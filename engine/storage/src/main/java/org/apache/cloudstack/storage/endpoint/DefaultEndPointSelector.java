@@ -80,7 +80,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
     private final String findOneHostOnPrimaryStorage = "select t.id from "
                             + "(select h.id, cd.value, hd.value as " + VOL_ENCRYPT_COLUMN_NAME + " "
                             + "from host h join storage_pool_host_ref s on h.id = s.host_id  "
-                            + "join cluster c on c.id=h.cluster_id "
+                            + "join cluster c on c.id=h.cluster_id and c.allocation_state = 'Enabled'"
                             + "left join cluster_details cd on c.id=cd.cluster_id and cd.name='" + CapacityManager.StorageOperationsExcludeCluster.key() + "' "
                             + "left join host_details hd on h.id=hd.host_id and hd.name='" + HOST_VOLUME_ENCRYPTION + "' "
                             + "where h.status = 'Up' and h.type = 'Routing' and h.resource_state = 'Enabled' and s.pool_id = ? ";
@@ -461,43 +461,105 @@ public class DefaultEndPointSelector implements EndPointSelector {
 
     @Override
     public EndPoint select(DataObject object, StorageAction action, boolean encryptionRequired) {
-        if (action == StorageAction.TAKESNAPSHOT) {
-            SnapshotInfo snapshotInfo = (SnapshotInfo)object;
-            if (snapshotInfo.getHypervisorType() == Hypervisor.HypervisorType.KVM) {
-                VolumeInfo volumeInfo = snapshotInfo.getBaseVolume();
-                VirtualMachine vm = volumeInfo.getAttachedVM();
-                if ((vm != null) && (vm.getState() == VirtualMachine.State.Running)) {
-                    Long hostId = vm.getHostId();
-                    return getEndPointFromHostId(hostId);
+        switch (action) {
+            case DELETESNAPSHOT:
+            case TAKESNAPSHOT:
+            case CONVERTSNAPSHOT: {
+                SnapshotInfo snapshotInfo = (SnapshotInfo)object;
+                if (Hypervisor.HypervisorType.KVM.equals(snapshotInfo.getHypervisorType())) {
+                    return getEndPointForSnapshotOperationsInKvm(snapshotInfo, encryptionRequired);
                 }
+                break;
             }
-        } else if (action == StorageAction.MIGRATEVOLUME) {
-            VolumeInfo volume = (VolumeInfo)object;
-            if (volume.getHypervisorType() == Hypervisor.HypervisorType.Hyperv || volume.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
-                VirtualMachine vm = volume.getAttachedVM();
-                if ((vm != null) && (vm.getState() == VirtualMachine.State.Running)) {
-                    Long hostId = vm.getHostId();
-                    return getEndPointFromHostId(hostId);
-                }
+            case REMOVEBITMAP: {
+                return getEndPointForBitmapRemoval(object, encryptionRequired);
             }
-        } else if (action == StorageAction.DELETEVOLUME) {
-            VolumeInfo volume = (VolumeInfo)object;
-            if (volume.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
-                VirtualMachine vm = volume.getAttachedVM();
-                if (vm != null) {
-                    Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
-                    if (hostId != null) {
+            case MIGRATEVOLUME: {
+                VolumeInfo volume = (VolumeInfo) object;
+                if (volume.getHypervisorType() == Hypervisor.HypervisorType.Hyperv || volume.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
+                    VirtualMachine vm = volume.getAttachedVM();
+                    if ((vm != null) && (vm.getState() == VirtualMachine.State.Running)) {
+                        Long hostId = vm.getHostId();
                         return getEndPointFromHostId(hostId);
                     }
                 }
+                break;
+            }
+            case DELETEVOLUME: {
+                VolumeInfo volume = (VolumeInfo) object;
+                if (volume.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
+                    VirtualMachine vm = volume.getAttachedVM();
+                    if (vm != null) {
+                        Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
+                        if (hostId != null) {
+                            return getEndPointFromHostId(hostId);
+                        }
+                    }
+                }
+                break;
             }
         }
         return select(object, encryptionRequired);
     }
 
+    protected EndPoint getEndPointForBitmapRemoval(DataObject object, boolean encryptionRequired) {
+        SnapshotInfo snapshotInfo = (SnapshotInfo)object;
+        VolumeInfo volumeInfo = snapshotInfo.getBaseVolume();
+
+        logger.debug("Selecting endpoint for bitmap removal of volume [{}].", volumeInfo.getUuid());
+        if (volumeInfo.isAttachedVM()) {
+            VirtualMachine attachedVM = volumeInfo.getAttachedVM();
+            if (attachedVM.getHostId() != null) {
+                return getEndPointFromHostId(attachedVM.getHostId());
+            } else if (attachedVM.getLastHostId() != null) {
+                return getEndPointFromHostId(attachedVM.getLastHostId());
+            }
+        }
+        return select(volumeInfo, encryptionRequired);
+    }
+
+    protected EndPoint getEndPointForSnapshotOperationsInKvm(SnapshotInfo snapshotInfo, boolean encryptionRequired) {
+        VolumeInfo volumeInfo = snapshotInfo.getBaseVolume();
+        DataStoreRole snapshotDataStoreRole = snapshotInfo.getDataStore().getRole();
+        VirtualMachine vm = volumeInfo.getAttachedVM();
+
+        logger.debug("Selecting endpoint for operation on snapshot [{}] with encryptionRequired as [{}].", snapshotInfo, encryptionRequired);
+        if (vm == null) {
+            if (snapshotDataStoreRole == DataStoreRole.Image) {
+                return selectRandom(snapshotInfo.getDataCenterId(), Hypervisor.HypervisorType.KVM);
+            } else {
+                return select(snapshotInfo, encryptionRequired);
+            }
+        }
+
+        if (vm.getState() == VirtualMachine.State.Running) {
+            return getEndPointFromHostId(vm.getHostId());
+        }
+
+        Long hostId = vm.getLastHostId();
+        if (hostId != null) {
+            return getEndPointFromHostId(hostId);
+        } else if (snapshotDataStoreRole == DataStoreRole.Image) {
+            return selectRandom(snapshotInfo.getDataCenterId(), Hypervisor.HypervisorType.KVM);
+        }
+
+        return select(snapshotInfo, encryptionRequired);
+    }
+
     @Override
     public EndPoint select(Scope scope, Long storeId) {
         return findEndPointInScope(scope, findOneHostOnPrimaryStorage, storeId);
+    }
+
+    @Override
+    public EndPoint selectRandom(long zoneId, Hypervisor.HypervisorType hypervisorType) {
+        List<HostVO> hostVOs = hostDao.listByDataCenterIdAndHypervisorType(zoneId, hypervisorType);
+
+        if (hostVOs.isEmpty()) {
+            return null;
+        }
+        Collections.shuffle(hostVOs);
+        return RemoteHostEndPoint.getHypervisorHostEndPoint(hostVOs.get(0));
     }
 
     @Override

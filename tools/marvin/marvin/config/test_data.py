@@ -1080,7 +1080,7 @@ test_data = {
             "format": "vhd",
             "hypervisor": "xenserver",
             "ostype": "Other Linux (64-bit)",
-            "url": "https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-amd64-azure.vhd.tar.gz",
+            "url": "https://cloud-images.ubuntu.com/releases/jammy/release/ubuntu-22.04-server-cloudimg-amd64-azure.vhd.tar.gz",
             "requireshvm": "True",
             "ispublic": "True",
             "isextractable": "True"
@@ -1091,10 +1091,10 @@ test_data = {
             "format": "ova",
             "hypervisor": "vmware",
             "ostype": "Other Linux (64-bit)",
-            "url": "https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-amd64.ova",
+            "url": "https://cloud-images.ubuntu.com/releases/jammy/release/ubuntu-22.04-server-cloudimg-amd64.ova",
             "requireshvm": "True",
             "ispublic": "True",
-            "deployasis": "True"
+            "deployasis": "False"
         },
     },
     "test_ovf_templates": [

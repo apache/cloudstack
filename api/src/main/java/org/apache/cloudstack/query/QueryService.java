@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.query;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -31,6 +32,7 @@ import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListObjectStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListSecondaryStagingStoresCmd;
+import org.apache.cloudstack.api.command.admin.storage.ListStorageAccessGroupsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStorageTagsCmd;
 import org.apache.cloudstack.api.command.admin.storage.heuristics.ListSecondaryStorageSelectorsCmd;
@@ -86,6 +88,7 @@ import org.apache.cloudstack.api.response.SecondaryStorageHeuristicsResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.SnapshotResponse;
+import org.apache.cloudstack.api.response.StorageAccessGroupResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.StorageTagResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
@@ -97,12 +100,15 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.vm.VmDetailConstants;
 
 /**
  * Service used for list api query.
  *
  */
 public interface QueryService {
+
+    List<String> RootAdminOnlyVmSettings = Arrays.asList(VmDetailConstants.GUEST_CPU_MODE, VmDetailConstants.GUEST_CPU_MODEL);
 
     // Config keys
     ConfigKey<Boolean> AllowUserViewDestroyedVM = new ConfigKey<>("Advanced", Boolean.class, "allow.user.view.destroyed.vm", "false",
@@ -192,6 +198,8 @@ public interface QueryService {
     ListResponse<DomainRouterResponse> searchForInternalLbVms(ListInternalLBVMsCmd cmd);
 
     ListResponse<StorageTagResponse> searchForStorageTags(ListStorageTagsCmd cmd);
+
+    ListResponse<StorageAccessGroupResponse> searchForStorageAccessGroups(ListStorageAccessGroupsCmd cmd);
 
     ListResponse<HostTagResponse> searchForHostTags(ListHostTagsCmd cmd);
 

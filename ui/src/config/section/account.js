@@ -228,11 +228,10 @@ export default {
       message: 'message.delete.account',
       dataView: true,
       disabled: (record, store) => {
-        return record.id !== 'undefined' && store.userInfo.accountid === record.id
+        return store.userInfo.accountid === record?.id
       },
-      groupAction: true,
       popup: true,
-      groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+      component: shallowRef(defineAsyncComponent(() => import('@/views/iam/DeleteAccountWrapper.vue')))
     }
   ]
 }

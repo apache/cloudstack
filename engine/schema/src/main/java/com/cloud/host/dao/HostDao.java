@@ -19,6 +19,7 @@ package com.cloud.host.dao;
 import java.util.Date;
 import java.util.List;
 
+import com.cloud.cpu.CPU;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
@@ -30,6 +31,7 @@ import com.cloud.resource.ResourceState;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 
 /**
  * Data Access Object for server
@@ -82,6 +84,10 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<HostVO> findHypervisorHostInCluster(long clusterId);
 
+    List<HostVO> findHypervisorHostInPod(long podId);
+
+    List<HostVO> findHypervisorHostInZone(long zoneId);
+
     HostVO findAnyStateHypervisorHostInCluster(long clusterId);
 
     HostVO findOldestExistentHypervisorHostInCluster(long clusterId);
@@ -94,9 +100,13 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<HostVO> findByPodId(Long podId);
 
+    List<HostVO> findByPodId(Long podId, Type type);
+
     List<Long> listIdsByPodId(Long podId);
 
     List<HostVO> findByClusterId(Long clusterId);
+
+    List<HostVO> findByClusterId(Long clusterId, Type type);
 
     List<Long> listIdsByClusterId(Long clusterId);
 
@@ -212,5 +222,13 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<HypervisorType> listDistinctHypervisorTypes(final Long zoneId);
 
+    List<Pair<HypervisorType, CPU.CPUArch>> listDistinctHypervisorArchTypes(final Long zoneId);
+
+    List<CPU.CPUArch> listDistinctArchTypes(final Long clusterId);
+
     List<HostVO> listByIds(final List<Long> ids);
+
+    Long findClusterIdByVolumeInfo(VolumeInfo volumeInfo);
+
+    List<String> listDistinctStorageAccessGroups(String name, String keyword);
 }

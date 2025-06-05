@@ -74,6 +74,11 @@ public class ManagementServerResponse extends BaseResponse {
     @Param(description = "the running OS kernel version for this Management Server")
     private String kernelVersion;
 
+    @Deprecated
+    @SerializedName(ApiConstants.SERVICE_IP)
+    @Param(description = "the IP Address for this Management Server. This is deprecated, please use 'ipaddress' instead.")
+    private String serviceIp;
+
     @SerializedName(ApiConstants.IP_ADDRESS)
     @Param(description = "the IP Address for this Management Server")
     private String ipAddress;
@@ -138,6 +143,10 @@ public class ManagementServerResponse extends BaseResponse {
         return lastBoot;
     }
 
+    public String getServiceIp() {
+        return serviceIp;
+    }
+
     public String getIpAddress() {
         return ipAddress;
     }
@@ -200,6 +209,10 @@ public class ManagementServerResponse extends BaseResponse {
 
     public void setKernelVersion(String kernelVersion) {
         this.kernelVersion = kernelVersion;
+    }
+
+    public void setServiceIp(String serviceIp) {
+        this.serviceIp = serviceIp;
     }
 
     public void setIpAddress(String ipAddress) {

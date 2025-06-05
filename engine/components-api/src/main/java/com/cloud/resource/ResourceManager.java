@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
@@ -28,6 +30,7 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.agent.api.to.GPUDeviceTO;
+import com.cloud.cpu.CPU;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodCluster;
@@ -60,6 +63,17 @@ public interface ResourceManager extends ResourceService, Configurable {
                     + "Choose 'Migration' strategy to migrate away VMs running on local storage. "
                     + "To force-stop VMs, choose 'ForceStop' strategy",
             true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.Select, "Error,Migration,ForceStop");
+
+    ConfigKey<String> SystemVmPreferredArchitecture = new ConfigKey<>(
+            String.class,
+            "system.vm.preferred.architecture",
+            "Advanced",
+            CPU.CPUArch.getDefault().getType(),
+            "Preferred architecture for the system VMs including virtual routers",
+            true,
+            ConfigKey.Scope.Zone, null, null, null, null, null,
+            ConfigKey.Kind.Select,
+            "," + CPU.CPUArch.getTypesAsCSV());
 
     /**
      * Register a listener for different types of resource life cycle events.
@@ -224,4 +238,12 @@ public interface ResourceManager extends ResourceService, Configurable {
     HostVO findOneRandomRunningHostByHypervisor(HypervisorType type, Long dcId);
 
     boolean cancelMaintenance(final long hostId);
+
+    void updateStoragePoolConnectionsOnHosts(Long poolId, List<String> storageAccessGroups);
+
+    List<HostVO> getEligibleUpHostsInClusterForStorageConnection(PrimaryDataStoreInfo primaryStore);
+
+    List<HostVO> getEligibleUpAndEnabledHostsInClusterForStorageConnection(PrimaryDataStoreInfo primaryStore);
+
+    List<HostVO> getEligibleUpAndEnabledHostsInZoneForStorageConnection(DataStore dataStore, long zoneId, HypervisorType hypervisorType);
 }

@@ -38,10 +38,12 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.deploy.DeploymentClusterPlanner;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.user.AccountManager;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
@@ -73,6 +75,7 @@ import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.resourcedetail.DiskOfferingDetailVO;
@@ -81,8 +84,10 @@ import org.apache.cloudstack.secret.PassphraseVO;
 import org.apache.cloudstack.secret.dao.PassphraseDao;
 import org.apache.cloudstack.snapshot.SnapshotHelper;
 import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
@@ -198,6 +203,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     @Inject
     protected PrimaryDataStoreDao _storagePoolDao = null;
     @Inject
+    protected ImageStoreDao imageStoreDao;
+    @Inject
     protected TemplateDataStoreDao _vmTemplateStoreDao = null;
     @Inject
     protected VolumeDao _volumeDao;
@@ -257,6 +264,10 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     StoragePoolHostDao storagePoolHostDao;
     @Inject
     DiskOfferingDao diskOfferingDao;
+    @Inject
+    ConfigDepot configDepot;
+    @Inject
+    ConfigurationDao configurationDao;
 
     @Inject
     protected SnapshotHelper snapshotHelper;
@@ -572,6 +583,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         } catch (CloudRuntimeException e) {
             snapshotHelper.expungeTemporarySnapshot(kvmSnapshotOnlyInPrimaryStorage, snapInfo);
             throw e;
+        }
+
+        boolean kvmIncrementalSnapshot = SnapshotManager.kvmIncrementalSnapshot.valueIn(_hostDao.findClusterIdByVolumeInfo(snapInfo.getBaseVolume()));
+        if (kvmIncrementalSnapshot && DataStoreRole.Image.equals(dataStoreRole)) {
+            snapInfo = snapshotHelper.convertSnapshotIfNeeded(snapInfo);
         }
 
         // don't try to perform a sync if the DataStoreRole of the snapshot is equal to DataStoreRole.Primary
@@ -1974,8 +1990,27 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                     _vmCloneSettingDao.persist(vmCloneSettingVO);
                 }
             }
-
         }
+    }
+
+    @Override
+    public Pair<List<String>, Set<String>> getVolumeCheckpointPathsAndImageStoreUrls(long volumeId, HypervisorType hypervisorType) {
+        List<String> checkpointPaths = new ArrayList<>();
+        Set<Long> imageStoreIds = new HashSet<>();
+        Set<String> imageStoreUrls = new HashSet<>();
+        if (HypervisorType.KVM.equals(hypervisorType)) {
+            List<SnapshotDataStoreVO> snapshotDataStoreVos = _snapshotDataStoreDao.listReadyByVolumeIdAndCheckpointPathNotNull(volumeId);
+            snapshotDataStoreVos.forEach(snapshotDataStoreVO -> {
+                checkpointPaths.add(snapshotDataStoreVO.getKvmCheckpointPath());
+                if (DataStoreRole.Image.equals(snapshotDataStoreVO.getRole())) {
+                    imageStoreIds.add(snapshotDataStoreVO.getDataStoreId());
+                }
+            });
+            imageStoreUrls = imageStoreIds.stream().map(id -> imageStoreDao.findById(id).getUrl()).collect(Collectors.toSet());
+            logger.debug(String.format("Found [%s] snapshots [%s] that have checkpoints for volume with id [%s].", snapshotDataStoreVos.size(), snapshotDataStoreVos, volumeId));
+        }
+
+        return new Pair<>(checkpointPaths, imageStoreUrls);
     }
 
     private void handleCheckAndRepairVolume(Volume vol, Long hostId) {
@@ -2018,7 +2053,9 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {RecreatableSystemVmEnabled, MaxVolumeSize, StorageHAMigrationEnabled, StorageMigrationEnabled, CustomDiskOfferingMaxSize, CustomDiskOfferingMinSize, VolumeUrlCheck};
+        return new ConfigKey<?>[] {
+                RecreatableSystemVmEnabled, MaxVolumeSize, StorageHAMigrationEnabled, StorageMigrationEnabled,
+                CustomDiskOfferingMaxSize, CustomDiskOfferingMinSize, VolumeUrlCheck, VolumeAllocationAlgorithm};
     }
 
     @Override
@@ -2028,6 +2065,18 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        return true;
+    }
+
+    @Override
+    public boolean start() {
+        if (configDepot.isNewConfig(VolumeAllocationAlgorithm)) {
+            String vmAllocationAlgo = DeploymentClusterPlanner.VmAllocationAlgorithm.value();
+            if (com.cloud.utils.StringUtils.isNotEmpty(vmAllocationAlgo) && !VolumeAllocationAlgorithm.defaultValue().equalsIgnoreCase(vmAllocationAlgo)) {
+                logger.debug("Updating value for configuration: {} to {}", VolumeAllocationAlgorithm.key(), vmAllocationAlgo);
+                configurationDao.update(VolumeAllocationAlgorithm.key(), vmAllocationAlgo);
+            }
+        }
         return true;
     }
 

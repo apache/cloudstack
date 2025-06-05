@@ -1,0 +1,65 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+# This file specifies the files that need
+#
+# to be transferred over to the XenServer.
+# The format of this file is as follows:
+# [Name of file]=[source path],[file permission],[destination path]
+# [destination path] is required.
+# If [file permission] is missing, 755 is assumed.
+# If [source path] is missing, it looks in the same
+# directory as the patch file.
+# If [source path] starts with '/', then it is absolute path.
+# If [source path] starts with '~', then it is path relative to management server home directory.
+# If [source path] does not start with '/' or '~', then it is relative path to the location of the patch file. 
+NFSSR.py=/opt/xensource/sm
+vmops=../xenserver84/,0755,/etc/xapi.d/plugins
+ovstunnel=..,0755,/etc/xapi.d/plugins
+vmopsSnapshot=../xenserver84/,0755,/etc/xapi.d/plugins
+agent.zip=../../../../../vms,0644,/opt/xensource/packages/resources/
+cloud-scripts.tgz=../../../../../vms,0644,/opt/xensource/packages/resources/
+patch-sysvms.sh=../../../../../vms,0644,/opt/xensource/packages/resources/
+id_rsa.cloud=../../../systemvm,0600,/root/.ssh
+network_info.sh=..,0755,/opt/cloud/bin
+setupxenserver.sh=..,0755,/opt/cloud/bin
+make_migratable.sh=..,0755,/opt/cloud/bin
+setup_iscsi.sh=..,0755,/opt/cloud/bin
+pingtest.sh=../../..,0755,/opt/cloud/bin
+router_proxy.sh=../../../../network/domr/,0755,/opt/cloud/bin
+cloud-setup-bonding.sh=..,0755,/opt/cloud/bin
+copy_vhd_to_secondarystorage.sh=..,0755,/opt/cloud/bin
+copy_vhd_from_secondarystorage.sh=..,0755,/opt/cloud/bin
+setup_heartbeat_sr.sh=..,0755,/opt/cloud/bin
+setup_heartbeat_file.sh=..,0755,/opt/cloud/bin
+check_heartbeat.sh=..,0755,/opt/cloud/bin
+xenheartbeat.sh=..,0755,/opt/cloud/bin
+launch_hb.sh=..,0755,/opt/cloud/bin
+vhd-util=..,0755,/opt/cloud/bin
+vmopspremium=../xenserver84/,0755,/etc/xapi.d/plugins
+create_privatetemplate_from_snapshot.sh=..,0755,/opt/cloud/bin
+upgrade_snapshot.sh=..,0755,/opt/cloud/bin
+cloud-clean-vlan.sh=..,0755,/opt/cloud/bin
+cloud-prepare-upgrade.sh=..,0755,/opt/cloud/bin
+add_to_vcpus_params_live.sh=..,0755,/opt/cloud/bin
+cloud-plugin-storage=../xenserver84/,0755,/etc/xapi.d/plugins
+
+###add cloudstack plugin script for XCP
+cloudstack_plugins.conf=..,0644,/etc/xensource
+cloudstack_pluginlib.py=../xenserver84/,0755,/etc/xapi.d/plugins
+cloudlog=..,0644,/etc/logrotate.d
+update_host_passwd.sh=../..,0755,/opt/cloud/bin

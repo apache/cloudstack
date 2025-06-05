@@ -85,6 +85,14 @@ public class PodResponse extends BaseResponseWithAnnotations {
     @Param(description = "the capacity of the Pod", responseObject = CapacityResponse.class)
     private List<CapacityResponse> capacities;
 
+    @SerializedName(ApiConstants.STORAGE_ACCESS_GROUPS)
+    @Param(description = "comma-separated list of storage access groups for the pod", since = "4.21.0")
+    private String storageAccessGroups;
+
+    @SerializedName(ApiConstants.ZONE_STORAGE_ACCESS_GROUPS)
+    @Param(description = "comma-separated list of storage access groups on the zone", since = "4.21.0")
+    private String zoneStorageAccessGroups;
+
     public String getId() {
         return id;
     }
@@ -183,5 +191,21 @@ public class PodResponse extends BaseResponseWithAnnotations {
 
     public void setCapacities(List<CapacityResponse> capacities) {
         this.capacities = capacities;
+    }
+
+    public String getStorageAccessGroups() {
+        return storageAccessGroups;
+    }
+
+    public void setStorageAccessGroups(String storageAccessGroups) {
+        this.storageAccessGroups = storageAccessGroups;
+    }
+
+    public String getZoneStorageAccessGroups() {
+        return zoneStorageAccessGroups;
+    }
+
+    public void setZoneStorageAccessGroups(String zoneStorageAccessGroups) {
+        this.zoneStorageAccessGroups = zoneStorageAccessGroups;
     }
 }

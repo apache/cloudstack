@@ -16,20 +16,11 @@
 // under the License.
 package org.apache.cloudstack.storage.allocator;
 
-import java.math.BigDecimal;
-import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
 import com.cloud.api.query.dao.StoragePoolJoinDao;
+import com.cloud.dc.dao.HostPodDao;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.StoragePoolStatus;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
@@ -64,20 +55,41 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachineProfile;
 
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.math.BigDecimal;
+import java.security.SecureRandom;
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 public abstract class AbstractStoragePoolAllocator extends AdapterBase implements StoragePoolAllocator {
 
     protected BigDecimal storageOverprovisioningFactor = new BigDecimal(1);
-    protected String allocationAlgorithm = "random";
     protected long extraBytesPerVolume = 0;
+    static DecimalFormat decimalFormat = new DecimalFormat("#.##");
     @Inject protected DataStoreManager dataStoreMgr;
     @Inject protected PrimaryDataStoreDao storagePoolDao;
     @Inject protected VolumeDao volumeDao;
     @Inject protected ConfigurationDao configDao;
-    @Inject private CapacityDao capacityDao;
-    @Inject private ClusterDao clusterDao;
+    @Inject protected ClusterDao clusterDao;
+    @Inject protected CapacityDao capacityDao;
     @Inject private StorageManager storageMgr;
     @Inject private StorageUtil storageUtil;
     @Inject private StoragePoolDetailsDao storagePoolDetailsDao;
+    @Inject
+    protected HostDao hostDao;
+    @Inject
+    protected HostPodDao podDao;
 
     /**
      * make sure shuffled lists of Pools are really shuffled
@@ -95,10 +107,6 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             String globalStorageOverprovisioningFactor = configs.get("storage.overprovisioning.factor");
             storageOverprovisioningFactor = new BigDecimal(NumbersUtil.parseFloat(globalStorageOverprovisioningFactor, 2.0f));
             extraBytesPerVolume = 0;
-            String allocationAlgorithm = configs.get("vm.allocation.algorithm");
-            if (allocationAlgorithm != null) {
-                this.allocationAlgorithm = allocationAlgorithm;
-            }
             return true;
         }
         return false;
@@ -142,12 +150,16 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
                 capacityType, storagePool.getName(), storagePool.getUuid(), storageType
         ));
 
-        List<Long> poolIdsByCapacity = capacityDao.orderHostsByFreeCapacity(zoneId, clusterId, capacityType);
+        Pair<List<Long>, Map<Long, Double>> result = capacityDao.orderHostsByFreeCapacity(zoneId, clusterId, capacityType);
+        List<Long> poolIdsByCapacity = result.first();
+        Map<Long, String> sortedHostByCapacity = result.second().entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> decimalFormat.format(entry.getValue() * 100) + "%", (e1, e2) -> e1, LinkedHashMap::new));
+        logger.debug("List of pools in descending order of hostId: [{}] available capacity (percentage): {}",
+                poolIdsByCapacity, sortedHostByCapacity);
 
-        logger.debug(String.format("List of pools in descending order of available capacity [%s].", poolIdsByCapacity));
-
-
-      //now filter the given list of Pools by this ordered list
+        // now filter the given list of Pools by this ordered list
         Map<Long, StoragePool> poolMap = new HashMap<>();
         for (StoragePool pool : pools) {
             poolMap.put(pool.getId(), pool);
@@ -227,16 +239,16 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     }
 
     List<StoragePool> reorderStoragePoolsBasedOnAlgorithm(List<StoragePool> pools, DeploymentPlan plan, Account account) {
-        logger.debug(String.format("Using allocation algorithm [%s] to reorder pools.", allocationAlgorithm));
-
-        if (allocationAlgorithm.equals("random") || allocationAlgorithm.equals("userconcentratedpod_random") || (account == null)) {
+        String volumeAllocationAlgorithm = VolumeOrchestrationService.VolumeAllocationAlgorithm.value();
+        logger.debug("Using volume allocation algorithm {} to reorder pools.", volumeAllocationAlgorithm);
+        if (volumeAllocationAlgorithm.equals("random") || volumeAllocationAlgorithm.equals("userconcentratedpod_random") || (account == null)) {
             reorderRandomPools(pools);
-        } else if (StringUtils.equalsAny(allocationAlgorithm, "userdispersing", "firstfitleastconsumed")) {
+        } else if (StringUtils.equalsAny(volumeAllocationAlgorithm, "userdispersing", "firstfitleastconsumed")) {
             if (logger.isTraceEnabled()) {
-                logger.trace(String.format("Using reordering algorithm [%s]", allocationAlgorithm));
+                logger.trace("Using reordering algorithm {}", volumeAllocationAlgorithm);
             }
 
-            if (allocationAlgorithm.equals("userdispersing")) {
+            if (volumeAllocationAlgorithm.equals("userdispersing")) {
                 pools = reorderPoolsByNumberOfVolumes(plan, pools, account);
             } else {
                 pools = reorderPoolsByCapacity(plan, pools);
@@ -248,7 +260,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     void reorderRandomPools(List<StoragePool> pools) {
         StorageUtil.traceLogStoragePools(pools, logger, "pools to choose from: ");
         if (logger.isTraceEnabled()) {
-            logger.trace(String.format("Shuffle this so that we don't check the pools in the same order. Algorithm == '%s' (or no account?)", allocationAlgorithm));
+            logger.trace("Shuffle this so that we don't check the pools in the same order. Algorithm == 'random' (or no account?)");
         }
         StorageUtil.traceLogStoragePools(pools, logger, "pools to shuffle: ");
         Collections.shuffle(pools, secureRandom);
@@ -314,6 +326,16 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 
         if(!checkHypervisorCompatibility(dskCh.getHypervisorType(), dskCh.getType(), pool.getPoolType())){
             return false;
+        }
+
+        if (plan.getHostId() != null) {
+            HostVO plannedHost = hostDao.findById(plan.getHostId());
+            if (!storageMgr.checkIfHostAndStoragePoolHasCommonStorageAccessGroups(plannedHost, pool)) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug(String.format("StoragePool %s and host %s does not have matching storage access groups", pool, plannedHost));
+                }
+                return false;
+            }
         }
 
         Volume volume = null;

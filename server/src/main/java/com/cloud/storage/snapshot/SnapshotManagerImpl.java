@@ -18,10 +18,12 @@ package com.cloud.storage.snapshot;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -32,6 +34,9 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.host.dao.HostDao;
+import com.cloud.storage.Upload;
+import com.cloud.storage.dao.SnapshotDetailsDao;
 import org.apache.cloudstack.acl.SecurityChecker;
 import com.cloud.api.ApiDBUtils;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -66,6 +71,7 @@ import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.resourcedetail.SnapshotPolicyDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.SnapshotPolicyDetailsDao;
@@ -212,6 +218,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     @Inject
     ClusterDao _clusterDao;
     @Inject
+    HostDao hostDao;
+    @Inject
     ResourceLimitService _resourceLimitMgr;
     @Inject
     DomainManager _domainMgr;
@@ -250,6 +258,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     VMSnapshotDetailsDao vmSnapshotDetailsDao;
     @Inject
     SnapshotDataFactory snapshotDataFactory;
+    @Inject
+    SnapshotDetailsDao snapshotDetailsDao;
 
     private int _totalRetries;
     private int _pauseInterval;
@@ -284,7 +294,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {BackupRetryAttempts, BackupRetryInterval, SnapshotHourlyMax, SnapshotDailyMax, SnapshotMonthlyMax, SnapshotWeeklyMax, usageSnapshotSelection,
-                SnapshotInfo.BackupSnapshotAfterTakingSnapshot, VmStorageSnapshotKvm};
+                SnapshotInfo.BackupSnapshotAfterTakingSnapshot, VmStorageSnapshotKvm, kvmIncrementalSnapshot, snapshotDeltaMax};
     }
 
     @Override
@@ -391,6 +401,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         boolean result = snapshotStrategy.revertSnapshot(snapshotInfo);
         if (result) {
             updateVolumeSizeAndPrimaryStorageCount(volume, snapshot);
+            endSnapshotChainForVolume(snapshot.getVolumeId(), snapshot.getHypervisorType());
             return snapshotInfo;
         }
         return null;
@@ -408,6 +419,35 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             _volsDao.update(volume.getId(), volume);
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_RESIZE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
                     volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid());
+        }
+    }
+
+    /**
+     * Marks the snapshot chain as finished if the volume is on KVM.
+     * */
+    @Override
+    public void endSnapshotChainForVolume(long volumeId, HypervisorType hypervisorType) {
+        if (!HypervisorType.KVM.equals(hypervisorType)) {
+            return;
+        }
+
+        List<SnapshotDataStoreVO> snapshots;
+        SnapshotDataStoreVO snapshotOnPrimary = _snapshotStoreDao.findLatestSnapshotForVolume(volumeId, DataStoreRole.Primary);
+
+        if (snapshotOnPrimary != null) {
+            snapshots = _snapshotStoreDao.listBySnapshotId(snapshotOnPrimary.getSnapshotId());
+        } else {
+            SnapshotDataStoreVO snapshotOnSecondary = _snapshotStoreDao.findLatestSnapshotForVolume(volumeId, DataStoreRole.Image);
+            snapshots = snapshotOnSecondary != null ? _snapshotStoreDao.listBySnapshotId(snapshotOnSecondary.getSnapshotId()) : null;
+        }
+
+        if (CollectionUtils.isEmpty(snapshots)) {
+            return;
+        }
+
+        for (SnapshotDataStoreVO snapshotDataStoreVO : snapshots) {
+            snapshotDataStoreVO.setEndOfChain(true);
+            _snapshotStoreDao.update(snapshotDataStoreVO.getId(), snapshotDataStoreVO);
         }
     }
 
@@ -465,7 +505,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             throw new CloudRuntimeException("Failed to create snapshot");
         }
         try {
-            postCreateSnapshot(volumeId, snapshot.getId(), policyId);
+            postCreateSnapshot(volumeId, snapshot.getId(), policyId, hostDao.findClusterIdByVolumeInfo(volume));
             //Check if the snapshot was removed while backingUp. If yes, do not log snapshot create usage event
             SnapshotVO freshSnapshot = _snapshotDao.findById(snapshot.getId());
             if (freshSnapshot != null) {
@@ -541,6 +581,11 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         snapshotSrv.syncVolumeSnapshotsToRegionStore(snapshot.getVolumeId(), chosenStore);
 
         SnapshotInfo snapshotObject = snapshotFactory.getSnapshot(snapshotId, chosenStore);
+
+        if (snapshotDataStoreReference.getKvmCheckpointPath() != null) {
+            snapshotSrv.convertSnapshot(snapshotObject);
+        }
+
         String extractUrl = chosenStore.createEntityExtractUrl(snapshotObject.getPath(), snapshotObject.getBaseVolume().getFormat(), snapshotObject);
         logger.debug("Extract URL [{}] created for snapshot [{}].", extractUrl, snapshot);
         snapshotDataStoreReference.setExtractUrl(extractUrl);
@@ -687,7 +732,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         return userId;
     }
 
-    private void postCreateSnapshot(Long volumeId, Long snapshotId, Long policyId) {
+    private void postCreateSnapshot(Long volumeId, Long snapshotId, Long policyId, Long clusterId) {
         Long userId = getSnapshotUserId();
         SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
         if (policyId != Snapshot.MANUAL_POLICY_ID) {
@@ -698,8 +743,69 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             }
         }
 
-        if (snapshot != null && snapshot.isRecursive()) {
+        if (snapshot == null) {
+            return;
+        }
+
+        if (snapshot.isRecursive()) {
             postCreateRecurringSnapshotForPolicy(userId, volumeId, snapshotId, policyId);
+        }
+
+        if (HypervisorType.KVM.equals(snapshot.getHypervisorType())) {
+            if (kvmIncrementalSnapshot.valueIn(clusterId)){
+                endCurrentChainIfNeeded(snapshotId, snapshot.getDataCenterId());
+            } else {
+                endLastChainIfNeeded(clusterId, volumeId);
+            }
+        }
+    }
+
+    /**
+     * Will mark this snapshot as the end of the chain if it has reached the value of snapshot.delta.max.
+     * */
+    private void endCurrentChainIfNeeded(Long snapshotId, Long zoneId) {
+        SnapshotDataStoreVO snapshotDataStoreVo = _snapshotStoreDao.findOneBySnapshotId(snapshotId, zoneId);
+        int chainSize = 1;
+        while (snapshotDataStoreVo.getParentSnapshotId() > 0) {
+            snapshotDataStoreVo = _snapshotStoreDao.findOneBySnapshotId(snapshotDataStoreVo.getParentSnapshotId(), zoneId);
+            chainSize++;
+        }
+        if (chainSize >= snapshotDeltaMax.value()) {
+            List<SnapshotDataStoreVO> currentSnapStoreRefs = _snapshotStoreDao.listBySnapshotId(snapshotId);
+            for (SnapshotDataStoreVO currentSnapStoreRef : currentSnapStoreRefs) {
+                currentSnapStoreRef.setEndOfChain(true);
+                _snapshotStoreDao.update(currentSnapStoreRef.getId(), currentSnapStoreRef);
+            }
+        }
+    }
+
+    /**
+     * This method ends the last snapshot chain if the current snapshot being taken is not incremental anymore.
+     * This is needed when a user has a chain of snapshots with kvm.incremental.snapshot = true, then sets the configuration as false and takes a new snapshot.
+     * Ending the last snapshot chain prevents future inconsistencies if the user sets kvm.incremental.snapshot = true again.
+     * <br></br>
+     * <b>This method should only be called when kvm.incremental.snapshot = false and for volumes in KVM</b>
+     * */
+    protected void endLastChainIfNeeded(long clusterId, long volumeId) {
+        if (kvmIncrementalSnapshot.valueIn(clusterId)) {
+            return;
+        }
+
+        List<SnapshotDataStoreVO> volumeSnapshots = _snapshotStoreDao.listReadyByVolumeId(volumeId);
+        volumeSnapshots.sort(Comparator.comparing(SnapshotDataStoreVO::getCreated));
+        Collections.reverse(volumeSnapshots);
+
+        SnapshotDataStoreVO snapshotDataStoreVO;
+        for (int i = 1; i < volumeSnapshots.size(); i++) {
+            snapshotDataStoreVO = volumeSnapshots.get(i);
+            if (snapshotDataStoreVO.getKvmCheckpointPath() != null) {
+                if (!snapshotDataStoreVO.isEndOfChain()) {
+                    logger.debug("Found snapshot reference [{}] that used to belong to a now dead snapshot chain. Will mark it as end of chain.", snapshotDataStoreVO);
+                    snapshotDataStoreVO.setEndOfChain(true);
+                    _snapshotStoreDao.update(snapshotDataStoreVO.getId(), snapshotDataStoreVO);
+                }
+                return;
+            }
         }
     }
 
@@ -791,36 +897,30 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         List<SnapshotDataStoreVO> snapshotStoreRefs = storeRefAndZones.first();
         List<Long> zoneIds = storeRefAndZones.second();
 
-        try {
-            boolean result = snapshotStrategy.deleteSnapshot(snapshotId, zoneId);
-            if (result) {
-                for (Long zId : zoneIds) {
-                    if (snapshotCheck.getState() == Snapshot.State.BackedUp) {
-                        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_DELETE, snapshotCheck.getAccountId(), zId, snapshotId,
-                                snapshotCheck.getName(), null, null, 0L, snapshotCheck.getClass().getName(), snapshotCheck.getUuid());
-                    }
-                }
-                final SnapshotVO postDeleteSnapshotEntry = _snapshotDao.findById(snapshotId);
-                if (postDeleteSnapshotEntry == null || Snapshot.State.Destroyed.equals(postDeleteSnapshotEntry.getState())) {
-                    annotationDao.removeByEntityType(AnnotationService.EntityType.SNAPSHOT.name(), snapshotCheck.getUuid());
-
-                    if (snapshotCheck.getState() != Snapshot.State.Error && snapshotCheck.getState() != Snapshot.State.Destroyed) {
-                        _resourceLimitMgr.decrementResourceCount(snapshotCheck.getAccountId(), ResourceType.snapshot);
-                    }
-                }
-                for (SnapshotDataStoreVO snapshotStoreRef : snapshotStoreRefs) {
-                    if (ObjectInDataStoreStateMachine.State.Ready.equals(snapshotStoreRef.getState()) && !DataStoreRole.Primary.equals(snapshotStoreRef.getRole())) {
-                        _resourceLimitMgr.decrementResourceCount(snapshotCheck.getAccountId(), ResourceType.secondary_storage, new Long(snapshotStoreRef.getPhysicalSize()));
-                    }
+        boolean result = snapshotStrategy.deleteSnapshot(snapshotId, zoneId);
+        if (result) {
+            for (Long zId : zoneIds) {
+                if (snapshotCheck.getState() == Snapshot.State.BackedUp) {
+                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_DELETE, snapshotCheck.getAccountId(), zId, snapshotId,
+                            snapshotCheck.getName(), null, null, 0L, snapshotCheck.getClass().getName(), snapshotCheck.getUuid());
                 }
             }
+            final SnapshotVO postDeleteSnapshotEntry = _snapshotDao.findById(snapshotId);
+            if (postDeleteSnapshotEntry == null || Snapshot.State.Destroyed.equals(postDeleteSnapshotEntry.getState())) {
+                annotationDao.removeByEntityType(AnnotationService.EntityType.SNAPSHOT.name(), snapshotCheck.getUuid());
 
-            return result;
-        } catch (Exception e) {
-            logger.debug("Failed to delete snapshot {}:{}", snapshotCheck.getId(), e.toString());
-
-            throw new CloudRuntimeException("Failed to delete snapshot:" + e.toString());
+                if (snapshotCheck.getState() != Snapshot.State.Error && snapshotCheck.getState() != Snapshot.State.Destroyed) {
+                    _resourceLimitMgr.decrementResourceCount(snapshotCheck.getAccountId(), ResourceType.snapshot);
+                }
+            }
+            for (SnapshotDataStoreVO snapshotStoreRef : snapshotStoreRefs) {
+                if (ObjectInDataStoreStateMachine.State.Ready.equals(snapshotStoreRef.getState()) && !DataStoreRole.Primary.equals(snapshotStoreRef.getRole())) {
+                    _resourceLimitMgr.decrementResourceCount(snapshotCheck.getAccountId(), ResourceType.secondary_storage, new Long(snapshotStoreRef.getPhysicalSize()));
+                }
+            }
         }
+
+        return result;
     }
 
     @Override
@@ -930,7 +1030,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         } else if (intervalTypeStr != null && volumeId != null) {
             Type type = SnapshotVO.getSnapshotType(intervalTypeStr);
             if (type == null) {
-                throw new InvalidParameterValueException("Unsupported snapstho interval type " + intervalTypeStr);
+                throw new InvalidParameterValueException("Unsupported snapshot interval type " + intervalTypeStr);
             }
             sc.setParameters("snapshotTypeEQ", type.ordinal());
         } else {
@@ -1445,11 +1545,27 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     public SnapshotInfo takeSnapshot(VolumeInfo volume) throws ResourceAllocationException {
         CreateSnapshotPayload payload = (CreateSnapshotPayload)volume.getpayload();
 
-        updateSnapshotPayload(volume.getPoolId(), payload);
-
         Long snapshotId = payload.getSnapshotId();
         Account snapshotOwner = payload.getAccount();
+
         SnapshotInfo snapshot = snapshotFactory.getSnapshot(snapshotId, volume.getDataStore());
+        StoragePool storagePool = _storagePoolDao.findById(volume.getPoolId());
+
+        Long clusterId = hostDao.findClusterIdByVolumeInfo(volume);
+
+        boolean isKvmAndFileBasedStorage = isHypervisorKvmAndFileBasedStorage(volume, storagePool);
+        boolean backupSnapToSecondary = isBackupSnapshotToSecondaryForZone(volume.getDataCenterId());
+
+        if (isKvmAndFileBasedStorage && backupSnapToSecondary) {
+            DataStore imageStore = snapshotSrv.findSnapshotImageStore(snapshot);
+            if (imageStore == null) {
+                throw new CloudRuntimeException(String.format("Could not find any secondary storage to allocate snapshot [%s].", snapshot));
+            }
+            snapshot.setImageStore(imageStore);
+        }
+
+        updateSnapshotPayload(volume.getPoolId(), payload, isKvmAndFileBasedStorage, clusterId);
+
         snapshot.addPayload(payload);
         try {
             SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.TAKE);
@@ -1459,17 +1575,20 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             }
 
             SnapshotInfo snapshotOnPrimary = snapshotStrategy.takeSnapshot(snapshot);
-            boolean backupSnapToSecondary = isBackupSnapshotToSecondaryForZone(snapshot.getDataCenterId());
 
             if (backupSnapToSecondary) {
-                backupSnapshotToSecondary(payload.getAsyncBackup(), snapshotStrategy, snapshotOnPrimary, payload.getZoneIds());
+                if (!isKvmAndFileBasedStorage) {
+                    backupSnapshotToSecondary(payload.getAsyncBackup(), snapshotStrategy, snapshotOnPrimary, payload.getZoneIds());
+                } else {
+                    postSnapshotDirectlyToSecondary(snapshot, snapshotOnPrimary, snapshotId);
+                }
             } else {
-                logger.debug("skipping backup of snapshot [{}] to secondary due to configuration", snapshot);
+                logger.debug("Skipping backup of snapshot [{}] to secondary due to configuration [{}].", snapshotOnPrimary.getUuid(), SnapshotInfo.BackupSnapshotAfterTakingSnapshot.key());
                 snapshotOnPrimary.markBackedUp();
             }
 
             try {
-                postCreateSnapshot(volume.getId(), snapshotId, payload.getSnapshotPolicyId());
+                postCreateSnapshot(volume.getId(), snapshotId, payload.getSnapshotPolicyId(), clusterId);
                 snapshotZoneDao.addSnapshotToZone(snapshotId, snapshot.getDataCenterId());
 
                 DataStoreRole dataStoreRole = backupSnapToSecondary ? snapshotHelper.getDataStoreRole(snapshot) : DataStoreRole.Primary;
@@ -1508,6 +1627,29 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
         return snapshot;
     }
+
+    private void postSnapshotDirectlyToSecondary(SnapshotInfo snapshot, SnapshotInfo snapshotOnPrimary, Long snapshotId) {
+        logger.debug("{} was directly copied to secondary storage because the hypervisor is KVM, the primary storage is file-based and the [{}] configuration" +
+                " is set to true.", snapshot.getSnapshotVO().toString(), SnapshotInfo.BackupSnapshotAfterTakingSnapshot);
+
+        SnapshotDataStoreVO snapshotStore = _snapshotStoreDao.findBySnapshotIdAndDataStoreRoleAndState(snapshotId, DataStoreRole.Image, ObjectInDataStoreStateMachine.State.Allocated);
+
+        snapshotStore.setInstallPath(snapshotOnPrimary.getPath());
+        snapshotStore.setState(ObjectInDataStoreStateMachine.State.Ready);
+
+        _snapshotStoreDao.update(snapshotStore.getId(), snapshotStore);
+
+        snapshotOnPrimary.markBackedUp();
+        _snapshotStoreDao.removeBySnapshotStore(snapshotId, snapshotOnPrimary.getDataStore().getId(), snapshotOnPrimary.getDataStore().getRole());
+        snapshotDetailsDao.removeDetail(snapshotOnPrimary.getId(), AsyncJob.Constants.MS_ID);
+    }
+
+    @Override
+    public boolean isHypervisorKvmAndFileBasedStorage(VolumeInfo volumeInfo, StoragePool storagePool) {
+        Set<StoragePoolType> fileBasedStores = Set.of(Storage.StoragePoolType.SharedMountPoint, Storage.StoragePoolType.NetworkFilesystem, Storage.StoragePoolType.Filesystem);
+        return volumeInfo.getHypervisorType() == HypervisorType.KVM && fileBasedStores.contains(storagePool.getPoolType());
+    }
+
 
     protected void backupSnapshotToSecondary(boolean asyncBackup, SnapshotStrategy snapshotStrategy, SnapshotInfo snapshotOnPrimary, List<Long> zoneIds) {
         if (asyncBackup) {
@@ -1557,7 +1699,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
     }
 
-    private void updateSnapshotPayload(long storagePoolId, CreateSnapshotPayload payload) {
+    private void updateSnapshotPayload(long storagePoolId, CreateSnapshotPayload payload, boolean isKvmAndFileBasedStorage, Long clusterId) {
         StoragePoolVO storagePoolVO = _storagePoolDao.findById(storagePoolId);
 
         if (storagePoolVO.isManaged()) {
@@ -1568,6 +1710,10 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             }
         } else {
             payload.setLocationType(null);
+        }
+
+        if (isKvmAndFileBasedStorage && kvmIncrementalSnapshot.valueIn(clusterId)) {
+            payload.setKvmIncrementalSnapshot(true);
         }
     }
 
@@ -1788,10 +1934,19 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             }
             return true; // already downloaded on this image store
         }
-        if (List.of(VMTemplateStorageResourceAssoc.Status.ABANDONED,
+
+        if (ObjectInDataStoreStateMachine.State.Hidden.equals(dstSnapshotStore.getState())) {
+            logger.debug("Snapshot [{}] was hidden in secondary storage [{}]. Since the user asked to copy it back. We will put it as ready.", dstSnapshotStore, dstSecStore);
+            dstSnapshotStore.setState(ObjectInDataStoreStateMachine.State.Ready);
+            dstSnapshotStore.setDisplay(true);
+            _snapshotStoreDao.update(dstSnapshotStore.getId(), dstSnapshotStore);
+            return true;
+        }
+
+        if ((dstSnapshotStore.getDownloadState() != null && List.of(VMTemplateStorageResourceAssoc.Status.ABANDONED,
                 VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR,
                 VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED,
-                VMTemplateStorageResourceAssoc.Status.UNKNOWN).contains(dstSnapshotStore.getDownloadState()) ||
+                VMTemplateStorageResourceAssoc.Status.UNKNOWN).contains(dstSnapshotStore.getDownloadState())) ||
                 !List.of(ObjectInDataStoreStateMachine.State.Creating,
                         ObjectInDataStoreStateMachine.State.Copying).contains(dstSnapshotStore.getState())) {
             _snapshotStoreDao.removeBySnapshotStore(snapshotId, dstSecStore.getId(), DataStoreRole.Image);
@@ -1801,7 +1956,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
     @DB
     private boolean copySnapshotToZone(SnapshotDataStoreVO snapshotDataStoreVO, DataStore srcSecStore,
-           DataCenterVO dstZone, DataStore dstSecStore, Account account)
+                                       DataCenterVO dstZone, DataStore dstSecStore, Account account, boolean kvmIncrementalSnapshot)
             throws ResourceAllocationException {
         final long snapshotId = snapshotDataStoreVO.getSnapshotId();
         final long dstZoneId = dstZone.getId();
@@ -1811,6 +1966,9 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         _resourceLimitMgr.checkResourceLimit(account, ResourceType.secondary_storage, snapshotDataStoreVO.getSize());
         // snapshotId may refer to ID of a removed parent snapshot
         SnapshotInfo snapshotOnSecondary = snapshotFactory.getSnapshot(snapshotId, srcSecStore);
+        if (kvmIncrementalSnapshot) {
+            snapshotOnSecondary = snapshotHelper.convertSnapshotIfNeeded(snapshotOnSecondary);
+        }
         String copyUrl = null;
         try {
             AsyncCallFuture<CreateCmdResult> future = snapshotSrv.queryCopySnapshot(snapshotOnSecondary);
@@ -1840,6 +1998,10 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_COPY, account.getId(), dstZoneId, snapshotId, null, null, null, snapshotVO.getSize(),
                         snapshotVO.getSize(), snapshotVO.getClass().getName(), snapshotVO.getUuid());
             }
+            if (kvmIncrementalSnapshot) {
+                ((ImageStoreEntity) srcSecStore).deleteExtractUrl(snapshotOnSecondary.getPath(), copyUrl, Upload.Type.SNAPSHOT);
+            }
+
             return true;
         } catch (InterruptedException | ExecutionException | ResourceUnavailableException ex) {
             logger.debug("Failed to copy snapshot ID: {} to image store: {}", snapshotId, dstSecStore);
@@ -1856,6 +2018,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         List<SnapshotDataStoreVO> snapshotChain = new ArrayList<>();
         long size = 0L;
         DataStore dstSecStore = null;
+        boolean kvmIncrementalSnapshot = currentSnap.getKvmCheckpointPath() != null;
         do {
             dstSecStore = getSnapshotZoneImageStore(currentSnap.getSnapshotId(), destZone.getId());
             if (dstSecStore != null) {
@@ -1868,7 +2031,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             }
             snapshotChain.add(currentSnap);
             size += currentSnap.getSize();
-            currentSnap = currentSnap.getParentSnapshotId() == 0 ?
+            currentSnap = currentSnap.getParentSnapshotId() == 0 || kvmIncrementalSnapshot ?
                     null :
                     _snapshotStoreDao.findByStoreSnapshot(DataStoreRole.Image, srcSecStore.getId(), currentSnap.getParentSnapshotId());
         } while (currentSnap != null);
@@ -1895,7 +2058,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
         logger.debug("Copying snapshot chain for snapshot ID: {} on secondary store: {} of zone ID: {}", snapshotVO, dstSecStore, destZone);
         for (SnapshotDataStoreVO snapshotDataStoreVO : snapshotChain) {
-            if (!copySnapshotToZone(snapshotDataStoreVO, srcSecStore, destZone, dstSecStore, account)) {
+            if (!copySnapshotToZone(snapshotDataStoreVO, srcSecStore, destZone, dstSecStore, account, kvmIncrementalSnapshot)) {
                 logger.error("Failed to copy snapshot: {} to zone: {} due to failure to copy snapshot ID: {} from snapshot chain",
                         snapshotVO, destZone, snapshotDataStoreVO.getSnapshotId());
                 return false;
@@ -1903,7 +2066,6 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
         return true;
     }
-
     @DB
     private List<String> copySnapshotToZones(SnapshotVO snapshotVO, DataStore srcSecStore, List<DataCenterVO> dstZones) throws StorageUnavailableException, ResourceAllocationException {
         AccountVO account = _accountDao.findById(snapshotVO.getAccountId());

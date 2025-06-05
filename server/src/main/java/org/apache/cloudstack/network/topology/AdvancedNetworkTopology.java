@@ -229,11 +229,6 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
     public boolean applyNetworkACLs(final Network network, final List<? extends NetworkACLItem> rules, final VirtualRouter router, final boolean isPrivateGateway)
             throws ResourceUnavailableException {
 
-        if (rules == null || rules.isEmpty()) {
-            logger.debug("No network ACLs to be applied for network {}", network);
-            return true;
-        }
-
         logger.debug("APPLYING NETWORK ACLs RULES");
 
         final String typeString = "network acls";

@@ -15,24 +15,19 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.api.command.admin.zone;
+package org.apache.cloudstack.command;
 
-import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.ResponseObject;
-import org.apache.cloudstack.api.response.ListResponse;
+import com.cloud.agent.api.Command;
 
-public class VmwareRequestResponse<T extends ResponseObject> extends ListResponse<T> {
-    @SerializedName(ApiConstants.TOKEN)
-    @Param(description = "The Vmware API token to use for retrieving further responses with")
-    private String token;
+public class ReconcileCommand extends Command {
 
-    public String getToken() {
-        return token;
+    @Override
+    public boolean executeInSequence() {
+        return false;
     }
 
-    public void setToken(String token) {
-        this.token = token;
+    @Override
+    public int getWait() {
+        return 30;  // timeout is 30 seconds
     }
 }

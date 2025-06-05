@@ -50,6 +50,8 @@ import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.vmware.vim25.FileInfo;
 import com.vmware.vim25.HostDatastoreBrowserSearchResults;
 import com.vmware.vim25.HostDatastoreBrowserSearchSpec;
+import com.vmware.vim25.VirtualTPM;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsAnswer;
 import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsCommand;
@@ -834,5 +836,42 @@ public class VmwareResourceTest {
         assertEquals(Collections.singletonList(false), answer.getIsDirs());
         assertEquals(Collections.singletonList(1L), answer.getSizes());
         assertEquals(Collections.singletonList(date.getTime()), answer.getLastModified());
+    }
+
+    @Test
+    public void testAddVirtualTPMDevice() throws Exception {
+        VirtualMachineMO vmMo = Mockito.mock(VirtualMachineMO.class);
+        VirtualMachineTO vmSpec = Mockito.mock(VirtualMachineTO.class);
+        VirtualMachineConfigSpec vmConfigSpec = Mockito.mock(VirtualMachineConfigSpec.class);
+        Map<String, String> details = new HashMap<>();
+        details.put(ApiConstants.BootType.UEFI.toString(), "SECURE");
+        details.put(VmDetailConstants.VIRTUAL_TPM_ENABLED, "true");
+        when(vmSpec.getDetails()).thenReturn(details);
+        when(vmMo.getAllDeviceList()).thenReturn(new ArrayList<>());
+        List<VirtualDeviceConfigSpec> deviceChanges = Mockito.mock(List.class);
+        when(vmConfigSpec.getDeviceChange()).thenReturn(deviceChanges);
+
+        vmwareResource.configureVirtualTPM(vmMo, vmSpec, vmConfigSpec);
+        Mockito.verify(vmwareResource, Mockito.times(1)).addVirtualTPMDevice(vmConfigSpec);
+        Mockito.verify(deviceChanges, Mockito.times(1)).add(any(VirtualDeviceConfigSpec.class));
+    }
+
+    @Test
+    public void testRemoveVirtualTPMDevice() throws Exception {
+        VirtualMachineMO vmMo = Mockito.mock(VirtualMachineMO.class);
+        VirtualMachineTO vmSpec = Mockito.mock(VirtualMachineTO.class);
+        VirtualMachineConfigSpec vmConfigSpec = Mockito.mock(VirtualMachineConfigSpec.class);
+        Map<String, String> details = new HashMap<>();
+        details.put(ApiConstants.BootType.UEFI.toString(), "SECURE");
+        details.put(VmDetailConstants.VIRTUAL_TPM_ENABLED, "false");
+        when(vmSpec.getDetails()).thenReturn(details);
+        VirtualTPM tpm = new VirtualTPM();
+        when(vmMo.getAllDeviceList()).thenReturn(List.of(tpm));
+        List<VirtualDeviceConfigSpec> deviceChanges = Mockito.mock(List.class);
+        when(vmConfigSpec.getDeviceChange()).thenReturn(deviceChanges);
+
+        vmwareResource.configureVirtualTPM(vmMo, vmSpec, vmConfigSpec);
+        Mockito.verify(vmwareResource, Mockito.times(1)).removeVirtualTPMDevice(vmConfigSpec, tpm);
+        Mockito.verify(deviceChanges, Mockito.times(1)).add(any(VirtualDeviceConfigSpec.class));
     }
 }

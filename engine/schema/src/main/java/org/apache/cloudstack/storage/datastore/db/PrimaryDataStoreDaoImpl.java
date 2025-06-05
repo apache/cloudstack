@@ -28,6 +28,8 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.StoragePoolAndAccessGroupMapVO;
+import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
 import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.host.Status;
@@ -70,15 +72,25 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     private StoragePoolHostDao _hostDao;
     @Inject
     private StoragePoolTagsDao _tagsDao;
+    @Inject
+    StoragePoolAndAccessGroupMapDao _storagePoolAccessGroupMapDao;
 
     protected final String DetailsSqlPrefix = "SELECT storage_pool.* from storage_pool LEFT JOIN storage_pool_details ON storage_pool.id = storage_pool_details.pool_id WHERE storage_pool.removed is null and storage_pool.status = 'Up' and storage_pool.data_center_id = ? and (storage_pool.pod_id = ? or storage_pool.pod_id is null) and storage_pool.scope = ? and (";
     protected final String DetailsSqlSuffix = ") GROUP BY storage_pool_details.pool_id HAVING COUNT(storage_pool_details.name) >= ?";
+    protected final String DetailsForHostConnectionSqlSuffix = ") GROUP BY storage_pool_details.pool_id";
     private final String ZoneWideTagsSqlPrefix = "SELECT storage_pool.* from storage_pool LEFT JOIN storage_pool_tags ON storage_pool.id = storage_pool_tags.pool_id WHERE storage_pool.removed is null and storage_pool.status = 'Up' AND storage_pool_tags.is_tag_a_rule = 0 and storage_pool.data_center_id = ? and storage_pool.scope = ? and (";
     private final String ZoneWideTagsSqlSuffix = ") GROUP BY storage_pool_tags.pool_id HAVING COUNT(storage_pool_tags.tag) >= ?";
+    private final String ZoneWideStorageAccessGroupsForHostConnectionSqlPrefix = "SELECT storage_pool.* from storage_pool LEFT JOIN storage_pool_and_access_group_map ON storage_pool.id = storage_pool_and_access_group_map.pool_id WHERE storage_pool.removed is null and storage_pool.status = 'Up' and storage_pool.data_center_id = ? and storage_pool.scope = ? and (";
+    private final String ZoneWideStorageAccessGroupsForHostConnectionSqlSuffix = ") GROUP BY storage_pool_and_access_group_map.pool_id";
+    private final String ZoneWideStorageAccessGroupsWithHypervisorTypeSqlPrefix = "SELECT storage_pool.* from storage_pool LEFT JOIN storage_pool_and_access_group_map ON storage_pool.id = storage_pool_and_access_group_map.pool_id WHERE storage_pool.removed is null and storage_pool.status = 'Up' and storage_pool.hypervisor = ? and storage_pool.data_center_id = ? and storage_pool.scope = ? and (";
+    private final String ZoneWideStorageAccessGroupsWithHypervisorTypeSqlSuffix = ") GROUP BY storage_pool_and_access_group_map.pool_id";
 
     // Storage tags are now separate from storage_pool_details, leaving only details on that table
     protected final String TagsSqlPrefix = "SELECT storage_pool.* from storage_pool LEFT JOIN storage_pool_tags ON storage_pool.id = storage_pool_tags.pool_id WHERE storage_pool.removed is null and storage_pool.status = 'Up' AND storage_pool_tags.is_tag_a_rule = 0 and storage_pool.data_center_id = ? and (storage_pool.pod_id = ? or storage_pool.pod_id is null) and storage_pool.scope = ? and (";
     protected final String TagsSqlSuffix = ") GROUP BY storage_pool_tags.pool_id HAVING COUNT(storage_pool_tags.tag) >= ?";
+    protected final String SAGsForHostConnectionSqlPrefix = "SELECT storage_pool.* from storage_pool LEFT JOIN storage_pool_and_access_group_map ON storage_pool.id = storage_pool_and_access_group_map.pool_id WHERE storage_pool.removed is null and storage_pool.status = 'Up' and storage_pool.data_center_id = ? and (storage_pool.pod_id = ? or storage_pool.pod_id is null) and storage_pool.scope = ? and (";
+
+    protected final String SAGsForHostConnectionSqlSuffix = ") GROUP BY storage_pool_and_access_group_map.pool_id";
 
     private static final String GET_STORAGE_POOLS_OF_VOLUMES_WITHOUT_OR_NOT_HAVING_TAGS = "SELECT s.* " +
             "FROM volumes vol " +
@@ -296,19 +308,27 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     }
 
     @Override
+    public StoragePoolVO persist(StoragePoolVO pool, Map<String, String> details, List<String> tags, Boolean isTagARule, List<String> storageAccessGroups) {
+        return persist(pool, details, tags, isTagARule, true, storageAccessGroups);
+    }
+
+    @Override
     @DB
-    public StoragePoolVO persist(StoragePoolVO pool, Map<String, String> details, List<String> tags, Boolean isTagARule) {
+    public StoragePoolVO persist(StoragePoolVO pool, Map<String, String> details, List<String> tags, Boolean isTagARule, boolean displayDetails, List<String> storageAccessGroups) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         pool = super.persist(pool);
         if (details != null) {
             for (Map.Entry<String, String> detail : details.entrySet()) {
-                StoragePoolDetailVO vo = new StoragePoolDetailVO(pool.getId(), detail.getKey(), detail.getValue(), true);
+                StoragePoolDetailVO vo = new StoragePoolDetailVO(pool.getId(), detail.getKey(), detail.getValue(), displayDetails);
                 _detailsDao.persist(vo);
             }
         }
         if (CollectionUtils.isNotEmpty(tags)) {
             _tagsDao.persist(pool.getId(), tags, isTagARule);
+        }
+        if (CollectionUtils.isNotEmpty(storageAccessGroups)) {
+            _storagePoolAccessGroupMapDao.persist(pool.getId(), storageAccessGroups);
         }
         txn.commit();
         return pool;
@@ -333,6 +353,13 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         return searchStoragePoolsPreparedStatement(sql, dcId, podId, clusterId, scope, valuesLength);
     }
 
+    protected List<StoragePoolVO> findPoolsByDetailsOrTagsForHostConnectionInternal(long dcId, long podId, Long clusterId, ScopeType scope, String sqlValues, ValueType valuesType) {
+        String sqlPrefix = valuesType.equals(ValueType.DETAILS) ? DetailsSqlPrefix : SAGsForHostConnectionSqlPrefix;
+        String sqlSuffix = valuesType.equals(ValueType.DETAILS) ? DetailsForHostConnectionSqlSuffix : SAGsForHostConnectionSqlSuffix;
+        String sql = getSqlPreparedStatement(sqlPrefix, sqlSuffix, sqlValues, clusterId);
+        return searchStoragePoolsPreparedStatement(sql, dcId, podId, clusterId, scope, null);
+    }
+
     /**
      * Search storage pools in a transaction
      * @param sql prepared statement sql
@@ -344,7 +371,50 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
      * @return storage pools matching criteria
      */
     @DB
-    protected List<StoragePoolVO> searchStoragePoolsPreparedStatement(String sql, long dcId, Long podId, Long clusterId, ScopeType scope, int valuesLength) {
+    protected List<StoragePoolVO> searchStoragePoolsWithHypervisorTypesPreparedStatement(String sql, HypervisorType type, long dcId, Long podId, Long clusterId, ScopeType scope, Integer valuesLength) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        List<StoragePoolVO> pools = new ArrayList<StoragePoolVO>();
+        try (PreparedStatement pstmt = txn.prepareStatement(sql);) {
+            if (pstmt != null) {
+                int i = 1;
+                pstmt.setString(i++, type.toString());
+                pstmt.setLong(i++, dcId);
+                if (podId != null) {
+                    pstmt.setLong(i++, podId);
+                }
+                pstmt.setString(i++, scope.toString());
+                if (clusterId != null) {
+                    pstmt.setLong(i++, clusterId);
+                }
+                if (valuesLength != null) {
+                    pstmt.setInt(i++, valuesLength);
+                }
+                try (ResultSet rs = pstmt.executeQuery();) {
+                    while (rs.next()) {
+                        pools.add(toEntityBean(rs, false));
+                    }
+                } catch (SQLException e) {
+                    throw new CloudRuntimeException("Unable to execute :" + e.getMessage(), e);
+                }
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to execute :" + e.getMessage(), e);
+        }
+        return pools;
+    }
+
+    /**
+     * Search storage pools in a transaction
+     * @param sql prepared statement sql
+     * @param dcId data center id
+     * @param podId pod id
+     * @param clusterId cluster id
+     * @param scope scope
+     * @param valuesLength values length
+     * @return storage pools matching criteria
+     */
+    @DB
+    protected List<StoragePoolVO> searchStoragePoolsPreparedStatement(String sql, long dcId, Long podId, Long clusterId, ScopeType scope, Integer valuesLength) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         List<StoragePoolVO> pools = new ArrayList<StoragePoolVO>();
         try (PreparedStatement pstmt = txn.prepareStatement(sql);) {
@@ -358,7 +428,9 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
                 if (clusterId != null) {
                     pstmt.setLong(i++, clusterId);
                 }
-                pstmt.setInt(i++, valuesLength);
+                if (valuesLength != null) {
+                    pstmt.setInt(i++, valuesLength);
+                }
                 try (ResultSet rs = pstmt.executeQuery();) {
                     while (rs.next()) {
                         pools.add(toEntityBean(rs, false));
@@ -415,6 +487,22 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         return sqlValues.toString();
     }
 
+    /**
+     * Return SQL string from storage pool access group map, to be placed between SQL Prefix and SQL Suffix when creating storage tags PreparedStatement.
+     * @param storageAccessGroups storage tags array
+     * @return SQL string containing storage tag values to be placed between Prefix and Suffix when creating PreparedStatement.
+     * @throws NullPointerException if tags is null
+     * @throws IndexOutOfBoundsException if tags is not null, but empty
+     */
+    protected String getSqlValuesFromStorageAccessGroups(String[] storageAccessGroups) throws NullPointerException, IndexOutOfBoundsException {
+        StringBuilder sqlValues = new StringBuilder();
+        for (String tag : storageAccessGroups) {
+            sqlValues.append("(storage_pool_and_access_group_map.storage_access_group='").append(tag).append("') OR ");
+        }
+        sqlValues.delete(sqlValues.length() - 4, sqlValues.length());
+        return sqlValues.toString();
+    }
+
     @DB
     @Override
     public List<StoragePoolVO> findPoolsByDetails(long dcId, long podId, Long clusterId, Map<String, String> details, ScopeType scope) {
@@ -423,10 +511,10 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     }
 
     @Override
-    public List<StoragePoolVO> findPoolsByTags(long dcId, long podId, Long clusterId, String[] tags, boolean validateTagRule, long ruleExecuteTimeout) {
+    public List<StoragePoolVO> findPoolsByTags(long dcId, long podId, Long clusterId, ScopeType scope, String[] tags, boolean validateTagRule, long ruleExecuteTimeout) {
         List<StoragePoolVO> storagePools = null;
         if (tags == null || tags.length == 0) {
-            storagePools = listBy(dcId, podId, clusterId, ScopeType.CLUSTER);
+            storagePools = listBy(dcId, podId, clusterId, scope);
 
             if (validateTagRule) {
                 storagePools = getPoolsWithoutTagRule(storagePools);
@@ -434,7 +522,20 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
 
         } else {
             String sqlValues = getSqlValuesFromStorageTags(tags);
-            storagePools = findPoolsByDetailsOrTagsInternal(dcId, podId, clusterId, ScopeType.CLUSTER, sqlValues, ValueType.TAGS, tags.length);
+            storagePools = findPoolsByDetailsOrTagsInternal(dcId, podId, clusterId, scope, sqlValues, ValueType.TAGS, tags.length);
+        }
+
+        return storagePools;
+    }
+
+    @Override
+    public List<StoragePoolVO> findPoolsByAccessGroupsForHostConnection(Long dcId, Long podId, Long clusterId, ScopeType scope, String[] storageAccessGroups) {
+        List<StoragePoolVO> storagePools = null;
+        if (storageAccessGroups == null || storageAccessGroups.length == 0) {
+            storagePools = listBy(dcId, podId, clusterId, scope);
+        } else {
+            String sqlValues = getSqlValuesFromStorageAccessGroups(storageAccessGroups);
+            storagePools = findPoolsByDetailsOrTagsForHostConnectionInternal(dcId, podId, clusterId, scope, sqlValues, ValueType.TAGS);
         }
 
         return storagePools;
@@ -552,6 +653,77 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     }
 
     @Override
+    public List<StoragePoolVO> findZoneWideStoragePoolsByAccessGroupsForHostConnection(long dcId, String[] storageAccessGroups) {
+        if (storageAccessGroups == null || storageAccessGroups.length == 0) {
+            QueryBuilder<StoragePoolVO> sc = QueryBuilder.create(StoragePoolVO.class);
+            sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
+            sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
+            sc.and(sc.entity().getScope(), Op.EQ, ScopeType.ZONE);
+            return sc.list();
+        } else {
+            String sqlValues = getSqlValuesFromStorageAccessGroups(storageAccessGroups);
+            String sql = getSqlPreparedStatement(ZoneWideStorageAccessGroupsForHostConnectionSqlPrefix, ZoneWideStorageAccessGroupsForHostConnectionSqlSuffix, sqlValues, null);
+            return searchStoragePoolsPreparedStatement(sql, dcId, null, null, ScopeType.ZONE, null);
+        }
+    }
+
+    @Override
+    public List<StoragePoolVO> findZoneWideStoragePoolsByAccessGroupsAndHypervisorTypeForHostConnection(long dcId, String[] storageAccessGroups, HypervisorType type) {
+        if (storageAccessGroups == null || storageAccessGroups.length == 0) {
+            QueryBuilder<StoragePoolVO> sc = QueryBuilder.create(StoragePoolVO.class);
+            sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
+            sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
+            sc.and(sc.entity().getScope(), Op.EQ, ScopeType.ZONE);
+            sc.and(sc.entity().getHypervisor(), Op.EQ, type);
+            return sc.list();
+        } else {
+            String sqlValues = getSqlValuesFromStorageAccessGroups(storageAccessGroups);
+            String sql = getSqlPreparedStatement(ZoneWideStorageAccessGroupsWithHypervisorTypeSqlPrefix, ZoneWideStorageAccessGroupsWithHypervisorTypeSqlSuffix, sqlValues, null);
+            return searchStoragePoolsWithHypervisorTypesPreparedStatement(sql, type, dcId, null, null, ScopeType.ZONE, null);
+        }
+    }
+
+    @Override
+    public List<StoragePoolVO> findStoragePoolsByEmptyStorageAccessGroups(Long dcId, Long podId, Long clusterId, ScopeType scope, HypervisorType hypervisorType) {
+        SearchBuilder<StoragePoolVO> poolSearch = createSearchBuilder();
+        SearchBuilder<StoragePoolAndAccessGroupMapVO> storageAccessGroupsPoolSearch = _storagePoolAccessGroupMapDao.createSearchBuilder();
+        // Set criteria for pools
+        poolSearch.and("scope", poolSearch.entity().getScope(), Op.EQ);
+        poolSearch.and("removed", poolSearch.entity().getRemoved(), Op.NULL);
+        poolSearch.and("status", poolSearch.entity().getStatus(), Op.EQ);
+        poolSearch.and("datacenterid", poolSearch.entity().getDataCenterId(), Op.EQ);
+        poolSearch.and("podid", poolSearch.entity().getPodId(), Op.EQ);
+        poolSearch.and("clusterid", poolSearch.entity().getClusterId(), Op.EQ);
+        poolSearch.and("hypervisortype", poolSearch.entity().getHypervisor(), Op.EQ);
+
+        // Set StoragePoolAccessGroupMapVO.pool_id IS NULL. This ensures only pools without tags are returned
+        storageAccessGroupsPoolSearch.and("poolid", storageAccessGroupsPoolSearch.entity().getPoolId(), Op.NULL);
+        poolSearch.join("tagJoin", storageAccessGroupsPoolSearch, poolSearch.entity().getId(), storageAccessGroupsPoolSearch.entity().getPoolId(), JoinBuilder.JoinType.LEFT);
+
+        SearchCriteria<StoragePoolVO> sc = poolSearch.create();
+        sc.setParameters("scope", scope.toString());
+        sc.setParameters("status", Status.Up.toString());
+
+        if (dcId != null) {
+            sc.setParameters("datacenterid", dcId);
+        }
+
+        if (podId != null) {
+            sc.setParameters("podid", podId);
+        }
+
+        if (clusterId != null) {
+            sc.setParameters("clusterid", clusterId);
+        }
+
+        if (hypervisorType != null) {
+            sc.setParameters("hypervisortype", hypervisorType);
+        }
+
+        return listBy(sc);
+    }
+
+    @Override
     public List<String> searchForStoragePoolTags(long poolId) {
         return _tagsDao.getStoragePoolTags(poolId);
     }
@@ -568,6 +740,11 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
                 _detailsDao.removeDetails(poolId);
             }
         }
+    }
+
+    @Override
+    public void removeDetails(long poolId) {
+        _detailsDao.removeDetails(poolId);
     }
 
     @Override
@@ -650,6 +827,11 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     }
 
     @Override
+    public void deleteStoragePoolAccessGroups(long poolId) {
+        _storagePoolAccessGroupMapDao.deleteStorageAccessGroups(poolId);
+    }
+
+    @Override
     public List<StoragePoolVO> listChildStoragePoolsInDatastoreCluster(long poolId) {
         QueryBuilder<StoragePoolVO> sc = QueryBuilder.create(StoragePoolVO.class);
         sc.and(sc.entity().getParent(), Op.EQ, poolId);
@@ -715,9 +897,10 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
 
     @Override
     public Pair<List<Long>, Integer> searchForIdsAndCount(Long storagePoolId, String storagePoolName, Long zoneId,
-            String path, Long podId, Long clusterId, String address, ScopeType scopeType, StoragePoolStatus status,
-            String keyword, Filter searchFilter) {
-        SearchCriteria<StoragePoolVO> sc = createStoragePoolSearchCriteria(storagePoolId, storagePoolName, zoneId, path, podId, clusterId, address, scopeType, status, keyword);
+            String path, Long podId, Long clusterId, Long hostId, String address, ScopeType scopeType, StoragePoolStatus status,
+            String keyword, String storageAccessGroup, Filter searchFilter) {
+        SearchCriteria<StoragePoolVO> sc = createStoragePoolSearchCriteria(storagePoolId, storagePoolName, zoneId, path, podId, clusterId,
+                hostId, address, scopeType, status, keyword, storageAccessGroup);
         Pair<List<StoragePoolVO>, Integer> uniquePair = searchAndCount(sc, searchFilter);
         List<Long> idList = uniquePair.first().stream().map(StoragePoolVO::getId).collect(Collectors.toList());
         return new Pair<>(idList, uniquePair.second());
@@ -734,8 +917,8 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     }
 
     private SearchCriteria<StoragePoolVO> createStoragePoolSearchCriteria(Long storagePoolId, String storagePoolName,
-            Long zoneId, String path, Long podId, Long clusterId, String address, ScopeType scopeType,
-            StoragePoolStatus status, String keyword) {
+                                                                          Long zoneId, String path, Long podId, Long clusterId, Long hostId, String address, ScopeType scopeType,
+                                                                          StoragePoolStatus status, String keyword, String storageAccessGroup) {
         SearchBuilder<StoragePoolVO> sb = createSearchBuilder();
         sb.select(null, SearchCriteria.Func.DISTINCT, sb.entity().getId()); // select distinct
         // ids
@@ -749,6 +932,18 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         sb.and("scope", sb.entity().getScope(), SearchCriteria.Op.EQ);
         sb.and("status", sb.entity().getStatus(), SearchCriteria.Op.EQ);
         sb.and("parent", sb.entity().getParent(), SearchCriteria.Op.EQ);
+
+        if (hostId != null) {
+            SearchBuilder<StoragePoolHostVO> hostJoin = _hostDao.createSearchBuilder();
+            hostJoin.and("hostId", hostJoin.entity().getHostId(), SearchCriteria.Op.EQ);
+            sb.join("poolHostJoin", hostJoin, sb.entity().getId(), hostJoin.entity().getPoolId(), JoinBuilder.JoinType.INNER);
+        }
+
+        if (storageAccessGroup != null) {
+            SearchBuilder<StoragePoolAndAccessGroupMapVO> storageAccessGroupJoin = _storagePoolAccessGroupMapDao.createSearchBuilder();
+            storageAccessGroupJoin.and("storageAccessGroup", storageAccessGroupJoin.entity().getStorageAccessGroup(), SearchCriteria.Op.EQ);
+            sb.join("poolStorageAccessGroupJoin", storageAccessGroupJoin, sb.entity().getId(), storageAccessGroupJoin.entity().getPoolId(), JoinBuilder.JoinType.INNER);
+        }
 
         SearchCriteria<StoragePoolVO> sc = sb.create();
 
@@ -798,6 +993,15 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
             sc.setParameters("status", status.toString());
         }
         sc.setParameters("parent", 0);
+
+        if (hostId != null) {
+            sc.setJoinParameters("poolHostJoin", "hostId", hostId);
+        }
+
+        if (storageAccessGroup != null) {
+            sc.setJoinParameters("poolStorageAccessGroupJoin", "storageAccessGroup", storageAccessGroup);
+        }
+
         return sc;
     }
 }

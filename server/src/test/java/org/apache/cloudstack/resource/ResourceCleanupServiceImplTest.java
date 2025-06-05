@@ -17,6 +17,11 @@
 package org.apache.cloudstack.resource;
 
 import java.lang.reflect.Field;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.zone.ZoneRules;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -629,9 +634,23 @@ public class ResourceCleanupServiceImplTest {
         Date result = resourceCleanupService.calculatePastDateFromConfig(
                 ResourceCleanupService.ExpungedResourcesPurgeKeepPastDays.key(),
                 days);
-        Date today = new Date();
-        long diff = today.getTime() - result.getTime();
-        Assert.assertEquals(days, TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS));
+        Instant resultInstant = result.toInstant();
+        ZoneId systemZone = ZoneId.systemDefault();
+        ZoneRules rules = systemZone.getRules();
+        ZonedDateTime resultDateTime = resultInstant.atZone(systemZone);
+        boolean isDSTInResultDateTime = rules.isDaylightSavings(resultDateTime.toInstant());
+
+        ZonedDateTime todayDateTime = ZonedDateTime.now(systemZone);
+        boolean isDSTInTodayDateTime = rules.isDaylightSavings(todayDateTime.toInstant());
+
+        Duration duration = Duration.between(resultDateTime, todayDateTime);
+        long actualDays = TimeUnit.DAYS.convert(duration.toMillis(), TimeUnit.MILLISECONDS);
+
+        if (!isDSTInResultDateTime && isDSTInTodayDateTime) {
+            Assert.assertEquals(days - 1, actualDays);
+        } else {
+            Assert.assertEquals(days, actualDays);
+        }
     }
 
     @Test

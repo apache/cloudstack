@@ -1788,8 +1788,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             if (ipv4 && Objects.isNull(startIP)) {
                 throw new CloudRuntimeException("IPv4 address range needs to be provided");
             }
-            if (ipv6 && Objects.isNull(startIPv6)) {
-                throw new CloudRuntimeException("IPv6 address range needs to be provided");
+            if (ipv6) {
+                logger.info(String.format("ip range for network '%s' is specified as %s - %s", name, startIPv6, endIPv6));
             }
         }
         Pair<Integer, Integer> interfaceMTUs = validateMtuConfig(publicMtu, privateMtu, zone.getId());
@@ -2186,12 +2186,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             if (implementedNetwork == null || implementedNetwork.first() == null) {
                 logger.warn("Failed to provision the network " + network);
             }
-            Network implemented = implementedNetwork.second();
-            if (implemented != null) {
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_CREATE, implemented.getAccountId(), implemented.getDataCenterId(), implemented.getId(),
-                        implemented.getName(), implemented.getNetworkOfferingId(), null, null, null, Network.class.getName(), implemented.getUuid());
-            }
-            return implemented;
+            return implementedNetwork.second();
         } catch (ResourceUnavailableException ex) {
             logger.warn("Failed to implement persistent guest network " + network + "due to ", ex);
             CloudRuntimeException e = new CloudRuntimeException("Failed to implement persistent guest network");
@@ -2926,6 +2921,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         Account callerAccount = _accountMgr.getActiveAccountById(user.getAccountId());
         _accountMgr.checkAccess(callerAccount, AccessType.OperateEntry, true, network);
         if (!network.isRedundant() && makeRedundant) {
+            NetworkOffering networkOffering = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
+            Map<Network.Capability, String> sourceNatCapabilities = getNetworkOfferingServiceCapabilities(networkOffering, Service.SourceNat);
+            String isRedundantRouterSupported = sourceNatCapabilities.get(Capability.RedundantRouter);
+            if (!Boolean.parseBoolean(isRedundantRouterSupported)) {
+                throw new InvalidParameterValueException(String.format("Redundant router is not supported by the network offering %s", networkOffering));
+            }
             network.setRedundant(true);
             if (!_networksDao.update(network.getId(), network)) {
                 throw new CloudRuntimeException("Failed to update network into a redundant one, please try again");
@@ -3592,8 +3593,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
         }
         Network updatedNetwork = getNetwork(network.getId());
-        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_UPDATE, updatedNetwork.getAccountId(), updatedNetwork.getDataCenterId(), updatedNetwork.getId(),
-                updatedNetwork.getName(), updatedNetwork.getNetworkOfferingId(), null, updatedNetwork.getState().name(), Network.class.getName(), updatedNetwork.getUuid(), true);
+        UsageEventUtils.publishNetworkUpdate(updatedNetwork);
         return updatedNetwork;
     }
 

@@ -151,15 +151,12 @@ export default {
       return this.prefillContent?.zoneSuperType === 'Edge' || false
     },
     steps () {
-      const steps = []
+      const steps = [{
+        title: 'label.cluster',
+        fromKey: 'clusterResource',
+        description: 'message.desc.cluster'
+      }]
       const hypervisor = this.prefillContent.hypervisor ? this.prefillContent.hypervisor : null
-      if (!this.isEdgeZone) {
-        steps.push({
-          title: 'label.cluster',
-          fromKey: 'clusterResource',
-          description: 'message.desc.cluster'
-        })
-      }
       if (hypervisor !== 'VMware') {
         steps.push({
           title: 'label.host',
@@ -190,7 +187,8 @@ export default {
           title: 'label.cluster.name',
           key: 'clusterName',
           placeHolder: 'message.error.cluster.name',
-          required: true
+          required: true,
+          defaultValue: this.isEdgeZone ? 'Cluster-' + (this.prefillContent?.name || 'Edge') : undefined
         },
         {
           title: 'label.arch',

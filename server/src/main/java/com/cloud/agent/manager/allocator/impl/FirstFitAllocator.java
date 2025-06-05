@@ -16,18 +16,18 @@
 // under the License.
 package com.cloud.agent.manager.allocator.impl;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
-
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.capacity.CapacityManager;
@@ -37,6 +37,7 @@ import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.deploy.DeploymentPlan;
+import com.cloud.deploy.DeploymentClusterPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.gpu.GPU;
 import com.cloud.host.DetailVO;
@@ -63,6 +64,10 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+
+import org.springframework.stereotype.Component;
 
 /**
  * An allocator that tries to find a fit on a computing host.  This allocator does not care whether or not the host supports routing.
@@ -97,8 +102,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
     UserVmDetailsDao _userVmDetailsDao;
 
     boolean _checkHvm = true;
-    protected String _allocationAlgorithm = "random";
-
+    static DecimalFormat decimalFormat = new DecimalFormat("#.##");
 
     @Override
     public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, int returnUpTo) {
@@ -285,12 +289,13 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
 
     protected List<Host> allocateTo(DeploymentPlan plan, ServiceOffering offering, VMTemplateVO template, ExcludeList avoid, List<? extends Host> hosts, int returnUpTo,
         boolean considerReservedCapacity, Account account) {
-        if (_allocationAlgorithm.equals("random") || _allocationAlgorithm.equals("userconcentratedpod_random")) {
+        String vmAllocationAlgorithm = DeploymentClusterPlanner.VmAllocationAlgorithm.value();
+        if (vmAllocationAlgorithm.equals("random") || vmAllocationAlgorithm.equals("userconcentratedpod_random")) {
             // Shuffle this so that we don't check the hosts in the same order.
             Collections.shuffle(hosts);
-        } else if (_allocationAlgorithm.equals("userdispersing")) {
+        } else if (vmAllocationAlgorithm.equals("userdispersing")) {
             hosts = reorderHostsByNumberOfVms(plan, hosts, account);
-        }else if(_allocationAlgorithm.equals("firstfitleastconsumed")){
+        }else if(vmAllocationAlgorithm.equals("firstfitleastconsumed")){
             hosts = reorderHostsByCapacity(plan, hosts);
         }
 
@@ -373,9 +378,16 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
         if("RAM".equalsIgnoreCase(capacityTypeToOrder)){
             capacityType = CapacityVO.CAPACITY_TYPE_MEMORY;
         }
-        List<Long> hostIdsByFreeCapacity = _capacityDao.orderHostsByFreeCapacity(zoneId, clusterId, capacityType);
+        Pair<List<Long>, Map<Long, Double>> result = _capacityDao.orderHostsByFreeCapacity(zoneId, clusterId, capacityType);
+        List<Long> hostIdsByFreeCapacity = result.first();
+        Map<Long, String> sortedHostByCapacity = result.second().entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> decimalFormat.format(entry.getValue() * 100) + "%",
+                        (e1, e2) -> e1, LinkedHashMap::new));
         if (logger.isDebugEnabled()) {
-            logger.debug("List of hosts in descending order of free capacity in the cluster: "+ hostIdsByFreeCapacity);
+            logger.debug("List of hosts: [{}] in descending order of free capacity (percentage) in the cluster: {}",
+                    hostIdsByFreeCapacity, sortedHostByCapacity);
         }
 
         //now filter the given list of Hosts by this ordered list
@@ -574,11 +586,6 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         if (_configDao != null) {
             Map<String, String> configs = _configDao.getConfiguration(params);
-
-            String allocationAlgorithm = configs.get("vm.allocation.algorithm");
-            if (allocationAlgorithm != null) {
-                _allocationAlgorithm = allocationAlgorithm;
-            }
             String value = configs.get("xenserver.check.hvm");
             _checkHvm = value == null ? true : Boolean.parseBoolean(value);
         }

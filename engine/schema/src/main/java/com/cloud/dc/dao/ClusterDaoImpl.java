@@ -21,10 +21,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -39,6 +37,7 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Grouping;
 import com.cloud.org.Managed;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
@@ -149,14 +148,6 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     }
 
     @Override
-    public List<ClusterVO> listByHyTypeWithoutGuid(String hyType) {
-        SearchCriteria<ClusterVO> sc = HyTypeWithoutGuidSearch.create();
-        sc.setParameters("hypervisorType", hyType);
-
-        return listBy(sc);
-    }
-
-    @Override
     public List<ClusterVO> listByDcHyType(long dcId, String hyType) {
         SearchCriteria<ClusterVO> sc = ZoneHyTypeSearch.create();
         sc.setParameters("dataCenterId", dcId);
@@ -178,8 +169,19 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     }
 
     @Override
-    public Set<HypervisorType> getDistinctAvailableHypervisorsAcrossClusters() {
-        return new HashSet<>(getAvailableHypervisorInZone(null));
+    public List<Pair<HypervisorType, CPU.CPUArch>> listDistinctHypervisorsArchAcrossClusters(Long zoneId) {
+        SearchBuilder<ClusterVO> sb = createSearchBuilder();
+        sb.select(null, Func.DISTINCT_PAIR, sb.entity().getHypervisorType(), sb.entity().getArch());
+        sb.and("zoneId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.done();
+        SearchCriteria<ClusterVO> sc = sb.create();
+        if (zoneId != null) {
+            sc.setParameters("zoneId", zoneId);
+        }
+        final List<ClusterVO> clusters = search(sc, null);
+        return clusters.stream()
+                .map(c -> new Pair<>(c.getHypervisorType(), c.getArch()))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -343,5 +345,37 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         sc.setParameters("dataCenterId", zoneId);
         sc.setParameters("arch", arch);
         return listBy(sc);
+    }
+
+    @Override
+    public List<String> listDistinctStorageAccessGroups(String name, String keyword) {
+        GenericSearchBuilder<ClusterVO, String> searchBuilder = createSearchBuilder(String.class);
+
+        searchBuilder.select(null, SearchCriteria.Func.DISTINCT, searchBuilder.entity().getStorageAccessGroups());
+        if (name != null) {
+            searchBuilder.and().op("storageAccessGroupExact", searchBuilder.entity().getStorageAccessGroups(), Op.EQ);
+            searchBuilder.or("storageAccessGroupPrefix", searchBuilder.entity().getStorageAccessGroups(), Op.LIKE);
+            searchBuilder.or("storageAccessGroupSuffix", searchBuilder.entity().getStorageAccessGroups(), Op.LIKE);
+            searchBuilder.or("storageAccessGroupMiddle", searchBuilder.entity().getStorageAccessGroups(), Op.LIKE);
+            searchBuilder.cp();
+        }
+        if (keyword != null) {
+            searchBuilder.and("keyword", searchBuilder.entity().getStorageAccessGroups(), Op.LIKE);
+        }
+        searchBuilder.done();
+
+        SearchCriteria<String> sc = searchBuilder.create();
+        if (name != null) {
+            sc.setParameters("storageAccessGroupExact", name);
+            sc.setParameters("storageAccessGroupPrefix", name + ",%");
+            sc.setParameters("storageAccessGroupSuffix", "%," + name);
+            sc.setParameters("storageAccessGroupMiddle", "%," + name + ",%");
+        }
+
+        if (keyword != null) {
+            sc.setParameters("keyword", "%" + keyword + "%");
+        }
+
+        return customSearch(sc, null);
     }
 }

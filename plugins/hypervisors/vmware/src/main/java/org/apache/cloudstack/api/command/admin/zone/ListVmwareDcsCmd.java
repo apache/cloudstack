@@ -42,12 +42,13 @@ import com.cloud.dc.VmwareDatacenter;
 import com.cloud.hypervisor.vmware.VmwareDatacenterService;
 import com.cloud.user.Account;
 
-@APICommand(name = "listVmwareDcs", responseObject = VmwareDatacenterResponse.class, description = "Retrieves Vmware DC(s) associated with a zone.",
+@APICommand(name = "listVmwareDcs", responseObject = VmwareDatacenterResponse.class, description = "Retrieves VMware DC(s) associated with a zone.",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListVmwareDcsCmd extends BaseListCmd {
 
     @Inject
     public VmwareDatacenterService _vmwareDatacenterService;
+
 
 
     /////////////////////////////////////////////////////
@@ -72,27 +73,20 @@ public class ListVmwareDcsCmd extends BaseListCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
         ResourceAllocationException {
-        List<? extends VmwareDatacenter> vmwareDcList;
+        List<? extends VmwareDatacenter> vmwareDcList = null;
 
         try {
             vmwareDcList = _vmwareDatacenterService.listVmwareDatacenters(this);
         } catch (InvalidParameterValueException ie) {
             throw new InvalidParameterValueException("Invalid zone id " + getZoneId());
         } catch (Exception e) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to find associated Vmware DCs associated with zone " + getZoneId());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to find associated VMware DCs associated with zone " + getZoneId());
         }
 
-        ListResponse<VmwareDatacenterResponse> response = new ListResponse<>();
-        List<VmwareDatacenterResponse> vmwareDcResponses = getVmwareDatacenterResponses(vmwareDcList);
-        response.setResponses(vmwareDcResponses);
-        response.setResponseName(getCommandName());
-        setResponseObject(response);
-    }
+        ListResponse<VmwareDatacenterResponse> response = new ListResponse<VmwareDatacenterResponse>();
+        List<VmwareDatacenterResponse> vmwareDcResponses = new ArrayList<VmwareDatacenterResponse>();
 
-    private List<VmwareDatacenterResponse> getVmwareDatacenterResponses(List<? extends VmwareDatacenter> vmwareDcList) {
-        List<VmwareDatacenterResponse> vmwareDcResponses = new ArrayList<>();
-
-        if (vmwareDcList != null && !vmwareDcList.isEmpty()) {
+        if (vmwareDcList != null && vmwareDcList.size() > 0) {
             for (VmwareDatacenter vmwareDc : vmwareDcList) {
                 VmwareDatacenterResponse vmwareDcResponse = new VmwareDatacenterResponse();
 
@@ -100,12 +94,14 @@ public class ListVmwareDcsCmd extends BaseListCmd {
                 vmwareDcResponse.setVcenter(vmwareDc.getVcenterHost());
                 vmwareDcResponse.setName(vmwareDc.getVmwareDatacenterName());
                 vmwareDcResponse.setZoneId(getZoneId());
-                vmwareDcResponse.setObjectName(ApiConstants.VMWARE_DC);
+                vmwareDcResponse.setObjectName("VMwareDC");
 
                 vmwareDcResponses.add(vmwareDcResponse);
             }
         }
-        return vmwareDcResponses;
+        response.setResponses(vmwareDcResponses);
+        response.setResponseName(getCommandName());
+        setResponseObject(response);
     }
 
     @Override

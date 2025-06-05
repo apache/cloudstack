@@ -307,8 +307,9 @@ export default {
         }
         if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'account', 'hypervisor', 'level',
           'clusterid', 'podid', 'groupid', 'entitytype', 'accounttype', 'systemvmtype', 'scope', 'provider',
-          'type', 'scope', 'managementserverid', 'serviceofferingid', 'diskofferingid', 'networkid',
-          'usagetype', 'restartrequired', 'displaynetwork', 'guestiptype', 'usersource'].includes(item)
+          'type', 'scope', 'managementserverid', 'serviceofferingid',
+          'diskofferingid', 'networkid', 'usagetype', 'restartrequired',
+          'displaynetwork', 'guestiptype', 'usersource', 'arch'].includes(item)
         ) {
           type = 'list'
         } else if (item === 'tags') {
@@ -442,6 +443,20 @@ export default {
           { value: 'Inherit' }
         ]
         this.fields[apiKeyAccessIndex].loading = false
+      }
+
+      if (arrayField.includes('usersource')) {
+        const userSourceIndex = this.fields.findIndex(item => item.name === 'usersource')
+        this.fields[userSourceIndex].loading = true
+        this.fields[userSourceIndex].opts = this.fetchAvailableUserSourceTypes()
+        this.fields[userSourceIndex].loading = false
+      }
+
+      if (arrayField.includes('arch')) {
+        const typeIndex = this.fields.findIndex(item => item.name === 'arch')
+        this.fields[typeIndex].loading = true
+        this.fields[typeIndex].opts = this.$fetchCpuArchitectureTypes()
+        this.fields[typeIndex].loading = false
       }
     },
     async fetchDynamicFieldData (arrayField, searchKeyword) {
@@ -1300,6 +1315,26 @@ export default {
             reject(error.response.headers['x-description'])
           })
       })
+    },
+    fetchAvailableUserSourceTypes () {
+      return [
+        {
+          id: 'native',
+          name: 'label.native'
+        },
+        {
+          id: 'saml2',
+          name: 'label.saml'
+        },
+        {
+          id: 'saml2disabled',
+          name: 'label.saml.disabled'
+        },
+        {
+          id: 'ldap',
+          name: 'label.ldap'
+        }
+      ]
     },
     onSearch (value) {
       this.paramsFilter = {}

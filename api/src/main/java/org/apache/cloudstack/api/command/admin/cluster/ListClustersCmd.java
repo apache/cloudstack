@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.admin.cluster;
 import java.util.ArrayList;
 import java.util.List;
 
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
@@ -28,7 +27,9 @@ import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.commons.lang3.StringUtils;
 
+import com.cloud.cpu.CPU;
 import com.cloud.org.Cluster;
 import com.cloud.utils.Pair;
 
@@ -67,6 +68,16 @@ public class ListClustersCmd extends BaseListCmd {
 
     @Parameter(name = ApiConstants.SHOW_CAPACITIES, type = CommandType.BOOLEAN, description = "flag to display the capacity of the clusters")
     private Boolean showCapacities;
+
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+            description = "CPU arch of the clusters",
+            since = "4.20.1")
+    private String arch;
+
+    @Parameter(name = ApiConstants.STORAGE_ACCESS_GROUP, type = CommandType.STRING,
+            description = "the name of the storage access group",
+            since = "4.21.0")
+    private String storageAccessGroup;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -110,6 +121,22 @@ public class ListClustersCmd extends BaseListCmd {
 
     public Boolean getShowCapacities() {
         return showCapacities;
+    }
+
+    public CPU.CPUArch getArch() {
+        return StringUtils.isBlank(arch) ? null : CPU.CPUArch.fromType(arch);
+    }
+
+    public String getStorageAccessGroup() {
+        return storageAccessGroup;
+    }
+
+    public ListClustersCmd() {
+
+    }
+
+    public ListClustersCmd(String storageAccessGroup) {
+        this.storageAccessGroup = storageAccessGroup;
     }
 
     /////////////////////////////////////////////////////

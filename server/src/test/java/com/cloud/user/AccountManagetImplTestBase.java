@@ -210,6 +210,9 @@ public class AccountManagetImplTestBase {
     @Mock
     RoutedIpv4Manager routedIpv4Manager;
 
+    @Mock
+    Account accountMock;
+
     @Before
     public void setup() {
         accountManagerImpl.setUserAuthenticators(Arrays.asList(userAuthenticator));

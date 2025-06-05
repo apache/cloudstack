@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -82,6 +83,17 @@ public interface VolumeOrchestrationService {
             "2000",
             "The maximum size for a volume (in GiB).",
             true);
+
+    ConfigKey<String> VolumeAllocationAlgorithm = new ConfigKey<>(
+            String.class,
+            "volume.allocation.algorithm",
+            "Advanced",
+            "random",
+            "Order in which storage pool within a cluster will be considered for volume allocation. The value can be 'random', 'firstfit', 'userdispersing', 'userconcentratedpod_random', 'userconcentratedpod_firstfit', or 'firstfitleastconsumed'.",
+            true,
+            ConfigKey.Scope.Global, null, null, null, null, null,
+            ConfigKey.Kind.Select,
+            "random,firstfit,userdispersing,userconcentratedpod_random,userconcentratedpod_firstfit,firstfitleastconsumed");
 
     VolumeInfo moveVolume(VolumeInfo volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId, HypervisorType dataDiskHyperType)
         throws ConcurrentOperationException, StorageUnavailableException;
@@ -179,4 +191,9 @@ public interface VolumeOrchestrationService {
      * Unmanage VM volumes
      */
     void unmanageVolumes(long vmId);
+
+    /**
+     * Retrieves the volume's checkpoints paths to be used in the KVM processor. If there are no checkpoints, it will return an empty list.
+     */
+    Pair<List<String>, Set<String>> getVolumeCheckpointPathsAndImageStoreUrls(long volumeId, HypervisorType hypervisorType);
 }

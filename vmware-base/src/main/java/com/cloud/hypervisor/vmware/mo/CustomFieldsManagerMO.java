@@ -16,14 +16,11 @@
 // under the License.
 package com.cloud.hypervisor.vmware.mo;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 import com.vmware.vim25.CustomFieldDef;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.PrivilegePolicyDef;
-import com.vmware.vim25.InvalidPropertyFaultMsg;
-import com.vmware.vim25.RuntimeFaultFaultMsg;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 
@@ -53,12 +50,12 @@ public class CustomFieldsManagerMO extends BaseMO {
         _context.getService().setField(getMor(), morEntity, key, value);
     }
 
-    public List<CustomFieldDef> getFields() throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
+    public List<CustomFieldDef> getFields() throws Exception {
         return _context.getVimClient().getDynamicProperty(getMor(), "field");
     }
 
     @Override
-    public int getCustomFieldKey(String morType, String fieldName) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
+    public int getCustomFieldKey(String morType, String fieldName) throws Exception {
         List<CustomFieldDef> fields = getFields();
         if (fields != null) {
             for (CustomFieldDef field : fields) {

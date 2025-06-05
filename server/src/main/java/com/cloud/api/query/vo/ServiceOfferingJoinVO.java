@@ -16,7 +16,12 @@
 // under the License.
 package com.cloud.api.query.vo;
 
-import java.util.Date;
+import com.cloud.offering.ServiceOffering.State;
+import com.cloud.storage.Storage;
+import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.vm.lease.VMLeaseManager;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -24,13 +29,7 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
-
-import com.cloud.offering.ServiceOffering.State;
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
-
-import com.cloud.storage.Storage;
-import com.cloud.utils.db.GenericDao;
+import java.util.Date;
 
 @Entity
 @Table(name = "service_offering_view")
@@ -220,6 +219,13 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
 
     @Column(name = "encrypt_root")
     private boolean encryptRoot;
+
+    @Column(name = "lease_duration")
+    private Integer leaseDuration;
+
+    @Column(name = "lease_expiry_action")
+    @Enumerated(value = EnumType.STRING)
+    private VMLeaseManager.ExpiryAction leaseExpiryAction;
 
     public ServiceOfferingJoinVO() {
     }
@@ -459,4 +465,12 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
     }
 
     public boolean getEncryptRoot() { return encryptRoot; }
+
+    public Integer getLeaseDuration() {
+        return leaseDuration;
+    }
+
+    public VMLeaseManager.ExpiryAction getLeaseExpiryAction() {
+        return leaseExpiryAction;
+    }
 }

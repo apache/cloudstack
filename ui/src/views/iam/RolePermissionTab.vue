@@ -18,15 +18,24 @@
 <template>
   <loading-outlined v-if="loadingTable" class="main-loading-spinner" />
   <div v-else>
-    <div style="width: 100%; display: flex; margin-bottom: 10px">
+    <div style="width: 100%; display: flex; margin-bottom: 20px">
       <a-button type="dashed" @click="exportRolePermissions" style="width: 100%">
         <template #icon><download-outlined /></template>
         {{ $t('label.export.rules') }}
       </a-button>
     </div>
+    <a-input-search
+      v-model:value="searchRule"
+      :placeholder="$t('label.rolepermissiontab.searchbar')"
+      background-color="gray"
+      style="width: 100%; margin-bottom: 10px; display: inline-block"
+      enter-button
+      @search="searchRulePermission"
+    />
     <div v-if="updateTable" class="loading-overlay">
       <loading-outlined />
     </div>
+
     <div
       class="rules-list ant-list ant-list-bordered"
       :class="{'rules-list--overflow-hidden' : updateTable}" >
@@ -137,7 +146,8 @@ export default {
       newRuleDescription: '',
       newRuleSelectError: false,
       drag: false,
-      apis: []
+      apis: [],
+      searchRule: ''
     }
   },
   created () {
@@ -172,6 +182,7 @@ export default {
       if (!this.resource.id) return
       api('listRolePermissions', { roleid: this.resource.id }).then(response => {
         this.rules = response.listrolepermissionsresponse.rolepermission
+        this.totalRules = this.rules
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
@@ -258,6 +269,19 @@ export default {
       hiddenElement.download = this.resource.name + '_' + this.resource.type + '.csv'
       hiddenElement.click()
       hiddenElement.remove()
+    },
+    searchRulePermission (searchValue) {
+      searchValue = searchValue.toLowerCase()
+      if (!searchValue) {
+        this.rules = this.totalRules
+      } else {
+        this.updateTable = true
+        const searchRules = this.totalRules.filter((rule) => rule.rule.toLowerCase().includes(searchValue))
+        this.rules = searchRules
+        setTimeout(() => {
+          this.updateTable = false
+        })
+      }
     }
   }
 }
