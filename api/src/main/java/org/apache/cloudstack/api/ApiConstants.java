@@ -273,7 +273,10 @@ public class ApiConstants {
     public static final String INTERNAL_DNS2 = "internaldns2";
     public static final String INTERNET_PROTOCOL = "internetprotocol";
     public static final String INTERVAL_TYPE = "intervaltype";
-    public static final String LOCATION_TYPE = "locationtype";
+    public static final String INSTANCE_LEASE_DURATION = "leaseduration";
+    public static final String INSTANCE_LEASE_ENABLED = "instanceleaseenabled";
+    public static final String INSTANCE_LEASE_EXPIRY_ACTION = "leaseexpiryaction";
+    public static final String INSTANCE_LEASE_EXPIRY_DATE= "leaseexpirydate";
     public static final String IOPS_READ_RATE = "iopsreadrate";
     public static final String IOPS_READ_RATE_MAX = "iopsreadratemax";
     public static final String IOPS_READ_RATE_MAX_LENGTH = "iopsreadratemaxlength";
@@ -322,11 +325,13 @@ public class ApiConstants {
     public static final String LAST_BOOT = "lastboottime";
     public static final String LAST_SERVER_START = "lastserverstart";
     public static final String LAST_SERVER_STOP = "lastserverstop";
+    public static final String LEASED = "leased";
     public static final String LEVEL = "level";
     public static final String LENGTH = "length";
     public static final String LIMIT = "limit";
     public static final String LIMIT_CPU_USE = "limitcpuuse";
     public static final String LIST_HOSTS = "listhosts";
+    public static final String LOCATION_TYPE = "locationtype";
     public static final String LOCK = "lock";
     public static final String LUN = "lun";
     public static final String LBID = "lbruleid";

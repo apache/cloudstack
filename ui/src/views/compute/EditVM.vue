@@ -117,6 +117,34 @@
         </template>
         <a-switch v-model:checked="form.deleteprotection" />
       </a-form-item>
+      <a-form-item name="showLeaseOptions" ref="showLeaseOptions" v-if="isLeaseEditable">
+        <template #label>
+          <tooltip-label :title="$t('label.lease.enable')" :tooltip="$t('label.lease.enable.tooltip')" />
+        </template>
+        <a-switch v-model:checked="showLeaseOptions" @change="onToggleLeaseData"/>
+      </a-form-item>
+      <a-row :gutter="12" v-if="showLeaseOptions">
+        <a-col :md="12" :lg="12">
+          <a-form-item name="leaseduration" ref="leaseduration">
+            <template #label>
+              <tooltip-label :title="$t('label.leaseduration')" />
+            </template>
+            <a-input
+              v-model:value="form.leaseduration"
+              :placeholder="$t('label.instance.lease.placeholder')"/>
+          </a-form-item>
+        </a-col>
+        <a-col :md="12" :lg="12">
+          <a-form-item name="leaseexpiryaction" ref="leaseexpiryaction">
+            <template #label>
+              <tooltip-label :title="$t('label.leaseexpiryaction')"  />
+            </template>
+            <a-select v-model:value="form.leaseexpiryaction" :defaultValue="expiryActions">
+              <a-select-option v-for="action in expiryActions" :key="action" :label="action" />
+            </a-select>
+          </a-form-item>
+        </a-col>
+      </a-row>
 
       <div :span="24" class="action-button">
         <a-button :loading="loading" @click="onCloseAction">{{ $t('label.cancel') }}</a-button>
@@ -165,6 +193,15 @@ export default {
       groups: {
         loading: false,
         opts: []
+      },
+      isLeaseEditable: this.$store.getters.features.instanceleaseenabled && this.resource.leaseduration > -1,
+      showLeaseOptions: false,
+      leaseduration: this.resource.leaseduration === undefined ? 90 : this.resource.leaseduration,
+      leaseexpiryaction: this.resource.leaseexpiryaction === undefined ? 'STOP' : this.resource.leaseexpiryaction,
+      expiryActions: ['STOP', 'DESTROY'],
+      naturalNumberRule: {
+        type: 'number',
+        validator: this.validateNumber
       }
     }
   },
@@ -186,9 +223,14 @@ export default {
         deleteprotection: this.resource.deleteprotection,
         group: this.resource.group,
         userdata: '',
-        haenable: this.resource.haenable
+        haenable: this.resource.haenable,
+        leaseduration: this.resource.leaseduration,
+        leaseexpiryaction: this.resource.leaseexpiryaction
       })
-      this.rules = reactive({})
+      this.rules = reactive({
+        leaseduration: [this.naturalNumberRule]
+      })
+      this.showLeaseOptions = this.isLeaseEditable
     },
     fetchData () {
       this.fetchZoneDetails()
@@ -327,7 +369,6 @@ export default {
         })
       })
     },
-
     handleSubmit () {
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
@@ -354,6 +395,12 @@ export default {
         if (values.userdata && values.userdata.length > 0) {
           params.userdata = this.$toBase64AndURIEncoded(values.userdata)
         }
+        if (values.leaseduration !== undefined && (values.leaseduration === -1 || values.leaseduration > 0)) {
+          params.leaseduration = values.leaseduration
+          if (values.leaseexpiryaction !== undefined) {
+            params.leaseexpiryaction = values.leaseexpiryaction
+          }
+        }
         this.loading = true
 
         api('updateVirtualMachine', {}, 'POST', params).then(json => {
@@ -372,6 +419,21 @@ export default {
     },
     onCloseAction () {
       this.$emit('close-action')
+    },
+    onToggleLeaseData () {
+      if (this.showLeaseOptions === false) {
+        this.form.leaseduration = -1
+        this.form.leaseexpiryaction = undefined
+      } else {
+        this.form.leaseduration = this.leaseduration
+        this.form.leaseexpiryaction = this.leaseexpiryaction
+      }
+    },
+    async validateNumber (rule, value) {
+      if (value && (isNaN(value) || value <= 0)) {
+        return Promise.reject(this.$t('message.error.number'))
+      }
+      return Promise.resolve()
     }
   }
 }

@@ -137,6 +137,7 @@ import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.cloudstack.utils.jsinterpreter.TagAsRuleHelper;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.cloudstack.vm.UnmanagedVMsManager;
+import org.apache.cloudstack.vm.lease.VMLeaseManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.EnumUtils;
@@ -478,6 +479,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     NsxProviderDao nsxProviderDao;
     @Inject
     ResourceManager resourceManager;
+    @Inject
+    VMLeaseManager vmLeaseManager;
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
     @Inject
@@ -585,6 +588,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         configValuesForValidation.add(UserDataManager.VM_USERDATA_MAX_LENGTH_STRING);
         configValuesForValidation.add(UnmanagedVMsManager.RemoteKvmInstanceDisksCopyTimeout.key());
         configValuesForValidation.add(UnmanagedVMsManager.ConvertVmwareInstanceToKvmTimeout.key());
+        configValuesForValidation.add(VMLeaseManager.InstanceLeaseSchedulerInterval.key());
+        configValuesForValidation.add(VMLeaseManager.InstanceLeaseExpiryEventSchedulerInterval.key());
+        configValuesForValidation.add(VMLeaseManager.InstanceLeaseExpiryEventDaysBefore.key());
     }
 
     protected void weightBasedParametersForValidation() {
@@ -638,6 +644,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     params.put(Config.RouterAggregationCommandEachTimeout.toString(), _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
                     params.put(Config.MigrateWait.toString(), _configDao.getValue(Config.MigrateWait.toString()));
                     _agentManager.propagateChangeToAgents(params);
+                } else if (VMLeaseManager.InstanceLeaseEnabled.key().equals(globalSettingUpdated)) {
+                    vmLeaseManager.onLeaseFeatureToggle();
                 }
             }
         });
@@ -705,7 +713,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     @DB
-    public String updateConfiguration(final long userId, final String name, final String category, String value, final String scope, final Long resourceId) {
+    public String updateConfiguration(final long userId, final String name, final String category, String value, ConfigKey.Scope scope, final Long resourceId) {
         final String validationMsg = validateConfigurationValue(name, value, scope);
         if (validationMsg != null) {
             logger.error("Invalid value [{}] for configuration [{}] due to [{}].", value, name, validationMsg);
@@ -716,15 +724,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // corresponding details table,
         // if scope is mentioned as global or not mentioned then it is normal
         // global parameter updation
-        if (scope != null && !scope.isEmpty() && !ConfigKey.Scope.Global.toString().equalsIgnoreCase(scope)) {
+        if (scope != null && !ConfigKey.Scope.Global.equals(scope)) {
             boolean valueEncrypted = shouldEncryptValue(category);
             if (valueEncrypted) {
                 value = DBEncryptionUtil.encrypt(value);
             }
 
             ApiCommandResourceType resourceType;
-            ConfigKey.Scope scopeVal = ConfigKey.Scope.valueOf(scope);
-            switch (scopeVal) {
+            switch (scope) {
             case Zone:
                 final DataCenterVO zone = _zoneDao.findById(resourceId);
                 if (zone == null) {
@@ -823,9 +830,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
             CallContext.current().setEventResourceType(resourceType);
             CallContext.current().setEventResourceId(resourceId);
-            CallContext.current().setEventDetails(String.format(" Name: %s, New Value: %s, Scope: %s", name, value, scope));
+            CallContext.current().setEventDetails(String.format(" Name: %s, New Value: %s, Scope: %s", name, value, scope.name()));
 
-            _configDepot.invalidateConfigCache(name, scopeVal, resourceId);
+            _configDepot.invalidateConfigCache(name, scope, resourceId);
             return valueEncrypted ? DBEncryptionUtil.decrypt(value) : value;
         }
 
@@ -991,40 +998,40 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             return _configDao.findByName(name);
         }
 
-        String scope = null;
+        ConfigKey.Scope scope = null;
         Long id = null;
         int paramCountCheck = 0;
 
         if (zoneId != null) {
-            scope = ConfigKey.Scope.Zone.toString();
+            scope = ConfigKey.Scope.Zone;
             id = zoneId;
             paramCountCheck++;
         }
         if (clusterId != null) {
-            scope = ConfigKey.Scope.Cluster.toString();
+            scope = ConfigKey.Scope.Cluster;
             id = clusterId;
             paramCountCheck++;
         }
         if (accountId != null) {
             Account account = _accountMgr.getAccount(accountId);
             _accountMgr.checkAccess(caller, null, false, account);
-            scope = ConfigKey.Scope.Account.toString();
+            scope = ConfigKey.Scope.Account;
             id = accountId;
             paramCountCheck++;
         }
         if (domainId != null) {
             _accountMgr.checkAccess(caller, _domainDao.findById(domainId));
-            scope = ConfigKey.Scope.Domain.toString();
+            scope = ConfigKey.Scope.Domain;
             id = domainId;
             paramCountCheck++;
         }
         if (storagepoolId != null) {
-            scope = ConfigKey.Scope.StoragePool.toString();
+            scope = ConfigKey.Scope.StoragePool;
             id = storagepoolId;
             paramCountCheck++;
         }
         if (imageStoreId != null) {
-            scope = ConfigKey.Scope.ImageStore.toString();
+            scope = ConfigKey.Scope.ImageStore;
             id = imageStoreId;
             paramCountCheck++;
         }
@@ -1038,8 +1045,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (value.isEmpty() || value.equals("null")) {
             value = (id == null) ? null : "";
         }
+
+        String currentValueInScope = getConfigurationValueInScope(config, name, scope, id);
         final String updatedValue = updateConfiguration(userId, name, category, value, scope, id);
         if (value == null && updatedValue == null || updatedValue.equalsIgnoreCase(value)) {
+            logger.debug("Config: {} value is updated from: {} to {} for scope: {}", name,
+                    encryptEventValueIfConfigIsEncrypted(config, currentValueInScope),
+                    encryptEventValueIfConfigIsEncrypted(config, value),
+                    scope != null ? scope : ConfigKey.Scope.Global.name());
+
             return _configDao.findByName(name);
         } else {
             throw new CloudRuntimeException("Unable to update configuration parameter " + name);
@@ -1101,7 +1115,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             configScope = config.getScopes();
         }
 
-        String scope = "";
+        String scopeVal = "";
         Map<String, Long> scopeMap = new LinkedHashMap<>();
 
         Long id = null;
@@ -1117,22 +1131,23 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         ParamCountPair paramCountPair = getParamCount(scopeMap);
         id = paramCountPair.getId();
         paramCountCheck = paramCountPair.getParamCount();
-        scope = paramCountPair.getScope();
+        scopeVal = paramCountPair.getScope();
 
         if (paramCountCheck > 1) {
             throw new InvalidParameterValueException("cannot handle multiple IDs, provide only one ID corresponding to the scope");
         }
 
-        if (scope != null) {
-            ConfigKey.Scope scopeVal = ConfigKey.Scope.valueOf(scope);
-            if (!scope.equals(ConfigKey.Scope.Global.toString()) && !configScope.contains(scopeVal)) {
+        if (scopeVal != null) {
+            ConfigKey.Scope scope = ConfigKey.Scope.valueOf(scopeVal);
+            if (!scopeVal.equals(ConfigKey.Scope.Global.toString()) && !configScope.contains(scope)) {
                 throw new InvalidParameterValueException("Invalid scope id provided for the parameter " + name);
             }
         }
 
         String newValue = null;
-        ConfigKey.Scope scopeVal = ConfigKey.Scope.valueOf(scope);
-        switch (scopeVal) {
+        ConfigKey.Scope scope = ConfigKey.Scope.valueOf(scopeVal);
+        String currentValueInScope = getConfigurationValueInScope(config, name, scope, id);
+        switch (scope) {
             case Zone:
                 final DataCenterVO zone = _zoneDao.findById(id);
                 if (zone == null) {
@@ -1217,10 +1232,26 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
         }
 
-        _configDepot.invalidateConfigCache(name, scopeVal, id);
+        logger.debug("Config: {} value is updated from: {} to {} for scope: {}", name,
+                encryptEventValueIfConfigIsEncrypted(config, currentValueInScope),
+                encryptEventValueIfConfigIsEncrypted(config, newValue), scope);
+
+        _configDepot.invalidateConfigCache(name, scope, id);
 
         CallContext.current().setEventDetails(" Name: " + name + " New Value: " + (name.toLowerCase().contains("password") ? "*****" : defaultValue == null ? "" : defaultValue));
         return new Pair<Configuration, String>(_configDao.findByName(name), newValue);
+    }
+
+    private String getConfigurationValueInScope(ConfigurationVO config, String name, ConfigKey.Scope scope, Long id) {
+        String configValue;
+        if (scope == null || ConfigKey.Scope.Global.equals(scope)) {
+            configValue = config.getValue();
+        } else {
+            ConfigKey<?> configKey = _configDepot.get(name);
+            Object currentValue = configKey.valueInScope(scope, id);
+            configValue = currentValue != null ? currentValue.toString() : null;
+        }
+        return configValue;
     }
 
     /**
@@ -1230,7 +1261,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
      * @param scope scope of the configuration.
      * @return null if the value is valid; otherwise, returns an error message.
      */
-    protected String validateConfigurationValue(String name, String value, String scope) {
+    protected String validateConfigurationValue(String name, String value, ConfigKey.Scope scope) {
         final ConfigurationVO cfg = _configDao.findByName(name);
         if (cfg == null) {
             logger.error("Missing configuration variable " + name + " in configuration table");
@@ -1240,10 +1271,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         List<ConfigKey.Scope> configScope = cfg.getScopes();
         if (scope != null) {
-            ConfigKey.Scope scopeVal = ConfigKey.Scope.valueOf(scope);
-            if (!configScope.contains(scopeVal) &&
+            if (!configScope.contains(scope) &&
                     !(ENABLE_ACCOUNT_SETTINGS_FOR_DOMAIN.value() && configScope.contains(ConfigKey.Scope.Account) &&
-                            scope.equals(ConfigKey.Scope.Domain.toString()))) {
+                            ConfigKey.Scope.Domain.equals(scope))) {
                 logger.error("Invalid scope id provided for the parameter " + name);
                 return "Invalid scope id provided for the parameter " + name;
             }
@@ -3367,6 +3397,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
+        // validate lease properties and set leaseExpiryAction
+        Integer leaseDuration = cmd.getLeaseDuration();
+        VMLeaseManager.ExpiryAction leaseExpiryAction = validateAndGetLeaseExpiryAction(leaseDuration, cmd.getLeaseExpiryAction());
+
         return createServiceOffering(userId, cmd.isSystem(), vmType, cmd.getServiceOfferingName(), cpuNumber, memory, cpuSpeed, cmd.getDisplayText(),
                 cmd.getProvisioningType(), localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainIds(), cmd.getZoneIds(), cmd.getHostTag(),
                 cmd.getNetworkRate(), cmd.getDeploymentPlanner(), details, cmd.getRootDiskSize(), isCustomizedIops, cmd.getMinIops(), cmd.getMaxIops(),
@@ -3375,20 +3409,20 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 cmd.getIopsReadRate(), cmd.getIopsReadRateMax(), cmd.getIopsReadRateMaxLength(),
                 cmd.getIopsWriteRate(), cmd.getIopsWriteRateMax(), cmd.getIopsWriteRateMaxLength(),
                 cmd.getHypervisorSnapshotReserve(), cmd.getCacheMode(), storagePolicyId, cmd.getDynamicScalingEnabled(), diskOfferingId,
-                cmd.getDiskOfferingStrictness(), cmd.isCustomized(), cmd.getEncryptRoot(), cmd.isPurgeResources());
+                cmd.getDiskOfferingStrictness(), cmd.isCustomized(), cmd.getEncryptRoot(), cmd.isPurgeResources(), leaseDuration, leaseExpiryAction);
     }
 
     protected ServiceOfferingVO createServiceOffering(final long userId, final boolean isSystem, final VirtualMachine.Type vmType,
-            final String name, final Integer cpu, final Integer ramSize, final Integer speed, final String displayText, final String provisioningType, final boolean localStorageRequired,
-            final boolean offerHA, final boolean limitResourceUse, final boolean volatileVm, String tags, final List<Long> domainIds, List<Long> zoneIds, final String hostTag,
-            final Integer networkRate, final String deploymentPlanner, final Map<String, String> details, Long rootDiskSizeInGiB, final Boolean isCustomizedIops, Long minIops, Long maxIops,
-            Long bytesReadRate, Long bytesReadRateMax, Long bytesReadRateMaxLength,
-            Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
-            Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
-            Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
-            final Integer hypervisorSnapshotReserve, String cacheMode, final Long storagePolicyID,
-            final boolean dynamicScalingEnabled, final Long diskOfferingId, final boolean diskOfferingStrictness,
-            final boolean isCustomized, final boolean encryptRoot, final boolean purgeResources) {
+                                                      final String name, final Integer cpu, final Integer ramSize, final Integer speed, final String displayText, final String provisioningType, final boolean localStorageRequired,
+                                                      final boolean offerHA, final boolean limitResourceUse, final boolean volatileVm, String tags, final List<Long> domainIds, List<Long> zoneIds, final String hostTag,
+                                                      final Integer networkRate, final String deploymentPlanner, final Map<String, String> details, Long rootDiskSizeInGiB, final Boolean isCustomizedIops, Long minIops, Long maxIops,
+                                                      Long bytesReadRate, Long bytesReadRateMax, Long bytesReadRateMaxLength,
+                                                      Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
+                                                      Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
+                                                      Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
+                                                      final Integer hypervisorSnapshotReserve, String cacheMode, final Long storagePolicyID,
+                                                      final boolean dynamicScalingEnabled, final Long diskOfferingId, final boolean diskOfferingStrictness,
+                                                      final boolean isCustomized, final boolean encryptRoot, final boolean purgeResources, Integer leaseDuration, VMLeaseManager.ExpiryAction leaseExpiryAction) {
 
         // Filter child domains when both parent and child domains are present
         List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
@@ -3495,6 +3529,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         if ((serviceOffering = _serviceOfferingDao.persist(serviceOffering)) != null) {
+            //persist lease properties if leaseExpiryAction is valid
+            if (leaseExpiryAction != null) {
+                detailsVOList.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), ApiConstants.INSTANCE_LEASE_DURATION, String.valueOf(leaseDuration), false));
+                detailsVOList.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), ApiConstants.INSTANCE_LEASE_EXPIRY_ACTION, leaseExpiryAction.name(), false));
+            }
+
             for (Long domainId : filteredDomainIds) {
                 detailsVOList.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), ApiConstants.DOMAIN_ID, String.valueOf(domainId), false));
             }
@@ -3516,6 +3556,31 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         } else {
             return null;
         }
+    }
+
+    /**
+     * This method will return valid and non-empty expiryAction  when
+     * "instance.lease.enabled" feature is enabled at global level
+     * leaseDuration is positive > 0 and has valid leaseExpiryAction provided
+     * @param leaseDuration
+     * @param cmdExpiryAction
+     * @return leaseExpiryAction
+     */
+    public static VMLeaseManager.ExpiryAction validateAndGetLeaseExpiryAction(Integer leaseDuration, VMLeaseManager.ExpiryAction cmdExpiryAction) {
+        if (!VMLeaseManager.InstanceLeaseEnabled.value() || ObjectUtils.allNull(leaseDuration, cmdExpiryAction)) { // both are null
+            return null;
+        }
+
+        // one of them is non-null
+        if (ObjectUtils.anyNull(leaseDuration, cmdExpiryAction)) {
+            throw new InvalidParameterValueException("Provide values for both: leaseduration and leaseexpiryaction");
+        }
+
+        if (leaseDuration < 1L || leaseDuration > VMLeaseManager.MAX_LEASE_DURATION_DAYS) {
+            throw new InvalidParameterValueException("Invalid leaseduration: must be a natural number (>=1), max supported value is 36500");
+        }
+
+        return cmdExpiryAction;
     }
 
     @Override

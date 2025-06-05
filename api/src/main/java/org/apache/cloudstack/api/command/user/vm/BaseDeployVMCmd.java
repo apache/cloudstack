@@ -46,9 +46,11 @@ import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.vm.lease.VMLeaseManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.agent.api.LogLevel;
@@ -60,9 +62,9 @@ import com.cloud.network.Network.IpAddresses;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.DiskOfferingInfo;
 import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.utils.net.Dhcp;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VmDetailConstants;
+import com.cloud.utils.net.Dhcp;
 
 public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityGroupAction, UserCmd {
 
@@ -262,6 +264,14 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
             description = "Enable packed virtqueues or not.")
     private Boolean nicPackedVirtQueues;
 
+    @Parameter(name = ApiConstants.INSTANCE_LEASE_DURATION, type = CommandType.INTEGER, since = "4.21.0",
+            description = "Number of days instance is leased for.")
+    private Integer leaseDuration;
+
+    @Parameter(name = ApiConstants.INSTANCE_LEASE_EXPIRY_ACTION, type = CommandType.STRING, since = "4.21.0",
+            description = "Lease expiry action, valid values are STOP and DESTROY")
+    private String leaseExpiryAction;
+
     private List<DiskOfferingInfo> dataDiskOfferingsInfo;
 
     /////////////////////////////////////////////////////
@@ -456,6 +466,22 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
 
     public String getPassword() {
         return password;
+    }
+
+    public Integer getLeaseDuration() {
+        return leaseDuration;
+    }
+
+    public VMLeaseManager.ExpiryAction getLeaseExpiryAction() {
+        if (StringUtils.isBlank(leaseExpiryAction)) {
+            return null;
+        }
+        VMLeaseManager.ExpiryAction action = EnumUtils.getEnumIgnoreCase(VMLeaseManager.ExpiryAction.class, leaseExpiryAction);
+        if (action == null) {
+            throw new InvalidParameterValueException("Invalid value configured for leaseexpiryaction, valid values are: " +
+                    com.cloud.utils.EnumUtils.listValues(VMLeaseManager.ExpiryAction.values()));
+        }
+        return action;
     }
 
     public List<Long> getNetworkIds() {

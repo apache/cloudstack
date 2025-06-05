@@ -1728,6 +1728,7 @@ export default {
       delete query.domainid
       delete query.state
       delete query.annotationfilter
+      delete query.leased
       if (this.$route.name === 'template') {
         query.templatefilter = filter
       } else if (this.$route.name === 'iso') {
@@ -1777,6 +1778,8 @@ export default {
           query.domainid = this.$store.getters.userInfo.domainid
         } else if (['running', 'stopped'].includes(filter)) {
           query.state = filter
+        } else if (filter === 'leased') {
+          query.leased = true
         }
       } else if (this.$route.name === 'comment') {
         query.annotationfilter = filter
