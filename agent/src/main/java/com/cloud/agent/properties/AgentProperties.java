@@ -425,13 +425,24 @@ public class AgentProperties{
     public static final Property<String> GUEST_CPU_ARCH = new Property<>("guest.cpu.arch", null, String.class);
 
     /**
-     * This param will require CPU features on the CPU section.<br>
-     * The features listed in this property must be separated by a blank space (see example below).<br>
+     * Specifies required CPU features for end-user VMs (non-system VMs).<br>
+     * These features must be present on the host CPU for VM deployment.<br>
+     * Multiple features should be separated by whitespace (see example below).<br>
      * Possible values: vmx vme <br>
      * Data type: String.<br>
      * Default value: <code>null</code>
      */
     public static final Property<String> GUEST_CPU_FEATURES = new Property<>("guest.cpu.features", null, String.class);
+
+    /**
+     * Specifies required CPU features for system VMs.<br>
+     * These features must be present on the host CPU for VM deployment.<br>
+     * Multiple features should be separated by whitespace (see example below).<br>
+     * Possible values: vmx vme <br>
+     * Data type: String.<br>
+     * Default value: <code>null</code>
+     */
+    public static final Property<String> SYSTEMVM_GUEST_CPU_FEATURES = new Property<>("systemvm.guest.cpu.features", null, String.class);
 
     /**
      * Disables memory ballooning on VM guests for overcommit.<br>
