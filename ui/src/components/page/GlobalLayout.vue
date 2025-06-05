@@ -17,6 +17,7 @@
 
 <template>
   <div>
+    <announcement-banner />
     <a-affix v-if="this.$store.getters.maintenanceInitiated" >
       <a-alert :message="$t('message.maintenance.initiated')" type="error" banner :showIcon="false" class="maintenanceHeader" />
     </a-affix>
@@ -131,6 +132,7 @@ import { isAdmin } from '@/role'
 import { api } from '@/api'
 import Drawer from '@/components/widgets/Drawer'
 import Setting from '@/components/view/Setting.vue'
+import AnnouncementBanner from '@/components/header/AnnouncementBanner.vue'
 
 export default {
   name: 'GlobalLayout',
@@ -139,7 +141,8 @@ export default {
     GlobalHeader,
     GlobalFooter,
     Drawer,
-    Setting
+    Setting,
+    AnnouncementBanner
   },
   mixins: [mixin, mixinDevice],
   data () {
