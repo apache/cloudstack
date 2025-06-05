@@ -51,7 +51,7 @@
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item>
+      <a-form-item name="parameters" ref="parameters">
         <template #label>
           <tooltip-label :title="$t('label.parameters')" :tooltip="apiParams.parameters.description"/>
         </template>
@@ -75,7 +75,7 @@
           v-model:value="form.errormessage"
           :placeholder="apiParams.errormessage.description" />
       </a-form-item>
-      <a-form-item>
+      <a-form-item name="details" ref="details">
         <template #label>
           <tooltip-label :title="$t('label.details')" :tooltip="apiParams.details.description"/>
         </template>

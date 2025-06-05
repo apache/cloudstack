@@ -69,7 +69,7 @@
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item>
+      <a-form-item name="details" ref="details">
         <template #label>
           <tooltip-label :title="$t('label.details')" :tooltip="apiParams.details.description"/>
         </template>
