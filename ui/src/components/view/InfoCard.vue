@@ -72,6 +72,9 @@
               <a-tag v-if="resource.broadcasturi">
                 {{ resource.broadcasturi }}
               </a-tag>
+              <a-tag v-if="resource.arch">
+                {{ resource.arch }}
+              </a-tag>
               <a-tag v-if="resource.hypervisor">
                 {{ resource.hypervisor }}
               </a-tag>
@@ -92,6 +95,9 @@
               </a-tag>
               <a-tag v-if="resource.archived" :color="this.$config.theme['@warning-color']">
                 {{ $t('label.archived') }}
+              </a-tag>
+              <a-tag v-if="resource.leaseduration != undefined">
+                {{ $t('label.remainingdays') + ': ' + (resource.leaseduration > -1 ? resource.leaseduration + 'd' : 'Over') }}
               </a-tag>
               <a-tooltip placement="right" >
                 <template #title>
@@ -221,6 +227,27 @@
                 :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.allocated')"
               />
             </span>
+          </div>
+        </div>
+        <div class="resource-detail-item" v-if="'leaseduration' in resource && resource.leaseduration !== undefined">
+          <div class="resource-detail-item__label">{{ $t('label.leaseduration') }}</div>
+          <div class="resource-detail-item__details">
+            <field-time-outlined
+                  :style="{
+                    color: $store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' },
+                    fontSize: '20px'
+                  }"/>
+            {{ resource.leaseduration + ' ' + $t('label.days') }}
+          </div>
+        </div>
+        <div class="resource-detail-item" v-if="'leaseexpiryaction' in resource && resource.leaseexpiryaction !== undefined">
+          <div class="resource-detail-item__label">{{ $t('label.leaseexpiryaction') }}</div>
+          <div class="resource-detail-item__details">
+            <font-awesome-icon
+              :icon="['fa-solid', 'fa-circle-xmark']"
+              class="anticon"
+              :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
+            {{ resource.leaseexpiryaction }}
           </div>
         </div>
         <div class="resource-detail-item" v-if="'memory' in resource">
@@ -646,7 +673,7 @@
             <span v-else>{{ resource.podname || resource.pod || resource.podid }}</span>
           </div>
         </div>
-        <div class="resource-detail-item" v-if="resource.zoneid">
+        <div class="resource-detail-item" v-if="resource.zoneid && !['template', 'iso'].includes($route.path.split('/')[1])">
           <div class="resource-detail-item__label">{{ $t('label.zone') }}</div>
           <div class="resource-detail-item__details">
             <span v-if="images.zone">
@@ -733,7 +760,7 @@
             <span v-else>{{ resource.managementserver || resource.managementserverid }}</span>
           </div>
         </div>
-        <div class="resource-detail-item" v-if="resource.created">
+        <div class="resource-detail-item" v-if="resource.created && !['template', 'iso'].includes($route.path.split('/')[1])">
           <div class="resource-detail-item__label">{{ $t('label.created') }}</div>
           <div class="resource-detail-item__details">
             <calendar-outlined />{{ $toLocaleDate(resource.created) }}

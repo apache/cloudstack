@@ -71,6 +71,8 @@ SELECT
     `service_offering`.`dynamic_scaling_enabled` AS `dynamic_scaling_enabled`,
     `service_offering`.`disk_offering_strictness` AS `disk_offering_strictness`,
     `vsphere_storage_policy`.`value` AS `vsphere_storage_policy`,
+    `lease_duration_details`.`value` AS `lease_duration`,
+    `lease_expiry_action_details`.`value` AS `lease_expiry_action`,
     GROUP_CONCAT(DISTINCT(domain.id)) AS domain_id,
     GROUP_CONCAT(DISTINCT(domain.uuid)) AS domain_uuid,
     GROUP_CONCAT(DISTINCT(domain.name)) AS domain_name,
@@ -109,5 +111,11 @@ FROM
         LEFT JOIN
     `cloud`.`service_offering_details` AS `vsphere_storage_policy` ON `vsphere_storage_policy`.`service_offering_id` = `service_offering`.`id`
         AND `vsphere_storage_policy`.`name` = 'storagepolicy'
+        LEFT JOIN
+    `cloud`.`service_offering_details` AS `lease_duration_details` ON `lease_duration_details`.`service_offering_id` = `service_offering`.`id`
+        AND `lease_duration_details`.`name` = 'leaseduration'
+        LEFT JOIN
+    `cloud`.`service_offering_details` AS `lease_expiry_action_details` ON `lease_expiry_action_details`.`service_offering_id` = `service_offering`.`id`
+        AND `lease_expiry_action_details`.`name` = 'leaseexpiryaction'
 GROUP BY
     `service_offering`.`id`;

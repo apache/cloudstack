@@ -21,6 +21,7 @@ package org.apache.cloudstack.storage.datastore.provider;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CleanupPersistentNetworkResourceCommand;
+import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.SetupPersistentNetworkCommand;
@@ -45,6 +46,7 @@ import com.cloud.storage.StorageService;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -207,8 +209,41 @@ public class DefaultHostListener implements HypervisorHostListener {
 
     @Override
     public boolean hostDisconnected(long hostId, long poolId) {
-        // TODO Auto-generated method stub
-        return false;
+        HostVO host = hostDao.findById(hostId);
+        if (host == null) {
+            logger.error("Failed to disconnect host by HostListener as host was not found with id : " + hostId);
+            return false;
+        }
+
+        DataStore dataStore = dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
+        StoragePool storagePool = (StoragePool) dataStore;
+        DeleteStoragePoolCommand cmd = new DeleteStoragePoolCommand(storagePool);
+        Answer answer  = sendDeleteStoragePoolCommand(cmd, storagePool, host);
+        if (!answer.getResult()) {
+            logger.error("Failed to disconnect storage pool: " + storagePool + " and host: " + host);
+            return false;
+        }
+
+        StoragePoolHostVO storagePoolHost = storagePoolHostDao.findByPoolHost(poolId, hostId);
+        if (storagePoolHost != null) {
+            storagePoolHostDao.deleteStoragePoolHostDetails(hostId, poolId);
+        }
+        logger.info("Connection removed between storage pool: " + storagePool + " and host: " + host);
+        return true;
+    }
+
+    private Answer sendDeleteStoragePoolCommand(DeleteStoragePoolCommand cmd, StoragePool storagePool, HostVO host) {
+        Answer answer = agentMgr.easySend(host.getId(), cmd);
+        if (answer == null) {
+            throw new CloudRuntimeException(String.format("Unable to get an answer to the delete storage pool command for storage pool %s, sent to host %s", storagePool, host));
+        }
+
+        if (!answer.getResult()) {
+            String msg = "Unable to detach storage pool " + storagePool + " from the host " + host;
+            alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, storagePool.getDataCenterId(), storagePool.getPodId(), msg, msg);
+        }
+
+        return answer;
     }
 
     @Override

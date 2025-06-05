@@ -22,6 +22,14 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import com.cloud.agent.api.ConvertSnapshotAnswer;
+import com.cloud.agent.api.ConvertSnapshotCommand;
+import com.cloud.agent.api.RemoveBitmapCommand;
+import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.Volume;
+import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
@@ -38,6 +46,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageAction;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -50,6 +59,7 @@ import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
+import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.command.QuerySnapshotZoneCopyAnswer;
 import org.apache.cloudstack.storage.command.QuerySnapshotZoneCopyCommand;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
@@ -57,6 +67,8 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.heuristics.HeuristicRuleHelper;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -101,6 +113,8 @@ public class SnapshotServiceImpl implements SnapshotService {
     EndPointSelector epSelector;
     @Inject
     ConfigurationDao _configDao;
+    @Inject
+    HostDao hostDao;
 
     @Inject
     private HeuristicRuleHelper heuristicRuleHelper;
@@ -232,27 +246,27 @@ public class SnapshotServiceImpl implements SnapshotService {
     public SnapshotResult takeSnapshot(SnapshotInfo snap) {
         SnapshotObject snapshot = (SnapshotObject)snap;
 
-        SnapshotObject snapshotOnPrimary = null;
+        SnapshotObject snapshotOnPrimaryStorage = null;
         try {
-            snapshotOnPrimary = (SnapshotObject)snap.getDataStore().create(snapshot);
+            snapshotOnPrimaryStorage = (SnapshotObject)snap.getDataStore().create(snapshot);
         } catch (Exception e) {
             logger.debug("Failed to create snapshot state on data store due to " + e.getMessage());
             throw new CloudRuntimeException(e);
         }
 
         try {
-            snapshotOnPrimary.processEvent(Snapshot.Event.CreateRequested);
+            snapshotOnPrimaryStorage.processEvent(Snapshot.Event.CreateRequested);
         } catch (NoTransitionException e) {
             logger.debug("Failed to change snapshot state: " + e.toString());
             throw new CloudRuntimeException(e);
         }
 
         try {
-            snapshotOnPrimary.processEvent(Event.CreateOnlyRequested);
+            snapshotOnPrimaryStorage.processEvent(Event.CreateOnlyRequested);
         } catch (Exception e) {
             logger.debug("Failed to change snapshot state: " + e.toString());
             try {
-                snapshotOnPrimary.processEvent(Snapshot.Event.OperationFailed);
+                snapshotOnPrimaryStorage.processEvent(Snapshot.Event.OperationFailed);
             } catch (NoTransitionException e1) {
                 logger.debug("Failed to change snapshot state: " + e1.toString());
             }
@@ -261,10 +275,10 @@ public class SnapshotServiceImpl implements SnapshotService {
 
         AsyncCallFuture<SnapshotResult> future = new AsyncCallFuture<SnapshotResult>();
         try {
-            CreateSnapshotContext<CommandResult> context = new CreateSnapshotContext<CommandResult>(null, snap.getBaseVolume(), snapshotOnPrimary, future);
+            CreateSnapshotContext<CommandResult> context = new CreateSnapshotContext<CommandResult>(null, snap.getBaseVolume(), snapshotOnPrimaryStorage, future);
             AsyncCallbackDispatcher<SnapshotServiceImpl, CreateCmdResult> caller = AsyncCallbackDispatcher.create(this);
             caller.setCallback(caller.getTarget().createSnapshotAsyncCallback(null, null)).setContext(context);
-            PrimaryDataStoreDriver primaryStore = (PrimaryDataStoreDriver)snapshotOnPrimary.getDataStore().getDriver();
+            PrimaryDataStoreDriver primaryStore = (PrimaryDataStoreDriver)snapshotOnPrimaryStorage.getDataStore().getDriver();
             primaryStore.takeSnapshot(snapshot, caller);
         } catch (Exception e) {
             logger.debug("Failed to take snapshot: {}", snapshot, e);
@@ -281,22 +295,56 @@ public class SnapshotServiceImpl implements SnapshotService {
 
         try {
             result = future.get();
+
+            updateSnapSizeAndCheckpointPathIfPossible(result, snap);
+
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_ON_PRIMARY, snap.getAccountId(), snap.getDataCenterId(), snap.getId(),
-                    snap.getName(), null, null, snapshotOnPrimary.getSize(), snapshotOnPrimary.getSize(), snap.getClass().getName(), snap.getUuid());
+                    snap.getName(), null, null, snapshotOnPrimaryStorage.getSize(), snapshotOnPrimaryStorage.getSize(), snap.getClass().getName(), snap.getUuid());
             return result;
-        } catch (InterruptedException e) {
-            logger.debug("Failed to create snapshot", e);
-            throw new CloudRuntimeException("Failed to create snapshot", e);
-        } catch (ExecutionException e) {
-            logger.debug("Failed to create snapshot", e);
-            throw new CloudRuntimeException("Failed to create snapshot", e);
+        } catch (InterruptedException | ExecutionException e) {
+            String message = String.format("Failed to create snapshot [%s] due to [%s].", snapshot, e.getMessage());
+            logger.error(message, e);
+            throw new CloudRuntimeException(message, e);
         }
     }
+
+    /**
+     * Updates the snapshot physical size if the answer is an instance of CreateObjectAnswer and the returned physical size if bigger than 0.
+     * Also updates the checkpoint path if possible.
+     * */
+    protected void updateSnapSizeAndCheckpointPathIfPossible(SnapshotResult result, SnapshotInfo snapshotInfo) {
+        SnapshotDataStoreVO snapshotStore;
+        Answer answer = result.getAnswer();
+
+        if (!answer.getResult() || !(answer instanceof CreateObjectAnswer)) {
+            return;
+        }
+
+        SnapshotInfo resultSnapshot = result.getSnapshot();
+        if (snapshotInfo.getImageStore() != null) {
+            snapshotInfo.getImageStore().create(resultSnapshot);
+            snapshotStore = _snapshotStoreDao.findBySnapshotIdAndDataStoreRoleAndState(resultSnapshot.getSnapshotId(), DataStoreRole.Image, ObjectInDataStoreStateMachine.State.Allocated);
+        } else {
+            snapshotStore = _snapshotStoreDao.findByStoreSnapshot(DataStoreRole.Primary, resultSnapshot.getDataStore().getId(), resultSnapshot.getSnapshotId());
+        }
+
+        SnapshotObjectTO snapshotObjectTo = (SnapshotObjectTO) ((CreateObjectAnswer) answer).getData();
+
+        Long physicalSize = snapshotObjectTo.getPhysicalSize();
+        if (NumberUtils.compare(physicalSize, 0L) > 0) {
+            snapshotStore.setPhysicalSize(physicalSize);
+        }
+
+        snapshotStore.setKvmCheckpointPath(snapshotObjectTo.getCheckpointPath());
+        _snapshotStoreDao.update(snapshotStore.getId(), snapshotStore);
+    }
+
 
     // if a snapshot has parent snapshot, the new snapshot should be stored in
     // the same store as its parent since
     // we are taking delta snapshot
-    private DataStore findSnapshotImageStore(SnapshotInfo snapshot) {
+    @Override
+    public DataStore findSnapshotImageStore(SnapshotInfo snapshot) {
         Boolean fullSnapshot = true;
         Boolean snapshotFullBackup = snapshot.getFullBackup();
         if (snapshotFullBackup != null) {
@@ -337,6 +385,49 @@ public class SnapshotServiceImpl implements SnapshotService {
             imageStore = dataStoreMgr.getImageStoreWithFreeCapacity(snapshot.getDataCenterId());
         }
         return imageStore;
+    }
+
+    /**
+     * Converts a given snapshot that is on the secondary storage. The original and its backing chains will be maintained, the converted snapshot must be later deleted if not used.
+     * The original purpose of this method is to work with KVM incremental snapshots, copying the snapshot to a temporary location and consolidating the snapshot chain.
+     * @param snapshotInfo The snapshot to be converted
+     * @return the snapshotInfo given with the updated path. This should not be persisted on the DB, otherwise the original snapshot will be lost.
+     * */
+    @Override
+    public SnapshotInfo convertSnapshot(SnapshotInfo snapshotInfo) {
+        SnapshotObject snapObj = (SnapshotObject)snapshotInfo;
+
+        logger.debug("Converting snapshot [%s].", snapObj);
+        Answer answer = null;
+        try {
+            snapObj.processEvent(Snapshot.Event.BackupToSecondary);
+
+            SnapshotObjectTO snapshotObjectTO = (SnapshotObjectTO) snapshotInfo.getTO();
+            ConvertSnapshotCommand cmd = new ConvertSnapshotCommand(snapshotObjectTO);
+
+            EndPoint ep = epSelector.select(snapshotInfo, StorageAction.CONVERTSNAPSHOT);
+
+            answer = ep.sendMessage(cmd);
+
+            if (answer != null && answer.getResult()) {
+                snapObj.setPath(((ConvertSnapshotAnswer) answer).getSnapshotObjectTO().getPath());
+                return snapObj;
+            }
+        } catch (NoTransitionException e) {
+            logger.debug("Failed to change snapshot {} state.", snapObj.getUuid(), e);
+        } finally {
+            try {
+                if (answer != null && answer.getResult()) {
+                    snapObj.processEvent(Snapshot.Event.OperationSucceeded);
+                } else {
+                    snapObj.processEvent(Snapshot.Event.OperationNotPerformed);
+                }
+            } catch (NoTransitionException ex) {
+                logger.debug("Failed to change snapshot {} state.", snapObj.getUuid(), ex);
+            }
+        }
+
+        throw new CloudRuntimeException(String.format("Failed to convert snapshot [%s]%s.", snapObj.getUuid(), answer != null ? String.format(" due to [%s]", answer.getDetails()) : ""));
     }
 
     @Override
@@ -404,7 +495,7 @@ public class SnapshotServiceImpl implements SnapshotService {
         SnapshotResult snapResult = new SnapshotResult(destSnapshot, result.getAnswer());
         if (result.isFailed()) {
             try {
-                if (createSnapshotPayload.getAsyncBackup()) {
+                if (BooleanUtils.isTrue(createSnapshotPayload.getAsyncBackup())) {
                     _snapshotDao.remove(srcSnapshot.getId());
                     destSnapshot.processEvent(Event.OperationFailed);
                     throw new SnapshotBackupException(String.format("Failed in creating backup of snapshot %s", srcSnapshot));
@@ -528,6 +619,17 @@ public class SnapshotServiceImpl implements SnapshotService {
     public boolean deleteSnapshot(SnapshotInfo snapInfo) {
         snapInfo.processEvent(ObjectInDataStoreStateMachine.Event.DestroyRequested);
 
+        if (Hypervisor.HypervisorType.KVM.equals(snapInfo.getHypervisorType()) &&
+                SnapshotManager.kvmIncrementalSnapshot.valueIn(hostDao.findClusterIdByVolumeInfo(snapInfo.getBaseVolume()))) {
+            SnapshotDataStoreVO snapshotDataStoreVo = _snapshotStoreDao.findByStoreSnapshot(snapInfo.getDataStore().getRole(), snapInfo.getDataStore().getId(), snapInfo.getSnapshotId());
+            String kvmCheckpointPath = snapshotDataStoreVo.getKvmCheckpointPath();
+            if (kvmCheckpointPath != null) {
+                snapInfo.setCheckpointPath(kvmCheckpointPath);
+                snapInfo.setKvmIncrementalSnapshot(true);
+                deleteBitmap(snapInfo);
+            }
+        }
+
         AsyncCallFuture<SnapshotResult> future = new AsyncCallFuture<SnapshotResult>();
         DeleteSnapshotContext<CommandResult> context = new DeleteSnapshotContext<CommandResult>(null, snapInfo, future);
         AsyncCallbackDispatcher<SnapshotServiceImpl, CommandResult> caller = AsyncCallbackDispatcher.create(this);
@@ -549,6 +651,25 @@ public class SnapshotServiceImpl implements SnapshotService {
         }
 
         return false;
+    }
+
+    protected void deleteBitmap (SnapshotInfo snapshotInfo) {
+        Volume baseVol = snapshotInfo.getBaseVolume();
+        if (baseVol == null || !Volume.State.Ready.equals(baseVol.getState())) {
+            return;
+        }
+
+        VirtualMachine attachedVM = snapshotInfo.getBaseVolume().getAttachedVM();
+
+        RemoveBitmapCommand cmd = new RemoveBitmapCommand((SnapshotObjectTO) snapshotInfo.getTO(),
+                attachedVM != null && attachedVM.getState().equals(VirtualMachine.State.Running));
+        EndPoint ep = epSelector.select(snapshotInfo, StorageAction.REMOVEBITMAP);
+
+        Answer answer = ep.sendMessage(cmd);
+        if (!answer.getResult()) {
+            logger.error("Unable to remove bitmap associated with snapshot {} due to {}.", answer.getDetails());
+            throw new CloudRuntimeException(String.format("Unable to remove bitmap associated with snapshot [%s].", snapshotInfo.getName()));
+        }
     }
 
     @Override

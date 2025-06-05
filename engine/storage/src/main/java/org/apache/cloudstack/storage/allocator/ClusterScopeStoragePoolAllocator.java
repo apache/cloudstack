@@ -16,26 +16,26 @@
 // under the License.
 package org.apache.cloudstack.storage.allocator;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import com.cloud.storage.VolumeApiServiceImpl;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.springframework.stereotype.Component;
-
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.VolumeApiServiceImpl;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachineProfile;
+
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+
+import org.springframework.stereotype.Component;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocator {
@@ -77,12 +77,12 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
             logDisabledStoragePools(dcId, podId, clusterId, ScopeType.CLUSTER);
         }
 
-        List<StoragePoolVO> pools = storagePoolDao.findPoolsByTags(dcId, podId, clusterId, dskCh.getTags(), true, VolumeApiServiceImpl.storageTagRuleExecutionTimeout.value());
+        List<StoragePoolVO> pools = storagePoolDao.findPoolsByTags(dcId, podId, clusterId, ScopeType.CLUSTER, dskCh.getTags(), true, VolumeApiServiceImpl.storageTagRuleExecutionTimeout.value());
         pools.addAll(storagePoolJoinDao.findStoragePoolByScopeAndRuleTags(dcId, podId, clusterId, ScopeType.CLUSTER, List.of(dskCh.getTags())));
         logger.debug(String.format("Found pools [%s] that match with tags [%s].", pools, Arrays.toString(dskCh.getTags())));
 
         // add remaining pools in cluster, that did not match tags, to avoid set
-        List<StoragePoolVO> allPools = storagePoolDao.findPoolsByTags(dcId, podId, clusterId, null, false, 0);
+        List<StoragePoolVO> allPools = storagePoolDao.findPoolsByTags(dcId, podId, clusterId, ScopeType.CLUSTER, null, false, 0);
         allPools.removeAll(pools);
         for (StoragePoolVO pool : allPools) {
             logger.trace(String.format("Adding pool [%s] to the 'avoid' set since it did not match any tags.", pool));
@@ -100,7 +100,7 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
             }
             StoragePool storagePool = (StoragePool)dataStoreMgr.getPrimaryDataStore(pool.getId());
             if (filter(avoid, storagePool, dskCh, plan)) {
-                logger.debug(String.format("Found suitable local storage pool [%s] to allocate disk [%s] to it, adding to list.", pool, dskCh));
+                logger.debug(String.format("Found suitable cluster storage pool [%s] to allocate disk [%s] to it, adding to list.", pool, dskCh));
                 suitablePools.add(storagePool);
             } else {
                 logger.debug(String.format("Adding storage pool [%s] to avoid set during allocation of disk [%s].", pool, dskCh));
@@ -116,14 +116,6 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-
-        if (configDao != null) {
-            Map<String, String> configs = configDao.getConfiguration(params);
-            String allocationAlgorithm = configs.get("vm.allocation.algorithm");
-            if (allocationAlgorithm != null) {
-                this.allocationAlgorithm = allocationAlgorithm;
-            }
-        }
         return true;
     }
 }

@@ -109,6 +109,10 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
     @Param(description = "the tags for the storage pool")
     private String tags;
 
+    @SerializedName(ApiConstants.STORAGE_ACCESS_GROUPS)
+    @Param(description = "the storage access groups for the storage pool", since = "4.21.0")
+    private String storageAccessGroups;
+
     @SerializedName(ApiConstants.NFS_MOUNT_OPTIONS)
     @Param(description = "the nfs mount options for the storage pool", since = "4.19.1")
     private String nfsMountOpts;
@@ -342,6 +346,14 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
 
     public void setTags(String tags) {
         this.tags = tags;
+    }
+
+    public String getStorageAccessGroups() {
+        return storageAccessGroups;
+    }
+
+    public void setStorageAccessGroups(String storageAccessGroups) {
+        this.storageAccessGroups = storageAccessGroups;
     }
 
     public Boolean getIsTagARule() {

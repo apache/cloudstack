@@ -20,10 +20,10 @@ Install tools and dependencies used for development:
 
 Set up Maven (3.6.0):
 
-    # wget http://www.us.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.tar.gz
-    # tar -zxvf apache-maven-3.6.3-bin.tar.gz -C /usr/local
+    # wget https://dlcdn.apache.org/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.tar.gz
+    # tar -zxvf apache-maven-3.9.9-bin.tar.gz -C /usr/local
     # cd /usr/local
-    # ln -s apache-maven-3.6.3 maven
+    # ln -s apache-maven-3.9.9 maven
     # echo export M2_HOME=/usr/local/maven >> ~/.bashrc # or .zshrc or .profile
     # echo export PATH=/usr/local/maven/bin:${PATH} >> ~/.bashrc # or .zshrc or .profile
     # source ~/.bashrc

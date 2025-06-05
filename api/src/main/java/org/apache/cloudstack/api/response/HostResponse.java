@@ -152,7 +152,7 @@ public class HostResponse extends BaseResponseWithAnnotations {
     @Deprecated
     @SerializedName("memoryallocated")
     @Param(description = "the amount of the host's memory currently allocated")
-    private Long memoryAllocated;
+    private long memoryAllocated;
 
     @SerializedName("memoryallocatedpercentage")
     @Param(description = "the amount of the host's memory currently allocated in percentage")
@@ -302,6 +302,22 @@ public class HostResponse extends BaseResponseWithAnnotations {
     @Param(description = "CPU Arch of the host", since = "4.20")
     private String arch;
 
+    @SerializedName(ApiConstants.STORAGE_ACCESS_GROUPS)
+    @Param(description = "comma-separated list of storage access groups for the host", since = "4.21.0")
+    private String storageAccessGroups;
+
+    @SerializedName(ApiConstants.CLUSTER_STORAGE_ACCESS_GROUPS)
+    @Param(description = "comma-separated list of storage access groups on the cluster", since = "4.21.0")
+    private String clusterStorageAccessGroups;
+
+    @SerializedName(ApiConstants.POD_STORAGE_ACCESS_GROUPS)
+    @Param(description = "comma-separated list of storage access groups on the pod", since = "4.21.0")
+    private String podStorageAccessGroups;
+
+    @SerializedName(ApiConstants.ZONE_STORAGE_ACCESS_GROUPS)
+    @Param(description = "comma-separated list of storage access groups on the zone", since = "4.21.0")
+    private String zoneStorageAccessGroups;
+
     @Override
     public String getObjectId() {
         return this.getId();
@@ -415,7 +431,7 @@ public class HostResponse extends BaseResponseWithAnnotations {
         this.memWithOverprovisioning=memWithOverprovisioning;
     }
 
-    public void setMemoryAllocated(Long memoryAllocated) {
+    public void setMemoryAllocated(long memoryAllocated) {
         this.memoryAllocated = memoryAllocated;
     }
 
@@ -489,6 +505,38 @@ public class HostResponse extends BaseResponseWithAnnotations {
 
     public void setHostTags(String hostTags) {
         this.hostTags = hostTags;
+    }
+
+    public String getStorageAccessGroups() {
+        return storageAccessGroups;
+    }
+
+    public void setStorageAccessGroups(String storageAccessGroups) {
+        this.storageAccessGroups = storageAccessGroups;
+    }
+
+    public String getClusterStorageAccessGroups() {
+        return clusterStorageAccessGroups;
+    }
+
+    public void setClusterStorageAccessGroups(String clusterStorageAccessGroups) {
+        this.clusterStorageAccessGroups = clusterStorageAccessGroups;
+    }
+
+    public String getPodStorageAccessGroups() {
+        return podStorageAccessGroups;
+    }
+
+    public void setPodStorageAccessGroups(String podStorageAccessGroups) {
+        this.podStorageAccessGroups = podStorageAccessGroups;
+    }
+
+    public String getZoneStorageAccessGroups() {
+        return zoneStorageAccessGroups;
+    }
+
+    public void setZoneStorageAccessGroups(String zoneStorageAccessGroups) {
+        this.zoneStorageAccessGroups = zoneStorageAccessGroups;
     }
 
     public String getExplicitHostTags() {
@@ -703,8 +751,8 @@ public class HostResponse extends BaseResponseWithAnnotations {
         return memoryTotal;
     }
 
-    public Long getMemoryAllocated() {
-        return memoryAllocated == null ? 0 : memoryAllocated;
+    public long getMemoryAllocated() {
+        return memoryAllocated;
     }
 
     public void setMemoryAllocatedPercentage(String memoryAllocatedPercentage) {

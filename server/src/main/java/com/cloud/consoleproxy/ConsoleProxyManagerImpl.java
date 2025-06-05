@@ -48,7 +48,6 @@ import org.apache.cloudstack.framework.security.keystore.KeystoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 
@@ -82,9 +81,9 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
+import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.ConsoleProxyConnectionInfo;
@@ -111,10 +110,8 @@ import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePoolStatus;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
@@ -281,9 +278,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         }
 
         @Override
-        public void onAgentDisconnect(long agentId, com.cloud.host.Status state) {
+        public void onAgentDisconnect(long agentId, Status state) {
 
-            if (state == com.cloud.host.Status.Alert || state == com.cloud.host.Status.Disconnected) {
+            if (state == Status.Alert || state == Status.Disconnected) {
                 HostVO host = _hostDao.findById(agentId);
                 if (host.getType() == Type.ConsoleProxy) {
                     String name = host.getName();
@@ -465,7 +462,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     public ConsoleProxyVO startProxy(long proxyVmId, boolean ignoreRestartSetting) {
         try {
             ConsoleProxyVO proxy = consoleProxyDao.findById(proxyVmId);
-            if (proxy.getState() == VirtualMachine.State.Running) {
+            if (proxy.getState() == State.Running) {
                 return proxy;
             }
 
@@ -474,7 +471,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                 return null;
             }
 
-            if (proxy.getState() == VirtualMachine.State.Stopped) {
+            if (proxy.getState() == State.Stopped) {
                 virtualMachineManager.advanceStart(proxy.getUuid(), null, null);
                 proxy = consoleProxyDao.findById(proxy.getId());
                 return proxy;
@@ -575,12 +572,13 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         }
 
         HypervisorType availableHypervisor = resourceManager.getAvailableHypervisor(dataCenterId);
-        VMTemplateVO template = vmTemplateDao.findSystemVMReadyTemplate(dataCenterId, availableHypervisor);
-        if (template == null) {
+        List<VMTemplateVO> templates = vmTemplateDao.findSystemVMReadyTemplates(dataCenterId, availableHypervisor,
+                ResourceManager.SystemVmPreferredArchitecture.valueIn(dataCenterId));
+        if (CollectionUtils.isEmpty(templates)) {
             throw new CloudRuntimeException("Not able to find the System templates or not downloaded in zone " + dataCenterId);
         }
 
-        Map<String, Object> context = createProxyInstance(dataCenterId, template);
+        Map<String, Object> context = createProxyInstance(dataCenterId, templates);
 
         long proxyVmId = (Long)context.get("proxyVmId");
         if (proxyVmId == 0) {
@@ -673,7 +671,26 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         return defaultNetworks.get(0);
     }
 
-    protected Map<String, Object> createProxyInstance(long dataCenterId, VMTemplateVO template) throws ConcurrentOperationException {
+    protected ConsoleProxyVO createOrUpdateConsoleProxy(ConsoleProxyVO proxy, long dataCenterId, long id, String name,
+            ServiceOffering serviceOffering, VMTemplateVO template, Account systemAccount) {
+        if (proxy == null) {
+            proxy = new ConsoleProxyVO(id, serviceOffering.getId(), name, template.getId(),
+                    template.getHypervisorType(), template.getGuestOSId(), dataCenterId, systemAccount.getDomainId(),
+                    systemAccount.getId(), accountManager.getSystemUser().getId(), 0,
+                    serviceOffering.isOfferHA());
+            proxy.setDynamicallyScalable(template.isDynamicallyScalable());
+            proxy.setLimitCpuUse(serviceOffering.getLimitCpuUse());
+            return consoleProxyDao.persist(proxy);
+        }
+        proxy.setTemplateId(template.getId());
+        proxy.setHypervisorType(template.getHypervisorType());
+        proxy.setGuestOSId(template.getGuestOSId());
+        proxy.setDynamicallyScalable(template.isDynamicallyScalable());
+        consoleProxyDao.update(proxy.getId(), proxy);
+        return proxy;
+    }
+
+    protected Map<String, Object> createProxyInstance(long dataCenterId, List<VMTemplateVO> templates) throws ConcurrentOperationException {
 
         long id = consoleProxyDao.getNextInSequence(Long.class, "id");
         String name = VirtualMachineName.getConsoleProxyName(id, instance);
@@ -702,18 +719,23 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         if (serviceOffering == null) {
             serviceOffering = serviceOfferingDao.findDefaultSystemOffering(ServiceOffering.consoleProxyDefaultOffUniqueName, ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dataCenterId));
         }
-        ConsoleProxyVO proxy =
-            new ConsoleProxyVO(id, serviceOffering.getId(), name, template.getId(), template.getHypervisorType(), template.getGuestOSId(), dataCenterId,
-                systemAcct.getDomainId(), systemAcct.getId(), accountManager.getSystemUser().getId(), 0, serviceOffering.isOfferHA());
-        proxy.setDynamicallyScalable(template.isDynamicallyScalable());
-        proxy.setLimitCpuUse(serviceOffering.getLimitCpuUse());
-        proxy = consoleProxyDao.persist(proxy);
-        try {
-            virtualMachineManager.allocate(name, template, serviceOffering, networks, plan, null);
-        } catch (InsufficientCapacityException e) {
-            String message = String.format("Unable to allocate proxy [%s] on zone [%s] due to [%s].", proxy.toString(), dataCenterId, e.getMessage());
-            logger.warn(message, e);
-            throw new CloudRuntimeException(message, e);
+        ConsoleProxyVO proxy = null;
+        for (final Iterator<VMTemplateVO> templateIterator = templates.iterator(); templateIterator.hasNext();) {
+            VMTemplateVO template = templateIterator.next();
+            proxy = createOrUpdateConsoleProxy(proxy, dataCenterId, id, name, serviceOffering, template, systemAcct);
+            try {
+                virtualMachineManager.allocate(name, template, serviceOffering, networks, plan,
+                        template.getHypervisorType());
+                proxy = consoleProxyDao.findById(proxy.getId());
+                virtualMachineManager.checkDeploymentPlan(proxy, template, serviceOffering, systemAcct, plan);
+                break;
+            } catch (InsufficientCapacityException e) {
+                if (templateIterator.hasNext()) {
+                    logger.debug("Unable to allocate proxy {} with {} in {} due to [{}]. Retrying with another template", proxy, template, dc, e.getMessage(), e);
+                    continue;
+                }
+                throw new CloudRuntimeException("Failed to allocate proxy [%s] in zone [%s] with available templates", e);
+            }
         }
 
         Map<String, Object> context = new HashMap<>();
@@ -737,8 +759,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         updateConsoleProxyStatus(answer.getDetails(), answer.getProxyVmId());
     }
 
-    public void handleAgentDisconnect(long agentId, com.cloud.host.Status state) {
-        if (state == com.cloud.host.Status.Alert || state == com.cloud.host.Status.Disconnected) {
+    public void handleAgentDisconnect(long agentId, Status state) {
+        if (state == Status.Alert || state == Status.Disconnected) {
             HostVO host = hostDao.findById(agentId);
             if (host.getType() == Type.ConsoleProxy) {
                 String name = host.getName();
@@ -789,8 +811,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             return false;
         }
         List<ConsoleProxyVO> l =
-            consoleProxyDao.getProxyListInStates(dcId, VirtualMachine.State.Starting, VirtualMachine.State.Running, VirtualMachine.State.Stopping,
-                VirtualMachine.State.Stopped, VirtualMachine.State.Migrating, VirtualMachine.State.Shutdown, VirtualMachine.State.Unknown);
+            consoleProxyDao.getProxyListInStates(dcId, State.Starting, State.Running, State.Stopping,
+                State.Stopped, State.Migrating, State.Shutdown, State.Unknown);
 
         String value = configurationDao.getValue(Config.ConsoleProxyLaunchMax.key());
         int launchLimit = NumbersUtil.parseInt(value, 10);
@@ -876,33 +898,21 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         }
         ZoneHostInfo zoneHostInfo = zoneHostInfoMap.get(dataCenter.getId());
         if (zoneHostInfo != null && isZoneHostReady(zoneHostInfo)) {
-            VMTemplateVO template = vmTemplateDao.findSystemVMReadyTemplate(dataCenter.getId(), HypervisorType.Any);
-            if (template == null) {
+            List<VMTemplateVO> templates = vmTemplateDao.findSystemVMReadyTemplates(dataCenter.getId(),
+                    HypervisorType.Any, null);
+            if (CollectionUtils.isEmpty(templates)) {
                 if (logger.isDebugEnabled()) {
                     logger.debug("System vm template is not ready at data center {}, wait until it is ready to launch console proxy vm", dataCenter);
                 }
                 return false;
             }
-            TemplateDataStoreVO templateHostRef;
-            if (template.isDirectDownload()) {
-                templateHostRef = templateDataStoreDao.findByTemplate(template.getId(), DataStoreRole.Image);
-            } else {
-                templateHostRef = templateDataStoreDao.findByTemplateZoneDownloadStatus(template.getId(), dataCenter.getId(), Status.DOWNLOADED);
-            }
-
-            if (templateHostRef != null) {
-                Boolean useLocalStorage = BooleanUtils.toBoolean(ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dataCenter.getId()));
-                boolean hasDatacenterStoragePoolHostInfo = consoleProxyDao.hasDatacenterStoragePoolHostInfo(dataCenter.getId(), !useLocalStorage);
-                if (hasDatacenterStoragePoolHostInfo) {
-                    return true;
-                } else {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Primary storage is not ready, wait until it is ready to launch console proxy");
-                    }
-                }
+            boolean useLocalStorage = BooleanUtils.toBoolean(ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dataCenter.getId()));
+            boolean hasDatacenterStoragePoolHostInfo = consoleProxyDao.hasDatacenterStoragePoolHostInfo(dataCenter.getId(), !useLocalStorage);
+            if (hasDatacenterStoragePoolHostInfo) {
+                return true;
             } else {
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Zone [{}] is ready, but console proxy template [{}] is not ready on secondary storage.", dataCenter, template);
+                    logger.debug("Primary storage is not ready, wait until it is ready to launch console proxy");
                 }
             }
         }
@@ -912,9 +922,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     private boolean isZoneHostReady(ZoneHostInfo zoneHostInfo) {
         int expectedFlags;
         if (useStorageVm) {
-            expectedFlags = RunningHostInfoAgregator.ZoneHostInfo.ROUTING_HOST_MASK;
+            expectedFlags = ZoneHostInfo.ROUTING_HOST_MASK;
         } else {
-            expectedFlags = RunningHostInfoAgregator.ZoneHostInfo.ALL_HOST_MASK;
+            expectedFlags = ZoneHostInfo.ALL_HOST_MASK;
         }
 
         return (zoneHostInfo.getFlags() & expectedFlags) == expectedFlags;
@@ -1093,7 +1103,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             proxy.setPrivateIpAddress(null);
             consoleProxyDao.update(proxy.getId(), proxy);
             consoleProxyDao.remove(vmId);
-            HostVO host = hostDao.findByTypeNameAndZoneId(proxy.getDataCenterId(), proxy.getHostName(), Host.Type.ConsoleProxy);
+            HostVO host = hostDao.findByTypeNameAndZoneId(proxy.getDataCenterId(), proxy.getHostName(), Type.ConsoleProxy);
             if (host != null) {
                 logger.debug("Removing host [{}] entry for proxy [{}].", host, proxy);
                 return hostDao.remove(host.getId());
@@ -1511,7 +1521,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             return false;
         }
 
-        List<ConsoleProxyVO> l = consoleProxyDao.getProxyListInStates(VirtualMachine.State.Starting, VirtualMachine.State.Stopping);
+        List<ConsoleProxyVO> l = consoleProxyDao.getProxyListInStates(State.Starting, State.Stopping);
         if (l.size() > 0) {
             if (logger.isDebugEnabled()) {
                 logger.debug("Zone {} has {} console proxy VM(s) in transition state", zone, l.size());
@@ -1568,7 +1578,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             return null;
         }
 
-        host.setType(com.cloud.host.Host.Type.ConsoleProxy);
+        host.setType(Type.ConsoleProxy);
         return host;
     }
 
@@ -1584,7 +1594,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     protected HostVO findConsoleProxyHostByName(String name) {
         QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
-        sc.and(sc.entity().getType(), Op.EQ, Host.Type.ConsoleProxy);
+        sc.and(sc.entity().getType(), Op.EQ, Type.ConsoleProxy);
         sc.and(sc.entity().getName(), Op.EQ, name);
         return sc.find();
     }

@@ -154,4 +154,9 @@ public class MigrateVolumeCommand extends Command {
     public Long getNewIops() {
         return newIops;
     }
+
+    @Override
+    public boolean isReconcile() {
+        return true;
+    }
 }
