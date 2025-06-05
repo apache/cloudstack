@@ -1441,6 +1441,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         capacities.add(ApiDBUtils.getStoragePoolUsedStats(poolId, clusterId, podId, zoneId));
         if (clusterId == null && podId == null) {
             capacities.add(ApiDBUtils.getSecondaryStorageUsedStats(poolId, zoneId));
+            capacities.add(ApiDBUtils.getObjectStorageUsedStats(zoneId));
         }
 
         List<CapacityResponse> capacityResponses = new ArrayList<CapacityResponse>();
@@ -2097,6 +2098,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<CapacityResponse> capacityResponses = new ArrayList<CapacityResponse>();
 
         for (Capacity summedCapacity : result) {
+            if (summedCapacity.getTotalCapacity() == 0 &&
+                    (summedCapacity.getCapacityType() == Capacity.CAPACITY_TYPE_BACKUP_STORAGE ||
+                     summedCapacity.getCapacityType() == Capacity.CAPACITY_TYPE_OBJECT_STORAGE)) {
+                continue;
+            }
             CapacityResponse capacityResponse = new CapacityResponse();
             capacityResponse.setCapacityTotal(summedCapacity.getTotalCapacity());
             if (summedCapacity.getAllocatedCapacity() != null) {
@@ -4988,8 +4994,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public BackupResponse createBackupResponse(Backup backup) {
-        return ApiDBUtils.newBackupResponse(backup);
+    public BackupResponse createBackupResponse(Backup backup, Boolean listVmDetails) {
+        return ApiDBUtils.newBackupResponse(backup, listVmDetails);
     }
 
     @Override
