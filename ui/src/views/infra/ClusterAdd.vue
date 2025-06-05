@@ -284,6 +284,7 @@ export default {
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
+        this.extensionsList.unshift({ id: null, name: '' })
         this.loading = false
       })
     },
@@ -375,7 +376,7 @@ export default {
       if (this.password) {
         data.password = this.password
       }
-      if (this.hypervisor === 'External') {
+      if (this.hypervisor === 'External' && this.extensionid) {
         data.extensionid = this.extensionid
       }
       api('addCluster', {}, 'POST', data).then(response => {
