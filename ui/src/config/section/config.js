@@ -374,12 +374,7 @@ export default {
           label: 'label.add.gpu.card',
           listView: true,
           dataView: false,
-          args: ['name', 'deviceid', 'devicename', 'vendorid', 'vendorname']
-          // mapping: {
-          //   deviceid: {
-          //     options: ['nvidia-gpu', 'amd-gpu']
-          //   }
-          // }
+          args: ['name', 'deviceid', 'devicename', 'vendorid', 'vendorname', 'videoram']
         },
         {
           api: 'updateGpuCard',
@@ -408,8 +403,9 @@ export default {
       docHelp: 'adminguide/guest_os.html#guest-os',
       icon: 'laptop-outlined',
       permission: ['listVgpuProfiles'],
-      columns: ['gpucardname', 'name', 'description', 'maxvgpuperphysicalgpu'],
-      details: ['gpucardname', 'name', 'description', 'maxvgpuperphysicalgpu'],
+      hidden: true,
+      columns: ['name', 'gpucardname', 'description', 'videoram', 'maxheads', 'resolution', 'maxvgpuperphysicalgpu'],
+      details: ['gpucardname', 'name', 'description', 'videoram', 'maxheads', 'maxresolutionx', 'maxresolutiony', 'maxvgpuperphysicalgpu'],
       actions: [
         {
           api: 'createVgpuProfile',
@@ -417,7 +413,7 @@ export default {
           label: 'label.add.vgpu.profile',
           listView: true,
           dataView: false,
-          args: ['name', 'description', 'gpucardid', 'maxvgpuperphysicalgpu']
+          args: ['name', 'description', 'gpucardid', 'videoram', 'maxheads', 'maxresolutionx', 'maxresolutiony', 'maxvgpuperphysicalgpu']
         },
         {
           api: 'updateVgpuProfile',
@@ -425,7 +421,7 @@ export default {
           label: 'label.edit',
           dataView: true,
           popup: true,
-          args: ['name', 'description', 'maxvgpuperphysicalgpu']
+          args: ['name', 'description', 'videoram', 'maxheads', 'maxresolutionx', 'maxresolutiony', 'maxvgpuperphysicalgpu']
         },
         {
           api: 'removeVgpuProfile',

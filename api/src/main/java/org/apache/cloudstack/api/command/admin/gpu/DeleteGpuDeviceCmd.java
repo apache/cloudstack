@@ -24,67 +24,46 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.GpuCardResponse;
-import org.apache.cloudstack.gpu.GpuCard;
+import org.apache.cloudstack.api.response.GpuDeviceResponse;
+import org.apache.cloudstack.api.response.SuccessResponse;
 
+import java.util.List;
 
-@APICommand(name = "updateGpuCard", description = "Updates a GPU card definition in the system",
-            responseObject = GpuCardResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
-            since = "4.21.0", authorized = {RoleType.Admin})
-public class UpdateGpuCardCmd extends BaseCmd {
+@APICommand(name = "deleteGpuDevice", description = "Deletes a vGPU profile from the system",
+        responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        since = "4.21.0", authorized = {RoleType.Admin})
+public class DeleteGpuDeviceCmd extends BaseCmd {
 
     /// //////////////////////////////////////////////////
     /// ///////////// API parameters /////////////////////
     /// //////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = GpuCardResponse.class, required = true,
-               description = "the ID of the GPU card")
-    private Long id;
-
-    @Parameter(name = ApiConstants.DEVICE_NAME, type = CommandType.STRING,
-               description = "the device name of the GPU card")
-    private String deviceName;
-
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the display name of the GPU card")
-    private String name;
-
-    @Parameter(name = ApiConstants.VENDOR_NAME, type = CommandType.STRING,
-               description = "the vendor name of the GPU card")
-    private String vendorName;
+    @Parameter(name = ApiConstants.IDS, type = CommandType.LIST, collectionType = CommandType.UUID,
+            entityType = GpuDeviceResponse.class, required = true,
+            description = "comma separated list of IDs of the GPU device")
+    private List<Long> ids;
 
     /// //////////////////////////////////////////////////
     /// //////////////// Accessors ///////////////////////
     /// //////////////////////////////////////////////////
 
-    public Long getId() {
-        return id;
-    }
-
-    public String getDeviceName() {
-        return deviceName;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getVendorName() {
-        return vendorName;
+    public List<Long> getIds() {
+        return ids;
     }
 
     @Override
     public void execute() {
         try {
-            GpuCard gpuCard = gpuService.updateGpuCard(this);
-            if (gpuCard != null) {
-                GpuCardResponse response = new GpuCardResponse(gpuCard);
-                response.setResponseName(getCommandName());
+            boolean success = gpuService.deleteGpuDevices(this);
+            if (success) {
+                SuccessResponse response = new SuccessResponse(getCommandName());
                 setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update GPU card");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete vGPU profile");
             }
         } catch (Exception e) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update GPU card: " + e.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR,
+                    "Failed to delete vGPU profile: " + e.getMessage());
         }
     }
 

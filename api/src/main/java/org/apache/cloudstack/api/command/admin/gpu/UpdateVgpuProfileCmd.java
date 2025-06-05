@@ -25,39 +25,47 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.VgpuProfileResponse;
-import org.apache.cloudstack.gpu.GpuService;
 
-import javax.inject.Inject;
 
-@APICommand(name = "updateVgpuProfile", description = "Updates a vGPU profile in the system", responseObject =
-        VgpuProfileResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.21.0",
-        authorized = {RoleType.Admin})
+@APICommand(name = "updateVgpuProfile", description = "Updates a vGPU profile in the system",
+            responseObject = VgpuProfileResponse.class, requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false, since = "4.21.0", authorized = {RoleType.Admin})
 public class UpdateVgpuProfileCmd extends BaseCmd {
-
-    @Inject
-    private GpuService gpuService;
 
     /// //////////////////////////////////////////////////
     /// ///////////// API parameters /////////////////////
     /// //////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VgpuProfileResponse.class,
-            required = true, description = "the ID of the vGPU profile")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VgpuProfileResponse.class, required = true,
+               description = "the ID of the vGPU profile")
     private Long id;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the vGPU profile")
     private String profileName;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "the description of the vGPU"
-                                                                                         + " profile")
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING,
+               description = "the description of the vGPU profile")
     private String description;
 
-    @Parameter(name = ApiConstants.MAX_VGPU_PER_PHYSICAL_GPU, type = CommandType.LONG, description = "the maximum "
-                                                                                                     + "number of "
-                                                                                                     + "vGPUs per "
-                                                                                                     + "physical GPU")
+    @Parameter(name = ApiConstants.MAX_VGPU_PER_PHYSICAL_GPU, type = CommandType.LONG,
+               description = "the maximum number of vGPUs per physical GPU")
     private Long maxVgpuPerPgpu;
+
+    @Parameter(name = ApiConstants.VIDEORAM, type = CommandType.LONG,
+               description = "the video RAM size in MB")
+    private Long videoRam;
+
+    @Parameter(name = ApiConstants.MAXHEADS, type = CommandType.LONG,
+               description = "the maximum number of display heads")
+    private Long maxHeads;
+
+    @Parameter(name = ApiConstants.MAXRESOLUTIONX, type = CommandType.LONG,
+               description = "the maximum X resolution")
+    private Long maxResolutionX;
+
+    @Parameter(name = ApiConstants.MAXRESOLUTIONY, type = CommandType.LONG,
+               description = "the maximum Y resolution")
+    private Long maxResolutionY;
 
     /// //////////////////////////////////////////////////
     /// //////////////// Accessors ///////////////////////
@@ -77,6 +85,22 @@ public class UpdateVgpuProfileCmd extends BaseCmd {
 
     public Long getMaxVgpuPerPgpu() {
         return maxVgpuPerPgpu;
+    }
+
+    public Long getVideoRam() {
+        return videoRam;
+    }
+
+    public Long getMaxHeads() {
+        return maxHeads;
+    }
+
+    public Long getMaxResolutionX() {
+        return maxResolutionX;
+    }
+
+    public Long getMaxResolutionY() {
+        return maxResolutionY;
     }
 
     @Override

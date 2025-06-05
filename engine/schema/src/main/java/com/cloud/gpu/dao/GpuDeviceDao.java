@@ -24,6 +24,8 @@ import java.util.List;
 
 public interface GpuDeviceDao extends GenericDao<GpuDeviceVO, Long> {
 
+    List<GpuDeviceVO> listByIds(List<Long> ids);
+
     /**
      * Find GPU device by host ID and bus address
      *
@@ -49,31 +51,21 @@ public interface GpuDeviceDao extends GenericDao<GpuDeviceVO, Long> {
      */
     List<GpuDeviceVO> listByVmId(long vmId);
 
-    /**
-     * List GPU devices by card ID
-     *
-     * @param cardId the GPU card ID
-     * @return list of GpuDeviceVO
-     */
-    List<GpuDeviceVO> listByCardId(long cardId);
-
-    /**
-     * List vGPU devices by parent GPU device ID
-     *
-     * @param parentGpuDeviceId the parent GPU device ID
-     * @return list of GpuDeviceVO
-     */
-    List<GpuDeviceVO> listByParentGpuDeviceId(long parentGpuDeviceId);
-
     boolean isVgpuProfileInUse(long vgpuProfileId);
 
     boolean isGpuCardInUse(long cardId);
 
     List<GpuDeviceVO> listByHostAndVm(Long hostId, long vmId);
 
-    List<GpuDeviceVO> listDevicesForAllocation(Long hostId, List<Long> vgpuProfileIdList);
+    List<GpuDeviceVO> listDevicesForAllocation(Long hostId, Long vgpuProfileId);
 
     Pair<List<GpuDeviceVO>, Integer> searchAndCountGpuDevices(
             Long id, String keyword, Long hostId, Long vmId, Long gpuCardId, Long vgpuProfileId,
             Long startIndex, Long pageSize);
+
+    List<Long> getDistinctGpuCardIds();
+
+    List<Long> getDistinctVgpuProfileIds();
+
+    List<GpuDeviceVO> listByParentGpuDeviceId(Long parentGpuDeviceId);
 }

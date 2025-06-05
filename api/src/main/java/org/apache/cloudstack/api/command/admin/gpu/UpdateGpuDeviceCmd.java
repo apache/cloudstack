@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.admin.gpu;
 
 import com.cloud.user.Account;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -27,44 +28,37 @@ import org.apache.cloudstack.api.response.GpuCardResponse;
 import org.apache.cloudstack.api.response.GpuDeviceResponse;
 import org.apache.cloudstack.api.response.VgpuProfileResponse;
 import org.apache.cloudstack.gpu.GpuDevice;
-import org.apache.cloudstack.gpu.GpuService;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.inject.Inject;
 
 @APICommand(name = "updateGpuDevice", description = "Updates an existing GPU device",
-        responseObject = GpuDeviceResponse.class, since = "4.21.0", requestHasSensitiveInfo = false,
-        responseHasSensitiveInfo = false)
+            responseObject = GpuDeviceResponse.class, since = "4.21.0", requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
 public class UpdateGpuDeviceCmd extends BaseCmd {
 
-    @Inject
-    private GpuService gpuService;
-
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = GpuDeviceResponse.class, required = true,
-            description = "ID of the GPU device to update")
+               description = "ID of the GPU device to update")
     private Long id;
 
     @Parameter(name = ApiConstants.GPU_CARD_ID, type = CommandType.UUID, entityType = GpuCardResponse.class,
-            description = "New GPU card ID")
+               description = "New GPU card ID")
     private Long gpuCardId;
 
     @Parameter(name = ApiConstants.VGPU_PROFILE_ID, type = CommandType.UUID, entityType = VgpuProfileResponse.class,
-            description = "New vGPU profile ID")
+               description = "New vGPU profile ID")
     private Long vgpuProfileId;
 
     @Parameter(name = "type", type = CommandType.STRING, description = "New type of GPU device (PCI, MDEV, VGPUOnly)")
     private String type;
 
     @Parameter(name = "parentgpudeviceid", type = CommandType.UUID, entityType = GpuDeviceResponse.class,
-            description = "New parent GPU device ID (for virtual GPU devices)")
+               description = "New parent GPU device ID (for virtual GPU devices)")
     private Long parentGpuDeviceId;
 
-    @Parameter(name = ApiConstants.NUMA_NODE, type = CommandType.STRING, description = "New NUMA node of the GPU device")
+    @Parameter(name = ApiConstants.NUMA_NODE, type = CommandType.STRING,
+               description = "New NUMA node of the GPU device")
     private String numaNode;
-
-    @Parameter(name = ApiConstants.PCI_ROOT, type = CommandType.STRING, description = "New PCI root of the GPU device")
-    private String pciRoot;
 
     public Long getId() {
         return id;
@@ -95,10 +89,6 @@ public class UpdateGpuDeviceCmd extends BaseCmd {
 
     public String getNumaNode() {
         return numaNode;
-    }
-
-    public String getPciRoot() {
-        return pciRoot;
     }
 
     @Override

@@ -36,8 +36,9 @@ public class MockGpuDeviceVO implements MockGpuDevice, InternalIdentity {
     @Column(name = "id")
     private long id;
 
+    // PCI address for parent devices, MDEV UUID for MDEV devices, VF PCI address for VF devices
     @Column(name = "bus_address", nullable = false)
-    private String busAddress; // PCI address for parent devices, MDEV UUID for MDEV devices, VF PCI address for VF devices
+    private String busAddress;
 
     @Column(name = "vendor_id", nullable = false)
     private String vendorId;
@@ -60,11 +61,22 @@ public class MockGpuDeviceVO implements MockGpuDevice, InternalIdentity {
     @Column(name = "max_vgpu_per_pgpu", nullable = false)
     private Long maxVgpuPerPgpu = 1L;
 
+    @Column(name = "video_ram", nullable = false)
+    private Long videoRam = 0L;
+
+    @Column(name = "max_resolution_x", nullable = false)
+    private Long maxResolutionX = 0L;
+
+    @Column(name = "max_resolution_y", nullable = false)
+    private Long maxResolutionY = 0L;
+
+    @Column(name = "max_heads", nullable = false)
+    private Long maxHeads = 1L;
+
     @Column(name = "state")
     @Enumerated(EnumType.STRING)
     private State state;
 
-    // New fields to support KVM-like behavior
     @Column(name = "device_type")
     @Enumerated(EnumType.STRING)
     private GpuDevice.DeviceType deviceType = GpuDevice.DeviceType.PCI;
@@ -87,8 +99,8 @@ public class MockGpuDeviceVO implements MockGpuDevice, InternalIdentity {
     public MockGpuDeviceVO() {
     }
 
-    public MockGpuDeviceVO(String busAddress, String vendorId, String deviceId,
-                           String vendorName, String deviceName, Long hostId) {
+    public MockGpuDeviceVO(String busAddress, String vendorId, String deviceId, String vendorName, String deviceName,
+            Long hostId) {
         this.busAddress = busAddress;
         this.vendorId = vendorId;
         this.deviceId = deviceId;
@@ -173,14 +185,6 @@ public class MockGpuDeviceVO implements MockGpuDevice, InternalIdentity {
         this.vmId = vmId;
     }
 
-    public Long getMaxVgpuPerPgpu() {
-        return maxVgpuPerPgpu;
-    }
-
-    public void setMaxVgpuPerPgpu(Long maxVgpuPerGpu) {
-        this.maxVgpuPerPgpu = maxVgpuPerGpu;
-    }
-
     @Override
     public State getState() {
         return state;
@@ -190,7 +194,46 @@ public class MockGpuDeviceVO implements MockGpuDevice, InternalIdentity {
         this.state = state;
     }
 
-    // New getters and setters for enhanced fields
+    public Long getMaxVgpuPerPgpu() {
+        return maxVgpuPerPgpu;
+    }
+
+    public void setMaxVgpuPerPgpu(Long maxVgpuPerGpu) {
+        this.maxVgpuPerPgpu = maxVgpuPerGpu;
+    }
+
+    public Long getVideoRam() {
+        return videoRam;
+    }
+
+    public void setVideoRam(Long videoRam) {
+        this.videoRam = videoRam;
+    }
+
+    public Long getMaxResolutionX() {
+        return maxResolutionX;
+    }
+
+    public void setMaxResolutionX(Long maxResolutionX) {
+        this.maxResolutionX = maxResolutionX;
+    }
+
+    public Long getMaxResolutionY() {
+        return maxResolutionY;
+    }
+
+    public void setMaxResolutionY(Long maxResolutionY) {
+        this.maxResolutionY = maxResolutionY;
+    }
+
+    public Long getMaxHeads() {
+        return maxHeads;
+    }
+
+    public void setMaxHeads(Long maxHeads) {
+        this.maxHeads = maxHeads;
+    }
+
     public GpuDevice.DeviceType getDeviceType() {
         return deviceType;
     }

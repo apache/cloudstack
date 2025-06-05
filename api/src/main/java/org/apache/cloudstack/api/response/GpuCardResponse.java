@@ -49,10 +49,6 @@ public class GpuCardResponse extends BaseResponse {
     @Param(description = "the vendor ID of the GPU card")
     protected String vendorId;
 
-    @SerializedName("vramsize")
-    @Param(description = "the VRAM size of the GPU card in MB")
-    protected Long vramSize;
-
     public GpuCardResponse(GpuCard gpuCard) {
         super("gpucard");
         id = gpuCard.getUuid();
@@ -109,13 +105,5 @@ public class GpuCardResponse extends BaseResponse {
 
     public void setVendorId(String vendorId) {
         this.vendorId = vendorId;
-    }
-
-    public Long getVramSize() {
-        return vramSize;
-    }
-
-    public void setVramSize(Long vramSize) {
-        this.vramSize = vramSize;
     }
 }

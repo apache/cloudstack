@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.gpu;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
@@ -24,25 +25,19 @@ import org.apache.cloudstack.api.response.GpuDeviceResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.gpu.GpuService;
 
-import javax.inject.Inject;
 
-@APICommand(name = "discoverGpuDevices",
-        description = "Discovers available GPU devices on a host",
-        responseObject = GpuDeviceResponse.class, requestHasSensitiveInfo = false,
-        responseHasSensitiveInfo = false, since = "4.21.0")
+@APICommand(name = "discoverGpuDevices", description = "Discovers available GPU devices on a host",
+            responseObject = GpuDeviceResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+            since = "4.21.0", authorized = {RoleType.Admin})
 public class DiscoverGpuDevicesCmd extends BaseListCmd {
-
-    @Inject
-    private GpuService gpuService;
 
     /// //////////////////////////////////////////////////
     /// ///////////// API parameters /////////////////////
     /// //////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HostResponse.class,
-            required = true, description = "ID of the host")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HostResponse.class, required = true,
+               description = "ID of the host")
     private Long id;
 
     /// //////////////////////////////////////////////////

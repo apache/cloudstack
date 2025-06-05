@@ -245,73 +245,39 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
      */
     private void createPhysicalGpuDevices(long hostId) {
         // 1. Create passthrough-only GPU devices across different NUMA nodes and PCI roots
-        createPassthroughGpu(hostId, "00:01.0", "1234", "5678", "Apache CloudStack Simulator",
-                "Simulated Graphics Card Pro", 0, "pci0000:00");
-        createPassthroughGpu(hostId, "00:02.0", "1234", "5678", "Apache CloudStack Simulator",
-                "Simulated Graphics Card Pro", 0, "pci0000:00");
-        createPassthroughGpu(hostId, "00:03.0", "1234", "6789", "Apache CloudStack Simulator",
-                "Simulated Graphics Card Basic", 1, "pci0000:00");
-        createPassthroughGpu(hostId, "00:04.0", "1234", "6789", "Apache CloudStack Simulator",
-                "Simulated Graphics Card Basic", 1, "pci0000:00");
-
+        createPassthroughGpu(hostId, "00:01.0", "1234", "5678", "ACS",
+                "Simulated Graphics Card Basic", 0, "pci0000:00", 8192L, 4096L, 2160L, 1L);
+        createPassthroughGpu(hostId, "00:02.0", "1234", "5678", "ACS",
+                "Simulated Graphics Card Basic", 0, "pci0000:00", 8192L, 4096L, 2160L, 1L);
         // Additional passthrough GPUs on different PCI roots
-        createPassthroughGpu(hostId, "17:00.0", "1234", "5678", "Apache CloudStack Simulator",
-                "Simulated Graphics Card Pro", 2, "pci0000:17");
-        createPassthroughGpu(hostId, "3a:00.0", "1234", "6789", "Apache CloudStack Simulator",
-                "Simulated Graphics Card Basic", 3, "pci0000:3a");
-        createPassthroughGpu(hostId, "5d:00.0", "1234", "5678", "Apache CloudStack Simulator",
-                "Simulated Graphics Card Pro", 2, "pci0000:5d");
-        createPassthroughGpu(hostId, "80:00.0", "1234", "6789", "Apache CloudStack Simulator",
-                "Simulated Graphics Card Basic", 3, "pci0000:80");
-
-        // 2. Create GPUs with Virtual Functions support on different NUMA nodes
-        MockGpuDeviceVO vfParentDevice1 = createVfCapableGpu(hostId, "00:05.0", "1234", "789a", "Apache CloudStack Simulator",
-                        "Simulated Graphics Card VF", 0, "pci0000:00");
-        createVirtualFunctions(hostId, vfParentDevice1);
-
-        MockGpuDeviceVO vfParentDevice2 = createVfCapableGpu(hostId, "00:06.0", "1234", "789a", "Apache CloudStack Simulator",
-                "Simulated Graphics Card VF", 1, "pci0000:00");
-        createVirtualFunctions(hostId, vfParentDevice2);
-
-        MockGpuDeviceVO vfParentDevice3 = createVfCapableGpu(hostId, "17:01.0", "1234", "789a", "Apache CloudStack Simulator",
-                "Simulated Graphics Card VF", 2, "pci0000:17");
-        createVirtualFunctions(hostId, vfParentDevice3);
-
-        MockGpuDeviceVO vfParentDevice4 = createVfCapableGpu(hostId, "3a:01.0", "1234", "789a", "Apache CloudStack Simulator",
-                "Simulated Graphics Card VF", 3, "pci0000:3a");
-        createVirtualFunctions(hostId, vfParentDevice4);
+        createPassthroughGpu(hostId, "00:03.0", "1234", "5678", "ACS",
+                "Simulated Graphics Card Basic", 1, "pci0000:17", 8192L, 4096L, 2160L, 1L);
+        createPassthroughGpu(hostId, "00:04.0", "1234", "5678", "ACS",
+                "Simulated Graphics Card Basic", 1, "pci0000:5d", 8192L, 4096L, 2160L, 1L);
 
         // 3. Create GPUs with MDEV support across different NUMA nodes
-        MockGpuDeviceVO mdevParentDevice1 = createMdevCapableGpu(hostId, "00:07.0", "1234", "89ab", "Apache CloudStack Simulator",
-                "Simulated Graphics Card MDEV", 0, "pci0000:00");
+        MockGpuDeviceVO mdevParentDevice1 = createMdevCapableGpu(hostId, "00:05.0", "1234", "89ab", "ACS",
+                "Simulated Graphics Card Pro", 0, "pci0000:00");
         createMdevDevices(hostId, mdevParentDevice1);
 
-        MockGpuDeviceVO mdevParentDevice2 = createMdevCapableGpu(hostId, "00:08.0", "1234", "89ab", "Apache CloudStack Simulator",
-                "Simulated Graphics Card MDEV", 1, "pci0000:00");
+        MockGpuDeviceVO mdevParentDevice2 = createMdevCapableGpu(hostId, "00:06.0", "1234", "89ab", "ACS",
+                "Simulated Graphics Card Pro", 0, "pci0000:00");
         createMdevDevices(hostId, mdevParentDevice2);
 
-        MockGpuDeviceVO mdevParentDevice3 = createMdevCapableGpu(hostId, "17:02.0", "1234", "89ab", "Apache CloudStack Simulator",
-                "Simulated Graphics Card MDEV", 2, "pci0000:17");
+        MockGpuDeviceVO mdevParentDevice3 = createMdevCapableGpu(hostId, "00:07.0", "1234", "89ab", "ACS",
+                "Simulated Graphics Card Pro", 1, "pci0000:17");
         createMdevDevices(hostId, mdevParentDevice3);
 
-        MockGpuDeviceVO mdevParentDevice4 = createMdevCapableGpu(hostId, "3a:02.0", "1234", "89ab", "Apache CloudStack Simulator",
-                "Simulated Graphics Card MDEV", 3, "pci0000:3a");
+        MockGpuDeviceVO mdevParentDevice4 = createMdevCapableGpu(hostId, "00:08.0", "1234", "89ab", "ACS",
+                "Simulated Graphics Card Pro", 1, "pci0000:3a");
         createMdevDevices(hostId, mdevParentDevice4);
-
-        MockGpuDeviceVO mdevParentDevice5 = createMdevCapableGpu(hostId, "5d:01.0", "1234", "89ab", "Apache CloudStack Simulator",
-                "Simulated Graphics Card MDEV", 2, "pci0000:5d");
-        createMdevDevices(hostId, mdevParentDevice5);
-
-        MockGpuDeviceVO mdevParentDevice6 = createMdevCapableGpu(hostId, "80:01.0", "1234", "89ab", "Apache CloudStack Simulator",
-                "Simulated Graphics Card MDEV", 3, "pci0000:80");
-        createMdevDevices(hostId, mdevParentDevice6);
     }
 
     /**
      * Creates a basic passthrough-only GPU device
      */
     private void createPassthroughGpu(long hostId, String busAddress, String vendorId, String deviceId,
-                                      String vendorName, String deviceName, Integer numaNode, String pciRoot) {
+                                      String vendorName, String deviceName, Integer numaNode, String pciRoot, Long videoRam, Long resolutionX, Long resolutionY, Long maxHeads) {
         MockGpuDeviceVO device = new MockGpuDeviceVO();
         device.setBusAddress(busAddress);
         device.setVendorId(vendorId);
@@ -325,60 +291,11 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
         device.setPassthroughEnabled(true);
         device.setNumaNode(numaNode);
         device.setPciRoot(pciRoot);
+        device.setVideoRam(videoRam);
+        device.setMaxResolutionX(resolutionX);
+        device.setMaxResolutionY(resolutionY);
+        device.setMaxHeads(maxHeads);
         _mockGpuDeviceDao.persist(device);
-    }
-
-    /**
-     * Creates a GPU device capable of Virtual Functions
-     */
-    private MockGpuDeviceVO createVfCapableGpu(long hostId, String busAddress, String vendorId, String deviceId,
-                                    String vendorName, String deviceName, Integer numaNode, String pciRoot) {
-        MockGpuDeviceVO device = new MockGpuDeviceVO();
-        device.setBusAddress(busAddress);
-        device.setVendorId(vendorId);
-        device.setDeviceId(deviceId);
-        device.setVendorName(vendorName);
-        device.setDeviceName(deviceName);
-        device.setHostId(hostId);
-        device.setState(MockGpuDevice.State.Available);
-        device.setDeviceType(GpuDevice.DeviceType.PCI);
-        device.setProfileName("passthrough");
-        device.setPassthroughEnabled(false);
-        device.setNumaNode(numaNode);
-        device.setPciRoot(pciRoot);
-        MockGpuDeviceVO savedDevice = _mockGpuDeviceDao.persist(device);
-        return savedDevice;
-    }
-
-    /**
-     * Creates Virtual Function devices as children of a VF-capable GPU
-     */
-    private void createVirtualFunctions(long hostId, MockGpuDeviceVO parentDevice) {
-        // Create 3 Virtual Function devices
-        String[] vfProfiles = {"VF-P1", "VF-P2", "VF-P2"};
-        Long[] maxVgpuPerGpu = {2L, 4L, 4L};
-        String parentBussAdressPrefix = parentDevice.getBusAddress().substring(0, parentDevice.getBusAddress().length() - 1);
-        String[] vfAddresses = {parentBussAdressPrefix + "1", parentBussAdressPrefix + "2", parentBussAdressPrefix + "3"};
-
-        for (int i = 0; i < vfAddresses.length; i++) {
-            MockGpuDeviceVO vfDevice = new MockGpuDeviceVO();
-            vfDevice.setBusAddress(vfAddresses[i]);
-            vfDevice.setVendorId("1234");
-            vfDevice.setDeviceId("789a"); // Different device ID for VF
-            vfDevice.setVendorName("Apache CloudStack Simulator");
-            vfDevice.setDeviceName("Simulated Graphics Card VF");
-            vfDevice.setHostId(hostId);
-            vfDevice.setState(MockGpuDevice.State.Available);
-            vfDevice.setDeviceType(GpuDevice.DeviceType.PCI);
-            vfDevice.setParentDeviceId(parentDevice.getId());
-            vfDevice.setProfileName(vfProfiles[i]);
-            vfDevice.setPassthroughEnabled(true);
-            vfDevice.setMaxVgpuPerPgpu(maxVgpuPerGpu[i]);
-            // VF devices inherit NUMA node and PCI root from parent
-            vfDevice.setNumaNode(parentDevice.getNumaNode());
-            vfDevice.setPciRoot(parentDevice.getPciRoot());
-            _mockGpuDeviceDao.persist(vfDevice);
-        }
     }
 
     /**
@@ -399,8 +316,7 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
         device.setPassthroughEnabled(false); // MDEV parent doesn't use passthrough
         device.setNumaNode(numaNode);
         device.setPciRoot(pciRoot);
-        MockGpuDeviceVO savedDevice = _mockGpuDeviceDao.persist(device);
-        return savedDevice;
+        return _mockGpuDeviceDao.persist(device);
     }
 
     /**
@@ -408,18 +324,22 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
      */
     private void createMdevDevices(long hostId, MockGpuDeviceVO parentDevice) {
         // Create MDEV devices with different profiles (similar to NVIDIA/Intel naming)
-        String[] mdevProfiles = { "sim-8q", "sim-4q", "sim-2q", "sim-1q", "sim-1q" };
+        String[] mdevProfiles = { "sim-8q", "sim-4q", "sim-2q", "sim-2q"};
         String[] mdevUuids = {UUID.randomUUID().toString(), UUID.randomUUID().toString(), UUID.randomUUID().toString(),
-                              UUID.randomUUID().toString(), UUID.randomUUID().toString()};
-        Long[] maxVgpuPerGpu = {2L, 4L, 8L, 16L, 16L};
+                              UUID.randomUUID().toString()};
+        Long[] videoRam = {8192L, 4096L, 2048L, 2048L};
+        Long[] resoultionX = {4096L, 1920L, 1920L, 1920L};
+        Long[] resoultionY = {2160L, 1080L, 1080L, 1080L};
+        Long[] maxVgpuPerGpu = {2L, 4L, 8L, 8L};
+        Long[] maxHeads = {4L, 2L, 1L, 1L};
 
         for (int i = 0; i < mdevProfiles.length; i++) {
             MockGpuDeviceVO mdevDevice = new MockGpuDeviceVO();
             mdevDevice.setBusAddress(mdevUuids[i]); // MDEV uses UUID as bus address
-            mdevDevice.setVendorId("1234");
-            mdevDevice.setDeviceId("89ab"); // Different device ID for MDEV
-            mdevDevice.setVendorName("Apache CloudStack Simulator");
-            mdevDevice.setDeviceName("Simulated Graphics Card MDEV");
+            mdevDevice.setVendorId(parentDevice.getVendorId());
+            mdevDevice.setDeviceId(parentDevice.getDeviceId());
+            mdevDevice.setVendorName(parentDevice.getVendorName());
+            mdevDevice.setDeviceName(parentDevice.getDeviceName() + " " + mdevProfiles[i]);
             mdevDevice.setHostId(hostId);
             mdevDevice.setState(MockGpuDevice.State.Available);
             mdevDevice.setDeviceType(GpuDevice.DeviceType.MDEV);
@@ -427,6 +347,10 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
             mdevDevice.setProfileName(mdevProfiles[i]);
             mdevDevice.setPassthroughEnabled(true); // MDEV devices don't use passthrough
             mdevDevice.setMaxVgpuPerPgpu(maxVgpuPerGpu[i]);
+            mdevDevice.setVideoRam(videoRam[i]);
+            mdevDevice.setMaxResolutionX(resoultionX[i]);
+            mdevDevice.setMaxResolutionY(resoultionY[i]);
+            mdevDevice.setMaxHeads(maxHeads[i]);
             // MDEV devices inherit NUMA node and PCI root from parent
             mdevDevice.setNumaNode(parentDevice.getNumaNode());
             mdevDevice.setPciRoot(parentDevice.getPciRoot());
@@ -716,10 +640,15 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
                     Integer numaNode = mockGpuDevice.getNumaNode();
                     String pciRoot = mockGpuDevice.getPciRoot();
 
-                    VgpuTypesInfo vgpuTypesInfo = new VgpuTypesInfo(mockGpuDevice.getDeviceType(), modelName, modelName, busAddress,
-                            vendorId, vendorName, deviceId, deviceName, numaNode.toString(), pciRoot);
+                    VgpuTypesInfo vgpuTypesInfo = new VgpuTypesInfo(mockGpuDevice.getDeviceType(),
+                            vendorName + " " + deviceName, modelName, busAddress, vendorId, vendorName,
+                            deviceId, deviceName, numaNode.toString(), pciRoot);
                     vgpuTypesInfo.setPassthroughEnabled(isPassthrough);
                     vgpuTypesInfo.setMaxVgpuPerGpu(maxVgpuPerGpu);
+                    vgpuTypesInfo.setVideoRam(mockGpuDevice.getVideoRam());
+                    vgpuTypesInfo.setMaxResolutionX(mockGpuDevice.getMaxResolutionX());
+                    vgpuTypesInfo.setMaxResolutionY(mockGpuDevice.getMaxResolutionY());
+                    vgpuTypesInfo.setMaxHeads(mockGpuDevice.getMaxHeads());
 
                     if (mockGpuDevice.getVmId() != null) {
                         MockVMVO mockVm = _mockVmDao.findById(mockGpuDevice.getVmId());

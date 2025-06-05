@@ -68,7 +68,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.gpu.GpuDevice;
 import org.apache.cloudstack.gpu.GpuService;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -3556,9 +3555,12 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         host.setSpeed(ssCmd.getSpeed());
         host.setHypervisorType(hyType);
         host.setHypervisorVersion(ssCmd.getHypervisorVersion());
-        gpuService.addGpuDevicesToHost(host, ssCmd.getGpuDevices());
+        // The below method needs the host to be persisted in the DB to save the GPU devices for the host
+        if (host.getId() > 0) {
+            gpuService.addGpuDevicesToHost(host, ssCmd.getGpuDevices());
+        }
         if (CollectionUtils.isNotEmpty(ssCmd.getGpuDevices())) {
-            host.setGpuGroups(gpuService.getGpuGroupDetailsFromGpuDevices(host));
+            host.setGpuGroups(gpuService.getGpuGroupDetailsFromGpuDevicesOnHost(host));
         } else {
             host.setGpuGroups(ssCmd.getGpuGroupDetails());
         }
@@ -4229,7 +4231,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             String vgpuType = vgpuProfile.getName();
             return isGPUDeviceAvailable(host, groupName, vgpuType);
         } else {
-            // Use GPU device
             return gpuService.isGPUDeviceAvailable(host, vmId, vgpuProfile, gpuCount);
         }
     }
@@ -4243,7 +4244,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             String vgpuType = vgpuProfile.getName();
             return getGPUDevice(vm.getHostId(), groupName, vgpuType);
         } else {
-            // Use GPU device
             return gpuService.getGPUDevice(vm, vgpuProfile, gpuCount);
         }
     }
@@ -4263,7 +4263,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public void updateGPUDetails(final long hostId, final HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails) {
-        // TODO: Handle for KVM & Simulator
         // Update GPU group capacity
         final TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
@@ -4274,15 +4273,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public void updateGPUDetailsForVmStop(final VirtualMachine vm, final GPUDeviceTO gpuDevice) {
-        // TODO: Handle for KVM & Simulator
-        // Update GPU group capacity
         HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails;
         if (gpuDevice == null || gpuDevice.getGpuDevices() != null) {
             HostVO host = _hostDao.findById(vm.getHostId());
             if (GpuDetachOnStop.valueIn(vm.getDomainId())) {
-                gpuService.deallocateGpuDevicesForVmOnHost(vm.getId(), GpuDevice.State.Free);
+                gpuService.deallocateGpuDevicesForVmOnHost(vm.getId());
             }
-            groupDetails = gpuService.getGpuGroupDetailsFromGpuDevices(host);
+            groupDetails = gpuService.getGpuGroupDetailsFromGpuDevicesOnHost(host);
         } else {
             groupDetails = gpuDevice.getGroupDetails();
         }
@@ -4294,8 +4291,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = gpuDevice.getGroupDetails();
         if (gpuDevice.getGpuDevices() != null) {
             HostVO host = _hostDao.findById(hostId);
-            gpuService.assignGpuDevicesToVmOnHost(vmId, hostId, gpuDevice.getGpuDevices());
-            groupDetails = gpuService.getGpuGroupDetailsFromGpuDevices(host);
+            gpuService.allocateGpuDevicesToVmOnHost(vmId, hostId, gpuDevice.getGpuDevices());
+            groupDetails = gpuService.getGpuGroupDetailsFromGpuDevicesOnHost(host);
         }
         updateGPUDetails(hostId, groupDetails);
     }
@@ -4317,7 +4314,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails;
                 gpuService.addGpuDevicesToHost(host, gpuStatsAnswer.getGpuDevices());
                 if (CollectionUtils.isNotEmpty(gpuStatsAnswer.getGpuDevices())) {
-                    groupDetails = gpuService.getGpuGroupDetailsFromGpuDevices(host);
+                    groupDetails = gpuService.getGpuGroupDetailsFromGpuDevicesOnHost(host);
                 } else {
                     groupDetails = gpuStatsAnswer.getGroupDetails();
                 }

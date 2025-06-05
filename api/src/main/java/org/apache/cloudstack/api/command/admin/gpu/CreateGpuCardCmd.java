@@ -30,17 +30,12 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.GpuCardResponse;
 import org.apache.cloudstack.gpu.GpuCard;
-import org.apache.cloudstack.gpu.GpuService;
 
-import javax.inject.Inject;
 
 @APICommand(name = "createGpuCard", description = "Creates a GPU card definition in the system",
-        responseObject = GpuCardResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.21.0")
+        responseObject = GpuCardResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        since = "4.21.0")
 public class CreateGpuCardCmd extends BaseCmd {
-
-    @Inject
-    private GpuService gpuService;
 
     /// //////////////////////////////////////////////////
     /// ///////////// API parameters /////////////////////
@@ -54,8 +49,8 @@ public class CreateGpuCardCmd extends BaseCmd {
             description = "the device name of the GPU card")
     private String deviceName;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description
-            = "the display name of the GPU card")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true,
+            description = "the display name of the GPU card")
     private String name;
 
     @Parameter(name = ApiConstants.VENDOR_NAME, type = CommandType.STRING, required = true,
@@ -65,6 +60,11 @@ public class CreateGpuCardCmd extends BaseCmd {
     @Parameter(name = ApiConstants.VENDOR_ID, type = CommandType.STRING, required = true,
             description = "the vendor ID of the GPU card")
     private String vendorId;
+
+    // Optional parameters for the passthrough vGPU profile display properties
+    @Parameter(name = ApiConstants.VIDEORAM, type = CommandType.LONG,
+            description = "the video RAM size in MB for the passthrough vGPU profile")
+    private Long videoRam;
 
     /// //////////////////////////////////////////////////
     /// //////////////// Accessors ///////////////////////
@@ -90,10 +90,13 @@ public class CreateGpuCardCmd extends BaseCmd {
         return vendorId;
     }
 
+    public Long getVideoRam() {
+        return videoRam;
+    }
+
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException,
-            ServerApiException, ConcurrentOperationException,
-            ResourceAllocationException, NetworkRuleConflictException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException,
+            ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
             GpuCard gpuCard = gpuService.createGpuCard(this);
             if (gpuCard != null) {
@@ -101,12 +104,10 @@ public class CreateGpuCardCmd extends BaseCmd {
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR,
-                        "Failed to create GPU card");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create GPU card");
             }
         } catch (Exception e) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR,
-                    "Failed to create GPU card: " + e.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create GPU card: " + e.getMessage());
         }
     }
 

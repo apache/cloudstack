@@ -26,25 +26,19 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.GpuCardResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.cloudstack.gpu.GpuService;
 
-import javax.inject.Inject;
 
-@APICommand(name = "deleteGpuCard", description = "Deletes a GPU card definition from the system", responseObject =
-        SuccessResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.21.0",
-        authorized = {RoleType.Admin})
+@APICommand(name = "deleteGpuCard", description = "Deletes a GPU card definition from the system",
+            responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+            since = "4.21.0", authorized = {RoleType.Admin})
 public class DeleteGpuCardCmd extends BaseCmd {
-
-    @Inject
-    private GpuService gpuService;
 
     /// //////////////////////////////////////////////////
     /// ///////////// API parameters /////////////////////
     /// //////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = GpuCardResponse.class,
-            required = true, description = "the ID of the GPU card")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = GpuCardResponse.class, required = true,
+               description = "the ID of the GPU card")
     private Long id;
 
     /// //////////////////////////////////////////////////

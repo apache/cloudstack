@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.admin.gpu;
 
 import com.cloud.user.Account;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -28,72 +29,43 @@ import org.apache.cloudstack.api.response.GpuDeviceResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.VgpuProfileResponse;
 import org.apache.cloudstack.gpu.GpuDevice;
-import org.apache.cloudstack.gpu.GpuService;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.inject.Inject;
 
-@APICommand(name = "createGpuDevice",
-        description = "Creates a GPU device manually on a host",
-        responseObject = GpuDeviceResponse.class,
-        since = "4.21.0",
-        requestHasSensitiveInfo = false,
-        responseHasSensitiveInfo = false)
+@APICommand(name = "createGpuDevice", description = "Creates a GPU device manually on a host",
+            responseObject = GpuDeviceResponse.class, since = "4.21.0", requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
 public class CreateGpuDeviceCmd extends BaseCmd {
 
-    @Inject
-    private GpuService gpuService;
-
-    @Parameter(name = ApiConstants.HOST_ID,
-            type = CommandType.UUID,
-            entityType = HostResponse.class,
-            required = true,
-            description = "ID of the host where the GPU device is located")
+    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, required = true,
+               description = "ID of the host where the GPU device is located")
     private Long hostId;
 
-    @Parameter(name = ApiConstants.BUS_ADDRESS,
-            type = CommandType.STRING,
-            required = true,
-            description = "PCI bus address of the GPU device (e.g., 0000:01:00.0) or UUID for MDEV devices.")
+    @Parameter(name = ApiConstants.BUS_ADDRESS, type = CommandType.STRING, required = true,
+               description = "PCI bus address of the GPU device (e.g., 0000:01:00.0) or UUID for MDEV devices.")
     private String busAddress;
 
-    @Parameter(name = ApiConstants.GPU_CARD_ID,
-            type = CommandType.UUID,
-            entityType = GpuCardResponse.class,
-            required = true,
-            description = "ID of the GPU card type")
+    @Parameter(name = ApiConstants.GPU_CARD_ID, type = CommandType.UUID, entityType = GpuCardResponse.class,
+               required = true, description = "ID of the GPU card type")
     private Long gpuCardId;
 
-    @Parameter(name = ApiConstants.VGPU_PROFILE_ID,
-            type = CommandType.UUID,
-            entityType = VgpuProfileResponse.class,
-            required = true,
-            description = "ID of the vGPU profile")
+    @Parameter(name = ApiConstants.VGPU_PROFILE_ID, type = CommandType.UUID, entityType = VgpuProfileResponse.class,
+               required = true, description = "ID of the vGPU profile")
     private Long vgpuProfileId;
 
-    @Parameter(name = ApiConstants.TYPE,
-            type = CommandType.STRING,
-            description = "Type of GPU device (PCI, MDEV, VGPUOnly). Defaults to PCI.")
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING,
+               description = "Type of GPU device (PCI, MDEV, VGPUOnly). Defaults to PCI.")
     private String type;
 
-    @Parameter(name = ApiConstants.PARENT_GPU_DEVICE_ID,
-            type = CommandType.UUID,
-            entityType = GpuDeviceResponse.class,
-            description = "ID of the parent GPU device (for virtual GPU devices)")
+    @Parameter(name = ApiConstants.PARENT_GPU_DEVICE_ID, type = CommandType.UUID, entityType = GpuDeviceResponse.class,
+               description = "ID of the parent GPU device (for virtual GPU devices)")
     private Long parentGpuDeviceId;
 
-    @Parameter(name = ApiConstants.NUMA_NODE,
-            type = CommandType.STRING,
-            entityType = GpuDeviceResponse.class,
-            description = "NUMA node of the GPU device (e.g., 0, 1, etc.). This is optional and can be used to specify the NUMA node for the GPU device which is used during allocation. Defaults to -1")
+    @Parameter(name = ApiConstants.NUMA_NODE, type = CommandType.STRING,
+            description = "NUMA node of the GPU device (e.g., 0, 1, etc.). This is optional and can be used to "
+                          + "specify the NUMA node for the GPU device which is used during allocation. Defaults to -1")
     private String numaNode;
-
-    @Parameter(name = ApiConstants.PCI_ROOT,
-            type = CommandType.STRING,
-            entityType = GpuDeviceResponse.class,
-            description = "PCI root of the GPU device.")
-    private String pciRoot;
 
     public Long getHostId() {
         return hostId;
@@ -131,10 +103,6 @@ public class CreateGpuDeviceCmd extends BaseCmd {
             return "-1"; // Default value for NUMA node
         }
         return numaNode;
-    }
-
-    public String getPciRoot() {
-        return pciRoot;
     }
 
     @Override

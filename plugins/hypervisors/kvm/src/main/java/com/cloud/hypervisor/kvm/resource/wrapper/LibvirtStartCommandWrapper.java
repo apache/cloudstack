@@ -85,8 +85,6 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
 
             libvirtComputingResource.createVifs(vmSpec, vm);
 
-            libvirtComputingResource.attachGpuDevices(vmSpec, vm);
-
             logger.debug("starting " + vmName + ": " + vm.toString());
             String vmInitialSpecification = vm.toString();
             String vmFinalSpecification = performXmlTransformHook(vmInitialSpecification, libvirtComputingResource);

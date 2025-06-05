@@ -24,6 +24,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import org.springframework.stereotype.Component;
 
+import javax.inject.Inject;
 import java.util.List;
 
 @Component
@@ -31,15 +32,16 @@ public class GpuCardDaoImpl extends GenericDaoBase<GpuCardVO, Long> implements G
 
     private final SearchBuilder<GpuCardVO> allFieldSearch;
 
+    @Inject
+    private GpuDeviceDao gpuDeviceDao;
+
     public GpuCardDaoImpl() {
         allFieldSearch = createSearchBuilder();
         allFieldSearch.and("name", allFieldSearch.entity().getName(), SearchCriteria.Op.EQ);
         allFieldSearch.and("vendorId", allFieldSearch.entity().getVendorId(), SearchCriteria.Op.EQ);
-        allFieldSearch.and("vendorName", allFieldSearch.entity().getVendorName(),
-                SearchCriteria.Op.EQ);
+        allFieldSearch.and("vendorName", allFieldSearch.entity().getVendorName(), SearchCriteria.Op.EQ);
         allFieldSearch.and("deviceId", allFieldSearch.entity().getDeviceId(), SearchCriteria.Op.EQ);
-        allFieldSearch.and("deviceName", allFieldSearch.entity().getDeviceName(),
-                SearchCriteria.Op.EQ);
+        allFieldSearch.and("deviceName", allFieldSearch.entity().getDeviceName(), SearchCriteria.Op.EQ);
         allFieldSearch.done();
     }
 
@@ -66,9 +68,8 @@ public class GpuCardDaoImpl extends GenericDaoBase<GpuCardVO, Long> implements G
     }
 
     @Override
-    public Pair<List<GpuCardVO>, Integer> searchAndCountGpuCards(
-            Long id, String keyword, String vendorId, String vendorName, String deviceId,
-            String deviceName, Long startIndex, Long pageSize
+    public Pair<List<GpuCardVO>, Integer> searchAndCountGpuCards(Long id, String keyword, String vendorId,
+            String vendorName, String deviceId, String deviceName, boolean activeOnly, Long startIndex, Long pageSize
     ) {
 
         Filter searchFilter = new Filter(GpuCardVO.class, "id", true, startIndex, pageSize);
@@ -95,6 +96,9 @@ public class GpuCardDaoImpl extends GenericDaoBase<GpuCardVO, Long> implements G
         if (deviceName != null) {
             sb.and("deviceName", sb.entity().getDeviceName(), SearchCriteria.Op.EQ);
         }
+        if (activeOnly) {
+            sb.and("ids", sb.entity().getId(), SearchCriteria.Op.IN);
+        }
         sb.done();
 
         // Build search criteria
@@ -118,6 +122,13 @@ public class GpuCardDaoImpl extends GenericDaoBase<GpuCardVO, Long> implements G
         }
         if (deviceName != null) {
             sc.setParameters("deviceName", deviceName);
+        }
+        if (activeOnly) {
+            List<Long> cardIds = gpuDeviceDao.getDistinctGpuCardIds();
+            if (cardIds.isEmpty()) {
+                return new Pair<>(List.of(), 0);
+            }
+            sc.setParameters("ids", cardIds.toArray());
         }
 
         return searchAndCount(sc, searchFilter);

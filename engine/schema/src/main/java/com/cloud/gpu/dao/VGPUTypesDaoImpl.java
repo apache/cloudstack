@@ -39,25 +39,27 @@ import java.util.Map.Entry;
 @Component
 public class VGPUTypesDaoImpl extends GenericDaoBase<VGPUTypesVO, Long> implements VGPUTypesDao {
 
+    @Inject
+    protected HostGpuGroupsDao hostGpuGroupsDao;
+
     private static final String LIST_ZONE_POD_CLUSTER_WIDE_GPU_CAPACITIES =
             "SELECT host_gpu_groups.group_name, vgpu_type, max_vgpu_per_pgpu, SUM(remaining_capacity) AS remaining_capacity, SUM(max_capacity) AS total_capacity FROM" +
                     " `cloud`.`vgpu_types` INNER JOIN `cloud`.`host_gpu_groups` ON vgpu_types.gpu_group_id = host_gpu_groups.id INNER JOIN `cloud`.`host`" +
                     " ON host_gpu_groups.host_id = host.id WHERE host.type =  'Routing' AND vgpu_types.max_capacity > 0 AND host.data_center_id = ?";
-    private final SearchBuilder<VGPUTypesVO> _searchByGroupId;
-    private final SearchBuilder<VGPUTypesVO> _searchByGroupIdVGPUType;
-    @Inject
-    protected HostGpuGroupsDao _hostGpuGroupsDao;
+
+    private final SearchBuilder<VGPUTypesVO> searchByGroupId;
+    private final SearchBuilder<VGPUTypesVO> searchByGroupIdVGPUType;
 
     public VGPUTypesDaoImpl() {
 
-        _searchByGroupId = createSearchBuilder();
-        _searchByGroupId.and("groupId", _searchByGroupId.entity().getGpuGroupId(), SearchCriteria.Op.EQ);
-        _searchByGroupId.done();
+        searchByGroupId = createSearchBuilder();
+        searchByGroupId.and("groupId", searchByGroupId.entity().getGpuGroupId(), SearchCriteria.Op.EQ);
+        searchByGroupId.done();
 
-        _searchByGroupIdVGPUType = createSearchBuilder();
-        _searchByGroupIdVGPUType.and("groupId", _searchByGroupIdVGPUType.entity().getGpuGroupId(), SearchCriteria.Op.EQ);
-        _searchByGroupIdVGPUType.and("vgpuType", _searchByGroupIdVGPUType.entity().getVgpuType(), SearchCriteria.Op.EQ);
-        _searchByGroupIdVGPUType.done();
+        searchByGroupIdVGPUType = createSearchBuilder();
+        searchByGroupIdVGPUType.and("groupId", searchByGroupIdVGPUType.entity().getGpuGroupId(), SearchCriteria.Op.EQ);
+        searchByGroupIdVGPUType.and("vgpuType", searchByGroupIdVGPUType.entity().getVgpuType(), SearchCriteria.Op.EQ);
+        searchByGroupIdVGPUType.done();
     }
 
     @Override
@@ -103,14 +105,14 @@ public class VGPUTypesDaoImpl extends GenericDaoBase<VGPUTypesVO, Long> implemen
 
     @Override
     public List<VGPUTypesVO> listByGroupId(long groupId) {
-        SearchCriteria<VGPUTypesVO> sc = _searchByGroupId.create();
+        SearchCriteria<VGPUTypesVO> sc = searchByGroupId.create();
         sc.setParameters("groupId", groupId);
         return listBy(sc);
     }
 
     @Override
     public VGPUTypesVO findByGroupIdVGPUType(long groupId, String vgpuType) {
-        SearchCriteria<VGPUTypesVO> sc = _searchByGroupIdVGPUType.create();
+        SearchCriteria<VGPUTypesVO> sc = searchByGroupIdVGPUType.create();
         sc.setParameters("groupId", groupId);
         sc.setParameters("vgpuType", vgpuType);
         return findOneBy(sc);
@@ -121,7 +123,7 @@ public class VGPUTypesDaoImpl extends GenericDaoBase<VGPUTypesVO, Long> implemen
         Iterator<Entry<String, HashMap<String, VgpuTypesInfo>>> it1 = groupDetails.entrySet().iterator();
         while (it1.hasNext()) {
             Entry<String, HashMap<String, VgpuTypesInfo>> entry = it1.next();
-            HostGpuGroupsVO gpuGroup = _hostGpuGroupsDao.findByHostIdGroupName(hostId, entry.getKey());
+            HostGpuGroupsVO gpuGroup = hostGpuGroupsDao.findByHostIdGroupName(hostId, entry.getKey());
             HashMap<String, VgpuTypesInfo> values = entry.getValue();
             Iterator<Entry<String, VgpuTypesInfo>> it2 = values.entrySet().iterator();
             while (it2.hasNext()) {

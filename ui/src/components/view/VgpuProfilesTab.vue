@@ -130,7 +130,7 @@ export default {
   data () {
     return {
       tabLoading: false,
-      columnKeys: ['name', 'gpucardname', 'maxvgpuperphysicalgpu'],
+      columnKeys: ['name', 'videoram', 'maxheads', 'resolution', 'maxvgpuperphysicalgpu'],
       selectedColumnKeys: [],
       columns: [],
       cols: [],

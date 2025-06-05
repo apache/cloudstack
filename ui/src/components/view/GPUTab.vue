@@ -17,170 +17,139 @@
 
 <template>
   <div>
-    <!-- Toolbar for bulk actions -->
-    <div style="margin-bottom: 16px;">
+    <!-- GPU Device Management Buttons (before tabs, for Host resource type only) -->
+    <div
+      v-if="resourceType === 'Host'"
+      style="margin-bottom: 16px;"
+    >
       <a-space wrap>
-        <!-- Bulk GPU Device Actions -->
+        <!-- GPU Device Discovery -->
         <a-popconfirm
-          :title="$t('message.confirm.enable.gpu.devices', { count: selectedDeviceCount })"
-          @confirm="bulkEnableGpuDevices"
+          :title="$t('message.confirm.discover.gpu.devices')"
+          @confirm="discoverGpuDevices"
           okText="Yes"
           cancelText="No"
         >
-          <a-button
-            type="primary"
-            :disabled="!hasSelectedDevices"
-          >
-            {{ $t('label.gpu.devices.enable') }}
+          <a-button type="default">
+            {{ $t('label.discover.gpu.devices') }}
           </a-button>
         </a-popconfirm>
 
-        <a-popconfirm
-          :title="$t('message.confirm.disable.gpu.devices', { count: selectedDeviceCount })"
-          @confirm="bulkDisableGpuDevices"
-          okText="Yes"
-          cancelText="No"
+        <!-- Add GPU Device (Admin Only) -->
+        <a-button
+          v-if="isAdmin"
+          type="primary"
+          @click="showAddGpuDeviceModal"
         >
-          <a-button
-            type="primary"
-            danger
-            :disabled="!hasSelectedDevices"
-          >
-            {{ $t('label.gpu.devices.disable') }}
-          </a-button>
-        </a-popconfirm>
+          {{ $t('label.gpu.devices.add') }}
+        </a-button>
       </a-space>
     </div>
 
-    <a-table
-      :loading="tabLoading"
-      :columns="columns"
-      :dataSource="items"
-      :pagination="false"
-      :rowKey="record => record.id"
-      :childrenColumnName="'children'"
-      :defaultExpandAllRows="true"
-      :rowSelection="{
-        selectedRowKeys: selectedGpuDeviceIds,
-        onChange: onGpuDeviceSelectionChange,
-        getCheckboxProps: record => ({
-          disabled: record.state === 'Disabled'
-        })
-      }"
-      :customRow="customRowProps"
-      size="small"
-    >
-      <template #bodyCell="{ column, record }">
-        <template v-if="column.key === 'busaddress'">
-          <span :style="{ paddingLeft: record.parentgpudeviceid ? '20px' : '0px' }">
-            {{ record.busaddress }}
-          </span>
-        </template>
-        <template v-else-if="column.key === 'virtualmachinename'">
-          <router-link
-            v-if="record.virtualmachinename && record.virtualmachineid"
-            :to="{ path: '/vm/' + record.virtualmachineid }"
-          >
-            {{ record.virtualmachinename }}
-          </router-link>
-          <span v-else>{{ record.virtualmachinename }}</span>
-        </template>
-        <template v-else-if="column.key === 'gpucardname'">
-          <router-link
-            v-if="record.gpucardid"
-            :to="{ path: '/gpucard/' + record.gpucardid }"
-            :title="record.gpucardname"
-            class="text-ellipsis"
-          >
-            {{ record.gpucardname }}
-          </router-link>
-          <span
-            v-else
-            :title="record.gpucardname"
-            class="text-ellipsis"
-          >{{ record.gpucardname }}</span>
-        </template>
-        <template v-else-if="column.key === 'vgpuprofilename'">
-          <router-link
-            v-if="record.vgpuprofileid"
-            :to="{ path: '/vgpuprofile/' + record.vgpuprofileid }"
-            :title="record.vgpuprofilename"
-            class="text-ellipsis"
-          >
-            {{ record.vgpuprofilename }}
-          </router-link>
-          <span
-            v-else
-            :title="record.vgpuprofilename"
-            class="text-ellipsis"
-          >{{ record.vgpuprofilename }}</span>
-        </template>
-        <template v-else-if="column.key === 'hostname'">
-          <router-link
-            v-if="record.hostid"
-            :to="{ path: '/host/' + record.hostid }"
-            :title="record.hostname"
-            class="text-ellipsis"
-          >
-            {{ record.hostname }}
-          </router-link>
-          <span
-            v-else
-            :title="record.hostname"
-            class="text-ellipsis"
-          >{{ record.hostname }}</span>
-        </template>
-      </template>
+    <!-- For VMs: Show tabs only for admin, summary only for regular users -->
+    <div v-if="resourceType === 'VirtualMachine' && !isAdmin">
+      <!-- Summary only for non-admin users viewing VMs -->
+      <GPUSummaryTab
+        ref="summaryTabSimple"
+        :resource="resource"
+        :resourceType="resourceType"
+        :loading="loading"
+        @refresh="$emit('refresh')"
+      />
+    </div>
 
-      <!-- Custom Filter Dropdown for Column Selection -->
-      <template #customFilterDropdown="{ column }">
-        <div
-          v-if="column.key === 'columnFilter'"
-          style="padding: 8px; min-width: 200px;"
+    <!-- For admins on VMs or all users on other resource types: Show tabs -->
+    <a-tabs
+      v-else
+      defaultActiveKey="summary"
+      :tabBarStyle="{ marginBottom: '16px' }"
+    >
+      <!-- Summary Tab -->
+      <a-tab-pane
+        key="summary"
+        :tab="$t('label.gpu.summary')"
+      >
+        <GPUSummaryTab
+          ref="summaryTab"
+          :resource="resource"
+          :resourceType="resourceType"
+          :loading="loading"
+          @refresh="$emit('refresh')"
+        />
+      </a-tab-pane>
+
+      <!-- Devices Tab -->
+      <a-tab-pane
+        key="devices"
+        :tab="$t('label.gpu.devices')"
+      >
+        <GPUDevicesTab
+          ref="devicesTab"
+          :resource="resource"
+          :resourceType="resourceType"
+          :loading="loading"
+          @refresh="$emit('refresh')"
+        />
+      </a-tab-pane>
+    </a-tabs>
+
+    <!-- Add GPU Device Modal -->
+    <a-modal
+      :visible="addGpuDeviceModalVisible"
+      :title="$t('label.gpu.devices.add')"
+      @ok="addGpuDevice"
+      @cancel="addGpuDeviceModalVisible = false"
+    >
+      <a-form layout="vertical">
+        <a-form-item
+          v-for="field in createFormFields"
+          :key="field.key"
+          :label="field.label"
+          :required="field.required"
         >
-          <div style="margin-bottom: 8px; font-weight: 500;">{{ $t('label.select.columns') }}</div>
-          <div style="margin-bottom: 8px;">
-            <a-space>
-              <a-button
-                size="small"
-                @click="selectAllColumns"
-              >
-                {{ $t('label.select.all') }}
-              </a-button>
-              <a-button
-                size="small"
-                @click="clearAllColumns"
-              >
-                {{ $t('label.clear.all') }}
-              </a-button>
-            </a-space>
-          </div>
-          <div style="max-height: 200px; overflow-y: auto;">
-            <div
-              v-for="columnKey in columnKeys"
-              :key="columnKey"
-              style="margin-bottom: 4px;"
+          <!-- Input field -->
+          <a-input
+            v-if="field.type === 'input'"
+            v-model:value="gpuDeviceForm[field.key]"
+            :placeholder="field.placeholder"
+          />
+
+          <!-- Select field -->
+          <a-select
+            v-else-if="field.type === 'select'"
+            v-model:value="gpuDeviceForm[field.key]"
+            :placeholder="field.placeholder"
+            :loading="field.loading"
+            :show-search="field.showSearch"
+            :filter-option="filterOption"
+            :allow-clear="field.allowClear"
+            @change="field.onChange"
+          >
+            <a-select-option
+              v-for="option in field.options"
+              :key="option.value"
+              :value="option.value"
             >
-              <a-checkbox
-                :checked="selectedColumnKeys.includes(columnKey)"
-                @change="updateSelectedColumns(columnKey)"
-              >
-                {{ $t('label.' + String(columnKey).toLowerCase()) }}
-              </a-checkbox>
-            </div>
-          </div>
-        </div>
-      </template>
-    </a-table>
+              {{ option.label }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
 <script>
 import { api } from '@/api'
-import { genericCompare } from '@/utils/sort.js'
+import GPUSummaryTab from '@/components/view/GPUSummaryTab'
+import GPUDevicesTab from '@/components/view/GPUDevicesTab'
 
 export default {
   name: 'GPUTab',
+  components: {
+    GPUSummaryTab,
+    GPUDevicesTab
+  },
   props: {
     resource: {
       type: Object,
@@ -198,173 +167,239 @@ export default {
   },
   data () {
     return {
-      tabLoading: false,
-      columnKeys: ['busaddress', 'gpucardname', 'vgpuprofilename', 'gpudevicetype', 'resourcestate', 'state', 'virtualmachinename'],
-      selectedColumnKeys: [],
-      columns: [],
-      items: [],
-      selectedGpuDeviceIds: []
+      addGpuDeviceModalVisible: false,
+      gpuDeviceForm: {},
+      gpuCards: [],
+      vgpuProfiles: [],
+      parentGpuDevices: [],
+      loadingGpuCards: false,
+      loadingVgpuProfiles: false,
+      loadingParentDevices: false,
+      createApiParams: {},
+      createFormFields: []
     }
   },
   computed: {
-    hasSelectedDevices () {
-      return this.selectedGpuDeviceIds.length > 0
-    },
-    selectedDeviceCount () {
-      return this.selectedGpuDeviceIds.length
+    isAdmin () {
+      return this.$store.getters.userInfo.roletype === 'Admin'
     }
   },
   created () {
-    this.selectedColumnKeys = this.columnKeys
-    this.updateColumns()
-    this.fetchData()
-  },
-  watch: {
-    resource: {
-      handler () {
-        this.fetchGPUDevices()
-      }
-    }
+    this.fetchApiParams()
   },
   methods: {
-    validateBulkOperation () {
-      if (this.selectedGpuDeviceIds.length === 0) {
-        this.$notification.warning({
-          message: this.$t('label.warning'),
-          description: this.$t('message.please.select.gpu.devices')
-        })
-        return false
-      }
-      return true
-    },
-    handleBulkOperationSuccess (messageKey, count) {
-      this.$notification.success({
-        message: this.$t('label.success'),
-        description: this.$t(messageKey, { count })
-      })
-      this.selectedGpuDeviceIds = []
-      this.fetchGPUDevices()
-    },
-    fetchData () {
-      this.fetchGPUDevices()
-    },
-    fetchGPUDevices () {
-      this.items = []
+    discoverGpuDevices () {
       if (!this.resource.id) {
         return
       }
-      const params = {}
-      if (this.resourceType === 'Host') {
-        params.hostid = this.resource.id
+
+      api('discoverGpuDevices', {
+        id: this.resource.id
+      }).then(() => {
+        this.$notification.success({
+          message: this.$t('label.success'),
+          description: this.$t('message.success.discover.gpu.devices')
+        })
+        this.refresh()
+      }).catch(error => {
+        this.$notifyError(error)
+      })
+    },
+    fetchApiParams () {
+      this.createApiParams = this.$getApiParams('createGpuDevice') || {}
+      this.generateFormFields()
+    },
+    generateFormFields () {
+      const fields = []
+      const fieldOrder = ['busaddress', 'gpucardid', 'vgpuprofileid', 'type', 'numanode', 'parentgpudeviceid']
+
+      fieldOrder.forEach(paramName => {
+        if (paramName === 'hostid') return // Skip hostid as it's auto-populated
+
+        const param = this.createApiParams[paramName]
+        if (!param) return
+
+        const field = {
+          key: paramName,
+          label: this.$t(`label.${paramName}`),
+          required: param.required || ['busaddress', 'gpucardid', 'vgpuprofileid'].includes(paramName),
+          placeholder: param.description,
+          type: this.getFieldType(paramName, param)
+        }
+
+        // Add special configurations for dropdown fields
+        if (field.type === 'select') {
+          field.options = this.getFieldOptions(paramName)
+          field.loading = this.getFieldLoading(paramName)
+          field.showSearch = true
+          field.allowClear = false
+
+          if (paramName === 'gpucardid') {
+            field.onChange = this.onGpuCardChange
+          }
+        }
+
+        fields.push(field)
+      })
+
+      this.createFormFields = fields
+    },
+    getFieldType (paramName, param) {
+      const selectFields = ['gpucardid', 'vgpuprofileid', 'parentgpudeviceid', 'type']
+      return selectFields.includes(paramName) ? 'select' : 'input'
+    },
+    getFieldOptions (paramName) {
+      switch (paramName) {
+        case 'gpucardid':
+          return this.gpuCards.map(card => ({ value: card.id, label: card.name }))
+        case 'vgpuprofileid':
+          return this.vgpuProfiles.map(profile => ({ value: profile.id, label: profile.name }))
+        case 'parentgpudeviceid':
+          return this.parentGpuDevices.map(device => ({
+            value: device.id,
+            label: `${device.gpucardname} - ${device.busaddress}`
+          }))
+        case 'type':
+          return [
+            { value: 'PCI', label: 'PCI' },
+            { value: 'MDEV', label: 'MDEV' },
+            { value: 'VGPUOnly', label: 'VGPUOnly' }
+          ]
+        default:
+          return []
       }
-      this.tabLoading = true
-      api('listGpuDevices', params).then(json => {
-        const devices = json?.listgpudevicesresponse?.gpudevice || []
-        this.items = this.buildGpuTree(devices)
+    },
+    getFieldLoading (paramName) {
+      switch (paramName) {
+        case 'gpucardid':
+          return this.loadingGpuCards
+        case 'vgpuprofileid':
+          return this.loadingVgpuProfiles
+        case 'parentgpudeviceid':
+          return this.loadingParentDevices
+        default:
+          return false
+      }
+    },
+    onGpuCardChange (gpucardid) {
+      // Clear the selected vGPU profile when GPU card changes
+      this.gpuDeviceForm.vgpuprofileid = null
+      // Fetch vGPU profiles for the selected GPU card
+      if (gpucardid) {
+        this.fetchVgpuProfiles(gpucardid)
+      } else {
+        this.vgpuProfiles = []
+      }
+    },
+    fetchGpuCards () {
+      this.loadingGpuCards = true
+      api('listGpuCards').then(json => {
+        this.gpuCards = json?.listgpucardsresponse?.gpucard || []
+        this.generateFormFields() // Refresh form fields with new data
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
-        this.tabLoading = false
+        this.loadingGpuCards = false
       })
     },
-    buildGpuTree (devices) {
-      // Separate parent devices and vGPUs
-      const parentDevices = []
-      const vgpuDevices = []
-      for (const device of devices) {
-        if (device.parentgpudeviceid) {
-          vgpuDevices.push(device)
-        } else {
-          parentDevices.push(device)
-        }
+    fetchVgpuProfiles (gpucardid = null) {
+      this.loadingVgpuProfiles = true
+      const params = {}
+      if (gpucardid) {
+        params.gpucardid = gpucardid
       }
-
-      // Group vGPUs by their parent ID
-      const vgpusByParent = {}
-      vgpuDevices.forEach(vgpu => {
-        const parentId = vgpu.parentgpudeviceid
-        if (!vgpusByParent[parentId]) {
-          vgpusByParent[parentId] = []
-        }
-        vgpusByParent[parentId].push(vgpu)
+      api('listVgpuProfiles', params).then(json => {
+        this.vgpuProfiles = json?.listvgpuprofilesresponse?.vgpuprofile || []
+        this.generateFormFields() // Refresh form fields with new data
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.loadingVgpuProfiles = false
       })
-
-      // Build tree structure
-      const treeData = parentDevices.map(parent => {
-        const children = vgpusByParent[parent.id] || []
-        return {
-          ...parent,
-          children: children.length > 0 ? children : undefined
-        }
-      })
-
-      return treeData
     },
-    updateSelectedColumns (key) {
-      if (this.selectedColumnKeys.includes(key)) {
-        this.selectedColumnKeys = this.selectedColumnKeys.filter(x => x !== key)
-      } else {
-        this.selectedColumnKeys.push(key)
+    fetchParentGpuDevices () {
+      if (!this.resource.id || this.resourceType !== 'Host') {
+        return
       }
-      this.updateColumns()
+      this.loadingParentDevices = true
+      api('listGpuDevices', { hostid: this.resource.id }).then(json => {
+        const devices = json?.listgpudevicesresponse?.gpudevice || []
+        // Only include devices that can be parent devices (not virtual GPU devices)
+        this.parentGpuDevices = devices.filter(device => !device.parentgpudeviceid)
+        this.generateFormFields() // Refresh form fields with new data
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.loadingParentDevices = false
+      })
     },
-    updateColumns () {
-      this.columns = []
-      for (var columnKey of this.columnKeys) {
-        if (!this.selectedColumnKeys.includes(columnKey)) continue
-        this.columns.push({
-          key: columnKey,
-          title: this.$t('label.' + String(columnKey).toLowerCase()),
-          dataIndex: columnKey,
-          sorter: (a, b) => { return genericCompare(a[columnKey] || '', b[columnKey] || '') }
+    filterOption (input, option) {
+      return option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+    },
+    showAddGpuDeviceModal () {
+      this.gpuDeviceForm = {
+        type: 'PCI' // Set default type
+      }
+      this.vgpuProfiles = [] // Clear profiles initially
+      this.fetchGpuCards()
+      this.fetchParentGpuDevices()
+      this.addGpuDeviceModalVisible = true
+    },
+    addGpuDevice () {
+      // Validate required fields
+      if (!this.gpuDeviceForm.busaddress || !this.gpuDeviceForm.gpucardid || !this.gpuDeviceForm.vgpuprofileid) {
+        this.$notification.warning({
+          message: this.$t('label.warning'),
+          description: this.$t('message.please.fill.required.fields')
         })
+        return
       }
-      // Add column filter as the last column
-      this.columns.push({
-        key: 'columnFilter',
-        title: null,
-        dataIndex: 'columnFilter',
-        customFilterDropdown: true,
-        onFilter: () => true
-      })
-    },
-    onGpuDeviceSelectionChange (keys) {
-      this.selectedGpuDeviceIds = keys
-    },
-    customRowProps (record) {
-      return {
-        class: record.parentgpudeviceid ? 'vgpu-row' : 'parent-gpu-row'
-      }
-    },
-    selectAllColumns () {
-      this.selectedColumnKeys = this.columnKeys
-      this.updateColumns()
-    },
-    clearAllColumns () {
-      this.selectedColumnKeys = []
-      this.updateColumns()
-    },
-    bulkEnableGpuDevices () {
-      if (!this.validateBulkOperation()) return
 
-      api('enableGpuDevice', {
-        ids: this.selectedGpuDeviceIds.join(',')
-      }).then(() => {
-        this.handleBulkOperationSuccess('message.success.enable.gpu.devices', this.selectedGpuDeviceIds.length)
+      const params = {
+        hostid: this.resource.id,
+        busaddress: this.gpuDeviceForm.busaddress,
+        gpucardid: this.gpuDeviceForm.gpucardid,
+        vgpuprofileid: this.gpuDeviceForm.vgpuprofileid
+      }
+
+      // Add optional parameters only if they have values
+      if (this.gpuDeviceForm.type) {
+        params.type = this.gpuDeviceForm.type
+      }
+      if (this.gpuDeviceForm.numanode) {
+        params.numanode = this.gpuDeviceForm.numanode
+      }
+      if (this.gpuDeviceForm.pciroot) {
+        params.pciroot = this.gpuDeviceForm.pciroot
+      }
+      if (this.gpuDeviceForm.parentgpudeviceid) {
+        params.parentgpudeviceid = this.gpuDeviceForm.parentgpudeviceid
+      }
+
+      api('createGpuDevice', params).then(() => {
+        this.$notification.success({
+          message: this.$t('label.success'),
+          description: this.$t('message.success.add.gpu.device')
+        })
+        this.addGpuDeviceModalVisible = false
+        this.refresh()
       }).catch(error => {
         this.$notifyError(error)
       })
     },
-    bulkDisableGpuDevices () {
-      if (!this.validateBulkOperation()) return
-
-      api('disableGpuDevice', {
-        ids: this.selectedGpuDeviceIds.join(',')
-      }).then(() => {
-        this.handleBulkOperationSuccess('message.success.disable.gpu.devices', this.selectedGpuDeviceIds.length)
-      }).catch(error => {
-        this.$notifyError(error)
-      })
+    refresh () {
+      // Refresh child tabs
+      if (this.$refs.summaryTab && this.$refs.summaryTab.refresh) {
+        this.$refs.summaryTab.refresh()
+      }
+      if (this.$refs.devicesTab && this.$refs.devicesTab.refresh) {
+        this.$refs.devicesTab.refresh()
+      }
+      if (this.$refs.summaryTabSimple && this.$refs.summaryTabSimple.refresh) {
+        this.$refs.summaryTabSimple.refresh()
+      }
+      // Emit refresh to parent
+      this.$emit('refresh')
     }
   }
 }

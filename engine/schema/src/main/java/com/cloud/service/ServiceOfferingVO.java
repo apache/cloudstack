@@ -130,6 +130,9 @@ public class ServiceOfferingVO implements ServiceOffering {
     @Column(name = "gpu_count")
     private Integer gpuCount;
 
+    @Column(name = "gpu_display")
+    private Boolean gpuDisplay;
+
     // This is a delayed load value.  If the value is null,
     // then this field has not been loaded yet.
     // Call service offering dao to load it.
@@ -470,5 +473,13 @@ public class ServiceOfferingVO implements ServiceOffering {
 
     public void setGpuCount(Integer gpuCount) {
         this.gpuCount = gpuCount;
+    }
+
+    public Boolean getGpuDisplay() {
+        return gpuDisplay;
+    }
+
+    public void setGpuDisplay(Boolean gpuDisplay) {
+        this.gpuDisplay = gpuDisplay;
     }
 }

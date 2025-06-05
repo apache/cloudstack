@@ -17,8 +17,8 @@
 package org.apache.cloudstack.api.response;
 
 import com.cloud.serializer.Param;
+import com.cloud.vm.VirtualMachine;
 import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
@@ -32,7 +32,7 @@ public class GpuDeviceResponse extends BaseResponse {
     private String id;
 
     @SerializedName(ApiConstants.BUS_ADDRESS)
-    @Param(description = "bus address of the GPU device")
+    @Param(description = "bus address of the GPU device or MDEV UUID for vGPU devices")
     private String bussAddress;
 
     @SerializedName(ApiConstants.GPU_DEVICE_TYPE)
@@ -71,13 +71,17 @@ public class GpuDeviceResponse extends BaseResponse {
     @Param(description = "the vGPU profile name assigned to this GPU device")
     private String vmName;
 
+    @SerializedName(ApiConstants.VIRTUAL_MACHINE_STATE)
+    @Param(description = "the state of the virtual machine to which this GPU device is allocated")
+    private VirtualMachine.State vmState;
+
     @SerializedName(ApiConstants.STATE)
     @Param(description = "the vGPU profile name assigned to this GPU device")
     private GpuDevice.State state;
 
-    @SerializedName(ApiConstants.RESOURCE_STATE)
-    @Param(description = "the resource state of the GPU device (Enabled/Disabled)")
-    private GpuDevice.ResourceState resourceState;
+    @SerializedName(ApiConstants.MANAGED_STATE)
+    @Param(description = "the managed state of the GPU device (Enabled/Disabled)")
+    private GpuDevice.ManagedState managedState;
 
     @SerializedName(ApiConstants.PARENT_GPU_DEVICE_ID)
     @Param(description = "the ID of the parent GPU device, if this is a vGPU")
@@ -87,9 +91,6 @@ public class GpuDeviceResponse extends BaseResponse {
     @Param(description = "the NUMA node where the GPU device is located")
     private String numaNode;
 
-    @SerializedName(ApiConstants.PCI_ROOT)
-    @Param(description = "the PCI root of the GPU device")
-    private String pciRoot;
 
     public GpuDeviceResponse() {
         // Empty constructor for serialization
@@ -184,6 +185,14 @@ public class GpuDeviceResponse extends BaseResponse {
         this.vmName = vmName;
     }
 
+    public VirtualMachine.State getVmState() {
+        return vmState;
+    }
+
+    public void setVmState(VirtualMachine.State vmState) {
+        this.vmState = vmState;
+    }
+
     public GpuDevice.State getState() {
         return state;
     }
@@ -192,12 +201,12 @@ public class GpuDeviceResponse extends BaseResponse {
         this.state = state;
     }
 
-    public GpuDevice.ResourceState getResourceState() {
-        return resourceState;
+    public GpuDevice.ManagedState getManagedState() {
+        return managedState;
     }
 
-    public void setResourceState(GpuDevice.ResourceState resourceState) {
-        this.resourceState = resourceState;
+    public void setManagedState(GpuDevice.ManagedState managedState) {
+        this.managedState = managedState;
     }
 
     public String getParentGpuDeviceId() {
@@ -214,13 +223,5 @@ public class GpuDeviceResponse extends BaseResponse {
 
     public void setNumaNode(String numaNode) {
         this.numaNode = numaNode;
-    }
-
-    public String getPciRoot() {
-        return pciRoot;
-    }
-
-    public void setPciRoot(String pciRoot) {
-        this.pciRoot = pciRoot;
     }
 }

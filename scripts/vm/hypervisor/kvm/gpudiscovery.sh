@@ -25,11 +25,12 @@
 #   - NUMA node
 #   - SR-IOV VF counts
 #   - full_passthrough block (with VM usage)
-#   - vGPU (MDEV) instances (with VM usage)
+#   - vGPU (MDEV) instances (fetching profile “name” and “max_instance” from description)
 #   - VF (SR-IOV / MIG) instances (with VM usage)
 #
 # Uses `lspci -nnm` for GPU discovery and `virsh` to detect VM attachments.
 # Compatible with Ubuntu (20.04+, 22.04+) and RHEL/CentOS (7/8), Bash ≥4.
+#
 #
 # Sample JSON:
 # {
@@ -88,7 +89,7 @@
 #         {
 #           "mdev_uuid": "a1b2c3d4-5678-4e9a-8b0c-d1e2f3a4b5c6",
 #           "profile_name": "grid_t4-16c",
-#           "available_instances": 4,
+#           "max_instances": 4,
 #           "libvirt_address": {
 #             "domain": "0x0000",
 #             "bus": "0x00",
@@ -100,7 +101,7 @@
 #         {
 #           "mdev_uuid": "b2c3d4e5-6789-4f0a-9c1d-e2f3a4b5c6d7",
 #           "profile_name": "grid_t4-8c",
-#           "available_instances": 8,
+#           "max_instances": 8,
 #           "libvirt_address": {
 #             "domain": "0x0000",
 #             "bus": "0x00",
@@ -140,7 +141,7 @@
 #         {
 #           "mdev_uuid": "f4a2c8de-1234-4b3a-8c9d-0a1b2c3d4e5f",
 #           "profile_name": "grid_a100-8c",
-#           "available_instances": 8,
+#           "max_instances": 8,
 #           "libvirt_address": {
 #             "domain": "0x0000",
 #             "bus": "0x00",
@@ -152,7 +153,7 @@
 #         {
 #           "mdev_uuid": "e5b3d9ef-5678-4c2b-9d0e-1b2c3d4e5f6a",
 #           "profile_name": "grid_a100-5c",
-#           "available_instances": 5,
+#           "max_instances": 5,
 #           "libvirt_address": {
 #             "domain": "0x0000",
 #             "bus": "0x00",
@@ -215,7 +216,7 @@
 #         {
 #           "mdev_uuid": "b7c8d9fe-1111-2222-3333-444455556666",
 #           "profile_name": "i915-GVTg_V5_4",
-#           "available_instances": 4,
+#           "max_instances": 4,
 #           "libvirt_address": {
 #             "domain": "0x0000",
 #             "bus": "0x00",
@@ -227,7 +228,7 @@
 #         {
 #           "mdev_uuid": "c8d9e0af-7777-8888-9999-000011112222",
 #           "profile_name": "i915-GVTg_V5_8",
-#           "available_instances": 8,
+#           "max_instances": 8,
 #           "libvirt_address": {
 #             "domain": "0x0000",
 #             "bus": "0x00",
@@ -377,25 +378,23 @@ get_numa_node() {
 # Given a PCI address, return its PCI root (the top‐level bridge ID, e.g. "0000:00:03")
 get_pci_root() {
   local addr="$1"
-  # Follow sysfs parent chain until you reach a PCI bridge whose parent is /sys/devices/pci0000:00
   local devpath
   devpath=$(readlink -f "/sys/bus/pci/devices/0000:$addr")
-  while [[ "$devpath" != "/sys/devices/pci0000:00" && "$devpath" =~ pci[0-9]+:([0-9A-Fa-f]{2}):([0-9A-Fa-f]{2})\.([0-9A-Fa-f]) ]]; do
-    if [[ $(basename "$devpath") =~ ^[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}\.[0-9A-Fa-f]$ ]]; then
-      root="${BASH_REMATCH[0]}"
-      # Move up one level to see if parent is a bridge
+  while [[ "$devpath" != "/sys/devices/pci0000:00" ]]; do
+    base=$(basename "$devpath")
+    if [[ $base =~ ^([0-9A-Fa-f]{2}):([0-9A-Fa-f]{2})\.([0-9A-Fa-f])$ ]]; then
+      root="$base"
       parent=$(dirname "$devpath")
-      if [[ $(basename "$parent") =~ ^[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}\.[0-9A-Fa-f]$ ]]; then
-        devpath="$parent"
-        continue
-      else
+      pb=$(basename "$parent")
+      # if parent is not another PCI device, we've found the root of this chain
+      if [[ ! $pb =~ ^([0-9A-Fa-f]{2}):([0-9A-Fa-f]{2})\.([0-9A-Fa-f])$ ]]; then
         echo "0000:$root"
         return
       fi
     fi
     devpath=$(dirname "$devpath")
   done
-  # Fallback: return the addr itself
+  # fallback
   echo "0000:$addr"
 }
 
@@ -513,39 +512,69 @@ for LINE in "${LINES[@]}"; do
 
   # === vGPU (MDEV) instances ===
   VGPU_ARRAY="[]"
-  MDEV_PATH="/sys/class/mdev_bus/0000:$PCI_ADDR"
-  if [[ -d $MDEV_PATH ]]; then
+  MDEV_BASE="/sys/bus/pci/devices/0000:$PCI_ADDR/mdev_supported_types"
+  if [[ -d "$MDEV_BASE" ]]; then
     declare -a vlist=()
-    for U in "$MDEV_PATH"/devices/*; do
-      [[ -d $U ]] || continue
-      MDEV_UUID=${U##*/}
+    for PROF_DIR in "$MDEV_BASE"/*; do
+      [[ -d "$PROF_DIR" ]] || continue
 
-      # Profile name from mdev_type/name
-      TYPE_PATH="$(readlink -f "$U/mdev_type")"
-      PROFILE_NAME=""
-      if [[ -f "$TYPE_PATH/name" ]]; then
-        PROFILE_NAME=$(<"$TYPE_PATH/name")
+      # Read the human-readable profile name from the 'name' file
+      if [[ -f "$PROF_DIR/name" ]]; then
+        PROFILE_NAME=$(<"$PROF_DIR/name")
+      else
+        PROFILE_NAME=$(basename "$PROF_DIR")
       fi
 
-      # Available instances
-      AVAILABLE_INSTANCES=0
-      if [[ -f "$TYPE_PATH/available_instances" ]]; then
-        AVAILABLE_INSTANCES=$(<"$TYPE_PATH/available_instances")
+      # Fetch max_instance from the description file, if present
+      # num_heads=4, frl_config=60, framebuffer=2048M, max_resolution=4096x2160, max_instance=4
+      MAX_INSTANCES="null"
+      VIDEO_RAM="null"
+      MAX_HEADS="null"
+      MAX_RESOLUTION_X="null"
+      MAX_RESOLUTION_Y="null"
+      if [[ -f "$PROF_DIR/description" ]]; then
+        # description format: “…, max_instance=24” etc.
+        desc=$(<"$PROF_DIR/description")
+        if [[ $desc =~ num_heads=([0-9]+) ]]; then
+          MAX_HEADS="${BASH_REMATCH[1]}"
+        fi
+        if [[ $desc =~ framebuffer=([0-9]+) ]]; then
+          VIDEO_RAM="${BASH_REMATCH[1]}"
+        fi
+        if [[ $desc =~ max_resolution=([0-9]+)x([0-9]+) ]]; then
+          MAX_RESOLUTION_X="${BASH_REMATCH[1]}"
+          MAX_RESOLUTION_Y="${BASH_REMATCH[2]}"
+        fi
+        if [[ $desc =~ max_instance=([0-9]+) ]]; then
+          MAX_INSTANCES="${BASH_REMATCH[1]}"
+        fi
       fi
 
-      # libvirt_address uses PF BDF
-      DOMAIN="0x0000"
-      BUS="0x${PCI_ADDR:0:2}"
-      SLOT="0x${PCI_ADDR:3:2}"
-      FUNC="0x${PCI_ADDR:6:1}"
+      # Under each profile, existing UUIDs appear in:
+      #    /sys/bus/pci/devices/0000:$PCI_ADDR/mdev_supported_types/<PROFILE>/devices/*
+      DEVICE_DIR="$PROF_DIR/devices"
+      if [[ -d "$DEVICE_DIR" ]]; then
+        for UDIR in "$DEVICE_DIR"/*; do
+          [[ -d $UDIR ]] || continue
+          MDEV_UUID=$(basename "$UDIR")
 
-      # Determine which VM uses this UUID
-      raw="${mdev_to_vm[$MDEV_UUID]:-}"
-      USED_JSON=$(to_json_vm "$raw")
+          # libvirt_address uses PF BDF
+          DOMAIN="0x0000"
+          BUS="0x${PCI_ADDR:0:2}"
+          SLOT="0x${PCI_ADDR:3:2}"
+          FUNC="0x${PCI_ADDR:6:1}"
 
-      vlist+=( \
-        "{\"mdev_uuid\":\"$MDEV_UUID\",\"profile_name\":$(json_escape "$PROFILE_NAME"),\"available_instances\":$AVAILABLE_INSTANCES,\"libvirt_address\":{"\
-        "\"domain\":\"$DOMAIN\",\"bus\":\"$BUS\",\"slot\":\"$SLOT\",\"function\":\"$FUNC\"},\"used_by_vm\":$USED_JSON}" )
+          # Determine which VM uses this UUID
+          raw="${mdev_to_vm[$MDEV_UUID]:-}"
+          USED_JSON=$(to_json_vm "$raw")
+
+          vlist+=( \
+            "{\"mdev_uuid\":\"$MDEV_UUID\",\"profile_name\":$(json_escape "$PROFILE_NAME"),"\
+            "\"max_instances\":$MAX_INSTANCES,\"video_ram\":$VIDEO_RAM,\"max_heads\":$MAX_HEADS,"\
+            "\"max_resolution_x\":$MAX_RESOLUTION_X,\"max_resolution_y\":$MAX_RESOLUTION_Y,\"libvirt_address\":{"\
+            "\"domain\":\"$DOMAIN\",\"bus\":\"$BUS\",\"slot\":\"$SLOT\",\"function\":\"$FUNC\"},\"used_by_vm\":$USED_JSON}" )
+        done
+      fi
     done
     VGPU_ARRAY="[${vlist[*]}]"
   fi
@@ -568,15 +597,10 @@ for LINE in "${LINES[@]}"; do
       # Determine vf_type and vf_profile
       VF_TYPE="sr-iov"
       VF_PROFILE=""
-      if [[ $VENDOR_ID == "10de" && -f "/sys/bus/pci/devices/$VF_ADDR/device/mig_profile" ]]; then
-        VF_TYPE="mig"
-        VF_PROFILE=$(<"/sys/bus/pci/devices/$VF_ADDR/device/mig_profile")
-      else
-        if VF_LINE=$(lspci -nnm -s "$VF_BDF" 2>/dev/null); then
-          if [[ $VF_LINE =~ \"([^\"]+)\"[[:space:]]\"([^\"]+)\"[[:space:]]\"([^\"]+)\"[[:space:]]\"([^\"]+)\" ]]; then
-            VF_DEVICE_FIELD="${BASH_REMATCH[4]}"
-            VF_PROFILE=$(sed -E 's/ \[[0-9A-Fa-f]{4}\]$//' <<<"$VF_DEVICE_FIELD")
-          fi
+      if VF_LINE=$(lspci -nnm -s "$VF_BDF" 2>/dev/null); then
+        if [[ $VF_LINE =~ \"([^\"]+)\"[[:space:]]\"([^\"]+)\"[[:space:]]\"([^\"]+)\"[[:space:]]\"([^\"]+)\" ]]; then
+          VF_DEVICE_FIELD="${BASH_REMATCH[4]}"
+          VF_PROFILE=$(sed -E 's/ \[[0-9A-Fa-f]{4}\]$//' <<<"$VF_DEVICE_FIELD")
         fi
       fi
       VF_PROFILE_JSON=$(json_escape "$VF_PROFILE")
@@ -593,7 +617,8 @@ for LINE in "${LINES[@]}"; do
   fi
 
   # === full_passthrough block ===
-  FP_ENABLED=$(( TOTALVFS == 0 ))
+  # If vgpu_instances and vf_instances are empty, we can assume full passthrough
+  FP_ENABLED=$(( ${#VGPU_ARRAY} == 2 && ${#VF_ARRAY} == 2 )) || true
   DOMAIN="0x0000"
   BUS="0x${PCI_ADDR:0:2}"
   SLOT="0x${PCI_ADDR:3:2}"

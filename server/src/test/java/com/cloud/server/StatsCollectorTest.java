@@ -612,20 +612,4 @@ public class StatsCollectorTest {
         Mockito.verify(mockPool, Mockito.never()).setCapacityIops(Mockito.anyLong());
         Mockito.verify(mockPool, Mockito.never()).setUsedIops(Mockito.anyLong());
     }
-
-
-    @Test
-    public void testgpu() {
-        List<String> gpuDevices = new ArrayList<>();
-        gpuDevices.add("00:01.0 \"3D controller [0302]\" \"Apache Cloudstack Simulator [0000]\" \"Simulated GPU [ACS Simulated GPU] [ffff]\" -ra1 -p00 \"XXXX [0000]\" \"Device [0001]\"");
-        gpuDevices.add("00:02.0 \"3D controller [0302]\" \"Apache Cloudstack Simulator [0000]\" \"Simulated GPU [ACS Simulated GPU] [ffff]\" -ra1 -p00 \"XXXX [0000]\" \"Device [0001]\"");
-        for (String gpuDevice : gpuDevices) {
-            String[] gpuDeviceDetails = gpuDevice.split(" \"");
-            String busAddress = gpuDeviceDetails[0];
-            String vendorId = gpuDeviceDetails[2].split("\\[")[1].split("]")[0];
-            String deviceId = gpuDeviceDetails[3].split("\\[")[2].split("]")[0];
-            String test = busAddress + " " + vendorId + " " + deviceId;
-            Assert.assertFalse(false);
-        }
-    }
 }

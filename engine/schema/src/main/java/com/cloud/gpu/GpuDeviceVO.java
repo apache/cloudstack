@@ -64,9 +64,9 @@ public class GpuDeviceVO implements GpuDevice {
     @Enumerated(value = EnumType.STRING)
     private State state = State.Free;
 
-    @Column(name = "resource_state")
+    @Column(name = "managed_state")
     @Enumerated(value = EnumType.STRING)
-    private ResourceState resourceState = ResourceState.Enabled;
+    private ManagedState managedState = ManagedState.Managed;
 
     @Column(name = "parent_gpu_device_id")
     private Long parentGpuDeviceId;
@@ -81,7 +81,8 @@ public class GpuDeviceVO implements GpuDevice {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public GpuDeviceVO(long cardId, long vgpuProfileId, String busAddress, long hostId, Long parentGpuDeviceId, String numaNode, String pciRoot) {
+    public GpuDeviceVO(long cardId, long vgpuProfileId, String busAddress, long hostId, Long parentGpuDeviceId,
+            String numaNode, String pciRoot) {
         this.uuid = UUID.randomUUID().toString();
         this.cardId = cardId;
         this.vgpuProfileId = vgpuProfileId;
@@ -94,10 +95,9 @@ public class GpuDeviceVO implements GpuDevice {
 
     @Override
     public String toString() {
-        return String.format("GpuDevice %s",
-                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                        this, "id", "uuid", "cardId", "vgpuProfileId", "busAddress", "hostId",
-                        "vmId", "parentGpuDeviceId", "numaNode", "pciRoot", "state", "resourceState"));
+        return String.format("GpuDevice %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                this, "id", "uuid", "cardId", "vgpuProfileId", "busAddress", "hostId", "vmId",
+                "parentGpuDeviceId", "numaNode", "pciRoot", "state", "resourceState"));
     }
 
     @Override
@@ -141,14 +141,6 @@ public class GpuDeviceVO implements GpuDevice {
         this.hostId = hostId;
     }
 
-    public DeviceType getType() {
-        return type;
-    }
-
-    public void setType(DeviceType type) {
-        this.type = type;
-    }
-
     @Override
     public State getState() {
         return state;
@@ -158,12 +150,20 @@ public class GpuDeviceVO implements GpuDevice {
         this.state = state;
     }
 
-    public ResourceState getResourceState() {
-        return resourceState;
+    public DeviceType getType() {
+        return type;
     }
 
-    public void setResourceState(ResourceState resourceState) {
-        this.resourceState = resourceState;
+    public void setType(DeviceType type) {
+        this.type = type;
+    }
+
+    public ManagedState getManagedState() {
+        return managedState;
+    }
+
+    public void setManagedState(ManagedState managedState) {
+        this.managedState = managedState;
     }
 
     public Long getVmId() {

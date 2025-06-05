@@ -23,35 +23,30 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.GpuCardResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.VgpuProfileResponse;
-import org.apache.cloudstack.gpu.GpuService;
-
-import javax.inject.Inject;
 
 @APICommand(name = "listVgpuProfiles", description = "Lists all available vGPU profiles",
-        responseObject = VgpuProfileResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.21.0")
+        responseObject = VgpuProfileResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        since = "4.21.0")
 public class ListVgpuProfilesCmd extends BaseListCmd {
-
-    @Inject
-    private GpuService gpuService;
 
     /// //////////////////////////////////////////////////
     /// ///////////// API parameters /////////////////////
     /// //////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType =
-            VgpuProfileResponse.class,
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VgpuProfileResponse.class,
             description = "ID of the vGPU profile")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "name of the "
-                                                                                  + "vGPU profile")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "name of the vGPU profile")
     private String name;
 
-    @Parameter(name = ApiConstants.GPU_CARD_ID, type = CommandType.UUID, entityType =
-            GpuCardResponse.class,
+    @Parameter(name = ApiConstants.GPU_CARD_ID, type = CommandType.UUID, entityType = GpuCardResponse.class,
             description = "the GPU card ID associated with this GPU device")
     private Long cardId;
+
+    @Parameter(name = ApiConstants.ACTIVE_ONLY, type = CommandType.BOOLEAN,
+            description = "If true, only vGPU profiles which have a device will be listed. If false, all vGPU profiles will be listed.")
+    private Boolean activeOnly;
 
     /// //////////////////////////////////////////////////
     /// //////////////// Accessors ///////////////////////
@@ -69,12 +64,15 @@ public class ListVgpuProfilesCmd extends BaseListCmd {
         return cardId;
     }
 
+    public boolean getActiveOnly() {
+        return Boolean.TRUE.equals(activeOnly);
+    }
+
     /// //////////////////////////////////////////////////
     /// //////////// API Implementation///////////////////
     /// //////////////////////////////////////////////////
 
-    @Override
-    public void execute() {
+    @Override public void execute() {
         ListResponse<VgpuProfileResponse> response = gpuService.listVgpuProfiles(this);
         response.setResponseName(getCommandName());
         setResponseObject(response);

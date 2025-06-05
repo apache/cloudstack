@@ -152,6 +152,11 @@ public class DomainJoinVO extends BaseViewVO implements InternalIdentity, Identi
     @Column(name="memoryTotal")
     private Long memoryTotal;
 
+    @Column(name = "gpuLimit")
+    private Long gpuLimit;
+
+    @Column(name = "gpuTotal")
+    private Long gpuTotal;
 
     @Column(name="primaryStorageLimit")
     private Long primaryStorageLimit;
@@ -404,6 +409,14 @@ public class DomainJoinVO extends BaseViewVO implements InternalIdentity, Identi
     }
 
 
+    public Long getGpuTotal() {
+        return gpuTotal;
+    }
+
+    public void setGpuTotal(Long gpuTotal) {
+        this.gpuTotal = gpuTotal;
+    }
+
     public Long getPrimaryStorageTotal() {
         return primaryStorageTotal;
     }
@@ -544,6 +557,14 @@ public class DomainJoinVO extends BaseViewVO implements InternalIdentity, Identi
         this.memoryLimit = memoryLimit;
     }
 
+
+    public Long getGpuLimit() {
+        return gpuLimit;
+    }
+
+    public void setGpuLimit(Long gpuLimit) {
+        this.gpuLimit = gpuLimit;
+    }
 
     public Long getPrimaryStorageLimit() {
         return primaryStorageLimit;

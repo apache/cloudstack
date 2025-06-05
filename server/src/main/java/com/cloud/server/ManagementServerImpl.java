@@ -44,6 +44,9 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.gpu.VgpuProfileVO;
+import com.cloud.gpu.dao.VgpuProfileDao;
+import com.cloud.offering.ServiceOffering;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
@@ -943,6 +946,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private HostPodDao _hostPodDao;
     @Inject
+    private VgpuProfileDao vgpuProfileDao;
+    @Inject
     private VMInstanceDao _vmInstanceDao;
     @Inject
     private VolumeDao _volumeDao;
@@ -1529,6 +1534,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (!canMigrateWithStorage && usesLocal) {
             throw new InvalidParameterValueException("Unsupported operation, VM uses Local storage, cannot migrate");
+        }
+
+        ServiceOffering serviceOffering = vmProfile.getServiceOffering();
+        if (serviceOffering.getVgpuProfileId() != null) {
+            VgpuProfileVO vgpuProfile = vgpuProfileDao.findById(serviceOffering.getVgpuProfileId());
+            if (vgpuProfile == null || "passthrough".equals(vgpuProfile.getName())) {
+                throw new InvalidParameterValueException("Unsupported operation, VM uses host passthrough, cannot migrate");
+            }
         }
 
         final Type hostType = srcHost.getType();

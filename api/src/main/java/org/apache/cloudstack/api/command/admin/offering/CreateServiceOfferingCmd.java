@@ -273,10 +273,15 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.GPU_COUNT,
             type = CommandType.INTEGER,
-            entityType = VgpuProfileResponse.class,
-            description = "Count of GPUs to be used with this service offering. This is applicable only for vGPU profiles.",
+            description = "Count of GPUs to be used with this service offering. This is applicable only when passed with vGPU profile.",
             since = "4.21")
     private Integer gpuCount;
+
+    @Parameter(name = ApiConstants.GPU_DISPLAY,
+            type = CommandType.BOOLEAN,
+            description = "Whether to enable GPU display for this service offering. This is applicable only when passed with vGPU profile. Defaults to false.",
+            since = "4.21")
+    private Boolean gpuDisplay;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -538,6 +543,10 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     public Integer getGpuCount() {
         return gpuCount;
+    }
+
+    public Boolean getGpuDisplay() {
+        return Boolean.TRUE.equals(gpuDisplay);
     }
 
     /////////////////////////////////////////////////////

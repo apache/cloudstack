@@ -26,27 +26,21 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.GpuDeviceResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.cloudstack.gpu.GpuService;
 
-import javax.inject.Inject;
 import java.util.List;
 
-@APICommand(name = "disableGpuDevice", description = "Disables a GPU device", responseObject =
-        SuccessResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.21.0",
-        authorized = {RoleType.Admin})
-public class DisableGpuDeviceCmd extends BaseCmd {
-
-    @Inject
-    private GpuService gpuService;
+@APICommand(name = "unmanageGpuDevice", description = "Unmanage a GPU device", responseObject = SuccessResponse.class,
+            requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.21.0",
+            authorized = {RoleType.Admin})
+public class UnmanageGpuDeviceCmd extends BaseCmd {
 
     /// //////////////////////////////////////////////////
     /// ///////////// API parameters /////////////////////
     /// //////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.IDS,  type = CommandType.LIST, collectionType = CommandType.UUID, entityType =
-            GpuDeviceResponse.class,
-            required = true, description = "the ID of the GPU device")
+    @Parameter(name = ApiConstants.IDS, type = CommandType.LIST, collectionType = CommandType.UUID,
+               entityType = GpuDeviceResponse.class, required = true,
+               description = "comma separated list of IDs of the GPU device")
     private List<Long> ids;
 
 
@@ -66,8 +60,7 @@ public class DisableGpuDeviceCmd extends BaseCmd {
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR,
-                        "Failed to disable GPU device");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to disable GPU device");
             }
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR,
