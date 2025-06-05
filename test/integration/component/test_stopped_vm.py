@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-""" P1 for stopped Virtual Maschine life cycle
+""" P1 for stopped Virtual Machine life cycle
 """
 # Import Local Modules
 from nose.plugins.attrib import attr

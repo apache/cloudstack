@@ -568,7 +568,7 @@ class stopVM(unittest.TestCase):
         driver.find_element_by_xpath(Global_Locators.actionconfirm_xpath).click()
         time.sleep(2)
 
-        # Go to Dahsboard
+        # Go to Dashboard
         #driver.find_element_by_xpath(Global_Locators.dashboard_xpath).click()
         driver.refresh()
 
