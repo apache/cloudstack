@@ -223,7 +223,8 @@ export default {
       selectedArchitecture: null,
       placeholder: {
         clustername: null
-      }
+      },
+      extensionid: null
     }
   },
   created () {
@@ -279,7 +280,7 @@ export default {
       this.loading = true
       api('listExtensions', {
       }).then(response => {
-        this.extensionsList = response.listextensionsresponse.extensions || []
+        this.extensionsList = response.listextensionsresponse.extension || []
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
