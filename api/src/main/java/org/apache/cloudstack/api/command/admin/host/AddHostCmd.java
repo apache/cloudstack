@@ -138,27 +138,13 @@ public class AddHostCmd extends BaseCmd {
     }
 
     public Map<String, String> getExternalDetails() {
-        boolean isStringMap = true;
-        if (externalDetails instanceof Map<?, ?>) {
-            for (Map.Entry<?, ?> entry : ((Map<?, ?>) externalDetails).entrySet()) {
-                if (!(entry.getKey() instanceof String) || !(entry.getValue() instanceof String)) {
-                    isStringMap = false;
-                    break;
-                }
-            }
+        Map<String, String> customparameterMap = convertDetailsToMap(externalDetails);
+        Map<String, String> details = new HashMap<>();
+        for (String key : customparameterMap.keySet()) {
+            String value = customparameterMap.get(key);
+            details.put(VmDetailConstants.EXTERNAL_DETAIL_PREFIX + key, value);
         }
-
-        if (!isStringMap) {
-            Map<String, String> customParameterMap = convertDetailsToMap(externalDetails);
-            Map<String, String> details = new HashMap<>();
-            for (String key : customParameterMap.keySet()) {
-                String value = customParameterMap.get(key);
-                details.put(VmDetailConstants.EXTERNAL_DETAIL_PREFIX + key, value);
-            }
-            return details;
-        }
-
-        return (Map<String, String>) externalDetails;
+        return details;
     }
 
     /////////////////////////////////////////////////////

@@ -687,6 +687,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
     }
 
+    // ToDo: confirm if this needed anymore
     protected void validateExternalHypervisorConfigValues(final String configName, final String value) {
         if (configName.equals("external.provisioners") && StringUtils.isNotEmpty(value)) {
             if (externalProvisioners != null) {

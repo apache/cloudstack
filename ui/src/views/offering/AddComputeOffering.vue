@@ -383,7 +383,7 @@
           </template>
           <a-switch v-model:checked="form.computeonly" :checked="computeonly" @change="val => { computeonly = val }"/>
         </a-form-item>
-        <a-card>
+        <a-card style="margin-bottom: 10px;">
           <span v-if="computeonly">
             <a-form-item name="storagetype" ref="storagetype">
               <template #label>
@@ -612,79 +612,16 @@
             <a-switch v-model:checked="form.diskofferingstrictness" :checked="diskofferingstrictness" @change="val => { diskofferingstrictness = val }"/>
           </a-form-item>
         </a-card>
+        <a-form-item name="externaldetails" ref="externaldetails">
+          <template #label>
+            <tooltip-label :title="$t('label.externaldetails')" :tooltip="apiParams.externaldetails.description"/>
+          </template>
+          <div style="margin-bottom: 10px">{{ $t('message.add.external.details') }}</div>
+          <details-input
+            v-model:value="form.externaldetails" />
+        </a-form-item>
       </a-form>
       <br/>
-      <a-form-item v-if="externalProvisionerExists" name="externalDetailsFlag" ref="externalDetailsFlag">
-        <template #label>
-          <tooltip-label :title="$t('label.external.details')" :tooltip="$t('label.external.details.tooltip')"/>
-        </template>
-        <a-switch v-model:checked="form.externalDetailsFlag" :checked="externalDetailsFlag" @change="val => { externalDetailsFlag = val }"/>
-      </a-form-item>
-      <a-form-item v-if="externalDetailsFlag">
-        <a-card>
-          <a-button ref="details" type="primary" style="width: 100%;" @click="addExternalDetails">
-            <template #icon><plus-outlined /></template>
-            {{ $t('label.add.external.details') }}
-          </a-button>
-          <div v-show="showAddDetail" style="padding-top: 15px;">
-            <a-input-group
-              type="text">
-              <a-row :gutter="{ xs: 8, sm: 16, md: 24, lg: 32 }">
-                <a-col :span="8">
-                  <a-input
-                    ref="keyElm"
-                    v-model:value="newKey"
-                    :placeholder="$t('label.name')"
-                    @change="e => onAddInputChange(e, 'newKey')" />
-                </a-col>
-                <a-col :span="3" style="text-align: center;">
-                  <a-input
-                    class="tag-disabled-input"
-                    style="pointer-events: none; text-align: center"
-                    placeholder="="
-                    disabled />
-                </a-col>
-                <a-col :span="8">
-                  <a-input
-                    v-model:value="newValue"
-                    :placeholder="$t('label.value')"
-                    @change="e => onAddInputChange(e, 'newValue')" />
-                </a-col>
-                <a-col :span="2">
-                  <tooltip-button :tooltip="$t('label.add.setting')" :shape="null" icon="check-outlined" @onClick="addDetail" buttonClass="detail-button" />
-                </a-col>
-                <a-col :span="2">
-                  <tooltip-button :tooltip="$t('label.cancel')" :shape="null" icon="close-outlined" @onClick="closeDetail" buttonClass="detail-button" />
-                </a-col>
-              </a-row>
-              <br/>
-            </a-input-group>
-          </div>
-          <div style="padding-top: 10px">
-            <div :key="index" v-for="(item, index) in externalDetails">
-              <a-row :gutter="{ xs: 8, sm: 16, md: 24, lg: 32 }">
-                <a-col :span="6">
-                  <div class="ant-col-detail">{{ item.name }}</div>
-                </a-col>
-                <a-col :span="14">
-                  <div class="ant-col-detail">{{ item.value }}</div>
-                </a-col>
-                <a-col :span="4">
-                  <div>
-                    <tooltip-button
-                      :tooltip="$t('label.delete')"
-                      :type="primary"
-                      :danger="true"
-                      icon="delete-outlined"
-                      @onClick="removeDetail(index)"/>
-                    </div>
-                </a-col>
-              </a-row>
-              <a-divider style="margin-top: 10px; margin-bottom: 10px;" v-if="index < externalDetails.length - 1" />
-            </div>
-          </div>
-        </a-card>
-      </a-form-item>
       <div :span="24" class="action-button">
         <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
         <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -701,7 +638,7 @@ import { isAdmin } from '@/role'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
-import TooltipButton from '@/components/widgets/TooltipButton'
+import DetailsInput from '@/components/widgets/DetailsInput'
 import store from '@/store'
 
 export default {
@@ -711,7 +648,7 @@ export default {
     AddDiskOffering,
     ResourceIcon,
     TooltipLabel,
-    TooltipButton
+    DetailsInput
   },
   data () {
     return {
@@ -804,13 +741,7 @@ export default {
       defaultLeaseDuration: 90,
       defaultLeaseExpiryAction: 'STOP',
       leaseduration: undefined,
-      leaseexpiryaction: undefined,
-      externalDetailsFlag: false,
-      showAddDetail: false,
-      newKey: '',
-      newValue: '',
-      externalDetails: [],
-      externalProvisionerExists: false
+      leaseexpiryaction: undefined
     }
   },
   beforeCreate () {
@@ -851,8 +782,7 @@ export default {
         diskofferingstrictness: this.diskofferingstrictness,
         encryptdisk: this.encryptdisk,
         leaseduration: this.leaseduration,
-        leaseexpiryaction: this.leaseexpiryaction,
-        externalDetailsFlag: this.externalDetailsFlag
+        leaseexpiryaction: this.leaseexpiryaction
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],
@@ -920,7 +850,6 @@ export default {
         }
       }
       this.fetchDiskOfferings()
-      this.fetchExternalHypervisorProvisioners()
     },
     addDiskOffering () {
       this.showDiskOfferingModal = true
@@ -952,49 +881,6 @@ export default {
     },
     isDomainAdmin () {
       return ['DomainAdmin'].includes(this.$store.getters.userInfo.roletype)
-    },
-    addExternalDetails () {
-      this.showAddDetail = true
-    },
-    onAddInputChange (val, obj) {
-      this.error = false
-      this[obj].concat(val.data)
-    },
-    addDetail () {
-      if (this.newKey === '' || this.newValue === '') {
-        this.error = this.$t('message.error.provide.setting')
-        return
-      }
-      this.error = false
-      this.externalDetails.push({ name: this.newKey, value: this.newValue })
-      this.newKey = ''
-      this.newValue = ''
-    },
-    removeDetail (index) {
-      this.externalDetails.splice(index, 1)
-      this.newKey = ''
-      this.newValue = ''
-    },
-    closeDetail () {
-      this.newKey = ''
-      this.newValue = ''
-      this.error = false
-      this.showAddDetail = false
-    },
-    fetchExternalHypervisorProvisioners () {
-      const params = {
-        name: 'external.provisioners'
-      }
-      api('listConfigurations', params).then(json => {
-        if (json.listconfigurationsresponse.configuration !== null) {
-          const config = json.listconfigurationsresponse.configuration[0]
-          if (config && config.name === params.name && config.value !== null && config.value !== '') {
-            this.externalProvisionerExists = true
-          }
-        }
-      }).finally(() => {
-        this.loading = false
-      })
     },
     checkIfDomainAdminIsAllowedToInformTag () {
       const params = { id: store.getters.userInfo.accountid }
@@ -1264,9 +1150,9 @@ export default {
         if (values.storagepolicy) {
           params.storagepolicy = values.storagepolicy
         }
-        if (this.externalDetails.length > 0) {
-          this.externalDetails.forEach(function (item, index) {
-            params['externaldetails[0].' + item.name] = item.value
+        if (values.externaldetails) {
+          Object.entries(values.externaldetails).forEach(([key, value]) => {
+            params['externaldetails[0].' + key] = value
           })
         }
 

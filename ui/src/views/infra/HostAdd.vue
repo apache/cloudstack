@@ -257,7 +257,6 @@ import { mixinForm } from '@/utils/mixin'
 import DedicateDomain from '../../components/view/DedicateDomain'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
-import TooltipButton from '@/components/widgets/TooltipButton'
 import DetailsInput from '@/components/widgets/DetailsInput'
 
 export default {
@@ -267,7 +266,6 @@ export default {
     DedicateDomain,
     ResourceIcon,
     TooltipLabel,
-    TooltipButton,
     DetailsInput
   },
   props: {
