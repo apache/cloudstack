@@ -33,6 +33,7 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
 import org.apache.cloudstack.api.response.BackupOfferingResponse;
+import org.apache.cloudstack.api.response.ExtensionResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.IsoVmResponse;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -164,6 +165,11 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
             description = "Whether to return only leased instances",
             since = "4.21.0")
     private Boolean onlyLeasedInstances = false;
+
+    @Parameter(name = ApiConstants.EXTENSION_ID, type = CommandType.UUID,
+            entityType = ExtensionResponse.class, description = "UUID of the extension",
+            since = "4.21.0")
+    private Long extensionId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -310,6 +316,10 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
 
     public boolean getOnlyLeasedInstances() {
         return BooleanUtils.toBoolean(onlyLeasedInstances);
+    }
+
+    public Long getExtensionId() {
+        return extensionId;
     }
 
     /////////////////////////////////////////////////////

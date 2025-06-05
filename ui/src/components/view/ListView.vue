@@ -473,6 +473,10 @@
         <router-link v-if="$router.resolve('/webhook/' + record.webhookid).matched[0].redirect !== '/exception/404'" :to="{ path: '/webhook/' + record.webhookid }">{{ text }}</router-link>
         <span v-else>  {{ text }} </span>
       </template>
+      <template v-if="column.key === 'extensionname'">
+        <router-link v-if="$router.resolve('/xaas/' + record.extensionid).matched[0].redirect !== '/exception/404'" :to="{ path: '/xaas/' + record.extensionid }">{{ text }}</router-link>
+        <span v-else>  {{ text + record}} </span>
+      </template>
       <template v-if="column.key === 'success'">
         <status :text="text ? 'success' : 'error'" />
       </template>
@@ -748,7 +752,7 @@ export default {
         '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm', '/annotation',
         '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering',
         '/tungstenfabric', '/oauthsetting', '/guestos', '/guestoshypervisormapping', '/webhook', 'webhookdeliveries', '/quotatariff', '/sharedfs',
-        '/ipv4subnets', '/managementserver'].join('|'))
+        '/ipv4subnets', '/managementserver', '/xaas'].join('|'))
         .test(this.$route.path)
     },
     enableGroupAction () {

@@ -29,13 +29,15 @@ import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.datacenter.DataCenterIpv4GuestSubnet;
+import org.apache.cloudstack.extension.Extension;
+import org.apache.cloudstack.extension.ExtensionCustomAction;
 import org.apache.cloudstack.ha.HAConfig;
 import org.apache.cloudstack.network.BgpPeer;
 import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap;
 import org.apache.cloudstack.quota.QuotaTariff;
-import org.apache.cloudstack.storage.sharedfs.SharedFS;
 import org.apache.cloudstack.storage.object.Bucket;
 import org.apache.cloudstack.storage.object.ObjectStore;
+import org.apache.cloudstack.storage.sharedfs.SharedFS;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.vm.schedule.VMSchedule;
 
@@ -796,10 +798,24 @@ public class EventTypes {
     // Resource Limit
     public static final String EVENT_RESOURCE_LIMIT_UPDATE = "RESOURCE.LIMIT.UPDATE";
 
+    // VM Lease
     public static final String VM_LEASE_EXPIRED = "VM.LEASE.EXPIRED";
     public static final String VM_LEASE_DISABLED = "VM.LEASE.DISABLED";
     public static final String VM_LEASE_CANCELLED = "VM.LEASE.CANCELLED";
     public static final String VM_LEASE_EXPIRING = "VM.LEASE.EXPIRING";
+
+    // Extension
+    public static final String EVENT_EXTENSION_CREATE = "EXTENSION.CREATE";
+    public static final String EVENT_EXTENSION_UPDATE = "EXTENSION.UPDATE";
+    public static final String EVENT_EXTENSION_DELETE = "EXTENSION.DELETE";
+    public static final String EVENT_EXTENSION_RESOURCE_REGISTER = "EXTENSION.RESOURCE.REGISTER";
+    public static final String EVENT_EXTENSION_RESOURCE_UNREGISTER = "EXTENSION.RESOURCE.UNREGISTER";
+    public static final String EVENT_EXTENSION_CUSTOM_ACTION_ADD = "EXTENSION.CUSTOM.ACTION.ADD";
+    public static final String EVENT_EXTENSION_CUSTOM_ACTION_UPDATE = "EXTENSION.CUSTOM.ACTION.UPDATE";
+    public static final String EVENT_EXTENSION_CUSTOM_ACTION_DELETE = "EXTENSION.CUSTOM.ACTION.DELETE";
+
+    // Custom Action
+    public static final String EVENT_CUSTOM_ACTION = "CUSTOM.ACTION";
 
     static {
 
@@ -1301,6 +1317,16 @@ public class EventTypes {
         entityEventDetails.put(VM_LEASE_EXPIRING, VirtualMachine.class);
         entityEventDetails.put(VM_LEASE_DISABLED, VirtualMachine.class);
         entityEventDetails.put(VM_LEASE_CANCELLED, VirtualMachine.class);
+
+        // Extension
+        entityEventDetails.put(EVENT_EXTENSION_CREATE, Extension.class);
+        entityEventDetails.put(EVENT_EXTENSION_UPDATE, Extension.class);
+        entityEventDetails.put(EVENT_EXTENSION_DELETE, Extension.class);
+        entityEventDetails.put(EVENT_EXTENSION_RESOURCE_REGISTER, Extension.class);
+        entityEventDetails.put(EVENT_EXTENSION_RESOURCE_UNREGISTER, Extension.class);
+        entityEventDetails.put(EVENT_EXTENSION_CUSTOM_ACTION_ADD, ExtensionCustomAction.class);
+        entityEventDetails.put(EVENT_EXTENSION_CUSTOM_ACTION_UPDATE, ExtensionCustomAction.class);
+        entityEventDetails.put(EVENT_EXTENSION_CUSTOM_ACTION_DELETE, ExtensionCustomAction.class);
     }
 
     public static boolean isNetworkEvent(String eventType) {

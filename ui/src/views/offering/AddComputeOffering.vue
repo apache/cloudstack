@@ -383,7 +383,7 @@
           </template>
           <a-switch v-model:checked="form.computeonly" :checked="computeonly" @change="val => { computeonly = val }"/>
         </a-form-item>
-        <a-card>
+        <a-card style="margin-bottom: 10px;">
           <span v-if="computeonly">
             <a-form-item name="storagetype" ref="storagetype">
               <template #label>
@@ -612,7 +612,16 @@
             <a-switch v-model:checked="form.diskofferingstrictness" :checked="diskofferingstrictness" @change="val => { diskofferingstrictness = val }"/>
           </a-form-item>
         </a-card>
+        <a-form-item name="externaldetails" ref="externaldetails">
+          <template #label>
+            <tooltip-label :title="$t('label.externaldetails')" :tooltip="apiParams.externaldetails.description"/>
+          </template>
+          <div style="margin-bottom: 10px">{{ $t('message.add.external.details') }}</div>
+          <details-input
+            v-model:value="form.externaldetails" />
+        </a-form-item>
       </a-form>
+      <br/>
       <div :span="24" class="action-button">
         <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
         <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -629,6 +638,7 @@ import { isAdmin } from '@/role'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import DetailsInput from '@/components/widgets/DetailsInput'
 import store from '@/store'
 
 export default {
@@ -637,7 +647,8 @@ export default {
   components: {
     AddDiskOffering,
     ResourceIcon,
-    TooltipLabel
+    TooltipLabel,
+    DetailsInput
   },
   data () {
     return {
@@ -1139,6 +1150,12 @@ export default {
         if (values.storagepolicy) {
           params.storagepolicy = values.storagepolicy
         }
+        if (values.externaldetails) {
+          Object.entries(values.externaldetails).forEach(([key, value]) => {
+            params['externaldetails[0].' + key] = value
+          })
+        }
+
         api('createServiceOffering', params).then(json => {
           const message = this.isSystem
             ? `${this.$t('message.create.service.offering')}: `

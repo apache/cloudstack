@@ -194,7 +194,7 @@
             </a-form-item>
           </a-col>
           <a-col :md="24" :lg="12">
-            <a-form-item ref="format" name="format">
+            <a-form-item ref="format" name="format" v-if="!hyperExternalShow">
               <template #label>
                 <tooltip-label :title="$t('label.format')" :tooltip="apiParams.format.description"/>
               </template>
@@ -212,10 +212,100 @@
                 </a-select-option>
               </a-select>
             </a-form-item>
+            <a-form-item ref="extensionid" name="extensionid" v-if="hyperExternalShow">
+              <template #label>
+                <tooltip-label :title="$t('label.extensionid')" :tooltip="apiParams.extensionid.description"/>
+              </template>
+              <a-select
+                v-model:value="form.extensionid"
+                :placeholder="apiParams.extensionid.description"
+                showSearch
+                optionFilterProp="label"
+                :filterOption="(input, option) => {
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
+                <a-select-option v-for="extension in extensionsList" :key="extension.id" :label="extension.name || extension.description">
+                  {{ extension.name || extension.description }}
+                </a-select-option>
+              </a-select>
+            </a-form-item>
           </a-col>
         </a-row>
-        <a-row :gutter="12">
-          <a-col :md="24" :lg="12" v-if="(hyperKVMShow || hyperCustomShow) && currentForm === 'Create'">
+        <div v-if="hyperExternalShow">
+          <a-form-item name="externalDetailsFlag" ref="externalDetailsFlag">
+            <template #label>
+              <tooltip-label :title="$t('label.external.details')" :tooltip="$t('label.external.details.tooltip')"/>
+            </template>
+            <a-switch v-model:checked="form.externalDetailsFlag" :checked="externalDetailsFlag" @change="val => { externalDetailsFlag = val }"/>
+          </a-form-item>
+          <a-form-item v-if="externalDetailsFlag">
+            <a-card>
+              <a-button ref="details" type="primary" style="width: 100%;" @click="addExternalDetails">
+                <template #icon><plus-outlined /></template>
+                {{ $t('label.add.external.details') }}
+              </a-button>
+              <div v-show="showAddDetail" style="padding-top: 15px;">
+                <a-input-group
+                  type="text">
+                  <a-row :gutter="{ xs: 8, sm: 16, md: 24, lg: 32 }">
+                    <a-col :span="8">
+                      <a-input
+                        ref="keyElm"
+                        v-model:value="newKey"
+                        :placeholder="$t('label.name')"
+                        @change="e => onAddInputChange(e, 'newKey')" />
+                    </a-col>
+                    <a-col :span="3" style="text-align: center;">
+                      <a-input
+                        class="tag-disabled-input"
+                        style="pointer-events: none; text-align: center"
+                        placeholder="="
+                        disabled />
+                    </a-col>
+                    <a-col :span="8">
+                      <a-input
+                        v-model:value="newValue"
+                        :placeholder="$t('label.value')"
+                        @change="e => onAddInputChange(e, 'newValue')" />
+                    </a-col>
+                    <a-col :span="2">
+                      <tooltip-button :tooltip="$t('label.add.setting')" :shape="null" icon="check-outlined" @onClick="addDetail" buttonClass="detail-button" />
+                    </a-col>
+                    <a-col :span="2">
+                      <tooltip-button :tooltip="$t('label.cancel')" :shape="null" icon="close-outlined" @onClick="closeDetail" buttonClass="detail-button" />
+                    </a-col>
+                  </a-row>
+                  <br/>
+                </a-input-group>
+              </div>
+              <div style="padding-top: 10px">
+                <div :key="index" v-for="(item, index) in externalDetails">
+                  <a-row :gutter="{ xs: 8, sm: 16, md: 24, lg: 32 }">
+                    <a-col :span="6">
+                      <div class="ant-col-detail">{{ item.name }}</div>
+                    </a-col>
+                    <a-col :span="14">
+                      <div class="ant-col-detail">{{ item.value }}</div>
+                    </a-col>
+                    <a-col :span="4">
+                      <div>
+                        <tooltip-button
+                          :tooltip="$t('label.delete')"
+                          :type="primary"
+                          :danger="true"
+                          icon="delete-outlined"
+                          @onClick="removeDetail(index)"/>
+                        </div>
+                    </a-col>
+                  </a-row>
+                  <a-divider style="margin-top: 10px; margin-bottom: 10px;" v-if="index < externalDetails.length - 1" />
+                </div>
+              </div>
+            </a-card>
+          </a-form-item>
+        </div>
+        <a-row :gutter="12" v-if="(hyperKVMShow || hyperCustomShow) && currentForm === 'Create'">
+          <a-col :md="24" :lg="12">
             <a-form-item ref="directdownload" name="directdownload">
               <template #label>
                 <tooltip-label :title="$t('label.directdownload')" :tooltip="apiParams.directdownload.description"/>
@@ -474,6 +564,7 @@ import { axios } from '../../utils/request'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'RegisterOrUploadTemplate',
@@ -490,7 +581,8 @@ export default {
   },
   components: {
     ResourceIcon,
-    TooltipLabel
+    TooltipLabel,
+    TooltipButton
   },
   data () {
     return {
@@ -513,6 +605,7 @@ export default {
       userdatapolicylist: {},
       defaultOsId: null,
       hyperKVMShow: false,
+      hyperExternalShow: false,
       hyperCustomShow: false,
       hyperXenServerShow: false,
       hyperVMWShow: false,
@@ -531,7 +624,13 @@ export default {
       domainid: null,
       account: null,
       customHypervisorName: 'Custom',
-      architectureTypes: {}
+      architectureTypes: {},
+      externalDetailsFlag: false,
+      showAddDetail: false,
+      newKey: '',
+      newValue: '',
+      externalDetails: [],
+      extensionsList: []
     }
   },
   beforeCreate () {
@@ -594,6 +693,7 @@ export default {
           this.fetchXenServerProvider()
         }
       }
+      this.fetchExtensionsList()
     },
     handleFormChange (e) {
       this.currentForm = e.target.value
@@ -658,6 +758,45 @@ export default {
             store.dispatch('SetCustomHypervisorName', this.customHypervisorName)
           }
         }
+      }).finally(() => {
+        this.loading = false
+      })
+    },
+    addExternalDetails () {
+      this.showAddDetail = true
+    },
+    onAddInputChange (val, obj) {
+      this.error = false
+      this[obj].concat(val.data)
+    },
+    addDetail () {
+      if (this.newKey === '' || this.newValue === '') {
+        this.error = this.$t('message.error.provide.setting')
+        return
+      }
+      this.error = false
+      this.externalDetails.push({ name: this.newKey, value: this.newValue })
+      this.newKey = ''
+      this.newValue = ''
+    },
+    removeDetail (index) {
+      this.externalDetails.splice(index, 1)
+      this.newKey = ''
+      this.newValue = ''
+    },
+    closeDetail () {
+      this.newKey = ''
+      this.newValue = ''
+      this.error = false
+      this.showAddDetail = false
+    },
+    fetchExtensionsList () {
+      this.loading = true
+      api('listExtensions', {
+      }).then(response => {
+        this.extensionsList = response.listextensionsresponse.extensions || []
+      }).catch(error => {
+        this.$notifyError(error)
       }).finally(() => {
         this.loading = false
       })
@@ -942,6 +1081,10 @@ export default {
             description: 'BareMetal'
           })
           break
+        case 'External':
+          this.hyperExternalShow = true
+          this.selectedFormat = 'External'
+          break
         case 'Ovm':
           format.push({
             id: 'RAW',
@@ -1019,6 +1162,7 @@ export default {
       this.hyperXenServerShow = false
       this.hyperVMWShow = false
       this.hyperKVMShow = false
+      this.hyperExternalShow = false
       this.hyperCustomShow = false
       this.deployasis = false
       this.allowDirectDownload = false
@@ -1098,6 +1242,14 @@ export default {
         }
         if (!('requireshvm' in params)) { // handled as default true by API
           params.requireshvm = false
+        }
+        if (this.selectedFormat === 'External') {
+          params.format = 'External'
+        }
+        if (this.externalDetails.length > 0) {
+          this.externalDetails.forEach(function (item, index) {
+            params['externaldetails[0].' + item.name] = item.value
+          })
         }
         if (this.currentForm === 'Create') {
           this.loading = true

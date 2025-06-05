@@ -124,6 +124,7 @@ import {
   MobileOutlined,
   MoreOutlined,
   NodeIndexOutlined,
+  NodeExpandOutlined,
   NotificationOutlined,
   NumberOutlined,
   LaptopOutlined,
@@ -135,6 +136,7 @@ import {
   PictureOutlined,
   PieChartOutlined,
   PlayCircleOutlined,
+  PlaySquareOutlined,
   PlusCircleOutlined,
   PlusOutlined,
   PlusSquareOutlined,
@@ -294,6 +296,7 @@ export default {
     app.component('MobileOutlined', MobileOutlined)
     app.component('MoreOutlined', MoreOutlined)
     app.component('NodeIndexOutlined', NodeIndexOutlined)
+    app.component('NodeExpandOutlined', NodeExpandOutlined)
     app.component('NotificationOutlined', NotificationOutlined)
     app.component('NumberOutlined', NumberOutlined)
     app.component('LaptopOutlined', LaptopOutlined)
@@ -305,6 +308,7 @@ export default {
     app.component('PictureOutlined', PictureOutlined)
     app.component('PieChartOutlined', PieChartOutlined)
     app.component('PlayCircleOutlined', PlayCircleOutlined)
+    app.component('PlaySquareOutlined', PlaySquareOutlined)
     app.component('PlusCircleOutlined', PlusCircleOutlined)
     app.component('PlusOutlined', PlusOutlined)
     app.component('PlusSquareOutlined', PlusSquareOutlined)
