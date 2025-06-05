@@ -61,6 +61,11 @@ public class ListCustomActionCmd extends BaseListCmd {
             description = "Type of the resource for actions")
     private String resourceType;
 
+    @Parameter(name = ApiConstants.RESOURCE_ID,
+            type = CommandType.STRING,
+            description = "ID of a resource for actions")
+    private String resourceId;
+
     @Parameter(name = ApiConstants.ENABLED,
             type = CommandType.BOOLEAN,
             description = "List actions whether they are enabled or not")
@@ -84,6 +89,10 @@ public class ListCustomActionCmd extends BaseListCmd {
 
     public String getResourceType() {
         return resourceType;
+    }
+
+    public String getResourceId() {
+        return resourceId;
     }
 
     public Boolean isEnabled() {

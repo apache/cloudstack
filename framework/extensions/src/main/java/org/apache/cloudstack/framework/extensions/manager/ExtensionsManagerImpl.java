@@ -526,23 +526,63 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         });
     }
 
+    protected Extension getExtensionFromResource(ExtensionCustomAction.ResourceType resourceType, String resourceUuid) {
+        Object object = entityManager.findByUuid(resourceType.getAssociatedClass(), resourceUuid);
+        if (object == null) {
+            return null;
+        }
+        Long clusterId = null;
+        if (resourceType == ExtensionCustomAction.ResourceType.VirtualMachine) {
+            VirtualMachine vm = (VirtualMachine) object;
+            Pair<Long, Long> clusterHostId = virtualMachineManager.findClusterAndHostIdForVm(vm, false);
+            clusterId = clusterHostId.first();
+        }
+        if (clusterId == null) {
+            return null;
+        }
+        ExtensionResourceMapVO mapVO =
+                extensionResourceMapDao.findByResourceIdAndType(clusterId, ExtensionResourceMap.ResourceType.Cluster);
+        if (mapVO == null) {
+            return null;
+        }
+        return extensionDao.findById(mapVO.getExtensionId());
+    }
+
     @Override
     public List<ExtensionCustomActionResponse> listCustomActions(ListCustomActionCmd cmd) {
         Long id = cmd.getId();
         String name = cmd.getName();
         Long extensionId = cmd.getExtensionId();
         String keyword = cmd.getKeyword();
-        final String resourceType = cmd.getResourceType();
+        final String resourceTypeStr = cmd.getResourceType();
+        final String resourceId = cmd.getResourceId();
         final Boolean enabled = cmd.isEnabled();
         final SearchBuilder<ExtensionCustomActionVO> sb = extensionCustomActionDao.createSearchBuilder();
         final Filter searchFilter = new Filter(ExtensionCustomActionVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+
+        ExtensionCustomAction.ResourceType resourceType = null;
+        if (StringUtils.isNotBlank(resourceTypeStr)) {
+            resourceType = EnumUtils.getEnum(ExtensionCustomAction.ResourceType.class, resourceTypeStr);
+            if (resourceType == null) {
+                throw new InvalidParameterValueException("Invalid resource type specified");
+            }
+        }
+
+        if (extensionId == null && resourceType != null && StringUtils.isNotBlank(resourceId)) {
+            Extension extension = getExtensionFromResource(resourceType, resourceId);
+            if (extension == null) {
+                logger.error("No extension found for the specified resource [type: {}, id: {}]", resourceTypeStr, resourceId);
+                throw new InvalidParameterValueException("Internal error listing custom actions with specified resource");
+            }
+            extensionId = extension.getId();
+        }
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("extensionid", sb.entity().getExtensionId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("keyword", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("enabled", sb.entity().isEnabled(), SearchCriteria.Op.EQ);
-        if (StringUtils.isNotBlank(resourceType)) {
+        if (resourceType != null) {
             sb.and().op("resourceTypeNull", sb.entity().getResourceType(), SearchCriteria.Op.NULL);
             sb.or("resourceType", sb.entity().getResourceType(), SearchCriteria.Op.EQ);
             sb.cp();
@@ -564,7 +604,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         if (enabled != null) {
             sc.setParameters("enabled",  true);
         }
-        if (StringUtils.isNotBlank(resourceType)) {
+        if (resourceType != null) {
             sc.setParameters("resourceType",  resourceType);
         }
         final Pair<List<ExtensionCustomActionVO>, Integer> result = extensionCustomActionDao.searchAndCount(sc, searchFilter);

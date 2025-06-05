@@ -53,7 +53,7 @@ public class RunCustomActionCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, required = true,
+    @Parameter(name = ApiConstants.CUSTOM_ACTION_ID, type = CommandType.UUID, required = true,
             entityType = ExtensionCustomActionResponse.class, description = "ID of the custom action")
     private Long customActionId;
 
