@@ -70,10 +70,10 @@ public class ListVmwareDcVmsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, description = "The password for specified username.")
     private String password;
 
-    @Parameter(name = ApiConstants.HOST_NAME, type = CommandType.STRING, description = "Name of the host on vCenter. Must be set along with the instancename parameter")
+    @Parameter(name = ApiConstants.HOST_NAME, type = CommandType.STRING, description = "Name of the host on vCenter. Must be set along with the instancename parameter", since = "4.19.3.0")
     private String hostName;
 
-    @Parameter(name = ApiConstants.INSTANCE_NAME, type = CommandType.STRING, description = "Name of the VM on vCenter. Must be set along with the hostname parameter")
+    @Parameter(name = ApiConstants.INSTANCE_NAME, type = CommandType.STRING, description = "Name of the VM on vCenter. Must be set along with the hostname parameter", since = "4.19.3.0")
     private String instanceName;
 
     public String getVcenter() {
