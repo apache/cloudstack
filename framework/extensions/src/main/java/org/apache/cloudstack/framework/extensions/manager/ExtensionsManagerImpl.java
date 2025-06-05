@@ -304,8 +304,10 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         String resourceId = cmd.getResourceId();
         Long extensionId = cmd.getExtensionId();
         String resourceType = cmd.getResourceType();
-        if (!ExtensionResourceMap.ResourceType.Cluster.name().equalsIgnoreCase(resourceType)) {
-            throw new InvalidParameterValueException("Currently only cluster can be used to register an extension of type Orchestrator");
+        if (!EnumUtils.isValidEnum(ExtensionResourceMap.ResourceType.class, resourceType)) {
+            throw new InvalidParameterValueException(
+                    String.format("Currently only [%s] can be used to register an extension of type Orchestrator",
+                            EnumSet.allOf(ExtensionResourceMap.ResourceType.class)));
         }
         ClusterVO clusterVO = clusterDao.findByUuid(resourceId);
         if (clusterVO == null) {
@@ -319,6 +321,11 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     @ActionEvent(eventType = EventTypes.EVENT_EXTENSION_RESOURCE_REGISTER, eventDescription = "registering extension resource")
     public ExtensionResourceMap registerExtensionWithCluster(Cluster cluster, long extensionId,
                   Map<String, String> details) {
+        if (!Hypervisor.HypervisorType.External.equals(cluster.getHypervisorType())) {
+            throw new CloudRuntimeException(
+                    String.format("Cluster ID: %s is not of %s hypervisor type", cluster.getId(),
+                            cluster.getHypervisorType()));
+        }
         final ExtensionResourceMap.ResourceType resourceType = ExtensionResourceMap.ResourceType.Cluster;
         ExtensionResourceMapVO existing =
                 extensionResourceMapDao.findByResourceIdAndType(cluster.getId(), resourceType);
@@ -346,11 +353,12 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         final String resourceId = cmd.getResourceId();
         final Long extensionId = cmd.getExtensionId();
         final String resourceType = cmd.getResourceType();
-        if (ExtensionResourceMap.ResourceType.Cluster.name().equalsIgnoreCase(resourceType)) {
-            unregisterExtensionWithCluster(resourceId, extensionId);
-        } else {
-            throw new CloudRuntimeException("Currently only cluster can be used to register an extension of type Orchestrator");
+        if (!EnumUtils.isValidEnum(ExtensionResourceMap.ResourceType.class, resourceType)) {
+            throw new InvalidParameterValueException(
+                    String.format("Currently only [%s] can be used to unregister an extension of type Orchestrator",
+                            EnumSet.allOf(ExtensionResourceMap.ResourceType.class)));
         }
+        unregisterExtensionWithCluster(resourceId, extensionId);
         return extensionDao.findById(extensionId);
     }
 
