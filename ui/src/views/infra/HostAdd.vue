@@ -96,7 +96,7 @@
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item style="width: 100%" name="hostname" ref="hostname">
+          <a-form-item name="hostname" ref="hostname">
             <template #label>
               <tooltip-label
                 :title="selectedClusterHyperVisorType === 'VMware' ? $t('label.esx.host') : $t('label.hostnamelabel')"
@@ -106,7 +106,7 @@
               v-model:value="form.hostname"
               :placeholder="placeholder.url"></a-input>
           </a-form-item>
-          <a-form-item name="username" ref="username" v-if="selectedClusterHyperVisorType !== 'VMware' && selectedClusterHyperVisorType !== 'External'">
+          <a-form-item name="username" ref="username" v-if="!['VMware', 'External'].includes(selectedClusterHyperVisorType)">
             <template #label>
               <tooltip-label :title="$t('label.username')" :tooltip="placeholder.username"/>
             </template>
@@ -114,7 +114,7 @@
               v-model:value="form.username"
               :placeholder="placeholder.username"></a-input>
           </a-form-item>
-          <a-form-item name="authmethod" ref="authmethod" v-if="selectedClusterHyperVisorType !== 'VMware' && selectedClusterHyperVisorType !== 'External'">
+          <a-form-item name="authmethod" ref="authmethod" v-if="!['VMware', 'External'].includes(selectedClusterHyperVisorType)">
             <template #label>
               <tooltip-label :title="$t('label.authentication.method')" :tooltip="$t('label.authentication.method')"/>
             </template>
@@ -137,7 +137,7 @@
               </a-alert>
             </div>
           </a-form-item>
-          <a-form-item name="password" ref="password" v-if="selectedClusterHyperVisorType !== 'VMware' && selectedClusterHyperVisorType !== 'External' && authMethod === 'password'">
+          <a-form-item name="password" ref="password" v-if="!['VMware', 'External'].includes(selectedClusterHyperVisorType) && authMethod === 'password'">
             <template #label>
               <tooltip-label :title="$t('label.password')" :tooltip="placeholder.password"/>
             </template>
@@ -217,54 +217,13 @@
               <a-select-option v-for="tag in hostTagsList" :key="tag.name">{{ tag.name }}</a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item v-if="selectedClusterHyperVisorType === 'External'">
-            <br />
-            <span>{{ $t('message.add.external.details') }}</span><br/>
-            <br />
-            <a-button style="width: 100%" ref="details" type="primary" @click="addExternalDetails">
-              <template #icon><plus-outlined /></template>
-              {{ $t('label.add.external.details') }}
-            </a-button>
-            <a-form-item>
-              <div v-show="showAddDetail">
-                <br/>
-                <a-input-group
-                  type="text"
-                  compact>
-                  <a-input
-                    style="width: 25%;"
-                    ref="keyElm"
-                    v-model:value="newKey"
-                    :placeholder="$t('label.name')"
-                    @change="e => onAddInputChange(e, 'newKey')" />
-                  <a-input
-                    class="tag-disabled-input"
-                    style=" width: 30px; margin-left: 10px; margin-right: 10px; pointer-events: none; text-align: center"
-                    placeholder="="
-                    disabled />
-                  <a-input
-                    style="width: 35%;"
-                    v-model:value="newValue"
-                    :placeholder="$t('label.value')"
-                    @change="e => onAddInputChange(e, 'newValue')" />
-                  <tooltip-button :tooltip="$t('label.add.setting')" :shape="null" icon="check-outlined" @onClick="addDetail" buttonClass="detail-button" />
-                  <tooltip-button :tooltip="$t('label.cancel')" :shape="null" icon="close-outlined" @onClick="closeDetail" buttonClass="detail-button" />
-                </a-input-group>
-              </div>
-            </a-form-item>
-            <a-list size="medium">
-              <a-list-item :key="index" v-for="(item, index) in externalDetails">
-                <span style="padding-left: 11px; width: 14%;"> {{ item.name }} </span>
-                <span style="padding-left: 30px; width: 55%;"> {{ item.value }}</span>
-                <tooltip-button
-                  style="width: 30%;"
-                  :tooltip="$t('label.delete')"
-                  :type="primary"
-                  :danger="true"
-                  icon="delete-outlined"
-                  @onClick="removeDetail(index)"/>
-              </a-list-item>
-            </a-list>
+          <a-form-item name="externaldetails" ref="externaldetails" v-if="selectedClusterHyperVisorType === 'External'">
+            <template #label>
+              <tooltip-label :title="$t('label.externaldetails')" :tooltip="apiParams.externaldetails.description"/>
+            </template>
+            <div style="margin-bottom: 10px">{{ $t('message.add.external.details') }}</div>
+            <details-input
+              v-model:value="form.externaldetails" />
           </a-form-item>
           <a-form-item name="isdedicated" ref="isdedicated">
             <template #label>
@@ -299,6 +258,7 @@ import DedicateDomain from '../../components/view/DedicateDomain'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import TooltipButton from '@/components/widgets/TooltipButton'
+import DetailsInput from '@/components/widgets/DetailsInput'
 
 export default {
   name: 'HostAdd',
@@ -307,7 +267,8 @@ export default {
     DedicateDomain,
     ResourceIcon,
     TooltipLabel,
-    TooltipButton
+    TooltipButton,
+    DetailsInput
   },
   props: {
     resource: {
@@ -332,10 +293,6 @@ export default {
       dedicatedAccount: null,
       domainError: false,
       params: [],
-      showAddDetail: false,
-      newKey: '',
-      newValue: '',
-      externalDetails: [],
       placeholder: {
         zoneid: null,
         podid: null,
@@ -357,6 +314,9 @@ export default {
 
       return rules
     }
+  },
+  beforeCreate () {
+    this.apiParams = this.$getApiParams('addHost')
   },
   created () {
     this.initForm()
@@ -471,28 +431,6 @@ export default {
     handleAuthMethodChange (val) {
       this.authMethod = val
     },
-    addExternalDetails () {
-      this.showAddDetail = true
-    },
-    onAddInputChange (val, obj) {
-      this.error = false
-      this[obj].concat(val.data)
-    },
-    addDetail () {
-      if (this.newKey === '' || this.newValue === '') {
-        this.error = this.$t('message.error.provide.setting')
-        return
-      }
-      this.error = false
-      this.externalDetails.push({ name: this.newKey, value: this.newValue })
-      this.newKey = ''
-      this.newValue = ''
-    },
-    removeDetail (index) {
-      this.externalDetails.splice(index, 1)
-      this.newKey = ''
-      this.newValue = ''
-    },
     handleSubmitForm () {
       if (this.loading) return
       this.formRef.value.validate().then(() => {
@@ -531,10 +469,9 @@ export default {
           args.memory = values.baremetalmemory
           args.hostmac = values.baremetalmac
         }
-
-        if (this.externalDetails.length > 0) {
-          this.externalDetails.forEach(function (item, index) {
-            args['externaldetails[0].' + item.name] = item.value
+        if (values.externaldetails) {
+          Object.entries(values.externaldetails).forEach(([key, value]) => {
+            args['externaldetails[0].' + key] = value
           })
         }
         Object.keys(args).forEach((key) => (args[key] == null) && delete args[key])
@@ -621,7 +558,7 @@ export default {
     .ant-select {
       width: 85vw;
       @media (min-width: 760px) {
-        width: 400px;
+        width: 500px;
       }
     }
   }
@@ -634,14 +571,5 @@ export default {
         display: block;
       }
     }
-  }
-
-  .detail-input {
-    width: calc(calc(100% / 4) - 45px);
-  }
-
-  .detail-button {
-    width: 30px;
-    margin-left: 5px;
   }
 </style>
