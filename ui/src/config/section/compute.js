@@ -426,6 +426,15 @@ export default {
           show: (record, store) => { return ['Destroyed'].includes(record.state) && store.features.allowuserexpungerecovervm && record.vmtype !== 'sharedfsvm' }
         },
         {
+          api: 'runCustomAction',
+          icon: 'play-square-outlined',
+          label: 'label.run.custom.action',
+          dataView: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/extension/RunCustomAction'))),
+          popup: true,
+          show: (record) => { return ['External', 'Simulator'].includes(record.hypervisor) }
+        },
+        {
           api: 'unmanageVirtualMachine',
           icon: 'disconnect-outlined',
           label: 'label.action.unmanage.virtualmachine',
