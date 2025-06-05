@@ -36,8 +36,8 @@
             return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }"
           @change="handleResourceTypeChange" >
-          <a-select-option v-for="opt in resourceTypes" :key="opt.id" :label="opt.id || opt.description">
-            {{ opt.id || opt.description }}
+          <a-select-option v-for="opt in resourceTypes" :key="opt.id" :label="opt.description || opt.id">
+            {{ opt.description || opt.id }}
           </a-select-option>
         </a-select>
       </a-form-item>
