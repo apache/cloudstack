@@ -687,26 +687,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
     }
 
-    // ToDo: confirm if this needed anymore
-    protected void validateExternalHypervisorConfigValues(final String configName, final String value) {
-        if (configName.equals("external.provisioners") && StringUtils.isNotEmpty(value)) {
-            if (externalProvisioners != null) {
-                logger.info("Found these external provisioners from the available plugins {}", externalProvisioners);
-                Set<String> externalProvisionersListFromConfig = Arrays.stream(value.split(","))
-                        .map(String::trim)
-                        .collect(Collectors.toSet());
-                Set<String> externalProvisionersListFromPlugins = externalProvisioners.stream()
-                        .map(ExternalProvisioner::getName)
-                        .collect(Collectors.toSet());
-                if (externalProvisionersListFromPlugins.containsAll(externalProvisionersListFromConfig)) {
-                    logger.info("Found the suitable external provisioner names: {}", value);
-                    return;
-                }
-            }
-         throw new InvalidParameterValueException(String.format("Invalid value %s for the external provisioners", value));
-        }
-    }
-
     @Override
     public boolean start() {
 
@@ -1445,7 +1425,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         validateIpAddressRelatedConfigValues(name, value);
-        validateExternalHypervisorConfigValues(name, value);
 
         if (!shouldValidateConfigRange(name, value, configuration)) {
             return null;
