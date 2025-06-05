@@ -18,8 +18,12 @@
 <template>
   <div>
     <div class="input-row">
-      <a-input v-model:value="newKey" placeholder="Key" class="input-field" />
-      <a-input v-model:value="newValue" placeholder="Value" class="input-field" />
+      <a-form-item no-style>
+        <a-input v-model:value="newKey" placeholder="Key" class="input-field" />
+      </a-form-item>
+      <a-form-item no-style>
+        <a-input v-model:value="newValue" placeholder="Value" class="input-field" />
+      </a-form-item>
       <a-button type="primary" class="add-button" @click="addEntry" :disabled="!newKey || !newValue">
         Add
       </a-button>
@@ -51,7 +55,9 @@
         </template>
 
         <template v-else-if="record.editing">
-          <a-input v-model:value="record[column.key]" />
+          <a-form-item no-style>
+            <a-input v-model:value="editBuffer[column.key]" />
+          </a-form-item>
         </template>
 
         <template v-else>
@@ -87,7 +93,8 @@ export default {
       ],
       newKey: '',
       newValue: '',
-      tableData: []
+      tableData: [],
+      editBuffer: {}
     }
   },
   watch: {
@@ -118,17 +125,20 @@ export default {
       this.updateData()
     },
     editRow (record) {
-      record._originalValue = record.value
+      this.editBuffer = {
+        key: record.key,
+        value: record.value
+      }
       record.editing = true
     },
     cancelEdit (record) {
-      record.value = record._originalValue
       record.editing = false
-      delete record._originalValue
+      this.editBuffer = {}
     },
     saveEdit (record) {
+      record.key = this.editBuffer.key
+      record.value = this.editBuffer.value
       record.editing = false
-      delete record._originalValue
       this.updateData()
     },
     updateData () {

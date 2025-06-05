@@ -18,11 +18,17 @@
 <template>
   <div>
     <div class="input-row">
-      <a-input v-model:value="newParam.name" :placeholder="$t('label.name')" class="input-field" />
-      <a-select v-model:value="newParam.type" :placeholder="$t('label.type')" class="input-field">
-        <a-select-option v-for="t in types" :key="t" :value="t">{{ t }}</a-select-option>
-      </a-select>
-      <a-checkbox v-model:checked="newParam.required" class="required-checkbox">Required</a-checkbox>
+      <a-form-item no-style>
+        <a-input v-model:value="newParam.name" :placeholder="$t('label.name')" class="input-field" />
+      </a-form-item>
+      <a-form-item no-style>
+        <a-select v-model:value="newParam.type" :placeholder="$t('label.type')" class="input-field">
+          <a-select-option v-for="t in types" :key="t" :value="t">{{ t }}</a-select-option>
+        </a-select>
+      </a-form-item>
+      <a-form-item no-style>
+        <a-checkbox v-model:checked="newParam.required" class="required-checkbox">Required</a-checkbox>
+      </a-form-item>
       <a-button type="primary" class="add-button" @click="addEntry" :disabled="!newParam.name || !newParam.type">
         Add
       </a-button>
@@ -54,11 +60,17 @@
         </template>
 
         <template v-else-if="record.editing">
-          <a-input v-if="column.key === 'name'" v-model:value="record.name" />
-          <a-select v-if="column.key === 'type'" v-model:value="record.type">
-            <a-select-option v-for="t in types" :key="t" :value="t">{{ t }}</a-select-option>
-          </a-select>
-          <a-checkbox v-if="column.key === 'required'" v-model:checked="record.required" />
+          <a-form-item no-style>
+            <a-input v-if="column.key === 'name'" v-model:value="editBuffer.name" />
+          </a-form-item>
+          <a-form-item no-style>
+            <a-select v-if="column.key === 'type'" v-model:value="editBuffer.type">
+              <a-select-option v-for="t in types" :key="t" :value="t">{{ t }}</a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item no-style>
+            <a-checkbox v-if="column.key === 'required'" v-model:checked="editBuffer.required" />
+          </a-form-item>
         </template>
 
         <template v-else>
@@ -105,7 +117,8 @@ export default {
         { title: 'Required', dataIndex: 'required', key: 'required', width: '20%' },
         { title: 'Action', key: 'action', width: '20%' }
       ],
-      tableData: []
+      tableData: [],
+      editBuffer: null
     }
   },
   watch: {
@@ -136,18 +149,24 @@ export default {
       this.updateData()
     },
     editRow (record) {
-      record._original = { ...record }
+      this.editBuffer = {
+        name: record.name,
+        type: record.type,
+        required: record.required
+      }
       record.editing = true
     },
     cancelEdit (record) {
-      Object.assign(record, record._original)
       record.editing = false
-      delete record._original
+      this.editBuffer = {}
     },
     saveEdit (record) {
+      record.name = this.editBuffer.name
+      record.type = this.editBuffer.type
+      record.required = this.editBuffer.required
       record.editing = false
-      delete record._original
       this.updateData()
+      this.editBuffer = {}
     },
     updateData () {
       const data = this.tableData.map(({ name, type, required }) => ({ name, type, required }))
