@@ -1912,7 +1912,7 @@ public class UserVmManagerImplTest {
 
     @Test
     public void validateIfVmHasNoRulesTestOneToOneNatRulesExistThrowsInvalidParameterValueException() {
-        String expectedMessage = String.format("Remove the One to One Nat rule for VM [%s] for IP [%s].", userVmVoMock, ipAddressVoMock.toString());
+        String expectedMessage = String.format("Remove the One to One NAT rule for VM [%s] for IP [%s].", userVmVoMock, ipAddressVoMock.toString());
 
         LinkedList<IPAddressVO> ipAddressVoList = new LinkedList<IPAddressVO>();
 
