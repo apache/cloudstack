@@ -18,41 +18,14 @@
  */
 package org.apache.cloudstack.storage.datastore.lifecycle;
 
-import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.CreateStoragePoolCommand;
-import com.cloud.agent.api.DeleteStoragePoolCommand;
-import com.cloud.agent.api.StoragePoolInfo;
-import com.cloud.agent.api.ValidateVcenterDetailsCommand;
-import com.cloud.alert.AlertManager;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.StorageConflictException;
-import com.cloud.exception.StorageUnavailableException;
-import com.cloud.host.Host;
-import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.resource.ResourceManager;
-import com.cloud.server.ManagementServer;
-import com.cloud.storage.OCFS2Manager;
-import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolAutomation;
-import com.cloud.storage.StoragePoolHostVO;
-import com.cloud.storage.dao.StoragePoolHostDao;
-import com.cloud.storage.dao.StoragePoolWorkDao;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.user.dao.UserDao;
-import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.db.DB;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.dao.ConsoleProxyDao;
-import com.cloud.vm.dao.DomainRouterDao;
-import com.cloud.vm.dao.SecondaryStorageVmDao;
-import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.VMInstanceDao;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import javax.inject.Inject;
+
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -65,11 +38,45 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
 
-import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CreateStoragePoolCommand;
+import com.cloud.agent.api.DeleteStoragePoolCommand;
+import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.agent.api.ValidateVcenterDetailsCommand;
+import com.cloud.alert.AlertManager;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.HostPodDao;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.StorageConflictException;
+import com.cloud.exception.StorageUnavailableException;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.resource.ResourceManager;
+import com.cloud.server.ManagementServer;
+import com.cloud.storage.OCFS2Manager;
+import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolAutomation;
+import com.cloud.storage.StoragePoolHostVO;
+import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
+import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.storage.dao.StoragePoolWorkDao;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.user.dao.UserDao;
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.dao.ConsoleProxyDao;
+import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.dao.SecondaryStorageVmDao;
+import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     @Inject
@@ -86,6 +93,8 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStor
     StorageManager storageMgr;
 
     @Inject
+    ClusterDao clusterDao;
+    @Inject
     VolumeDao volumeDao;
     @Inject
     VMInstanceDao vmDao;
@@ -94,6 +103,8 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStor
     @Inject
     protected VirtualMachineManager vmMgr;
     @Inject
+    HostPodDao podDao;
+    @Inject
     protected SecondaryStorageVmDao _secStrgDao;
     @Inject
     UserVmDao userVmDao;
@@ -101,6 +112,8 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStor
     protected UserDao _userDao;
     @Inject
     protected DomainRouterDao _domrDao;
+    @Inject
+    DataCenterDao zoneDao;
     @Inject
     protected StoragePoolHostDao _storagePoolHostDao;
     @Inject
@@ -116,6 +129,8 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStor
     StoragePoolAutomation storagePoolAutmation;
     @Inject
     protected HostDao _hostDao;
+    @Inject
+    private StoragePoolAndAccessGroupMapDao storagePoolAndAccessGroupMapDao;
 
     @SuppressWarnings("unchecked")
     @Override
@@ -133,9 +148,11 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStor
         PrimaryDataStoreParameters parameters = new PrimaryDataStoreParameters();
 
         String tags = (String)dsInfos.get("tags");
+        String storageAccessGroups = (String)dsInfos.get(ApiConstants.STORAGE_ACCESS_GROUPS);
         Map<String, String> details = (Map<String, String>)dsInfos.get("details");
 
         parameters.setTags(tags);
+        parameters.setStorageAccessGroups(storageAccessGroups);
         parameters.setIsTagARule((Boolean)dsInfos.get("isTagARule"));
         parameters.setDetails(details);
 
@@ -317,34 +334,33 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStor
     }
 
     private void validateVcenterDetails(Long zoneId, Long podId, Long clusterId, String storageHost) {
-
-        List<HostVO> allHosts =
-                _resourceMgr.listAllUpHosts(Host.Type.Routing, clusterId, podId, zoneId);
-        if (allHosts.isEmpty()) {
-            throw new CloudRuntimeException("No host up to associate a storage pool with in zone: " + zoneId + " pod: " + podId + " cluster: " + clusterId);
+        List<Long> allHostIds = _hostDao.listIdsForUpRouting(zoneId, podId, clusterId);
+        if (allHostIds.isEmpty()) {
+            throw new CloudRuntimeException(String.format("No host up to associate a storage pool with in zone: %s pod: %s cluster: %s",
+                    zoneDao.findById(zoneId), podDao.findById(podId), clusterDao.findById(clusterId)));
         }
-
-        boolean success = false;
-        for (HostVO h : allHosts) {
+        for (Long hId : allHostIds) {
             ValidateVcenterDetailsCommand cmd = new ValidateVcenterDetailsCommand(storageHost);
-            final Answer answer = agentMgr.easySend(h.getId(), cmd);
+            final Answer answer = agentMgr.easySend(hId, cmd);
             if (answer != null && answer.getResult()) {
                 logger.info("Successfully validated vCenter details provided");
                 return;
             } else {
                 if (answer != null) {
-                    throw new InvalidParameterValueException("Provided vCenter server details does not match with the existing vCenter in zone id: " + zoneId);
+                    throw new InvalidParameterValueException(String.format("Provided vCenter server details does not match with the existing vCenter in zone: %s",
+                            zoneDao.findById(zoneId)));
                 } else {
-                    String msg = "Can not validate vCenter through host " + h.getId() + " due to ValidateVcenterDetailsCommand returns null";
-                    logger.warn(msg);
+                    logger.warn("Can not validate vCenter through host {} due to ValidateVcenterDetailsCommand returns null", hostDao.findById(hId));
                 }
             }
         }
-        throw new CloudRuntimeException("Could not validate vCenter details through any of the hosts with in zone: " + zoneId + ", pod: " + podId + ", cluster: " + clusterId);
+        throw new CloudRuntimeException(String.format("Could not validate vCenter details through any of the hosts with in zone: %s, pod: %s, cluster: %s",
+                zoneDao.findById(zoneId), podDao.findById(podId), clusterDao.findById(clusterId)));
     }
 
-    protected boolean createStoragePool(long hostId, StoragePool pool) {
-        logger.debug("creating pool " + pool.getName() + " on  host " + hostId);
+    protected boolean createStoragePool(HostVO host, StoragePool pool) {
+        long hostId = host.getId();
+        logger.debug("creating pool {} on  host {}", pool, host);
 
         if (pool.getPoolType() != StoragePoolType.NetworkFilesystem && pool.getPoolType() != StoragePoolType.Filesystem &&
                 pool.getPoolType() != StoragePoolType.IscsiLUN && pool.getPoolType() != StoragePoolType.Iscsi && pool.getPoolType() != StoragePoolType.VMFS &&
@@ -363,95 +379,66 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStor
             primaryDataStoreDao.expunge(pool.getId());
             String msg = "";
             if (answer != null) {
-                msg = "Can not create storage pool through host " + hostId + " due to " + answer.getDetails();
+                msg = String.format("Can not create storage pool through host %s due to %s", host, answer.getDetails());
                 logger.warn(msg);
             } else {
-                msg = "Can not create storage pool through host " + hostId + " due to CreateStoragePoolCommand returns null";
+                msg = String.format("Can not create storage pool through host %s due to CreateStoragePoolCommand returns null", host);
                 logger.warn(msg);
             }
             throw new CloudRuntimeException(msg);
         }
     }
 
+    private Pair<List<Long>, Boolean> prepareOcfs2NodesIfNeeded(PrimaryDataStoreInfo primaryStore) {
+        List<HostVO> hostsToConnect = _resourceMgr.getEligibleUpHostsInClusterForStorageConnection(primaryStore);
+        logger.debug(String.format("Attaching the pool to each of the hosts %s in the cluster: %s", hostsToConnect, primaryStore.getClusterId()));
+        List<Long> hostIds = hostsToConnect.stream().map(HostVO::getId).collect(Collectors.toList());
+
+        if (!StoragePoolType.OCFS2.equals(primaryStore.getPoolType())) {
+            return new Pair<>(hostIds, true);
+        }
+
+        if (!_ocfs2Mgr.prepareNodes(hostsToConnect, primaryStore)) {
+            return new Pair<>(hostIds, false);
+        }
+        return new Pair<>(hostIds, true);
+    }
+
     @Override
     public boolean attachCluster(DataStore store, ClusterScope scope) {
-        PrimaryDataStoreInfo primarystore = (PrimaryDataStoreInfo)store;
-        // Check if there is host up in this cluster
-        List<HostVO> allHosts =
-                _resourceMgr.listAllUpHosts(Host.Type.Routing, primarystore.getClusterId(), primarystore.getPodId(), primarystore.getDataCenterId());
-        if (allHosts.isEmpty()) {
-            primaryDataStoreDao.expunge(primarystore.getId());
-            throw new CloudRuntimeException("No host up to associate a storage pool with in cluster " + primarystore.getClusterId());
+        PrimaryDataStoreInfo primaryStore = (PrimaryDataStoreInfo)store;
+        Pair<List<Long>, Boolean> result = prepareOcfs2NodesIfNeeded(primaryStore);
+        List<Long> hostIds = result.first();
+        if (hostIds.isEmpty()) {
+            primaryDataStoreDao.expunge(primaryStore.getId());
+            throw new CloudRuntimeException("No host up to associate a storage pool with in cluster: " +
+                    clusterDao.findById(primaryStore.getClusterId()));
         }
-
-        if (primarystore.getPoolType() == StoragePoolType.OCFS2 && !_ocfs2Mgr.prepareNodes(allHosts, primarystore)) {
-            logger.warn("Can not create storage pool " + primarystore + " on cluster " + primarystore.getClusterId());
-            primaryDataStoreDao.expunge(primarystore.getId());
+        if (!result.second()) {
+            logger.warn("Can not create storage pool {} on {}", primaryStore,
+                    clusterDao.findById(primaryStore.getClusterId()));
+            primaryDataStoreDao.expunge(primaryStore.getId());
             return false;
         }
-
-        boolean success = false;
-        for (HostVO h : allHosts) {
-            success = createStoragePool(h.getId(), primarystore);
-            if (success) {
+        for (Long hId : hostIds) {
+            HostVO host = _hostDao.findById(hId);
+            if (createStoragePool(host, primaryStore)) {
                 break;
             }
         }
-
         logger.debug("In createPool Adding the pool to each of the hosts");
-        List<HostVO> poolHosts = new ArrayList<HostVO>();
-        for (HostVO h : allHosts) {
-            try {
-                storageMgr.connectHostToSharedPool(h.getId(), primarystore.getId());
-                poolHosts.add(h);
-            } catch (StorageConflictException se) {
-                primaryDataStoreDao.expunge(primarystore.getId());
-                throw new CloudRuntimeException("Storage has already been added as local storage");
-            } catch (Exception e) {
-                logger.warn("Unable to establish a connection between " + h + " and " + primarystore, e);
-                String reason = storageMgr.getStoragePoolMountFailureReason(e.getMessage());
-                if (reason != null) {
-                    throw new CloudRuntimeException(reason);
-                }
-            }
-        }
-
-        if (poolHosts.isEmpty()) {
-            logger.warn("No host can access storage pool " + primarystore + " on cluster " + primarystore.getClusterId());
-            primaryDataStoreDao.expunge(primarystore.getId());
-            throw new CloudRuntimeException("Failed to access storage pool");
-        }
-
+        storageMgr.connectHostsToPool(store, hostIds, scope, true, true);
         dataStoreHelper.attachCluster(store);
         return true;
     }
 
     @Override
-    public boolean attachZone(DataStore dataStore, ZoneScope scope, HypervisorType hypervisorType) {
-        List<HostVO> hosts = _resourceMgr.listAllUpHostsInOneZoneByHypervisor(hypervisorType, scope.getScopeId());
-        logger.debug("In createPool. Attaching the pool to each of the hosts.");
-        List<HostVO> poolHosts = new ArrayList<HostVO>();
-        for (HostVO host : hosts) {
-            try {
-                storageMgr.connectHostToSharedPool(host.getId(), dataStore.getId());
-                poolHosts.add(host);
-            } catch (StorageConflictException se) {
-                    primaryDataStoreDao.expunge(dataStore.getId());
-                    throw new CloudRuntimeException("Storage has already been added as local storage to host: " + host.getName());
-            } catch (Exception e) {
-                logger.warn("Unable to establish a connection between " + host + " and " + dataStore, e);
-                String reason = storageMgr.getStoragePoolMountFailureReason(e.getMessage());
-                if (reason != null) {
-                    throw new CloudRuntimeException(reason);
-                }
-            }
-        }
-        if (poolHosts.isEmpty()) {
-            logger.warn("No host can access storage pool " + dataStore + " in this zone.");
-            primaryDataStoreDao.expunge(dataStore.getId());
-            throw new CloudRuntimeException("Failed to create storage pool as it is not accessible to hosts.");
-        }
-        dataStoreHelper.attachZone(dataStore, hypervisorType);
+    public boolean attachZone(DataStore store, ZoneScope scope, HypervisorType hypervisorType) {
+        List<HostVO> hostsToConnect = _resourceMgr.getEligibleUpAndEnabledHostsInZoneForStorageConnection(store, scope.getScopeId(), hypervisorType);
+        logger.debug(String.format("In createPool. Attaching the pool to each of the hosts in %s.", hostsToConnect));
+        List<Long> hostIds = hostsToConnect.stream().map(HostVO::getId).collect(Collectors.toList());
+        storageMgr.connectHostsToPool(store, hostIds, scope, true, true);
+        dataStoreHelper.attachZone(store, hypervisorType);
         return true;
     }
 
@@ -518,7 +505,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStor
         DataStore dataStore = dataStoreHelper.attachHost(store, scope, existingInfo);
         if(existingInfo.getCapacityBytes() == 0){
             try {
-                storageMgr.connectHostToSharedPool(scope.getScopeId(), dataStore.getId());
+                storageMgr.connectHostToSharedPool(hostDao.findById(scope.getScopeId()), dataStore.getId());
             } catch (StorageUnavailableException ex) {
                 logger.error("Storage unavailable ",ex);
             } catch (StorageConflictException ex) {

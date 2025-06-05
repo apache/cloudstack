@@ -31,6 +31,12 @@ public class DbUpgradeUtils {
         }
     }
 
+    public static void renameIndexIfNeeded(Connection conn, String tableName, String oldName, String newName) {
+        if (!dao.indexExists(conn, tableName, oldName)) {
+            dao.renameIndex(conn, tableName, oldName, newName);
+        }
+    }
+
     public static void addForeignKey(Connection conn, String tableName, String tableColumn, String foreignTableName, String foreignColumnName) {
         dao.addForeignKey(conn, tableName, tableColumn, foreignTableName, foreignColumnName);
     }
@@ -49,6 +55,22 @@ public class DbUpgradeUtils {
             if (dao.columnExists(conn, tableName, columnName)) {
                 dao.dropColumn(conn, tableName, columnName);
             }
+        }
+    }
+
+    public static String getTableColumnType(Connection conn, String tableName, String columnName) {
+        return dao.getColumnType(conn, tableName, columnName);
+    }
+
+    public static void addTableColumnIfNotExist(Connection conn, String tableName, String columnName, String columnDefinition) {
+        if (!dao.columnExists(conn, tableName, columnName)) {
+            dao.addColumn(conn, tableName, columnName, columnDefinition);
+        }
+    }
+
+    public static void changeTableColumnIfNotExist(Connection conn, String tableName, String oldColumnName, String newColumnName, String columnDefinition) {
+        if (dao.columnExists(conn, tableName, oldColumnName)) {
+            dao.changeColumn(conn, tableName, oldColumnName, newColumnName, columnDefinition);
         }
     }
 

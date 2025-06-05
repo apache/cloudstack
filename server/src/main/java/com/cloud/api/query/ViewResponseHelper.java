@@ -262,6 +262,15 @@ public class ViewResponseHelper {
         return new ArrayList<HostResponse>(vrDataList.values());
     }
 
+    public static List<HostResponse> createMinimalHostResponse(HostJoinVO... hosts) {
+        LinkedHashMap<Long, HostResponse> vrDataList = new LinkedHashMap<>();
+        for (HostJoinVO vr : hosts) {
+            HostResponse vrData = ApiDBUtils.newMinimalHostResponse(vr);
+            vrDataList.put(vr.getId(), vrData);
+        }
+        return new ArrayList<HostResponse>(vrDataList.values());
+    }
+
     public static List<HostForMigrationResponse> createHostForMigrationResponse(EnumSet<HostDetails> details, HostJoinVO... hosts) {
         LinkedHashMap<Long, HostForMigrationResponse> vrDataList = new LinkedHashMap<>();
         // Initialise the vrdatalist with the input data
@@ -324,6 +333,18 @@ public class ViewResponseHelper {
             } else {
                 // update tags
                 vrData = ApiDBUtils.fillStoragePoolDetails(vrData, vr);
+            }
+            vrDataList.put(vr.getId(), vrData);
+        }
+        return new ArrayList<StoragePoolResponse>(vrDataList.values());
+    }
+
+    public static List<StoragePoolResponse> createMinimalStoragePoolResponse(StoragePoolJoinVO... pools) {
+        LinkedHashMap<Long, StoragePoolResponse> vrDataList = new LinkedHashMap<>();
+        for (StoragePoolJoinVO vr : pools) {
+            StoragePoolResponse vrData = vrDataList.get(vr.getId());
+            if (vrData == null) {
+                vrData = ApiDBUtils.newMinimalStoragePoolResponse(vr);
             }
             vrDataList.put(vr.getId(), vrData);
         }
@@ -453,6 +474,10 @@ public class ViewResponseHelper {
         resourceLimitMap.put(Resource.ResourceType.primary_storage, domainJoinVO.getPrimaryStorageLimit());
         resourceLimitMap.put(Resource.ResourceType.secondary_storage, domainJoinVO.getSecondaryStorageLimit());
         resourceLimitMap.put(Resource.ResourceType.project, domainJoinVO.getProjectLimit());
+        resourceLimitMap.put(Resource.ResourceType.backup, domainJoinVO.getBackupLimit());
+        resourceLimitMap.put(Resource.ResourceType.backup_storage, domainJoinVO.getBackupStorageLimit());
+        resourceLimitMap.put(Resource.ResourceType.bucket, domainJoinVO.getBucketLimit());
+        resourceLimitMap.put(Resource.ResourceType.object_storage, domainJoinVO.getObjectStorageLimit());
     }
 
     private static void copyResourceLimitsFromMap(Map<Resource.ResourceType, Long> resourceLimitMap, DomainJoinVO domainJoinVO){
@@ -468,6 +493,10 @@ public class ViewResponseHelper {
         domainJoinVO.setPrimaryStorageLimit(resourceLimitMap.get(Resource.ResourceType.primary_storage));
         domainJoinVO.setSecondaryStorageLimit(resourceLimitMap.get(Resource.ResourceType.secondary_storage));
         domainJoinVO.setProjectLimit(resourceLimitMap.get(Resource.ResourceType.project));
+        domainJoinVO.setBackupLimit(resourceLimitMap.get(Resource.ResourceType.backup));
+        domainJoinVO.setBackupStorageLimit(resourceLimitMap.get(Resource.ResourceType.backup_storage));
+        domainJoinVO.setBucketLimit(resourceLimitMap.get(Resource.ResourceType.bucket));
+        domainJoinVO.setObjectStorageLimit(resourceLimitMap.get(Resource.ResourceType.object_storage));
     }
 
     private static void setParentResourceLimitIfNeeded(Map<Resource.ResourceType, Long> resourceLimitMap, DomainJoinVO domainJoinVO, List<DomainJoinVO> domainsCopy) {
@@ -486,6 +515,10 @@ public class ViewResponseHelper {
             Long primaryStorageLimit = resourceLimitMap.get(Resource.ResourceType.primary_storage);
             Long secondaryStorageLimit = resourceLimitMap.get(Resource.ResourceType.secondary_storage);
             Long projectLimit = resourceLimitMap.get(Resource.ResourceType.project);
+            Long backupLimit = resourceLimitMap.get(Resource.ResourceType.backup);
+            Long backupStorageLimit = resourceLimitMap.get(Resource.ResourceType.backup_storage);
+            Long bucketLimit = resourceLimitMap.get(Resource.ResourceType.bucket);
+            Long objectStorageLimit = resourceLimitMap.get(Resource.ResourceType.object_storage);
 
             if (vmLimit == null) {
                 vmLimit = parentDomainJoinVO.getVmLimit();
@@ -535,6 +568,22 @@ public class ViewResponseHelper {
                 projectLimit = parentDomainJoinVO.getProjectLimit();
                 resourceLimitMap.put(Resource.ResourceType.project, projectLimit);
             }
+            if (backupLimit == null) {
+                backupLimit = parentDomainJoinVO.getBackupLimit();
+                resourceLimitMap.put(Resource.ResourceType.backup, backupLimit);
+            }
+            if (backupStorageLimit == null) {
+                backupStorageLimit = parentDomainJoinVO.getBackupStorageLimit();
+                resourceLimitMap.put(Resource.ResourceType.backup_storage, backupStorageLimit);
+            }
+            if (bucketLimit == null) {
+                bucketLimit = parentDomainJoinVO.getBucketLimit();
+                resourceLimitMap.put(Resource.ResourceType.bucket, bucketLimit);
+            }
+            if (objectStorageLimit == null) {
+                objectStorageLimit = parentDomainJoinVO.getObjectStorageLimit();
+                resourceLimitMap.put(Resource.ResourceType.object_storage, objectStorageLimit);
+            }
             //-- try till parent present
             if (parentDomainJoinVO.getParent() != null && parentDomainJoinVO.getParent() != Domain.ROOT_DOMAIN) {
                 setParentResourceLimitIfNeeded(resourceLimitMap, parentDomainJoinVO, domainsCopy);
@@ -568,8 +617,16 @@ public class ViewResponseHelper {
 
     public static List<ZoneResponse> createDataCenterResponse(ResponseView view, Boolean showCapacities, Boolean showResourceImage, DataCenterJoinVO... dcs) {
         List<ZoneResponse> respList = new ArrayList<ZoneResponse>();
-        for (DataCenterJoinVO vt : dcs){
+        for (DataCenterJoinVO vt : dcs) {
             respList.add(ApiDBUtils.newDataCenterResponse(view, vt, showCapacities, showResourceImage));
+        }
+        return respList;
+    }
+
+    public static List<ZoneResponse> createMinimalDataCenterResponse(ResponseView view, DataCenterJoinVO... dcs) {
+        List<ZoneResponse> respList = new ArrayList<ZoneResponse>();
+        for (DataCenterJoinVO vt : dcs) {
+            respList.add(ApiDBUtils.newMinimalDataCenterResponse(view, vt));
         }
         return respList;
     }

@@ -32,6 +32,10 @@ public interface SnapshotInfo extends DataObject, Snapshot {
 
     String getPath();
 
+    DataStore getImageStore();
+
+    void setImageStore(DataStore imageStore);
+
     SnapshotInfo getChild();
 
     List<SnapshotInfo> getChildren();
@@ -55,6 +59,14 @@ public interface SnapshotInfo extends DataObject, Snapshot {
     long getPhysicalSize();
 
     void markBackedUp() throws CloudRuntimeException;
+
+    String getCheckpointPath();
+
+    void setCheckpointPath(String checkpointPath);
+
+    void setKvmIncrementalSnapshot(boolean isKvmIncrementalSnapshot);
+
+    boolean isKvmIncrementalSnapshot();
 
     Snapshot getSnapshotVO();
 

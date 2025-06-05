@@ -97,6 +97,10 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
     @Param(description = "total min IOPS currently in use by volumes")
     private Long allocatedIops;
 
+    @SerializedName(ApiConstants.USED_IOPS)
+    @Param(description = "total IOPS currently in use", since = "4.20.1")
+    private Long usedIops;
+
     @SerializedName(ApiConstants.STORAGE_CUSTOM_STATS)
     @Param(description = "the storage pool custom stats", since = "4.18.1")
     private Map<String, String> customStats;
@@ -104,6 +108,10 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
     @SerializedName("tags")
     @Param(description = "the tags for the storage pool")
     private String tags;
+
+    @SerializedName(ApiConstants.STORAGE_ACCESS_GROUPS)
+    @Param(description = "the storage access groups for the storage pool", since = "4.21.0")
+    private String storageAccessGroups;
 
     @SerializedName(ApiConstants.NFS_MOUNT_OPTIONS)
     @Param(description = "the nfs mount options for the storage pool", since = "4.19.1")
@@ -144,6 +152,10 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
     @SerializedName(ApiConstants.MANAGED)
     @Param(description = "whether this pool is managed or not")
     private Boolean managed;
+
+    @SerializedName(ApiConstants.DETAILS)
+    @Param(description = "the storage pool details")
+    private Map<String, String> details;
 
     public Map<String, String> getCaps() {
         return caps;
@@ -312,6 +324,14 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
        this.allocatedIops = allocatedIops;
     }
 
+    public Long getUsedIops() {
+        return usedIops;
+    }
+
+    public void setUsedIops(Long usedIops) {
+        this.usedIops = usedIops;
+    }
+
     public Map<String, String> getCustomStats() {
         return customStats;
     }
@@ -326,6 +346,14 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
 
     public void setTags(String tags) {
         this.tags = tags;
+    }
+
+    public String getStorageAccessGroups() {
+        return storageAccessGroups;
+    }
+
+    public void setStorageAccessGroups(String storageAccessGroups) {
+        this.storageAccessGroups = storageAccessGroups;
     }
 
     public Boolean getIsTagARule() {
@@ -394,5 +422,13 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
 
     public void setManaged(Boolean managed) {
         this.managed = managed;
+    }
+
+    public Map<String, String> getDetails() {
+        return details;
+    }
+
+    public void setDetails(Map<String, String> details) {
+        this.details = details;
     }
 }

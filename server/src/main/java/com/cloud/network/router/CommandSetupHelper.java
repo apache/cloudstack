@@ -1368,7 +1368,7 @@ public class CommandSetupHelper {
 
     private void setIpAddressNetworkParams(IpAddressTO ipAddress, final Network network, final VirtualRouter router) {
         if (_networkModel.isPrivateGateway(network.getId())) {
-            logger.debug("network " + network.getId() + " (name: " + network.getName() + " ) is a vpc private gateway, set traffic type to Public");
+            logger.debug("network (id: {}, uuid: {}, name: {}) is a vpc private gateway, set traffic type to Public", network.getId(), network.getUuid(), network.getName());
             ipAddress.setTrafficType(TrafficType.Public);
             ipAddress.setPrivateGateway(true);
         } else {

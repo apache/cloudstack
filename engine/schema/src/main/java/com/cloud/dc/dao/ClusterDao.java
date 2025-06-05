@@ -16,27 +16,25 @@
 // under the License.
 package com.cloud.dc.dao;
 
+import java.util.List;
+import java.util.Map;
+
 import com.cloud.cpu.CPU;
 import com.cloud.dc.ClusterVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 public interface ClusterDao extends GenericDao<ClusterVO, Long> {
     List<ClusterVO> listByPodId(long podId);
 
     ClusterVO findBy(String name, long podId);
 
-    List<ClusterVO> listByHyTypeWithoutGuid(String hyType);
-
     List<ClusterVO> listByZoneId(long zoneId);
 
     List<HypervisorType> getAvailableHypervisorInZone(Long zoneId);
 
-    Set<HypervisorType> getDistictAvailableHypervisorsAcrossClusters();
+    List<Pair<HypervisorType, CPU.CPUArch>> listDistinctHypervisorsArchAcrossClusters(Long zoneId);
 
     List<ClusterVO> listByDcHyType(long dcId, String hyType);
 
@@ -46,13 +44,19 @@ public interface ClusterDao extends GenericDao<ClusterVO, Long> {
 
     List<Long> listClustersWithDisabledPods(long zoneId);
 
+    Integer countAllByDcId(long zoneId);
+
+    Integer countAllManagedAndEnabledByDcId(long zoneId);
+
     List<ClusterVO> listClustersByDcId(long zoneId);
 
-    List<Long> listAllClusters(Long zoneId);
+    List<Long> listAllClusterIds(Long zoneId);
 
     boolean getSupportsResigning(long clusterId);
 
     List<CPU.CPUArch> getClustersArchsByZone(long zoneId);
 
     List<ClusterVO> listClustersByArchAndZoneId(long zoneId, CPU.CPUArch arch);
+
+    List<String> listDistinctStorageAccessGroups(String name, String keyword);
 }

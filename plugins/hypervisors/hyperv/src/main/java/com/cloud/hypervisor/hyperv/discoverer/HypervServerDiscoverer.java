@@ -136,7 +136,7 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
         }
 
         if (logger.isDebugEnabled()) {
-            logger.debug("Setting up host " + agentId);
+            logger.debug(String.format("Setting up host %s", agent));
         }
 
         HostEnvironment env = new HostEnvironment();
@@ -161,14 +161,14 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
                 if (reason == null) {
                     reason = " details were null";
                 }
-                logger.warn("Unable to setup agent " + agentId + " due to " + reason);
+                logger.warn(String.format("Unable to setup agent %s due to %s", agent, reason));
             }
             // Error handling borrowed from XcpServerDiscoverer, may need to be
             // updated.
         } catch (AgentUnavailableException e) {
-            logger.warn("Unable to setup agent " + agentId + " because it became unavailable.", e);
+            logger.warn(String.format("Unable to setup agent %s because it became unavailable.", agent), e);
         } catch (OperationTimedoutException e) {
-            logger.warn("Unable to setup agent " + agentId + " because it timed out", e);
+            logger.warn(String.format("Unable to setup agent %s because it timed out", agent), e);
         }
         throw new ConnectionException(true, "Reinitialize agent after setup.");
     }
@@ -256,7 +256,7 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
             }
 
             logger.info("Creating" + HypervDirectConnectResource.class.getName() + " HypervDirectConnectResource for zone/pod/cluster " + dcId + "/" + podId + "/" +
-                clusterId);
+                cluster);
 
             // Some Hypervisors organise themselves in pools.
             // The startup command tells us what pool they are using.
@@ -391,7 +391,7 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
             return null;
         }
 
-        logger.info("Host: " + host.getName() + " connected with hypervisor type: " + HypervisorType.Hyperv + ". Checking CIDR...");
+        logger.info(String.format("Host: %s connected with hypervisor type: %s. Checking CIDR...", host, HypervisorType.Hyperv));
 
         HostPodVO pod = _podDao.findById(host.getPodId());
         DataCenterVO dc = _dcDao.findById(host.getDataCenterId());
