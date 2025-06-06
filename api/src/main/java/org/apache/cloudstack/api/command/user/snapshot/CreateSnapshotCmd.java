@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.snapshot;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -108,7 +109,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
             authorized = RoleType.Admin,
             description = "A comma-separated list of IDs of the storage pools in other zones in which the snapshot will be made available. " +
                     "The snapshot will always be made available in the zone in which the volume is present.",
-            since = "4.20.0")
+            since = "4.21.0")
     protected List<Long> storagePoolIds;
 
     @Parameter (name = ApiConstants.USE_STORAGE_REPLICATION, type=CommandType.BOOLEAN, required = false, description = "This parameter enables the option the snapshot to be copied to supported primary storage")
@@ -177,7 +178,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     }
 
     public List<Long> getStoragePoolIds() {
-        return storagePoolIds;
+        return storagePoolIds == null ? new ArrayList<>() : storagePoolIds;
     }
 
     public Boolean useStorageReplication() {

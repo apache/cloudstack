@@ -62,7 +62,7 @@ public class SnapshotPolicyResponse extends BaseResponseWithTagInformation {
     protected Set<ZoneResponse> zones;
 
     @SerializedName(ApiConstants.STORAGE)
-    @Param(description = "The list of pools in which snapshot backup is scheduled", responseObject = StoragePoolResponse.class, since = "4.20.0")
+    @Param(description = "The list of pools in which snapshot backup is scheduled", responseObject = StoragePoolResponse.class, since = "4.21.0")
     protected Set<StoragePoolResponse> storagePools;
 
     public SnapshotPolicyResponse() {
