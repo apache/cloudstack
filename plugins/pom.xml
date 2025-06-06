@@ -116,7 +116,7 @@
         <module>outofbandmanagement-drivers/nested-cloudstack</module>
         <module>outofbandmanagement-drivers/redfish</module>
 
-        <module>shutdown</module>
+        <module>maintenance</module>
 
         <module>storage/sharedfs/storagevm</module>
         <module>storage/image/default</module>
@@ -137,6 +137,7 @@
         <module>storage/volume/primera</module>
         <module>storage/object/minio</module>
         <module>storage/object/ceph</module>
+        <module>storage/object/cloudian</module>
         <module>storage/object/simulator</module>
 
 

@@ -16,29 +16,24 @@
 // under the License.
 package com.cloud.agent.manager.allocator.impl;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
-
-import com.cloud.deploy.DeploymentPlanner.AllocationAlgorithm;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.EnumUtils;
-import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.stereotype.Component;
 
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
 import com.cloud.deploy.DeploymentPlan;
+import com.cloud.deploy.DeploymentClusterPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.gpu.GPU;
 import com.cloud.host.DetailVO;
@@ -56,11 +51,25 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
+import org.springframework.stereotype.Component;
+
+import static com.cloud.deploy.DeploymentPlanner.AllocationAlgorithm.firstfitleastconsumed;
+import static com.cloud.deploy.DeploymentPlanner.AllocationAlgorithm.random;
+import static com.cloud.deploy.DeploymentPlanner.AllocationAlgorithm.userconcentratedpod_random;
+import static com.cloud.deploy.DeploymentPlanner.AllocationAlgorithm.userdispersing;
 
 /**
  * An allocator that tries to find a fit on a computing host.  This allocator does not care whether or not the host supports routing.
@@ -88,8 +97,7 @@ public class FirstFitAllocator extends BaseAllocator {
 
     boolean _checkHvm = true;
 
-    protected AllocationAlgorithm allocationAlgorithm = AllocationAlgorithm.random;
-
+    static DecimalFormat decimalFormat = new DecimalFormat("#.##");
 
     @Override
     public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, int returnUpTo) {
@@ -193,17 +201,13 @@ public class FirstFitAllocator extends BaseAllocator {
     protected List<Host> allocateTo(DeploymentPlan plan, ServiceOffering offering, VMTemplateVO template, ExcludeList avoid, List<? extends Host> hosts, int returnUpTo,
                                     boolean considerReservedCapacity, Account account) {
 
-        switch (allocationAlgorithm) {
-            case random:
-            case userconcentratedpod_random:
-                Collections.shuffle(hosts);
-                break;
-            case userdispersing:
-                hosts = reorderHostsByNumberOfVms(plan, hosts, account);
-                break;
-            case firstfitleastconsumed:
-                hosts = reorderHostsByCapacity(plan, hosts);
-                break;
+        String vmAllocationAlgorithm = DeploymentClusterPlanner.VmAllocationAlgorithm.value();
+        if (List.of(random.toString(), userconcentratedpod_random.toString()).contains(vmAllocationAlgorithm)) {
+            Collections.shuffle(hosts);
+        } else if (userdispersing.toString().equals(vmAllocationAlgorithm)) {
+            hosts = reorderHostsByNumberOfVms(plan, hosts, account);
+        } else if (firstfitleastconsumed.toString().equals(vmAllocationAlgorithm)) {
+            hosts = reorderHostsByCapacity(plan, hosts);
         }
 
         logger.debug("FirstFitAllocator has {} hosts to check for allocation {}.", hosts.size(), hosts);
@@ -275,8 +279,15 @@ public class FirstFitAllocator extends BaseAllocator {
         String capacityTypeToOrder = _configDao.getValue(Config.HostCapacityTypeToOrderClusters.key());
         short capacityType = "RAM".equalsIgnoreCase(capacityTypeToOrder) ? CapacityVO.CAPACITY_TYPE_MEMORY : CapacityVO.CAPACITY_TYPE_CPU;
 
-        List<Long> hostIdsByFreeCapacity = _capacityDao.orderHostsByFreeCapacity(zoneId, clusterId, capacityType);
-        logger.debug("List of hosts in descending order of free capacity in the cluster: {}.", hostIdsByFreeCapacity);
+        Pair<List<Long>, Map<Long, Double>> result = _capacityDao.orderHostsByFreeCapacity(zoneId, clusterId, capacityType);
+        List<Long> hostIdsByFreeCapacity = result.first();
+        Map<Long, String> sortedHostByCapacity = result.second().entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> decimalFormat.format(entry.getValue() * 100) + "%",
+                        (e1, e2) -> e1, LinkedHashMap::new));
+        logger.debug("List of hosts: [{}] in descending order of free capacity (percentage) in the cluster: {}.",
+                hostIdsByFreeCapacity, sortedHostByCapacity);
 
         return filterHosts(hosts, hostIdsByFreeCapacity);
     }
@@ -498,11 +509,6 @@ public class FirstFitAllocator extends BaseAllocator {
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         if (_configDao != null) {
             Map<String, String> configs = _configDao.getConfiguration(params);
-
-            String allocationAlgorithm = configs.get("vm.allocation.algorithm");
-            if (allocationAlgorithm != null) {
-                this.allocationAlgorithm = EnumUtils.getEnum(AllocationAlgorithm.class, allocationAlgorithm);
-            }
             String value = configs.get("xenserver.check.hvm");
             _checkHvm = value == null || Boolean.parseBoolean(value);
         }

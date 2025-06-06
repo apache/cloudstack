@@ -26,15 +26,15 @@ export default {
   permission: ['listZonesMetrics'],
   searchFilters: ['name', 'domainid', 'tags'],
   columns: () => {
-    const fields = ['name', 'allocationstate', 'type', 'networktype', 'clusters']
-    const metricsFields = ['cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal']
+    const fields = ['name', 'allocationstate', 'type', 'networktype']
+    const metricsFields = ['clusters', 'cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal']
     if (store.getters.metrics) {
       fields.push(...metricsFields)
     }
     fields.push('order')
     return fields
   },
-  details: ['name', 'id', 'allocationstate', 'type', 'networktype', 'guestcidraddress', 'localstorageenabled', 'securitygroupsenabled', 'dns1', 'dns2', 'internaldns1', 'internaldns2', 'asnrange'],
+  details: ['name', 'id', 'allocationstate', 'type', 'networktype', 'guestcidraddress', 'localstorageenabled', 'securitygroupsenabled', 'dns1', 'dns2', 'internaldns1', 'internaldns2', 'asnrange', 'storageaccessgroups'],
   related: [{
     name: 'pod',
     title: 'label.pods',
@@ -118,8 +118,8 @@ export default {
       icon: 'edit-outlined',
       label: 'label.action.edit.zone',
       dataView: true,
-      args: ['name', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'internaldns1', 'internaldns2', 'guestcidraddress', 'domain', 'localstorageenabled'],
-      show: (record) => { return record.networktype === 'Advanced' }
+      popup: true,
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/ZoneUpdate.vue')))
     },
     {
       api: 'updateZone',

@@ -119,6 +119,9 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
     @Column(name = "is_tag_a_rule")
     private boolean isTagARule;
 
+    @Column(name = "storage_access_group")
+    private String storageAccessGroup;
+
     @Column(name = "disk_used_capacity")
     private long usedCapacity;
 
@@ -269,6 +272,10 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
 
     public long getUsedCapacity() {
         return usedCapacity;
+    }
+
+    public String getStorageAccessGroup() {
+        return storageAccessGroup;
     }
 
     public long getReservedCapacity() {

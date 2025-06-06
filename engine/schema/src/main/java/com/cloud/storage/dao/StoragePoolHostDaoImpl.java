@@ -45,6 +45,7 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
     protected final SearchBuilder<StoragePoolHostVO> PoolSearch;
     protected final SearchBuilder<StoragePoolHostVO> HostSearch;
     protected final SearchBuilder<StoragePoolHostVO> PoolHostSearch;
+    protected final SearchBuilder<StoragePoolHostVO> LocalPathSearch;
 
     protected SearchBuilder<StoragePoolHostVO> poolNotInClusterSearch;
 
@@ -55,11 +56,11 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
 
     protected static final String HOSTS_FOR_POOLS_SEARCH = "SELECT DISTINCT(ph.host_id) FROM storage_pool_host_ref ph, host h WHERE ph.host_id = h.id AND h.status = 'Up' AND resource_state = 'Enabled' AND ph.pool_id IN (?)";
 
-    protected static final String STORAGE_POOL_HOST_INFO = "SELECT p.data_center_id,  count(ph.host_id) " + " FROM storage_pool p, storage_pool_host_ref ph "
-        + " WHERE p.id = ph.pool_id AND p.data_center_id = ? " + " GROUP by p.data_center_id";
+    protected static final String STORAGE_POOL_HOST_INFO = "SELECT (SELECT id FROM storage_pool_host_ref ph WHERE " +
+            "ph.pool_id=p.id limit 1) AS sphr FROM storage_pool p WHERE p.data_center_id = ?";
 
-    protected static final String SHARED_STORAGE_POOL_HOST_INFO = "SELECT p.data_center_id,  count(ph.host_id) " + " FROM storage_pool p, storage_pool_host_ref ph "
-        + " WHERE p.id = ph.pool_id AND p.data_center_id = ? " + " AND p.pool_type NOT IN ('LVM', 'Filesystem')" + " GROUP by p.data_center_id";
+    protected static final String SHARED_STORAGE_POOL_HOST_INFO = "SELECT (SELECT id FROM storage_pool_host_ref ph " +
+            "WHERE ph.pool_id=p.id limit 1) AS sphr FROM storage_pool p WHERE p.data_center_id = ? AND p.pool_type NOT IN ('LVM', 'Filesystem')";
 
     protected static final String DELETE_PRIMARY_RECORDS = "DELETE " + "FROM storage_pool_host_ref " + "WHERE host_id = ?";
 
@@ -77,6 +78,9 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
         PoolHostSearch.and("host_id", PoolHostSearch.entity().getHostId(), SearchCriteria.Op.EQ);
         PoolHostSearch.done();
 
+        LocalPathSearch = createSearchBuilder();
+        LocalPathSearch.and("local_path", LocalPathSearch.entity().getLocalPath(), SearchCriteria.Op.EQ);
+        LocalPathSearch.done();
     }
 
     @PostConstruct
@@ -115,6 +119,13 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
         sc.setParameters("pool_id", poolId);
         sc.setParameters("host_id", hostId);
         return findOneIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public List<StoragePoolHostVO> findByLocalPath(String path) {
+        SearchCriteria<StoragePoolHostVO> sc = LocalPathSearch.create();
+        sc.setParameters("local_path", path);
+        return listBy(sc);
     }
 
     @Override
@@ -169,23 +180,23 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
     }
 
     @Override
-    public List<Pair<Long, Integer>> getDatacenterStoragePoolHostInfo(long dcId, boolean sharedOnly) {
-        ArrayList<Pair<Long, Integer>> l = new ArrayList<Pair<Long, Integer>>();
+    public boolean hasDatacenterStoragePoolHostInfo(long dcId, boolean sharedOnly) {
+        Long poolCount = 0L;
         String sql = sharedOnly ? SHARED_STORAGE_POOL_HOST_INFO : STORAGE_POOL_HOST_INFO;
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-        PreparedStatement pstmt = null;
-        try {
-            pstmt = txn.prepareAutoCloseStatement(sql);
+        try (PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql)) {
             pstmt.setLong(1, dcId);
-
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
-                l.add(new Pair<Long, Integer>(rs.getLong(1), rs.getInt(2)));
+                poolCount = rs.getLong(1);
+                if (poolCount > 0) {
+                    return true;
+                }
             }
         } catch (SQLException e) {
             logger.debug("SQLException: ", e);
         }
-        return l;
+        return false;
     }
 
     /**
