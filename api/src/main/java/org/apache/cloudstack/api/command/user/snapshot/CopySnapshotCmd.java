@@ -39,6 +39,7 @@ import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -91,11 +92,12 @@ public class CopySnapshotCmd extends BaseAsyncCmd implements UserCmd {
             entityType = StoragePoolResponse.class,
             required = false,
             authorized = RoleType.Admin,
+            since = "4.21.0",
             description = "A comma-separated list of IDs of the storage pools in other zones in which the snapshot will be made available. " +
                     "The snapshot will always be made available in the zone in which the volume is present. Currently supported for StorPool only")
     protected List<Long> storagePoolIds;
 
-    @Parameter (name = ApiConstants.USE_STORAGE_REPLICATION, type=CommandType.BOOLEAN, required = false, description = "This parameter enables the option the snapshot to be copied to supported primary storage")
+    @Parameter (name = ApiConstants.USE_STORAGE_REPLICATION, type=CommandType.BOOLEAN, required = false, since = "4.21.0", description = "This parameter enables the option the snapshot to be copied to supported primary storage")
     protected Boolean useStorageReplication;
 
     /////////////////////////////////////////////////////
@@ -128,10 +130,7 @@ public class CopySnapshotCmd extends BaseAsyncCmd implements UserCmd {
     }
 
     public Boolean useStorageReplication() {
-        if (useStorageReplication == null) {
-            return false;
-        }
-        return useStorageReplication;
+        return BooleanUtils.toBoolean(useStorageReplication);
     }
 
     @Override

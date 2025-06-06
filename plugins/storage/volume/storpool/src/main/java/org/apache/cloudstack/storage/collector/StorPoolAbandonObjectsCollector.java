@@ -364,45 +364,53 @@ public class StorPoolAbandonObjectsCollector extends ManagerBase implements Conf
             }
             List<Long> recoveredSnapshots = new ArrayList<>();
             for (StoragePoolVO storagePool : onePoolforZone.values()) {
-                try {
-                    logger.debug(String.format("Checking StorPool recovered snapshots for zone [%s]",
-                            storagePool.getDataCenterId()));
-                    SpConnectionDesc conn = StorPoolUtil.getSpConnection(storagePool.getUuid(),
-                            storagePool.getId(), storagePoolDetailsDao, storagePoolDao);
-                    JsonArray arr = StorPoolUtil.snapshotsList(conn);
-                    List<String> snapshots = snapshotsForRecovery(arr);
-                    if (snapshots.isEmpty()) {
-                        continue;
-                    }
-                    for (SnapshotDetailsVO snapshot : snapshotDetails) {
-                        String[] snapshotOnRemote = snapshot.getValue().split(";");
-                        if (snapshotOnRemote.length != 2) {
-                            continue;
-                        }
-                        String name = snapshot.getValue().split(";")[0];
-                        String location = snapshot.getValue().split(";")[1];
-                        if (name == null || location == null) {
-                            StorPoolUtil.spLog("Could not find name or location for the snapshot %s", snapshot.getValue());
-                            continue;
-                        }
-                        if (snapshots.contains(name)) {
-                            Long clusterId = StorPoolHelper.findClusterIdByGlobalId(StorPoolUtil.getSnapshotClusterId(name, conn), clusterDao);
-                            conn = StorPoolHelper.getSpConnectionDesc(conn, clusterId);
-                            SpApiResponse resp = StorPoolUtil.snapshotUnexport(name, location, conn);
-                            if (resp.getError() == null) {
-                                StorPoolUtil.spLog("Unexport of snapshot %s was successful", name);
-                                recoveredSnapshots.add(snapshot.getId());
-                            } else {
-                                StorPoolUtil.spLog("Could not recover StorPool snapshot %s", resp.getError());
-                            }
-                        }
-                    }
-                } catch (Exception e) {
-                    logger.debug(String.format("Could not collect StorPool recovered snapshots %s", e.getMessage()));
-                }
+                collectRecoveredSnapshotAfterExport(snapshotDetails, recoveredSnapshots, storagePool);
             }
             for (Long recoveredSnapshot : recoveredSnapshots) {
                 snapshotDetailsDao.remove(recoveredSnapshot);
+            }
+        }
+
+        private void collectRecoveredSnapshotAfterExport(List<SnapshotDetailsVO> snapshotDetails, List<Long> recoveredSnapshots, StoragePoolVO storagePool) {
+            try {
+                logger.debug(String.format("Checking StorPool recovered snapshots for zone [%s]",
+                        storagePool.getDataCenterId()));
+                SpConnectionDesc conn = StorPoolUtil.getSpConnection(storagePool.getUuid(),
+                        storagePool.getId(), storagePoolDetailsDao, storagePoolDao);
+                JsonArray arr = StorPoolUtil.snapshotsList(conn);
+                List<String> snapshots = snapshotsForRecovery(arr);
+                if (snapshots.isEmpty()) {
+                    return;
+                }
+                for (SnapshotDetailsVO snapshot : snapshotDetails) {
+                    String[] snapshotOnRemote = snapshot.getValue().split(";");
+                    if (snapshotOnRemote.length != 2) {
+                        continue;
+                    }
+                    String name = snapshot.getValue().split(";")[0];
+                    String location = snapshot.getValue().split(";")[1];
+                    if (name == null || location == null) {
+                        StorPoolUtil.spLog("Could not find name or location for the snapshot %s", snapshot.getValue());
+                        continue;
+                    }
+                    if (snapshots.contains(name)) {
+                        findRecoveredSnapshots(recoveredSnapshots, conn, snapshot, name, location);
+                    }
+                }
+            } catch (Exception e) {
+                logger.debug(String.format("Could not collect StorPool recovered snapshots %s", e.getMessage()));
+            }
+        }
+
+        private void findRecoveredSnapshots(List<Long> recoveredSnapshots, SpConnectionDesc conn, SnapshotDetailsVO snapshot, String name, String location) {
+            Long clusterId = StorPoolHelper.findClusterIdByGlobalId(StorPoolUtil.getSnapshotClusterId(name, conn), clusterDao);
+            conn = StorPoolHelper.getSpConnectionDesc(conn, clusterId);
+            SpApiResponse resp = StorPoolUtil.snapshotUnexport(name, location, conn);
+            if (resp.getError() == null) {
+                StorPoolUtil.spLog("Unexport of snapshot %s was successful", name);
+                recoveredSnapshots.add(snapshot.getId());
+            } else {
+                StorPoolUtil.spLog("Could not recover StorPool snapshot %s", resp.getError());
             }
         }
     }

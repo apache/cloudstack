@@ -18,8 +18,6 @@ package com.cloud.api.query;
 
 import static com.cloud.vm.VmDetailConstants.SSH_PUBLIC_KEY;
 
-
-import com.cloud.cluster.ManagementServerHostPeerJoinVO;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -38,6 +36,14 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
+
+import com.cloud.dc.Pod;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.HostPodDao;
+import com.cloud.org.Cluster;
+import com.cloud.server.ManagementService;
+import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
+import com.cloud.cluster.ManagementServerHostPeerJoinVO;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -236,11 +242,8 @@ import com.cloud.cpu.CPU;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DedicatedResourceVO;
-import com.cloud.dc.Pod;
 import com.cloud.dc.dao.ClusterDao;
-import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DedicatedResourceDao;
-import com.cloud.dc.dao.HostPodDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -278,7 +281,6 @@ import com.cloud.network.security.dao.SecurityGroupVMMapDao;
 import com.cloud.network.vo.PublicIpQuarantineVO;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
@@ -290,7 +292,6 @@ import com.cloud.projects.dao.ProjectDao;
 import com.cloud.projects.dao.ProjectInvitationDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.icon.dao.ResourceIconDao;
-import com.cloud.server.ManagementService;
 import com.cloud.server.ResourceManagerUtil;
 import com.cloud.server.ResourceMetaDataService;
 import com.cloud.server.ResourceTag;
@@ -320,7 +321,6 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.BucketDao;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSDao;
-import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateDao;

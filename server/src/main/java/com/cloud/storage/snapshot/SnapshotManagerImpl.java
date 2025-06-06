@@ -1741,10 +1741,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_COPY, CallContext.current().getCallingUserId(), snapshotOnStore.getDataCenterId(), snapshotVO.getId(), null, null, null, snapshotVO.getSize(),
                         snapshotVO.getSize(), snapshotVO.getClass().getName(), snapshotVO.getUuid());
             }
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        } catch (ExecutionException e) {
-            throw new RuntimeException(e);
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException("Could not copy the snapshot to another pool", e);
         }
         return true;
     }
@@ -2234,7 +2232,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             throw new InvalidParameterValueException("Please specify a valid destination zone.");
         }
         if (!StoragePoolStatus.Up.equals(destPool.getStatus()) && !isRootAdmin) {
-            throw new PermissionDeniedException("Cannot perform this operation, the storage pool is not in Up state: " + destPool.getName());
+            throw new PermissionDeniedException("Cannot perform this operation, the storage pool is not in Up state or the user is not the Root Admin " + destPool.getName());
         }
         DataCenterVO destZone = dataCenterDao.findById(destPool.getDataCenterId());
         if (DataCenter.Type.Edge.equals(destZone.getType())) {
@@ -2295,13 +2293,13 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         List<Long> poolsToBeRemoved = new ArrayList<>();
         for (Long poolId : poolIds) {
             PrimaryDataStore dataStore = (PrimaryDataStore) dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
-            if (isObjectNull(dataStore == null, poolsToBeRemoved, poolId)) continue;
+            if (isDataStoreNull(dataStore == null, poolsToBeRemoved, poolId)) continue;
 
             SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(snapshot.getId(), poolId, DataStoreRole.Primary);
             if (isSnapshotExistsOnPool(snapshot, dataStore, snapshotInfo)) continue;
 
             VolumeVO volume = _volsDao.findById(snapshot.getVolumeId());
-            if (isObjectNull(volume == null, poolsToBeRemoved, poolId)) continue;
+            if (isDataStoreNull(volume == null, poolsToBeRemoved, poolId)) continue;
             doesStorageSupportCopySnapshot(poolsToBeRemoved, poolId, dataStore, volume);
         }
         poolIds.removeAll(poolsToBeRemoved);
@@ -2312,8 +2310,9 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     }
 
     private void doesStorageSupportCopySnapshot(List<Long> poolsToBeRemoved, Long poolId, PrimaryDataStore dataStore, VolumeVO volume) {
-        if (!dataStore.getDriver().getCapabilities()
-                .containsKey(DataStoreCapabilities.CAN_COPY_SNAPSHOT_BETWEEN_ZONES_AND_SAME_POOL_TYPE.toString())
+        if (dataStore.getDriver() != null
+                && MapUtils.isNotEmpty(dataStore.getDriver().getCapabilities())
+                && !dataStore.getDriver().getCapabilities().containsKey(DataStoreCapabilities.CAN_COPY_SNAPSHOT_BETWEEN_ZONES_AND_SAME_POOL_TYPE.toString())
                 && dataStore.getPoolType() != volume.getPoolType()) {
             poolsToBeRemoved.add(poolId);
             logger.debug(String.format("The %s  does not support copy to %s between zones", dataStore.getPoolType(), volume.getPoolType()));
@@ -2328,7 +2327,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         return false;
     }
 
-    private static boolean isObjectNull(boolean object, List<Long> poolsToBeRemoved, Long poolId) {
+    private static boolean isDataStoreNull(boolean object, List<Long> poolsToBeRemoved, Long poolId) {
         if (object) {
             poolsToBeRemoved.add(poolId);
             return true;

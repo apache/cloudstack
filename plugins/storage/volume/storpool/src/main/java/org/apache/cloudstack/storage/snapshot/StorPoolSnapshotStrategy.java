@@ -409,7 +409,6 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
 
     @Override
     public void copySnapshot(DataObject snapshot, DataObject snapshotDest, AsyncCompletionCallback<CreateCmdResult> callback) {
-
         // export snapshot on remote
         StoragePoolVO storagePoolVO = _primaryDataStoreDao.findById(snapshotDest.getDataStore().getId());
         String location = StorPoolConfigurationManager.StorPoolClusterLocation.valueIn(snapshotDest.getDataStore().getId());
