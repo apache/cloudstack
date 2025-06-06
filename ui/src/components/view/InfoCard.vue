@@ -728,6 +728,18 @@
             <span v-else>{{ resource.webhookname || resource.webhookid }}</span>
           </div>
         </div>
+        <div class="resource-detail-item" v-if="resource.boottype">
+          <div class="resource-detail-item__label">{{ $t('label.boottype') }}</div>
+          <div class="resource-detail-item__details">
+            <span>{{ resource.boottype }}</span>
+          </div>
+        </div>
+        <div class="resource-detail-item" v-if="resource.bootmode">
+          <div class="resource-detail-item__label">{{ $t('label.bootmode') }}</div>
+          <div class="resource-detail-item__details">
+            <span>{{ resource.bootmode }}</span>
+          </div>
+        </div>
         <div class="resource-detail-item" v-if="resource.managementserverid">
           <div class="resource-detail-item__label">{{ $t('label.management.servers') }}</div>
           <div class="resource-detail-item__details">
