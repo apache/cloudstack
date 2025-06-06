@@ -42,6 +42,8 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.org.Cluster;
 import com.cloud.server.ManagementService;
 import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
+import com.cloud.cluster.ManagementServerHostPeerJoinVO;
+
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -229,7 +231,6 @@ import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
-import com.cloud.cluster.ManagementServerHostPeerJoinVO;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.cluster.dao.ManagementServerHostPeerJoinDao;
@@ -5824,9 +5825,17 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     public SnapshotResponse listSnapshot(CopySnapshotCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
         List<Long> zoneIds = cmd.getDestinationZoneIds();
+        Long zoneId = null;
+        String location = null;
+        if (CollectionUtils.isNotEmpty(zoneIds)) {
+            zoneId = zoneIds.get(0);
+            location = Snapshot.LocationType.SECONDARY.name();
+        } else {
+            location = cmd.getSnapshot().getLocationType() != null ? cmd.getSnapshot().getLocationType().name() : null;
+        }
         Pair<List<SnapshotJoinVO>, Integer> result = searchForSnapshotsWithParams(cmd.getId(), null,
                 null, null, null, null,
-                null, null, zoneIds.get(0), Snapshot.LocationType.SECONDARY.name(),
+                null, null, zoneId, location,
                 false, null, null, null, null, null,
                 null, null, true, false, caller);
         ResponseView respView = ResponseView.Restricted;
