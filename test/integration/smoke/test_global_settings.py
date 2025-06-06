@@ -79,7 +79,7 @@ class TestUpdateConfigWithScope(cloudstackTestCase):
 
         updateConfigurationCmd = updateConfiguration.updateConfigurationCmd()
         updateConfigurationCmd.name = "commands.timeout"
-        updateConfigurationCmd.value = ""
+        updateConfigurationCmd.value = " "
         self.apiClient.updateConfiguration(updateConfigurationCmd)
 
 class TestListConfigurations(cloudstackTestCase):
