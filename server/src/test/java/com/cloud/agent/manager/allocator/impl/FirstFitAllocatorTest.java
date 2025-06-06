@@ -118,11 +118,7 @@ public class FirstFitAllocatorTest {
     @Before
     public void setUp() {
         Mockito.when(deploymentPlan.getDataCenterId()).thenReturn(1L);
-        Mockito.when(offering.getCpu()).thenReturn(2);
-        Mockito.when(offering.getSpeed()).thenReturn(1000);
-        Mockito.when(offering.getRamSize()).thenReturn(2048);
         Mockito.when(offering.getId()).thenReturn(123L);
-        Mockito.when(offering.getHostTag()).thenReturn(null);
     }
 
     @Test
