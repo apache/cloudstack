@@ -166,3 +166,12 @@ SET `sort_key` = CASE
     ELSE `sort_key`
 END;
 -- End: Changes for Guest OS category cleanup
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.console_session', 'domain_id', 'bigint(20) unsigned NOT NULL');
+
+UPDATE `cloud`.`console_session` `cs`
+SET `cs`.`domain_id` = (
+    SELECT `acc`.`domain_id`
+    FROM `cloud`.`account` `acc`
+    WHERE `acc`.`id` = `cs`.`account_id`
+);
