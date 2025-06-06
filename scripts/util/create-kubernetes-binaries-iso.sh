@@ -24,16 +24,6 @@ if [ $# -lt 6 ]; then
     exit 1
 fi
 
-RELEASE="v${2}"
-VAL="1.18.0"
-output_dir="${1}"
-start_dir="$PWD"
-iso_dir="/tmp/iso"
-working_dir="${iso_dir}/"
-mkdir -p "${working_dir}"
-build_name="${7}.iso"
-[ -z "${build_name}" ] && build_name="setup-${RELEASE}.iso"
-
 ARCH="amd64"
 if [ -n "${8}" ]; then
   ARCH="${8}"
@@ -42,6 +32,16 @@ if [ -n "${8}" ]; then
     exit 1
   fi
 fi
+
+RELEASE="v${2}"
+VAL="1.18.0"
+output_dir="${1}"
+start_dir="$PWD"
+iso_dir="/tmp/iso"
+working_dir="${iso_dir}/"
+mkdir -p "${working_dir}"
+build_name="${7}-${ARCH}.iso"
+[ -z "${build_name}" ] && build_name="setup-${RELEASE}-${ARCH}.iso"
 
 CNI_VERSION="v${3}"
 echo "Downloading CNI ${CNI_VERSION}..."
