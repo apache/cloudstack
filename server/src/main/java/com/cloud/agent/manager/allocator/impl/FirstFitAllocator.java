@@ -144,7 +144,7 @@ public class FirstFitAllocator extends BaseAllocator {
         } else if (ObjectUtils.allNull(hostTagOnOffering, hostTagOnTemplate)) {
             clusterHosts.retainAll(_resourceMgr.listAllUpAndEnabledNonHAHosts(type, clusterId, podId, dcId));
         } else {
-            retainHostsMatchingServiceOfferingAndTemplateTags(clusterHosts, type, clusterId, podId, dcId, hostTagOnTemplate, hostTagOnOffering);
+            retainHostsMatchingServiceOfferingAndTemplateTags(clusterHosts, type, dcId, podId, clusterId, hostTagOnOffering, hostTagOnTemplate);
         }
 
         filterHostsWithUefiEnabled(type, vmProfile, clusterId, podId, dcId, clusterHosts);

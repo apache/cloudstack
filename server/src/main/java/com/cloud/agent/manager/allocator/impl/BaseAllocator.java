@@ -65,7 +65,7 @@ public abstract class BaseAllocator extends AdapterBase implements HostAllocator
             return;
         }
 
-        logger.info("Found hosts %s with tag rules matching the compute offering tag [{}].", hostsWithTagRules, hostTagOnOffering);
+        logger.info("Found hosts {} with tag rules matching the compute offering tag [{}].", hostsWithTagRules, hostTagOnOffering);
         clusterHosts.addAll(hostsWithTagRules);
     }
 

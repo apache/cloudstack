@@ -107,7 +107,7 @@ public class RandomAllocator extends BaseAllocator {
         }
 
         if (ObjectUtils.anyNotNull(offeringHostTag, templateTag)) {
-            retainHostsMatchingServiceOfferingAndTemplateTags(availableHosts, type, clusterId, podId, dcId, offeringHostTag, templateTag);
+            retainHostsMatchingServiceOfferingAndTemplateTags(availableHosts, type, dcId, podId, clusterId, offeringHostTag, templateTag);
         } else {
             List<HostVO> hostsWithNoRuleTag = hostDao.listAllHostsThatHaveNoRuleTag(type, clusterId, podId, dcId);
             logger.debug("Retaining hosts {} because they do not have rule tags.", hostsWithNoRuleTag);

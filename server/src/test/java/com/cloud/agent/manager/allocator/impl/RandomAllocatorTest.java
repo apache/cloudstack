@@ -59,9 +59,9 @@ public class RandomAllocatorTest {
 
     private final Long clusterId = 1L;
 
-    private final Long podId = 1L;
+    private final Long podId = 2L;
 
-    private final Long zoneId = 1L;
+    private final Long zoneId = 3L;
 
     private final List<HostVO> emptyList = new ArrayList<>();
 
@@ -94,37 +94,37 @@ public class RandomAllocatorTest {
         String offeringTag = "tag2";
         HostVO host1 = Mockito.mock(HostVO.class);
         HostVO host2 = Mockito.mock(HostVO.class);
-        Mockito.when(hostDao.listByHostTag(type, id, id, id, offeringTag)).thenReturn(List.of(host1, host2));
+        Mockito.when(hostDao.listByHostTag(type, clusterId, podId, zoneId, offeringTag)).thenReturn(List.of(host1, host2));
 
         // No template tagged host
         ArrayList<HostVO> noTemplateTaggedHosts = new ArrayList<>(Arrays.asList(host1, host2));
-        Mockito.when(hostDao.listByHostTag(type, id, id, id, templateTag)).thenReturn(new ArrayList<>());
-        randomAllocator.retainHostsMatchingServiceOfferingAndTemplateTags(noTemplateTaggedHosts, type, id, id, id, offeringTag, templateTag);
+        Mockito.when(hostDao.listByHostTag(type, clusterId, podId, zoneId, templateTag)).thenReturn(new ArrayList<>());
+        randomAllocator.retainHostsMatchingServiceOfferingAndTemplateTags(noTemplateTaggedHosts, type, zoneId, podId, clusterId, offeringTag, templateTag);
         Assert.assertTrue(CollectionUtils.isEmpty(noTemplateTaggedHosts));
 
         // Different template tagged host
         ArrayList<HostVO> differentTemplateTaggedHost = new ArrayList<>(Arrays.asList(host1, host2));
         HostVO host3 = Mockito.mock(HostVO.class);
-        Mockito.when(hostDao.listByHostTag(type, id, id, id, templateTag)).thenReturn(List.of(host3));
-        randomAllocator.retainHostsMatchingServiceOfferingAndTemplateTags(differentTemplateTaggedHost, type, id, id, id, offeringTag, templateTag);
+        Mockito.when(hostDao.listByHostTag(type, clusterId, podId, zoneId, templateTag)).thenReturn(List.of(host3));
+        randomAllocator.retainHostsMatchingServiceOfferingAndTemplateTags(differentTemplateTaggedHost, type, zoneId, podId, clusterId, offeringTag, templateTag);
         Assert.assertTrue(CollectionUtils.isEmpty(differentTemplateTaggedHost));
 
         // Matching template tagged host
         ArrayList<HostVO> matchingTemplateTaggedHost = new ArrayList<>(Arrays.asList(host1, host2));
-        Mockito.when(hostDao.listByHostTag(type, id, id, id, templateTag)).thenReturn(List.of(host1));
-        randomAllocator.retainHostsMatchingServiceOfferingAndTemplateTags(matchingTemplateTaggedHost, type, id, id, id, offeringTag, templateTag);
+        Mockito.when(hostDao.listByHostTag(type, clusterId, podId, zoneId, templateTag)).thenReturn(List.of(host1));
+        randomAllocator.retainHostsMatchingServiceOfferingAndTemplateTags(matchingTemplateTaggedHost, type, zoneId, podId, clusterId, offeringTag, templateTag);
         Assert.assertFalse(CollectionUtils.isEmpty(matchingTemplateTaggedHost));
         Assert.assertEquals(1, matchingTemplateTaggedHost.size());
 
         // No template tag
         ArrayList<HostVO> noTemplateTag = new ArrayList<>(Arrays.asList(host1, host2));
-        randomAllocator.retainHostsMatchingServiceOfferingAndTemplateTags(noTemplateTag, type, id, id, id, offeringTag, null);
+        randomAllocator.retainHostsMatchingServiceOfferingAndTemplateTags(noTemplateTag, type, zoneId, podId, clusterId, offeringTag, null);
         Assert.assertFalse(CollectionUtils.isEmpty(noTemplateTag));
         Assert.assertEquals(2, noTemplateTag.size());
 
         // No offering tag
         ArrayList<HostVO> noOfferingTag = new ArrayList<>(Arrays.asList(host1, host2));
-        randomAllocator.retainHostsMatchingServiceOfferingAndTemplateTags(noOfferingTag, type, id, id, id, null, templateTag);
+        randomAllocator.retainHostsMatchingServiceOfferingAndTemplateTags(noOfferingTag, type, zoneId, podId, clusterId, null, templateTag);
         Assert.assertFalse(CollectionUtils.isEmpty(noOfferingTag));
         Assert.assertEquals(1, noOfferingTag.size());
     }
