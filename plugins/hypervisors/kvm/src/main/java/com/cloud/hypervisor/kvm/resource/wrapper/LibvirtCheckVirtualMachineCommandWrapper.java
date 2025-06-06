@@ -20,6 +20,8 @@
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import org.libvirt.Connect;
+import org.libvirt.Domain;
+import org.libvirt.DomainInfo;
 import org.libvirt.LibvirtException;
 
 import com.cloud.agent.api.Answer;
@@ -43,6 +45,11 @@ public final class LibvirtCheckVirtualMachineCommandWrapper extends CommandWrapp
             Integer vncPort = null;
             if (state == PowerState.PowerOn) {
                 vncPort = libvirtComputingResource.getVncPort(conn, command.getVmName());
+            }
+
+            Domain vm = conn.domainLookupByName(command.getVmName());
+            if (state == PowerState.PowerOn && DomainInfo.DomainState.VIR_DOMAIN_PAUSED.equals(vm.getInfo().state)) {
+                return new CheckVirtualMachineAnswer(command, PowerState.PowerUnknown, vncPort);
             }
 
             return new CheckVirtualMachineAnswer(command, state, vncPort);

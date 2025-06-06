@@ -62,7 +62,7 @@ public class GsonHelper {
         LOGGER.info("Default Builder inited.");
     }
 
-    static Gson setDefaultGsonConfig(GsonBuilder builder) {
+    public static Gson setDefaultGsonConfig(GsonBuilder builder) {
         builder.setVersion(1.5);
         InterfaceTypeAdaptor<DataStoreTO> dsAdaptor = new InterfaceTypeAdaptor<DataStoreTO>();
         builder.registerTypeAdapter(DataStoreTO.class, dsAdaptor);

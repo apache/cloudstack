@@ -52,6 +52,8 @@ import org.apache.cloudstack.api.command.admin.host.PrepareForHostMaintenanceCmd
 import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import javax.naming.ConfigurationException;
@@ -568,6 +570,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
         return null;
     }
 
+
     /* (non-Javadoc)
      * @see com.cloud.utils.component.Manager#configure(java.lang.String, java.util.Map)
      */
@@ -629,6 +632,24 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
     }
 
     @Override
+    public void updatePodStorageAccessGroups(long podId, List<String> newStorageAccessGroups) {
+    }
+
+    @Override
+    public void updateZoneStorageAccessGroups(long zoneId, List<String> newStorageAccessGroups) {
+    }
+
+    @Override
+    public void updateClusterStorageAccessGroups(Long clusterId, List<String> newStorageAccessGroups) {
+
+    }
+
+    @Override
+    public void updateHostStorageAccessGroups(Long hostId, List<String> newStorageAccessGroups) {
+
+    }
+
+    @Override
     public boolean isGPUDeviceAvailable(final Host host, final String groupName, final String vgpuType) {
         // TODO Auto-generated method stub
         return false;
@@ -666,6 +687,25 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
     @Override
     public boolean cancelMaintenance(long hostId) {
         return false;
+    }
+
+    @Override
+    public void updateStoragePoolConnectionsOnHosts(Long poolId, List<String> storageAccessGroups) {
+    }
+
+    @Override
+    public List<HostVO> getEligibleUpHostsInClusterForStorageConnection(PrimaryDataStoreInfo primaryDataStoreInfo) {
+        return null;
+    }
+
+    @Override
+    public List<HostVO> getEligibleUpAndEnabledHostsInClusterForStorageConnection(PrimaryDataStoreInfo primaryStore) {
+        return null;
+    }
+
+    @Override
+    public List<HostVO> getEligibleUpAndEnabledHostsInZoneForStorageConnection(DataStore dataStore, long zoneId, HypervisorType hypervisorType) {
+        return null;
     }
 
     @Override

@@ -3661,7 +3661,6 @@
   "message.volumes.managed": "CloudStack ద్వారా నియంత్రించబడే వాల్యూమ్‌లు.",
   "message.volumes.unmanaged": "CloudStack ద్వారా వాల్యూమ్‌లు నియంత్రించబడవు.",
   "message.vpc.restart.required": "VPC(లు) కోసం పునఃప్రారంభించాల్సిన అవసరం ఉంది. ",
-  "message.vr.alert.upon.network.offering.creation.l2": "L2 నెట్‌వర్క్‌ల కోసం వర్చువల్ రూటర్‌లు సృష్టించబడనందున, కంప్యూట్ ఆఫర్ ఉపయోగించబడదు.",
   "message.vr.alert.upon.network.offering.creation.others": "వర్చువల్ రూటర్‌ను (VPN, DHCP, DNS, Firewall, LB, UserData, SourceNat, StaticNat, PortForwarding) సృష్టించడం కోసం తప్పనిసరి సేవలు ఏవీ ప్రారంభించబడనందున, వర్చువల్ రూటర్ సృష్టించబడదు మరియు గణన సమర్పణ ఉపయోగించబడదు.",
   "message.warn.change.primary.storage.scope": "ఈ ఫీచర్ క్రింది కాన్ఫిగరేషన్‌ల కోసం పరీక్షించబడింది మరియు మద్దతు ఇస్తుంది:<br>KVM - NFS/Ceph - డిఫాల్ట్ ప్రైమరీ<br>VMware - NFS - డిఫాల్ట్ ప్రైమరీ<br>*ఇతర కాన్ఫిగరేషన్‌ల కోసం ఇది పని చేయడానికి అదనపు దశలు ఉండవచ్చు.",
   "message.warn.filetype": "jpg, jpeg, png, bmp మరియు svg మాత్రమే మద్దతు ఉన్న ఇమేజ్ ఫార్మాట్‌లు.",

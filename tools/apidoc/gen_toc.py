@@ -261,6 +261,8 @@ known_categories = {
     'listASNumbers': 'AS Number',
     'releaseASNumber': 'AS Number',
     'addNetrisProvider': 'Netris',
+    'configureStorageAccess': 'Storage Access Groups',
+    'listStorageAccessGroups': 'Storage Access Groups'
 }
 
 

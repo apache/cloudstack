@@ -17,71 +17,27 @@
 
 <template>
   <div>
-    <a-input-search
-      style="width: 25vw;float: right;margin-bottom: 10px; z-index: 8;"
-      :placeholder="$t('label.search')"
-      v-model:value="filter"
-      @search="handleSearch" />
-
-    <a-list size="large" class="list" :loading="loading || tabLoading">
-      <a-list-item :key="index" v-for="(item, index) in items" class="item">
-        <a-list-item-meta>
-          <template #title style="word-break: break-all">{{ item.name }}</template>
-          <template #description style="word-break: break-all">{{ item.description }}</template>
-        </a-list-item-meta>
-
-        <div class="item__content">
-          <a-input
-            v-focus="editableValueKey === index"
-            v-if="editableValueKey === index"
-            class="editable-value value"
-            :defaultValue="item.value"
-            v-model:value="editableValue"
-            @keydown.esc="editableValueKey = null"
-            @pressEnter="updateData(item)">
-          </a-input>
-          <span v-else class="value">
-            {{ item.value }}
-          </span>
-        </div>
-
-        <template #actions class="action">
-          <tooltip-button
-            :tooltip="$t('label.edit')"
-            :disabled="!('updateConfiguration' in $store.getters.apis)"
-            v-if="editableValueKey !== index"
-            icon="edit-outlined"
-            @onClick="setEditableSetting(item, index)" />
-          <tooltip-button
-            :tooltip="$t('label.cancel')"
-            @onClick="editableValueKey = null"
-            v-if="editableValueKey === index"
-            iconType="CloseCircleTwoTone"
-            iconTwoToneColor="#f5222d" />
-          <tooltip-button
-            :tooltip="$t('label.ok')"
-            @onClick="updateData(item)"
-            v-if="editableValueKey === index"
-            iconType="CheckCircleTwoTone"
-            iconTwoToneColor="#52c41a" />
-          <tooltip-button
-            :tooltip="$t('label.reset.config.value')"
-            @onClick="resetConfig(item)"
-            v-if="editableValueKey !== index"
-            icon="reload-outlined"
-            :disabled="!('updateConfiguration' in $store.getters.apis)" />
-        </template>
-      </a-list-item>
-    </a-list>
+    <a-col :span="24">
+      <a-input-search
+        style="width: 25vw;float: right;margin-bottom: 10px; z-index: 8;"
+        :placeholder="$t('label.search')"
+        v-model:value="filter"
+        @search="handleSearch" />
+      <ConfigurationTable
+        :columns="columns"
+        :config="items" />
+    </a-col>
   </div>
 </template>
 
 <script>
 import { api } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
+import ConfigurationTable from '@/views/setting/ConfigurationTable.vue'
 
 export default {
   components: {
+    ConfigurationTable,
     TooltipButton
   },
   name: 'SettingsTab',
@@ -112,7 +68,20 @@ export default {
           scope: 'zone',
           warning: this.$t('message.warn.zone.mtu.update')
         }
-      }
+      },
+      columns: [
+        {
+          title: 'name',
+          dataIndex: 'name',
+          key: 'name'
+        },
+        {
+          title: 'value',
+          dataIndex: 'value',
+          key: 'value',
+          width: '29%'
+        }
+      ]
     }
   },
   created () {
@@ -167,70 +136,9 @@ export default {
         callback()
       })
     },
-    updateData (item) {
-      this.tabLoading = true
-      api('updateConfiguration', {
-        [this.scopeKey]: this.resource.id,
-        name: item.name,
-        value: this.editableValue
-      }).then(() => {
-        var message = `${this.$t('label.setting')} ${item.name} ${this.$t('label.update.to')} ${this.editableValue}`
-        this.handleSuccessMessage(item, this.$route.meta.name, message)
-      }).catch(error => {
-        console.error(error)
-        this.$message.error(this.$t('message.error.save.setting'))
-        this.$notification.error({
-          message: this.$t('label.error'),
-          description: this.$t('message.error.try.save.setting')
-        })
-      }).finally(() => {
-        this.tabLoading = false
-        this.fetchData(() => {
-          this.editableValueKey = null
-        })
-      })
-    },
-    setEditableSetting (item, index) {
-      this.editableValueKey = index
-      this.editableValue = item.value
-    },
     handleSearch (value) {
       this.filter = value
       this.fetchData()
-    },
-    resetConfig (item) {
-      this.tabLoading = true
-      api('resetConfiguration', {
-        [this.scopeKey]: this.resource.id,
-        name: item.name
-      }).then(() => {
-        var message = `${this.$t('label.setting')} ${item.name} ${this.$t('label.reset.config.value')}`
-        this.handleSuccessMessage(item, this.$route.meta.name, message)
-      }).catch(error => {
-        console.error(error)
-        this.$message.error(this.$t('message.error.reset.config'))
-        this.$notification.error({
-          message: this.$t('label.error'),
-          description: this.$t('message.error.reset.config')
-        })
-      }).finally(() => {
-        this.tabLoading = false
-        this.fetchData(() => {
-          this.editableValueKey = null
-        })
-      })
-    },
-    handleSuccessMessage (config, scope, message) {
-      var obj = this.warningMessages[config.name]
-      if (obj && obj.scope === scope) {
-        var content = obj.warning
-        if (config.isdynamic) {
-          content = `this.$t('message.setting.update.delay').\n ${content}`
-        }
-        this.$warning({ title: message, content: content })
-      } else {
-        this.$messageConfigSuccess(message, config)
-      }
     }
   }
 }

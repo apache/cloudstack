@@ -89,6 +89,9 @@ public class EngineHostPodVO implements EnginePod, Identity {
     @Temporal(value = TemporalType.TIMESTAMP)
     protected Date lastUpdated;
 
+    @Column(name = "storage_access_groups")
+    String storageAccessGroups;
+
     /**
      * Note that state is intentionally missing the setter.  Any updates to
      * the state machine needs to go through the DAO object because someone
@@ -200,6 +203,11 @@ public class EngineHostPodVO implements EnginePod, Identity {
     @Override
     public boolean getExternalDhcp() {
         return externalDhcp;
+    }
+
+    @Override
+    public String getStorageAccessGroups() {
+        return storageAccessGroups;
     }
 
     public void setExternalDhcp(boolean use) {

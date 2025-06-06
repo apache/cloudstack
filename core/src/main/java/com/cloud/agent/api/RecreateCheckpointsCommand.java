@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,16 +15,35 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.command.admin.zone;
+//
 
-public interface ListVmwareDcItems {
-    String getVcenter();
+package com.cloud.agent.api;
 
-    String getDatacenterName();
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
-    String getUsername();
+import java.util.List;
 
-    String getPassword();
+public class RecreateCheckpointsCommand extends Command {
 
-    Long getExistingVcenterId();
+    private List<VolumeObjectTO> volumes;
+
+    private String vmName;
+
+    public RecreateCheckpointsCommand(List<VolumeObjectTO> volumes, String vmName) {
+        this.volumes = volumes;
+        this.vmName = vmName;
+    }
+
+    public List<VolumeObjectTO> getDisks() {
+        return volumes;
+    }
+
+    public String getVmName() {
+        return vmName;
+    }
+
+    @Override
+    public boolean executeInSequence() {
+        return true;
+    }
 }

@@ -533,4 +533,8 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     public UserAccount clearUserTwoFactorAuthenticationInSetupStateOnLogin(UserAccount user) {
         return null;
     }
+
+    @Override
+    public void verifyCallerPrivilegeForUserOrAccountOperations(Account userAccount) {
+    }
 }

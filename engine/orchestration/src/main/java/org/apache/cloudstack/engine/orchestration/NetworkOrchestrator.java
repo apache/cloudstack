@@ -601,7 +601,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworks) == null) {
                     offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworks,
                             "Offering for Isolated VPC networks with Source Nat service enabled", TrafficType.Guest, null, false, Availability.Optional, null,
-                            defaultVPCOffProviders, true, Network.GuestType.Isolated, false, null, false, null, false, false, null, false, null, true, true, false, false, false,null, null, null,true, null, null, false);
+                            defaultVPCOffProviders, true, Network.GuestType.Isolated, false, null, true, null, false, false, null, false, null, true, true, false, false, false,null, null, null,true, null, null, false);
                 }
 
                 //#6 - default vpc offering with no LB service
@@ -1547,8 +1547,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         if (isNetworkImplemented(network)) {
             logger.debug("Network {} is already implemented", network);
             implemented.set(guru, network);
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_UPDATE, network.getAccountId(), network.getDataCenterId(), network.getId(),
-                    network.getName(), network.getNetworkOfferingId(), null, network.getState().name(), Network.class.getName(), network.getUuid(), true);
             return implemented;
         }
 
@@ -1604,9 +1602,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
             network.setRestartRequired(false);
             _networksDao.update(network.getId(), network);
+            UsageEventUtils.publishNetworkUpdate(network);
             implemented.set(guru, network);
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_CREATE, network.getAccountId(), network.getDataCenterId(), network.getId(),
-                    network.getName(), network.getNetworkOfferingId(), null, null, null, network.getState().name(), network.getUuid());
             return implemented;
         } catch (final NoTransitionException e) {
             logger.error(e.getMessage());
@@ -3115,6 +3112,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 if (updateResourceCount) {
                     _resourceLimitMgr.incrementResourceCount(owner.getId(), ResourceType.network, isDisplayNetworkEnabled);
                 }
+                UsageEventUtils.publishNetworkCreation(network);
 
                 return network;
             }
@@ -3196,13 +3194,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
             logger.debug("Lock is acquired for network {} as a part of network shutdown", network);
 
-            if (network.getState() == Network.State.Allocated) {
-                logger.debug("Network is already shutdown: {}", network);
+            final Network.State initialState = network.getState();
+            if (initialState == Network.State.Allocated) {
+                logger.debug(String.format("Network [%s] is in Allocated state, no need to shutdown.", network));
                 return true;
             }
 
-            if (network.getState() != Network.State.Implemented && network.getState() != Network.State.Shutdown) {
-                logger.debug("Network is not implemented: {}", network);
+            if (initialState != Network.State.Implemented && initialState != Network.State.Shutdown) {
+                logger.debug("Network is not implemented: " + network);
                 return false;
             }
 
@@ -3246,6 +3245,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         }
                         _networksDao.update(networkFinal.getId(), networkFinal);
                         _networksDao.clearCheckForGc(networkId);
+                        if (initialState == Network.State.Implemented) {
+                            UsageEventUtils.publishNetworkUpdate(networkFinal);
+                        }
                         result = true;
                     } else {
                         try {
@@ -3505,8 +3507,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     final Pair<Class<?>, Long> networkMsg = new Pair<Class<?>, Long>(Network.class, networkFinal.getId());
                     _messageBus.publish(_name, EntityManager.MESSAGE_REMOVE_ENTITY_EVENT, PublishScope.LOCAL, networkMsg);
                 }
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_DELETE, network.getAccountId(), network.getDataCenterId(), network.getId(),
-                        network.getName(), network.getNetworkOfferingId(), null, null, null, Network.class.getName(), network.getUuid());
+                UsageEventUtils.publishNetworkDeletion(network);
                 return true;
             } catch (final CloudRuntimeException e) {
                 logger.error("Failed to delete network", e);
