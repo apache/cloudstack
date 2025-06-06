@@ -361,7 +361,11 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class ApiDBUtils {
+    private static final Logger log = LogManager.getLogger(ApiDBUtils.class);
     private static ManagementServer s_ms;
     static AsyncJobManager s_asyncMgr;
     static SecurityGroupManager s_securityGroupMgr;
@@ -1712,7 +1716,9 @@ public class ApiDBUtils {
         for (SnapshotPolicyDetailVO detail : poolDetails) {
             try {
                 poolIds.add(Long.valueOf(detail.getValue()));
-            } catch (NumberFormatException ignored) {}
+            } catch (NumberFormatException ignored) {
+                log.debug(String.format("Could not parse the storage ID value of %s", detail.getValue()), ignored);
+            }
         }
         if (volume != null && !poolIds.contains(volume.getPoolId())) {
             poolIds.add(0, volume.getPoolId());
