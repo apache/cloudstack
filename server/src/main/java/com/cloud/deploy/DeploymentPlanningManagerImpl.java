@@ -1698,20 +1698,19 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
     @Override
     public void reorderHostsByPriority(Map<Long, Integer> priorities, List<Host> hosts) {
-        logger.info("Re-ordering hosts {} by priorities {}", hosts, priorities);
+        if (CollectionUtils.isEmpty(hosts)){
+            logger.debug("Hosts list is empty; therefore, there is nothing to reorder.");
+            return;
+        }
 
+        logger.info("Re-ordering hosts [{}] by priorities [{}].", hosts, priorities);
         hosts.removeIf(host -> DataCenterDeployment.PROHIBITED_HOST_PRIORITY.equals(getHostPriority(priorities, host.getId())));
+        hosts.sort((host1, host2) -> {
+            int res = getHostPriority(priorities, host1.getId()).compareTo(getHostPriority(priorities, host2.getId()));
+            return -res;
+        });
 
-        Collections.sort(hosts, new Comparator<>() {
-                    @Override
-                    public int compare(Host host1, Host host2) {
-                        int res = getHostPriority(priorities, host1.getId()).compareTo(getHostPriority(priorities, host2.getId()));
-                        return -res;
-                    }
-                }
-        );
-
-        logger.info("Hosts after re-ordering are: {}", hosts);
+        logger.info("Hosts after re-ordering are: [{}].", hosts);
     }
 
     private Integer getHostPriority(Map<Long, Integer> priorities, Long hostId) {
