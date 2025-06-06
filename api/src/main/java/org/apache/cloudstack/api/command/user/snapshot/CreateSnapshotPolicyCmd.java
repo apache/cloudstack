@@ -22,6 +22,7 @@ import com.cloud.projects.Project;
 import com.cloud.storage.Volume;
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.user.Account;
+import java.util.ArrayList;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -89,7 +90,7 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
             entityType = StoragePoolResponse.class,
             description = "A comma-separated list of IDs of the storage pools in other zones in which the snapshot will be made available. " +
                     "The snapshot will always be made available in the zone in which the volume is present.",
-            since = "4.20.0")
+            since = "4.21.0")
     protected List<Long> storagePoolIds;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -127,7 +128,9 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
         return zoneIds;
     }
 
-    public  List<Long> getStoragePoolIds() { return storagePoolIds; }
+    public  List<Long> getStoragePoolIds() {
+        return storagePoolIds == null ? new ArrayList<>() : storagePoolIds;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
