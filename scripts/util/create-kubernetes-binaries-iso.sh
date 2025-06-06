@@ -19,7 +19,7 @@
 set -e
 
 if [ $# -lt 6 ]; then
-    echo "Invalid input. Valid usage: ./create-kubernetes-binaries-iso.sh OUTPUT_PATH KUBERNETES_VERSION CNI_VERSION CRICTL_VERSION WEAVENET_NETWORK_YAML_CONFIG DASHBOARD_YAML_CONFIG BUILD_NAME"
+    echo "Invalid input. Valid usage: ./create-kubernetes-binaries-iso.sh OUTPUT_PATH KUBERNETES_VERSION CNI_VERSION CRICTL_VERSION WEAVENET_NETWORK_YAML_CONFIG DASHBOARD_YAML_CONFIG BUILD_NAME [ARCH]"
     echo "eg: ./create-kubernetes-binaries-iso.sh ./ 1.11.4 0.7.1 1.11.1 https://github.com/weaveworks/weave/releases/download/latest_release/weave-daemonset-k8s-1.11.yaml https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.0/src/deploy/recommended/kubernetes-dashboard.yaml setup-v1.11.4"
     exit 1
 fi
@@ -34,26 +34,35 @@ mkdir -p "${working_dir}"
 build_name="${7}.iso"
 [ -z "${build_name}" ] && build_name="setup-${RELEASE}.iso"
 
+ARCH="amd64"
+if [ -n "${8}" ]; then
+  ARCH="${8}"
+  if [ "$ARCH" != "amd64" ] && [ "$ARCH" != "arm64" ]; then
+    echo "ERROR: ARCH must be 'amd64' or 'arm64'. If the optional parameter ARCH is not set then 'amd64' is used."
+    exit 1
+  fi
+fi
+
 CNI_VERSION="v${3}"
 echo "Downloading CNI ${CNI_VERSION}..."
 cni_dir="${working_dir}/cni/"
 mkdir -p "${cni_dir}"
-cni_status_code=$(curl -L  --write-out "%{http_code}\n" "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-linux-amd64-${CNI_VERSION}.tgz" -o "${cni_dir}/cni-plugins-amd64.tgz")
+cni_status_code=$(curl -L  --write-out "%{http_code}\n" "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-linux-${ARCH}-${CNI_VERSION}.tgz" -o "${cni_dir}/cni-plugins-${ARCH}.tgz")
 if [[ ${cni_status_code} -eq 404 ]] ; then
-  curl -L  --write-out "%{http_code}\n" "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-amd64-${CNI_VERSION}.tgz" -o "${cni_dir}/cni-plugins-amd64.tgz"
+  curl -L  --write-out "%{http_code}\n" "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-${ARCH}-${CNI_VERSION}.tgz" -o "${cni_dir}/cni-plugins-${ARCH}.tgz"
 fi
 
 CRICTL_VERSION="v${4}"
 echo "Downloading CRI tools ${CRICTL_VERSION}..."
 crictl_dir="${working_dir}/cri-tools/"
 mkdir -p "${crictl_dir}"
-curl -L "https://github.com/kubernetes-incubator/cri-tools/releases/download/${CRICTL_VERSION}/crictl-${CRICTL_VERSION}-linux-amd64.tar.gz" -o "${crictl_dir}/crictl-linux-amd64.tar.gz"
+curl -L "https://github.com/kubernetes-incubator/cri-tools/releases/download/${CRICTL_VERSION}/crictl-${CRICTL_VERSION}-linux-${ARCH}.tar.gz" -o "${crictl_dir}/crictl-linux-${ARCH}.tar.gz"
 
 echo "Downloading Kubernetes tools ${RELEASE}..."
 k8s_dir="${working_dir}/k8s"
 mkdir -p "${k8s_dir}"
 cd "${k8s_dir}"
-curl -L --remote-name-all https://dl.k8s.io/release/${RELEASE}/bin/linux/amd64/{kubeadm,kubelet,kubectl}
+curl -L --remote-name-all https://dl.k8s.io/release/${RELEASE}/bin/linux/${ARCH}/{kubeadm,kubelet,kubectl}
 kubeadm_file_permissions=`stat --format '%a' kubeadm`
 chmod +x kubeadm
 
