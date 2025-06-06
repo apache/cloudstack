@@ -200,7 +200,7 @@ export default {
   },
   computed: {
     isolationMethods () {
-      return ['VLAN', 'VXLAN', 'GRE', 'STT', 'BCF_SEGMENT', 'SSP', 'ODL', 'L3VPN', 'VCS']
+      return ['VLAN', 'VXLAN', 'GRE', 'STT', 'BCF_SEGMENT', 'SSP', 'ODL', 'L3VPN', 'VCS', 'NSX', 'NETRIS']
     }
   },
   methods: {

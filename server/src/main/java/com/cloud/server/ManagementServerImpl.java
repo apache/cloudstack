@@ -44,6 +44,13 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.cpu.CPU;
+import com.cloud.dc.VlanDetailsVO;
+import com.cloud.dc.dao.VlanDetailsDao;
+import com.cloud.network.dao.NetrisProviderDao;
+import com.cloud.network.dao.NsxProviderDao;
+
+import com.cloud.utils.security.CertificateHelper;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
@@ -676,7 +683,6 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.consoleproxy.ConsoleProxyManagementState;
 import com.cloud.consoleproxy.ConsoleProxyManager;
-import com.cloud.cpu.CPU;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
@@ -823,7 +829,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.utils.security.CertificateHelper;
 import com.cloud.utils.ssh.SSHKeysHelper;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DiskProfile;
@@ -884,6 +889,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private VlanDao _vlanDao;
     @Inject
+    private VlanDetailsDao vlanDetailsDao;
+    @Inject
     private AccountVlanMapDao _accountVlanMapDao;
     @Inject
     private PodVlanMapDao _podVlanMapDao;
@@ -926,7 +933,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private StoragePoolJoinDao _poolJoinDao;
     @Inject
-    private NetworkDao networkDao;
+    protected NetworkDao networkDao;
     @Inject
     private StorageManager _storageMgr;
     @Inject
@@ -996,7 +1003,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private NetworkModel _networkMgr;
     @Inject
-    private VpcDao _vpcDao;
+    protected VpcDao _vpcDao;
     @Inject
     private DomainVlanMapDao _domainVlanMapDao;
     @Inject
@@ -1026,6 +1033,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
     @Inject
     ResourceLimitService resourceLimitService;
+    @Inject
+    NsxProviderDao nsxProviderDao;
+    @Inject
+    NetrisProviderDao netrisProviderDao;
 
     private LockControllerListener _lockControllerListener;
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
@@ -2610,6 +2621,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final String address = cmd.getIpAddress();
         final Boolean forLoadBalancing = cmd.isForLoadBalancing();
         final Map<String, String> tags = cmd.getTags();
+        boolean forProvider = cmd.isForProvider();
 
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("address", sb.entity().getAddress(), SearchCriteria.Op.EQ);
@@ -2655,13 +2667,21 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         if (isAllocated != null && isAllocated) {
             sb.and("allocated", sb.entity().getAllocatedTime(), SearchCriteria.Op.NNULL);
         }
+
+        if (forProvider) {
+            SearchBuilder<VlanDetailsVO> vlanDetailsSearch = vlanDetailsDao.createSearchBuilder();
+            vlanDetailsSearch.and("name", vlanDetailsSearch.entity().getName(), SearchCriteria.Op.IN);
+            vlanDetailsSearch.and("value", vlanDetailsSearch.entity().getValue(), SearchCriteria.Op.EQ);
+            sb.join("vlanDetailSearch", vlanDetailsSearch, sb.entity().getVlanId(), vlanDetailsSearch.entity().getResourceId(), JoinType.LEFT);
+        }
     }
 
     protected void setParameters(SearchCriteria<IPAddressVO> sc, final ListPublicIpAddressesCmd cmd, VlanType vlanType, Boolean isAllocated) {
         final Object keyword = cmd.getKeyword();
         final Long physicalNetworkId = cmd.getPhysicalNetworkId();
         final Long sourceNetworkId = cmd.getNetworkId();
-        final Long zone = cmd.getZoneId();
+        final Long vpcId = cmd.getVpcId();
+        Long zone = cmd.getZoneId();
         final String address = cmd.getIpAddress();
         final Long vlan = cmd.getVlanId();
         final Long ipId = cmd.getId();
@@ -2670,6 +2690,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Boolean forDisplay = cmd.getDisplay();
         final String state = cmd.getState();
         final Boolean forSystemVms = cmd.getForSystemVMs();
+        final boolean forProvider = cmd.isForProvider();
         final Map<String, String> tags = cmd.getTags();
 
         sc.setJoinParameters("vlanSearch", "vlanType", vlanType);
@@ -2734,6 +2755,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             sc.setParameters(FOR_SYSTEMVMS, false);
         } else {
             sc.setParameters(FOR_SYSTEMVMS, forSystemVms);
+        }
+
+        if (forProvider) {
+            sc.setJoinParameters("vlanDetailSearch", "name", ApiConstants.NETRIS_DETAIL_KEY, ApiConstants.NSX_DETAIL_KEY);
+            sc.setJoinParameters("vlanDetailSearch", "value", "true");
         }
     }
 
