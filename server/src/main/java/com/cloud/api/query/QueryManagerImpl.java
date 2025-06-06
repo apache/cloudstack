@@ -18,8 +18,6 @@ package com.cloud.api.query;
 
 import static com.cloud.vm.VmDetailConstants.SSH_PUBLIC_KEY;
 
-
-import com.cloud.cluster.ManagementServerHostPeerJoinVO;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -44,6 +42,8 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.org.Cluster;
 import com.cloud.server.ManagementService;
 import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
+import com.cloud.cluster.ManagementServerHostPeerJoinVO;
+
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker;
