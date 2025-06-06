@@ -56,10 +56,7 @@ under the License.
       <!-- Append warnings+ to the syslog if it is listening on UDP port -->
       <!-- ============================== -->
 
-
-      <Syslog name="SYSLOG" host="localhost" facility="LOCAL6">
-         <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
-         <PatternLayout pattern="%-5p [%c{1.}] (%t:%x) %m%ex%n"/>
+      <Syslog name="SYSLOG" host="localhost" port="514" protocol="UDP" appName="ApacheCloudStack" facility="LOCAL6">
       </Syslog>
 
       <!-- ============================== -->
