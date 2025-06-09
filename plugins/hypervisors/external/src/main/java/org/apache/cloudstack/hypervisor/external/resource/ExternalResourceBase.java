@@ -32,9 +32,11 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckNetworkAnswer;
 import com.cloud.agent.api.CheckNetworkCommand;
+import com.cloud.agent.api.CleanupNetworkRulesCmd;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetHostStatsAnswer;
 import com.cloud.agent.api.GetHostStatsCommand;
+import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.MaintainAnswer;
 import com.cloud.agent.api.MaintainCommand;
@@ -159,6 +161,10 @@ public class ExternalResourceBase implements ServerResource {
                 return execute((MaintainCommand) cmd);
             } else if (cmd instanceof CheckHealthCommand) {
                 return execute((CheckHealthCommand) cmd);
+            } else if (cmd instanceof CleanupNetworkRulesCmd) {
+                return execute((CleanupNetworkRulesCmd) cmd);
+            } else if (cmd instanceof GetVmStatsCommand) {
+                return execute((GetVmStatsCommand) cmd);
             } else if (cmd instanceof RunCustomActionCommand) {
                 return execute((RunCustomActionCommand) cmd);
             } else {
@@ -217,6 +223,14 @@ public class ExternalResourceBase implements ServerResource {
 
     private Answer execute(CheckHealthCommand cmd) {
         return externalProvisioner.checkHealth(guid, extensionName, extensionRelativeEntryPoint, cmd);
+    }
+
+    private Answer execute(CleanupNetworkRulesCmd cmd) {
+        return new Answer(cmd, false, "Not supported");
+    }
+
+    private Answer execute(GetVmStatsCommand cmd) {
+        return new Answer(cmd, false, "Not supported");
     }
 
     @Override
