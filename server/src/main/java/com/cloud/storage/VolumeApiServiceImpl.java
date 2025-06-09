@@ -63,6 +63,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
@@ -105,6 +106,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
 import org.apache.cloudstack.utils.jsinterpreter.TagAsRuleHelper;
@@ -357,6 +359,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private StatsCollector statsCollector;
     @Inject
     HostPodDao podDao;
+    @Inject
+    EndPointSelector _epSelector;
 
     protected Gson _gson;
 
@@ -3143,6 +3147,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             DataTO volTO = volFactory.getVolume(volume.getId()).getTO();
+            ((VolumeObjectTO) volTO).setCheckpointPaths(_volumeMgr.getVolumeCheckpointPathsAndImageStoreUrls(volumeId, vm.getHypervisorType()).first());
             DiskTO disk = new DiskTO(volTO, volume.getDeviceId(), volume.getPath(), volume.getVolumeType());
             Map<String, String> details = new HashMap<String, String>();
             disk.setDetails(details);
@@ -3404,6 +3409,18 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             Pod destPoolPod = _entityMgr.findById(Pod.class, destPool.getPodId());
 
             destPool = _volumeMgr.findChildDataStoreInDataStoreCluster(dc, destPoolPod, destPool.getClusterId(), null, null, destPool.getId());
+        }
+
+        Pair<Boolean, String> checkResult = storageMgr.checkIfReadyVolumeFitsInStoragePoolWithStorageAccessGroups(destPool, vol);
+        if (!checkResult.first()) {
+            throw new CloudRuntimeException(checkResult.second());
+        }
+
+        if (!liveMigrateVolume && vm != null) {
+            DataStore primaryStore = dataStoreMgr.getPrimaryDataStore(destPool.getId());
+            if (_epSelector.select(primaryStore) == null) {
+                throw new CloudRuntimeException("Unable to find accessible host for volume migration");
+            }
         }
 
         if (!storageMgr.storagePoolCompatibleWithVolumePool(destPool, (Volume) vol)) {
@@ -3740,7 +3757,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             VolumeApiResult result = future.get();
             if (result.isFailed()) {
                 logger.debug("migrate volume failed:" + result.getResult());
-                throw new StorageUnavailableException("Migrate volume failed: " + result.getResult(), destPool.getId());
+                throw new CloudRuntimeException("Migrate volume failed: " + result.getResult());
             }
             return result.getVolume();
         } catch (InterruptedException e) {
@@ -4117,7 +4134,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         Optional<String> extractUrl = setExtractVolumeSearchCriteria(sc, volume);
         if (extractUrl.isPresent()) {
-            return extractUrl.get();
+            String url = extractUrl.get();
+            CallContext.current().setEventDetails(String.format("Download URL: %s, volume ID: %s", url, volume.getUuid()));
+            return url;
         }
 
         VMInstanceVO vm = null;
@@ -4134,7 +4153,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 VmWorkJobVO placeHolder = null;
                 placeHolder = createPlaceHolderWork(vm.getId());
                 try {
-                    return orchestrateExtractVolume(volume.getId(), zoneId);
+                    String url = orchestrateExtractVolume(volume.getId(), zoneId);
+                    CallContext.current().setEventDetails(String.format("Download URL: %s, volume ID: %s", url, volume.getUuid()));
+                    return url;
                 } finally {
                     _workJobDao.expunge(placeHolder.getId());
                 }
@@ -4163,13 +4184,17 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                 // retrieve the entity url from job result
                 if (jobResult != null && jobResult instanceof String) {
-                    return (String)jobResult;
+                    String url = (String) jobResult;
+                    CallContext.current().setEventDetails(String.format("Download URL: %s, volume ID: %s", url, volume.getUuid()));
+                    return url;
                 }
                 return null;
             }
         }
 
-        return orchestrateExtractVolume(volume.getId(), zoneId);
+        String url = orchestrateExtractVolume(volume.getId(), zoneId);
+        CallContext.current().setEventDetails(String.format("Download URL: %s, volume ID: %s", url, volume.getUuid()));
+        return url;
     }
 
     @Override

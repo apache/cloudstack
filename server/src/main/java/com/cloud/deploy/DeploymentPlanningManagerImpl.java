@@ -1411,7 +1411,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
             if (vmRequiresSharedStorage) {
                 // check shared pools
-                List<StoragePoolVO> allPoolsInCluster = _storagePoolDao.findPoolsByTags(clusterVO.getDataCenterId(), clusterVO.getPodId(), clusterVO.getId(), null, false, 0);
+                List<StoragePoolVO> allPoolsInCluster = _storagePoolDao.findPoolsByTags(clusterVO.getDataCenterId(), clusterVO.getPodId(), clusterVO.getId(), ScopeType.CLUSTER, null, false, 0);
                 for (StoragePoolVO pool : allPoolsInCluster) {
                     if (!allocatorAvoidOutput.shouldAvoid(pool)) {
                         // there's some pool in the cluster that is not yet in avoid set
@@ -1658,6 +1658,13 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
     }
 
     protected boolean hostCanAccessSPool(Host host, StoragePool pool) {
+        if (!_storageMgr.checkIfHostAndStoragePoolHasCommonStorageAccessGroups(host, pool)) {
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("StoragePool %s and host %s does not have matching storage access groups", pool, host));
+            }
+            return false;
+        }
+
         boolean hostCanAccessSPool = false;
 
         StoragePoolHostVO hostPoolLinkage = _poolHostDao.findByPoolHost(pool.getId(), host.getId());

@@ -22,6 +22,7 @@ package org.apache.cloudstack.storage.datastore.lifecycle;
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
@@ -29,8 +30,11 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
+import com.cloud.host.HostVO;
+import com.cloud.resource.ResourceManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
@@ -105,6 +109,9 @@ public class ScaleIOPrimaryDataStoreLifeCycleTest {
     @Mock
     private HypervisorHostListener hostListener;
 
+    @Mock
+    private ResourceManager resourceManager;
+
     @InjectMocks
     private ScaleIOPrimaryDataStoreLifeCycle scaleIOPrimaryDataStoreLifeCycleTest;
     private AutoCloseable closeable;
@@ -136,8 +143,14 @@ public class ScaleIOPrimaryDataStoreLifeCycleTest {
 
         final ZoneScope scope = new ZoneScope(1L);
 
-        when(hostDao.listIdsForUpEnabledByZoneAndHypervisor(scope.getScopeId(), Hypervisor.HypervisorType.KVM))
-                .thenReturn(List.of(1L, 2L));
+        HostVO host1 = Mockito.mock(HostVO.class);
+        HostVO host2 = Mockito.mock(HostVO.class);
+
+        Mockito.when(host1.getId()).thenReturn(1L);
+        Mockito.when(host2.getId()).thenReturn(2L);
+
+        when(resourceManager.getEligibleUpAndEnabledHostsInZoneForStorageConnection(dataStore, scope.getScopeId(), Hypervisor.HypervisorType.KVM))
+                .thenReturn(Arrays.asList(host1, host2));
 
         when(dataStoreMgr.getDataStore(anyLong(), eq(DataStoreRole.Primary))).thenReturn(store);
         when(store.isShared()).thenReturn(true);
@@ -163,7 +176,7 @@ public class ScaleIOPrimaryDataStoreLifeCycleTest {
     @Test
     public void testMaintain() {
         final DataStore store = mock(DataStore.class);
-        when(storagePoolAutomation.maintain(any(DataStore.class))).thenReturn(true);
+        when(storagePoolAutomation.maintain(any(DataStore.class), anyMap())).thenReturn(true);
         when(dataStoreHelper.maintain(any(DataStore.class))).thenReturn(true);
         final boolean result = scaleIOPrimaryDataStoreLifeCycleTest.maintain(store);
         assertThat(result).isTrue();
@@ -173,7 +186,7 @@ public class ScaleIOPrimaryDataStoreLifeCycleTest {
     public void testCancelMaintain() {
         final DataStore store = mock(DataStore.class);
         when(dataStoreHelper.cancelMaintain(any(DataStore.class))).thenReturn(true);
-        when(storagePoolAutomation.cancelMaintain(any(DataStore.class))).thenReturn(true);
+        when(storagePoolAutomation.cancelMaintain(any(DataStore.class), anyMap())).thenReturn(true);
         final boolean result = scaleIOPrimaryDataStoreLifeCycleTest.cancelMaintain(store);
         assertThat(result).isTrue();
     }

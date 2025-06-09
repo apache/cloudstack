@@ -29,8 +29,7 @@ export default {
       title: 'label.instances',
       icon: 'cloud-server-outlined',
       docHelp: 'adminguide/virtual_machines.html',
-      permission: ['listVirtualMachines', 'listVirtualMachinesMetrics'],
-      getApiToCall: () => store.getters.metrics ? 'listVirtualMachinesMetrics' : 'listVirtualMachines',
+      permission: ['listVirtualMachinesMetrics'],
       resourceType: 'UserVm',
       params: () => {
         var params = { details: 'group,nics,secgrp,tmpl,servoff,diskoff,iso,volume,affgrp,backoff' }
@@ -44,6 +43,9 @@ export default {
         const filters = ['running', 'stopped']
         if (!(store.getters.project && store.getters.project.id)) {
           filters.unshift('self')
+        }
+        if (store.getters.features.instanceleaseenabled) {
+          filters.push('leased')
         }
         return filters
       },
@@ -63,6 +65,7 @@ export default {
         if (store.getters.metrics) {
           fields.push(...metricsFields)
         }
+        fields.push('arch')
         if (store.getters.userInfo.roletype === 'Admin') {
           fields.splice(2, 0, 'instancename')
           fields.push('hostname')
@@ -78,12 +81,12 @@ export default {
         fields.push('zonename')
         return fields
       },
-      searchFilters: ['name', 'zoneid', 'domainid', 'account', 'groupid', 'tags'],
+      searchFilters: ['name', 'zoneid', 'domainid', 'account', 'groupid', 'arch', 'tags'],
       details: () => {
         var fields = ['name', 'displayname', 'id', 'state', 'ipaddress', 'ip6address', 'templatename', 'ostypename',
-          'serviceofferingname', 'isdynamicallyscalable', 'haenable', 'hypervisor', 'boottype', 'bootmode', 'account',
+          'serviceofferingname', 'isdynamicallyscalable', 'haenable', 'hypervisor', 'arch', 'boottype', 'bootmode', 'account',
           'domain', 'zonename', 'userdataid', 'userdataname', 'userdataparams', 'userdatadetails', 'userdatapolicy',
-          'hostcontrolstate', 'deleteprotection']
+          'hostcontrolstate', 'deleteprotection', 'leaseexpirydate', 'leaseexpiryaction']
         const listZoneHaveSGEnabled = store.getters.zones.filter(zone => zone.securitygroupsenabled === true)
         if (!listZoneHaveSGEnabled || listZoneHaveSGEnabled.length === 0) {
           return fields
@@ -123,7 +126,7 @@ export default {
           dataView: true,
           groupAction: true,
           popup: true,
-          groupMap: (selection, values) => { return selection.map(x => { return { id: x, considerlasthost: values.considerlasthost } }) },
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, considerlasthost: values.considerlasthost === true } }) },
           args: (record, store) => {
             if (['Admin'].includes(store.userInfo.roletype)) {
               return ['considerlasthost']
@@ -189,7 +192,13 @@ export default {
           label: 'label.action.vmsnapshot.create',
           docHelp: 'adminguide/virtual_machines.html#virtual-machine-snapshots',
           dataView: true,
-          args: ['virtualmachineid', 'name', 'description', 'snapshotmemory', 'quiescevm'],
+          args: (record, store) => {
+            var args = ['virtualmachineid', 'name', 'description', 'snapshotmemory']
+            if (['KVM', 'VMware'].includes(record.hypervisor)) {
+              args.push('quiescevm')
+            }
+            return args
+          },
           show: (record) => {
             return (((['Running'].includes(record.state) && record.hypervisor !== 'LXC') ||
               (['Stopped'].includes(record.state) && ((record.hypervisor !== 'KVM' && record.hypervisor !== 'LXC') ||
@@ -925,7 +934,7 @@ export default {
       related: [{
         name: 'vm',
         title: 'label.instances',
-        param: 'userdata'
+        param: 'userdataid'
       }],
       tabs: [
         {

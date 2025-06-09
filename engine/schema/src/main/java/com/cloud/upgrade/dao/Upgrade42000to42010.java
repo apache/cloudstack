@@ -78,7 +78,7 @@ public class Upgrade42000to42010 extends DbUpgradeAbstractImpl implements DbUpgr
         try {
             systemVmTemplateRegistration.updateSystemVmTemplates(conn);
         } catch (Exception e) {
-            throw new CloudRuntimeException("Failed to find / register SystemVM template(s)");
+            throw new CloudRuntimeException("Failed to find / register SystemVM template(s)", e);
         }
     }
 

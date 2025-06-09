@@ -75,6 +75,12 @@ public class AddHostCmd extends BaseCmd {
     @Parameter(name = ApiConstants.HOST_TAGS, type = CommandType.LIST, collectionType = CommandType.STRING, description = "list of tags to be added to the host")
     private List<String> hostTags;
 
+    @Parameter(name = ApiConstants.STORAGE_ACCESS_GROUPS,
+            type = CommandType.LIST, collectionType = CommandType.STRING,
+            description = "comma separated list of storage access groups for the host",
+            since = "4.21.0")
+    private List<String> storageAccessGroups;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -113,6 +119,10 @@ public class AddHostCmd extends BaseCmd {
 
     public List<String> getHostTags() {
         return hostTags;
+    }
+
+    public List<String> getStorageAccessGroups() {
+        return storageAccessGroups;
     }
 
     public String getAllocationState() {

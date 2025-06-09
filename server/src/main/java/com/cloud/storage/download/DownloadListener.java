@@ -100,6 +100,7 @@ public class DownloadListener implements Listener {
     protected Logger logger = LogManager.getLogger(getClass());
     public static final int SMALL_DELAY = 100;
     public static final long STATUS_POLL_INTERVAL = 10000L;
+    public static final long DOWNLOAD_TIMEOUT = 5 * STATUS_POLL_INTERVAL;
 
     public static final String DOWNLOADED = Status.DOWNLOADED.toString();
     public static final String NOT_DOWNLOADED = Status.NOT_DOWNLOADED.toString();

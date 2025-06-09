@@ -189,13 +189,6 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
         super();
     }
 
-    private Double findRatioValue(final String value) {
-        if (value != null) {
-            return Double.valueOf(value);
-        }
-        return 1.0;
-    }
-
     private void updateHostMetrics(final HostMetrics hostMetrics, final HostJoinVO host) {
         hostMetrics.addCpuAllocated(host.getCpuReservedCapacity() + host.getCpuUsedCapacity());
         hostMetrics.addMemoryAllocated(host.getMemReservedCapacity() + host.getMemUsedCapacity());
@@ -767,14 +760,10 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
             if (AllowListMetricsComputation.value()) {
                 List<Ternary<Long, Long, Long>> cpuList = new ArrayList<>();
                 List<Ternary<Long, Long, Long>> memoryList = new ArrayList<>();
-                for (final Host host : hostDao.findByClusterId(clusterId)) {
-                    if (host == null || host.getType() != Host.Type.Routing) {
-                        continue;
-                    }
-                    updateHostMetrics(hostMetrics, hostJoinDao.findById(host.getId()));
-                    HostJoinVO hostJoin = hostJoinDao.findById(host.getId());
-                    cpuList.add(new Ternary<>(hostJoin.getCpuUsedCapacity(), hostJoin.getCpuReservedCapacity(), hostJoin.getCpus() * hostJoin.getSpeed()));
-                    memoryList.add(new Ternary<>(hostJoin.getMemUsedCapacity(), hostJoin.getMemReservedCapacity(), hostJoin.getTotalMemory()));
+                for (final HostJoinVO host : hostJoinDao.findByClusterId(clusterId, Host.Type.Routing)) {
+                    updateHostMetrics(hostMetrics, host);
+                    cpuList.add(new Ternary<>(host.getCpuUsedCapacity(), host.getCpuReservedCapacity(), host.getCpus() * host.getSpeed()));
+                    memoryList.add(new Ternary<>(host.getMemUsedCapacity(), host.getMemReservedCapacity(), host.getTotalMemory()));
                 }
                 try {
                     Double imbalance = ClusterDrsAlgorithm.getClusterImbalance(clusterId, cpuList, memoryList, null);
@@ -955,11 +944,8 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
                     if (cluster == null) {
                         continue;
                     }
-                    for (final Host host: hostDao.findByClusterId(cluster.getId())) {
-                        if (host == null || host.getType() != Host.Type.Routing) {
-                            continue;
-                        }
-                        updateHostMetrics(hostMetrics, hostJoinDao.findById(host.getId()));
+                    for (final HostJoinVO host: hostJoinDao.findByClusterId(cluster.getId(), Host.Type.Routing)) {
+                        updateHostMetrics(hostMetrics, host);
                     }
                 }
             } else {
