@@ -26,9 +26,12 @@ fi
 
 ARCH="amd64"
 if [ -n "${8}" ]; then
-  ARCH="${8}"
-  if [ "$ARCH" != "amd64" ] && [ "$ARCH" != "arm64" ]; then
-    echo "ERROR: ARCH must be 'amd64' or 'arm64'. If the optional parameter ARCH is not set then 'amd64' is used."
+  if [ "${8}" = "x86_64" ]; then
+    ARCH="amd64"
+  elif [ "${8}" = "aarch64" ]; then
+    ARCH="arm64"
+  else
+    echo "ERROR: ARCH must be 'x86_64' or 'aarch64'. If the optional parameter ARCH is not set then 'x86_64' is used."
     exit 1
   fi
 fi
