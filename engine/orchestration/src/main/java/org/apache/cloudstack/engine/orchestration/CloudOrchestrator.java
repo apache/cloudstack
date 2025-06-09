@@ -20,6 +20,7 @@ package org.apache.cloudstack.engine.orchestration;
 
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
+import com.cloud.template.VirtualMachineTemplate;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -256,8 +257,12 @@ public class CloudOrchestrator implements OrchestrationService {
                 }
             }
         }
-
-        _itMgr.allocate(vm.getInstanceName(), _templateDao.findByIdIncludingRemoved(new Long(templateId)), computeOffering, rootDiskOfferingInfo, dataDiskOfferings, networkIpMap, plan,
+        VirtualMachineTemplate template = null;
+        if (volume != null || snapshot != null) {
+            template = _templateDao.findByIdIncludingRemoved(new Long(templateId));
+        } else
+            template = _templateDao.findById(new Long(templateId));
+        _itMgr.allocate(vm.getInstanceName(), template, computeOffering, rootDiskOfferingInfo, dataDiskOfferings, networkIpMap, plan,
             hypervisorType, extraDhcpOptionMap, dataDiskTemplateToDiskOfferingMap, volume, snapshot);
 
         return vmEntity;

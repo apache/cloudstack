@@ -1222,7 +1222,7 @@ class Volume:
 
     @classmethod
     def create_from_snapshot(cls, apiclient, snapshot_id, services,
-                             account=None, domainid=None, projectid=None, zoneid=None, disk_offering=None):
+                             account=None, domainid=None, projectid=None, zoneid=None, disk_offering=None, size=None):
         """Create Volume from snapshot"""
         cmd = createVolume.createVolumeCmd()
         cmd.name = "-".join([services["diskname"], random_gen()])
@@ -1251,6 +1251,9 @@ class Volume:
 
         if disk_offering:
             cmd.diskofferingid = disk_offering
+
+        if size:
+            cmd.size = size
 
         return Volume(apiclient.createVolume(cmd).__dict__)
 
