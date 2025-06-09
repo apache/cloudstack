@@ -3108,13 +3108,4 @@ export default {
       }
     }
   }
-
-  .detail-input {
-    width: calc(calc(100% / 4) - 45px);
-  }
-
-  .detail-button {
-    width: 30px;
-    margin-left: 5px;
-  }
 </style>
