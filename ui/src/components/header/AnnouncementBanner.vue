@@ -122,10 +122,9 @@ export default {
 .announcement-banner-container {
   z-index: 1000;
   top: 0;
-  position: fixed;
+  position: relative;
   margin: 0;
   width: 100%;
-  display: flex;
   justify-content: center;
   align-items: center;
 }

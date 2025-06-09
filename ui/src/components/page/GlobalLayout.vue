@@ -334,4 +334,8 @@ export default {
   position: absolute;
 }
 
+.layout.ant-layout .sidemenu .ant-header-fixedHeader {
+  top: auto !important
+}
+
 </style>
