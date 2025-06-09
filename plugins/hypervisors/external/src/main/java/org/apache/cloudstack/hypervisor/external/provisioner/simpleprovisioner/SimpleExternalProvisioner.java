@@ -26,6 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -79,7 +80,6 @@ import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.fasterxml.jackson.core.JsonProcessingException;
 
 public class SimpleExternalProvisioner extends ManagerBase implements ExternalProvisioner, PluggableService, Configurable {
 
@@ -523,8 +523,8 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
             List<String> command = new ArrayList<>();
             command.add(executablePath.toString());
             command.add(action);
-            String parameters = prepareParameters(accessDetails);
-            command.add(parameters);
+            String dataFile = prepareActionData(accessDetails);
+            command.add(dataFile);
             command.add(Integer.toString(wait));
             ProcessBuilder builder = new ProcessBuilder(command);
             builder.redirectErrorStream(true);
@@ -532,7 +532,7 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
             if (IS_DEBUG) {
                 logger.info("Executable: {}",executablePath);
                 logger.info("Action: {} with wait: {}", action, wait);
-                logger.info("Parameters: {}", parameters);
+                logger.info("Data file: {}", dataFile);
                 return new Pair<>(true, "Operation successful!");
             }
             logger.debug("Executing command: {}", command);
@@ -573,8 +573,16 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
         return new Answer(cmd);
     }
 
-    private String prepareParameters(Map<String, Object> details) throws JsonProcessingException {
-        return GsonHelper.getGson().toJson(details);
+    private String prepareActionData(Map<String, Object> details) throws IOException {
+        // ToDo: some mechanism to clean up these data files
+        String json = GsonHelper.getGson().toJson(details);
+        logger.debug("Data: {}", json);
+        long epochMillis = System.currentTimeMillis();
+        String fileName = epochMillis + ".json";
+        Path tempDir = Files.createTempDirectory("orchestrator");
+        Path tempFile = tempDir.resolve(fileName);
+        Files.writeString(tempFile, json, StandardOpenOption.CREATE_NEW);
+        return tempFile.toAbsolutePath().toString();
     }
 
     @Override
