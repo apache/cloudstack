@@ -27,10 +27,8 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.QuotaResponseBuilder;
 import org.apache.cloudstack.api.response.QuotaSummaryResponse;
-import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.quota.QuotaAccountStateFilter;
 import org.apache.cloudstack.quota.QuotaService;
-import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
