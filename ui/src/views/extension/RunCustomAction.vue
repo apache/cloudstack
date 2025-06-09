@@ -35,15 +35,18 @@
           optionFilterProp="label"
           :filterOption="(input, option) => {
             return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }" >
+          }"
+          @change="onCustomActionChange" >
           <a-select-option v-for="opt in customActions" :key="opt.id" :label="opt.name || opt.id">
             {{ opt.name || opt.id }}
           </a-select-option>
         </a-select>
       </a-form-item>
       <a-card v-if="form.customactionid" style="margin-bottom: 10px;">
-        <div style="margin: 10px 0px;">{{ currentDescription }}</div>
-        <a-divider />
+        <div v-if="!!currentDescription">
+          {{ currentDescription }}
+          <a-divider />
+        </div>
         <div v-for="(field, fieldIndex) in currentParameters" :key="fieldIndex">
           <a-form-item :name="field.name" :ref="field.name">
             <template #label>
@@ -62,9 +65,20 @@
               :placeholder="field.name"
               v-focus="fieldIndex === 0"
             />
+            <a-select
+              v-else-if="field.options && field.options.length > 0"
+              v-model:value="form[field.name]"
+              :placeholder="field.name">
+              <a-select-option v-for="t in field.options" :key="t" :value="t">{{ t }}</a-select-option>
+            </a-select>
             <a-input-number
-              v-else-if="['FLOAT', 'INTEGER', 'SHORT', 'LONG'].includes(field.type)"
-              :precision="['FLOAT'].includes(field.type) ? 2 : 0"
+              v-else-if="['NUMBER'].includes(field.type)"
+              :precision="['DECIMAL'].includes(field.format) ? 2 : 0"
+              v-focus="fieldIndex === 0"
+              v-model:value="form[field.name]"
+              :placeholder="field.name" />
+            <a-input-password
+              v-else-if="['STRING'].includes(field.type) && ['PASSWORD'].includes(field.format)"
               v-focus="fieldIndex === 0"
               v-model:value="form[field.name]"
               :placeholder="field.name" />
@@ -157,6 +171,55 @@ export default {
         this.loading = false
       })
     },
+    onCustomActionChange () {
+      Object.keys(this.rules).forEach(key => {
+        if (key !== 'customactionid') {
+          delete this.rules[key]
+        }
+      })
+      if (this.currentParameters && this.currentParameters.length > 0) {
+        this.currentParameters.forEach(field => {
+          const required = !!field.required
+          const fieldRules = []
+          // Required rule
+          if (required) {
+            fieldRules.push({
+              required: true,
+              message: `${this.$t('message.error.field.required', { field: field.name })}`
+            })
+          }
+          if (field.type === 'STRING' && field.format) {
+            let validator
+            switch (field.format) {
+              case 'EMAIL':
+                validator = {
+                  type: 'email',
+                  message: this.$t('message.error.invalidemail')
+                }
+                break
+              case 'URL':
+                validator = {
+                  type: 'url',
+                  message: this.$t('message.error.invalidurl')
+                }
+                break
+              case 'UUID':
+                validator = {
+                  pattern: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+                  message: this.$t('message.error.invaliduuid')
+                }
+                break
+            }
+            if (validator) {
+              fieldRules.push(validator)
+            }
+          }
+          if (fieldRules.length > 0) {
+            this.rules[field.name] = fieldRules
+          }
+        })
+      }
+    },
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
@@ -166,33 +229,51 @@ export default {
         const params = {
           resourcetype: this.resourceType,
           resourceid: this.resource.id,
-          enabled: true
+          customactionid: values.customactionid
         }
-        console.log('values----------------', values)
-        for (const key of Object.keys(values)) {
+        var keys = Object.keys(values)
+        keys = keys.filter(k => k !== 'customactionid')
+        for (const key of keys) {
           var value = values[key]
           if (value !== undefined && value != null &&
               (typeof value !== 'string' || (typeof value === 'string' && value.trim().length > 0))) {
-            params[key] = value
+            params['parameters[0].' + key] = value
           }
         }
-        if (params) {
-          console.log('----------------', params)
-          return
-        }
-        api('runCustomAction', params).then(response => {
-          this.$emit('refresh-data')
-          this.$notification.success({
-            message: this.$t('label.run.custom.action'),
-            description: this.$t('message.success.run.custom.action')
+        const httpMethod = this.currentParameters.find(p => p.format === 'PASSWORD') ? 'POST' : 'GET'
+        const args = httpMethod === 'POST' ? {} : params
+        const data = httpMethod === 'POST' ? params : {}
+        api('runCustomAction', args, httpMethod, data).then(response => {
+          this.$pollJob({
+            jobId: response.runcustomactionresponse.jobid,
+            title: this.$t('label.run.custom.action'),
+            description: this.currentAction.description || this.currentAction.name,
+            successMethod: (result) => {
+              this.$emit('refresh-data')
+              const actionResponse = result.jobresult?.customactionresult || {}
+              const success = actionResponse.success || false
+              const message = actionResponse?.result?.message || (success ? 'success' : 'fail')
+              if (actionResponse.success) {
+                this.$notification.success({
+                  message: this.$t('label.run.custom.action'),
+                  description: message,
+                  duration: 0
+                })
+              } else {
+                this.$notification.error({
+                  message: this.$t('error.run.custom.action'),
+                  description: message,
+                  duration: 0
+                })
+              }
+            },
+            errorMessage: this.$t('error.run.custom.action'),
+            loadingMessage: this.$t('message.running.custom.action'),
+            catchMessage: this.$t('error.fetching.async.job.result')
           })
           this.closeAction()
         }).catch(error => {
-          this.$notification.error({
-            message: this.$t('message.request.failed'),
-            description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message,
-            duration: 0
-          })
+          this.$notifyError(error)
         }).finally(() => {
           this.loading = false
         })

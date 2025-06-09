@@ -51,6 +51,10 @@ public class ExtensionResponse extends BaseResponse {
     @Param(description = "The path of the entry point fo the extension")
     private String entryPoint;
 
+    @SerializedName(ApiConstants.IS_USER_DEFINED)
+    @Param(description = "True if the extension is added by admin")
+    private Boolean userDefined;
+
     @SerializedName(ApiConstants.DETAILS)
     @Param(description = "The details of the extension")
     private Map<String, String> details;
@@ -100,6 +104,10 @@ public class ExtensionResponse extends BaseResponse {
 
     public void setEntryPoint(String entryPoint) {
         this.entryPoint = entryPoint;
+    }
+
+    public void setUserDefined(Boolean userDefined) {
+        this.userDefined = userDefined;
     }
 
     public void setDetails(Map<String, String> details) {

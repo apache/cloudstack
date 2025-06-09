@@ -35,7 +35,7 @@ import com.cloud.utils.component.PluggableService;
 
 public class ExternalAgentManagerImpl extends ManagerBase implements ExternalAgentManager, Configurable, PluggableService {
 
-    public static final ConfigKey<Boolean> expectMacAddressFromExternalProvisioner = new ConfigKey<>(Boolean.class, "expect.macaddress.from.external.provisioner", "Advanced", "true",
+    public static final ConfigKey<Boolean> expectMacAddressFromExternalProvisioner = new ConfigKey<>(Boolean.class, "expect.macaddress.from.external.provisioner", "Advanced", "false",
             "Sample external provisioning config, any value that has to be sent", true, ConfigKey.Scope.Cluster, null);
 
     public boolean configure(String name, Map<String, Object> params) {

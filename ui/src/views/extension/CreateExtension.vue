@@ -119,7 +119,7 @@ export default {
       if (!value || value.length === 0) {
         return ''
       }
-      return value.replace(/[^a-zA-Z0-9._-]/g, '')
+      return value.replace(/[^a-zA-Z0-9._-]/g, '').toLowerCase()
     },
     extenstionBasePath () {
       return this.extensionsPath + '/' + this.safeName + '/'
@@ -180,7 +180,7 @@ export default {
         if (!entryPoint) {
           entryPoint = this.safeName + '.sh'
         }
-        params.entrypoint = this.extenstionBasePath + entryPoint
+        params.entrypoint = this.safeName + '/' + entryPoint
         if (values.details) {
           Object.entries(values.details).forEach(([key, value]) => {
             params['details[0].' + key] = value

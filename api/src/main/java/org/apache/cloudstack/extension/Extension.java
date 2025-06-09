@@ -30,5 +30,6 @@ public interface Extension extends InternalIdentity, Identity {
     String getDescription();
     Type getType();
     String getRelativeEntryPoint();
+    boolean isUserDefined();
     Date getCreated();
 }

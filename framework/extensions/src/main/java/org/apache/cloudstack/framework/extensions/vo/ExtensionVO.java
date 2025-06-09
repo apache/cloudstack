@@ -51,6 +51,7 @@ public class ExtensionVO implements Extension {
         this.description = description;
         this.type = type;
         this.relativeEntryPoint = relativeEntryPoint;
+        this.userDefined = true;
         this.created = new Date();
     }
 
@@ -74,6 +75,9 @@ public class ExtensionVO implements Extension {
 
     @Column(name = "relative_entry_point", nullable = false, length = 2048)
     private String relativeEntryPoint;
+
+    @Column(name = "is_user_defined")
+    private boolean userDefined;
 
     @Column(name = "created", nullable = false, updatable = false)
     @Temporal(TemporalType.TIMESTAMP)
@@ -121,6 +125,11 @@ public class ExtensionVO implements Extension {
 
     public void setRelativeEntryPoint(String relativeEntryPoint) {
         this.relativeEntryPoint = relativeEntryPoint;
+    }
+
+    @Override
+    public boolean isUserDefined() {
+        return userDefined;
     }
 
     @Override

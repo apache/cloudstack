@@ -1665,6 +1665,7 @@
 "label.operator.less.or.equal": "Less than or equals to",
 "label.operator.equal": "Equals to",
 "label.optional": "Optional",
+"label.options": "Options",
 "label.order": "Order",
 "label.oscategoryid": "OS category",
 "label.oscategoryname": "OS category name",

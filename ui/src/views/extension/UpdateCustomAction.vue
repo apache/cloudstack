@@ -128,12 +128,24 @@ export default {
     this.fetchRoles()
   },
   methods: {
+    fixParamatersOptions (params) {
+      if (!params) {
+        return
+      }
+      for (var param of params) {
+        if (!param.options || param.options.length === 0) {
+          continue
+        }
+        param.options = param.options.join(',')
+      }
+      return params
+    },
     initForm () {
       this.formRef = ref()
       this.form = reactive({
         description: this.resource.description,
-        resourcetype: this.resource.resourcetype,
-        parameters: this.resource.parameters,
+        roles: this.resource.roles,
+        parameters: this.fixParamatersOptions(this.resource.parameters),
         detail: this.resource.details
       })
       this.rules = reactive({})
@@ -205,9 +217,9 @@ export default {
 
 <style scoped lang="less">
 .form-layout {
-  width: 80vw;
-  @media (min-width: 600px) {
-    width: 550px;
+  width: 100vw;
+  @media (min-width: 1000px) {
+    width: 950px;
   }
 }
 </style>

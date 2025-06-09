@@ -80,7 +80,7 @@
     </a-table>
 
     <a-modal
-      style="min-width: 600px;"
+      style="min-width: 1000px;"
       :visible="showAddCustomAction"
       :title="$t('label.add.custom.action')"
       :maskClosable="false"
@@ -91,7 +91,7 @@
     </a-modal>
 
     <a-modal
-      style="min-width: 600px;"
+      style="min-width: 1000px;"
       :visible="showUpdateCustomAction"
       :title="$t('label.update.custom.action')"
       :maskClosable="false"

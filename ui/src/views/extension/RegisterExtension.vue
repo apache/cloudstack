@@ -136,7 +136,11 @@ export default {
       this.resources.loading = true
       const resourceApi = 'list' + id + 's'
       const type = id.toLowerCase()
-      api(resourceApi).then(json => {
+      const params = {}
+      if (['cluster'].includes(type)) {
+        params.hypervisor = 'External'
+      }
+      api(resourceApi, params).then(json => {
         this.resources.opts = json?.[resourceApi.toLowerCase() + 'response']?.[type] || []
       }).finally(() => {
         this.resources.loading = false

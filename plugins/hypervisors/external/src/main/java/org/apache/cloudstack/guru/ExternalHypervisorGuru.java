@@ -23,21 +23,20 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 import org.apache.commons.collections.MapUtils;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.host.HostVO;
+import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruBase;
-import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
-import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
 
 public class ExternalHypervisorGuru extends HypervisorGuruBase implements HypervisorGuru {
@@ -46,6 +45,8 @@ public class ExternalHypervisorGuru extends HypervisorGuruBase implements Hyperv
     private VirtualMachineManager virtualMachineManager;
     @Inject
     private UserVmDao userVmDao;
+    @Inject
+    ExtensionsManager extensionsManager;
 
     protected ExternalHypervisorGuru() {
         super();
@@ -85,49 +86,27 @@ public class ExternalHypervisorGuru extends HypervisorGuruBase implements Hyperv
         return to;
     }
 
+    protected void updateStopCommandForExternalHypervisorType(final Hypervisor.HypervisorType hypervisorType,
+                  final Long hostId, final StopCommand stopCommand) {
+        if (!Hypervisor.HypervisorType.External.equals(hypervisorType) || hostId == null) {
+            return;
+        }
+        Host host = hostDao.findById(hostId);
+        if (host == null) {
+            return;
+        }
+        stopCommand.setExternalDetails(extensionsManager.getExternalAccessDetails(host));
+        stopCommand.setExpungeVM(true);
+    }
+
     public List<Command> finalizeExpunge(VirtualMachine vm) {
-
         List<Command> commands = new ArrayList<>();
-
         final StopCommand stop = new StopCommand(vm, virtualMachineManager.getExecuteInSequence(vm.getHypervisorType()), false, false);
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
         stop.setVirtualMachine(toVirtualMachineTO(profile));
-
-        if (Hypervisor.HypervisorType.External.equals(vm.getHypervisorType())) {
-            final Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
-            if (hostId != null) {
-                HostVO host = hostDao.findById(hostId);
-                HashMap<String, String> accessDetails = new HashMap<>();
-                hostDao.loadDetails(host);
-                Map<String, String> hostDetails = host.getDetails();
-                UserVmVO userVm = userVmDao.findById(vm.getId());
-                userVmDao.loadDetails(userVm);
-                Map<String, String> userVmDetails = userVm.getDetails();
-                loadExternalResourceAccessDetails(hostDetails, accessDetails);
-                loadExternalResourceAccessDetails(userVmDetails, accessDetails);
-
-                stop.setDetails(accessDetails);
-                stop.setExpungeVM(true);
-            } else {
-                return null;
-            }
-        }
-
+        final Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
+        updateStopCommandForExternalHypervisorType(vm.getHypervisorType(), hostId, stop);
         commands.add(stop);
-
         return commands;
-    }
-
-    public static void loadExternalResourceAccessDetails(Map<String, String> resourceDetails, Map<String, String> accessDetails) {
-        Map<String, String> externalInstanceDetails = new HashMap<>();
-        if (resourceDetails == null) {
-            return;
-        }
-        for (Map.Entry<String, String> entry : resourceDetails.entrySet()) {
-            if (entry.getKey().startsWith(VmDetailConstants.EXTERNAL_DETAIL_PREFIX)) {
-                externalInstanceDetails.put(entry.getKey(), entry.getValue());
-            }
-        }
-        accessDetails.putAll(externalInstanceDetails);
     }
 }

@@ -24,25 +24,40 @@ import java.util.Map;
 public class RunCustomActionCommand extends Command {
 
     String actionName;
+    Long vmId;
     Map<String, Object> parameters;
-    Map<String, String> details;
+    Map<String, Object> externalDetails;
 
-    public RunCustomActionCommand(String actionName, Map<String, Object> parameters, Map<String, String> details) {
+    public RunCustomActionCommand(String actionName) {
         this.actionName = actionName;
-        this.parameters = parameters;
-        this.details = details;
     }
 
     public String getActionName() {
         return actionName;
     }
 
+    public Long getVmId() {
+        return vmId;
+    }
+
+    public void setVmId(Long vmId) {
+        this.vmId = vmId;
+    }
+
     public Map<String, Object> getParameters() {
         return parameters;
     }
 
-    public Map<String, String> getDetails() {
-        return details;
+    public void setParameters(Map<String, Object> parameters) {
+        this.parameters = parameters;
+    }
+
+    public Map<String, Object> getExternalDetails() {
+        return externalDetails;
+    }
+
+    public void setExternalDetails(Map<String, Object> externalDetails) {
+        this.externalDetails = externalDetails;
     }
 
     @Override

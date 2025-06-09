@@ -49,9 +49,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
-import com.cloud.host.dao.HostDetailsDao;
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.network.NetworkService;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -74,6 +71,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.framework.ca.Certificate;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
@@ -205,12 +203,14 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruBase;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.NetworkService;
 import com.cloud.network.Networks;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDetailVO;
@@ -437,6 +437,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @Inject
     private VolumeDataFactory volumeDataFactory;
+    @Inject
+    ExtensionsManager extensionsManager;
 
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
@@ -1337,29 +1339,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     final Map<String, String> ipAddressDetails = new HashMap<>(sshAccessDetails);
                     ipAddressDetails.remove(NetworkElementCommand.ROUTER_NAME);
 
-                    final HostVO vmHost = _hostDao.findById(destHostId);
-                    if (HypervisorType.External.equals(vmHost.getHypervisorType())) {
-                        Map<String, String> accessDetails = vmTO.getDetails();
-                        loadExternalHostAccessDetails(vmHost, accessDetails);
-                        loadExternalInstanceDetails(vm.getId(), accessDetails);
-
-                        NicTO[] nics = vmTO.getNics();
-                        for (NicTO nic : nics) {
-                            if (!nic.isDefaultNic()) {
-                                continue;
-                            }
-                            Networks.BroadcastDomainType broadcastDomainType = Networks.BroadcastDomainType.getSchemeValue(nic.getBroadcastUri());
-                            NetworkVO networkVO = _networkDao.findById(nic.getNetworkId());
-                            if (Networks.BroadcastDomainType.NSX.equals(broadcastDomainType)) {
-                                String segmentName = networkService.getNsxSegmentId(networkVO.getDomainId(), networkVO.getAccountId(), networkVO.getDataCenterId(), networkVO.getVpcId(), networkVO.getId());
-                                accessDetails.put(VmDetailConstants.EXTERNAL_DETAIL_PREFIX + VmDetailConstants.CLOUDSTACK_VLAN, segmentName);
-                            } else {
-                                accessDetails.put(VmDetailConstants.EXTERNAL_DETAIL_PREFIX + VmDetailConstants.CLOUDSTACK_VLAN, Networks.BroadcastDomainType.getValue(nic.getBroadcastUri()));
-                            }
-                        }
-                    }
-
                     StartCommand command = new StartCommand(vmTO, dest.getHost(), getExecuteInSequence(vm.getHypervisorType()));
+                    updateStartCommandWithExternalDetails(dest.getHost(), vmTO, command);
                     cmds.addCommand(command);
 
                     vmGuru.finalizeDeployment(cmds, vmProfile, dest, ctx);
@@ -1409,6 +1390,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                             startedVm = vm;
                             logger.debug("Start completed for VM {}", vm);
+                            final Host vmHost = _hostDao.findById(destHostId);
                             if (vmHost != null && (VirtualMachine.Type.ConsoleProxy.equals(vm.getType()) ||
                                     VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType())) && caManager.canProvisionCertificates()) {
                                 for (int retries = 3; retries > 0; retries--) {
@@ -1531,30 +1513,51 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    private void loadExternalHostAccessDetails(HostVO vmHost, Map<String, String> accessDetails) {
-        _hostDao.loadDetails(vmHost);
-        Map<String, String> hostDetails = vmHost.getDetails();
-        Map<String, String> externalHostDetails = new HashMap<>();
-        for (Map.Entry<String, String> entry : hostDetails.entrySet()) {
-            if (entry.getKey().startsWith(VmDetailConstants.EXTERNAL_DETAIL_PREFIX)) {
-                externalHostDetails.put(entry.getKey(), entry.getValue());
+    private void updateStartCommandWithExternalDetails(Host host, VirtualMachineTO vmTO, StartCommand command) {
+        if (!HypervisorType.External.equals(host.getHypervisorType())) {
+            return;
+        }
+        Map<String, Object> externalDetails = extensionsManager.getExternalAccessDetails(host);
+        Map<String, String> vmExternalDetails = vmTO.getExternalDetails();
+        for (NicTO nic : vmTO.getNics()) {
+            if (!nic.isDefaultNic()) {
+                continue;
+            }
+            Networks.BroadcastDomainType broadcastDomainType = Networks.BroadcastDomainType.getSchemeValue(nic.getBroadcastUri());
+            NetworkVO networkVO = _networkDao.findById(nic.getNetworkId());
+            if (Networks.BroadcastDomainType.NSX.equals(broadcastDomainType)) {
+                String segmentName = networkService.getNsxSegmentId(networkVO.getDomainId(), networkVO.getAccountId(), networkVO.getDataCenterId(), networkVO.getVpcId(), networkVO.getId());
+                vmExternalDetails.put(VmDetailConstants.CLOUDSTACK_VLAN, segmentName);
+            } else {
+                vmExternalDetails.put(VmDetailConstants.CLOUDSTACK_VLAN, Networks.BroadcastDomainType.getValue(nic.getBroadcastUri()));
             }
         }
-
-        accessDetails.putAll(externalHostDetails);
+        externalDetails.put(ApiConstants.VIRTUAL_MACHINE_ID, vmExternalDetails);
+        command.setExternalDetails(externalDetails);
     }
 
-    private void loadExternalInstanceDetails(long vmId, Map<String, String> accessDetails) {
-        UserVmVO userVm = _userVmDao.findById(vmId);
-        _userVmDao.loadDetails(userVm);
-        Map<String, String> userVmDetails = userVm.getDetails();
-        Map<String, String> externalInstanceDetails = new HashMap<>();
-        for (Map.Entry<String, String> entry : userVmDetails.entrySet()) {
-            if (entry.getKey().startsWith(VmDetailConstants.EXTERNAL_DETAIL_PREFIX)) {
-                externalInstanceDetails.put(entry.getKey(), entry.getValue());
-            }
+    protected void updateStopCommandForExternalHypervisorType(final HypervisorType hypervisorType,  final Long hostId,
+                                                              final StopCommand stopCommand) {
+        if (!HypervisorType.External.equals(hypervisorType) || hostId == null) {
+            return;
         }
-        accessDetails.putAll(externalInstanceDetails);
+        Host host = _hostDao.findById(hostId);
+        if (host == null) {
+            return;
+        }
+        stopCommand.setExternalDetails(extensionsManager.getExternalAccessDetails(host));
+    }
+
+    private void updateRebootCommandWithExternalDetails(Host host, VirtualMachineTO vmTO, RebootCommand rebootCmd) {
+        if (!HypervisorType.External.equals(host.getHypervisorType())) {
+            return;
+        }
+        Map<String, Object> externalDetails = extensionsManager.getExternalAccessDetails(host);
+        Map<String, String> vmExternalDetails = vmTO.getExternalDetails();
+        if (MapUtils.isNotEmpty(vmExternalDetails)) {
+            externalDetails.put(ApiConstants.VIRTUAL_MACHINE_ID, vmExternalDetails);
+        }
+        rebootCmd.setExternalDetails(externalDetails);
     }
 
     public void setVmNetworkDetails(VMInstanceVO vm, VirtualMachineTO vmTO) {
@@ -1941,25 +1944,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return volumesToDisconnect;
     }
 
-    protected void updateStopCommandForExternalHypervisorType(final VirtualMachine vm, final Long hostId,
-                  final StopCommand stopCommand) {
-        if (!HypervisorType.External.equals(vm.getHypervisorType()) || hostId == null) {
-            return;
-        }
-        HostVO host = _hostDao.findById(hostId);
-        HashMap<String, String> accessDetails = new HashMap<>();
-        loadExternalHostAccessDetails(host, accessDetails);
-        loadExternalInstanceDetails(vm.getId(), accessDetails);
-
-        stopCommand.setDetails(accessDetails);
-    }
-
     protected boolean sendStop(final VirtualMachineGuru guru, final VirtualMachineProfile profile, final boolean force, final boolean checkBeforeCleanup) {
         final VirtualMachine vm = profile.getVirtualMachine();
         Map<String, Boolean> vlanToPersistenceMap = getVlanToPersistenceMapForVM(vm.getId());
 
         StopCommand stpCmd = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), checkBeforeCleanup);
-        updateStopCommandForExternalHypervisorType(vm, profile.getHostId(), stpCmd);
+        updateStopCommandForExternalHypervisorType(vm.getHypervisorType(), profile.getHostId(), stpCmd);
         if (MapUtils.isNotEmpty(vlanToPersistenceMap)) {
             stpCmd.setVlanToPersistenceMap(vlanToPersistenceMap);
         }
@@ -2287,18 +2277,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         Map<String, Boolean> vlanToPersistenceMap = getVlanToPersistenceMapForVM(vm.getId());
         final StopCommand stop = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), false, cleanUpEvenIfUnableToStop);
         stop.setControlIp(getControlNicIpForVM(vm));
-
-        if (HypervisorType.External.equals(vm.getHypervisorType())) {
-            Long hostID = profile.getHostId();
-            HostVO host = _hostDao.findById(hostID);
-
-            HashMap<String, String> accessDetails = new HashMap<>();
-            loadExternalHostAccessDetails(host, accessDetails);
-            loadExternalInstanceDetails(vm.getId(), accessDetails);
-
-            stop.setDetails(accessDetails);
-        }
-
+        updateStopCommandForExternalHypervisorType(vm.getHypervisorType(), vm.getHostId(), stop);
         if (MapUtils.isNotEmpty(vlanToPersistenceMap)) {
             stop.setVlanToPersistenceMap(vlanToPersistenceMap);
         }
@@ -3820,17 +3799,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         try {
             final Commands cmds = new Commands(Command.OnError.Stop);
             RebootCommand rebootCmd = new RebootCommand(vm.getInstanceName(), getExecuteInSequence(vm.getHypervisorType()));
-            if (Hypervisor.HypervisorType.External.equals(vm.getHypervisorType())) {
-                HostVO hostVo = _hostDao.findById(host.getId());
-                HashMap<String, String> accessDetails = new HashMap<>();
-                loadExternalHostAccessDetails(hostVo, accessDetails);
-                loadExternalInstanceDetails(vm.getId(), accessDetails);
-
-                rebootCmd.setDetails(accessDetails);
-            }
             VirtualMachineTO vmTo = getVmTO(vm.getId());
             checkAndSetEnterSetupMode(vmTo, params);
             rebootCmd.setVirtualMachine(vmTo);
+            updateRebootCommandWithExternalDetails(host, vmTo, rebootCmd);
             cmds.addCommand(rebootCmd);
             _agentMgr.send(host.getId(), cmds);
 

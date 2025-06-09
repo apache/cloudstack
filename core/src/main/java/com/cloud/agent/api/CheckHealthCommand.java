@@ -19,10 +19,22 @@
 
 package com.cloud.agent.api;
 
+import java.util.Map;
+
 public class CheckHealthCommand extends Command {
+
+    private Map<String, Object> externalDetails;
 
     public CheckHealthCommand() {
         setWait(50);
+    }
+
+    public Map<String, Object> getExternalDetails() {
+        return externalDetails;
+    }
+
+    public void setExternalDetails(Map<String, Object> externalDetails) {
+        this.externalDetails = externalDetails;
     }
 
     @Override

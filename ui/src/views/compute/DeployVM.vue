@@ -817,58 +817,6 @@
                 <template #description v-if="zoneSelected">
                   <div style="margin-top: 15px">
                     {{ $t('message.vm.review.launch') }}
-                    <a-form-item v-if="template.hypervisor === 'External'">
-                      <br />
-                      <a-button style="width: 100%" ref="details" type="primary" @click="addExternalDetails">
-                        <template #icon><plus-outlined /></template>
-                        {{ $t('label.add.external.details') }}
-                      </a-button>
-                      <a-form-item>
-                        <div v-show="showAddDetail">
-                          <br/>
-                          <a-input-group
-                            type="text"
-                            compact>
-                            <a-input
-                              style="width: 25%;"
-                              ref="keyElm"
-                              v-model:value="newKey"
-                              :placeholder="$t('label.name')"
-                              @change="e => onAddInputChange(e, 'newKey')" />
-                            <a-input
-                              class="tag-disabled-input"
-                              style=" width: 30px; margin-left: 10px; margin-right: 10px; pointer-events: none; text-align: center"
-                              placeholder="="
-                              disabled />
-                            <a-input
-                              style="width: 35%;"
-                              v-model:value="newValue"
-                              :placeholder="$t('label.value')"
-                              @change="e => onAddInputChange(e, 'newValue')" />
-                            <tooltip-button :tooltip="$t('label.add.setting')" :shape="null" icon="check-outlined" @onClick="addDetail" buttonClass="detail-button" />
-                            <tooltip-button :tooltip="$t('label.cancel')" :shape="null" icon="close-outlined" @onClick="closeDetail" buttonClass="detail-button" />
-                          </a-input-group>
-                        </div>
-                      </a-form-item>
-                      <a-list size="medium">
-                        <a-list-item :key="index" v-for="(item, index) in externalDetails">
-                          <span style="padding-left: 11px; width: 14%;"> {{ item.name }} </span>
-                          <a-input
-                            class="tag-disabled-input"
-                            style=" width: 30px; margin-left: 105px; margin-right: 10px; pointer-events: none; text-align: center"
-                            placeholder="="
-                            disabled />
-                          <span style="padding-left: 0px; width: 64%;"> {{ item.value }}</span>
-                          <tooltip-button
-                            style="width: 30%;"
-                            :tooltip="$t('label.delete')"
-                            :type="primary"
-                            :danger="true"
-                            icon="delete-outlined"
-                            @onClick="removeDetail(index)"/>
-                        </a-list-item>
-                      </a-list>
-                    </a-form-item>
                     <a-form-item :label="$t('label.name.optional')" name="name" ref="name">
                       <a-input v-model:value="form.name" />
                     </a-form-item>
@@ -886,6 +834,17 @@
                         optionFilterProp="label"
                         :filterOption="filterOption"
                       ></a-select>
+                    </a-form-item>
+                    <a-form-item name="externaldetails" ref="externaldetails">
+                      <template #label>
+                        <tooltip-label :title="$t('label.externaldetails')" :tooltip="apiParams.externaldetails.description" />
+                      </template>
+                      <a-switch v-model:checked="externalDetailsEnabled" @change="onExternalDetailsEnabledChange"/>
+                      <a-card v-if="externalDetailsEnabled" style="margin-top: 10px">
+                        <div style="margin-bottom: 10px">{{ $t('message.add.external.details') }}</div>
+                        <details-input
+                          v-model:value="form.externaldetails" />
+                      </a-card>
                     </a-form-item>
                     <a-form-item :label="$t('label.action.start.instance')" name="startvm" ref="startvm">
                       <a-switch v-model:checked="form.startvm" />
@@ -983,7 +942,7 @@ import SshKeyPairSelection from '@views/compute/wizard/SshKeyPairSelection'
 import UserDataSelection from '@views/compute/wizard/UserDataSelection'
 import SecurityGroupSelection from '@views/compute/wizard/SecurityGroupSelection'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
-import TooltipButton from '@/components/widgets/TooltipButton'
+import DetailsInput from '@/components/widgets/DetailsInput'
 import InstanceNicsNetworkSelectListView from '@/components/view/InstanceNicsNetworkSelectListView.vue'
 
 export default {
@@ -1005,7 +964,7 @@ export default {
     SecurityGroupSelection,
     ResourceIcon,
     TooltipLabel,
-    TooltipButton,
+    DetailsInput,
     InstanceNicsNetworkSelectListView
   },
   props: {
@@ -1176,10 +1135,6 @@ export default {
       selectedZone: '',
       formModel: {},
       nicToNetworkSelection: [],
-      showAddDetail: false,
-      newKey: '',
-      newValue: '',
-      externalDetails: [],
       selectedArchitecture: null,
       architectureTypes: {
         opts: [
@@ -1202,7 +1157,8 @@ export default {
       naturalNumberRule: {
         type: 'number',
         validator: this.validateNumber
-      }
+      },
+      externalDetailsEnabled: false
     }
   },
   computed: {
@@ -1701,6 +1657,9 @@ export default {
       this.doUserdataOverride = false
       this.doUserdataAppend = false
     }
+  },
+  beforeCreate () {
+    this.apiParams = this.$getApiParams('deployVirtualMachine')
   },
   created () {
     this.initForm()
@@ -2355,6 +2314,12 @@ export default {
           deployVmData.projectid = this.owner.projectid
         }
 
+        if (values.externaldetails) {
+          Object.entries(values.externaldetails).forEach(([key, value]) => {
+            deployVmData['externaldetails[0].' + key] = value
+          })
+        }
+
         const title = this.$t('label.launch.vm')
         const description = values.name || ''
         const password = this.$t('label.password')
@@ -2374,12 +2339,6 @@ export default {
             deployVmData['userdatadetails[' + idx + '].' + `${key}`] = value
             idx++
           }
-        }
-
-        if (this.externalDetails.length > 0) {
-          this.externalDetails.forEach(function (item, index) {
-            deployVmData['externaldetails[0].' + item.name] = item.value
-          })
         }
 
         const httpMethod = deployVmData.userdata ? 'POST' : 'GET'
@@ -3062,6 +3021,12 @@ export default {
         return Promise.reject(this.$t('message.error.number'))
       }
       return Promise.resolve()
+    },
+    onExternalDetailsEnabledChange (val) {
+      if (val || !this.form.externaldetails) {
+        return
+      }
+      this.form.externaldetails = undefined
     }
   }
 }

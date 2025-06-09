@@ -19,13 +19,13 @@
 
 package com.cloud.agent.api;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 import com.cloud.agent.api.to.DpdkTO;
 import com.cloud.agent.api.to.GPUDeviceTO;
 import com.cloud.vm.VirtualMachine;
-
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.List;
 
 public class StopCommand extends RebootCommand {
     private boolean isProxy = false;
@@ -39,7 +39,7 @@ public class StopCommand extends RebootCommand {
     Map<String, Boolean> vlanToPersistenceMap;
     boolean expungeVM = false;
 
-    private Map<String, String> details;
+    private Map<String, Object> externalDetails;
 
     public Map<String, DpdkTO> getDpdkInterfaceMapping() {
         return dpdkInterfaceMapping;
@@ -150,11 +150,11 @@ public class StopCommand extends RebootCommand {
         this.expungeVM = expungeVM;
     }
 
-    public void setDetails(Map<String, String> details) {
-        this.details = details;
+    public void setExternalDetails(Map<String, Object> externalDetails) {
+        this.externalDetails = externalDetails;
     }
 
-    public Map<String, String> getDetails() {
-        return details;
+    public Map<String, Object> getExternalDetails() {
+        return externalDetails;
     }
 }

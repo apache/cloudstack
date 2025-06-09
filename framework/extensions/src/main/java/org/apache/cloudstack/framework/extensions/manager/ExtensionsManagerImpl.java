@@ -20,6 +20,9 @@
 package org.apache.cloudstack.framework.extensions.manager;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -75,6 +78,7 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.RunCustomActionAnswer;
 import com.cloud.agent.api.RunCustomActionCommand;
 import com.cloud.dc.ClusterVO;
@@ -150,27 +154,32 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     @Inject
     EntityManager entityManager;
 
-    protected String getExternalDetailKey(String key) {
-        if (key.startsWith(VmDetailConstants.EXTERNAL_DETAIL_PREFIX)) {
-            return key;
-        }
-        return VmDetailConstants.EXTERNAL_DETAIL_PREFIX + key;
-    }
-
-    protected Map<String, String> convertExternalDetailsMap(Map<String, String> details) {
-        Map<String, String> externalDetails = new HashMap<>();
-        if (MapUtils.isEmpty(details)) {
-            return externalDetails;
-        }
-        for (Map.Entry<String, String> entry : details.entrySet()) {
-            externalDetails.put(getExternalDetailKey(entry.getKey()), entry.getValue());
-        }
-        return externalDetails;
+    protected String getExtensionSafeName(String name) {
+        return  name.replaceAll("[^a-zA-Z0-9._-]", "_").toLowerCase();
     }
 
     protected String getDefaultExtensionRelativeEntryPoint(String name) {
-        String safeName = name.replaceAll("[^a-zA-Z0-9._-]", "_").toLowerCase();
+        String safeName = getExtensionSafeName(name);
         return String.format("%s%s%s.sh", safeName, File.separator, safeName);
+    }
+
+    protected String getValidatedExtensionRelativeEntryPoint(String name, String relativeEntryPointPath) {
+        String safeName = getExtensionSafeName(name);
+        String normalizedPath = relativeEntryPointPath.replace("\\", "/");
+        if (normalizedPath.startsWith("/")) {
+            normalizedPath = normalizedPath.substring(1);
+        }
+        if (normalizedPath.equals(safeName)) {
+            normalizedPath = safeName + "/" + safeName;
+        } else if (!normalizedPath.startsWith(safeName + "/")) {
+            normalizedPath = safeName + "/" + normalizedPath;
+        }
+        Path pathObj = Paths.get(normalizedPath);
+        int subDirCount = pathObj.getNameCount() - 1;
+        if (subDirCount > 2) {
+            throw new InvalidParameterException("Entry point path cannot be nested more than two sub-directories deep");
+        }
+        return normalizedPath;
     }
 
     @Override
@@ -189,6 +198,8 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         }
         if (StringUtils.isBlank(entryPoint)) {
             entryPoint = getDefaultExtensionRelativeEntryPoint(name);
+        } else {
+            entryPoint = getValidatedExtensionRelativeEntryPoint(name, entryPoint);
         }
         final String entryPointFinal = entryPoint;
         return Transaction.execute((TransactionCallbackWithException<Extension, CloudRuntimeException>) status -> {
@@ -204,7 +215,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                 }
                 extensionDetailsDao.saveDetails(detailsVOList);
             }
-            externalProvisioner.prepareScripts(extension.getName(), extension.getRelativeEntryPoint());
+            externalProvisioner.prepareExtensionEntryPoint(extension.getName(), extension.isUserDefined(), extension.getRelativeEntryPoint());
             CallContext.current().setEventResourceId(extension.getId());
             return extension;
         });
@@ -388,6 +399,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                 extension.getDescription(), extension.getType().name());
         response.setCreated(extension.getCreated());
         response.setEntryPoint(externalProvisioner.getExtensionEntryPoint(extension.getRelativeEntryPoint()));
+        response.setUserDefined(extension.isUserDefined());
         if (viewDetails.contains(ApiConstants.ExtensionDetails.all) ||
                 viewDetails.contains(ApiConstants.ExtensionDetails.resource)) {
             List<ExtensionResourceResponse> resourcesResponse = new ArrayList<>();
@@ -443,7 +455,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         String name = cmd.getName();
         String description = cmd.getDescription();
         Long extensionId = cmd.getExtensionId();
-        String resourceType = cmd.getResourceType();
+        String resourceTypeStr = cmd.getResourceType();
         List<String> rolesStrList = cmd.getRolesList();
         final boolean enabled = cmd.isEnabled();
         Map parametersMap = cmd.getParametersMap();
@@ -459,17 +471,17 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             throw new InvalidParameterValueException("Specified extension can not be found");
         }
         List<ExtensionCustomAction.Parameter> parameters = getParametersListFromMap(name, parametersMap);
-        ExtensionCustomAction.ResourceType resourceTypeVal = null;
-        if (StringUtils.isNotBlank(resourceType)) {
-            try {
-                resourceTypeVal = ExtensionCustomAction.ResourceType.fromString(resourceType);
-            } catch (IllegalArgumentException e) {
-                throw new InvalidParameterValueException(String.format("%s. Valid values are: %s", e.getMessage(),
+        ExtensionCustomAction.ResourceType resourceType = null;
+        if (StringUtils.isNotBlank(resourceTypeStr)) {
+            resourceType = EnumUtils.getEnumIgnoreCase(ExtensionCustomAction.ResourceType.class, resourceTypeStr);
+            if (resourceType == null) {
+                throw new InvalidParameterValueException(
+                        String.format("Invalid resource type specified: %s. Valid values are: %s", resourceTypeStr,
                         EnumSet.allOf(ExtensionCustomAction.ResourceType.class)));
             }
         }
-        if (resourceTypeVal == null && Extension.Type.Orchestrator.equals(extensionVO.getType())) {
-            resourceTypeVal = ExtensionCustomAction.ResourceType.VirtualMachine;
+        if (resourceType == null && Extension.Type.Orchestrator.equals(extensionVO.getType())) {
+            resourceType = ExtensionCustomAction.ResourceType.VirtualMachine;
         }
         final Set<RoleType> roleTypes = new HashSet<>();
         if (CollectionUtils.isNotEmpty(rolesStrList)) {
@@ -483,7 +495,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             }
         }
         roleTypes.add(RoleType.Admin);
-        final ExtensionCustomAction.ResourceType resourceTypeFinal = resourceTypeVal;
+        final ExtensionCustomAction.ResourceType resourceTypeFinal = resourceType;
         return Transaction.execute((TransactionCallbackWithException<ExtensionCustomActionVO, CloudRuntimeException>) status -> {
             ExtensionCustomActionVO customAction =
                     new ExtensionCustomActionVO(name, description, extensionId, successMessage, errorMessage, enabled);
@@ -621,7 +633,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     public ExtensionCustomAction updateCustomAction(UpdateCustomActionCmd cmd) {
         final long id = cmd.getId();
         String description = cmd.getDescription();
-        String resourceType = cmd.getResourceType();
+        String resourceTypeStr = cmd.getResourceType();
         List<String> rolesStrList = cmd.getRoles();
         Boolean enabled = cmd.isEnabled();
         Map parametersMap = cmd.getParametersMap();
@@ -641,15 +653,15 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             customAction.setDescription(description);
             needUpdate = true;
         }
-        if (resourceType != null) {
-            try {
-                ExtensionCustomAction.ResourceType resourceTypeVal =
-                        ExtensionCustomAction.ResourceType.fromString(resourceType);
-                customAction.setResourceType(resourceTypeVal);
-            } catch (IllegalArgumentException e) {
-                throw new InvalidParameterValueException(String.format("%s. Valid values are: %s", e.getMessage(),
-                        EnumSet.allOf(ExtensionCustomAction.ResourceType.class)));
+        if (resourceTypeStr != null) {
+            ExtensionCustomAction.ResourceType resourceType =
+                    EnumUtils.getEnumIgnoreCase(ExtensionCustomAction.ResourceType.class, resourceTypeStr);
+            if (resourceType == null) {
+                throw new InvalidParameterValueException(
+                        String.format("Invalid resource type specified: %s. Valid values are: %s", resourceTypeStr,
+                                EnumSet.allOf(ExtensionCustomAction.ResourceType.class)));
             }
+            customAction.setResourceType(resourceType);
             needUpdate = true;
         }
         if (CollectionUtils.isNotEmpty(rolesStrList)) {
@@ -747,7 +759,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     @Override
     public CustomActionResultResponse runCustomAction(RunCustomActionCmd cmd) {
         final Long id =  cmd.getCustomActionId();
-        final String resourceType = cmd.getResourceType();
+        final String resourceTypeStr = cmd.getResourceType();
         final String resourceUuid = cmd.getResourceId();
         Map<String, String> cmdParameters = cmd.getParameters();
 
@@ -756,6 +768,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             throw new InvalidParameterValueException("Invalid custom action specified");
         }
         final String actionName = customActionVO.getName();
+        RunCustomActionCommand runCustomActionCommand = new RunCustomActionCommand(actionName);
         final long extensionId = customActionVO.getExtensionId();
         final ExtensionVO extensionVO = extensionDao.findById(extensionId);
         if (extensionVO == null) {
@@ -763,22 +776,18 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             throw new CloudRuntimeException("Internal error running action");
         }
         ExtensionCustomAction.ResourceType actionResourceType = customActionVO.getResourceType();
-        if (actionResourceType == null && StringUtils.isBlank(resourceType)) {
+        if (actionResourceType == null && StringUtils.isBlank(resourceTypeStr)) {
             throw new InvalidParameterValueException("Resource type not specified for the action");
         }
         boolean validType = true;
-        if (StringUtils.isNotBlank(resourceType)) {
-            try {
-                ExtensionCustomAction.ResourceType cmdResourceType =
-                        ExtensionCustomAction.ResourceType.fromString(resourceType);
-                validType = actionResourceType == null || actionResourceType.equals(cmdResourceType);
-                actionResourceType = cmdResourceType;
-            } catch (IllegalArgumentException ignored) {
-                validType = false;
-            }
+        if (StringUtils.isNotBlank(resourceTypeStr)) {
+            ExtensionCustomAction.ResourceType cmdResourceType =
+                    EnumUtils.getEnumIgnoreCase(ExtensionCustomAction.ResourceType.class, resourceTypeStr);
+            validType = cmdResourceType != null && (actionResourceType == null || actionResourceType.equals(cmdResourceType));
+            actionResourceType = cmdResourceType;
         }
         if (!validType || actionResourceType == null) {
-            logger.error("Invalid resource type - {} specified for {}", resourceType, customActionVO);
+            logger.error("Invalid resource type - {} specified for {}", resourceTypeStr, customActionVO);
             throw new CloudRuntimeException("Internal error running action");
         }
         Object entity = entityManager.findByUuid(actionResourceType.getAssociatedClass(), resourceUuid);
@@ -798,7 +807,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             hostId = hosts.get(0).getId();
         } else if (entity instanceof Host) {
             Host host = (Host)entity;
-            if (Hypervisor.HypervisorType.External.equals(host.getHypervisorType())) {
+            if (!Hypervisor.HypervisorType.External.equals(host.getHypervisorType())) {
                 logger.error("Invalid {} specified as resource for running {}", entity, customActionVO);
                 throw new InvalidParameterValueException("Invalid resource specified");
             }
@@ -806,7 +815,8 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             clusterId = host.getClusterId();
         } else if (entity instanceof VirtualMachine) {
             VirtualMachine virtualMachine = (VirtualMachine)entity;
-            if (Hypervisor.HypervisorType.External.equals(virtualMachine.getHypervisorType())) {
+            runCustomActionCommand.setVmId(virtualMachine.getId());
+            if (!Hypervisor.HypervisorType.External.equals(virtualMachine.getHypervisorType())) {
                 logger.error("Invalid {} specified as resource for running {}", entity, customActionVO);
                 throw new InvalidParameterValueException("Invalid resource specified");
             }
@@ -838,35 +848,42 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             details.remove(ApiConstants.PARAMETERS);
         }
         Map<String, Object> parameters = null;
-        if (CollectionUtils.isNotEmpty(actionParameters) && MapUtils.isNotEmpty(cmdParameters)) {
+        if (CollectionUtils.isNotEmpty(actionParameters)) {
             parameters = ExtensionCustomAction.Parameter.validateParameterValues(actionParameters, cmdParameters);
         }
 
-        RunCustomActionAnswer answer;
         CustomActionResultResponse response = new CustomActionResultResponse();
         response.setId(customActionVO.getUuid());
         response.setName(actionName);
-        response.setObjectName("CustomActionResult");
+        response.setObjectName("customactionresult");
         Map<String, String> result = new HashMap<>();
         response.setSuccess(false);
         result.put(ApiConstants.MESSAGE, getActionMessage(false, customActionVO, extensionVO));
+        Map<String, Object> externalDetails = getExternalAccessDetails(details, hostId, extensionResource, extensionVO);
+        runCustomActionCommand.setParameters(parameters);
+        runCustomActionCommand.setExternalDetails(externalDetails);
         try {
-            RunCustomActionCommand runCustomActionCommand = new RunCustomActionCommand(actionName, parameters, details);
-            answer = (RunCustomActionAnswer) agentMgr.send(hostId, runCustomActionCommand);
-            response.setSuccess(answer.getResult());
-            result.put(ApiConstants.MESSAGE, getActionMessage(answer.getResult(), customActionVO, extensionVO));
-            result.put(ApiConstants.RESULT1, answer.getDetails());
+            Answer answer = agentMgr.send(hostId, runCustomActionCommand);
+            if (!(answer instanceof RunCustomActionAnswer)) {
+                logger.error("Unexpected answer [{}] received for {}", answer.getClass().getSimpleName(), RunCustomActionCommand.class.getSimpleName());
+                result.put(ApiConstants.DETAILS, "Internal error running action");
+            } else {
+                RunCustomActionAnswer customActionAnswer = (RunCustomActionAnswer) answer;
+                response.setSuccess(answer.getResult());
+                result.put(ApiConstants.MESSAGE, getActionMessage(answer.getResult(), customActionVO, extensionVO));
+                // ToDo: Check if we should pass the details for an errored action or pass it at all
+                result.put(ApiConstants.DETAILS, customActionAnswer.getDetails());
+            }
         } catch (AgentUnavailableException e) {
             String msg = "Unable to run custom action";
             logger.error("{} due to {}", msg, e.getMessage(), e);
-            result.put(ApiConstants.RESULT1, msg);
+            result.put(ApiConstants.DETAILS, msg);
         } catch (OperationTimedoutException e) {
             String msg = "Running custom action timed out, please try again";
             logger.error(msg, e);
-            result.put(ApiConstants.RESULT1, msg);
+            result.put(ApiConstants.DETAILS, msg);
         }
         response.setResult(result);
-
         return response;
     }
 
@@ -893,7 +910,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                 .ifPresent(parameters -> {
                     Set<ExtensionCustomActionParameterResponse> paramResponses = parameters.stream()
                             .map(p -> new ExtensionCustomActionParameterResponse(p.getName(),
-                                    p.getType().name(), p.isRequired()))
+                                    p.getType().name(), p.getFormat().name(), p.getOptions(), p.isRequired()))
                             .collect(Collectors.toSet());
                     response.setParameters(paramResponses);
                 });
@@ -902,6 +919,54 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         response.setDetails(details);
         response.setObjectName(ExtensionCustomAction.class.getSimpleName().toLowerCase());
         return response;
+    }
+
+    protected Map<String, String> getFilteredExternalDetails(Map<String, String> details) {
+        if (MapUtils.isEmpty(details)) {
+            return new HashMap<>();
+        }
+        return details.entrySet().stream()
+                .filter(entry -> entry.getKey().startsWith(VmDetailConstants.EXTERNAL_DETAIL_PREFIX))
+                .collect(Collectors.toMap(
+                        entry -> entry.getKey().substring(VmDetailConstants.EXTERNAL_DETAIL_PREFIX.length()),
+                        Map.Entry::getValue
+                ));
+    }
+
+    @Override
+    public Map<String, Object> getExternalAccessDetails(Host host) {
+        Map<String, Object> externalDetails = new HashMap<>();
+        Map<String, String> hostDetails = getFilteredExternalDetails(hostDetailsDao.findDetails(host.getId()));
+        externalDetails.put(ApiConstants.HOST_ID, hostDetails);
+        long clusterId = host.getClusterId();
+        ExtensionResourceMapVO resourceMap = extensionResourceMapDao.findByResourceIdAndType(clusterId,
+                ExtensionResourceMap.ResourceType.Cluster);
+        if (resourceMap == null) {
+            return externalDetails;
+        }
+        Map<String, String> resourceDetails = extensionResourceMapDetailsDao.listDetailsKeyPairs(resourceMap.getId());
+        externalDetails.put(ApiConstants.RESOURCE_ID, resourceDetails);
+        Map<String, String> extensionDetails = extensionDetailsDao.listDetailsKeyPairs(resourceMap.getExtensionId());
+        externalDetails.put(ApiConstants.EXTENSION_ID, extensionDetails);
+        return externalDetails;
+    }
+
+    private Map<String, Object> getExternalAccessDetails(Map<String, String> actionDetails, long hostId, ExtensionResourceMap resourceMap, Extension extension) {
+        Map<String, Object> externalDetails = new HashMap<>();
+        externalDetails.put(ApiConstants.CUSTOM_ACTION_ID, actionDetails);
+        Map<String, String> hostDetails = getFilteredExternalDetails(hostDetailsDao.findDetails(hostId));
+        externalDetails.put(ApiConstants.HOST_ID, hostDetails);
+        if (resourceMap == null) {
+            return externalDetails;
+        }
+        Map<String, String> resourceDetails = extensionResourceMapDetailsDao.listDetailsKeyPairs(resourceMap.getId());
+        externalDetails.put(ApiConstants.RESOURCE_ID, resourceDetails);
+        if (extension == null) {
+            return externalDetails;
+        }
+        Map<String, String> extensionDetails = extensionDetailsDao.listDetailsKeyPairs(resourceMap.getExtensionId());
+        externalDetails.put(ApiConstants.EXTENSION_ID, extensionDetails);
+        return externalDetails;
     }
 
     @Override

@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.api.response;
 
+import java.util.List;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
@@ -33,25 +35,24 @@ public class ExtensionCustomActionParameterResponse extends BaseResponse {
     @Param(description = "Type of the parameter")
     private String type;
 
+    @SerializedName(ApiConstants.FORMAT)
+    @Param(description = "Format for value of the parameter. Available for specific types")
+    private String format;
+
+    @SerializedName(ApiConstants.OPTIONS)
+    @Param(description = "Options for value of the parameter")
+    private List<Object> options;
+
     @SerializedName(ApiConstants.REQUIRED)
     @Param(description = "Whether the parameter is required or not")
     private Boolean required;
 
-    public ExtensionCustomActionParameterResponse(String name, String type, boolean required) {
+    public ExtensionCustomActionParameterResponse(String name, String type, String format, List<Object> options,
+                  boolean required) {
         this.name = name;
         this.type = type;
-        this.required = required;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    public void setRequired(Boolean required) {
+        this.format = format;
+        this.options = options;
         this.required = required;
     }
 }

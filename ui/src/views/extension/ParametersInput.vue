@@ -16,24 +16,99 @@
 // under the License.
 
 <template>
-  <div>
-    <div class="input-row">
-      <a-form-item no-style>
-        <a-input v-model:value="newParam.name" :placeholder="$t('label.name')" class="input-field" />
-      </a-form-item>
-      <a-form-item no-style>
-        <a-select v-model:value="newParam.type" :placeholder="$t('label.type')" class="input-field">
-          <a-select-option v-for="t in types" :key="t" :value="t">{{ t }}</a-select-option>
-        </a-select>
-      </a-form-item>
-      <a-form-item no-style>
-        <a-checkbox v-model:checked="newParam.required" class="required-checkbox">Required</a-checkbox>
-      </a-form-item>
-      <a-button type="primary" class="add-button" @click="addEntry" :disabled="!newParam.name || !newParam.type">
-        Add
-      </a-button>
-    </div>
-
+  <a-card>
+    <a-row :gutter="[16, 8]">
+      <a-col :span="18">
+        <a-row :gutter="[16, 8]">
+          <a-col :span="18">
+            <a-form-item no-style>
+              <tooltip-label :title="$t('label.name')" />
+              <a-input
+                v-model:value="newParam.name"
+                :placeholder="$t('label.name')"
+                class="input-field"
+              />
+            </a-form-item>
+          </a-col>
+          <a-col :span="6" style="display: flex; align-items: flex-end;">
+            <a-form-item no-style>
+              <a-checkbox
+                v-model:checked="newParam.required"
+                class="required-checkbox"
+              >
+                Required
+              </a-checkbox>
+            </a-form-item>
+          </a-col>
+          <!-- Row 2 -->
+          <a-col :span="12">
+            <a-form-item no-style>
+              <tooltip-label :title="$t('label.type')" />
+              <a-select
+                v-model:value="newParam.type"
+                :placeholder="$t('label.type')"
+                class="input-field"
+                @change="onNewParamTypeChange"
+              >
+                <a-select-option
+                  v-for="t in types"
+                  :key="t"
+                  :value="t"
+                >
+                  {{ t }}
+                </a-select-option>
+              </a-select>
+            </a-form-item>
+          </a-col>
+          <a-col :span="12">
+            <a-form-item
+              no-style
+            >
+              <tooltip-label :title="$t('label.format')" />
+              <a-select
+                :disabled="!['NUMBER', 'STRING'].includes(newParam.type)"
+                v-model:value="newParam.format"
+                :placeholder="$t('label.format')"
+                class="input-field"
+              >
+                <a-select-option
+                  v-for="t in newParamFormats"
+                  :key="t"
+                  :value="t"
+                >
+                  {{ t }}
+                </a-select-option>
+              </a-select>
+            </a-form-item>
+          </a-col>
+          <!-- Row 3 -->
+          <a-col :span="24">
+            <a-form-item
+              :label="$t('label.options')"
+              no-style
+            >
+              <tooltip-label :title="$t('label.options')" />
+              <a-input
+                :disabled="!['NUMBER', 'STRING'].includes(newParam.type)"
+                v-model:value="newParam.options"
+                :placeholder="$t('label.options')"
+                class="input-field"
+              />
+            </a-form-item>
+          </a-col>
+        </a-row>
+      </a-col>
+      <a-col :span="6" style="display: flex; align-items: flex-end; justify-content: center;">
+        <a-button
+          type="primary"
+          class="add-button"
+          @click="addEntry"
+          :disabled="!newParam.name || !newParam.type"
+        >
+          Add
+        </a-button>
+      </a-col>
+    </a-row>
     <a-table
       :columns="columns"
       :dataSource="tableData"
@@ -64,9 +139,17 @@
             <a-input v-if="column.key === 'name'" v-model:value="editBuffer.name" />
           </a-form-item>
           <a-form-item no-style>
-            <a-select v-if="column.key === 'type'" v-model:value="editBuffer.type">
+            <a-select v-if="column.key === 'type'" v-model:value="editBuffer.type" @change="onEditBufferTypeChange">
               <a-select-option v-for="t in types" :key="t" :value="t">{{ t }}</a-select-option>
             </a-select>
+          </a-form-item>
+          <a-form-item no-style>
+            <a-select v-if="column.key === 'format'" :disabled="!['NUMBER', 'STRING'].includes(editBuffer.type)" v-model:value="editBuffer.format">
+              <a-select-option v-for="t in editBufferFormats" :key="t" :value="t">{{ t }}</a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item no-style>
+            <a-input v-if="column.key === 'options'" :disabled="!['NUMBER', 'STRING'].includes(editBuffer.type)" v-model:value="editBuffer.options" />
           </a-form-item>
           <a-form-item no-style>
             <a-checkbox v-if="column.key === 'required'" v-model:checked="editBuffer.required" />
@@ -79,15 +162,19 @@
         </template>
       </template>
     </a-table>
-  </div>
+  </a-card>
 </template>
 
 <script>
 import TooltipButton from '@/components/widgets/TooltipButton'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'ParametersInput',
-  components: { TooltipButton },
+  components: {
+    TooltipButton,
+    TooltipLabel
+  },
   props: {
     value: {
       type: Array,
@@ -100,22 +187,14 @@ export default {
   },
   data () {
     return {
-      types: [
-        'BOOLEAN',
-        'DATE',
-        'FLOAT',
-        'INTEGER',
-        'SHORT',
-        'LONG',
-        'STRING',
-        'UUID'
-      ],
-      newParam: { name: '', type: '', required: false },
+      newParam: {},
       columns: [
-        { title: 'Name', dataIndex: 'name', key: 'name', width: '30%' },
-        { title: 'Type', dataIndex: 'type', key: 'type', width: '30%' },
-        { title: 'Required', dataIndex: 'required', key: 'required', width: '20%' },
-        { title: 'Action', key: 'action', width: '20%' }
+        { title: 'Name', dataIndex: 'name', key: 'name', width: '20%' },
+        { title: 'Type', dataIndex: 'type', key: 'type', width: '15%' },
+        { title: 'Format', dataIndex: 'format', key: 'format', width: '15%' },
+        { title: 'Options', dataIndex: 'options', key: 'options', width: '25%' },
+        { title: 'Required', dataIndex: 'required', key: 'required', width: '10%' },
+        { title: 'Action', key: 'action', width: '15%' }
       ],
       tableData: [],
       editBuffer: null
@@ -133,7 +212,42 @@ export default {
     }
   },
   emits: ['update:value'],
+  computed: {
+    types () {
+      return [
+        'BOOLEAN',
+        'DATE',
+        'NUMBER',
+        'STRING'
+      ]
+    },
+    newParamFormats () {
+      return this.getFormatOptions(this.newParam?.type)
+    },
+    editBufferFormats () {
+      return this.getFormatOptions(this.editBuffer?.type)
+    }
+  },
   methods: {
+    getFormatOptions (type) {
+      const formats = ['NONE']
+      if (type === 'STRING') {
+        formats.push('UUID', 'EMAIL', 'PASSWORD', 'URL')
+      } else if (type === 'NUMBER') {
+        formats.push('DECIMAL')
+      }
+      return formats
+    },
+    resetFormatAndOptions (obj) {
+      delete obj.format
+      delete obj.options
+    },
+    onNewParamTypeChange () {
+      this.resetFormatAndOptions(this.newParam)
+    },
+    onEditBufferTypeChange () {
+      this.resetFormatAndOptions(this.editBuffer)
+    },
     addEntry () {
       const existingIndex = this.tableData.findIndex(row => row.name === this.newParam.name)
       if (existingIndex !== -1) {
@@ -142,18 +256,14 @@ export default {
         this.tableData.push({ ...this.newParam, editing: false })
       }
       this.updateData()
-      this.newParam = { name: '', type: '', required: false }
+      this.newParam = {}
     },
     removeEntry (name) {
       this.tableData = this.tableData.filter(item => item.name !== name)
       this.updateData()
     },
     editRow (record) {
-      this.editBuffer = {
-        name: record.name,
-        type: record.type,
-        required: record.required
-      }
+      this.editBuffer = { ...record }
       record.editing = true
     },
     cancelEdit (record) {
@@ -161,15 +271,20 @@ export default {
       this.editBuffer = {}
     },
     saveEdit (record) {
-      record.name = this.editBuffer.name
-      record.type = this.editBuffer.type
-      record.required = this.editBuffer.required
+      if (!this.editBuffer) return
+      Object.assign(record, this.editBuffer)
+      if (!this.editBuffer.format) {
+        delete record.format
+      }
+      if (!this.editBuffer.options) {
+        delete record.options
+      }
       record.editing = false
       this.updateData()
       this.editBuffer = {}
     },
     updateData () {
-      const data = this.tableData.map(({ name, type, required }) => ({ name, type, required }))
+      const data = this.tableData.map(({ name, type, format, options, required }) => ({ name, type, format, options, required }))
       this.$emit('update:value', data)
     }
   }
@@ -178,26 +293,26 @@ export default {
 
 <style scoped>
 .input-row {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
+  display: grid;
+  grid-template-columns: 1fr auto; /* First column flexible, second column auto-sized */
+  grid-template-rows: auto auto auto;
+  gap: 8px 16px; /* row-gap and column-gap */
   align-items: center;
 }
-
-.input-field {
-  flex: 1;
+.grid-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
-
-.required-checkbox {
+.input-field {
+  width: 100%;
+}
+.add-button {
   white-space: nowrap;
 }
 
-.add-button {
-  width: 20%;
-  min-width: 100px;
-}
-
 .table {
+  margin-top: 10px;
   width: 100%;
 }
 

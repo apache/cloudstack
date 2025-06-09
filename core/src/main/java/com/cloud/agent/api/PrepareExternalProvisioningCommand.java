@@ -18,13 +18,15 @@
 //
 package com.cloud.agent.api;
 
+import java.util.Map;
+
 import com.cloud.agent.api.to.VirtualMachineTO;
 
 public class PrepareExternalProvisioningCommand extends Command {
 
     VirtualMachineTO virtualMachineTO;
-
     Long clusterId;
+    Map<String, Object> externalDetails;
 
     public PrepareExternalProvisioningCommand(VirtualMachineTO vmUUID, Long clusterId) {
         this.virtualMachineTO = vmUUID;
@@ -37,6 +39,14 @@ public class PrepareExternalProvisioningCommand extends Command {
 
     public Long getClusterId() {
         return clusterId;
+    }
+
+    public Map<String, Object> getExternalDetails() {
+        return externalDetails;
+    }
+
+    public void setExternalDetails(Map<String, Object> externalDetails) {
+        this.externalDetails = externalDetails;
     }
 
     @Override

@@ -50,23 +50,23 @@ public interface ExternalProvisioner extends Manager {
 
     String getExtensionEntryPoint(String relativeEntryPoint);
 
-    void prepareScripts(String extensionName, String extensionRelativeEntryPoint);
+    void prepareExtensionEntryPoint(String extensionName, boolean userDefined, String extensionRelativeEntryPoint);
 
-    PrepareExternalProvisioningAnswer prepareExternalProvisioning(String extensionName, String extensionRelativeEntryPoint, PrepareExternalProvisioningCommand cmd);
+    PrepareExternalProvisioningAnswer prepareExternalProvisioning(String hostGuid, String extensionName, String extensionRelativeEntryPoint, PrepareExternalProvisioningCommand cmd);
 
-    StartAnswer startInstance(String extensionName, String extensionRelativeEntryPoint, StartCommand cmd);
+    StartAnswer startInstance(String hostGuid, String extensionName, String extensionRelativeEntryPoint, StartCommand cmd);
 
-    StopAnswer stopInstance(String extensionName, String extensionRelativeEntryPoint, StopCommand cmd);
+    StopAnswer stopInstance(String hostGuid, String extensionName, String extensionRelativeEntryPoint, StopCommand cmd);
 
-    RebootAnswer rebootInstance(String extensionName, String extensionRelativeEntryPoint, RebootCommand cmd);
+    RebootAnswer rebootInstance(String hostGuid, String extensionName, String extensionRelativeEntryPoint, RebootCommand cmd);
 
-    StopAnswer expungeInstance(String extensionName, String extensionRelativeEntryPoint, StopCommand cmd);
+    StopAnswer expungeInstance(String hostGuid, String extensionName, String extensionRelativeEntryPoint, StopCommand cmd);
 
-    PostExternalProvisioningAnswer postSetupInstance(String extensionName, String extensionRelativeEntryPoint, PostExternalProvisioningCommand cmd);
+    PostExternalProvisioningAnswer postSetupInstance(String hostGuid, String extensionName, String extensionRelativeEntryPoint, PostExternalProvisioningCommand cmd);
 
-    Map<String, HostVmStateReportEntry> getHostVmStateReport(String extensionName, String extensionRelativeEntryPoint, long hostId);
+    Map<String, HostVmStateReportEntry> getHostVmStateReport(long hostId, String extensionName, String extensionRelativeEntryPoint);
 
-    RunCustomActionAnswer runCustomAction(String extensionName, String extensionRelativeEntryPoint, RunCustomActionCommand cmd);
+    RunCustomActionAnswer runCustomAction(String hostGuid, String extensionName, String extensionRelativeEntryPoint, RunCustomActionCommand cmd);
 
-    Answer checkHealth(String extensionName, String extensionRelativeEntryPoint, CheckHealthCommand cmd);
+    Answer checkHealth(String hostGuid, String extensionName, String extensionRelativeEntryPoint, CheckHealthCommand cmd);
 }

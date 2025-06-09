@@ -616,9 +616,12 @@
           <template #label>
             <tooltip-label :title="$t('label.externaldetails')" :tooltip="apiParams.externaldetails.description"/>
           </template>
-          <div style="margin-bottom: 10px">{{ $t('message.add.external.details') }}</div>
-          <details-input
-            v-model:value="form.externaldetails" />
+          <a-switch v-model:checked="externalDetailsEnabled" @change="onExternalDetailsEnabledChange"/>
+          <a-card v-if="externalDetailsEnabled" style="margin-top: 10px">
+            <div style="margin-bottom: 10px">{{ $t('message.add.external.details') }}</div>
+            <details-input
+              v-model:value="form.externaldetails" />
+          </a-card>
         </a-form-item>
       </a-form>
       <br/>
@@ -741,7 +744,8 @@ export default {
       defaultLeaseDuration: 90,
       defaultLeaseExpiryAction: 'STOP',
       leaseduration: undefined,
-      leaseexpiryaction: undefined
+      leaseexpiryaction: undefined,
+      externalDetailsEnabled: false
     }
   },
   beforeCreate () {
@@ -994,6 +998,12 @@ export default {
       if (!this.arrayHasItems(this.vGpuTypes)) {
         this.vGpuVisible = false
       }
+    },
+    onExternalDetailsEnabledChange (val) {
+      if (val || !this.form.externaldetails) {
+        return
+      }
+      this.form.externaldetails = undefined
     },
     handleSubmit (e) {
       e.preventDefault()

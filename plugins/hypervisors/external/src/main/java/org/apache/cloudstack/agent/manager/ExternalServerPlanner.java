@@ -103,7 +103,7 @@ public class ExternalServerPlanner extends AdapterBase implements DeploymentPlan
             }
         }
 
-        List<ClusterVO> clusters = clusterDao.listClustersByDcId(vm.getDataCenterId());
+        List<ClusterVO> clusters = clusterDao.listByDcHyType(vm.getDataCenterId(), HypervisorType.External.name());
         List<Long> extensionClusterIds = extensionResourceMapDao.listResourceIdsByExtensionIdAndType(extensionId,
                 ExtensionResourceMap.ResourceType.Cluster);
         if (CollectionUtils.isEmpty(extensionClusterIds)) {
@@ -112,7 +112,7 @@ public class ExternalServerPlanner extends AdapterBase implements DeploymentPlan
             return null;
         }
         clusters = clusters.stream()
-                .filter(c -> !extensionClusterIds.contains(c.getId()))
+                .filter(c -> extensionClusterIds.contains(c.getId()))
                 .collect(Collectors.toList());
         logger.debug("Found {} clusters associated with {}", clusters.size(), extensionVO);
         HostVO target = null;
@@ -132,6 +132,7 @@ public class ExternalServerPlanner extends AdapterBase implements DeploymentPlan
                 if (CollectionUtils.isNotEmpty(hosts)) {
                     Collections.shuffle(hosts);
                     target = hosts.get(0);
+                    break;
                 }
             }
         }

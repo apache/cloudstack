@@ -231,9 +231,9 @@ export default {
 
 <style scoped lang="less">
 .form-layout {
-  width: 80vw;
-  @media (min-width: 600px) {
-    width: 550px;
+  width: 100vw;
+  @media (min-width: 1000px) {
+    width: 950px;
   }
 }
 </style>

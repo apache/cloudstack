@@ -28,6 +28,9 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ExtensionCustomActionResponse;
 import org.apache.cloudstack.api.response.ExtensionResponse;
 import org.apache.cloudstack.extension.CustomActionResultResponse;
+import org.apache.cloudstack.extension.Extension;
+import org.apache.cloudstack.extension.ExtensionCustomAction;
+import org.apache.cloudstack.extension.ExtensionResourceMap;
 import org.apache.cloudstack.framework.extensions.api.AddCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.CreateExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.DeleteCustomActionCmd;
@@ -40,9 +43,7 @@ import org.apache.cloudstack.framework.extensions.api.UnregisterExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.UpdateCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.UpdateExtensionCmd;
 
-import org.apache.cloudstack.extension.Extension;
-import org.apache.cloudstack.extension.ExtensionCustomAction;
-import org.apache.cloudstack.extension.ExtensionResourceMap;
+import com.cloud.host.Host;
 import com.cloud.org.Cluster;
 import com.cloud.utils.component.Manager;
 
@@ -77,4 +78,6 @@ public interface ExtensionsManager extends Manager {
     ExtensionCustomAction updateCustomAction(UpdateCustomActionCmd cmd);
 
     ExtensionCustomActionResponse createCustomActionResponse(ExtensionCustomAction customAction);
+
+    Map<String, Object> getExternalAccessDetails(Host host);
 }
