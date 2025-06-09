@@ -36,6 +36,8 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmDetailConstants;
 
+import java.util.Objects;
+import java.util.stream.Stream;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ACL;
@@ -861,9 +863,10 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
 
     @Override
     public void create() throws ResourceAllocationException {
-        if (!isVolumeOrSnapshotProvided() && templateId == null) {
-            throw new CloudRuntimeException("There isn't a ROOT volume, snapshot of ROOT volume or template provided to deploy a Virtual machine");
+        if (Stream.of(templateId, snapshotId, volumeId).filter(Objects::nonNull).count() != 1) {
+            throw new CloudRuntimeException(String.format("Only one of the parameters - template ID [%s], volume ID [%s] or snapshot ID [%s] - should be provided to deploy a Virtual machine", templateId, volumeId, snapshotId));
         }
+
         try {
             UserVm vm = _userVmService.createVirtualMachine(this);
 

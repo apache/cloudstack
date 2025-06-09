@@ -298,6 +298,8 @@ class TestDeployVMFromSnapshotOrVolume(cloudstackTestCase):
             snapshot_id=snapshotid,
             services=self.services,
             disk_offering=self.disk_offering.id,
+            account=self.account.name,
+            domainid=self.account.domainid,
             zoneid=self.zone.id,
         )
         virtual_machine = VirtualMachine.create(self.apiclient,
