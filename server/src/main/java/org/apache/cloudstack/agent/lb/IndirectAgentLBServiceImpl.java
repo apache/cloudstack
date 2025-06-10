@@ -360,7 +360,7 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
             return;
         }
 
-        logger.debug("Propagating management server list to the agents in cluster " + clusterId);
+        logger.debug("Propagating management server list update to the agents in cluster " + clusterId);
         ClusterVO cluster = clusterDao.findById(clusterId);
         if (cluster == null) {
             logger.warn("Unable to propagate management server list, couldn't find cluster " + clusterId);

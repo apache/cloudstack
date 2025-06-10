@@ -1456,7 +1456,8 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
     private List<HostVO> getDirectAgentHosts(long msId, boolean excludeHostsInMaintenance) {
         List<HostVO> directAgentHosts = new ArrayList<>();
-        List<HostVO> hosts = _hostDao.listHostsByMsResourceState(msId, null);
+        List<ResourceState> statesToExclude = excludeHostsInMaintenance ? ResourceState.s_maintenanceStates : List.of();
+        List<HostVO> hosts = _hostDao.listHostsByMsResourceState(msId, statesToExclude);
         for (HostVO host : hosts) {
             AgentAttache agent = findAttache(host.getId());
             if (agent instanceof DirectAgentAttache) {

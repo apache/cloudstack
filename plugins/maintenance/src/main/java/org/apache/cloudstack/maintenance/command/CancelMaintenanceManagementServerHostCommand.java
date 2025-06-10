@@ -19,18 +19,8 @@
 package org.apache.cloudstack.maintenance.command;
 
 public class CancelMaintenanceManagementServerHostCommand extends BaseShutdownManagementServerHostCommand {
-    boolean rebalance;
 
     public CancelMaintenanceManagementServerHostCommand(long msId) {
         super(msId);
-    }
-
-    public CancelMaintenanceManagementServerHostCommand(long msId, boolean rebalance) {
-        super(msId);
-        this.rebalance = rebalance;
-    }
-
-    public boolean getRebalance() {
-        return rebalance;
     }
 }

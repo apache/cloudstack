@@ -461,7 +461,7 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
         }
 
         final Command[] cmds = new Command[1];
-        cmds[0] = new CancelMaintenanceManagementServerHostCommand(msHost.getMsid(), cmd.getRebalance());
+        cmds[0] = new CancelMaintenanceManagementServerHostCommand(msHost.getMsid());
         executeCmd(msHost, cmds);
 
         msHostDao.updateState(msHost.getId(), State.Up);

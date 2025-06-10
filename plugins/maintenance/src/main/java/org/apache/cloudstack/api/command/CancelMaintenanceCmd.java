@@ -39,7 +39,7 @@ public class CancelMaintenanceCmd extends BaseMSMaintenanceActionCmd {
 
     public static final String APINAME = "cancelMaintenance";
 
-    @Parameter(name = ApiConstants.REBALANCE, type = CommandType.BOOLEAN, description = "Rebalance agents (applicable for indirect agents) after cancelling maintenance, default is true")
+    @Parameter(name = ApiConstants.REBALANCE, type = CommandType.BOOLEAN, description = "Rebalance agents (applicable for indirect agents, ensure the settings 'host' and 'indirect.agent.lb.algorithm' are properly configured) after cancelling maintenance, default is true")
     private Boolean rebalance;
 
     public boolean getRebalance() {
