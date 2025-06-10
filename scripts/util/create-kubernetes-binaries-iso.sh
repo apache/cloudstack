@@ -25,11 +25,14 @@ if [ $# -lt 6 ]; then
 fi
 
 ARCH="amd64"
+ARCH_SUFFIX="x86_64"
 if [ -n "${8}" ]; then
   if [ "${8}" = "x86_64" ]; then
     ARCH="amd64"
+    ARCH_SUFFIX="x86_64"
   elif [ "${8}" = "aarch64" ]; then
     ARCH="arm64"
+    ARCH_SUFFIX="aarch64"
   else
     echo "ERROR: ARCH must be 'x86_64' or 'aarch64'. If the optional parameter ARCH is not set then 'x86_64' is used."
     exit 1
@@ -43,8 +46,8 @@ start_dir="$PWD"
 iso_dir="/tmp/iso"
 working_dir="${iso_dir}/"
 mkdir -p "${working_dir}"
-build_name="${7}-${ARCH}.iso"
-[ -z "${build_name}" ] && build_name="setup-${RELEASE}-${ARCH}.iso"
+build_name="${7}-${ARCH_SUFFIX}.iso"
+[ -z "${build_name}" ] && build_name="setup-${RELEASE}-${ARCH_SUFFIX}.iso"
 
 CNI_VERSION="v${3}"
 echo "Downloading CNI ${CNI_VERSION}..."
