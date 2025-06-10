@@ -544,12 +544,12 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
             builder.redirectErrorStream(true);
 
             if (IS_DEBUG) {
-                logger.info("Executable: {}",executablePath);
-                logger.info("Action: {} with wait: {}", action, wait);
-                logger.info("Data file: {}", dataFile);
-                return new Pair<>(true, "Operation successful!");
+                logger.debug("Executable: {}",executablePath);
+                logger.debug("Action: {} with wait: {}", action, wait);
+                logger.debug("Data file: {}", dataFile);
+//                return new Pair<>(true, "Operation successful!");
             }
-            logger.debug("Executing command: {}", command);
+            logger.debug("Executing command: {}", action);
             Process process = builder.start();
             boolean finished = process.waitFor(wait, TimeUnit.SECONDS);
             if (!finished) {

@@ -80,13 +80,21 @@ status() {
 }
 
 action=$1
-parameters=$2
-wait_time=$3
+parameters_file="$2"
+wait_time="$3"
 
-if [[ -z $action || -z $parameters ]]; then
+if [[ -z "$action" || -z "$parameters_file" ]]; then
     echo '{"error":"Missing required arguments"}'
     exit 1
 fi
+
+if [[ ! -r "$parameters_file" ]]; then
+    echo '{"error":"File not found or unreadable"}'
+    exit 1
+fi
+
+# Read file content as parameters (assumes space-separated arguments)
+parameters=$(<"$parameters_file")
 
 case $action in
     prepare)
