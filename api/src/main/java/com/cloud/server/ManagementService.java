@@ -377,7 +377,7 @@ public interface ManagementService {
      * Registers a cni configuration.
      *
      * @param cmd    The api command class.
-     * @return A VO with the registered userdata.
+     * @return A VO with the registered user data.
      */
     UserData registerCniConfiguration(RegisterCniConfigurationCmd cmd);
 
@@ -398,7 +398,7 @@ public interface ManagementService {
     boolean deleteUserData(DeleteUserDataCmd cmd);
 
     /**
-     * Deletes a userdata.
+     * Deletes user data.
      *
      * @param cmd
      *            The api command class.

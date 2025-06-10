@@ -29,7 +29,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.ArrayList;
 import java.util.List;
 
-@APICommand(name = "listCniConfiguration", description = "List userdata for CNI plugins", responseObject = UserDataResponse.class, entityType = {UserData.class},
+@APICommand(name = "listCniConfiguration", description = "List user data for CNI plugins", responseObject = UserDataResponse.class, entityType = {UserData.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.21.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListCniConfigurationCmd extends ListUserDataCmd {

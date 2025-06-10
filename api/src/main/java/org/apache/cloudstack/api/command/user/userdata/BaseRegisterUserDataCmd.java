@@ -31,7 +31,7 @@ import java.util.List;
 
 public abstract class BaseRegisterUserDataCmd extends BaseCmd {
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Name of the userdata")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Name of the user data")
     private String name;
 
     //Owner information
@@ -41,13 +41,13 @@ public abstract class BaseRegisterUserDataCmd extends BaseCmd {
     @Parameter(name = ApiConstants.DOMAIN_ID,
             type = CommandType.UUID,
             entityType = DomainResponse.class,
-            description = "an optional domainId for the userdata. If the account parameter is used, domainId must also be used.")
+            description = "an optional domainId for the user data. If the account parameter is used, domainId must also be used.")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "an optional project for the userdata")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "an optional project for the user data")
     private Long projectId;
 
-    @Parameter(name = ApiConstants.PARAMS, type = CommandType.STRING, description = "comma separated list of variables declared in userdata content")
+    @Parameter(name = ApiConstants.PARAMS, type = CommandType.STRING, description = "comma separated list of variables declared in user data content")
     private String params;
 
     /////////////////////////////////////////////////////

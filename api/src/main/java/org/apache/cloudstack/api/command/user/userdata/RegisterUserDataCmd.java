@@ -46,7 +46,7 @@ public class RegisterUserDataCmd extends BaseRegisterUserDataCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.USER_DATA, type = CommandType.STRING, required = true, description = "Userdata content", length = 1048576)
+    @Parameter(name = ApiConstants.USER_DATA, type = CommandType.STRING, required = true, description = "User data content", length = 1048576)
     protected String userData;
 
 
