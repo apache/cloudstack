@@ -9480,16 +9480,31 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         long vmId = cmd.getEntityId();
         Map<Long, DiskOffering> diskOfferingMap = cmd.getDataDiskTemplateToDiskOfferingMap();
         Map<VirtualMachineProfile.Param, Object> additonalParams = new HashMap<>();
-        UserVm vm = startVirtualMachine(vmId, null, null, null, diskOfferingMap, additonalParams, null);
+        UserVm vm;
 
-        boolean status = false;
-        status =  stopVirtualMachine(CallContext.current().getCallingUserId(), vm.getId()) ;
-        if (!status) {
-            expungeVm(vm.getId());
-            throw new CloudRuntimeException("Unable to stop the instance before restore ");
+        try {
+            vm = startVirtualMachine(vmId, null, null, null, diskOfferingMap, additonalParams, null);
+
+            boolean status =  stopVirtualMachine(CallContext.current().getCallingUserId(), vm.getId()) ;
+            if (!status) {
+                UserVmVO vmVO = _vmDao.findById(vmId);
+                expunge(vmVO);
+                logger.debug("Successfully cleaned up VM {} after create instance from backup failed", vmId);
+                throw new CloudRuntimeException("Unable to stop the instance before restore");
+            }
+
+            backupManager.restoreBackupToVM(cmd.getBackupId(), vmId);
+
+        } catch (Exception e) {
+            UserVmVO vmVO = _vmDao.findById(vmId);
+            try {
+                expunge(vmVO);
+                logger.debug("Successfully cleaned up VM {} after create instance from backup failed", vmId);
+            } catch (Exception cleanupException) {
+                logger.debug("Failed to cleanup VM {} after create instance from backup failed", vmId, cleanupException);
+            }
+            throw e;
         }
-
-        backupManager.restoreBackupToVM(cmd.getBackupId(), vmId);
 
         Account owner = _accountService.getActiveAccountById(cmd.getEntityOwnerId());
         UserVmVO userVm = _vmDao.findById(vmId);

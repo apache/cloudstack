@@ -533,7 +533,7 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
             HashMap<String, String> dataDisk = (HashMap<String, String>)iter.next();
             String diskOfferingUuid = dataDisk.get(ApiConstants.DISK_OFFERING_ID);
             if (diskOfferingUuid == null) {
-                throw new InvalidParameterValueException("Disk offering id is required for data disk");
+                throw new InvalidParameterValueException("diskofferingid parameter is required for datadiskdetails");
             }
             DiskOffering diskOffering = _entityMgr.findByUuid(DiskOffering.class, diskOfferingUuid);
             if (diskOffering == null) {
@@ -546,6 +546,9 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
             Long size = null;
             Long minIops = null;
             Long maxIops = null;
+            if (dataDisk.get(ApiConstants.DEVICE_ID) == null) {
+                throw new InvalidParameterValueException("deviceid parameter is required for datadiskdetails");
+            }
             Long deviceId = Long.parseLong(dataDisk.get(ApiConstants.DEVICE_ID));
             if (diskOffering.isCustomized()) {
                 if (dataDisk.get(ApiConstants.SIZE) == null) {
