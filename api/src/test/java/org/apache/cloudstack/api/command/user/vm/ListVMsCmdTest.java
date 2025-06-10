@@ -220,5 +220,4 @@ public class ListVMsCmdTest {
         assertTrue(result.containsKey(vmUuid));
         assertNull(result.get(vmUuid));
     }
-
 }
