@@ -171,8 +171,12 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         try {
             answer = (BackupAnswer) agentManager.send(host.getId(), command);
         } catch (AgentUnavailableException e) {
+            backupVO.setStatus(Backup.Status.Error);
+            backupDao.update(backupVO.getId(), backupVO);
             throw new CloudRuntimeException("Unable to contact backend control plane to initiate backup");
         } catch (OperationTimedoutException e) {
+            backupVO.setStatus(Backup.Status.Error);
+            backupDao.update(backupVO.getId(), backupVO);
             throw new CloudRuntimeException("Operation to initiate backup timed out, please try again");
         }
 
@@ -255,7 +259,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         } catch (AgentUnavailableException e) {
             throw new CloudRuntimeException("Unable to contact backend control plane to initiate backup");
         } catch (OperationTimedoutException e) {
-            throw new CloudRuntimeException("Operation to initiate backup timed out, please try again");
+            throw new CloudRuntimeException("Operation to restore backup timed out, please try again");
         }
         return answer.getResult();
     }
@@ -322,7 +326,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         } catch (AgentUnavailableException e) {
             throw new CloudRuntimeException("Unable to contact backend control plane to initiate backup");
         } catch (OperationTimedoutException e) {
-            throw new CloudRuntimeException("Operation to initiate backup timed out, please try again");
+            throw new CloudRuntimeException("Operation to restore backed up volume timed out, please try again");
         }
 
         if (answer.getResult()) {
@@ -374,7 +378,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         } catch (AgentUnavailableException e) {
             throw new CloudRuntimeException("Unable to contact backend control plane to initiate backup");
         } catch (OperationTimedoutException e) {
-            throw new CloudRuntimeException("Operation to initiate backup timed out, please try again");
+            throw new CloudRuntimeException("Operation to delete backup timed out, please try again");
         }
 
         if (answer != null && answer.getResult()) {
