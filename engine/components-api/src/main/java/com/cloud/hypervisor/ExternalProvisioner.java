@@ -54,6 +54,8 @@ public interface ExternalProvisioner extends Manager {
 
     void prepareExtensionEntryPoint(String extensionName, boolean userDefined, String extensionRelativeEntryPoint);
 
+    void cleanupExtensionEntryPoint(String extensionName, String extensionRelativeEntryPoint);
+
     PrepareExternalProvisioningAnswer prepareExternalProvisioning(String hostGuid, String extensionName, String extensionRelativeEntryPoint, PrepareExternalProvisioningCommand cmd);
 
     StartAnswer startInstance(String hostGuid, String extensionName, String extensionRelativeEntryPoint, StartCommand cmd);

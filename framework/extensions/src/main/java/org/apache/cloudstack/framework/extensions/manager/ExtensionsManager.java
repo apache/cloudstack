@@ -42,19 +42,15 @@ import org.apache.cloudstack.framework.extensions.api.RunCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.UnregisterExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.UpdateCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.UpdateExtensionCmd;
-import org.apache.cloudstack.framework.extensions.command.GetExtensionEntryPointChecksumCommand;
+import org.apache.cloudstack.framework.extensions.command.ExtensionServerActionBaseCommand;
 
 import com.cloud.host.Host;
 import com.cloud.org.Cluster;
-import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 
 public interface ExtensionsManager extends Manager {
 
     Extension createExtension(CreateExtensionCmd cmd);
-
-    Pair<Boolean, String> prepareExtensionEntryPointOnCurrentServer(String name, boolean userDefined,
-                String relativeEntryPoint);
 
     void prepareExtensionEntryPointAcrossServers(Extension extension);
 
@@ -88,5 +84,5 @@ public interface ExtensionsManager extends Manager {
 
     Map<String, Object> getExternalAccessDetails(Host host);
 
-    String handleGetExtensionEntryPointChecksumCommand(GetExtensionEntryPointChecksumCommand cmd);
+    String handleExtensionServerCommands(ExtensionServerActionBaseCommand cmd);
 }

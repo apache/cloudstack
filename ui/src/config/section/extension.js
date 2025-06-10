@@ -90,7 +90,14 @@ export default {
           label: 'label.delete.extension',
           message: 'message.action.delete.extension',
           dataView: true,
-          popup: true
+          popup: true,
+          args: ['id', 'cleanup'],
+          mapping: {
+            id: {
+              value: (record, params) => { return record.id }
+            },
+            cleanup: false
+          }
         }
       ]
     },

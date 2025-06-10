@@ -64,6 +64,8 @@ import org.apache.cloudstack.framework.extensions.api.RunCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.UnregisterExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.UpdateCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.UpdateExtensionCmd;
+import org.apache.cloudstack.framework.extensions.command.CleanupExtensionEntryPointCommand;
+import org.apache.cloudstack.framework.extensions.command.ExtensionServerActionBaseCommand;
 import org.apache.cloudstack.framework.extensions.command.GetExtensionEntryPointChecksumCommand;
 import org.apache.cloudstack.framework.extensions.command.PrepareExtensionEntryPointCommand;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionCustomActionDao;
@@ -183,17 +185,13 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
 
     private ScheduledExecutorService entryPointSyncCheckExecutor;
 
-    protected String getExtensionSafeName(String name) {
-        return  name.replaceAll("[^a-zA-Z0-9._-]", "_").toLowerCase();
-    }
-
     protected String getDefaultExtensionRelativeEntryPoint(String name) {
-        String safeName = getExtensionSafeName(name);
+        String safeName = Extension.getDirectoryName(name);
         return String.format("%s%s%s.sh", safeName, File.separator, safeName);
     }
 
     protected String getValidatedExtensionRelativeEntryPoint(String name, String relativeEntryPointPath) {
-        String safeName = getExtensionSafeName(name);
+        String safeName = Extension.getDirectoryName(name);
         String normalizedPath = relativeEntryPointPath.replace("\\", "/");
         if (normalizedPath.startsWith("/")) {
             normalizedPath = normalizedPath.substring(1);
@@ -209,6 +207,168 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             throw new InvalidParameterException("Entry point path cannot be nested more than two sub-directories deep");
         }
         return normalizedPath;
+    }
+
+    protected Pair<Boolean, String> getResultFromAnswersString(String answersStr, Extension extension,
+                   ManagementServerHostVO msHost, String op) {
+        Answer[] answers = null;
+        try {
+            answers = GsonHelper.getGson().fromJson(answersStr, Answer[].class);
+        } catch (Exception e) {
+            logger.error("Failed to parse answer JSON during {} for {} on {}: {}",
+                    op, extension, msHost, e.getMessage(), e);
+            return new Pair<>(false, e.getMessage());
+        }
+        Answer answer = answers != null && answers.length > 0 ? answers[0] : null;
+        boolean result = false;
+        String details = "Unknown error";
+        if (answer != null) {
+            result = answer.getResult();
+            details = answer.getDetails();
+        }
+        if (!result) {
+            logger.error("Failed to {} for {} on {} due to {}", op, extension, msHost, details);
+            return new Pair<>(false, details);
+        }
+        return new Pair<>(true, details);
+    }
+
+    protected boolean prepareExtensionEntryPointOnMSPeer(Extension extension, ManagementServerHostVO msHost) {
+        final String msPeer = Long.toString(msHost.getMsid());
+        logger.debug("Sending prepare extension entry-point for {} command to MS: {}", extension, msPeer);
+        final Command[] commands = new Command[1];
+        commands[0] = new PrepareExtensionEntryPointCommand(ManagementServerNode.getManagementServerId(), extension);
+        String answersStr = clusterManager.execute(msPeer, 0L, GsonHelper.getGson().toJson(commands), true);
+        return getResultFromAnswersString(answersStr, extension, msHost, "prepare entry-point").first();
+    }
+
+    protected Pair<Boolean, String> prepareExtensionEntryPointOnCurrentServer(String name, boolean userDefined,
+                                                                              String relativeEntryPoint) {
+        try {
+            externalProvisioner.prepareExtensionEntryPoint(name, userDefined, relativeEntryPoint);
+        } catch (CloudRuntimeException e) {
+            logger.error("Failed to prepare entry-point for Extension [name: {}, userDefined: {}, relativeEntryPoint: {}] on this server",
+                    name, userDefined, relativeEntryPoint, e);
+            return new Pair<>(false, e.getMessage());
+        }
+        return new Pair<>(true, null);
+    }
+
+    protected boolean cleanupExtensionEntryPointOnMSPeer(Extension extension, ManagementServerHostVO msHost) {
+        final String msPeer = Long.toString(msHost.getMsid());
+        logger.debug("Sending cleanup extension entry-point for {} command to MS: {}", extension, msPeer);
+        final Command[] commands = new Command[1];
+        commands[0] = new CleanupExtensionEntryPointCommand(ManagementServerNode.getManagementServerId(), extension);
+        String answersStr = clusterManager.execute(msPeer, 0L, GsonHelper.getGson().toJson(commands), true);
+        return getResultFromAnswersString(answersStr, extension, msHost, "cleanup entry-point").first();
+    }
+
+    protected Pair<Boolean, String> cleanupExtensionEntryPointOnCurrentServer(String name, String relativeEntryPoint) {
+        try {
+            externalProvisioner.cleanupExtensionEntryPoint(name, relativeEntryPoint);
+        } catch (CloudRuntimeException e) {
+            logger.error("Failed to cleanup entry-point files for Extension [name: {}, relativeEntryPoint: {}] on this server",
+                    name, relativeEntryPoint, e);
+            return new Pair<>(false, e.getMessage());
+        }
+        return new Pair<>(true, null);
+    }
+
+    protected void cleanupExtensionEntryPointAcrossServers(Extension extension) {
+        boolean cleanup = true;
+        List<ManagementServerHostVO> msHosts = managementServerHostDao.listBy(ManagementServerHost.State.Up);
+        for (ManagementServerHostVO msHost : msHosts) {
+            if (msHost.getMsid() == ManagementServerNode.getManagementServerId()) {
+                cleanup = cleanup && cleanupExtensionEntryPointOnCurrentServer(extension.getName(),
+                        extension.getRelativeEntryPoint()).first();
+                continue;
+            }
+            cleanup = cleanup && cleanupExtensionEntryPointOnMSPeer(extension, msHost);
+        }
+        if (!cleanup) {
+            throw new CloudRuntimeException("Extension is deleted but its entry-point files are not cleaned up across servers");
+        }
+    }
+
+    protected Pair<Boolean, String> getChecksumForExtensionEntryPointOnMSPeer(Extension extension, ManagementServerHostVO msHost) {
+        final String msPeer = Long.toString(msHost.getMsid());
+        logger.debug("Retrieving checksum for {} from MS: {}", extension, msPeer);
+        final Command[] cmds = new Command[1];
+        cmds[0] = new GetExtensionEntryPointChecksumCommand(ManagementServerNode.getManagementServerId(),
+                extension);
+        String answersStr = clusterManager.execute(msPeer, 0L, GsonHelper.getGson().toJson(cmds), true);
+        return getResultFromAnswersString(answersStr, extension, msHost, "prepare entry-point");
+    }
+
+    protected List<ExtensionCustomAction.Parameter> getParametersListFromMap(String actionName, Map parametersMap) {
+        if (MapUtils.isEmpty(parametersMap)) {
+            return Collections.emptyList();
+        }
+        List<ExtensionCustomAction.Parameter> parameters = new ArrayList<>();
+        for (Map<String, String> entry : (Collection<Map<String, String>>)parametersMap.values()) {
+            ExtensionCustomAction.Parameter parameter = ExtensionCustomAction.Parameter.fromMap(entry);
+            logger.debug("Adding {} for custom action [{}]", parameter, actionName);
+            parameters.add(parameter);
+        }
+        return parameters;
+    }
+
+    protected void unregisterExtensionWithCluster(String clusterUuid, Long extensionId) {
+        ClusterVO cluster = clusterDao.findByUuid(clusterUuid);
+        if (cluster == null) {
+            throw new InvalidParameterValueException("Unable to find cluster with given ID");
+        }
+        unregisterExtensionWithCluster(cluster, extensionId);
+    }
+
+    protected Extension getExtensionFromResource(ExtensionCustomAction.ResourceType resourceType, String resourceUuid) {
+        Object object = entityManager.findByUuid(resourceType.getAssociatedClass(), resourceUuid);
+        if (object == null) {
+            return null;
+        }
+        Long clusterId = null;
+        if (resourceType == ExtensionCustomAction.ResourceType.VirtualMachine) {
+            VirtualMachine vm = (VirtualMachine) object;
+            Pair<Long, Long> clusterHostId = virtualMachineManager.findClusterAndHostIdForVm(vm, false);
+            clusterId = clusterHostId.first();
+        }
+        if (clusterId == null) {
+            return null;
+        }
+        ExtensionResourceMapVO mapVO =
+                extensionResourceMapDao.findByResourceIdAndType(clusterId, ExtensionResourceMap.ResourceType.Cluster);
+        if (mapVO == null) {
+            return null;
+        }
+        return extensionDao.findById(mapVO.getExtensionId());
+    }
+
+    protected String getActionMessage(boolean success, ExtensionCustomAction action, Extension extension) {
+        String  msg = success ? action.getSuccessMessage() : action.getErrorMessage();
+        if (StringUtils.isNotBlank(msg)) {
+            Map<String, String> values = new HashMap<>();
+            values.put("actionName", action.getName());
+            values.put("extensionName", extension.getName());
+            String result = msg;
+            for (Map.Entry<String, String> entry : values.entrySet()) {
+                result = result.replace("{{" + entry.getKey() + "}}", entry.getValue());
+            }
+            return result;
+        }
+        return success ? String.format("Successfully completed %s", action.getName()) :
+                String.format("Failed to complete %s", action.getName());
+    }
+
+    protected Map<String, String> getFilteredExternalDetails(Map<String, String> details) {
+        if (MapUtils.isEmpty(details)) {
+            return new HashMap<>();
+        }
+        return details.entrySet().stream()
+                .filter(entry -> entry.getKey().startsWith(VmDetailConstants.EXTERNAL_DETAIL_PREFIX))
+                .collect(Collectors.toMap(
+                        entry -> entry.getKey().substring(VmDetailConstants.EXTERNAL_DETAIL_PREFIX.length()),
+                        Map.Entry::getValue
+                ));
     }
 
     @Override
@@ -250,44 +410,6 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         });
         prepareExtensionEntryPointAcrossServers(extensionVO);
         return extensionVO;
-    }
-
-    protected boolean prepareExtensionEntryPointOnMSPeer(Extension extension, ManagementServerHostVO msHost) {
-        final String msPeer = Long.toString(msHost.getMsid());
-        logger.debug("Sending prepare extension entry-point for {} command to MS: {}", extension, msPeer);
-        final Command[] commands = new Command[1];
-        commands[0] = new PrepareExtensionEntryPointCommand(ManagementServerNode.getManagementServerId(), extension);
-        String answersStr = clusterManager.execute(msPeer, 0L, GsonHelper.getGson().toJson(commands), true);
-        Answer[] answers = null;
-        try {
-            answers = GsonHelper.getGson().fromJson(answersStr, Answer[].class);
-        } catch (Exception e) {
-            logger.error("Failed to parse answer JSON from {} on {}: {}", extension, msHost, e.getMessage(), e);
-        }
-        Answer answer = answers != null && answers.length > 0 ? answers[0] : null;
-        boolean result = false;
-        String error = "Unknown error";
-        if (answer != null) {
-            result = answer.getResult();
-            error = answer.getDetails();
-        }
-        if (!result) {
-            logger.error("Failed to prepare entry-point for {} on {} due to {}", extension, msHost, error);
-            return false;
-        }
-        return true;
-    }
-
-    public Pair<Boolean, String> prepareExtensionEntryPointOnCurrentServer(String name, boolean userDefined,
-                   String relativeEntryPoint) {
-        try {
-            externalProvisioner.prepareExtensionEntryPoint(name, userDefined, relativeEntryPoint);
-        } catch (CloudRuntimeException e) {
-            logger.error("Failed to prepare entry-point for Extension [name: {}, userDefined: {}, relativeEntryPoint: {}] on this server",
-                    name, userDefined, relativeEntryPoint, e);
-            return new Pair<>(false, e.getMessage());
-        }
-        return new Pair<>(true, null);
     }
 
     @Override
@@ -381,20 +503,28 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     @ActionEvent(eventType = EventTypes.EVENT_EXTENSION_DELETE, eventDescription = "deleting extension")
     public boolean deleteExtension(DeleteExtensionCmd cmd) {
         Long extensionId = cmd.getId();
+        final boolean cleanup = cmd.isCleanup();
         ExtensionVO extension = extensionDao.findById(extensionId);
         if (extension == null) {
             throw new InvalidParameterValueException("Unable to find the extension with the specified id");
+        }
+        if (!extension.isUserDefined()) {
+            throw new InvalidParameterValueException("System extension can not be deleted");
         }
         List<ExtensionResourceMapVO> registeredResources = extensionResourceMapDao.listByExtensionId(extensionId);
         if (CollectionUtils.isNotEmpty(registeredResources)) {
             throw new CloudRuntimeException("There are resources registered with this extension, unregister the extension from them");
         }
 
-        return Transaction.execute((TransactionCallbackWithException<Boolean, CloudRuntimeException>) status -> {
+        boolean result = Transaction.execute((TransactionCallbackWithException<Boolean, CloudRuntimeException>) status -> {
             extensionDetailsDao.removeDetails(extensionId);
             extensionDao.remove(extensionId);
             return true;
         });
+        if (result && cleanup) {
+            cleanupExtensionEntryPointAcrossServers(extension);
+        }
+        return true;
     }
 
     @Override
@@ -461,14 +591,6 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         return extensionDao.findById(extensionId);
     }
 
-    protected void unregisterExtensionWithCluster(String clusterUuid, Long extensionId) {
-        ClusterVO cluster = clusterDao.findByUuid(clusterUuid);
-        if (cluster == null) {
-            throw new InvalidParameterValueException("Unable to find cluster with given ID");
-        }
-        unregisterExtensionWithCluster(cluster, extensionId);
-    }
-
     @Override
     public void unregisterExtensionWithCluster(Cluster cluster, Long extensionId) {
         ExtensionResourceMapVO existing = extensionResourceMapDao.findByResourceIdAndType(cluster.getId(),
@@ -523,19 +645,6 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         }
         response.setObjectName(Extension.class.getSimpleName().toLowerCase());
         return response;
-    }
-
-    protected List<ExtensionCustomAction.Parameter> getParametersListFromMap(String actionName, Map parametersMap) {
-        if (MapUtils.isEmpty(parametersMap)) {
-            return Collections.emptyList();
-        }
-        List<ExtensionCustomAction.Parameter> parameters = new ArrayList<>();
-        for (Map<String, String> entry : (Collection<Map<String, String>>)parametersMap.values()) {
-            ExtensionCustomAction.Parameter parameter = ExtensionCustomAction.Parameter.fromMap(entry);
-            logger.debug("Adding {} for custom action [{}]", parameter, actionName);
-            parameters.add(parameter);
-        }
-        return parameters;
     }
 
     @Override
@@ -625,28 +734,6 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             extensionCustomActionDao.remove(customActionId);
             return true;
         });
-    }
-
-    protected Extension getExtensionFromResource(ExtensionCustomAction.ResourceType resourceType, String resourceUuid) {
-        Object object = entityManager.findByUuid(resourceType.getAssociatedClass(), resourceUuid);
-        if (object == null) {
-            return null;
-        }
-        Long clusterId = null;
-        if (resourceType == ExtensionCustomAction.ResourceType.VirtualMachine) {
-            VirtualMachine vm = (VirtualMachine) object;
-            Pair<Long, Long> clusterHostId = virtualMachineManager.findClusterAndHostIdForVm(vm, false);
-            clusterId = clusterHostId.first();
-        }
-        if (clusterId == null) {
-            return null;
-        }
-        ExtensionResourceMapVO mapVO =
-                extensionResourceMapDao.findByResourceIdAndType(clusterId, ExtensionResourceMap.ResourceType.Cluster);
-        if (mapVO == null) {
-            return null;
-        }
-        return extensionDao.findById(mapVO.getExtensionId());
     }
 
     @Override
@@ -829,22 +916,6 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         });
     }
 
-    protected String getActionMessage(boolean success, ExtensionCustomAction action, Extension extension) {
-        String  msg = success ? action.getSuccessMessage() : action.getErrorMessage();
-        if (StringUtils.isNotBlank(msg)) {
-            Map<String, String> values = new HashMap<>();
-            values.put("actionName", action.getName());
-            values.put("extensionName", extension.getName());
-            String result = msg;
-            for (Map.Entry<String, String> entry : values.entrySet()) {
-                result = result.replace("{{" + entry.getKey() + "}}", entry.getValue());
-            }
-            return result;
-        }
-        return success ? String.format("Successfully completed %s", action.getName()) :
-                String.format("Failed to complete %s", action.getName());
-    }
-
     @Override
     public CustomActionResultResponse runCustomAction(RunCustomActionCmd cmd) {
         final Long id =  cmd.getCustomActionId();
@@ -1010,18 +1081,6 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         return response;
     }
 
-    protected Map<String, String> getFilteredExternalDetails(Map<String, String> details) {
-        if (MapUtils.isEmpty(details)) {
-            return new HashMap<>();
-        }
-        return details.entrySet().stream()
-                .filter(entry -> entry.getKey().startsWith(VmDetailConstants.EXTERNAL_DETAIL_PREFIX))
-                .collect(Collectors.toMap(
-                        entry -> entry.getKey().substring(VmDetailConstants.EXTERNAL_DETAIL_PREFIX.length()),
-                        Map.Entry::getValue
-                ));
-    }
-
     @Override
     public Map<String, Object> getExternalAccessDetails(Host host) {
         Map<String, Object> externalDetails = new HashMap<>();
@@ -1059,12 +1118,32 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     }
 
     @Override
-    public String handleGetExtensionEntryPointChecksumCommand(GetExtensionEntryPointChecksumCommand cmd) {
-        final String extensionName = cmd.getExtensionName();
-        final String extensionRelativeEntryPointPath = cmd.getExtensionRelativeEntryPointPath();
-        logger.debug("Received GetExtensionEntryPointChecksumCommand from MS: {} for extension [id: {}, name: {}, relativeEntryPoint: {}]",
-                cmd.getMsId(), cmd.getExtensionId(), extensionName, extensionRelativeEntryPointPath);
-        return externalProvisioner.getChecksumForExtensionEntryPoint(extensionName, extensionRelativeEntryPointPath);
+    public String handleExtensionServerCommands(ExtensionServerActionBaseCommand command) {
+        final String extensionName = command.getExtensionName();
+        final String extensionRelativeEntryPointPath = command.getExtensionRelativeEntryPointPath();
+        logger.debug("Received {} from MS: {} for extension [id: {}, name: {}, relativeEntryPoint: {}]",
+                command.getClass().getSimpleName(), command.getMsId(), command.getExtensionId(),
+                extensionName, extensionRelativeEntryPointPath);
+        Answer answer = new Answer(command, false, "Unsupported command");
+        if (command instanceof GetExtensionEntryPointChecksumCommand) {
+            final GetExtensionEntryPointChecksumCommand cmd = (GetExtensionEntryPointChecksumCommand)command;
+            String checksum = externalProvisioner.getChecksumForExtensionEntryPoint(extensionName,
+                    extensionRelativeEntryPointPath);
+            answer = new Answer(cmd, StringUtils.isNotBlank(checksum), checksum);
+        } else if (command instanceof PrepareExtensionEntryPointCommand) {
+            final PrepareExtensionEntryPointCommand cmd = (PrepareExtensionEntryPointCommand)command;
+            Pair<Boolean, String> result = prepareExtensionEntryPointOnCurrentServer(
+                    extensionName, cmd.isExtensionUserDefined(), extensionRelativeEntryPointPath);
+            answer = new Answer(cmd, result.first(), result.second());
+        } else if (command instanceof CleanupExtensionEntryPointCommand) {
+            final CleanupExtensionEntryPointCommand cmd = (CleanupExtensionEntryPointCommand)command;
+            Pair<Boolean, String> result = cleanupExtensionEntryPointOnCurrentServer(extensionName,
+                    extensionRelativeEntryPointPath);
+            answer = new Answer(cmd, result.first(), result.second());
+        }
+        final Answer[] answers = new Answer[1];
+        answers[0] = answer;
+        return GsonHelper.getGson().toJson(answers);
     }
 
     @Override
@@ -1126,32 +1205,23 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             extensionDao.update(extension.getId(), extensionVO);
         }
 
-        protected String getChecksumFromMSPeer(Extension extension, ManagementServerHostVO msHost) {
-            final String msPeer = Long.toString(msHost.getMsid());
-            logger.debug("Retrieving checksum for {} from MS: {}", extension, msPeer);
-            final Command[] cmds = new Command[1];
-            cmds[0] = new GetExtensionEntryPointChecksumCommand(ManagementServerNode.getManagementServerId(),
-                    extension);
-            return clusterManager.execute(msPeer, 0L, GsonHelper.getGson().toJson(cmds), true);
-        }
-
         protected void checkSyncForOrchestrator(Extension extension, List<ManagementServerHostVO> msHosts) {
-            if (CollectionUtils.isEmpty(msHosts)) {
-                updateExtensionSync(extension, true);
-                return;
-            }
             String checksum = externalProvisioner.getChecksumForExtensionEntryPoint(extension.getName(),
                     extension.getRelativeEntryPoint());
             if (StringUtils.isBlank(checksum)) {
                 updateExtensionSync(extension, false);
                 return;
             }
+            if (CollectionUtils.isEmpty(msHosts)) {
+                updateExtensionSync(extension, true);
+                return;
+            }
             for (ManagementServerHostVO msHost : msHosts) {
-                final String msPeerChecksum = getChecksumFromMSPeer(extension, msHost);
-                if (!checksum.equals(msPeerChecksum)) {
-                    logger.warn("Entry-point checksum for {} is different [msid: {}, checksum: {}] and [msid: {}, checksum: {}]",
-                            extension, ManagementServerNode.getManagementServerId(), checksum,
-                            msHost.getMsid(), msPeerChecksum);
+                final Pair<Boolean, String> msPeerChecksumResult = getChecksumForExtensionEntryPointOnMSPeer(extension, msHost);
+                if (!msPeerChecksumResult.first() || !checksum.equals(msPeerChecksumResult.second())) {
+                    logger.error("Entry-point checksum for {} is different [msid: {}, checksum: {}] and [msid: {}, checksum: {}]",
+                            extension, ManagementServerNode.getManagementServerId(), checksum, msHost.getMsid(),
+                            (msPeerChecksumResult.first() ? msPeerChecksumResult.second() : "unknown"));
                     updateExtensionSync(extension, false);
                     return;
                 }

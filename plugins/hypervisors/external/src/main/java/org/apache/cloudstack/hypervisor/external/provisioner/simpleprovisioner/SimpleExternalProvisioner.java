@@ -37,6 +37,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.extension.Extension;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.utils.security.DigestHelper;
@@ -67,6 +68,7 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.serializer.GsonHelper;
+import com.cloud.utils.FileUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
@@ -457,6 +459,35 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
         }
         logger.debug("Successfully prepared entry point [{}] for extension: {}", destinationPath,
                 extensionName);
+    }
+
+    @Override
+    public void cleanupExtensionEntryPoint(String extensionName, String extensionRelativeEntryPoint) {
+        String normalizedPath = extensionRelativeEntryPoint;
+        if (normalizedPath.startsWith("/")) {
+            normalizedPath = normalizedPath.substring(1);
+        }
+        try {
+            Path rootPath = Paths.get(extensionsDirectory).toAbsolutePath().normalize();
+            String extensionDirName = Extension.getDirectoryName(extensionName);
+            Path filePath = rootPath
+                    .resolve(normalizedPath.startsWith(extensionDirName) ? extensionDirName : normalizedPath)
+                    .normalize();
+            if (!Files.isDirectory(filePath) && !Files.isRegularFile(filePath)) {
+                throw new CloudRuntimeException(
+                        String.format("Failed to cleanup extension entry-point: %s for extension: %s as it either does not exist or is not a regular file/directory",
+                                extensionName, extensionRelativeEntryPoint));
+            }
+            if (!FileUtil.deleteRecursively(filePath)) {
+                throw new CloudRuntimeException(
+                        String.format("Failed to delete extension entry-point: %s for extension: %s",
+                                extensionName, filePath));
+            }
+        } catch (IOException e) {
+            throw new CloudRuntimeException(
+                    String.format("Failed to cleanup extension entry-point: %s for extension: %s due to: %s",
+                            extensionName, normalizedPath, e.getMessage()), e);
+        }
     }
 
     public Pair<Boolean, String> runCustomActionOnExternalSystem(String filename, String actionName, Map<String, Object> accessDetails, int wait) {

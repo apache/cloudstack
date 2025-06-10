@@ -98,10 +98,10 @@ export default {
             state = this.$t('state.up')
             break
           case 'Yes':
-            state = this.$t('state.yes')
+            state = this.$t('label.yes')
             break
           case 'no':
-            state = this.$t('state.no')
+            state = this.$t('label.no')
             break
         }
         return state.charAt(0).toUpperCase() + state.slice(1)

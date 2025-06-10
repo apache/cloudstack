@@ -52,8 +52,12 @@ public class DeleteExtensionCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID,
-            entityType = ExtensionResponse.class, description = "uuid of the extension")
+            entityType = ExtensionResponse.class, description = "ID of the extension")
     private Long id;
+
+    @Parameter(name = ApiConstants.CLEANUP, type = CommandType.BOOLEAN,
+            entityType = ExtensionResponse.class, description = "Whether cleanup entry-point files for the extension")
+    private Boolean cleanup;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -61,6 +65,10 @@ public class DeleteExtensionCmd extends BaseCmd {
 
     public Long getId() {
         return id;
+    }
+
+    public boolean isCleanup() {
+        return Boolean.TRUE.equals(cleanup);
     }
 
     /////////////////////////////////////////////////////

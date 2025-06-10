@@ -33,4 +33,8 @@ public interface Extension extends InternalIdentity, Identity {
     boolean isEntryPointSync();
     boolean isUserDefined();
     Date getCreated();
+
+    static String getDirectoryName(String name) {
+        return name.replaceAll("[^a-zA-Z0-9._-]", "_").toLowerCase();
+    }
 }
