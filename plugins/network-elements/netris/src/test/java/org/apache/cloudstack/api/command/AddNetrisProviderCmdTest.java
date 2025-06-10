@@ -42,6 +42,9 @@ public class AddNetrisProviderCmdTest {
     @Mock
     private CallContext callContext;
 
+    @Mock
+    Object _responseObject;
+
     private MockedStatic<CallContext> callContextMockedStatic;
 
     @InjectMocks
@@ -51,8 +54,7 @@ public class AddNetrisProviderCmdTest {
 
     private static final long ZONE_ID = 1L;
     private static final String NAME = "test-provider";
-    private static final String HOSTNAME = "test-host";
-    private static final String PORT = "8080";
+    private static final String URL = "http://domain.provider.dev";
     private static final String USERNAME = "test-user";
     private static final String PASSWORD = "test-password";
     private static final String SITE_NAME = "test-site";
@@ -68,8 +70,7 @@ public class AddNetrisProviderCmdTest {
         // Set private fields using reflection
         setPrivateField("zoneId", ZONE_ID);
         setPrivateField("name", NAME);
-        setPrivateField("hostname", HOSTNAME);
-        setPrivateField("port", PORT);
+        setPrivateField("url", URL);
         setPrivateField("username", USERNAME);
         setPrivateField("password", PASSWORD);
         setPrivateField("siteName", SITE_NAME);
