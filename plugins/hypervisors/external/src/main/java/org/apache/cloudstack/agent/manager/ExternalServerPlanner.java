@@ -24,12 +24,12 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.extension.ExtensionResourceMap;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionDao;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionResourceMapDao;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionVO;
 import org.apache.commons.collections.CollectionUtils;
 
-import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
 import com.cloud.dc.dao.ClusterDao;
@@ -39,7 +39,6 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.exception.InsufficientServerCapacityException;
-import org.apache.cloudstack.extension.ExtensionResourceMap;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -103,7 +102,8 @@ public class ExternalServerPlanner extends AdapterBase implements DeploymentPlan
             }
         }
 
-        List<ClusterVO> clusters = clusterDao.listByDcHyType(vm.getDataCenterId(), HypervisorType.External.name());
+        List<Long> clusterIds = clusterDao.listEnabledClusterIdsByZoneHypervisorArch(vm.getDataCenterId(),
+                HypervisorType.External, vmProfile.getTemplate().getArch());
         List<Long> extensionClusterIds = extensionResourceMapDao.listResourceIdsByExtensionIdAndType(extensionId,
                 ExtensionResourceMap.ResourceType.Cluster);
         if (CollectionUtils.isEmpty(extensionClusterIds)) {
@@ -111,14 +111,15 @@ public class ExternalServerPlanner extends AdapterBase implements DeploymentPlan
                     vmProfile.getInstanceName());
             return null;
         }
-        clusters = clusters.stream()
-                .filter(c -> extensionClusterIds.contains(c.getId()))
+        clusterIds = clusterIds.stream()
+                .filter(extensionClusterIds::contains)
                 .collect(Collectors.toList());
-        logger.debug("Found {} clusters associated with {}", clusters.size(), extensionVO);
+        logger.debug("Found {} clusters associated with {}", clusterIds.size(), extensionVO);
         HostVO target = null;
         List<HostVO> hosts;
-        for (ClusterVO cluster : clusters) {
-            hosts = resourceMgr.listAllUpAndEnabledHosts(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId());
+        for (Long clusterId : clusterIds) {
+            hosts = resourceMgr.listAllUpAndEnabledHosts(Host.Type.Routing, clusterId, null,
+                    vm.getDataCenterId());
             if (hostTag != null) {
                 for (HostVO host : hosts) {
                     hostDao.loadHostTags(host);
