@@ -154,7 +154,7 @@ export default {
   created () {
     this.initForm()
     if (this.extension) {
-      this.form.extensionid = this.extensionid
+      this.form.extensionid = this.extension.id
     }
     this.fetchRoles()
   },
@@ -184,7 +184,7 @@ export default {
         const values = toRaw(this.form)
         this.loading = true
         const params = {
-          extensionid: this.form.extensionid,
+          extensionid: values.extensionid || this.extension.id,
           name: values.name
         }
         if (values.description) {
