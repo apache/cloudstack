@@ -432,7 +432,7 @@ export default {
           dataView: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/extension/RunCustomAction'))),
           popup: true,
-          show: (record) => { return ['External', 'Simulator'].includes(record.hypervisor) }
+          show: (record) => { return ['External'].includes(record.hypervisor) }
         },
         {
           api: 'unmanageVirtualMachine',

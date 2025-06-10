@@ -83,6 +83,12 @@
         <details-input
           v-model:value="form.details" />
       </a-form-item>
+      <a-form-item name="enabled" ref="enabled">
+        <template #label>
+          <tooltip-label :title="$t('label.enabled')" :tooltip="apiParams.enabled.description"/>
+        </template>
+        <a-switch v-model:checked="form.enabled" />
+      </a-form-item>
       <div :span="24" class="action-button">
         <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
         <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -146,7 +152,8 @@ export default {
         description: this.resource.description,
         roles: this.resource.roles,
         parameters: this.fixParamatersOptions(this.resource.parameters),
-        detail: this.resource.details
+        detail: this.resource.details,
+        enabled: this.resource.enabled
       })
       this.rules = reactive({})
     },
@@ -167,7 +174,8 @@ export default {
         const values = toRaw(this.form)
         this.loading = true
         const params = {
-          id: this.resource.id
+          id: this.resource.id,
+          enabled: values.enabled
         }
         if (values.description) {
           params.description = values.description

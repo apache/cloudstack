@@ -163,7 +163,8 @@ export default {
       this.customActions = []
       const params = {
         resourcetype: this.resourceType,
-        resourceid: this.resource.id
+        resourceid: this.resource.id,
+        enabled: true
       }
       api('listCustomActions', params).then(json => {
         this.customActions = json?.listcustomactionsresponse?.extensioncustomaction || []

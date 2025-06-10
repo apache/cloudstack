@@ -39,7 +39,7 @@
           </router-link>
         </template>
         <template v-if="['enabled'].includes(column.key)">
-          {{ !!text ? $type('label.yes') : $t('label.no') }}
+          <status :text="text ? 'Enabled' : 'Disabled'" displayText />
         </template>
         <template v-if="['created'].includes(column.key)">
           {{ text && $toLocaleDate(text) }}
@@ -109,6 +109,7 @@ import ObjectListTable from '@/components/view/ObjectListTable.vue'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import AddCustomAction from '@/views/extension/AddCustomAction.vue'
 import UpdateCustomAction from '@/views/extension/UpdateCustomAction.vue'
+import Status from '@/components/widgets/Status'
 
 export default {
   name: 'ExtensionCustomActionsTab',
@@ -116,7 +117,8 @@ export default {
     ObjectListTable,
     TooltipButton,
     AddCustomAction,
-    UpdateCustomAction
+    UpdateCustomAction,
+    Status
   },
   props: {
     resource: {
@@ -134,13 +136,13 @@ export default {
           dataIndex: 'name'
         },
         {
-          title: this.$t('label.resourcetype'),
-          dataIndex: 'resourcetype'
+          key: 'enabled',
+          title: this.$t('label.state'),
+          dataIndex: 'enabled'
         },
         {
-          key: 'enabled',
-          title: this.$t('label.enabled'),
-          dataIndex: 'enabled'
+          title: this.$t('label.resourcetype'),
+          dataIndex: 'resourcetype'
         },
         {
           key: 'created',
@@ -197,6 +199,8 @@ export default {
         this.totalCount = json?.listcustomactionsresponse?.count || 0
         this.extensionCustomActions = json?.listcustomactionsresponse?.extensioncustomaction || []
         this.tabLoading = false
+      }).catch(error => {
+        this.$notifyError(error)
       })
     },
     showAddCustomActionModal () {

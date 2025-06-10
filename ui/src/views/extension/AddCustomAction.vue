@@ -103,12 +103,12 @@
         <details-input
           v-model:value="form.details" />
       </a-form-item>
-        <a-form-item name="enabled" ref="enabled">
-          <template #label>
-            <tooltip-label :title="$t('label.enabled')" :tooltip="apiParams.enabled.description"/>
-          </template>
-          <a-switch v-model:checked="form.enabled" />
-        </a-form-item>
+      <a-form-item name="enabled" ref="enabled">
+        <template #label>
+          <tooltip-label :title="$t('label.enabled')" :tooltip="apiParams.enabled.description"/>
+        </template>
+        <a-switch v-model:checked="form.enabled" />
+      </a-form-item>
       <div :span="24" class="action-button">
         <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
         <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -185,7 +185,8 @@ export default {
         this.loading = true
         const params = {
           extensionid: values.extensionid || this.extension.id,
-          name: values.name
+          name: values.name,
+          enabled: values.enabled
         }
         if (values.description) {
           params.description = values.description
