@@ -532,8 +532,8 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         boolean hasDefaultOffering = serviceOfferingNodeTypeMap.containsKey(DEFAULT.name());
         if (hasDefaultOffering) {
             final ServiceOffering existingServiceOffering = serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId());
-            final ServiceOffering existingControlOffering = serviceOfferingDao.findById(kubernetesCluster.getControlServiceOfferingId());
-            final ServiceOffering existingWorkerOffering = serviceOfferingDao.findById(kubernetesCluster.getWorkerServiceOfferingId());
+            final ServiceOffering existingControlOffering = serviceOfferingDao.findById(kubernetesCluster.getControlNodeServiceOfferingId());
+            final ServiceOffering existingWorkerOffering = serviceOfferingDao.findById(kubernetesCluster.getWorkerNodeServiceOfferingId());
             if (existingServiceOffering == null && ObjectUtils.anyNull(existingControlOffering, existingWorkerOffering)) {
                 logAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster : %s failed, service offering for the Kubernetes cluster not found!", kubernetesCluster.getName()));
             }

@@ -258,9 +258,9 @@ public class KubernetesClusterActionWorker {
         VMTemplateVO template = templateDao.findById(templateId);
         Hypervisor.HypervisorType type = template.getHypervisorType();
         this.clusterTemplate = manager.getKubernetesServiceTemplate(dataCenterVO, type, null, KubernetesClusterNodeType.DEFAULT);
-        this.controlNodeTemplate = templateDao.findById(this.kubernetesCluster.getControlTemplateId());
-        this.workerNodeTemplate = templateDao.findById(this.kubernetesCluster.getWorkerTemplateId());
-        this.etcdTemplate = templateDao.findById(this.kubernetesCluster.getEtcdTemplateId());
+        this.controlNodeTemplate = templateDao.findById(this.kubernetesCluster.getControlNodeTemplateId());
+        this.workerNodeTemplate = templateDao.findById(this.kubernetesCluster.getWorkerNodeTemplateId());
+        this.etcdTemplate = templateDao.findById(this.kubernetesCluster.getEtcdNodeTemplateId());
         this.sshKeyFile = getManagementServerSshPublicKeyFile();
     }
 
@@ -827,9 +827,9 @@ public class KubernetesClusterActionWorker {
                                                                      KubernetesCluster cluster) {
         Long offeringId = null;
         Long defaultOfferingId = cluster.getServiceOfferingId();
-        Long controlOfferingId = cluster.getControlServiceOfferingId();
-        Long workerOfferingId = cluster.getWorkerServiceOfferingId();
-        Long etcdOfferingId = cluster.getEtcdServiceOfferingId();
+        Long controlOfferingId = cluster.getControlNodeServiceOfferingId();
+        Long workerOfferingId = cluster.getWorkerNodeServiceOfferingId();
+        Long etcdOfferingId = cluster.getEtcdNodeServiceOfferingId();
         if (KubernetesClusterNodeType.CONTROL == nodeType) {
             offeringId = controlOfferingId != null ? controlOfferingId : defaultOfferingId;
         } else if (KubernetesClusterNodeType.WORKER == nodeType) {
@@ -847,7 +847,7 @@ public class KubernetesClusterActionWorker {
     }
 
     protected boolean isDefaultTemplateUsed() {
-        if (Arrays.asList(kubernetesCluster.getControlTemplateId(), kubernetesCluster.getWorkerTemplateId(), kubernetesCluster.getEtcdTemplateId()).contains(kubernetesCluster.getTemplateId())) {
+        if (Arrays.asList(kubernetesCluster.getControlNodeTemplateId(), kubernetesCluster.getWorkerNodeTemplateId(), kubernetesCluster.getEtcdNodeTemplateId()).contains(kubernetesCluster.getTemplateId())) {
             return true;
         }
         return false;

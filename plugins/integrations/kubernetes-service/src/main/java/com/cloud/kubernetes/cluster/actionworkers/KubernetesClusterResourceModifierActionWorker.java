@@ -837,11 +837,11 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             }
             if (updateNodeOffering && serviceOfferingId != null && nodeType != null) {
                 if (WORKER == nodeType) {
-                    updatedCluster.setWorkerServiceOfferingId(serviceOfferingId);
+                    updatedCluster.setWorkerNodeServiceOfferingId(serviceOfferingId);
                 } else if (CONTROL == nodeType) {
-                    updatedCluster.setControlServiceOfferingId(serviceOfferingId);
+                    updatedCluster.setControlNodeServiceOfferingId(serviceOfferingId);
                 } else if (ETCD == nodeType) {
-                    updatedCluster.setEtcdServiceOfferingId(serviceOfferingId);
+                    updatedCluster.setEtcdNodeServiceOfferingId(serviceOfferingId);
                 }
             }
             if (updateClusterOffering && serviceOfferingId != null) {

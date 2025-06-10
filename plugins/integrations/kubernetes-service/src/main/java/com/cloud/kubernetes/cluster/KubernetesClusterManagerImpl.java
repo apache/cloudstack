@@ -773,9 +773,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             response.setCniConfigId(cniConfig.getUuid());
             response.setCniConfigName(cniConfig.getName());
         }
-        setNodeTypeServiceOfferingResponse(response, WORKER, kubernetesCluster.getWorkerServiceOfferingId());
-        setNodeTypeServiceOfferingResponse(response, CONTROL, kubernetesCluster.getControlServiceOfferingId());
-        setNodeTypeServiceOfferingResponse(response, ETCD, kubernetesCluster.getEtcdServiceOfferingId());
+        setNodeTypeServiceOfferingResponse(response, WORKER, kubernetesCluster.getWorkerNodeServiceOfferingId());
+        setNodeTypeServiceOfferingResponse(response, CONTROL, kubernetesCluster.getControlNodeServiceOfferingId());
+        setNodeTypeServiceOfferingResponse(response, ETCD, kubernetesCluster.getEtcdNodeServiceOfferingId());
 
         if (kubernetesCluster.getEtcdNodeCount() != null) {
             response.setEtcdNodes(kubernetesCluster.getEtcdNodeCount());
@@ -1339,11 +1339,11 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
     private Long getExistingServiceOfferingIdForNodeType(String key, KubernetesClusterVO kubernetesCluster) {
         if (key.equalsIgnoreCase(WORKER.name())) {
-            return kubernetesCluster.getWorkerServiceOfferingId();
+            return kubernetesCluster.getWorkerNodeServiceOfferingId();
         } else if (key.equalsIgnoreCase(CONTROL.name())) {
-            return kubernetesCluster.getControlServiceOfferingId();
+            return kubernetesCluster.getControlNodeServiceOfferingId();
         } else if (key.equalsIgnoreCase(ETCD.name())) {
-            return kubernetesCluster.getEtcdServiceOfferingId();
+            return kubernetesCluster.getEtcdNodeServiceOfferingId();
         }
         return kubernetesCluster.getServiceOfferingId();
     }
@@ -1569,20 +1569,20 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 }
                 newCluster.setCniConfigDetails(cniConfigDetails);
                 if (serviceOfferingNodeTypeMap.containsKey(WORKER.name())) {
-                    newCluster.setWorkerServiceOfferingId(serviceOfferingNodeTypeMap.get(WORKER.name()));
+                    newCluster.setWorkerNodeServiceOfferingId(serviceOfferingNodeTypeMap.get(WORKER.name()));
                 }
                 if (serviceOfferingNodeTypeMap.containsKey(CONTROL.name())) {
-                    newCluster.setControlServiceOfferingId(serviceOfferingNodeTypeMap.get(CONTROL.name()));
+                    newCluster.setControlNodeServiceOfferingId(serviceOfferingNodeTypeMap.get(CONTROL.name()));
                 }
                 if (etcdNodes > 0) {
-                    newCluster.setEtcdTemplateId(etcdNodeTemplate.getId());
+                    newCluster.setEtcdNodeTemplateId(etcdNodeTemplate.getId());
                     newCluster.setEtcdNodeCount(etcdNodes);
                     if (serviceOfferingNodeTypeMap.containsKey(ETCD.name())) {
-                        newCluster.setEtcdServiceOfferingId(serviceOfferingNodeTypeMap.get(ETCD.name()));
+                        newCluster.setEtcdNodeServiceOfferingId(serviceOfferingNodeTypeMap.get(ETCD.name()));
                     }
                 }
-                newCluster.setWorkerTemplateId(workerNodeTemplate.getId());
-                newCluster.setControlTemplateId(controlNodeTemplate.getId());
+                newCluster.setWorkerNodeTemplateId(workerNodeTemplate.getId());
+                newCluster.setControlNodeTemplateId(controlNodeTemplate.getId());
                 if (zone.isSecurityGroupEnabled()) {
                     newCluster.setSecurityGroupId(finalSecurityGroup.getId());
                 }
