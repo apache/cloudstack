@@ -241,6 +241,9 @@
         </span>
         <span v-else>{{ text }}</span>
       </template>
+      <template v-if="column.key === 'isuserdefined'">
+        <span>{{ text ? $t('label.yes') : $t('label.no') }}</span>
+      </template>
       <template v-if="column.key === 'state'">
         <status v-if="$route.path.startsWith('/host')" :text="getHostState(record)" displayText />
         <status v-else :text="text ? text : ''" displayText :styles="{ 'min-width': '80px' }" />
@@ -263,6 +266,9 @@
       </template>
       <template v-if="column.key === 'agentstate'">
         <status :text="text ? text : ''" displayText />
+      </template>
+      <template v-if="column.key === 'entrypointsync'">
+        <status :text="text ? 'Yes' : 'No'" displayText />
       </template>
       <template v-if="column.key === 'cpunumber'">
         <span>{{ record.serviceofferingdetails?.mincpunumber && record.serviceofferingdetails?.maxcpunumber ? `${record.serviceofferingdetails.mincpunumber} - ${record.serviceofferingdetails.maxcpunumber}` : record.cpunumber }}</span>

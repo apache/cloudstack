@@ -97,6 +97,12 @@ export default {
           case 'Up':
             state = this.$t('state.up')
             break
+          case 'Yes':
+            state = this.$t('state.yes')
+            break
+          case 'no':
+            state = this.$t('state.no')
+            break
         }
         return state.charAt(0).toUpperCase() + state.slice(1)
       }
@@ -124,6 +130,7 @@ export default {
         case 'success':
         case 'poweron':
         case 'primary':
+        case 'yes':
           status = 'success'
           break
         case 'alert':
@@ -138,6 +145,7 @@ export default {
         case 'poweroff':
         case 'stopped':
         case 'failed':
+        case 'no':
           status = 'error'
           break
         case 'migrating':

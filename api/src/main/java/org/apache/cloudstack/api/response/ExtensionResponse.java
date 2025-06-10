@@ -51,6 +51,10 @@ public class ExtensionResponse extends BaseResponse {
     @Param(description = "The path of the entry point fo the extension")
     private String entryPoint;
 
+    @SerializedName(ApiConstants.ENTRY_POINT_SYNC)
+    @Param(description = "True if the extension entry point is in sync across management servers")
+    private Boolean entryPointSync;
+
     @SerializedName(ApiConstants.IS_USER_DEFINED)
     @Param(description = "True if the extension is added by admin")
     private Boolean userDefined;
@@ -104,6 +108,10 @@ public class ExtensionResponse extends BaseResponse {
 
     public void setEntryPoint(String entryPoint) {
         this.entryPoint = entryPoint;
+    }
+
+    public void setEntryPointSync(Boolean entryPointSync) {
+        this.entryPointSync = entryPointSync;
     }
 
     public void setUserDefined(Boolean userDefined) {

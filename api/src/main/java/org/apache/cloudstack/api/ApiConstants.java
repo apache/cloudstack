@@ -198,6 +198,7 @@ public class ApiConstants {
     public static final String END_IPV6 = "endipv6";
     public static final String END_PORT = "endport";
     public static final String ENTRY_POINT = "entrypoint";
+    public static final String ENTRY_POINT_SYNC = "entrypointsync";
     public static final String ENTRY_TIME = "entrytime";
     public static final String ERROR_MESSAGE = "errormessage";
     public static final String EVENT_ID = "eventid";

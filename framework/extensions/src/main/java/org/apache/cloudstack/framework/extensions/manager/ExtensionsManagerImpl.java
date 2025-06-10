@@ -427,6 +427,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                 extension.getDescription(), extension.getType().name());
         response.setCreated(extension.getCreated());
         response.setEntryPoint(externalProvisioner.getExtensionEntryPoint(extension.getRelativeEntryPoint()));
+        response.setEntryPointSync(extension.isEntryPointSync());
         response.setUserDefined(extension.isUserDefined());
         if (viewDetails.contains(ApiConstants.ExtensionDetails.all) ||
                 viewDetails.contains(ApiConstants.ExtensionDetails.resource)) {

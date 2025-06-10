@@ -2691,6 +2691,7 @@
 "label.quotagib": "Quota in GiB",
 "label.encryption": "Encryption",
 "label.entrypoint": "Entry Point",
+"label.entrypointsync": "Entry Point Sync",
 "label.versioning": "Versioning",
 "label.objectlocking": "Object Lock",
 "label.bucket.policy": "Bucket Policy",

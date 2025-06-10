@@ -37,8 +37,8 @@ export default {
         return params
       },
       resourceType: 'Extension',
-      columns: ['name', 'type', 'entrypoint', 'isuserdefined', 'created'],
-      details: ['name', 'id', 'type', 'details', 'entrypoint', 'isuserdefined', 'created'],
+      columns: ['name', 'type', 'entrypoint', 'entrypointsync', 'isuserdefined', 'created'],
+      details: ['name', 'id', 'type', 'details', 'entrypoint', 'entrypointsync', 'isuserdefined', 'created'],
       tabs: [{
         name: 'details',
         component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
