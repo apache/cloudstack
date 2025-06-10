@@ -542,22 +542,10 @@ export default {
 </script>
 
 <style lang="scss">
-  .form {
-    &__label {
-      margin-bottom: 5px;
-
-      .required {
-        margin-left: 10px;
-      }
-    }
-    &__item {
-      margin-bottom: 20px;
-    }
-    .ant-select {
-      width: 85vw;
-      @media (min-width: 760px) {
-        width: 500px;
-      }
+  .form-layout {
+    width: 60vw;
+    @media (min-width: 600px) {
+      width: 550px;
     }
   }
 
