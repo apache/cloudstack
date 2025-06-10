@@ -842,8 +842,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             CallContext.current().setEventResourceId(resourceId);
             CallContext.current().setEventDetails(String.format(" Name: %s, New Value: %s, Scope: %s", name, value, scope.name()));
 
-            _configDepot.invalidateConfigCache(name, scopeVal, resourceId);
-            messageBus.publish(_name, EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, PublishScope.GLOBAL, new Ternary<>(name, scopeVal, resourceId));
+            _configDepot.invalidateConfigCache(name, scope, resourceId);
+            messageBus.publish(_name, EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, PublishScope.GLOBAL, new Ternary<>(name, scope, resourceId));
             return valueEncrypted ? DBEncryptionUtil.decrypt(value) : value;
         }
 
