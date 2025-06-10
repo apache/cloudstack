@@ -46,11 +46,17 @@ import org.apache.cloudstack.framework.extensions.command.GetExtensionEntryPoint
 
 import com.cloud.host.Host;
 import com.cloud.org.Cluster;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 
 public interface ExtensionsManager extends Manager {
 
     Extension createExtension(CreateExtensionCmd cmd);
+
+    Pair<Boolean, String> prepareExtensionEntryPointOnCurrentServer(String name, boolean userDefined,
+                String relativeEntryPoint);
+
+    void prepareExtensionEntryPointAcrossServers(Extension extension);
 
     List<ExtensionResponse> listExtensions(ListExtensionsCmd cmd);
 

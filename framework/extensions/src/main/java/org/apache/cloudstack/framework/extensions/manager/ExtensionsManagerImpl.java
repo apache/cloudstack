@@ -65,6 +65,7 @@ import org.apache.cloudstack.framework.extensions.api.UnregisterExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.UpdateCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.UpdateExtensionCmd;
 import org.apache.cloudstack.framework.extensions.command.GetExtensionEntryPointChecksumCommand;
+import org.apache.cloudstack.framework.extensions.command.PrepareExtensionEntryPointCommand;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionCustomActionDao;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionCustomActionDetailsDao;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionDao;
@@ -230,9 +231,10 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             entryPoint = getValidatedExtensionRelativeEntryPoint(name, entryPoint);
         }
         final String entryPointFinal = entryPoint;
-        return Transaction.execute((TransactionCallbackWithException<Extension, CloudRuntimeException>) status -> {
+        ExtensionVO extensionVO = Transaction.execute((TransactionCallbackWithException<ExtensionVO, CloudRuntimeException>) status -> {
             ExtensionVO extension = new ExtensionVO(name, description, EnumUtils.getEnum(Extension.Type.class, typeStr),
                     entryPointFinal);
+            extension.setEntryPointSync(true);
             extension = extensionDao.persist(extension);
 
             Map<String, String> details = cmd.getDetails();
@@ -243,10 +245,68 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                 }
                 extensionDetailsDao.saveDetails(detailsVOList);
             }
-            externalProvisioner.prepareExtensionEntryPoint(extension.getName(), extension.isUserDefined(), extension.getRelativeEntryPoint());
             CallContext.current().setEventResourceId(extension.getId());
             return extension;
         });
+        prepareExtensionEntryPointAcrossServers(extensionVO);
+        return extensionVO;
+    }
+
+    protected boolean prepareExtensionEntryPointOnMSPeer(Extension extension, ManagementServerHostVO msHost) {
+        final String msPeer = Long.toString(msHost.getMsid());
+        logger.debug("Sending prepare extension entry-point for {} command to MS: {}", extension, msPeer);
+        final Command[] commands = new Command[1];
+        commands[0] = new PrepareExtensionEntryPointCommand(ManagementServerNode.getManagementServerId(), extension);
+        String answersStr = clusterManager.execute(msPeer, 0L, GsonHelper.getGson().toJson(commands), true);
+        Answer[] answers = null;
+        try {
+            answers = GsonHelper.getGson().fromJson(answersStr, Answer[].class);
+        } catch (Exception e) {
+            logger.error("Failed to parse answer JSON from {} on {}: {}", extension, msHost, e.getMessage(), e);
+        }
+        Answer answer = answers != null && answers.length > 0 ? answers[0] : null;
+        boolean result = false;
+        String error = "Unknown error";
+        if (answer != null) {
+            result = answer.getResult();
+            error = answer.getDetails();
+        }
+        if (!result) {
+            logger.error("Failed to prepare entry-point for {} on {} due to {}", extension, msHost, error);
+            return false;
+        }
+        return true;
+    }
+
+    public Pair<Boolean, String> prepareExtensionEntryPointOnCurrentServer(String name, boolean userDefined,
+                   String relativeEntryPoint) {
+        try {
+            externalProvisioner.prepareExtensionEntryPoint(name, userDefined, relativeEntryPoint);
+        } catch (CloudRuntimeException e) {
+            logger.error("Failed to prepare entry-point for Extension [name: {}, userDefined: {}, relativeEntryPoint: {}] on this server",
+                    name, userDefined, relativeEntryPoint, e);
+            return new Pair<>(false, e.getMessage());
+        }
+        return new Pair<>(true, null);
+    }
+
+    @Override
+    public void prepareExtensionEntryPointAcrossServers(Extension extension) {
+        boolean sync = true;
+        List<ManagementServerHostVO> msHosts = managementServerHostDao.listBy(ManagementServerHost.State.Up);
+        for (ManagementServerHostVO msHost : msHosts) {
+            if (msHost.getMsid() == ManagementServerNode.getManagementServerId()) {
+                sync = sync && prepareExtensionEntryPointOnCurrentServer(extension.getName(), extension.isUserDefined(),
+                        extension.getRelativeEntryPoint()).first();
+                continue;
+            }
+            sync = sync && prepareExtensionEntryPointOnMSPeer(extension, msHost);
+        }
+        if (extension.isEntryPointSync() != sync) {
+            ExtensionVO updateExtension = extensionDao.createForUpdate(extension.getId());
+            updateExtension.setEntryPointSync(sync);
+            extensionDao.update(extension.getId(), updateExtension);
+        }
     }
 
     @Override
@@ -1071,7 +1131,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             logger.debug("Retrieving checksum for {} from MS: {}", extension, msPeer);
             final Command[] cmds = new Command[1];
             cmds[0] = new GetExtensionEntryPointChecksumCommand(ManagementServerNode.getManagementServerId(),
-                    extension.getId(), extension.getName(), extension.getRelativeEntryPoint());
+                    extension);
             return clusterManager.execute(msPeer, 0L, GsonHelper.getGson().toJson(cmds), true);
         }
 

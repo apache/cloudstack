@@ -26,8 +26,10 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.agent.manager.ExternalAgentManager;
+import org.apache.cloudstack.extension.ExtensionResourceMap;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionDao;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionResourceMapDao;
+import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionResourceMapVO;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionVO;
 import org.apache.cloudstack.hypervisor.external.resource.ExternalResourceBase;
@@ -43,11 +45,9 @@ import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.dc.ClusterVO;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.DiscoveryException;
-import org.apache.cloudstack.extension.ExtensionResourceMap;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.hypervisor.ExternalProvisioner;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
@@ -58,19 +58,19 @@ import com.cloud.resource.UnableDeleteHostException;
 public class ExternalServerDiscoverer extends DiscovererBase implements Discoverer, Listener, ResourceStateAdapter {
 
     @Inject
-    private AgentManager agentManager;
+    AgentManager agentManager;
 
     @Inject
-    private ExtensionDao externalOrchestratorDao;
+    ExtensionDao extensionDao;
 
     @Inject
     ExtensionResourceMapDao extensionResourceMapDao;
 
     @Inject
-    ExternalAgentManager externalAgentManager = null;
+    ExternalAgentManager externalAgentManager;
 
     @Inject
-    ExternalProvisioner externalProvisioner;
+    ExtensionsManager extensionsManager;
 
     @Override
     public boolean processAnswers(long agentId, long seq, Answer[] answers) {
@@ -177,7 +177,7 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
 
             ExtensionResourceMapVO extensionResourceMapVO = extensionResourceMapDao.findByResourceIdAndType(clusterId,
                     ExtensionResourceMap.ResourceType.Cluster);
-            ExtensionVO extensionVO = externalOrchestratorDao.findById(extensionResourceMapVO.getExtensionId());
+            ExtensionVO extensionVO = extensionDao.findById(extensionResourceMapVO.getExtensionId());
             params.put("extensionName", extensionVO.getName());
             params.put("extensionRelativeEntryPoint", extensionVO.getRelativeEntryPoint());
 
@@ -200,7 +200,7 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
             logger.debug("Cluster ID: {} not registered with any extension", clusterId);
             return params;
         }
-        ExtensionVO extensionVO = externalOrchestratorDao.findById(extensionResourceMapVO.getExtensionId());
+        ExtensionVO extensionVO = extensionDao.findById(extensionResourceMapVO.getExtensionId());
         if (extensionVO == null) {
             logger.error("Extension with ID: {} not found", extensionResourceMapVO.getExtensionId());
             return params;
@@ -256,9 +256,9 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
         final ClusterVO cluster = _clusterDao.findById(host.getClusterId());
         ExtensionResourceMapVO extensionResourceMapVO = extensionResourceMapDao.findByResourceIdAndType(cluster.getId(),
                         ExtensionResourceMap.ResourceType.Cluster);
-        ExtensionVO extension = externalOrchestratorDao.findById(extensionResourceMapVO.getExtensionId());
+        ExtensionVO extension = extensionDao.findById(extensionResourceMapVO.getExtensionId());
         logger.debug("Creating host for {}", extension);
-        externalProvisioner.prepareExtensionEntryPoint(extension.getName(), extension.isUserDefined(), extension.getRelativeEntryPoint());
+        extensionsManager.prepareExtensionEntryPointAcrossServers(extension);
         return _resourceMgr.fillRoutingHostVO(host, ssCmd, Hypervisor.HypervisorType.External, details, hostTags);
     }
 

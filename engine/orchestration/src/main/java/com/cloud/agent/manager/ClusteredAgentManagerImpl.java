@@ -47,6 +47,7 @@ import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.extensions.command.GetExtensionEntryPointChecksumCommand;
+import org.apache.cloudstack.framework.extensions.command.PrepareExtensionEntryPointCommand;
 import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 import org.apache.cloudstack.ha.dao.HAConfigDao;
 import org.apache.cloudstack.maintenance.ManagementServerMaintenanceManager;
@@ -98,6 +99,7 @@ import com.cloud.host.Status.Event;
 import com.cloud.resource.ServerResource;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.Pair;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
@@ -1327,6 +1329,13 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             } else if (cmds.length == 1 && cmds[0] instanceof GetExtensionEntryPointChecksumCommand) {
                 final GetExtensionEntryPointChecksumCommand cmd = (GetExtensionEntryPointChecksumCommand) cmds[0];
                 return extensionsManager.handleGetExtensionEntryPointChecksumCommand(cmd);
+            } else if (cmds.length == 1 && cmds[0] instanceof PrepareExtensionEntryPointCommand) {
+                final PrepareExtensionEntryPointCommand cmd = (PrepareExtensionEntryPointCommand) cmds[0];
+                Pair<Boolean, String> result = extensionsManager.prepareExtensionEntryPointOnCurrentServer(
+                        cmd.getExtensionName(), cmd.isExtensionUserDefined(), cmd.getExtensionRelativeEntryPointPath());
+                final Answer[] answers = new Answer[1];
+                answers[0] = new Answer(cmd, result.first(), result.second());
+                return _gson.toJson(answers);
             }
 
             try {
