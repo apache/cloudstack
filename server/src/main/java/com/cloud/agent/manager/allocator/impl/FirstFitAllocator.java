@@ -30,10 +30,12 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.agent.manager.allocator.HostAllocator;
+import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.deploy.DeploymentPlan;
@@ -64,9 +66,11 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 /**
@@ -372,13 +376,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
     private List<? extends Host> reorderHostsByCapacity(DeploymentPlan plan, List<? extends Host> hosts) {
         Long zoneId = plan.getDataCenterId();
         Long clusterId = plan.getClusterId();
-        //Get capacity by which we should reorder
-        String capacityTypeToOrder = _configDao.getValue(Config.HostCapacityTypeToOrderClusters.key());
-        short capacityType = CapacityVO.CAPACITY_TYPE_CPU;
-        if("RAM".equalsIgnoreCase(capacityTypeToOrder)){
-            capacityType = CapacityVO.CAPACITY_TYPE_MEMORY;
-        }
-        Pair<List<Long>, Map<Long, Double>> result = _capacityDao.orderHostsByFreeCapacity(zoneId, clusterId, capacityType);
+        Pair<List<Long>, Map<Long, Double>> result = getOrderedHostsByCapacity(zoneId, clusterId);
         List<Long> hostIdsByFreeCapacity = result.first();
         Map<Long, String> sortedHostByCapacity = result.second().entrySet()
                 .stream()
@@ -405,6 +403,54 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
         }
 
         return reorderedHosts;
+    }
+
+    private Pair<List<Long>, Map<Long, Double>> getOrderedHostsByCapacity(Long zoneId, Long clusterId) {
+        double cpuToMemoryWeight = ConfigurationManager.HostCapacityTypeCpuMemoryWeight.value();
+        // Get capacity by which we should reorder
+        short capacityType = getCapacityType(cpuToMemoryWeight);
+        if (capacityType >= 0) { // for CPU or RAM
+            return _capacityDao.orderHostsByFreeCapacity(zoneId, clusterId, capacityType);
+        }
+        List<CapacityVO> capacities = _capacityDao.listHostCapacityByCapacityTypes(zoneId, clusterId,
+                List.of(Capacity.CAPACITY_TYPE_CPU, Capacity.CAPACITY_TYPE_MEMORY));
+        Map<Long, Double> hostByComputedCapacity = getHostByCombinedCapacities(capacities, cpuToMemoryWeight);
+        return new Pair<>(new ArrayList<>(hostByComputedCapacity.keySet()), hostByComputedCapacity);
+    }
+
+    short getCapacityType(double cpuToMemoryWeight) {
+        String capacityTypeToOrder = _configDao.getValue(Config.HostCapacityTypeToOrderClusters.key());
+        short capacityType = CapacityVO.CAPACITY_TYPE_CPU;
+        if (ApiConstants.RAM.equalsIgnoreCase(capacityTypeToOrder)){
+            capacityType = CapacityVO.CAPACITY_TYPE_MEMORY;
+        } else if (ApiConstants.COMBINED_CAPACITY_ORDERING.equalsIgnoreCase(capacityTypeToOrder)) {
+            capacityType = -1;
+        }
+
+        if (cpuToMemoryWeight == 1) {
+            capacityType = CapacityVO.CAPACITY_TYPE_CPU;
+        }
+        if (cpuToMemoryWeight == 0) {
+            capacityType = CapacityVO.CAPACITY_TYPE_MEMORY;
+        }
+        return capacityType;
+    }
+
+
+    @NotNull
+    private static Map<Long, Double> getHostByCombinedCapacities(List<CapacityVO> capacities, double cpuToMemoryWeight) {
+        Map<Long, Double> hostByComputedCapacity = new HashMap<>();
+        for (CapacityVO capacityVO : capacities) {
+            long hostId = capacityVO.getHostOrPoolId();
+            double applicableWeight = capacityVO.getCapacityType() == Capacity.CAPACITY_TYPE_CPU ? cpuToMemoryWeight : 1 - cpuToMemoryWeight;
+            double capacityMetric = applicableWeight * (capacityVO.getTotalCapacity() - (capacityVO.getUsedCapacity() + capacityVO.getReservedCapacity()))/capacityVO.getTotalCapacity();
+            hostByComputedCapacity.merge(hostId, capacityMetric, Double::sum);
+        }
+
+        return hostByComputedCapacity.entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
     }
 
     private List<? extends Host> reorderHostsByNumberOfVms(DeploymentPlan plan, List<? extends Host> hosts, Account account) {

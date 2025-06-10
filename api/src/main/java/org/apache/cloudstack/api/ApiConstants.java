@@ -90,9 +90,11 @@ public class ApiConstants {
     public static final String CONVERT_INSTANCE_HOST_ID = "convertinstancehostid";
     public static final String CONVERT_INSTANCE_STORAGE_POOL_ID = "convertinstancepoolid";
     public static final String ENABLED_REVOCATION_CHECK = "enabledrevocationcheck";
+    public static final String COMBINED_CAPACITY_ORDERING = "COMBINED";
     public static final String CONTROLLER = "controller";
     public static final String CONTROLLER_UNIT = "controllerunit";
     public static final String COPY_IMAGE_TAGS = "copyimagetags";
+    public static final String CPU_OVERCOMMIT_RATIO = "cpuOvercommitRatio";
     public static final String CSR = "csr";
     public static final String PRIVATE_KEY = "privatekey";
     public static final String DATASTORE_HOST = "datastorehost";
@@ -120,6 +122,7 @@ public class ApiConstants {
     public static final String COMMAND = "command";
     public static final String CMD_EVENT_TYPE = "cmdeventtype";
     public static final String COMPONENT = "component";
+    public static final String CPU = "CPU";
     public static final String CPU_CORE_PER_SOCKET = "cpucorepersocket";
     public static final String CPU_NUMBER = "cpunumber";
     public static final String CPU_SPEED = "cpuspeed";
@@ -337,6 +340,7 @@ public class ApiConstants {
     public static final String MAX_BACKUPS = "maxbackups";
     public static final String MAX_CPU_NUMBER = "maxcpunumber";
     public static final String MAX_MEMORY = "maxmemory";
+    public static final String MEMORY_OVERCOMMIT_RATIO = "memoryOvercommitRatio";
     public static final String MIN_CPU_NUMBER = "mincpunumber";
     public static final String MIN_MEMORY = "minmemory";
     public static final String MIGRATION_TYPE = "migrationtype";
@@ -432,6 +436,7 @@ public class ApiConstants {
     public static final String PUBLIC_END_PORT = "publicendport";
     public static final String PUBLIC_ZONE = "publiczone";
     public static final String PURGE_RESOURCES = "purgeresources";
+    public static final String RAM = "RAM";
     public static final String RECEIVED_BYTES = "receivedbytes";
     public static final String RECONNECT = "reconnect";
     public static final String RECOVER = "recover";
