@@ -58,7 +58,7 @@
           </span>
           <span v-if="$showIcon() && !['vm', 'vnfapp'].includes($route.path.split('/')[1])" style="margin-right: 5px">
             <resource-icon v-if="$showIcon() && record.icon && record.icon.base64image" :image="record.icon.base64image" size="2x"/>
-            <os-logo v-else-if="record.ostypename" :osName="record.ostypename" size="xl" />
+            <os-logo v-else-if="record.ostypename || ['guestoscategory'].includes($route.path.split('/')[1])" :osName="record.ostypename || record.name" size="xl" />
             <render-icon v-else-if="typeof $route.meta.icon ==='string'" style="font-size: 16px;" :icon="$route.meta.icon"/>
             <render-icon v-else style="font-size: 16px;" :svgIcon="$route.meta.icon" />
           </span>
@@ -240,6 +240,15 @@
           <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
         </span>
         <span v-else>{{ text }}</span>
+      </template>
+      <template v-if="column.key === 'oscategoryname'">
+        <span v-if="('listOsCategories' in $store.getters.apis) && record.oscategoryid">
+          <router-link :to="{ path: '/guestoscategory/' + record.oscategoryid }">{{ text }}</router-link>
+        </span>
+        <span v-else>{{ text }}</span>
+      </template>
+      <template v-if="column.key === 'isuserdefined'">
+        <span>{{ text ? $t('label.yes') : $t('label.no') }}</span>
       </template>
       <template v-if="column.key === 'state'">
         <status v-if="$route.path.startsWith('/host')" :text="getHostState(record)" displayText />
@@ -484,6 +493,9 @@
       </template>
       <template v-if="['startdate', 'enddate'].includes(column.key) && ['usage'].includes($route.path.split('/')[1])">
         {{ $toLocaleDate(text.replace('\'T\'', ' ')) }}
+      </template>
+      <template v-if="['isfeatured'].includes(column.key) && ['guestoscategory'].includes($route.path.split('/')[1])">
+        {{ record.isfeatured ? $t('label.yes') : $t('label.no') }}
       </template>
       <template v-if="column.key === 'order'">
         <div class="shift-btns">
@@ -756,7 +768,7 @@ export default {
         'vmsnapshot', 'backup', 'guestnetwork', 'vpc', 'publicip', 'vpnuser', 'vpncustomergateway', 'vnfapp',
         'project', 'account', 'systemvm', 'router', 'computeoffering', 'systemoffering',
         'diskoffering', 'backupoffering', 'networkoffering', 'vpcoffering', 'ilbvm', 'kubernetes', 'comment', 'buckets',
-        'webhook', 'webhookdeliveries', 'sharedfs', 'ipv4subnets', 'asnumbers'
+        'webhook', 'webhookdeliveries', 'sharedfs', 'ipv4subnets', 'asnumbers', 'guestos'
       ].includes(this.$route.name)
     },
     getDateAtTimeZone (date, timezone) {
@@ -859,8 +871,9 @@ export default {
         case 'vpcoffering':
           apiString = 'updateVPCOffering'
           break
-        default:
-          apiString = 'updateTemplate'
+        case 'guestoscategory':
+          apiString = 'updateOsCategory'
+          break
       }
       return apiString
     },
