@@ -46,6 +46,8 @@ import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.extensions.command.GetExtensionEntryPointChecksumCommand;
+import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 import org.apache.cloudstack.ha.dao.HAConfigDao;
 import org.apache.cloudstack.maintenance.ManagementServerMaintenanceManager;
 import org.apache.cloudstack.maintenance.command.BaseShutdownManagementServerHostCommand;
@@ -60,6 +62,7 @@ import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.security.SSLUtils;
+import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CancelCommand;
@@ -105,8 +108,6 @@ import com.cloud.utils.nio.Link;
 import com.cloud.utils.nio.Task;
 import com.google.gson.Gson;
 
-import org.apache.commons.collections.CollectionUtils;
-
 public class ClusteredAgentManagerImpl extends AgentManagerImpl implements ClusterManagerListener, ClusteredAgentRebalanceService {
     private static ScheduledExecutorService s_transferExecutor = Executors.newScheduledThreadPool(2, new NamedThreadFactory("Cluster-AgentRebalancingExecutor"));
     private final long rebalanceTimeOut = 300000; // 5 mins - after this time remove the agent from the transfer list
@@ -146,6 +147,8 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     private ManagementServerMaintenanceManager managementServerMaintenanceManager;
     @Inject
     private DataCenterDao dcDao;
+    @Inject
+    ExtensionsManager extensionsManager;
 
     protected ClusteredAgentManagerImpl() {
         super();
@@ -1321,6 +1324,9 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             } else if (cmds.length == 1 && cmds[0] instanceof BaseShutdownManagementServerHostCommand) {
                 final BaseShutdownManagementServerHostCommand cmd = (BaseShutdownManagementServerHostCommand) cmds[0];
                 return handleShutdownManagementServerHostCommand(cmd);
+            } else if (cmds.length == 1 && cmds[0] instanceof GetExtensionEntryPointChecksumCommand) {
+                final GetExtensionEntryPointChecksumCommand cmd = (GetExtensionEntryPointChecksumCommand) cmds[0];
+                return extensionsManager.handleGetExtensionEntryPointChecksumCommand(cmd);
             }
 
             try {

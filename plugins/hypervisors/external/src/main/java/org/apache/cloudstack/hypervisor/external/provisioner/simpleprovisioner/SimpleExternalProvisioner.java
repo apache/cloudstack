@@ -39,6 +39,7 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 
@@ -179,6 +180,19 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     @Override
     public String getExtensionEntryPoint(String relativeEntryPoint) {
         return String.format("%s%s%s", extensionsDirectory, File.separator, relativeEntryPoint);
+    }
+
+    @Override
+    public String getChecksumForExtensionEntryPoint(String extensionName, String relativeEntryPoint) {
+        String entryPoint = getExtensionCheckedEntryPointPath(extensionName, relativeEntryPoint);
+        if (StringUtils.isBlank(entryPoint)) {
+            return null;
+        }
+        try {
+            return DigestHelper.calculateChecksum(new File(entryPoint));
+        } catch (CloudRuntimeException ignored) {
+            return null;
+        }
     }
 
     @Override

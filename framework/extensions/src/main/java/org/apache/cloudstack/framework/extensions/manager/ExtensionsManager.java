@@ -42,6 +42,7 @@ import org.apache.cloudstack.framework.extensions.api.RunCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.UnregisterExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.UpdateCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.UpdateExtensionCmd;
+import org.apache.cloudstack.framework.extensions.command.GetExtensionEntryPointChecksumCommand;
 
 import com.cloud.host.Host;
 import com.cloud.org.Cluster;
@@ -80,4 +81,6 @@ public interface ExtensionsManager extends Manager {
     ExtensionCustomActionResponse createCustomActionResponse(ExtensionCustomAction customAction);
 
     Map<String, Object> getExternalAccessDetails(Host host);
+
+    String handleGetExtensionEntryPointChecksumCommand(GetExtensionEntryPointChecksumCommand cmd);
 }

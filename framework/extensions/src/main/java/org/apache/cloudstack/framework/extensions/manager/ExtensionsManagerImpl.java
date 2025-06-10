@@ -26,6 +26,7 @@ import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,9 +34,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -59,6 +64,7 @@ import org.apache.cloudstack.framework.extensions.api.RunCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.UnregisterExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.UpdateCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.UpdateExtensionCmd;
+import org.apache.cloudstack.framework.extensions.command.GetExtensionEntryPointChecksumCommand;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionCustomActionDao;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionCustomActionDetailsDao;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionDao;
@@ -71,6 +77,9 @@ import org.apache.cloudstack.framework.extensions.vo.ExtensionDetailsVO;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionResourceMapDetailsVO;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionResourceMapVO;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionVO;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.management.ManagementServerHost;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.EnumUtils;
@@ -79,8 +88,13 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
 import com.cloud.agent.api.RunCustomActionAnswer;
 import com.cloud.agent.api.RunCustomActionCommand;
+import com.cloud.alert.AlertManager;
+import com.cloud.cluster.ClusterManager;
+import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.event.ActionEvent;
@@ -95,11 +109,14 @@ import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.ExternalProvisioner;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.org.Cluster;
+import com.cloud.serializer.GsonHelper;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
+import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -153,6 +170,17 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
 
     @Inject
     EntityManager entityManager;
+
+    @Inject
+    ManagementServerHostDao managementServerHostDao;
+
+    @Inject
+    ClusterManager clusterManager;
+
+    @Inject
+    AlertManager alertManager;
+
+    private ScheduledExecutorService entryPointSyncCheckExecutor;
 
     protected String getExtensionSafeName(String name) {
         return  name.replaceAll("[^a-zA-Z0-9._-]", "_").toLowerCase();
@@ -970,6 +998,37 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     }
 
     @Override
+    public String handleGetExtensionEntryPointChecksumCommand(GetExtensionEntryPointChecksumCommand cmd) {
+        final String extensionName = cmd.getExtensionName();
+        final String extensionRelativeEntryPointPath = cmd.getExtensionRelativeEntryPointPath();
+        logger.debug("Received GetExtensionEntryPointChecksumCommand from MS: {} for extension [id: {}, name: {}, relativeEntryPoint: {}]",
+                cmd.getMsId(), cmd.getExtensionId(), extensionName, extensionRelativeEntryPointPath);
+        return externalProvisioner.getChecksumForExtensionEntryPoint(extensionName, extensionRelativeEntryPointPath);
+    }
+
+    @Override
+    public boolean start() {
+        long syncCheckInitialDelay = 120;
+        long syncCheckInterval = 600;
+        logger.debug("Scheduling extensions entrypoint sync check task with initial delay={}s and interval={}s",
+                syncCheckInitialDelay, syncCheckInterval);
+        entryPointSyncCheckExecutor.scheduleWithFixedDelay(new EntryPointSyncCheckWorker(),
+                syncCheckInitialDelay, syncCheckInterval, TimeUnit.SECONDS);
+        return true;
+    }
+
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        try {
+            entryPointSyncCheckExecutor = Executors.newScheduledThreadPool(1,
+                    new NamedThreadFactory("Extension-EntryPoint-Sync-Check"));
+        } catch (final Exception e) {
+            throw new ConfigurationException("Unable to to configure ExtensionsManagerImpl");
+        }
+        return true;
+    }
+
+    @Override
     public List<Class<?>> getCommands() {
         List<Class<?>> cmds = new ArrayList<>();
         cmds.add(AddCustomActionCmd.class);
@@ -985,5 +1044,95 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         cmds.add(RegisterExtensionCmd.class);
         cmds.add(UnregisterExtensionCmd.class);
         return cmds;
+    }
+
+    public class EntryPointSyncCheckWorker extends ManagedContextRunnable {
+        protected void sendExtensionEntryPointOutOfSyncAlert(Extension extension) {
+            String msg = String.format("Entry-point for %s are out of sync across management servers",
+                    extension);
+            alertManager.sendAlert(AlertManager.AlertType.ALERT_TYPE_USERVM, 0L, 0L, msg, msg);
+        }
+
+        protected void updateExtensionSync(Extension extension, boolean sync) {
+            if (!sync) {
+                sendExtensionEntryPointOutOfSyncAlert(extension);
+            }
+            if (extension.isEntryPointSync() == sync) {
+                return;
+            }
+            ExtensionVO extensionVO = extensionDao.createForUpdate(extension.getId());
+            extensionVO.setEntryPointSync(sync);
+            extensionDao.update(extension.getId(), extensionVO);
+        }
+
+        protected String getChecksumFromMSPeer(Extension extension, ManagementServerHostVO msHost) {
+            final String msPeer = Long.toString(msHost.getMsid());
+            logger.debug("Retrieving checksum for {} from MS: {}", extension, msPeer);
+            final Command[] cmds = new Command[1];
+            cmds[0] = new GetExtensionEntryPointChecksumCommand(ManagementServerNode.getManagementServerId(),
+                    extension.getId(), extension.getName(), extension.getRelativeEntryPoint());
+            return clusterManager.execute(msPeer, 0L, GsonHelper.getGson().toJson(cmds), true);
+        }
+
+        protected void checkSyncForOrchestrator(Extension extension, List<ManagementServerHostVO> msHosts) {
+            if (CollectionUtils.isEmpty(msHosts)) {
+                updateExtensionSync(extension, true);
+                return;
+            }
+            String checksum = externalProvisioner.getChecksumForExtensionEntryPoint(extension.getName(),
+                    extension.getRelativeEntryPoint());
+            if (StringUtils.isBlank(checksum)) {
+                updateExtensionSync(extension, false);
+                return;
+            }
+            for (ManagementServerHostVO msHost : msHosts) {
+                final String msPeerChecksum = getChecksumFromMSPeer(extension, msHost);
+                if (!checksum.equals(msPeerChecksum)) {
+                    logger.warn("Entry-point checksum for {} is different [msid: {}, checksum: {}] and [msid: {}, checksum: {}]",
+                            extension, ManagementServerNode.getManagementServerId(), checksum,
+                            msHost.getMsid(), msPeerChecksum);
+                    updateExtensionSync(extension, false);
+                    return;
+                }
+            }
+            updateExtensionSync(extension, true);
+        }
+
+        protected void runCleanupForLongestRunningManagementServer() {
+            try {
+                List<ManagementServerHostVO> msHosts = managementServerHostDao.listBy(ManagementServerHost.State.Up);
+                msHosts.sort(Comparator.comparingLong(ManagementServerHostVO::getRunid));
+                ManagementServerHostVO msHost = msHosts.remove(0);
+                if (msHost == null || (msHost.getMsid() != ManagementServerNode.getManagementServerId())) {
+                    logger.debug("Skipping the extensions entrypoint sync check on this management server");
+                    return;
+                }
+                List<ExtensionVO> extensions = extensionDao.listAll();
+                for (ExtensionVO extension : extensions) {
+                    if (!Extension.Type.Orchestrator.equals(extension.getType())) {
+                        continue;
+                    }
+                    checkSyncForOrchestrator(extension, msHosts);
+                }
+            } catch (Exception e) {
+                logger.warn("Cleanup task failed to cleanup old webhook deliveries", e);
+            }
+        }
+
+        @Override
+        protected void runInContext() {
+            GlobalLock gcLock = GlobalLock.getInternLock("ExtensionEntryPointSyncCheck");
+            try {
+                if (gcLock.lock(3)) {
+                    try {
+                        runCleanupForLongestRunningManagementServer();
+                    } finally {
+                        gcLock.unlock();
+                    }
+                }
+            } finally {
+                gcLock.releaseRef();
+            }
+        }
     }
 }

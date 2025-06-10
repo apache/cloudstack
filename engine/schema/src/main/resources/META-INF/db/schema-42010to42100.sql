@@ -91,6 +91,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`extension` (
   `description` varchar(4096),
   `type` varchar(255) NOT NULL COMMENT 'Type of the extension: Orchestrator, etc',
   `relative_entry_point` varchar(2048) NOT NULL COMMENT 'Path of entry point for the extension relative to the root extensions directory',
+  `entry_point_sync` int unsigned DEFAULT '0' COMMENT 'True if the extension entry point is in sync across management servers',
   `is_user_defined` int unsigned DEFAULT '0' COMMENT 'True if the extension is added by admin',
   `created` datetime NOT NULL,
   `removed` datetime DEFAULT NULL,

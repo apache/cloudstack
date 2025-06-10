@@ -50,6 +50,8 @@ public interface ExternalProvisioner extends Manager {
 
     String getExtensionEntryPoint(String relativeEntryPoint);
 
+    String getChecksumForExtensionEntryPoint(String extensionName, String relativeEntryPoint);
+
     void prepareExtensionEntryPoint(String extensionName, boolean userDefined, String extensionRelativeEntryPoint);
 
     PrepareExternalProvisioningAnswer prepareExternalProvisioning(String hostGuid, String extensionName, String extensionRelativeEntryPoint, PrepareExternalProvisioningCommand cmd);

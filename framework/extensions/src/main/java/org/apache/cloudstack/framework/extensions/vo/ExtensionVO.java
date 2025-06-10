@@ -76,6 +76,9 @@ public class ExtensionVO implements Extension {
     @Column(name = "relative_entry_point", nullable = false, length = 2048)
     private String relativeEntryPoint;
 
+    @Column(name = "entry_point_sync")
+    private boolean entryPointSync;
+
     @Column(name = "is_user_defined")
     private boolean userDefined;
 
@@ -125,6 +128,15 @@ public class ExtensionVO implements Extension {
 
     public void setRelativeEntryPoint(String relativeEntryPoint) {
         this.relativeEntryPoint = relativeEntryPoint;
+    }
+
+    @Override
+    public boolean isEntryPointSync() {
+        return entryPointSync;
+    }
+
+    public void setEntryPointSync(boolean entryPointSync) {
+        this.entryPointSync = entryPointSync;
     }
 
     @Override
