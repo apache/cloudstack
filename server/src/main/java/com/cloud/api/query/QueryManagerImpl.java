@@ -316,6 +316,7 @@ import com.cloud.storage.VolumeApiServiceImpl;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.BucketDao;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -642,6 +643,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     HostPodDao podDao;
+
+    @Inject
+    GuestOSDao guestOSDao;
 
     private SearchCriteria<ServiceOfferingJoinVO> getMinimumCpuServiceOfferingJoinSearchCriteria(int cpu) {
         SearchCriteria<ServiceOfferingJoinVO> sc = _srvOfferingJoinDao.createSearchCriteria();
@@ -4792,7 +4796,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 null, cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), cmd.getStoragePoolId(),
                 cmd.getImageStoreId(), hypervisorType, showDomr, cmd.listInReadyState(), permittedAccounts, caller,
                 listProjectResourcesCriteria, tags, showRemovedTmpl, cmd.getIds(), parentTemplateId, cmd.getShowUnique(),
-                templateType, isVnf, cmd.getArch(), forCks);
+                templateType, isVnf, cmd.getArch(), cmd.getOsCategoryId(), forCks);
     }
 
     private Pair<List<TemplateJoinVO>, Integer> searchForTemplatesInternal(Long templateId, String name, String keyword,
@@ -4801,7 +4805,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             boolean showDomr, boolean onlyReady, List<Account> permittedAccounts, Account caller,
             ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags,
             boolean showRemovedTmpl, List<Long> ids, Long parentTemplateId, Boolean showUnique, String templateType,
-            Boolean isVnf, CPU.CPUArch arch, Boolean forCks) {
+            Boolean isVnf, CPU.CPUArch arch, Long osCategoryId, Boolean forCks) {
 
         // check if zone is configured, if not, just return empty list
         List<HypervisorType> hypers = null;
@@ -4829,8 +4833,11 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (storagePoolId != null) {
             SearchBuilder<VMTemplateStoragePoolVO> storagePoolSb = templatePoolDao.createSearchBuilder();
-            storagePoolSb.and("pool_id", storagePoolSb.entity().getPoolId(), SearchCriteria.Op.EQ);
             sb.join("storagePool", storagePoolSb, storagePoolSb.entity().getTemplateId(), sb.entity().getId(), JoinBuilder.JoinType.INNER);
+        }
+
+        if (osCategoryId != null) {
+            sb.and("guestOsIdIN", sb.entity().getGuestOSId(), Op.IN);
         }
 
         SearchCriteria<TemplateJoinVO> sc = sb.create();
@@ -4845,6 +4852,15 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (storagePoolId != null) {
             sc.setJoinParameters("storagePool", "pool_id", storagePoolId);
+        }
+
+        if (osCategoryId != null) {
+            List<Long> guestOsIds = guestOSDao.listIdsByCategoryId(osCategoryId);
+            if (CollectionUtils.isNotEmpty(guestOsIds)) {
+                sc.setParameters("guestOsIdIN", guestOsIds.toArray());
+            } else {
+                return new Pair<>(new ArrayList<>(), 0);
+            }
         }
 
         // verify templateId parameter and specially handle it
@@ -5236,7 +5252,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         return searchForTemplatesInternal(cmd.getId(), cmd.getIsoName(), cmd.getKeyword(), isoFilter, true, cmd.isBootable(),
                 cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), cmd.getStoragePoolId(), cmd.getImageStoreId(),
                 hypervisorType, true, cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria,
-                tags, showRemovedISO, null, null, cmd.getShowUnique(), null, null, cmd.getArch(), null);
+                tags, showRemovedISO, null, null, cmd.getShowUnique(), null, null,
+                cmd.getArch(), cmd.getOsCategoryId(), null);
     }
 
     @Override

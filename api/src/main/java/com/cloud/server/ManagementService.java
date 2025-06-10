@@ -25,12 +25,15 @@ import org.apache.cloudstack.api.command.admin.cluster.ListClustersCmd;
 import org.apache.cloudstack.api.command.admin.config.ListCfgGroupsByCmd;
 import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateHypervisorCapabilitiesCmd;
+import org.apache.cloudstack.api.command.admin.guest.AddGuestOsCategoryCmd;
 import org.apache.cloudstack.api.command.admin.guest.AddGuestOsCmd;
 import org.apache.cloudstack.api.command.admin.guest.AddGuestOsMappingCmd;
+import org.apache.cloudstack.api.command.admin.guest.DeleteGuestOsCategoryCmd;
 import org.apache.cloudstack.api.command.admin.guest.GetHypervisorGuestOsNamesCmd;
 import org.apache.cloudstack.api.command.admin.guest.ListGuestOsMappingCmd;
 import org.apache.cloudstack.api.command.admin.guest.RemoveGuestOsCmd;
 import org.apache.cloudstack.api.command.admin.guest.RemoveGuestOsMappingCmd;
+import org.apache.cloudstack.api.command.admin.guest.UpdateGuestOsCategoryCmd;
 import org.apache.cloudstack.api.command.admin.guest.UpdateGuestOsCmd;
 import org.apache.cloudstack.api.command.admin.guest.UpdateGuestOsMappingCmd;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
@@ -169,6 +172,12 @@ public interface ManagementService {
      * @return list of GuestOSCategories
      */
     Pair<List<? extends GuestOsCategory>, Integer> listGuestOSCategoriesByCriteria(ListGuestOsCategoriesCmd cmd);
+
+    GuestOsCategory addGuestOsCategory(AddGuestOsCategoryCmd cmd);
+
+    GuestOsCategory updateGuestOsCategory(UpdateGuestOsCategoryCmd cmd);
+
+    boolean deleteGuestOsCategory(DeleteGuestOsCategoryCmd cmd);
 
     /**
      * Obtains a list of all guest OS mappings

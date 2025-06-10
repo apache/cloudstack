@@ -30,11 +30,11 @@
                 <edit-outlined class="upload-icon"/>
               </div>
               <slot name="avatar">
-                <span v-if="(resource.icon && resource.icon.base64image || images.template || images.iso || resourceIcon) && !['router', 'systemvm', 'volume'].includes($route.path.split('/')[1])">
-                  <resource-icon :image="getImage(resource.icon && resource.icon.base64image || images.template || images.iso || resourceIcon)" size="4x" style="margin-right: 5px"/>
+                <span v-if="resourceIcon && !['router', 'systemvm', 'volume'].includes($route.path.split('/')[1])">
+                  <resource-icon :image="resourceIcon" size="4x" style="margin-right: 5px"/>
                 </span>
                 <span v-else>
-                  <os-logo v-if="resource.ostypeid || resource.ostypename" :osId="resource.ostypeid" :osName="resource.ostypename" size="3x" @update-osname="setResourceOsType"/>
+                  <os-logo v-if="resource.ostypeid || resource.ostypename || ['guestoscategory'].includes($route.path.split('/')[1])" :osId="resource.ostypeid" :osName="resource.ostypename || resource.name" size="3x" @update-osname="setResourceOsType"/>
                   <render-icon v-else-if="typeof $route.meta.icon ==='string'" style="font-size: 36px" :icon="$route.meta.icon" />
                   <font-awesome-icon
                     v-else-if="$route.meta.icon && Array.isArray($route.meta.icon)"
@@ -158,11 +158,16 @@
         <div class="resource-detail-item" v-if="resource.ostypename && resource.ostypeid">
           <div class="resource-detail-item__label">{{ $t('label.ostypename') }}</div>
           <div class="resource-detail-item__details">
-            <span v-if="resource.icon && resource.icon.base64image || images.template || images.iso">
-              <resource-icon :image="getImage(images.template || images.iso)" size="1x" style="margin-right: 5px"/>
+            <span v-if="images.guestoscategory">
+              <resource-icon :image="images.guestoscategory" size="1x" style="margin-right: 5px"/>
             </span>
             <os-logo v-else :osId="resource.ostypeid" :osName="resource.ostypename" size="lg" style="margin-left: -1px" />
-            <span style="margin-left: 8px">{{ resource.ostypename }}</span>
+            <span style="margin-left: 8px">
+              <router-link v-if="$router.resolve('/guestos/' + resource.ostypeid).matched[0].redirect !== '/exception/404'" :to="{ path: '/guestos/' + resource.ostypeid }">
+                {{ resource.ostypename }}
+              </router-link>
+              <span v-else>{{ resource.ostypename }}</span>
+            </span>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.ipaddress">
@@ -449,7 +454,7 @@
           <div class="resource-detail-item__label">{{ $t('label.project') }}</div>
           <div class="resource-detail-item__details">
             <span v-if="images.project">
-              <resource-icon :image="getImage(images.project)" size="1x" style="margin-right: 5px"/>
+              <resource-icon :image="images.project" size="1x" style="margin-right: 5px"/>
             </span>
             <project-outlined v-else />
             <router-link v-if="!isStatic && resource.projectid" :to="{ path: '/project/' + resource.projectid }">{{ resource.project || resource.projectname || resource.projectid }}</router-link>
@@ -546,7 +551,7 @@
           <div class="resource-detail-item__label">{{ $t('label.vpcname') }}</div>
           <div class="resource-detail-item__details">
             <span v-if="images.vpc">
-              <resource-icon :image="getImage(images.vpc)" size="1x" style="margin-right: 5px"/>
+              <resource-icon :image="images.vpc" size="1x" style="margin-right: 5px"/>
             </span>
             <deployment-unit-outlined v-else />
             <router-link :to="{ path: '/vpc/' + resource.vpcid }">{{ resource.vpcname || resource.vpcid }}</router-link>
@@ -557,7 +562,7 @@
           <div class="resource-detail-item__label">{{ $t('label.aclid') }}</div>
           <div class="resource-detail-item__details">
             <span v-if="images.acl">
-              <resource-icon :image="getImage(images.acl)" size="1x" style="margin-right: 5px"/>
+              <resource-icon :image="images.acl" size="1x" style="margin-right: 5px"/>
             </span>
             <deployment-unit-outlined v-else />
             <router-link :to="{ path: '/acllist/' + resource.aclid }">{{ resource.aclname || resource.aclid }}</router-link>
@@ -578,7 +583,7 @@
         <div class="resource-detail-item" v-if="resource.templateid">
           <div class="resource-detail-item__label">{{ resource.templateformat === 'ISO'? $t('label.iso') : $t('label.templatename') }}</div>
           <div class="resource-detail-item__details">
-            <resource-icon v-if="resource.icon" :image="getImage(resource.icon.base64image)" size="1x" style="margin-right: 5px"/>
+            <resource-icon v-if="images.template || images.guestoscategory" :image="images.template || images.guestoscategory" size="1x" style="margin-right: 5px"/>
             <SaveOutlined v-else />
             <router-link :to="{ path: (resource.templateformat === 'ISO' ? '/iso/' : '/template/') + resource.templateid }">{{ resource.templatedisplaytext || resource.templatename || resource.templateid }} </router-link>
           </div>
@@ -586,7 +591,7 @@
         <div class="resource-detail-item" v-if="resource.isoid">
           <div class="resource-detail-item__label">{{ $t('label.isoname') }}</div>
           <div class="resource-detail-item__details">
-            <resource-icon v-if="resource.icon" :image="getImage(resource.icon.base64image)" size="1x" style="margin-right: 5px"/>
+            <resource-icon v-if="images.iso || (resource.isoid === resource.templateid && images.guestoscategory)" :image="images.iso || images.guestoscategory" size="1x" style="margin-right: 5px"/>
             <UsbOutlined v-else />
               <router-link :to="{ path: '/iso/' + resource.isoid }">{{ resource.isodisplaytext || resource.isoname || resource.isoid }} </router-link>
           </div>
@@ -704,7 +709,7 @@
           <div class="resource-detail-item__label">{{ $t('label.zone') }}</div>
           <div class="resource-detail-item__details">
             <span v-if="images.zone">
-              <resource-icon :image="getImage(images.zone)" size="1x" style="margin-right: 5px"/>
+              <resource-icon :image="images.zone" size="1x" style="margin-right: 5px"/>
             </span>
             <global-outlined v-else />
             <router-link v-if="!isStatic && $router.resolve('/zone/' + resource.zoneid).matched[0].redirect !== '/exception/404'" :to="{ path: '/zone/' + resource.zoneid }">{{ resource.zone || resource.zonename || resource.zoneid }}</router-link>
@@ -739,7 +744,7 @@
           <div class="resource-detail-item__label">{{ $t('label.account') }}</div>
           <div class="resource-detail-item__details">
             <span v-if="images.account">
-              <resource-icon :image="getImage(images.account)" size="1x" style="margin-right: 5px"/>
+              <resource-icon :image="images.account" size="1x" style="margin-right: 5px"/>
             </span>
             <user-outlined v-else />
             <router-link v-if="!isStatic && $store.getters.userInfo.roletype !== 'User'" :to="{ path: '/account', query: { name: resource.account, domainid: resource.domainid } }">{{ resource.account }}</router-link>
@@ -757,7 +762,7 @@
         <div class="resource-detail-item" v-if="resource.domainid">
           <div class="resource-detail-item__label">{{ $t('label.domain') }}</div>
           <div class="resource-detail-item__details">
-            <resource-icon v-if="images.domain" :image="getImage(images.domain)" size="1x" style="margin-right: 5px"/>
+            <resource-icon v-if="images.domain" :image="images.domain" size="1x" style="margin-right: 5px"/>
             <block-outlined v-else />
             <router-link v-if="!isStatic && $store.getters.userInfo.roletype !== 'User'" :to="{ path: '/domain/' + resource.domainid, query: { tab: 'details'}  }">{{ resource.domain || resource.domainid }}</router-link>
             <span v-else>{{ resource.domain || resource.domainid }}</span>
@@ -815,6 +820,10 @@
             </a-button>
           </router-link>
         </div>
+        <image-deploy-instance-button
+          v-if="'deployVirtualMachine' in $store.getters.apis && ['template', 'iso'].includes($route.meta.name)"
+          :resource="resource"
+          :osCategoryId="osCategoryId" />
       </div>
 
       <div class="account-center-tags" v-if="showKeys || resource.apikeyaccess">
@@ -921,6 +930,7 @@ import UploadResourceIcon from '@/components/view/UploadResourceIcon'
 import eventBus from '@/config/eventBus'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import ResourceLabel from '@/components/widgets/ResourceLabel'
+import ImageDeployInstanceButton from '@/components/view/ImageDeployInstanceButton.vue'
 
 export default {
   name: 'InfoCard',
@@ -932,7 +942,8 @@ export default {
     TooltipButton,
     UploadResourceIcon,
     ResourceIcon,
-    ResourceLabel
+    ResourceLabel,
+    ImageDeployInstanceButton
   },
   props: {
     resource: {
@@ -978,7 +989,8 @@ export default {
         network: ''
       },
       newResource: {},
-      validLinks: {}
+      validLinks: {},
+      osCategoryId: null
     }
   },
   watch: {
@@ -1002,9 +1014,6 @@ export default {
         }
         this.updateResourceAdditionalData()
       }
-    },
-    async templateIcon () {
-      this.getIcons()
     }
   },
   created () {
@@ -1034,22 +1043,31 @@ export default {
       }
       return [this.resource.keypairs.toString()]
     },
-    templateIcon () {
-      return this.resource.templateid
+    isResourceShowingParentResourceIcon () {
+      const resourcesShowParentResourceIcon = ['guestos']
+      const routeName = this.$route.path.split('/')?.[1] || null
+      if (!routeName) {
+        return false
+      }
+      return resourcesShowParentResourceIcon.includes(routeName)
     },
     resourceIcon () {
-      if (this.$showIcon()) {
-        if (this.resource?.icon?.base64image) {
-          return this.resource.icon.base64image
-        }
-        if (this.resource?.resourceIcon?.base64image) {
-          return this.resource.resourceIcon.base64image
-        }
+      if (!this.$showIcon() && !this.isResourceShowingParentResourceIcon) {
+        return null
       }
-      return null
+      if (this.resource?.icon?.base64image) {
+        return this.resource.icon.base64image
+      }
+      if (this.resource?.resourceIcon?.base64image) {
+        return this.resource.resourceIcon.base64image
+      }
+      return this.images.template || this.images.iso || this.images.guestoscategory || null
     },
     routeFromResourceType () {
       return this.$getRouteFromResourceType(this.resource.resourcetype)
+    },
+    isModernImageSelection () {
+      return this.$config.imageSelectionInterface === undefined || this.$config.imageSelectionInterface === 'modern'
     }
   },
   methods: {
@@ -1064,6 +1082,15 @@ export default {
           this.getTags()
         }
       }
+      const osId = this.resource.guestosid || this.resource.ostypeid
+      if (osId && 'listOsTypes' in this.$store.getters.apis) {
+        api('listOsTypes', { id: osId }).then(json => {
+          this.osCategoryId = json?.listostypesresponse?.ostype?.[0]?.oscategoryid || null
+          if (this.osCategoryId) {
+            this.fetchResourceIcon(this.osCategoryId, 'guestoscategory')
+          }
+        })
+      }
       this.getIcons()
     },
     showUploadModal (show) {
@@ -1075,43 +1102,34 @@ export default {
         this.showUpload = false
       }
     },
-    getImage (image) {
-      return (image || this.resource?.icon?.base64image)
-    },
-    async getIcons () {
-      this.images = {
-        zone: '',
-        template: '',
-        iso: '',
-        domain: '',
-        account: '',
-        project: '',
-        vpc: '',
-        network: ''
-      }
+    getIcons () {
+      this.images = {}
       if (this.resource.templateid) {
-        await this.fetchResourceIcon(this.resource.templateid, 'template')
+        this.fetchResourceIcon(this.resource.templateid, 'template')
       }
       if (this.resource.isoid) {
-        await this.fetchResourceIcon(this.resource.isoid, 'iso')
+        this.fetchResourceIcon(this.resource.isoid, 'iso')
       }
       if (this.resource.zoneid) {
-        await this.fetchResourceIcon(this.resource.zoneid, 'zone')
+        this.fetchResourceIcon(this.resource.zoneid, 'zone')
       }
       if (this.resource.domainid) {
-        await this.fetchResourceIcon(this.resource.domainid, 'domain')
+        this.fetchResourceIcon(this.resource.domainid, 'domain')
       }
       if (this.resource.account) {
-        await this.fetchAccount()
+        this.fetchAccount()
       }
       if (this.resource.projectid) {
-        await this.fetchResourceIcon(this.resource.projectid, 'project')
+        this.fetchResourceIcon(this.resource.projectid, 'project')
       }
       if (this.resource.vpcid) {
-        await this.fetchResourceIcon(this.resource.vpcid, 'vpc')
+        this.fetchResourceIcon(this.resource.vpcid, 'vpc')
       }
       if (this.resource.networkid) {
-        await this.fetchResourceIcon(this.resource.networkid, 'network')
+        this.fetchResourceIcon(this.resource.networkid, 'network')
+      }
+      if (this.resource.oscategoryid) {
+        this.fetchResourceIcon(this.resource.oscategoryid, 'guestoscategory')
       }
     },
     fetchAccount () {
@@ -1136,19 +1154,14 @@ export default {
             resourcetype: type
           }).then(json => {
             const response = json.listresourceiconresponse.icon || []
-            if (response?.[0]) {
-              this.images[type] = response[0].base64image
-              resolve(this.images)
-            } else {
-              this.images[type] = ''
-              resolve(this.images)
-            }
+            this.images[type] = response?.[0]?.base64image || null
+            resolve(this.images)
           }).catch(error => {
             reject(error)
           })
         })
       } else {
-        this.images.type = ''
+        this.images.type = null
       }
     },
     setData () {
@@ -1279,7 +1292,6 @@ export default {
           query[item.param] = this.resource.id
         }
       }
-
       return query
     }
   }
