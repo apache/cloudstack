@@ -2193,7 +2193,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     }
 
     @Override
-    public boolean transferDirectAgentsFromMS(String fromMsUuid, long fromMsId, long timeoutDurationInMs) {
+    public boolean transferDirectAgentsFromMS(String fromMsUuid, long fromMsId, long timeoutDurationInMs, boolean excludeHostsInMaintenance) {
         return true;
     }
 

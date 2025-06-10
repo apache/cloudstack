@@ -1876,6 +1876,7 @@
 "label.read.io": "Read (IO)",
 "label.readonly": "Read-Only",
 "label.reason": "Reason",
+"label.rebalance": "Rebalance",
 "label.reboot": "Reboot",
 "label.recent.deliveries": "Recent deliveries",
 "label.receivedbytes": "Bytes received",

@@ -26,7 +26,9 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
+import com.cloud.resource.ResourceState;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
+import org.apache.cloudstack.agent.lb.IndirectAgentLBServiceImpl;
 import org.apache.cloudstack.api.command.CancelMaintenanceCmd;
 import org.apache.cloudstack.api.command.CancelShutdownCmd;
 import org.apache.cloudstack.api.command.PrepareForMaintenanceCmd;
@@ -251,7 +253,7 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
 
         this.preparingForShutdown = true;
         jobManager.disableAsyncJobs();
-        waitForPendingJobs();
+        waitForPendingJobs(false);
     }
 
     @Override
@@ -273,7 +275,7 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
     }
 
     @Override
-    public void prepareForMaintenance(String lbAlorithm) {
+    public void prepareForMaintenance(String lbAlorithm, boolean forced) {
         if (this.preparingForShutdown) {
             throw new CloudRuntimeException("Shutdown has already been triggered, cancel shutdown and try again");
         }
@@ -286,7 +288,7 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
         this.lbAlgorithm = lbAlorithm;
         jobManager.disableAsyncJobs();
         onPreparingForMaintenance();
-        waitForPendingJobs();
+        waitForPendingJobs(forced);
     }
 
     @Override
@@ -310,12 +312,13 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
         }
     }
 
-    private void waitForPendingJobs() {
+    private void waitForPendingJobs(boolean forceMaintenance) {
         cancelWaitForPendingJobs();
         pendingJobsCheckTask = Executors.newScheduledThreadPool(1, new NamedThreadFactory("PendingJobsCheck"));
         long pendingJobsCheckDelayInSecs = 1L; // 1 sec
         long pendingJobsCheckPeriodInSecs = 3L; // every 3 secs, check more frequently for pending jobs
-        pendingJobsCheckTask.scheduleAtFixedRate(new CheckPendingJobsTask(this), pendingJobsCheckDelayInSecs, pendingJobsCheckPeriodInSecs, TimeUnit.SECONDS);
+        boolean ignoreMaintenanceHosts = ManagementServerMaintenanceIgnoreMaintenanceHosts.value();
+        pendingJobsCheckTask.scheduleAtFixedRate(new CheckPendingJobsTask(this, ignoreMaintenanceHosts, forceMaintenance), pendingJobsCheckDelayInSecs, pendingJobsCheckPeriodInSecs, TimeUnit.SECONDS);
     }
 
     @Override
@@ -426,7 +429,8 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
 
         checkAnyMsInPreparingStates("prepare for maintenance");
 
-        if (indirectAgentLB.haveAgentBasedHosts(msHost.getMsid())) {
+        boolean ignoreMaintenanceHosts = ManagementServerMaintenanceIgnoreMaintenanceHosts.value();
+        if (indirectAgentLB.haveAgentBasedHosts(msHost.getMsid(), ignoreMaintenanceHosts)) {
             List<String> indirectAgentMsList = indirectAgentLB.getManagementServerList();
             indirectAgentMsList.remove(msHost.getServiceIP());
             List<String> nonUpMsList = msHostDao.listNonUpStateMsIPs();
@@ -437,7 +441,7 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
         }
 
         final Command[] cmds = new Command[1];
-        cmds[0] = new PrepareForMaintenanceManagementServerHostCommand(msHost.getMsid(), cmd.getAlgorithm());
+        cmds[0] = new PrepareForMaintenanceManagementServerHostCommand(msHost.getMsid(), cmd.getAlgorithm(), cmd.isForced());
         executeCmd(msHost, cmds);
 
         msHostDao.updateState(msHost.getId(), State.PreparingForMaintenance);
@@ -457,10 +461,15 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
         }
 
         final Command[] cmds = new Command[1];
-        cmds[0] = new CancelMaintenanceManagementServerHostCommand(msHost.getMsid());
+        cmds[0] = new CancelMaintenanceManagementServerHostCommand(msHost.getMsid(), cmd.getRebalance());
         executeCmd(msHost, cmds);
 
         msHostDao.updateState(msHost.getId(), State.Up);
+
+        if (cmd.getRebalance()) {
+            logger.info("Propagate MS list and rebalance indirect agents");
+            indirectAgentLB.propagateMSListToAgents(true);
+        }
         return prepareMaintenanceResponse(cmd.getManagementServerId());
     }
 
@@ -546,17 +555,21 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[]{
-                ManagementServerMaintenanceTimeoutInMins
+                ManagementServerMaintenanceTimeoutInMins, ManagementServerMaintenanceIgnoreMaintenanceHosts
         };
     }
 
     private final class CheckPendingJobsTask extends ManagedContextRunnable {
 
         private ManagementServerMaintenanceManager managementServerMaintenanceManager;
+        private boolean ignoreMaintenanceHosts = false;
         private boolean agentsTransferTriggered = false;
+        private boolean forceMaintenance = false;
 
-        public CheckPendingJobsTask(ManagementServerMaintenanceManager managementServerMaintenanceManager) {
+        public CheckPendingJobsTask(ManagementServerMaintenanceManager managementServerMaintenanceManager, boolean ignoreMaintenanceHosts, boolean forceMaintenance) {
             this.managementServerMaintenanceManager = managementServerMaintenanceManager;
+            this.ignoreMaintenanceHosts = ignoreMaintenanceHosts;
+            this.forceMaintenance = forceMaintenance;
         }
 
         @Override
@@ -570,6 +583,15 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
                 }
 
                 if (managementServerMaintenanceManager.isPreparingForMaintenance() && isMaintenanceWindowExpired()) {
+                    if (forceMaintenance) {
+                        logger.debug("Maintenance window timeout, MS is forced to Maintenance Mode");
+                        ManagementServerHostVO msHost = msHostDao.findByMsid(ManagementServerNode.getManagementServerId());
+                        msHostDao.updateState(msHost.getId(), State.Maintenance);
+                        managementServerMaintenanceManager.onMaintenance();
+                        managementServerMaintenanceManager.cancelWaitForPendingJobs();
+                        return;
+                    }
+
                     logger.debug("Maintenance window timeout, terminating the pending jobs check timer task");
                     managementServerMaintenanceManager.cancelPreparingForMaintenance(null);
                     managementServerMaintenanceManager.cancelWaitForPendingJobs();
@@ -577,7 +599,9 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
                 }
 
                 long totalPendingJobs = managementServerMaintenanceManager.countPendingJobs(ManagementServerNode.getManagementServerId());
-                int totalAgents = hostDao.countByMs(ManagementServerNode.getManagementServerId());
+
+                long totalAgents = totalAgentsInMs();
+
                 String msg = String.format("Checking for triggered maintenance or shutdown... shutdownTriggered [%b] AllowAsyncJobs [%b] PendingJobCount [%d] AgentsCount [%d]",
                         managementServerMaintenanceManager.isShutdownTriggered(), managementServerMaintenanceManager.isAsyncJobsEnabled(), totalPendingJobs, totalAgents);
                 logger.debug(msg);
@@ -609,7 +633,7 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
 
                     agentsTransferTriggered = true;
                     logger.info(String.format("Preparing for maintenance - migrating agents from management server node %d (id: %s)", ManagementServerNode.getManagementServerId(), msHost.getUuid()));
-                    boolean agentsMigrated = indirectAgentLB.migrateAgents(msHost.getUuid(), ManagementServerNode.getManagementServerId(), managementServerMaintenanceManager.getLbAlgorithm(), remainingMaintenanceWindowInMs());
+                    boolean agentsMigrated = indirectAgentLB.migrateAgents(msHost.getUuid(), ManagementServerNode.getManagementServerId(), managementServerMaintenanceManager.getLbAlgorithm(), remainingMaintenanceWindowInMs(), ignoreMaintenanceHosts);
                     if (!agentsMigrated) {
                         logger.warn(String.format("Unable to prepare for maintenance, cannot migrate indirect agents on this management server node %d (id: %s)", ManagementServerNode.getManagementServerId(), msHost.getUuid()));
                         managementServerMaintenanceManager.cancelPreparingForMaintenance(msHost);
@@ -617,7 +641,7 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
                         return;
                     }
 
-                    if(!agentMgr.transferDirectAgentsFromMS(msHost.getUuid(), ManagementServerNode.getManagementServerId(), remainingMaintenanceWindowInMs())) {
+                    if(!agentMgr.transferDirectAgentsFromMS(msHost.getUuid(), ManagementServerNode.getManagementServerId(), remainingMaintenanceWindowInMs(), ignoreMaintenanceHosts)) {
                         logger.warn(String.format("Unable to prepare for maintenance, cannot transfer direct agents on this management server node %d (id: %s)", ManagementServerNode.getManagementServerId(), msHost.getUuid()));
                         managementServerMaintenanceManager.cancelPreparingForMaintenance(msHost);
                         managementServerMaintenanceManager.cancelWaitForPendingJobs();
@@ -647,6 +671,15 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
             long maintenanceElapsedTimeInMs = System.currentTimeMillis() - managementServerMaintenanceManager.getMaintenanceStartTime();
             long remainingMaintenanceWindowTimeInMs = (ManagementServerMaintenanceTimeoutInMins.value().longValue() * 60 * 1000) - maintenanceElapsedTimeInMs;
             return (remainingMaintenanceWindowTimeInMs > 0) ? remainingMaintenanceWindowTimeInMs : 0;
+        }
+
+        private long totalAgentsInMs() {
+            /* Any Host in Maintenance state could block moving Management Server to Maintenance state, exclude those Hosts from total agents count
+             * To exclude maintenance states use values from ResourceState as source of truth
+             */
+            List<ResourceState> statesToExclude = ignoreMaintenanceHosts ? ResourceState.s_maintenanceStates : List.of();
+            return hostDao.countHostsByMsResourceStateTypeAndHypervisorType(ManagementServerNode.getManagementServerId(), statesToExclude,
+                    IndirectAgentLBServiceImpl.agentValidHostTypes, null);
         }
     }
 }

@@ -75,6 +75,7 @@ export default {
       message: 'message.cancel.maintenance',
       dataView: true,
       popup: true,
+      args: ['rebalance'],
       show: (record, store) => { return ['PreparingForMaintenance', 'Maintenance'].includes(record.state) },
       mapping: {
         managementserverid: {
