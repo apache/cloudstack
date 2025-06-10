@@ -99,6 +99,7 @@ import org.apache.cloudstack.vm.UnmanagedVMsManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang3.ObjectUtils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -1536,16 +1537,23 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         command.setExternalDetails(externalDetails);
     }
 
-    protected void updateStopCommandForExternalHypervisorType(final HypervisorType hypervisorType,  final Long hostId,
-                                                              final StopCommand stopCommand) {
-        if (!HypervisorType.External.equals(hypervisorType) || hostId == null) {
+    protected void updateStopCommandForExternalHypervisorType(final HypervisorType hypervisorType,
+                  final VirtualMachineProfile vmProfile, final StopCommand stopCommand) {
+        if (!HypervisorType.External.equals(hypervisorType) || vmProfile.getHostId() == null) {
             return;
         }
-        Host host = _hostDao.findById(hostId);
+        Host host = _hostDao.findById(vmProfile.getHostId());
         if (host == null) {
             return;
         }
-        stopCommand.setExternalDetails(extensionsManager.getExternalAccessDetails(host));
+        VirtualMachineTO vmTO = ObjectUtils.defaultIfNull(stopCommand.getVirtualMachine(), toVmTO(vmProfile));
+        Map<String, Object> externalDetails = extensionsManager.getExternalAccessDetails(host);
+        Map<String, String> vmExternalDetails = vmTO.getExternalDetails();
+        if (MapUtils.isNotEmpty(vmExternalDetails)) {
+            externalDetails.put(ApiConstants.VIRTUAL_MACHINE_ID, vmExternalDetails);
+        }
+        stopCommand.setVirtualMachine(vmTO);
+        stopCommand.setExternalDetails(externalDetails);
     }
 
     private void updateRebootCommandWithExternalDetails(Host host, VirtualMachineTO vmTO, RebootCommand rebootCmd) {
@@ -1949,7 +1957,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         Map<String, Boolean> vlanToPersistenceMap = getVlanToPersistenceMapForVM(vm.getId());
 
         StopCommand stpCmd = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), checkBeforeCleanup);
-        updateStopCommandForExternalHypervisorType(vm.getHypervisorType(), profile.getHostId(), stpCmd);
+        updateStopCommandForExternalHypervisorType(vm.getHypervisorType(), profile, stpCmd);
         if (MapUtils.isNotEmpty(vlanToPersistenceMap)) {
             stpCmd.setVlanToPersistenceMap(vlanToPersistenceMap);
         }
@@ -2277,7 +2285,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         Map<String, Boolean> vlanToPersistenceMap = getVlanToPersistenceMapForVM(vm.getId());
         final StopCommand stop = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), false, cleanUpEvenIfUnableToStop);
         stop.setControlIp(getControlNicIpForVM(vm));
-        updateStopCommandForExternalHypervisorType(vm.getHypervisorType(), vm.getHostId(), stop);
+        updateStopCommandForExternalHypervisorType(vm.getHypervisorType(), profile, stop);
         if (MapUtils.isNotEmpty(vlanToPersistenceMap)) {
             stop.setVlanToPersistenceMap(vlanToPersistenceMap);
         }
