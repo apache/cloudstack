@@ -868,6 +868,7 @@ export default {
   name: 'Wizard',
   components: {
     InfoCard,
+    DeployButtons,
     ResourceIcon,
     ZoneBlockRadioGroupSelect,
     BlockRadioGroupSelect,

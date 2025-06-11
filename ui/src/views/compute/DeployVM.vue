@@ -913,6 +913,7 @@ export default {
   components: {
     OwnershipSelection,
     InfoCard,
+    DeployButtons,
     ResourceIcon,
     ZoneBlockRadioGroupSelect,
     BlockRadioGroupSelect,
