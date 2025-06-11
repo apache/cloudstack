@@ -59,6 +59,7 @@ import com.cloud.server.ResourceManagerUtil;
 import com.cloud.server.ResourceTag;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.GuestOsCategory;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VMTemplateVO;
@@ -119,6 +120,7 @@ public class ResourceManagerUtilImpl implements ResourceManagerUtil {
         s_typeMap.put(ResourceTag.ResourceObjectType.VpcOffering, VpcOfferingVO.class);
         s_typeMap.put(ResourceTag.ResourceObjectType.Domain, DomainVO.class);
         s_typeMap.put(ResourceTag.ResourceObjectType.ObjectStore, ObjectStoreVO.class);
+        s_typeMap.put(ResourceTag.ResourceObjectType.GuestOsCategory, GuestOsCategory.class);
     }
 
     @Inject

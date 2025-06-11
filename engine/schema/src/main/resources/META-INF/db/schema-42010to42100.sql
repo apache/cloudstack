@@ -80,3 +80,93 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.host', 'storage_access_groups', 'var
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.cluster', 'storage_access_groups', 'varchar(255) DEFAULT NULL COMMENT "storage access groups for the hosts in the cluster"');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.host_pod_ref', 'storage_access_groups', 'varchar(255) DEFAULT NULL COMMENT "storage access groups for the hosts in the pod"');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.data_center', 'storage_access_groups', 'varchar(255) DEFAULT NULL COMMENT "storage access groups for the hosts in the zone"');
+
+-- Add featured column for guest_os_category
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.guest_os_category', 'featured', 'tinyint(1) NOT NULL DEFAULT 0 COMMENT "whether the category is featured or not" AFTER `uuid`');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.guest_os_category', 'sort_key', 'int NOT NULL DEFAULT 0 COMMENT "sort key used for customising sort method" AFTER `featured`');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.guest_os_category', 'created', 'datetime COMMENT "date on which the category was created" AFTER `sort_key`');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.guest_os_category', 'removed', 'datetime COMMENT "date removed if not null" AFTER `created`');
+UPDATE `cloud`.`guest_os_category` SET `featured` = 1 WHERE `name` NOT IN ('Novel', 'None');
+
+-- Begin: Changes for Guest OS category cleanup
+-- Add new OS categories if not present
+DROP PROCEDURE IF EXISTS `cloud`.`INSERT_CATEGORY_IF_NOT_EXIST`;
+CREATE PROCEDURE `cloud`.`INSERT_CATEGORY_IF_NOT_EXIST`(IN os_name VARCHAR(255))
+BEGIN
+    IF NOT EXISTS ((SELECT 1 FROM `cloud`.`guest_os_category` WHERE name = os_name))
+    THEN
+        INSERT INTO `cloud`.`guest_os_category` (name, uuid)
+            VALUES (os_name, UUID())
+;   END IF
+; END;
+
+CALL `cloud`.`INSERT_CATEGORY_IF_NOT_EXIST`('Fedora');
+CALL `cloud`.`INSERT_CATEGORY_IF_NOT_EXIST`('Rocky Linux');
+CALL `cloud`.`INSERT_CATEGORY_IF_NOT_EXIST`('Alma Linux');
+
+-- Move existing guest OS to new categories
+DROP PROCEDURE IF EXISTS `cloud`.`UPDATE_CATEGORY_FOR_GUEST_OSES`;
+CREATE PROCEDURE `cloud`.`UPDATE_CATEGORY_FOR_GUEST_OSES`(IN category_name VARCHAR(255), IN os_name VARCHAR(255))
+BEGIN
+    DECLARE category_id BIGINT
+;   SELECT `id` INTO category_id
+    FROM `cloud`.`guest_os_category`
+    WHERE `name` = category_name
+    LIMIT 1
+;   IF category_id IS NULL THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Category not found'
+;   END IF
+;   UPDATE `cloud`.`guest_os`
+    SET `category_id` = category_id
+    WHERE `display_name` LIKE CONCAT('%', os_name, '%')
+; END;
+CALL `cloud`.`UPDATE_CATEGORY_FOR_GUEST_OSES`('Rocky Linux', 'Rocky Linux');
+CALL `cloud`.`UPDATE_CATEGORY_FOR_GUEST_OSES`('Alma Linux', 'Alma Linux');
+CALL `cloud`.`UPDATE_CATEGORY_FOR_GUEST_OSES`('Fedora', 'Fedora');
+
+-- Move existing guest OS whose category will be deleted to Other category
+DROP PROCEDURE IF EXISTS `cloud`.`UPDATE_NEW_AND_DELETE_OLD_CATEGORY_FOR_GUEST_OS`;
+CREATE PROCEDURE `cloud`.`UPDATE_NEW_AND_DELETE_OLD_CATEGORY_FOR_GUEST_OS`(IN to_category_name VARCHAR(255), IN from_category_name VARCHAR(255))
+BEGIN
+    DECLARE done INT DEFAULT 0
+;   DECLARE to_category_id BIGINT
+;   SELECT id INTO to_category_id
+    FROM `cloud`.`guest_os_category`
+    WHERE `name` = to_category_name
+    LIMIT 1
+;   IF to_category_id IS NULL THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'ToCategory not found'
+;   END IF
+;   UPDATE `cloud`.`guest_os`
+    SET `category_id` = to_category_id
+    WHERE `category_id` = (SELECT `id` FROM `cloud`.`guest_os_category` WHERE `name` = from_category_name)
+;   UPDATE `cloud`.`guest_os_category` SET `removed`=now() WHERE `name` = from_category_name
+; END;
+CALL `cloud`.`UPDATE_NEW_AND_DELETE_OLD_CATEGORY_FOR_GUEST_OS`('Other', 'Novel');
+CALL `cloud`.`UPDATE_NEW_AND_DELETE_OLD_CATEGORY_FOR_GUEST_OS`('Other', 'None');
+CALL `cloud`.`UPDATE_NEW_AND_DELETE_OLD_CATEGORY_FOR_GUEST_OS`('Other', 'Unix');
+CALL `cloud`.`UPDATE_NEW_AND_DELETE_OLD_CATEGORY_FOR_GUEST_OS`('Other', 'Mac');
+
+-- Add featured column for cloud.guest_os_category
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.guest_os_category', 'featured', 'tinyint(1) NOT NULL DEFAULT 0 COMMENT "whether the category is featured or not" AFTER `uuid`');
+UPDATE `cloud`.`guest_os_category` SET featured = 1;
+-- Add sort_key column for cloud.guest_os_category
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.guest_os_category', 'sort_key', 'int NOT NULL DEFAULT 0 COMMENT "sort key used for customising sort method" AFTER `featured`');
+
+-- Update sort order for all guest OS categories
+UPDATE `cloud`.`guest_os_category`
+SET `sort_key` = CASE
+    WHEN `name` = 'Ubuntu' THEN 1
+    WHEN `name` = 'Debian' THEN 2
+    WHEN `name` = 'Fedora' THEN 3
+    WHEN `name` = 'CentOS' THEN 4
+    WHEN `name` = 'Rocky Linux' THEN 5
+    WHEN `name` = 'Alma Linux' THEN 6
+    WHEN `name` = 'Oracle' THEN 7
+    WHEN `name` = 'RedHat' THEN 8
+    WHEN `name` = 'SUSE' THEN 9
+    WHEN `name` = 'Windows' THEN 10
+    WHEN `name` = 'Other' THEN 11
+    ELSE `sort_key`
+END;
+-- End: Changes for Guest OS category cleanup
