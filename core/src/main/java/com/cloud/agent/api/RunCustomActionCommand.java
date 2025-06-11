@@ -30,6 +30,7 @@ public class RunCustomActionCommand extends Command {
 
     public RunCustomActionCommand(String actionName) {
         this.actionName = actionName;
+        this.setWait(5);
     }
 
     public String getActionName() {
