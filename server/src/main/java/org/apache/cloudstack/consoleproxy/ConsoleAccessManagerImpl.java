@@ -474,10 +474,13 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     }
 
     protected void persistConsoleSession(String sessionUuid, long instanceId, long hostId, String consoleEndpointCreatorAddress) {
+        CallContext caller = CallContext.current();
+
         ConsoleSessionVO consoleSessionVo = new ConsoleSessionVO();
         consoleSessionVo.setUuid(sessionUuid);
-        consoleSessionVo.setAccountId(CallContext.current().getCallingAccountId());
-        consoleSessionVo.setUserId(CallContext.current().getCallingUserId());
+        consoleSessionVo.setDomainId(caller.getCallingAccount().getDomainId());
+        consoleSessionVo.setAccountId(caller.getCallingAccountId());
+        consoleSessionVo.setUserId(caller.getCallingUserId());
         consoleSessionVo.setInstanceId(instanceId);
         consoleSessionVo.setHostId(hostId);
         consoleSessionVo.setConsoleEndpointCreatorAddress(consoleEndpointCreatorAddress);
