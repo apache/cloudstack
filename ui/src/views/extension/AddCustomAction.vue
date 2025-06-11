@@ -190,8 +190,11 @@ export default {
           name: values.name,
           enabled: values.enabled
         }
-        if (values.description) {
-          params.description = values.description
+        const keys = ['description', 'successmessage', 'errormessage']
+        for (const key of keys) {
+          if (values[key]) {
+            params[key] = Array.isArray(values[key]) ? values[key].join(',') : values[key]
+          }
         }
         if (values.parameters) {
           values.parameters.forEach((param, index) => {

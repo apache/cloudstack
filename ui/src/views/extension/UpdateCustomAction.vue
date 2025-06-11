@@ -148,13 +148,14 @@ export default {
     },
     initForm () {
       this.formRef = ref()
-      this.form = reactive({
-        description: this.resource.description,
-        roles: this.resource.roles,
-        parameters: this.fixParamatersOptions(this.resource.parameters),
-        detail: this.resource.details,
-        enabled: this.resource.enabled
-      })
+      const formData = {
+        parameters: this.fixParamatersOptions(this.resource.parameters)
+      }
+      const keys = ['description', 'roles', 'successmessage', 'errormessage', 'details', 'enabled']
+      for (const key of keys) {
+        formData[key] = this.resource[key]
+      }
+      this.form = reactive(formData)
       this.rules = reactive({})
     },
     fetchRoles () {
@@ -177,8 +178,11 @@ export default {
           id: this.resource.id,
           enabled: values.enabled
         }
-        if (values.description) {
-          params.description = values.description
+        const keys = ['description', 'roles', 'successmessage', 'errormessage']
+        for (const key of keys) {
+          if (values[key] !== undefined || values[key] !== null) {
+            params[key] = Array.isArray(values[key]) ? values[key].join(',') : values[key]
+          }
         }
         if (values.parameters && values.parameters.length > 0) {
           values.parameters.forEach((param, index) => {
