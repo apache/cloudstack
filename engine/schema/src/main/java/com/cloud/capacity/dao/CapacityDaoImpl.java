@@ -1073,9 +1073,11 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         sb.and("zoneId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
         sb.and("capacityTypes", sb.entity().getCapacityType(), SearchCriteria.Op.IN);
+        sb.and("capacityState", sb.entity().getCapacityState(), Op.EQ);
         sb.done();
 
         SearchCriteria<CapacityVO> sc = sb.create();
+        sc.setParameters("capacityState", "Enabled");
         if (zoneId != null) {
             sc.setParameters("zoneId", zoneId);
         }
@@ -1091,8 +1093,10 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         SearchBuilder<CapacityVO> sb = createSearchBuilder();
         sb.and("zoneId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("capacityTypes", sb.entity().getCapacityType(), SearchCriteria.Op.IN);
+        sb.and("capacityState", sb.entity().getCapacityState(), Op.EQ);
         sb.done();
         SearchCriteria<CapacityVO> sc = sb.create();
+        sc.setParameters("capacityState", "Enabled");
         if (zoneId != null) {
             sc.setParameters("zoneId", zoneId);
         }
@@ -1106,9 +1110,11 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         sb.and("zoneId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
         sb.and("capacityTypes", sb.entity().getCapacityType(), SearchCriteria.Op.IN);
+        sb.and("capacityState", sb.entity().getCapacityState(), Op.EQ);
         sb.done();
 
         SearchCriteria<CapacityVO> sc = sb.create();
+        sc.setParameters("capacityState", "Enabled");
         if (zoneId != null) {
             sc.setParameters("zoneId", zoneId);
         }

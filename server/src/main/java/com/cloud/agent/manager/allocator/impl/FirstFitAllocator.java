@@ -299,7 +299,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             Collections.shuffle(hosts);
         } else if (vmAllocationAlgorithm.equals("userdispersing")) {
             hosts = reorderHostsByNumberOfVms(plan, hosts, account);
-        }else if(vmAllocationAlgorithm.equals("firstfitleastconsumed")){
+        } else if(vmAllocationAlgorithm.equals("firstfitleastconsumed")){
             hosts = reorderHostsByCapacity(plan, hosts);
         }
 

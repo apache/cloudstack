@@ -558,8 +558,8 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
         List<CapacityVO> capacities = capacityDao.listClusterCapacityByCapacityTypes(zoneId, podId, vmId,
                 List.of(Capacity.CAPACITY_TYPE_CPU, Capacity.CAPACITY_TYPE_MEMORY));
 
-        Map<Long, Double> podsByCombinedCapacities = getClusterByCombinedCapacities(capacities, cpuToMemoryWeight);
-        return new Pair<>(new ArrayList<>(podsByCombinedCapacities.keySet()), podsByCombinedCapacities);
+        Map<Long, Double> clusterByCombinedCapacities = getClusterByCombinedCapacities(capacities, cpuToMemoryWeight);
+        return new Pair<>(new ArrayList<>(clusterByCombinedCapacities.keySet()), clusterByCombinedCapacities);
     }
 
     private Map<Long, Double> getClusterByCombinedCapacities(List<CapacityVO> capacities, double cpuToMemoryWeight) {
