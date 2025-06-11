@@ -1071,7 +1071,7 @@ export default {
     fetchOsCategoryAndIcon () {
       const osId = this.resource.guestosid || this.resource.ostypeid
       if (osId && 'listOsTypes' in this.$store.getters.apis) {
-        api('listOsTypes', { id: osId }).then(json => {
+        getAPI('listOsTypes', { id: osId }).then(json => {
           this.osCategoryId = json?.listostypesresponse?.ostype?.[0]?.oscategoryid || null
           if (this.osCategoryId) {
             this.fetchResourceIcon(this.osCategoryId, 'guestoscategory')
