@@ -539,7 +539,7 @@ export default {
       if (!needed) {
         return
       }
-      api('listOsTypes', { id: this.resource.ostypeid }).then(json => {
+      getAPI('listOsTypes', { id: this.resource.ostypeid }).then(json => {
         this.osCategoryId = json?.listostypesresponse?.ostype?.[0]?.oscategoryid || null
       })
     },

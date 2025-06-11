@@ -571,7 +571,7 @@ export default {
         this.data.stopped = json?.listvirtualmachinesresponse?.count
       })
       if (this.isLeaseFeatureEnabled) {
-        api('listVirtualMachines', { leased: true, listall: true, details: 'min', page: 1, pagesize: 1 }).then(json => {
+        getAPI('listVirtualMachines', { leased: true, listall: true, details: 'min', page: 1, pagesize: 1 }).then(json => {
           this.loading = false
           this.data.leasedinstances = json?.listvirtualmachinesresponse?.count
           if (!this.data.leasedinstances) {

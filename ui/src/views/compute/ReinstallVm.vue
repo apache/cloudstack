@@ -308,7 +308,7 @@ export default {
         featured: true,
         showicon: true
       }
-      api('listOsCategories', params).then((response) => {
+      getAPI('listOsCategories', params).then((response) => {
         this.options.guestOsCategories = response?.listoscategoriesresponse?.oscategory || []
         if (this.showUserCategoryForModernImageSelection) {
           const userCategory = {
