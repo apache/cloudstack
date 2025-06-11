@@ -215,7 +215,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
 
     protected Pair<List<ConsoleSessionVO>, Integer> listConsoleSessionsInternal(ListConsoleSessionsCmd cmd) {
         CallContext caller = CallContext.current();
-        long domainId = cmd.getDomainId() != null ? cmd.getDomainId() : caller.getCallingAccount().getDomainId();
+        long domainId = getBaseDomainIdToListConsoleSessions(cmd.getDomainId());
         Long accountId = cmd.getAccountId();
         Long userId = cmd.getUserId();
         boolean isRecursive = cmd.isRecursive();
@@ -237,6 +237,26 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
                 cmd.getHostId(), cmd.getStartDate(), cmd.getEndDate(), cmd.getInstanceId(),
                 cmd.getConsoleEndpointCreatorAddress(), cmd.getClientAddress(), cmd.isActiveOnly(),
                 cmd.getPageSizeVal(), cmd.getStartIndex());
+    }
+
+    /**
+     * Determines the base domain ID for listing console sessions.
+     *
+     * If no domain ID is provided, returns the caller's domain ID. Otherwise,
+     * checks if the caller has access to that domain and returns the provided domain ID.
+     *
+     * @param domainId The domain ID to check, can be null
+     * @return The base domain ID to use for listing console sessions
+     * @throws PermissionDeniedException if the caller does not have access to the specified domain
+     */
+    protected long getBaseDomainIdToListConsoleSessions(Long domainId) {
+        Account caller = CallContext.current().getCallingAccount();
+        if (domainId == null) {
+            return caller.getDomainId();
+        }
+
+        accountManager.checkAccess(caller, domainDao.findById(domainId));
+        return domainId;
     }
 
     @Override
