@@ -48,7 +48,7 @@ public class KubernetesVersionManagerImplTest {
         Mockito.when(kubernetesSupportedVersion.getIsoId()).thenReturn(1L);
         KubernetesSupportedVersionResponse response = new KubernetesSupportedVersionResponse();
         kubernetesVersionManager.updateTemplateDetailsInKubernetesSupportedVersionResponse(kubernetesSupportedVersion,
-                response);
+                response, true);
         Assert.assertNull(ReflectionTestUtils.getField(response, "isoId"));
     }
 
@@ -63,13 +63,13 @@ public class KubernetesVersionManagerImplTest {
         Mockito.when(templateJoinVO.getUuid()).thenReturn(uuid);
         Mockito.when(templateJoinDao.findById(1L)).thenReturn(templateJoinVO);
         kubernetesVersionManager.updateTemplateDetailsInKubernetesSupportedVersionResponse(kubernetesSupportedVersion,
-                response);
+                response, true);
         Assert.assertEquals(uuid, ReflectionTestUtils.getField(response, "isoId"));
         Assert.assertNull(ReflectionTestUtils.getField(response, "isoState"));
         ObjectInDataStoreStateMachine.State state = ObjectInDataStoreStateMachine.State.Ready;
         Mockito.when(templateJoinVO.getState()).thenReturn(state);
         kubernetesVersionManager.updateTemplateDetailsInKubernetesSupportedVersionResponse(kubernetesSupportedVersion,
-                response);
+                response, true);
         Assert.assertEquals(state.toString(), ReflectionTestUtils.getField(response, "isoState"));
     }
 }
