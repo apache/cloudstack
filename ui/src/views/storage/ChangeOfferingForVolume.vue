@@ -90,7 +90,7 @@
         :checked="autoMigrate"
         @change="val => { autoMigrate = val }"/>
     </a-form-item>
-    <a-form-item name="shrinkOk" ref="shrinkOk" :label="$t('label.shrinkok')">
+    <a-form-item name="shrinkOk" ref="shrinkOk" :label="$t('label.shrinkok')" v-if="!['XenServer'].includes(resource.hypervisor)">
       <a-switch
         v-model:checked="form.shrinkOk"
         :checked="shrinkOk"
