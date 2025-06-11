@@ -37,7 +37,7 @@ export default {
         return params
       },
       resourceType: 'Extension',
-      columns: ['name', 'type', 'entrypoint', 'entrypointsync', 'isuserdefined', 'created'],
+      columns: ['name', 'state', 'type', 'entrypoint', 'entrypointsync', 'isuserdefined', 'created'],
       details: ['name', 'id', 'type', 'details', 'entrypoint', 'entrypointsync', 'isuserdefined', 'created'],
       tabs: [{
         name: 'details',

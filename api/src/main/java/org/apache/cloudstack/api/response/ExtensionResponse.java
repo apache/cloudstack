@@ -59,6 +59,10 @@ public class ExtensionResponse extends BaseResponse {
     @Param(description = "True if the extension is added by admin")
     private Boolean userDefined;
 
+    @SerializedName(ApiConstants.STATE)
+    @Param(description = "The state of the extension")
+    private String state;
+
     @SerializedName(ApiConstants.DETAILS)
     @Param(description = "The details of the extension")
     private Map<String, String> details;
@@ -82,30 +86,6 @@ public class ExtensionResponse extends BaseResponse {
         this.type = type;
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
-
     public void setEntryPoint(String entryPoint) {
         this.entryPoint = entryPoint;
     }
@@ -116,6 +96,10 @@ public class ExtensionResponse extends BaseResponse {
 
     public void setUserDefined(Boolean userDefined) {
         this.userDefined = userDefined;
+    }
+
+    public void setState(String state) {
+        this.state = state;
     }
 
     public void setDetails(Map<String, String> details) {

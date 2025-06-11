@@ -26,12 +26,16 @@ public interface Extension extends InternalIdentity, Identity {
     enum Type {
         Orchestrator
     }
+    enum State {
+        Enabled, Disabled;
+    };
     String getName();
     String getDescription();
     Type getType();
     String getRelativeEntryPoint();
     boolean isEntryPointSync();
     boolean isUserDefined();
+    State getState();
     Date getCreated();
 
     static String getDirectoryName(String name) {

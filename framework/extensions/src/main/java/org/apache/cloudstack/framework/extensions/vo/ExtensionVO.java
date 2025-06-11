@@ -45,13 +45,15 @@ public class ExtensionVO implements Extension {
         this.created = new Date();
     }
 
-    public ExtensionVO(String name, String description, Type type, String relativeEntryPoint) {
+    public ExtensionVO(String name, String description, Type type, String relativeEntryPoint, State state) {
         this.uuid = UUID.randomUUID().toString();
         this.name = name;
         this.description = description;
         this.type = type;
         this.relativeEntryPoint = relativeEntryPoint;
         this.userDefined = true;
+        this.entryPointSync = true;
+        this.state = state;
         this.created = new Date();
     }
 
@@ -81,6 +83,10 @@ public class ExtensionVO implements Extension {
 
     @Column(name = "is_user_defined")
     private boolean userDefined;
+
+    @Column(name = "state")
+    @Enumerated(value = EnumType.STRING)
+    private State state;
 
     @Column(name = "created", nullable = false, updatable = false)
     @Temporal(TemporalType.TIMESTAMP)
@@ -142,6 +148,15 @@ public class ExtensionVO implements Extension {
     @Override
     public boolean isUserDefined() {
         return userDefined;
+    }
+
+    @Override
+    public State getState() {
+        return state;
+    }
+
+    public void setState(State state) {
+        this.state = state;
     }
 
     @Override

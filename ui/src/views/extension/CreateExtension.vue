@@ -77,6 +77,12 @@
         <details-input
           v-model:value="form.details" />
       </a-form-item>
+      <a-form-item name="state" ref="state">
+        <template #label>
+          <tooltip-label :title="$t('label.enabled')" :tooltip="apiParams.state.description"/>
+        </template>
+        <a-switch v-model:checked="form.state" />
+      </a-form-item>
       <div :span="24" class="action-button">
         <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
         <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -128,7 +134,9 @@ export default {
   methods: {
     initForm () {
       this.formRef = ref()
-      this.form = reactive({})
+      this.form = reactive({
+        state: true
+      })
       this.rules = reactive({
         name: [{ required: true, message: `${this.$t('message.error.name')}` }],
         type: [{ required: true, message: `${this.$t('message.error.select')}` }]
@@ -171,7 +179,8 @@ export default {
         this.loading = true
         const params = {
           name: values.name,
-          type: values.type
+          type: values.type,
+          state: values.state ? 'Enabled' : 'Disabled'
         }
         if (values.description) {
           params.description = values.description

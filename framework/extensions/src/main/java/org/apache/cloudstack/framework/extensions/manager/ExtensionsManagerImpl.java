@@ -378,6 +378,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         final String description = cmd.getDescription();
         final String typeStr = cmd.getType();
         String entryPoint = cmd.getEntryPoint();
+        final String stateStr = cmd.getState();
         ExtensionVO extensionByName = extensionDao.findByName(name);
         if (extensionByName != null) {
             throw new CloudRuntimeException("Extension by name already exists");
@@ -390,11 +391,19 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         } else {
             entryPoint = getValidatedExtensionRelativeEntryPoint(name, entryPoint);
         }
+        Extension.State state = Extension.State.Enabled;
+        if (StringUtils.isNotEmpty(stateStr)) {
+            try {
+                state = Extension.State.valueOf(stateStr);
+            } catch (IllegalArgumentException iae) {
+                throw new InvalidParameterValueException("Invalid state specified");
+            }
+        }
         final String entryPointFinal = entryPoint;
+        final Extension.State stateFinal = state;
         ExtensionVO extensionVO = Transaction.execute((TransactionCallbackWithException<ExtensionVO, CloudRuntimeException>) status -> {
             ExtensionVO extension = new ExtensionVO(name, description, EnumUtils.getEnum(Extension.Type.class, typeStr),
-                    entryPointFinal);
-            extension.setEntryPointSync(true);
+                    entryPointFinal, stateFinal);
             extension = extensionDao.persist(extension);
 
             Map<String, String> details = cmd.getDetails();
@@ -471,19 +480,36 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     public Extension updateExtension(UpdateExtensionCmd cmd) {
         final long id = cmd.getId();
         final String description = cmd.getDescription();
+        final String stateStr = cmd.getState();
         final Map<String, String> details = cmd.getDetails();
         final Boolean cleanupDetails = cmd.isCleanupDetails();
-        ExtensionVO extensionVO = extensionDao.findById(id);
+        final ExtensionVO extensionVO = extensionDao.findById(id);
         if (extensionVO == null) {
             throw new InvalidParameterValueException("Failed to find the extension");
         }
+        boolean updateNeeded = false;
+        if (description != null) {
+            extensionVO.setDescription(description);
+            updateNeeded = true;
+            if (!extensionDao.update(id, extensionVO)) {
+                throw new CloudRuntimeException(String.format("Failed to updated the extension: %s",
+                        extensionVO.getName()));
+            }
+        }
+        if (StringUtils.isNotBlank(stateStr)) {
+            try {
+                Extension.State state = Extension.State.valueOf(stateStr);
+                extensionVO.setState(state);
+                updateNeeded = true;
+            } catch (IllegalArgumentException iae) {
+                throw new InvalidParameterValueException("Invalid state specified");
+            }
+        }
+        final boolean updateNeededFinal = updateNeeded;
         return Transaction.execute((TransactionCallbackWithException<ExtensionVO, CloudRuntimeException>) status -> {
-            if (description != null) {
-                extensionVO.setDescription(description);
-                if (!extensionDao.update(id, extensionVO)) {
-                    throw new CloudRuntimeException(String.format("Failed to updated the extension: %s",
-                            extensionVO.getName()));
-                }
+            if (updateNeededFinal && !extensionDao.update(id, extensionVO)) {
+                throw new CloudRuntimeException(String.format("Failed to updated the extension: %s",
+                        extensionVO.getName()));
             }
             if (Boolean.TRUE.equals(cleanupDetails) || MapUtils.isNotEmpty(details)) {
                 extensionDetailsDao.removeDetails(extensionVO.getId());
@@ -513,7 +539,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         }
         List<ExtensionResourceMapVO> registeredResources = extensionResourceMapDao.listByExtensionId(extensionId);
         if (CollectionUtils.isNotEmpty(registeredResources)) {
-            throw new CloudRuntimeException("There are resources registered with this extension, unregister the extension from them");
+            throw new CloudRuntimeException("Extension has associated resources, unregister them to delete the extension");
         }
 
         boolean result = Transaction.execute((TransactionCallbackWithException<Boolean, CloudRuntimeException>) status -> {
@@ -611,6 +637,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         response.setEntryPoint(externalProvisioner.getExtensionEntryPoint(extension.getRelativeEntryPoint()));
         response.setEntryPointSync(extension.isEntryPointSync());
         response.setUserDefined(extension.isUserDefined());
+        response.setState(extension.getState().name());
         if (viewDetails.contains(ApiConstants.ExtensionDetails.all) ||
                 viewDetails.contains(ApiConstants.ExtensionDetails.resource)) {
             List<ExtensionResourceResponse> resourcesResponse = new ArrayList<>();
@@ -923,9 +950,11 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         final String resourceUuid = cmd.getResourceId();
         Map<String, String> cmdParameters = cmd.getParameters();
 
+        String error = "Internal error running action";
         ExtensionCustomActionVO customActionVO = extensionCustomActionDao.findById(id);
         if (customActionVO == null) {
-            throw new InvalidParameterValueException("Invalid custom action specified");
+            logger.error("Invalid custom action specified with ID: {}", id);
+            throw new InvalidParameterValueException(error);
         }
         final String actionName = customActionVO.getName();
         RunCustomActionCommand runCustomActionCommand = new RunCustomActionCommand(actionName);
@@ -933,7 +962,11 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         final ExtensionVO extensionVO = extensionDao.findById(extensionId);
         if (extensionVO == null) {
             logger.error("Unable to find extension for {}", customActionVO);
-            throw new CloudRuntimeException("Internal error running action");
+            throw new CloudRuntimeException(error);
+        }
+        if (!Extension.State.Enabled.equals(extensionVO.getState())) {
+            logger.error("{} is not in enabled state for running {}", extensionVO, customActionVO);
+            throw new CloudRuntimeException(error);
         }
         ExtensionCustomAction.ResourceType actionResourceType = customActionVO.getResourceType();
         if (actionResourceType == null && StringUtils.isBlank(resourceTypeStr)) {
@@ -948,12 +981,12 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         }
         if (!validType || actionResourceType == null) {
             logger.error("Invalid resource type - {} specified for {}", resourceTypeStr, customActionVO);
-            throw new CloudRuntimeException("Internal error running action");
+            throw new CloudRuntimeException(error);
         }
         Object entity = entityManager.findByUuid(actionResourceType.getAssociatedClass(), resourceUuid);
         if (entity == null) {
             logger.error("Specified resource does not exist for running {}", customActionVO);
-            throw new CloudRuntimeException("Internal error running action");
+            throw new CloudRuntimeException(error);
         }
         Long clusterId = null;
         Long hostId = null;
@@ -962,14 +995,14 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             List<HostVO> hosts = hostDao.listByClusterAndHypervisorType(clusterId, Hypervisor.HypervisorType.External);
             if (CollectionUtils.isEmpty(hosts)) {
                 logger.error("No hosts found for {} for running {}", entity, customActionVO);
-                throw new CloudRuntimeException("Internal error running action");
+                throw new CloudRuntimeException(error);
             }
             hostId = hosts.get(0).getId();
         } else if (entity instanceof Host) {
             Host host = (Host)entity;
             if (!Hypervisor.HypervisorType.External.equals(host.getHypervisorType())) {
-                logger.error("Invalid {} specified as resource for running {}", entity, customActionVO);
-                throw new InvalidParameterValueException("Invalid resource specified");
+                logger.error("Invalid {} specified as host resource for running {}", entity, customActionVO);
+                throw new InvalidParameterValueException(error);
             }
             hostId = host.getId();
             clusterId = host.getClusterId();
@@ -977,8 +1010,8 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             VirtualMachine virtualMachine = (VirtualMachine)entity;
             runCustomActionCommand.setVmId(virtualMachine.getId());
             if (!Hypervisor.HypervisorType.External.equals(virtualMachine.getHypervisorType())) {
-                logger.error("Invalid {} specified as resource for running {}", entity, customActionVO);
-                throw new InvalidParameterValueException("Invalid resource specified");
+                logger.error("Invalid {} specified as VM resource for running {}", entity, customActionVO);
+                throw new InvalidParameterValueException(error);
             }
             Pair<Long, Long> clusterAndHostId = virtualMachineManager.findClusterAndHostIdForVm(virtualMachine, false);
             clusterId = clusterAndHostId.first();
@@ -989,14 +1022,14 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             logger.error(
                     "Unable to find cluster or host with the specified resource - cluster ID: {}, host ID: {}",
                     clusterId, hostId);
-            throw new CloudRuntimeException("Internal resource specified");
+            throw new CloudRuntimeException(error);
         }
 
         ExtensionResourceMapVO extensionResource = extensionResourceMapDao.findByResourceIdAndType(clusterId,
                 ExtensionResourceMap.ResourceType.Cluster);
         if (extensionResource == null) {
             logger.error("No extension registered with cluster ID: {}", clusterId);
-            throw new CloudRuntimeException("Internal error running action");
+            throw new CloudRuntimeException(error);
         }
 
         List<ExtensionCustomAction.Parameter> actionParameters = null;
@@ -1026,7 +1059,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             Answer answer = agentMgr.send(hostId, runCustomActionCommand);
             if (!(answer instanceof RunCustomActionAnswer)) {
                 logger.error("Unexpected answer [{}] received for {}", answer.getClass().getSimpleName(), RunCustomActionCommand.class.getSimpleName());
-                result.put(ApiConstants.DETAILS, "Internal error running action");
+                result.put(ApiConstants.DETAILS, error);
             } else {
                 RunCustomActionAnswer customActionAnswer = (RunCustomActionAnswer) answer;
                 response.setSuccess(answer.getResult());
