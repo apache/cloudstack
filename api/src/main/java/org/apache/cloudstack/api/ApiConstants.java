@@ -578,7 +578,6 @@ public class ApiConstants {
     public static final String ISOLATION_URI = "isolationuri";
     public static final String IS_ALLOCATED = "isallocated";
     public static final String IS_DEDICATED = "isdedicated";
-    public static final String IS_ISO = "isiso";
     public static final String TAKEN = "taken";
     public static final String VM_AVAILABLE = "vmavailable";
     public static final String VM_DETAILS = "vmdetails";
