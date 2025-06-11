@@ -161,7 +161,9 @@ export default {
   methods: {
     initForm () {
       this.formRef = ref()
-      this.form = reactive({})
+      this.form = reactive({
+        enabled: true
+      })
       this.rules = reactive({
         extensionid: [{ required: true, message: `${this.$t('message.error.select')}` }],
         name: [{ required: true, message: `${this.$t('message.error.name')}` }]

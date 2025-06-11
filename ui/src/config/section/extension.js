@@ -85,6 +85,30 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/views/extension/RegisterExtension.vue')))
         },
         {
+          api: 'updateExtension',
+          icon: 'play-circle-outlined',
+          label: 'label.enable.extension',
+          message: 'message.confirm.enable.extension',
+          dataView: true,
+          groupAction: true,
+          popup: true,
+          defaultArgs: { state: 'Enabled' },
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
+          show: (record) => { return ['Disabled'].includes(record.state) }
+        },
+        {
+          api: 'updateExtension',
+          icon: 'pause-circle-outlined',
+          label: 'label.disable.extension',
+          message: 'message.confirm.disable.extension',
+          dataView: true,
+          groupAction: true,
+          popup: true,
+          defaultArgs: { state: 'Disabled' },
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
+          show: (record) => { return ['Enabled'].includes(record.state) }
+        },
+        {
           api: 'deleteExtension',
           icon: 'delete-outlined',
           label: 'label.delete.extension',

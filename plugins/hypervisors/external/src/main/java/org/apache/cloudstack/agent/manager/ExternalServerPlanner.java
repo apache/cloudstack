@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.extension.Extension;
 import org.apache.cloudstack.extension.ExtensionResourceMap;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionDao;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionResourceMapDao;
@@ -76,8 +77,13 @@ public class ExternalServerPlanner extends AdapterBase implements DeploymentPlan
         Long extensionId = template.getExtensionId();
         final ExtensionVO extensionVO = extensionDao.findById(extensionId);
         if (extensionVO == null) {
-            logger.error("Extension associated with {} cannot be found during deployment external instance {}",
+            logger.error("Extension associated with {} cannot be found during deployment of external instance {}",
                     template, vmProfile.getInstanceName());
+            return null;
+        }
+        if (!Extension.State.Enabled.equals(extensionVO.getState())) {
+            logger.error("{} is not in enabled state therefore planning can not be done for deployment of external instance {}",
+                    extensionVO, vmProfile.getInstanceName());
             return null;
         }
 

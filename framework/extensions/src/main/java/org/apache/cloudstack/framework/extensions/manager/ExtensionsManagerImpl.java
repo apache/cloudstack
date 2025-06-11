@@ -506,7 +506,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             }
         }
         final boolean updateNeededFinal = updateNeeded;
-        return Transaction.execute((TransactionCallbackWithException<ExtensionVO, CloudRuntimeException>) status -> {
+        ExtensionVO result = Transaction.execute((TransactionCallbackWithException<ExtensionVO, CloudRuntimeException>) status -> {
             if (updateNeededFinal && !extensionDao.update(id, extensionVO)) {
                 throw new CloudRuntimeException(String.format("Failed to updated the extension: %s",
                         extensionVO.getName()));
@@ -523,6 +523,10 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             }
             return extensionVO;
         });
+        if (StringUtils.isNotBlank(stateStr) && Extension.State.Enabled.equals(result.getState())) {
+            prepareExtensionEntryPointAcrossServers(result);
+        }
+        return result;
     }
 
     @Override
