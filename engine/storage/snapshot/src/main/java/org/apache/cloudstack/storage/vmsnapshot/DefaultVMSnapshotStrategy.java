@@ -479,8 +479,14 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
     @Override
     public StrategyPriority canHandle(Long vmId, Long rootPoolId, boolean snapshotMemory) {
         UserVmVO vm = userVmDao.findById(vmId);
-        if (State.Running.equals(vm.getState()) && (!snapshotMemory || vmHasKvmDiskOnlySnapshot(vm))) {
+        if (State.Running.equals(vm.getState()) && !snapshotMemory) {
             logger.debug("Default VM snapshot cannot handle VM snapshot for [{}] as it is running and its memory will not be affected.", vm);
+            return StrategyPriority.CANT_HANDLE;
+        }
+
+        if (vmHasKvmDiskOnlySnapshot(vm)) {
+            logger.debug("Default VM snapshot cannot handle VM snapshot for [{}] as it has a disk-only VM snapshot using kvmFileBasedStorageSnapshot strategy." +
+                    "These two strategies are not compatible, as reverting a disk-only VM snapshot will erase newer disk-and-memory VM snapshots.", vm);
             return StrategyPriority.CANT_HANDLE;
         }
 
@@ -501,9 +507,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
 
         for (VMSnapshotVO vmSnapshotVO : vmSnapshotDao.findByVmAndByType(vm.getId(), VMSnapshot.Type.Disk)) {
             List<VMSnapshotDetailsVO> vmSnapshotDetails = vmSnapshotDetailsDao.listDetails(vmSnapshotVO.getId());
-            if (vmSnapshotDetails.stream().
-                    anyMatch(vmSnapshotDetailsVO -> vmSnapshotDetailsVO.getName().equals(KVM_FILE_BASED_STORAGE_SNAPSHOT) ||
-                            vmSnapshotDetailsVO.getName().equals(STORAGE_SNAPSHOT))) {
+            if (vmSnapshotDetails.stream().anyMatch(vmSnapshotDetailsVO -> vmSnapshotDetailsVO.getName().equals(KVM_FILE_BASED_STORAGE_SNAPSHOT))) {
                 return true;
             }
         }
