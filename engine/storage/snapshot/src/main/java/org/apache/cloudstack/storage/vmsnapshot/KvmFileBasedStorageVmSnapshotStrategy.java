@@ -49,6 +49,8 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
 import com.cloud.vm.snapshot.VMSnapshotVO;
+import org.apache.cloudstack.backup.BackupOfferingVO;
+import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
@@ -80,6 +82,9 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
 
     @Inject
     protected ResourceLimitService resourceLimitManager;
+
+    @Inject
+    protected BackupOfferingDao backupOfferingDao;
 
     @Override
     public VMSnapshot takeVMSnapshot(VMSnapshot vmSnapshot) {
@@ -316,9 +321,21 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
         for (VolumeVO volume : volumes) {
             StoragePoolVO storagePoolVO = storagePool.findById(volume.getPoolId());
             if (!supportedStoragePoolTypes.contains(storagePoolVO.getPoolType())) {
-                logger.debug("{} as the VM has a volume that is in a storage with unsupported type [{}].", cantHandleLog, storagePoolVO.getPoolType());
+                logger.debug(String.format("%s as the VM has a volume that is in a storage with unsupported type [%s].", cantHandleLog, storagePoolVO.getPoolType()));
                 return StrategyPriority.CANT_HANDLE;
             }
+            List<SnapshotVO> snapshots = snapshotDao.listByVolumeIdAndTypeNotInAndStateNotRemoved(volume.getId(), Snapshot.Type.GROUP);
+            if (CollectionUtils.isNotEmpty(snapshots)) {
+                logger.debug("{} as VM has a volume with snapshots {}. Volume snapshots and KvmFileBasedStorageVmSnapshotStrategy are not compatible, as restoring volume snapshots will erase VM " +
+                        "snapshots and cause data loss.", cantHandleLog, snapshots);
+                return StrategyPriority.CANT_HANDLE;
+            }
+        }
+
+        BackupOfferingVO backupOffering = backupOfferingDao.findById(vm.getBackupOfferingId());
+        if (backupOffering != null) {
+            logger.debug("{} as the VM has a backup offering. This strategy does not support snapshots on VMs with current backup providers.", cantHandleLog);
+            return StrategyPriority.CANT_HANDLE;
         }
 
         return StrategyPriority.HIGHEST;
