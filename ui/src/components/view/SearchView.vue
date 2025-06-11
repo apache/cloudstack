@@ -309,7 +309,8 @@ export default {
           'clusterid', 'podid', 'groupid', 'entitytype', 'accounttype', 'systemvmtype', 'scope', 'provider',
           'type', 'scope', 'managementserverid', 'serviceofferingid',
           'diskofferingid', 'networkid', 'usagetype', 'restartrequired',
-          'displaynetwork', 'guestiptype', 'usersource', 'arch', 'extensionid'].includes(item)
+          'displaynetwork', 'guestiptype', 'usersource', 'arch', 'oscategoryid', 'templatetype',
+          'extensionid'].includes(item)
         ) {
           type = 'list'
         } else if (item === 'tags') {
@@ -445,10 +446,24 @@ export default {
         this.fields[apiKeyAccessIndex].loading = false
       }
 
+      if (arrayField.includes('usersource')) {
+        const userSourceIndex = this.fields.findIndex(item => item.name === 'usersource')
+        this.fields[userSourceIndex].loading = true
+        this.fields[userSourceIndex].opts = this.fetchAvailableUserSourceTypes()
+        this.fields[userSourceIndex].loading = false
+      }
+
       if (arrayField.includes('arch')) {
         const typeIndex = this.fields.findIndex(item => item.name === 'arch')
         this.fields[typeIndex].loading = true
         this.fields[typeIndex].opts = this.$fetchCpuArchitectureTypes()
+        this.fields[typeIndex].loading = false
+      }
+
+      if (arrayField.includes('templatetype')) {
+        const typeIndex = this.fields.findIndex(item => item.name === 'templatetype')
+        this.fields[typeIndex].loading = true
+        this.fields[typeIndex].opts = this.$fetchTemplateTypes()
         this.fields[typeIndex].loading = false
       }
     },
@@ -470,6 +485,7 @@ export default {
       let networkIndex = -1
       let usageTypeIndex = -1
       let volumeIndex = -1
+      let osCategoryIndex = -1
       let extensionIndex = -1
 
       if (arrayField.includes('type')) {
@@ -580,6 +596,12 @@ export default {
         promises.push(await this.fetchVolumes(searchKeyword))
       }
 
+      if (arrayField.includes('oscategoryid')) {
+        osCategoryIndex = this.fields.findIndex(item => item.name === 'oscategoryid')
+        this.fields[osCategoryIndex].loading = true
+        promises.push(await this.fetchOsCategories(searchKeyword))
+      }
+
       Promise.all(promises).then(response => {
         if (typeIndex > -1) {
           const types = response.filter(item => item.type === 'type')
@@ -682,6 +704,13 @@ export default {
             this.fields[usageTypeIndex].opts = this.sortArray(usageTypes[0].data)
           }
         }
+
+        if (osCategoryIndex > -1) {
+          const osCategories = response.filter(item => item.type === 'oscategoryid')
+          if (osCategories && osCategories.length > 0) {
+            this.fields[osCategoryIndex].opts = this.sortArray(osCategories[0].data)
+          }
+        }
       }).finally(() => {
         if (typeIndex > -1) {
           this.fields[typeIndex].loading = false
@@ -730,6 +759,9 @@ export default {
         }
         if (usageTypeIndex > -1) {
           this.fields[usageTypeIndex].loading = false
+        }
+        if (osCategoryIndex > -1) {
+          this.fields[osCategoryIndex].loading = false
         }
         if (Array.isArray(arrayField)) {
           this.fillFormFieldValues()
@@ -1022,6 +1054,19 @@ export default {
           resolve({
             type: 'managementserverid',
             data: managementservers
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
+    fetchOsCategories (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        api('listOsCategories', { showicon: true, keyword: searchKeyword }).then(json => {
+          const osCategories = json.listoscategoriesresponse.oscategory
+          resolve({
+            type: 'oscategoryid',
+            data: osCategories
           })
         }).catch(error => {
           reject(error.response.headers['x-description'])
@@ -1337,6 +1382,26 @@ export default {
             reject(error.response.headers['x-description'])
           })
       })
+    },
+    fetchAvailableUserSourceTypes () {
+      return [
+        {
+          id: 'native',
+          name: 'label.native'
+        },
+        {
+          id: 'saml2',
+          name: 'label.saml'
+        },
+        {
+          id: 'saml2disabled',
+          name: 'label.saml.disabled'
+        },
+        {
+          id: 'ldap',
+          name: 'label.ldap'
+        }
+      ]
     },
     onSearch (value) {
       this.paramsFilter = {}

@@ -61,6 +61,7 @@ public enum ApiCommandResourceType {
     AffinityGroup(org.apache.cloudstack.affinity.AffinityGroup.class),
     InternalLbVm(com.cloud.network.router.VirtualRouter.class),
     DedicatedGuestVlanRange(com.cloud.network.GuestVlan.class),
+    GuestOsCategory(com.cloud.storage.GuestOsCategory.class),
     GuestOs(com.cloud.storage.GuestOS.class),
     GuestOsMapping(com.cloud.storage.GuestOSHypervisor.class),
     Network(com.cloud.network.Network.class),
