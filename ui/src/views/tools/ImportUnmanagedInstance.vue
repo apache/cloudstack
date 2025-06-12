@@ -944,6 +944,12 @@ export default {
           } else {
             host.name = host.name + ' (' + this.$t('label.not.supported') + ')'
           }
+          if (host.details['kvm.host.virtv2v.version']) {
+            host.name = host.name + ' (virt-v2v=' + host.details['kvm.host.virtv2v.version'] + ')'
+          }
+          if (host.details['kvm.host.ovftool.version']) {
+            host.name = host.name + ' (ovftool=' + host.details['kvm.host.virtv2v.version'] + ')'
+          }
         })
       })
     },
