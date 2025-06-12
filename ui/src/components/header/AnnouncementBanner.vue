@@ -16,20 +16,20 @@
 // under the License.
 
 <template>
-  <div v-if="showBanner" class="announcement-banner-container">
+  <a-affix v-if="showBanner" class="announcement-banner-container">
     <a-alert
-      :type="bannerConfig.type || 'info'"
+      :type="bannerConfig.type || 'default'"
       :show-icon="bannerConfig.showIcon !== false"
       :closable="bannerConfig.closable !== false"
       :banner="true"
       @close="handleClose"
-      :style="[ bannerConfig.type === 'error' ? { border: '1px solid #ffa39e' } : bannerConfig.type  === 'warning' ? { border: '1px solid #ffe58f' } : { border: '1px solid #b7eb8f' }]"
+      :style="[ { border: borderColor }]"
     >
       <template #message>
         <div class="banner-content" v-html="sanitizedMessage" :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
       </template>
     </a-alert>
-  </div>
+  </a-affix>
 </template>
 
 <script>
@@ -59,6 +59,16 @@ export default {
         FORBID_ATTR: ['onclick', 'onload', 'onerror', 'onmouseover', 'onfocus', 'onblur']
       })
       return cleanHTML
+    },
+    borderColor () {
+      const colorMap = {
+        error: '#ffa39e',
+        warning: '#ffe58f',
+        success: '#b7eb8f',
+        info: '#b3cde3'
+      }
+      const color = colorMap[this.bannerConfig.type]
+      return color ? `1px solid ${color}` : '0px'
     }
   },
   mounted () {
@@ -122,7 +132,6 @@ export default {
 .announcement-banner-container {
   z-index: 1000;
   top: 0;
-  position: relative;
   margin: 0;
   width: 100%;
   justify-content: center;
@@ -130,7 +139,7 @@ export default {
 }
 
 .banner-content {
-  line-height: 2.0;
+  line-height: 1.7;
   text-align: center
 }
 </style>
