@@ -101,7 +101,7 @@ BEGIN
 
 CALL `cloud`.`INSERT_CATEGORY_IF_NOT_EXIST`('Fedora');
 CALL `cloud`.`INSERT_CATEGORY_IF_NOT_EXIST`('Rocky Linux');
-CALL `cloud`.`INSERT_CATEGORY_IF_NOT_EXIST`('Alma Linux');
+CALL `cloud`.`INSERT_CATEGORY_IF_NOT_EXIST`('AlmaLinux');
 
 -- Move existing guest OS to new categories
 DROP PROCEDURE IF EXISTS `cloud`.`UPDATE_CATEGORY_FOR_GUEST_OSES`;
@@ -120,7 +120,7 @@ BEGIN
     WHERE `display_name` LIKE CONCAT('%', os_name, '%')
 ; END;
 CALL `cloud`.`UPDATE_CATEGORY_FOR_GUEST_OSES`('Rocky Linux', 'Rocky Linux');
-CALL `cloud`.`UPDATE_CATEGORY_FOR_GUEST_OSES`('Alma Linux', 'Alma Linux');
+CALL `cloud`.`UPDATE_CATEGORY_FOR_GUEST_OSES`('AlmaLinux', 'AlmaLinux');
 CALL `cloud`.`UPDATE_CATEGORY_FOR_GUEST_OSES`('Fedora', 'Fedora');
 
 -- Move existing guest OS whose category will be deleted to Other category
@@ -157,7 +157,7 @@ SET `sort_key` = CASE
     WHEN `name` = 'Fedora' THEN 3
     WHEN `name` = 'CentOS' THEN 4
     WHEN `name` = 'Rocky Linux' THEN 5
-    WHEN `name` = 'Alma Linux' THEN 6
+    WHEN `name` = 'AlmaLinux' THEN 6
     WHEN `name` = 'Oracle' THEN 7
     WHEN `name` = 'RedHat' THEN 8
     WHEN `name` = 'SUSE' THEN 9
