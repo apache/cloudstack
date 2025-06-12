@@ -520,6 +520,10 @@ public class StorPoolUtil {
         return POST("MultiCluster/VolumeCreate", json, conn);
     }
 
+    public static SpApiResponse volumeCreate(StorPoolVolumeDef volume, SpConnectionDesc conn) {
+        return POST("MultiCluster/VolumeCreate", volume, conn);
+    }
+
     public static SpApiResponse volumeCreate(SpConnectionDesc conn) {
         Map<String, Object> json = new LinkedHashMap<>();
         json.put("name", "");
@@ -568,6 +572,7 @@ public class StorPoolUtil {
     public static SpApiResponse volumeRemoveTags(String name, SpConnectionDesc conn) {
         Map<String, Object> json = new HashMap<>();
         Map<String, String> tags = StorPoolHelper.addStorPoolTags(null, "", null, "", null);
+        tags.put("disk", "");
         json.put("tags", tags);
         return POST("MultiCluster/VolumeUpdate/" + name, json, conn);
     }
