@@ -27,10 +27,10 @@ fi
 ARCH="amd64"
 ARCH_SUFFIX="x86_64"
 if [ -n "${8}" ]; then
-  if [ "${8}" = "x86_64" ]; then
+  if [ "${8}" = "x86_64" ] || [ "${8}" = "amd64" ]; then
     ARCH="amd64"
     ARCH_SUFFIX="x86_64"
-  elif [ "${8}" = "aarch64" ]; then
+  elif [ "${8}" = "aarch64" ] || [ "${8}" = "arm64" ]; then
     ARCH="arm64"
     ARCH_SUFFIX="aarch64"
   else
