@@ -483,7 +483,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Inject
     NetrisProviderDao netrisProviderDao;
     @Inject
-    NetrisService netrisService;
+    private javax.inject.Provider<NetrisService> netrisServiceProvider;
     @Inject
     ResourceManager resourceManager;
     @Inject
@@ -4991,7 +4991,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             });
 
             if (provider == Provider.Netris && netrisProviderDao.findByZoneId(zoneId) != null) {
-                netrisService.createIPAMAllocationsForZoneLevelPublicRanges(zoneId);
+                if (Objects.nonNull(netrisServiceProvider) && Objects.nonNull(netrisServiceProvider.get())) {
+                    NetrisService netrisService = netrisServiceProvider.get();
+                    netrisService.createIPAMAllocationsForZoneLevelPublicRanges(zoneId);
+                }
             }
             messageBus.publish(_name, MESSAGE_CREATE_VLAN_IP_RANGE_EVENT, PublishScope.LOCAL, vlan);
 
