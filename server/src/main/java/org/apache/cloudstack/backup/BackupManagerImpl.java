@@ -343,7 +343,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             if (!networkIds.isEmpty()) {
                 details.put(ApiConstants.NETWORK_IDS, String.join(",", networkIds));
                 details.put(ApiConstants.IP_ADDRESSES, String.join(",", ipAddresses));
-                details.put(ApiConstants.IP6_ADDRESS, String.join(",", ip6Addresses));
+                details.put(ApiConstants.IP6_ADDRESSES, String.join(",", ip6Addresses));
                 details.put(ApiConstants.MAC_ADDRESSES, String.join(",", macAddresses));
             }
         }
@@ -1058,6 +1058,13 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         return diskOfferingInfoList;
     }
 
+    private List<String> parseAddressString(String input) {
+        if (input == null) return null;
+        return Arrays.stream(input.split(","))
+                .map(s -> "null".equalsIgnoreCase(s.trim()) ? null : s.trim())
+                .collect(Collectors.toList());
+    }
+
     @Override
     public Map<Long, Network.IpAddresses> getIpToNetworkMapFromBackup(Backup backup, boolean preserveIps, List<Long> networkIds)
     {
@@ -1080,19 +1087,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             }
         }
         if (preserveIpAddresses) {
-            String ipAddressString = backup.getDetail(ApiConstants.IP_ADDRESSES);
-            String ip6AddressString = backup.getDetail(ApiConstants.IP6_ADDRESSES);
-            String macAddressString = backup.getDetail(ApiConstants.MAC_ADDRESSES);
-
-            if (ipAddressString != null) {
-                requestedIp = List.of(ipAddressString.split(","));
-            }
-            if (macAddressString != null) {
-                requestedMac = List.of(macAddressString.split(","));
-            }
-            if (ip6AddressString != null) {
-                requestedIpv6 = List.of(ip6AddressString.split(","));
-            }
+            requestedIp = parseAddressString(backup.getDetail(ApiConstants.IP_ADDRESSES));
+            requestedMac = parseAddressString(backup.getDetail(ApiConstants.MAC_ADDRESSES));
+            requestedIpv6 = parseAddressString(backup.getDetail(ApiConstants.IP6_ADDRESSES));
         }
 
         int index = 0;

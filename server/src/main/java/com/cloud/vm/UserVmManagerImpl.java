@@ -9428,7 +9428,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             size = cmd.getSize();
         }
 
-        return createVirtualMachine(cmd, zone, owner, serviceOffering, template, diskOfferingId, size, overrideDiskOfferingId, dataDiskOfferingsInfo, networkIds, cmd.getIpToNetworkMap());
+        return createVirtualMachine(cmd, zone, owner, serviceOffering, template, diskOfferingId, size, overrideDiskOfferingId, dataDiskOfferingsInfo, networkIds, ipToNetworkMap);
     }
 
     @Override
