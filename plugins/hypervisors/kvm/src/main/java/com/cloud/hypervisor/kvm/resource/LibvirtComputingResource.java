@@ -843,8 +843,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     protected List<String> cpuFeatures;
 
-    protected List<String> systemVmCpuFeatures;
-
     protected enum BridgeType {
         NATIVE, OPENVSWITCH, TUNGSTEN
     }
@@ -1286,7 +1284,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         this.cpuFeatures = parseCpuFeatures(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.GUEST_CPU_FEATURES));
-        this.systemVmCpuFeatures = parseCpuFeatures(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.SYSTEMVM_GUEST_CPU_FEATURES));
 
         final String[] info = NetUtils.getNetworkParams(privateNic);
 
@@ -2995,11 +2992,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         String cpuModel = MapUtils.isNotEmpty(details) && details.get(VmDetailConstants.GUEST_CPU_MODEL) != null ? details.get(VmDetailConstants.GUEST_CPU_MODEL) : guestCpuModel;
         cmd.setMode(cpuMode);
         cmd.setModel(cpuModel);
-        if (VirtualMachine.Type.User.equals(vmTO.getType())) {
-            cmd.setFeatures(cpuFeatures);
-        } else if (vmTO.getType().isUsedBySystem()) {
-            cmd.setFeatures(systemVmCpuFeatures);
-        }
+        cmd.setFeatures(cpuFeatures);
         int vCpusInDef = vmTO.getVcpuMaxLimit() == null ? vcpus : vmTO.getVcpuMaxLimit();
         setCpuTopology(cmd, vCpusInDef, vmTO.getDetails());
         return cmd;
