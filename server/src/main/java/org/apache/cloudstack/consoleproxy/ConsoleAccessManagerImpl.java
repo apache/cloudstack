@@ -28,7 +28,9 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.exception.InvalidParameterValueException;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.command.user.consoleproxy.ConsoleEndpoint;
@@ -255,7 +257,12 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
             return caller.getDomainId();
         }
 
-        accountManager.checkAccess(caller, domainDao.findById(domainId));
+        Domain domain = domainDao.findById(domainId);
+        if (domain == null) {
+            throw new InvalidParameterValueException(String.format("Unable to find domain with ID [%s]. Verify the informed domain and try again.", domainId));
+        }
+
+        accountManager.checkAccess(caller, domain);
         return domainId;
     }
 
