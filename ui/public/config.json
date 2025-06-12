@@ -97,9 +97,12 @@
   "basicZoneEnabled": true,
   "multipleServer": false,
   "allowSettingTheme": true,
+  "imageSelectionInterface": "modern",
+  "showUserCategoryForModernImageSelection": true,
+  "showAllCategoryForModernImageSelection": false,
   "docHelpMappings": {},
   "announcementBanner": {
-    "enabled": true,
+    "enabled": false,
     "showIcon": false,
     "closable": true,
     "persistDismissal": true,

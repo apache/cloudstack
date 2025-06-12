@@ -25,19 +25,20 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.cloud.storage.GuestOS;
-import com.cloud.utils.Pair;
-import com.cloud.utils.db.DB;
-import com.cloud.utils.db.TransactionLegacy;
-import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
+import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSVO;
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class GuestOSDaoImpl extends GenericDaoBase<GuestOSVO, Long> implements GuestOSDao {
@@ -152,4 +153,14 @@ public class GuestOSDaoImpl extends GenericDaoBase<GuestOSVO, Long> implements G
         return new Pair<>(result.first(), result.second());
     }
 
+    @Override
+    public List<Long> listIdsByCategoryId(final long categoryId) {
+        GenericSearchBuilder<GuestOSVO, Long> sb = createSearchBuilder(Long.class);
+        sb.selectFields(sb.entity().getId());
+        sb.and("categoryId", sb.entity().getCategoryId(), SearchCriteria.Op.EQ);
+        sb.done();
+        SearchCriteria<Long> sc = sb.create();
+        sc.setParameters("categoryId", categoryId);
+        return customSearch(sc, null);
+    }
 }
