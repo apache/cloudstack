@@ -23,6 +23,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.cloud.utils.ThreadUtil;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
@@ -51,7 +52,7 @@ public class DirectAgentAttache extends AgentAttache {
     AtomicInteger _outstandingTaskCount;
     AtomicInteger _outstandingCronTaskCount;
 
-    public DirectAgentAttache(AgentManagerImpl agentMgr, long id, String uuid,String name, ServerResource resource, boolean maintenance) {
+    public DirectAgentAttache(AgentManagerImpl agentMgr, long id, String uuid, String name, ServerResource resource, boolean maintenance) {
         super(agentMgr, id, uuid, name, maintenance);
         _resource = resource;
         _outstandingTaskCount = new AtomicInteger(0);
@@ -91,10 +92,10 @@ public class DirectAgentAttache extends AgentAttache {
     public void send(Request req) throws AgentUnavailableException {
         req.logD("Executing: ", true);
         if (req instanceof Response) {
-            Response resp = (Response)req;
+            Response resp = (Response) req;
             Answer[] answers = resp.getAnswers();
             if (answers != null && answers[0] instanceof StartupAnswer) {
-                StartupAnswer startup = (StartupAnswer)answers[0];
+                StartupAnswer startup = (StartupAnswer) answers[0];
                 int interval = startup.getPingInterval();
                 _futures.add(_agentMgr.getCronJobPool().scheduleAtFixedRate(new PingTask(), interval, interval, TimeUnit.SECONDS));
             }
@@ -104,7 +105,7 @@ public class DirectAgentAttache extends AgentAttache {
                 queueTask(new Task(req));
                 scheduleFromQueue();
             } else {
-                CronCommand cmd = (CronCommand)cmds[0];
+                CronCommand cmd = (CronCommand) cmds[0];
                 _futures.add(_agentMgr.getCronJobPool().scheduleAtFixedRate(new CronTask(req), cmd.getInterval(), cmd.getInterval(), TimeUnit.SECONDS));
             }
         }
@@ -113,7 +114,7 @@ public class DirectAgentAttache extends AgentAttache {
     @Override
     public void process(Answer[] answers) {
         if (answers != null && answers[0] instanceof StartupAnswer) {
-            StartupAnswer startup = (StartupAnswer)answers[0];
+            StartupAnswer startup = (StartupAnswer) answers[0];
             int interval = startup.getPingInterval();
             logger.info("StartupAnswer received [id: {}, uuid: {}, name: {}, interval: {}]", startup.getHostId(), startup.getHostUuid(), startup.getHostName(), interval);
             _futures.add(_agentMgr.getCronJobPool().scheduleAtFixedRate(new PingTask(), interval, interval, TimeUnit.SECONDS));
@@ -165,7 +166,7 @@ public class DirectAgentAttache extends AgentAttache {
                     PingCommand cmd = resource.getCurrentStatus(_id);
                     int retried = 0;
                     while (cmd == null && ++retried <= _HostPingRetryCount.value()) {
-                        wait(1000 * _HostPingRetryTimer.value());
+                        ThreadUtil.wait(this, _HostPingRetryTimer.value() * 1000L, _id, _uuid, _name);
                         cmd = resource.getCurrentStatus(_id);
                     }
 
@@ -182,7 +183,7 @@ public class DirectAgentAttache extends AgentAttache {
 
                     logger.trace("SeqA {}-{}: {}", _id, seq, new Request(_id, -1, cmd, false).toString());
 
-                    _agentMgr.handleCommands(DirectAgentAttache.this, seq, new Command[] {cmd});
+                    _agentMgr.handleCommands(DirectAgentAttache.this, seq, new Command[]{cmd});
                 } else {
                     logger.debug("Unable to send ping because agent is disconnected [id: {}, uuid: {}, name: {}]", _id, _uuid, _name);
                 }
