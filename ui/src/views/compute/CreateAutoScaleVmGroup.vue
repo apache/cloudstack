@@ -947,21 +947,27 @@
                 </template>
               </a-step>
             </a-steps>
-            <div class="card-footer">
-              <!-- ToDo extract as component -->
-              <a-button @click="() => $router.back()" :disabled="loading.deploy">
-                {{ $t('label.cancel') }}
-              </a-button>
-              <a-button style="margin-left: 10px" type="primary" ref="submit" @click="handleSubmit" :loading="loading.deploy">
-                {{ $t('label.create') }}
-              </a-button>
+            <div class="card-footer" v-if="isMobile()">
+              <deploy-buttons
+                :loading="loading.deploy"
+                :deployButtonText="$t('label.create')"
+                @handle-cancel="() => $router.back()"
+                @handle-deploy="handleSubmit" />
             </div>
           </a-form>
         </a-card>
       </a-col>
       <a-col :md="24" :lg="7" v-if="!isMobile()">
         <a-affix :offsetTop="75" class="vm-info-card">
-          <info-card :resource="vm" :title="$t('label.your.autoscale.vmgroup')" @change-resource="(data) => resource = data" />
+          <info-card :footerVisible="true" :resource="vm" :title="$t('label.your.autoscale.vmgroup')" @change-resource="(data) => resource = data">
+            <template #footer-content>
+              <deploy-buttons
+                :loading="loading.deploy"
+                :deployButtonText="$t('label.create')"
+                @handle-cancel="() => $router.back()"
+                @handle-deploy="handleSubmit" />
+            </template>
+          </info-card>
         </a-affix>
       </a-col>
     </a-row>
@@ -1031,6 +1037,7 @@ import store from '@/store'
 import eventBus from '@/config/eventBus'
 
 import InfoCard from '@/components/view/InfoCard'
+import DeployButtons from '@views/compute/wizard/DeployButtons'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import ZoneBlockRadioGroupSelect from '@views/compute/wizard/ZoneBlockRadioGroupSelect.vue'
 import BlockRadioGroupSelect from '@/components/widgets/BlockRadioGroupSelect'
@@ -1059,6 +1066,7 @@ export default {
   name: 'Wizard',
   components: {
     InfoCard,
+    DeployButtons,
     ResourceIcon,
     ZoneBlockRadioGroupSelect,
     BlockRadioGroupSelect,
