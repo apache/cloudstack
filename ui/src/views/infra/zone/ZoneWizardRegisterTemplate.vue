@@ -111,108 +111,149 @@ export default {
           id: 1,
           name: 'Ubuntu 24.04',
           version: '24.04',
-          osCategoryName: 'Ubuntu',
+          distroName: 'Ubuntu',
           arch: 'x86_64',
-          url: 'https://cloud-images.ubuntu.com/releases/noble/release/ubuntu-24.04-server-cloudimg-amd64.img'
+          filename: 'ubuntu-24.04-server-cloudimg-amd64.img'
         },
         {
           id: 2,
           name: 'Ubuntu 22.04',
           version: '22.04',
-          osCategoryName: 'Ubuntu',
+          distroName: 'Ubuntu',
           arch: 'x86_64',
-          url: 'https://cloud-images.ubuntu.com/releases/jammy/release/ubuntu-22.04-server-cloudimg-amd64.img'
+          filename: 'ubuntu-22.04-server-cloudimg-amd64.img'
         },
         {
           id: 3,
           name: 'Ubuntu 20.04',
           version: '20.04',
-          osCategoryName: 'Ubuntu',
+          distroName: 'Ubuntu',
           arch: 'x86_64',
-          url: 'https://cloud-images.ubuntu.com/releases/focal/release/ubuntu-20.04-server-cloudimg-amd64.img'
+          filename: 'ubuntu-20.04-server-cloudimg-amd64.img'
         },
         {
           id: 4,
           name: 'Debian GNU/Linux 12 (64-bit)',
           version: '12',
-          osCategoryName: 'Debian',
+          distroName: 'Debian',
           arch: 'x86_64',
-          url: 'https://laotzu.ftp.acc.umu.se/images/cloud/bookworm/latest/debian-12-genericcloud-amd64.qcow2'
+          filename: 'debian-12-genericcloud-amd64.qcow2'
         },
         {
           id: 5,
-          name: 'AlmaLinux 8',
+          name: 'Rocky Linux 8',
           version: '8',
-          osCategoryName: 'CentOS',
+          distroName: 'Rockylinux',
           arch: 'x86_64',
-          url: 'https://repo.almalinux.org/almalinux/8/cloud/x86_64/images/AlmaLinux-8-GenericCloud-latest.x86_64.qcow2'
+          filename: 'Rocky-8-GenericCloud.latest.x86_64.qcow2'
         },
         {
           id: 6,
-          name: 'AlmaLinux 9',
+          name: 'Rocky Linux 9',
           version: '9',
-          osCategoryName: 'CentOS',
+          distroName: 'Rockylinux',
           arch: 'x86_64',
-          url: 'https://repo.almalinux.org/almalinux/9/cloud/x86_64/images/AlmaLinux-9-GenericCloud-latest.x86_64.qcow2'
+          filename: 'Rocky-9-GenericCloud.latest.x86_64.qcow2'
         },
         {
           id: 7,
           name: 'OpenSUSE 15.5',
           version: '15.5',
-          osCategoryName: 'OpenSUSE',
+          distroName: 'OpenSUSE',
           arch: 'x86_64',
-          url: 'https://mirror.squ.edu.om/opensuse/opensuse/distribution/leap/15.5/appliances/openSUSE-Leap-15.5-Minimal-VM.x86_64-Cloud.qcow2'
+          filename: 'openSUSE-Leap-15.5-Minimal-VM.x86_64-Cloud.qcow2'
         },
         {
           id: 8,
           name: 'Ubuntu 24.04',
           version: '24.04',
-          osCategoryName: 'Ubuntu',
+          distroName: 'Ubuntu',
           arch: 'aarch64',
-          url: 'https://cloud-images.ubuntu.com/releases/noble/release/ubuntu-24.04-server-cloudimg-arm64.img'
+          filename: 'ubuntu-24.04-server-cloudimg-arm64.img'
         },
         {
           id: 9,
           name: 'Ubuntu 22.04',
           version: '22.04',
-          osCategoryName: 'Ubuntu',
+          distroName: 'Ubuntu',
           arch: 'aarch64',
-          url: 'https://cloud-images.ubuntu.com/releases/jammy/release/ubuntu-22.04-server-cloudimg-arm64.img'
+          filename: 'ubuntu-22.04-server-cloudimg-arm64.img'
         },
         {
           id: 10,
           name: 'Ubuntu 20.04',
           version: '20.04',
-          osCategoryName: 'Ubuntu',
+          distroName: 'Ubuntu',
           arch: 'aarch64',
-          url: 'https://cloud-images.ubuntu.com/releases/focal/release/ubuntu-20.04-server-cloudimg-arm64.img'
+          filename: 'ubuntu-20.04-server-cloudimg-arm64.img'
         },
         {
           id: 11,
           name: 'Debian GNU/Linux 12 (64-bit)',
           version: '12',
-          osCategoryName: 'Debian',
+          distroName: 'Debian',
           arch: 'aarch64',
-          url: 'https://saimei.ftp.acc.umu.se/images/cloud/bookworm/latest/debian-12-genericcloud-arm64.qcow2'
+          filename: 'debian-12-genericcloud-arm64.qcow2'
         },
         {
           id: 12,
-          name: 'AlmaLinux 9',
-          version: '9',
-          osCategoryName: 'CentOS',
+          name: 'Rocky Linux 8',
+          version: '8',
+          distroName: 'Rockylinux',
           arch: 'aarch64',
-          url: 'https://repo.almalinux.org/almalinux/9/cloud/aarch64/images/AlmaLinux-9-GenericCloud-latest.aarch64.qcow2'
+          filename: 'Rocky-8-GenericCloud.latest.aarch64.qcow2'
         },
         {
           id: 13,
+          name: 'Rocky Linux 9',
+          version: '9',
+          distroName: 'Rockylinux',
+          arch: 'aarch64',
+          filename: 'Rocky-9-GenericCloud.latest.aarch64.qcow2'
+        },
+        {
+          id: 14,
           name: 'OpenSUSE 15.5',
           version: '15.5',
-          osCategoryName: 'OpenSUSE',
+          distroName: 'OpenSUSE',
           arch: 'aarch64',
-          url: 'https://download.opensuse.org/distribution/leap/15.5/appliances/openSUSE-Leap-15.5-Minimal-VM.aarch64-Cloud.qcow2'
+          filename: 'openSUSE-Leap-15.5-Minimal-VM.aarch64-Cloud.qcow2'
+        },
+        {
+          id: 15,
+          name: 'Oracle Linux 8',
+          version: '8.10',
+          distroName: 'OracleLinux',
+          arch: 'aarch64',
+          filename: 'OL8U10_aarch64-kvm-b122.qcow2'
+        },
+        {
+          id: 16,
+          name: 'Oracle Linux 8',
+          version: '8.10',
+          distroName: 'OracleLinux',
+          arch: 'x86_64',
+          filename: 'OL8U10_x86_64-kvm-b258.qcow2'
+        },
+        {
+          id: 17,
+          name: 'Oracle Linux 9',
+          version: '9.5',
+          distroName: 'OracleLinux',
+          arch: 'aarch64',
+          filename: 'OL9U5_aarch64-kvm-b126.qcow2'
+        },
+        {
+          id: 18,
+          name: 'Oracle Linux 9',
+          version: '9.5',
+          distroName: 'OracleLinux',
+          arch: 'x86_64',
+          filename: 'OL9U5_x86_64-kvm-b259.qcow2'
         }
       ]
       this.defaultOsTypeId = await this.fetchOsTypeId('Other Linux (64-bit)')
+      this.prepareDownloadUrls()
     },
     handleDone () {
       this.$emit('refresh-data')
@@ -317,6 +358,12 @@ export default {
           format = 'RAW'
       }
       return format
+    },
+    prepareDownloadUrls () {
+      const templatesBaseUrl = 'https://download.cloudstack.org/templates/cloud-images/'
+      for (const template of this.predefinedTemplates) {
+        template.url = templatesBaseUrl + template.distroName.toLowerCase() + '/' + template.filename
+      }
     }
   }
 }
