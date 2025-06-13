@@ -58,7 +58,7 @@ under the License.
 
       <Syslog name="SYSLOG" host="localhost" port="514" protocol="UDP" appName="ApacheCloudStack" facility="LOCAL6">
             <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
-            <PatternLayout pattern="%d{DEFAULT} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%ex{filters(${filters})}%n"/>
+            <PatternLayout pattern="%-5p [%c{1.}] (%t:%x) %m%ex%n"/>
       </Syslog>
 
       <!-- ============================== -->
