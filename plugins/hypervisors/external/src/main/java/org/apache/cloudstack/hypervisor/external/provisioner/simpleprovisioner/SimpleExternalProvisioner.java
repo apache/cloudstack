@@ -87,12 +87,7 @@ import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
-public class SimpleExternalProvisioner extends ManagerBase implements ExternalProvisioner, PluggableService, Configurable {
-
-    ConfigKey<String> ExtensionsDirectory = new ConfigKey<>("Advanced", String.class,
-            "external.provisioner.extensions.directory", "/etc/cloudstack/extensions",
-            "Directory on the management server where extensions are present",
-            false, ConfigKey.Scope.Global);
+public class SimpleExternalProvisioner extends ManagerBase implements ExternalProvisioner, PluggableService {
 
     public static final String BASE_EXTERNAL_PROVISIONER_SCRIPTS_DIR = "scripts/vm/hypervisor/external/simpleExternalProvisioner";
     public static final String BASE_EXTERNAL_PROVISIONER_SCRIPT = BASE_EXTERNAL_PROVISIONER_SCRIPTS_DIR + "/provisioner.sh";
@@ -165,8 +160,8 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     protected boolean checkExtensionsDirectory() {
         File dir = new File(extensionsDirectory);
         if (!dir.exists() || !dir.isDirectory() || !dir.canWrite()) {
-            logger.error("Extension directory [{}] specified by config - {} is not properly set up. It must exist, be a directory, and be writeable",
-                    extensionsDirectory, ExtensionsDirectory.key());
+            logger.error("Extension directory [{}] is not properly set up. It must exist, be a directory, and be writeable",
+                    extensionsDirectory);
             return false;
         }
         return true;
@@ -656,17 +651,5 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     @Override
     public List<Class<?>> getCommands() {
         return new ArrayList<>();
-    }
-
-    @Override
-    public String getConfigComponentName() {
-        return SimpleExternalProvisioner.class.getSimpleName();
-    }
-
-    @Override
-    public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey[] {
-                ExtensionsDirectory
-        };
     }
 }
