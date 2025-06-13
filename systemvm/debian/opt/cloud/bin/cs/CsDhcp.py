@@ -82,7 +82,7 @@ class CsDhcp(CsDataBag):
                 CsHelper.service("dnsmasq", "reload")
 
     def configure_server(self):
-        # self.conf.addeq("dhcp-hostsfile=%s" % DHCP_HOSTS)
+        self.conf.add("bind-interfaces", 0)
         idx = 0
         listen_address = ["127.0.0.1"]
         for i in self.devinfo:

@@ -44,7 +44,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.cpu.CPU;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
@@ -90,12 +89,15 @@ import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.domain.MoveDomainCmd;
 import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
+import org.apache.cloudstack.api.command.admin.guest.AddGuestOsCategoryCmd;
 import org.apache.cloudstack.api.command.admin.guest.AddGuestOsCmd;
 import org.apache.cloudstack.api.command.admin.guest.AddGuestOsMappingCmd;
+import org.apache.cloudstack.api.command.admin.guest.DeleteGuestOsCategoryCmd;
 import org.apache.cloudstack.api.command.admin.guest.GetHypervisorGuestOsNamesCmd;
 import org.apache.cloudstack.api.command.admin.guest.ListGuestOsMappingCmd;
 import org.apache.cloudstack.api.command.admin.guest.RemoveGuestOsCmd;
 import org.apache.cloudstack.api.command.admin.guest.RemoveGuestOsMappingCmd;
+import org.apache.cloudstack.api.command.admin.guest.UpdateGuestOsCategoryCmd;
 import org.apache.cloudstack.api.command.admin.guest.UpdateGuestOsCmd;
 import org.apache.cloudstack.api.command.admin.guest.UpdateGuestOsMappingCmd;
 import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
@@ -214,6 +216,7 @@ import org.apache.cloudstack.api.command.admin.storage.AddImageStoreS3CMD;
 import org.apache.cloudstack.api.command.admin.storage.AddObjectStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.ChangeStoragePoolScopeCmd;
+import org.apache.cloudstack.api.command.admin.storage.ConfigureStorageAccessCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteImageStoreCmd;
@@ -224,6 +227,7 @@ import org.apache.cloudstack.api.command.admin.storage.FindStoragePoolsForMigrat
 import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListObjectStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListSecondaryStagingStoresCmd;
+import org.apache.cloudstack.api.command.admin.storage.ListStorageAccessGroupsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStorageProvidersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStorageTagsCmd;
@@ -639,8 +643,11 @@ import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.cloudstack.vm.lease.VMLeaseManager;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.agent.AgentManager;
@@ -674,6 +681,7 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.consoleproxy.ConsoleProxyManagementState;
 import com.cloud.consoleproxy.ConsoleProxyManager;
+import com.cloud.cpu.CPU;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
@@ -1274,6 +1282,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Object clusterType = cmd.getClusterType();
         final Object allocationState = cmd.getAllocationState();
         final String keyword = cmd.getKeyword();
+        final CPU.CPUArch arch = cmd.getArch();
+        final String storageAccessGroup = cmd.getStorageAccessGroup();
         zoneId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), zoneId);
 
         final Filter searchFilter = new Filter(ClusterVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
@@ -1286,6 +1296,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
         sb.and("clusterType", sb.entity().getClusterType(), SearchCriteria.Op.EQ);
         sb.and("allocationState", sb.entity().getAllocationState(), SearchCriteria.Op.EQ);
+        sb.and("arch", sb.entity().getArch(), SearchCriteria.Op.EQ);
+        if (storageAccessGroup != null) {
+            sb.and().op("storageAccessGroupExact", sb.entity().getStorageAccessGroups(), SearchCriteria.Op.EQ);
+            sb.or("storageAccessGroupPrefix", sb.entity().getStorageAccessGroups(), SearchCriteria.Op.LIKE);
+            sb.or("storageAccessGroupSuffix", sb.entity().getStorageAccessGroups(), SearchCriteria.Op.LIKE);
+            sb.or("storageAccessGroupMiddle", sb.entity().getStorageAccessGroups(), SearchCriteria.Op.LIKE);
+            sb.cp();
+        }
 
         final SearchCriteria<ClusterVO> sc = sb.create();
         if (id != null) {
@@ -1323,6 +1341,17 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("hypervisorType", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        }
+
+        if (arch != null) {
+            sc.setParameters("arch", arch);
+        }
+
+        if (storageAccessGroup != null) {
+            sc.setParameters("storageAccessGroupExact", storageAccessGroup);
+            sc.setParameters("storageAccessGroupPrefix", storageAccessGroup + ",%");
+            sc.setParameters("storageAccessGroupSuffix", "%," + storageAccessGroup);
+            sc.setParameters("storageAccessGroupMiddle", "%," + storageAccessGroup + ",%");
         }
 
         final Pair<List<ClusterVO>, Integer> result = _clusterDao.searchAndCount(sc, searchFilter);
@@ -2008,6 +2037,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Long zoneId = cmd.getZoneId();
         final Object keyword = cmd.getKeyword();
         final Object allocationState = cmd.getAllocationState();
+        final String storageAccessGroup = cmd.getStorageAccessGroup();
+
         zoneId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), zoneId);
 
         final Filter searchFilter = new Filter(HostPodVO.class, "dataCenterId", true, cmd.getStartIndex(), cmd.getPageSizeVal());
@@ -2016,6 +2047,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("allocationState", sb.entity().getAllocationState(), SearchCriteria.Op.EQ);
+        if (storageAccessGroup != null) {
+            sb.and().op("storageAccessGroupExact", sb.entity().getStorageAccessGroups(), SearchCriteria.Op.EQ);
+            sb.or("storageAccessGroupPrefix", sb.entity().getStorageAccessGroups(), SearchCriteria.Op.LIKE);
+            sb.or("storageAccessGroupSuffix", sb.entity().getStorageAccessGroups(), SearchCriteria.Op.LIKE);
+            sb.or("storageAccessGroupMiddle", sb.entity().getStorageAccessGroups(), SearchCriteria.Op.LIKE);
+            sb.cp();
+        }
 
         final SearchCriteria<HostPodVO> sc = sb.create();
         if (keyword != null) {
@@ -2040,6 +2078,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (allocationState != null) {
             sc.setParameters("allocationState", allocationState);
+        }
+
+        if (storageAccessGroup != null) {
+            sc.setParameters("storageAccessGroupExact", storageAccessGroup);
+            sc.setParameters("storageAccessGroupPrefix", storageAccessGroup + ",%");
+            sc.setParameters("storageAccessGroupSuffix", "%," + storageAccessGroup);
+            sc.setParameters("storageAccessGroupMiddle", "%," + storageAccessGroup + ",%");
         }
 
         final Pair<List<HostPodVO>, Integer> result = _hostPodDao.searchAndCount(sc, searchFilter);
@@ -2712,27 +2757,112 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public Pair<List<? extends GuestOsCategory>, Integer> listGuestOSCategoriesByCriteria(final ListGuestOsCategoriesCmd cmd) {
-        final Filter searchFilter = new Filter(GuestOSCategoryVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        final Filter searchFilter = new Filter(GuestOSCategoryVO.class, "sortKey", true,
+                cmd.getStartIndex(), cmd.getPageSizeVal());
+        searchFilter.addOrderBy(GuestOSCategoryVO.class, "id", true);
         final Long id = cmd.getId();
         final String name = cmd.getName();
         final String keyword = cmd.getKeyword();
+        final Boolean featured = cmd.isFeatured();
+        final Boolean isIso = cmd.isIso();
+        final Boolean isVnf = cmd.isVnf();
+        final Long zoneId = cmd.getZoneId();
+        final CPU.CPUArch arch = cmd.getArch();
 
-        final SearchCriteria<GuestOSCategoryVO> sc = _guestOSCategoryDao.createSearchCriteria();
-
+        final SearchBuilder<GuestOSCategoryVO> sb = _guestOSCategoryDao.createSearchBuilder();
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("keyword", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("featured", sb.entity().isFeatured(), SearchCriteria.Op.EQ);
+        if (ObjectUtils.anyNotNull(zoneId, arch, isIso, isVnf)) {
+            final SearchBuilder<GuestOSVO> guestOsSearch = _guestOSDao.createSearchBuilder();
+            guestOsSearch.and("ids", guestOsSearch.entity().getId(), SearchCriteria.Op.IN);
+            sb.join("guestOsSearch", guestOsSearch, guestOsSearch.entity().getCategoryId(), sb.entity().getId(),
+                    JoinType.INNER);
+            guestOsSearch.done();
+            sb.groupBy(sb.entity().getId());
+        }
+        sb.done();
+        SearchCriteria<GuestOSCategoryVO> sc = sb.create();
         if (id != null) {
-            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+            sc.setParameters("id", id);
         }
-
         if (name != null) {
-            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
+            sc.setParameters("name", "%" + name + "%");
         }
-
         if (keyword != null) {
-            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.setParameters("name", "%" + keyword + "%");
         }
-
+        if (featured != null) {
+            sc.setParameters("featured", featured);
+        }
+        if (ObjectUtils.anyNotNull(zoneId, arch, isIso, isVnf)) {
+            List<Long> guestOsIds = templateDao.listTemplateIsoByArchVnfAndZone(zoneId, arch, isIso, isVnf);
+            if (CollectionUtils.isEmpty(guestOsIds)) {
+                return new Pair<>(Collections.emptyList(), 0);
+            }
+            sc.setJoinParameters("guestOsSearch", "ids", guestOsIds.toArray());
+        }
         final Pair<List<GuestOSCategoryVO>, Integer> result = _guestOSCategoryDao.searchAndCount(sc, searchFilter);
         return new Pair<>(result.first(), result.second());
+    }
+
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_GUEST_OS_CATEGORY_ADD, eventDescription = "adding OS category")
+    public GuestOsCategory addGuestOsCategory(AddGuestOsCategoryCmd cmd) {
+        final String name = cmd.getName();
+        final boolean featured = cmd.isFeatured();
+        final GuestOSCategoryVO guestOSCategory = new GuestOSCategoryVO(name, featured);
+        GuestOsCategory guestOsCategory = _guestOSCategoryDao.persist(guestOSCategory);
+        CallContext.current().setEventResourceId(guestOsCategory.getId());
+        CallContext.current().setEventResourceType(ApiCommandResourceType.GuestOsCategory);
+        return guestOSCategory;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_GUEST_OS_CATEGORY_UPDATE, eventDescription = "updating OS category")
+    public GuestOsCategory updateGuestOsCategory(UpdateGuestOsCategoryCmd cmd) {
+        final long id = cmd.getId();
+        final String name = cmd.getName();
+        final Boolean featured = cmd.isFeatured();
+        Integer sortKey = cmd.getSortKey();
+        final GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(id);
+        if (guestOSCategory == null) {
+            throw new InvalidParameterValueException("Invalid OS category ID specified");
+        }
+        if (ObjectUtils.allNull(name, featured, sortKey)) {
+            return guestOSCategory;
+        }
+        if (StringUtils.isNotBlank(name)) {
+            guestOSCategory.setName(name);
+        }
+        if (featured != null) {
+            guestOSCategory.setFeatured(featured);
+        }
+        if (sortKey != null) {
+            guestOSCategory.setSortKey(sortKey);
+        }
+        if (!_guestOSCategoryDao.update(id, guestOSCategory)) {
+            return null;
+        }
+        return guestOSCategory;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_GUEST_OS_CATEGORY_DELETE, eventDescription = "deleting OS category")
+    public boolean deleteGuestOsCategory(DeleteGuestOsCategoryCmd cmd) {
+        final long id = cmd.getId();
+        final GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(id);
+        if (guestOSCategory == null) {
+            throw new InvalidParameterValueException("Invalid OS category ID specified");
+        }
+        List<Long> guestOses = _guestOSDao.listIdsByCategoryId(id);
+        if (!guestOses.isEmpty()) {
+            throw new InvalidParameterValueException(String.format(
+                    "Unable to delete the OS category. %d guest OS exist for it.", guestOses.size()));
+        }
+        return _guestOSCategoryDao.remove(id);
     }
 
     @Override
@@ -2952,6 +3082,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public GuestOS updateGuestOs(final UpdateGuestOsCmd cmd) {
         final Long id = cmd.getId();
         final String displayName = cmd.getOsDisplayName();
+        final Long osCategoryId = cmd.getOsCategoryId();
+        final Boolean display = cmd.getForDisplay();
+        final Map<String, String> details = cmd.getDetails();
+        boolean updateNeeded = false;
 
         //check if guest OS exists
         final GuestOS guestOsHandle = ApiDBUtils.findGuestOSById(id);
@@ -2959,26 +3093,45 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw new InvalidParameterValueException("Guest OS not found. Please specify a valid ID for the Guest OS");
         }
 
-        if (!guestOsHandle.getIsUserDefined()) {
+        //Check if update is needed
+        if (StringUtils.isNotBlank(displayName) && !displayName.equals(guestOsHandle.getDisplayName())) {
+            //Check if another Guest OS by same name exists
+            final GuestOS duplicate = ApiDBUtils.findGuestOSByDisplayName(displayName);
+            if (duplicate != null) {
+                throw new InvalidParameterValueException("The specified Guest OS name : " + displayName + " already exists. Please specify a unique guest OS name");
+            }
+            updateNeeded = true;
+        }
+
+        if (osCategoryId != null) {
+            if (_guestOSCategoryDao.findById(osCategoryId) == null) {
+                throw new InvalidParameterValueException("Invalid OS category ID specified");
+            }
+            updateNeeded = true;
+        }
+
+        if (!guestOsHandle.getIsUserDefined() && (StringUtils.isNotBlank(displayName) || MapUtils.isNotEmpty(details)
+                || display != null)) {
             throw new InvalidParameterValueException("Unable to modify system defined guest OS");
         }
 
-        persistGuestOsDetails(cmd.getDetails(), id);
+        if (MapUtils.isNotEmpty(details)) {
+            persistGuestOsDetails(details, id);
+        }
 
-        //Check if update is needed
-        if (displayName.equals(guestOsHandle.getDisplayName())) {
+        if (!updateNeeded) {
             return guestOsHandle;
         }
 
-        //Check if another Guest OS by same name exists
-        final GuestOS duplicate = ApiDBUtils.findGuestOSByDisplayName(displayName);
-        if (duplicate != null) {
-            throw new InvalidParameterValueException("The specified Guest OS name : " + displayName + " already exists. Please specify a unique guest OS name");
-        }
         final GuestOSVO guestOs = _guestOSDao.createForUpdate(id);
-        guestOs.setDisplayName(displayName);
+        if (StringUtils.isNotBlank(displayName)) {
+            guestOs.setDisplayName(displayName);
+        }
         if (cmd.getForDisplay() != null) {
             guestOs.setDisplay(cmd.getForDisplay());
+        }
+        if (osCategoryId != null) {
+            guestOs.setCategoryId(osCategoryId);
         }
         if (_guestOSDao.update(id, guestOs)) {
             return _guestOSDao.findById(id);
@@ -3581,12 +3734,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListSwiftsCmd.class);
         cmdList.add(ListStoragePoolsCmd.class);
         cmdList.add(ListStorageTagsCmd.class);
+        cmdList.add(ListStorageAccessGroupsCmd.class);
         cmdList.add(FindStoragePoolsForMigrationCmd.class);
         cmdList.add(PreparePrimaryStorageForMaintenanceCmd.class);
         cmdList.add(UpdateStoragePoolCmd.class);
         cmdList.add(SyncStoragePoolCmd.class);
         cmdList.add(UpdateStorageCapabilitiesCmd.class);
         cmdList.add(UpdateImageStoreCmd.class);
+        cmdList.add(ConfigureStorageAccessCmd.class);
         cmdList.add(DestroySystemVmCmd.class);
         cmdList.add(ListSystemVMsCmd.class);
         cmdList.add(MigrateSystemVMCmd.class);
@@ -3680,6 +3835,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListPortForwardingRulesCmd.class);
         cmdList.add(UpdatePortForwardingRuleCmd.class);
         cmdList.add(ListGuestOsCategoriesCmd.class);
+        cmdList.add(AddGuestOsCategoryCmd.class);
+        cmdList.add(UpdateGuestOsCategoryCmd.class);
+        cmdList.add(DeleteGuestOsCategoryCmd.class);
         cmdList.add(ListGuestOsCmd.class);
         cmdList.add(ListGuestOsMappingCmd.class);
         cmdList.add(AddGuestOsCmd.class);
@@ -4182,6 +4340,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Long podId = cmd.getPodId();
         final Long hostId = cmd.getHostId();
         final Long storageId = cmd.getStorageId();
+        final CPU.CPUArch arch = cmd.getArch();
 
         final Filter searchFilter = new Filter(VMInstanceVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         final SearchBuilder<VMInstanceVO> sb = _vmInstanceDao.createSearchBuilder();
@@ -4206,6 +4365,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 volumeSearch.and("poolId", volumeSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
                 sb.join("volumeSearch", volumeSearch, sb.entity().getId(), volumeSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
             }
+        }
+
+        boolean templateJoinNeeded = arch != null;
+        if (templateJoinNeeded) {
+            SearchBuilder<VMTemplateVO> templateSearch = templateDao.createSearchBuilder();
+            templateSearch.and("templateArch", templateSearch.entity().getArch(), SearchCriteria.Op.EQ);
+            sb.join("vmTemplate", templateSearch, templateSearch.entity().getId(), sb.entity().getTemplateId(), JoinBuilder.JoinType.INNER);
         }
 
         final SearchCriteria<VMInstanceVO> sc = sb.create();
@@ -4253,6 +4419,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             } else {
                 sc.setJoinParameters("volumeSearch", "poolId", storageId);
             }
+        }
+
+        if (arch != null) {
+            sc.setJoinParameters("vmTemplate", "templateArch", arch);
         }
 
         final Pair<List<VMInstanceVO>, Integer> result = _vmInstanceDao.searchAndCount(sc, searchFilter);
@@ -4505,6 +4675,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         capabilities.put(ApiConstants.INSTANCES_STATS_USER_ONLY, StatsCollector.vmStatsCollectUserVMOnly.value());
         capabilities.put(ApiConstants.INSTANCES_DISKS_STATS_RETENTION_ENABLED, StatsCollector.vmDiskStatsRetentionEnabled.value());
         capabilities.put(ApiConstants.INSTANCES_DISKS_STATS_RETENTION_TIME, StatsCollector.vmDiskStatsMaxRetentionTime.value());
+        capabilities.put(ApiConstants.INSTANCE_LEASE_ENABLED, VMLeaseManager.InstanceLeaseEnabled.value());
         if (apiLimitEnabled) {
             capabilities.put("apiLimitInterval", apiLimitInterval);
             capabilities.put("apiLimitMax", apiLimitMax);

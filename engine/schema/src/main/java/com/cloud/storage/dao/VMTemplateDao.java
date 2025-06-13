@@ -19,6 +19,7 @@ package com.cloud.storage.dao;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.cpu.CPU;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
@@ -57,6 +58,8 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long>, StateDao<
 
     public List<VMTemplateVO> listInZoneByState(long dataCenterId, VirtualMachineTemplate.State... states);
 
+    public List<Long> listTemplateIsoByArchVnfAndZone(Long dataCenterId, CPU.CPUArch arch, Boolean isIso, Boolean isVnf);
+
     public List<VMTemplateVO> listAllActive();
 
     public List<VMTemplateVO> listByState(VirtualMachineTemplate.State... states);
@@ -73,9 +76,13 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long>, StateDao<
 
     VMTemplateVO findSystemVMReadyTemplate(long zoneId, HypervisorType hypervisorType);
 
+    List<VMTemplateVO> findSystemVMReadyTemplates(long zoneId, HypervisorType hypervisorType, String preferredArch);
+
     VMTemplateVO findRoutingTemplate(HypervisorType type, String templateName);
 
-    VMTemplateVO findLatestTemplateByTypeAndHypervisor(HypervisorType hypervisorType, Storage.TemplateType type);
+    List<VMTemplateVO> findRoutingTemplates(HypervisorType type, String templateName, String preferredArch);
+
+    VMTemplateVO findLatestTemplateByTypeAndHypervisorAndArch(HypervisorType hypervisorType, CPU.CPUArch arch, Storage.TemplateType type);
 
     public Long countTemplatesForAccount(long accountId);
 
@@ -87,7 +94,7 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long>, StateDao<
 
     List<VMTemplateVO> listByParentTemplatetId(long parentTemplatetId);
 
-    VMTemplateVO findLatestTemplateByName(String name);
+    VMTemplateVO findLatestTemplateByName(String name, CPU.CPUArch arch);
 
     List<VMTemplateVO> findTemplatesLinkedToUserdata(long userdataId);
 

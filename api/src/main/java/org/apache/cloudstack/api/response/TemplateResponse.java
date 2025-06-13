@@ -93,6 +93,8 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "the name of the OS type for this template.")
     private String osTypeName;
 
+    private transient Long osTypeCategoryId;
+
     @SerializedName(ApiConstants.ACCOUNT_ID)
     @Param(description = "the account id to which the template belongs")
     private String accountId;
@@ -283,6 +285,14 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
 
     public void setOsTypeName(String osTypeName) {
         this.osTypeName = osTypeName;
+    }
+
+    public Long getOsTypeCategoryId() {
+        return osTypeCategoryId;
+    }
+
+    public void setOsTypeCategoryId(Long osTypeCategoryId) {
+        this.osTypeCategoryId = osTypeCategoryId;
     }
 
     public void setId(String id) {

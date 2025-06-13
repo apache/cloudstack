@@ -58,14 +58,13 @@
           </span>
           <span v-if="$showIcon() && !['vm', 'vnfapp'].includes($route.path.split('/')[1])" style="margin-right: 5px">
             <resource-icon v-if="$showIcon() && record.icon && record.icon.base64image" :image="record.icon.base64image" size="2x"/>
-            <os-logo v-else-if="record.ostypename" :osName="record.ostypename" size="xl" />
+            <os-logo v-else-if="record.ostypename || ['guestoscategory'].includes($route.path.split('/')[1])" :osName="record.ostypename || record.name" size="xl" />
             <render-icon v-else-if="typeof $route.meta.icon ==='string'" style="font-size: 16px;" :icon="$route.meta.icon"/>
             <render-icon v-else style="font-size: 16px;" :svgIcon="$route.meta.icon" />
           </span>
           <span v-else :style="{ 'margin-right': record.ostypename ? '5px' : '0' }">
             <os-logo v-if="record.ostypename" :osName="record.ostypename" size="xl" />
           </span>
-
           <span v-if="record.hasannotations">
             <span v-if="record.id">
               <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
@@ -100,6 +99,20 @@
                 <warning-outlined style="color: #f5222d"/>
               </a-tooltip>
             </span>
+          </span>
+          <span
+            v-if="record.leaseduration !== undefined"
+            :style="{
+              'margin-right': '5px',
+              'float': 'right'}">
+              <a-tooltip>
+                <template #title>{{ $t('label.remainingdays')  + ": " + getRemainingLeaseText(record.leaseduration) }}</template>
+                <field-time-outlined
+                  :style="{
+                    color: getLeaseColor(record.leaseduration),
+                    fontSize: '20px'
+                  }"/>
+              </a-tooltip>
           </span>
         </span>
       </template>
@@ -227,6 +240,15 @@
           <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
         </span>
         <span v-else>{{ text }}</span>
+      </template>
+      <template v-if="column.key === 'oscategoryname'">
+        <span v-if="('listOsCategories' in $store.getters.apis) && record.oscategoryid">
+          <router-link :to="{ path: '/guestoscategory/' + record.oscategoryid }">{{ text }}</router-link>
+        </span>
+        <span v-else>{{ text }}</span>
+      </template>
+      <template v-if="column.key === 'isuserdefined'">
+        <span>{{ text ? $t('label.yes') : $t('label.no') }}</span>
       </template>
       <template v-if="column.key === 'state'">
         <status v-if="$route.path.startsWith('/host')" :text="getHostState(record)" displayText />
@@ -472,6 +494,9 @@
       <template v-if="['startdate', 'enddate'].includes(column.key) && ['usage'].includes($route.path.split('/')[1])">
         {{ $toLocaleDate(text.replace('\'T\'', ' ')) }}
       </template>
+      <template v-if="['isfeatured'].includes(column.key) && ['guestoscategory'].includes($route.path.split('/')[1])">
+        {{ record.isfeatured ? $t('label.yes') : $t('label.no') }}
+      </template>
       <template v-if="column.key === 'order'">
         <div class="shift-btns">
           <a-tooltip :name="text" placement="top">
@@ -543,7 +568,7 @@
           iconTwoToneColor="#52c41a" />
         <tooltip-button
           :tooltip="$t('label.reset.config.value')"
-          @onClick="resetConfig(record)"
+          @onClick="$resetConfigurationValueConfirm(item, resetConfig)"
           v-if="editableValueKey !== record.key"
           icon="reload-outlined"
           :disabled="!('updateConfiguration' in $store.getters.apis)" />
@@ -743,7 +768,7 @@ export default {
         'vmsnapshot', 'backup', 'guestnetwork', 'vpc', 'publicip', 'vpnuser', 'vpncustomergateway', 'vnfapp',
         'project', 'account', 'systemvm', 'router', 'computeoffering', 'systemoffering',
         'diskoffering', 'backupoffering', 'networkoffering', 'vpcoffering', 'ilbvm', 'kubernetes', 'comment', 'buckets',
-        'webhook', 'webhookdeliveries', 'sharedfs', 'ipv4subnets', 'asnumbers'
+        'webhook', 'webhookdeliveries', 'sharedfs', 'ipv4subnets', 'asnumbers', 'guestos'
       ].includes(this.$route.name)
     },
     getDateAtTimeZone (date, timezone) {
@@ -846,8 +871,9 @@ export default {
         case 'vpcoffering':
           apiString = 'updateVPCOffering'
           break
-        default:
-          apiString = 'updateTemplate'
+        case 'guestoscategory':
+          apiString = 'updateOsCategory'
+          break
       }
       return apiString
     },
@@ -1069,6 +1095,24 @@ export default {
             }
           }
         })
+      }
+    },
+    getRemainingLeaseText (leaseDuration) {
+      if (leaseDuration > 0) {
+        return leaseDuration + (leaseDuration === 1 ? ' day' : ' days')
+      } else if (leaseDuration === 0) {
+        return 'expiring today'
+      } else {
+        return 'over'
+      }
+    },
+    getLeaseColor (leaseDuration) {
+      if (leaseDuration >= 7) {
+        return '#888'
+      } else if (leaseDuration >= 0) {
+        return '#ffbf00'
+      } else {
+        return '#fd7e14'
       }
     }
   }

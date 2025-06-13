@@ -25,6 +25,7 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
@@ -219,6 +220,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoreCommand.setBackupPath(backup.getExternalId());
         restoreCommand.setBackupRepoType(backupRepository.getType());
         restoreCommand.setBackupRepoAddress(backupRepository.getAddress());
+        restoreCommand.setMountOptions(backupRepository.getMountOptions());
         restoreCommand.setVmName(vm.getName());
         restoreCommand.setVolumePaths(getVolumePaths(volumes));
         restoreCommand.setVmExists(vm.getRemoved() == null);
@@ -277,6 +279,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoredVolume.setPoolId(dataStore.getPoolId());
         restoredVolume.setPath(restoredVolume.getUuid());
         restoredVolume.setState(Volume.State.Copying);
+        restoredVolume.setFormat(Storage.ImageFormat.QCOW2);
         restoredVolume.setSize(backedUpVolumeSize);
         restoredVolume.setDiskOfferingId(volume.getDiskOfferingId());
 
@@ -287,6 +290,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoreCommand.setVmName(vmNameAndState.first());
         restoreCommand.setVolumePaths(Collections.singletonList(String.format("%s/%s", dataStore.getLocalPath(), volumeUUID)));
         restoreCommand.setDiskType(volume.getVolumeType().name().toLowerCase(Locale.ROOT));
+        restoreCommand.setMountOptions(backupRepository.getMountOptions());
         restoreCommand.setVmExists(null);
         restoreCommand.setVmState(vmNameAndState.second());
         restoreCommand.setRestoreVolumeUUID(volumeUuid);
@@ -372,8 +376,12 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             Long vmBackupSize = 0L;
             Long vmBackupProtectedSize = 0L;
             for (final Backup backup: backupDao.listByVmId(null, vm.getId())) {
-                vmBackupSize += backup.getSize();
-                vmBackupProtectedSize += backup.getProtectedSize();
+                if (Objects.nonNull(backup.getSize())) {
+                    vmBackupSize += backup.getSize();
+                }
+                if (Objects.nonNull(backup.getProtectedSize())) {
+                    vmBackupProtectedSize += backup.getProtectedSize();
+                }
             }
             Backup.Metric vmBackupMetric = new Backup.Metric(vmBackupSize,vmBackupProtectedSize);
             LOG.debug("Metrics for VM {} is [backup size: {}, data size: {}].", vm, vmBackupMetric.getBackupSize(), vmBackupMetric.getDataSize());

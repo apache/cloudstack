@@ -75,6 +75,7 @@ import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.projects.ProjectManager;
+import com.cloud.resource.ResourceManager;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.server.ManagementService;
 import com.cloud.service.dao.ServiceOfferingDaoImpl;
@@ -252,6 +253,11 @@ public class
     @Bean
     public Ipv6AddressManager ipv6Mgr() {
         return Mockito.mock(Ipv6AddressManager.class);
+    }
+
+    @Bean
+    public ResourceManager resourceManager() {
+        return Mockito.mock(ResourceManager.class);
     }
 
     @Bean

@@ -269,7 +269,10 @@ public class ApiConstants {
     public static final String INTERNAL_DNS2 = "internaldns2";
     public static final String INTERNET_PROTOCOL = "internetprotocol";
     public static final String INTERVAL_TYPE = "intervaltype";
-    public static final String LOCATION_TYPE = "locationtype";
+    public static final String INSTANCE_LEASE_DURATION = "leaseduration";
+    public static final String INSTANCE_LEASE_ENABLED = "instanceleaseenabled";
+    public static final String INSTANCE_LEASE_EXPIRY_ACTION = "leaseexpiryaction";
+    public static final String INSTANCE_LEASE_EXPIRY_DATE= "leaseexpirydate";
     public static final String IOPS_READ_RATE = "iopsreadrate";
     public static final String IOPS_READ_RATE_MAX = "iopsreadratemax";
     public static final String IOPS_READ_RATE_MAX_LENGTH = "iopsreadratemaxlength";
@@ -296,6 +299,7 @@ public class ApiConstants {
     public static final String IS_EXTRACTABLE = "isextractable";
     public static final String IS_FEATURED = "isfeatured";
     public static final String IS_IMPLICIT = "isimplicit";
+    public static final String IS_ISO = "isiso";
     public static final String IS_PORTABLE = "isportable";
     public static final String IS_PUBLIC = "ispublic";
     public static final String IS_PERSISTENT = "ispersistent";
@@ -317,11 +321,13 @@ public class ApiConstants {
     public static final String LAST_BOOT = "lastboottime";
     public static final String LAST_SERVER_START = "lastserverstart";
     public static final String LAST_SERVER_STOP = "lastserverstop";
+    public static final String LEASED = "leased";
     public static final String LEVEL = "level";
     public static final String LENGTH = "length";
     public static final String LIMIT = "limit";
     public static final String LIMIT_CPU_USE = "limitcpuuse";
     public static final String LIST_HOSTS = "listhosts";
+    public static final String LOCATION_TYPE = "locationtype";
     public static final String LOCK = "lock";
     public static final String LUN = "lun";
     public static final String LBID = "lbruleid";
@@ -456,6 +462,7 @@ public class ApiConstants {
     public static final String SENT = "sent";
     public static final String SENT_BYTES = "sentbytes";
     public static final String SERIAL = "serial";
+    public static final String SERVICE_IP = "serviceip";
     public static final String SERVICE_OFFERING_ID = "serviceofferingid";
     public static final String SESSIONKEY = "sessionkey";
     public static final String SHOW_CAPACITIES = "showcapacities";
@@ -485,18 +492,22 @@ public class ApiConstants {
     public static final String STATE = "state";
     public static final String STATS = "stats";
     public static final String STATUS = "status";
+    public static final String STORAGE_TYPE = "storagetype";
+    public static final String STORAGE_POLICY = "storagepolicy";
+    public static final String STORAGE_MOTION_ENABLED = "storagemotionenabled";
     public static final String STORAGE_CAPABILITIES = "storagecapabilities";
     public static final String STORAGE_CUSTOM_STATS = "storagecustomstats";
-    public static final String STORAGE_MOTION_ENABLED = "storagemotionenabled";
-    public static final String STORAGE_POLICY = "storagepolicy";
-    public static final String STORAGE_POOL = "storagepool";
-    public static final String STORAGE_TYPE = "storagetype";
     public static final String SUBNET = "subnet";
     public static final String OWNER = "owner";
     public static final String SWAP_OWNER = "swapowner";
     public static final String SYSTEM_VM_TYPE = "systemvmtype";
     public static final String TAGS = "tags";
     public static final String STORAGE_TAGS = "storagetags";
+    public static final String STORAGE_ACCESS_GROUPS = "storageaccessgroups";
+    public static final String STORAGE_ACCESS_GROUP = "storageaccessgroup";
+    public static final String CLUSTER_STORAGE_ACCESS_GROUPS = "clusterstorageaccessgroups";
+    public static final String POD_STORAGE_ACCESS_GROUPS = "podstorageaccessgroups";
+    public static final String ZONE_STORAGE_ACCESS_GROUPS = "zonestorageaccessgroups";
     public static final String SUCCESS = "success";
     public static final String SUITABLE_FOR_VM = "suitableforvirtualmachine";
     public static final String SUPPORTS_STORAGE_SNAPSHOT = "supportsstoragesnapshot";
@@ -1150,6 +1161,7 @@ public class ApiConstants {
     public static final String PENDING_JOBS_COUNT = "pendingjobscount";
     public static final String AGENTS_COUNT = "agentscount";
     public static final String AGENTS = "agents";
+    public static final String LAST_AGENTS = "lastagents";
 
     public static final String PUBLIC_MTU = "publicmtu";
     public static final String PRIVATE_MTU = "privatemtu";

@@ -14,20 +14,18 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.hypervisor.vmware.util;
+package com.cloud.storage.dao;
 
-import com.cloud.exception.CloudException;
+import java.util.List;
 
-public class VmwareClientException extends CloudException {
-    public VmwareClientException(String message, Throwable cause) {
-        super(message, cause);
-    }
+import com.cloud.storage.StoragePoolAndAccessGroupMapVO;
 
-    public VmwareClientException(String msg) {
-        super(msg);
-    }
-    // TODO embed vmware classes in this one for use downstream
-    public VmwareClientException(String msg, Exception embedded) {
-        super(msg, embedded);
-    }
+import com.cloud.utils.db.GenericDao;
+
+public interface StoragePoolAndAccessGroupMapDao extends GenericDao<StoragePoolAndAccessGroupMapVO, Long> {
+
+    void persist(long poolId, List<String> storageAccessGroups);
+    List<String> getStorageAccessGroups(long poolId);
+    void deleteStorageAccessGroups(long poolId);
+    List<String> listDistinctStorageAccessGroups(String name, String keyword);
 }

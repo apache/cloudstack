@@ -718,10 +718,10 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                  getDynamicDataFromDB();
                  long interval = (Long) dbStats.get(uptime) - lastUptime;
                  long activity = (Long) dbStats.get(queries) - lastQueries;
-                 loadHistory.add(0, Double.valueOf(activity / interval));
+                 loadHistory.add(0, interval == 0 ? -1 : Double.valueOf(activity / interval));
                  int maxsize = DATABASE_SERVER_LOAD_HISTORY_RETENTION_NUMBER.value();
                  while (loadHistory.size() > maxsize) {
-                     loadHistory.remove(maxsize - 1);
+                     loadHistory.remove(maxsize);
                  }
              } catch (Throwable e) {
                  // pokemon catch to make sure the thread stays running
@@ -752,21 +752,21 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             logger.debug(String.format("%s is running...", this.getClass().getSimpleName()));
             long msid = ManagementServerNode.getManagementServerId();
             ManagementServerHostVO mshost = null;
-            ManagementServerHostStatsEntry hostStatsEntry = null;
+            ManagementServerHostStatsEntry msHostStatsEntry = null;
             try {
                 mshost = managementServerHostDao.findByMsid(msid);
                 // get local data
-                hostStatsEntry = getDataFrom(mshost);
-                managementServerHostStats.put(mshost.getUuid(), hostStatsEntry);
+                msHostStatsEntry = getDataFrom(mshost);
+                managementServerHostStats.put(mshost.getUuid(), msHostStatsEntry);
                 // send to other hosts
-                clusterManager.publishStatus(gson.toJson(hostStatsEntry));
+                clusterManager.publishStatus(gson.toJson(msHostStatsEntry));
             } catch (Throwable t) {
                 // pokemon catch to make sure the thread stays running
                 logger.error("Error trying to retrieve management server host statistics", t);
             }
             try {
                 // send to DB
-                storeStatus(hostStatsEntry, mshost);
+                storeStatus(msHostStatsEntry, mshost);
             } catch (Throwable t) {
                 // pokemon catch to make sure the thread stays running
                 logger.error("Error trying to store  management server host statistics", t);
@@ -834,11 +834,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         }
 
         private void getDataBaseStatistics(ManagementServerHostStatsEntry newEntry, long msid) {
-            newEntry.setLastAgents(_agentMgr.getLastAgents());
+            List<String> lastAgents = _hostDao.listByLastMs(msid);
+            newEntry.setLastAgents(lastAgents);
             List<String> agents = _hostDao.listByMs(msid);
             newEntry.setAgents(agents);
-            int count = _hostDao.countByMs(msid);
-            newEntry.setAgentCount(count);
+            newEntry.setAgentCount(agents.size());
         }
 
         private void getMemoryData(@NotNull ManagementServerHostStatsEntry newEntry) {
