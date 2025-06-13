@@ -166,7 +166,6 @@ export default {
         formData[key] = this.resource[key]
       }
       this.form = reactive(formData)
-      console.log('----------------', this.form.description, formData, this.resource)
       this.rules = reactive({})
     },
     fetchRoleTypes () {

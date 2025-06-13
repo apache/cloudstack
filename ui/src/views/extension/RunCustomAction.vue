@@ -66,19 +66,19 @@
               v-focus="fieldIndex === 0"
             />
             <a-select
-              v-else-if="field.options && field.options.length > 0"
+              v-else-if="field.valueoptions && field.valueoptions.length > 0"
               v-model:value="form[field.name]"
               :placeholder="field.name">
-              <a-select-option v-for="t in field.options" :key="t" :value="t">{{ t }}</a-select-option>
+              <a-select-option v-for="t in field.valueoptions" :key="t" :value="t">{{ t }}</a-select-option>
             </a-select>
             <a-input-number
               v-else-if="['NUMBER'].includes(field.type)"
-              :precision="['DECIMAL'].includes(field.format) ? 2 : 0"
+              :precision="['DECIMAL'].includes(field.validationformat) ? 2 : 0"
               v-focus="fieldIndex === 0"
               v-model:value="form[field.name]"
               :placeholder="field.name" />
             <a-input-password
-              v-else-if="['STRING'].includes(field.type) && ['PASSWORD'].includes(field.format)"
+              v-else-if="['STRING'].includes(field.type) && ['PASSWORD'].includes(field.validationformat)"
               v-focus="fieldIndex === 0"
               v-model:value="form[field.name]"
               :placeholder="field.name" />
@@ -189,25 +189,25 @@ export default {
               message: `${this.$t('message.error.field.required', { field: field.name })}`
             })
           }
-          if (field.type === 'STRING' && field.format) {
+          if (field.type === 'STRING' && field.validationformat) {
             let validator
-            switch (field.format) {
+            switch (field.validationformat) {
               case 'EMAIL':
                 validator = {
                   type: 'email',
-                  message: this.$t('message.error.invalidemail')
+                  message: this.$t('message.error.input.invalidemail')
                 }
                 break
               case 'URL':
                 validator = {
                   type: 'url',
-                  message: this.$t('message.error.invalidurl')
+                  message: this.$t('message.error.input.invalidurl')
                 }
                 break
               case 'UUID':
                 validator = {
                   pattern: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-                  message: this.$t('message.error.invaliduuid')
+                  message: this.$t('message.error.input.invaliduuid')
                 }
                 break
             }
@@ -241,7 +241,7 @@ export default {
             params['parameters[0].' + key] = value
           }
         }
-        const httpMethod = this.currentParameters.find(p => p.format === 'PASSWORD') ? 'POST' : 'GET'
+        const httpMethod = this.currentParameters.find(p => p.validationformat === 'PASSWORD') ? 'POST' : 'GET'
         const args = httpMethod === 'POST' ? {} : params
         const data = httpMethod === 'POST' ? params : {}
         api('runCustomAction', args, httpMethod, data).then(response => {
