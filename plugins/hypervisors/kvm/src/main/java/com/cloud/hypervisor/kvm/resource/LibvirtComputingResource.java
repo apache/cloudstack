@@ -5368,8 +5368,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return exitValue == 0;
     }
 
+    public String getHostVirtV2vVersion() {
+        String cmd = String.format("%s | awk '{print $2}'", INSTANCE_CONVERSION_SUPPORTED_CHECK_CMD);
+        return Script.runSimpleBashScript(cmd);
+    }
+
+    public String getHostOvfToolVersion() {
+        return Script.runSimpleBashScript(OVF_EXPORT_TOOl_GET_VERSION_CMD);
+    }
+
     public boolean ovfExportToolSupportsParallelThreads() {
-        String ovfExportToolVersion = Script.runSimpleBashScript(OVF_EXPORT_TOOl_GET_VERSION_CMD);
+        String ovfExportToolVersion = getHostOvfToolVersion();
         if (StringUtils.isBlank(ovfExportToolVersion)) {
             return false;
         }

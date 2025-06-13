@@ -57,6 +57,10 @@ public interface Host extends StateObject<Status>, Identity, Partition, HAResour
     public static final String HOST_VOLUME_ENCRYPTION = "host.volume.encryption";
     public static final String HOST_INSTANCE_CONVERSION = "host.instance.conversion";
 
+    // Vmware to KVM Migration
+    String KVM_HOST_OVFTOOL_VERSION = "kvm.host.ovftool.version";
+    String KVM_HOST_VIRTV2V_VERSION = "kvm.host.virtv2v.version";
+
     /**
      * @return name of the machine.
      */
