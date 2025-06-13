@@ -36,17 +36,6 @@ import com.cloud.agent.api.StopCommand;
 import com.cloud.utils.component.Manager;
 
 public interface ExternalProvisioner extends Manager {
-    /**
-     * Returns the unique name of the provider
-     * @return returns provider name
-     */
-    String getName();
-
-    /**
-     * Returns description about the provider
-     * @return returns description
-     */
-    String getDescription();
 
     String getExtensionEntryPoint(String relativeEntryPoint);
 
@@ -55,6 +44,8 @@ public interface ExternalProvisioner extends Manager {
     void prepareExtensionEntryPoint(String extensionName, boolean userDefined, String extensionRelativeEntryPoint);
 
     void cleanupExtensionEntryPoint(String extensionName, String extensionRelativeEntryPoint);
+
+    void cleanupExtensionPayloads(String extensionName, int olderThanDays, boolean cleanupDirectory);
 
     PrepareExternalProvisioningAnswer prepareExternalProvisioning(String hostGuid, String extensionName, String extensionRelativeEntryPoint, PrepareExternalProvisioningCommand cmd);
 

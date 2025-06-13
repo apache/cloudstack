@@ -19,9 +19,9 @@ package org.apache.cloudstack.framework.extensions.command;
 
 import org.apache.cloudstack.extension.Extension;
 
-public class CleanupExtensionEntryPointCommand extends ExtensionServerActionBaseCommand {
+public class CleanupExtensionFilesCommand extends ExtensionServerActionBaseCommand {
 
-    public CleanupExtensionEntryPointCommand(long msId, Extension extension) {
+    public CleanupExtensionFilesCommand(long msId, Extension extension) {
         super(msId, extension);
     }
 }

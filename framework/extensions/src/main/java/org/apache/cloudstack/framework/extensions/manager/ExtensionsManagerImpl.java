@@ -66,7 +66,7 @@ import org.apache.cloudstack.framework.extensions.api.RunCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.UnregisterExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.UpdateCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.UpdateExtensionCmd;
-import org.apache.cloudstack.framework.extensions.command.CleanupExtensionEntryPointCommand;
+import org.apache.cloudstack.framework.extensions.command.CleanupExtensionFilesCommand;
 import org.apache.cloudstack.framework.extensions.command.ExtensionServerActionBaseCommand;
 import org.apache.cloudstack.framework.extensions.command.GetExtensionEntryPointChecksumCommand;
 import org.apache.cloudstack.framework.extensions.command.PrepareExtensionEntryPointCommand;
@@ -256,18 +256,19 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         return new Pair<>(true, null);
     }
 
-    protected boolean cleanupExtensionEntryPointOnMSPeer(Extension extension, ManagementServerHostVO msHost) {
+    protected boolean cleanupExtensionFilesOnMSPeer(Extension extension, ManagementServerHostVO msHost) {
         final String msPeer = Long.toString(msHost.getMsid());
         logger.debug("Sending cleanup extension entry-point for {} command to MS: {}", extension, msPeer);
         final Command[] commands = new Command[1];
-        commands[0] = new CleanupExtensionEntryPointCommand(ManagementServerNode.getManagementServerId(), extension);
+        commands[0] = new CleanupExtensionFilesCommand(ManagementServerNode.getManagementServerId(), extension);
         String answersStr = clusterManager.execute(msPeer, 0L, GsonHelper.getGson().toJson(commands), true);
         return getResultFromAnswersString(answersStr, extension, msHost, "cleanup entry-point").first();
     }
 
-    protected Pair<Boolean, String> cleanupExtensionEntryPointOnCurrentServer(String name, String relativeEntryPoint) {
+    protected Pair<Boolean, String> cleanupExtensionFilesOnCurrentServer(String name, String relativeEntryPoint) {
         try {
             externalProvisioner.cleanupExtensionEntryPoint(name, relativeEntryPoint);
+            externalProvisioner.cleanupExtensionPayloads(name, 0, true);
         } catch (CloudRuntimeException e) {
             logger.error("Failed to cleanup entry-point files for Extension [name: {}, relativeEntryPoint: {}] on this server",
                     name, relativeEntryPoint, e);
@@ -276,16 +277,16 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         return new Pair<>(true, null);
     }
 
-    protected void cleanupExtensionEntryPointAcrossServers(Extension extension) {
+    protected void cleanupExtensionFilesAcrossServers(Extension extension) {
         boolean cleanup = true;
         List<ManagementServerHostVO> msHosts = managementServerHostDao.listBy(ManagementServerHost.State.Up);
         for (ManagementServerHostVO msHost : msHosts) {
             if (msHost.getMsid() == ManagementServerNode.getManagementServerId()) {
-                cleanup = cleanup && cleanupExtensionEntryPointOnCurrentServer(extension.getName(),
+                cleanup = cleanup && cleanupExtensionFilesOnCurrentServer(extension.getName(),
                         extension.getRelativeEntryPoint()).first();
                 continue;
             }
-            cleanup = cleanup && cleanupExtensionEntryPointOnMSPeer(extension, msHost);
+            cleanup = cleanup && cleanupExtensionFilesOnMSPeer(extension, msHost);
         }
         if (!cleanup) {
             throw new CloudRuntimeException("Extension is deleted but its entry-point files are not cleaned up across servers");
@@ -602,7 +603,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             return true;
         });
         if (result && cleanup) {
-            cleanupExtensionEntryPointAcrossServers(extension);
+            cleanupExtensionFilesAcrossServers(extension);
         }
         return true;
     }
@@ -1236,9 +1237,9 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             Pair<Boolean, String> result = prepareExtensionEntryPointOnCurrentServer(
                     extensionName, cmd.isExtensionUserDefined(), extensionRelativeEntryPointPath);
             answer = new Answer(cmd, result.first(), result.second());
-        } else if (command instanceof CleanupExtensionEntryPointCommand) {
-            final CleanupExtensionEntryPointCommand cmd = (CleanupExtensionEntryPointCommand)command;
-            Pair<Boolean, String> result = cleanupExtensionEntryPointOnCurrentServer(extensionName,
+        } else if (command instanceof CleanupExtensionFilesCommand) {
+            final CleanupExtensionFilesCommand cmd = (CleanupExtensionFilesCommand)command;
+            Pair<Boolean, String> result = cleanupExtensionFilesOnCurrentServer(extensionName,
                     extensionRelativeEntryPointPath);
             answer = new Answer(cmd, result.first(), result.second());
         }
