@@ -125,7 +125,7 @@
       </a-row>
       <a-form-item name="externaldetails" ref="externaldetails" v-if="form.hypervisor === 'External' && !!form.extensionid">
         <template #label>
-          <tooltip-label :title="$t('label.externaldetails')" :tooltip="apiParams.externaldetails.description"/>
+          <tooltip-label :title="$t('label.configuration.details')" :tooltip="apiParams.externaldetails.description"/>
         </template>
         <a-switch v-model:checked="externalDetailsEnabled" @change="onExternalDetailsEnabledChange"/>
         <a-card v-if="externalDetailsEnabled" style="margin-top: 10px">
