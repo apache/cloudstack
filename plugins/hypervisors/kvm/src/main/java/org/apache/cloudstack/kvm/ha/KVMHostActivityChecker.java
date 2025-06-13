@@ -21,6 +21,7 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.CheckVMActivityOnStoragePoolCommand;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
@@ -52,6 +53,8 @@ import java.util.List;
 public class KVMHostActivityChecker extends AdapterBase implements ActivityCheckerInterface<Host>, HealthCheckerInterface<Host> {
 
     @Inject
+    private ClusterDao clusterDao;
+    @Inject
     private VolumeDao volumeDao;
     @Inject
     private VMInstanceDao vmInstanceDao;
@@ -67,7 +70,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
     @Override
     public boolean isActive(Host r, DateTime suspectTime) throws HACheckerException {
         try {
-            return isVMActivtyOnHost(r, suspectTime);
+            return isVMActivityOnHost(r, suspectTime);
         } catch (HACheckerException e) {
             //Re-throwing the exception to avoid poluting the 'HACheckerException' already thrown
             throw e;
@@ -146,7 +149,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
         return hostStatus == Status.Up;
     }
 
-    private boolean isVMActivtyOnHost(Host agent, DateTime suspectTime) throws HACheckerException {
+    private boolean isVMActivityOnHost(Host agent, DateTime suspectTime) throws HACheckerException {
         if (agent.getHypervisorType() != Hypervisor.HypervisorType.KVM && agent.getHypervisorType() != Hypervisor.HypervisorType.LXC) {
             throw new IllegalStateException(String.format("Calling KVM investigator for non KVM Host of type [%s].", agent.getHypervisorType()));
         }
@@ -155,7 +158,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
         for (StoragePool pool : poolVolMap.keySet()) {
             activityStatus = verifyActivityOfStorageOnHost(poolVolMap, pool, agent, suspectTime, activityStatus);
             if (!activityStatus) {
-                logger.warn(String.format("It seems that the storage pool [%s] does not have activity on %s.", pool.getId(), agent.toString()));
+                logger.warn("It seems that the storage pool [{}] does not have activity on {}.", pool, agent);
                 break;
             }
         }
@@ -167,20 +170,20 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
         List<Volume> volume_list = poolVolMap.get(pool);
         final CheckVMActivityOnStoragePoolCommand cmd = new CheckVMActivityOnStoragePoolCommand(agent, pool, volume_list, suspectTime);
 
-        logger.debug(String.format("Checking VM activity for %s on storage pool [%s].", agent.toString(), pool.getId()));
+        logger.debug("Checking VM activity for {} on storage pool [{}].", agent.toString(), pool);
         try {
             Answer answer = storageManager.sendToPool(pool, getNeighbors(agent), cmd);
 
             if (answer != null) {
                 activityStatus = !answer.getResult();
-                logger.debug(String.format("%s %s activity on storage pool [%s]", agent.toString(), activityStatus ? "has" : "does not have", pool.getId()));
+                logger.debug("{} {} activity on storage pool [{}]", agent.toString(), activityStatus ? "has" : "does not have", pool);
             } else {
-                String message = String.format("Did not get a valid response for VM activity check for %s on storage pool [%s].", agent.toString(), pool.getId());
+                String message = String.format("Did not get a valid response for VM activity check for %s on storage pool [%s].", agent.toString(), pool);
                 logger.debug(message);
                 throw new IllegalStateException(message);
             }
         } catch (StorageUnavailableException e){
-            String message = String.format("Storage [%s] is unavailable to do the check, probably the %s is not reachable.", pool.getId(), agent.toString());
+            String message = String.format("Storage [%s] is unavailable to do the check, probably the %s is not reachable.", pool, agent);
             logger.warn(message, e);
             throw new HACheckerException(message, e);
         }
@@ -191,15 +194,15 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
         List<VMInstanceVO> vm_list = vmInstanceDao.listByHostId(agent.getId());
         List<VolumeVO> volume_list = new ArrayList<VolumeVO>();
         for (VirtualMachine vm : vm_list) {
-            logger.debug(String.format("Retrieving volumes of VM [%s]...", vm.getId()));
+            logger.debug("Retrieving volumes of VM [{}]...", vm);
             List<VolumeVO> vm_volume_list = volumeDao.findByInstance(vm.getId());
             volume_list.addAll(vm_volume_list);
         }
 
         HashMap<StoragePool, List<Volume>> poolVolMap = new HashMap<StoragePool, List<Volume>>();
         for (Volume vol : volume_list) {
-            logger.debug(String.format("Retrieving storage pool [%s] of volume [%s]...", vol.getPoolId(), vol.getId()));
             StoragePool sp = storagePool.findById(vol.getPoolId());
+            logger.debug("Retrieving storage pool [{}] of volume [{}]...", sp, vol);
             if (!poolVolMap.containsKey(sp)) {
                 List<Volume> list = new ArrayList<Volume>();
                 list.add(vol);
@@ -215,7 +218,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
     public long[] getNeighbors(Host agent) {
         List<Long> neighbors = new ArrayList<Long>();
         List<HostVO> cluster_hosts = resourceManager.listHostsInClusterByStatus(agent.getClusterId(), Status.Up);
-        logger.debug(String.format("Retrieving all \"Up\" hosts from cluster [%s]...", agent.getClusterId()));
+        logger.debug("Retrieving all \"Up\" hosts from cluster [{}]...", clusterDao.findById(agent.getClusterId()));
         for (HostVO host : cluster_hosts) {
             if (host.getId() == agent.getId() || (host.getHypervisorType() != Hypervisor.HypervisorType.KVM && host.getHypervisorType() != Hypervisor.HypervisorType.LXC)) {
                 continue;

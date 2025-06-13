@@ -17,12 +17,17 @@
 package org.apache.cloudstack.storage.datastore.db;
 
 import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.isNull;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,13 +39,15 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.StoragePoolTagsDao;
+import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.SearchBuilder;
 
 import junit.framework.TestCase;
-import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class PrimaryDataStoreDaoImplTest extends TestCase {
@@ -58,6 +65,8 @@ public class PrimaryDataStoreDaoImplTest extends TestCase {
 
     @Mock
     StoragePoolVO storagePoolVO;
+
+    private GenericSearchBuilder<StoragePoolVO, Long> genericSearchBuilder;
 
     private static final String STORAGE_TAG_1 = "NFS-A";
     private static final String STORAGE_TAG_2 = "NFS-B";
@@ -154,5 +163,33 @@ public class PrimaryDataStoreDaoImplTest extends TestCase {
                 primaryDataStoreDao.DetailsSqlPrefix, primaryDataStoreDao.DetailsSqlSuffix, SQL_VALUES, CLUSTER_ID);
         String expectedSql = primaryDataStoreDao.DetailsSqlPrefix + SQL_VALUES + primaryDataStoreDao.DetailsSqlSuffix;
         verify(primaryDataStoreDao).searchStoragePoolsPreparedStatement(expectedSql, DATACENTER_ID, POD_ID, CLUSTER_ID, SCOPE, STORAGE_POOL_DETAILS.size());
+    }
+
+    @Test
+    public void testListAllIds() {
+        GenericSearchBuilder<StoragePoolVO, Long> genericSearchBuilder = mock(SearchBuilder.class);
+        StoragePoolVO entityVO = mock(StoragePoolVO.class);
+        when(genericSearchBuilder.entity()).thenReturn(entityVO);
+        doReturn(genericSearchBuilder).when(primaryDataStoreDao).createSearchBuilder(Long.class);
+        List<Long> mockIds = Arrays.asList(1L, 2L, 3L);
+        doReturn(mockIds).when(primaryDataStoreDao).customSearch(any(), isNull());
+        List<Long> result = primaryDataStoreDao.listAllIds();
+        verify(primaryDataStoreDao).customSearch(genericSearchBuilder.create(), null);
+        assertEquals(3, result.size());
+        assertEquals(Long.valueOf(1L), result.get(0));
+        assertEquals(Long.valueOf(2L), result.get(1));
+        assertEquals(Long.valueOf(3L), result.get(2));
+    }
+
+    @Test
+    public void testListAllIdsEmptyResult() {
+        GenericSearchBuilder<StoragePoolVO, Long> genericSearchBuilder = mock(SearchBuilder.class);
+        StoragePoolVO entityVO = mock(StoragePoolVO.class);
+        when(genericSearchBuilder.entity()).thenReturn(entityVO);
+        doReturn(genericSearchBuilder).when(primaryDataStoreDao).createSearchBuilder(Long.class);
+        doReturn(Collections.emptyList()).when(primaryDataStoreDao).customSearch(any(), isNull());
+        List<Long> result = primaryDataStoreDao.listAllIds();
+        verify(primaryDataStoreDao).customSearch(genericSearchBuilder.create(), null);
+        assertTrue(result.isEmpty());
     }
 }

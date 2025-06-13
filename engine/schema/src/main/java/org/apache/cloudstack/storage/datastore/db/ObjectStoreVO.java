@@ -20,6 +20,7 @@ package org.apache.cloudstack.storage.datastore.db;
 
 import org.apache.cloudstack.storage.object.ObjectStore;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -139,5 +140,12 @@ public class ObjectStoreVO implements ObjectStore {
 
     public void setDetails(Map<String, String> details) {
         this.details = details;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("ObjectStore %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "name", "providerName"));
     }
 }

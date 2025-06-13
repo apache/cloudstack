@@ -131,7 +131,7 @@ public class DhcpSubNetRules extends RuleApplier {
                     }
                 } catch (final InsufficientAddressCapacityException e) {
                     logger.info(e.getMessage());
-                    logger.info("unable to configure dhcp for this VM.");
+                    logger.info("unable to configure dhcp for this VM {}", vm);
                     return false;
                 }
                 // this means we did not create an IP alias on the router.

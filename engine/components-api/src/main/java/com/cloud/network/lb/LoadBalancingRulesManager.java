@@ -62,7 +62,7 @@ public interface LoadBalancingRulesManager {
      */
     boolean removeVmFromLoadBalancers(long vmId);
 
-    boolean applyLoadBalancersForNetwork(long networkId, Scheme scheme) throws ResourceUnavailableException;
+    boolean applyLoadBalancersForNetwork(Network network, Scheme scheme) throws ResourceUnavailableException;
 
     String getLBCapability(long networkid, String capabilityName);
 
@@ -74,7 +74,7 @@ public interface LoadBalancingRulesManager {
 
     boolean configureLbAutoScaleVmGroup(long vmGroupid, AutoScaleVmGroup.State currentState) throws ResourceUnavailableException;
 
-    boolean revokeLoadBalancersForNetwork(long networkId, Scheme scheme) throws ResourceUnavailableException;
+    boolean revokeLoadBalancersForNetwork(Network network, Scheme scheme) throws ResourceUnavailableException;
 
     boolean validateLbRule(LoadBalancingRule lbRule);
 

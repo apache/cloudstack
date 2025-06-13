@@ -19,6 +19,7 @@
 package com.cloud.server;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * management server related stats
@@ -31,6 +32,8 @@ public interface ManagementServerHostStats {
     long getManagementServerHostId();
 
     String getManagementServerHostUuid();
+
+    long getManagementServerRunId();
 
     long getSessions();
 
@@ -67,6 +70,10 @@ public interface ManagementServerHostStats {
     String getJvmVersion();
 
     String getOsDistribution();
+
+    List<String> getLastAgents();
+
+    List<String> getAgents();
 
     int getAgentCount();
 

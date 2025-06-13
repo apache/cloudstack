@@ -45,7 +45,7 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
     private static final String MOUNT_COMMAND = "sudo mount -t %s %s %s";
     private static final String UMOUNT_COMMAND = "sudo umount %s";
     private static final String FILE_PATH_PLACEHOLDER = "%s/%s";
-    private static final String ATTACH_DISK_COMMAND = " virsh attach-disk %s %s %s --cache none";
+    private static final String ATTACH_DISK_COMMAND = " virsh attach-disk %s %s %s --driver qemu --subdriver qcow2 --cache none";
     private static final String CURRRENT_DEVICE = "virsh domblklist --domain %s | tail -n 3 | head -n 1 | awk '{print $1}'";
     private static final String RSYNC_COMMAND = "rsync -az %s %s";
 
@@ -67,7 +67,7 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
             int lastIndex = volumePath.lastIndexOf("/");
             newVolumeId = volumePath.substring(lastIndex + 1);
             restoreVolume(backupPath, backupRepoType, backupRepoAddress, volumePath, diskType, restoreVolumeUuid,
-                    new Pair<>(vmName, command.getVmState()));
+                    new Pair<>(vmName, command.getVmState()), mountOptions);
         } else if (Boolean.TRUE.equals(vmExists)) {
             restoreVolumesOfExistingVM(volumePaths, backupPath, backupRepoType, backupRepoAddress, mountOptions);
         } else {
@@ -80,7 +80,7 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
     private void restoreVolumesOfExistingVM(List<String> volumePaths, String backupPath,
                                              String backupRepoType, String backupRepoAddress, String mountOptions) {
         String diskType = "root";
-        String mountDirectory = mountBackupDirectory(backupRepoAddress, backupRepoType);
+        String mountDirectory = mountBackupDirectory(backupRepoAddress, backupRepoType, mountOptions);
         try {
             for (int idx = 0; idx < volumePaths.size(); idx++) {
                 String volumePath = volumePaths.get(idx);
@@ -101,7 +101,7 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
 
     private void restoreVolumesOfDestroyedVMs(List<String> volumePaths, String vmName, String backupPath,
                                               String backupRepoType, String backupRepoAddress, String mountOptions) {
-        String mountDirectory = mountBackupDirectory(backupRepoAddress, backupRepoType);
+        String mountDirectory = mountBackupDirectory(backupRepoAddress, backupRepoType, mountOptions);
         String diskType = "root";
         try {
             for (int i = 0; i < volumePaths.size(); i++) {
@@ -121,8 +121,8 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
     }
 
     private void restoreVolume(String backupPath, String backupRepoType, String backupRepoAddress, String volumePath,
-                               String diskType, String volumeUUID, Pair<String, VirtualMachine.State> vmNameAndState) {
-        String mountDirectory = mountBackupDirectory(backupRepoAddress, backupRepoType);
+                               String diskType, String volumeUUID, Pair<String, VirtualMachine.State> vmNameAndState, String mountOptions) {
+        String mountDirectory = mountBackupDirectory(backupRepoAddress, backupRepoType, mountOptions);
         Pair<String, String> bkpPathAndVolUuid;
         try {
             bkpPathAndVolUuid = getBackupPath(mountDirectory, volumePath, backupPath, diskType, volumeUUID);
@@ -145,12 +145,22 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
     }
 
 
-    private String mountBackupDirectory(String backupRepoAddress, String backupRepoType) {
+    private String mountBackupDirectory(String backupRepoAddress, String backupRepoType, String mountOptions) {
         String randomChars = RandomStringUtils.random(5, true, false);
         String mountDirectory = String.format("%s.%s",BACKUP_TEMP_FILE_PREFIX , randomChars);
         try {
             mountDirectory = Files.createTempDirectory(mountDirectory).toString();
             String mount = String.format(MOUNT_COMMAND, backupRepoType, backupRepoAddress, mountDirectory);
+            if ("cifs".equals(backupRepoType)) {
+                if (Objects.isNull(mountOptions) || mountOptions.trim().isEmpty()) {
+                    mountOptions = "nobrl";
+                } else {
+                    mountOptions += ",nobrl";
+                }
+            }
+            if (Objects.nonNull(mountOptions) && !mountOptions.trim().isEmpty()) {
+                mount += " -o " + mountOptions;
+            }
             Script.runSimpleBashScript(mount);
         } catch (Exception e) {
             throw new CloudRuntimeException(String.format("Failed to mount %s to %s", backupRepoType, backupRepoAddress), e);

@@ -51,7 +51,7 @@
           </template>
 
           <template v-else-if="column.key === 'size' || column.key === 'virtualsize'">
-            {{ bytesToHumanReadableSize(text) }}
+            {{ $bytesToHumanReadableSize(text) }}
           </template>
 
           <template v-else>

@@ -81,6 +81,16 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item v-if="isRootAdmin" ref="apikeyaccess" name="apikeyaccess">
+          <template #label>
+            <tooltip-label :title="$t('label.apikeyaccess')" :tooltip="apiParams.apikeyaccess.description"/>
+          </template>
+          <a-radio-group v-model:value="form.apikeyaccess" buttonStyle="solid">
+            <a-radio-button value="ENABLED">Enabled</a-radio-button>
+            <a-radio-button value="INHERIT">Inherit</a-radio-button>
+            <a-radio-button value="DISABLED">Disabled</a-radio-button>
+          </a-radio-group>
+        </a-form-item>
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
           <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -127,6 +137,11 @@ export default {
   created () {
     this.initForm()
     this.fetchData()
+  },
+  computed: {
+    isRootAdmin () {
+      return this.$store.getters.userInfo?.roletype === 'Admin'
+    }
   },
   methods: {
     initForm () {
@@ -187,7 +202,8 @@ export default {
           username: values.username,
           email: values.email,
           firstname: values.firstname,
-          lastname: values.lastname
+          lastname: values.lastname,
+          apikeyaccess: values.apikeyaccess
         }
         if (this.isValidValueForKey(values, 'timezone') && values.timezone.length > 0) {
           params.timezone = values.timezone

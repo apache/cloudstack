@@ -18,14 +18,15 @@
 import logging
 import random
 import time
+import socket
 
 # All tests inherit from cloudstackTestCase
 from marvin.cloudstackTestCase import cloudstackTestCase
 
 # Import Integration Libraries
 # base - contains all resources as entities and defines create, delete, list operations on them
-from marvin.lib.base import Account, DiskOffering, ServiceOffering, Snapshot, StoragePool, Template, User, \
-    VirtualMachine, Volume
+from marvin.lib.base import Account, DiskOffering, ServiceOffering, Snapshot, StoragePool, Template, User
+from marvin.lib.base import VirtualMachine, Volume, VmSnapshot
 
 # common - commonly used methods for all tests are listed here
 from marvin.lib.common import get_domain, get_template, get_zone, list_clusters, list_hosts, list_virtual_machines, \
@@ -97,8 +98,7 @@ class TestData:
     # hypervisor type to test
     hypervisor_type = kvm
 
-    def __init__(self):
-        linstor_controller_url = "http://10.43.224.8"
+    def __init__(self, linstor_controller_url):
         self.testdata = {
             TestData.kvm: {
                 TestData.username: "admin",
@@ -197,7 +197,7 @@ class TestData:
                     "resourceGroup": "acs-test-same"
                 }
             },
-            # Linstor storage pool on different ScaleIO storage instance
+            # Linstor storage pool on different Linstor storage instance
             TestData.primaryStorageDistinctInstance: {
                 "name": "Linstor-%d" % random.randint(0, 100),
                 TestData.scope: "ZONE",
@@ -225,6 +225,44 @@ class TestData:
             },
         }
 
+class ServiceReady:
+    @classmethod
+    def ready(cls, hostname: str, port: int) -> bool:
+        try:
+            s = socket.create_connection((hostname, port), timeout=1)
+            s.close()
+            return True
+        except (ConnectionRefusedError, socket.timeout, OSError):
+            return False
+
+    @classmethod
+    def wait(
+            cls,
+            hostname,
+            port,
+            wait_interval = 5,
+            timeout = 90,
+            service_name = 'ssh') -> bool:
+        """
+        Wait until the controller can be reached.
+        :param hostname:
+        :param port: port of the application
+        :param wait_interval:
+        :param timeout: time to wait until exit with False
+        :param service_name: name of the service to wait
+        :return:
+        """
+        starttime = int(round(time.time() * 1000))
+        while not cls.ready(hostname, port):
+            if starttime + timeout * 1000 < int(round(time.time() * 1000)):
+                raise RuntimeError("{s} {h} cannot be reached.".format(s=service_name, h=hostname))
+            time.sleep(wait_interval)
+        return True
+
+    @classmethod
+    def wait_ssh_ready(cls, hostname, wait_interval = 1, timeout = 90):
+        return cls.wait(hostname, 22, wait_interval, timeout, "ssh")
+
 
 class TestLinstorVolumes(cloudstackTestCase):
     _volume_vm_id_and_vm_id_do_not_match_err_msg = "The volume's VM ID and the VM's ID do not match."
@@ -239,7 +277,11 @@ class TestLinstorVolumes(cloudstackTestCase):
         cls.apiClient = testclient.getApiClient()
         cls.configData = testclient.getParsedTestDataConfig()
         cls.dbConnection = testclient.getDbConnection()
-        cls.testdata = TestData().testdata
+
+        # first host has the linstor controller
+        first_host = list_hosts(cls.apiClient)[0]
+
+        cls.testdata = TestData(first_host.ipaddress).testdata
 
         # Get Resources from Cloud Infrastructure
         cls.zone = get_zone(cls.apiClient, zone_id=cls.testdata[TestData.zoneId])
@@ -326,7 +368,8 @@ class TestLinstorVolumes(cloudstackTestCase):
             serviceofferingid=cls.compute_offering.id,
             templateid=cls.template.id,
             domainid=cls.domain.id,
-            startvm=False
+            startvm=False,
+            mode='basic',
         )
 
         TestLinstorVolumes._start_vm(cls.virtual_machine)
@@ -394,7 +437,8 @@ class TestLinstorVolumes(cloudstackTestCase):
             serviceofferingid=self.compute_offering.id,
             templateid=self.template.id,
             domainid=self.domain.id,
-            startvm=False
+            startvm=False,
+            mode='basic',
         )
 
         TestLinstorVolumes._start_vm(test_virtual_machine)
@@ -887,8 +931,31 @@ class TestLinstorVolumes(cloudstackTestCase):
             "Check volume was deleted"
         )
 
+    @attr(tags=['basic'], required_hardware=False)
+    def test_09_create_snapshot(self):
+        """Create snapshot of root disk"""
+        self.virtual_machine.stop(self.apiClient)
+
+        volume = list_volumes(
+            self.apiClient,
+            virtualmachineid = self.virtual_machine.id,
+            type = "ROOT",
+            listall = True,
+        )
+        snapshot = Snapshot.create(
+            self.apiClient,
+            volume_id = volume[0].id,
+            account=self.account.name,
+            domainid=self.domain.id,
+        )
+
+        self.assertIsNotNone(snapshot, "Could not create snapshot")
+
+        snapshot.delete(self.apiClient)
+
+
     @attr(tags=['advanced', 'migration'], required_hardware=False)
-    def test_09_migrate_volume_to_same_instance_pool(self):
+    def test_10_migrate_volume_to_same_instance_pool(self):
         """Migrate volume to the same instance pool"""
 
         if not self.testdata[TestData.migrationTests]:
@@ -906,7 +973,8 @@ class TestLinstorVolumes(cloudstackTestCase):
             serviceofferingid=self.compute_offering.id,
             templateid=self.template.id,
             domainid=self.domain.id,
-            startvm=False
+            startvm=False,
+            mode='basic',
         )
 
         TestLinstorVolumes._start_vm(test_virtual_machine)
@@ -1020,7 +1088,7 @@ class TestLinstorVolumes(cloudstackTestCase):
         test_virtual_machine.delete(self.apiClient, True)
 
     @attr(tags=['advanced', 'migration'], required_hardware=False)
-    def test_10_migrate_volume_to_distinct_instance_pool(self):
+    def test_11_migrate_volume_to_distinct_instance_pool(self):
         """Migrate volume to distinct instance pool"""
 
         if not self.testdata[TestData.migrationTests]:
@@ -1038,7 +1106,8 @@ class TestLinstorVolumes(cloudstackTestCase):
             serviceofferingid=self.compute_offering.id,
             templateid=self.template.id,
             domainid=self.domain.id,
-            startvm=False
+            startvm=False,
+            mode='basic',
         )
 
         TestLinstorVolumes._start_vm(test_virtual_machine)
@@ -1151,6 +1220,132 @@ class TestLinstorVolumes(cloudstackTestCase):
 
         test_virtual_machine.delete(self.apiClient, True)
 
+    @attr(tags=["basic"], required_hardware=False)
+    def test_12_create_vm_snapshots(self):
+        """Test to create VM snapshots
+        """
+        vm = TestLinstorVolumes._start_vm(self.virtual_machine)
+
+        try:
+            # Login to VM and write data to file system
+            self.debug("virt: {}".format(vm))
+            ssh_client = self.virtual_machine.get_ssh_client(vm.ipaddress, retries=5)
+            ssh_client.execute("echo 'hello world' > testfile")
+            ssh_client.execute("sync")
+        except Exception as exc:
+            self.fail("SSH failed for Virtual machine {}: {}".format(self.virtual_machine.ssh_ip, exc))
+
+        time.sleep(10)
+        memory_snapshot = False
+        vm_snapshot = VmSnapshot.create(
+            self.apiClient,
+            self.virtual_machine.id,
+            memory_snapshot,
+            "VMSnapshot1",
+            "test snapshot"
+        )
+        self.assertEqual(
+            vm_snapshot.state,
+            "Ready",
+            "Check the snapshot of vm is ready!"
+        )
+
+    @attr(tags=["basic"], required_hardware=False)
+    def test_13_revert_vm_snapshots(self):
+        """Test to revert VM snapshots
+        """
+
+        result = None
+        try:
+            ssh_client = self.virtual_machine.get_ssh_client(reconnect=True)
+            result = ssh_client.execute("rm -rf testfile")
+        except Exception as exc:
+            self.fail("SSH failed for Virtual machine %s: %s".format(self.virtual_machine.ipaddress, exc))
+
+        if result is not None and "No such file or directory" in str(result):
+            self.fail("testfile not deleted")
+
+        time.sleep(5)
+
+        list_snapshot_response = VmSnapshot.list(
+            self.apiClient,
+            virtualmachineid=self.virtual_machine.id,
+            listall=True)
+
+        self.assertEqual(
+            isinstance(list_snapshot_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
+        self.assertNotEqual(
+            list_snapshot_response,
+            None,
+            "Check if snapshot exists in ListSnapshot"
+        )
+
+        self.assertEqual(
+            list_snapshot_response[0].state,
+            "Ready",
+            "Check the snapshot of vm is ready!"
+        )
+
+        self.virtual_machine.stop(self.apiClient, forced=True)
+
+        VmSnapshot.revertToSnapshot(
+            self.apiClient,
+            list_snapshot_response[0].id
+        )
+
+        TestLinstorVolumes._start_vm(self.virtual_machine)
+
+        try:
+            ssh_client = self.virtual_machine.get_ssh_client(reconnect=True)
+
+            result = ssh_client.execute("cat testfile")
+
+        except Exception as exc:
+            self.fail("SSH failed for Virtual machine {}: {}".format(self.virtual_machine.ipaddress, exc))
+
+        self.assertEqual(
+            "hello world",
+            result[0],
+            "Check the content is the same as originally written"
+        )
+
+    @attr(tags=["basic"], required_hardware=False)
+    def test_14_delete_vm_snapshots(self):
+        """Test to delete vm snapshots
+        """
+
+        list_snapshot_response = VmSnapshot.list(
+            self.apiClient,
+            virtualmachineid=self.virtual_machine.id,
+            listall=True)
+
+        self.assertEqual(
+            isinstance(list_snapshot_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
+        self.assertNotEqual(
+            list_snapshot_response,
+            None,
+            "Check if snapshot exists in ListSnapshot"
+        )
+        VmSnapshot.deleteVMSnapshot(
+            self.apiClient,
+            list_snapshot_response[0].id)
+
+        time.sleep(5)
+
+        list_snapshot_response = VmSnapshot.list(
+            self.apiClient,
+            virtualmachineid=self.virtual_machine.id,
+            listall=False)
+        self.debug('list_snapshot_response -------------------- {}'.format(list_snapshot_response))
+
+        self.assertIsNone(list_snapshot_response, "snapshot is already deleted")
+
     def _create_vm_using_template_and_destroy_vm(self, template):
         vm_name = "VM-%d" % random.randint(0, 100)
 
@@ -1177,42 +1372,31 @@ class TestLinstorVolumes(cloudstackTestCase):
 
         virtual_machine.delete(self.apiClient, True)
 
-    @staticmethod
-    def _get_bytes_from_gb(number_in_gb):
-        return number_in_gb * 1024 * 1024 * 1024
-
     def _get_volume(self, volume_id):
         list_vols_response = list_volumes(self.apiClient, id=volume_id)
         return list_vols_response[0]
 
-    def _get_vm(self, vm_id):
-        list_vms_response = list_virtual_machines(self.apiClient, id=vm_id)
+    @classmethod
+    def _get_vm(cls, vm_id):
+        list_vms_response = list_virtual_machines(cls.apiClient, id=vm_id)
         return list_vms_response[0]
-
-    def _get_template_cache_name(self):
-        if TestData.hypervisor_type == TestData.kvm:
-            return TestData.templateCacheNameKvm
-
-        self.assert_(False, "Invalid hypervisor type")
 
     @classmethod
     def _start_vm(cls, vm):
-        vm_for_check = list_virtual_machines(
-            cls.apiClient,
-            id=vm.id
-        )[0]
+        vm_for_check = cls._get_vm(vm.id)
 
         if vm_for_check.state == VirtualMachine.STOPPED:
             vm.start(cls.apiClient)
 
-            # For KVM, just give it 90 seconds to boot up.
-            if TestData.hypervisor_type == TestData.kvm:
-                time.sleep(90)
+            vm_for_check = cls._get_vm(vm.id)
+            ServiceReady.wait_ssh_ready(vm_for_check.ipaddress)
+        return vm_for_check
 
     @classmethod
     def _reboot_vm(cls, vm):
+        vm_for_check = cls._get_vm(vm.id)
         vm.reboot(cls.apiClient)
 
-        # For KVM, just give it 90 seconds to boot up.
-        if TestData.hypervisor_type == TestData.kvm:
-            time.sleep(90)
+        time.sleep(5)
+
+        ServiceReady.wait_ssh_ready(vm_for_check.ipaddress)

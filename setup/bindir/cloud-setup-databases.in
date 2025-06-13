@@ -403,6 +403,8 @@ for example:
                 except IOError as e:
                     msg = "Failed to save management server secret key file %s due to %s, also please check the default umask"%(self.encryptionKeyFile, e.strerror)
                     self.errorAndExit(msg)
+                os.chmod(self.encryptionKeyFile, 0o640)
+                shutil.chown(self.encryptionKeyFile, user=None, group="cloud")
 
         def formatEncryptResult(value):
             return 'ENC(%s)'%value

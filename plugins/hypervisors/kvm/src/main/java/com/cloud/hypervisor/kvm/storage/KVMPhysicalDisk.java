@@ -23,6 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class KVMPhysicalDisk {
     private String path;
@@ -32,10 +33,17 @@ public class KVMPhysicalDisk {
     private String vmName;
     private boolean useAsTemplate;
 
-    public static String RBDStringBuilder(String monHost, int monPort, String authUserName, String authSecret, String image) {
-        String rbdOpts;
+    public static final String RBD_DEFAULT_DATA_POOL = "rbd_default_data_pool";
 
-        rbdOpts = "rbd:" + image;
+    public static String RBDStringBuilder(KVMStoragePool storagePool, String image) {
+        String monHost = storagePool.getSourceHost();
+        int monPort = storagePool.getSourcePort();
+        String authUserName = storagePool.getAuthUserName();
+        String authSecret = storagePool.getAuthSecret();
+        Map<String, String> details = storagePool.getDetails();
+        String dataPool = (details == null) ? null : details.get(RBD_DEFAULT_DATA_POOL);
+
+        String rbdOpts = "rbd:" + image;
         rbdOpts += ":mon_host=" + composeOptionForMonHosts(monHost, monPort);
 
         if (authUserName == null) {
@@ -44,6 +52,10 @@ public class KVMPhysicalDisk {
             rbdOpts += ":auth_supported=cephx";
             rbdOpts += ":id=" + authUserName;
             rbdOpts += ":key=" + authSecret;
+        }
+
+        if (dataPool != null) {
+            rbdOpts += String.format(":rbd_default_data_pool=%s", dataPool);
         }
 
         rbdOpts += ":rbd_default_format=2";

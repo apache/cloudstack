@@ -1395,7 +1395,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                             for (ResourceType resourceType : resourceTypes) {
                                 if (!domainCountStr.contains(resourceType.toString())) {
                                     ResourceCountVO resourceCountVO = new ResourceCountVO(resourceType, 0, domain.getId(), ResourceOwnerType.Domain);
-                                    logger.debug("Inserting resource count of type " + resourceType + " for domain id=" + domain.getId());
+                                    logger.debug("Inserting resource count of type {} for domain {}", resourceType, domain);
                                     _resourceCountDao.persist(resourceCountVO);
                                 }
                             }
@@ -1424,7 +1424,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                             for (ResourceType resourceType : resourceTypes) {
                                 if (!accountCountStr.contains(resourceType.toString())) {
                                     ResourceCountVO resourceCountVO = new ResourceCountVO(resourceType, 0, account.getId(), ResourceOwnerType.Account);
-                                    logger.debug("Inserting resource count of type " + resourceType + " for account id=" + account.getId());
+                                    logger.debug("Inserting resource count of type {} for account {}", resourceType, account);
                                     _resourceCountDao.persist(resourceCountVO);
                                 }
                             }

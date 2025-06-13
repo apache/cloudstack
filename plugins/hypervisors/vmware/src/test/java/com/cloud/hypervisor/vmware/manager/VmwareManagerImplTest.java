@@ -69,6 +69,8 @@ public class VmwareManagerImplTest {
     private Map<String, String> clusterDetails;
     @Mock
     private Map<String, String> hostDetails;
+    @Mock
+    private Map<String, Object> _configParams;
 
     @Before
     public void beforeTest() {

@@ -21,7 +21,7 @@ public interface Resource {
     short RESOURCE_UNLIMITED = -1;
     String UNLIMITED = "Unlimited";
 
-    enum ResourceType { // Primary and Secondary storage are allocated_storage and not the physical storage.
+    enum ResourceType { // All storage type resources are allocated_storage and not the physical storage.
         user_vm("user_vm", 0),
         public_ip("public_ip", 1),
         volume("volume", 2),
@@ -33,7 +33,11 @@ public interface Resource {
         cpu("cpu", 8),
         memory("memory", 9),
         primary_storage("primary_storage", 10),
-        secondary_storage("secondary_storage", 11);
+        secondary_storage("secondary_storage", 11),
+        backup("backup", 12),
+        backup_storage("backup_storage", 13),
+        bucket("bucket", 14),
+        object_storage("object_storage", 15);
 
         private String name;
         private int ordinal;
@@ -61,6 +65,10 @@ public interface Resource {
                 }
             }
             return null;
+        }
+
+        public static Boolean isStorageType(ResourceType type) {
+            return (type == primary_storage || type == secondary_storage || type == backup_storage || type == object_storage);
         }
     }
 

@@ -19,6 +19,7 @@ package com.cloud.host.dao;
 import java.util.Date;
 import java.util.List;
 
+import com.cloud.cpu.CPU;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
@@ -27,8 +28,10 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.RunningHostCountInfo;
 import com.cloud.resource.ResourceState;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 
 /**
  * Data Access Object for server
@@ -39,7 +42,13 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     Integer countAllByType(final Host.Type type);
 
+    Integer countAllInClusterByTypeAndStates(Long clusterId, final Host.Type type, List<Status> status);
+
     Integer countAllByTypeInZone(long zoneId, final Host.Type type);
+
+    Integer countUpAndEnabledHostsInZone(long zoneId);
+
+    Pair<Integer, Integer> countAllHostsAndCPUSocketsByType(Type type);
 
     /**
      * Mark all hosts associated with a certain management server
@@ -75,32 +84,49 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<HostVO> findHypervisorHostInCluster(long clusterId);
 
+    List<HostVO> findHypervisorHostInPod(long podId);
+
+    List<HostVO> findHypervisorHostInZone(long zoneId);
+
+    HostVO findAnyStateHypervisorHostInCluster(long clusterId);
+
     HostVO findOldestExistentHypervisorHostInCluster(long clusterId);
 
     List<HostVO> listAllUpAndEnabledNonHAHosts(Type type, Long clusterId, Long podId, long dcId, String haTag);
 
     List<HostVO> findByDataCenterId(Long zoneId);
 
+    List<Long> listIdsByDataCenterId(Long zoneId);
+
     List<HostVO> findByPodId(Long podId);
 
+    List<HostVO> findByPodId(Long podId, Type type);
+
+    List<Long> listIdsByPodId(Long podId);
+
     List<HostVO> findByClusterId(Long clusterId);
+
+    List<HostVO> findByClusterId(Long clusterId, Type type);
+
+    List<Long> listIdsByClusterId(Long clusterId);
+
+    List<Long> listIdsForUpRouting(Long zoneId, Long podId, Long clusterId);
+
+    List<Long> listIdsByType(Type type);
+
+    List<Long> listIdsForUpEnabledByZoneAndHypervisor(Long zoneId, HypervisorType hypervisorType);
 
     List<HostVO> findByClusterIdAndEncryptionSupport(Long clusterId);
 
     /**
-     * Returns hosts that are 'Up' and 'Enabled' from the given Data Center/Zone
+     * Returns host Ids that are 'Up' and 'Enabled' from the given Data Center/Zone
      */
-    List<HostVO> listByDataCenterId(long id);
+    List<Long> listEnabledIdsByDataCenterId(long id);
 
     /**
-     * Returns hosts that are from the given Data Center/Zone and at a given state (e.g. Creating, Enabled, Disabled, etc).
+     * Returns host Ids that are 'Up' and 'Disabled' from the given Data Center/Zone
      */
-    List<HostVO> listByDataCenterIdAndState(long id, ResourceState state);
-
-    /**
-     * Returns hosts that are 'Up' and 'Disabled' from the given Data Center/Zone
-     */
-    List<HostVO> listDisabledByDataCenterId(long id);
+    List<Long> listDisabledIdsByDataCenterId(long id);
 
     List<HostVO> listByDataCenterIdAndHypervisorType(long zoneId, Hypervisor.HypervisorType hypervisorType);
 
@@ -109,8 +135,6 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
     List<HostVO> listAllHostsByZoneAndHypervisorType(long zoneId, HypervisorType hypervisorType);
 
     List<HostVO> listAllHostsThatHaveNoRuleTag(Host.Type type, Long clusterId, Long podId, Long dcId);
-
-    List<HostVO> listAllHostsByType(Host.Type type);
 
     HostVO findByPublicIp(String publicIp);
 
@@ -151,12 +175,30 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<HostVO> listHostsWithActiveVMs(long offeringId);
 
+    List<HostVO> listHostsByMsAndDc(long msId, long dcId);
+
+    List<HostVO> listHostsByMs(long msId);
+
     /**
      * Retrieves the number of hosts/agents this {@see ManagementServer} has responsibility over.
-     * @param msid the id of the {@see ManagementServer}
+     * @param msId the id of the {@see ManagementServer}
      * @return the number of hosts/agents this {@see ManagementServer} has responsibility over
      */
-    int countByMs(long msid);
+    int countByMs(long msId);
+
+    /**
+     * Retrieves the host ids/agents this {@see ManagementServer} has responsibility over.
+     * @param msId the id of the {@see ManagementServer}
+     * @return the host ids/agents this {@see ManagementServer} has responsibility over
+     */
+    List<String> listByMs(long msId);
+
+    /**
+     * Retrieves the last host ids/agents this {@see ManagementServer} has responsibility over.
+     * @param msId the id of the {@see ManagementServer}
+     * @return the last host ids/agents this {@see ManagementServer} has responsibility over
+     */
+    List<String> listByLastMs(long msId);
 
     /**
      * Retrieves the hypervisor versions of the hosts in the datacenter which are in Up state in ascending order
@@ -171,4 +213,22 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
     List<Long> findClustersThatMatchHostTagRule(String computeOfferingTags);
 
     List<Long> listSsvmHostsWithPendingMigrateJobsOrderedByJobCount();
+
+    boolean isHostUp(long hostId);
+
+    List<Long> findHostIdsByZoneClusterResourceStateTypeAndHypervisorType(final Long zoneId, final Long clusterId,
+            final Long msId, final List<ResourceState> resourceStates, final List<Type> types,
+            final List<Hypervisor.HypervisorType> hypervisorTypes);
+
+    List<HypervisorType> listDistinctHypervisorTypes(final Long zoneId);
+
+    List<Pair<HypervisorType, CPU.CPUArch>> listDistinctHypervisorArchTypes(final Long zoneId);
+
+    List<CPU.CPUArch> listDistinctArchTypes(final Long clusterId);
+
+    List<HostVO> listByIds(final List<Long> ids);
+
+    Long findClusterIdByVolumeInfo(VolumeInfo volumeInfo);
+
+    List<String> listDistinctStorageAccessGroups(String name, String keyword);
 }

@@ -177,6 +177,8 @@ public interface Host extends StateObject<Status>, Identity, Partition, HAResour
      */
     Long getManagementServerId();
 
+    Long getLastManagementServerId();
+
     /*
      *@return removal date
      */
@@ -211,4 +213,6 @@ public interface Host extends StateObject<Status>, Identity, Partition, HAResour
     ResourceState getResourceState();
 
     CPU.CPUArch getArch();
+
+    String getStorageAccessGroups();
 }

@@ -419,7 +419,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                 if (answer != null && answer.getDetails() != null)
                     errMsg = errMsg + " due to " + answer.getDetails();
                 logger.error(errMsg);
-                throw new CloudRuntimeException(errMsg);
+                throw new CloudRuntimeException(String.format("Unable to revert VM %s to snapshot %s.", userVm.getInstanceName(), vmSnapshotVO.getName()));
             }
         } catch (OperationTimedoutException e) {
             logger.debug("Failed to revert vm snapshot", e);

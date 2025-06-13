@@ -56,7 +56,7 @@ public class UpdateBucketCmd extends BaseCmd {
     @Parameter(name = ApiConstants.POLICY, type = CommandType.STRING, description = "Bucket Access Policy")
     private String policy;
 
-    @Parameter(name = ApiConstants.QUOTA, type = CommandType.INTEGER,description = "Bucket Quota in GB")
+    @Parameter(name = ApiConstants.QUOTA, type = CommandType.INTEGER, description = "Bucket Quota in GiB")
     private Integer quota;
 
     /////////////////////////////////////////////////////

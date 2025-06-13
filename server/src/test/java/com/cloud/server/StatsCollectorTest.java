@@ -18,21 +18,23 @@
 //
 package com.cloud.server;
 
-import com.cloud.agent.api.VmDiskStatsEntry;
-import com.cloud.agent.api.VmStatsEntry;
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.server.StatsCollector.ExternalStatsProtocol;
-import com.cloud.storage.VolumeStatsVO;
-import com.cloud.storage.dao.VolumeStatsDao;
-import com.cloud.user.VmDiskStatisticsVO;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.VmStats;
-import com.cloud.vm.VmStatsVO;
-import com.cloud.vm.dao.VmStatsDaoImpl;
-import com.google.gson.Gson;
-import com.tngtech.java.junit.dataprovider.DataProvider;
-import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import static org.mockito.Mockito.when;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDBFactory;
@@ -52,20 +54,25 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.stubbing.Answer;
+import org.springframework.test.util.ReflectionTestUtils;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.TreeMap;
-import java.util.concurrent.TimeUnit;
-
-import static org.mockito.Mockito.when;
+import com.cloud.agent.api.GetStorageStatsAnswer;
+import com.cloud.agent.api.GetStorageStatsCommand;
+import com.cloud.agent.api.VmDiskStatsEntry;
+import com.cloud.agent.api.VmStatsEntry;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.server.StatsCollector.ExternalStatsProtocol;
+import com.cloud.storage.StorageStats;
+import com.cloud.storage.VolumeStatsVO;
+import com.cloud.storage.dao.VolumeStatsDao;
+import com.cloud.user.VmDiskStatisticsVO;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VmStats;
+import com.cloud.vm.VmStatsVO;
+import com.cloud.vm.dao.VmStatsDaoImpl;
+import com.google.gson.Gson;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 
 @RunWith(DataProviderRunner.class)
 public class StatsCollectorTest {
@@ -103,6 +110,9 @@ public class StatsCollectorTest {
 
     @Mock
     VolumeStatsDao volumeStatsDao = Mockito.mock(VolumeStatsDao.class);
+
+    @Mock
+    private StoragePoolVO mockPool;
 
     private static Gson gson = new Gson();
 
@@ -515,11 +525,91 @@ public class StatsCollectorTest {
 
     private Map<String, String> convertJsonToOrderedMap(String json) {
         Map<String, String> jsonMap = new TreeMap<String, String>();
-        String[] keyValuePairs = json.replace("{", "").replace("}","").split(",");
-        for (String pair: keyValuePairs) {
+        String[] keyValuePairs = json.replace("{", "").replace("}", "").split(",");
+        for (String pair : keyValuePairs) {
             String[] keyValue = pair.split(":");
             jsonMap.put(keyValue[0], keyValue[1]);
         }
         return jsonMap;
+    }
+
+    private void setCollectorIopsStats(long poolId, Long capacityIops, Long usedIops) {
+        ConcurrentHashMap<Long, StorageStats> storagePoolStats = new ConcurrentHashMap<>();
+        storagePoolStats.put(poolId, new GetStorageStatsAnswer(Mockito.mock(GetStorageStatsCommand.class),
+                10L, 2L, capacityIops, usedIops));
+        ReflectionTestUtils.setField(statsCollector, "_storagePoolStats", storagePoolStats);
+    }
+
+    @Test
+    public void testPoolNeedsIopsStatsUpdating_NoChanges() {
+        long poolId = 1L;
+        long capacityIops = 100L;
+        long usedIops = 50L;
+        when(mockPool.getId()).thenReturn(poolId);
+        when(mockPool.getCapacityIops()).thenReturn(capacityIops);
+        when(mockPool.getUsedIops()).thenReturn(usedIops);
+
+        setCollectorIopsStats(poolId, capacityIops, usedIops);
+
+        boolean result = statsCollector.isPoolNeedsIopsStatsUpdate(mockPool, capacityIops, usedIops);
+        Assert.assertFalse(result);
+        Mockito.verify(mockPool, Mockito.never()).setCapacityIops(Mockito.anyLong());
+        Mockito.verify(mockPool, Mockito.never()).setUsedIops(Mockito.anyLong());
+    }
+
+    @Test
+    public void testPoolNeedsIopsStatsUpdating_CapacityIopsNeedsUpdating() {
+        long poolId = 1L;
+        when(mockPool.getId()).thenReturn(poolId);
+        when(mockPool.getCapacityIops()).thenReturn(100L);
+        when(mockPool.getUsedIops()).thenReturn(50L);
+
+        setCollectorIopsStats(poolId, 90L, 50L);
+
+        boolean result = statsCollector.isPoolNeedsIopsStatsUpdate(mockPool, 120L, 50L);
+        Assert.assertTrue(result);
+        Mockito.verify(mockPool).setCapacityIops(120L);
+        Mockito.verify(mockPool, Mockito.never()).setUsedIops(Mockito.anyLong());
+    }
+
+    @Test
+    public void testPoolNeedsIopsStatsUpdating_UsedIopsNeedsUpdating() {
+        long poolId = 1L;
+        when(mockPool.getId()).thenReturn(poolId);
+        when(mockPool.getCapacityIops()).thenReturn(100L);
+        when(mockPool.getUsedIops()).thenReturn(50L);
+
+        setCollectorIopsStats(poolId, 100L, 45L);
+
+        boolean result = statsCollector.isPoolNeedsIopsStatsUpdate(mockPool, 100L, 60L);
+        Assert.assertTrue(result);
+        Mockito.verify(mockPool).setUsedIops(60L);
+        Mockito.verify(mockPool, Mockito.never()).setCapacityIops(Mockito.anyLong());
+    }
+
+    @Test
+    public void testPoolNeedsIopsStatsUpdating_BothNeedUpdating() {
+        long poolId = 1L;
+        when(mockPool.getId()).thenReturn(poolId);
+        when(mockPool.getCapacityIops()).thenReturn(100L);
+        when(mockPool.getUsedIops()).thenReturn(50L);
+
+        setCollectorIopsStats(poolId, 90L, 45L);
+
+        boolean result = statsCollector.isPoolNeedsIopsStatsUpdate(mockPool, 120L, 60L);
+        Assert.assertTrue(result);
+        Mockito.verify(mockPool).setCapacityIops(120L);
+        Mockito.verify(mockPool).setUsedIops(60L);
+    }
+
+    @Test
+    public void testPoolNeedsIopsStatsUpdating_NullIops() {
+        long poolId = 1L;
+        when(mockPool.getId()).thenReturn(poolId);
+
+        boolean result = statsCollector.isPoolNeedsIopsStatsUpdate(mockPool, null, null);
+        Assert.assertFalse(result);
+        Mockito.verify(mockPool, Mockito.never()).setCapacityIops(Mockito.anyLong());
+        Mockito.verify(mockPool, Mockito.never()).setUsedIops(Mockito.anyLong());
     }
 }

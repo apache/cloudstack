@@ -31,6 +31,58 @@ NAS_ADDRESS=""
 MOUNT_OPTS=""
 BACKUP_DIR=""
 DISK_PATHS=""
+logFile="/var/log/cloudstack/agent/agent.log"
+
+log() {
+  [[ "$verb" -eq 1 ]] && builtin echo "$@"
+  if [[ "$1" == "-ne"  || "$1" == "-e" || "$1" == "-n" ]]; then
+    builtin echo -e "$(date '+%Y-%m-%d %H-%M-%S>')" "${@: 2}" >> "$logFile"
+  else
+    builtin echo "$(date '+%Y-%m-%d %H-%M-%S>')" "$@" >> "$logFile"
+  fi
+}
+
+vercomp() {
+  local IFS=.
+  local i ver1=($1) ver2=($3)
+
+  # Compare each segment of the version numbers
+  for ((i=0; i<${#ver1[@]}; i++)); do
+      if [[ -z ${ver2[i]} ]]; then
+          ver2[i]=0
+      fi
+
+      if ((10#${ver1[i]} > 10#${ver2[i]})); then
+          return  0 # Version 1 is greater
+      elif ((10#${ver1[i]} < 10#${ver2[i]})); then
+          return 2  # Version 2 is greater
+      fi
+  done
+  return 0  # Versions are equal
+}
+
+sanity_checks() {
+  hvVersion=$(virsh version | grep hypervisor | awk '{print $(NF)}')
+  libvVersion=$(virsh version | grep libvirt | awk '{print $(NF)}' | tail -n 1)
+  apiVersion=$(virsh version | grep API | awk '{print $(NF)}')
+
+  # Compare qemu version (hvVersion >= 4.2.0)
+  vercomp "$hvVersion" ">=" "4.2.0"
+  hvStatus=$?
+
+  # Compare libvirt version (libvVersion >= 7.2.0)
+  vercomp "$libvVersion" ">=" "7.2.0"
+  libvStatus=$?
+
+  if [[ $hvStatus -eq 0 && $libvStatus -eq 0 ]]; then
+    log -ne "Success... [ QEMU: $hvVersion Libvirt: $libvVersion apiVersion: $apiVersion ]"
+  else
+    echo "Failure... Your QEMU version $hvVersion or libvirt version $libvVersion is unsupported. Consider upgrading to the required minimum version of QEMU: 4.2.0 and Libvirt: 7.2.0"
+    exit 1
+  fi
+
+  log -ne "Environment Sanity Checks successfully passed"
+}
 
 ### Operation methods ###
 
@@ -79,7 +131,7 @@ backup_stopped_vm() {
   name="root"
   for disk in $DISK_PATHS; do
     volUuid="${disk##*/}"
-    qemu-img convert -O qcow2 $disk $dest/$name.$volUuid.qcow2
+    qemu-img convert -O qcow2 $disk $dest/$name.$volUuid.qcow2  | tee -a "$logFile"
     name="datadisk"
   done
   sync
@@ -99,7 +151,16 @@ delete_backup() {
 mount_operation() {
   mount_point=$(mktemp -d -t csbackup.XXXXX)
   dest="$mount_point/${BACKUP_DIR}"
-  mount -t ${NAS_TYPE} ${NAS_ADDRESS} ${mount_point} $([[ ! -z "${MOUNT_OPTS}" ]] && echo -o ${MOUNT_OPTS})
+  if [ ${NAS_TYPE} == "cifs" ]; then
+    MOUNT_OPTS="${MOUNT_OPTS},nobrl"
+  fi
+  mount -t ${NAS_TYPE} ${NAS_ADDRESS} ${mount_point} $([[ ! -z "${MOUNT_OPTS}" ]] && echo -o ${MOUNT_OPTS}) | tee -a "$logFile"
+  if [ $? -eq 0 ]; then
+      log -ne "Successfully mounted ${NAS_TYPE} store"
+  else
+      echo "Failed to mount ${NAS_TYPE} store"
+      exit 1
+  fi
 }
 
 function usage {
@@ -156,6 +217,9 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+# Perform Initial sanity checks
+sanity_checks
 
 if [ "$OP" = "backup" ]; then
   STATE=$(virsh -c qemu:///system list | grep $VM | awk '{print $3}')

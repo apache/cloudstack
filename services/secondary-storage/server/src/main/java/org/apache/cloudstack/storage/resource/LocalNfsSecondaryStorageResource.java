@@ -41,11 +41,6 @@ public class LocalNfsSecondaryStorageResource extends NfsSecondaryStorageResourc
     }
 
     @Override
-    public void setParentPath(String path) {
-        this._parent = path;
-    }
-
-    @Override
     public Answer executeRequest(Command cmd) {
         return super.executeRequest(cmd);
     }
@@ -57,7 +52,7 @@ public class LocalNfsSecondaryStorageResource extends NfsSecondaryStorageResourc
             String dir = mountUri(uri, nfsVersion);
             return _parent + "/" + dir;
         } catch (Exception e) {
-            String msg = "GetRootDir for " + secUrl + " failed due to " + e.toString();
+            String msg = "GetRootDir for " + secUrl + " failed due to " + e;
             logger.error(msg, e);
             throw new CloudRuntimeException(msg);
         }
@@ -75,14 +70,14 @@ public class LocalNfsSecondaryStorageResource extends NfsSecondaryStorageResourc
 
         // Change permissions for the mountpoint - seems to bypass authentication
         Script script = new Script(true, "chmod", _timeout, logger);
-        script.add("777", localRootPath);
+        script.add("1777", localRootPath);
         String result = script.execute();
         if (result != null) {
             String errMsg = "Unable to set permissions for " + localRootPath + " due to " + result;
             logger.error(errMsg);
             throw new CloudRuntimeException(errMsg);
         }
-        logger.debug("Successfully set 777 permission for " + localRootPath);
+        logger.debug("Successfully set 1777 permission for " + localRootPath);
 
         // XXX: Adding the check for creation of snapshots dir here. Might have
         // to move it somewhere more logical later.

@@ -104,6 +104,18 @@
                 </a-select>
               </a-form-item>
             </a-col>
+            <a-col :md="24" :lg="12">
+              <a-form-item :label="$t('label.keep')" name="maxbackups" ref="maxbackups">
+                <a-tooltip
+                  placement="right"
+                  :title="$t('label.maxbackups.to.retain')">
+                  <a-input-number
+                    style="width: 100%"
+                    v-model:value="form.maxbackups"
+                    :min="1" />
+                </a-tooltip>
+              </a-form-item>
+            </a-col>
             <a-col :md="24" :lg="24">
               <a-form-item :label="$t('label.timezone')" ref="timezone" name="timezone">
                 <a-select
@@ -247,6 +259,7 @@ export default {
         const params = {}
         params.virtualmachineid = this.resource.id
         params.intervaltype = values.intervaltype
+        params.maxbackups = values.maxbackups
         params.timezone = values.timezone
         switch (values.intervaltype) {
           case 'hourly':

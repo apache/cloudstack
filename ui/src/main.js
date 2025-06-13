@@ -35,7 +35,10 @@ import {
   resourceTypePlugin,
   fileSizeUtilPlugin,
   genericUtilPlugin,
-  localesPlugin
+  localesPlugin,
+  dialogUtilPlugin,
+  cpuArchitectureUtilPlugin,
+  imagesUtilPlugin
 } from './utils/plugins'
 import { VueAxios } from './utils/request'
 import directives from './utils/directives'
@@ -51,10 +54,13 @@ vueApp.use(resourceTypePlugin)
 vueApp.use(fileSizeUtilPlugin)
 vueApp.use(localesPlugin)
 vueApp.use(genericUtilPlugin)
+vueApp.use(dialogUtilPlugin)
+vueApp.use(cpuArchitectureUtilPlugin)
+vueApp.use(imagesUtilPlugin)
 vueApp.use(extensions)
 vueApp.use(directives)
 
-fetch('config.json').then(response => response.json()).then(config => {
+fetch('config.json?ts=' + Date.now()).then(response => response.json()).then(config => {
   vueProps.$config = config
   let basUrl = config.apiBase
   if (config.multipleServer) {

@@ -192,18 +192,18 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
     }
 
     private boolean canHandle(Network network, Service service) {
-        logger.debug("Checking if BigSwitchBcfElement can handle service " + service.getName() + " on network " + network.getDisplayText());
+        logger.debug(String.format("Checking if BigSwitchBcfElement can handle service %s on network %s", service.getName(), network));
         if (network.getBroadcastDomainType() != BroadcastDomainType.Vlan) {
             return false;
         }
 
         if (!_networkModel.isProviderForNetwork(getProvider(), network.getId())) {
-            logger.debug("BigSwitchBcfElement is not a provider for network " + network.getDisplayText());
+            logger.debug(String.format("BigSwitchBcfElement is not a provider for network %s", network));
             return false;
         }
 
         if (!_ntwkSrvcDao.canProviderSupportServiceInNetwork(network.getId(), service, BcfConstants.BIG_SWITCH_BCF)) {
-            logger.debug("BigSwitchBcfElement can't provide the " + service.getName() + " service on network " + network.getDisplayText());
+            logger.debug(String.format("BigSwitchBcfElement can't provide the %s service on network %s", service.getName(), network));
             return false;
         }
 
@@ -421,11 +421,11 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
         final PhysicalNetworkServiceProviderVO ntwkSvcProvider =
             _physicalNetworkServiceProviderDao.findByServiceProvider(physicalNetwork.getId(), networkDevice.getNetworkServiceProvder());
         if (ntwkSvcProvider == null) {
-            throw new CloudRuntimeException("Network Service Provider: " + networkDevice.getNetworkServiceProvder() + " is not enabled in the physical network: " +
-                physicalNetworkId + "to add this device");
+            throw new CloudRuntimeException(String.format("Network Service Provider: %s is not enabled in the physical network: %s to add this device",
+                    networkDevice.getNetworkServiceProvder(), physicalNetwork));
         } else if (ntwkSvcProvider.getState() == PhysicalNetworkServiceProvider.State.Shutdown) {
-            throw new CloudRuntimeException("Network Service Provider: " + ntwkSvcProvider.getProviderName() + " is in shutdown state in the physical network: " +
-                physicalNetworkId + "to add this device");
+            throw new CloudRuntimeException(String.format("Network Service Provider: %s is in shutdown state in the physical network: %s to add this device",
+                    ntwkSvcProvider.getProviderName(), physicalNetwork));
         }
         ntwkSvcProvider.setFirewallServiceProvided(true);
         ntwkSvcProvider.setGatewayServiceProvided(true);
@@ -527,7 +527,7 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
         Long bigswitchBcfDeviceId = cmd.getBigSwitchBcfDeviceId();
         BigSwitchBcfDeviceVO bigswitchBcfDevice = _bigswitchBcfDao.findById(bigswitchBcfDeviceId);
         if (bigswitchBcfDevice == null) {
-            throw new InvalidParameterValueException("Could not find a BigSwitch Controller with id " + bigswitchBcfDevice);
+            throw new InvalidParameterValueException(String.format("Could not find a BigSwitch Controller with id %d", bigswitchBcfDeviceId));
         }
 
         HostVO bigswitchHost = _hostDao.findById(bigswitchBcfDevice.getHostId());
@@ -554,7 +554,7 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
         if (bigswitchBcfDeviceId != null) {
             BigSwitchBcfDeviceVO bigswitchBcfDevice = _bigswitchBcfDao.findById(bigswitchBcfDeviceId);
             if (bigswitchBcfDevice == null) {
-                throw new InvalidParameterValueException("Could not find BigSwitch controller with id: " + bigswitchBcfDevice);
+                throw new InvalidParameterValueException(String.format("Could not find BigSwitch controller with id: %d", bigswitchBcfDeviceId));
             }
             responseList.add(bigswitchBcfDevice);
         } else {

@@ -21,14 +21,18 @@ package com.cloud.agent.api;
 
 public class StartupAnswer extends Answer {
     long hostId;
+    String hostName;
+    String hostUuid;
     int pingInterval;
 
     protected StartupAnswer() {
     }
 
-    public StartupAnswer(StartupCommand cmd, long hostId, int pingInterval) {
+    public StartupAnswer(StartupCommand cmd, long hostId, String hostUuid, String hostName, int pingInterval) {
         super(cmd);
         this.hostId = hostId;
+        this.hostUuid = hostUuid;
+        this.hostName = hostName;
         this.pingInterval = pingInterval;
     }
 
@@ -38,6 +42,14 @@ public class StartupAnswer extends Answer {
 
     public long getHostId() {
         return hostId;
+    }
+
+    public String getHostUuid() {
+        return hostUuid;
+    }
+
+    public String getHostName() {
+        return hostName;
     }
 
     public int getPingInterval() {

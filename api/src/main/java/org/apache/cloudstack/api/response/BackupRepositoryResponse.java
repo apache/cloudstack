@@ -57,10 +57,6 @@ public class BackupRepositoryResponse extends BaseResponse {
     @Param(description = "backup type")
     private String type;
 
-    @SerializedName(ApiConstants.MOUNT_OPTIONS)
-    @Param(description = "mount options for the backup repository")
-    private String mountOptions;
-
     @SerializedName(ApiConstants.CAPACITY_BYTES)
     @Param(description = "capacity of the backup repository")
     private Long capacityBytes;
@@ -110,14 +106,6 @@ public class BackupRepositoryResponse extends BaseResponse {
 
     public void setAddress(String address) {
         this.address = address;
-    }
-
-    public String getMountOptions() {
-        return mountOptions;
-    }
-
-    public void setMountOptions(String mountOptions) {
-        this.mountOptions = mountOptions;
     }
 
     public String getProviderName() {

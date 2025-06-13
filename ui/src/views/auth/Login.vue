@@ -175,7 +175,7 @@
           class="auth-btn github-auth"
           style="height: 38px; width: 185px; padding: 0; margin-bottom: 5px;" >
           <img src="/assets/github.svg" style="width: 32px; padding: 5px" />
-          <a-text>Sign in with Github</a-text>
+          <a-typography-text>Sign in with Github</a-typography-text>
         </a-button>
       </div>
       <div class="social-auth" v-if="googleprovider">
@@ -187,7 +187,7 @@
           class="auth-btn google-auth"
           style="height: 38px; width: 185px; padding: 0" >
           <img src="/assets/google.svg" style="width: 32px; padding: 5px" />
-          <a-text>Sign in with Google</a-text>
+          <a-typography-text>Sign in with Google</a-typography-text>
         </a-button>
       </div>
     </div>
@@ -253,7 +253,9 @@ export default {
     initForm () {
       this.formRef = ref()
       this.form = reactive({
-        server: (this.server.apiHost || '') + this.server.apiBase
+        server: (this.server.apiHost || '') + this.server.apiBase,
+        username: this.$route.query?.username || '',
+        domain: this.$route.query?.domain || ''
       })
       this.rules = reactive({})
       this.setRules()
@@ -299,7 +301,6 @@ export default {
         if (response) {
           const oauthproviders = response.listoauthproviderresponse.oauthprovider || []
           oauthproviders.forEach(item => {
-            this.socialLogin = true
             if (item.provider === 'google') {
               this.googleprovider = item.enabled
               this.googleclientid = item.clientid
@@ -311,6 +312,7 @@ export default {
               this.githubredirecturi = item.redirecturi
             }
           })
+          this.socialLogin = this.googleprovider || this.githubprovider
         }
       })
       api('forgotPassword', {}).then(response => {

@@ -79,6 +79,9 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
     @Column(name = "capacity_bytes")
     private long capacityBytes;
 
+    @Column(name = "used_bytes")
+    private long usedBytes;
+
     @Column(name = "cluster_id")
     private long clusterId;
 
@@ -116,6 +119,9 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
     @Column(name = "is_tag_a_rule")
     private boolean isTagARule;
 
+    @Column(name = "storage_access_group")
+    private String storageAccessGroup;
+
     @Column(name = "disk_used_capacity")
     private long usedCapacity;
 
@@ -137,6 +143,9 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
 
     @Column(name = "capacity_iops")
     private Long capacityIops;
+
+    @Column(name = "used_iops")
+    private Long usedIops;
 
     @Column(name = "hypervisor")
     @Convert(converter = HypervisorTypeConverter.class)
@@ -201,8 +210,16 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
         return capacityBytes;
     }
 
+    public long getUsedBytes() {
+        return usedBytes;
+    }
+
     public Long getCapacityIops() {
         return capacityIops;
+    }
+
+    public Long getUsedIops() {
+        return usedIops;
     }
 
     public long getClusterId() {
@@ -255,6 +272,10 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
 
     public long getUsedCapacity() {
         return usedCapacity;
+    }
+
+    public String getStorageAccessGroup() {
+        return storageAccessGroup;
     }
 
     public long getReservedCapacity() {

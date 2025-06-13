@@ -138,6 +138,8 @@ public class StorPoolUtil {
 
     public static final String SP_TIER = "SP_QOSCLASS";
 
+    public static final String OBJECT_DOES_NOT_EXIST = "objectDoesNotExist";
+
     public static enum StorpoolRights {
         RO("ro"), RW("rw"), DETACH("detach");
 
@@ -458,7 +460,7 @@ public class StorPoolUtil {
     }
 
     private static boolean objectExists(SpApiError err) {
-        if (!err.getName().equals("objectDoesNotExist")) {
+        if (!err.getName().equals(OBJECT_DOES_NOT_EXIST)) {
             throw new CloudRuntimeException(err.getDescr());
         }
         return false;
@@ -518,6 +520,10 @@ public class StorPoolUtil {
         return POST("MultiCluster/VolumeCreate", json, conn);
     }
 
+    public static SpApiResponse volumeCreate(StorPoolVolumeDef volume, SpConnectionDesc conn) {
+        return POST("MultiCluster/VolumeCreate", volume, conn);
+    }
+
     public static SpApiResponse volumeCreate(SpConnectionDesc conn) {
         Map<String, Object> json = new LinkedHashMap<>();
         json.put("name", "");
@@ -566,6 +572,7 @@ public class StorPoolUtil {
     public static SpApiResponse volumeRemoveTags(String name, SpConnectionDesc conn) {
         Map<String, Object> json = new HashMap<>();
         Map<String, String> tags = StorPoolHelper.addStorPoolTags(null, "", null, "", null);
+        tags.put("disk", "");
         json.put("tags", tags);
         return POST("MultiCluster/VolumeUpdate/" + name, json, conn);
     }
@@ -641,6 +648,12 @@ public class StorPoolUtil {
         return POST("MultiCluster/VolumeRevert/" + name, json, conn);
     }
 
+    /**
+     * @deprecated Use volumeSnapshot instead
+     * @param volumeName
+     * @param conn
+     * @return
+     */
     public static SpApiResponse volumeFreeze(final String volumeName, SpConnectionDesc conn) {
         return POST("MultiCluster/VolumeFreeze/" + volumeName, null, conn);
     }

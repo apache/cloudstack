@@ -67,7 +67,7 @@ public class UserResponse extends BaseResponse implements SetResourceIconRespons
     @Param(description = "the account type of the user")
     private Integer accountType;
 
-    @SerializedName("usersource")
+    @SerializedName(ApiConstants.USER_SOURCE)
     @Param(description = "the source type of the user in lowercase, such as native, ldap, saml2")
     private String userSource;
 
@@ -127,6 +127,10 @@ public class UserResponse extends BaseResponse implements SetResourceIconRespons
     @SerializedName(ApiConstants.IS_2FA_MANDATED)
     @Param(description = "true if user has two factor authentication is mandated", since = "4.18.0.0")
     private Boolean is2FAmandated;
+
+    @SerializedName(ApiConstants.API_KEY_ACCESS)
+    @Param(description = "whether api key access is Enabled, Disabled or set to Inherit (it inherits the value from the parent)", since = "4.20.1.0")
+    ApiConstants.ApiKeyAccess apiKeyAccess;
 
     @Override
     public String getObjectId() {
@@ -308,5 +312,9 @@ public class UserResponse extends BaseResponse implements SetResourceIconRespons
 
     public void set2FAmandated(Boolean is2FAmandated) {
         this.is2FAmandated = is2FAmandated;
+    }
+
+    public void setApiKeyAccess(Boolean apiKeyAccess) {
+        this.apiKeyAccess = ApiConstants.ApiKeyAccess.fromBoolean(apiKeyAccess);
     }
 }

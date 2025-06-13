@@ -260,7 +260,7 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
         } else {
             answer = agentMgr.sendTo(sourcePool.getDataCenterId(), HypervisorType.VMware, cmd);
         }
-        updateVolumeAfterMigration(answer, srcData, destData);
+        handleAnswerAndUpdateVolumeAfterMigration(answer, srcData, destData);
         CopyCommandResult result = new CopyCommandResult(null, answer);
         callback.complete(result);
     }
@@ -286,21 +286,19 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
         return hostId;
     }
 
-    private void updateVolumeAfterMigration(Answer answer, DataObject srcData, DataObject destData) {
+    private void handleAnswerAndUpdateVolumeAfterMigration(Answer answer, DataObject srcData, DataObject destData) {
         VolumeVO destinationVO = volDao.findById(destData.getId());
         if (!(answer instanceof MigrateVolumeAnswer)) {
             // OfflineVmwareMigration: reset states and such
-            VolumeVO sourceVO = volDao.findById(srcData.getId());
-            sourceVO.setState(Volume.State.Ready);
-            volDao.update(sourceVO.getId(), sourceVO);
-            if (destinationVO.getId() != sourceVO.getId()) {
-                destinationVO.setState(Volume.State.Expunged);
-                destinationVO.setRemoved(new Date());
-                volDao.update(destinationVO.getId(), destinationVO);
-            }
+            resetVolumeState(srcData, destinationVO);
             throw new CloudRuntimeException("unexpected answer from hypervisor agent: " + answer.getDetails());
         }
         MigrateVolumeAnswer ans = (MigrateVolumeAnswer) answer;
+        if (!answer.getResult()) {
+            String msg = "Unable to migrate volume: " + srcData.getName() + " due to " + answer.getDetails();
+            resetVolumeState(srcData, destinationVO);
+            throw new CloudRuntimeException(msg);
+        }
         if (logger.isDebugEnabled()) {
             String format = "retrieved '%s' as new path for volume(%d)";
             logger.debug(String.format(format, ans.getVolumePath(), destData.getId()));
@@ -309,6 +307,17 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
         destinationVO.setPoolId(destData.getDataStore().getId());
         destinationVO.setPath(ans.getVolumePath());
         volDao.update(destinationVO.getId(), destinationVO);
+    }
+
+    private void resetVolumeState(DataObject srcData, VolumeVO destinationVO) {
+        VolumeVO sourceVO = volDao.findById(srcData.getId());
+        sourceVO.setState(Volume.State.Ready);
+        volDao.update(sourceVO.getId(), sourceVO);
+        if (destinationVO.getId() != sourceVO.getId()) {
+            destinationVO.setState(Volume.State.Expunged);
+            destinationVO.setRemoved(new Date());
+            volDao.update(destinationVO.getId(), destinationVO);
+        }
     }
 
     @Override

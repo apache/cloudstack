@@ -269,13 +269,13 @@ public class NetScalerVMManagerImpl extends ManagerBase implements NetScalerVMMa
 
         ServiceOfferingVO vpxOffering = _serviceOfferingDao.findById(svcOffId); //using 2GB and 2CPU  offering
         if(vpxOffering.getRamSize() < 2048 && vpxOffering.getCpu() <2 ) {
-            throw new InvalidParameterValueException("Specified Service Offering :" + vpxOffering.getUuid() + " NS Vpx cannot be deployed. Min 2GB Ram and 2 CPU are required");
+            throw new InvalidParameterValueException(String.format("Specified Service Offering: %s NS Vpx cannot be deployed. Min 2GB Ram and 2 CPU are required", vpxOffering));
         }
 
         long userId = CallContext.current().getCallingUserId();
         //TODO change the os bits from 142  103 to the actual guest of bits
         if(template.getGuestOSId() !=  103 ) {
-            throw new InvalidParameterValueException("Specified Template " + template.getUuid()+ " not suitable for NS VPX Deployment. Please register the template with guest os type as unknow(64-bit)");
+            throw new InvalidParameterValueException(String.format("Specified Template %s not suitable for NS VPX Deployment. Please register the template with guest os type as unknown(64-bit)", template));
         }
 
         NetworkVO defaultNetwork = null;

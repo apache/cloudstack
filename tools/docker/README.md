@@ -2,9 +2,7 @@
 
 Dockerfiles used to build CloudStack images are available on Docker hub.
 
-
 ## Using images from docker-hub
-
 
 ### CloudStack Simulator
 
@@ -60,7 +58,7 @@ docker run -ti --name cloudstack --link cloudstack-mysql:mysql -d -p 8080:8080 -
 ### Marvin
 
 Use marvin to deploy or test your CloudStack environment.
-Use Marvin with cloudstack connection thru the API port (8096)
+Use Marvin with cloudstack connection through the API port (8096)
 
 ```
 docker pull cloudstack/marvin
@@ -90,7 +88,6 @@ docker run -ti --rm --link simulator:8096 \
 
 Image provided by CloudStack are automatically built by Jenkins performing following tasks:
 
-
 ### CentOS 6
 
 CentOS 6 image use RPM's from jenkins.buildacloud.org
@@ -102,7 +99,7 @@ tag:latest = main branch
    docker build -f Dockerfile.centos6 -t cloudstack/management_centos6 .
    ```
 
-2. on jenkins, database and systemvm.iso are pre-deployed. the inital start require privileged container to
+2. on jenkins, database and systemvm.iso are pre-deployed. the initial start require privileged container to
    mount systemvm.iso and copy ssh_rsa.pub into it.
 
    ```
@@ -113,7 +110,6 @@ tag:latest = main branch
    docker stop cloudstack
    docker commit -m "init system.iso" -a "Apache CloudStack" cloudstack cloudstack/management_centos6
    ```
-
 
 ### Marvin
 

@@ -150,7 +150,7 @@ public class ConfigTungstenFabricServiceCmd extends BaseCmd {
                 if (networkServiceMapDao.canProviderSupportServiceInNetwork(network.getId(), service, provider)) {
                     logger.debug(String.format("A mapping between the network, service and provider (%s, %s, %s) " +
                                     "already exists, skipping duplicated entry",
-                            network.getId(), service.getName(), provider.getName()));
+                            network, service.getName(), provider.getName()));
                     return;
 
                 }

@@ -176,7 +176,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
         if (hosts != null && hosts.size() > 0) {
             int maxHostsPerCluster = _hvCapabilitiesDao.getMaxHostsPerCluster(hosts.get(0).getHypervisorType(), hosts.get(0).getHypervisorVersion());
             if (hosts.size() >= maxHostsPerCluster) {
-                String msg = "VMware cluster " + cluster.getName() + " is too big to add new host, current size: " + hosts.size() + ", max. size: " + maxHostsPerCluster;
+                String msg = String.format("VMware cluster %s is too big to add new host, current size: %d, max. size: %d", cluster, hosts.size(), maxHostsPerCluster);
                 logger.error(msg);
                 throw new DiscoveredWithErrorException(msg);
             }

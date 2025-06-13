@@ -151,7 +151,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         files = migrationHelper.getSortedValidSourcesList(srcDatastore, snapshotChains, childTemplates);
 
         if (files.isEmpty()) {
-            return new MigrationResponse(String.format("No files in Image store: %s to migrate", srcDatastore.getId()), migrationPolicy.toString(), true);
+            return new MigrationResponse(String.format("No files in Image store: %s to migrate", srcDatastore), migrationPolicy.toString(), true);
         }
         Map<Long, Pair<Long, Long>> storageCapacities = new Hashtable<>();
         for (Long storeId : destDatastores) {
@@ -159,7 +159,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         }
         storageCapacities.put(srcDataStoreId, new Pair<>(null, null));
         if (migrationPolicy == MigrationPolicy.COMPLETE) {
-            logger.debug("Setting source image store: {} to read-only", srcDatastore.getId());
+            logger.debug("Setting source image store: {} to read-only", srcDatastore);
             storageService.updateImageStoreStatus(srcDataStoreId, true);
         }
 
@@ -309,8 +309,9 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
                 message += "Image stores have been attempted to be balanced";
                 success = true;
             } else {
-                message = "Files not completely migrated from "+ srcDatastore.getId() + ". Datastore (source): " + srcDatastore.getId() + "has equal or more free space than destination."+
-                        " If you want to continue using the Image Store, please change the read-only status using 'update imagestore' command";
+                message = String.format("Files not completely migrated from %s. Source datastore " +
+                        "has equal or more free space than destination. If you want to continue using the Image Store, " +
+                        "please change the read-only status using 'update imagestore' command", srcDatastore);
                 success = false;
             }
         } else {
@@ -353,7 +354,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             task.setTemplateChain(templateChains);
         }
         futures.add((executor.submit(task)));
-        logger.debug(String.format("Migration of {}: {} is initiated.", chosenFileForMigration.getType().name(), chosenFileForMigration.getUuid()));
+        logger.debug("Migration of {}: {} is initiated.", chosenFileForMigration.getType().name(), chosenFileForMigration.getUuid());
         return storageCapacities;
     }
 

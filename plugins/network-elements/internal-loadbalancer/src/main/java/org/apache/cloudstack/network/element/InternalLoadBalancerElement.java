@@ -347,8 +347,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
 
             //2.3 Apply Internal LB rules on the VM
             if (!_internalLbMgr.applyLoadBalancingRules(network, entry.getValue(), internalLbVms)) {
-                throw new CloudRuntimeException("Failed to apply load balancing rules for ip " + sourceIp.addr() +
-                        " in network " + network.getId() + " on element " + getName());
+                throw new CloudRuntimeException(String.format("Failed to apply load balancing rules for ip %s in network %s on element %s", sourceIp.addr(), network, getName()));
             }
         }
 

@@ -22,6 +22,7 @@ import java.util.Map;
 
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.ChangeStoragePoolScopeCmd;
+import org.apache.cloudstack.api.command.admin.storage.ConfigureStorageAccessCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteImageStoreCmd;
@@ -98,6 +99,8 @@ public interface StorageService {
     StoragePool enablePrimaryStoragePool(Long id);
 
     StoragePool disablePrimaryStoragePool(Long id);
+
+    boolean configureStorageAccess(ConfigureStorageAccessCmd cmd);
 
     StoragePool getStoragePool(long id);
 

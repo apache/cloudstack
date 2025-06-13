@@ -26,7 +26,7 @@ import com.cloud.utils.SerialVersionUID;
 public class StorageAccessException extends RuntimeException {
     private static final long serialVersionUID = SerialVersionUID.StorageAccessException;
 
-    public StorageAccessException(String message) {
-        super(message);
+    public StorageAccessException(String message, Exception causer) {
+        super(message, causer);
     }
 }

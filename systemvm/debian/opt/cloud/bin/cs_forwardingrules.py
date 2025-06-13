@@ -16,6 +16,8 @@
 # under the License.
 
 
+import logging
+
 def merge(dbag, rules):
     for rule in rules["rules"]:
         source_ip = rule["source_ip_address"]
@@ -33,6 +35,8 @@ def merge(dbag, rules):
             newrule["public_ports"] = rule["source_port_range"]
             newrule["internal_ports"] = rule["destination_port_range"]
             newrule["protocol"] = rule["protocol"]
+            if "source_cidr_list" in rule:
+                newrule["source_cidr_list"] = rule["source_cidr_list"]
 
         if not revoke:
             if rules["type"] == "staticnatrules":
@@ -59,7 +63,7 @@ def merge(dbag, rules):
                     for forward in dbag[source_ip]:
                         if ruleCompare(forward, newrule):
                             index = dbag[source_ip].index(forward)
-                            print("removing index %s" % str(index))
+                            logging.info("Removing forwarding rule [%s] at index [%s].", forward, index)
                     if not index == -1:
                         del dbag[source_ip][index]
 
@@ -74,4 +78,18 @@ def ruleCompare(ruleA, ruleB):
         return ruleA["public_ip"] == ruleB["public_ip"]
     elif ruleA["type"] == "forward":
         return ruleA["public_ip"] == ruleB["public_ip"] and ruleA["public_ports"] == ruleB["public_ports"] \
-            and ruleA["protocol"] == ruleB["protocol"]
+            and ruleA["protocol"] == ruleB["protocol"] and cidrsConflict(ruleA.get("source_cidr_list"), ruleB.get("source_cidr_list"))
+
+# Same validation as in com.cloud.network.firewall.FirewallManagerImpl.detectConflictingCidrs
+def cidrsConflict(cidrListA, cidrListB):
+    if not cidrListA and not cidrListB:
+        return True
+    if not cidrListA:
+        return False
+    if not cidrListB:
+        return False
+
+    cidrListA = set(cidrListA.split(","))
+    cidrListB = set(cidrListB.split(","))
+
+    return len(cidrListA.intersection(cidrListB)) > 0

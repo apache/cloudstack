@@ -30,6 +30,11 @@ public interface RoleService {
     ConfigKey<Boolean> EnableDynamicApiChecker = new ConfigKey<>("Advanced", Boolean.class, "dynamic.apichecker.enabled", "false",
             "If set to true, this enables the dynamic role-based api access checker and disables the default static role-based api access checker.", true);
 
+    ConfigKey<Integer> DynamicApiCheckerCachePeriod = new ConfigKey<>("Advanced", Integer.class,
+            "dynamic.apichecker.cache.period", "0",
+            "Defines the expiration time in seconds for the Dynamic API Checker cache, determining how long cached data is retained before being refreshed. If set to zero then caching will be disabled",
+            false);
+
     boolean isEnabled();
 
     /**

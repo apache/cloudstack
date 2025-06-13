@@ -28,8 +28,6 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import com.cloud.network.vpc.dao.VpcDao;
-import com.cloud.utils.validation.ChecksumUtil;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -38,8 +36,8 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.router.deployment.RouterDeploymentDefinition;
 import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -86,6 +84,7 @@ import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.router.VirtualRouter.RedundantState;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.LbStickinessMethod;
+import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.resource.ResourceManager;
@@ -104,6 +103,7 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.utils.validation.ChecksumUtil;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
@@ -192,8 +192,8 @@ public class NetworkHelperImpl implements NetworkHelper {
     @Override
     public boolean sendCommandsToRouter(final VirtualRouter router, final Commands cmds) throws AgentUnavailableException, ResourceUnavailableException {
         if (!checkRouterVersion(router)) {
-            logger.debug("Router requires upgrade. Unable to send command to router:" + router.getId() + ", router template version : " + router.getTemplateVersion()
-                    + ", minimal required version : " + NetworkOrchestrationService.MinVRVersion.valueIn(router.getDataCenterId()));
+            logger.debug("Router requires upgrade. Unable to send command to router: {}, router template version: {}, minimal required version: {}",
+                    router, router.getTemplateVersion(), NetworkOrchestrationService.MinVRVersion.valueIn(router.getDataCenterId()));
             throw new ResourceUnavailableException("Unable to send command. Router requires upgrade", VirtualRouter.class, router.getId());
         }
         Answer[] answers = null;
@@ -242,10 +242,10 @@ public class NetworkHelperImpl implements NetworkHelper {
         DomainRouterVO disconnectedRouter = (DomainRouterVO) disconnectedRouters.get(0);
 
         if (logger.isDebugEnabled()) {
-            logger.debug("About to stop the router " + disconnectedRouter.getInstanceName() + " due to: " + reason);
+            logger.debug("About to stop the router {} due to: {}", disconnectedRouter, reason);
         }
         final String title = "Virtual router " + disconnectedRouter.getInstanceName() + " would be stopped after connecting back, due to " + reason;
-        final String context = "Virtual router (name: " + disconnectedRouter.getInstanceName() + ", id: " + disconnectedRouter.getId()
+        final String context = "Virtual router (name: " + disconnectedRouter.getInstanceName() + ", id: " + disconnectedRouter.getUuid()
                 + ") would be stopped after connecting back, due to: " + reason;
         _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER, disconnectedRouter.getDataCenterId(), disconnectedRouter.getPodIdToDeployIn(), title, context);
         disconnectedRouter.setStopPending(true);
@@ -262,11 +262,10 @@ public class NetworkHelperImpl implements NetworkHelper {
     @Override
     public VirtualRouter destroyRouter(final long routerId, final Account caller, final Long callerUserId) throws ResourceUnavailableException, ConcurrentOperationException {
 
-        if (logger.isDebugEnabled()) {
-            logger.debug("Attempting to destroy router " + routerId);
-        }
-
         final DomainRouterVO router = _routerDao.findById(routerId);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Attempting to destroy router {} with id {}", router, routerId);
+        }
         if (router == null) {
             return null;
         }
@@ -326,7 +325,7 @@ public class NetworkHelperImpl implements NetworkHelper {
             throw new ResourceUnavailableException("Starting router " + router + " failed! " + e.toString(), DataCenter.class, router.getDataCenterId());
         }
         if (router.isStopPending()) {
-            logger.info("Clear the stop pending flag of router " + router.getHostName() + " after start router successfully!");
+            logger.info("Clear the stop pending flag of router {} after start router successfully!", router);
             router.setStopPending(false);
             router = _routerDao.persist(router);
         }
@@ -344,7 +343,7 @@ public class NetworkHelperImpl implements NetworkHelper {
         DomainRouterVO vm = _routerDao.findById(router.getId());
 
         if (logger.isDebugEnabled()) {
-            logger.debug("Router " + router.getInstanceName() + " is not fully up yet, we will wait");
+            logger.debug("Router {} is not fully up yet, we will wait", router);
         }
         while (vm.getState() == State.Starting) {
             try {
@@ -358,13 +357,13 @@ public class NetworkHelperImpl implements NetworkHelper {
 
         if (vm.getState() == State.Running) {
             if (logger.isDebugEnabled()) {
-                logger.debug("Router " + router.getInstanceName() + " is now fully up");
+                logger.debug("Router {} is now fully up", router);
             }
 
             return router;
         }
 
-        logger.warn("Router " + router.getInstanceName() + " failed to start. current state: " + vm.getState());
+        logger.warn("Router {} failed to start. current state: {}", router, vm.getState());
         return null;
     }
 
@@ -404,7 +403,7 @@ public class NetworkHelperImpl implements NetworkHelper {
         }
 
         if (router.getState() == State.Running) {
-            logger.debug("Redundant router " + router.getInstanceName() + " is already running!");
+            logger.debug("Redundant router {} is already running!", router);
             return router;
         }
 
@@ -433,9 +432,7 @@ public class NetworkHelperImpl implements NetworkHelper {
             for (final DomainRouterVO rrouter : routerList) {
                 if (rrouter.getHostId() != null && rrouter.getIsRedundantRouter() && rrouter.getState() == State.Running) {
                     if (routerToBeAvoid != null) {
-                        throw new ResourceUnavailableException("Try to start router " + router.getInstanceName() + "(" + router.getId() + ")"
-                                + ", but there are already two redundant routers with IP " + router.getPublicIpAddress() + ", they are " + rrouter.getInstanceName() + "("
-                                + rrouter.getId() + ") and " + routerToBeAvoid.getInstanceName() + "(" + routerToBeAvoid.getId() + ")", DataCenter.class,
+                        throw new ResourceUnavailableException(String.format("Try to start router %s(%s), but there are already two redundant routers with IP %s, they are %s(%s) and %s(%s)", router.getInstanceName(), router, router.getPublicIpAddress(), rrouter.getInstanceName(), rrouter, routerToBeAvoid.getInstanceName(), routerToBeAvoid), DataCenter.class,
                                 rrouter.getDataCenterId());
                     }
                     routerToBeAvoid = rrouter;
@@ -449,7 +446,9 @@ public class NetworkHelperImpl implements NetworkHelper {
         final int retryIndex = 5;
         final ExcludeList[] avoids = new ExcludeList[5];
         avoids[0] = new ExcludeList();
-        avoids[0].addPod(routerToBeAvoid.getPodIdToDeployIn());
+        if (routerToBeAvoid.getPodIdToDeployIn() != null) {
+            avoids[0].addPod(routerToBeAvoid.getPodIdToDeployIn());
+        }
         avoids[1] = new ExcludeList();
         avoids[1].addCluster(_hostDao.findById(routerToBeAvoid.getHostId()).getClusterId());
         avoids[2] = new ExcludeList();
@@ -464,7 +463,7 @@ public class NetworkHelperImpl implements NetworkHelper {
 
         for (int i = 0; i < retryIndex; i++) {
             if (logger.isTraceEnabled()) {
-                logger.trace("Try to deploy redundant virtual router:" + router.getHostName() + ", for " + i + " time");
+                logger.trace("Try to deploy redundant virtual router: {}, for {} time", router, i);
             }
             plan.setAvoids(avoids[i]);
             try {
@@ -499,17 +498,76 @@ public class NetworkHelperImpl implements NetworkHelper {
         return templateName;
     }
 
+    protected DomainRouterVO createOrUpdateDomainRouter(DomainRouterVO router, final long id,
+            final RouterDeploymentDefinition routerDeploymentDefinition, final Account owner, final long userId,
+            final ServiceOfferingVO routerOffering, final boolean offerHA, final Long vpcId,
+            final VMTemplateVO template) {
+        if (router == null) {
+            router = new DomainRouterVO(id, routerOffering.getId(),
+                    routerDeploymentDefinition.getVirtualProvider().getId(),
+                    VirtualMachineName.getRouterName(id, s_vmInstanceName), template.getId(),
+                    template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(),
+                    userId, routerDeploymentDefinition.isRedundant(), RedundantState.UNKNOWN, offerHA, false,
+                    vpcId);
+            router.setDynamicallyScalable(template.isDynamicallyScalable());
+            router.setRole(Role.VIRTUAL_ROUTER);
+            router.setLimitCpuUse(routerOffering.getLimitCpuUse());
+            return _routerDao.persist(router);
+        }
+        router.setTemplateId(template.getId());
+        router.setDynamicallyScalable(template.isDynamicallyScalable());
+        _routerDao.update(router.getId(), router);
+        return router;
+    }
+
+    protected DomainRouterVO deployRouterWithTemplates(DomainRouterVO router, final long id,
+               final RouterDeploymentDefinition routerDeploymentDefinition, final Account owner, final long userId,
+               final ServiceOfferingVO routerOffering, final boolean offerHA, final Long vpcId,
+               final List<VMTemplateVO> templates) throws InsufficientCapacityException {
+        for (final Iterator<VMTemplateVO> templatesIterator = templates.iterator(); templatesIterator.hasNext();) {
+            final VMTemplateVO template = templatesIterator.next();
+            try {
+                router = createOrUpdateDomainRouter(router, id, routerDeploymentDefinition, owner, userId,
+                        routerOffering, offerHA, vpcId, template);
+                reallocateRouterNetworks(routerDeploymentDefinition, router, template, null);
+                router = _routerDao.findById(router.getId());
+                if (templatesIterator.hasNext()) {
+                    _itMgr.checkDeploymentPlan(router, template, routerOffering, owner,
+                            routerDeploymentDefinition.getPlan());
+                }
+                return router;
+            } catch (InsufficientCapacityException ex) {
+                if (templatesIterator.hasNext()) {
+                    logger.debug("Failed to allocate the VR with hypervisor {} and {}, retrying with another template", template.getHypervisorType(), template);
+                } else {
+                    throw ex;
+                }
+            }
+        }
+        return null;
+    }
+
     @Override
     public DomainRouterVO deployRouter(final RouterDeploymentDefinition routerDeploymentDefinition, final boolean startRouter)
             throws InsufficientAddressCapacityException, InsufficientServerCapacityException, InsufficientCapacityException, StorageUnavailableException, ResourceUnavailableException {
 
         final ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(routerDeploymentDefinition.getServiceOfferingId());
+        final boolean offerHA = routerOffering.isOfferHA();
         final Account owner = routerDeploymentDefinition.getOwner();
+        final Long vpcId = routerDeploymentDefinition.getVpc() != null ? routerDeploymentDefinition.getVpc().getId() : null;
 
         // Router is the network element, we don't know the hypervisor type yet.
         // Try to allocate the domR twice using diff hypervisors, and when
         // failed both times, throw the exception up
         final List<HypervisorType> hypervisors = getHypervisors(routerDeploymentDefinition);
+
+        long userId = CallContext.current().getCallingUserId();
+        if (CallContext.current().getCallingAccount().getId() != owner.getId()) {
+            final List<UserVO> userVOs = _userDao.listByAccount(owner.getAccountId());
+            if (!userVOs.isEmpty()) {
+                userId =  userVOs.get(0).getId();
+            }
+        }
 
         DomainRouterVO router = null;
         for (final Iterator<HypervisorType> iter = hypervisors.iterator(); iter.hasNext();) {
@@ -522,43 +580,20 @@ public class NetworkHelperImpl implements NetworkHelper {
                     logger.debug(String.format("Allocating the VR with id=%s in datacenter %s with the hypervisor type %s", id, routerDeploymentDefinition.getDest()
                             .getDataCenter(), hType));
                 }
-
-                final String templateName = retrieveTemplateName(hType, routerDeploymentDefinition.getDest().getDataCenter().getId());
-                final VMTemplateVO template = _templateDao.findRoutingTemplate(hType, templateName);
-
-                if (template == null) {
-                    logger.debug(hType + " won't support system vm, skip it");
+                final long zoneId = routerDeploymentDefinition.getDest().getDataCenter().getId();
+                final String templateName = retrieveTemplateName(hType, zoneId);
+                final String preferredArch = ResourceManager.SystemVmPreferredArchitecture.valueIn(zoneId);
+                final List<VMTemplateVO> templates = _templateDao.findRoutingTemplates(hType, templateName,
+                        preferredArch);
+                if (CollectionUtils.isEmpty(templates)) {
+                    logger.debug("{} won't support system vm, skip it", hType);
                     continue;
                 }
-
-                final boolean offerHA = routerOffering.isOfferHA();
-
-                // routerDeploymentDefinition.getVpc().getId() ==> do not use
-                // VPC because it is not a VPC offering.
-                final Long vpcId = routerDeploymentDefinition.getVpc() != null ? routerDeploymentDefinition.getVpc().getId() : null;
-
-                long userId = CallContext.current().getCallingUserId();
-                if (CallContext.current().getCallingAccount().getId() != owner.getId()) {
-                    final List<UserVO> userVOs = _userDao.listByAccount(owner.getAccountId());
-                    if (!userVOs.isEmpty()) {
-                        userId =  userVOs.get(0).getId();
-                    }
-                }
-
-                router = new DomainRouterVO(id, routerOffering.getId(), routerDeploymentDefinition.getVirtualProvider().getId(), VirtualMachineName.getRouterName(id,
-                        s_vmInstanceName), template.getId(), template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(),
-                        userId, routerDeploymentDefinition.isRedundant(), RedundantState.UNKNOWN, offerHA, false, vpcId);
-
-                router.setDynamicallyScalable(template.isDynamicallyScalable());
-                router.setRole(Role.VIRTUAL_ROUTER);
-                router.setLimitCpuUse(routerOffering.getLimitCpuUse());
-                router = _routerDao.persist(router);
-
-                reallocateRouterNetworks(routerDeploymentDefinition, router, template, null);
-                router = _routerDao.findById(router.getId());
+                router = deployRouterWithTemplates(router, id, routerDeploymentDefinition, owner, userId,
+                        routerOffering, offerHA, vpcId, templates);
             } catch (final InsufficientCapacityException ex) {
                 if (iter.hasNext()) {
-                    logger.debug("Failed to allocate the VR with hypervisor type " + hType + ", retrying one more time");
+                    logger.debug("Failed to allocate the VR with {}, retrying with another hypervisor", hType);
                     continue;
                 } else {
                     throw ex;
@@ -664,7 +699,7 @@ public class NetworkHelperImpl implements NetworkHelper {
 
             for (final HostVO h : hosts) {
                 if (h.getState() == Status.Up) {
-                    logger.debug("Pick up host that has hypervisor type " + h.getHypervisorType() + " in cluster " + cv.getId() + " to start domain router for OVM");
+                    logger.debug("Pick up host that has hypervisor type {} in cluster {} to start domain router for OVM", h.getHypervisorType(), cv);
                     return h.getHypervisorType();
                 }
             }
@@ -790,8 +825,9 @@ public class NetworkHelperImpl implements NetworkHelper {
                                     && _ipAddressDao.findByIpAndSourceNetworkId(guestNetwork.getId(), startIp).getAllocatedTime() == null) {
                                 defaultNetworkStartIp = startIp;
                             } else if (logger.isDebugEnabled()) {
-                                logger.debug("First ipv4 " + startIp + " in network id=" + guestNetwork.getId()
-                                        + " is already allocated, can't use it for domain router; will get random ip address from the range");
+                                logger.debug("First ipv4 {} in network {} is already allocated, " +
+                                        "can't use it for domain router; will get random ip " +
+                                        "address from the range", startIp, guestNetwork);
                             }
                         }
                     }
@@ -812,8 +848,9 @@ public class NetworkHelperImpl implements NetworkHelper {
                             if (startIpv6 != null && _ipv6Dao.findByNetworkIdAndIp(guestNetwork.getId(), startIpv6) == null) {
                                 defaultNetworkStartIpv6 = startIpv6;
                             } else if (logger.isDebugEnabled()) {
-                                logger.debug("First ipv6 " + startIpv6 + " in network id=" + guestNetwork.getId()
-                                        + " is already allocated, can't use it for domain router; will get random ipv6 address from the range");
+                                logger.debug("First ipv6 {} in network {} is already allocated, " +
+                                        "can't use it for domain router; will get random ipv6 " +
+                                        "address from the range", startIpv6, guestNetwork);
                             }
                         }
                     }
@@ -901,10 +938,10 @@ public class NetworkHelperImpl implements NetworkHelper {
                     }
                 }
                 if (expire != null && !containsOnlyNumbers(expire, timeEndChar)) {
-                    throw new InvalidParameterValueException("Failed LB in validation rule id: " + rule.getId() + " Cause: expire is not in timeformat: " + expire);
+                    throw new InvalidParameterValueException(String.format("Failed LB in validation rule: %s Cause: expire is not in timeformat: %s", rule.getLb(), expire));
                 }
                 if (tablesize != null && !containsOnlyNumbers(tablesize, "kmg")) {
-                    throw new InvalidParameterValueException("Failed LB in validation rule id: " + rule.getId() + " Cause: tablesize is not in size format: " + tablesize);
+                    throw new InvalidParameterValueException(String.format("Failed LB in validation rule: %s Cause: tablesize is not in size format: %s", rule.getLb(), tablesize));
 
                 }
             } else if (LbStickinessMethod.StickinessMethodType.AppCookieBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName())) {
@@ -923,10 +960,10 @@ public class NetworkHelperImpl implements NetworkHelper {
                 }
 
                 if (length != null && !containsOnlyNumbers(length, null)) {
-                    throw new InvalidParameterValueException("Failed LB in validation rule id: " + rule.getId() + " Cause: length is not a number: " + length);
+                    throw new InvalidParameterValueException(String.format("Failed LB in validation rule id: %s Cause: length is not a number: %s", rule.getLb(), length));
                 }
                 if (holdTime != null && !containsOnlyNumbers(holdTime, timeEndChar) && !containsOnlyNumbers(holdTime, null)) {
-                    throw new InvalidParameterValueException("Failed LB in validation rule id: " + rule.getId() + " Cause: holdtime is not in timeformat: " + holdTime);
+                    throw new InvalidParameterValueException(String.format("Failed LB in validation rule id: %s Cause: holdtime is not in timeformat: %s", rule.getLb(), holdTime));
                 }
             }
         }

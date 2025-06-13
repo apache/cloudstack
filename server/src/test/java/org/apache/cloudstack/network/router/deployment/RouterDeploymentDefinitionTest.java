@@ -32,6 +32,7 @@ import com.cloud.network.VirtualRouterProvider.Type;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.NsxProviderDao;
+import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.element.VirtualRouterProviderVO;
 import com.cloud.network.router.VirtualRouter.Role;
@@ -75,6 +76,8 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
     @Mock
     protected NetworkVO mockNw;
     @Mock
+    PhysicalNetworkDao physicalNetworkDao;
+    @Mock
     protected NsxProviderDao nsxProviderDao;
 
     protected RouterDeploymentDefinition deployment;
@@ -101,6 +104,7 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
                 .setAccountOwner(mockOwner)
                 .setParams(params)
                 .build();
+        deployment.pNtwkDao = physicalNetworkDao;
     }
 
     @Test
@@ -607,6 +611,8 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
     @Test(expected = CloudRuntimeException.class)
     public void testFindVirtualProviderWithNullPhyNwSrvProvider() {
         // Prepare
+
+        when(physicalNetworkDao.findById(PHYSICAL_NW_ID)).thenReturn(null);
         when(mockNetworkModel.getPhysicalNetworkId(deployment.guestNetwork)).thenReturn(PHYSICAL_NW_ID);
         final Type type = Type.VirtualRouter;
         when(physicalProviderDao.findByServiceProvider(PHYSICAL_NW_ID, type.toString()))

@@ -25,6 +25,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -58,9 +59,12 @@ import javax.xml.xpath.XPathFactory;
 
 import com.cloud.utils.net.NetUtils;
 
+import com.cloud.vm.VmDetailConstants;
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.linux.CPUStat;
 import org.apache.cloudstack.utils.linux.MemStat;
@@ -238,6 +242,13 @@ public class LibvirtComputingResourceTest {
     @Mock
     LibvirtDomainXMLParser parserMock;
 
+    @Mock
+    DiskTO diskToMock;
+
+    @Mock
+    private VolumeObjectTO volumeObjectToMock;
+
+
     @Spy
     private LibvirtComputingResource libvirtComputingResourceSpy = Mockito.spy(new LibvirtComputingResource());
 
@@ -398,7 +409,7 @@ public class LibvirtComputingResourceTest {
         VirtualMachineTO to = createDefaultVM(false);
         LibvirtVMDef vm = new LibvirtVMDef();
         GuestDef guestDef = libvirtComputingResourceSpy.createGuestFromSpec(to, vm, to.getUuid(), null);
-        verifySysInfo(guestDef, "smbios", to.getUuid(), "pc");
+        verifySysInfo(guestDef, "smbios", to.getUuid(), "s390x".equals(System.getProperty("os.arch")) ? "s390-ccw-virtio" : "pc");
         Assert.assertEquals(GuestDef.BootType.BIOS, guestDef.getBootType());
         Assert.assertNull(guestDef.getBootMode());
     }
@@ -457,6 +468,9 @@ public class LibvirtComputingResourceTest {
         VirtualMachineTO to = createDefaultVM(false);
         to.setDetails(new HashMap<>());
         to.setPlatformEmulator("Other PV Virtio-SCSI");
+
+        final DiskTO diskTO = Mockito.mock(DiskTO.class);
+        to.setDisks(new DiskTO[]{diskTO});
 
         GuestDef guest = new GuestDef();
         guest.setGuestType(GuestType.KVM);
@@ -645,7 +659,7 @@ public class LibvirtComputingResourceTest {
     public void testCreateSCSIDef() {
         VirtualMachineTO to = createDefaultVM(false);
 
-        SCSIDef scsiDef = libvirtComputingResourceSpy.createSCSIDef(to.getCpus(), false);
+        SCSIDef scsiDef = libvirtComputingResourceSpy.createSCSIDef((short)0, to.getCpus(), false);
         Document domainDoc = parse(scsiDef.toString());
         verifyScsi(to, domainDoc, "");
     }
@@ -823,7 +837,7 @@ public class LibvirtComputingResourceTest {
     }
 
     private void verifyOsType(Document domainDoc) {
-        assertXpath(domainDoc, "/domain/os/type/@machine", "pc");
+        assertXpath(domainDoc, "/domain/os/type/@machine", "s390x".equals(System.getProperty("os.arch")) ? "s390-ccw-virtio" : "pc");
         assertXpath(domainDoc, "/domain/os/type/text()", "hvm");
     }
 
@@ -1474,7 +1488,7 @@ public class LibvirtComputingResourceTest {
 
         when(libvirtComputingResourceMock.getVifDriver(nicTO.getType(), nicTO.getName())).thenReturn(vifDriver);
         when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolManager);
-        when(storagePoolManager.connectPhysicalDisksViaVmSpec(vm)).thenReturn(true);
+        when(storagePoolManager.connectPhysicalDisksViaVmSpec(vm, true)).thenReturn(true);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -1754,6 +1768,8 @@ public class LibvirtComputingResourceTest {
     @Test
     public void testCheckVirtualMachineCommand() {
         final Connect conn = Mockito.mock(Connect.class);
+        final Domain vm = Mockito.mock(Domain.class);
+        final DomainInfo domainInfo = Mockito.mock(DomainInfo.class);
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
 
         final String vmName = "Test";
@@ -1762,6 +1778,8 @@ public class LibvirtComputingResourceTest {
         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
         try {
             when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenReturn(conn);
+            when(conn.domainLookupByName(vmName)).thenReturn(vm);
+            when(vm.getInfo()).thenReturn(domainInfo);
         } catch (final LibvirtException e) {
             fail(e.getMessage());
         }
@@ -5020,7 +5038,7 @@ public class LibvirtComputingResourceTest {
             fail(e.getMessage());
         }
 
-        when(storagePoolMgr.connectPhysicalDisksViaVmSpec(vmSpec)).thenReturn(false);
+        when(storagePoolMgr.connectPhysicalDisksViaVmSpec(vmSpec, false)).thenReturn(false);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -5221,7 +5239,7 @@ public class LibvirtComputingResourceTest {
             fail(e.getMessage());
         }
 
-        when(storagePoolMgr.connectPhysicalDisksViaVmSpec(vmSpec)).thenReturn(true);
+        when(storagePoolMgr.connectPhysicalDisksViaVmSpec(vmSpec, false)).thenReturn(true);
         try {
             doNothing().when(libvirtComputingResourceMock).createVifs(vmSpec, vmDef);
 
@@ -5244,8 +5262,8 @@ public class LibvirtComputingResourceTest {
         try (MockedStatic<SshHelper> sshHelperMockedStatic = Mockito.mockStatic(SshHelper.class)) {
             sshHelperMockedStatic.when(() -> SshHelper.scpTo(
                     Mockito.anyString(), Mockito.anyInt(),
-                    Mockito.anyString(), Mockito.any(File.class), nullable(String.class), Mockito.anyString(),
-                    Mockito.any(String[].class), Mockito.anyString())).thenAnswer(invocation -> null);
+                    Mockito.anyString(), any(File.class), nullable(String.class), Mockito.anyString(),
+                    any(String[].class), Mockito.anyString())).thenAnswer(invocation -> null);
 
             final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
             assertNotNull(wrapper);
@@ -5300,7 +5318,7 @@ public class LibvirtComputingResourceTest {
             fail(e.getMessage());
         }
 
-        when(storagePoolMgr.connectPhysicalDisksViaVmSpec(vmSpec)).thenReturn(true);
+        when(storagePoolMgr.connectPhysicalDisksViaVmSpec(vmSpec, false)).thenReturn(true);
         try {
             doNothing().when(libvirtComputingResourceMock).createVifs(vmSpec, vmDef);
 
@@ -5324,8 +5342,8 @@ public class LibvirtComputingResourceTest {
         try (MockedStatic<SshHelper> sshHelperMockedStatic = Mockito.mockStatic(SshHelper.class)) {
             sshHelperMockedStatic.when(() -> SshHelper.scpTo(
                     Mockito.anyString(), Mockito.anyInt(),
-                    Mockito.anyString(), Mockito.any(File.class), nullable(String.class), Mockito.anyString(),
-                    Mockito.any(String[].class), Mockito.anyString())).thenAnswer(invocation -> null);
+                    Mockito.anyString(), any(File.class), nullable(String.class), Mockito.anyString(),
+                    any(String[].class), Mockito.anyString())).thenAnswer(invocation -> null);
             final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
             assertNotNull(wrapper);
 
@@ -5363,7 +5381,11 @@ public class LibvirtComputingResourceTest {
         when(vmSpec.getNics()).thenReturn(nics);
         when(vmSpec.getType()).thenReturn(VirtualMachine.Type.User);
         when(vmSpec.getName()).thenReturn(vmName);
+        when(vmSpec.getDisks()).thenReturn(new DiskTO[]{diskToMock});
+        when(diskToMock.getData()).thenReturn(new VolumeObjectTO());
         when(libvirtComputingResourceMock.createVMFromSpec(vmSpec)).thenReturn(vmDef);
+
+        when(libvirtComputingResourceMock.recreateCheckpointsOnVm(any(), any(), any())).thenReturn(true);
 
         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
         try {
@@ -5377,7 +5399,7 @@ public class LibvirtComputingResourceTest {
             fail(e.getMessage());
         }
 
-        when(storagePoolMgr.connectPhysicalDisksViaVmSpec(vmSpec)).thenReturn(true);
+        when(storagePoolMgr.connectPhysicalDisksViaVmSpec(vmSpec, false)).thenReturn(true);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -5515,7 +5537,7 @@ public class LibvirtComputingResourceTest {
     @Test
     public void testSetQuotaAndPeriod() {
         double pct = 0.33d;
-        Mockito.when(vmTO.getLimitCpuUse()).thenReturn(true);
+        Mockito.when(vmTO.isLimitCpuUse()).thenReturn(true);
         Mockito.when(vmTO.getCpuQuotaPercentage()).thenReturn(pct);
         CpuTuneDef cpuTuneDef = new CpuTuneDef();
         final LibvirtComputingResource lcr = new LibvirtComputingResource();
@@ -5526,7 +5548,7 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void testSetQuotaAndPeriodNoCpuLimitUse() {
-        Mockito.when(vmTO.getLimitCpuUse()).thenReturn(false);
+        Mockito.when(vmTO.isLimitCpuUse()).thenReturn(false);
         CpuTuneDef cpuTuneDef = new CpuTuneDef();
         final LibvirtComputingResource lcr = new LibvirtComputingResource();
         lcr.setQuotaAndPeriod(vmTO, cpuTuneDef);
@@ -5537,7 +5559,7 @@ public class LibvirtComputingResourceTest {
     @Test
     public void testSetQuotaAndPeriodMinQuota() {
         double pct = 0.01d;
-        Mockito.when(vmTO.getLimitCpuUse()).thenReturn(true);
+        Mockito.when(vmTO.isLimitCpuUse()).thenReturn(true);
         Mockito.when(vmTO.getCpuQuotaPercentage()).thenReturn(pct);
         CpuTuneDef cpuTuneDef = new CpuTuneDef();
         final LibvirtComputingResource lcr = new LibvirtComputingResource();
@@ -5575,7 +5597,7 @@ public class LibvirtComputingResourceTest {
     public void testAddExtraConfigComponentEmptyExtraConfig() {
         libvirtComputingResourceMock = new LibvirtComputingResource();
         libvirtComputingResourceMock.addExtraConfigComponent(new HashMap<>(), vmDef);
-        Mockito.verify(vmDef, never()).addComp(Mockito.any());
+        Mockito.verify(vmDef, never()).addComp(any());
     }
 
     @Test
@@ -5586,7 +5608,7 @@ public class LibvirtComputingResourceTest {
         extraConfig.put("extraconfig-2", "value2");
         extraConfig.put("extraconfig-3", "value3");
         libvirtComputingResourceMock.addExtraConfigComponent(extraConfig, vmDef);
-        Mockito.verify(vmDef, times(1)).addComp(Mockito.any());
+        Mockito.verify(vmDef, times(1)).addComp(any());
     }
 
     public void validateGetCurrentMemAccordingToMemBallooningWithoutMemBalooning(){
@@ -5805,7 +5827,7 @@ public class LibvirtComputingResourceTest {
 
         try (MockedStatic<AgentPropertiesFileHandler> ignored = Mockito.mockStatic(AgentPropertiesFileHandler.class);
              MockedStatic<NetUtils> netUtilsMockedStatic = Mockito.mockStatic(NetUtils.class)) {
-            Mockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.any())).thenReturn("cloudbr15",
+            Mockito.when(AgentPropertiesFileHandler.getPropertyValue(any())).thenReturn("cloudbr15",
                     "cloudbr28");
 
             Mockito.when(NetUtils.getNetworkInterface(Mockito.anyString())).thenReturn(networkInterfaceMock1,
@@ -5880,7 +5902,7 @@ public class LibvirtComputingResourceTest {
                 (mock, context) -> {
                     doNothing().when(mock).add(Mockito.anyString());
                     when(mock.execute()).thenReturn(null);
-                    when(mock.execute(Mockito.any())).thenReturn(null);
+                    when(mock.execute(any())).thenReturn(null);
                 });
              MockedConstruction<OneLineParser> ignored = Mockito.mockConstruction(OneLineParser.class, (mock, context) -> {
                  when(mock.getLine()).thenReturn("result");
@@ -5936,7 +5958,7 @@ public class LibvirtComputingResourceTest {
                 (mock, context) -> {
                     doNothing().when(mock).add(Mockito.anyString());
                     when(mock.execute()).thenReturn(null);
-                    when(mock.execute(Mockito.any())).thenReturn(null);
+                    when(mock.execute(any())).thenReturn(null);
                 }); MockedConstruction<OneLineParser> ignored2 = Mockito.mockConstruction(OneLineParser.class,
                 (mock, context) -> {when(mock.getLine()).thenReturn("result");})) {
 
@@ -5958,7 +5980,7 @@ public class LibvirtComputingResourceTest {
                 (mock, context) -> {
                     doNothing().when(mock).add(Mockito.anyString());
                     when(mock.execute()).thenReturn(null);
-                    when(mock.execute(Mockito.any())).thenReturn(null);
+                    when(mock.execute(any())).thenReturn(null);
                 }); MockedConstruction<OneLineParser> ignored2 = Mockito.mockConstruction(OneLineParser.class,
                 (mock, context) -> {when(mock.getLine()).thenReturn("result");})) {
 
@@ -5978,7 +6000,7 @@ public class LibvirtComputingResourceTest {
 
         List<Integer> result = libvirtComputingResourceSpy.getVmsToSetMemoryBalloonStatsPeriod(connMock);
 
-        Mockito.verify(loggerMock).error(Mockito.anyString(), (Throwable) Mockito.any());
+        Mockito.verify(loggerMock).error(Mockito.anyString(), (Throwable) any());
         Assert.assertTrue(result.isEmpty());
     }
 
@@ -6068,7 +6090,7 @@ public class LibvirtComputingResourceTest {
         Mockito.when(parserMock.parseDomainXML(Mockito.anyString())).thenReturn(true);
         Mockito.when(parserMock.getMemBalloon()).thenReturn(memBalloonDef);
         try (MockedStatic<Script> ignored = Mockito.mockStatic(Script.class)) {
-            Mockito.when(Script.runSimpleBashScript(Mockito.any())).thenReturn(null);
+            Mockito.when(Script.runSimpleBashScript(any())).thenReturn(null);
 
             libvirtComputingResourceSpy.setupMemoryBalloonStatsPeriod(connMock);
 
@@ -6414,5 +6436,188 @@ public class LibvirtComputingResourceTest {
         Assert.assertEquals(newStats.getDiskWriteIOs() - oldStats.getDiskWriteIOs(), metrics.getDiskWriteIOs(), 0);
         Assert.assertEquals(newStats.getDiskReadKBs() - oldStats.getDiskReadKBs(), metrics.getDiskReadKBs(), 0);
         Assert.assertEquals(newStats.getDiskWriteKBs() - oldStats.getDiskWriteKBs(), metrics.getDiskWriteKBs(), 0);
+    }
+
+    @Test
+    public void createLinstorVdb() throws LibvirtException, InternalErrorException, URISyntaxException {
+        final Connect connect = Mockito.mock(Connect.class);
+
+        final int id = random.nextInt(65534);
+        final String name = "test-instance-1";
+
+        final int cpus = 2;
+        final int speed = 1024;
+        final int minRam = 256 * 1024;
+        final int maxRam = 512 * 1024;
+        final String os = "Ubuntu";
+        final String vncPassword = "mySuperSecretPassword";
+
+        final VirtualMachineTO to = new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, speed, minRam,
+                maxRam, BootloaderType.HVM, os, false, false, vncPassword);
+        to.setVncAddr("");
+        to.setArch("x86_64");
+        to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
+        to.setVcpuMaxLimit(cpus + 1);
+        final HashMap<String, String> vmToDetails = new HashMap<>();
+        to.setDetails(vmToDetails);
+
+        String diskLinPath = "9ebe53c1-3d35-46e5-b7aa-6fc223ba0fcf";
+        final DiskTO diskTO = new DiskTO();
+        diskTO.setDiskSeq(1L);
+        diskTO.setType(Volume.Type.ROOT);
+        diskTO.setDetails(new HashMap<>());
+        diskTO.setPath(diskLinPath);
+
+        final PrimaryDataStoreTO primaryDataStoreTO = Mockito.mock(PrimaryDataStoreTO.class);
+        String pDSTOUUID = "9ebe53c1-3d35-46e5-b7aa-6fc223ac4fcf";
+        when(primaryDataStoreTO.getPoolType()).thenReturn(StoragePoolType.Linstor);
+        when(primaryDataStoreTO.getUuid()).thenReturn(pDSTOUUID);
+
+        VolumeObjectTO dataTO = new VolumeObjectTO();
+
+        dataTO.setUuid("12be53c1-3d35-46e5-b7aa-6fc223ba0f34");
+        dataTO.setPath(diskTO.getPath());
+        dataTO.setDataStore(primaryDataStoreTO);
+        diskTO.setData(dataTO);
+        to.setDisks(new DiskTO[]{diskTO});
+
+        String path = "/dev/drbd1020";
+        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        final KVMStoragePool storagePool = Mockito.mock(KVMStoragePool.class);
+        final KVMPhysicalDisk vol = Mockito.mock(KVMPhysicalDisk.class);
+
+        when(libvirtComputingResourceSpy.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        when(storagePool.getType()).thenReturn(StoragePoolType.Linstor);
+        when(storagePoolMgr.getPhysicalDisk(StoragePoolType.Linstor, pDSTOUUID, diskLinPath)).thenReturn(vol);
+        when(vol.getPath()).thenReturn(path);
+        when(vol.getPool()).thenReturn(storagePool);
+        when(vol.getFormat()).thenReturn(PhysicalDiskFormat.RAW);
+
+        // 1. test Bus: IDE and broken qemu version -> NO discard
+        when(libvirtComputingResourceSpy.getHypervisorQemuVersion()).thenReturn(6000000L);
+        vmToDetails.put(VmDetailConstants.ROOT_DISK_CONTROLLER, DiskDef.DiskBus.IDE.name());
+        {
+            LibvirtVMDef vm = new LibvirtVMDef();
+            vm.addComp(new DevicesDef());
+            libvirtComputingResourceSpy.createVbd(connect, to, name, vm);
+
+            DiskDef rootDisk = vm.getDevices().getDisks().get(0);
+            assertEquals(DiskDef.DiskType.BLOCK, rootDisk.getDiskType());
+            assertEquals(DiskDef.DiskBus.IDE, rootDisk.getBusType());
+            assertEquals(DiskDef.DiscardType.IGNORE, rootDisk.getDiscard());
+        }
+
+        // 2. test Bus: VIRTIO and broken qemu version -> discard unmap
+        vmToDetails.put(VmDetailConstants.ROOT_DISK_CONTROLLER, DiskDef.DiskBus.VIRTIO.name());
+        {
+            LibvirtVMDef vm = new LibvirtVMDef();
+            vm.addComp(new DevicesDef());
+            libvirtComputingResourceSpy.createVbd(connect, to, name, vm);
+
+            DiskDef rootDisk = vm.getDevices().getDisks().get(0);
+            assertEquals(DiskDef.DiskType.BLOCK, rootDisk.getDiskType());
+            assertEquals(DiskDef.DiskBus.VIRTIO, rootDisk.getBusType());
+            assertEquals(DiskDef.DiscardType.UNMAP, rootDisk.getDiscard());
+        }
+
+        // 3. test Bus; IDE and "good" qemu version -> discard unmap
+        vmToDetails.put(VmDetailConstants.ROOT_DISK_CONTROLLER, DiskDef.DiskBus.IDE.name());
+        when(libvirtComputingResourceSpy.getHypervisorQemuVersion()).thenReturn(7000000L);
+        {
+            LibvirtVMDef vm = new LibvirtVMDef();
+            vm.addComp(new DevicesDef());
+            libvirtComputingResourceSpy.createVbd(connect, to, name, vm);
+
+            DiskDef rootDisk = vm.getDevices().getDisks().get(0);
+            assertEquals(DiskDef.DiskType.BLOCK, rootDisk.getDiskType());
+            assertEquals(DiskDef.DiskBus.IDE, rootDisk.getBusType());
+            assertEquals(DiskDef.DiscardType.UNMAP, rootDisk.getDiscard());
+        }
+
+        // 4. test Bus: VIRTIO and "good" qemu version -> discard unmap
+        vmToDetails.put(VmDetailConstants.ROOT_DISK_CONTROLLER, DiskDef.DiskBus.VIRTIO.name());
+        {
+            LibvirtVMDef vm = new LibvirtVMDef();
+            vm.addComp(new DevicesDef());
+            libvirtComputingResourceSpy.createVbd(connect, to, name, vm);
+
+            DiskDef rootDisk = vm.getDevices().getDisks().get(0);
+            assertEquals(DiskDef.DiskType.BLOCK, rootDisk.getDiskType());
+            assertEquals(DiskDef.DiskBus.VIRTIO, rootDisk.getBusType());
+            assertEquals(DiskDef.DiscardType.UNMAP, rootDisk.getDiscard());
+        }
+    }
+
+    @Test
+    public void testGetDiskModelFromVMDetailVirtioBlk() {
+        VirtualMachineTO virtualMachineTO = Mockito.mock(VirtualMachineTO.class);
+        Map<String, String> details = new HashMap<>();
+        details.put(VmDetailConstants.ROOT_DISK_CONTROLLER, "virtio-blk");
+        Mockito.when(virtualMachineTO.getDetails()).thenReturn(details);
+        DiskDef.DiskBus diskBus = libvirtComputingResourceSpy.getDiskModelFromVMDetail(virtualMachineTO);
+        assertEquals(DiskDef.DiskBus.VIRTIOBLK, diskBus);
+    }
+
+    @Test
+    public void testCreateTpmDef() {
+        VirtualMachineTO virtualMachineTO = Mockito.mock(VirtualMachineTO.class);
+        Map<String, String> details = new HashMap<>();
+        details.put(VmDetailConstants.VIRTUAL_TPM_MODEL, "tpm-tis");
+        details.put(VmDetailConstants.VIRTUAL_TPM_VERSION, "2.0");
+        Mockito.when(virtualMachineTO.getDetails()).thenReturn(details);
+        LibvirtVMDef.TpmDef tpmDef = libvirtComputingResourceSpy.createTpmDef(virtualMachineTO);
+        assertEquals(LibvirtVMDef.TpmDef.TpmModel.TIS, tpmDef.getModel());
+        assertEquals(LibvirtVMDef.TpmDef.TpmVersion.V2_0, tpmDef.getVersion());
+    }
+
+    @Test
+    public void testCreateTpmDefWithInvalidVersion() {
+        VirtualMachineTO virtualMachineTO = Mockito.mock(VirtualMachineTO.class);
+        Map<String, String> details = new HashMap<>();
+        details.put(VmDetailConstants.VIRTUAL_TPM_MODEL, "tpm-crb");
+        details.put(VmDetailConstants.VIRTUAL_TPM_VERSION, "3.0");
+        Mockito.when(virtualMachineTO.getDetails()).thenReturn(details);
+        LibvirtVMDef.TpmDef tpmDef = libvirtComputingResourceSpy.createTpmDef(virtualMachineTO);
+        assertEquals(LibvirtVMDef.TpmDef.TpmModel.CRB, tpmDef.getModel());
+        assertEquals(LibvirtVMDef.TpmDef.TpmVersion.V2_0, tpmDef.getVersion());
+    }
+
+    @Test
+    public void recreateCheckpointsOnVmTestVersionIsNotSufficient() {
+        Mockito.doThrow(new CloudRuntimeException("")).when(libvirtComputingResourceSpy).validateLibvirtAndQemuVersionForIncrementalSnapshots();
+
+        boolean result = libvirtComputingResourceSpy.recreateCheckpointsOnVm(List.of(volumeObjectToMock), null, null);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void recreateCheckpointsOnVmTestVolumesDoNotHaveCheckpoints() {
+        Mockito.doNothing().when(libvirtComputingResourceSpy).validateLibvirtAndQemuVersionForIncrementalSnapshots();
+
+        Mockito.doReturn(null).when(libvirtComputingResourceSpy).getDisks(Mockito.any(), Mockito.any());
+        Mockito.doReturn(null).when(libvirtComputingResourceSpy).mapVolumeToDiskDef(Mockito.any(), Mockito.any());
+
+        boolean result = libvirtComputingResourceSpy.recreateCheckpointsOnVm(List.of(volumeObjectToMock), null, null);
+
+        Mockito.verify(libvirtComputingResourceSpy, Mockito.never()).recreateCheckpointsOfDisk(Mockito.any(), Mockito.any(), Mockito.any());
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void recreateCheckpointsOnVmTestVolumesHaveCheckpoints() {
+        Mockito.doNothing().when(libvirtComputingResourceSpy).validateLibvirtAndQemuVersionForIncrementalSnapshots();
+
+        Mockito.doReturn(null).when(libvirtComputingResourceSpy).getDisks(Mockito.any(), Mockito.any());
+        Mockito.doReturn(null).when(libvirtComputingResourceSpy).mapVolumeToDiskDef(Mockito.any(), Mockito.any());
+
+        Mockito.doReturn(List.of("path")).when(volumeObjectToMock).getCheckpointPaths();
+
+        Mockito.doNothing().when(libvirtComputingResourceSpy).recreateCheckpointsOfDisk(Mockito.any(), Mockito.any(), Mockito.any());
+
+        boolean result = libvirtComputingResourceSpy.recreateCheckpointsOnVm(List.of(volumeObjectToMock), null, null);
+
+        Mockito.verify(libvirtComputingResourceSpy, Mockito.times(1)).recreateCheckpointsOfDisk(Mockito.any(), Mockito.any(), Mockito.any());
+        Assert.assertTrue(result);
     }
 }

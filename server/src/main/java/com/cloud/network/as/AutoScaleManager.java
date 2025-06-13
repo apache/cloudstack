@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network.as;
 
+import com.cloud.user.Account;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 public interface AutoScaleManager extends AutoScaleService {
@@ -40,9 +41,9 @@ public interface AutoScaleManager extends AutoScaleService {
 
     void checkAutoScaleUser(Long autoscaleUserId, long accountId);
 
-    boolean deleteAutoScaleVmGroupsByAccount(Long accountId);
+    boolean deleteAutoScaleVmGroupsByAccount(Account account);
 
-    void cleanUpAutoScaleResources(Long accountId);
+    void cleanUpAutoScaleResources(Account account);
 
     void doScaleUp(long groupId, Integer numVm);
 

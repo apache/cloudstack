@@ -39,6 +39,7 @@
             @keydown.esc="editableValueKey = null"
             @pressEnter="updateConfigurationValue(configrecord)"
             @change="value => setConfigurationEditable(configrecord, value)"
+            @keydown="e => handleInputNumberKeyDown(e, false)"
           />
         </a-tooltip>
       </span>
@@ -52,12 +53,13 @@
             @keydown.esc="editableValueKey = null"
             @pressEnter="updateConfigurationValue(configrecord)"
             @change="value => setConfigurationEditable(configrecord, value)"
+            @keydown="e => handleInputNumberKeyDown(e, true)"
           />
         </a-tooltip>
       </span>
-      <span v-else-if="configrecord.type ==='Range'">
-        <a-row>
-          <a-col>
+      <span v-else-if="configrecord.type ==='Range'" style="width: 75%;">
+        <a-row type="flex">
+          <a-col flex="auto">
             <a-tooltip :title="editableValue">
               <a-slider
                 style="width: 13vw"
@@ -73,10 +75,10 @@
               />
             </a-tooltip>
           </a-col>
-          <a-col>
+          <a-col flex="30px">
             <a-tooltip :title="editableValue">
               <a-input-number
-                style="width: 5vw; margin-left: 10px; float: right"
+                style="margin-left: 10px;"
                 class="config-slider-text"
                 :defaultValue="configrecord.value * 100"
                 :min="0"
@@ -87,6 +89,7 @@
                 @keydown.esc="editableValueKey = null"
                 @pressEnter="updateConfigurationValue(configrecord)"
                 @change="value => setConfigurationEditable(configrecord, value)"
+                @keydown="e => handleInputNumberKeyDown(e, true)"
               />
             </a-tooltip>
           </a-col>
@@ -181,7 +184,7 @@
           :disabled="valueLoading" />
         <tooltip-button
           :tooltip="$t('label.reset.config.value')"
-          @onClick="resetConfigurationValue(configrecord)"
+          @onClick="$resetConfigurationValueConfirm(configrecord, resetConfigurationValue)"
           v-if="editableValueKey === null"
           icon="reload-outlined"
           :disabled="(!('resetConfiguration' in $store.getters.apis) || configDisabled || valueLoading)" />
@@ -219,12 +222,35 @@ export default {
   data () {
     return {
       valueLoading: this.loading,
+      scopeKey: '',
       actualValue: null,
       editableValue: null,
       editableValueKey: null
     }
   },
   created () {
+    switch (this.$route.meta.name) {
+      case 'account':
+        this.scopeKey = 'accountid'
+        break
+      case 'domain':
+        this.scopeKey = 'domainid'
+        break
+      case 'zone':
+        this.scopeKey = 'zoneid'
+        break
+      case 'cluster':
+        this.scopeKey = 'clusterid'
+        break
+      case 'storagepool':
+        this.scopeKey = 'storageid'
+        break
+      case 'imagestore':
+        this.scopeKey = 'imagestoreuuid'
+        break
+      default:
+        this.scopeKey = ''
+    }
     this.setConfigData()
   },
   watch: {
@@ -250,6 +276,7 @@ export default {
         newValue = newValue.join(' ')
       }
       const params = {
+        [this.scopeKey]: this.$route.params?.id,
         name: configrecord.name,
         value: newValue
       }
@@ -284,9 +311,11 @@ export default {
     resetConfigurationValue (configrecord) {
       this.valueLoading = true
       this.editableValueKey = null
-      api('resetConfiguration', {
+      const params = {
+        [this.scopeKey]: this.$route.params?.id,
         name: configrecord.name
-      }).then(json => {
+      }
+      api('resetConfiguration', params).then(json => {
         this.editableValue = this.getEditableValue(json.resetconfigurationresponse.configuration)
         this.actualValue = this.editableValue
         var newValue = this.editableValue
@@ -364,6 +393,26 @@ export default {
         this.editableValueKey = 'edit'
       } else {
         this.editableValueKey = null
+      }
+    },
+    handleInputNumberKeyDown (event, isDecimal) {
+      const allowedCodes = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Minus']
+
+      if (isDecimal) {
+        allowedCodes.push('Period')
+      }
+
+      if (
+        event.getModifierState('Control') ||
+        event.getModifierState('Meta') ||
+        event.getModifierState('Alt')
+      ) {
+        return
+      }
+
+      const isValid = allowedCodes.includes(event.code) || !isNaN(event.key)
+      if (!isValid) {
+        event.preventDefault()
       }
     }
   }

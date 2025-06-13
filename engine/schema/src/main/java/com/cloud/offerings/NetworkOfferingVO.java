@@ -32,6 +32,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
 @Table(name = "network_offerings")
@@ -471,8 +472,8 @@ public class NetworkOfferingVO implements NetworkOffering {
 
     @Override
     public String toString() {
-        StringBuilder buf = new StringBuilder("[Network Offering [");
-        return buf.append(id).append("-").append(trafficType).append("-").append(name).append("]").toString();
+        return String.format("NetworkOffering %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                this, "id", "uuid", "name", "trafficType"));
     }
 
     @Override

@@ -57,7 +57,7 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
     public SnapshotInfo getSnapshot(DataObject obj, DataStore store) {
         SnapshotVO snapshot = snapshotDao.findById(obj.getId());
         if (snapshot == null) {
-            throw new CloudRuntimeException("Can't find snapshot: " + obj.getId());
+            throw new CloudRuntimeException("Can't find snapshot: " + obj);
         }
         SnapshotObject so = SnapshotObject.getSnapshotObject(snapshot, store);
         return so;

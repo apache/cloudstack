@@ -52,7 +52,7 @@ public class BucketUsageParser {
 
     public static boolean parse(AccountVO account, Date startDate, Date endDate) {
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Parsing all Bucket usage events for account: " + account.getId());
+            LOGGER.debug("Parsing all Bucket usage events for account {}", account);
         }
 
         if ((endDate == null) || endDate.after(new Date())) {

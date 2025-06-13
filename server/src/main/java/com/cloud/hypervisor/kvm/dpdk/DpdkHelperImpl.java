@@ -75,10 +75,9 @@ public class DpdkHelperImpl implements DpdkHelper {
                 VHostUserMode dpdKvHostUserMode = VHostUserMode.fromValue(mode);
                 to.addExtraConfig(DPDK_VHOST_USER_MODE, dpdKvHostUserMode.toString());
             } catch (IllegalArgumentException e) {
-                logger.error(String.format("DPDK vHost User mode found as a detail for service offering: %s " +
-                                "but value: %s is not supported. Supported values: %s, %s",
-                        offering.getId(), mode,
-                        VHostUserMode.CLIENT.toString(), VHostUserMode.SERVER.toString()));
+                logger.error("DPDK vHost User mode found as a detail for service offering: {} " +
+                        "but value: {} is not supported. Supported values: {}, {}",
+                        offering, mode, VHostUserMode.CLIENT.toString(), VHostUserMode.SERVER.toString());
             }
         }
     }

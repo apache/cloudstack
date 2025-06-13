@@ -25,8 +25,8 @@ import com.cloud.utils.fsm.StateDao;
 
 public interface KubernetesClusterDao extends GenericDao<KubernetesClusterVO, Long>,
         StateDao<KubernetesCluster.State, KubernetesCluster.Event, KubernetesCluster> {
-
-    List<KubernetesClusterVO> listByAccount(long accountId);
+    List<KubernetesClusterVO> listForCleanupByAccount(long accountId);
+    int countNotForGCByAccount(long accountId);
     List<KubernetesClusterVO> findKubernetesClustersToGarbageCollect();
     List<KubernetesClusterVO> findManagedKubernetesClustersInState(KubernetesCluster.State state);
     List<KubernetesClusterVO> listByNetworkId(long networkId);

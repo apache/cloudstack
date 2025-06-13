@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.api.command.admin.offering;
 
+import com.cloud.exception.InvalidParameterValueException;
+import org.apache.cloudstack.vm.lease.VMLeaseManager;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -54,5 +56,26 @@ public class CreateServiceOfferingCmdTest {
     public void testIsPurgeResourcesTrue() {
         ReflectionTestUtils.setField(createServiceOfferingCmd, "purgeResources", true);
         Assert.assertTrue(createServiceOfferingCmd.isPurgeResources());
+    }
+
+    @Test
+    public void testGetLeaseDuration() {
+        ReflectionTestUtils.setField(createServiceOfferingCmd, "leaseDuration", 10);
+        Assert.assertEquals(10, createServiceOfferingCmd.getLeaseDuration().longValue());
+    }
+
+    @Test
+    public void testGetLeaseExpiryAction() {
+        ReflectionTestUtils.setField(createServiceOfferingCmd, "leaseExpiryAction", "stop");
+        Assert.assertEquals(VMLeaseManager.ExpiryAction.STOP, createServiceOfferingCmd.getLeaseExpiryAction());
+
+        ReflectionTestUtils.setField(createServiceOfferingCmd, "leaseExpiryAction", "DESTROY");
+        Assert.assertEquals(VMLeaseManager.ExpiryAction.DESTROY, createServiceOfferingCmd.getLeaseExpiryAction());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testGetLeaseExpiryActionInvalidValue() {
+        ReflectionTestUtils.setField(createServiceOfferingCmd, "leaseExpiryAction", "Unknown");
+        Assert.assertEquals(null, createServiceOfferingCmd.getLeaseExpiryAction());
     }
 }

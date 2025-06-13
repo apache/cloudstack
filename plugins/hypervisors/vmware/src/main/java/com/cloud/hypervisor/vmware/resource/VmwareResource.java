@@ -45,11 +45,13 @@ import java.util.TimeZone;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import com.cloud.agent.api.CleanupVMCommand;
 import javax.naming.ConfigurationException;
 import javax.xml.datatype.XMLGregorianCalendar;
 
 import com.cloud.capacity.CapacityManager;
 import com.cloud.hypervisor.vmware.mo.HostDatastoreBrowserMO;
+import com.vmware.vim25.Description;
 import com.vmware.vim25.FileInfo;
 import com.vmware.vim25.FileQueryFlags;
 import com.vmware.vim25.FolderFileInfo;
@@ -57,6 +59,7 @@ import com.vmware.vim25.HostDatastoreBrowserSearchResults;
 import com.vmware.vim25.HostDatastoreBrowserSearchSpec;
 import com.vmware.vim25.VirtualCdromIsoBackingInfo;
 import com.vmware.vim25.VirtualMachineConfigSummary;
+import com.vmware.vim25.VirtualTPM;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.backup.PrepareForBackupRestorationCommand;
 import org.apache.cloudstack.storage.command.CopyCommand;
@@ -74,7 +77,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.math.NumberUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.ThreadContext;
 import org.joda.time.Duration;
 
@@ -290,6 +292,7 @@ import com.cloud.utils.FileUtil;
 import com.cloud.utils.LogUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -391,7 +394,6 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
     // out an operation
     protected final int _retry = 24;
-    protected final int _sleep = 10000;
     protected final int DefaultDomRSshPort = 3922;
     protected final int MazCmdMBean = 100;
 
@@ -417,10 +419,10 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
     protected DiskControllerType _rootDiskController = DiskControllerType.ide;
 
     protected ManagedObjectReference _morHyperHost;
-    protected final static ThreadLocal<VmwareContext> s_serviceContext = new ThreadLocal<VmwareContext>();
+    protected final static ThreadLocal<VmwareContext> s_serviceContext = new ThreadLocal<>();
     protected String _hostName;
 
-    protected List<PropertyMapDynamicBean> _cmdMBeans = new ArrayList<PropertyMapDynamicBean>();
+    protected List<PropertyMapDynamicBean> _cmdMBeans = new ArrayList<>();
 
     protected Gson _gson;
 
@@ -431,7 +433,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
     protected VirtualRoutingResource _vrResource;
 
-    protected final static HashMap<VirtualMachinePowerState, PowerState> s_powerStatesTable = new HashMap<VirtualMachinePowerState, PowerState>();
+    protected final static HashMap<VirtualMachinePowerState, PowerState> s_powerStatesTable = new HashMap<>();
 
     static {
         s_powerStatesTable.put(VirtualMachinePowerState.POWERED_ON, PowerState.PowerOn);
@@ -465,7 +467,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
     @Override
     public Answer executeRequest(Command cmd) {
         logCommand(cmd);
-        Answer answer = null;
+        Answer answer;
         ThreadContext.push(getCommandLogTitle(cmd));
         try {
             long cmdSequence = _cmdSequence++;
@@ -583,6 +585,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 return execute((ResizeVolumeCommand) cmd);
             } else if (clz == UnregisterVMCommand.class) {
                 return execute((UnregisterVMCommand) cmd);
+            } else if (clz == CleanupVMCommand.class) {
+                return execute((CleanupVMCommand) cmd);
             } else if (cmd instanceof StorageSubSystemCommand) {
                 checkStorageProcessorAndHandlerNfsVersionAttribute((StorageSubSystemCommand) cmd);
                 return storageHandler.handleStorageCommands((StorageSubSystemCommand) cmd);
@@ -693,13 +697,13 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         String scriptChecksum = lines[1].trim();
         String checksum = ChecksumUtil.calculateCurrentChecksum(sysVMName, "vms/cloud-scripts.tgz").trim();
 
-        if (!org.apache.commons.lang3.StringUtils.isEmpty(checksum) && checksum.equals(scriptChecksum) && !cmd.isForced()) {
+        if (!StringUtils.isEmpty(checksum) && checksum.equals(scriptChecksum) && !cmd.isForced()) {
             String msg = String.format("No change in the scripts checksum, not patching systemVM %s", sysVMName);
             logger.info(msg);
             return new PatchSystemVmAnswer(cmd, msg, lines[0], lines[1]);
         }
 
-        Pair<Boolean, String> patchResult = null;
+        Pair<Boolean, String> patchResult;
         try {
             patchResult = SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root",
                     pemFile, null, "/var/cache/cloud/patch-sysvms.sh", 10000, 10000, 600000);
@@ -727,7 +731,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
     private Answer execute(SetupPersistentNetworkCommand cmd) {
         VmwareHypervisorHost host = getHyperHost(getServiceContext());
-        String hostname = null;
+        String hostname;
         VmwareContext context = getServiceContext();
         HostMO hostMO = new HostMO(context, host.getMor());
 
@@ -752,7 +756,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         if (storageNfsVersion != null)
             return;
         if (cmd instanceof CopyCommand) {
-            EnumMap<VmwareStorageProcessorConfigurableFields, Object> params = new EnumMap<VmwareStorageProcessorConfigurableFields, Object>(
+            EnumMap<VmwareStorageProcessorConfigurableFields, Object> params = new EnumMap<>(
                     VmwareStorageProcessorConfigurableFields.class);
             examineStorageSubSystemCommandNfsVersion((CopyCommand) cmd, params);
             params = examineStorageSubSystemCommandFullCloneFlagForVmware((CopyCommand) cmd, params);
@@ -791,10 +795,10 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             if (destDataStore instanceof PrimaryDataStoreTO) {
                 PrimaryDataStoreTO dest = (PrimaryDataStoreTO) destDataStore;
                 if (dest.isFullCloneFlag() != null) {
-                    paramsCopy.put(VmwareStorageProcessorConfigurableFields.FULL_CLONE_FLAG, dest.isFullCloneFlag().booleanValue());
+                    paramsCopy.put(VmwareStorageProcessorConfigurableFields.FULL_CLONE_FLAG, dest.isFullCloneFlag());
                 }
                 if (dest.getDiskProvisioningStrictnessFlag() != null) {
-                    paramsCopy.put(VmwareStorageProcessorConfigurableFields.DISK_PROVISIONING_STRICTNESS, dest.getDiskProvisioningStrictnessFlag().booleanValue());
+                    paramsCopy.put(VmwareStorageProcessorConfigurableFields.DISK_PROVISIONING_STRICTNESS, dest.getDiskProvisioningStrictnessFlag());
                 }
             }
         }
@@ -880,7 +884,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         try {
             if (newSize < oldSize) {
                 String errorMsg = String.format("VMware doesn't support shrinking volume from larger size [%s] GB to a smaller size [%s] GB. Can't resize volume of VM [name: %s].",
-                        oldSize / Float.valueOf(ResourceType.bytesToMiB), newSize / Float.valueOf(ResourceType.bytesToMiB), vmName);
+                        oldSize / (float) ResourceType.bytesToMiB, newSize / (float) ResourceType.bytesToMiB, vmName);
                 logger.error(errorMsg);
                 throw new Exception(errorMsg);
             } else if (newSize == oldSize) {
@@ -1018,8 +1022,10 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 if (useWorkerVm) {
                     logger.info("Destroy worker VM after volume resize");
 
-                    vmMo.detachDisk(vmdkDataStorePath, false);
-                    vmMo.destroy();
+                    if (vmMo != null) {
+                        vmMo.detachDisk(vmdkDataStorePath, false);
+                        vmMo.destroy();
+                    }
                 }
             } catch (Throwable e) {
                 logger.error(String.format("Failed to destroy worker VM [name: %s] due to: [%s].", vmName, e.getMessage()), e);
@@ -1111,13 +1117,11 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
         if (cmd.getOption() != null && cmd.getOption().equals("create")) {
             String result = networkUsage(cmd.getPrivateIP(), "create", null);
-            NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, result, 0L, 0L);
-            return answer;
+            return new NetworkUsageAnswer(cmd, result, 0L, 0L);
         }
         long[] stats = getNetworkStats(cmd.getPrivateIP(), null);
 
-        NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, "", stats[0], stats[1]);
-        return answer;
+        return new NetworkUsageAnswer(cmd, "", stats[0], stats[1]);
     }
 
     protected NetworkUsageAnswer VPCNetworkUsage(NetworkUsageCommand cmd) {
@@ -1192,8 +1196,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
     }
 
     protected Answer execute(GetAutoScaleMetricsCommand cmd) {
-        Long bytesSent;
-        Long bytesReceived;
+        long bytesSent;
+        long bytesReceived;
         if (cmd.isForVpc()) {
             long[] stats = getVPCNetworkStats(cmd.getPrivateIP(), cmd.getPublicIP(), "get", "");
             bytesSent = stats[0];
@@ -1213,14 +1217,14 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             switch (metrics.getCounter()) {
                 case NETWORK_RECEIVED_AVERAGE_MBPS:
                     values.add(new VirtualRouterAutoScale.AutoScaleMetricsValue(metrics, VirtualRouterAutoScale.AutoScaleValueType.AGGREGATED_VM_GROUP,
-                            Double.valueOf(bytesReceived) / VirtualRouterAutoScale.MBITS_TO_BYTES));
+                            (double) bytesReceived / VirtualRouterAutoScale.MBITS_TO_BYTES));
                     break;
                 case NETWORK_TRANSMIT_AVERAGE_MBPS:
                     values.add(new VirtualRouterAutoScale.AutoScaleMetricsValue(metrics, VirtualRouterAutoScale.AutoScaleValueType.AGGREGATED_VM_GROUP,
-                            Double.valueOf(bytesSent) / VirtualRouterAutoScale.MBITS_TO_BYTES));
+                            (double) bytesSent / VirtualRouterAutoScale.MBITS_TO_BYTES));
                     break;
                 case LB_AVERAGE_CONNECTIONS:
-                    values.add(new VirtualRouterAutoScale.AutoScaleMetricsValue(metrics, VirtualRouterAutoScale.AutoScaleValueType.INSTANT_VM, Double.valueOf(lbConnections)));
+                    values.add(new VirtualRouterAutoScale.AutoScaleMetricsValue(metrics, VirtualRouterAutoScale.AutoScaleValueType.INSTANT_VM, (double) lbConnections));
                     break;
             }
         }
@@ -1232,7 +1236,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
     public ExecutionResult createFileInVR(String routerIp, String filePath, String fileName, String content) {
         File keyFile = getSystemVmKeyFile();
         try {
-            SshHelper.scpTo(routerIp, 3922, "root", keyFile, null, filePath, content.getBytes("UTF-8"), fileName, null);
+            SshHelper.scpTo(routerIp, 3922, "root", keyFile, null, filePath, content.getBytes(StringUtils.getPreferredCharset()), fileName, null);
         } catch (Exception e) {
             logger.warn("Fail to create file " + filePath + fileName + " in VR " + routerIp, e);
             return new ExecutionResult(false, e.getMessage());
@@ -1280,7 +1284,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
     private int findRouterEthDeviceIndex(String domrName, String routerIp, String mac) throws Exception {
         File keyFile = getSystemVmKeyFile();
         logger.info("findRouterEthDeviceIndex. mac: " + mac);
-        ArrayList<String> skipInterfaces = new ArrayList<String>(Arrays.asList("all", "default", "lo"));
+        ArrayList<String> skipInterfaces = new ArrayList<>(Arrays.asList("all", "default", "lo"));
 
         // when we dynamically plug in a new NIC into virtual router, it may take time to show up in guest OS
         // we use a waiting loop here as a workaround to synchronize activities in systems
@@ -1347,7 +1351,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             int ethDeviceNum = findRouterEthDeviceIndex(domrName, routerIp, nic.getMac());
             nic.setDeviceId(ethDeviceNum);
         } catch (Exception e) {
-            String msg = "Prepare SetupGuestNetwork failed due to " + e.toString();
+            String msg = "Prepare SetupGuestNetwork failed due to " + e;
             logger.warn(msg, e);
             return new ExecutionResult(false, msg);
         }
@@ -1391,7 +1395,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             int ethDeviceNum = findRouterEthDeviceIndex(routerName, routerIp, pubIp.getVifMacAddress());
             pubIp.setNicDevId(ethDeviceNum);
         } catch (Exception e) {
-            String msg = "Prepare Ip SNAT failure due to " + e.toString();
+            String msg = "Prepare Ip SNAT failure due to " + e;
             logger.error(msg, e);
             return new ExecutionResult(false, e.toString());
         }
@@ -1407,7 +1411,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             int ethDeviceNum = findRouterEthDeviceIndex(routerName, routerIp, nic.getMac());
             nic.setDeviceId(ethDeviceNum);
         } catch (Exception e) {
-            String msg = "Prepare SetNetworkACL failed due to " + e.toString();
+            String msg = "Prepare SetNetworkACL failed due to " + e;
             logger.error(msg, e);
             return new ExecutionResult(false, msg);
         }
@@ -1428,7 +1432,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             return new PlugNicAnswer(cmd, true, "success");
         } catch (Exception e) {
             logger.error("Unexpected exception: ", e);
-            return new PlugNicAnswer(cmd, false, "Unable to execute PlugNicCommand due to " + e.toString());
+            return new PlugNicAnswer(cmd, false, "Unable to execute PlugNicCommand due to " + e);
         }
     }
 
@@ -1475,7 +1479,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
         VirtualDevice nic;
         Pair<ManagedObjectReference, String> networkInfo = prepareNetworkFromNicInfo(vmMo.getRunningHost(), nicTo, false, nicTo.getNetworkSegmentName(), vmType);
-        String dvSwitchUuid = null;
+        String dvSwitchUuid;
         if (VmwareHelper.isDvPortGroup(networkInfo.first())) {
             ManagedObjectReference dcMor = hyperHost.getHyperHostDatacenter();
             DatacenterMO dataCenterMo = new DatacenterMO(context, dcMor);
@@ -1537,7 +1541,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             }
 
             Pair<ManagedObjectReference, String> networkInfo = prepareNetworkFromNicInfo(vmMo.getRunningHost(), nicTo, false, null, cmd.getVMType());
-            String dvSwitchUuid = null;
+            String dvSwitchUuid;
             if (VmwareHelper.isDvPortGroup(networkInfo.first())) {
                 ManagedObjectReference dcMor = hyperHost.getHyperHostDatacenter();
                 DatacenterMO dataCenterMo = new DatacenterMO(context, dcMor);
@@ -1556,7 +1560,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             return new ReplugNicAnswer(cmd, true, "success");
         } catch (Exception e) {
             logger.error("Unexpected exception: ", e);
-            return new ReplugNicAnswer(cmd, false, "Unable to execute ReplugNicCommand due to " + e.toString());
+            return new ReplugNicAnswer(cmd, false, "Unable to execute ReplugNicCommand due to " + e);
         }
     }
 
@@ -1597,13 +1601,13 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             return new UnPlugNicAnswer(cmd, true, "success");
         } catch (Exception e) {
             logger.error("Unexpected exception: ", e);
-            return new UnPlugNicAnswer(cmd, false, "Unable to execute unPlugNicCommand due to " + e.toString());
+            return new UnPlugNicAnswer(cmd, false, "Unable to execute unPlugNicCommand due to " + e);
         }
     }
 
     private void plugPublicNic(VirtualMachineMO vmMo, final String vlanId, final IpAddressTO ipAddressTO) throws Exception {
         // TODO : probably need to set traffic shaping
-        Pair<ManagedObjectReference, String> networkInfo = null;
+        Pair<ManagedObjectReference, String> networkInfo;
         VirtualSwitchType vSwitchType = VirtualSwitchType.StandardVirtualSwitch;
         if (_publicTrafficInfo != null) {
             vSwitchType = _publicTrafficInfo.getVirtualSwitchType();
@@ -1744,7 +1748,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 ip.setNewNic(addVif);
             }
         } catch (Throwable e) {
-            logger.error("Unexpected exception: " + e.toString() + " will shortcut rest of IPAssoc commands", e);
+            logger.error("Unexpected exception: " + e + " will shortcut rest of IPAssoc commands", e);
             return new ExecutionResult(false, e.toString());
         }
         return new ExecutionResult(true, null);
@@ -1788,7 +1792,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 configureNicDevice(vmMo, nicInfo.first(), VirtualDeviceConfigSpecOperation.REMOVE, "unplugNicCommand");
             }
         } catch (Throwable e) {
-            logger.error("Unexpected exception: " + e.toString() + " will shortcut rest of IPAssoc commands", e);
+            logger.error("Unexpected exception: " + e + " will shortcut rest of IPAssoc commands", e);
             return new ExecutionResult(false, e.toString());
         }
         return new ExecutionResult(true, null);
@@ -1845,7 +1849,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         } catch (Exception e) {
             String msg = "Command failed due to " + VmwareHelper.getExceptionMessage(e);
             logger.error(msg);
-            result = new Pair<Boolean, String>(false, msg);
+            result = new Pair<>(false, msg);
         }
         if (logger.isDebugEnabled()) {
             logger.debug(script + " execution result: " + result.first().toString());
@@ -1889,7 +1893,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
     }
 
     private DiskTO[] validateDisks(DiskTO[] disks) {
-        List<DiskTO> validatedDisks = new ArrayList<DiskTO>();
+        List<DiskTO> validatedDisks = new ArrayList<>();
 
         for (DiskTO vol : disks) {
             if (vol.getType() != Volume.Type.ISO) {
@@ -1956,14 +1960,14 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             // Check if license supports the feature
             VmwareHelper.isFeatureLicensed(hyperHost, FeatureKeyConstants.HOTPLUG);
             VmwareHelper.setVmScaleUpConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getMaxSpeed(), getReservedCpuMHZ(vmSpec), (int) requestedMaxMemoryInMb, ramMb,
-                    vmSpec.getLimitCpuUse());
+                    vmSpec.isLimitCpuUse());
 
             if (!vmMo.configureVm(vmConfigSpec)) {
                 throw new Exception("Unable to execute ScaleVmCommand");
             }
         } catch (Exception e) {
             logger.error(String.format("ScaleVmCommand failed due to: [%s].", VmwareHelper.getExceptionMessage(e)), e);
-            return new ScaleVmAnswer(cmd, false, String.format("Unable to execute ScaleVmCommand due to: [%s].", e.toString()));
+            return new ScaleVmAnswer(cmd, false, String.format("Unable to execute ScaleVmCommand due to: [%s].", e));
         }
         return new ScaleVmAnswer(cmd, true, null);
     }
@@ -2032,12 +2036,11 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         String existingVmName = null;
         VirtualMachineFileInfo existingVmFileInfo = null;
         VirtualMachineFileLayoutEx existingVmFileLayout = null;
-        List<DatastoreMO> existingDatastores = new ArrayList<DatastoreMO>();
-        String diskStoragePolicyId = null;
+        List<DatastoreMO> existingDatastores = new ArrayList<>();
+        String diskStoragePolicyId;
         String vmStoragePolicyId = null;
         VirtualMachineDefinedProfileSpec diskProfileSpec = null;
         VirtualMachineDefinedProfileSpec vmProfileSpec = null;
-
 
         DeployAsIsInfoTO deployAsIsInfo = vmSpec.getDeployAsIsInfo();
         boolean deployAsIs = deployAsIsInfo != null;
@@ -2082,7 +2085,6 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             }
 
             VirtualMachineDiskInfoBuilder diskInfoBuilder = null;
-            VirtualDevice[] nicDevices = null;
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmInternalCSName);
             DiskControllerType systemVmScsiControllerType = DiskControllerType.lsilogic;
             int firstScsiControllerBusNum = 0;
@@ -2099,7 +2101,6 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 diskDatastores = vmMo.getAllDiskDatastores();
                 diskInfoBuilder = vmMo.getDiskInfoBuilder();
                 hasSnapshot = vmMo.hasSnapshot();
-                nicDevices = vmMo.getNicDevices();
 
                 tearDownVmDevices(vmMo, hasSnapshot, deployAsIs);
                 ensureDiskControllersInternal(vmMo, systemVm, controllerInfo, systemVmScsiControllerType,
@@ -2115,17 +2116,20 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                     }
 
                     takeVmFromOtherHyperHost(hyperHost, vmInternalCSName);
+                    vmMo = hyperHost.findVmOnHyperHost(vmInternalCSName);
 
-                    if (getVmPowerState(vmMo) != PowerState.PowerOff)
-                        vmMo.safePowerOff(_shutdownWaitMs);
+                    if (vmMo != null) {
+                        if (getVmPowerState(vmMo) != PowerState.PowerOff)
+                            vmMo.safePowerOff(_shutdownWaitMs);
 
-                    diskInfoBuilder = vmMo.getDiskInfoBuilder();
-                    hasSnapshot = vmMo.hasSnapshot();
-                    diskDatastores = vmMo.getAllDiskDatastores();
+                        diskInfoBuilder = vmMo.getDiskInfoBuilder();
+                        hasSnapshot = vmMo.hasSnapshot();
+                        diskDatastores = vmMo.getAllDiskDatastores();
 
-                    tearDownVmDevices(vmMo, hasSnapshot, deployAsIs);
-                    ensureDiskControllersInternal(vmMo, systemVm, controllerInfo, systemVmScsiControllerType,
-                            numScsiControllerForSystemVm, firstScsiControllerBusNum, deployAsIs);
+                        tearDownVmDevices(vmMo, hasSnapshot, deployAsIs);
+                        ensureDiskControllersInternal(vmMo, systemVm, controllerInfo, systemVmScsiControllerType,
+                                numScsiControllerForSystemVm, firstScsiControllerBusNum, deployAsIs);
+                    }
                 } else {
                     // If a VM with the same name is found in a different cluster in the DC, unregister the old VM and configure a new VM (cold-migration).
                     VirtualMachineMO existingVmInDc = dcMo.findVm(vmInternalCSName);
@@ -2142,7 +2146,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                         vmMo = hyperHost.findVmOnHyperHost(vmInternalCSName);
                         if (vmMo == null) {
                             logger.info("Cloned deploy-as-is VM " + vmInternalCSName + " is not in this host, relocating it");
-                            vmMo = takeVmFromOtherHyperHost(hyperHost, vmInternalCSName);
+                            takeVmFromOtherHyperHost(hyperHost, vmInternalCSName);
                         }
                     } else {
                         DiskTO rootDisk = null;
@@ -2183,7 +2187,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                             }
                             tearDownVm(vmMo);
                         } else if (!hyperHost.createBlankVm(vmNameOnVcenter, vmInternalCSName, vmSpec.getCpus(), vmSpec.getMaxSpeed().intValue(), getReservedCpuMHZ(vmSpec),
-                                vmSpec.getLimitCpuUse(), (int) (vmSpec.getMaxRam() / ResourceType.bytesToMiB), getReservedMemoryMb(vmSpec), guestOsId, rootDiskDataStoreDetails.first(), false,
+                                vmSpec.isLimitCpuUse(), (int) (vmSpec.getMaxRam() / ResourceType.bytesToMiB), getReservedMemoryMb(vmSpec), guestOsId, rootDiskDataStoreDetails.first(), false,
                                 controllerInfo, systemVm)) {
                             throw new Exception("Failed to create VM. vmName: " + vmInternalCSName);
                         }
@@ -2227,7 +2231,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[totalChangeDevices];
             DiskTO[] sortedDisks = sortVolumesByDeviceId(disks);
             VmwareHelper.setBasicVmConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getMaxSpeed(), getReservedCpuMHZ(vmSpec), (int) (vmSpec.getMaxRam() / (1024 * 1024)),
-                    getReservedMemoryMb(vmSpec), guestOsId, vmSpec.getLimitCpuUse(), deployAsIs);
+                    getReservedMemoryMb(vmSpec), guestOsId, vmSpec.isLimitCpuUse(), deployAsIs);
 
             // Check for multi-cores per socket settings
             int numCoresPerSocket = 1;
@@ -2252,11 +2256,11 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 vmConfigSpec.setCpuHotAddEnabled(vmMo.isCpuHotAddSupported(guestOsId) && vmSpec.isEnableDynamicallyScaleVm());
             }
 
-            if(!vmMo.isMemoryHotAddSupported(guestOsId) && vmSpec.isEnableDynamicallyScaleVm()){
+            if (!vmMo.isMemoryHotAddSupported(guestOsId) && vmSpec.isEnableDynamicallyScaleVm()) {
                 logger.warn("hotadd of memory is not supported, dynamic scaling feature can not be applied to vm: " + vmInternalCSName);
             }
 
-            if(!vmMo.isCpuHotAddSupported(guestOsId) && vmSpec.isEnableDynamicallyScaleVm()){
+            if (!vmMo.isCpuHotAddSupported(guestOsId) && vmSpec.isEnableDynamicallyScaleVm()) {
                 logger.warn("hotadd of cpu is not supported, dynamic scaling feature can not be applied to vm: " + vmInternalCSName);
             }
 
@@ -2345,13 +2349,16 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                     continue;
                 }
 
+                VirtualMachineDiskInfo matchingExistingDisk = getMatchingExistingDisk(diskInfoBuilder, vol, hyperHost, context);
+                Pair<ManagedObjectReference, DatastoreMO> volumeDsDetails = getVolumeDatastoreDetails(vol, dataStoresDetails);
+                syncVolumeDatastoreAndPathForDatastoreCluster(vol, diskInfoBuilder, matchingExistingDisk, volumeDsDetails, diskDatastores, hyperHost, context);
+
                 if (deployAsIs && vol.getType() == Volume.Type.ROOT) {
                     rootDiskTO = vol;
                     resizeRootDiskOnVMStart(vmMo, rootDiskTO, hyperHost, context);
                     continue;
                 }
 
-                VirtualMachineDiskInfo matchingExistingDisk = getMatchingExistingDisk(diskInfoBuilder, vol, hyperHost, context);
                 String diskController = getDiskController(vmMo, matchingExistingDisk, vol, chosenDiskControllers, deployAsIs);
                 if (DiskControllerType.getType(diskController) == DiskControllerType.ide) {
                     controllerKey = vmMo.getIDEControllerKey(ideUnitNumber);
@@ -2360,7 +2367,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                         // Ensure maximum of 2 data volumes over IDE controller, 3 includeing root volume
                         if (vmMo.getNumberOfVirtualDisks() > 3) {
                             throw new CloudRuntimeException("Found more than 3 virtual disks attached to this VM [" + vmMo.getVmName() + "]. Unable to implement the disks over "
-                                    + diskController + " controller, as maximum number of devices supported over IDE controller is 4 includeing CDROM device.");
+                                    + diskController + " controller, as maximum number of devices supported over IDE controller is 4 including CDROM device.");
                         }
                     }
                 } else {
@@ -2380,54 +2387,9 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 if (!hasSnapshot) {
                     deviceConfigSpecArray[i] = new VirtualDeviceConfigSpec();
 
-                    VolumeObjectTO volumeTO = (VolumeObjectTO) vol.getData();
-                    DataStoreTO primaryStore = volumeTO.getDataStore();
-                    Map<String, String> details = vol.getDetails();
-                    boolean managed = false;
-                    String iScsiName = null;
-
-                    if (details != null) {
-                        managed = Boolean.parseBoolean(details.get(DiskTO.MANAGED));
-                        iScsiName = details.get(DiskTO.IQN);
-                    }
-
-                    String primaryStoreUuid = primaryStore.getUuid();
-                    // if the storage is managed, iScsiName should not be null
-                    String datastoreName = managed ? VmwareResource.getDatastoreName(iScsiName) : primaryStoreUuid;
-                    Pair<ManagedObjectReference, DatastoreMO> volumeDsDetails = dataStoresDetails.get(datastoreName);
-
-                    assert (volumeDsDetails != null);
-                    if (volumeDsDetails == null) {
-                        throw new Exception("Primary datastore " + primaryStore.getUuid() + " is not mounted on host.");
-                    }
-
-                    if (vol.getDetails().get(DiskTO.PROTOCOL_TYPE) != null && vol.getDetails().get(DiskTO.PROTOCOL_TYPE).equalsIgnoreCase("DatastoreCluster")) {
-                        if (diskInfoBuilder != null && matchingExistingDisk != null) {
-                            String[] diskChain = matchingExistingDisk.getDiskChain();
-                            if (diskChain != null && diskChain.length > 0) {
-                                DatastoreFile file = new DatastoreFile(diskChain[0]);
-                                if (!file.getFileBaseName().equalsIgnoreCase(volumeTO.getPath())) {
-                                    if (logger.isInfoEnabled())
-                                        logger.info("Detected disk-chain top file change on volume: " + volumeTO.getId() + " " + volumeTO.getPath() + " -> " + file.getFileBaseName());
-                                    volumeTO.setPath(file.getFileBaseName());
-                                }
-                            }
-                            DatastoreMO diskDatastoreMofromVM = getDataStoreWhereDiskExists(hyperHost, context, diskInfoBuilder, vol, diskDatastores);
-                            if (diskDatastoreMofromVM != null) {
-                                String actualPoolUuid = diskDatastoreMofromVM.getCustomFieldValue(CustomFieldConstants.CLOUD_UUID);
-                                if (actualPoolUuid != null && !actualPoolUuid.equalsIgnoreCase(primaryStore.getUuid())) {
-                                    volumeDsDetails = new Pair<>(diskDatastoreMofromVM.getMor(), diskDatastoreMofromVM);
-                                    if (logger.isInfoEnabled())
-                                        logger.info("Detected datastore uuid change on volume: " + volumeTO.getId() + " " + primaryStore.getUuid() + " -> " + actualPoolUuid);
-                                    ((PrimaryDataStoreTO)primaryStore).setUuid(actualPoolUuid);
-                                }
-                            }
-                        }
-                    }
-
                     String[] diskChain = syncDiskChain(dcMo, vmMo, vol, matchingExistingDisk, volumeDsDetails.second());
 
-                    int deviceNumber = -1;
+                    int deviceNumber;
                     if (controllerKey == vmMo.getIDEControllerKey(ideUnitNumber)) {
                         deviceNumber = ideUnitNumber % VmwareHelper.MAX_ALLOWED_DEVICES_IDE_CONTROLLER;
                         ideUnitNumber++;
@@ -2436,6 +2398,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                         scsiUnitNumber++;
                     }
 
+                    VolumeObjectTO volumeTO = (VolumeObjectTO) vol.getData();
                     Long maxIops = volumeTO.getIopsWriteRate() + volumeTO.getIopsReadRate();
                     VirtualDevice device = VmwareHelper.prepareDiskDevice(vmMo, null, controllerKey, diskChain, volumeDsDetails.first(), deviceNumber, i + 1, maxIops);
                     logger.debug(LogUtils.logGsonWithoutException("The following definitions will be used to start the VM: virtual device [%s], volume [%s].", device, volumeTO));
@@ -2503,7 +2466,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
             NiciraNvpApiVersion.logNiciraApiVersion();
 
-            Map<String, String> nicUuidToDvSwitchUuid = new HashMap<String, String>();
+            Map<String, String> nicUuidToDvSwitchUuid = new HashMap<>();
             for (NicTO nicTo : sortNicsByDeviceId(nics)) {
                 logger.info("Prepare NIC device based on NicTO: " + _gson.toJson(nicTo));
 
@@ -2567,7 +2530,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             //
 
             // pass boot arguments through machine.id & perform customized options to VMX
-            ArrayList<OptionValue> extraOptions = new ArrayList<OptionValue>();
+            ArrayList<OptionValue> extraOptions = new ArrayList<>();
             configBasicExtraOption(extraOptions, vmSpec);
 
             if (deployAsIs) {
@@ -2594,12 +2557,16 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
             setBootOptions(vmSpec, bootMode, vmConfigSpec);
 
+            // Config vTPM
+            configureVirtualTPM(vmMo, vmSpec, vmConfigSpec);
+
             if (StringUtils.isNotEmpty(vmStoragePolicyId)) {
                 vmConfigSpec.getVmProfile().add(vmProfileSpec);
                 if (logger.isTraceEnabled()) {
                     logger.trace(String.format("Configuring the VM %s with storage policy: %s", vmInternalCSName, vmStoragePolicyId));
                 }
             }
+
             //
             // Configure VM
             //
@@ -2626,7 +2593,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
             Map<String, Map<String, String>> iqnToData = new HashMap<>();
 
-            postDiskConfigBeforeStart(vmMo, vmSpec, sortedDisks, ideControllerKey, scsiControllerKey, iqnToData, hyperHost, context);
+            postDiskConfigBeforeStart(vmMo, vmSpec, sortedDisks, iqnToData, hyperHost, context);
 
             //
             // Power-on VM
@@ -2669,12 +2636,12 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
             // Since VM was successfully powered-on, if there was an existing VM in a different cluster that was unregistered, delete all the files associated with it.
             if (existingVmName != null && existingVmFileLayout != null) {
-                List<String> vmDatastoreNames = new ArrayList<String>();
+                List<String> vmDatastoreNames = new ArrayList<>();
                 for (DatastoreMO vmDatastore : vmMo.getAllDatastores()) {
                     vmDatastoreNames.add(vmDatastore.getName());
                 }
                 // Don't delete files that are in a datastore that is being used by the new VM as well (zone-wide datastore).
-                List<String> skipDatastores = new ArrayList<String>();
+                List<String> skipDatastores = new ArrayList<>();
                 for (DatastoreMO existingDatastore : existingDatastores) {
                     if (vmDatastoreNames.contains(existingDatastore.getName())) {
                         skipDatastores.add(existingDatastore.getName());
@@ -2705,15 +2672,83 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         }
     }
 
+    private Pair<ManagedObjectReference, DatastoreMO> getVolumeDatastoreDetails(DiskTO vol, HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> dataStoresDetails) throws Exception {
+        boolean managed = false;
+        String iScsiName = null;
+        Map<String, String> details = vol.getDetails();
+        if (MapUtils.isNotEmpty(details)) {
+            managed = Boolean.parseBoolean(details.get(DiskTO.MANAGED));
+            iScsiName = details.get(DiskTO.IQN);
+        }
+
+        VolumeObjectTO volumeTO = (VolumeObjectTO) vol.getData();
+        DataStoreTO primaryStore = volumeTO.getDataStore();
+        String primaryStoreUuid = primaryStore.getUuid();
+        // if the storage is managed, iScsiName should not be null
+        String datastoreName = managed ? VmwareResource.getDatastoreName(iScsiName) : primaryStoreUuid;
+        Pair<ManagedObjectReference, DatastoreMO> volumeDsDetails = dataStoresDetails.get(datastoreName);
+        if (volumeDsDetails == null) {
+            throw new Exception("Primary datastore " + primaryStore.getUuid() + " is not mounted on host.");
+        }
+
+        return volumeDsDetails;
+    }
+
+    private void syncVolumeDatastoreAndPathForDatastoreCluster(DiskTO vol, VirtualMachineDiskInfoBuilder diskInfoBuilder, VirtualMachineDiskInfo matchingExistingDisk,
+                                                               Pair<ManagedObjectReference, DatastoreMO> volumeDsDetails, List<Pair<Integer, ManagedObjectReference>> diskDatastores,
+                                                               VmwareHypervisorHost hyperHost, VmwareContext context) throws Exception {
+        if (vol.getDetails() == null || vol.getDetails().get(DiskTO.PROTOCOL_TYPE) == null || !vol.getDetails().get(DiskTO.PROTOCOL_TYPE).equalsIgnoreCase("DatastoreCluster")) {
+            return;
+        }
+
+        if (diskInfoBuilder != null && matchingExistingDisk != null) {
+            String[] diskChain = matchingExistingDisk.getDiskChain();
+            if (diskChain != null && diskChain.length > 0) {
+                DatastoreFile file = new DatastoreFile(diskChain[0]);
+                VolumeObjectTO volumeTO = (VolumeObjectTO) vol.getData();
+                if (!file.getFileBaseName().equalsIgnoreCase(volumeTO.getPath())) {
+                    if (logger.isInfoEnabled()) {
+                        logger.info("Detected disk-chain top file change on volume: " + volumeTO.getId() + " " + volumeTO.getPath() + " -> " + file.getFileBaseName());
+                    }
+                    volumeTO.setPath(file.getFileBaseName());
+                    vol.setPath(file.getFileBaseName());
+                }
+            }
+            DatastoreMO diskDatastoreMofromVM = getDataStoreWhereDiskExists(hyperHost, context, diskInfoBuilder, vol, diskDatastores);
+            if (diskDatastoreMofromVM != null) {
+                String actualPoolUuid = diskDatastoreMofromVM.getCustomFieldValue(CustomFieldConstants.CLOUD_UUID);
+                VolumeObjectTO volumeTO = (VolumeObjectTO) vol.getData();
+                DataStoreTO primaryStore = volumeTO.getDataStore();
+                if (actualPoolUuid != null && !actualPoolUuid.equalsIgnoreCase(primaryStore.getUuid())) {
+                    volumeDsDetails = new Pair<>(diskDatastoreMofromVM.getMor(), diskDatastoreMofromVM);
+                    if (logger.isInfoEnabled()) {
+                        logger.info("Detected datastore uuid change on volume: " + volumeTO.getId() + " " + primaryStore.getUuid() + " -> " + actualPoolUuid);
+                    }
+                    ((PrimaryDataStoreTO)primaryStore).setUuid(actualPoolUuid);
+                }
+            }
+        }
+    }
+
     private boolean powerOnVM(final VirtualMachineMO vmMo, final String vmInternalCSName, final String vmNameOnVcenter) throws Exception {
-        int retry = 20;
-        while (retry-- > 0) {
+        final int retry = 20;
+        int retryAttempt = 0;
+        while (++retryAttempt <= retry) {
             try {
+                logger.debug(String.format("VM %s, powerOn attempt #%d", vmInternalCSName, retryAttempt));
                 return vmMo.powerOn();
             } catch (Exception e) {
                 logger.info(String.format("Got exception while power on VM %s with hostname %s", vmInternalCSName, vmNameOnVcenter), e);
-                if (e.getMessage() != null && e.getMessage().contains("File system specific implementation of Ioctl[file] failed")) {
+                if (e.getMessage() != null &&
+                        (e.getMessage().contains("File system specific implementation of Ioctl[file] failed") ||
+                                e.getMessage().contains("Unable to access file") ||
+                                e.getMessage().contains("it is locked"))) {
                     logger.debug(String.format("Failed to power on VM %s with hostname %s. Retrying", vmInternalCSName, vmNameOnVcenter));
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException ie) {
+                        logger.debug(String.format("Waiting to power on VM %s been interrupted: ", vmInternalCSName));
+                    }
                 } else {
                     throw e;
                 }
@@ -3060,7 +3095,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         final Pair<VirtualDisk, String> vdisk = getVirtualDiskInfo(vmMo, appendFileType(rootDiskTO.getPath(), VMDK_EXTENSION));
         assert (vdisk != null);
 
-        Long reqSize = 0L;
+        long reqSize = 0L;
         final VolumeObjectTO volumeTO = ((VolumeObjectTO) rootDiskTO.getData());
         if (volumeTO != null) {
             reqSize = volumeTO.getSize() / 1024;
@@ -3176,8 +3211,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
      * @param vmConfigSpec  virtual machine config spec
      */
     protected void modifyVmVideoCardVRamSize(VirtualMachineVideoCard videoCard, VirtualMachineMO vmMo, long svgaVmramSize, VirtualMachineConfigSpec vmConfigSpec) {
-        if (videoCard.getVideoRamSizeInKB().longValue() != svgaVmramSize) {
-           logger.info("Video card memory was set " + toHumanReadableSize(videoCard.getVideoRamSizeInKB().longValue()) + " instead of " + toHumanReadableSize(svgaVmramSize));
+        if (videoCard.getVideoRamSizeInKB() != svgaVmramSize) {
+           logger.info("Video card memory was set " + toHumanReadableSize(videoCard.getVideoRamSizeInKB()) + " instead of " + toHumanReadableSize(svgaVmramSize));
             configureSpecVideoCardNewVRamSize(videoCard, svgaVmramSize, vmConfigSpec);
         }
     }
@@ -3200,12 +3235,63 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         vmConfigSpec.getDeviceChange().add(arrayVideoCardConfigSpecs);
     }
 
+    /**
+     * Add or Remove virtual TPM module
+     *
+     * @param vmMo         virtual machine mo
+     * @param vmSpec       virtual machine specs
+     * @param vmConfigSpec virtual machine config spec
+     * @throws Exception exception
+     */
+    protected void configureVirtualTPM(VirtualMachineMO vmMo, VirtualMachineTO vmSpec, VirtualMachineConfigSpec vmConfigSpec) throws Exception {
+        String virtualTPMEnabled = vmSpec.getDetails().getOrDefault(VmDetailConstants.VIRTUAL_TPM_ENABLED, null);
+        if (Boolean.parseBoolean(virtualTPMEnabled)) {
+            for (VirtualDevice device : vmMo.getAllDeviceList()) {
+                if (device instanceof VirtualTPM) {
+                    logger.debug(String.format("Virtual TPM device has already been added to VM %s, returning", vmMo.getVmName()));
+                    return;
+                }
+            }
+            logger.debug(String.format("Adding Virtual TPM device to the VM %s", vmMo.getVmName()));
+            addVirtualTPMDevice(vmConfigSpec);
+        } else if (virtualTPMEnabled == null) {
+            logger.debug(String.format("Virtual TPM device is neither enabled nor disabled for VM %s, skipping", vmMo.getVmName()));
+        } else {
+            logger.debug(String.format("Virtual TPM device is disabled for VM %s", vmMo.getVmName()));
+            for (VirtualDevice device : vmMo.getAllDeviceList()) {
+                if (device instanceof VirtualTPM) {
+                    logger.debug(String.format("Removing Virtual TPM device from VM %s as it is disabled", vmMo.getVmName()));
+                    removeVirtualTPMDevice(vmConfigSpec, (VirtualTPM) device);
+                }
+            }
+        }
+    }
+
+    protected void addVirtualTPMDevice(VirtualMachineConfigSpec vmConfigSpec) {
+        Description description = new Description();
+        description.setSummary("Trusted Platform Module");
+        description.setLabel("Trusted Platform Module");
+        VirtualTPM virtualTPM = new VirtualTPM();
+        virtualTPM.setDeviceInfo(description);
+        VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
+        deviceConfigSpec.setDevice(virtualTPM);
+        deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
+        vmConfigSpec.getDeviceChange().add(deviceConfigSpec);
+    }
+
+    protected void removeVirtualTPMDevice(VirtualMachineConfigSpec vmConfigSpec, VirtualTPM virtualTPM) {
+        VirtualDeviceConfigSpec virtualDeviceConfigSpec = new VirtualDeviceConfigSpec();
+        virtualDeviceConfigSpec.setDevice(virtualTPM);
+        virtualDeviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.REMOVE);
+        vmConfigSpec.getDeviceChange().add(virtualDeviceConfigSpec);
+    }
+
     private void tearDownVm(VirtualMachineMO vmMo) throws Exception {
 
         if (vmMo == null)
             return;
 
-        boolean hasSnapshot = false;
+        boolean hasSnapshot;
         hasSnapshot = vmMo.hasSnapshot();
         if (!hasSnapshot)
             vmMo.tearDownDevices(new Class<?>[]{VirtualDisk.class, VirtualEthernetCard.class});
@@ -3216,7 +3302,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
     int getReservedMemoryMb(VirtualMachineTO vmSpec) {
         if (vmSpec.getDetails().get(VMwareGuru.VmwareReserveMemory.key()).equalsIgnoreCase("true")) {
-            if(vmSpec.getDetails().get(VmDetailConstants.RAM_RESERVATION) != null){
+            if (vmSpec.getDetails().get(VmDetailConstants.RAM_RESERVATION) != null) {
                 float reservedMemory = (vmSpec.getMaxRam() * Float.parseFloat(vmSpec.getDetails().get(VmDetailConstants.RAM_RESERVATION)));
                 return (int) (reservedMemory / ResourceType.bytesToMiB);
             }
@@ -3308,7 +3394,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         } else if (_instanceNameFlag && vmSpec.getHostName() != null) {
             vmNameOnVcenter = vmSpec.getHostName();
         }
-        return new Pair<String, String>(vmInternalCSName, vmNameOnVcenter);
+        return new Pair<>(vmInternalCSName, vmNameOnVcenter);
     }
 
     protected void configNestedHVSupport(VirtualMachineMO vmMo, VirtualMachineTO vmSpec, VirtualMachineConfigSpec vmConfigSpec) throws Exception {
@@ -3326,7 +3412,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             if (nestedHvSupported == null) {
                 // nestedHvEnabled property is supported only since VMware 5.1. It's not defined for earlier versions.
                 logger.warn("Hypervisor doesn't support nested virtualization, unable to set config for VM " + vmSpec.getName());
-            } else if (nestedHvSupported.booleanValue()) {
+            } else if (nestedHvSupported) {
                 logger.debug("Hypervisor supports nested virtualization, enabling for VM " + vmSpec.getName());
                 vmConfigSpec.setNestedHVEnabled(true);
             } else {
@@ -3397,7 +3483,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         for (NicTO nicTo : sortNicsByDeviceId(vmSpec.getNics())) {
             if (nicTo.getBroadcastType() == BroadcastDomainType.Lswitch) {
                 // We need to create a port with a unique vlan and pass the key to the nic device
-                logger.trace("Nic " + nicTo.toString() + " is connected to an NVP logicalswitch");
+                logger.trace("Nic " + nicTo + " is connected to an NVP logicalswitch");
                 VirtualDevice nicVirtualDevice = vmMo.getNicDeviceByIndex(nicIndex);
                 if (nicVirtualDevice == null) {
                     throw new Exception("Failed to find a VirtualDevice for nic " + nicIndex); //FIXME Generic exceptions are bad
@@ -3411,7 +3497,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                     String portGroupKey = port.getPortgroupKey();
                     String dvSwitchUuid = port.getSwitchUuid();
 
-                    logger.debug("NIC " + nicTo.toString() + " is connected to dvSwitch " + dvSwitchUuid + " pg " + portGroupKey + " port " + portKey);
+                    logger.debug("NIC " + nicTo + " is connected to dvSwitch " + dvSwitchUuid + " pg " + portGroupKey + " port " + portKey);
 
                     ManagedObjectReference dvSwitchManager = vmMo.getContext().getVimClient().getServiceContent().getDvSwitchManager();
                     ManagedObjectReference dvSwitch = vmMo.getContext().getVimClient().getService().queryDvsByUuid(dvSwitchManager, dvSwitchUuid);
@@ -3423,7 +3509,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                     List<DistributedVirtualPort> dvPorts = vmMo.getContext().getVimClient().getService().fetchDVPorts(dvSwitch, criteria);
 
                     DistributedVirtualPort vmDvPort = null;
-                    List<Integer> usedVlans = new ArrayList<Integer>();
+                    List<Integer> usedVlans = new ArrayList<>();
                     for (DistributedVirtualPort dvPort : dvPorts) {
                         // Find the port for this NIC by portkey
                         if (portKey.equals(dvPort.getKey())) {
@@ -3438,7 +3524,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                     }
 
                     if (vmDvPort == null) {
-                        throw new Exception("Empty port list from dvSwitch for nic " + nicTo.toString());
+                        throw new Exception("Empty port list from dvSwitch for nic " + nicTo);
                     }
 
                     DVPortConfigInfo dvPortConfigInfo = vmDvPort.getConfig();
@@ -3468,13 +3554,13 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                         dvPortConfigSpec.setSetting(edittedSettings);
                         dvPortConfigSpec.setOperation("edit");
                         dvPortConfigSpec.setKey(portKey);
-                        List<DVPortConfigSpec> dvPortConfigSpecs = new ArrayList<DVPortConfigSpec>();
+                        List<DVPortConfigSpec> dvPortConfigSpecs = new ArrayList<>();
                         dvPortConfigSpecs.add(dvPortConfigSpec);
                         ManagedObjectReference task = vmMo.getContext().getVimClient().getService().reconfigureDVPortTask(dvSwitch, dvPortConfigSpecs);
                         if (!vmMo.getContext().getVimClient().waitForTask(task)) {
-                            throw new Exception("Failed to configure the dvSwitch port for nic " + nicTo.toString());
+                            throw new Exception("Failed to configure the dvSwitch port for nic " + nicTo);
                         }
-                        logger.debug("NIC " + nicTo.toString() + " connected to vlan " + i);
+                        logger.debug("NIC " + nicTo + " connected to vlan " + i);
                     } else {
                         logger.trace("Port already configured and set to vlan " + vlanId.getVlanId());
                     }
@@ -3535,8 +3621,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
     private Pair<String, String> getVMDiskInfo(String volumePath, boolean isManaged, String iScsiName, String datastoreUUID,
                                                VmwareHypervisorHost hyperHost, VmwareContext context) throws Exception {
-        String dsName = null;
-        String diskBackingFileBaseName = null;
+        String dsName;
+        String diskBackingFileBaseName;
 
         if (isManaged) {
             // if the storage is managed, iScsiName should not be null
@@ -3554,18 +3640,18 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
     private VirtualMachineDiskInfo getMatchingExistingDisk(VirtualMachineDiskInfoBuilder diskInfoBuilder, DiskTO vol, VmwareHypervisorHost hyperHost, VmwareContext context)
             throws Exception {
-        if (diskInfoBuilder != null) {
-            VolumeObjectTO volume = (VolumeObjectTO) vol.getData();
-            String chainInfo = volume.getChainInfo();
-            Map<String, String> details = vol.getDetails();
-            boolean isManaged = details != null && Boolean.parseBoolean(details.get(DiskTO.MANAGED));
-            String iScsiName = details.get(DiskTO.IQN);
-            String datastoreUUID = volume.getDataStore().getUuid();
-
-            return getMatchingExistingDiskWithVolumeDetails(diskInfoBuilder, volume.getPath(), chainInfo, isManaged, iScsiName, datastoreUUID, hyperHost, context);
-        } else {
+        if (diskInfoBuilder == null) {
             return null;
         }
+
+        VolumeObjectTO volume = (VolumeObjectTO) vol.getData();
+        String chainInfo = volume.getChainInfo();
+        Map<String, String> details = vol.getDetails();
+        boolean isManaged = details != null && Boolean.parseBoolean(details.get(DiskTO.MANAGED));
+        String iScsiName = details.get(DiskTO.IQN);
+        String datastoreUUID = volume.getDataStore().getUuid();
+
+        return getMatchingExistingDiskWithVolumeDetails(diskInfoBuilder, volume.getPath(), chainInfo, isManaged, iScsiName, datastoreUUID, hyperHost, context);
     }
 
     private String getDiskController(VirtualMachineMO vmMo, VirtualMachineDiskInfo matchingExistingDisk, DiskTO vol, Pair<String, String> controllerInfo, boolean deployAsIs) throws Exception {
@@ -3590,34 +3676,36 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         return VmwareHelper.getControllerBasedOnDiskType(controllerInfo, vol);
     }
 
-    private void postDiskConfigBeforeStart(VirtualMachineMO vmMo, VirtualMachineTO vmSpec, DiskTO[] sortedDisks, int ideControllerKey,
-                                           int scsiControllerKey, Map<String, Map<String, String>> iqnToData, VmwareHypervisorHost hyperHost, VmwareContext context) throws Exception {
+    private void postDiskConfigBeforeStart(VirtualMachineMO vmMo, VirtualMachineTO vmSpec, DiskTO[] sortedDisks,
+                                           Map<String, Map<String, String>> iqnToData, VmwareHypervisorHost hyperHost, VmwareContext context) throws Exception {
         VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
 
         for (DiskTO vol : sortedDisks) {
             if (vol.getType() == Volume.Type.ISO)
                 continue;
 
-            VolumeObjectTO volumeTO = (VolumeObjectTO) vol.getData();
-
             VirtualMachineDiskInfo diskInfo = getMatchingExistingDisk(diskInfoBuilder, vol, hyperHost, context);
-            assert (diskInfo != null);
+            if (diskInfo == null) {
+                continue;
+            }
 
             String[] diskChain = diskInfo.getDiskChain();
-            assert (diskChain.length > 0);
-
-            Map<String, String> details = vol.getDetails();
-            boolean managed = false;
-
-            if (details != null) {
-                managed = Boolean.parseBoolean(details.get(DiskTO.MANAGED));
+            if (diskChain.length <= 0) {
+                continue;
             }
 
             DatastoreFile file = new DatastoreFile(diskChain[0]);
 
+            boolean managed = false;
+            Map<String, String> details = vol.getDetails();
+            if (details != null) {
+                managed = Boolean.parseBoolean(details.get(DiskTO.MANAGED));
+            }
+
+            VolumeObjectTO volumeTO = (VolumeObjectTO) vol.getData();
+
             if (managed) {
                 DatastoreFile originalFile = new DatastoreFile(volumeTO.getPath());
-
                 if (!file.getFileBaseName().equalsIgnoreCase(originalFile.getFileBaseName())) {
                     if (logger.isInfoEnabled())
                         logger.info("Detected disk-chain top file change on volume: " + volumeTO.getId() + " " + volumeTO.getPath() + " -> " + diskChain[0]);
@@ -3630,7 +3718,6 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             }
 
             VolumeObjectTO volInSpec = getVolumeInSpec(vmSpec, volumeTO);
-
             if (volInSpec != null) {
                 if (managed) {
                     Map<String, String> data = new HashMap<>();
@@ -3711,11 +3798,11 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
     private static NicTO[] sortNicsByDeviceId(NicTO[] nics) {
 
-        List<NicTO> listForSort = new ArrayList<NicTO>();
+        List<NicTO> listForSort = new ArrayList<>();
         for (NicTO nic : nics) {
             listForSort.add(nic);
         }
-        Collections.sort(listForSort, new Comparator<NicTO>() {
+        Collections.sort(listForSort, new Comparator<>() {
 
             @Override
             public int compare(NicTO arg0, NicTO arg1) {
@@ -3734,11 +3821,11 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
     private static DiskTO[] sortVolumesByDeviceId(DiskTO[] volumes) {
 
-        List<DiskTO> listForSort = new ArrayList<DiskTO>();
+        List<DiskTO> listForSort = new ArrayList<>();
         for (DiskTO vol : volumes) {
             listForSort.add(vol);
         }
-        Collections.sort(listForSort, new Comparator<DiskTO>() {
+        Collections.sort(listForSort, new Comparator<>() {
 
             @Override
             public int compare(DiskTO arg0, DiskTO arg1) {
@@ -3774,9 +3861,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
         path = path.substring(startIndex + search.length());
 
-        final String search2 = VMDK_EXTENSION;
-
-        int endIndex = path.indexOf(search2);
+        int endIndex = path.indexOf(VMDK_EXTENSION);
 
         if (endIndex == -1) {
             return null;
@@ -3797,20 +3882,20 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             if (diskInfo != null) {
                 logger.info("Found existing disk info from volume path: " + volume.getPath());
                 return dsMo;
-            } else {
-                String chainInfo = volume.getChainInfo();
-                if (chainInfo != null) {
-                    VirtualMachineDiskInfo infoInChain = _gson.fromJson(chainInfo, VirtualMachineDiskInfo.class);
-                    if (infoInChain != null) {
-                        String[] disks = infoInChain.getDiskChain();
-                        if (disks.length > 0) {
-                            for (String diskPath : disks) {
-                                DatastoreFile file = new DatastoreFile(diskPath);
-                                diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(file.getFileBaseName(), dsName);
-                                if (diskInfo != null) {
-                                    logger.info("Found existing disk from chain info: " + diskPath);
-                                    return dsMo;
-                                }
+            }
+
+            String chainInfo = volume.getChainInfo();
+            if (chainInfo != null) {
+                VirtualMachineDiskInfo infoInChain = _gson.fromJson(chainInfo, VirtualMachineDiskInfo.class);
+                if (infoInChain != null) {
+                    String[] disks = infoInChain.getDiskChain();
+                    if (disks.length > 0) {
+                        for (String diskPath : disks) {
+                            DatastoreFile file = new DatastoreFile(diskPath);
+                            diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(file.getFileBaseName(), dsName);
+                            if (diskInfo != null) {
+                                logger.info("Found existing disk from chain info: " + diskPath);
+                                return dsMo;
                             }
                         }
                     }
@@ -3893,7 +3978,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
     }
 
     private Pair<ManagedObjectReference, DatastoreMO> getDatastoreThatDiskIsOn(HashMap<String, Pair<ManagedObjectReference, DatastoreMO>> dataStoresDetails, DiskTO vol) {
-        Pair<ManagedObjectReference, DatastoreMO> rootDiskDataStoreDetails = null;
+        Pair<ManagedObjectReference, DatastoreMO> rootDiskDataStoreDetails;
 
         Map<String, String> details = vol.getDetails();
         boolean managed = false;
@@ -3962,7 +4047,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         String vlanToken = switchDetails.third();
 
         String namePrefix = getNetworkNamePrefix(nicTo);
-        Pair<ManagedObjectReference, String> networkInfo = null;
+        Pair<ManagedObjectReference, String> networkInfo;
 
         logger.info("Prepare network on " + switchType + " " + switchName + " with name prefix: " + namePrefix);
 
@@ -3972,7 +4057,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                     _opsTimeout, true, nicTo.getBroadcastType(), nicTo.getUuid(), nicTo.getDetails());
         } else {
             String vlanId = getVlanInfo(nicTo, vlanToken);
-            String svlanId = null;
+            String svlanId;
             boolean pvlannetwork = (getPvlanInfo(nicTo) == null) ? false : true;
             if (vmType != null && vmType.equals(VirtualMachine.Type.DomainRouter) && pvlannetwork) {
                 // plumb this network to the promiscuous vlan.
@@ -3995,7 +4080,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
         TrafficType trafficType = nicTo.getType();
         if (!Arrays.asList(supportedTrafficTypes).contains(trafficType)) {
-            throw new CloudException("Traffic type " + trafficType.toString() + " for nic " + nicTo.toString() + " is not supported.");
+            throw new CloudException("Traffic type " + trafficType.toString() + " for nic " + nicTo + " is not supported.");
         }
 
         String switchName = null;
@@ -4030,12 +4115,12 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         if (switchType == VirtualSwitchType.NexusDistributedVirtualSwitch) {
             if (trafficType == TrafficType.Management || trafficType == TrafficType.Storage) {
                 throw new CloudException(
-                        "Unable to configure NIC " + nicTo.toString() + " as traffic type " + trafficType.toString() + " is not supported over virtual switch type " + switchType
+                        "Unable to configure NIC " + nicTo + " as traffic type " + trafficType + " is not supported over virtual switch type " + switchType
                                 + ". Please specify only supported type of virtual switches i.e. {vmwaresvs, vmwaredvs} in physical network traffic label.");
             }
         }
 
-        return new Ternary<String, String, String>(switchName, switchType.toString(), vlanId);
+        return new Ternary<>(switchName, switchType.toString(), vlanId);
     }
 
     private String getNetworkNamePrefix(NicTO nicTo) throws Exception {
@@ -4111,7 +4196,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         ManagedObjectReference morDs = prepareSecondaryDatastoreOnHost(storeUrl);
         DatastoreMO dsMo = new DatastoreMO(getServiceContext(), morDs);
 
-        return new Pair<String, ManagedObjectReference>(String.format("[%s] %s%s", dsMo.getName(), isoPath, isoFileName), morDs);
+        return new Pair<>(String.format("[%s] %s%s", dsMo.getName(), isoPath, isoFileName), morDs);
     }
 
     protected Answer execute(ReadyCommand cmd) {
@@ -4119,7 +4204,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             VmwareContext context = getServiceContext();
             VmwareHypervisorHost hyperHost = getHyperHost(context);
 
-            Map<String, String> hostDetails = new HashMap<String, String>();
+            Map<String, String> hostDetails = new HashMap<>();
             ManagedObjectReference morHost = hyperHost.getMor();
             HostMO hostMo = new HostMO(context, morHost);
             boolean uefiLegacySupported = hostMo.isUefiLegacySupported();
@@ -4170,7 +4255,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
             // getVmNames should return all i-x-y values.
             List<String> requestedVmNames = cmd.getVmNames();
-            List<String> vmNames = new ArrayList<String>();
+            List<String> vmNames = new ArrayList<>();
 
             if (requestedVmNames != null) {
                 for (String vmName : requestedVmNames) {
@@ -4239,7 +4324,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                     long writeReq = 0;
                     long writeBytes = 0;
 
-                    final ArrayList<PerfMetricId> perfMetricsIds = new ArrayList<PerfMetricId>();
+                    final ArrayList<PerfMetricId> perfMetricsIds = new ArrayList<>();
                     if (diskReadIOPerfCounterInfo != null) {
                         perfMetricsIds.add(VmwareHelper.createPerfMetricId(diskReadIOPerfCounterInfo, diskBusName));
                     }
@@ -4329,7 +4414,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
             ManagedObjectReference dcMor = hyperHost.getHyperHostDatacenter();
             DatacenterMO dcMo = new DatacenterMO(getServiceContext(), dcMor);
-            HashMap<String, VolumeStatsEntry> statEntry = new HashMap<String, VolumeStatsEntry>();
+            HashMap<String, VolumeStatsEntry> statEntry = new HashMap<>();
 
             for (String chainInfo : cmd.getVolumeUuids()) {
                 if (chainInfo != null) {
@@ -4404,7 +4489,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
                     if (getVmPowerState(vmMo) != PowerState.PowerOff) {
                         String msg = "Stop VM " + cmd.getVmName() + " Succeed";
-                        boolean success = false;
+                        boolean success;
                         if (cmd.isForceStop()) {
                             success = vmMo.powerOff();
                         } else {
@@ -4673,7 +4758,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             Map<Integer, Long> volumeDeviceKey = new HashMap<>();
             if (cmd instanceof MigrateVolumeCommand) { // Else device keys will be found in relocateVirtualMachine
                 MigrateVolumeCommand mcmd = (MigrateVolumeCommand) cmd;
-                addVolumeDiskmapping(vmMo, volumeDeviceKey, mcmd.getVolumePath(), mcmd.getVolumeId());
+                addVolumeDiskMapping(vmMo, volumeDeviceKey, mcmd.getVolumePath(), mcmd.getVolumeId());
                 if (logger.isTraceEnabled()) {
                     for (Integer diskId: volumeDeviceKey.keySet()) {
                         logger.trace(String.format("Disk to migrate has disk id %d and volumeId %d", diskId, volumeDeviceKey.get(diskId)));
@@ -4690,10 +4775,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
     }
 
     Answer createAnswerForCmd(VirtualMachineMO vmMo, List<VolumeObjectTO> volumeObjectToList, Command cmd, Map<Integer, Long> volumeDeviceKey) throws Exception {
-        List<VolumeObjectTO> volumeToList = new ArrayList<>();
-        VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
+        List<VolumeObjectTO> volumeToList;
         VirtualDisk[] disks = vmMo.getAllDiskDevice();
-        Answer answer;
         if (logger.isTraceEnabled()) {
             logger.trace(String.format("creating answer for %s", cmd.getClass().getSimpleName()));
         }
@@ -4710,7 +4793,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         return new Answer(cmd, false, null);
     }
 
-    private void addVolumeDiskmapping(VirtualMachineMO vmMo, Map<Integer, Long> volumeDeviceKey, String volumePath, long volumeId) throws Exception {
+    private void addVolumeDiskMapping(VirtualMachineMO vmMo, Map<Integer, Long> volumeDeviceKey, String volumePath, long volumeId) throws Exception {
         if (logger.isDebugEnabled()) {
             logger.debug(String.format("locating disk for volume (%d) using path %s", volumeId, volumePath));
         }
@@ -4752,7 +4835,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
     }
 
     private VirtualMachineMO getVirtualMachineMO(String vmName, VmwareHypervisorHost hyperHost) {
-        VirtualMachineMO vmMo = null;
+        VirtualMachineMO vmMo;
         try {
             // find VM through datacenter (VM is not at the target host yet)
             vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
@@ -4821,16 +4904,16 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
     }
 
     private Answer migrateVolume(MigrateVolumeCommand cmd) {
-        Answer answer = null;
+        Answer answer;
         String path = cmd.getVolumePath();
 
         VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
         VirtualMachineMO vmMo = null;
-        DatastoreMO sourceDsMo = null;
+        DatastoreMO sourceDsMo;
         DatastoreMO destinationDsMo = null;
-        ManagedObjectReference morSourceDS = null;
-        ManagedObjectReference morDestinationDS = null;
-        String vmdkDataStorePath = null;
+        ManagedObjectReference morSourceDS;
+        ManagedObjectReference morDestinationDS;
+        String vmdkDataStorePath;
         boolean isvVolsInvolved = false;
 
         String vmName = null;
@@ -4845,7 +4928,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             VmwareHypervisorHost dsHost = hyperHostInTargetCluster == null ? hyperHost : hyperHostInTargetCluster;
             String targetDsName = cmd.getTargetPool().getUuid();
             morDestinationDS = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(dsHost, targetDsName);
-            if(morDestinationDS == null) {
+            if (morDestinationDS == null) {
                 String msg = "Unable to find the target datastore: " + targetDsName + " on host: " + dsHost.getHyperHostName();
                 logger.error(msg);
                 throw new CloudRuntimeException(msg);
@@ -4987,20 +5070,20 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
         String vmName = cmd.getAttachedVmName();
 
-        VirtualMachineMO vmMo = null;
-        VmwareHypervisorHost srcHyperHost = null;
+        VirtualMachineMO vmMo;
+        VmwareHypervisorHost srcHyperHost;
 
         // OfflineVmwareMigration: ifhost is null ???
         if (StringUtils.isBlank(cmd.getAttachedVmName())) {
             return migrateVolume(cmd);
         }
-        ManagedObjectReference morDs = null;
-        ManagedObjectReference morDc = null;
+        ManagedObjectReference morDs;
+        ManagedObjectReference morDc;
         VirtualMachineRelocateSpec relocateSpec = new VirtualMachineRelocateSpec();
-        List<VirtualMachineRelocateSpecDiskLocator> diskLocators = new ArrayList<VirtualMachineRelocateSpecDiskLocator>();
-        VirtualMachineRelocateSpecDiskLocator diskLocator = null;
+        List<VirtualMachineRelocateSpecDiskLocator> diskLocators = new ArrayList<>();
+        VirtualMachineRelocateSpecDiskLocator diskLocator;
 
-        String tgtDsName = "";
+        String tgtDsName;
 
         try {
             srcHyperHost = getHyperHost(getServiceContext());
@@ -5060,9 +5143,9 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 // Hence set the existing datastore as target datastore for volumes that are not to be migrated.
                 List<Pair<Integer, ManagedObjectReference>> diskDatastores = vmMo.getAllDiskDatastores();
                 for (Pair<Integer, ManagedObjectReference> diskDatastore : diskDatastores) {
-                    if (diskDatastore.first().intValue() != diskId) {
+                    if (diskDatastore.first() != diskId) {
                         diskLocator = new VirtualMachineRelocateSpecDiskLocator();
-                        diskLocator.setDiskId(diskDatastore.first().intValue());
+                        diskLocator.setDiskId(diskDatastore.first());
                         diskLocator.setDatastore(diskDatastore.second());
                         diskLocators.add(diskLocator);
                     }
@@ -5101,9 +5184,9 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             answer.setVolumeChainInfo(chainInfo);
             return answer;
         } catch (Exception e) {
-            String msg = "Catch Exception " + e.getClass().getName() + " due to " + e.toString();
+            String msg = "Catch Exception " + e.getClass().getName() + " due to " + e.getMessage();
             logger.error(msg, e);
-            return new MigrateVolumeAnswer(cmd, false, msg, null);
+            return new MigrateVolumeAnswer(cmd, false, e.getMessage(), null);
         }
     }
 
@@ -5201,8 +5284,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             DatastoreMO dsMo = new DatastoreMO(getServiceContext(), morDatastore);
             HypervisorHostHelper.createBaseFolder(dsMo, hyperHost, pool.getType());
 
-            long capacity = 0;
-            long available = 0;
+            long capacity;
+            long available;
             List<ModifyStoragePoolAnswer> childDatastoresModifyStoragePoolAnswers = new ArrayList<>();
             if (pool.getType() == StoragePoolType.DatastoreCluster) {
                 StoragepodMO datastoreClusterMo = new StoragepodMO(getServiceContext(), morDatastore);
@@ -5484,7 +5567,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
          * "ManageSnapshotCommand",
          * "{\"_commandSwitch\":\"-c\",\"_volumePath\":\"i-2-3-KY-ROOT\",\"_snapshotName\":\"i-2-3-KY_i-2-3-KY-ROOT_20101102203827\",\"_snapshotId\":1,\"_vmName\":\"i-2-3-KY\"}"
          */
-        boolean success = false;
+        boolean success;
         String cmdSwitch = cmd.getCommandSwitch();
         String snapshotOp = "Unsupported snapshot command." + cmdSwitch;
         if (cmdSwitch.equals(ManageSnapshotCommand.CREATE_SNAPSHOT)) {
@@ -5493,8 +5576,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             snapshotOp = "destroy";
         }
 
-        String details = "ManageSnapshotCommand operation: " + snapshotOp + " Failed for snapshotId: " + snapshotId;
-        String snapshotUUID = null;
+        String details;
+        String snapshotUUID;
 
         // snapshot operation (create or destroy) is handled inside BackupSnapshotCommand(), we just fake
         // a success return here
@@ -5552,7 +5635,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
     }
 
     protected Answer execute(CreateVolumeFromSnapshotCommand cmd) {
-        String details = null;
+        String details;
         boolean success = false;
         String newVolumeName = UUID.randomUUID().toString();
 
@@ -5600,8 +5683,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getStorageId());
 
             if (morDs != null) {
-                long capacity = 0;
-                long free = 0;
+                long capacity;
+                long free;
                 if (cmd.getPooltype() == StoragePoolType.DatastoreCluster) {
                     StoragepodMO datastoreClusterMo = new StoragepodMO(getServiceContext(), morDs);
                     StoragePodSummary summary = datastoreClusterMo.getDatastoreClusterSummary();
@@ -5735,8 +5818,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         String details = "Unable to find IP Address of VM. ";
         String vmName = cmd.getVmName();
         boolean result = false;
-        String ip = null;
-        Answer answer = null;
+        String ip;
+        Answer answer;
 
         VmwareContext context = getServiceContext();
         VmwareHypervisorHost hyperHost = getHyperHost(context);
@@ -5794,6 +5877,31 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         // that issue this command. Note that pvlan operations are supported only
         // in Distributed Virtual Switch environments for vmware deployments.
         return new Answer(cmd, true, "success");
+    }
+
+    protected Answer execute(CleanupVMCommand cmd) {
+        VmwareContext context = getServiceContext();
+        VmwareHypervisorHost hyperHost = getHyperHost(context);
+
+        try {
+            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(cmd.getVmName());
+            if (vmMo == null) {
+                String msg = String.format("VM [%s] not found on vCenter, cleanup not needed.", cmd.getVmName());
+                logger.debug(msg);
+                return new Answer(cmd, true, msg);
+            }
+            vmMo.destroy();
+            String msg = String.format("VM [%s] remnants on vCenter cleaned up.", cmd.getVmName());
+            logger.debug(msg);
+            return new Answer(cmd, true, msg);
+        } catch (Exception e) {
+            if (e.getMessage().contains("was not found")) {
+                String msg = String.format("%s - VM [%s] file(s) not found, cleanup not needed .", e.getMessage(), cmd.getVmName());
+                logger.debug(msg);
+                return new Answer(cmd, true, msg);
+            }
+            return new Answer(cmd, false, createLogMessageException(e, cmd));
+        }
     }
 
     protected Answer execute(UnregisterVMCommand cmd) {
@@ -6003,7 +6111,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
                             VirtualMachineMO vmMo = new VirtualMachineMO(hyperHost.getContext(), oc.getObj());
                             if (!template && isWorker) {
-                                boolean recycle = false;
+                                boolean recycle;
                                 recycle = mgr.needRecycle(workerTag);
 
                                 if (recycle) {
@@ -6036,8 +6144,13 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
     @Override
     public StartupCommand[] initialize() {
+        return initialize(false);
+    }
+
+    @Override
+    public StartupCommand[] initialize(boolean isTransferredConnection) {
         try {
-            String hostApiVersion = "4.1";
+            String hostApiVersion;
             VmwareContext context = getServiceContext();
             try {
                 VmwareHypervisorHost hyperHost = getHyperHost(context);
@@ -6064,6 +6177,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             cmd.setHypervisorType(HypervisorType.VMware);
             cmd.setCluster(_cluster);
             cmd.setHypervisorVersion(hostApiVersion);
+            cmd.setConnectionTransferred(isTransferredConnection);
 
             List<StartupStorageCommand> storageCmds = initializeLocalStorage();
             StartupCommand[] answerCmds = new StartupCommand[1 + storageCmds.size()];
@@ -6079,7 +6193,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
     }
 
     private List<StartupStorageCommand> initializeLocalStorage() {
-        List<StartupStorageCommand> storageCmds = new ArrayList<StartupStorageCommand>();
+        List<StartupStorageCommand> storageCmds = new ArrayList<>();
         VmwareContext context = getServiceContext();
 
         try {
@@ -6133,7 +6247,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         VmwareContext serviceContext = getServiceContext();
         Map<String, String> details = cmd.getHostDetails();
         if (details == null) {
-            details = new HashMap<String, String>();
+            details = new HashMap<>();
         }
 
         try {
@@ -6141,16 +6255,16 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             fillHostNetworkInfo(serviceContext, cmd);
             fillHostDetailsInfo(serviceContext, details);
         } catch (RuntimeFaultFaultMsg e) {
-            logger.error("RuntimeFault while retrieving host info: " + e.toString(), e);
+            logger.error("RuntimeFault while retrieving host info: " + e, e);
             throw new CloudRuntimeException("RuntimeFault while retrieving host info");
         } catch (RemoteException e) {
-            logger.error("RemoteException while retrieving host info: " + e.toString(), e);
+            logger.error("RemoteException while retrieving host info: " + e, e);
             invalidateServiceContext();
             throw new CloudRuntimeException("RemoteException while retrieving host info");
         } catch (Exception e) {
-            logger.error("Exception while retrieving host info: " + e.toString(), e);
+            logger.error("Exception while retrieving host info: " + e, e);
             invalidateServiceContext();
-            throw new CloudRuntimeException("Exception while retrieving host info: " + e.toString());
+            throw new CloudRuntimeException("Exception while retrieving host info: " + e);
         }
 
         cmd.setHostDetails(details);
@@ -6249,7 +6363,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         try {
             return getHostVmStateReport();
         } catch (Exception e) {
-            return new HashMap<String, HostVmStateReportEntry>();
+            return new HashMap<>();
         }
     }
 
@@ -6368,7 +6482,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         // the internal CS name, but the custom field CLOUD_VM_INTERNAL_NAME always stores the internal CS name.
         ObjectContent[] ocs = hyperHost.getVmPropertiesOnHyperHost(new String[]{"name", "runtime.powerState", "config.template", instanceNameCustomField});
 
-        HashMap<String, HostVmStateReportEntry> newStates = new HashMap<String, HostVmStateReportEntry>();
+        HashMap<String, HostVmStateReportEntry> newStates = new HashMap<>();
         if (ocs != null && ocs.length > 0) {
             for (ObjectContent oc : ocs) {
                 List<DynamicProperty> objProps = oc.getPropSet();
@@ -6420,7 +6534,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         // the internal CS name, but the custom field CLOUD_VM_INTERNAL_NAME always stores the internal CS name.
         ObjectContent[] ocs = hyperHost.getVmPropertiesOnHyperHost(new String[]{"name", "runtime.powerState", "config.template", instanceNameCustomField});
 
-        HashMap<String, PowerState> newStates = new HashMap<String, PowerState>();
+        HashMap<String, PowerState> newStates = new HashMap<>();
         if (ocs != null && ocs.length > 0) {
             for (ObjectContent oc : ocs) {
                 List<DynamicProperty> objProps = oc.getPropSet();
@@ -6461,7 +6575,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
     private HashMap<String, VmStatsEntry> getVmStats(List<String> vmNames) throws Exception {
         VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
-        HashMap<String, VmStatsEntry> vmResponseMap = new HashMap<String, VmStatsEntry>();
+        HashMap<String, VmStatsEntry> vmResponseMap = new HashMap<>();
         ManagedObjectReference perfMgr = getServiceContext().getServiceContent().getPerfManager();
         VimPortType service = getServiceContext().getService();
 
@@ -6523,7 +6637,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             for (ObjectContent oc : ocs) {
                 List<DynamicProperty> objProps = oc.getPropSet();
                 if (objProps != null) {
-                    String name = null;
+                    String name;
                     String numberCPUs = null;
                     double maxCpuUsage = 0;
                     String memlimit = null;
@@ -6574,7 +6688,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                     double diskReadKbs = 0;
                     double diskWriteKbs = 0;
 
-                    final ArrayList<PerfMetricId> perfMetricsIds = new ArrayList<PerfMetricId>();
+                    final ArrayList<PerfMetricId> perfMetricsIds = new ArrayList<>();
                     if (rxPerfCounterInfo != null) {
                         perfMetricsIds.add(VmwareHelper.createPerfMetricId(rxPerfCounterInfo, ""));
                     }
@@ -6701,7 +6815,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                     stats[1] += Long.parseLong(splitResult[i++]);
                 }
             } catch (Throwable e) {
-                logger.warn("Unable to parse return from script return of network usage command: " + e.toString(), e);
+                logger.warn("Unable to parse return from script return of network usage command: " + e, e);
             }
         }
         return stats;
@@ -6724,7 +6838,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 sch.connect(addr);
                 return null;
             } catch (IOException e) {
-                logger.info("Could not connect to " + ipAddress + " due to " + e.toString());
+                logger.info("Could not connect to " + ipAddress + " due to " + e);
                 if (e instanceof ConnectException) {
                     // if connection is refused because of VM is being started,
                     // we give it more sleep time
@@ -6865,21 +6979,21 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
             Integer intObj = (Integer) params.get("ports.per.dvportgroup");
             if (intObj != null)
-                _portsPerDvPortGroup = intObj.intValue();
+                _portsPerDvPortGroup = intObj;
 
             logger.info("VmwareResource network configuration info." + " private traffic over vSwitch: " + _privateNetworkVSwitchName + ", public traffic over "
                     + _publicTrafficInfo.getVirtualSwitchType() + " : " + _publicTrafficInfo.getVirtualSwitchName() + ", guest traffic over "
                     + _guestTrafficInfo.getVirtualSwitchType() + " : " + _guestTrafficInfo.getVirtualSwitchName());
 
             Boolean boolObj = (Boolean) params.get("vmware.create.full.clone");
-            if (boolObj != null && boolObj.booleanValue()) {
+            if (boolObj != null && boolObj) {
                 _fullCloneFlag = true;
             } else {
                 _fullCloneFlag = false;
             }
 
             boolObj = (Boolean) params.get("vm.instancename.flag");
-            if (boolObj != null && boolObj.booleanValue()) {
+            if (boolObj != null && boolObj) {
                 _instanceNameFlag = true;
             } else {
                 _instanceNameFlag = false;
@@ -6944,7 +7058,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
     @Override
     public VmwareContext getServiceContext(Command cmd) {
-        VmwareContext context = null;
+        VmwareContext context;
         if (s_serviceContext.get() != null) {
             context = s_serviceContext.get();
             String poolKey = VmwareContextPool.composePoolKey(_vCenterAddress, _username);
@@ -7130,7 +7244,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             logger.debug("Looking for file [" + filePath + "] in the classpath.");
         }
         if (!keyFile.exists()) {
-            logger.error("Unable to locate id_rsa.cloud in your setup at " + keyFile.toString());
+            logger.error("Unable to locate id_rsa.cloud in your setup at " + keyFile);
         }
         return keyFile;
     }
@@ -7213,13 +7327,13 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         }
         VmwareHypervisorHost sourceHyperHost = hypervisorHost;
         VmwareHypervisorHost targetHyperHost = hostInTargetCluster;
-        VirtualMachineMO vmMo = null;
-        ManagedObjectReference morSourceHostDc = null;
+        VirtualMachineMO vmMo;
+        ManagedObjectReference morSourceHostDc;
         VirtualMachineRelocateSpec relocateSpec = new VirtualMachineRelocateSpec();
-        List<VirtualMachineRelocateSpecDiskLocator> diskLocators = new ArrayList<VirtualMachineRelocateSpecDiskLocator>();
-        Set<String> mountedDatastoresAtSource = new HashSet<String>();
+        List<VirtualMachineRelocateSpecDiskLocator> diskLocators = new ArrayList<>();
+        Set<String> mountedDatastoresAtSource = new HashSet<>();
         List<VolumeObjectTO> volumeToList =  new ArrayList<>();
-        Map<Long, Integer> volumeDeviceKey = new HashMap<Long, Integer>();
+        Map<Long, Integer> volumeDeviceKey = new HashMap<>();
 
         try {
             if (sourceHyperHost == null) {
@@ -7259,7 +7373,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
             if (StringUtils.isNotBlank(poolUuid)) {
                 VmwareHypervisorHost dsHost = targetHyperHost == null ? sourceHyperHost : targetHyperHost;
-                ManagedObjectReference morDatastore = null;
+                ManagedObjectReference morDatastore;
                 morDatastore = getTargetDatastoreMOReference(poolUuid, dsHost);
                 if (morDatastore == null) {
                     String msg = String.format("Unable to find the target datastore: %s on host: %s to execute migration", poolUuid, dsHost.getHyperHostName());
@@ -7308,9 +7422,9 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 // Hence set the existing datastore as target datastore for volumes that are not to be migrated.
                 List<Pair<Integer, ManagedObjectReference>> diskDatastores = vmMo.getAllDiskDatastores();
                 for (Pair<Integer, ManagedObjectReference> diskDatastore : diskDatastores) {
-                    if (!volumeDeviceKey.containsValue(diskDatastore.first().intValue())) {
+                    if (!volumeDeviceKey.containsValue(diskDatastore.first())) {
                         VirtualMachineRelocateSpecDiskLocator diskLocator = new VirtualMachineRelocateSpecDiskLocator();
-                        diskLocator.setDiskId(diskDatastore.first().intValue());
+                        diskLocator.setDiskId(diskDatastore.first());
                         diskLocator.setDatastore(diskDatastore.second());
                         diskLocators.add(diskLocator);
                     }
@@ -7549,7 +7663,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
         VmwareContext context = getServiceContext();
         VmwareHypervisorHost hyperHost = getHyperHost(context);
-        ManagedObjectReference morDatastore = null;
+        ManagedObjectReference morDatastore;
 
         int count = 0;
         List<String> names = new ArrayList<>();
@@ -7658,7 +7772,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             return new Answer(command, true, "success");
         } catch (Exception e) {
             logger.error("Unexpected exception: ", e);
-            return new Answer(command, false, "Unable to execute PrepareForBackupRestorationCommand due to " + e.toString());
+            return new Answer(command, false, "Unable to execute PrepareForBackupRestorationCommand due to " + e);
         }
     }
 

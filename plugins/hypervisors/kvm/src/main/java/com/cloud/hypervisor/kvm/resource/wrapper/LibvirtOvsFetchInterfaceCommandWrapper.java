@@ -89,7 +89,7 @@ public final class LibvirtOvsFetchInterfaceCommandWrapper extends CommandWrapper
 
     @Override
     public Answer execute(final OvsFetchInterfaceCommand command, final LibvirtComputingResource libvirtComputingResource) {
-        final String label = "'" + command.getLabel() + "'";
+        final String label = command.getLabel();
 
         logger.debug("Will look for network with name-label:" + label);
         try {

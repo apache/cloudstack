@@ -55,7 +55,7 @@
     </div>
   </body>
   <script type="text/javascript">
-    fetch('./config.json')
+    fetch('./config.json?ts=' + Date.now())
       .then(response => response.json())
       .then(data => {
         document.getElementById("favicon").setAttribute("href", data.loginFavicon);

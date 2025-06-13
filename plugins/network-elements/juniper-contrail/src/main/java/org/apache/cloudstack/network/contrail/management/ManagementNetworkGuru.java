@@ -121,7 +121,7 @@ public class ManagementNetworkGuru extends ContrailGuru {
             network.setCidr(_mgmtCidr);
             network.setGateway(_mgmtGateway);
         }
-        logger.debug("Allocated network " + userSpecified.getName() + (network.getCidr() == null ? "" : " subnet: " + network.getCidr()));
+        logger.debug("Allocated network " + userSpecified + (network.getCidr() == null ? "" : " subnet: " + network.getCidr()));
         return network;
     }
 

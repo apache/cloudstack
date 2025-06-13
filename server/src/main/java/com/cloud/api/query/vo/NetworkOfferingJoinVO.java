@@ -30,6 +30,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Networks;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
 @Table(name = "network_offering_view")
@@ -198,6 +199,12 @@ public class NetworkOfferingJoinVO extends BaseViewVO implements NetworkOffering
     private Boolean specifyAsNumber;
 
     public NetworkOfferingJoinVO() {
+    }
+
+    @Override
+    public String toString() {
+        return String.format("NetworkOffering %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                this, "id", "uuid", "name", "trafficType"));
     }
 
     @Override

@@ -34,7 +34,7 @@ name=storage-volume-<providername>
 parent=storage
 ```
 ### Spring Bean Context Configuration
-This provides instructions of which provider implementation class to load when the Spring bean initilization is running.
+This provides instructions of which provider implementation class to load when the Spring bean initialization is running.
 ```
 <!-- resources/META-INF/cloudstack/storage-volume-<providername>/spring-storage-volume-<providername>-context.xml -->
 <beans xmlns="http://www.springframework.org/schema/beans"

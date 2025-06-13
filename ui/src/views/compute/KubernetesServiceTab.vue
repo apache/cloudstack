@@ -284,7 +284,7 @@ export default {
     }
   },
   mounted () {
-    if (this.$store.getters.apis.scaleKubernetesCluster.params.filter(x => x.name === 'nodeids').length > 0 && this.resource.clustertype === 'CloudManaged') {
+    if (this.$store.getters.apis.scaleKubernetesCluster?.params?.filter(x => x.name === 'nodeids').length > 0 && this.resource.clustertype === 'CloudManaged') {
       this.vmColumns.push({
         key: 'actions',
         title: this.$t('label.actions'),

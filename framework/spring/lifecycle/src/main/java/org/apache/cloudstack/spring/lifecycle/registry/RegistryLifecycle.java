@@ -48,7 +48,7 @@ public class RegistryLifecycle implements BeanPostProcessor, SmartLifecycle, App
      * can use this.
      */
     String registryBeanName;
-    Set<Object> beans = new HashSet<Object>();
+    Set<Object> beans = new HashSet<>();
     Class<?> typeClass;
     ApplicationContext applicationContext;
     Set<String> excludes = null;
@@ -79,7 +79,7 @@ public class RegistryLifecycle implements BeanPostProcessor, SmartLifecycle, App
 
     protected synchronized void loadExcluded() {
         Properties props = applicationContext.getBean("DefaultConfigProperties", Properties.class);
-        excludes = new HashSet<String>();
+        excludes = new HashSet<>();
         for (String exclude : props.getProperty(EXTENSION_EXCLUDE, "").trim().split("\\s*,\\s*")) {
             if (StringUtils.hasText(exclude)) {
                 excludes.add(exclude);
@@ -109,10 +109,15 @@ public class RegistryLifecycle implements BeanPostProcessor, SmartLifecycle, App
 
         while (iter.hasNext()) {
             Object next = iter.next();
-            if (registry.register(next)) {
-                logger.debug("Registered " + next);
-            } else {
-                iter.remove();
+            try {
+                if (registry.register(next)) {
+                    logger.debug("Registered " + next);
+                } else {
+                    logger.warn("Bean registration failed for " + next.toString());
+                    iter.remove();
+                }
+            } catch (Throwable e) {
+                logger.warn("Bean registration attempt resulted in an exception for " + next.toString(), e);
             }
         }
     }

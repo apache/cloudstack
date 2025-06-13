@@ -153,6 +153,7 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
         long cpuSpeed = Long.parseLong((String)params.get("cpuspeed"));
         long memory = Long.parseLong((String)params.get("memory"));
         long localStorageSize = Long.parseLong((String)params.get("localstorage"));
+        String arch = (String)params.get("arch");
         synchronized (this) {
             long dataCenterId = Long.parseLong((String)params.get("zone"));
             long podId = Long.parseLong((String)params.get("pod"));
@@ -170,6 +171,7 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
             mockHost.setCpuCount(cpuCore);
             mockHost.setCpuSpeed(cpuSpeed);
             mockHost.setMemorySize(memory);
+            mockHost.setArch(arch);
             String guid = UUID.randomUUID().toString();
             mockHost.setGuid(guid);
             mockHost.setName("SimulatedAgent." + guid);

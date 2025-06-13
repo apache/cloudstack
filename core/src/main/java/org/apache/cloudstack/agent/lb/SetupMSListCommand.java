@@ -26,18 +26,24 @@ import com.cloud.agent.api.Command;
 public class SetupMSListCommand extends Command {
 
     private List<String> msList;
+    private List<String> avoidMsList;
     private String lbAlgorithm;
     private Long lbCheckInterval;
 
-    public SetupMSListCommand(final List<String> msList, final String lbAlgorithm, final Long lbCheckInterval) {
+    public SetupMSListCommand(final List<String> msList, final List<String> avoidMsList, final String lbAlgorithm, final Long lbCheckInterval) {
         super();
         this.msList = msList;
+        this.avoidMsList = avoidMsList;
         this.lbAlgorithm = lbAlgorithm;
         this.lbCheckInterval = lbCheckInterval;
     }
 
     public List<String> getMsList() {
         return msList;
+    }
+
+    public List<String> getAvoidMsList() {
+        return avoidMsList;
     }
 
     public String getLbAlgorithm() {

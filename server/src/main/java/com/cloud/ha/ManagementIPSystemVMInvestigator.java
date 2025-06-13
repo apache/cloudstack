@@ -71,9 +71,9 @@ public class ManagementIPSystemVMInvestigator extends AbstractInvestigatorImpl {
                 continue;
             }
             // get the data center IP address, find a host on the pod, use that host to ping the data center IP address
-            List<Long> otherHosts = findHostByPod(vmHost.getPodId(), vm.getHostId());
-            for (Long otherHost : otherHosts) {
-                Status vmState = testIpAddress(otherHost, nic.getIPv4Address());
+            List<HostVO> otherHosts = findHostByPod(vmHost.getPodId(), vm.getHostId());
+            for (HostVO otherHost : otherHosts) {
+                Status vmState = testIpAddress(otherHost.getId(), nic.getIPv4Address());
                 assert vmState != null;
                 // In case of Status.Unknown, next host will be tried
                 if (vmState == Status.Up) {
@@ -84,7 +84,7 @@ public class ManagementIPSystemVMInvestigator extends AbstractInvestigatorImpl {
                 } else if (vmState == Status.Down) {
                     // We can't ping the VM directly...if we can ping the host, then report the VM down.
                     // If we can't ping the host, then we don't have enough information.
-                    Status vmHostState = testIpAddress(otherHost, vmHost.getPrivateIpAddress());
+                    Status vmHostState = testIpAddress(otherHost.getId(), vmHost.getPrivateIpAddress());
                     assert vmHostState != null;
                     if (vmHostState == Status.Up) {
                         if (logger.isDebugEnabled()) {

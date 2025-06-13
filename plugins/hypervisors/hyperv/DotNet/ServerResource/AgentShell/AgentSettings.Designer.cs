@@ -1,4 +1,4 @@
-﻿// Licensed to the Apache Software Foundation (ASF) under one
+// Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -16,20 +16,20 @@
 // under the License.
 
 namespace CloudStack.Plugin.AgentShell {
-    
-    
+
+
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "11.0.0.0")]
     public sealed partial class AgentSettings : global::System.Configuration.ApplicationSettingsBase {
-        
+
         private static AgentSettings defaultInstance = ((AgentSettings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new AgentSettings())));
-        
+
         public static AgentSettings Default {
             get {
                 return defaultInstance;
             }
         }
-        
+
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("8")]
@@ -38,7 +38,7 @@ namespace CloudStack.Plugin.AgentShell {
                 return ((int)(this["cpus"]));
             }
         }
-        
+
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("Routing")]
@@ -47,7 +47,7 @@ namespace CloudStack.Plugin.AgentShell {
                 return ((string)(this["type"]));
             }
         }
-        
+
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("5fe2bad3-d785-394e-9949-89786b8a63d2")]
@@ -56,7 +56,7 @@ namespace CloudStack.Plugin.AgentShell {
                 return ((global::System.Guid)(this["local_storage_uuid"]));
             }
         }
-        
+
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("hvm")]
@@ -65,7 +65,7 @@ namespace CloudStack.Plugin.AgentShell {
                 return ((string)(this["capabilities"]));
             }
         }
-        
+
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("2130")]
@@ -74,7 +74,7 @@ namespace CloudStack.Plugin.AgentShell {
                 return ((int)(this["Settingcpuspeed"]));
             }
         }
-        
+
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("8250")]
@@ -83,7 +83,7 @@ namespace CloudStack.Plugin.AgentShell {
                 return ((int)(this["port"]));
             }
         }
-        
+
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("34359738368")]
@@ -92,7 +92,7 @@ namespace CloudStack.Plugin.AgentShell {
                 return ((long)(this["memory"]));
             }
         }
-        
+
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("camldonall01.citrite.net")]
@@ -101,7 +101,7 @@ namespace CloudStack.Plugin.AgentShell {
                 return ((string)(this["host"]));
             }
         }
-        
+
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("1")]
@@ -110,7 +110,7 @@ namespace CloudStack.Plugin.AgentShell {
                 return ((int)(this["pod"]));
             }
         }
-        
+
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("10.1.1.1")]
@@ -119,7 +119,7 @@ namespace CloudStack.Plugin.AgentShell {
                 return ((string)(this["gateway_ip_address"]));
             }
         }
-        
+
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         public global::System.Guid guid {
@@ -127,7 +127,7 @@ namespace CloudStack.Plugin.AgentShell {
                 return ((global::System.Guid)(this["guid"]));
             }
         }
-        
+
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("2")]
@@ -136,7 +136,7 @@ namespace CloudStack.Plugin.AgentShell {
                 return ((int)(this["cluster"]));
             }
         }
-        
+
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("1")]
@@ -145,7 +145,7 @@ namespace CloudStack.Plugin.AgentShell {
                 return ((int)(this["zone"]));
             }
         }
-        
+
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("c:\\Secondary")]
@@ -157,7 +157,7 @@ namespace CloudStack.Plugin.AgentShell {
                 this["local_secondary_storage_path"] = value;
             }
         }
-        
+
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("E:\\Disks\\Disks")]
@@ -169,7 +169,7 @@ namespace CloudStack.Plugin.AgentShell {
                 this["local_storage_path"] = value;
             }
         }
-        
+
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("5")]
@@ -178,7 +178,7 @@ namespace CloudStack.Plugin.AgentShell {
                 return ((int)(this["workers"]));
             }
         }
-        
+
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("255.255.240.0")]
@@ -187,7 +187,7 @@ namespace CloudStack.Plugin.AgentShell {
                 return ((string)(this["private_ip_netmask"]));
             }
         }
-        
+
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("4294967296")]
@@ -196,7 +196,7 @@ namespace CloudStack.Plugin.AgentShell {
                 return ((long)(this["RootDeviceReservedSpaceBytes"]));
             }
         }
-        
+
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("../../../../../")]
@@ -205,7 +205,7 @@ namespace CloudStack.Plugin.AgentShell {
                 return ((string)(this["hyperv_plugin_root"]));
             }
         }
-        
+
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("e:\\")]
@@ -214,7 +214,7 @@ namespace CloudStack.Plugin.AgentShell {
                 return ((string)(this["RootDeviceName"]));
             }
         }
-        
+
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("101F742C6B88")]
@@ -247,7 +247,7 @@ namespace CloudStack.Plugin.AgentShell {
                 this["testLocalStorePath"] = value;
             }
         }
-        
+
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("testS3Bucket")]
@@ -259,7 +259,7 @@ namespace CloudStack.Plugin.AgentShell {
                 this["testS3Bucket"] = value;
             }
         }
-        
+
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("testS3Endpoint")]
@@ -271,7 +271,7 @@ namespace CloudStack.Plugin.AgentShell {
                 this["testS3Endpoint"] = value;
             }
         }
-        
+
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("testS3AccessKey")]
@@ -283,7 +283,7 @@ namespace CloudStack.Plugin.AgentShell {
                 this["testS3AccessKey"] = value;
             }
         }
-        
+
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("testS3SecretKey")]
@@ -295,7 +295,7 @@ namespace CloudStack.Plugin.AgentShell {
                 this["testS3SecretKey"] = value;
             }
         }
-        
+
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("206-2-73592258-559a-3b38-8f66-b667aab143eb")]
@@ -307,7 +307,7 @@ namespace CloudStack.Plugin.AgentShell {
                 this["testS3TemplateName"] = value;
             }
         }
-        
+
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("5fe2bad3-d785-394e-9949-89786b8a63d2")]
@@ -319,7 +319,7 @@ namespace CloudStack.Plugin.AgentShell {
                 this["testLocalStoreUUID"] = value;
             }
         }
-        
+
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("acton-systemvm-02062012.vhd.bz2")]
@@ -331,7 +331,7 @@ namespace CloudStack.Plugin.AgentShell {
                 this["testSystemVMTemplateName"] = value;
             }
         }
-        
+
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("acton-systemvm-02062012")]
@@ -343,7 +343,7 @@ namespace CloudStack.Plugin.AgentShell {
                 this["testSystemVMTemplateNameNoExt"] = value;
             }
         }
-        
+
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("2048")]
@@ -352,7 +352,7 @@ namespace CloudStack.Plugin.AgentShell {
                 return ((ulong)(this["dom0MinMemory"]));
             }
         }
-        
+
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("10.1.1.1")]
@@ -361,7 +361,7 @@ namespace CloudStack.Plugin.AgentShell {
                 return ((string)(this["private_ip_address"]));
             }
         }
-        
+
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("cifs://10.1.1.1/secondary?user\\u003dadministrator\\u0026password\\u003d1pass%40w" +
@@ -374,7 +374,7 @@ namespace CloudStack.Plugin.AgentShell {
                 this["testCifsUrl"] = value;
             }
         }
-        
+
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("template/tmpl/2/201/61d5316a-3cc4-30cf-a557-78691ff5c143.vhd")]

@@ -21,6 +21,7 @@ package org.apache.cloudstack.cluster;
 
 import com.cloud.host.Host;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.org.Cluster;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
@@ -40,8 +41,9 @@ public class Condensed extends AdapterBase implements ClusterDrsAlgorithm {
     private static final Logger logger = LogManager.getLogger(Condensed.class);
 
     @Override
-    public boolean needsDrs(long clusterId, List<Ternary<Long, Long, Long>> cpuList,
-            List<Ternary<Long, Long, Long>> memoryList) throws ConfigurationException {
+    public boolean needsDrs(Cluster cluster, List<Ternary<Long, Long, Long>> cpuList,
+                            List<Ternary<Long, Long, Long>> memoryList) throws ConfigurationException {
+        long clusterId = cluster.getId();
         double threshold = getThreshold(clusterId);
         Float skipThreshold = ClusterDrsImbalanceSkipThreshold.valueIn(clusterId);
         Double imbalance = ClusterDrsAlgorithm.getClusterImbalance(clusterId, cpuList, memoryList, skipThreshold);
@@ -50,12 +52,12 @@ public class Condensed extends AdapterBase implements ClusterDrsAlgorithm {
         Boolean useRatio = ClusterDrsAlgorithm.getDrsMetricUseRatio(clusterId);
         if (imbalance < threshold) {
 
-            logger.debug(String.format("Cluster %d needs DRS. Imbalance: %s Threshold: %s Algorithm: %s DRS metric: %s Metric Type: %s Use ratio: %s SkipThreshold: %s",
-                    clusterId, imbalance, threshold, getName(), drsMetric, metricType, useRatio, skipThreshold));
+            logger.debug("Cluster {} needs DRS. Imbalance: {} Threshold: {} Algorithm: {} DRS metric: {} Metric Type: {} Use ratio: {} SkipThreshold: {}",
+                    cluster, imbalance, threshold, getName(), drsMetric, metricType, useRatio, skipThreshold);
             return true;
         } else {
-            logger.debug(String.format("Cluster %d does not need DRS. Imbalance: %s Threshold: %s Algorithm: %s DRS metric: %s Metric Type: %s Use ratio: %s SkipThreshold: %s",
-                    clusterId, imbalance, threshold, getName(), drsMetric, metricType, useRatio, skipThreshold));
+            logger.debug("Cluster {} does not need DRS. Imbalance: {} Threshold: {} Algorithm: {} DRS metric: {} Metric Type: {} Use ratio: {} SkipThreshold: {}",
+                    cluster, imbalance, threshold, getName(), drsMetric, metricType, useRatio, skipThreshold);
             return false;
         }
     }
@@ -70,16 +72,16 @@ public class Condensed extends AdapterBase implements ClusterDrsAlgorithm {
     }
 
     @Override
-    public Ternary<Double, Double, Double> getMetrics(long clusterId, VirtualMachine vm,
+    public Ternary<Double, Double, Double> getMetrics(Cluster cluster, VirtualMachine vm,
             ServiceOffering serviceOffering, Host destHost,
             Map<Long, Ternary<Long, Long, Long>> hostCpuMap, Map<Long, Ternary<Long, Long, Long>> hostMemoryMap,
             Boolean requiresStorageMotion) throws ConfigurationException {
-        Double preImbalance = ClusterDrsAlgorithm.getClusterImbalance(clusterId, new ArrayList<>(hostCpuMap.values()),
+        Double preImbalance = ClusterDrsAlgorithm.getClusterImbalance(cluster.getId(), new ArrayList<>(hostCpuMap.values()),
                 new ArrayList<>(hostMemoryMap.values()), null);
         Double postImbalance = getImbalancePostMigration(serviceOffering, vm, destHost, hostCpuMap, hostMemoryMap);
 
-        logger.debug(String.format("Cluster %d pre-imbalance: %s post-imbalance: %s Algorithm: %s VM: %s srcHost: %d destHost: %s",
-                clusterId, preImbalance, postImbalance, getName(), vm.getUuid(), vm.getHostId(), destHost.getUuid()));
+        logger.debug("Cluster {} pre-imbalance: {} post-imbalance: {} Algorithm: {} VM: {} srcHost: {} destHost: {}",
+                cluster, preImbalance, postImbalance, getName(), vm, vm.getHostId(), destHost);
 
         // This needs more research to determine the cost and benefit of a migration
         // TODO: Cost should be a factor of the VM size and the host capacity

@@ -35,8 +35,7 @@ public class CheckOnHostCommand extends Command {
     }
 
     public CheckOnHostCommand(Host host, boolean reportCheckFailureIfOneStorageIsDown) {
-        super();
-        this.host = new HostTO(host);
+        this(host);
         this.reportCheckFailureIfOneStorageIsDown = reportCheckFailureIfOneStorageIsDown;
     }
 

@@ -19,6 +19,7 @@ package org.apache.cloudstack.metrics;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -298,11 +299,11 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
                     metricsList.add(new ItemHostMemory(zoneName, zoneUuid, null, null, null, null, ALLOCATED, allocatedCapacityByTag.third(), 0, tag));
                 });
 
-        List<HostTagVO> allHostTagVOS = hostDao.listAll().stream()
-                .flatMap( h -> _hostTagsDao.getHostTags(h.getId()).stream())
+        List<HostTagVO> allHostTagVOS = hostDao.listAllIds().stream()
+                .flatMap( h -> _hostTagsDao.getHostTags(h).stream())
                 .distinct()
                 .collect(Collectors.toList());
-        List<String> allHostTags = new ArrayList<>();
+        HashSet<String> allHostTags = new HashSet<>();
         allHostTagVOS.forEach(hostTagVO -> allHostTags.add(hostTagVO.getTag()));
 
         for (final State state : State.values()) {

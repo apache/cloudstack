@@ -75,7 +75,7 @@ public class SimulatorInvestigator extends AdapterBase implements Investigator {
                     return answer.getResult() ? Status.Up : Status.Down;
                 }
             } catch (Exception e) {
-                logger.debug("Failed to send command to host: " + neighbor.getId());
+                logger.debug(String.format("Failed to send command to host: %s", neighbor));
             }
         }
 

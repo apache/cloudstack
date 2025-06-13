@@ -727,8 +727,7 @@ export default {
           break
         case 'networkAcl':
           this.rules = {
-            name: [{ required: true, message: this.$t('label.required') }],
-            description: [{ required: true, message: this.$t('label.required') }]
+            name: [{ required: true, message: this.$t('label.required') }]
           }
           this.modals.networkAcl = true
           break

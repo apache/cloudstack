@@ -359,7 +359,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     @DB
     public void deallocate(final Network network, final NicProfile nic, VirtualMachineProfile vm) {
         if (logger.isDebugEnabled()) {
-            logger.debug("Deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIPv4Address());
+            logger.debug("Deallocate network: network: {}, nic: {}", network, nic);
         }
 
         if (nic.getIPv4Address() != null) {
@@ -371,14 +371,14 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
                         // if the ip address a part of placeholder, don't release it
                         Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(network, null);
                         if (placeholderNic != null && placeholderNic.getIPv4Address().equalsIgnoreCase(ip.getAddress().addr())) {
-                            logger.debug("Not releasing direct ip " + ip.getId() + " yet as its ip is saved in the placeholder");
+                            logger.debug("Not releasing direct ip {} yet as its ip is saved in the placeholder", ip);
                         } else {
                             _ipAddrMgr.markIpAsUnavailable(ip.getId());
                             _ipAddressDao.unassignIpAddress(ip.getId());
                         }
 
                         //unassign nic secondary ip address
-                        logger.debug("remove nic " + nic.getId() + " secondary ip ");
+                        logger.debug("remove nic {} secondary ip ", nic);
                         List<String> nicSecIps = null;
                         nicSecIps = _nicSecondaryIpDao.getSecondaryIpAddressesForNic(nic.getId());
                         for (String secIp : nicSecIps) {

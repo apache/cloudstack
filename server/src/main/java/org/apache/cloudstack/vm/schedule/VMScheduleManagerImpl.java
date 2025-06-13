@@ -115,7 +115,7 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
             description = String.format("%s - %s", action, DateUtil.getHumanReadableSchedule(cronExpression));
         } else description = cmd.getDescription();
 
-        logger.warn(String.format("Using timezone [%s] for running the schedule for VM [%s], as an equivalent of [%s].", timeZoneId, vm.getUuid(), cmdTimeZone));
+        logger.warn("Using timezone [{}] for running the schedule for VM [{}], as an equivalent of [{}].", timeZoneId, vm, cmdTimeZone);
 
         String finalDescription = description;
         VMSchedule.Action finalAction = action;
@@ -212,8 +212,8 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
             timeZone = TimeZone.getTimeZone(cmdTimeZone);
             timeZoneId = timeZone.getID();
             if (!timeZoneId.equals(cmdTimeZone)) {
-                logger.warn(String.format("Using timezone [%s] for running the schedule [%s] for VM %s, as an equivalent of [%s].",
-                        timeZoneId, vmSchedule.getSchedule(), vmSchedule.getVmId(), cmdTimeZone));
+                logger.warn("Using timezone [{}] for running the schedule [{}] for VM {}, as an equivalent of [{}].",
+                        timeZoneId, vmSchedule.getSchedule(), userVmManager.getUserVm(vmSchedule.getVmId()), cmdTimeZone);
             }
             vmSchedule.setTimeZone(timeZoneId);
         } else {

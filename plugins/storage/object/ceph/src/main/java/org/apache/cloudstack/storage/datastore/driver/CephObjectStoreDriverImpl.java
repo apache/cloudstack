@@ -46,8 +46,6 @@ import org.apache.cloudstack.storage.datastore.db.ObjectStoreDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.object.BaseObjectStoreDriverImpl;
 import org.apache.cloudstack.storage.object.BucketObject;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.twonote.rgwadmin4j.RgwAdmin;
 import org.twonote.rgwadmin4j.RgwAdminBuilder;
 import org.twonote.rgwadmin4j.model.BucketInfo;
@@ -62,7 +60,6 @@ import java.util.Map;
 import java.util.HashMap;
 
 public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
-    private static final Logger s_logger = LogManager.getLogger(CephObjectStoreDriverImpl.class);
 
     @Inject
     AccountDao _accountDao;
@@ -98,8 +95,8 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         AmazonS3 s3client = getS3Client(storeId, accountId);
 
         try {
-            if (s3client.getBucketAcl(bucketName) != null) {
-                throw new CloudRuntimeException("Bucket already exists with name " + bucketName);
+            if (s3client.doesBucketExistV2(bucketName)) {
+                throw new CloudRuntimeException("Bucket already exists with the name: " + bucketName);
             }
         } catch (AmazonS3Exception e) {
             if (e.getStatusCode() != 404) {
@@ -168,7 +165,7 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         String policyConfig;
 
         if (policy.equalsIgnoreCase("public")) {
-            s_logger.debug("Setting public policy on bucket " + bucket.getName());
+            logger.debug("Setting public policy on bucket " + bucket.getName());
             StringBuilder builder = new StringBuilder();
             builder.append("{\n");
             builder.append("    \"Statement\": [\n");
@@ -192,7 +189,7 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             builder.append("}\n");
             policyConfig = builder.toString();
         } else {
-            s_logger.debug("Setting private policy on bucket " + bucket.getName());
+            logger.debug("Setting private policy on bucket " + bucket.getName());
             policyConfig = "{\"Version\":\"2012-10-17\",\"Statement\":[]}";
         }
 
@@ -218,15 +215,17 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         RgwAdmin rgwAdmin = getRgwAdminClient(storeId);
         String username = account.getUuid();
 
-        s_logger.debug("Attempting to create Ceph RGW user for account " + account.getAccountName() + " with UUID " + username);
+        logger.debug("Attempting to create Ceph RGW user for account {} with UUID {}", account, username);
         try {
             Optional<User> user = rgwAdmin.getUserInfo(username);
             if (user.isPresent()) {
-                s_logger.info("User already exists in Ceph RGW: " + username);
+                logger.info("User already exists in Ceph RGW: " + username);
                 return true;
+            } else {
+                logger.debug("User does not exist. Creating user in Ceph RGW: " + username);
             }
         } catch (Exception e) {
-            s_logger.debug("User does not exist. Creating user in Ceph RGW: " + username);
+            logger.debug("Get user info failed for user {} with exception {}. Proceeding with user creation.",  username, e.getMessage());
         }
 
         try {
@@ -293,7 +292,7 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         RgwAdmin rgwAdmin = getRgwAdminClient(storeId);
 
         try {
-            rgwAdmin.setBucketQuota(bucket.getName(), -1, size);
+            rgwAdmin.setIndividualBucketQuota(null, bucket.getName(), -1, size * 1024 * 1024);
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }
@@ -351,7 +350,7 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
                         new AWSStaticCredentialsProvider(
                                 new BasicAWSCredentials(accessKey, secretKey)))
                 .withEndpointConfiguration(
-                        new AwsClientBuilder.EndpointConfiguration(url, "auto"))
+                        new AwsClientBuilder.EndpointConfiguration(url, null))
                 .build();
 
         if (client == null) {

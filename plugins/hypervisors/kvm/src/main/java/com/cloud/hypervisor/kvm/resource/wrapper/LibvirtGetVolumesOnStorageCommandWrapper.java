@@ -161,11 +161,7 @@ public final class LibvirtGetVolumesOnStorageCommandWrapper extends CommandWrapp
             QemuImg qemu = new QemuImg(0);
             QemuImgFile qemuFile = new QemuImgFile(disk.getPath(), disk.getFormat());
             if (StoragePoolType.RBD.equals(pool.getType())) {
-                String rbdDestFile = KVMPhysicalDisk.RBDStringBuilder(pool.getSourceHost(),
-                        pool.getSourcePort(),
-                        pool.getAuthUserName(),
-                        pool.getAuthSecret(),
-                        disk.getPath());
+                String rbdDestFile = KVMPhysicalDisk.RBDStringBuilder(pool, disk.getPath());
                 qemuFile = new QemuImgFile(rbdDestFile, disk.getFormat());
             }
             return qemu.info(qemuFile, secure);

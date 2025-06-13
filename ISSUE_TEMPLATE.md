@@ -35,16 +35,13 @@ New line separated list of affected versions, commit ID for issues on main branc
 Information about the configuration if relevant, e.g. basic network, advanced networking, etc.  N/A otherwise
 -->
 
-
 ##### OS / ENVIRONMENT
 <!--
 Information about the environment if relevant, N/A otherwise
 -->
 
-
 ##### SUMMARY
 <!-- Explain the problem/feature briefly -->
-
 
 ##### STEPS TO REPRODUCE
 <!--

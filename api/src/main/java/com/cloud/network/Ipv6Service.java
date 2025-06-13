@@ -58,7 +58,7 @@ public interface Ipv6Service extends PluggableService, Configurable {
 
     Pair<Integer, Integer> getUsedTotalIpv6SubnetForZone(long zoneId);
 
-    Pair<String, String> preAllocateIpv6SubnetForNetwork(long zoneId) throws ResourceAllocationException;
+    Pair<String, String> preAllocateIpv6SubnetForNetwork(DataCenter zone) throws ResourceAllocationException;
 
     void assignIpv6SubnetToNetwork(String subnet, long networkId);
 

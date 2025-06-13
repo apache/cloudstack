@@ -133,6 +133,9 @@ public class UserAccountJoinVO extends BaseViewVO implements InternalIdentity, I
     @Column(name = "is_user_2fa_enabled")
     boolean user2faEnabled;
 
+    @Column(name = "api_key_access")
+    Boolean apiKeyAccess;
+
     public UserAccountJoinVO() {
     }
 
@@ -280,5 +283,9 @@ public class UserAccountJoinVO extends BaseViewVO implements InternalIdentity, I
 
     public boolean isUser2faEnabled() {
         return user2faEnabled;
+    }
+
+    public Boolean getApiKeyAccess() {
+        return apiKeyAccess;
     }
 }

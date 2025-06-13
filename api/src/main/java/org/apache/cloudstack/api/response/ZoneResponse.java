@@ -95,7 +95,7 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
 
     @SerializedName("securitygroupsenabled")
     @Param(description = "true if security groups support is enabled, false otherwise")
-    private boolean securityGroupsEnabled;
+    private Boolean securityGroupsEnabled;
 
     @SerializedName("allocationstate")
     @Param(description = "the allocation state of the cluster")
@@ -115,7 +115,7 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
 
     @SerializedName(ApiConstants.LOCAL_STORAGE_ENABLED)
     @Param(description = "true if local storage offering enabled, false otherwise")
-    private boolean localStorageEnabled;
+    private Boolean localStorageEnabled;
 
     @SerializedName(ApiConstants.TAGS)
     @Param(description = "the list of resource tags associated with zone.", responseObject = ResourceTagResponse.class, since = "4.3")
@@ -157,8 +157,21 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
     @Param(description = "AS Number Range")
     private String asnRange;
 
+    @SerializedName(ApiConstants.ROUTED_MODE_ENABLED)
+    @Param(description = "true, if routed network/vpc is enabled", since = "4.20.1")
+    private boolean routedModeEnabled = false;
+
+    @SerializedName(ApiConstants.STORAGE_ACCESS_GROUPS)
+    @Param(description = "comma-separated list of storage access groups for the zone", since = "4.21.0")
+    private String storageAccessGroups;
+
+
     public ZoneResponse() {
         tags = new LinkedHashSet<ResourceTagResponse>();
+    }
+
+    public ZoneResponse(Set<ResourceTagResponse> tags) {
+        this.tags = tags;
     }
 
     public void setId(String id) {
@@ -397,6 +410,14 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
         return type;
     }
 
+    public String getStorageAccessGroups() {
+        return storageAccessGroups;
+    }
+
+    public void setStorageAccessGroups(String storageAccessGroups) {
+        this.storageAccessGroups = storageAccessGroups;
+    }
+
     public void setNsxEnabled(boolean nsxEnabled) {
         this.nsxEnabled = nsxEnabled;
     }
@@ -411,5 +432,13 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
 
     public String getAsnRange() {
         return asnRange;
+    }
+
+    public boolean isRoutedModeEnabled() {
+        return routedModeEnabled;
+    }
+
+    public void setRoutedModeEnabled(boolean routedModeEnabled) {
+        this.routedModeEnabled = routedModeEnabled;
     }
 }

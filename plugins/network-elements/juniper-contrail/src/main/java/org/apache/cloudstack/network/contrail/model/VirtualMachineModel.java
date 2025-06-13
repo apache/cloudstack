@@ -79,7 +79,7 @@ public class VirtualMachineModel extends ModelObjectBase {
         setProperties(controller, instance);
         UserVm userVm = controller.getVmDao().findById(instance.getId());
         if (userVm != null && userVm.getUserData() != null) {
-            logger.debug("vm " + instance.getInstanceName() + " user data: " + userVm.getUserData());
+            logger.debug(String.format("vm %s user data: %s", instance, userVm.getUserData()));
             final Gson json = new Gson();
             Map<String, String> kvmap = json.fromJson(userVm.getUserData(), new TypeToken<Map<String, String>>() {
             }.getType());
@@ -99,7 +99,7 @@ public class VirtualMachineModel extends ModelObjectBase {
                 } else {
                     // Throw a CloudRuntimeException in case the UUID is not valid.
                     String message = "Invalid UUID ({0}) given for the service-instance for VM {1}.";
-                    message = MessageFormat.format(message, instance.getId(), serviceUuid);
+                    message = MessageFormat.format(message, serviceUuid, instance);
                     logger.warn(message);
                     throw new CloudRuntimeException(message);
                 }

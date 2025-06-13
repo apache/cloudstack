@@ -123,9 +123,9 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
 
         if (logger.isDebugEnabled()) {
             if (!found) {
-                logger.debug("template " + templateId + " is not in store:" + store.getId() + ", type:" + store.getRole());
+                logger.debug("template {} with id {} is not in store: {}, type: {}", templ, templateId, store, store.getRole());
             } else {
-                logger.debug("template " + templateId + " is already in store:" + store.getId() + ", type:" + store.getRole());
+                logger.debug("template {} with id {} is already in store:{}, type: {}", templ, templateId, store, store.getRole());
             }
         }
 
@@ -242,7 +242,7 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
         HostVO host = hostDao.findById(hostId);
         List<StoragePoolVO> pools = getStoragePoolsForScope(host.getDataCenterId(), host.getClusterId(), hostId, host.getHypervisorType());
         if (CollectionUtils.isEmpty(pools)) {
-            throw new CloudRuntimeException(String.format("No storage pool found to download template: %s", templateVO.getName()));
+            throw new CloudRuntimeException(String.format("No storage pool found to download template: %s", templateVO));
         }
         List<VMTemplateStoragePoolVO> existingRefs = templatePoolDao.listByTemplateId(templateVO.getId());
         return getOneMatchingPoolIdFromRefs(existingRefs, pools);
@@ -274,7 +274,7 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
         }
 
         if (poolId == null) {
-            throw new CloudRuntimeException("No storage pool specified to download template: " + templateId);
+            throw new CloudRuntimeException(String.format("No storage pool specified to download template: %s", templateVO));
         }
 
         StoragePoolVO poolVO = primaryDataStoreDao.findById(poolId);
@@ -284,7 +284,7 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
 
         VMTemplateStoragePoolVO spoolRef = templatePoolDao.findByPoolTemplate(poolId, templateId, null);
         if (spoolRef == null) {
-            throw new CloudRuntimeException("Template not created on managed storage pool: " + poolId + " to copy the download template: " + templateId);
+            throw new CloudRuntimeException(String.format("Template not created on managed storage pool: %s to copy the download template: %s", poolVO, templateVO));
         } else if (spoolRef.getDownloadState() == VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED) {
             directDownloadManager.downloadTemplate(templateId, poolId, hostId);
         }

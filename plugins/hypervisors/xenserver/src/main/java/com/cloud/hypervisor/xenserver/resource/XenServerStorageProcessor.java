@@ -23,6 +23,7 @@ import static com.cloud.utils.ReflectUtil.flattenProperties;
 import static com.google.common.collect.Lists.newArrayList;
 
 import java.io.File;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -810,7 +811,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
             final SR poolSr = hypervisorResource.getStorageRepository(conn,
                     CitrixHelper.getSRNameLabel(primaryStore.getUuid(), primaryStore.getPoolType(), primaryStore.getPath()));
             VDI.Record vdir = new VDI.Record();
-            vdir.nameLabel = volume.getName();
+            vdir.nameLabel = getEncodedVolumeName(volume.getName());
             vdir.SR = poolSr;
             vdir.type = Types.VdiType.USER;
 
@@ -829,6 +830,26 @@ public class XenServerStorageProcessor implements StorageProcessor {
             logger.debug("create volume failed: " + e.toString());
             return new CreateObjectAnswer(e.toString());
         }
+    }
+
+    private String getEncodedVolumeName(String volumeName) throws UnsupportedEncodingException {
+        byte[] utf8Bytes = volumeName.getBytes("UTF-8");
+        // Decode UTF-8 into a Java String (UTF-16)
+        String decoded = new String(utf8Bytes, "UTF-8");
+        // Print each code unit as a Unicode escape
+        StringBuilder unicodeEscaped = new StringBuilder();
+        for (int i = 0; i < decoded.length(); i++) {
+            char ch = decoded.charAt(i);
+            if (ch <= 127 && Character.isLetterOrDigit(ch)) {
+                // Keep ASCII alphanumerics as-is
+                unicodeEscaped.append(ch);
+            } else {
+                // Escape non-ASCII characters
+                unicodeEscaped.append(String.format("\\u%04X", (int) ch));
+            }
+        }
+
+        return unicodeEscaped.toString();
     }
 
     @Override

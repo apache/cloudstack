@@ -75,7 +75,7 @@ public class RandomAllocator extends AdapterBase implements HostAllocator {
         if (logger.isDebugEnabled()) {
             logger.debug(String.format("Found %d hosts %s with type: %s, zone ID: %d, pod ID: %d, cluster ID: %s, offering host tag(s): %s, template tag: %s",
                     taggedHosts.size(),
-                    (taggedHosts.isEmpty() ? "" : String.format("(%s)", StringUtils.join(taggedHosts.stream().map(HostVO::getId).toArray(), ","))),
+                    (taggedHosts.isEmpty() ? "" : String.format("(%s)", StringUtils.join(taggedHosts.stream().map(HostVO::toString).toArray(), ","))),
                     type.name(), dcId, podId, clusterId, offeringHostTag, templateTag));
         }
         return taggedHosts;
@@ -94,15 +94,17 @@ public class RandomAllocator extends AdapterBase implements HostAllocator {
             return suitableHosts;
         }
         String offeringHostTag = offering.getHostTag();
+
         VMTemplateVO template = (VMTemplateVO)vmProfile.getTemplate();
         String templateTag = template.getTemplateTag();
         String hostTag = null;
-        if (ObjectUtils.anyNull(offeringHostTag, templateTag)) {
-            hostTag = offeringHostTag;
-            hostTag = hostTag == null ? templateTag : String.format("%s, %s", hostTag, templateTag);
-            logger.debug(String.format("Looking for hosts in dc [%s], pod [%s], cluster [%s] and complying with host tag(s): [%s]", dcId, podId, clusterId, hostTag));
+        if (ObjectUtils.anyNotNull(offeringHostTag, templateTag)) {
+            hostTag = ObjectUtils.allNotNull(offeringHostTag, templateTag) ?
+                    String.format("%s, %s", offeringHostTag, templateTag) :
+                    ObjectUtils.firstNonNull(offeringHostTag, templateTag);
+            logger.debug("Looking for hosts in dc [{}], pod [{}], cluster [{}] and complying with host tag(s): [{}]", dcId, podId, clusterId, hostTag);
         } else {
-            logger.debug("Looking for hosts in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId);
+            logger.debug("Looking for hosts in dc: {} pod: {} cluster: {}", dcId , podId, clusterId);
         }
         if (hosts != null) {
             // retain all computing hosts, regardless of whether they support routing...it's random after all
@@ -139,19 +141,19 @@ public class RandomAllocator extends AdapterBase implements HostAllocator {
             }
             if (avoid.shouldAvoid(host)) {
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Host name: " + host.getName() + ", hostId: " + host.getId() + " is in avoid set, skipping this and trying other available hosts");
+                    logger.debug(String.format("Host %s is in avoid set, skipping this and trying other available hosts", host));
                 }
                 continue;
             }
             Pair<Boolean, Boolean> cpuCapabilityAndCapacity = capacityManager.checkIfHostHasCpuCapabilityAndCapacity(host, offering, considerReservedCapacity);
             if (!cpuCapabilityAndCapacity.first() || !cpuCapabilityAndCapacity.second()) {
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Not using host " + host.getId() + "; host has cpu capability? " + cpuCapabilityAndCapacity.first() + ", host has capacity?" + cpuCapabilityAndCapacity.second());
+                    logger.debug(String.format("Not using host %s; host has cpu capability? %s, host has capacity? %s", host, cpuCapabilityAndCapacity.first(), cpuCapabilityAndCapacity.second()));
                 }
                 continue;
             }
             if (logger.isDebugEnabled()) {
-                logger.debug("Found a suitable host, adding to list: " + host.getId());
+                logger.debug(String.format("Found a suitable host, adding to list: %s", host));
             }
             suitableHosts.add(host);
         }

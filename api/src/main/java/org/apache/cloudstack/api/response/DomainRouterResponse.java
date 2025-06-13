@@ -245,6 +245,10 @@ public class DomainRouterResponse extends BaseResponseWithAnnotations implements
     @Param(description = "the version of the code / software in the router")
     private String softwareVersion;
 
+    @SerializedName(ApiConstants.ARCH)
+    @Param(description = "CPU arch of the router", since = "4.20.1")
+    private String arch;
+
     public DomainRouterResponse() {
         nics = new LinkedHashSet<NicResponse>();
     }
@@ -517,5 +521,9 @@ public class DomainRouterResponse extends BaseResponseWithAnnotations implements
 
     public void setSoftwareVersion(String softwareVersion) {
         this.softwareVersion = softwareVersion;
+    }
+
+    public void setArch(String arch) {
+        this.arch = arch;
     }
 }

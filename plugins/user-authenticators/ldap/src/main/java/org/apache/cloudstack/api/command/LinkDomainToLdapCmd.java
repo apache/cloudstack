@@ -107,12 +107,12 @@ public class LinkDomainToLdapCmd extends BaseCmd {
                             UserAccount userAccount = _accountService.createUserAccount(admin, "", ldapUser.getFirstname(), ldapUser.getLastname(), ldapUser.getEmail(), null,
                                     admin, Account.Type.DOMAIN_ADMIN, RoleType.DomainAdmin.getId(), domainId, null, null, UUID.randomUUID().toString(), UUID.randomUUID().toString(), User.Source.LDAP);
                             response.setAdminId(String.valueOf(userAccount.getAccountId()));
-                            logger.info("created an account with name " + admin + " in the given domain " + domainId);
+                            logger.info("created an account with name {} in the given domain {} with id {}", admin, _domainService.getDomain(domainId), domainId);
                         } catch (Exception e) {
-                            logger.info("an exception occurred while creating account with name " + admin +" in domain " + domainId, e);
+                            logger.info("an exception occurred while creating account with name {} in domain {} with id {}", admin, _domainService.getDomain(domainId), domainId, e);
                         }
                     } else {
-                        logger.debug("an account with name " + admin + " already exists in the domain " + domainId);
+                        logger.debug("an account with name {} already exists in the domain {} with id {}", admin, _domainService.getDomain(domainId), domainId);
                     }
                 } else {
                     logger.debug("ldap user with username "+admin+" is disabled in the given group/ou");

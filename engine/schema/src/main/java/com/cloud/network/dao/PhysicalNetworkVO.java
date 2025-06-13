@@ -37,6 +37,7 @@ import com.cloud.network.PhysicalNetwork;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 /**
  * NetworkConfigurationVO contains information about a specific physical network.
@@ -247,5 +248,12 @@ public class PhysicalNetworkVO implements PhysicalNetwork {
     @Override
     public String getName() {
         return name;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("PhysicalNetwork %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "name"));
     }
 }

@@ -170,8 +170,7 @@ public class NicIpAliasDaoImpl extends GenericDaoBase<NicIpAliasVO, Long> implem
     public Integer countAliasIps(long id) {
         SearchCriteria<NicIpAliasVO> sc = AllFieldsSearch.create();
         sc.setParameters("instanceId", id);
-        List<NicIpAliasVO> list = listBy(sc);
-        return list.size();
+        return getCount(sc);
     }
 
     @Override

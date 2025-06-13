@@ -18,18 +18,23 @@ package org.apache.cloudstack.api.response;
 
 import com.google.gson.annotations.SerializedName;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
 
 public class RegisterResponse extends BaseResponse {
-    @SerializedName("apikey")
+    @SerializedName(ApiConstants.API_KEY)
     @Param(description = "the api key of the registered user", isSensitive = true)
     private String apiKey;
 
-    @SerializedName("secretkey")
+    @SerializedName(ApiConstants.SECRET_KEY)
     @Param(description = "the secret key of the registered user", isSensitive = true)
     private String secretKey;
+
+    @SerializedName(ApiConstants.API_KEY_ACCESS)
+    @Param(description = "whether api key access is allowed or not", isSensitive = true)
+    private Boolean apiKeyAccess;
 
     public String getApiKey() {
         return apiKey;
@@ -45,5 +50,9 @@ public class RegisterResponse extends BaseResponse {
 
     public void setSecretKey(String secretKey) {
         this.secretKey = secretKey;
+    }
+
+    public void setApiKeyAccess(Boolean apiKeyAccess) {
+        this.apiKeyAccess = apiKeyAccess;
     }
 }

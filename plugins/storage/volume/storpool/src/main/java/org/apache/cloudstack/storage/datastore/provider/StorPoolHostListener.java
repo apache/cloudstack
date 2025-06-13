@@ -114,7 +114,7 @@ public class StorPoolHostListener implements HypervisorHostListener {
         if (!isCurrentVersionSupportsEverythingFromPrevious) {
             String msg = "The current StorPool driver does not support all functionality from the one before upgrade to CS";
             StorPoolUtil.spLog("Storage pool [%s] is not connected to host [%s] because the functionality after the upgrade is not full",
-                    poolId, hostId);
+                    pool, host);
             alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, pool.getDataCenterId(), pool.getPodId(), msg, msg);
             return false;
         }
@@ -126,24 +126,23 @@ public class StorPoolHostListener implements HypervisorHostListener {
         boolean isPoolConnectedToTheHost = poolHost != null;
 
         if (answer == null) {
-            StorPoolUtil.spLog("Storage pool [%s] is not connected to the host [%s]", poolVO.getName(), host.getName());
+            StorPoolUtil.spLog("Storage pool [%s] is not connected to the host [%s]", poolVO, host);
             deleteVolumeWhenHostCannotConnectPool(conn, volumeOnPool);
             removePoolOnHost(poolHost, isPoolConnectedToTheHost);
-            throw new CloudRuntimeException("Unable to get an answer to the modify storage pool command" + pool.getId());
+            throw new CloudRuntimeException(String.format("Unable to get an answer to the modify storage pool command for pool %s", pool));
         }
 
         if (!answer.getResult()) {
-            StorPoolUtil.spLog("Storage pool [%s] is not connected to the host [%s]", poolVO.getName(), host.getName());
+            StorPoolUtil.spLog("Storage pool [%s] is not connected to the host [%s]", poolVO, host);
             removePoolOnHost(poolHost, isPoolConnectedToTheHost);
 
             if (answer.getDetails() != null && isStorPoolVolumeOrStorageNotExistsOnHost(answer)) {
                 deleteVolumeWhenHostCannotConnectPool(conn, volumeOnPool);
                 return false;
             }
-            String msg = "Unable to attach storage pool" + poolId + " to the host" + hostId;
+            String msg = String.format("Unable to attach storage pool %s to the host %s", pool, host);
             alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, pool.getDataCenterId(), pool.getPodId(), msg, msg);
-            throw new CloudRuntimeException("Unable establish connection from storage head to storage pool " + pool.getId() + " due to " + answer.getDetails() +
-                pool.getId());
+            throw new CloudRuntimeException(String.format("Unable establish connection from storage head to storage pool %s due to %s", pool, answer.getDetails()));
         }
 
         StorPoolModifyStoragePoolAnswer mspAnswer = (StorPoolModifyStoragePoolAnswer)answer;
@@ -152,9 +151,8 @@ public class StorPoolHostListener implements HypervisorHostListener {
             List<StoragePoolVO> localStoragePools = primaryStoreDao.listLocalStoragePoolByPath(pool.getDataCenterId(), datastoreName);
             for (StoragePoolVO localStoragePool : localStoragePools) {
                 if (datastoreName.equals(localStoragePool.getPath())) {
-                    logger.warn("Storage pool: " + pool.getId() + " has already been added as local storage: " + localStoragePool.getName());
-                    throw new StorageConflictException("Cannot add shared storage pool: " + pool.getId() + " because it has already been added as local storage:"
-                            + localStoragePool.getName());
+                    logger.warn("Storage pool: {} has already been added as local storage: {}", pool, localStoragePool);
+                    throw new StorageConflictException(String.format("Cannot add shared storage pool: %s because it has already been added as local storage: %s", pool, localStoragePool));
                 }
             }
         }
@@ -173,7 +171,7 @@ public class StorPoolHostListener implements HypervisorHostListener {
 
         StorPoolHelper.setSpClusterIdIfNeeded(hostId, mspAnswer.getClusterId(), clusterDao, hostDao, clusterDetailsDao);
 
-        StorPoolUtil.spLog("Connection established between storage pool [%s] and host [%s]", poolVO.getName(), host.getName());
+        StorPoolUtil.spLog("Connection established between storage pool [%s] and host [%s]", poolVO, host);
         return true;
     }
 

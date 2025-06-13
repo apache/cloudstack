@@ -105,6 +105,30 @@ public class DomainResponse extends BaseResponseWithAnnotations implements Resou
     @SerializedName("snapshotavailable") @Param(description="the total number of snapshots available for this domain")
     private String snapshotAvailable;
 
+    @SerializedName(ApiConstants.BACKUP_LIMIT)
+    @Param(description = "the total number of backups which can be stored by this domain", since = "4.21.0")
+    private String backupLimit;
+
+    @SerializedName(ApiConstants.BACKUP_TOTAL)
+    @Param(description = "the total number of backups stored by this domain", since = "4.21.0")
+    private Long backupTotal;
+
+    @SerializedName(ApiConstants.BACKUP_AVAILABLE)
+    @Param(description = "the total number of backups available to this domain", since = "4.21.0")
+    private String backupAvailable;
+
+    @SerializedName(ApiConstants.BACKUP_STORAGE_LIMIT)
+    @Param(description = "the total backup storage space (in GiB) the domain can own", since = "4.21.0")
+    private String backupStorageLimit;
+
+    @SerializedName(ApiConstants.BACKUP_STORAGE_TOTAL)
+    @Param(description = "the total backup storage space (in GiB) owned by the domain", since = "4.21.0")
+    private Long backupStorageTotal;
+
+    @SerializedName(ApiConstants.BACKUP_STORAGE_AVAILABLE)
+    @Param(description = "the total backup storage space (in GiB) available to the domain", since = "4.21.0")
+    private String backupStorageAvailable;
+
     @SerializedName("templatelimit") @Param(description="the total number of templates which can be created by this domain")
     private String templateLimit;
 
@@ -176,6 +200,30 @@ public class DomainResponse extends BaseResponseWithAnnotations implements Resou
 
     @SerializedName("secondarystorageavailable") @Param(description="the total secondary storage space (in GiB) available to be used for this domain", since="4.2.0")
     private String secondaryStorageAvailable;
+
+    @SerializedName(ApiConstants.BUCKET_LIMIT)
+    @Param(description = "the total number of buckets which can be stored by this domain", since = "4.21.0")
+    private String bucketLimit;
+
+    @SerializedName(ApiConstants.BUCKET_TOTAL)
+    @Param(description = "the total number of buckets stored by this domain", since = "4.21.0")
+    private Long bucketTotal;
+
+    @SerializedName(ApiConstants.BUCKET_AVAILABLE)
+    @Param(description = "the total number of buckets available to this domain", since = "4.21.0")
+    private String bucketAvailable;
+
+    @SerializedName(ApiConstants.OBJECT_STORAGE_LIMIT)
+    @Param(description = "the total object storage space (in GiB) the domain can own", since = "4.21.0")
+    private String objectStorageLimit;
+
+    @SerializedName(ApiConstants.OBJECT_STORAGE_TOTAL)
+    @Param(description = "the total object storage space (in GiB) owned by the domain", since = "4.21.0")
+    private Long objectStorageTotal;
+
+    @SerializedName(ApiConstants.OBJECT_STORAGE_AVAILABLE)
+    @Param(description = "the total object storage space (in GiB) available to the domain", since = "4.21.0")
+    private String objectStorageAvailable;
 
     @SerializedName(ApiConstants.RESOURCE_ICON)
     @Param(description = "Base64 string representation of the resource icon", since = "4.16.0.0")
@@ -314,6 +362,36 @@ public class DomainResponse extends BaseResponseWithAnnotations implements Resou
     }
 
     @Override
+    public void setBackupLimit(String backupLimit) {
+        this.backupLimit = backupLimit;
+    }
+
+    @Override
+    public void setBackupTotal(Long backupTotal) {
+        this.backupTotal = backupTotal;
+    }
+
+    @Override
+    public void setBackupAvailable(String backupAvailable) {
+        this.backupAvailable = backupAvailable;
+    }
+
+    @Override
+    public void setBackupStorageLimit(String backupStorageLimit) {
+        this.backupStorageLimit = backupStorageLimit;
+    }
+
+    @Override
+    public void setBackupStorageTotal(Long backupStorageTotal) {
+        this.backupStorageTotal = backupStorageTotal;
+    }
+
+    @Override
+    public void setBackupStorageAvailable(String backupStorageAvailable) {
+        this.backupStorageAvailable = backupStorageAvailable;
+    }
+
+    @Override
     public void setTemplateLimit(String templateLimit) {
         this.templateLimit = templateLimit;
     }
@@ -428,6 +506,36 @@ public class DomainResponse extends BaseResponseWithAnnotations implements Resou
     @Override
     public void setSecondaryStorageAvailable(String secondaryStorageAvailable) {
         this.secondaryStorageAvailable = secondaryStorageAvailable;
+    }
+
+    @Override
+    public void setBucketLimit(String bucketLimit) {
+        this.bucketLimit = bucketLimit;
+    }
+
+    @Override
+    public void setBucketTotal(Long bucketTotal) {
+        this.bucketTotal = bucketTotal;
+    }
+
+    @Override
+    public void setBucketAvailable(String bucketAvailable) {
+        this.bucketAvailable = bucketAvailable;
+    }
+
+    @Override
+    public void setObjectStorageLimit(String objectStorageLimit) {
+        this.objectStorageLimit = objectStorageLimit;
+    }
+
+    @Override
+    public void setObjectStorageTotal(Long objectStorageTotal) {
+        this.objectStorageTotal = objectStorageTotal;
+    }
+
+    @Override
+    public void setObjectStorageAvailable(String objectStorageAvailable) {
+        this.objectStorageAvailable = objectStorageAvailable;
     }
 
     public void setState(String state) {

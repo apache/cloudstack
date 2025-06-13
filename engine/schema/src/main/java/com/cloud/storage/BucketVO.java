@@ -19,8 +19,7 @@ package com.cloud.storage;
 import com.cloud.utils.db.GenericDao;
 import com.google.gson.annotations.Expose;
 import org.apache.cloudstack.storage.object.Bucket;
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -257,7 +256,8 @@ public class BucketVO implements Bucket {
 
     @Override
     public String toString() {
-        return String.format("Bucket %s", new ToStringBuilder(this, ToStringStyle.JSON_STYLE).append("uuid", getUuid()).append("name", getName())
-                .append("ObjectStoreId", getObjectStoreId()).toString());
+        return String.format("Bucket %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "name", "objectStoreId"));
     }
 }

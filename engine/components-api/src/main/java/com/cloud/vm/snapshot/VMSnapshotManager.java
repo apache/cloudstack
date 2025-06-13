@@ -31,7 +31,7 @@ public interface VMSnapshotManager extends VMSnapshotService, Manager {
     static final ConfigKey<Integer> VMSnapshotExpireInterval = new ConfigKey<Integer>("Advanced", Integer.class, "vmsnapshot.expire.interval", "-1",
             "VM Snapshot expire interval in hours", true, ConfigKey.Scope.Account);
 
-    public static final int VMSNAPSHOTMAX = 10;
+    ConfigKey<Integer> VMSnapshotMax = new ConfigKey<Integer>("Advanced", Integer.class, "vmsnapshot.max", "10", "Maximum vm snapshots for a single vm", true, ConfigKey.Scope.Global);
 
     /**
      * Delete all VM snapshots belonging to one VM

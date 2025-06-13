@@ -22,6 +22,7 @@ import java.util.Map;
 
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Storage.ProvisioningType;
+import com.cloud.storage.Volume;
 import com.cloud.vm.snapshot.VMSnapshot;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
 
@@ -75,7 +76,7 @@ public class Value extends GenericPresetVariable {
     private GenericPresetVariable template;
 
     @PresetVariableDefinition(description = "Disk offering of the volume.", supportedTypes = {QuotaTypes.VOLUME})
-    private GenericPresetVariable diskOffering;
+    private DiskOfferingPresetVariables diskOffering;
 
     @PresetVariableDefinition(description = "Storage where the volume or snapshot is. While handling with snapshots, this value can be from the primary storage if the global " +
             "setting 'snapshot.backup.to.secondary' is false, otherwise it will be from secondary storage.", supportedTypes = {QuotaTypes.VOLUME, QuotaTypes.SNAPSHOT})
@@ -93,6 +94,10 @@ public class Value extends GenericPresetVariable {
 
     @PresetVariableDefinition(description = "The volume format. Values can be: RAW, VHD, VHDX, OVA and QCOW2.", supportedTypes = {QuotaTypes.VOLUME, QuotaTypes.VOLUME_SECONDARY})
     private String volumeFormat;
+
+    @PresetVariableDefinition(description = "The volume type. Values can be: UNKNOWN, ROOT, SWAP, DATADISK and ISO.", supportedTypes = {QuotaTypes.VOLUME})
+    private Volume.Type volumeType;
+
     private String state;
 
     public Host getHost() {
@@ -194,11 +199,11 @@ public class Value extends GenericPresetVariable {
         fieldNamesToIncludeInToString.add("template");
     }
 
-    public GenericPresetVariable getDiskOffering() {
+    public DiskOfferingPresetVariables getDiskOffering() {
         return diskOffering;
     }
 
-    public void setDiskOffering(GenericPresetVariable diskOffering) {
+    public void setDiskOffering(DiskOfferingPresetVariables diskOffering) {
         this.diskOffering = diskOffering;
         fieldNamesToIncludeInToString.add("diskOffering");
     }
@@ -255,6 +260,15 @@ public class Value extends GenericPresetVariable {
 
     public String getVolumeFormat() {
         return volumeFormat;
+    }
+
+    public Volume.Type getVolumeType() {
+        return volumeType;
+    }
+
+    public void setVolumeType(Volume.Type volumeType) {
+        this.volumeType = volumeType;
+        fieldNamesToIncludeInToString.add("volumeType");
     }
 
     public String getState() {

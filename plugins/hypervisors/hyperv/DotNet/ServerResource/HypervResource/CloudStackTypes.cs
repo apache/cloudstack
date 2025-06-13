@@ -26,7 +26,7 @@ using System.Threading.Tasks;
 // C# versions of certain CloudStack types to simplify JSON serialisation.
 // Limit to the number of types, because they are written and maintained manually.
 // JsonProperty used to identify property name when serialised, which allows
-// later adoption of C# naming conventions if requried. 
+// later adoption of C# naming conventions if requried.
 namespace HypervResource
 {
     public class PrimaryDataStoreTO
@@ -474,15 +474,15 @@ namespace HypervResource
         /// </summary>
         Filesystem,
         /// <summary>
-        /// NFS or CIFS 
+        /// NFS or CIFS
         /// </summary>
         NetworkFilesystem,
         /// <summary>
-        /// shared LUN, with a clusterfs overlay 
+        /// shared LUN, with a clusterfs overlay
         /// </summary>
         IscsiLUN,
         /// <summary>
-        /// for e.g., ZFS Comstar 
+        /// for e.g., ZFS Comstar
         /// </summary>
         Iscsi,
         /// <summary>
@@ -494,31 +494,31 @@ namespace HypervResource
         /// </summary>
         LVM,
         /// <summary>
-        /// 
+        ///
         /// </summary>
         CLVM,
         /// <summary>
-        /// 
+        ///
         /// </summary>
         RBD,
         /// <summary>
-        /// 
+        ///
         /// </summary>
         SharedMountPoint,
         /// <summary>
-        /// VMware VMFS storage 
+        /// VMware VMFS storage
         /// </summary>
         VMFS,
         /// <summary>
-        /// for XenServer, Storage Pool is set up by customers. 
+        /// for XenServer, Storage Pool is set up by customers.
         /// </summary>
         PreSetup,
         /// <summary>
-        /// XenServer local EXT SR 
+        /// XenServer local EXT SR
         /// </summary>
         EXT,
         /// <summary>
-        /// 
+        ///
         /// </summary>
         OCFS2,
         /// <summary>
@@ -662,7 +662,7 @@ namespace HypervResource
     }
 
     /// <summary>
-    /// Fully qualified named for a number of types used in CloudStack.  Used to specify the intended type for JSON serialised objects. 
+    /// Fully qualified named for a number of types used in CloudStack.  Used to specify the intended type for JSON serialised objects.
     /// </summary>
     public class CloudStackTypes
     {

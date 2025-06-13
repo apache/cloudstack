@@ -82,7 +82,7 @@ public class ListBackupScheduleCmd extends BaseCmd {
             List<BackupSchedule> schedules = backupManager.listBackupSchedule(getVmId());
             ListResponse<BackupScheduleResponse> response = new ListResponse<>();
             List<BackupScheduleResponse> scheduleResponses = new ArrayList<>();
-            if (CollectionUtils.isNullOrEmpty(schedules)) {
+            if (!CollectionUtils.isNullOrEmpty(schedules)) {
                 for (BackupSchedule schedule : schedules) {
                     scheduleResponses.add(_responseGenerator.createBackupScheduleResponse(schedule));
                 }

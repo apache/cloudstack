@@ -34,10 +34,13 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
+import com.cloud.host.dao.HostDao;
 import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -49,18 +52,23 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import org.mockito.junit.MockitoJUnitRunner;
 
 /**
  * Created by sudharma_jain on 3/2/17.
  */
-
+@RunWith(MockitoJUnitRunner.class)
 public class VMInstanceDaoImplTest {
 
+    @InjectMocks
     @Spy
-    VMInstanceDaoImpl vmInstanceDao = new VMInstanceDaoImpl();
+    VMInstanceDaoImpl vmInstanceDao;
 
     @Mock
     VMInstanceVO vm;
+
+    @Mock
+    HostDao _hostDao;
 
     private AutoCloseable closeable;
 
@@ -111,9 +119,6 @@ public class VMInstanceDaoImplTest {
 
     @Test
     public void testUpdatePowerStateVmNotFound() {
-        when(vm.getPowerStateUpdateTime()).thenReturn(null);
-        when(vm.getPowerHostId()).thenReturn(1L);
-        when(vm.getPowerState()).thenReturn(VirtualMachine.PowerState.PowerOn);
         doReturn(null).when(vmInstanceDao).findById(anyLong());
 
         boolean result = vmInstanceDao.updatePowerState(1L, 1L, VirtualMachine.PowerState.PowerOff, new Date());
@@ -154,7 +159,6 @@ public class VMInstanceDaoImplTest {
         when(vm.getPowerStateUpdateCount()).thenReturn(MAX_CONSECUTIVE_SAME_STATE_UPDATE_COUNT);
         when(vm.getState()).thenReturn(Running);
         doReturn(vm).when(vmInstanceDao).findById(anyLong());
-        doReturn(true).when(vmInstanceDao).update(anyLong(), any());
 
         boolean result = vmInstanceDao.updatePowerState(1L, 1L, VirtualMachine.PowerState.PowerOn, new Date());
 
@@ -170,8 +174,8 @@ public class VMInstanceDaoImplTest {
     public void testUpdatePowerStateNoChangeMaxUpdatesInvalidStateVmStopped() {
         when(vm.getPowerStateUpdateTime()).thenReturn(null);
         when(vm.getPowerHostId()).thenReturn(1L);
+        when(vm.getHostId()).thenReturn(1L);
         when(vm.getPowerState()).thenReturn(VirtualMachine.PowerState.PowerOn);
-        when(vm.getPowerStateUpdateCount()).thenReturn(MAX_CONSECUTIVE_SAME_STATE_UPDATE_COUNT);
         when(vm.getState()).thenReturn(Stopped);
         doReturn(vm).when(vmInstanceDao).findById(anyLong());
         doReturn(true).when(vmInstanceDao).update(anyLong(), any());
@@ -190,8 +194,8 @@ public class VMInstanceDaoImplTest {
     public void testUpdatePowerStateNoChangeMaxUpdatesInvalidStateVmRunning() {
         when(vm.getPowerStateUpdateTime()).thenReturn(null);
         when(vm.getPowerHostId()).thenReturn(1L);
+        when(vm.getHostId()).thenReturn(1L);
         when(vm.getPowerState()).thenReturn(VirtualMachine.PowerState.PowerOff);
-        when(vm.getPowerStateUpdateCount()).thenReturn(MAX_CONSECUTIVE_SAME_STATE_UPDATE_COUNT);
         when(vm.getState()).thenReturn(Running);
         doReturn(vm).when(vmInstanceDao).findById(anyLong());
         doReturn(true).when(vmInstanceDao).update(anyLong(), any());

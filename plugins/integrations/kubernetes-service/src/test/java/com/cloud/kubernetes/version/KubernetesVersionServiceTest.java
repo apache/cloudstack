@@ -125,6 +125,7 @@ public class KubernetesVersionServiceTest {
 
         TemplateJoinVO templateJoinVO = Mockito.mock(TemplateJoinVO.class);
         when(templateJoinVO.getState()).thenReturn(ObjectInDataStoreStateMachine.State.Ready);
+        when(templateJoinVO.getArch()).thenReturn(CPU.CPUArch.getDefault());
         when(templateJoinDao.findById(Mockito.anyLong())).thenReturn(templateJoinVO);
 
         KubernetesSupportedVersionVO versionVO = Mockito.mock(KubernetesSupportedVersionVO.class);

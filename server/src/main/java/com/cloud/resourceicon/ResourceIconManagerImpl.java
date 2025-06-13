@@ -16,8 +16,11 @@
 // under the License.
 package com.cloud.resourceicon;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -181,7 +184,7 @@ public class ResourceIconManagerImpl extends ManagerBase implements ResourceIcon
                     Pair<Long, Long> accountDomainPair = getAccountDomain(id, resourceType);
                     Long domainId = accountDomainPair.second();
                     Long accountId = accountDomainPair.first();
-                    resourceManagerUtil.checkResourceAccessible(accountId, domainId, String.format("Account ' %s ' doesn't have permissions to upload icon for resource ' %s ", caller, id));
+                    resourceManagerUtil.checkResourceAccessible(accountId, domainId, String.format("Account ' %s ' doesn't have permissions to upload icon for resource [id: %s, uuid: %s] ", caller, id, resourceUuid));
 
                     if (existingResourceIcon == null) {
                         resourceIcon = new ResourceIconVO(id, resourceType, resourceUuid, base64Image);
@@ -221,7 +224,7 @@ public class ResourceIconManagerImpl extends ManagerBase implements ResourceIcon
                     Pair<Long, Long> accountDomainPair = getAccountDomain(id, resourceType);
                     Long domainId = accountDomainPair.second();
                     Long accountId = accountDomainPair.first();
-                    resourceManagerUtil.checkResourceAccessible(accountId, domainId, String.format("Account ' %s ' doesn't have permissions to upload icon for resource ' %s ", caller, id));
+                    resourceManagerUtil.checkResourceAccessible(accountId, domainId, String.format("Account ' %s ' doesn't have permissions to upload icon for resource [id: %s, uuid: %s]", caller, id, resourceId));
                     resourceIconDao.remove(resourceIcon.getId());
                     logger.debug("Removed icon for resources (" +
                             String.join(", ", resourceIds) + ")");
@@ -246,5 +249,19 @@ public class ResourceIconManagerImpl extends ManagerBase implements ResourceIcon
         sc.setParameters("resourceUuid", resourceUuids.toArray());
         sc.setParameters("resourceType", resourceType);
         return resourceIconDao.search(sc, null);
+    }
+
+
+    @Override
+    public Map<Long, ResourceIcon> getByResourceTypeAndIds(ResourceTag.ResourceObjectType resourceType, Collection<Long> resourceIds) {
+        List<ResourceIconVO> icons = resourceIconDao.listByResourceTypeAndIds(resourceType, resourceIds);
+        return icons.stream().collect(Collectors.toMap(ResourceIconVO::getResourceId, Function.identity()));
+    }
+
+
+    @Override
+    public Map<String, ResourceIcon> getByResourceTypeAndUuids(ResourceTag.ResourceObjectType resourceType, Collection<String> resourceUuids) {
+        List<ResourceIconVO> icons = resourceIconDao.listByResourceTypeAndUuids(resourceType, resourceUuids);
+        return icons.stream().collect(Collectors.toMap(ResourceIconVO::getResourceUuid, Function.identity()));
     }
 }

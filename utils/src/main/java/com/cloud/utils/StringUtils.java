@@ -28,6 +28,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -90,7 +92,7 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
 
     /**
      * Converts a List of tags to a comma separated list
-     * @param tags
+     * @param tagsList
      * @return String containing a comma separated list of tags
      */
 
@@ -303,5 +305,108 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
         }
 
         return mapResult;
+    }
+
+    /**
+     * Converts the comma separated numbers to ranges for any consecutive numbers in the input with numbers (and ranges)
+     * Eg: "198,200-203,299,300,301,303,304,305,306,307,308,311,197" to "197-198,200-203,299-301,303-308,311"
+     * @param inputNumbersAndRanges
+     * @return String containing a converted ranges for any consecutive numbers
+     */
+    public static String numbersToRange(String inputNumbersAndRanges) {
+        Set<Integer> numberSet = new TreeSet<>();
+        for (String inputNumber : inputNumbersAndRanges.split(",")) {
+            inputNumber = inputNumber.trim();
+            if (inputNumber.contains("-")) {
+                String[] range = inputNumber.split("-");
+                if (range.length == 2 && range[0] != null && range[1] != null) {
+                    int start = NumbersUtil.parseInt(range[0], 0);
+                    int end = NumbersUtil.parseInt(range[1], 0);
+                    for (int i = start; i <= end; i++) {
+                        numberSet.add(i);
+                    }
+                }
+            } else {
+                numberSet.add(NumbersUtil.parseInt(inputNumber, 0));
+            }
+        }
+
+        StringBuilder result = new StringBuilder();
+        if (!numberSet.isEmpty()) {
+            List<Integer> numbers = new ArrayList<>(numberSet);
+            int startNumber = numbers.get(0);
+            int endNumber = startNumber;
+
+            for (int i = 1; i < numbers.size(); i++) {
+                if (numbers.get(i) == endNumber + 1) {
+                    endNumber = numbers.get(i);
+                } else {
+                    appendRange(result, startNumber, endNumber);
+                    startNumber = endNumber = numbers.get(i);
+                }
+            }
+            appendRange(result, startNumber, endNumber);
+        }
+
+        return result.toString();
+    }
+
+    private static void appendRange(StringBuilder sb, int startNumber, int endNumber) {
+        if (sb.length() > 0) {
+            sb.append(",");
+        }
+        if (startNumber == endNumber) {
+            sb.append(startNumber);
+        } else {
+            sb.append(startNumber).append("-").append(endNumber);
+        }
+    }
+
+    /**
+     * Converts the comma separated numbers and ranges to numbers
+     * Eg: "197-198,200-203,299-301,303-308,311" to "197,198,200,201,202,203,299,300,301,303,304,305,306,307,308,311"
+     * @param inputNumbersAndRanges
+     * @return String containing a converted numbers
+     */
+    public static String rangeToNumbers(String inputNumbersAndRanges) {
+        Set<Integer> numberSet = new TreeSet<>();
+        for (String inputNumber : inputNumbersAndRanges.split(",")) {
+            inputNumber = inputNumber.trim();
+            if (inputNumber.contains("-")) {
+                String[] range = inputNumber.split("-");
+                int startNumber = Integer.parseInt(range[0]);
+                int endNumber = Integer.parseInt(range[1]);
+                for (int i = startNumber; i <= endNumber; i++) {
+                    numberSet.add(i);
+                }
+            } else {
+                numberSet.add(Integer.parseInt(inputNumber));
+            }
+        }
+
+        StringBuilder result = new StringBuilder();
+        for (int number : numberSet) {
+            if (result.length() > 0) {
+                result.append(",");
+            }
+            result.append(number);
+        }
+
+        return result.toString();
+    }
+
+    public static String[] splitCommaSeparatedStrings(String... tags) {
+        StringBuilder sb = new StringBuilder();
+        for (String tag : tags) {
+            if (tag != null && !tag.isEmpty()) {
+                if (sb.length() > 0) {
+                    sb.append(",");
+                }
+                sb.append(tag);
+            }
+        }
+        String appendedTags = sb.toString();
+        String[] finalMergedTagsArray = appendedTags.split(",");
+        return finalMergedTagsArray;
     }
 }

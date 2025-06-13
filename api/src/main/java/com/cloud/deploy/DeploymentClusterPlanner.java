@@ -62,7 +62,7 @@ public interface DeploymentClusterPlanner extends DeploymentPlanner {
             "vm.allocation.algorithm",
             "Advanced",
             "random",
-            "Order in which hosts within a cluster will be considered for VM/volume allocation. The value can be 'random', 'firstfit', 'userdispersing', 'userconcentratedpod_random', 'userconcentratedpod_firstfit', or 'firstfitleastconsumed'.",
+            "Order in which hosts within a cluster will be considered for VM allocation. The value can be 'random', 'firstfit', 'userdispersing', 'userconcentratedpod_random', 'userconcentratedpod_firstfit', or 'firstfitleastconsumed'.",
             true,
             ConfigKey.Scope.Global, null, null, null, null, null,
             ConfigKey.Kind.Select,

@@ -26,7 +26,7 @@ import org.apache.cloudstack.response.VmMetricsStatsResponse;
 
 @APICommand(name = "listSystemVmsUsageHistory", description = "Lists System VM stats", responseObject = VmMetricsStatsResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.18.0",
-        authorized = {RoleType.Admin,  RoleType.ResourceAdmin, RoleType.DomainAdmin})
+        authorized = {RoleType.Admin})
 public class ListSystemVMsUsageHistoryCmd extends BaseResourceUsageHistoryCmd {
 
     /////////////////////////////////////////////////////

@@ -66,10 +66,10 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('label.asyncbackup')" name="asyncbackup" ref="asyncbackup">
+        <a-form-item :label="$t('label.asyncbackup')" name="asyncbackup" ref="asyncbackup" v-if="!supportsStorageSnapshot">
           <a-switch v-model:checked="form.asyncbackup" />
         </a-form-item>
-        <a-form-item :label="$t('label.quiescevm')">
+        <a-form-item :label="$t('label.quiescevm')" name="quiescevm" ref="quiescevm" v-if="quiescevm && hypervisorSupportsQuiesceVm">
           <a-switch v-model:checked="form.quiescevm" />
         </a-form-item>
         <a-divider/>
@@ -152,6 +152,7 @@ export default {
     return {
       actionLoading: false,
       quiescevm: false,
+      hypervisorSupportsQuiesceVm: false,
       supportsStorageSnapshot: false,
       inputValue: '',
       inputKey: '',
@@ -168,6 +169,10 @@ export default {
   created () {
     this.initForm()
     this.quiescevm = this.resource.quiescevm
+    if (['KVM', 'VMware'].includes(this.resource.hypervisor)) {
+      this.hypervisorSupportsQuiesceVm = true
+    }
+
     this.supportsStorageSnapshot = this.resource.supportsstoragesnapshot
     this.fetchZoneData()
   },

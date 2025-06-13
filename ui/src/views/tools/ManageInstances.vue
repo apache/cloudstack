@@ -840,7 +840,8 @@ export default {
           options: {
             zoneid: _.get(this.zone, 'id'),
             podid: this.podId,
-            hypervisor: this.destinationHypervisor
+            hypervisor: this.destinationHypervisor,
+            allocationstate: 'Enabled'
           },
           field: 'clusterid'
         },
@@ -1315,6 +1316,31 @@ export default {
         this.fetchInstances()
       }
     },
+    fetchVmwareInstanceForKVMMigration (vmname, hostname) {
+      const params = {}
+      if (this.isMigrateFromVmware && this.selectedVmwareVcenter) {
+        if (this.selectedVmwareVcenter.vcenter) {
+          params.datacentername = this.selectedVmwareVcenter.datacentername
+          params.vcenter = this.selectedVmwareVcenter.vcenter
+          params.username = this.selectedVmwareVcenter.username
+          params.password = this.selectedVmwareVcenter.password
+        } else {
+          params.existingvcenterid = this.selectedVmwareVcenter.existingvcenterid
+        }
+        params.instancename = vmname
+        params.hostname = hostname
+      }
+      api('listVmwareDcVms', params).then(json => {
+        const response = json.listvmwaredcvmsresponse
+        this.selectedUnmanagedInstance = response.unmanagedinstance[0]
+        this.selectedUnmanagedInstance.ostypename = this.selectedUnmanagedInstance.osdisplayname
+        this.selectedUnmanagedInstance.state = this.selectedUnmanagedInstance.powerstate
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.loading = false
+      })
+    },
     onManageInstanceAction () {
       this.selectedUnmanagedInstance = {}
       if (this.unmanagedInstances.length > 0 &&
@@ -1332,6 +1358,9 @@ export default {
           }
         })
         this.showUnmanageForm = false
+      } else if (this.isMigrateFromVmware) {
+        this.fetchVmwareInstanceForKVMMigration(this.selectedUnmanagedInstance.name, this.selectedUnmanagedInstance.hostname)
+        this.showUnmanageForm = true
       } else {
         this.showUnmanageForm = true
       }

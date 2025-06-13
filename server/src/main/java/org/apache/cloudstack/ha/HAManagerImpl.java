@@ -153,8 +153,8 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
             final HAConfig.HAState nextState = HAConfig.HAState.getStateMachine().getNextState(currentHAState, event);
             boolean result = HAConfig.HAState.getStateMachine().transitTo(haConfig, event, null, haConfigDao);
             if (result) {
-                final String message = String.format("Transitioned host HA state from:%s to:%s due to event:%s for the host id:%d",
-                        currentHAState, nextState, event, haConfig.getResourceId());
+                final String message = String.format("Transitioned host HA state from: %s to: %s due to event:%s for the host %s with id: %d",
+                        currentHAState, nextState, event, hostDao.findByIdIncludingRemoved(haConfig.getResourceId()), haConfig.getResourceId());
                 logger.debug(message);
 
                 if (nextState == HAConfig.HAState.Recovering || nextState == HAConfig.HAState.Fencing || nextState == HAConfig.HAState.Fenced) {
@@ -164,7 +164,8 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
             }
             return result;
         } catch (NoTransitionException e) {
-            logger.warn(String.format("Unable to find next HA state for current HA state=[%s] for event=[%s] for host=[%s].", currentHAState, event, haConfig.getResourceId()), e);
+            logger.warn("Unable to find next HA state for current HA state=[{}] for event=[{}] for host {} with id {}.",
+                    currentHAState, event, hostDao.findByIdIncludingRemoved(haConfig.getResourceId()), haConfig.getResourceId(), e);
         }
         return false;
     }
@@ -294,7 +295,7 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
             }
 
             if (!host.getHypervisorType().toString().equals(haProvider.resourceSubType().toString())) {
-                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Incompatible haprovider provided [%s] for the resource [%s] of hypervisor type: [%s].", haProvider.resourceSubType().toString(), host.getId(),host.getHypervisorType()));
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Incompatible haprovider provided [%s] for the resource [%s] of hypervisor type: [%s].", haProvider.resourceSubType().toString(), host.getUuid(), host.getHypervisorType()));
             }
         }
     }
@@ -307,10 +308,10 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
         final HAConfig haConfig = haConfigDao.findHAResource(host.getId(), HAResource.ResourceType.Host);
         if (haConfig != null) {
             if (haConfig.getState() == HAConfig.HAState.Fenced) {
-                logger.debug(String.format("HA: Host [%s] is fenced.", host.getId()));
+                logger.debug("HA: Host [{}] is fenced.", host);
                 return false;
             }
-            logger.debug(String.format("HA: Host [%s] is alive.", host.getId()));
+            logger.debug("HA: Host [{}] is alive.", host);
             return true;
         }
         throw new Investigator.UnknownVM();
@@ -320,10 +321,10 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
         final HAConfig haConfig = haConfigDao.findHAResource(host.getId(), HAResource.ResourceType.Host);
         if (haConfig != null) {
             if (haConfig.getState() == HAConfig.HAState.Fenced) {
-                logger.debug(String.format("HA: Agent [%s] is available/suspect/checking Up.", host.getId()));
+                logger.debug("HA: Agent [{}] is available/suspect/checking Up.", host);
                 return Status.Down;
             } else if (haConfig.getState() == HAConfig.HAState.Degraded || haConfig.getState() == HAConfig.HAState.Recovering || haConfig.getState() == HAConfig.HAState.Fencing) {
-                logger.debug(String.format("HA: Agent [%s] is disconnected. State: %s, %s.", host.getId(), haConfig.getState(), haConfig.getState().getDescription()));
+                logger.debug("HA: Agent [{}] is disconnected. State: {}, {}.", host, haConfig.getState(), haConfig.getState().getDescription());
                 return Status.Disconnected;
             }
             return Status.Up;

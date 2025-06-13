@@ -27,6 +27,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.cpu.CPU;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.Network.GuestType;
@@ -38,6 +39,8 @@ import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
+
+import org.apache.cloudstack.util.CPUArchConverter;
 import org.apache.cloudstack.util.HypervisorTypeConverter;
 
 @Entity
@@ -142,6 +145,10 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
     @Column(name="hypervisor_type")
     @Convert(converter = HypervisorTypeConverter.class)
     private Hypervisor.HypervisorType hypervisorType;
+
+    @Column(name="arch")
+    @Convert(converter = CPUArchConverter.class)
+    private CPU.CPUArch arch;
 
     @Column(name = "template_id", updatable = true, nullable = true, length = 17)
     private long templateId;
@@ -374,6 +381,10 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
 
     public Hypervisor.HypervisorType getHypervisorType() {
         return hypervisorType;
+    }
+
+    public CPU.CPUArch getArch() {
+        return arch;
     }
 
     public Long getClusterId() {

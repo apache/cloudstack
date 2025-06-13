@@ -28,6 +28,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
 @Table(name = "affinity_group")
@@ -119,9 +120,8 @@ public class AffinityGroupVO implements AffinityGroup {
 
     @Override
     public String toString() {
-        StringBuilder buf = new StringBuilder("AffinityGroup[");
-        buf.append(uuid).append("]");
-        return buf.toString();
+        return String.format("AffinityGroup %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                this, "id", "uuid", "name"));
     }
 
     @Override
