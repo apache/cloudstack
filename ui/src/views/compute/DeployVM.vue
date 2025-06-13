@@ -861,36 +861,31 @@
                 </template>
               </a-step>
             </a-steps>
-            <div class="card-footer">
-              <a-form-item name="stayonpage" ref="stayonpage">
-                <a-switch
-                  class="form-item-hidden"
-                  v-model:checked="form.stayonpage" />
-              </a-form-item>
-              <!-- ToDo extract as component -->
-              <a-button @click="() => $router.back()" :disabled="loading.deploy">
-                {{ $t('label.cancel') }}
-              </a-button>
-              <a-dropdown-button style="margin-left: 10px" type="primary" ref="submit" @click="handleSubmit" :loading="loading.deploy">
-                <rocket-outlined />
-                {{ this.form.startvm ? $t('label.launch.vm') : $t('label.create.vm') }}
-                <template #icon><down-outlined /></template>
-                <template #overlay>
-                  <a-menu type="primary" @click="handleSubmitAndStay" theme="dark" class="btn-stay-on-page">
-                    <a-menu-item type="primary" key="1">
-                      <rocket-outlined />
-                      {{ this.form.startvm ? $t('label.launch.vm.and.stay') : $t('label.create.vm.and.stay') }}
-                    </a-menu-item>
-                  </a-menu>
-                </template>
-              </a-dropdown-button>
+            <div class="card-footer" v-if="isMobile()">
+              <deploy-buttons
+                :loading="loading.deploy"
+                :deployButtonText="form.startvm ? $t('label.launch.vm') : $t('label.create.vm')"
+                :deployButtonMenuOptions="deployMenuOptions"
+                @handle-cancel="() => $router.back()"
+                @handle-deploy="handleSubmit"
+                @handle-deploy-menu="handleSubmitAndStay" />
             </div>
           </a-form>
         </a-card>
       </a-col>
       <a-col :md="24" :lg="7" v-if="!isMobile()">
         <a-affix :offsetTop="75" class="vm-info-card">
-          <info-card :resource="vm" :title="$t('label.yourinstance')" @change-resource="(data) => resource = data" />
+          <info-card :footerVisible="true" :resource="vm" :title="$t('label.yourinstance')" @change-resource="(data) => resource = data">
+            <template #footer-content>
+              <deploy-buttons
+                :loading="loading.deploy"
+                :deployButtonText="form.startvm ? $t('label.launch.vm') : $t('label.create.vm')"
+                :deployButtonMenuOptions="deployMenuOptions"
+                @handle-cancel="() => $router.back()"
+                @handle-deploy="handleSubmit"
+                @handle-deploy-menu="handleSubmitAndStay" />
+            </template>
+          </info-card>
         </a-affix>
       </a-col>
     </a-row>
@@ -908,6 +903,7 @@ import eventBus from '@/config/eventBus'
 
 import OwnershipSelection from '@views/compute/wizard/OwnershipSelection'
 import InfoCard from '@/components/view/InfoCard'
+import DeployButtons from '@views/compute/wizard/DeployButtons'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import ZoneBlockRadioGroupSelect from '@views/compute/wizard/ZoneBlockRadioGroupSelect'
 import BlockRadioGroupSelect from '@/components/widgets/BlockRadioGroupSelect'
@@ -933,6 +929,7 @@ export default {
   components: {
     OwnershipSelection,
     InfoCard,
+    DeployButtons,
     ResourceIcon,
     ZoneBlockRadioGroupSelect,
     BlockRadioGroupSelect,
@@ -3160,10 +3157,6 @@ export default {
   .card-footer {
     text-align: right;
     margin-top: 2rem;
-
-    button + button {
-      margin-left: 8px;
-    }
   }
 
   .ant-list-item-meta-avatar {
@@ -3214,13 +3207,5 @@ export default {
 
   .form-item-hidden {
     display: none;
-  }
-
-  .btn-stay-on-page {
-    &.ant-dropdown-menu-dark {
-      .ant-dropdown-menu-item:hover {
-        background: transparent !important;
-      }
-    }
   }
 </style>
