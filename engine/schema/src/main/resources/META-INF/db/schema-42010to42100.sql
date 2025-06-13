@@ -250,3 +250,61 @@ CREATE TABLE IF NOT EXISTS `cloud`.`extension_custom_action_details` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vm_template', 'extension_id', 'bigint unsigned DEFAULT NULL COMMENT "id of the extension"');
+
+-- Add built-in extensions
+
+DROP PROCEDURE IF EXISTS `cloud`.`INSERT_EXTENSION_IF_NOT_EXISTS`;
+CREATE PROCEDURE `cloud`.`INSERT_EXTENSION_IF_NOT_EXISTS`(
+    IN ext_name VARCHAR(255),
+    IN ext_desc VARCHAR(255),
+    IN entry_point VARCHAR(255)
+)
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM extension WHERE name = ext_name
+    ) THEN
+        INSERT INTO extension (
+            uuid, name, description, type,
+            relative_entry_point, entry_point_sync,
+            is_user_defined, state, created, removed
+        )
+        VALUES (
+            UUID(), ext_name, ext_desc, 'Orchestrator',
+            entry_point, 1, 0, 'Enabled', NOW(), NULL
+        )
+    ;END IF
+;END;
+
+DROP PROCEDURE IF EXISTS `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`;
+CREATE PROCEDURE `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`(
+    IN ext_name VARCHAR(255),
+    IN detail_key VARCHAR(255),
+    IN detail_value TEXT,
+    IN display_detail TINYINT(1)
+)
+BEGIN
+    DECLARE ext_id BIGINT
+;   SELECT id INTO ext_id FROM extension WHERE name = ext_name LIMIT 1
+;   IF NOT EXISTS (
+        SELECT 1 FROM extension_details
+        WHERE extension_id = ext_id AND name = detail_key
+    ) THEN
+        INSERT INTO extension_details (
+            extension_id, name, value, display
+        )
+        VALUES (
+            ext_id, detail_key, detail_value, display_detail
+        )
+    ;END IF
+;END;
+
+CALL `cloud`.`INSERT_EXTENSION_IF_NOT_EXISTS`('org.apache.cloudstack.extension.Proxmox', 'Sample extension for Proxmox written in bash', 'Proxmox/proxmox.sh');
+CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('org.apache.cloudstack.extension.Proxmox', 'url', '', 1);
+CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('org.apache.cloudstack.extension.Proxmox', 'user', '', 1);
+CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('org.apache.cloudstack.extension.Proxmox', 'token', '', 1);
+CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('org.apache.cloudstack.extension.Proxmox', 'secret', '', 0);
+
+CALL `cloud`.`INSERT_EXTENSION_IF_NOT_EXISTS`('org.apache.cloudstack.extension.HyperV', 'Sample extension for HyperV written in python', 'HyperV/hyperv.py');
+CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('org.apache.cloudstack.extension.HyperV', 'url', '', 1);
+CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('org.apache.cloudstack.extension.HyperV', 'username', '', 1);
+CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('org.apache.cloudstack.extension.HyperV', 'password', '', 0);
