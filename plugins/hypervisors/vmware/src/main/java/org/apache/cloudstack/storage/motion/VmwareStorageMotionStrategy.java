@@ -27,6 +27,7 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import com.cloud.agent.api.to.DiskTO;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
@@ -251,6 +252,17 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
                 , sourcePool
                 , targetPool
                 , hostIdForVmAndHostGuidInTargetCluster.second(), ((VolumeObjectTO) srcData.getTO()).getChainInfo());
+
+        VolumeInfo volumeInfo = (VolumeInfo) srcData;
+        if (volumeInfo.getpayload() instanceof DiskOfferingVO) {
+            DiskOfferingVO offering = (DiskOfferingVO) volumeInfo.getpayload();
+            Long newIops = null;
+            if (offering.getIopsReadRate() != null && offering.getIopsWriteRate() != null) {
+                newIops = offering.getIopsReadRate() + offering.getIopsWriteRate();
+            }
+            cmd.setNewIops(newIops);
+        }
+
         if (sourcePool.getParent() != 0) {
             cmd.setContextParam(DiskTO.PROTOCOL_TYPE, Storage.StoragePoolType.DatastoreCluster.toString());
         }
