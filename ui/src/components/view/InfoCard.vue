@@ -14,877 +14,859 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-// $message.success(`${$t('label.copied.clipboard')} : ${name}`)
 <template>
   <a-spin :spinning="loading">
     <a-card class="spin-content" :bordered="bordered" :title="title">
-      <div>
-        <div class="resource-details">
-          <div class="resource-details__name">
-            <div
-              class="avatar"
-              @click="showUploadModal(true)"
-              v-clipboard:copy="name" >
-              <upload-resource-icon v-if="'uploadResourceIcon' in $store.getters.apis" :visible="showUpload" :resource="resource" @handle-close="showUpload(false)"/>
-              <div class="ant-upload-preview" v-if="$showIcon() && !$route.path.includes('zones')">
-                <edit-outlined class="upload-icon"/>
+      <div class="card-body">
+        <div class="card-content">
+          <div>
+            <div class="resource-details">
+              <div class="resource-details__name">
+                <div
+                  class="avatar"
+                  @click="showUploadModal(true)"
+                  v-clipboard:copy="name" >
+                  <upload-resource-icon v-if="'uploadResourceIcon' in $store.getters.apis" :visible="showUpload" :resource="resource" @handle-close="showUpload(false)"/>
+                  <div class="ant-upload-preview" v-if="$showIcon() && !$route.path.includes('zones')">
+                    <edit-outlined class="upload-icon"/>
+                  </div>
+                  <slot name="avatar">
+                    <span v-if="resourceIcon && !['router', 'systemvm', 'volume'].includes($route.path.split('/')[1])">
+                      <resource-icon :image="resourceIcon" size="4x" style="margin-right: 5px"/>
+                    </span>
+                    <span v-else>
+                      <os-logo v-if="resource.ostypeid || resource.ostypename || ['guestoscategory'].includes($route.path.split('/')[1])" :osId="resource.ostypeid" :osName="resource.ostypename || resource.name" size="3x" @update-osname="setResourceOsType"/>
+                      <render-icon v-else-if="typeof $route.meta.icon ==='string'" style="font-size: 36px" :icon="$route.meta.icon" />
+                      <font-awesome-icon
+                        v-else-if="$route.meta.icon && Array.isArray($route.meta.icon)"
+                        :icon="$route.meta.icon"
+                        size="3x"
+                        class="anticon"
+                        :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
+                      <render-icon v-else style="font-size: 36px" :svgIcon="$route.meta.icon" />
+                    </span>
+                  </slot>
+                </div>
+                <slot name="name">
+                  <div v-if="['USER.LOGIN', 'USER.LOGOUT', 'ROUTER.HEALTH.CHECKS', 'FIREWALL.CLOSE', 'ALERT.SERVICE.DOMAINROUTER'].includes(resource.name)">{{ $t(resource.name.toLowerCase()) }}</div>
+                  <div v-else>
+                    <h4 class="name">
+                      {{ name }}
+                    </h4>
+                  </div>
+                </slot>
               </div>
-              <slot name="avatar">
-                <span v-if="resourceIcon && !['router', 'systemvm', 'volume'].includes($route.path.split('/')[1])">
-                  <resource-icon :image="resourceIcon" size="4x" style="margin-right: 5px"/>
-                </span>
-                <span v-else>
-                  <os-logo v-if="resource.ostypeid || resource.ostypename || ['guestoscategory'].includes($route.path.split('/')[1])" :osId="resource.ostypeid" :osName="resource.ostypename || resource.name" size="3x" @update-osname="setResourceOsType"/>
-                  <render-icon v-else-if="typeof $route.meta.icon ==='string'" style="font-size: 36px" :icon="$route.meta.icon" />
-                  <font-awesome-icon
-                    v-else-if="$route.meta.icon && Array.isArray($route.meta.icon)"
-                    :icon="$route.meta.icon"
-                    size="3x"
-                    class="anticon"
-                    :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
-                  <render-icon v-else style="font-size: 36px" :svgIcon="$route.meta.icon" />
-                </span>
+              <slot name="actions">
+                <div class="tags">
+                  <a-tag v-if="resource.instancename">
+                    {{ resource.instancename }}
+                  </a-tag>
+                  <a-tag v-if="resource.type">
+                    <span v-if="['USER.LOGIN', 'USER.LOGOUT', 'ROUTER.HEALTH.CHECKS', 'FIREWALL.CLOSE', 'ALERT.SERVICE.DOMAINROUTER'].includes(resource.type)">{{ $t(resource.type.toLowerCase()) }}</span>
+                    <span v-else>
+                      {{ resource.type }}
+                    </span>
+                  </a-tag>
+                  <a-tag v-if="resource.issourcenat">
+                    {{ $t('label.issourcenat') }}
+                  </a-tag>
+                  <a-tag v-if="resource.broadcasturi">
+                    {{ resource.broadcasturi }}
+                  </a-tag>
+                  <a-tag v-if="resource.arch">
+                    {{ resource.arch }}
+                  </a-tag>
+                  <a-tag v-if="resource.hypervisor">
+                    {{ resource.hypervisor }}
+                  </a-tag>
+                  <a-tag v-if="resource.haenable">
+                    {{ $t('label.haenable') }}
+                  </a-tag>
+                  <a-tag v-if="resource.isdynamicallyscalable">
+                    {{ $t('label.isdynamicallyscalable') }}
+                  </a-tag>
+                  <a-tag v-if="resource.scope">
+                    {{ resource.scope }}
+                  </a-tag>
+                  <a-tag v-if="resource.version">
+                    {{ resource.version }}
+                  </a-tag>
+                  <a-tag v-if="resource.internetprotocol && ['IPv6', 'DualStack'].includes(resource.internetprotocol)">
+                    {{ resource.internetprotocol ? $t('label.ip.v4.v6') : resource.internetprotocol }}
+                  </a-tag>
+                  <a-tag v-if="resource.archived" :color="this.$config.theme['@warning-color']">
+                    {{ $t('label.archived') }}
+                  </a-tag>
+                  <a-tooltip placement="right" >
+                    <template #title>
+                      <span>{{ $t('label.view.console') }}</span>
+                    </template>
+                    <console
+                      style="margin-top: -5px;"
+                      :resource="resource"
+                      size="default"
+                      v-if="resource.id"
+                    />
+                  </a-tooltip>
+                </div>
               </slot>
             </div>
-            <slot name="name">
-              <div v-if="['USER.LOGIN', 'USER.LOGOUT', 'ROUTER.HEALTH.CHECKS', 'FIREWALL.CLOSE', 'ALERT.SERVICE.DOMAINROUTER'].includes(resource.name)">{{ $t(resource.name.toLowerCase()) }}</div>
-              <div v-else>
-                <h4 class="name">
-                  {{ name }}
-                </h4>
+
+            <a-divider/>
+
+            <div class="resource-detail-item" v-if="(resource.state || resource.status) && $route.meta.name !== 'zone'">
+              <div class="resource-detail-item__label">{{ $t('label.status') }}</div>
+              <div class="resource-detail-item__details">
+                <status class="status" :text="resource.state || resource.status" displayText/>
               </div>
-            </slot>
-          </div>
-          <slot name="actions">
-            <div class="tags">
-              <a-tag v-if="resource.instancename">
-                {{ resource.instancename }}
-              </a-tag>
-              <a-tag v-if="resource.type">
-                <span v-if="['USER.LOGIN', 'USER.LOGOUT', 'ROUTER.HEALTH.CHECKS', 'FIREWALL.CLOSE', 'ALERT.SERVICE.DOMAINROUTER'].includes(resource.type)">{{ $t(resource.type.toLowerCase()) }}</span>
-                <span v-else>
-                  {{ resource.type }}
-                </span>
-              </a-tag>
-              <a-tag v-if="resource.issourcenat">
-                {{ $t('label.issourcenat') }}
-              </a-tag>
-              <a-tag v-if="resource.broadcasturi">
-                {{ resource.broadcasturi }}
-              </a-tag>
-              <a-tag v-if="resource.arch">
-                {{ resource.arch }}
-              </a-tag>
-              <a-tag v-if="resource.hypervisor">
-                {{ resource.hypervisor }}
-              </a-tag>
-              <a-tag v-if="resource.haenable">
-                {{ $t('label.haenable') }}
-              </a-tag>
-              <a-tag v-if="resource.isdynamicallyscalable">
-                {{ $t('label.isdynamicallyscalable') }}
-              </a-tag>
-              <a-tag v-if="resource.scope">
-                {{ resource.scope }}
-              </a-tag>
-              <a-tag v-if="resource.version">
-                {{ resource.version }}
-              </a-tag>
-              <a-tag v-if="resource.internetprotocol && ['IPv6', 'DualStack'].includes(resource.internetprotocol)">
-                {{ resource.internetprotocol ? $t('label.ip.v4.v6') : resource.internetprotocol }}
-              </a-tag>
-              <a-tag v-if="resource.archived" :color="this.$config.theme['@warning-color']">
-                {{ $t('label.archived') }}
-              </a-tag>
-              <a-tag v-if="resource.leaseduration != undefined">
-                {{ $t('label.remainingdays') + ': ' + (resource.leaseduration > -1 ? resource.leaseduration + 'd' : 'Over') }}
-              </a-tag>
-              <a-tooltip placement="right" >
-                <template #title>
-                  <span>{{ $t('label.view.console') }}</span>
-                </template>
-                <console
-                  style="margin-top: -5px;"
-                  :resource="resource"
-                  size="default"
-                  v-if="resource.id"
-                />
-              </a-tooltip>
             </div>
-          </slot>
-        </div>
+            <div class="resource-detail-item" v-if="resource.allocationstate">
+              <div class="resource-detail-item__label">{{ $t('label.allocationstate') }}</div>
+              <div class="resource-detail-item__details">
+                <status class="status" :text="resource.allocationstate" displayText/>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.resourcestate">
+              <div class="resource-detail-item__label">{{ $t('label.resourcestate') }}</div>
+              <div class="resource-detail-item__details">
+                <status class="status" :text="resource.resourcestate" displayText/>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="('success' in resource) && $route.meta.name === 'webhookdeliveries'">
+              <div class="resource-detail-item__label">{{ $t('label.success') }}</div>
+              <div class="resource-detail-item__details">
+                <status class="status" :text="resource.success ? 'success' : 'error'"/>
+              </div>
+            </div>
 
-        <a-divider/>
-
-        <div class="resource-detail-item" v-if="(resource.state || resource.status) && $route.meta.name !== 'zone'">
-          <div class="resource-detail-item__label">{{ $t('label.status') }}</div>
-          <div class="resource-detail-item__details">
-            <status class="status" :text="resource.state || resource.status" displayText/>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.allocationstate">
-          <div class="resource-detail-item__label">{{ $t('label.allocationstate') }}</div>
-          <div class="resource-detail-item__details">
-            <status class="status" :text="resource.allocationstate" displayText/>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.resourcestate">
-          <div class="resource-detail-item__label">{{ $t('label.resourcestate') }}</div>
-          <div class="resource-detail-item__details">
-            <status class="status" :text="resource.resourcestate" displayText/>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="('success' in resource) && $route.meta.name === 'webhookdeliveries'">
-          <div class="resource-detail-item__label">{{ $t('label.success') }}</div>
-          <div class="resource-detail-item__details">
-            <status class="status" :text="resource.success ? 'success' : 'error'"/>
-          </div>
-        </div>
-
-        <div class="resource-detail-item" v-if="resource.id">
-          <div class="resource-detail-item__label">{{ $t('label.id') }}</div>
-          <div class="resource-detail-item__details">
-            <tooltip-button
-              tooltipPlacement="top"
-              :tooltip="$t('label.copyid')"
-              icon="barcode-outlined"
-              type="dashed"
-              size="small"
-              :copyResource="String(resource.id)"
-              @onClick="$message.success($t('label.copied.clipboard'))" />
-            <span style="margin-left: 10px;"><copy-label :label="resource.id" /></span>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.ostypename && resource.ostypeid">
-          <div class="resource-detail-item__label">{{ $t('label.ostypename') }}</div>
-          <div class="resource-detail-item__details">
-            <span v-if="images.guestoscategory">
-              <resource-icon :image="images.guestoscategory" size="1x" style="margin-right: 5px"/>
-            </span>
-            <os-logo v-else :osId="resource.ostypeid" :osName="resource.ostypename" size="lg" style="margin-left: -1px" />
-            <span style="margin-left: 8px">
-              <router-link v-if="$router.resolve('/guestos/' + resource.ostypeid).matched[0].redirect !== '/exception/404'" :to="{ path: '/guestos/' + resource.ostypeid }">
-                {{ resource.ostypename }}
-              </router-link>
-              <span v-else>{{ resource.ostypename }}</span>
-            </span>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.ipaddress">
-          <div class="resource-detail-item__label">{{ $t('label.ip') }}</div>
-          <div class="resource-detail-item__details">
-            <environment-outlined
-              @click="$message.success(`${$t('label.copied.clipboard')} : ${ ipaddress }`)"
-              v-clipboard:copy="ipaddress" />
-            <router-link v-if="!isStatic && resource.ipaddressid" :to="{ path: '/publicip/' + resource.ipaddressid }">
-              <copy-label :label="ipaddress" />
-            </router-link>
-            <span v-else>
-              <span v-if="ipaddress.includes(',')">
-                <span
-                v-for="(value, index) in ipaddress.split(',')"
-                :key="index">
-                  <copy-label :label="value" /><br/>
+            <div class="resource-detail-item" v-if="resource.id">
+              <div class="resource-detail-item__label">{{ $t('label.id') }}</div>
+              <div class="resource-detail-item__details">
+                <tooltip-button
+                  tooltipPlacement="top"
+                  :tooltip="$t('label.copyid')"
+                  icon="barcode-outlined"
+                  type="dashed"
+                  size="small"
+                  :copyResource="String(resource.id)"
+                  @onClick="$message.success($t('label.copied.clipboard'))" />
+                <span style="margin-left: 10px;"><copy-label :label="resource.id" /></span>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.ostypename && resource.ostypeid">
+              <div class="resource-detail-item__label">{{ $t('label.ostypename') }}</div>
+              <div class="resource-detail-item__details">
+                <span v-if="images.guestoscategory">
+                  <resource-icon :image="images.guestoscategory" size="1x" style="margin-right: 5px"/>
                 </span>
-              </span>
-              <span v-else>
-                <copy-label :label="ipaddress" />
-              </span>
-            </span>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="('cpunumber' in resource && 'cpuspeed' in resource) || resource.cputotal">
-          <div class="resource-detail-item__label">{{ $t('label.cpu') }}</div>
-          <div class="resource-detail-item__details">
-            <font-awesome-icon
-              :icon="['fa-solid', 'fa-microchip']"
-              class="anticon"
-              :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
-            <span v-if="'cpunumber' in resource && 'cpuspeed' in resource">{{ resource.cpunumber }} CPU x {{ (resource.cpuspeed / 1000.0).toFixed(2) }} GHz
-              <a-tooltip placement="top">
-                <template #title>
-                  {{ resource.cpuspeed }} MHz
-                </template>
-                <QuestionCircleOutlined />
-              </a-tooltip>
-            </span>
-            <span v-else>{{ resource.cputotal }}</span>
-            <a-tag v-if="resource.arch" style="margin-left: 10px">
-              {{ resource.arch }}
-            </a-tag>
-          </div>
-          <div>
-            <span v-if="resource.cpuused">
-              <a-progress
-                v-if="resource.cpuused"
-                class="progress-bar"
-                size="small"
-                status="active"
-                :percent="parseFloat(resource.cpuused)"
-                :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.used')"
-              />
-            </span>
-            <span v-if="resource.cpuallocated">
-              <a-progress
-                class="progress-bar"
-                size="small"
-                :percent="parseFloat(resource.cpuallocated)"
-                :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.allocated')"
-              />
-            </span>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="'leaseduration' in resource && resource.leaseduration !== undefined">
-          <div class="resource-detail-item__label">{{ $t('label.leaseduration') }}</div>
-          <div class="resource-detail-item__details">
-            <field-time-outlined
-                  :style="{
-                    color: $store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' },
-                    fontSize: '20px'
-                  }"/>
-            {{ resource.leaseduration + ' ' + $t('label.days') }}
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="'leaseexpiryaction' in resource && resource.leaseexpiryaction !== undefined">
-          <div class="resource-detail-item__label">{{ $t('label.leaseexpiryaction') }}</div>
-          <div class="resource-detail-item__details">
-            <font-awesome-icon
-              :icon="['fa-solid', 'fa-circle-xmark']"
-              class="anticon"
-              :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
-            {{ resource.leaseexpiryaction }}
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="'memory' in resource">
-          <div class="resource-detail-item__label">{{ $t('label.memory') }}</div>
-          <div class="resource-detail-item__details">
-            <font-awesome-icon
-              :icon="['fa-solid', 'fa-memory']"
-              class="anticon"
-              :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
-            {{ resource.memory + ' ' + $t('label.mb.memory') }}
-          </div>
-          <div>
-            <span v-if="resource.memorykbs && resource.memoryintfreekbs">
-              <a-progress
-                class="progress-bar"
-                size="small"
-                status="active"
-                :percent="Number(parseFloat(100.0 * (resource.memorykbs - resource.memoryintfreekbs) / resource.memorykbs).toFixed(2))"
-                :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.used')"
-              />
-            </span>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-else-if="resource.memorytotalgb">
-          <div class="resource-detail-item__label">{{ $t('label.memory') }}</div>
-          <div class="resource-detail-item__details">
-            <bulb-outlined />
-            <span>
-              {{ resource.memorytotalgb + ' ' + $t('label.memory') }}
-              <a-tooltip placement="top">
-                <template #title>
-                  {{ (resource.memorytotal/(1024**2)).toFixed(3) }} MB
-                </template>
-                <QuestionCircleOutlined />
-              </a-tooltip>
-            </span>
-          </div>
-          <div>
-            <span v-if="resource.memoryusedgb">
-              <a-progress
-                class="progress-bar"
-                size="small"
-                status="active"
-                :percent="Number(parseFloat(100.0 * parseFloat(resource.memoryusedgb) / parseFloat(resource.memorytotalgb)).toFixed(2))"
-                :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.used')"
-              />
-            </span>
-            <span v-if="resource.memoryallocatedgb">
-              <a-progress
-                class="progress-bar"
-                size="small"
-                :percent="Number(parseFloat(100.0 * parseFloat(resource.memoryallocatedgb) / parseFloat(resource.memorytotalgb)).toFixed(2))"
-                :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.allocated')"
-              />
-            </span>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-else-if="resource.memorytotal">
-          <div class="resource-detail-item__label">{{ $t('label.memory') }}</div>
-          <div class="resource-detail-item__details">
-
-            <div style="display: flex; flex-direction: column; width: 100%;">
-              <div>
-                <bulb-outlined />{{ resource.memorytotal + ' ' + $t('label.memory') }}
+                <os-logo v-else :osId="resource.ostypeid" :osName="resource.ostypename" size="lg" style="margin-left: -1px" />
+                <span style="margin-left: 8px">
+                  <router-link v-if="$router.resolve('/guestos/' + resource.ostypeid).matched[0].redirect !== '/exception/404'" :to="{ path: '/guestos/' + resource.ostypeid }">
+                    {{ resource.ostypename }}
+                  </router-link>
+                  <span v-else>{{ resource.ostypename }}</span>
+                </span>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.ipaddress">
+              <div class="resource-detail-item__label">{{ $t('label.ip') }}</div>
+              <div class="resource-detail-item__details">
+                <environment-outlined
+                  @click="$message.success(`${$t('label.copied.clipboard')} : ${ ipaddress }`)"
+                  v-clipboard:copy="ipaddress" />
+                <router-link v-if="!isStatic && resource.ipaddressid" :to="{ path: '/publicip/' + resource.ipaddressid }">
+                  <copy-label :label="ipaddress" />
+                </router-link>
+                <span v-else>
+                  <span v-if="ipaddress.includes(',')">
+                    <span
+                    v-for="(value, index) in ipaddress.split(',')"
+                    :key="index">
+                      <copy-label :label="value" /><br/>
+                    </span>
+                  </span>
+                  <span v-else>
+                    <copy-label :label="ipaddress" />
+                  </span>
+                </span>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="('cpunumber' in resource && 'cpuspeed' in resource) || resource.cputotal">
+              <div class="resource-detail-item__label">{{ $t('label.cpu') }}</div>
+              <div class="resource-detail-item__details">
+                <font-awesome-icon
+                  :icon="['fa-solid', 'fa-microchip']"
+                  class="anticon"
+                  :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
+                <span v-if="'cpunumber' in resource && 'cpuspeed' in resource">{{ resource.cpunumber }} CPU x {{ (resource.cpuspeed / 1000.0).toFixed(2) }} GHz
+                  <a-tooltip placement="top">
+                    <template #title>
+                      {{ resource.cpuspeed }} MHz
+                    </template>
+                    <QuestionCircleOutlined />
+                  </a-tooltip>
+                </span>
+                <span v-else>{{ resource.cputotal }}</span>
+                <a-tag v-if="resource.arch" style="margin-left: 10px">
+                  {{ resource.arch }}
+                </a-tag>
               </div>
               <div>
-                <span
-                  v-if="resource.memoryused">
+                <span v-if="resource.cpuused">
+                  <a-progress
+                    v-if="resource.cpuused"
+                    class="progress-bar"
+                    size="small"
+                    status="active"
+                    :percent="parseFloat(resource.cpuused)"
+                    :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.used')"
+                  />
+                </span>
+                <span v-if="resource.cpuallocated">
+                  <a-progress
+                    class="progress-bar"
+                    size="small"
+                    :percent="parseFloat(resource.cpuallocated)"
+                    :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.allocated')"
+                  />
+                </span>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="'memory' in resource">
+              <div class="resource-detail-item__label">{{ $t('label.memory') }}</div>
+              <div class="resource-detail-item__details">
+                <font-awesome-icon
+                  :icon="['fa-solid', 'fa-memory']"
+                  class="anticon"
+                  :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
+                {{ resource.memory + ' ' + $t('label.mb.memory') }}
+              </div>
+              <div>
+                <span v-if="resource.memorykbs && resource.memoryintfreekbs">
                   <a-progress
                     class="progress-bar"
                     size="small"
                     status="active"
-                    :percent="parseFloat(resource.memoryused)"
-                    :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.used')" />
+                    :percent="Number(parseFloat(100.0 * (resource.memorykbs - resource.memoryintfreekbs) / resource.memorykbs).toFixed(2))"
+                    :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.used')"
+                  />
                 </span>
-                <span
-                  v-if="resource.memoryallocated">
+              </div>
+            </div>
+            <div class="resource-detail-item" v-else-if="resource.memorytotalgb">
+              <div class="resource-detail-item__label">{{ $t('label.memory') }}</div>
+              <div class="resource-detail-item__details">
+                <bulb-outlined />
+                <span>
+                  {{ resource.memorytotalgb + ' ' + $t('label.memory') }}
+                  <a-tooltip placement="top">
+                    <template #title>
+                      {{ (resource.memorytotal/(1024**2)).toFixed(3) }} MB
+                    </template>
+                    <QuestionCircleOutlined />
+                  </a-tooltip>
+                </span>
+              </div>
+              <div>
+                <span v-if="resource.memoryusedgb">
                   <a-progress
                     class="progress-bar"
                     size="small"
-                    :percent="parseFloat(resource.memoryallocated)"
-                    :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.allocated')" />
+                    status="active"
+                    :percent="Number(parseFloat(100.0 * parseFloat(resource.memoryusedgb) / parseFloat(resource.memorytotalgb)).toFixed(2))"
+                    :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.used')"
+                  />
+                </span>
+                <span v-if="resource.memoryallocatedgb">
+                  <a-progress
+                    class="progress-bar"
+                    size="small"
+                    :percent="Number(parseFloat(100.0 * parseFloat(resource.memoryallocatedgb) / parseFloat(resource.memorytotalgb)).toFixed(2))"
+                    :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.allocated')"
+                  />
                 </span>
               </div>
             </div>
+            <div class="resource-detail-item" v-else-if="resource.memorytotal">
+              <div class="resource-detail-item__label">{{ $t('label.memory') }}</div>
+              <div class="resource-detail-item__details">
 
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.volumes || resource.sizegb">
-          <div class="resource-detail-item__label" v-if="$route.meta.name === 'backup'">{{ $t('label.size') }}</div>
-          <div class="resource-detail-item__label" v-else>{{ $t('label.disksize') }}</div>
-          <div class="resource-detail-item__details">
-            <hdd-outlined />
-            <span style="width: 100%;" v-if="$route.meta.name === 'vm' && resource.volumes">{{ (resource.volumes.reduce((total, item) => total += item.size, 0) / (1024 * 1024 * 1024.0)).toFixed(2) }} GB Storage</span>
-            <span style="width: 100%;" v-else-if="$route.meta.name === 'backup'">
-              {{ $bytesToHumanReadableSize(resource.size) }}
-              <a-tooltip placement="right">
-                <template #title>
-                  {{ resource.size }} bytes
-                </template>
-                <QuestionCircleOutlined />
-              </a-tooltip>
-            </span>
-            <span style="width: 100%;" v-else-if="resource.sizegb || resource.size">{{ resource.sizegb || (resource.size/1024.0) }}</span>
-          </div>
-          <div style="margin-left: 25px; margin-top: 5px" v-if="resource.diskkbsread && resource.diskkbswrite && resource.diskioread && resource.diskiowrite">
-            <a-tag style="margin-bottom: 5px;">{{ $t('label.read') + ' ' + toSize(resource.diskkbsread) }}</a-tag>
-            <a-tag style="margin-bottom: 5px;">{{ $t('label.write') + ' ' + toSize(resource.diskkbswrite) }}</a-tag><br/>
-            <a-tag style="margin-bottom: 5px;">{{ $t('label.read.io') + ' ' + resource.diskioread }}</a-tag>
-            <a-tag>{{ $t('label.writeio') + ' ' + resource.diskiowrite }}</a-tag>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-else-if="resource.disksizetotalgb">
-          <div class="resource-detail-item__label">{{ $t('label.disksize') }}</div>
-          <div class="resource-detail-item__details">
-            <database-outlined />{{ resource.disksizetotalgb }}
-          </div>
-          <div>
-            <span v-if="resource.disksizeusedgb">
-              <a-progress
-                class="progress-bar"
-                size="small"
-                status="active"
-                :percent="Number(parseFloat(100.0 * parseFloat(resource.disksizeusedgb) / parseFloat(resource.disksizetotalgb)).toFixed(2))"
-                :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.disksizeusedgb')" />
-            </span>
-            <span v-if="resource.disksizeallocatedgb">
-              <a-progress
-                class="progress-bar"
-                size="small"
-                :percent="Number(parseFloat(100.0 * parseFloat(resource.disksizeallocatedgb) / (parseFloat(resource.disksizetotalgb) *
-                  (parseFloat(resource.overprovisionfactor) || 1.0))).toFixed(2))"
-                :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.disksizeallocatedgb')" />
-            </span>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.nic || ('networkkbsread' in resource && 'networkkbswrite' in resource)">
-          <div class="resource-detail-item__label">{{ $t('label.network') }}</div>
-          <div class="resource-detail-item__details resource-detail-item__details--start">
-            <wifi-outlined />
-            <div>
-              <div v-if="'networkkbsread' in resource && 'networkkbswrite' in resource">
-                <a-tag><ArrowDownOutlined />RX {{ toSize(resource.networkkbsread) }}</a-tag>
-                <a-tag><ArrowUpOutlined />TX {{ toSize(resource.networkkbswrite) }}</a-tag>
+                <div style="display: flex; flex-direction: column; width: 100%;">
+                  <div>
+                    <bulb-outlined />{{ resource.memorytotal + ' ' + $t('label.memory') }}
+                  </div>
+                  <div>
+                    <span
+                      v-if="resource.memoryused">
+                      <a-progress
+                        class="progress-bar"
+                        size="small"
+                        status="active"
+                        :percent="parseFloat(resource.memoryused)"
+                        :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.used')" />
+                    </span>
+                    <span
+                      v-if="resource.memoryallocated">
+                      <a-progress
+                        class="progress-bar"
+                        size="small"
+                        :percent="parseFloat(resource.memoryallocated)"
+                        :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.allocated')" />
+                    </span>
+                  </div>
+                </div>
+
               </div>
-              <div v-else>{{ resource.nic.length }} NIC(s)</div>
-              <div
-                v-for="(eth, index) in resource.nic"
-                :key="eth.id"
-                style="margin-left: -24px; margin-top: 5px;">
-                <font-awesome-icon
-                  :icon="['fa-solid', 'fa-ethernet']"
-                  class="anticon"
-                  :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
-                <strong>eth{{ index }}</strong>&nbsp;
-                <copy-label :label="eth.ip6address ? eth.ipaddress + ', ' + eth.ip6address : eth.ipaddress" />&nbsp;
-                <a-tag v-if="eth.isdefault">
-                  {{ $t('label.default') }}
-                </a-tag ><br/>
-                <span v-if="!isStatic && eth.networkname && eth.networkid">
-                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                  <apartment-outlined/>
-                  <router-link :to="{ path: '/guestnetwork/' + eth.networkid      }">
-                    {{ eth.networkname }}
-                  </router-link>
+            </div>
+            <div class="resource-detail-item" v-if="resource.volumes || resource.sizegb">
+              <div class="resource-detail-item__label" v-if="$route.meta.name === 'backup'">{{ $t('label.size') }}</div>
+              <div class="resource-detail-item__label" v-else>{{ $t('label.disksize') }}</div>
+              <div class="resource-detail-item__details">
+                <hdd-outlined />
+                <span style="width: 100%;" v-if="$route.meta.name === 'vm' && resource.volumes">{{ (resource.volumes.reduce((total, item) => total += item.size, 0) / (1024 * 1024 * 1024.0)).toFixed(2) }} GB Storage</span>
+                <span style="width: 100%;" v-else-if="$route.meta.name === 'backup'">
+                  {{ $bytesToHumanReadableSize(resource.size) }}
+                  <a-tooltip placement="right">
+                    <template #title>
+                      {{ resource.size }} bytes
+                    </template>
+                    <QuestionCircleOutlined />
+                  </a-tooltip>
+                </span>
+                <span style="width: 100%;" v-else-if="resource.sizegb || resource.size">{{ resource.sizegb || (resource.size/1024.0) }}</span>
+              </div>
+              <div style="margin-left: 25px; margin-top: 5px" v-if="resource.diskkbsread && resource.diskkbswrite && resource.diskioread && resource.diskiowrite">
+                <a-tag style="margin-bottom: 5px;">{{ $t('label.read') + ' ' + toSize(resource.diskkbsread) }}</a-tag>
+                <a-tag style="margin-bottom: 5px;">{{ $t('label.write') + ' ' + toSize(resource.diskkbswrite) }}</a-tag><br/>
+                <a-tag style="margin-bottom: 5px;">{{ $t('label.read.io') + ' ' + resource.diskioread }}</a-tag>
+                <a-tag>{{ $t('label.writeio') + ' ' + resource.diskiowrite }}</a-tag>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-else-if="resource.disksizetotalgb">
+              <div class="resource-detail-item__label">{{ $t('label.disksize') }}</div>
+              <div class="resource-detail-item__details">
+                <database-outlined />{{ resource.disksizetotalgb }}
+              </div>
+              <div>
+                <span v-if="resource.disksizeusedgb">
+                  <a-progress
+                    class="progress-bar"
+                    size="small"
+                    status="active"
+                    :percent="Number(parseFloat(100.0 * parseFloat(resource.disksizeusedgb) / parseFloat(resource.disksizetotalgb)).toFixed(2))"
+                    :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.disksizeusedgb')" />
+                </span>
+                <span v-if="resource.disksizeallocatedgb">
+                  <a-progress
+                    class="progress-bar"
+                    size="small"
+                    :percent="Number(parseFloat(100.0 * parseFloat(resource.disksizeallocatedgb) / (parseFloat(resource.disksizetotalgb) *
+                      (parseFloat(resource.overprovisionfactor) || 1.0))).toFixed(2))"
+                    :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.disksizeallocatedgb')" />
                 </span>
               </div>
             </div>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.networks && resource.networks.length > 0">
-          <div class="resource-detail-item__label">{{ $t('label.networks') }}</div>
-          <div class="resource-detail-item__details resource-detail-item__details--start">
-            <div>
-              <div
-                v-for="network in resource.networks"
-                :key="network.id"
-                style="margin-top: 5px;">
-                <font-awesome-icon
-                  :icon="['fa-solid', 'fa-ethernet']"
-                  class="anticon"
-                  :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
-                {{ network.name }}
-                <span v-if="resource.defaultnetworkid === network.id">
-                  ({{ $t('label.default') }})
-                </span>
+            <div class="resource-detail-item" v-if="resource.nic || ('networkkbsread' in resource && 'networkkbswrite' in resource)">
+              <div class="resource-detail-item__label">{{ $t('label.network') }}</div>
+              <div class="resource-detail-item__details resource-detail-item__details--start">
+                <wifi-outlined />
+                <div>
+                  <div v-if="'networkkbsread' in resource && 'networkkbswrite' in resource">
+                    <a-tag><ArrowDownOutlined />RX {{ toSize(resource.networkkbsread) }}</a-tag>
+                    <a-tag><ArrowUpOutlined />TX {{ toSize(resource.networkkbswrite) }}</a-tag>
+                  </div>
+                  <div v-else>{{ resource.nic.length }} NIC(s)</div>
+                  <div
+                    v-for="(eth, index) in resource.nic"
+                    :key="eth.id"
+                    style="margin-left: -24px; margin-top: 5px;">
+                    <font-awesome-icon
+                      :icon="['fa-solid', 'fa-ethernet']"
+                      class="anticon"
+                      :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
+                    <strong>eth{{ index }}</strong>&nbsp;
+                    <copy-label :label="eth.ip6address ? eth.ipaddress + ', ' + eth.ip6address : eth.ipaddress" />&nbsp;
+                    <a-tag v-if="eth.isdefault">
+                      {{ $t('label.default') }}
+                    </a-tag ><br/>
+                    <span v-if="!isStatic && eth.networkname && eth.networkid">
+                      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                      <apartment-outlined/>
+                      <router-link :to="{ path: '/guestnetwork/' + eth.networkid      }">
+                        {{ eth.networkname }}
+                      </router-link>
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.loadbalancer">
-          <div class="resource-detail-item__label">{{ $t('label.loadbalancerrule') }}</div>
-          <div class="resource-detail-item__details">
-            <api-outlined />
-            <span>{{ resource.loadbalancer.name }} ( {{ resource.loadbalancer.publicip }}:{{ resource.loadbalancer.publicport }})</span>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.projectid || resource.projectname">
-          <div class="resource-detail-item__label">{{ $t('label.project') }}</div>
-          <div class="resource-detail-item__details">
-            <span v-if="images.project">
-              <resource-icon :image="images.project" size="1x" style="margin-right: 5px"/>
-            </span>
-            <project-outlined v-else />
-            <router-link v-if="!isStatic && resource.projectid" :to="{ path: '/project/' + resource.projectid }">{{ resource.project || resource.projectname || resource.projectid }}</router-link>
-            <router-link v-else :to="{ path: '/project', query: { name: resource.projectname }}">{{ resource.projectname }}</router-link>
-          </div>
-        </div>
-
-        <div class="resource-detail-item">
-          <slot name="details">
-          </slot>
-        </div>
-
-        <div class="resource-detail-item" v-if="resource.groupid">
-          <div class="resource-detail-item__label">{{ $t('label.group') }}</div>
-          <div class="resource-detail-item__details">
-            <gold-outlined />
-            <router-link :to="{ path: '/vmgroup/' + resource.groupid }">{{ resource.group || resource.groupid }}</router-link>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.autoscalevmgroupid">
-          <div class="resource-detail-item__label">{{ $t('label.autoscalevmgroupname') }}</div>
-          <div class="resource-detail-item__details">
-            <gold-outlined />
-            <router-link :to="{ path: '/autoscalevmgroup/' + resource.autoscalevmgroupid }">{{ resource.autoscalevmgroupname || resource.autoscalevmgroupid }}</router-link>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.keypairs && resource.keypairs.length > 0">
-          <div class="resource-detail-item__label">{{ $t('label.keypairs') }}</div>
-          <div class="resource-detail-item__details">
-            <div>
-              <div
-                v-for="keypair in keypairs"
-                :key="keypair"
-                style="margin-top: 5px;">
-                <key-outlined />
-                <router-link :to="{ path: '/ssh/' + keypair }" style="margin-right: 5px">{{ keypair }}</router-link>
+            <div class="resource-detail-item" v-if="resource.networks && resource.networks.length > 0">
+              <div class="resource-detail-item__label">{{ $t('label.networks') }}</div>
+              <div class="resource-detail-item__details resource-detail-item__details--start">
+                <div>
+                  <div
+                    v-for="network in resource.networks"
+                    :key="network.id"
+                    style="margin-top: 5px;">
+                    <font-awesome-icon
+                      :icon="['fa-solid', 'fa-ethernet']"
+                      class="anticon"
+                      :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
+                    {{ network.name }}
+                    <span v-if="resource.defaultnetworkid === network.id">
+                      ({{ $t('label.default') }})
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.resourcetype && resource.resourceid && routeFromResourceType">
-          <div class="resource-detail-item__label">{{ $t('label.resource') }}</div>
-          <div class="resource-detail-item__details">
-            <resource-label :resourceType="resource.resourcetype" :resourceId="resource.resourceid" :resourceName="resource.resourcename" />
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.virtualmachineid">
-          <div class="resource-detail-item__label">{{ $t('label.vmname') }}</div>
-          <div class="resource-detail-item__details">
-            <desktop-outlined />
-            <router-link :to="{ path: createPathBasedOnVmType(resource.vmtype, resource.virtualmachineid) }">{{ resource.vmname || resource.vm || resource.virtualmachinename || resource.virtualmachineid }} </router-link>
-            <status class="status status--end" :text="resource.vmstate" v-if="resource.vmstate"/>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.volumeid">
-          <div class="resource-detail-item__label">{{ $t('label.volume') }}</div>
-          <div class="resource-detail-item__details">
-            <hdd-outlined />
-            <router-link v-if="validLinks.volume" :to="{ path: '/volume/' + resource.volumeid }">{{ resource.volumename || resource.volume || resource.volumeid }} </router-link>
-            <span v-else>{{ resource.volumename || resource.volume || resource.volumeid }}</span>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.associatednetworkid">
-          <div class="resource-detail-item__label">{{ $t('label.associatednetwork') }}</div>
-          <div class="resource-detail-item__details">
-            <wifi-outlined />
-            <router-link :to="{ path: '/guestnetwork/' + resource.associatednetworkid }">{{ resource.associatednetworkname || resource.associatednetwork || resource.associatednetworkid }} </router-link>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.sourceipaddressnetworkid">
-          <div class="resource-detail-item__label">{{ $t('label.network') }}</div>
-          <div class="resource-detail-item__details">
-            <wifi-outlined />
-            <router-link :to="{ path: '/guestnetwork/' + resource.sourceipaddressnetworkid }">{{ resource.sourceipaddressnetworkname || resource.sourceipaddressnetworkid }} </router-link>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.guestnetworkid">
-          <div class="resource-detail-item__label">{{ $t('label.guestnetwork') }}</div>
-          <div class="resource-detail-item__details">
-            <gateway-outlined />
-            <router-link :to="{ path: '/guestnetwork/' + resource.guestnetworkid }">{{ resource.guestnetworkname || resource.guestnetworkid }} </router-link>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.publicip">
-          <div class="resource-detail-item__label">{{ $t('label.public.ip') }}</div>
-          <div class="resource-detail-item__details">
-            <gateway-outlined />
-            <router-link v-if="resource.publicipid" :to="{ path: '/publicip/' + resource.publicipid }">{{ resource.publicip }} </router-link>
-            <copy-label v-if="resource.publicipid" :copyValue="resource.publicip" :showIcon=true />
-            <copy-label v-else :label="resource.publicip" />
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.vpcid">
-          <div class="resource-detail-item__label">{{ $t('label.vpcname') }}</div>
-          <div class="resource-detail-item__details">
-            <span v-if="images.vpc">
-              <resource-icon :image="images.vpc" size="1x" style="margin-right: 5px"/>
-            </span>
-            <deployment-unit-outlined v-else />
-            <router-link :to="{ path: '/vpc/' + resource.vpcid }">{{ resource.vpcname || resource.vpcid }}</router-link>
-          </div>
-        </div>
-
-        <div class="resource-detail-item" v-if="resource.aclid">
-          <div class="resource-detail-item__label">{{ $t('label.aclid') }}</div>
-          <div class="resource-detail-item__details">
-            <span v-if="images.acl">
-              <resource-icon :image="images.acl" size="1x" style="margin-right: 5px"/>
-            </span>
-            <deployment-unit-outlined v-else />
-            <router-link :to="{ path: '/acllist/' + resource.aclid }">{{ resource.aclname || resource.aclid }}</router-link>
-          </div>
-        </div>
-
-        <div class="resource-detail-item" v-if="resource.affinitygroup && resource.affinitygroup.length > 0">
-          <div class="resource-detail-item__label">{{ $t('label.affinitygroup') }}</div>
-          <SwapOutlined />
-          <span
-            v-for="(group, index) in resource.affinitygroup"
-            :key="group.id"
-          >
-            <router-link :to="{ path: '/affinitygroup/' + group.id }">{{ group.name }}</router-link>
-            <span v-if="index + 1 < resource.affinitygroup.length">, </span>
-          </span>
-        </div>
-        <div class="resource-detail-item" v-if="resource.templateid">
-          <div class="resource-detail-item__label">{{ resource.templateformat === 'ISO'? $t('label.iso') : $t('label.templatename') }}</div>
-          <div class="resource-detail-item__details">
-            <resource-icon v-if="images.template || images.guestoscategory" :image="images.template || images.guestoscategory" size="1x" style="margin-right: 5px"/>
-            <SaveOutlined v-else />
-            <router-link :to="{ path: (resource.templateformat === 'ISO' ? '/iso/' : '/template/') + resource.templateid }">{{ resource.templatedisplaytext || resource.templatename || resource.templateid }} </router-link>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.isoid">
-          <div class="resource-detail-item__label">{{ $t('label.isoname') }}</div>
-          <div class="resource-detail-item__details">
-            <resource-icon v-if="images.iso || (resource.isoid === resource.templateid && images.guestoscategory)" :image="images.iso || images.guestoscategory" size="1x" style="margin-right: 5px"/>
-            <UsbOutlined v-else />
-              <router-link :to="{ path: '/iso/' + resource.isoid }">{{ resource.isodisplaytext || resource.isoname || resource.isoid }} </router-link>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.serviceofferingname && resource.serviceofferingid">
-          <div class="resource-detail-item__label" v-if="$route.meta.name === 'router' || $route.meta.name === 'systemvm'">{{ $t('label.system.offering') }}</div>
-          <div class="resource-detail-item__label" v-else >{{ $t('label.serviceofferingname') }}</div>
-          <div class="resource-detail-item__details">
-            <cloud-outlined />
-            <router-link v-if="!isStatic && ($route.meta.name === 'router' || $route.meta.name === 'systemvm')" :to="{ path: '/systemoffering/' + resource.serviceofferingid}">{{ resource.serviceofferingname || resource.serviceofferingid }} </router-link>
-            <router-link v-else-if="$router.resolve('/computeoffering/' + resource.serviceofferingid).matched[0].redirect !== '/exception/404'" :to="{ path: '/computeoffering/' + resource.serviceofferingid }">{{ resource.serviceofferingname || resource.serviceofferingid }} </router-link>
-            <span v-else>{{ resource.serviceofferingname || resource.serviceofferingid }}</span>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.rootdiskofferingid && resource.rootdiskofferingdisplaytext || resource.datadiskofferingid && resource.datadiskofferingdisplaytext">
-          <div class="resource-detail-item__label">{{ $t('label.diskoffering') }}</div>
-          <div class="resource-detail-item__details">
-            <hdd-outlined />
-            <div v-if="resource.rootdiskofferingid">
-              <router-link v-if="!isStatic && $router.resolve('/diskoffering/' + resource.rootdiskofferingid).matched[0].redirect !== '/exception/404'" :to="{ path: '/diskoffering/' + resource.rootdiskofferingid }">{{ resource.rootdiskofferingdisplaytext }}</router-link>
-              <span v-else>{{ resource.rootdiskofferingdisplaytext }}</span>
+            <div class="resource-detail-item" v-if="resource.loadbalancer">
+              <div class="resource-detail-item__label">{{ $t('label.loadbalancerrule') }}</div>
+              <div class="resource-detail-item__details">
+                <api-outlined />
+                <span>{{ resource.loadbalancer.name }} ( {{ resource.loadbalancer.publicip }}:{{ resource.loadbalancer.publicport }})</span>
+              </div>
             </div>
-            <span v-if="resource.rootdiskofferingid && resource.datadiskofferingid">&nbsp;|&nbsp;</span>
-            <div v-if="resource.datadiskofferingid">
-              <router-link v-if="!isStatic && $router.resolve('/diskoffering/' + resource.datadiskofferingid).matched[0].redirect !== '/exception/404'" :to="{ path: '/diskoffering/' + resource.datadiskofferingid }">{{ resource.datadiskofferingdisplaytext }}</router-link>
-              <span v-else>{{ resource.datadiskofferingdisplaytext }}</span>
-            </div>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.backupofferingid">
-          <div class="resource-detail-item__label">{{ $t('label.backupofferingid') }}</div>
-          <cloud-upload-outlined />
-          <router-link v-if="!isStatic && $router.resolve('/backupoffering/' + resource.backupofferingid).matched[0].redirect !== '/exception/404'" :to="{ path: '/backupoffering/' + resource.backupofferingid }">{{ resource.backupofferingname || resource.backupofferingid }} </router-link>
-          <span v-else>{{ resource.backupofferingname || resource.backupofferingid }}</span>
-        </div>
-        <div class="resource-detail-item" v-if="resource.networkofferingid">
-          <div class="resource-detail-item__label">{{ $t('label.networkofferingid') }}</div>
-          <div class="resource-detail-item__details">
-            <wifi-outlined />
-            <router-link v-if="!isStatic && $router.resolve('/networkoffering/' + resource.networkofferingid).matched[0].redirect !== '/exception/404'" :to="{ path: '/networkoffering/' + resource.networkofferingid }">{{ resource.networkofferingname || resource.networkofferingid }} </router-link>
-            <span v-else>{{ resource.networkofferingname || resource.networkofferingid }}</span>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.vpcofferingid">
-          <div class="resource-detail-item__label">{{ $t('label.vpcoffering') }}</div>
-          <div class="resource-detail-item__details">
-            <DeploymentUnitOutlined />
-            <router-link v-if="!isStatic && $router.resolve('/vpcoffering/' + resource.vpcofferingid).matched[0].redirect !== '/exception/404'" :to="{ path: '/vpcoffering/' + resource.vpcofferingid }">{{ resource.vpcofferingname || resource.vpcofferingid }} </router-link>
-            <span v-else>{{ resource.vpcofferingname || resource.vpcofferingid }}</span>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.storageid">
-          <div class="resource-detail-item__label">{{ $t('label.storagepool') }}</div>
-          <div class="resource-detail-item__details">
-            <database-outlined />
-            <router-link v-if="!isStatic && $router.resolve('/storagepool/' + resource.storageid).matched[0].redirect !== '/exception/404'" :to="{ path: '/storagepool/' + resource.storageid }">{{ resource.storage || resource.storageid }} </router-link>
-            <span v-else>{{ resource.storage || resource.storageid }}</span>
-            <a-tag style="margin-left: 5px;" v-if="resource.storagetype">
-              {{ resource.storagetype }}
-            </a-tag>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.hostid">
-          <div class="resource-detail-item__label">{{ $t('label.hostname') }}</div>
-          <div class="resource-detail-item__details">
-            <desktop-outlined />
-            <router-link v-if="!isStatic && $router.resolve('/host/' + resource.hostid).matched[0].redirect !== '/exception/404'" :to="{ path: '/host/' + resource.hostid }">{{ resource.hostname || resource.hostid }} </router-link>
-            <span v-else>{{ resource.hostname || resource.hostid }}</span>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.clusterid">
-          <div class="resource-detail-item__label">{{ $t('label.clusterid') }}</div>
-          <div class="resource-detail-item__details">
-            <cluster-outlined />
-            <router-link v-if="!isStatic && $router.resolve('/cluster/' + resource.clusterid).matched[0].redirect !== '/exception/404'" :to="{ path: '/cluster/' + resource.clusterid }">{{ resource.clustername || resource.cluster || resource.clusterid }}</router-link>
-            <span v-else>{{ resource.clustername || resource.cluster || resource.clusterid }}</span>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.podid">
-          <div class="resource-detail-item__label">{{ $t('label.podid') }}</div>
-          <div class="resource-detail-item__details">
-            <appstore-outlined />
-            <router-link v-if="!isStatic && $router.resolve('/pod/' + resource.podid).matched[0].redirect !== '/exception/404'" :to="{ path: '/pod/' + resource.podid }">{{ resource.podname || resource.pod || resource.podid }}</router-link>
-            <span v-else>{{ resource.podname || resource.pod || resource.podid }}</span>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.zoneid && !['template', 'iso'].includes($route.path.split('/')[1])">
-          <div class="resource-detail-item__label">{{ $t('label.zone') }}</div>
-          <div class="resource-detail-item__details">
-            <span v-if="images.zone">
-              <resource-icon :image="images.zone" size="1x" style="margin-right: 5px"/>
-            </span>
-            <global-outlined v-else />
-            <router-link v-if="!isStatic && $router.resolve('/zone/' + resource.zoneid).matched[0].redirect !== '/exception/404'" :to="{ path: '/zone/' + resource.zoneid }">{{ resource.zone || resource.zonename || resource.zoneid }}</router-link>
-            <router-link v-else-if="$router.resolve('/zones/' + resource.zoneid).matched[0].redirect !== '/exception/404'" :to="{ path: '/zones/' + resource.zoneid }">{{ resource.zone || resource.zonename || resource.zoneid }}</router-link>
-            <span v-else>{{ resource.zone || resource.zonename || resource.zoneid }}</span>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.userdataname">
-          <div class="resource-detail-item__label">{{ $t('label.userdata') }}</div>
-          <div class="resource-detail-item__details">
-            <solution-outlined />
-            <router-link v-if="!isStatic && $router.resolve('/userdata/' + resource.userdataid).matched[0].redirect !== '/exception/404'" :to="{ path: '/userdata/' + resource.userdataid }">{{ resource.userdataname || resource.userdataid }}</router-link>
-            <span v-else>{{ resource.userdataname || resource.userdataid }}</span>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.owner">
-          <div class="resource-detail-item__label">{{ $t('label.owners') }}</div>
-          <div class="resource-detail-item__details">
-            <user-outlined />
-            <template v-for="(item, idx) in resource.owner" :key="idx">
-              <span style="margin-right:5px">
-                <span v-if="$store.getters.userInfo.roletype !== 'User'">
-                  <router-link v-if="!isStatic && 'user' in item" :to="{ path: '/accountuser', query: { username: item.user, domainid: resource.domainid }}">{{ item.account + '(' + item.user + ')' }}</router-link>
-                  <router-link v-else :to="{ path: '/account', query: { name: item.account, domainid: resource.domainid } }">{{ item.account }}</router-link>
+            <div class="resource-detail-item" v-if="resource.projectid || resource.projectname">
+              <div class="resource-detail-item__label">{{ $t('label.project') }}</div>
+              <div class="resource-detail-item__details">
+                <span v-if="images.project">
+                  <resource-icon :image="images.project" size="1x" style="margin-right: 5px"/>
                 </span>
-                <span v-else>{{ item.user ? item.account + '(' + item.user + ')' : item.account }}</span>
+                <project-outlined v-else />
+                <router-link v-if="!isStatic && resource.projectid" :to="{ path: '/project/' + resource.projectid }">{{ resource.project || resource.projectname || resource.projectid }}</router-link>
+                <router-link v-else :to="{ path: '/project', query: { name: resource.projectname }}">{{ resource.projectname }}</router-link>
+              </div>
+            </div>
+
+            <div class="resource-detail-item">
+              <slot name="details">
+              </slot>
+            </div>
+
+            <div class="resource-detail-item" v-if="resource.groupid">
+              <div class="resource-detail-item__label">{{ $t('label.group') }}</div>
+              <div class="resource-detail-item__details">
+                <gold-outlined />
+                <router-link :to="{ path: '/vmgroup/' + resource.groupid }">{{ resource.group || resource.groupid }}</router-link>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.autoscalevmgroupid">
+              <div class="resource-detail-item__label">{{ $t('label.autoscalevmgroupname') }}</div>
+              <div class="resource-detail-item__details">
+                <gold-outlined />
+                <router-link :to="{ path: '/autoscalevmgroup/' + resource.autoscalevmgroupid }">{{ resource.autoscalevmgroupname || resource.autoscalevmgroupid }}</router-link>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.keypairs && resource.keypairs.length > 0">
+              <div class="resource-detail-item__label">{{ $t('label.keypairs') }}</div>
+              <div class="resource-detail-item__details">
+                <div>
+                  <div
+                    v-for="keypair in keypairs"
+                    :key="keypair"
+                    style="margin-top: 5px;">
+                    <key-outlined />
+                    <router-link :to="{ path: '/ssh/' + keypair }" style="margin-right: 5px">{{ keypair }}</router-link>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.resourcetype && resource.resourceid && routeFromResourceType">
+              <div class="resource-detail-item__label">{{ $t('label.resource') }}</div>
+              <div class="resource-detail-item__details">
+                <resource-label :resourceType="resource.resourcetype" :resourceId="resource.resourceid" :resourceName="resource.resourcename" />
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.virtualmachineid">
+              <div class="resource-detail-item__label">{{ $t('label.vmname') }}</div>
+              <div class="resource-detail-item__details">
+                <desktop-outlined />
+                <router-link :to="{ path: createPathBasedOnVmType(resource.vmtype, resource.virtualmachineid) }">{{ resource.vmname || resource.vm || resource.virtualmachinename || resource.virtualmachineid }} </router-link>
+                <status class="status status--end" :text="resource.vmstate" v-if="resource.vmstate"/>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.volumeid">
+              <div class="resource-detail-item__label">{{ $t('label.volume') }}</div>
+              <div class="resource-detail-item__details">
+                <hdd-outlined />
+                <router-link v-if="validLinks.volume" :to="{ path: '/volume/' + resource.volumeid }">{{ resource.volumename || resource.volume || resource.volumeid }} </router-link>
+                <span v-else>{{ resource.volumename || resource.volume || resource.volumeid }}</span>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.associatednetworkid">
+              <div class="resource-detail-item__label">{{ $t('label.associatednetwork') }}</div>
+              <div class="resource-detail-item__details">
+                <wifi-outlined />
+                <router-link :to="{ path: '/guestnetwork/' + resource.associatednetworkid }">{{ resource.associatednetworkname || resource.associatednetwork || resource.associatednetworkid }} </router-link>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.sourceipaddressnetworkid">
+              <div class="resource-detail-item__label">{{ $t('label.network') }}</div>
+              <div class="resource-detail-item__details">
+                <wifi-outlined />
+                <router-link :to="{ path: '/guestnetwork/' + resource.sourceipaddressnetworkid }">{{ resource.sourceipaddressnetworkname || resource.sourceipaddressnetworkid }} </router-link>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.guestnetworkid">
+              <div class="resource-detail-item__label">{{ $t('label.guestnetwork') }}</div>
+              <div class="resource-detail-item__details">
+                <gateway-outlined />
+                <router-link :to="{ path: '/guestnetwork/' + resource.guestnetworkid }">{{ resource.guestnetworkname || resource.guestnetworkid }} </router-link>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.publicip">
+              <div class="resource-detail-item__label">{{ $t('label.public.ip') }}</div>
+              <div class="resource-detail-item__details">
+                <gateway-outlined />
+                <router-link v-if="resource.publicipid" :to="{ path: '/publicip/' + resource.publicipid }">{{ resource.publicip }} </router-link>
+                <copy-label v-if="resource.publicipid" :copyValue="resource.publicip" :showIcon=true />
+                <copy-label v-else :label="resource.publicip" />
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.vpcid">
+              <div class="resource-detail-item__label">{{ $t('label.vpcname') }}</div>
+              <div class="resource-detail-item__details">
+                <span v-if="images.vpc">
+                  <resource-icon :image="images.vpc" size="1x" style="margin-right: 5px"/>
+                </span>
+                <deployment-unit-outlined v-else />
+                <router-link :to="{ path: '/vpc/' + resource.vpcid }">{{ resource.vpcname || resource.vpcid }}</router-link>
+              </div>
+            </div>
+
+            <div class="resource-detail-item" v-if="resource.aclid">
+              <div class="resource-detail-item__label">{{ $t('label.aclid') }}</div>
+              <div class="resource-detail-item__details">
+                <span v-if="images.acl">
+                  <resource-icon :image="images.acl" size="1x" style="margin-right: 5px"/>
+                </span>
+                <deployment-unit-outlined v-else />
+                <router-link :to="{ path: '/acllist/' + resource.aclid }">{{ resource.aclname || resource.aclid }}</router-link>
+              </div>
+            </div>
+
+            <div class="resource-detail-item" v-if="resource.affinitygroup && resource.affinitygroup.length > 0">
+              <div class="resource-detail-item__label">{{ $t('label.affinitygroup') }}</div>
+              <SwapOutlined />
+              <span
+                v-for="(group, index) in resource.affinitygroup"
+                :key="group.id"
+              >
+                <router-link :to="{ path: '/affinitygroup/' + group.id }">{{ group.name }}</router-link>
+                <span v-if="index + 1 < resource.affinitygroup.length">, </span>
               </span>
-            </template>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.account && !resource.account.startsWith('PrjAcct-')">
-          <div class="resource-detail-item__label">{{ $t('label.account') }}</div>
-          <div class="resource-detail-item__details">
-            <span v-if="images.account">
-              <resource-icon :image="images.account" size="1x" style="margin-right: 5px"/>
-            </span>
-            <user-outlined v-else />
-            <router-link v-if="!isStatic && $store.getters.userInfo.roletype !== 'User'" :to="{ path: '/account', query: { name: resource.account, domainid: resource.domainid } }">{{ resource.account }}</router-link>
-            <span v-else>{{ resource.account }}</span>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.roleid">
-          <div class="resource-detail-item__label">{{ $t('label.role') }}</div>
-          <div class="resource-detail-item__details">
-            <idcard-outlined />
-            <router-link v-if="!isStatic && $router.resolve('/role/' + resource.roleid).matched[0].redirect !== '/exception/404'" :to="{ path: '/role/' + resource.roleid }">{{ resource.rolename || resource.role || resource.roleid }}</router-link>
-            <span v-else>{{ resource.rolename || resource.role || resource.roleid }}</span>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.domainid">
-          <div class="resource-detail-item__label">{{ $t('label.domain') }}</div>
-          <div class="resource-detail-item__details">
-            <resource-icon v-if="images.domain" :image="images.domain" size="1x" style="margin-right: 5px"/>
-            <block-outlined v-else />
-            <router-link v-if="!isStatic && $store.getters.userInfo.roletype !== 'User'" :to="{ path: '/domain/' + resource.domainid, query: { tab: 'details'}  }">{{ resource.domain || resource.domainid }}</router-link>
-            <span v-else>{{ resource.domain || resource.domainid }}</span>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.payloadurl">
-          <div class="resource-detail-item__label">{{ $t('label.payloadurl') }}</div>
-          <div class="resource-detail-item__details">
-          <link-outlined/>
-            <a v-if="!isStatic" :href="resource.payloadurl">{{ resource.payloadurl }}</a>
-            <span v-else>{{ resource.payloadurl }}</span>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.webhookid">
-          <div class="resource-detail-item__label">{{ $t('label.webhook') }}</div>
-          <div class="resource-detail-item__details">
-            <node-index-outlined />
-            <router-link v-if="!isStatic && $router.resolve('/webhook/' + resource.webhookid).matched[0].redirect !== '/exception/404'" :to="{ path: '/webhook/' + resource.webhookid }">{{ resource.webhookname || resource.webhookid }}</router-link>
-            <span v-else>{{ resource.webhookname || resource.webhookid }}</span>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.managementserverid">
-          <div class="resource-detail-item__label">{{ $t('label.management.servers') }}</div>
-          <div class="resource-detail-item__details">
-            <rocket-outlined />
-            <router-link v-if="!isStatic && $router.resolve('/managementserver/' + resource.managementserverid).matched[0].redirect !== '/exception/404'" :to="{ path: '/managementserver/' + resource.managementserverid }">{{ resource.managementserver || resource.managementserverid }}</router-link>
-            <span v-else>{{ resource.managementserver || resource.managementserverid }}</span>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.created && !['template', 'iso'].includes($route.path.split('/')[1])">
-          <div class="resource-detail-item__label">{{ $t('label.created') }}</div>
-          <div class="resource-detail-item__details">
-            <calendar-outlined />{{ $toLocaleDate(resource.created) }}
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.lastupdated">
-          <div class="resource-detail-item__label">{{ $t('label.last.updated') }}</div>
-          <div class="resource-detail-item__details">
-            <calendar-outlined />{{ $toLocaleDate(resource.lastupdated) }}
-          </div>
-        </div>
-      </div>
-
-      <div class="account-center-tags" v-if="$route.meta.related">
-        <a-divider/>
-        <div v-for="item in $route.meta.related" :key="item.path">
-          <router-link
-            v-if="(item.show === undefined || item.show(resource)) && $router.resolve('/' + item.name).matched[0].redirect !== '/exception/404'"
-            :to="{ name: item.name, query: getRouterQuery(item) }">
-            <a-button style="margin-right: 10px">
-              <template #icon>
-                <render-icon :icon="$router.resolve('/' + item.name).meta.icon" />
-              </template>
-              {{ $t('label.view') + ' ' + $t(item.title) }}
-            </a-button>
-          </router-link>
-        </div>
-        <image-deploy-instance-button
-          v-if="'deployVirtualMachine' in $store.getters.apis && ['template', 'iso'].includes($route.meta.name)"
-          :resource="resource"
-          :osCategoryId="osCategoryId" />
-      </div>
-
-      <div class="account-center-tags" v-if="showKeys || resource.apikeyaccess">
-        <a-divider/>
-      </div>
-      <div class="account-center-tags" v-if="resource.apikeyaccess && resource.account">
-        <div class="resource-detail-item">
-          <div class="resource-detail-item__label">{{ $t('label.apikeyaccess') }}</div>
-          <div class="resource-detail-item__details">
-            <status class="status" :text="resource.apikeyaccess" displayText/>
-          </div>
-        </div>
-      </div>
-      <div class="account-center-tags" v-if="showKeys">
-        <div class="user-keys">
-          <key-outlined />
-          <strong>
-            {{ $t('label.apikey') }}
-            <tooltip-button
-              tooltipPlacement="right"
-              :tooltip="$t('label.copy') + ' ' + $t('label.apikey')"
-              icon="CopyOutlined"
-              type="dashed"
-              size="small"
-              @onClick="$message.success($t('label.copied.clipboard'))"
-              :copyResource="resource.apikey" />
-          </strong>
-          <div>
-            {{ resource.apikey.substring(0, 20) }}...
-          </div>
-        </div> <br/>
-        <div class="user-keys">
-          <lock-outlined />
-          <strong>
-            {{ $t('label.secretkey') }}
-            <tooltip-button
-              tooltipPlacement="right"
-              :tooltip="$t('label.copy') + ' ' + $t('label.secretkey')"
-              icon="CopyOutlined"
-              type="dashed"
-              size="small"
-              @onClick="$message.success($t('label.copied.clipboard'))"
-              :copyResource="resource.secretkey" />
-          </strong>
-          <div>
-            {{ resource.secretkey.substring(0, 20) }}...
-          </div>
-        </div>
-      </div>
-
-      <div class="account-center-tags" v-if="!isStatic && resourceType && tagsSupportingResourceTypes.includes(this.resourceType) && 'listTags' in $store.getters.apis">
-        <a-divider/>
-        <a-spin :spinning="loadingTags">
-          <div class="title">{{ $t('label.tags') }}</div>
-          <div>
-            <template v-for="(tag, index) in tags" :key="index">
-              <a-tag :closable="isAdminOrOwner() && 'deleteTags' in $store.getters.apis" @close="() => handleDeleteTag(tag)">
-                {{ tag.key }} = {{ tag.value }}
-              </a-tag>
-            </template>
-
-            <div v-if="inputVisible">
-              <a-input-group
-                type="text"
-                size="small"
-                @blur="handleInputConfirm"
-                @keyup.enter="handleInputConfirm"
-                compact>
-                <a-input ref="input" :value="inputKey" @change="handleKeyChange" style="width: 30%; text-align: center" :placeholder="$t('label.key')" />
-                <a-input
-                  class="tag-disabled-input"
-                  style="width: 30px; border-left: 0; pointer-events: none; text-align: center"
-                  placeholder="="
-                  disabled />
-                <a-input :value="inputValue" @change="handleValueChange" style="width: 30%; text-align: center; border-left: 0" :placeholder="$t('label.value')" />
-                <tooltip-button :tooltip="$t('label.ok')" icon="CheckOutlined" size="small" @onClick="handleInputConfirm" />
-                <tooltip-button :tooltip="$t('label.cancel')" icon="CloseOutlined" size="small" @onClick="inputVisible=false" />
-              </a-input-group>
             </div>
-            <a-tag
-              @click="showInput"
-              class="btn-add-tag"
-              style="borderStyle: dashed;"
-              v-else-if="isAdminOrOwner() && 'createTags' in $store.getters.apis">
-              <plus-outlined  /> {{ $t('label.new.tag') }}
-            </a-tag>
+            <div class="resource-detail-item" v-if="resource.templateid">
+              <div class="resource-detail-item__label">{{ resource.templateformat === 'ISO'? $t('label.iso') : $t('label.templatename') }}</div>
+              <div class="resource-detail-item__details">
+                <resource-icon v-if="images.template || images.guestoscategory" :image="images.template || images.guestoscategory" size="1x" style="margin-right: 5px"/>
+                <SaveOutlined v-else />
+                <router-link :to="{ path: (resource.templateformat === 'ISO' ? '/iso/' : '/template/') + resource.templateid }">{{ resource.templatedisplaytext || resource.templatename || resource.templateid }} </router-link>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.isoid">
+              <div class="resource-detail-item__label">{{ $t('label.isoname') }}</div>
+              <div class="resource-detail-item__details">
+                <resource-icon v-if="images.iso || (resource.isoid === resource.templateid && images.guestoscategory)" :image="images.iso || images.guestoscategory" size="1x" style="margin-right: 5px"/>
+                <UsbOutlined v-else />
+                  <router-link :to="{ path: '/iso/' + resource.isoid }">{{ resource.isodisplaytext || resource.isoname || resource.isoid }} </router-link>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.serviceofferingname && resource.serviceofferingid">
+              <div class="resource-detail-item__label" v-if="$route.meta.name === 'router' || $route.meta.name === 'systemvm'">{{ $t('label.system.offering') }}</div>
+              <div class="resource-detail-item__label" v-else >{{ $t('label.serviceofferingname') }}</div>
+              <div class="resource-detail-item__details">
+                <cloud-outlined />
+                <router-link v-if="!isStatic && ($route.meta.name === 'router' || $route.meta.name === 'systemvm')" :to="{ path: '/systemoffering/' + resource.serviceofferingid}">{{ resource.serviceofferingname || resource.serviceofferingid }} </router-link>
+                <router-link v-else-if="$router.resolve('/computeoffering/' + resource.serviceofferingid).matched[0].redirect !== '/exception/404'" :to="{ path: '/computeoffering/' + resource.serviceofferingid }">{{ resource.serviceofferingname || resource.serviceofferingid }} </router-link>
+                <span v-else>{{ resource.serviceofferingname || resource.serviceofferingid }}</span>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.rootdiskofferingid && resource.rootdiskofferingdisplaytext || resource.datadiskofferingid && resource.datadiskofferingdisplaytext">
+              <div class="resource-detail-item__label">{{ $t('label.diskoffering') }}</div>
+              <div class="resource-detail-item__details">
+                <hdd-outlined />
+                <div v-if="resource.rootdiskofferingid">
+                  <router-link v-if="!isStatic && $router.resolve('/diskoffering/' + resource.rootdiskofferingid).matched[0].redirect !== '/exception/404'" :to="{ path: '/diskoffering/' + resource.rootdiskofferingid }">{{ resource.rootdiskofferingdisplaytext }}</router-link>
+                  <span v-else>{{ resource.rootdiskofferingdisplaytext }}</span>
+                </div>
+                <span v-if="resource.rootdiskofferingid && resource.datadiskofferingid">&nbsp;|&nbsp;</span>
+                <div v-if="resource.datadiskofferingid">
+                  <router-link v-if="!isStatic && $router.resolve('/diskoffering/' + resource.datadiskofferingid).matched[0].redirect !== '/exception/404'" :to="{ path: '/diskoffering/' + resource.datadiskofferingid }">{{ resource.datadiskofferingdisplaytext }}</router-link>
+                  <span v-else>{{ resource.datadiskofferingdisplaytext }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.backupofferingid">
+              <div class="resource-detail-item__label">{{ $t('label.backupofferingid') }}</div>
+              <cloud-upload-outlined />
+              <router-link v-if="!isStatic && $router.resolve('/backupoffering/' + resource.backupofferingid).matched[0].redirect !== '/exception/404'" :to="{ path: '/backupoffering/' + resource.backupofferingid }">{{ resource.backupofferingname || resource.backupofferingid }} </router-link>
+              <span v-else>{{ resource.backupofferingname || resource.backupofferingid }}</span>
+            </div>
+            <div class="resource-detail-item" v-if="resource.networkofferingid">
+              <div class="resource-detail-item__label">{{ $t('label.networkofferingid') }}</div>
+              <div class="resource-detail-item__details">
+                <wifi-outlined />
+                <router-link v-if="!isStatic && $router.resolve('/networkoffering/' + resource.networkofferingid).matched[0].redirect !== '/exception/404'" :to="{ path: '/networkoffering/' + resource.networkofferingid }">{{ resource.networkofferingname || resource.networkofferingid }} </router-link>
+                <span v-else>{{ resource.networkofferingname || resource.networkofferingid }}</span>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.vpcofferingid">
+              <div class="resource-detail-item__label">{{ $t('label.vpcoffering') }}</div>
+              <div class="resource-detail-item__details">
+                <DeploymentUnitOutlined />
+                <router-link v-if="!isStatic && $router.resolve('/vpcoffering/' + resource.vpcofferingid).matched[0].redirect !== '/exception/404'" :to="{ path: '/vpcoffering/' + resource.vpcofferingid }">{{ resource.vpcofferingname || resource.vpcofferingid }} </router-link>
+                <span v-else>{{ resource.vpcofferingname || resource.vpcofferingid }}</span>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.storageid">
+              <div class="resource-detail-item__label">{{ $t('label.storagepool') }}</div>
+              <div class="resource-detail-item__details">
+                <database-outlined />
+                <router-link v-if="!isStatic && $router.resolve('/storagepool/' + resource.storageid).matched[0].redirect !== '/exception/404'" :to="{ path: '/storagepool/' + resource.storageid }">{{ resource.storage || resource.storageid }} </router-link>
+                <span v-else>{{ resource.storage || resource.storageid }}</span>
+                <a-tag style="margin-left: 5px;" v-if="resource.storagetype">
+                  {{ resource.storagetype }}
+                </a-tag>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.hostid">
+              <div class="resource-detail-item__label">{{ $t('label.hostname') }}</div>
+              <div class="resource-detail-item__details">
+                <desktop-outlined />
+                <router-link v-if="!isStatic && $router.resolve('/host/' + resource.hostid).matched[0].redirect !== '/exception/404'" :to="{ path: '/host/' + resource.hostid }">{{ resource.hostname || resource.hostid }} </router-link>
+                <span v-else>{{ resource.hostname || resource.hostid }}</span>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.clusterid">
+              <div class="resource-detail-item__label">{{ $t('label.clusterid') }}</div>
+              <div class="resource-detail-item__details">
+                <cluster-outlined />
+                <router-link v-if="!isStatic && $router.resolve('/cluster/' + resource.clusterid).matched[0].redirect !== '/exception/404'" :to="{ path: '/cluster/' + resource.clusterid }">{{ resource.clustername || resource.cluster || resource.clusterid }}</router-link>
+                <span v-else>{{ resource.clustername || resource.cluster || resource.clusterid }}</span>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.podid">
+              <div class="resource-detail-item__label">{{ $t('label.podid') }}</div>
+              <div class="resource-detail-item__details">
+                <appstore-outlined />
+                <router-link v-if="!isStatic && $router.resolve('/pod/' + resource.podid).matched[0].redirect !== '/exception/404'" :to="{ path: '/pod/' + resource.podid }">{{ resource.podname || resource.pod || resource.podid }}</router-link>
+                <span v-else>{{ resource.podname || resource.pod || resource.podid }}</span>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.zoneid && !['template', 'iso'].includes($route.path.split('/')[1])">
+              <div class="resource-detail-item__label">{{ $t('label.zone') }}</div>
+              <div class="resource-detail-item__details">
+                <span v-if="images.zone">
+                  <resource-icon :image="images.zone" size="1x" style="margin-right: 5px"/>
+                </span>
+                <global-outlined v-else />
+                <router-link v-if="!isStatic && $router.resolve('/zone/' + resource.zoneid).matched[0].redirect !== '/exception/404'" :to="{ path: '/zone/' + resource.zoneid }">{{ resource.zone || resource.zonename || resource.zoneid }}</router-link>
+                <router-link v-else-if="$router.resolve('/zones/' + resource.zoneid).matched[0].redirect !== '/exception/404'" :to="{ path: '/zones/' + resource.zoneid }">{{ resource.zone || resource.zonename || resource.zoneid }}</router-link>
+                <span v-else>{{ resource.zone || resource.zonename || resource.zoneid }}</span>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.userdataname">
+              <div class="resource-detail-item__label">{{ $t('label.userdata') }}</div>
+              <div class="resource-detail-item__details">
+                <solution-outlined />
+                <router-link v-if="!isStatic && $router.resolve('/userdata/' + resource.userdataid).matched[0].redirect !== '/exception/404'" :to="{ path: '/userdata/' + resource.userdataid }">{{ resource.userdataname || resource.userdataid }}</router-link>
+                <span v-else>{{ resource.userdataname || resource.userdataid }}</span>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.owner">
+              <div class="resource-detail-item__label">{{ $t('label.owners') }}</div>
+              <div class="resource-detail-item__details">
+                <user-outlined />
+                <template v-for="(item, idx) in resource.owner" :key="idx">
+                  <span style="margin-right:5px">
+                    <span v-if="$store.getters.userInfo.roletype !== 'User'">
+                      <router-link v-if="!isStatic && 'user' in item" :to="{ path: '/accountuser', query: { username: item.user, domainid: resource.domainid }}">{{ item.account + '(' + item.user + ')' }}</router-link>
+                      <router-link v-else :to="{ path: '/account', query: { name: item.account, domainid: resource.domainid } }">{{ item.account }}</router-link>
+                    </span>
+                    <span v-else>{{ item.user ? item.account + '(' + item.user + ')' : item.account }}</span>
+                  </span>
+                </template>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.account && !resource.account.startsWith('PrjAcct-')">
+              <div class="resource-detail-item__label">{{ $t('label.account') }}</div>
+              <div class="resource-detail-item__details">
+                <span v-if="images.account">
+                  <resource-icon :image="images.account" size="1x" style="margin-right: 5px"/>
+                </span>
+                <user-outlined v-else />
+                <router-link v-if="!isStatic && $store.getters.userInfo.roletype !== 'User'" :to="{ path: '/account', query: { name: resource.account, domainid: resource.domainid } }">{{ resource.account }}</router-link>
+                <span v-else>{{ resource.account }}</span>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.roleid">
+              <div class="resource-detail-item__label">{{ $t('label.role') }}</div>
+              <div class="resource-detail-item__details">
+                <idcard-outlined />
+                <router-link v-if="!isStatic && $router.resolve('/role/' + resource.roleid).matched[0].redirect !== '/exception/404'" :to="{ path: '/role/' + resource.roleid }">{{ resource.rolename || resource.role || resource.roleid }}</router-link>
+                <span v-else>{{ resource.rolename || resource.role || resource.roleid }}</span>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.domainid">
+              <div class="resource-detail-item__label">{{ $t('label.domain') }}</div>
+              <div class="resource-detail-item__details">
+                <resource-icon v-if="images.domain" :image="images.domain" size="1x" style="margin-right: 5px"/>
+                <block-outlined v-else />
+                <router-link v-if="!isStatic && $store.getters.userInfo.roletype !== 'User'" :to="{ path: '/domain/' + resource.domainid, query: { tab: 'details'}  }">{{ resource.domain || resource.domainid }}</router-link>
+                <span v-else>{{ resource.domain || resource.domainid }}</span>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.payloadurl">
+              <div class="resource-detail-item__label">{{ $t('label.payloadurl') }}</div>
+              <div class="resource-detail-item__details">
+              <link-outlined/>
+                <a v-if="!isStatic" :href="resource.payloadurl">{{ resource.payloadurl }}</a>
+                <span v-else>{{ resource.payloadurl }}</span>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.webhookid">
+              <div class="resource-detail-item__label">{{ $t('label.webhook') }}</div>
+              <div class="resource-detail-item__details">
+                <node-index-outlined />
+                <router-link v-if="!isStatic && $router.resolve('/webhook/' + resource.webhookid).matched[0].redirect !== '/exception/404'" :to="{ path: '/webhook/' + resource.webhookid }">{{ resource.webhookname || resource.webhookid }}</router-link>
+                <span v-else>{{ resource.webhookname || resource.webhookid }}</span>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.managementserverid">
+              <div class="resource-detail-item__label">{{ $t('label.management.servers') }}</div>
+              <div class="resource-detail-item__details">
+                <rocket-outlined />
+                <router-link v-if="!isStatic && $router.resolve('/managementserver/' + resource.managementserverid).matched[0].redirect !== '/exception/404'" :to="{ path: '/managementserver/' + resource.managementserverid }">{{ resource.managementserver || resource.managementserverid }}</router-link>
+                <span v-else>{{ resource.managementserver || resource.managementserverid }}</span>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.created && !['template', 'iso'].includes($route.path.split('/')[1])">
+              <div class="resource-detail-item__label">{{ $t('label.created') }}</div>
+              <div class="resource-detail-item__details">
+                <calendar-outlined />{{ $toLocaleDate(resource.created) }}
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.lastupdated">
+              <div class="resource-detail-item__label">{{ $t('label.last.updated') }}</div>
+              <div class="resource-detail-item__details">
+                <calendar-outlined />{{ $toLocaleDate(resource.lastupdated) }}
+              </div>
+            </div>
           </div>
-        </a-spin>
+
+          <div class="account-center-tags" v-if="$route.meta.related">
+            <a-divider/>
+            <div v-for="item in $route.meta.related" :key="item.path">
+              <router-link
+                v-if="(item.show === undefined || item.show(resource)) && $router.resolve('/' + item.name).matched[0].redirect !== '/exception/404'"
+                :to="{ name: item.name, query: getRouterQuery(item) }">
+                <a-button style="margin-right: 10px">
+                  <template #icon>
+                    <render-icon :icon="$router.resolve('/' + item.name).meta.icon" />
+                  </template>
+                  {{ $t('label.view') + ' ' + $t(item.title) }}
+                </a-button>
+              </router-link>
+            </div>
+            <image-deploy-instance-button
+              v-if="'deployVirtualMachine' in $store.getters.apis && ['template', 'iso'].includes($route.meta.name)"
+              :resource="resource"
+              :osCategoryId="osCategoryId" />
+          </div>
+
+          <div class="account-center-tags" v-if="showKeys || resource.apikeyaccess">
+            <a-divider/>
+          </div>
+          <div class="account-center-tags" v-if="resource.apikeyaccess && resource.account">
+            <div class="resource-detail-item">
+              <div class="resource-detail-item__label">{{ $t('label.apikeyaccess') }}</div>
+              <div class="resource-detail-item__details">
+                <status class="status" :text="resource.apikeyaccess" displayText/>
+              </div>
+            </div>
+          </div>
+          <div class="account-center-tags" v-if="showKeys">
+            <div class="user-keys">
+              <key-outlined />
+              <strong>
+                {{ $t('label.apikey') }}
+                <tooltip-button
+                  tooltipPlacement="right"
+                  :tooltip="$t('label.copy') + ' ' + $t('label.apikey')"
+                  icon="CopyOutlined"
+                  type="dashed"
+                  size="small"
+                  @onClick="$message.success($t('label.copied.clipboard'))"
+                  :copyResource="resource.apikey" />
+              </strong>
+              <div>
+                {{ resource.apikey.substring(0, 20) }}...
+              </div>
+            </div> <br/>
+            <div class="user-keys">
+              <lock-outlined />
+              <strong>
+                {{ $t('label.secretkey') }}
+                <tooltip-button
+                  tooltipPlacement="right"
+                  :tooltip="$t('label.copy') + ' ' + $t('label.secretkey')"
+                  icon="CopyOutlined"
+                  type="dashed"
+                  size="small"
+                  @onClick="$message.success($t('label.copied.clipboard'))"
+                  :copyResource="resource.secretkey" />
+              </strong>
+              <div>
+                {{ resource.secretkey.substring(0, 20) }}...
+              </div>
+            </div>
+          </div>
+
+          <div class="account-center-tags" v-if="!isStatic && resourceType && tagsSupportingResourceTypes.includes(this.resourceType) && 'listTags' in $store.getters.apis">
+            <a-divider/>
+            <a-spin :spinning="loadingTags">
+              <div class="title">{{ $t('label.tags') }}</div>
+              <div>
+                <template v-for="(tag, index) in tags" :key="index">
+                  <a-tag :closable="isAdminOrOwner() && 'deleteTags' in $store.getters.apis" @close="() => handleDeleteTag(tag)">
+                    {{ tag.key }} = {{ tag.value }}
+                  </a-tag>
+                </template>
+
+                <div v-if="inputVisible">
+                  <a-input-group
+                    type="text"
+                    size="small"
+                    @blur="handleInputConfirm"
+                    @keyup.enter="handleInputConfirm"
+                    compact>
+                    <a-input ref="input" :value="inputKey" @change="handleKeyChange" style="width: 30%; text-align: center" :placeholder="$t('label.key')" />
+                    <a-input
+                      class="tag-disabled-input"
+                      style="width: 30px; border-left: 0; pointer-events: none; text-align: center"
+                      placeholder="="
+                      disabled />
+                    <a-input :value="inputValue" @change="handleValueChange" style="width: 30%; text-align: center; border-left: 0" :placeholder="$t('label.value')" />
+                    <tooltip-button :tooltip="$t('label.ok')" icon="CheckOutlined" size="small" @onClick="handleInputConfirm" />
+                    <tooltip-button :tooltip="$t('label.cancel')" icon="CloseOutlined" size="small" @onClick="inputVisible=false" />
+                  </a-input-group>
+                </div>
+                <a-tag
+                  @click="showInput"
+                  class="btn-add-tag"
+                  style="borderStyle: dashed;"
+                  v-else-if="isAdminOrOwner() && 'createTags' in $store.getters.apis">
+                  <plus-outlined  /> {{ $t('label.new.tag') }}
+                </a-tag>
+              </div>
+            </a-spin>
+          </div>
+        </div>
+        <div class="card-footer" v-if="footerVisible">
+          <slot name="footer-content"></slot>
+        </div>
       </div>
     </a-card>
   </a-spin>
@@ -903,7 +885,7 @@ import UploadResourceIcon from '@/components/view/UploadResourceIcon'
 import eventBus from '@/config/eventBus'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import ResourceLabel from '@/components/widgets/ResourceLabel'
-import ImageDeployInstanceButton from '@/components/view/ImageDeployInstanceButton.vue'
+import ImageDeployInstanceButton from '@/components/view/ImageDeployInstanceButton'
 
 export default {
   name: 'InfoCard',
@@ -936,6 +918,10 @@ export default {
       default: true
     },
     isStatic: {
+      type: Boolean,
+      default: false
+    },
+    footerVisible: {
       type: Boolean,
       default: false
     }
@@ -1038,9 +1024,6 @@ export default {
     },
     routeFromResourceType () {
       return this.$getRouteFromResourceType(this.resource.resourcetype)
-    },
-    isModernImageSelection () {
-      return this.$config.imageSelectionInterface === undefined || this.$config.imageSelectionInterface === 'modern'
     }
   },
   methods: {
@@ -1055,6 +1038,10 @@ export default {
           this.getTags()
         }
       }
+      this.fetchOsCategoryAndIcon()
+      this.getIcons()
+    },
+    fetchOsCategoryAndIcon () {
       const osId = this.resource.guestosid || this.resource.ostypeid
       if (osId && 'listOsTypes' in this.$store.getters.apis) {
         api('listOsTypes', { id: osId }).then(json => {
@@ -1064,7 +1051,6 @@ export default {
           }
         })
       }
-      this.getIcons()
     },
     showUploadModal (show) {
       if (show) {
@@ -1251,9 +1237,6 @@ export default {
         if (item.name === 'template') {
           query.templatefilter = 'self'
           query.filter = 'self'
-        } else if (item.name === 'iso') {
-          query.isofilter = 'self'
-          query.filter = 'self'
         }
 
         if (item.param === 'account') {
@@ -1273,6 +1256,25 @@ export default {
 
 <style lang="scss" scoped>
 :deep(.ant-card-body) {
+  padding: 0;
+}
+
+.card-body {
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  display: flex;
+}
+
+.card-content {
+  width: 100%;
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 30px;
+}
+
+.card-footer {
+  width: 100%;
   padding: 30px;
 }
 
