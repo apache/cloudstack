@@ -60,6 +60,9 @@
               <a-tag v-if="resource.instancename">
                 {{ resource.instancename }}
               </a-tag>
+              <a-tag v-if="'isuserdefined' in resource && !resource.isuserdefined" :color="this.$config.theme['@link-color']">
+                {{ $t('label.inbuilt') }}
+              </a-tag>
               <a-tag v-if="resource.type">
                 <span v-if="['USER.LOGIN', 'USER.LOGOUT', 'ROUTER.HEALTH.CHECKS', 'FIREWALL.CLOSE', 'ALERT.SERVICE.DOMAINROUTER'].includes(resource.type)">{{ $t(resource.type.toLowerCase()) }}</span>
                 <span v-else>

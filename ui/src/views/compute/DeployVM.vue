@@ -815,13 +815,13 @@
                         :filterOption="filterOption"
                       ></a-select>
                     </a-form-item>
-                    <a-form-item name="externaldetails" ref="externaldetails">
+                    <a-form-item name="externaldetails" ref="externaldetails" v-if="imageType === 'templateid' && template.hypervisor === 'External'">
                       <template #label>
                         <tooltip-label :title="$t('label.externaldetails')" :tooltip="apiParams.externaldetails.description" />
                       </template>
                       <a-switch v-model:checked="externalDetailsEnabled" @change="onExternalDetailsEnabledChange"/>
                       <a-card v-if="externalDetailsEnabled" style="margin-top: 10px">
-                        <div style="margin-bottom: 10px">{{ $t('message.add.external.details') }}</div>
+                        <div style="margin-bottom: 10px">{{ $t('message.add.orchestrator.resource.details') }}</div>
                         <details-input
                           v-model:value="form.externaldetails" />
                       </a-card>
@@ -2379,7 +2379,7 @@ export default {
           deployVmData.projectid = this.owner.projectid
         }
 
-        if (values.externaldetails) {
+        if (this.imageType === 'templateid' && this.template === 'External' && values.externaldetails) {
           Object.entries(values.externaldetails).forEach(([key, value]) => {
             deployVmData['externaldetails[0].' + key] = value
           })

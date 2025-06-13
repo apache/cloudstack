@@ -57,14 +57,17 @@ public class ExtensionCustomActionVO implements ExtensionCustomAction {
     @Enumerated(value = EnumType.STRING)
     private ResourceType resourceType;
 
-    @Column(name = "roles")
-    private Integer roles;
+    @Column(name = "allowed_role_types")
+    private Integer allowedRoleTypes;
 
     @Column(name = "success_message", length = 4096)
     private String successMessage;
 
     @Column(name = "error_message", length = 4096)
     private String errorMessage;
+
+    @Column(name = "timeout", nullable = false)
+    private int timeout;
 
     @Column(name = "enabled")
     private boolean enabled;
@@ -82,7 +85,7 @@ public class ExtensionCustomActionVO implements ExtensionCustomAction {
     }
 
     public ExtensionCustomActionVO(String name, String description, long extensionId, String successMessage,
-           String errorMessage, boolean enabled) {
+           String errorMessage, int timeout, boolean enabled) {
         this.uuid = UUID.randomUUID().toString();
         this.created = new Date();
         this.name = name;
@@ -90,6 +93,7 @@ public class ExtensionCustomActionVO implements ExtensionCustomAction {
         this.extensionId = extensionId;
         this.successMessage = successMessage;
         this.errorMessage = errorMessage;
+        this.timeout = timeout;
         this.enabled = enabled;
     }
 
@@ -103,13 +107,13 @@ public class ExtensionCustomActionVO implements ExtensionCustomAction {
         return uuid;
     }
 
-    public void setRoles(int roles) {
-        this.roles = roles;
+    public void setAllowedRoleTypes(int allowedRoleTypes) {
+        this.allowedRoleTypes = allowedRoleTypes;
     }
 
     @Override
-    public Integer getRoles() {
-        return roles;
+    public Integer getAllowedRoleTypes() {
+        return allowedRoleTypes;
     }
 
     public void setUuid(String uuid) {
@@ -166,8 +170,13 @@ public class ExtensionCustomActionVO implements ExtensionCustomAction {
         this.errorMessage = errorMessage;
     }
 
-    public void setCreated(Date created) {
-        this.created = created;
+    @Override
+    public int getTimeout() {
+        return timeout;
+    }
+
+    public void setTimeout(int timeout) {
+        this.timeout = timeout;
     }
 
     @Override
@@ -177,6 +186,10 @@ public class ExtensionCustomActionVO implements ExtensionCustomAction {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public void setCreated(Date created) {
+        this.created = created;
     }
 
     @Override

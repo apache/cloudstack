@@ -52,7 +52,7 @@ public interface ExtensionsManager extends Manager {
 
     Extension createExtension(CreateExtensionCmd cmd);
 
-    void prepareExtensionEntryPointAcrossServers(Extension extension);
+    boolean prepareExtensionEntryPointAcrossServers(Extension extension);
 
     List<ExtensionResponse> listExtensions(ListExtensionsCmd cmd);
 

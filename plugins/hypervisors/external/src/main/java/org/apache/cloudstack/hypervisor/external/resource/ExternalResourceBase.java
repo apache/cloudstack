@@ -16,15 +16,11 @@
 // under the License.
 package org.apache.cloudstack.hypervisor.external.resource;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.agent.manager.ExternalAgentManager;
-import org.apache.cloudstack.agent.manager.ExternalAgentManagerImpl;
 import org.apache.cloudstack.hypervisor.external.provisioner.simpleprovisioner.SimpleExternalProvisioner;
 
 import com.cloud.agent.IAgentControl;
@@ -64,26 +60,36 @@ import com.cloud.hypervisor.ExternalProvisioner;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.Networks;
 import com.cloud.resource.ServerResource;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentContext;
 
 public class ExternalResourceBase implements ServerResource {
+    protected static final int CPU = 4;
+    protected static final long CPU_SPEED = 4000L;
+    protected static final long RAM = 16000 * 1024 * 1024L;
+    protected static final long DOM0_RAM = 768 * 1024 * 1024L;
+    protected static final String CAPABILITIES = "hvm";
 
     @Inject
-    ExternalAgentManager externalAgentManager = null;
-    @Inject
     ExternalProvisioner externalProvisioner;
+
     protected String url;
     protected String dcId;
     protected String pod;
     protected String cluster;
+    protected String name;
     protected String guid;
-    private Host.Type type;
+    private final Host.Type type;
 
     private String extensionName;
     private String extensionRelativeEntryPoint;
 
+    protected boolean isExtensionConnected() {
+        return StringUtils.isNoneBlank(extensionName, extensionRelativeEntryPoint);
+    }
+
     public ExternalResourceBase() {
-        setType(Host.Type.Routing);
+        type = Host.Type.Routing;
     }
 
     @Override
@@ -91,22 +97,16 @@ public class ExternalResourceBase implements ServerResource {
         return type;
     }
 
-    public void setType(Host.Type type) {
-        this.type = type;
-    }
-
     @Override
     public StartupCommand[] initialize() {
-        final List<Object> info = getHostInfo();
-
         final StartupRoutingCommand cmd =
-                new StartupRoutingCommand((Integer)info.get(0), (Long)info.get(1), (Long)info.get(2), (Long)info.get(4), (String)info.get(3), Hypervisor.HypervisorType.External,
-                        Networks.RouterPrivateIpStrategy.HostLocal);
+                new StartupRoutingCommand(CPU, CPU_SPEED, RAM, DOM0_RAM, CAPABILITIES,
+                        Hypervisor.HypervisorType.External,Networks.RouterPrivateIpStrategy.HostLocal);
         cmd.setDataCenter(dcId);
         cmd.setPod(pod);
         cmd.setCluster(cluster);
-        cmd.setHostType(Host.Type.Routing);
-        cmd.setName(guid);
+        cmd.setHostType(type);
+        cmd.setName(name);
         cmd.setPrivateIpAddress(Hypervisor.HypervisorType.External.toString());
         cmd.setGuid(guid);
         cmd.setIqn(guid);
@@ -114,24 +114,11 @@ public class ExternalResourceBase implements ServerResource {
         return new StartupCommand[] {cmd};
     }
 
-    protected List<Object> getHostInfo() {
-        final ArrayList<Object> info = new ArrayList<>();
-        long speed = 4000L;
-        long cpus = 4L;
-        long ram = 16000L * 1024L * 1024L;
-        long dom0ram = Math.min(ram / 10, 768 * 1024 * 1024L);
-
-        String cap = "hvm";
-        info.add((int)cpus);
-        info.add(speed);
-        info.add(ram);
-        info.add(cap);
-        info.add(dom0ram);
-        return info;
-    }
-
     @Override
     public PingCommand getCurrentStatus(long id) {
+        if (isExtensionConnected()) {
+            return null;
+        }
         final Map<String, HostVmStateReportEntry> vmStates = externalProvisioner.getHostVmStateReport(id, extensionName,
                 extensionRelativeEntryPoint);
         return new PingRoutingCommand(Host.Type.Routing, id, vmStates);
@@ -282,17 +269,14 @@ public class ExternalResourceBase implements ServerResource {
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         externalProvisioner = ComponentContext.inject(SimpleExternalProvisioner.class);
         externalProvisioner.configure(name, params);
-        externalAgentManager = ComponentContext.inject(ExternalAgentManagerImpl.class);
-        externalAgentManager.configure(name, params);
-
         dcId = (String) params.get("zone");
         pod = (String) params.get("pod");
         cluster = (String) params.get("cluster");
+        this.name = (String)params.get("name");
         guid = (String) params.get("guid");
-        url = (String) params.get("guid");
+        url = (String) params.get("url");
         extensionName = (String) params.get("extensionName");
         extensionRelativeEntryPoint = (String) params.get("extensionRelativeEntryPoint");
-
         return true;
     }
 

@@ -17,9 +17,13 @@
 
 package org.apache.cloudstack.framework.extensions.dao;
 
+import java.util.List;
+
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+
+import org.apache.cloudstack.extension.Extension;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionVO;
 
 public class ExternalOrchestratorDaoImpl extends GenericDaoBase<ExtensionVO, Long> implements ExtensionDao {
@@ -30,6 +34,7 @@ public class ExternalOrchestratorDaoImpl extends GenericDaoBase<ExtensionVO, Lon
         AllFieldSearch = createSearchBuilder();
         AllFieldSearch.and("name", AllFieldSearch.entity().getName(), SearchCriteria.Op.EQ);
         AllFieldSearch.and("type", AllFieldSearch.entity().getType(), SearchCriteria.Op.EQ);
+        AllFieldSearch.and("state", AllFieldSearch.entity().getState(), SearchCriteria.Op.EQ);
         AllFieldSearch.done();
     }
 
@@ -39,5 +44,12 @@ public class ExternalOrchestratorDaoImpl extends GenericDaoBase<ExtensionVO, Lon
         sc.setParameters("name", name);
 
         return findOneBy(sc);
+    }
+
+    @Override
+    public List<ExtensionVO> listAllEnabled() {
+        SearchCriteria<ExtensionVO> sc = AllFieldSearch.create();
+        sc.setParameters("state", Extension.State.Enabled);
+        return listBy(sc);
     }
 }

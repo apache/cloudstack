@@ -51,7 +51,7 @@
                     <template #suffixIcon><filter-outlined class="ant-select-suffix" /></template>
                     <a-select-option
                       v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) &&
-                      ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool', 'kubernetes', 'computeoffering', 'systemoffering', 'diskoffering', 'sharedfs'].includes($route.name) ||
+                      ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool', 'kubernetes', 'computeoffering', 'systemoffering', 'diskoffering', 'sharedfs', 'xaas'].includes($route.name) ||
                       ['account'].includes($route.name)"
                       key="all"
                       :label="$t('label.all')">
@@ -692,7 +692,7 @@ export default {
         return this.$route.query.filter
       }
       const routeName = this.$route.name
-      if ((this.projectView && routeName === 'vm') || (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) && ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool'].includes(routeName)) || ['account', 'guestnetwork', 'guestvlans', 'oauthsetting', 'guestos', 'guestoshypervisormapping', 'kubernetes', 'asnumbers', 'networkoffering'].includes(routeName)) {
+      if ((this.projectView && routeName === 'vm') || (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) && ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool'].includes(routeName)) || ['account', 'guestnetwork', 'guestvlans', 'oauthsetting', 'guestos', 'guestoshypervisormapping', 'kubernetes', 'asnumbers', 'networkoffering', 'xaas'].includes(routeName)) {
         return 'all'
       }
       if (['publicip'].includes(routeName)) {
@@ -1812,6 +1812,12 @@ export default {
         }
       } else if (['computeoffering', 'systemoffering', 'diskoffering'].includes(this.$route.name)) {
         query.state = filter
+      } else if (['xaas'].includes(this.$route.name)) {
+        if (filter === 'all') {
+          delete query.type
+        } else {
+          query.type = filter
+        }
       }
       query.filter = filter
       query.page = '1'

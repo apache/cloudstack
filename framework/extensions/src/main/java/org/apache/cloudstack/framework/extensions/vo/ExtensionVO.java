@@ -52,7 +52,7 @@ public class ExtensionVO implements Extension {
         this.type = type;
         this.relativeEntryPoint = relativeEntryPoint;
         this.userDefined = true;
-        this.entryPointSync = true;
+        this.entryPointReady = true;
         this.state = state;
         this.created = new Date();
     }
@@ -78,8 +78,8 @@ public class ExtensionVO implements Extension {
     @Column(name = "relative_entry_point", nullable = false, length = 2048)
     private String relativeEntryPoint;
 
-    @Column(name = "entry_point_sync")
-    private boolean entryPointSync;
+    @Column(name = "entry_point_ready")
+    private boolean entryPointReady;
 
     @Column(name = "is_user_defined")
     private boolean userDefined;
@@ -137,12 +137,12 @@ public class ExtensionVO implements Extension {
     }
 
     @Override
-    public boolean isEntryPointSync() {
-        return entryPointSync;
+    public boolean isEntryPointReady() {
+        return entryPointReady;
     }
 
-    public void setEntryPointSync(boolean entryPointSync) {
-        this.entryPointSync = entryPointSync;
+    public void setEntryPointReady(boolean entryPointReady) {
+        this.entryPointReady = entryPointReady;
     }
 
     @Override

@@ -46,11 +46,17 @@
         <template #label>
           <tooltip-label :title="$t('label.entrypoint')" :tooltip="apiParams.entrypoint.description"/>
         </template>
-        <span v-if="!!safeName">{{ extenstionBasePath }}</span>
-        <a-input
-          v-model:value="form.entrypoint"
-          :placeholder="apiParams.entrypoint.description"
-          @input="markEntryPointModified" />
+        <div class="entry-point-input-container">
+          <span v-if="!!safeName" :title="extenstionBasePath" class="entry-point-input-base-path">
+            {{ extenstionBasePath }}
+          </span>
+          <a-input
+            v-model:value="form.entrypoint"
+            :placeholder="apiParams.entrypoint.description"
+            @input="markEntryPointModified"
+            class="entry-point-input-relative-path"
+          />
+        </div>
       </a-form-item>
       <a-form-item ref="type" name="type">
         <template #label>
@@ -71,9 +77,9 @@
       </a-form-item>
       <a-form-item name="details" ref="details">
         <template #label>
-          <tooltip-label :title="$t('label.details')" :tooltip="apiParams.details.description"/>
+          <tooltip-label :title="$t('label.configuration.details')" :tooltip="apiParams.details.description"/>
         </template>
-        <div style="margin-bottom: 10px">{{ $t('message.add.external.details') }}</div>
+        <div style="margin-bottom: 10px">{{ $t('message.add.extension.details') }}</div>
         <details-input
           v-model:value="form.details" />
       </a-form-item>
@@ -135,7 +141,7 @@ export default {
     initForm () {
       this.formRef = ref()
       this.form = reactive({
-        state: true
+        state: false
       })
       this.rules = reactive({
         name: [{ required: true, message: `${this.$t('message.error.name')}` }],
@@ -151,6 +157,7 @@ export default {
           description: item
         })
       })
+      this.form.type = this.extensionTypes?.[0]?.id
     },
     fetchExtensionsPath () {
       api('listConfigurations', { name: 'external.provisioner.extensions.directory' }).then(json => {
@@ -228,5 +235,23 @@ export default {
   @media (min-width: 600px) {
     width: 550px;
   }
+}
+
+.entry-point-input-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.entry-point-input-base-path {
+  max-width: 70%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.entry-point-input-relative-path {
+  flex: 1 1 0%;
+  min-width: 0;
 }
 </style>

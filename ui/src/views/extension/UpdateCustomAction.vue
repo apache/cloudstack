@@ -33,20 +33,20 @@
           :placeholder="apiParams.description.description"
           v-focus="true" />
       </a-form-item>
-      <a-form-item ref="roles" name="roles">
+      <a-form-item ref="allowedroletypes" name="allowedroletypes">
         <template #label>
-          <tooltip-label :title="$t('label.roles')" :tooltip="apiParams.roles.description"/>
+          <tooltip-label :title="$t('label.allowedroletypes')" :tooltip="apiParams.allowedroletypes.description"/>
         </template>
         <a-select
           showSearch
           mode="multiple"
-          v-model:value="form.roles"
-          :placeholder="apiParams.roles.description"
+          v-model:value="form.allowedroletypes"
+          :placeholder="apiParams.allowedroletypes.description"
           optionFilterProp="label"
           :filterOption="(input, option) => {
             return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
-          <a-select-option v-for="opt in roles" :key="opt.id" :label="opt.description || opt.id">
+          <a-select-option v-for="opt in roleTypes" :key="opt.id" :label="opt.description || opt.id">
             {{ opt.description || opt.id }}
           </a-select-option>
         </a-select>
@@ -77,11 +77,20 @@
       </a-form-item>
       <a-form-item name="details" ref="details">
         <template #label>
-          <tooltip-label :title="$t('label.details')" :tooltip="apiParams.details.description"/>
+          <tooltip-label :title="$t('label.configuration.details')" :tooltip="apiParams.details.description"/>
         </template>
-        <div style="margin-bottom: 10px">{{ $t('message.add.external.details') }}</div>
+        <div style="margin-bottom: 10px">{{ $t('message.add.extension.custom.action.details') }}</div>
         <details-input
           v-model:value="form.details" />
+      </a-form-item>
+      <a-form-item name="timeout" ref="timeout">
+        <template #label>
+          <tooltip-label :title="$t('label.timeout')" :tooltip="apiParams.timeout.description"/>
+        </template>
+        <a-input-number
+          v-model:value="form.timeout"
+          :placeholder="apiParams.timeout.description"
+          :min="1" />
       </a-form-item>
       <a-form-item name="enabled" ref="enabled">
         <template #label>
@@ -117,9 +126,10 @@ export default {
       required: true
     }
   },
+  inject: ['parentFetchData'],
   data () {
     return {
-      roles: [],
+      roleTypes: [],
       loading: false
     }
   },
@@ -131,7 +141,7 @@ export default {
   },
   created () {
     this.initForm()
-    this.fetchRoles()
+    this.fetchRoleTypes()
   },
   methods: {
     fixParamatersOptions (params) {
@@ -151,18 +161,19 @@ export default {
       const formData = {
         parameters: this.fixParamatersOptions(this.resource.parameters)
       }
-      const keys = ['description', 'roles', 'successmessage', 'errormessage', 'details', 'enabled']
+      const keys = ['description', 'allowedroletypes', 'successmessage', 'errormessage', 'details', 'timeout', 'enabled']
       for (const key of keys) {
         formData[key] = this.resource[key]
       }
       this.form = reactive(formData)
+      console.log('----------------', this.form.description, formData, this.resource)
       this.rules = reactive({})
     },
-    fetchRoles () {
-      this.roles = []
-      const rolesList = ['Admin', 'ResourceAdmin', 'DomainAdmin', 'User']
-      rolesList.forEach((item) => {
-        this.roles.push({
+    fetchRoleTypes () {
+      this.roleTypes = []
+      const roleTypesList = ['Admin', 'ResourceAdmin', 'DomainAdmin', 'User']
+      roleTypesList.forEach((item) => {
+        this.roleTypes.push({
           id: item,
           description: item
         })
@@ -178,7 +189,7 @@ export default {
           id: this.resource.id,
           enabled: values.enabled
         }
-        const keys = ['description', 'roles', 'successmessage', 'errormessage']
+        const keys = ['description', 'allowedroletypes', 'successmessage', 'errormessage', 'timeout']
         for (const key of keys) {
           if (values[key] !== undefined || values[key] !== null) {
             params[key] = Array.isArray(values[key]) ? values[key].join(',') : values[key]
@@ -207,6 +218,7 @@ export default {
             description: this.$t('message.success.update.custom.action')
           })
           this.closeAction()
+          this.parentFetchData()
         }).catch(error => {
           this.$notification.error({
             message: this.$t('message.request.failed'),

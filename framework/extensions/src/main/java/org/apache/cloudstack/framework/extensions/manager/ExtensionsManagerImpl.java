@@ -20,6 +20,8 @@
 package org.apache.cloudstack.framework.extensions.manager;
 
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.InvalidParameterException;
@@ -343,12 +345,26 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         return extensionDao.findById(mapVO.getExtensionId());
     }
 
-    protected String getActionMessage(boolean success, ExtensionCustomAction action, Extension extension) {
+    protected String getActionMessage(boolean success, ExtensionCustomAction action, Extension extension,
+                  ExtensionCustomAction.ResourceType resourceType, Object resource) {
         String  msg = success ? action.getSuccessMessage() : action.getErrorMessage();
         if (StringUtils.isNotBlank(msg)) {
             Map<String, String> values = new HashMap<>();
             values.put("actionName", action.getName());
             values.put("extensionName", extension.getName());
+            if (msg.contains("{{resourceName}}")) {
+                String resourceName = resourceType.name();
+                try {
+                    Method getNameMethod = resource.getClass().getMethod("getName");
+                    Object result = getNameMethod.invoke(resource);
+                    if (result instanceof String) {
+                        resourceName = (String) result;
+                    }
+                } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+                    logger.trace("Failed to get name for given resource of type: {}", resourceType, e);
+                }
+                values.put("resourceName", resourceName);
+            }
             String result = msg;
             for (Map.Entry<String, String> entry : values.entrySet()) {
                 result = result.replace("{{" + entry.getKey() + "}}", entry.getValue());
@@ -369,6 +385,29 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                         entry -> entry.getKey().substring(VmDetailConstants.EXTERNAL_DETAIL_PREFIX.length()),
                         Map.Entry::getValue
                 ));
+    }
+    protected void sendExtensionEntryPointOutOfSyncAlert(Extension extension) {
+        String msg = String.format("Entry-point for %s are out of sync across management servers",
+                extension);
+        alertManager.sendAlert(AlertManager.AlertType.ALERT_TYPE_USERVM, 0L, 0L, msg, msg);
+    }
+
+    protected void updateExtensionEntryPointReady(Extension extension, boolean ready) {
+        if (!ready) {
+            sendExtensionEntryPointOutOfSyncAlert(extension);
+        }
+        if (extension.isEntryPointReady() == ready) {
+            return;
+        }
+        ExtensionVO extensionVO = extensionDao.createForUpdate(extension.getId());
+        extensionVO.setEntryPointReady(ready);
+        extensionDao.update(extension.getId(), extensionVO);
+    }
+
+    protected void disableExtension(long extensionId) {
+        ExtensionVO extensionVO = extensionDao.createForUpdate(extensionId);
+        extensionVO.setState(Extension.State.Disabled);
+        extensionDao.update(extensionId, extensionVO);
     }
 
     @Override
@@ -417,27 +456,34 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             CallContext.current().setEventResourceId(extension.getId());
             return extension;
         });
-        prepareExtensionEntryPointAcrossServers(extensionVO);
+        if (Extension.State.Enabled.equals(extensionVO.getState()) &&
+                !prepareExtensionEntryPointAcrossServers(extensionVO)) {
+            disableExtension(extensionVO.getId());
+            throw new CloudRuntimeException(String.format(
+                    "Failed to enable extension: %s as it entry-point is not ready",
+                    extensionVO.getName()));
+        }
         return extensionVO;
     }
 
     @Override
-    public void prepareExtensionEntryPointAcrossServers(Extension extension) {
-        boolean sync = true;
+    public boolean prepareExtensionEntryPointAcrossServers(Extension extension) {
+        boolean prepared = true;
         List<ManagementServerHostVO> msHosts = managementServerHostDao.listBy(ManagementServerHost.State.Up);
         for (ManagementServerHostVO msHost : msHosts) {
             if (msHost.getMsid() == ManagementServerNode.getManagementServerId()) {
-                sync = sync && prepareExtensionEntryPointOnCurrentServer(extension.getName(), extension.isUserDefined(),
+                prepared = prepared && prepareExtensionEntryPointOnCurrentServer(extension.getName(), extension.isUserDefined(),
                         extension.getRelativeEntryPoint()).first();
                 continue;
             }
-            sync = sync && prepareExtensionEntryPointOnMSPeer(extension, msHost);
+            prepared = prepared && prepareExtensionEntryPointOnMSPeer(extension, msHost);
         }
-        if (extension.isEntryPointSync() != sync) {
+        if (extension.isEntryPointReady() != prepared) {
             ExtensionVO updateExtension = extensionDao.createForUpdate(extension.getId());
-            updateExtension.setEntryPointSync(sync);
+            updateExtension.setEntryPointReady(prepared);
             extensionDao.update(extension.getId(), updateExtension);
         }
+        return prepared;
     }
 
     @Override
@@ -523,8 +569,12 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             }
             return extensionVO;
         });
-        if (StringUtils.isNotBlank(stateStr) && Extension.State.Enabled.equals(result.getState())) {
-            prepareExtensionEntryPointAcrossServers(result);
+        if (StringUtils.isNotBlank(stateStr) && Extension.State.Enabled.equals(result.getState()) &&
+                !prepareExtensionEntryPointAcrossServers(result)) {
+            disableExtension(result.getId());
+            throw new CloudRuntimeException(String.format(
+                    "Failed to enable extension: %s as it entry-point is not ready",
+                    extensionVO.getName()));
         }
         return result;
     }
@@ -639,7 +689,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                 extension.getDescription(), extension.getType().name());
         response.setCreated(extension.getCreated());
         response.setEntryPoint(externalProvisioner.getExtensionEntryPoint(extension.getRelativeEntryPoint()));
-        response.setEntryPointSync(extension.isEntryPointSync());
+        response.setEntryPointReady(extension.isEntryPointReady());
         response.setUserDefined(extension.isUserDefined());
         response.setState(extension.getState().name());
         if (viewDetails.contains(ApiConstants.ExtensionDetails.all) ||
@@ -685,7 +735,8 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         String description = cmd.getDescription();
         Long extensionId = cmd.getExtensionId();
         String resourceTypeStr = cmd.getResourceType();
-        List<String> rolesStrList = cmd.getRolesList();
+        List<String> rolesStrList = cmd.getAllowedRoleTypes();
+        final int timeout = ObjectUtils.defaultIfNull(cmd.getTimeout(), 3);
         final boolean enabled = cmd.isEnabled();
         Map parametersMap = cmd.getParametersMap();
         final String successMessage = cmd.getSuccessMessage();
@@ -727,11 +778,11 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         final ExtensionCustomAction.ResourceType resourceTypeFinal = resourceType;
         return Transaction.execute((TransactionCallbackWithException<ExtensionCustomActionVO, CloudRuntimeException>) status -> {
             ExtensionCustomActionVO customAction =
-                    new ExtensionCustomActionVO(name, description, extensionId, successMessage, errorMessage, enabled);
+                    new ExtensionCustomActionVO(name, description, extensionId, successMessage, errorMessage, timeout, enabled);
             if (resourceTypeFinal != null) {
                 customAction.setResourceType(resourceTypeFinal);
             }
-            customAction.setRoles(RoleType.toCombinedMask(roleTypes));
+            customAction.setAllowedRoleTypes(RoleType.toCombinedMask(roleTypes));
             ExtensionCustomActionVO savedAction = extensionCustomActionDao.persist(customAction);
             List<ExtensionCustomActionDetailsVO> detailsVOList = new ArrayList<>();
             detailsVOList.add(new ExtensionCustomActionDetailsVO(
@@ -841,12 +892,13 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         final long id = cmd.getId();
         String description = cmd.getDescription();
         String resourceTypeStr = cmd.getResourceType();
-        List<String> rolesStrList = cmd.getRoles();
+        List<String> rolesStrList = cmd.getAllowedRoleTypes();
         Boolean enabled = cmd.isEnabled();
         Map parametersMap = cmd.getParametersMap();
         Boolean cleanupParameters = cmd.isCleanupParameters();
         final String successMessage = cmd.getSuccessMessage();
         final String errorMessage = cmd.getErrorMessage();
+        final Integer timeout = cmd.getTimeout();
         Map<String, String> details = cmd.getDetails();
         Boolean cleanupDetails = cmd.isCleanupDetails();
 
@@ -881,7 +933,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                     throw new InvalidParameterValueException(String.format("Invalid role specified - %s", roleTypeStr));
                 }
             }
-            customAction.setRoles(RoleType.toCombinedMask(roles));
+            customAction.setAllowedRoleTypes(RoleType.toCombinedMask(roles));
             needUpdate = true;
         }
         if (successMessage != null) {
@@ -890,6 +942,10 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         }
         if (errorMessage != null) {
             customAction.setErrorMessage(errorMessage);
+            needUpdate = true;
+        }
+        if (timeout != null) {
+            customAction.setTimeout(timeout);
             needUpdate = true;
         }
         if (enabled != null) {
@@ -1055,19 +1111,22 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         response.setObjectName("customactionresult");
         Map<String, String> result = new HashMap<>();
         response.setSuccess(false);
-        result.put(ApiConstants.MESSAGE, getActionMessage(false, customActionVO, extensionVO));
+        result.put(ApiConstants.MESSAGE, getActionMessage(false, customActionVO, extensionVO,
+                actionResourceType, entity));
         Map<String, Object> externalDetails = getExternalAccessDetails(details, hostId, extensionResource, extensionVO);
         runCustomActionCommand.setParameters(parameters);
         runCustomActionCommand.setExternalDetails(externalDetails);
         try {
             Answer answer = agentMgr.send(hostId, runCustomActionCommand);
             if (!(answer instanceof RunCustomActionAnswer)) {
-                logger.error("Unexpected answer [{}] received for {}", answer.getClass().getSimpleName(), RunCustomActionCommand.class.getSimpleName());
+                logger.error("Unexpected answer [{}] received for {}", answer.getClass().getSimpleName(),
+                        RunCustomActionCommand.class.getSimpleName());
                 result.put(ApiConstants.DETAILS, error);
             } else {
                 RunCustomActionAnswer customActionAnswer = (RunCustomActionAnswer) answer;
                 response.setSuccess(answer.getResult());
-                result.put(ApiConstants.MESSAGE, getActionMessage(answer.getResult(), customActionVO, extensionVO));
+                result.put(ApiConstants.MESSAGE, getActionMessage(answer.getResult(), customActionVO, extensionVO,
+                        actionResourceType, entity));
                 // ToDo: Check if we should pass the details for an errored action or pass it at all
                 result.put(ApiConstants.DETAILS, customActionAnswer.getDetails());
             }
@@ -1091,10 +1150,14 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         if (customAction.getResourceType() != null) {
             response.setResourceType(customAction.getResourceType().name());
         }
-        Integer roles = ObjectUtils.defaultIfNull(customAction.getRoles(), RoleType.Admin.getMask());
-        response.setRoles(RoleType.fromCombinedMask(roles).stream().map(Enum::name).collect(Collectors.toList()));
+        Integer roles = ObjectUtils.defaultIfNull(customAction.getAllowedRoleTypes(), RoleType.Admin.getMask());
+        response.setAllowedRoleTypes(RoleType.fromCombinedMask(roles)
+                .stream()
+                .map(Enum::name)
+                .collect(Collectors.toList()));
         response.setSuccessMessage(customAction.getSuccessMessage());
         response.setErrorMessage(customAction.getErrorMessage());
+        response.setTimeout(customAction.getTimeout());
         response.setEnabled(customAction.isEnabled());
         response.setCreated(customAction.getCreated());
         Optional.ofNullable(extensionDao.findById(customAction.getExtensionId())).ifPresent(extensionVO -> {
@@ -1107,7 +1170,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                 .ifPresent(parameters -> {
                     Set<ExtensionCustomActionParameterResponse> paramResponses = parameters.stream()
                             .map(p -> new ExtensionCustomActionParameterResponse(p.getName(),
-                                    p.getType().name(), p.getFormat().name(), p.getOptions(), p.isRequired()))
+                                    p.getType().name(), p.getValidationFormat().name(), p.getValueOptions(), p.isRequired()))
                             .collect(Collectors.toSet());
                     response.setParameters(paramResponses);
                 });
@@ -1136,7 +1199,8 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         return externalDetails;
     }
 
-    private Map<String, Object> getExternalAccessDetails(Map<String, String> actionDetails, long hostId, ExtensionResourceMap resourceMap, Extension extension) {
+    private Map<String, Object> getExternalAccessDetails(Map<String, String> actionDetails, long hostId,
+                 ExtensionResourceMap resourceMap, Extension extension) {
         Map<String, Object> externalDetails = new HashMap<>();
         externalDetails.put(ApiConstants.CUSTOM_ACTION_ID, actionDetails);
         Map<String, String> hostDetails = getFilteredExternalDetails(hostDetailsDao.findDetails(hostId));
@@ -1224,46 +1288,30 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     }
 
     public class EntryPointSyncCheckWorker extends ManagedContextRunnable {
-        protected void sendExtensionEntryPointOutOfSyncAlert(Extension extension) {
-            String msg = String.format("Entry-point for %s are out of sync across management servers",
-                    extension);
-            alertManager.sendAlert(AlertManager.AlertType.ALERT_TYPE_USERVM, 0L, 0L, msg, msg);
-        }
 
-        protected void updateExtensionSync(Extension extension, boolean sync) {
-            if (!sync) {
-                sendExtensionEntryPointOutOfSyncAlert(extension);
-            }
-            if (extension.isEntryPointSync() == sync) {
-                return;
-            }
-            ExtensionVO extensionVO = extensionDao.createForUpdate(extension.getId());
-            extensionVO.setEntryPointSync(sync);
-            extensionDao.update(extension.getId(), extensionVO);
-        }
-
-        protected void checkSyncForOrchestrator(Extension extension, List<ManagementServerHostVO> msHosts) {
+        protected void checkExtensionEntryPointSync(Extension extension, List<ManagementServerHostVO> msHosts) {
             String checksum = externalProvisioner.getChecksumForExtensionEntryPoint(extension.getName(),
                     extension.getRelativeEntryPoint());
             if (StringUtils.isBlank(checksum)) {
-                updateExtensionSync(extension, false);
+                updateExtensionEntryPointReady(extension, false);
                 return;
             }
             if (CollectionUtils.isEmpty(msHosts)) {
-                updateExtensionSync(extension, true);
+                updateExtensionEntryPointReady(extension, true);
                 return;
             }
             for (ManagementServerHostVO msHost : msHosts) {
-                final Pair<Boolean, String> msPeerChecksumResult = getChecksumForExtensionEntryPointOnMSPeer(extension, msHost);
+                final Pair<Boolean, String> msPeerChecksumResult = getChecksumForExtensionEntryPointOnMSPeer(extension,
+                        msHost);
                 if (!msPeerChecksumResult.first() || !checksum.equals(msPeerChecksumResult.second())) {
                     logger.error("Entry-point checksum for {} is different [msid: {}, checksum: {}] and [msid: {}, checksum: {}]",
                             extension, ManagementServerNode.getManagementServerId(), checksum, msHost.getMsid(),
                             (msPeerChecksumResult.first() ? msPeerChecksumResult.second() : "unknown"));
-                    updateExtensionSync(extension, false);
+                    updateExtensionEntryPointReady(extension, false);
                     return;
                 }
             }
-            updateExtensionSync(extension, true);
+            updateExtensionEntryPointReady(extension, true);
         }
 
         protected void runCleanupForLongestRunningManagementServer() {
@@ -1275,12 +1323,9 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                     logger.debug("Skipping the extensions entrypoint sync check on this management server");
                     return;
                 }
-                List<ExtensionVO> extensions = extensionDao.listAll();
+                List<ExtensionVO> extensions = extensionDao.listAllEnabled();
                 for (ExtensionVO extension : extensions) {
-                    if (!Extension.Type.Orchestrator.equals(extension.getType())) {
-                        continue;
-                    }
-                    checkSyncForOrchestrator(extension, msHosts);
+                    checkExtensionEntryPointSync(extension, msHosts);
                 }
             } catch (Exception e) {
                 logger.warn("Cleanup task failed to cleanup old webhook deliveries", e);

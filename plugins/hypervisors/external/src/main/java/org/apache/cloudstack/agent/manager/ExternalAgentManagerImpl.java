@@ -49,26 +49,22 @@ public class ExternalAgentManagerImpl extends ManagerBase implements ExternalAge
 
     @Override
     public List<Class<?>> getCommands() {
-        List<Class<?>> cmds = new ArrayList<Class<?>>();
-        return cmds;
+        return new ArrayList<>();
     }
 
     public Map<ExternalResourceBase, Map<String, String>> createServerResources(Map<String, Object> params) {
-
         Map<String, String> args = new HashMap<>();
         Map<ExternalResourceBase, Map<String, String>> newResources = new HashMap<>();
         ExternalResourceBase agentResource;
         synchronized (this) {
             String guid = (String)params.get("guid");
             agentResource = new ExternalResourceBase();
-            if (agentResource != null) {
-                try {
-                    agentResource.start();
-                    agentResource.configure("ExternalHost-" + guid, params);
-                    newResources.put(agentResource, args);
-                } catch (ConfigurationException e) {
-                    logger.error("error while configuring server resource" + e.getMessage());
-                }
+            try {
+                agentResource.start();
+                agentResource.configure("ExternalHost-" + guid, params);
+                newResources.put(agentResource, args);
+            } catch (ConfigurationException e) {
+                logger.error("Error while configuring server resource {}", e.getMessage());
             }
         }
         return newResources;

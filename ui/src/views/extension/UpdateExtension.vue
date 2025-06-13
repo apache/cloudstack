@@ -34,9 +34,9 @@
       </a-form-item>
       <a-form-item name="details" ref="details">
         <template #label>
-          <tooltip-label :title="$t('label.details')" :tooltip="apiParams.details.description"/>
+          <tooltip-label :title="$t('label.configuration.details')" :tooltip="apiParams.details.description"/>
         </template>
-        <div style="margin-bottom: 10px">{{ $t('message.add.external.details') }}</div>
+        <div style="margin-bottom: 10px">{{ $t('message.add.extension.details') }}</div>
         <details-input
           v-model:value="form.details" />
       </a-form-item>

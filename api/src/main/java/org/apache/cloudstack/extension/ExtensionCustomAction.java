@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
@@ -69,11 +70,13 @@ public interface ExtensionCustomAction extends InternalIdentity, Identity {
 
     ResourceType getResourceType();
 
-    Integer getRoles();
+    Integer getAllowedRoleTypes();
 
     String getSuccessMessage();
 
     String getErrorMessage();
+
+    int getTimeout();
 
     boolean isEnabled();
 
@@ -130,22 +133,22 @@ public interface ExtensionCustomAction extends InternalIdentity, Identity {
 
         private final String name;
         private final Type type;
-        private final ValidationFormat format;
-        private List<Object> options;
+        private final ValidationFormat validationFormat;
+        private final List<Object> valueOptions;
         private final boolean required;
 
-        public Parameter(String name, Type type, ValidationFormat format, List<Object> options, boolean required) {
+        public Parameter(String name, Type type, ValidationFormat validationFormat, List<Object> valueOptions, boolean required) {
             this.name = name;
             this.type = type;
-            this.format = format;
-            this.options = options;
+            this.validationFormat = validationFormat;
+            this.valueOptions = valueOptions;
             this.required = required;
         }
 
         /**
          * Parses a CSV string into a list of validated options.
          */
-        private static List<Object> parseOptions(String name, String csv, Type parsedType, ValidationFormat parsedFormat) {
+        private static List<Object> parseValueOptions(String name, String csv, Type parsedType, ValidationFormat parsedFormat) {
             if (StringUtils.isBlank(csv)) {
                 return null;
             }
@@ -157,8 +160,8 @@ public interface ExtensionCustomAction extends InternalIdentity, Identity {
                 case STRING:
                     if (parsedFormat != null && parsedFormat != ValidationFormat.NONE) {
                         for (String value : values) {
-                            if (!isValidateStringValue(value, parsedFormat)) {
-                                throw new InvalidParameterException(String.format("Invalid options with format: %s for parameter: %s", parsedFormat.name(), name));
+                            if (!isValidStringValue(value, parsedFormat)) {
+                                throw new InvalidParameterException(String.format("Invalid value options with validation format: %s for parameter: %s", parsedFormat.name(), name));
                             }
                         }
                     }
@@ -169,7 +172,7 @@ public interface ExtensionCustomAction extends InternalIdentity, Identity {
                                 .map(v -> parseNumber(v, parsedFormat))
                                 .collect(Collectors.toList());
                     } catch (NumberFormatException ignored) {
-                        throw new InvalidParameterException(String.format("Invalid options with format: %s for parameter: %s", parsedFormat.name(), name));
+                        throw new InvalidParameterException(String.format("Invalid value options with validation format: %s for parameter: %s", parsedFormat.name(), name));
                     }
                 default:
                     throw new InvalidParameterException(String.format("Options not supported for type: %s for parameter: %s", parsedType, name));
@@ -183,8 +186,8 @@ public interface ExtensionCustomAction extends InternalIdentity, Identity {
             return Integer.parseInt(value);
         }
 
-        private static boolean isValidateStringValue(String value, ValidationFormat format) {
-            switch (format) {
+        private static boolean isValidStringValue(String value, ValidationFormat validationFormat ) {
+            switch (validationFormat) {
                 case NONE:
                     return true;
                 case UUID:
@@ -211,11 +214,11 @@ public interface ExtensionCustomAction extends InternalIdentity, Identity {
         }
 
         public static Parameter fromMap(Map<String, String> map) throws InvalidParameterException {
-            final String name = map.get("name");
-            final String typeStr = map.get("type");
-            final String formatStr = map.get("format");
-            final String required = map.get("required");
-            final String optionsStr = map.get("options");
+            final String name = map.get(ApiConstants.NAME);
+            final String typeStr = map.get(ApiConstants.TYPE);
+            final String validationFormatStr = map.get(ApiConstants.VALIDATION_FORMAT);
+            final String required = map.get(ApiConstants.REQUIRED);
+            final String valueOptionsStr = map.get(ApiConstants.VALUE_OPTIONS);
             if (StringUtils.isBlank(name)) {
                 throw new InvalidParameterValueException("Invalid parameter specified with empty name");
             }
@@ -227,13 +230,13 @@ public interface ExtensionCustomAction extends InternalIdentity, Identity {
                 throw new InvalidParameterValueException(String.format("Invalid type: %s specified for parameter: %s",
                         typeStr, name));
             }
-            ValidationFormat parsedFormat = EnumUtils.getEnumIgnoreCase(ValidationFormat.class, formatStr, ValidationFormat.NONE);
+            ValidationFormat parsedFormat = EnumUtils.getEnumIgnoreCase(ValidationFormat.class, validationFormatStr, ValidationFormat.NONE);
             if (!ValidationFormat.NONE.equals(parsedFormat) && parsedFormat.getBaseType() != parsedType) {
                 throw new InvalidParameterValueException(
-                        String.format("Invalid format: %s specified for type: %s", parsedFormat.name(), parsedType.name()));
+                        String.format("Invalid validation format: %s specified for type: %s", parsedFormat.name(), parsedType.name()));
             }
-            List<Object> options = parseOptions(name, optionsStr, parsedType, parsedFormat);
-            return new Parameter(name, parsedType, parsedFormat, options, Boolean.parseBoolean(required));
+            List<Object> valueOptions = parseValueOptions(name, valueOptionsStr, parsedType, parsedFormat);
+            return new Parameter(name, parsedType, parsedFormat, valueOptions, Boolean.parseBoolean(required));
         }
 
         public String getName() {
@@ -244,12 +247,12 @@ public interface ExtensionCustomAction extends InternalIdentity, Identity {
             return type;
         }
 
-        public ValidationFormat getFormat() {
-            return format;
+        public ValidationFormat getValidationFormat() {
+            return validationFormat;
         }
 
-        public List<Object> getOptions() {
-            return options;
+        public List<Object> getValueOptions() {
+            return valueOptions;
         }
 
         public boolean isRequired() {
@@ -259,7 +262,7 @@ public interface ExtensionCustomAction extends InternalIdentity, Identity {
         @Override
         public String toString() {
             return String.format("Parameter %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this,
-                    "name", "type", "required"));
+                    ApiConstants.NAME, ApiConstants.TYPE, ApiConstants.REQUIRED));
         }
 
         public static String toJsonFromList(List<Parameter> parameters) {
@@ -272,7 +275,7 @@ public interface ExtensionCustomAction extends InternalIdentity, Identity {
         }
 
         private void validateValueInOptions(Object value) {
-            if (CollectionUtils.isNotEmpty(options) && !options.contains(value)) {
+            if (CollectionUtils.isNotEmpty(valueOptions) && !valueOptions.contains(value)) {
                 throw new InvalidParameterException();
             }
         }
@@ -288,11 +291,11 @@ public interface ExtensionCustomAction extends InternalIdentity, Identity {
                     case DATE:
                         return DateUtil.parseTZDateString(value);
                     case NUMBER:
-                        Object obj = parseNumber(value, format);
+                        Object obj = parseNumber(value, validationFormat);
                         validateValueInOptions(obj);
                         return obj;
                     default:
-                        if (!isValidateStringValue(value, format)) {
+                        if (!isValidStringValue(value, validationFormat)) {
                             throw new IllegalArgumentException();
                         }
                         validateValueInOptions(value);
@@ -338,39 +341,39 @@ public interface ExtensionCustomAction extends InternalIdentity, Identity {
             @Override
             public Parameter deserialize(JsonElement json, java.lang.reflect.Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
                 JsonObject obj = json.getAsJsonObject();
-                String name = obj.get("name").getAsString();
-                String typeStr = obj.get("type").getAsString();
-                String formatStr = obj.has("format") ? obj.get("format").getAsString() : null;
-                boolean required = obj.has("required") && obj.get("required").getAsBoolean();
+                String name = obj.get(ApiConstants.NAME).getAsString();
+                String typeStr = obj.get(ApiConstants.TYPE).getAsString();
+                String validationFormatStr = obj.has(ApiConstants.VALIDATION_FORMAT) ? obj.get(ApiConstants.VALIDATION_FORMAT).getAsString() : null;
+                boolean required = obj.has(ApiConstants.REQUIRED) && obj.get(ApiConstants.REQUIRED).getAsBoolean();
 
                 Parameter.Type typeEnum = Parameter.Type.valueOf(typeStr);
-                Parameter.ValidationFormat formatEnum = (formatStr != null)
-                        ? Parameter.ValidationFormat.valueOf(formatStr)
+                Parameter.ValidationFormat validationFormatEnum = (validationFormatStr != null)
+                        ? Parameter.ValidationFormat.valueOf(validationFormatStr)
                         : Parameter.ValidationFormat.NONE;
 
-                List<Object> options = null;
-                if (obj.has("options") && obj.get("options").isJsonArray()) {
-                    JsonArray optionsArray = obj.getAsJsonArray("options");
-                    options = new ArrayList<>();
-                    for (JsonElement el : optionsArray) {
+                List<Object> valueOptions = null;
+                if (obj.has(ApiConstants.VALUE_OPTIONS) && obj.get(ApiConstants.VALUE_OPTIONS).isJsonArray()) {
+                    JsonArray valueOptionsArray = obj.getAsJsonArray(ApiConstants.VALUE_OPTIONS);
+                    valueOptions = new ArrayList<>();
+                    for (JsonElement el : valueOptionsArray) {
                         switch (typeEnum) {
                             case STRING:
-                                options.add(el.getAsString());
+                                valueOptions.add(el.getAsString());
                                 break;
                             case NUMBER:
-                                if (formatEnum == Parameter.ValidationFormat.DECIMAL) {
-                                    options.add(el.getAsFloat());
+                                if (validationFormatEnum == Parameter.ValidationFormat.DECIMAL) {
+                                    valueOptions.add(el.getAsFloat());
                                 } else {
-                                    options.add(el.getAsInt());
+                                    valueOptions.add(el.getAsInt());
                                 }
                                 break;
                             default:
-                                throw new JsonParseException("Unsupported type for options");
+                                throw new JsonParseException("Unsupported type for value options");
                         }
                     }
                 }
 
-                return new Parameter(name, typeEnum, formatEnum, options, required);
+                return new Parameter(name, typeEnum, validationFormatEnum, valueOptions, required);
             }
         }
     }

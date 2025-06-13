@@ -16,10 +16,13 @@
 // under the License.
 package org.apache.cloudstack.framework.extensions.dao;
 
+import java.util.List;
+
 import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionVO;
 
 public interface ExtensionDao extends GenericDao<ExtensionVO, Long> {
 
     ExtensionVO findByName(String name);
+    List<ExtensionVO> listAllEnabled();
 }

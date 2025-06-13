@@ -76,6 +76,7 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang3.ArrayUtils;
 
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
@@ -824,25 +825,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         }
 
-        try {
-            uri = new URI(UriUtils.encodeURIComponent(url));
-            if (uri.getScheme() == null) {
-                throw new InvalidParameterValueException("uri.scheme is null " + url + ", add nfs:// (or cifs://) as a prefix");
-            } else if (uri.getScheme().equalsIgnoreCase("nfs")) {
-                if (uri.getHost() == null || uri.getHost().equalsIgnoreCase("") || uri.getPath() == null || uri.getPath().equalsIgnoreCase("")) {
-                    throw new InvalidParameterValueException("Your host and/or path is wrong.  Make sure it's of the format nfs://hostname/path");
-                }
-            } else if (uri.getScheme().equalsIgnoreCase("cifs")) {
-                // Don't validate against a URI encoded URI.
-                final URI cifsUri = new URI(url);
-                final String warnMsg = UriUtils.getCifsUriParametersProblems(cifsUri);
-                if (warnMsg != null) {
-                    throw new InvalidParameterValueException(warnMsg);
-                }
-            }
-        } catch (final URISyntaxException e) {
-            throw new InvalidParameterValueException(url + " is not a valid uri");
-        }
+        uri = validatedHostUrl(url, hypervisorType);
 
         final List<HostVO> hosts = new ArrayList<>();
         logger.info("Trying to add a new host at {} in data center {}", url, zone);
@@ -947,6 +930,33 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         String errorMsg = "Cannot find the server resources at " + url;
         logger.warn(errorMsg);
         throw new DiscoveryException("Unable to add the host: " + errorMsg);
+    }
+
+    @NotNull
+    private static URI validatedHostUrl(String url, String hostHypervisorType) {
+        URI uri;
+        try {
+            uri = new URI(UriUtils.encodeURIComponent(url));
+            if (uri.getScheme() == null) {
+                if (!HypervisorType.External.name().equalsIgnoreCase(hostHypervisorType)) {
+                    throw new InvalidParameterValueException("uri.scheme is null " + url + ", add nfs:// (or cifs://) as a prefix");
+                }
+            } else if (uri.getScheme().equalsIgnoreCase("nfs")) {
+                if (uri.getHost() == null || uri.getHost().equalsIgnoreCase("") || uri.getPath() == null || uri.getPath().equalsIgnoreCase("")) {
+                    throw new InvalidParameterValueException("Your host and/or path is wrong.  Make sure it's of the format nfs://hostname/path");
+                }
+            } else if (uri.getScheme().equalsIgnoreCase("cifs")) {
+                // Don't validate against a URI encoded URI.
+                final URI cifsUri = new URI(url);
+                final String warnMsg = UriUtils.getCifsUriParametersProblems(cifsUri);
+                if (warnMsg != null) {
+                    throw new InvalidParameterValueException(warnMsg);
+                }
+            }
+        } catch (final URISyntaxException e) {
+            throw new InvalidParameterValueException(url + " is not a valid uri");
+        }
+        return uri;
     }
 
     @Override
