@@ -55,3 +55,6 @@ webapp.dir=/usr/share/cloudstack-management/webapp
 
 # The path to access log file
 access.log=/var/log/cloudstack/management/access.log
+
+# The path to the extensions directory
+extensions.file.path=@EXTENSIONSDIR@

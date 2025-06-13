@@ -20,6 +20,7 @@ package org.apache.cloudstack.hypervisor.external.provisioner.simpleprovisioner;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
@@ -31,6 +32,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
@@ -70,6 +72,7 @@ import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.utils.FileUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
@@ -87,7 +90,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 public class SimpleExternalProvisioner extends ManagerBase implements ExternalProvisioner, PluggableService, Configurable {
 
     ConfigKey<String> ExtensionsDirectory = new ConfigKey<>("Advanced", String.class,
-            "external.provisioner.extensions.directory", "/usr/share/cloudstack-management/extensions",
+            "external.provisioner.extensions.directory", "/etc/cloudstack/extensions",
             "Directory on the management server where extensions are present",
             false, ConfigKey.Scope.Global);
 
@@ -118,6 +121,7 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
         return "Simple external provisioner";
     }
 
+    private String defaultExtensionsDirectory = "/etc/cloudstack/extensions";
     private String extensionsDirectory;
 
     protected Map<String, Object> loadAccessDetails(Map<String, Object> externalDetails, VirtualMachineTO virtualMachineTO) {
@@ -171,10 +175,29 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-        extensionsDirectory = ExtensionsDirectory.value();
-        if (StringUtils.isBlank(extensionsDirectory)) {
-            throw new ConfigurationException("Extension directory path is blank");
+
+        final File extensionsPropertiesFile = PropertiesUtil.findConfigFile("server.properties");
+
+        if (extensionsPropertiesFile == null) {
+            logger.debug("extensions.properties file not found, using default extensions directory");
+            extensionsDirectory = defaultExtensionsDirectory;
+        } else {
+            Properties properties = new Properties();
+            try (FileInputStream fis = new FileInputStream(extensionsPropertiesFile)) {
+                properties.load(fis);
+                extensionsDirectory = properties.getProperty("extensions.file.path");
+                logger.debug("Loaded extensions directory from properties file: {}", extensionsDirectory);
+
+                if (StringUtils.isBlank(extensionsDirectory)) {
+                    logger.warn("extensions.file.path property is blank in extensions.properties, using default");
+                    extensionsDirectory = defaultExtensionsDirectory;
+                }
+            } catch (IOException e) {
+                logger.warn("Failed to load extensions.properties file, falling back to default", e);
+                extensionsDirectory = defaultExtensionsDirectory;
+            }
         }
+
         checkExtensionsDirectory();
         return true;
     }
