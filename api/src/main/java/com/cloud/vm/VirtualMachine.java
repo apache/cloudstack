@@ -128,7 +128,6 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Partition, 
             s_fsm.addTransition(new Transition<State, Event>(State.Error, VirtualMachine.Event.DestroyRequested, State.Expunging, null));
             s_fsm.addTransition(new Transition<State, Event>(State.Error, VirtualMachine.Event.ExpungeOperation, State.Expunging, null));
             s_fsm.addTransition(new Transition<State, Event>(State.Stopped, Event.RestoringRequested, State.Restoring, null));
-            s_fsm.addTransition(new Transition<State, Event>(State.Expunging, Event.RestoringRequested, State.Restoring, null));
             s_fsm.addTransition(new Transition<State, Event>(State.Destroyed, Event.RestoringRequested, State.Restoring, null));
             s_fsm.addTransition(new Transition<State, Event>(State.Restoring, Event.RestoringSuccess, State.Stopped, null));
             s_fsm.addTransition(new Transition<State, Event>(State.Restoring, Event.RestoringFailed, State.Stopped, null));
