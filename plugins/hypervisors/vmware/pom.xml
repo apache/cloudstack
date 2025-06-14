@@ -17,7 +17,7 @@
   under the License.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <artifactId>cloud-plugin-hypervisor-vmware</artifactId>
     <name>Apache CloudStack Plugin - Hypervisor VMware</name>
@@ -27,48 +27,24 @@
         <version>4.21.0.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
+
     <dependencies>
+        <!-- Other dependencies can be listed here -->
+
+        <!-- JUnit Dependencies for Testing -->
         <dependency>
-            <groupId>org.apache.cloudstack</groupId>
-            <artifactId>cloud-vmware-base</artifactId>
-            <version>${project.version}</version>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>5.7.0</version>
+            <scope>test</scope>
         </dependency>
+
         <dependency>
-            <groupId>org.apache.cloudstack</groupId>
-            <artifactId>cloud-secondary-storage</artifactId>
-            <version>${project.version}</version>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>5.7.0</version>
+            <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.apache.cloudstack</groupId>
-            <artifactId>cloud-engine-storage</artifactId>
-            <version>${project.version}</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.cloudstack</groupId>
-            <artifactId>cloud-engine-orchestration</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.cloud.com.vmware</groupId>
-            <artifactId>vmware-vim25</artifactId>
-            <version>${cs.vmware.api.version}</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.org.apache.xml.internal</groupId>
-            <artifactId>resolver</artifactId>
-            <version>20050927</version>
-        </dependency>
-        <dependency>
-            <groupId>wsdl4j</groupId>
-            <artifactId>wsdl4j</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.cloud.com.vmware</groupId>
-            <artifactId>vmware-pbm</artifactId>
-            <version>${cs.vmware.api.version}</version>
-            <scope>compile</scope>
-        </dependency>
+
     </dependencies>
 </project>
