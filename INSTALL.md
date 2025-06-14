@@ -20,7 +20,7 @@ Install tools and dependencies used for development:
 
 Set up Maven (3.9.10):
 
-    # wget https://downloads.apache.org/maven/maven-3/3.9.10/binaries/apache-maven-3.9.10-bin.tar.gz
+    # wget https://dlcdn.apache.org/maven/maven-3/3.9.10/binaries/apache-maven-3.9.10-bin.tar.gz
     # sudo tar -zxvf apache-maven-3.9.10-bin.tar.gz -C /usr/local
     # cd /usr/local
     # sudo ln -s apache-maven-3.9.10 maven
