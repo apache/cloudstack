@@ -205,11 +205,11 @@ public class CapacityDaoImplTest {
         when(pstmt.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(false);
 
-        List<Long> resultZone = capacityDao.listClustersInZoneOrPodByHostCapacities(1L, 123L, 2, 2048L, (short)0, true);
+        List<Long> resultZone = capacityDao.listClustersInZoneOrPodByHostCapacities(1L, 123L, 2, 2048L, true);
         assertNotNull(resultZone);
         assertTrue(resultZone.isEmpty());
 
-        List<Long> resultPod = capacityDao.listClustersInZoneOrPodByHostCapacities(1L, 123L, 2, 2048L, (short)0, false);
+        List<Long> resultPod = capacityDao.listClustersInZoneOrPodByHostCapacities(1L, 123L, 2, 2048L, false);
         assertNotNull(resultPod);
         assertTrue(resultPod.isEmpty());
     }
@@ -281,7 +281,7 @@ public class CapacityDaoImplTest {
         when(pstmt.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(false);
 
-        List<Long> result = capacityDao.listPodsByHostCapacities(1L, 2, 1024L, (short)0);
+        List<Long> result = capacityDao.listPodsByHostCapacities(1L, 2, 1024L);
         assertNotNull(result);
         assertTrue(result.isEmpty());
     }

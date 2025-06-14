@@ -166,3 +166,9 @@ SET `sort_key` = CASE
     ELSE `sort_key`
 END;
 -- End: Changes for Guest OS category cleanup
+
+-- Update description for configuration: host.capacityType.to.order.clusters
+UPDATE `cloud`.`configuration` SET
+    `description` = 'The host capacity type (CPU, RAM or COMBINED) is used by deployment planner to order clusters during VM resource allocation'
+WHERE `name` = 'host.capacityType.to.order.clusters'
+  AND `description` = 'The host capacity type (CPU or RAM) is used by deployment planner to order clusters during VM resource allocation';
