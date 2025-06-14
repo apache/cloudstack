@@ -19,7 +19,8 @@
 
 	<bean id="presetVariableHelper" class="org.apache.cloudstack.quota.activationrule.presetvariables.PresetVariableHelper" />
 	<bean id="QuotaTariffDao" class="org.apache.cloudstack.quota.dao.QuotaTariffDaoImpl" />
-    <bean id="QuotaAccountDao" class="org.apache.cloudstack.quota.dao.QuotaAccountDaoImpl" />
+	<bean id="QuotaSummaryDao" class="org.apache.cloudstack.quota.dao.QuotaSummaryDaoImpl" />
+	<bean id="QuotaAccountDao" class="org.apache.cloudstack.quota.dao.QuotaAccountDaoImpl" />
 	<bean id="QuotaBalanceDao" class="org.apache.cloudstack.quota.dao.QuotaBalanceDaoImpl" />
 	<bean id="QuotaCreditsDao" class="org.apache.cloudstack.quota.dao.QuotaCreditsDaoImpl" />
 	<bean id="QuotaEmailTemplatesDao"
