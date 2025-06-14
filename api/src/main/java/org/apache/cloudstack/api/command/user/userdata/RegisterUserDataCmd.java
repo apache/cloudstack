@@ -16,30 +16,20 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.userdata;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.DomainResponse;
-import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.NetworkModel;
 import com.cloud.user.UserData;
 
 @APICommand(name = "registerUserData",
@@ -49,80 +39,19 @@ import com.cloud.user.UserData;
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class RegisterUserDataCmd extends BaseCmd {
+public class RegisterUserDataCmd extends BaseRegisterUserDataCmd {
 
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Name of the userdata")
-    private String name;
+    @Parameter(name = ApiConstants.USER_DATA, type = CommandType.STRING, required = true, description = "User data content", length = 1048576)
+    protected String userData;
 
-    //Owner information
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the userdata. Must be used with domainId.")
-    private String accountName;
-
-    @Parameter(name = ApiConstants.DOMAIN_ID,
-            type = CommandType.UUID,
-            entityType = DomainResponse.class,
-            description = "an optional domainId for the userdata. If the account parameter is used, domainId must also be used.")
-    private Long domainId;
-
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "an optional project for the userdata")
-    private Long projectId;
-
-    @Parameter(name = ApiConstants.USER_DATA,
-            type = CommandType.STRING,
-            required = true,
-            description = "Base64 encoded userdata content. " +
-                    "Using HTTP GET (via querystring), you can send up to 4KB of data after base64 encoding. " +
-                    "Using HTTP POST (via POST body), you can send up to 1MB of data after base64 encoding. " +
-                    "You also need to change vm.userdata.max.length value",
-            length = 1048576)
-    private String userData;
-
-    @Parameter(name = ApiConstants.PARAMS, type = CommandType.STRING, description = "comma separated list of variables declared in userdata content")
-    private String params;
-
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
-
-    public String getName() {
-        return name;
-    }
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
-
-    public Long getProjectId() {
-        return projectId;
-    }
 
     public String getUserData() {
         return userData;
-    }
-
-    public String getParams() {
-        checkForVRMetadataFileNames(params);
-        return params;
-    }
-
-    public void checkForVRMetadataFileNames(String params) {
-        if (StringUtils.isNotEmpty(params)) {
-            List<String> keyValuePairs = new ArrayList<>(Arrays.asList(params.split(",")));
-            keyValuePairs.retainAll(NetworkModel.metadataFileNames);
-            if (!keyValuePairs.isEmpty()) {
-                throw new InvalidParameterValueException(String.format("Params passed here have a few virtual router metadata file names %s", keyValuePairs));
-            }
-        }
     }
 
     /////////////////////////////////////////////////////
@@ -131,7 +60,7 @@ public class RegisterUserDataCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalyzeAccountId(getAccountName(), getDomainId(), getProjectId(), true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }

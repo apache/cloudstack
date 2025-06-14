@@ -44,6 +44,8 @@ public interface KubernetesCluster extends ControlledEntity, com.cloud.utils.fsm
         AutoscaleRequested,
         ScaleUpRequested,
         ScaleDownRequested,
+        AddNodeRequested,
+        RemoveNodeRequested,
         UpgradeRequested,
         OperationSucceeded,
         OperationFailed,
@@ -59,6 +61,8 @@ public interface KubernetesCluster extends ControlledEntity, com.cloud.utils.fsm
         Stopped("All resources for the Kubernetes cluster are destroyed, Kubernetes cluster may still have ephemeral resource like persistent volumes provisioned"),
         Scaling("Transient state in which resources are either getting scaled up/down"),
         Upgrading("Transient state in which cluster is getting upgraded"),
+        Importing("Transient state in which additional nodes are added as worker nodes to a cluster"),
+        RemovingNodes("Transient state in which additional nodes are removed from a cluster"),
         Alert("State to represent Kubernetes clusters which are not in expected desired state (operationally in active control place, stopped cluster VM's etc)."),
         Recovering("State in which Kubernetes cluster is recovering from alert state"),
         Destroyed("End state of Kubernetes cluster in which all resources are destroyed, cluster will not be usable further"),
@@ -95,6 +99,17 @@ public interface KubernetesCluster extends ControlledEntity, com.cloud.utils.fsm
             s_fsm.addTransition(State.Running, Event.UpgradeRequested, State.Upgrading);
             s_fsm.addTransition(State.Upgrading, Event.OperationSucceeded, State.Running);
             s_fsm.addTransition(State.Upgrading, Event.OperationFailed, State.Alert);
+
+            s_fsm.addTransition(State.Running, Event.AddNodeRequested, State.Importing);
+            s_fsm.addTransition(State.Alert, Event.AddNodeRequested, State.Importing);
+            s_fsm.addTransition(State.Importing, Event.OperationSucceeded, State.Running);
+            s_fsm.addTransition(State.Importing, Event.OperationFailed, State.Running);
+            s_fsm.addTransition(State.Alert, Event.OperationSucceeded, State.Running);
+
+            s_fsm.addTransition(State.Running, Event.RemoveNodeRequested, State.RemovingNodes);
+            s_fsm.addTransition(State.Alert, Event.RemoveNodeRequested, State.RemovingNodes);
+            s_fsm.addTransition(State.RemovingNodes, Event.OperationSucceeded, State.Running);
+            s_fsm.addTransition(State.RemovingNodes, Event.OperationFailed, State.Running);
 
             s_fsm.addTransition(State.Alert, Event.RecoveryRequested, State.Recovering);
             s_fsm.addTransition(State.Recovering, Event.OperationSucceeded, State.Running);
@@ -142,4 +157,13 @@ public interface KubernetesCluster extends ControlledEntity, com.cloud.utils.fsm
     Long getMaxSize();
     Long getSecurityGroupId();
     ClusterType getClusterType();
+    Long getControlNodeServiceOfferingId();
+    Long getWorkerNodeServiceOfferingId();
+    Long getEtcdNodeServiceOfferingId();
+    Long getControlNodeTemplateId();
+    Long getWorkerNodeTemplateId();
+    Long getEtcdNodeTemplateId();
+    Long getEtcdNodeCount();
+    Long getCniConfigId();
+    String getCniConfigDetails();
 }

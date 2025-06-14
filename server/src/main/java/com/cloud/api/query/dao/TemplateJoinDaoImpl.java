@@ -313,6 +313,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             templateResponse.setDetails(details);
 
             setDeployAsIsDetails(template, templateResponse);
+            templateResponse.setForCks(template.isForCks());
         }
 
         // update tag information

@@ -70,6 +70,7 @@ override_dh_auto_install:
 	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-management/lib
 	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-management/setup
 	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-management/templates/systemvm
+	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-management/cks/conf
 	mkdir $(DESTDIR)/var/log/$(PACKAGE)/management
 	mkdir $(DESTDIR)/var/cache/$(PACKAGE)/management
 	mkdir $(DESTDIR)/var/log/$(PACKAGE)/ipallocator
@@ -83,6 +84,7 @@ override_dh_auto_install:
 	cp client/target/cloud-client-ui-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-management/lib/cloudstack-$(VERSION).jar
 	cp client/target/lib/*jar $(DESTDIR)/usr/share/$(PACKAGE)-management/lib/
 	cp -r engine/schema/dist/systemvm-templates/* $(DESTDIR)/usr/share/$(PACKAGE)-management/templates/systemvm/
+	cp -r plugins/integrations/kubernetes-service/src/main/resources/conf/* $(DESTDIR)/usr/share/$(PACKAGE)-management/cks/conf/
 	rm -rf $(DESTDIR)/usr/share/$(PACKAGE)-management/templates/systemvm/md5sum.txt
 
 	# Bundle cmk in cloudstack-management
@@ -95,6 +97,12 @@ override_dh_auto_install:
 	chmod 0440 $(DESTDIR)/$(SYSCONFDIR)/sudoers.d/$(PACKAGE)
 
 	install -D client/target/utilities/bin/cloud-update-xenserver-licenses $(DESTDIR)/usr/bin/cloudstack-update-xenserver-licenses
+
+	install -D plugins/integrations/kubernetes-service/src/main/resources/conf/etcd-node.yml $(DESTDIR)/usr/share/$(PACKAGE)-management/cks/conf/etcd-node.yml
+	install -D plugins/integrations/kubernetes-service/src/main/resources/conf/k8s-control-node.yml $(DESTDIR)/usr/share/$(PACKAGE)-management/cks/conf/k8s-control-node.yml
+	install -D plugins/integrations/kubernetes-service/src/main/resources/conf/k8s-control-node-add.yml $(DESTDIR)/usr/share/$(PACKAGE)-management/cks/conf/k8s-control-node-add.yml
+	install -D plugins/integrations/kubernetes-service/src/main/resources/conf/k8s-node.yml $(DESTDIR)/usr/share/$(PACKAGE)-management/cks/conf/k8s-node.yml
+
 	# Remove configuration in /ur/share/cloudstack-management/webapps/client/WEB-INF
 	# This should all be in /etc/cloudstack/management
 	ln -s ../../..$(SYSCONFDIR)/$(PACKAGE)/management $(DESTDIR)/usr/share/$(PACKAGE)-management/conf

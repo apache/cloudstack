@@ -35,6 +35,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.cpu.CPU;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.storage.snapshot.SnapshotManager;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -1144,35 +1145,33 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ISO_DETACH, eventDescription = "detaching ISO", async = true)
-    public boolean detachIso(long vmId, boolean forced) {
+    public boolean detachIso(long vmId, Long isoParamId, Boolean... extraParams) {
         Account caller = CallContext.current().getCallingAccount();
         Long userId = CallContext.current().getCallingUserId();
 
-        // Verify input parameters
-        UserVmVO vmInstanceCheck = _userVmDao.findById(vmId);
-        if (vmInstanceCheck == null) {
-            throw new InvalidParameterValueException("Unable to find a virtual machine with id " + vmId);
-        }
+        boolean forced = extraParams != null && extraParams.length > 0 ? extraParams[0] : false;
+        boolean isVirtualRouter = extraParams != null && extraParams.length > 1 ? extraParams[1] : false;
 
-        UserVm userVM = _userVmDao.findById(vmId);
-        if (userVM == null) {
+        // Verify input parameters
+        VirtualMachine virtualMachine = !isVirtualRouter ? _userVmDao.findById(vmId) : _vmInstanceDao.findById(vmId);
+        if (virtualMachine == null || (isVirtualRouter && virtualMachine.getType() != VirtualMachine.Type.DomainRouter)) {
             throw new InvalidParameterValueException("Please specify a valid VM.");
         }
 
-        _accountMgr.checkAccess(caller, null, true, userVM);
+        _accountMgr.checkAccess(caller, null, true, virtualMachine);
 
-        Long isoId = userVM.getIsoId();
+        Long isoId = !isVirtualRouter ? ((UserVm) virtualMachine).getIsoId() : isoParamId;
         if (isoId == null) {
             throw new InvalidParameterValueException("The specified VM has no ISO attached to it.");
         }
-        CallContext.current().setEventDetails("Vm Id: " + userVM.getUuid() + " ISO Id: " + isoId);
+        CallContext.current().setEventDetails("Vm Id: " + virtualMachine.getUuid() + " ISO Id: " + isoId);
 
-        State vmState = userVM.getState();
+        State vmState = virtualMachine.getState();
         if (vmState != State.Running && vmState != State.Stopped) {
             throw new InvalidParameterValueException("Please specify a VM that is either Stopped or Running.");
         }
 
-        boolean result = attachISOToVM(vmId, userId, isoId, false, forced); // attach=false
+        boolean result = attachISOToVM(vmId, userId, isoId, false, forced, isVirtualRouter); // attach=false
         // => detach
         if (result) {
             return result;
@@ -1183,16 +1182,28 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ISO_ATTACH, eventDescription = "attaching ISO", async = true)
-    public boolean attachIso(long isoId, long vmId, boolean forced) {
+    public boolean attachIso(long isoId, long vmId, Boolean... extraParams) {
         Account caller = CallContext.current().getCallingAccount();
         Long userId = CallContext.current().getCallingUserId();
 
+        boolean forced = extraParams != null && extraParams.length > 0 ? extraParams[0] : false;
+        boolean isVirtualRouter = extraParams != null && extraParams.length > 1 ? extraParams[1] : false;
+
         // Verify input parameters
-        UserVmVO vm = _userVmDao.findById(vmId);
+        VirtualMachine vm = _userVmDao.findById(vmId);
         if (vm == null) {
-            throw new InvalidParameterValueException("Unable to find a virtual machine with id " + vmId);
+            if (isVirtualRouter) {
+                vm = _vmInstanceDao.findById(vmId);
+                if (vm == null) {
+                    throw new InvalidParameterValueException("Unable to find a virtual machine with id " + vmId);
+                } else if (vm.getType() != VirtualMachine.Type.DomainRouter) {
+                    throw new InvalidParameterValueException("Unable to find a virtual router with id " + vmId);
+                }
+            } else {
+                throw new InvalidParameterValueException("Unable to find a virtual machine with id " + vmId);
+            }
         }
-        if (UserVmManager.SHAREDFSVM.equals(vm.getUserVmType())) {
+        if (vm instanceof UserVm && UserVmManager.SHAREDFSVM.equals(((UserVm) vm).getUserVmType())) {
             throw new InvalidParameterValueException("Operation not supported on Shared FileSystem Instance");
         }
 
@@ -1229,7 +1240,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (VMWARE_TOOLS_ISO.equals(iso.getUniqueName()) && vm.getHypervisorType() != Hypervisor.HypervisorType.VMware) {
             throw new InvalidParameterValueException("Cannot attach VMware tools drivers to incompatible hypervisor " + vm.getHypervisorType());
         }
-        boolean result = attachISOToVM(vmId, userId, isoId, true, forced);
+        boolean result = attachISOToVM(vmId, userId, isoId, true, forced, isVirtualRouter);
         if (result) {
             return result;
         } else {
@@ -1268,10 +1279,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
     }
 
-    private boolean attachISOToVM(long vmId, long isoId, boolean attach, boolean forced) {
-        UserVmVO vm = _userVmDao.findById(vmId);
+    private boolean attachISOToVM(long vmId, long isoId, boolean attach, boolean forced, boolean isVirtualRouter) {
+        VirtualMachine vm = !isVirtualRouter ? _userVmDao.findById(vmId) : _vmInstanceDao.findById(vmId);
 
-        if (vm == null) {
+        if (vm == null || (isVirtualRouter && vm.getType() != VirtualMachine.Type.DomainRouter)) {
             return false;
         } else if (vm.getState() != State.Running) {
             return true;
@@ -1310,16 +1321,16 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         return (a != null && a.getResult());
     }
 
-    private boolean attachISOToVM(long vmId, long userId, long isoId, boolean attach, boolean forced) {
+    private boolean attachISOToVM(long vmId, long userId, long isoId, boolean attach, boolean forced, boolean isVirtualRouter) {
         UserVmVO vm = _userVmDao.findById(vmId);
         VMTemplateVO iso = _tmpltDao.findById(isoId);
 
-        boolean success = attachISOToVM(vmId, isoId, attach, forced);
-        if (success && attach) {
+        boolean success = attachISOToVM(vmId, isoId, attach, forced, isVirtualRouter);
+        if (success && attach && !isVirtualRouter) {
             vm.setIsoId(iso.getId());
             _userVmDao.update(vmId, vm);
         }
-        if (success && !attach) {
+        if (success && !attach && !isVirtualRouter) {
             vm.setIsoId(null);
             _userVmDao.update(vmId, vm);
         }
@@ -2129,6 +2140,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Map details = cmd.getDetails();
         Account account = CallContext.current().getCallingAccount();
         boolean cleanupDetails = cmd.isCleanupDetails();
+        Boolean forCks = cmd instanceof UpdateTemplateCmd ? ((UpdateTemplateCmd) cmd).getForCks() : null;
         CPU.CPUArch arch = cmd.getCPUArch();
 
         // verify that template exists
@@ -2178,6 +2190,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                   isRoutingTemplate == null &&
                   templateType == null &&
                   templateTag == null &&
+                  forCks == null &&
                   arch == null &&
                   (! cleanupDetails && details == null) //update details in every case except this one
                   );
@@ -2281,6 +2294,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         else if (details != null && !details.isEmpty()) {
             template.setDetails(details);
             _tmpltDao.saveDetails(template);
+        }
+        if (forCks != null) {
+            template.setForCks(forCks);
         }
 
         _tmpltDao.update(id, template);
