@@ -1707,17 +1707,10 @@ class TestVpnUsage(cloudstackTestCase):
                                 listall=True
                                 )
         if isinstance(networks, list):
-            network = networks[0]
+            cls.network = networks[0]
         else:
             raise Exception("List networks call failed")
 
-        cls.public_ip = PublicIPAddress.create(
-                                           cls.api_client,
-                                           zoneid=cls.zone.zoneid,
-                                           services=cls.services["server"],
-                                           networkid=network.id,
-                                           projectid=cls.project.id
-                                           )
         cls._cleanup = [
                         cls.project,
                         cls.service_offering,
@@ -1760,12 +1753,20 @@ class TestVpnUsage(cloudstackTestCase):
         #    this account in cloud.usage_event table
         # 4. Delete this account.
 
-        self.debug("Created VPN with public IP: %s" %
-                                    self.public_ip.ipaddress.id)
-        #Assign VPN to Public IP
+        # Listing source NAT IP of newly added network
+        ipAddresses = PublicIPAddress.list(
+            self.apiclient,
+            associatednetworkid=self.network.id,
+            projectid=self.project.id,
+            issourcenat=True)
+
+        sourceNatIP = ipAddresses[0]
+        self.debug("Created VPN with source NAT IP: %s" %
+                                    sourceNatIP.id)
+        #Assign VPN to source NAT IP
         vpn = Vpn.create(
                         self.apiclient,
-                        self.public_ip.ipaddress.id,
+                        sourceNatIP.id,
                         projectid=self.project.id
                         )
 

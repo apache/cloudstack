@@ -29,6 +29,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestType;
@@ -158,6 +159,11 @@ public class BaremetalPxeElement extends AdapterBase implements NetworkElement {
         if (dc.getNetworkType() == DataCenter.NetworkType.Advanced) {
             releaseVlan(network, vm);
         }
+        return true;
+    }
+
+    @Override
+    public boolean releaseIp(IpAddress ipAddress) {
         return true;
     }
 
