@@ -106,7 +106,7 @@
               v-model:value="form.hostname"
               :placeholder="placeholder.url"></a-input>
           </a-form-item>
-          <a-form-item name="username" ref="username" v-if="selectedClusterHyperVisorType !== 'VMware'">
+          <a-form-item name="username" ref="username" v-if="!['VMware', 'External'].includes(selectedClusterHyperVisorType)">
             <template #label>
               <tooltip-label :title="$t('label.username')" :tooltip="placeholder.username"/>
             </template>
@@ -114,7 +114,7 @@
               v-model:value="form.username"
               :placeholder="placeholder.username"></a-input>
           </a-form-item>
-          <a-form-item name="authmethod" ref="authmethod" v-if="selectedClusterHyperVisorType !== 'VMware'">
+          <a-form-item name="authmethod" ref="authmethod" v-if="!['VMware', 'External'].includes(selectedClusterHyperVisorType)">
             <template #label>
               <tooltip-label :title="$t('label.authentication.method')" :tooltip="$t('label.authentication.method')"/>
             </template>
@@ -137,7 +137,7 @@
               </a-alert>
             </div>
           </a-form-item>
-          <a-form-item name="password" ref="password" v-if="selectedClusterHyperVisorType !== 'VMware' && authMethod === 'password'">
+          <a-form-item name="password" ref="password" v-if="!['VMware', 'External'].includes(selectedClusterHyperVisorType) && authMethod === 'password'">
             <template #label>
               <tooltip-label :title="$t('label.password')" :tooltip="placeholder.password"/>
             </template>
@@ -217,6 +217,14 @@
               <a-select-option v-for="tag in hostTagsList" :key="tag.name">{{ tag.name }}</a-select-option>
             </a-select>
           </a-form-item>
+          <a-form-item name="externaldetails" ref="externaldetails" v-if="selectedClusterHyperVisorType === 'External'">
+            <template #label>
+              <tooltip-label :title="$t('label.externaldetails')" :tooltip="apiParams.externaldetails.description"/>
+            </template>
+            <div style="margin-bottom: 10px">{{ $t('message.add.external.details') }}</div>
+            <details-input
+              v-model:value="form.externaldetails" />
+          </a-form-item>
           <a-form-item name="isdedicated" ref="isdedicated">
             <template #label>
               <tooltip-label :title="$t('label.isdedicated')"/>
@@ -249,6 +257,7 @@ import { mixinForm } from '@/utils/mixin'
 import DedicateDomain from '../../components/view/DedicateDomain'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import DetailsInput from '@/components/widgets/DetailsInput'
 
 export default {
   name: 'HostAdd',
@@ -256,7 +265,8 @@ export default {
   components: {
     DedicateDomain,
     ResourceIcon,
-    TooltipLabel
+    TooltipLabel,
+    DetailsInput
   },
   props: {
     resource: {
@@ -302,6 +312,9 @@ export default {
 
       return rules
     }
+  },
+  beforeCreate () {
+    this.apiParams = this.$getApiParams('addHost')
   },
   created () {
     this.initForm()
@@ -422,13 +435,18 @@ export default {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
 
-        if (values.hostname.indexOf('http://') === -1) {
+        if ((values.hostname.indexOf('http://') === -1 && this.selectedClusterHyperVisorType !== 'External') || (values.hostname.indexOf('http') === -1 && this.selectedClusterHyperVisorType === 'External')) {
           this.url = `http://${values.hostname}`
         } else {
           this.url = values.hostname
         }
 
-        const args = {
+        if (this.selectedClusterHyperVisorType === 'External') {
+          values.username = 'external'
+          values.password = 'external'
+        }
+
+        var args = {
           zoneid: values.zoneid,
           podid: values.podid,
           clusterid: values.clusterid,
@@ -449,6 +467,11 @@ export default {
           args.memory = values.baremetalmemory
           args.hostmac = values.baremetalmac
         }
+        if (values.externaldetails) {
+          Object.entries(values.externaldetails).forEach(([key, value]) => {
+            args['externaldetails[0].' + key] = value
+          })
+        }
         Object.keys(args).forEach((key) => (args[key] == null) && delete args[key])
         this.loading = true
         api('addHost', {}, 'POST', args).then(response => {
@@ -468,7 +491,8 @@ export default {
           this.loading = false
         })
       }).catch(error => {
-        this.formRef.value.scrollToField(error.errorFields[0].name)
+        console.log(error)
+        this.formRef.value.scrollToField(error?.errorFields[0]?.name)
       })
     },
     dedicateHost (hostId) {
@@ -518,22 +542,10 @@ export default {
 </script>
 
 <style lang="scss">
-  .form {
-    &__label {
-      margin-bottom: 5px;
-
-      .required {
-        margin-left: 10px;
-      }
-    }
-    &__item {
-      margin-bottom: 20px;
-    }
-    .ant-select {
-      width: 85vw;
-      @media (min-width: 760px) {
-        width: 400px;
-      }
+  .form-layout {
+    width: 60vw;
+    @media (min-width: 600px) {
+      width: 550px;
     }
   }
 

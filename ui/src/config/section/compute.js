@@ -81,7 +81,7 @@ export default {
         fields.push('zonename')
         return fields
       },
-      searchFilters: ['name', 'zoneid', 'domainid', 'account', 'groupid', 'arch', 'tags'],
+      searchFilters: ['name', 'zoneid', 'domainid', 'account', 'groupid', 'arch', 'extensionid', 'tags'],
       details: () => {
         var fields = ['name', 'displayname', 'id', 'state', 'ipaddress', 'ip6address', 'templatename', 'ostypename',
           'serviceofferingname', 'isdynamicallyscalable', 'haenable', 'hypervisor', 'arch', 'boottype', 'bootmode', 'account',
@@ -424,6 +424,15 @@ export default {
           message: 'message.recover.vm',
           dataView: true,
           show: (record, store) => { return ['Destroyed'].includes(record.state) && store.features.allowuserexpungerecovervm && record.vmtype !== 'sharedfsvm' }
+        },
+        {
+          api: 'runCustomAction',
+          icon: 'play-square-outlined',
+          label: 'label.run.custom.action',
+          dataView: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/extension/RunCustomAction'))),
+          popup: true,
+          show: (record) => { return ['External'].includes(record.hypervisor) }
         },
         {
           api: 'unmanageVirtualMachine',

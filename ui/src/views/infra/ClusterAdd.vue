@@ -62,7 +62,7 @@
         </a-select>
       </div>
 
-      <div class="form__item">
+      <div class="form__item" v-if="hypervisor !== 'External'">
         <div class="form__label">{{ $t('label.arch') }}</div>
         <a-select
           showSearch
@@ -100,6 +100,25 @@
         <div class="form__label"><span class="required">* </span>{{ $t('label.clusternamelabel') }}</div>
         <span class="required required-label" ref="requiredCluster">{{ $t('label.required') }}</span>
         <a-input :placeholder="placeholder.clustername" v-model:value="clustername"></a-input>
+      </div>
+
+      <div class="form__item" v-if="hypervisor === 'External'">
+        <div class="form__label">{{ $t('label.extensionid') }}</div>
+        <a-select
+          v-model:value="extensionid"
+          showSearch
+          optionFilterProp="label"
+          :filterOption="(input, option) => {
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
+          <a-select-option
+            v-for="extension in extensionsList"
+            :value="extension.id"
+            :key="extension.id"
+            :label="extension.name">
+            {{ extension.name }}
+          </a-select-option>
+        </a-select>
       </div>
 
       <template v-if="hypervisor === 'VMware'">
@@ -193,6 +212,7 @@ export default {
       ovm3vip: null,
       zonesList: [],
       hypervisorsList: [],
+      extensionsList: [],
       podsList: [],
       showDedicated: false,
       dedicatedDomainId: null,
@@ -203,7 +223,8 @@ export default {
       selectedArchitecture: null,
       placeholder: {
         clustername: null
-      }
+      },
+      extensionid: null
     }
   },
   created () {
@@ -213,6 +234,7 @@ export default {
     fetchData () {
       this.fetchZones()
       this.fetchHypervisors()
+      this.fetchExtensionsList()
       this.architectureTypes.opts = this.$fetchCpuArchitectureTypes()
       this.selectedArchitecture = this.architectureTypes?.opts?.[0]?.id || null
       this.params = this.$store.getters.apis.addCluster.params
@@ -251,6 +273,18 @@ export default {
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
+        this.loading = false
+      })
+    },
+    fetchExtensionsList () {
+      this.loading = true
+      api('listExtensions', {
+      }).then(response => {
+        this.extensionsList = response.listextensionsresponse.extension || []
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.extensionsList.unshift({ id: null, name: '' })
         this.loading = false
       })
     },
@@ -341,6 +375,9 @@ export default {
       }
       if (this.password) {
         data.password = this.password
+      }
+      if (this.hypervisor === 'External' && this.extensionid) {
+        data.extensionid = this.extensionid
       }
       api('addCluster', {}, 'POST', data).then(response => {
         const cluster = response.addclusterresponse.cluster[0] || {}

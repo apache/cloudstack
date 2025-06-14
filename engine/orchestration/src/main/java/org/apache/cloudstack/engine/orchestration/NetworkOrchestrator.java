@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.engine.orchestration;
 
+import static com.cloud.configuration.ConfigurationManager.MESSAGE_DELETE_VLAN_IP_RANGE_EVENT;
+
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,13 +40,8 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.dc.ASNumberVO;
-import com.cloud.bgp.BGPService;
-import com.cloud.dc.VlanDetailsVO;
-import com.cloud.dc.dao.ASNumberDao;
-import com.cloud.dc.dao.VlanDetailsDao;
-import com.cloud.network.dao.NsxProviderDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.agent.manager.ExternalAgentManagerImpl;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
@@ -56,15 +53,18 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.network.dao.NetworkPermissionDao;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -76,18 +76,23 @@ import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.CleanupPersistentNetworkResourceAnswer;
 import com.cloud.agent.api.CleanupPersistentNetworkResourceCommand;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.PrepareExternalProvisioningAnswer;
+import com.cloud.agent.api.PrepareExternalProvisioningCommand;
 import com.cloud.agent.api.SetupPersistentNetworkAnswer;
 import com.cloud.agent.api.SetupPersistentNetworkCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.NicTO;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
+import com.cloud.bgp.BGPService;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
+import com.cloud.dc.ASNumberVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -95,12 +100,15 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DataCenterVnetVO;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
+import com.cloud.dc.VlanDetailsVO;
 import com.cloud.dc.VlanVO;
+import com.cloud.dc.dao.ASNumberDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterVnetDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
@@ -123,7 +131,11 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.HypervisorGuru;
+import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Ipv6Service;
@@ -161,6 +173,7 @@ import com.cloud.network.dao.NetworkDomainVO;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkServiceMapVO;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
@@ -248,9 +261,10 @@ import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachine.Type;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicExtraDhcpOptionDao;
@@ -259,11 +273,9 @@ import com.cloud.vm.dao.NicIpAliasVO;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.googlecode.ipv6.IPv6Address;
-import org.jetbrains.annotations.NotNull;
-
-import static com.cloud.configuration.ConfigurationManager.MESSAGE_DELETE_VLAN_IP_RANGE_EVENT;
 
 /**
  * NetworkManagerImpl implements NetworkManager.
@@ -284,6 +296,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     ConfigurationDao _configDao;
     @Inject
     UserVmDao _userVmDao;
+    @Inject
+    UserVmDetailsDao userVmDetailsDao;
     @Inject
     AlertManager _alertMgr;
     @Inject
@@ -358,6 +372,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     private ASNumberDao asNumberDao;
     @Inject
     private BGPService bgpService;
+    @Inject
+    private HypervisorGuruManager hvGuruMgr;
+    @Inject
+    ExtensionsManager extensionsManager;
 
     @Override
     public List<NetworkGuru> getNetworkGurus() {
@@ -424,6 +442,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     AgentManager _agentMgr;
     @Inject
     HostDao _hostDao;
+    @Inject
+    HostDetailsDao hostDetailsDao;
     @Inject
     NetworkServiceMapDao _ntwkSrvcDao;
     @Inject
@@ -2148,6 +2168,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         final Integer networkRate = _networkModel.getNetworkRate(network.getId(), vmProfile.getId());
         final NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
+
+        prepareNicIfExternalProvisionerInvolved(vmProfile, dest, nicId);
         final NicVO nic = _nicDao.findById(nicId);
 
         NicProfile profile = null;
@@ -2214,6 +2236,71 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         updateRouterDefaultDns(vmProfile, profile);
         configureExtraDhcpOptions(network, nicId);
         return profile;
+    }
+
+    private void prepareNicIfExternalProvisionerInvolved(VirtualMachineProfile vmProfile, DeployDestination dest, long nicId) {
+        if (!Hypervisor.HypervisorType.External.equals(vmProfile.getHypervisorType())) {
+            return;
+        }
+        if (userVmDetailsDao.findDetail(vmProfile.getId(), VmDetailConstants.DEPLOY_VM) == null) {
+            return;
+        }
+        HypervisorGuru hvGuru = hvGuruMgr.getGuru(vmProfile.getHypervisorType());
+        VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
+
+        HostVO host = _hostDao.findById(dest.getHost().getId());
+        PrepareExternalProvisioningCommand command = new PrepareExternalProvisioningCommand(vmTO, host.getClusterId());
+        Map<String, Object> externalDetails = extensionsManager.getExternalAccessDetails(host);
+        Map<String, String> vmExternalDetails = vmTO.getExternalDetails();
+        if (MapUtils.isNotEmpty(vmExternalDetails)) {
+            externalDetails.put(ApiConstants.VIRTUAL_MACHINE_ID, vmExternalDetails);
+        }
+        command.setExternalDetails(externalDetails);
+        final PrepareExternalProvisioningAnswer prepareExternalProvisioningAnswer;
+        try {
+            Long hostID = dest.getHost().getId();
+            final Answer answer = _agentMgr.send(hostID, command);
+
+            if (!(answer instanceof PrepareExternalProvisioningAnswer)) {
+                String errorMsg = String.format("Trying to prepare the instance on external hypervisor for the CloudStack instance %s failed: %s", vmProfile.getUuid(), answer.getDetails());
+                logger.debug(errorMsg);
+                throw new CloudRuntimeException(errorMsg);
+            }
+
+            prepareExternalProvisioningAnswer = (PrepareExternalProvisioningAnswer) answer;
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
+            String errorMsg = String.format("Trying to prepare the instance on external hypervisor for the CloudStack instance %s failed: %s", vmProfile.getUuid(), e);
+            logger.debug(errorMsg);
+            throw new CloudRuntimeException(errorMsg);
+        }
+
+        if (prepareExternalProvisioningAnswer == null || !prepareExternalProvisioningAnswer.getResult()) {
+            if (prepareExternalProvisioningAnswer != null && StringUtils.isNotBlank(prepareExternalProvisioningAnswer.getDetails())) {
+                throw new CloudRuntimeException(String.format("Unable to prepare the instance on external system due to %s", prepareExternalProvisioningAnswer.getDetails()));
+            } else {
+                throw new CloudRuntimeException("Unable to prepare the instance on external system, please check the access details");
+            }
+        }
+
+        Map<String, String> serverDetails = prepareExternalProvisioningAnswer.getServerDetails();
+        if (ExternalAgentManagerImpl.expectMacAddressFromExternalProvisioner.valueIn(host.getClusterId())) {
+            String macAddress = serverDetails.get(VmDetailConstants.MAC_ADDRESS);
+            if (StringUtils.isEmpty(macAddress)) {
+                throw new CloudRuntimeException("Unable to fetch macaddress from the external provisioner while preparing the instance");
+            }
+            final NicVO nic = _nicDao.findById(nicId);
+            nic.setMacAddress(macAddress);
+            _nicDao.update(nicId, nic);
+        }
+
+        if (MapUtils.isNotEmpty(serverDetails)) {
+            UserVmVO userVm = _userVmDao.findById(vmProfile.getId());
+            _userVmDao.loadDetails(userVm);
+            Map<String, String> details = userVm.getDetails();
+            details.putAll(serverDetails);
+            userVm.setDetails(details);
+            _userVmDao.saveDetails(userVm);
+        }
     }
 
     @Override

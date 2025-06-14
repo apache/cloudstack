@@ -165,7 +165,7 @@
                           :key="templateKey"
                           @handle-search-filter="filters => fetchAllTemplates(filters)"
                           @update-template-iso="updateFieldValue" />
-                        <div>
+                        <div v-if="template.hypervisor !== 'External'">
                           {{ $t('label.override.rootdisk.size') }}
                           <a-switch
                             v-model:checked="form.rootdisksizeitem"
@@ -291,7 +291,7 @@
                         <a-input v-model:value="form.memory"/>
                       </a-form-item>
                     </span>
-                    <span v-if="imageType!=='isoid'">
+                    <span v-if="imageType!=='isoid' && template.hypervisor !== 'External'">
                       {{ $t('label.override.root.diskoffering') }}
                       <a-switch
                         v-model:checked="showOverrideDiskOfferingOption"
@@ -370,9 +370,10 @@
               <a-step
                 v-else
                 :title="imageType === 'templateid' ? $t('label.data.disk') : $t('label.disk.size')"
+                :disabled="template.hypervisor === 'External' ? true : false"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description>
-                  <div v-if="zoneSelected">
+                  <div v-if="zoneSelected && template.hypervisor !== 'External'">
                     <disk-offering-selection
                       :items="options.diskOfferings"
                       :row-count="rowCount.diskOfferings"
@@ -397,6 +398,9 @@
                     <a-form-item class="form-item-hidden">
                       <a-input v-model:value="form.size"/>
                     </a-form-item>
+                  </div>
+                  <div v-else-if="template.hypervisor === 'External'" style="margin-bottom: 20px; margin-top: 7px">
+                    {{ $t('message.host.external.datadisk') }}
                   </div>
                 </template>
               </a-step>
@@ -571,7 +575,7 @@
                       ref="bootintosetup">
                       <a-switch v-model:checked="form.bootintosetup" />
                     </a-form-item>
-                    <a-form-item name="dynamicscalingenabled" ref="dynamicscalingenabled">
+                    <a-form-item name="dynamicscalingenabled" ref="dynamicscalingenabled" v-if="template.hypervisor !== 'External'">
                       <template #label>
                         <tooltip-label :title="$t('label.dynamicscalingenabled')" :tooltip="$t('label.dynamicscalingenabled.tooltip')"/>
                       </template>
@@ -811,6 +815,17 @@
                         :filterOption="filterOption"
                       ></a-select>
                     </a-form-item>
+                    <a-form-item name="externaldetails" ref="externaldetails">
+                      <template #label>
+                        <tooltip-label :title="$t('label.externaldetails')" :tooltip="apiParams.externaldetails.description" />
+                      </template>
+                      <a-switch v-model:checked="externalDetailsEnabled" @change="onExternalDetailsEnabledChange"/>
+                      <a-card v-if="externalDetailsEnabled" style="margin-top: 10px">
+                        <div style="margin-bottom: 10px">{{ $t('message.add.external.details') }}</div>
+                        <details-input
+                          v-model:value="form.externaldetails" />
+                      </a-card>
+                    </a-form-item>
                     <a-form-item :label="$t('label.action.start.instance')" name="startvm" ref="startvm">
                       <a-switch v-model:checked="form.startvm" />
                     </a-form-item>
@@ -907,6 +922,7 @@ import UserDataSelection from '@views/compute/wizard/UserDataSelection'
 import SecurityGroupSelection from '@views/compute/wizard/SecurityGroupSelection'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import InstanceNicsNetworkSelectListView from '@/components/view/InstanceNicsNetworkSelectListView'
+import DetailsInput from '@/components/widgets/DetailsInput'
 
 export default {
   name: 'Wizard',
@@ -931,7 +947,8 @@ export default {
     ComputeSelection,
     SecurityGroupSelection,
     TooltipLabel,
-    InstanceNicsNetworkSelectListView
+    InstanceNicsNetworkSelectListView,
+    DetailsInput
   },
   props: {
     visible: {
@@ -1106,7 +1123,8 @@ export default {
       },
       architectureTypes: {
         opts: []
-      }
+      },
+      externalDetailsEnabled: false
     }
   },
   computed: {
@@ -1638,6 +1656,9 @@ export default {
       this.doUserdataAppend = false
     }
   },
+  beforeCreate () {
+    this.apiParams = this.$getApiParams('deployVirtualMachine')
+  },
   created () {
     this.initForm()
     this.dataPreFill = this.preFillContent && Object.keys(this.preFillContent).length > 0 ? this.preFillContent : {}
@@ -1948,6 +1969,7 @@ export default {
           if (template.details['vmware-to-kvm-mac-addresses']) {
             this.dataPreFill.macAddressArray = JSON.parse(template.details['vmware-to-kvm-mac-addresses'])
           }
+          this.dataPreFill.hypervisorType = template.hypervisor
         }
       } else if (name === 'isoid') {
         this.imageType = 'isoid'
@@ -2352,6 +2374,12 @@ export default {
         } else if (this.owner.projectid) {
           deployVmData.domainid = this.owner.domainid
           deployVmData.projectid = this.owner.projectid
+        }
+
+        if (values.externaldetails) {
+          Object.entries(values.externaldetails).forEach(([key, value]) => {
+            deployVmData['externaldetails[0].' + key] = value
+          })
         }
 
         const title = this.$t('label.launch.vm')
@@ -2791,7 +2819,7 @@ export default {
         return
       }
       this.selectedArchitecture = resourceArch
-      this.changeArchitecture(resourceArch, this.tabKey === 'templateid')
+      this.changeArchitecture(resourceArch, this.imageType === 'templateid')
     },
     onSelectGuestOsCategory (value) {
       this.form.guestoscategoryid = value
@@ -3114,6 +3142,12 @@ export default {
         return Promise.reject(this.$t('message.error.number'))
       }
       return Promise.resolve()
+    },
+    onExternalDetailsEnabledChange (val) {
+      if (val || !this.form.externaldetails) {
+        return
+      }
+      this.form.externaldetails = undefined
     }
   }
 }

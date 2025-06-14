@@ -166,3 +166,87 @@ SET `sort_key` = CASE
     ELSE `sort_key`
 END;
 -- End: Changes for Guest OS category cleanup
+
+-- Extension framework
+UPDATE `cloud`.`configuration` SET value = CONCAT(value, ',External') WHERE name = 'hypervisor.list';
+
+CREATE TABLE IF NOT EXISTS `cloud`.`extension` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(40) NOT NULL UNIQUE,
+  `name` varchar(255) NOT NULL,
+  `description` varchar(4096),
+  `type` varchar(255) NOT NULL COMMENT 'Type of the extension: Orchestrator, etc',
+  `relative_entry_point` varchar(2048) NOT NULL COMMENT 'Path of entry point for the extension relative to the root extensions directory',
+  `entry_point_sync` int unsigned DEFAULT '0' COMMENT 'True if the extension entry point is in sync across management servers',
+  `is_user_defined` int unsigned DEFAULT '0' COMMENT 'True if the extension is added by admin',
+  `state` char(32) NOT NULL COMMENT 'State of the extension - Enabled or Disabled',
+  `created` datetime NOT NULL,
+  `removed` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `cloud`.`extension_details` (
+  `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `extension_id` bigint unsigned NOT NULL COMMENT 'extension to which the detail is related to',
+  `name` varchar(255) NOT NULL COMMENT 'name of the detail',
+  `value` varchar(255) NOT NULL COMMENT 'value of the detail',
+  `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_extension_details__extension_id` FOREIGN KEY (`extension_id`)
+    REFERENCES `extension` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `cloud`.`extension_resource_map` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `extension_id` bigint(20) unsigned NOT NULL,
+  `resource_id` bigint(20) unsigned NOT NULL,
+  `resource_type` char(255) NOT NULL,
+  `created` datetime NOT NULL,
+  `removed` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_extension_resource_map__extension_id` FOREIGN KEY (`extension_id`)
+      REFERENCES `cloud`.`extension`(`id`) ON DELETE CASCADE,
+  INDEX `idx_extension_resource` (`resource_id`, `resource_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `cloud`.`extension_resource_map_details` (
+  `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `extension_resource_map_id` bigint unsigned NOT NULL COMMENT 'mapping to which the detail is related',
+  `name` varchar(255) NOT NULL COMMENT 'name of the detail',
+  `value` varchar(255) NOT NULL COMMENT 'value of the detail',
+  `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_extension_resource_map_details__map_id` FOREIGN KEY (`extension_resource_map_id`)
+    REFERENCES `extension_resource_map` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `cloud`.`extension_custom_action` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(255) NOT NULL UNIQUE,
+  `name` varchar(255) NOT NULL,
+  `description` varchar(4096),
+  `extension_id` bigint(20) unsigned NOT NULL,
+  `resource_type` varchar(255),
+  `roles_list` varchar(255) DEFAULT NULL,
+  `success_message` varchar(4096),
+  `error_message` varchar(4096),
+  `enabled` boolean DEFAULT true,
+  `created` datetime NOT NULL,
+  `removed` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_extension_custom_action__extension_id` FOREIGN KEY (`extension_id`)
+    REFERENCES `cloud`.`extension`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `cloud`.`extension_custom_action_details` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `extension_custom_action_id` bigint(20) unsigned NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `value` varchar(255) NOT NULL,
+  `display` tinyint(1) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_custom_action_details__action_id` FOREIGN KEY (`extension_custom_action_id`)
+    REFERENCES `cloud`.`extension_custom_action`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vm_template', 'extension_id', 'bigint unsigned DEFAULT NULL COMMENT "id of the extension"');

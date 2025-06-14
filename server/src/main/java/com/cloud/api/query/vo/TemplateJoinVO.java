@@ -262,6 +262,15 @@ public class TemplateJoinVO extends BaseViewWithTagInformationVO implements Cont
     @Column(name = "user_data_params")
     private String userDataParams;
 
+    @Column(name = "extension_id")
+    private Long extensionId;
+
+    @Column(name = "extension_uuid")
+    private String extensionUuid;
+
+    @Column(name = "extension_name")
+    private String extensionName;
+
     public TemplateJoinVO() {
     }
 
@@ -559,5 +568,17 @@ public class TemplateJoinVO extends BaseViewWithTagInformationVO implements Cont
 
     public CPU.CPUArch getArch() {
         return arch;
+    }
+
+    public Long getExtensionId() {
+        return extensionId;
+    }
+
+    public String getExtensionUuid() {
+        return extensionUuid;
+    }
+
+    public String getExtensionName() {
+        return extensionName;
     }
 }
