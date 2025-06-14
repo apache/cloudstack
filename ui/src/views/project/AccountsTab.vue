@@ -87,7 +87,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
@@ -212,7 +212,7 @@ export default {
     },
     fetchUsers () {
       this.loading.user = true
-      api('listUsers', { listall: true }).then(response => {
+      getAPI('listUsers', { listall: true }).then(response => {
         this.users = response.listusersresponse.user || []
       }).catch(error => {
         this.$notifyError(error)
@@ -222,7 +222,7 @@ export default {
     },
     fetchProjectRoles () {
       this.loading.roles = true
-      api('listProjectRoles', { projectId: this.resource.id }).then(response => {
+      getAPI('listProjectRoles', { projectId: this.resource.id }).then(response => {
         this.projectRoles = response.listprojectrolesresponse.projectrole || []
       }).catch(error => {
         this.$notifyError(error)
@@ -232,7 +232,7 @@ export default {
     },
     fetchProjectAccounts (params) {
       this.loading.projectAccount = true
-      api('listProjectAccounts', params).then(json => {
+      getAPI('listProjectAccounts', params).then(json => {
         const listProjectAccount = json.listprojectaccountsresponse.projectaccount
         const itemCount = json.listprojectaccountsresponse.count
         if (!listProjectAccount || listProjectAccount.length === 0) {
@@ -297,7 +297,7 @@ export default {
       this.updateProject(record, params, title, loading)
     },
     updateProject (record, params, title, loading) {
-      api('updateProject', params).then(json => {
+      postAPI('updateProject', params).then(json => {
         const hasJobId = this.checkForAddAsyncJob(json, title, record.account)
         if (hasJobId) {
           this.fetchData()
@@ -337,7 +337,7 @@ export default {
       }
     },
     deleteOperation (apiName, params, record, title, loading) {
-      api(apiName, params).then(json => {
+      postAPI(apiName, params).then(json => {
         const hasJobId = this.checkForAddAsyncJob(json, title, record.account)
         if (hasJobId) {
           this.fetchData()
