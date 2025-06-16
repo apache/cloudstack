@@ -178,7 +178,6 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
      * @throws CloudRuntimeException in case if Storage Pool is not operate-able
      */
     private void validateMdmState(Map<String, String> details) {
-
         String configKey = ScaleIOSDCManager.ValidateMdmsOnConnect.key();
         String configValue = details.get(configKey);
 
@@ -689,8 +688,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
                 if (!ScaleIOUtil.isMdmPresent(mdmAddresses[0])) {
                     return new Pair<>(true, "MDM not added, no need to unprepare the SDC client");
                 } else {
-                    String configKey =
-                            details.get(ScaleIOSDCManager.BlockSdcUnprepareIfRestartNeededAndVolumesAreAttached.key());
+                    String configKey = ScaleIOSDCManager.BlockSdcUnprepareIfRestartNeededAndVolumesAreAttached.key();
                     String configValue = details.get(configKey);
 
                     if (StringUtils.isEmpty(configValue)) {
@@ -698,7 +696,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
                     } else {
                         LOGGER.debug(String.format("Configuration key %s provided as %s", configKey, configValue));
                     }
-                    Boolean blockUnprepare = Boolean.valueOf(configKey);
+                    Boolean blockUnprepare = Boolean.valueOf(configValue);
                     if (!ScaleIOUtil.isRemoveMdmCliSupported() && !ScaleIOUtil.getVolumeIds().isEmpty() && Boolean.TRUE.equals(blockUnprepare)) {
                         return new Pair<>(false, "Failed to remove MDMs, SDC client requires service to be restarted, but there are Volumes attached to the Host");
                     }
