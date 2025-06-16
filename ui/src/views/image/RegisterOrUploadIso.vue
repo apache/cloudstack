@@ -88,6 +88,15 @@
           <a-switch v-model:checked="form.directdownload"/>
         </a-form-item>
 
+        <a-form-item ref="checksum" name="checksum">
+          <template #label>
+            <tooltip-label :title="$t('label.checksum')" :tooltip="apiParams.checksum.description"/>
+          </template>
+          <a-input
+            v-model:value="form.checksum"
+            :placeholder="apiParams.checksum.description" />
+        </a-form-item>
+
         <a-form-item ref="zoneid" name="zoneid">
           <template #label>
             <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
@@ -179,6 +188,26 @@
                 <global-outlined v-else style="margin-right: 5px" />
                 {{ opt.name }}
               </span>
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+
+        <a-form-item
+          name="arch"
+          ref="arch">
+          <template #label>
+            <tooltip-label :title="$t('label.arch')" :tooltip="apiParams.arch.description"/>
+          </template>
+          <a-select
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            v-model:value="form.arch"
+            :placeholder="apiParams.arch.description">
+            <a-select-option v-for="opt in architectureTypes.opts" :key="opt.id">
+              {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -322,7 +351,8 @@ export default {
       accounts: [],
       domainLoading: false,
       domainid: null,
-      account: null
+      account: null,
+      architectureTypes: {}
     }
   },
   beforeCreate () {
@@ -363,6 +393,7 @@ export default {
     fetchData () {
       this.fetchZoneData()
       this.fetchOsType()
+      this.architectureTypes.opts = this.$fetchCpuArchitectureTypes()
       this.fetchUserData()
       this.fetchUserdataPolicy()
       if ('listDomains' in this.$store.getters.apis) {

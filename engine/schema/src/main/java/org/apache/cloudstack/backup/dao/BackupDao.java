@@ -32,9 +32,13 @@ public interface BackupDao extends GenericDao<BackupVO, Long> {
 
     List<Backup> listByVmId(Long zoneId, Long vmId);
     List<Backup> listByAccountId(Long accountId);
-    List<Backup> listByOfferingId(Long offeringId);
     List<Backup> syncBackups(Long zoneId, Long vmId, List<Backup> externalBackups);
     BackupVO getBackupVO(Backup backup);
+    List<Backup> listByOfferingId(Long backupOfferingId);
+
+    List<BackupVO> listBackupsByVMandIntervalType(Long vmId, Backup.Type backupType);
 
     BackupResponse newBackupResponse(Backup backup);
+    public Long countBackupsForAccount(long accountId);
+    public Long calculateBackupStorageForAccount(long accountId);
 }

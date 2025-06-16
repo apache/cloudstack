@@ -20,10 +20,12 @@
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
 import com.cloud.agent.api.storage.MigrateVolumeAnswer;
 import com.cloud.agent.api.storage.MigrateVolumeCommand;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.kvm.resource.disconnecthook.VolumeMigrationCancelHook;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
@@ -103,6 +105,8 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
         final String destDiskFileName = ScaleIOUtil.DISK_NAME_PREFIX + destSystemId + "-" + destVolumeId;
         final String diskFilePath = ScaleIOUtil.DISK_PATH + File.separator + destDiskFileName;
 
+        VolumeMigrationCancelHook cancelHook = null;
+
         Domain dm = null;
         try {
             final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
@@ -136,10 +140,23 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
             TypedParameter[] parameters = new TypedParameter[1];
             parameters[0] = parameter;
 
+            cancelHook = new VolumeMigrationCancelHook(dm, destDiskLabel);
+            libvirtComputingResource.addDisconnectHook(cancelHook);
+
+            libvirtComputingResource.createOrUpdateLogFileForCommand(command, Command.State.PROCESSING_IN_BACKEND);
+
             dm.blockCopy(destDiskLabel, diskdef, parameters, Domain.BlockCopyFlags.REUSE_EXT);
             logger.info(String.format("Block copy has started for the volume %s : %s ", destDiskLabel, srcPath));
 
-            return checkBlockJobStatus(command, dm, destDiskLabel, srcPath, destPath, libvirtComputingResource, conn, srcSecretUUID);
+            MigrateVolumeAnswer answer = checkBlockJobStatus(command, dm, destDiskLabel, srcPath, destPath, libvirtComputingResource, conn, srcSecretUUID);
+            if (answer != null) {
+                if (answer.getResult()) {
+                    libvirtComputingResource.createOrUpdateLogFileForCommand(command, Command.State.COMPLETED);
+                } else {
+                    libvirtComputingResource.createOrUpdateLogFileForCommand(command, Command.State.FAILED);
+                }
+            }
+            return answer;
         } catch (Exception e) {
             String msg = "Migrate volume failed due to " + e.toString();
             logger.warn(msg, e);
@@ -150,8 +167,12 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
                     logger.error("Migrate volume failed while aborting the block job due to " + ex.getMessage());
                 }
             }
+            libvirtComputingResource.createOrUpdateLogFileForCommand(command, Command.State.FAILED);
             return new MigrateVolumeAnswer(command, false, msg, null);
         } finally {
+            if (cancelHook != null) {
+                libvirtComputingResource.removeDisconnectHook(cancelHook);
+            }
             if (dm != null) {
                 try {
                     dm.free();
@@ -299,18 +320,39 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
         String destPath = destDetails != null && destDetails.get(DiskTO.IQN) != null ? destDetails.get(DiskTO.IQN) :
                 (destVolumeObjectTO.getPath() != null ? destVolumeObjectTO.getPath() : UUID.randomUUID().toString());
 
+        // Update path in the command for reconciliation
+        if (destVolumeObjectTO.getPath() == null) {
+            destVolumeObjectTO.setPath(destPath);
+        }
+
         try {
-            storagePoolManager.connectPhysicalDisk(srcPrimaryDataStore.getPoolType(), srcPrimaryDataStore.getUuid(), srcPath, srcDetails);
+            KVMStoragePool sourceStoragePool = storagePoolManager.getStoragePool(srcPrimaryDataStore.getPoolType(), srcPrimaryDataStore.getUuid());
+
+            if (!sourceStoragePool.connectPhysicalDisk(srcPath, srcDetails)) {
+                return new MigrateVolumeAnswer(command, false, "Unable to connect source volume on hypervisor", srcPath);
+            }
 
             KVMPhysicalDisk srcPhysicalDisk = storagePoolManager.getPhysicalDisk(srcPrimaryDataStore.getPoolType(), srcPrimaryDataStore.getUuid(), srcPath);
+            if (srcPhysicalDisk == null) {
+                return new MigrateVolumeAnswer(command, false, "Unable to get handle to source volume on hypervisor", srcPath);
+            }
 
             KVMStoragePool destPrimaryStorage = storagePoolManager.getStoragePool(destPrimaryDataStore.getPoolType(), destPrimaryDataStore.getUuid());
 
-            storagePoolManager.connectPhysicalDisk(destPrimaryDataStore.getPoolType(), destPrimaryDataStore.getUuid(), destPath, destDetails);
+            if (!destPrimaryStorage.connectPhysicalDisk(destPath, destDetails)) {
+                return new MigrateVolumeAnswer(command, false, "Unable to connect destination volume on hypervisor", srcPath);
+            }
 
-            storagePoolManager.copyPhysicalDisk(srcPhysicalDisk, destPath, destPrimaryStorage, command.getWaitInMillSeconds());
+            libvirtComputingResource.createOrUpdateLogFileForCommand(command, Command.State.PROCESSING_IN_BACKEND);
+            KVMPhysicalDisk newDiskCopy = storagePoolManager.copyPhysicalDisk(srcPhysicalDisk, destPath, destPrimaryStorage, command.getWaitInMillSeconds());
+            if (newDiskCopy == null) {
+                libvirtComputingResource.createOrUpdateLogFileForCommand(command, Command.State.FAILED);
+                return new MigrateVolumeAnswer(command, false, "Copy command failed to return handle to copied physical disk", destPath);
+            }
+            libvirtComputingResource.createOrUpdateLogFileForCommand(command, Command.State.COMPLETED);
         }
         catch (Exception ex) {
+            libvirtComputingResource.createOrUpdateLogFileForCommand(command, Command.State.FAILED);
             return new MigrateVolumeAnswer(command, false, ex.getMessage(), null);
         }
         finally {

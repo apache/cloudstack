@@ -38,6 +38,7 @@ public interface ScaleIOGatewayClient {
     String GATEWAY_API_PASSWORD = "powerflex.gw.password";
     String STORAGE_POOL_NAME = "powerflex.storagepool.name";
     String STORAGE_POOL_SYSTEM_ID = "powerflex.storagepool.system.id";
+    String STORAGE_POOL_MDMS = "powerflex.storagepool.mdms";
     String SDC_ID = "powerflex.sdc.id";
     String SDC_GUID = "powerflex.sdc.guid";
 
@@ -79,6 +80,7 @@ public interface ScaleIOGatewayClient {
     VolumeStatistics getVolumeStatistics(String volumeId);
     String getSystemId(String protectionDomainId);
     List<Volume> listVolumesInStoragePool(String poolId);
+    List<Volume> listVolumesMappedToSdc(String sdcId);
 
     // SDC APIs
     List<Sdc> listSdcs();
@@ -86,7 +88,10 @@ public interface ScaleIOGatewayClient {
     String getSdcIdByGuid(String sdcGuid);
     Sdc getSdcByIp(String ipAddress);
     Sdc getConnectedSdcByIp(String ipAddress);
+    int getConnectedSdcsCount();
     boolean haveConnectedSdcs();
     boolean isSdcConnected(String sdcId);
     boolean isSdcConnectedByIP(String ipAddress);
+
+    List<String> getMdmAddresses();
 }

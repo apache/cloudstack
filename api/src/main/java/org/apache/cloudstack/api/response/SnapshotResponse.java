@@ -47,6 +47,10 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "the domain name of the snapshot's account")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the Domain the snapshot's account belongs to", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName(ApiConstants.PROJECT_ID)
     @Param(description = "the project id of the snapshot")
     private String projectId;
@@ -70,6 +74,10 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
     @SerializedName("volumetype")
     @Param(description = "type of the disk volume")
     private String volumeType;
+
+    @SerializedName(ApiConstants.VOLUME_STATE)
+    @Param(description = "state of the disk volume")
+    private String volumeState;
 
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "  the date the snapshot was created")
@@ -183,6 +191,11 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
         this.domainName = domainName;
     }
 
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
+    }
+
     public void setSnapshotType(String snapshotType) {
         this.snapshotType = snapshotType;
     }
@@ -197,6 +210,10 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
 
     public void setVolumeType(String volumeType) {
         this.volumeType = volumeType;
+    }
+
+    public void setVolumeState(String volumeState) {
+        this.volumeState = volumeState;
     }
 
     public void setCreated(Date created) {

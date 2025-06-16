@@ -24,6 +24,7 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
+import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -194,8 +195,8 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
             final Certificate certificate = issueCertificate(csr, Arrays.asList(host.getName(), host.getPrivateIpAddress()), Arrays.asList(host.getPrivateIpAddress(), host.getPublicIpAddress(), host.getStorageIpAddress()), CAManager.CertValidityPeriod.value(), caProvider);
             return deployCertificate(host, certificate, reconnect, null);
         } catch (final AgentUnavailableException | OperationTimedoutException e) {
-            logger.error("Host/agent is not available or operation timed out, failed to setup keystore and generate CSR for host/agent id=" + host.getId() + ", due to: ", e);
-            throw new CloudRuntimeException("Failed to generate keystore and get CSR from the host/agent id=" + host.getId());
+            logger.error("Host/agent is not available or operation timed out, failed to setup keystore and generate CSR for host/agent {}, due to: ", host, e);
+            throw new CloudRuntimeException(String.format("Failed to generate keystore and get CSR from the host/agent %s", host));
         }
     }
 
@@ -233,11 +234,11 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
         if (answer.getResult()) {
             getActiveCertificatesMap().put(host.getPrivateIpAddress(), certificate.getClientCertificate());
             if (sshAccessDetails == null && reconnect != null && reconnect) {
-                logger.info(String.format("Successfully setup certificate on host, reconnecting with agent with id=%d, name=%s, address=%s", host.getId(), host.getName(), host.getPublicIpAddress()));
+                logger.info("Successfully setup certificate on host, reconnecting with agent [{}] with address={}", host, host.getPublicIpAddress());
                 try {
                     agentManager.reconnect(host.getId());
                 } catch (AgentUnavailableException | CloudRuntimeException e) {
-                    logger.debug("Error when reconnecting to host: " + host.getUuid(), e);
+                    logger.debug("Error when reconnecting to host: {}", host, e);
                 }
             }
             return true;
@@ -430,6 +431,14 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {CAProviderPlugin, CertKeySize, CertSignatureAlgorithm, CertValidityPeriod, AutomaticCertRenewal, AllowHostIPInSysVMAgentCert, CABackgroundJobDelay, CertExpiryAlertPeriod};
+        return new ConfigKey<?>[] {CAProviderPlugin, CertKeySize, CertSignatureAlgorithm, CertValidityPeriod,
+                AutomaticCertRenewal, AllowHostIPInSysVMAgentCert, CABackgroundJobDelay, CertExpiryAlertPeriod,
+                CertManagementCustomSubjectAlternativeName
+        };
+    }
+
+    @Override
+    public boolean isManagementCertificate(java.security.cert.Certificate certificate) throws CertificateParsingException {
+        return getConfiguredCaProvider().isManagementCertificate(certificate);
     }
 }

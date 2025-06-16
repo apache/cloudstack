@@ -111,7 +111,7 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
 
     @SerializedName("capacity")
     @Param(description = "the capacity of the Zone", responseObject = CapacityResponse.class)
-    private List<CapacityResponse> capacitites;
+    private List<CapacityResponse> capacities;
 
     @SerializedName(ApiConstants.LOCAL_STORAGE_ENABLED)
     @Param(description = "true if local storage offering enabled, false otherwise")
@@ -149,8 +149,29 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
     @Param(description = "true, if zone is NSX enabled", since = "4.20.0")
     private boolean nsxEnabled = false;
 
+    @SerializedName(ApiConstants.MULTI_ARCH)
+    @Param(description = "true, if zone contains clusters and hosts from different CPU architectures", since = "4.20")
+    private boolean multiArch;
+
+    @SerializedName(ApiConstants.ASN_RANGE)
+    @Param(description = "AS Number Range")
+    private String asnRange;
+
+    @SerializedName(ApiConstants.ROUTED_MODE_ENABLED)
+    @Param(description = "true, if routed network/vpc is enabled", since = "4.20.1")
+    private boolean routedModeEnabled = false;
+
+    @SerializedName(ApiConstants.STORAGE_ACCESS_GROUPS)
+    @Param(description = "comma-separated list of storage access groups for the zone", since = "4.21.0")
+    private String storageAccessGroups;
+
+
     public ZoneResponse() {
         tags = new LinkedHashSet<ResourceTagResponse>();
+    }
+
+    public ZoneResponse(Set<ResourceTagResponse> tags) {
+        this.tags = tags;
     }
 
     public void setId(String id) {
@@ -201,7 +222,7 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
         this.networkType = networkType;
     }
 
-    public void setSecurityGroupsEnabled(Boolean securityGroupsEnabled) {
+    public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
         this.securityGroupsEnabled = securityGroupsEnabled;
     }
 
@@ -217,15 +238,15 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
         this.dhcpProvider = dhcpProvider;
     }
 
-    public void setCapacitites(List<CapacityResponse> capacitites) {
-        this.capacitites = capacitites;
+    public void setCapacities(List<CapacityResponse> capacities) {
+        this.capacities = capacities;
     }
 
     public void setDomainName(String domainName) {
         this.domainName = domainName;
     }
 
-    public void setLocalStorageEnabled(Boolean localStorageEnabled) {
+    public void setLocalStorageEnabled(boolean localStorageEnabled) {
         this.localStorageEnabled = localStorageEnabled;
     }
 
@@ -312,10 +333,6 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
         return networkType;
     }
 
-    public boolean isSecurityGroupsEnabled() {
-        return securityGroupsEnabled;
-    }
-
     public String getAllocationState() {
         return allocationState;
     }
@@ -328,12 +345,8 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
         return dhcpProvider;
     }
 
-    public List<CapacityResponse> getCapacitites() {
-        return capacitites;
-    }
-
-    public boolean isLocalStorageEnabled() {
-        return localStorageEnabled;
+    public List<CapacityResponse> getCapacities() {
+        return capacities;
     }
 
     public Set<ResourceTagResponse> getTags() {
@@ -342,6 +355,30 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
 
     public Map<String, String> getResourceDetails() {
         return resourceDetails;
+    }
+
+    public boolean isSecurityGroupsEnabled() {
+        return securityGroupsEnabled;
+    }
+
+    public boolean isLocalStorageEnabled() {
+        return localStorageEnabled;
+    }
+
+    public Boolean getAllowUserSpecifyVRMtu() {
+        return allowUserSpecifyVRMtu;
+    }
+
+    public Integer getRouterPrivateInterfaceMaxMtu() {
+        return routerPrivateInterfaceMaxMtu;
+    }
+
+    public Integer getRouterPublicInterfaceMaxMtu() {
+        return routerPublicInterfaceMaxMtu;
+    }
+
+    public boolean isNsxEnabled() {
+        return nsxEnabled;
     }
 
     @Override
@@ -373,7 +410,35 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
         return type;
     }
 
+    public String getStorageAccessGroups() {
+        return storageAccessGroups;
+    }
+
+    public void setStorageAccessGroups(String storageAccessGroups) {
+        this.storageAccessGroups = storageAccessGroups;
+    }
+
     public void setNsxEnabled(boolean nsxEnabled) {
         this.nsxEnabled = nsxEnabled;
+    }
+
+    public void setMultiArch(boolean multiArch) {
+        this.multiArch = multiArch;
+    }
+
+    public void setAsnRange(String asnRange) {
+        this.asnRange = asnRange;
+    }
+
+    public String getAsnRange() {
+        return asnRange;
+    }
+
+    public boolean isRoutedModeEnabled() {
+        return routedModeEnabled;
+    }
+
+    public void setRoutedModeEnabled(boolean routedModeEnabled) {
+        this.routedModeEnabled = routedModeEnabled;
     }
 }

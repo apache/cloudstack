@@ -24,17 +24,30 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.function.Consumer;
 
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.user.AccountManager;
+import com.cloud.user.UserVO;
 import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.QuotaConfigureEmailCmd;
+import org.apache.cloudstack.api.command.QuotaCreditsListCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateListCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateUpdateCmd;
+import org.apache.cloudstack.api.command.QuotaValidateActivationRuleCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.discovery.ApiDiscoveryService;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.jsinterpreter.JsInterpreterHelper;
 import org.apache.cloudstack.quota.QuotaService;
 import org.apache.cloudstack.quota.QuotaStatement;
 import org.apache.cloudstack.quota.activationrule.presetvariables.PresetVariableDefinition;
@@ -55,8 +68,12 @@ import org.apache.cloudstack.quota.vo.QuotaCreditsVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailConfigurationVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
+import org.apache.cloudstack.utils.jsinterpreter.JsInterpreter;
+
 import org.apache.commons.lang3.time.DateUtils;
+
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -69,8 +86,10 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
+import com.cloud.user.User;
 
 import junit.framework.TestCase;
+import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -90,6 +109,12 @@ public class QuotaResponseBuilderImplTest extends TestCase {
 
     @Mock
     UserDao userDaoMock;
+
+    @Mock
+    User userMock;
+
+    @Mock
+    ApiDiscoveryService discoveryServiceMock;
 
     @Mock
     QuotaService quotaServiceMock;
@@ -119,7 +144,8 @@ public class QuotaResponseBuilderImplTest extends TestCase {
     QuotaEmailConfigurationDao quotaEmailConfigurationDaoMock;
 
     @InjectMocks
-    QuotaResponseBuilderImpl quotaResponseBuilderSpy = Mockito.spy(QuotaResponseBuilderImpl.class);
+    @Spy
+    QuotaResponseBuilderImpl quotaResponseBuilderSpy;
 
     Date date = new Date();
 
@@ -138,6 +164,26 @@ public class QuotaResponseBuilderImplTest extends TestCase {
     @Mock
     QuotaEmailTemplatesVO quotaEmailTemplatesVoMock;
 
+    @Mock
+    QuotaCreditsVO quotaCreditsVoMock;
+
+    @Mock
+    UserVO userVoMock;
+
+    @Mock
+    AccountManager accountManagerMock;
+
+    @Mock
+    Account callerAccountMock;
+
+    @Mock
+    User callerUserMock;
+
+    @Before
+    public void setup() {
+        CallContext.register(callerUserMock, callerAccountMock);
+    }
+
     private void overrideDefaultQuotaEnabledConfigValue(final Object value) throws IllegalAccessException, NoSuchFieldException {
         Field f = ConfigKey.class.getDeclaredField("_defaultValue");
         f.setAccessible(true);
@@ -149,6 +195,12 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         calendar.set(Calendar.HOUR, 0);
         return new Calendar[] {calendar, calendar};
     }
+
+    @Mock
+    QuotaValidateActivationRuleCmd quotaValidateActivationRuleCmdMock = Mockito.mock(QuotaValidateActivationRuleCmd.class);
+
+    @Mock
+    JsInterpreterHelper jsInterpreterHelperMock = Mockito.mock(JsInterpreterHelper.class);
 
     private QuotaTariffVO makeTariffTestData() {
         QuotaTariffVO tariffVO = new QuotaTariffVO();
@@ -164,9 +216,27 @@ public class QuotaResponseBuilderImplTest extends TestCase {
     @Test
     public void testQuotaResponse() {
         QuotaTariffVO tariffVO = makeTariffTestData();
-        QuotaTariffResponse response = quotaResponseBuilderSpy.createQuotaTariffResponse(tariffVO);
+        QuotaTariffResponse response = quotaResponseBuilderSpy.createQuotaTariffResponse(tariffVO, true);
         assertTrue(tariffVO.getUsageType() == response.getUsageType());
         assertTrue(tariffVO.getCurrencyValue().equals(response.getTariffValue()));
+    }
+
+    @Test
+    public void createQuotaTariffResponseTestIfReturnsActivationRuleWithPermission() {
+        QuotaTariffVO tariff = makeTariffTestData();
+        tariff.setActivationRule("x === 10");
+
+        QuotaTariffResponse tariffResponse = quotaResponseBuilderSpy.createQuotaTariffResponse(tariff, true);
+        assertEquals("x === 10", tariffResponse.getActivationRule());
+    }
+
+    @Test
+    public void createQuotaTariffResponseTestIfReturnsActivationRuleWithoutPermission() {
+        QuotaTariffVO tariff = makeTariffTestData();
+        tariff.setActivationRule("x === 10");
+
+        QuotaTariffResponse tariffResponse = quotaResponseBuilderSpy.createQuotaTariffResponse(tariff, false);
+        assertNull(tariffResponse.getActivationRule());
     }
 
     @Test
@@ -181,13 +251,14 @@ public class QuotaResponseBuilderImplTest extends TestCase {
 
         Mockito.when(quotaCreditsDaoMock.saveCredits(Mockito.any(QuotaCreditsVO.class))).thenReturn(credit);
         Mockito.when(quotaBalanceDaoMock.lastQuotaBalance(Mockito.anyLong(), Mockito.anyLong(), Mockito.any(Date.class))).thenReturn(new BigDecimal(111));
+        Mockito.doReturn(userVoMock).when(quotaResponseBuilderSpy).getCreditorForQuotaCredits(credit);
 
         AccountVO account = new AccountVO();
         account.setState(Account.State.LOCKED);
         Mockito.when(accountDaoMock.findById(Mockito.anyLong())).thenReturn(account);
 
         QuotaCreditsResponse resp = quotaResponseBuilderSpy.addQuotaCredits(accountId, domainId, amount, updatedBy, true);
-        assertTrue(resp.getCredits().compareTo(credit.getCredit()) == 0);
+        assertTrue(resp.getCredit().compareTo(credit.getCredit()) == 0);
     }
 
     @Test
@@ -334,7 +405,7 @@ public class QuotaResponseBuilderImplTest extends TestCase {
     @Test
     public void validateEndDateOnCreatingNewQuotaTariffTestSetValidEndDate() {
         Date startDate = DateUtils.addDays(date, -100);
-        Date endDate = DateUtils.addMilliseconds(new Date(), 1);
+        Date endDate = DateUtils.addMinutes(new Date(), 1);
 
         quotaResponseBuilderSpy.validateEndDateOnCreatingNewQuotaTariff(quotaTariffVoMock, startDate, endDate);
         Mockito.verify(quotaTariffVoMock).setEndDate(Mockito.any(Date.class));
@@ -372,8 +443,10 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         Mockito.doNothing().when(quotaResponseBuilderSpy).validateValueOnCreatingNewQuotaTariff(Mockito.any(QuotaTariffVO.class), Mockito.anyDouble());
         Mockito.doNothing().when(quotaResponseBuilderSpy).validateStringsOnCreatingNewQuotaTariff(Mockito.any(Consumer.class), Mockito.anyString());
         Mockito.doReturn(quotaTariffVoMock).when(quotaTariffDaoMock).addQuotaTariff(Mockito.any(QuotaTariffVO.class));
+        Mockito.doNothing().when(quotaResponseBuilderSpy).validatePositionOnCreatingNewQuotaTariff(Mockito.any(QuotaTariffVO.class), Mockito.anyInt());
 
-        quotaResponseBuilderSpy.persistNewQuotaTariff(quotaTariffVoMock, "", 1, date, 1l, date, 1.0, "", "");
+
+        quotaResponseBuilderSpy.persistNewQuotaTariff(quotaTariffVoMock, "", 1, date, 1l, date, 1.0, "", "", 2);
 
         Mockito.verify(quotaTariffDaoMock).addQuotaTariff(Mockito.any(QuotaTariffVO.class));
     }
@@ -552,5 +625,271 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         assertEquals(1, result.getAccountId());
         assertEquals(2, result.getEmailTemplateId());
         assertFalse(result.isEnabled());
+    }
+
+    @Test
+    public void validatePositionOnCreatingNewQuotaTariffTestNullValueDoNothing() {
+        quotaResponseBuilderSpy.validatePositionOnCreatingNewQuotaTariff(quotaTariffVoMock, null);
+        Mockito.verify(quotaTariffVoMock, Mockito.never()).setPosition(Mockito.any());
+    }
+
+    @Test
+    public void validatePositionOnCreatingNewQuotaTariffTestAnyValueIsSet() {
+        Integer position = 1;
+        quotaResponseBuilderSpy.validatePositionOnCreatingNewQuotaTariff(quotaTariffVoMock, position);
+        Mockito.verify(quotaTariffVoMock).setPosition(position);
+    }
+
+
+    @Test
+    public void isUserAllowedToSeeActivationRulesTestWithPermissionToCreateTariff() {
+        ApiDiscoveryResponse response = new ApiDiscoveryResponse();
+        response.setName("quotaTariffCreate");
+
+        List<ApiDiscoveryResponse> cmdList = new ArrayList<>();
+        cmdList.add(response);
+
+        ListResponse<ApiDiscoveryResponse> responseList = new ListResponse<>();
+        responseList.setResponses(cmdList);
+
+        Mockito.doReturn(responseList).when(discoveryServiceMock).listApis(userMock, null);
+
+        assertTrue(quotaResponseBuilderSpy.isUserAllowedToSeeActivationRules(userMock));
+    }
+
+    @Test
+    public void isUserAllowedToSeeActivationRulesTestWithPermissionToUpdateTariff() {
+        ApiDiscoveryResponse response = new ApiDiscoveryResponse();
+        response.setName("quotaTariffUpdate");
+
+        List<ApiDiscoveryResponse> cmdList = new ArrayList<>();
+        cmdList.add(response);
+
+        ListResponse<ApiDiscoveryResponse> responseList = new ListResponse<>();
+        responseList.setResponses(cmdList);
+
+        Mockito.doReturn(responseList).when(discoveryServiceMock).listApis(userMock, null);
+
+        assertTrue(quotaResponseBuilderSpy.isUserAllowedToSeeActivationRules(userMock));
+    }
+
+    @Test
+    public void isUserAllowedToSeeActivationRulesTestWithNoPermission() {
+        ApiDiscoveryResponse response = new ApiDiscoveryResponse();
+        response.setName("testCmd");
+
+        List<ApiDiscoveryResponse> cmdList = new ArrayList<>();
+        cmdList.add(response);
+
+        ListResponse<ApiDiscoveryResponse> responseList = new ListResponse<>();
+        responseList.setResponses(cmdList);
+
+        Mockito.doReturn(responseList).when(discoveryServiceMock).listApis(userMock, null);
+
+        assertFalse(quotaResponseBuilderSpy.isUserAllowedToSeeActivationRules(userMock));
+    }
+
+    @Test
+    public void createQuotaCreditsListResponseTestReturnsObject() {
+        List<QuotaCreditsVO> credits = new ArrayList<>();
+        credits.add(new QuotaCreditsVO());
+        QuotaCreditsResponse expectedQuotaCreditsResponse = new QuotaCreditsResponse();
+
+        Mockito.doReturn(credits).when(quotaResponseBuilderSpy).getCreditsForQuotaCreditsList(Mockito.any());
+        Mockito.doReturn(userVoMock).when(quotaResponseBuilderSpy).getCreditorForQuotaCreditsList(Mockito.any(), Mockito.any());
+        Mockito.doReturn(expectedQuotaCreditsResponse).when(quotaResponseBuilderSpy).createQuotaCreditsResponse(credits.get(0), userVoMock);
+
+        Pair<List<QuotaCreditsResponse>, Integer> result = quotaResponseBuilderSpy.createQuotaCreditsListResponse(createQuotaCreditsListCmdForTests());
+
+        Assert.assertEquals(expectedQuotaCreditsResponse, result.first().get(0));
+        Assert.assertEquals(1, (int) result.second());
+    }
+
+    private QuotaCreditsListCmd createQuotaCreditsListCmdForTests() {
+        Mockito.doReturn(false).when(accountManagerMock).isNormalUser(Mockito.anyLong());
+        QuotaCreditsListCmd cmd = new QuotaCreditsListCmd();
+        cmd.setAccountId(1L);
+        cmd.setDomainId(2L);
+        return cmd;
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void getCreditsForQuotaCreditsListTestThrowsInvalidParameterValueExceptionWhenBothAccountIdAndDomainIdAreNull() {
+        QuotaCreditsListCmd cmd = new QuotaCreditsListCmd();
+
+        quotaResponseBuilderSpy.getCreditsForQuotaCreditsList(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void getCreditsForQuotaCreditsListTestThrowsInvalidParameterValueExceptionWhenStartDateIsAfterEndDate() {
+        QuotaCreditsListCmd cmd = createQuotaCreditsListCmdForTests();
+        cmd.setStartDate(new Date());
+        cmd.setEndDate(DateUtils.addDays(new Date(), -1));
+
+        quotaResponseBuilderSpy.getCreditsForQuotaCreditsList(cmd);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void getCreditsForQuotaCreditsListTestThrowsPermissionDeniedExceptionWhenDomainIdIsProvidedAndCallerIsNormalUser() {
+        QuotaCreditsListCmd cmd = createQuotaCreditsListCmdForTests();
+        Mockito.doReturn(true).when(accountManagerMock).isNormalUser(Mockito.anyLong());
+
+        quotaResponseBuilderSpy.getCreditsForQuotaCreditsList(cmd);
+    }
+
+    @Test
+    public void getCreditsForQuotaCreditsListTestReturnsData() {
+        QuotaCreditsListCmd cmd = createQuotaCreditsListCmdForTests();
+        List<QuotaCreditsVO> expected = new ArrayList<>();
+        expected.add(new QuotaCreditsVO());
+
+        Mockito.doReturn(expected).when(quotaCreditsDaoMock).findCredits(Mockito.anyLong(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.anyBoolean());
+
+        List<QuotaCreditsVO> result = quotaResponseBuilderSpy.getCreditsForQuotaCreditsList(cmd);
+
+        Assert.assertEquals(expected, result);
+    }
+
+    @Test
+    public void getCreditorForQuotaCreditsListTestReturnsUserFromMapWhenMapHasCreditor() {
+        Long creditorId = 1L;
+        Map<Long, UserVO> userMap = new HashMap<>();
+
+        userMap.put(creditorId, userVoMock);
+        Mockito.doReturn(creditorId).when(quotaCreditsVoMock).getUpdatedBy();
+
+        UserVO result = quotaResponseBuilderSpy.getCreditorForQuotaCreditsList(quotaCreditsVoMock, userMap);
+
+        Assert.assertEquals(userVoMock, result);
+    }
+
+    @Test
+    public void getCreditorForQuotaCreditsListTestGetsCreditorFromDatabaseAndAddsItToMapWhenMapDoesNotHaveCreditor() {
+        Long creditorId = 1L;
+        Map<Long, UserVO> userMap = new HashMap<>();
+
+        Mockito.doReturn(creditorId).when(quotaCreditsVoMock).getUpdatedBy();
+        Mockito.doReturn(userVoMock).when(userDaoMock).findByIdIncludingRemoved(creditorId);
+
+        UserVO result = quotaResponseBuilderSpy.getCreditorForQuotaCreditsList(quotaCreditsVoMock, userMap);
+
+        Assert.assertEquals(userVoMock, result);
+        Assert.assertEquals(userVoMock, userMap.get(creditorId));
+    }
+
+    @Test
+    public void getCreditorForQuotaCreditsTestReturnsCreditorWhenCreditorExists() {
+        Long creditorId = 1L;
+
+        Mockito.when(quotaCreditsVoMock.getUpdatedBy()).thenReturn(creditorId);
+        Mockito.doReturn(userVoMock).when(userDaoMock).findByIdIncludingRemoved(creditorId);
+
+        UserVO result = quotaResponseBuilderSpy.getCreditorForQuotaCredits(quotaCreditsVoMock);
+
+        Assert.assertEquals(userVoMock, result);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void getCreditorForQuotaCreditsTestThrowsCloudRuntimeExceptionWhenCreditorDoesNotExist() {
+        quotaResponseBuilderSpy.getCreditorForQuotaCredits(quotaCreditsVoMock);
+    }
+
+    @Test
+    public void createQuotaCreditsResponseTestReturnsObject() {
+        QuotaCreditsResponse expected = new QuotaCreditsResponse();
+        expected.setCreditorUserId("test_uuid");
+        expected.setCreditorUsername("test_name");
+        expected.setCredit(new BigDecimal(41.5));
+        expected.setCreditedOn(new Date());
+        expected.setCurrency(QuotaConfig.QuotaCurrencySymbol.value());
+        expected.setObjectName("credit");
+
+        Mockito.when(userVoMock.getUuid()).thenReturn(expected.getCreditorUserId());
+        Mockito.when(userVoMock.getUsername()).thenReturn(expected.getCreditorUsername());
+        Mockito.when(quotaCreditsVoMock.getCredit()).thenReturn(expected.getCredit());
+        Mockito.when(quotaCreditsVoMock.getUpdatedOn()).thenReturn(expected.getCreditedOn());
+
+        QuotaCreditsResponse result = quotaResponseBuilderSpy.createQuotaCreditsResponse(quotaCreditsVoMock, userVoMock);
+
+        Assert.assertEquals(expected.getCreditorUserId(), result.getCreditorUserId());
+        Assert.assertEquals(expected.getCreditorUsername(), result.getCreditorUsername());
+        Assert.assertEquals(expected.getCredit(), result.getCredit());
+        Assert.assertEquals(expected.getCreditedOn(), result.getCreditedOn());
+        Assert.assertEquals(expected.getCurrency(), result.getCurrency());
+        Assert.assertEquals(expected.getObjectName(), result.getObjectName());
+    }
+
+    @Test
+    public void validateActivationRuleTestValidateActivationRuleReturnValidScriptResponse() {
+        Mockito.doReturn("if (account.name == 'test') { true } else { false }").when(quotaValidateActivationRuleCmdMock).getActivationRule();
+        Mockito.doReturn(QuotaTypes.getQuotaType(30)).when(quotaValidateActivationRuleCmdMock).getQuotaType();
+        Mockito.doReturn(quotaValidateActivationRuleCmdMock.getActivationRule()).when(jsInterpreterHelperMock).replaceScriptVariables(Mockito.anyString(), Mockito.any());
+
+        QuotaValidateActivationRuleResponse response = quotaResponseBuilderSpy.validateActivationRule(quotaValidateActivationRuleCmdMock);
+
+        Assert.assertTrue(response.isValid());
+    }
+
+    @Test
+    public void validateActivationRuleTestUsageTypeIncompatibleVariableReturnInvalidScriptResponse() {
+        Mockito.doReturn("if (value.osName == 'test') { true } else { false }").when(quotaValidateActivationRuleCmdMock).getActivationRule();
+        Mockito.doReturn(QuotaTypes.getQuotaType(30)).when(quotaValidateActivationRuleCmdMock).getQuotaType();
+        Mockito.doReturn(quotaValidateActivationRuleCmdMock.getActivationRule()).when(jsInterpreterHelperMock).replaceScriptVariables(Mockito.anyString(), Mockito.any());
+        Mockito.when(jsInterpreterHelperMock.getScriptVariables(quotaValidateActivationRuleCmdMock.getActivationRule())).thenReturn(Set.of("value.osName"));
+
+        QuotaValidateActivationRuleResponse response = quotaResponseBuilderSpy.validateActivationRule(quotaValidateActivationRuleCmdMock);
+
+        Assert.assertFalse(response.isValid());
+    }
+
+    @Test
+    public void validateActivationRuleTestActivationRuleWithSyntaxErrorsReturnInvalidScriptResponse() {
+        Mockito.doReturn("{ if (account.name == 'test') { true } else { false } }}").when(quotaValidateActivationRuleCmdMock).getActivationRule();
+        Mockito.doReturn(QuotaTypes.getQuotaType(1)).when(quotaValidateActivationRuleCmdMock).getQuotaType();
+        Mockito.doReturn(quotaValidateActivationRuleCmdMock.getActivationRule()).when(jsInterpreterHelperMock).replaceScriptVariables(Mockito.anyString(), Mockito.any());
+
+        QuotaValidateActivationRuleResponse response = quotaResponseBuilderSpy.validateActivationRule(quotaValidateActivationRuleCmdMock);
+
+        Assert.assertFalse(response.isValid());
+    }
+
+    @Test
+    public void isScriptVariablesValidTestUnsupportedUsageTypeVariablesReturnFalse() {
+        Set<String> scriptVariables = new HashSet<>(List.of("value.computingResources.cpuNumber", "account.name", "zone.id"));
+        List<String> usageTypeVariables = List.of("value.virtualSize", "account.name", "zone.id");
+
+        boolean isScriptVariablesValid = quotaResponseBuilderSpy.isScriptVariablesValid(scriptVariables, usageTypeVariables);
+
+        Assert.assertFalse(isScriptVariablesValid);
+    }
+
+    @Test
+    public void isScriptVariablesValidTestSupportedUsageTypeVariablesReturnTrue() {
+        Set<String> scriptVariables = new HashSet<>(List.of("value.computingResources.cpuNumber", "account.name", "zone.id"));
+        List<String> usageTypeVariables = List.of("value.computingResources.cpuNumber", "account.name", "zone.id");
+
+        boolean isScriptVariablesValid = quotaResponseBuilderSpy.isScriptVariablesValid(scriptVariables, usageTypeVariables);
+
+        Assert.assertTrue(isScriptVariablesValid);
+    }
+
+    @Test
+    public void isScriptVariablesValidTestVariablesUnrelatedToUsageTypeReturnTrue() {
+        Set<String> scriptVariables = new HashSet<>(List.of("variable1.valid", "variable2.valid.", "variable3.valid"));
+        List<String> usageTypeVariables = List.of("project.name", "account.id", "domain.path");
+
+        boolean isScriptVariablesValid = quotaResponseBuilderSpy.isScriptVariablesValid(scriptVariables, usageTypeVariables);
+
+        Assert.assertTrue(isScriptVariablesValid);
+    }
+
+    @Test
+    public void injectUsageTypeVariablesTestReturnInjectedVariables() {
+        JsInterpreter interpreter = Mockito.mock(JsInterpreter.class);
+
+        Map<String, String> formattedVariables = quotaResponseBuilderSpy.injectUsageTypeVariables(interpreter, List.of("account.name", "zone.name"));
+
+        Assert.assertTrue(formattedVariables.containsValue("accountname"));
+        Assert.assertTrue(formattedVariables.containsValue("zonename"));
     }
 }

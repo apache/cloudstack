@@ -18,21 +18,32 @@ package com.cloud.hypervisor.kvm.storage;
 
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuObject;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class KVMPhysicalDisk {
     private String path;
-    private String name;
-    private KVMStoragePool pool;
+    private final String name;
+    private final KVMStoragePool pool;
+    private String dispName;
+    private String vmName;
     private boolean useAsTemplate;
 
-    public static String RBDStringBuilder(String monHost, int monPort, String authUserName, String authSecret, String image) {
-        String rbdOpts;
+    public static final String RBD_DEFAULT_DATA_POOL = "rbd_default_data_pool";
 
-        rbdOpts = "rbd:" + image;
+    public static String RBDStringBuilder(KVMStoragePool storagePool, String image) {
+        String monHost = storagePool.getSourceHost();
+        int monPort = storagePool.getSourcePort();
+        String authUserName = storagePool.getAuthUserName();
+        String authSecret = storagePool.getAuthSecret();
+        Map<String, String> details = storagePool.getDetails();
+        String dataPool = (details == null) ? null : details.get(RBD_DEFAULT_DATA_POOL);
+
+        String rbdOpts = "rbd:" + image;
         rbdOpts += ":mon_host=" + composeOptionForMonHosts(monHost, monPort);
 
         if (authUserName == null) {
@@ -41,6 +52,10 @@ public class KVMPhysicalDisk {
             rbdOpts += ":auth_supported=cephx";
             rbdOpts += ":id=" + authUserName;
             rbdOpts += ":key=" + authSecret;
+        }
+
+        if (dataPool != null) {
+            rbdOpts += String.format(":rbd_default_data_pool=%s", dataPool);
         }
 
         rbdOpts += ":rbd_default_format=2";
@@ -81,7 +96,9 @@ public class KVMPhysicalDisk {
 
     @Override
     public String toString() {
-        return "KVMPhysicalDisk [path=" + path + ", name=" + name + ", pool=" + pool + ", format=" + format + ", size=" + size + ", virtualSize=" + virtualSize + "]";
+        return String.format("KVMPhysicalDisk %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "path", "name", "pool", "format", "size", "virtualSize", "dispName", "vmName"));
     }
 
     public void setFormat(PhysicalDiskFormat format) {
@@ -135,4 +152,20 @@ public class KVMPhysicalDisk {
     public void setUseAsTemplate() { this.useAsTemplate = true; }
 
     public boolean useAsTemplate() { return this.useAsTemplate; }
+
+    public String getDispName() {
+        return dispName;
+    }
+
+    public void setDispName(String dispName) {
+        this.dispName = dispName;
+    }
+
+    public String getVmName() {
+        return vmName;
+    }
+
+    public void setVmName(String vmName) {
+        this.vmName = vmName;
+    }
 }

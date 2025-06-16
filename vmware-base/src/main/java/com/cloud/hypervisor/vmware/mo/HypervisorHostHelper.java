@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -56,6 +55,7 @@ import org.w3c.dom.traversal.NodeIterator;
 import org.xml.sax.SAXException;
 
 import com.cloud.exception.CloudException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -276,16 +276,18 @@ public class HypervisorHostHelper {
         }
     }
 
-    public static String composeCloudNetworkName(String prefix, String vlanId, String svlanId, Integer networkRateMbps, String vSwitchName) {
+    public static String composeCloudNetworkName(String prefix, String vlanId, String svlanId, Integer networkRateMbps, String vSwitchName, VirtualSwitchType vSwitchType) {
         StringBuffer sb = new StringBuffer(prefix);
         if (vlanId == null || UNTAGGED_VLAN_NAME.equalsIgnoreCase(vlanId)) {
             sb.append(".untagged");
         } else {
+            if (vSwitchType != VirtualSwitchType.StandardVirtualSwitch && StringUtils.containsAny(vlanId, ",-")) {
+                vlanId = com.cloud.utils.StringUtils.numbersToRange(vlanId);
+            }
             sb.append(".").append(vlanId);
             if (svlanId != null) {
                 sb.append(".").append("s" + svlanId);
             }
-
         }
 
         if (networkRateMbps != null && networkRateMbps.intValue() > 0)
@@ -295,7 +297,12 @@ public class HypervisorHostHelper {
         sb.append(".").append(VersioningContants.PORTGROUP_NAMING_VERSION);
         sb.append("-").append(vSwitchName);
 
-        return sb.toString();
+        String networkName = sb.toString();
+        if (networkName.length() > 80) {
+            // the maximum limit for a vSwitch name is 80 chars, applies to both standard and distributed virtual switches.
+            LOGGER.warn(String.format("The network name: %s for the vSwitch %s of type %s, exceeds 80 chars", networkName, vSwitchName, vSwitchType));
+        }
+        return networkName;
     }
 
     public static Map<String, String> getValidatedVsmCredentials(VmwareContext context) throws Exception {
@@ -579,12 +586,12 @@ public class HypervisorHostHelper {
                 BroadcastDomainType.Storage, BroadcastDomainType.UnDecided, BroadcastDomainType.Vlan, BroadcastDomainType.NSX};
 
         if (!Arrays.asList(supportedBroadcastTypes).contains(broadcastDomainType)) {
-            throw new InvalidParameterException("BroadcastDomainType " + broadcastDomainType + " it not supported on a VMWare hypervisor at this time.");
+            throw new InvalidParameterValueException("BroadcastDomainType " + broadcastDomainType + " it not supported on a VMWare hypervisor at this time.");
         }
 
         if (broadcastDomainType == BroadcastDomainType.Lswitch) {
             if (vSwitchType == VirtualSwitchType.NexusDistributedVirtualSwitch) {
-                throw new InvalidParameterException("Nexus Distributed Virtualswitch is not supported with BroadcastDomainType " + broadcastDomainType);
+                throw new InvalidParameterValueException("Nexus Distributed Virtualswitch is not supported with BroadcastDomainType " + broadcastDomainType);
             }
             /**
              * Nicira NVP requires all vms to be connected to a single port-group.
@@ -598,7 +605,7 @@ public class HypervisorHostHelper {
             if (vlanId != null) {
                 vlanId = vlanId.replace("vlan://", "");
             }
-            networkName = composeCloudNetworkName(namePrefix, vlanId, secondaryvlanId, networkRateMbps, physicalNetwork);
+            networkName = composeCloudNetworkName(namePrefix, vlanId, secondaryvlanId, networkRateMbps, physicalNetwork, vSwitchType);
 
             if (vlanId != null && !UNTAGGED_VLAN_NAME.equalsIgnoreCase(vlanId) && !StringUtils.containsAny(vlanId, ",-")) {
                 createGCTag = true;
@@ -636,7 +643,7 @@ public class HypervisorHostHelper {
 
             if (broadcastDomainType == BroadcastDomainType.Lswitch) {
                 if (!dataCenterMo.hasDvPortGroup(networkName)) {
-                    throw new InvalidParameterException("NVP integration port-group " + networkName + " does not exist on the DVS " + dvSwitchName);
+                    throw new InvalidParameterValueException("NVP integration port-group " + networkName + " does not exist on the DVS " + dvSwitchName);
                 }
                 bWaitPortGroupReady = false;
             } else if (BroadcastDomainType.NSX == broadcastDomainType && Objects.nonNull(netName)){
@@ -1173,8 +1180,9 @@ public class HypervisorHostHelper {
         if (vlanId == null && vlanRange != null && !vlanRange.isEmpty()) {
             LOGGER.debug("Creating dvSwitch port vlan-trunk spec with range: " + vlanRange);
             VmwareDistributedVirtualSwitchTrunkVlanSpec trunkVlanSpec = new VmwareDistributedVirtualSwitchTrunkVlanSpec();
-            for (final String vlanRangePart : vlanRange.split(",")) {
-                if (vlanRangePart == null || vlanRange.isEmpty()) {
+            String vlanRangeUpdated = com.cloud.utils.StringUtils.numbersToRange(vlanRange);
+            for (final String vlanRangePart : vlanRangeUpdated.split(",")) {
+                if (vlanRangePart == null || vlanRangePart.isEmpty()) {
                     continue;
                 }
                 final NumericRange numericRange = new NumericRange();
@@ -1315,7 +1323,7 @@ public class HypervisorHostHelper {
                 BroadcastDomainType.Storage, BroadcastDomainType.UnDecided, BroadcastDomainType.Vlan, BroadcastDomainType.NSX};
 
         if (!Arrays.asList(supportedBroadcastTypes).contains(broadcastDomainType)) {
-            throw new InvalidParameterException("BroadcastDomainType " + broadcastDomainType + " it not supported on a VMWare hypervisor at this time.");
+            throw new InvalidParameterValueException("BroadcastDomainType " + broadcastDomainType + " it not supported on a VMWare hypervisor at this time.");
         }
 
         if (broadcastDomainType == BroadcastDomainType.Lswitch) {
@@ -1327,7 +1335,7 @@ public class HypervisorHostHelper {
             // No doubt about this, depending on vid=null to avoid lots of code below
             vid = null;
         } else {
-            networkName = composeCloudNetworkName(namePrefix, vlanId, null, networkRateMbps, vSwitchName);
+            networkName = composeCloudNetworkName(namePrefix, vlanId, null, networkRateMbps, vSwitchName, VirtualSwitchType.StandardVirtualSwitch);
 
             if (vlanId != null && !UNTAGGED_VLAN_NAME.equalsIgnoreCase(vlanId)) {
                 createGCTag = true;
@@ -1525,7 +1533,7 @@ public class HypervisorHostHelper {
             }
         }
         if (nvpVlanId == 4095) {
-            throw new InvalidParameterException("No free vlan numbers on " + vSwitchName + " to create a portgroup for nic " + networkName);
+            throw new InvalidParameterValueException("No free vlan numbers on " + vSwitchName + " to create a portgroup for nic " + networkName);
         }
 
         // Strict security policy
@@ -1574,15 +1582,8 @@ public class HypervisorHostHelper {
 
         VmwareHelper.setBasicVmConfig(vmConfig, cpuCount, cpuSpeedMHz, cpuReservedMHz, memoryMB, memoryReserveMB, guestOsIdentifier, limitCpuUse, false);
 
-        String newRootDiskController = controllerInfo.first();
-        String newDataDiskController = controllerInfo.second();
-        String recommendedController = null;
-        if (VmwareHelper.isControllerOsRecommended(newRootDiskController) || VmwareHelper.isControllerOsRecommended(newDataDiskController)) {
-            recommendedController = host.getRecommendedDiskController(guestOsIdentifier);
-        }
-
-        Pair<String, String> updatedControllerInfo = new Pair<String, String>(newRootDiskController, newDataDiskController);
-        String scsiDiskController = HypervisorHostHelper.getScsiController(updatedControllerInfo, recommendedController);
+        Pair<String, String> chosenDiskControllers = VmwareHelper.chooseRequiredDiskControllers(controllerInfo, null, host, guestOsIdentifier);
+        String scsiDiskController = HypervisorHostHelper.getScsiController(chosenDiskControllers);
         // If there is requirement for a SCSI controller, ensure to create those.
         if (scsiDiskController != null) {
         int busNum = 0;
@@ -2256,19 +2257,11 @@ public class HypervisorHostHelper {
         return morHyperHost;
     }
 
-    public static String getScsiController(Pair<String, String> controllerInfo, String recommendedController) {
+    public static String getScsiController(Pair<String, String> controllerInfo) {
         String rootDiskController = controllerInfo.first();
         String dataDiskController = controllerInfo.second();
 
-        // If "osdefault" is specified as controller type, then translate to actual recommended controller.
-        if (VmwareHelper.isControllerOsRecommended(rootDiskController)) {
-            rootDiskController = recommendedController;
-        }
-        if (VmwareHelper.isControllerOsRecommended(dataDiskController)) {
-            dataDiskController = recommendedController;
-        }
-
-        String scsiDiskController = null; //If any of the controller provided is SCSI then return it's sub-type.
+        String scsiDiskController; //If any of the controller provided is SCSI then return it's sub-type.
         if (isIdeController(rootDiskController) && isIdeController(dataDiskController)) {
             //Default controllers would exist
             return null;

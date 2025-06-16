@@ -37,9 +37,9 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	
-<!--  VM RELATED COMMANDS -->	
+
+
+<!--  VM RELATED COMMANDS -->
 	<command>
 		<name>rebootVirtualMachine</name>
 		<testcase>Reboot virtual machine</testcase>
@@ -51,7 +51,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>startVirtualMachine</name>
 		<testcase>Start virtual machine</testcase>
@@ -63,7 +63,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>stopVirtualMachine</name>
 		<testcase>Stop virtual machine</testcase>
@@ -75,7 +75,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>resetPasswordForVirtualMachine</name>
 		<testcase>Reset password for virtual machine</testcase>
@@ -87,7 +87,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>changeServiceForVirtualMachine</name>
 		<testcase>Change service offering for virtual machine</testcase>
@@ -103,7 +103,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>updateVirtualMachine</name>
 		<testcase>Update virtual machine</testcase>
@@ -119,7 +119,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listVirtualMachines</name>
 		<testcase>List virtual machines</testcase>
@@ -131,7 +131,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>deployVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -151,7 +151,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>domainid</name>
 				<param>domainid1</param>
@@ -162,8 +162,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 <!--  VOLUME RELATED COMMANDS -->
 	<command>
 		<name>listVolumes</name>
@@ -175,8 +175,8 @@ under the License.
 				<param>volumeid</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>attachVolume</name>
 		<testcase>Attach volume</testcase>
@@ -192,7 +192,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>detachVolume</name>
 		<testcase>Detach volume</testcase>
@@ -204,7 +204,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>createVolume</name>
 		<testcase>Creating volume</testcase>
@@ -220,7 +220,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>domainid</name>
 				<param>domainid1</param>
@@ -230,8 +230,8 @@ under the License.
 				<param>account1</param>
 			</item>
 		</parameters>
-	</command>			
-	
+	</command>
+
 
 <!--  SNAPSHOT RELATED COMMANDS -->
 	<command>
@@ -245,7 +245,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>createSnapshot</name>
 		<testcase>Creating snapshot</testcase>
@@ -265,7 +265,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listSnapshotPolicies</name>
 		<testcase>Listing snapshot policies</testcase>
@@ -277,7 +277,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>createSnapshotPolicy</name>
 		<usercommand>true</usercommand>
@@ -312,7 +312,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 <!--  TEMPLATE RELATED COMMANDS - FOR THE TEMPLATE CREATED FROM THE VOLUME-->
 	<command>
 		<name>updateTemplate</name>
@@ -329,7 +329,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>updateTemplatePermissions</name>
 		<testcase>Update template permissions</testcase>
@@ -345,7 +345,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>copyTemplate</name>
 		<testcase>Copy template</testcase>
@@ -365,7 +365,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listTemplates</name>
 		<testcase>List templates</testcase>
@@ -377,7 +377,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listTemplatePermissions</name>
 		<testcase>List template permissions</testcase>
@@ -389,7 +389,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>createTemplate</name>
 		<testcase>Create template</testcase>
@@ -419,9 +419,9 @@ under the License.
 				<param>account1</param>
 			</item>
 		</parameters>
-	</command>		
-				
-				
+	</command>
+
+
 	<!--  TEMPLATE RELATED COMMANDS - FOR THE REGISTERED TEMPLATE-->
 	<command>
 		<name>updateTemplate</name>
@@ -438,7 +438,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>updateTemplatePermissions</name>
 		<testcase>Update template permissions</testcase>
@@ -454,7 +454,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>copyTemplate</name>
 		<testcase>Copy template</testcase>
@@ -474,7 +474,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listTemplates</name>
 		<testcase>List templates</testcase>
@@ -486,7 +486,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listTemplatePermissions</name>
 		<testcase>List template permissions</testcase>
@@ -498,7 +498,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 
 
 <!--  ISO RELATED COMMANDS - FOR THE REGISTERED TEMPLATE-->
@@ -517,7 +517,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listIsos</name>
 		<testcase>List isos</testcase>
@@ -529,7 +529,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>copyIso</name>
 		<testcase>Copy iso</testcase>
@@ -548,8 +548,8 @@ under the License.
 				<param>globalzoneid1</param>
 			</item>
 		</parameters>
-	</command>		
-	
+	</command>
+
 	<command>
 		<name>attachIso</name>
 		<usercommand>true</usercommand>
@@ -564,8 +564,8 @@ under the License.
 				<param>isoid</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>detachIso</name>
 		<usercommand>true</usercommand>
@@ -576,12 +576,12 @@ under the License.
 				<param>vmid</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 <!-- IP ADDRESS SECTION -->
 	<command>
 		<name>listPublicIpAddresses</name>
-		<usercommand>true</usercommand>	
+		<usercommand>true</usercommand>
 		<testcase>List public ip addresses</testcase>
 		<parameters>
 			<item getparam="true">
@@ -590,7 +590,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>associateIpAddress</name>
 		<usercommand>true</usercommand>
@@ -610,7 +610,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 
 <!--  PORT FORWARDING SERVICE SECTION -->
 	<command>
@@ -623,8 +623,8 @@ under the License.
 				<param>pfgroupid</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>listPortForwardingServiceRules</name>
 		<empty>List port forwarding service rule</empty>
@@ -635,8 +635,8 @@ under the License.
 				<param>pfgroupid</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>listPortForwardingServicesByVm</name>
 		<testcase>List port forwarding services by vm</testcase>
@@ -647,7 +647,7 @@ under the License.
 				<param>vmid</param>
 			</item>
 		</parameters>
-	</command>		
+	</command>
 
 	<command>
 		<name>removePortForwardingService</name>
@@ -667,8 +667,8 @@ under the License.
 				<param>ipaddress</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>assignPortForwardingService</name>
 		<usercommand>true</usercommand>
@@ -687,8 +687,8 @@ under the License.
 				<param>ipaddress</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>createPortForwardingService</name>
 		<testcase>Create port forwarding service</testcase>
@@ -710,8 +710,8 @@ under the License.
 				<param>account1</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>createPortForwardingServiceRule</name>
 		<testcase>Create port forwarding service rule</testcase>
@@ -730,8 +730,8 @@ under the License.
 				<param>pfgroupid</param>
 			</item>
 		</parameters>
-	</command>				
-	
+	</command>
+
 	<command>
 		<name>deletePortForwardingServiceRule</name>
 		<testcase>Delete port forwarding service rule</testcase>
@@ -743,8 +743,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 	<command>
 		<name>deletePortForwardingService</name>
 		<usercommand>true</usercommand>
@@ -756,8 +756,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 <!--  Load balancer section-->
 	<command>
 		<name>listLoadBalancerRules</name>
@@ -769,8 +769,8 @@ under the License.
 				<param>lbid</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>listLoadBalancerRuleInstances</name>
 		<testcase>List load balancer rule instances</testcase>
@@ -781,8 +781,8 @@ under the License.
 				<param>lbid</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>removeFromLoadBalancerRule</name>
 		<testcase>Remove from load balancer</testcase>
@@ -797,8 +797,8 @@ under the License.
 				<param>vmid</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>assignToLoadBalancerRule</name>
 		<testcase>Assign to load balancer</testcase>
@@ -813,8 +813,8 @@ under the License.
 				<param>vmid</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>deleteLoadBalancerRule</name>
 		<testcase>Delete load balancer rule</testcase>
@@ -825,8 +825,8 @@ under the License.
 				<param>lbid</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>createLoadBalancerRule</name>
 		<testcase>Create load balancer rule</testcase>
@@ -850,13 +850,13 @@ under the License.
 				<value>roundrobin</value>
 			</item>
 		</parameters>
-	</command>	
-	
-	
+	</command>
+
+
 <!--  Destroy commands - cleanup section-->
 	<command>
 		<name>disassociateIpAddress</name>
-		<usercommand>true</usercommand>	
+		<usercommand>true</usercommand>
 		<testcase>Disassociate ip address</testcase>
 		<parameters>
 			<item getparam="true">
@@ -876,7 +876,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>deleteSnapshotPolicies</name>
 		<testcase>Deleting snapshot policy</testcase>
@@ -888,7 +888,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>deleteTemplate</name>
 		<testcase>Delete template</testcase>
@@ -900,7 +900,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>deleteTemplate</name>
 		<testcase>Delete template</testcase>
@@ -912,7 +912,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>deleteVolume</name>
 		<testcase>Deleting volume</testcase>
@@ -924,7 +924,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>deleteIso</name>
 		<testcase>Delete iso</testcase>
@@ -935,8 +935,8 @@ under the License.
 				<param>isoid</param>
 			</item>
 		</parameters>
-	</command>					
-	
+	</command>
+
 	<command>
 		<name>destroyVirtualMachine</name>
 		<testcase>Destroy virtual machine</testcase>
@@ -947,6 +947,6 @@ under the License.
 				<param>vmid</param>
 			</item>
 		</parameters>
-	</command>	
+	</command>
 
-</delegated_admin_verify_part2>	
+</delegated_admin_verify_part2>

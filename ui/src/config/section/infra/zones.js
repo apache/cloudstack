@@ -26,15 +26,15 @@ export default {
   permission: ['listZonesMetrics'],
   searchFilters: ['name', 'domainid', 'tags'],
   columns: () => {
-    const fields = ['name', 'allocationstate', 'type', 'networktype', 'clusters']
-    const metricsFields = ['cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal']
+    const fields = ['name', 'allocationstate', 'type', 'networktype']
+    const metricsFields = ['clusters', 'cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal']
     if (store.getters.metrics) {
       fields.push(...metricsFields)
     }
     fields.push('order')
     return fields
   },
-  details: ['name', 'id', 'allocationstate', 'type', 'networktype', 'guestcidraddress', 'localstorageenabled', 'securitygroupsenabled', 'dns1', 'dns2', 'internaldns1', 'internaldns2'],
+  details: ['name', 'id', 'allocationstate', 'type', 'networktype', 'guestcidraddress', 'localstorageenabled', 'securitygroupsenabled', 'dns1', 'dns2', 'internaldns1', 'internaldns2', 'asnrange', 'storageaccessgroups'],
   related: [{
     name: 'pod',
     title: 'label.pods',
@@ -73,6 +73,18 @@ export default {
     name: 'physical.network',
     component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/PhysicalNetworksTab.vue')))
   }, {
+    name: 'ipv4.subnets',
+    component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/Ipv4GuestSubnetsTab.vue'))),
+    show: (record) => { return record.routedmodeenabled && 'listIpv4SubnetsForZone' in store.getters.apis }
+  }, {
+    name: 'asnumber',
+    component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/AsNumbersTab.vue'))),
+    show: (record) => { return record.routedmodeenabled && 'listASNumbers' in store.getters.apis }
+  }, {
+    name: 'bgp.peers',
+    component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/BgpPeersTab.vue'))),
+    show: (record) => { return record.routedmodeenabled && 'listBgpPeers' in store.getters.apis }
+  }, {
     name: 'system.vms',
     component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/SystemVmsTab.vue'))),
     show: (record) => { return record.isEdge !== true }
@@ -106,8 +118,8 @@ export default {
       icon: 'edit-outlined',
       label: 'label.action.edit.zone',
       dataView: true,
-      args: ['name', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'internaldns1', 'internaldns2', 'guestcidraddress', 'domain', 'localstorageenabled'],
-      show: (record) => { return record.networktype === 'Advanced' }
+      popup: true,
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/ZoneUpdate.vue')))
     },
     {
       api: 'updateZone',

@@ -51,6 +51,11 @@ public interface TemplateManager {
     static final ConfigKey<Integer> TemplatePreloaderPoolSize = new ConfigKey<Integer>("Advanced", Integer.class, TemplatePreloaderPoolSizeCK, "8",
             "Size of the TemplateManager threadpool", false, ConfigKey.Scope.Global);
 
+    ConfigKey<Boolean> ValidateUrlIsResolvableBeforeRegisteringTemplate = new ConfigKey<>("Advanced", Boolean.class,
+            "validate.url.is.resolvable.before.registering.template", "true", "Indicates whether CloudStack "
+            + "will validate if the provided URL is resolvable during the register of templates/ISOs before persisting them in the database.",
+            true);
+
     static final String VMWARE_TOOLS_ISO = "vmware-tools.iso";
     static final String XS_TOOLS_ISO = "xs-tools.iso";
 
@@ -115,7 +120,7 @@ public interface TemplateManager {
 
     DataStore getImageStore(long tmpltId);
 
-    Long getTemplateSize(long templateId, long zoneId);
+    Long getTemplateSize(VirtualMachineTemplate template, long zoneId);
 
     DataStore getImageStore(String storeUuid, Long zoneId, VolumeVO volume);
 
@@ -138,5 +143,9 @@ public interface TemplateManager {
 
     TemplateType validateTemplateType(BaseCmd cmd, boolean isAdmin, boolean isCrossZones);
 
-    List<DatadiskTO> getTemplateDisksOnImageStore(Long templateId, DataStoreRole role, String configurationId);
+    List<DatadiskTO> getTemplateDisksOnImageStore(VirtualMachineTemplate template, DataStoreRole role, String configurationId);
+
+    static Boolean getValidateUrlIsResolvableBeforeRegisteringTemplateValue() {
+        return ValidateUrlIsResolvableBeforeRegisteringTemplate.value();
+    }
 }

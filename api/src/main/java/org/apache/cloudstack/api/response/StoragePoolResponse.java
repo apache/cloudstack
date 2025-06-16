@@ -97,9 +97,25 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
     @Param(description = "total min IOPS currently in use by volumes")
     private Long allocatedIops;
 
+    @SerializedName(ApiConstants.USED_IOPS)
+    @Param(description = "total IOPS currently in use", since = "4.20.1")
+    private Long usedIops;
+
+    @SerializedName(ApiConstants.STORAGE_CUSTOM_STATS)
+    @Param(description = "the storage pool custom stats", since = "4.18.1")
+    private Map<String, String> customStats;
+
     @SerializedName("tags")
     @Param(description = "the tags for the storage pool")
     private String tags;
+
+    @SerializedName(ApiConstants.STORAGE_ACCESS_GROUPS)
+    @Param(description = "the storage access groups for the storage pool", since = "4.21.0")
+    private String storageAccessGroups;
+
+    @SerializedName(ApiConstants.NFS_MOUNT_OPTIONS)
+    @Param(description = "the nfs mount options for the storage pool", since = "4.19.1")
+    private String nfsMountOpts;
 
     @SerializedName(ApiConstants.IS_TAG_A_RULE)
     @Param(description = ApiConstants.PARAMETER_DESCRIPTION_IS_TAG_A_RULE)
@@ -132,6 +148,14 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
     @SerializedName(ApiConstants.STORAGE_CAPABILITIES)
     @Param(description = "the storage pool capabilities")
     private Map<String, String> caps;
+
+    @SerializedName(ApiConstants.MANAGED)
+    @Param(description = "whether this pool is managed or not")
+    private Boolean managed;
+
+    @SerializedName(ApiConstants.DETAILS)
+    @Param(description = "the storage pool details")
+    private Map<String, String> details;
 
     public Map<String, String> getCaps() {
         return caps;
@@ -300,12 +324,36 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
        this.allocatedIops = allocatedIops;
     }
 
+    public Long getUsedIops() {
+        return usedIops;
+    }
+
+    public void setUsedIops(Long usedIops) {
+        this.usedIops = usedIops;
+    }
+
+    public Map<String, String> getCustomStats() {
+        return customStats;
+    }
+
+    public void setCustomStats(Map<String, String> customStats) {
+        this.customStats = customStats;
+    }
+
     public String getTags() {
         return tags;
     }
 
     public void setTags(String tags) {
         this.tags = tags;
+    }
+
+    public String getStorageAccessGroups() {
+        return storageAccessGroups;
+    }
+
+    public void setStorageAccessGroups(String storageAccessGroups) {
+        this.storageAccessGroups = storageAccessGroups;
     }
 
     public Boolean getIsTagARule() {
@@ -346,5 +394,41 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
 
     public void setProvider(String provider) {
         this.provider = provider;
+    }
+
+    public String getNfsMountOpts() {
+        return nfsMountOpts;
+    }
+
+    public void setNfsMountOpts(String nfsMountOpts) {
+        this.nfsMountOpts = nfsMountOpts;
+    }
+
+    public Long getAllocatedIops() {
+        return allocatedIops;
+    }
+
+    public Boolean getTagARule() {
+        return isTagARule;
+    }
+
+    public void setTagARule(Boolean tagARule) {
+        isTagARule = tagARule;
+    }
+
+    public Boolean getManaged() {
+        return managed;
+    }
+
+    public void setManaged(Boolean managed) {
+        this.managed = managed;
+    }
+
+    public Map<String, String> getDetails() {
+        return details;
+    }
+
+    public void setDetails(Map<String, String> details) {
+        this.details = details;
     }
 }

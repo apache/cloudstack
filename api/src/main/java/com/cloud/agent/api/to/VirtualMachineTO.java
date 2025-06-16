@@ -61,6 +61,7 @@ public class VirtualMachineTO {
     @LogLevel(LogLevel.Log4jLevel.Off)
     private String vncPassword;
     private String vncAddr;
+    private Map<String, String> details;
     private Map<String, String> params;
     private String uuid;
     private String bootType;
@@ -84,6 +85,8 @@ public class VirtualMachineTO {
     private Map<String, String> extraConfig = new HashMap<>();
     private Map<Long, String> networkIdToNetworkNameMap = new HashMap<>();
     private DeployAsIsInfoTO deployAsIsInfo;
+    private String metadataManufacturer;
+    private String metadataProductName;
 
     public VirtualMachineTO(long id, String instanceName, VirtualMachine.Type type, int cpus, Integer speed, long minRam, long maxRam, BootloaderType bootloader,
             String os, boolean enableHA, boolean limitCpuUse, String vncPassword) {
@@ -189,7 +192,11 @@ public class VirtualMachineTO {
         return maxSpeed;
     }
 
-    public boolean getLimitCpuUse() {
+    public boolean isEnableHA() {
+        return enableHA;
+    }
+
+    public boolean isLimitCpuUse() {
         return limitCpuUse;
     }
 
@@ -254,10 +261,6 @@ public class VirtualMachineTO {
         this.bootupScripts = bootupScripts;
     }
 
-    public boolean isEnableHA() {
-        return enableHA;
-    }
-
     public void setEnableHA(boolean enableHA) {
         this.enableHA = enableHA;
     }
@@ -295,11 +298,11 @@ public class VirtualMachineTO {
     }
 
     public Map<String, String> getDetails() {
-        return params;
+        return details;
     }
 
     public void setDetails(Map<String, String> params) {
-        this.params = params;
+        this.details = params;
     }
 
     public String getUuid() {
@@ -457,10 +460,6 @@ public class VirtualMachineTO {
         this.maxRam = maxRam;
     }
 
-    public boolean isLimitCpuUse() {
-        return limitCpuUse;
-    }
-
     public void setLimitCpuUse(boolean limitCpuUse) {
         this.limitCpuUse = limitCpuUse;
     }
@@ -475,6 +474,22 @@ public class VirtualMachineTO {
 
     public void setExtraConfig(Map<String, String> extraConfig) {
         this.extraConfig = extraConfig;
+    }
+
+    public String getMetadataManufacturer() {
+        return metadataManufacturer;
+    }
+
+    public void setMetadataManufacturer(String metadataManufacturer) {
+        this.metadataManufacturer = metadataManufacturer;
+    }
+
+    public String getMetadataProductName() {
+        return metadataProductName;
+    }
+
+    public void setMetadataProductName(String metadataProductName) {
+        this.metadataProductName = metadataProductName;
     }
 
     @Override

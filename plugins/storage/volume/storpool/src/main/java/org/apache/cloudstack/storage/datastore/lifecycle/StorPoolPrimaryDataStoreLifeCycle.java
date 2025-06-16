@@ -24,6 +24,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
@@ -38,8 +39,6 @@ import org.apache.cloudstack.storage.datastore.util.StorPoolUtil;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpApiResponse;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpConnectionDesc;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.host.HostVO;
@@ -61,9 +60,7 @@ import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class StorPoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycle {
-    protected Logger logger = LogManager.getLogger(getClass());
-
+public class StorPoolPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     @Inject
     protected PrimaryDataStoreHelper dataStoreHelper;
     @Inject
@@ -84,6 +81,8 @@ public class StorPoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCy
     private VMTemplateDetailsDao vmTemplateDetailsDao;
     @Inject
     private StoragePoolDetailsDao storagePoolDetailsDao;
+    @Inject
+    private StoragePoolAndAccessGroupMapDao storagePoolAndAccessGroupMapDao;
 
     @Override
     public DataStore initialize(Map<String, Object> dsInfos) {
@@ -212,10 +211,13 @@ public class StorPoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCy
         if (hypervisorType != HypervisorType.KVM) {
             throw new UnsupportedOperationException("Only KVM hypervisors supported!");
         }
-        List<HostVO> kvmHosts = resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(HypervisorType.KVM, scope.getScopeId());
-        for (HostVO host : kvmHosts) {
+        List<HostVO> kvmHostsToConnect = resourceMgr.getEligibleUpAndEnabledHostsInZoneForStorageConnection(dataStore, scope.getScopeId(), HypervisorType.KVM);
+
+        logger.debug(String.format("In createPool. Attaching the pool to each of the hosts in %s.", kvmHostsToConnect));
+
+        for (HostVO host : kvmHostsToConnect) {
             try {
-                storageMgr.connectHostToSharedPool(host.getId(), dataStore.getId());
+                storageMgr.connectHostToSharedPool(host, dataStore.getId());
             } catch (Exception e) {
                 logger.warn(String.format("Unable to establish a connection between host %s and pool %s due to %s", host, dataStore, e));
             }

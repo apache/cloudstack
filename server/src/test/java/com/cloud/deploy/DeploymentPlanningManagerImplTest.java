@@ -21,6 +21,7 @@ import com.cloud.agent.AgentManager;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.ConfigurationManagerImpl;
+import com.cloud.cpu.CPU;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
@@ -295,6 +296,10 @@ public class DeploymentPlanningManagerImplTest {
         DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);
 
         Mockito.when(avoids.shouldAvoid((DataCenterVO) ArgumentMatchers.any())).thenReturn(true);
+        VirtualMachineTemplate template = Mockito.mock(VirtualMachineTemplate.class);
+        Mockito.when(template.getArch()).thenReturn(CPU.CPUArch.amd64);
+        Mockito.when(vmProfile.getTemplate()).thenReturn(template);
+        Mockito.when(_clusterDao.listClustersByArchAndZoneId(dataCenterId, CPU.CPUArch.arm64)).thenReturn(null);
         DeployDestination dest = _dpm.planDeployment(vmProfile, plan, avoids, null);
         assertNull("DataCenter is in avoid set, destination should be null! ", dest);
     }
@@ -310,6 +315,10 @@ public class DeploymentPlanningManagerImplTest {
         Mockito.when(avoids.shouldAvoid((DataCenterVO) ArgumentMatchers.any())).thenReturn(false);
 
         Mockito.when(_planner.canHandle(vmProfile, plan, avoids)).thenReturn(false);
+        VirtualMachineTemplate template = Mockito.mock(VirtualMachineTemplate.class);
+        Mockito.when(template.getArch()).thenReturn(CPU.CPUArch.amd64);
+        Mockito.when(vmProfile.getTemplate()).thenReturn(template);
+        Mockito.when(_clusterDao.listClustersByArchAndZoneId(dataCenterId, CPU.CPUArch.arm64)).thenReturn(null);
         DeployDestination dest = _dpm.planDeployment(vmProfile, plan, avoids, null);
         assertNull("Planner cannot handle, destination should be null! ", dest);
     }
@@ -326,6 +335,10 @@ public class DeploymentPlanningManagerImplTest {
         Mockito.when(_planner.canHandle(vmProfile, plan, avoids)).thenReturn(true);
 
         Mockito.when(((DeploymentClusterPlanner) _planner).orderClusters(vmProfile, plan, avoids)).thenReturn(null);
+        VirtualMachineTemplate template = Mockito.mock(VirtualMachineTemplate.class);
+        Mockito.when(template.getArch()).thenReturn(CPU.CPUArch.amd64);
+        Mockito.when(vmProfile.getTemplate()).thenReturn(template);
+        Mockito.when(_clusterDao.listClustersByArchAndZoneId(dataCenterId, CPU.CPUArch.arm64)).thenReturn(null);
         DeployDestination dest = _dpm.planDeployment(vmProfile, plan, avoids, null);
         assertNull("Planner cannot handle, destination should be null! ", dest);
     }
@@ -876,9 +889,9 @@ public class DeploymentPlanningManagerImplTest {
         Pair<Host, Map<Volume, StoragePool>> potentialResources = new Pair<>(host, suitableVolumeStoragePoolMap);
 
         Mockito.when(capacityMgr.checkIfHostReachMaxGuestLimit(host)).thenReturn(false);
-        Mockito.when(capacityMgr.checkIfHostHasCpuCapability(ArgumentMatchers.anyLong(), ArgumentMatchers.anyInt(), ArgumentMatchers.anyInt())).thenReturn(true);
+        Mockito.when(capacityMgr.checkIfHostHasCpuCapability(ArgumentMatchers.any(Host.class), ArgumentMatchers.anyInt(), ArgumentMatchers.anyInt())).thenReturn(true);
         Mockito.when(capacityMgr.checkIfHostHasCapacity(
-                ArgumentMatchers.anyLong(),
+            ArgumentMatchers.any(),
                 ArgumentMatchers.anyInt(),
                 ArgumentMatchers.anyLong(),
                 ArgumentMatchers.anyBoolean(),
@@ -889,7 +902,7 @@ public class DeploymentPlanningManagerImplTest {
         Mockito.when(serviceOfferingDetailsDao.findDetail(vmProfile.getServiceOfferingId(), GPU.Keys.vgpuType.toString())).thenReturn(null);
 
         Mockito.doReturn(true).when(_dpm).checkVmProfileAndHost(vmProfile, host);
-        Mockito.doReturn(true).when(_dpm).checkIfHostFitsPlannerUsage(ArgumentMatchers.anyLong(), ArgumentMatchers.nullable(PlannerResourceUsage.class));
+        Mockito.doReturn(true).when(_dpm).checkIfHostFitsPlannerUsage(ArgumentMatchers.any(Host.class), ArgumentMatchers.nullable(PlannerResourceUsage.class));
         Mockito.when(clusterDetailsDao.findDetail(ArgumentMatchers.anyLong(), ArgumentMatchers.anyString())).thenReturn(new ClusterDetailsVO(clusterId, "mock", "1"));
 
         DeploymentClusterPlanner planner = Mockito.spy(new FirstFitPlanner());
@@ -1205,7 +1218,7 @@ public class DeploymentPlanningManagerImplTest {
             throw new RuntimeException(e);
         }
         List<Long> allClusters = List.of(101L, 102L, 103L, 104L);
-        Mockito.when(_clusterDao.listAllClusters(Mockito.anyLong())).thenReturn(allClusters);
+        Mockito.when(_clusterDao.listAllClusterIds(Mockito.anyLong())).thenReturn(allClusters);
         if (mockVolumes) {
             VolumeVO vol1 = Mockito.mock(VolumeVO.class);
             Mockito.when(vol1.getPoolId()).thenReturn(1L);

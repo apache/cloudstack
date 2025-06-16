@@ -25,6 +25,7 @@ SELECT
     `vm_instance`.`name` AS `name`,
     `user_vm`.`display_name` AS `display_name`,
     `user_vm`.`user_data` AS `user_data`,
+    `user_vm`.`user_vm_type` AS `user_vm_type`,
     `account`.`id` AS `account_id`,
     `account`.`uuid` AS `account_uuid`,
     `account`.`account_name` AS `account_name`,
@@ -53,6 +54,7 @@ SELECT
     `vm_instance`.`instance_name` AS `instance_name`,
     `vm_instance`.`guest_os_id` AS `guest_os_id`,
     `vm_instance`.`display_vm` AS `display_vm`,
+    `vm_instance`.`delete_protection` AS `delete_protection`,
     `guest_os`.`uuid` AS `guest_os_uuid`,
     `vm_instance`.`pod_id` AS `pod_id`,
     `host_pod_ref`.`uuid` AS `pod_uuid`,
@@ -81,6 +83,7 @@ SELECT
     `iso`.`uuid` AS `iso_uuid`,
     `iso`.`name` AS `iso_name`,
     `iso`.`display_text` AS `iso_display_text`,
+    `vm_template`.`arch` AS `arch`,
     `service_offering`.`id` AS `service_offering_id`,
     `service_offering`.`uuid` AS `service_offering_uuid`,
     `disk_offering`.`uuid` AS `disk_offering_uuid`,
@@ -166,7 +169,10 @@ SELECT
     `user_data`.`uuid` AS `user_data_uuid`,
     `user_data`.`name` AS `user_data_name`,
     `user_vm`.`user_data_details` AS `user_data_details`,
-    `vm_template`.`user_data_link_policy` AS `user_data_policy`
+    `vm_template`.`user_data_link_policy` AS `user_data_policy`,
+    `lease_expiry_date`.`value` AS `lease_expiry_date`,
+    `lease_expiry_action`.`value` AS `lease_expiry_action`,
+    `lease_action_execution`.`value` AS `lease_action_execution`
 FROM
     (((((((((((((((((((((((((((((((((((`user_vm`
         JOIN `vm_instance` ON (((`vm_instance`.`id` = `user_vm`.`id`)
@@ -213,4 +219,10 @@ FROM
         LEFT JOIN `user_vm_details` `custom_speed` ON (((`custom_speed`.`vm_id` = `vm_instance`.`id`)
         AND (`custom_speed`.`name` = 'CpuSpeed'))))
         LEFT JOIN `user_vm_details` `custom_ram_size` ON (((`custom_ram_size`.`vm_id` = `vm_instance`.`id`)
-        AND (`custom_ram_size`.`name` = 'memory'))));
+        AND (`custom_ram_size`.`name` = 'memory')))
+        LEFT JOIN `user_vm_details` `lease_expiry_date` ON ((`lease_expiry_date`.`vm_id` = `vm_instance`.`id`)
+        AND (`lease_expiry_date`.`name` = 'leaseexpirydate'))
+        LEFT JOIN `user_vm_details` `lease_action_execution` ON ((`lease_action_execution`.`vm_id` = `vm_instance`.`id`)
+        AND (`lease_action_execution`.`name` = 'leaseactionexecution'))
+        LEFT JOIN `user_vm_details` `lease_expiry_action` ON (((`lease_expiry_action`.`vm_id` = `vm_instance`.`id`)
+        AND (`lease_expiry_action`.`name` = 'leaseexpiryaction'))));

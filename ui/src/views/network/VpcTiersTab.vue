@@ -213,7 +213,7 @@
               @change="updateMtu()"/>
               <div style="color: red" v-if="errorPrivateMtu" v-html="errorPrivateMtu.replace('%x', privateMtuMax)"></div>
           </a-form-item>
-          <a-form-item v-if="!isObjectEmpty(selectedNetworkOffering) && selectedNetworkOffering.specifyvlan">
+          <a-form-item ref="vlan" name="vlan" v-if="!isObjectEmpty(selectedNetworkOffering) && selectedNetworkOffering.specifyvlan">
             <template #label>
               <tooltip-label :title="$t('label.vlan')" :tooltip="$t('label.vlan')"/>
             </template>
@@ -221,20 +221,39 @@
               v-model:value="form.vlan"
               :placeholder="$t('label.vlan')"/>
           </a-form-item>
+          <a-form-item ref="asnumber" name="asnumber" v-if="!isObjectEmpty(selectedNetworkOffering) && selectedNetworkOffering.specifyasnumber">
+            <template #label>
+              <tooltip-label :title="$t('label.asnumber')" :tooltip="$t('label.asnumber')"/>
+            </template>
+            <a-select
+             v-model:value="form.asnumber"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              :loading="asNumberLoading"
+              :placeholder="$t('label.asnumber')"
+              @change="val => { handleASNumberChange(val) }">
+              <a-select-option v-for="(opt, optIndex) in asNumbersZone" :key="optIndex" :label="opt.asnumber">
+                {{ opt.asnumber }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
           <a-form-item ref="gateway" name="gateway" :colon="false">
             <template #label>
-              <tooltip-label :title="$t('label.gateway')" :tooltip="$t('label.create.tier.gateway.description')"/>
+              <tooltip-label :title="$t('label.gateway')" :tooltip="gatewayPlaceholder"/>
             </template>
             <a-input
-              :placeholder="$t('label.create.tier.gateway.description')"
+              :placeholder="gatewayPlaceholder"
               v-model:value="form.gateway"></a-input>
           </a-form-item>
           <a-form-item ref="netmask" name="netmask" :colon="false">
             <template #label>
-              <tooltip-label :title="$t('label.netmask')" :tooltip="$t('label.create.tier.netmask.description')"/>
+              <tooltip-label :title="$t('label.netmask')" :tooltip="netmaskPlaceholder"/>
             </template>
             <a-input
-              :placeholder="$t('label.create.tier.netmask.description')"
+              :placeholder="netmaskPlaceholder"
               v-model:value="form.netmask"></a-input>
           </a-form-item>
           <a-form-item ref="externalId" name="externalId" :colon="false">
@@ -344,6 +363,7 @@ import { api } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import Status from '@/components/widgets/Status'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import { getNetmaskFromCidr } from '@/utils/network'
 
 export default {
   name: 'VpcTiersTab',
@@ -381,6 +401,8 @@ export default {
       selectedNetworkOffering: {},
       privateMtuMax: 1500,
       errorPrivateMtu: '',
+      gatewayPlaceholder: '',
+      netmaskPlaceholder: '',
       algorithms: {
         Source: 'source',
         'Round-robin': 'roundrobin',
@@ -439,7 +461,10 @@ export default {
       setMTU: false,
       isNsxEnabled: false,
       isOfferingNatMode: false,
-      displayCollapsible: []
+      isOfferingRoutedMode: false,
+      displayCollapsible: [],
+      selectedAsNumber: 0,
+      asNumbersZone: []
     }
   },
   created () {
@@ -454,6 +479,23 @@ export default {
     }
   },
   methods: {
+    isASNumberRequired () {
+      return !this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyasnumber && this.selectedNetworkOffering.routingmode && this.selectedNetworkOffering.routingmode.toLowerCase() === 'dynamic'
+    },
+    handleASNumberChange (selectedIndex) {
+      this.selectedAsNumber = this.asNumbersZone[selectedIndex].asnumber
+      this.form.asnumber = this.selectedAsNumber
+    },
+    fetchZoneASNumbers () {
+      const params = {}
+      this.asNumberLoading = true
+      params.zoneid = this.resource.zoneid
+      params.isallocated = false
+      api('listASNumbers', params).then(json => {
+        this.asNumbersZone = json.listasnumbersresponse.asnumber
+        this.asNumberLoading = false
+      })
+    },
     isObjectEmpty (obj) {
       return !(obj !== null && obj !== undefined && Object.keys(obj).length > 0 && obj.constructor === Object)
     },
@@ -538,7 +580,8 @@ export default {
         }).then(json => {
           const vpcOffering = json?.listvpcofferingsresponse?.vpcoffering[0]
           resolve(vpcOffering)
-          this.isOfferingNatMode = vpcOffering?.nsxmode === 'NATTED' || false
+          this.isOfferingNatMode = vpcOffering?.networkmode === 'NATTED' || false
+          this.isOfferingRoutedMode = vpcOffering?.networkmode === 'ROUTED' || false
         }).catch(e => {
           reject(e)
         })
@@ -551,7 +594,7 @@ export default {
       }).then(async json => {
         var lbNetworks = json.listnetworksresponse.network || []
         if (lbNetworks.length > 0) {
-          this.publicLBExists = true
+          this.publicLBExists = false
           for (var idx = 0; idx < lbNetworks.length; idx++) {
             const lbNetworkOffering = await this.getNetworkOffering(lbNetworks[idx].networkofferingid)
             const index = lbNetworkOffering.service.map(svc => { return svc.name }).indexOf('Lb')
@@ -572,25 +615,36 @@ export default {
         guestiptype: 'Isolated',
         state: 'Enabled'
       }
-      if (!this.isNsxEnabled) {
+      if (!this.isNsxEnabled && !this.isOfferingRoutedMode) {
         params.supportedServices = 'SourceNat'
       }
       api('listNetworkOfferings', params).then(json => {
         this.networkOfferings = json.listnetworkofferingsresponse.networkoffering || []
         var filteredOfferings = []
-        if (this.publicLBExists) {
-          for (var index in this.networkOfferings) {
-            const offering = this.networkOfferings[index]
-            const idx = offering.service.map(svc => { return svc.name }).indexOf('Lb')
-            if (idx === -1 || this.lbProviderMap.publicLb.vpc.indexOf(offering.service.map(svc => { return svc.provider[0].name })[idx]) === -1) {
+        const vpcLbServiceIndex = this.resource.service.map(svc => { return svc.name }).indexOf('Lb')
+        for (var index in this.networkOfferings) {
+          const offering = this.networkOfferings[index]
+          const idx = offering.service.map(svc => { return svc.name }).indexOf('Lb')
+          if (this.publicLBExists && (idx === -1 || this.lbProviderMap.publicLb.vpc.indexOf(offering.service.map(svc => { return svc.provider[0].name })[idx]) === -1)) {
+            filteredOfferings.push(offering)
+          } else if (!this.publicLBExists && vpcLbServiceIndex > -1) {
+            const vpcLbServiceProviders = vpcLbServiceIndex === -1 ? undefined : this.resource.service[vpcLbServiceIndex].provider.map(provider => provider.name)
+            const offeringLbServiceProvider = idx === -1 ? undefined : offering.service[idx].provider[0].name
+            if (vpcLbServiceProviders && (!offeringLbServiceProvider || (offeringLbServiceProvider && vpcLbServiceProviders.includes(offeringLbServiceProvider)))) {
               filteredOfferings.push(offering)
             }
+          } else {
+            filteredOfferings.push(offering)
           }
-          this.networkOfferings = filteredOfferings
         }
+        this.networkOfferings = filteredOfferings
         if (this.isNsxEnabled) {
-          this.networkOfferings = this.networkOfferings.filter(offering => offering.nsxmode === (this.isOfferingNatMode ? 'NATTED' : 'ROUTED'))
+          this.networkOfferings = this.networkOfferings.filter(offering => offering.networkmode === (this.isOfferingNatMode ? 'NATTED' : 'ROUTED'))
         }
+        if (this.resource.asnumberid) {
+          this.networkOfferings = this.networkOfferings.filter(offering => offering.routingmode === 'Dynamic')
+        }
+        this.fetchZoneASNumbers()
         this.form.networkOffering = this.networkOfferings[0].id
       }).catch(error => {
         this.$notifyError(error)
@@ -645,6 +699,13 @@ export default {
       this.initForm()
       this.fetchNetworkAclList()
       this.fetchNetworkOfferings()
+      const cidr = this.resource.cidr
+      const netmask = getNetmaskFromCidr(cidr)
+      if (netmask) {
+        this.gatewayPlaceholder = this.$t('label.create.tier.gateway.description', { value: cidr })
+        this.netmaskPlaceholder = this.$t('label.create.tier.netmask.description', { value: netmask })
+      }
+
       this.showCreateNetworkModal = true
       this.rules = {
         name: [{ required: true, message: this.$t('label.required') }],
@@ -697,6 +758,10 @@ export default {
 
         if (values.privatemtu) {
           params.privatemtu = values.privatemtu
+        }
+
+        if (values.asnumber && this.isASNumberRequired()) {
+          params.asnumber = values.asnumber
         }
 
         api('createNetwork', params).then(() => {

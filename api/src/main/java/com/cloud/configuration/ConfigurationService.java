@@ -201,11 +201,12 @@ public interface ConfigurationService {
      *            TODO
      * @param allocationState
      *            TODO
+     * @param storageAccessGroups
      * @return the new pod if successful, null otherwise
      * @throws
      * @throws
      */
-    Pod createPod(long zoneId, String name, String startIp, String endIp, String gateway, String netmask, String allocationState);
+    Pod createPod(long zoneId, String name, String startIp, String endIp, String gateway, String netmask, String allocationState, List<String> storageAccessGroups);
 
     /**
      * Creates a mutual exclusive IP range in the pod with same gateway, netmask.

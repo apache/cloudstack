@@ -32,6 +32,7 @@ import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
 import com.cloud.kubernetes.version.KubernetesSupportedVersion;
 import com.cloud.kubernetes.version.KubernetesVersionEventTypes;
+import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -50,6 +51,8 @@ public class KubernetesServiceHelperImpl extends AdapterBase implements Kubernet
     private KubernetesClusterDao kubernetesClusterDao;
     @Inject
     private KubernetesClusterVmMapDao kubernetesClusterVmMapDao;
+    @Inject
+    KubernetesClusterService kubernetesClusterService;
 
     protected void setEventTypeEntityDetails(Class<?> eventTypeDefinedClass, Class<?> entityClass) {
         Field[] declaredFields = eventTypeDefinedClass.getDeclaredFields();
@@ -92,15 +95,23 @@ public class KubernetesServiceHelperImpl extends AdapterBase implements Kubernet
         if (vmMapVO == null) {
             return;
         }
-        logger.error(String.format("VM ID: %s is a part of Kubernetes cluster ID: %d", userVm.getId(), vmMapVO.getClusterId()));
         KubernetesCluster kubernetesCluster = kubernetesClusterDao.findById(vmMapVO.getClusterId());
+        logger.error("VM {} is a part of Kubernetes cluster {} with ID: {}", userVm, kubernetesCluster, vmMapVO.getClusterId());
         String msg = "Instance is a part of a Kubernetes cluster";
         if (kubernetesCluster != null) {
+            if (KubernetesCluster.ClusterType.ExternalManaged.equals(kubernetesCluster.getClusterType())) {
+                return;
+            }
             msg += String.format(": %s", kubernetesCluster.getName());
         }
         msg += ". Use Instance delete option from Kubernetes cluster details or scale API for " +
                 "Kubernetes clusters with 'nodeids' to destroy the instance.";
         throw new CloudRuntimeException(msg);
+    }
+
+    @Override
+    public void cleanupForAccount(Account account) {
+        kubernetesClusterService.cleanupForAccount(account);
     }
 
     @Override

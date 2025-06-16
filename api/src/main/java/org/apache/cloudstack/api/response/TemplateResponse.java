@@ -93,6 +93,8 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "the name of the OS type for this template.")
     private String osTypeName;
 
+    private transient Long osTypeCategoryId;
+
     @SerializedName(ApiConstants.ACCOUNT_ID)
     @Param(description = "the account id to which the template belongs")
     private String accountId;
@@ -134,6 +136,10 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "the name of the domain to which the template belongs")
     private String domainName;
+
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the Domain the template belongs to", since = "4.19.2.0")
+    private String domainPath;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "the ID of the domain to which the template belongs")
@@ -178,6 +184,10 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @SerializedName(ApiConstants.DOWNLOAD_DETAILS)
     @Param(description = "Lists the download progress of a template across all secondary storages")
     private List<Map<String, String>> downloadDetails;
+
+    @SerializedName(ApiConstants.ARCH)
+    @Param(description = "CPU Arch of the template", since = "4.20")
+    private String arch;
 
     @SerializedName(ApiConstants.BITS)
     @Param(description = "the processor bit size", since = "4.10")
@@ -277,6 +287,14 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
         this.osTypeName = osTypeName;
     }
 
+    public Long getOsTypeCategoryId() {
+        return osTypeCategoryId;
+    }
+
+    public void setOsTypeCategoryId(Long osTypeCategoryId) {
+        this.osTypeCategoryId = osTypeCategoryId;
+    }
+
     public void setId(String id) {
         this.id = id;
     }
@@ -352,6 +370,11 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
+    }
+
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
     }
 
     @Override
@@ -510,5 +533,9 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
 
     public void setUserDataParams(String userDataParams) {
         this.userDataParams = userDataParams;
+    }
+
+    public void setArch(String arch) {
+        this.arch = arch;
     }
 }

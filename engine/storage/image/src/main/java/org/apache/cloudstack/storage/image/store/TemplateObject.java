@@ -23,8 +23,10 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.cpu.CPU;
 import com.cloud.storage.StorageManager;
 import com.cloud.user.UserData;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -82,6 +84,10 @@ public class TemplateObject implements TemplateInfo {
     }
 
     protected void configure(VMTemplateVO template, DataStore dataStore) {
+        if (template == null) {
+            String msg = String.format("Template Object is not properly initialised %s", this.toString());
+            logger.warn(msg);
+        }
         imageVO = template;
         this.dataStore = dataStore;
     }
@@ -97,7 +103,12 @@ public class TemplateObject implements TemplateInfo {
         imageVO.setSize(size);
     }
 
+    @Override
     public VMTemplateVO getImage() {
+        if (imageVO == null) {
+            String msg = String.format("Template Object is not properly initialised %s", this.toString());
+            logger.error(msg);
+        } // somehow the nullpointer is needed : refacter needed!?!
         return imageVO;
     }
 
@@ -343,6 +354,11 @@ public class TemplateObject implements TemplateInfo {
     }
 
     @Override
+    public CPU.CPUArch getArch() {
+        return imageVO.getArch();
+    }
+
+    @Override
     public DataTO getTO() {
         DataTO to = null;
         if (dataStore == null) {
@@ -581,5 +597,12 @@ public class TemplateObject implements TemplateInfo {
     @Override
     public boolean isFollowRedirects() {
         return followRedirects;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("TemplateObject %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "imageVO", "dataStore"));
     }
 }

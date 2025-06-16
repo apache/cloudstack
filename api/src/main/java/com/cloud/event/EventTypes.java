@@ -28,8 +28,12 @@ import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.config.Configuration;
+import org.apache.cloudstack.datacenter.DataCenterIpv4GuestSubnet;
 import org.apache.cloudstack.ha.HAConfig;
+import org.apache.cloudstack.network.BgpPeer;
+import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap;
 import org.apache.cloudstack.quota.QuotaTariff;
+import org.apache.cloudstack.storage.sharedfs.SharedFS;
 import org.apache.cloudstack.storage.object.Bucket;
 import org.apache.cloudstack.storage.object.ObjectStore;
 import org.apache.cloudstack.usage.Usage;
@@ -242,6 +246,8 @@ public class EventTypes {
     public static final String EVENT_ROLE_UPDATE = "ROLE.UPDATE";
     public static final String EVENT_ROLE_DELETE = "ROLE.DELETE";
     public static final String EVENT_ROLE_IMPORT = "ROLE.IMPORT";
+    public static final String EVENT_ROLE_ENABLE = "ROLE.ENABLE";
+    public static final String EVENT_ROLE_DISABLE = "ROLE.DISABLE";
     public static final String EVENT_ROLE_PERMISSION_CREATE = "ROLE.PERMISSION.CREATE";
     public static final String EVENT_ROLE_PERMISSION_UPDATE = "ROLE.PERMISSION.UPDATE";
     public static final String EVENT_ROLE_PERMISSION_DELETE = "ROLE.PERMISSION.DELETE";
@@ -286,6 +292,7 @@ public class EventTypes {
 
     //register for user API and secret keys
     public static final String EVENT_REGISTER_FOR_SECRET_API_KEY = "REGISTER.USER.KEY";
+    public static final String API_KEY_ACCESS_UPDATE = "API.KEY.ACCESS.UPDATE";
 
     // Template Events
     public static final String EVENT_TEMPLATE_CREATE = "TEMPLATE.CREATE";
@@ -333,6 +340,7 @@ public class EventTypes {
     public static final String EVENT_SNAPSHOT_OFF_PRIMARY = "SNAPSHOT.OFF_PRIMARY";
     public static final String EVENT_SNAPSHOT_DELETE = "SNAPSHOT.DELETE";
     public static final String EVENT_SNAPSHOT_REVERT = "SNAPSHOT.REVERT";
+    public static final String EVENT_SNAPSHOT_EXTRACT = "SNAPSHOT.EXTRACT";
     public static final String EVENT_SNAPSHOT_POLICY_CREATE = "SNAPSHOTPOLICY.CREATE";
     public static final String EVENT_SNAPSHOT_POLICY_UPDATE = "SNAPSHOTPOLICY.UPDATE";
     public static final String EVENT_SNAPSHOT_POLICY_DELETE = "SNAPSHOTPOLICY.DELETE";
@@ -389,6 +397,11 @@ public class EventTypes {
     public static final String EVENT_VLAN_IP_RANGE_DEDICATE = "VLAN.IP.RANGE.DEDICATE";
     public static final String EVENT_VLAN_IP_RANGE_RELEASE = "VLAN.IP.RANGE.RELEASE";
     public static final String EVENT_VLAN_IP_RANGE_UPDATE = "VLAN.IP.RANGE.UPDATE";
+
+    // AS Number
+    public static final String EVENT_AS_RANGE_CREATE = "AS.RANGE.CREATE";
+    public static final String EVENT_AS_RANGE_DELETE = "AS.RANGE.DELETE";
+    public static final String EVENT_AS_NUMBER_RELEASE = "AS.NUMBER.RELEASE";
 
     public static final String EVENT_MANAGEMENT_IP_RANGE_CREATE = "MANAGEMENT.IP.RANGE.CREATE";
     public static final String EVENT_MANAGEMENT_IP_RANGE_DELETE = "MANAGEMENT.IP.RANGE.DELETE";
@@ -448,9 +461,12 @@ public class EventTypes {
     public static final String EVENT_MAINTENANCE_PREPARE_PRIMARY_STORAGE = "MAINT.PREPARE.PS";
 
     // Primary storage pool
+    public static final String EVENT_UPDATE_PRIMARY_STORAGE = "UPDATE.PS";
     public static final String EVENT_ENABLE_PRIMARY_STORAGE = "ENABLE.PS";
     public static final String EVENT_DISABLE_PRIMARY_STORAGE = "DISABLE.PS";
     public static final String EVENT_SYNC_STORAGE_POOL = "SYNC.STORAGE.POOL";
+    public static final String EVENT_CONFIGURE_STORAGE_ACCESS = "CONFIGURE.STORAGE.ACCESS";
+    public static final String EVENT_CHANGE_STORAGE_POOL_SCOPE = "CHANGE.STORAGE.POOL.SCOPE";
 
     // VPN
     public static final String EVENT_REMOTE_ACCESS_VPN_CREATE = "VPN.REMOTE.ACCESS.CREATE";
@@ -672,6 +688,9 @@ public class EventTypes {
     public static final String EVENT_EXTERNAL_OPENDAYLIGHT_CONFIGURE_CONTROLLER = "PHYSICAL.ODLCONTROLLER.CONFIGURE";
 
     //Guest OS related events
+    public static final String EVENT_GUEST_OS_CATEGORY_ADD = "GUEST.OS.CATEGORY.ADD";
+    public static final String EVENT_GUEST_OS_CATEGORY_DELETE = "GUEST.OS.CATEGORY.DELETE";
+    public static final String EVENT_GUEST_OS_CATEGORY_UPDATE = "GUEST.OS.CATEGORY.UPDATE";
     public static final String EVENT_GUEST_OS_ADD = "GUEST.OS.ADD";
     public static final String EVENT_GUEST_OS_REMOVE = "GUEST.OS.REMOVE";
     public static final String EVENT_GUEST_OS_UPDATE = "GUEST.OS.UPDATE";
@@ -721,6 +740,15 @@ public class EventTypes {
 
     // SystemVM
     public static final String EVENT_LIVE_PATCH_SYSTEMVM = "LIVE.PATCH.SYSTEM.VM";
+    //Purge resources
+    public static final String EVENT_PURGE_EXPUNGED_RESOURCES = "PURGE.EXPUNGED.RESOURCES";
+
+    // Management Server
+    public static final String EVENT_MS_MAINTENANCE_PREPARE = "MS.MAINTENANCE.PREPARE";
+    public static final String EVENT_MS_MAINTENANCE_CANCEL = "MS.MAINTENANCE.CANCEL";
+    public static final String EVENT_MS_SHUTDOWN_PREPARE = "MS.SHUTDOWN.PREPARE";
+    public static final String EVENT_MS_SHUTDOWN_CANCEL = "MS.SHUTDOWN.CANCEL";
+    public static final String EVENT_MS_SHUTDOWN = "MS.SHUTDOWN";
 
     // OBJECT STORE
     public static final String EVENT_OBJECT_STORE_CREATE = "OBJECT.STORE.CREATE";
@@ -736,6 +764,45 @@ public class EventTypes {
     public static final String EVENT_QUOTA_TARIFF_CREATE = "QUOTA.TARIFF.CREATE";
     public static final String EVENT_QUOTA_TARIFF_DELETE = "QUOTA.TARIFF.DELETE";
     public static final String EVENT_QUOTA_TARIFF_UPDATE = "QUOTA.TARIFF.UPDATE";
+
+    // Routing
+    public static final String EVENT_ZONE_IP4_SUBNET_CREATE = "ZONE.IP4.SUBNET.CREATE";
+    public static final String EVENT_ZONE_IP4_SUBNET_UPDATE = "ZONE.IP4.SUBNET.UPDATE";
+    public static final String EVENT_ZONE_IP4_SUBNET_DELETE = "ZONE.IP4.SUBNET.DELETE";
+    public static final String EVENT_ZONE_IP4_SUBNET_DEDICATE = "ZONE.IP4.SUBNET.DEDICATE";
+    public static final String EVENT_ZONE_IP4_SUBNET_RELEASE = "ZONE.IP4.SUBNET.RELEASE";
+    public static final String EVENT_IP4_GUEST_SUBNET_CREATE = "IP4.GUEST.SUBNET.CREATE";
+    public static final String EVENT_IP4_GUEST_SUBNET_DELETE = "IP4.GUEST.SUBNET.DELETE";
+    public static final String EVENT_ROUTING_IPV4_FIREWALL_RULE_CREATE = "ROUTING.IPV4.FIREWALL.RULE.CREATE";
+    public static final String EVENT_ROUTING_IPV4_FIREWALL_RULE_UPDATE = "ROUTING.IPV4.FIREWALL.RULE.UPDATE";
+    public static final String EVENT_ROUTING_IPV4_FIREWALL_RULE_DELETE = "ROUTING.IPV4.FIREWALL.RULE.DELETE";
+    public static final String EVENT_BGP_PEER_CREATE = "BGP.PEER.CREATE";
+    public static final String EVENT_BGP_PEER_UPDATE = "BGP.PEER.UPDATE";
+    public static final String EVENT_BGP_PEER_DELETE = "BGP.PEER.DELETE";
+    public static final String EVENT_BGP_PEER_DEDICATE = "BGP.PEER.DEDICATE";
+    public static final String EVENT_BGP_PEER_RELEASE = "BGP.PEER.RELEASE";
+    public static final String EVENT_NETWORK_BGP_PEER_UPDATE = "NETWORK.BGP.PEER.UPDATE";
+    public static final String EVENT_VPC_BGP_PEER_UPDATE = "VPC.BGP.PEER.UPDATE";
+
+    // SharedFS
+    public static final String EVENT_SHAREDFS_CREATE = "SHAREDFS.CREATE";
+    public static final String EVENT_SHAREDFS_START = "SHAREDFS.START";
+    public static final String EVENT_SHAREDFS_UPDATE = "SHAREDFS.UPDATE";
+    public static final String EVENT_SHAREDFS_CHANGE_SERVICE_OFFERING = "SHAREDFS.CHANGE.SERVICE.OFFERING";
+    public static final String EVENT_SHAREDFS_CHANGE_DISK_OFFERING = "SHAREDFS.CHANGE.DISK.OFFERING";
+    public static final String EVENT_SHAREDFS_STOP = "SHAREDFS.STOP";
+    public static final String EVENT_SHAREDFS_RESTART = "SHAREDFS.RESTART";
+    public static final String EVENT_SHAREDFS_DESTROY = "SHAREDFS.DESTROY";
+    public static final String EVENT_SHAREDFS_EXPUNGE = "SHAREDFS.EXPUNGE";
+    public static final String EVENT_SHAREDFS_RECOVER = "SHAREDFS.RECOVER";
+
+    // Resource Limit
+    public static final String EVENT_RESOURCE_LIMIT_UPDATE = "RESOURCE.LIMIT.UPDATE";
+
+    public static final String VM_LEASE_EXPIRED = "VM.LEASE.EXPIRED";
+    public static final String VM_LEASE_DISABLED = "VM.LEASE.DISABLED";
+    public static final String VM_LEASE_CANCELLED = "VM.LEASE.CANCELLED";
+    public static final String VM_LEASE_EXPIRING = "VM.LEASE.EXPIRING";
 
     static {
 
@@ -838,6 +905,8 @@ public class EventTypes {
         entityEventDetails.put(EVENT_ROLE_UPDATE, Role.class);
         entityEventDetails.put(EVENT_ROLE_DELETE, Role.class);
         entityEventDetails.put(EVENT_ROLE_IMPORT, Role.class);
+        entityEventDetails.put(EVENT_ROLE_ENABLE, Role.class);
+        entityEventDetails.put(EVENT_ROLE_DISABLE, Role.class);
         entityEventDetails.put(EVENT_ROLE_PERMISSION_CREATE, RolePermission.class);
         entityEventDetails.put(EVENT_ROLE_PERMISSION_UPDATE, RolePermission.class);
         entityEventDetails.put(EVENT_ROLE_PERMISSION_DELETE, RolePermission.class);
@@ -894,6 +963,7 @@ public class EventTypes {
         // Snapshots
         entityEventDetails.put(EVENT_SNAPSHOT_CREATE, Snapshot.class);
         entityEventDetails.put(EVENT_SNAPSHOT_DELETE, Snapshot.class);
+        entityEventDetails.put(EVENT_SNAPSHOT_EXTRACT, Snapshot.class);
         entityEventDetails.put(EVENT_SNAPSHOT_ON_PRIMARY, Snapshot.class);
         entityEventDetails.put(EVENT_SNAPSHOT_OFF_PRIMARY, Snapshot.class);
         entityEventDetails.put(EVENT_SNAPSHOT_POLICY_CREATE, SnapshotPolicy.class);
@@ -998,8 +1068,10 @@ public class EventTypes {
         entityEventDetails.put(EVENT_MAINTENANCE_PREPARE_PRIMARY_STORAGE, Host.class);
 
         // Primary storage pool
+        entityEventDetails.put(EVENT_UPDATE_PRIMARY_STORAGE, StoragePool.class);
         entityEventDetails.put(EVENT_ENABLE_PRIMARY_STORAGE, StoragePool.class);
         entityEventDetails.put(EVENT_DISABLE_PRIMARY_STORAGE, StoragePool.class);
+        entityEventDetails.put(EVENT_CHANGE_STORAGE_POOL_SCOPE, StoragePool.class);
 
         // VPN
         entityEventDetails.put(EVENT_REMOTE_ACCESS_VPN_CREATE, RemoteAccessVpn.class);
@@ -1177,6 +1249,12 @@ public class EventTypes {
         entityEventDetails.put(EVENT_UPDATE_IMAGE_STORE_ACCESS_STATE, ImageStore.class);
         entityEventDetails.put(EVENT_LIVE_PATCH_SYSTEMVM, "SystemVMs");
 
+        entityEventDetails.put(EVENT_MS_MAINTENANCE_PREPARE, "ManagementServer");
+        entityEventDetails.put(EVENT_MS_MAINTENANCE_CANCEL, "ManagementServer");
+        entityEventDetails.put(EVENT_MS_SHUTDOWN_PREPARE, "ManagementServer");
+        entityEventDetails.put(EVENT_MS_SHUTDOWN_CANCEL, "ManagementServer");
+        entityEventDetails.put(EVENT_MS_SHUTDOWN, "ManagementServer");
+
         //Object Store
         entityEventDetails.put(EVENT_OBJECT_STORE_CREATE, ObjectStore.class);
         entityEventDetails.put(EVENT_OBJECT_STORE_UPDATE, ObjectStore.class);
@@ -1191,6 +1269,41 @@ public class EventTypes {
         entityEventDetails.put(EVENT_QUOTA_TARIFF_CREATE, QuotaTariff.class);
         entityEventDetails.put(EVENT_QUOTA_TARIFF_DELETE, QuotaTariff.class);
         entityEventDetails.put(EVENT_QUOTA_TARIFF_UPDATE, QuotaTariff.class);
+
+        // Routing
+        entityEventDetails.put(EVENT_ZONE_IP4_SUBNET_CREATE, DataCenterIpv4GuestSubnet.class);
+        entityEventDetails.put(EVENT_ZONE_IP4_SUBNET_UPDATE, DataCenterIpv4GuestSubnet.class);
+        entityEventDetails.put(EVENT_ZONE_IP4_SUBNET_DELETE, DataCenterIpv4GuestSubnet.class);
+        entityEventDetails.put(EVENT_ZONE_IP4_SUBNET_DEDICATE, DataCenterIpv4GuestSubnet.class);
+        entityEventDetails.put(EVENT_ZONE_IP4_SUBNET_RELEASE, DataCenterIpv4GuestSubnet.class);
+        entityEventDetails.put(EVENT_IP4_GUEST_SUBNET_CREATE, Ipv4GuestSubnetNetworkMap.class);
+        entityEventDetails.put(EVENT_IP4_GUEST_SUBNET_DELETE, Ipv4GuestSubnetNetworkMap.class);
+        entityEventDetails.put(EVENT_ROUTING_IPV4_FIREWALL_RULE_CREATE, FirewallRule.class);
+        entityEventDetails.put(EVENT_ROUTING_IPV4_FIREWALL_RULE_UPDATE, FirewallRule.class);
+        entityEventDetails.put(EVENT_ROUTING_IPV4_FIREWALL_RULE_DELETE, FirewallRule.class);
+        entityEventDetails.put(EVENT_BGP_PEER_CREATE, BgpPeer.class);
+        entityEventDetails.put(EVENT_BGP_PEER_UPDATE, BgpPeer.class);
+        entityEventDetails.put(EVENT_BGP_PEER_DELETE, BgpPeer.class);
+        entityEventDetails.put(EVENT_BGP_PEER_DEDICATE, BgpPeer.class);
+        entityEventDetails.put(EVENT_BGP_PEER_RELEASE, BgpPeer.class);
+
+        // SharedFS
+        entityEventDetails.put(EVENT_SHAREDFS_CREATE, SharedFS.class);
+        entityEventDetails.put(EVENT_SHAREDFS_START, SharedFS.class);
+        entityEventDetails.put(EVENT_SHAREDFS_STOP, SharedFS.class);
+        entityEventDetails.put(EVENT_SHAREDFS_UPDATE, SharedFS.class);
+        entityEventDetails.put(EVENT_SHAREDFS_CHANGE_SERVICE_OFFERING, SharedFS.class);
+        entityEventDetails.put(EVENT_SHAREDFS_CHANGE_DISK_OFFERING, SharedFS.class);
+        entityEventDetails.put(EVENT_SHAREDFS_RESTART, SharedFS.class);
+        entityEventDetails.put(EVENT_SHAREDFS_DESTROY, SharedFS.class);
+        entityEventDetails.put(EVENT_SHAREDFS_EXPUNGE, SharedFS.class);
+        entityEventDetails.put(EVENT_SHAREDFS_RECOVER, SharedFS.class);
+
+        // VM Lease
+        entityEventDetails.put(VM_LEASE_EXPIRED, VirtualMachine.class);
+        entityEventDetails.put(VM_LEASE_EXPIRING, VirtualMachine.class);
+        entityEventDetails.put(VM_LEASE_DISABLED, VirtualMachine.class);
+        entityEventDetails.put(VM_LEASE_CANCELLED, VirtualMachine.class);
     }
 
     public static boolean isNetworkEvent(String eventType) {

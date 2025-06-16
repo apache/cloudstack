@@ -16,24 +16,35 @@
 // under the License.
 package com.cloud.hypervisor.kvm.storage;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.utils.cryptsetup.KeyFile;
+import org.apache.cloudstack.utils.qemu.QemuImageOptions;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.logging.log4j.Logger;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 import org.libvirt.Secret;
@@ -67,18 +78,12 @@ import com.cloud.storage.StorageLayer;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-
 public class LibvirtStorageAdaptor implements StorageAdaptor {
     protected Logger logger = LogManager.getLogger(getClass());
     private StorageLayer _storageLayer;
     private String _mountPoint = "/mnt";
     private String _manageSnapshotPath;
+    private static final ConcurrentHashMap<String, Integer> storagePoolRefCounts = new ConcurrentHashMap<>();
 
     private String rbdTemplateSnapName = "cloudstack-base-snap";
     private static final int RBD_FEATURE_LAYERING = 1;
@@ -169,7 +174,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
      * Checks if downloaded template is extractable
      * @return true if it should be extracted, false if not
      */
-    private boolean isTemplateExtractable(String templatePath) {
+    public static boolean isTemplateExtractable(String templatePath) {
         String type = Script.runSimpleBashScript("file " + templatePath + " | awk -F' ' '{print $2}'");
         return type.equalsIgnoreCase("bzip2") || type.equalsIgnoreCase("gzip") || type.equalsIgnoreCase("zip");
     }
@@ -179,7 +184,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
      * @param downloadedTemplateFile
      * @param templateUuid
      */
-    private String getExtractCommandForDownloadedFile(String downloadedTemplateFile, String templateUuid) {
+    public static String getExtractCommandForDownloadedFile(String downloadedTemplateFile, String templateUuid) {
         if (downloadedTemplateFile.endsWith(".zip")) {
             return "unzip -p " + downloadedTemplateFile + " | cat > " + templateUuid;
         } else if (downloadedTemplateFile.endsWith(".bz2")) {
@@ -194,7 +199,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     /**
      * Extract downloaded template into installPath, remove compressed file
      */
-    private void extractDownloadedTemplate(String downloadedTemplateFile, KVMStoragePool destPool, String destinationFile) {
+    public static void extractDownloadedTemplate(String downloadedTemplateFile, KVMStoragePool destPool, String destinationFile) {
         String extractCommand = getExtractCommandForDownloadedFile(downloadedTemplateFile, destinationFile);
         Script.runSimpleBashScript(extractCommand);
         Script.runSimpleBashScript("rm -f " + downloadedTemplateFile);
@@ -273,9 +278,19 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
     }
 
-    private StoragePool createNetfsStoragePool(PoolType fsType, Connect conn, String uuid, String host, String path) throws LibvirtException {
+    private void checkNetfsStoragePoolMounted(String uuid) {
         String targetPath = _mountPoint + File.separator + uuid;
-        LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(fsType, uuid, uuid, host, path, targetPath);
+        int mountpointResult = Script.runSimpleBashScriptForExitValue("mountpoint -q " + targetPath);
+        if (mountpointResult != 0) {
+            String errMsg = String.format("libvirt failed to mount storage pool %s at %s", uuid, targetPath);
+            logger.error(errMsg);
+            throw new CloudRuntimeException(errMsg);
+        }
+    }
+
+    private StoragePool createNetfsStoragePool(PoolType fsType, Connect conn, String uuid, String host, String path, List<String> nfsMountOpts) throws LibvirtException {
+        String targetPath = _mountPoint + File.separator + uuid;
+        LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(fsType, uuid, uuid, host, path, targetPath, nfsMountOpts);
         _storageLayer.mkdir(targetPath);
         StoragePool sp = null;
         try {
@@ -338,7 +353,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         String volgroupName = path;
         volgroupName = volgroupName.replaceFirst("/", "");
 
-        LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(PoolType.loggerICAL, volgroupName, uuid, host, volgroupPath, volgroupPath);
+        LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(PoolType.LOGICAL, volgroupName, uuid, host, volgroupPath, volgroupPath);
         StoragePool sp = null;
         try {
             logger.debug(spd.toString());
@@ -362,6 +377,42 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             return null;
         }
 
+    }
+
+    private List<String> getNFSMountOptsFromDetails(StoragePoolType type, Map<String, String> details) {
+        List<String> nfsMountOpts = null;
+        if (!type.equals(StoragePoolType.NetworkFilesystem) || details == null) {
+            return nfsMountOpts;
+        }
+        if (details.containsKey(ApiConstants.NFS_MOUNT_OPTIONS)) {
+            nfsMountOpts = Arrays.asList(details.get(ApiConstants.NFS_MOUNT_OPTIONS).replaceAll("\\s", "").split(","));
+        }
+        return nfsMountOpts;
+    }
+
+    private boolean destroyStoragePoolOnNFSMountOptionsChange(StoragePool sp, Connect conn, List<String> nfsMountOpts) {
+        try {
+            LibvirtStoragePoolDef poolDef = getStoragePoolDef(conn, sp);
+            Set poolNfsMountOpts = poolDef.getNfsMountOpts();
+            boolean mountOptsDiffer = false;
+            if (poolNfsMountOpts.size() != nfsMountOpts.size()) {
+                mountOptsDiffer = true;
+            } else {
+                for (String nfsMountOpt : nfsMountOpts) {
+                    if (!poolNfsMountOpts.contains(nfsMountOpt)) {
+                        mountOptsDiffer = true;
+                        break;
+                    }
+                }
+            }
+            if (mountOptsDiffer) {
+                sp.destroy();
+                return true;
+            }
+        } catch (LibvirtException e) {
+            logger.error("Failure in destroying the pre-existing storage pool for changing the NFS mount options" + e);
+        }
+        return false;
     }
 
     private StoragePool createRBDStoragePool(Connect conn, String uuid, String host, int port, String userInfo, String path) {
@@ -471,6 +522,54 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         return this.getStoragePool(uuid, false);
     }
 
+    protected void updateLocalPoolIops(LibvirtStoragePool pool) {
+        if (!StoragePoolType.Filesystem.equals(pool.getType()) || StringUtils.isBlank(pool.getLocalPath())) {
+            return;
+        }
+        logger.trace("Updating used IOPS for pool: {}", pool.getName());
+
+        // Run script to get data
+        List<String[]> commands = new ArrayList<>();
+        commands.add(new String[]{
+                Script.getExecutableAbsolutePath("bash"),
+                "-c",
+                String.format(
+                        "%s %s | %s 'NR==2 {print $1}'",
+                        Script.getExecutableAbsolutePath("df"),
+                        pool.getLocalPath(),
+                        Script.getExecutableAbsolutePath("awk")
+                )
+        });
+        String result = Script.executePipedCommands(commands, 1000).second();
+        if (StringUtils.isBlank(result)) {
+            return;
+        }
+        result = result.trim();
+        commands.add(new String[]{
+                Script.getExecutableAbsolutePath("bash"),
+                "-c",
+                String.format(
+                        "%s -z %s 1 2 | %s 'NR==7 {print $2}'",
+                        Script.getExecutableAbsolutePath("iostat"),
+                        result,
+                        Script.getExecutableAbsolutePath("awk")
+                )
+        });
+        result = Script.executePipedCommands(commands, 10000).second();
+        logger.trace("Pool used IOPS result: {}", result);
+        if (StringUtils.isBlank(result)) {
+            return;
+        }
+        try {
+            double doubleValue = Double.parseDouble(result);
+            pool.setUsedIops((long) doubleValue);
+            logger.debug("Updated used IOPS: {} for pool: {}", pool.getUsedIops(), pool.getName());
+        } catch (NumberFormatException e) {
+            logger.warn(String.format("Unable to parse retrieved used IOPS: %s for pool: %s", result,
+                    pool.getName()));
+        }
+    }
+
     @Override
     public KVMStoragePool getStoragePool(String uuid, boolean refreshInfo) {
         logger.info("Trying to fetch storage pool " + uuid + " from libvirt");
@@ -494,7 +593,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 type = StoragePoolType.Filesystem;
             } else if (spd.getPoolType() == LibvirtStoragePoolDef.PoolType.RBD) {
                 type = StoragePoolType.RBD;
-            } else if (spd.getPoolType() == LibvirtStoragePoolDef.PoolType.loggerICAL) {
+            } else if (spd.getPoolType() == LibvirtStoragePoolDef.PoolType.LOGICAL) {
                 type = StoragePoolType.CLVM;
             } else if (spd.getPoolType() == LibvirtStoragePoolDef.PoolType.GLUSTERFS) {
                 type = StoragePoolType.Gluster;
@@ -541,6 +640,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             }
             pool.setCapacity(storage.getInfo().capacity);
             pool.setUsed(storage.getInfo().allocation);
+            updateLocalPoolIops(pool);
             pool.setAvailable(storage.getInfo().available);
 
             logger.debug("Successfully refreshed pool " + uuid +
@@ -596,8 +696,44 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
     }
 
+    /**
+     * adjust refcount
+     */
+    private int adjustStoragePoolRefCount(String uuid, int adjustment) {
+        final String mutexKey = storagePoolRefCounts.keySet().stream()
+                .filter(k -> k.equals(uuid))
+                .findFirst()
+                .orElse(uuid);
+        synchronized (mutexKey) {
+            // some access on the storagePoolRefCounts.key(mutexKey) element
+            int refCount = storagePoolRefCounts.computeIfAbsent(mutexKey, k -> 0);
+            refCount += adjustment;
+            if (refCount < 1) {
+                storagePoolRefCounts.remove(mutexKey);
+            } else {
+                storagePoolRefCounts.put(mutexKey, refCount);
+            }
+            return refCount;
+        }
+    }
+    /**
+     * Thread-safe increment storage pool usage refcount
+     * @param uuid UUID of the storage pool to increment the count
+     */
+    private void incStoragePoolRefCount(String uuid) {
+        adjustStoragePoolRefCount(uuid, 1);
+    }
+    /**
+     * Thread-safe decrement storage pool usage refcount for the given uuid and return if storage pool still in use.
+     * @param uuid UUID of the storage pool to decrement the count
+     * @return true if the storage pool is still used, else false.
+     */
+    private boolean decStoragePoolRefCount(String uuid) {
+        return adjustStoragePoolRefCount(uuid, -1) > 0;
+    }
+
     @Override
-    public KVMStoragePool createStoragePool(String name, String host, int port, String path, String userInfo, StoragePoolType type, Map<String, String> details) {
+    public KVMStoragePool createStoragePool(String name, String host, int port, String path, String userInfo, StoragePoolType type, Map<String, String> details, boolean isPrimaryStorage) {
         logger.info("Attempting to create storage pool " + name + " (" + type.toString() + ") in libvirt");
 
         StoragePool sp = null;
@@ -661,12 +797,21 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             } catch (LibvirtException e) {
                 logger.error("Failure in attempting to see if an existing storage pool might be using the path of the pool to be created:" + e);
             }
+        }
+
+        List<String> nfsMountOpts = getNFSMountOptsFromDetails(type, details);
+        if (sp != null && CollectionUtils.isNotEmpty(nfsMountOpts) &&
+            destroyStoragePoolOnNFSMountOptionsChange(sp, conn, nfsMountOpts)) {
+            sp = null;
+        }
+
+        if (sp == null) {
 
             logger.debug("Attempting to create storage pool " + name);
 
             if (type == StoragePoolType.NetworkFilesystem) {
                 try {
-                    sp = createNetfsStoragePool(PoolType.NETFS, conn, name, host, path);
+                    sp = createNetfsStoragePool(PoolType.NETFS, conn, name, host, path, nfsMountOpts);
                 } catch (LibvirtException e) {
                     logger.error("Failed to create netfs mount: " + host + ":" + path , e);
                     logger.error(e.getStackTrace());
@@ -674,7 +819,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 }
             } else if (type == StoragePoolType.Gluster) {
                 try {
-                    sp = createNetfsStoragePool(PoolType.GLUSTERFS, conn, name, host, path);
+                    sp = createNetfsStoragePool(PoolType.GLUSTERFS, conn, name, host, path, null);
                 } catch (LibvirtException e) {
                     logger.error("Failed to create glusterfs mount: " + host + ":" + path , e);
                     logger.error(e.getStackTrace());
@@ -694,13 +839,24 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
 
         try {
+            if (!isPrimaryStorage) {
+                // only ref count storage pools for secondary storage, as primary storage is assumed
+                // to be always mounted, as long the primary storage isn't fully deleted.
+                incStoragePoolRefCount(name);
+            }
+
             if (sp.isActive() == 0) {
                 logger.debug("Attempting to activate pool " + name);
                 sp.create(0);
             }
 
+            if (type == StoragePoolType.NetworkFilesystem) {
+                checkNetfsStoragePoolMounted(name);
+            }
+
             return getStoragePool(name);
         } catch (LibvirtException e) {
+            decStoragePoolRefCount(name);
             String error = e.toString();
             if (error.contains("Storage source conflict")) {
                 throw new CloudRuntimeException("A pool matching this location already exists in libvirt, " +
@@ -712,9 +868,52 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
     }
 
+    private boolean destroyStoragePool(Connect conn, String uuid) throws LibvirtException {
+        StoragePool sp;
+        try {
+            sp = conn.storagePoolLookupByUUIDString(uuid);
+        } catch (LibvirtException exc) {
+            logger.warn("Storage pool " + uuid + " doesn't exist in libvirt. Assuming it is already removed");
+            logger.warn(exc.getStackTrace());
+            return true;
+        }
+
+        if (sp != null) {
+            if (sp.isPersistent() == 1) {
+                sp.destroy();
+                sp.undefine();
+            } else {
+                sp.destroy();
+            }
+            sp.free();
+
+            return true;
+        } else {
+            logger.warn("Storage pool " + uuid + " doesn't exist in libvirt. Assuming it is already removed");
+            return false;
+        }
+    }
+
+    private boolean destroyStoragePoolHandleException(Connect conn, String uuid)
+    {
+        try {
+            return destroyStoragePool(conn, uuid);
+        } catch (LibvirtException e) {
+            logger.error(String.format("Failed to destroy libvirt pool %s: %s", uuid, e));
+        }
+        return false;
+    }
+
     @Override
     public boolean deleteStoragePool(String uuid) {
         logger.info("Attempting to remove storage pool " + uuid + " from libvirt");
+
+        // decrement and check if storage pool still in use
+        if (decStoragePoolRefCount(uuid)) {
+            logger.info(String.format("deleteStoragePool: Storage pool %s still in use", uuid));
+            return true;
+        }
+
         Connect conn = null;
         try {
             conn = LibvirtConnection.getConnection();
@@ -722,15 +921,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             throw new CloudRuntimeException(e.toString());
         }
 
-        StoragePool sp = null;
         Secret s = null;
-
-        try {
-            sp = conn.storagePoolLookupByUUIDString(uuid);
-        } catch (LibvirtException e) {
-            logger.warn("Storage pool " + uuid + " doesn't exist in libvirt. Assuming it is already removed");
-            return true;
-        }
 
         /*
          * Some storage pools, like RBD also have 'secret' information stored in libvirt
@@ -743,13 +934,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
 
         try {
-            if (sp.isPersistent() == 1) {
-                sp.destroy();
-                sp.undefine();
-            } else {
-                sp.destroy();
-            }
-            sp.free();
+            destroyStoragePool(conn, uuid);
             if (s != null) {
                 s.undefine();
                 s.free();
@@ -762,11 +947,12 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             // handle ebusy error when pool is quickly destroyed
             if (e.toString().contains("exit status 16")) {
                 String targetPath = _mountPoint + File.separator + uuid;
-                logger.error("deleteStoragePool removed pool from libvirt, but libvirt had trouble unmounting the pool. Trying umount location " + targetPath +
-                        "again in a few seconds");
+                    logger.error("deleteStoragePool removed pool from libvirt, but libvirt had trouble unmounting the pool. Trying umount location " + targetPath +
+                        " again in a few seconds");
                 String result = Script.runSimpleBashScript("sleep 5 && umount " + targetPath);
                 if (result == null) {
-                    logger.error("Succeeded in unmounting " + targetPath);
+                    logger.info("Succeeded in unmounting " + targetPath);
+                    destroyStoragePoolHandleException(conn, uuid);
                     return true;
                 }
                 logger.error("Failed to unmount " + targetPath);
@@ -775,17 +961,55 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
     }
 
+    /**
+     * Creates a physical disk depending on the {@link StoragePoolType}:
+     * <ul>
+     *     <li>
+     *         <b>{@link StoragePoolType#RBD}</b>
+     *         <ul>
+     *             <li>
+     *                 If it is an erasure code pool, utilizes QemuImg to create the physical disk through the method
+     *             {@link LibvirtStorageAdaptor#createPhysicalDiskByQemuImg(String, KVMStoragePool, PhysicalDiskFormat, Storage.ProvisioningType, long, byte[])}
+     *             </li>
+     *             <li>
+     *                 Otherwise, utilize Libvirt to create the physical disk through the method
+     *                 {@link LibvirtStorageAdaptor#createPhysicalDiskByLibVirt(String, KVMStoragePool, PhysicalDiskFormat, Storage.ProvisioningType, long)}
+     *             </li>
+     *         </ul>
+     *     </li>
+     *     <li>
+     *         {@link StoragePoolType#NetworkFilesystem} and {@link StoragePoolType#Filesystem}
+     *         <ul>
+     *             <li>
+     *                 If the format is {@link PhysicalDiskFormat#QCOW2} or {@link PhysicalDiskFormat#RAW}, utilizes QemuImg to create the physical disk through the method
+     *             {@link LibvirtStorageAdaptor#createPhysicalDiskByQemuImg(String, KVMStoragePool, PhysicalDiskFormat, Storage.ProvisioningType, long, byte[])}
+     *             </li>
+     *             <li>
+     *                 If the format is {@link PhysicalDiskFormat#DIR} or {@link PhysicalDiskFormat#TAR}, utilize Libvirt to create the physical disk through the method
+     *                 {@link LibvirtStorageAdaptor#createPhysicalDiskByLibVirt(String, KVMStoragePool, PhysicalDiskFormat, Storage.ProvisioningType, long)}
+     *             </li>
+     *         </ul>
+     *     </li>
+     *     <li>
+     *         For the rest of the {@link StoragePoolType} types, utilizes the Libvirt method
+     *         {@link LibvirtStorageAdaptor#createPhysicalDiskByLibVirt(String, KVMStoragePool, PhysicalDiskFormat, Storage.ProvisioningType, long)}
+     *     </li>
+     * </ul>
+     */
     @Override
     public KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool,
             PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, byte[] passphrase) {
 
-        logger.info("Attempting to create volume " + name + " (" + pool.getType().toString() + ") in pool "
-                + pool.getUuid() + " with size " + toHumanReadableSize(size));
+        logger.info("Attempting to create volume {} ({}) in pool {} with size {}", name, pool.getType().toString(), pool.getUuid(), toHumanReadableSize(size));
 
         StoragePoolType poolType = pool.getType();
-        if (poolType.equals(StoragePoolType.RBD)) {
-            return createPhysicalDiskByLibVirt(name, pool, PhysicalDiskFormat.RAW, provisioningType, size);
-        } else if (poolType.equals(StoragePoolType.NetworkFilesystem) || poolType.equals(StoragePoolType.Filesystem)) {
+        if (StoragePoolType.RBD.equals(poolType)) {
+            Map<String, String> details = pool.getDetails();
+            String dataPool = (details == null) ? null : details.get(KVMPhysicalDisk.RBD_DEFAULT_DATA_POOL);
+
+            return (dataPool == null) ?  createPhysicalDiskByLibVirt(name, pool, PhysicalDiskFormat.RAW, provisioningType, size) :
+                    createPhysicalDiskByQemuImg(name, pool, PhysicalDiskFormat.RAW, provisioningType, size, passphrase);
+        } else if (StoragePoolType.NetworkFilesystem.equals(poolType) || StoragePoolType.Filesystem.equals(poolType)) {
             switch (format) {
                 case QCOW2:
                 case RAW:
@@ -833,18 +1057,25 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     }
 
 
-    private KVMPhysicalDisk createPhysicalDiskByQemuImg(String name, KVMStoragePool pool,
-            PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, byte[] passphrase) {
-        String volPath = pool.getLocalPath() + "/" + name;
+    private KVMPhysicalDisk createPhysicalDiskByQemuImg(String name, KVMStoragePool pool, PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size,
+                                                        byte[] passphrase) {
+        String volPath;
         String volName = name;
         long virtualSize = 0;
         long actualSize = 0;
         QemuObject.EncryptFormat encryptFormat = null;
         List<QemuObject> passphraseObjects = new ArrayList<>();
-
         final int timeout = 0;
+        QemuImgFile destFile;
 
-        QemuImgFile destFile = new QemuImgFile(volPath);
+        if (StoragePoolType.RBD.equals(pool.getType())) {
+            volPath = pool.getSourceDir() + File.separator + name;
+            destFile = new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(pool, volPath));
+        } else {
+            volPath = pool.getLocalPath() + File.separator + name;
+            destFile = new QemuImgFile(volPath);
+        }
+
         destFile.setFormat(format);
         destFile.setSize(size);
         Map<String, String> options = new HashMap<String, String>();
@@ -882,7 +1113,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public boolean connectPhysicalDisk(String name, KVMStoragePool pool, Map<String, String> details) {
+    public boolean connectPhysicalDisk(String name, KVMStoragePool pool, Map<String, String> details, boolean isVMMigrate) {
         // this is for managed storage that needs to prep disks prior to use
         return true;
     }
@@ -1127,11 +1358,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
 
         QemuImgFile srcFile;
-        QemuImgFile destFile = new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(destPool.getSourceHost(),
-                destPool.getSourcePort(),
-                destPool.getAuthUserName(),
-                destPool.getAuthSecret(),
-                disk.getPath()));
+        QemuImgFile destFile = new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(destPool, disk.getPath()));
         destFile.setFormat(format);
 
         if (srcPool.getType() != StoragePoolType.RBD) {
@@ -1325,7 +1552,10 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
          */
 
         KVMStoragePool srcPool = disk.getPool();
-        PhysicalDiskFormat sourceFormat = disk.getFormat();
+        /* Linstor images are always stored as RAW, but Linstor uses qcow2 in DB,
+           to support snapshots(backuped) as qcow2 files. */
+        PhysicalDiskFormat sourceFormat = srcPool.getType() != StoragePoolType.Linstor ?
+                disk.getFormat() : PhysicalDiskFormat.RAW;
         String sourcePath = disk.getPath();
 
         KVMPhysicalDisk newDisk;
@@ -1379,13 +1609,15 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     } else {
                         destFile = new QemuImgFile(destPath, destFormat);
                         try {
-                            qemu.convert(srcFile, destFile);
+                            boolean isQCOW2 = PhysicalDiskFormat.QCOW2.equals(sourceFormat);
+                            qemu.convert(srcFile, destFile, null, null, new QemuImageOptions(srcFile.getFormat(), srcFile.getFileName(), null),
+                                    null, false, isQCOW2);
                             Map<String, String> destInfo = qemu.info(destFile);
                             Long virtualSize = Long.parseLong(destInfo.get(QemuImg.VIRTUAL_SIZE));
                             newDisk.setVirtualSize(virtualSize);
                             newDisk.setSize(virtualSize);
-                        } catch (QemuImgException | LibvirtException e) {
-                            logger.error("Failed to convert " + srcFile.getFileName() + " to " + destFile.getFileName() + " the error was: " + e.getMessage());
+                        } catch (QemuImgException e) {
+                            logger.error("Failed to convert [{}] to [{}] due to: [{}].", srcFile.getFileName(), destFile.getFileName(), e.getMessage(), e);
                             newDisk = null;
                         }
                     }
@@ -1403,11 +1635,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             try {
                 srcFile = new QemuImgFile(sourcePath, sourceFormat);
                 String rbdDestPath = destPool.getSourceDir() + "/" + name;
-                String rbdDestFile = KVMPhysicalDisk.RBDStringBuilder(destPool.getSourceHost(),
-                        destPool.getSourcePort(),
-                        destPool.getAuthUserName(),
-                        destPool.getAuthSecret(),
-                        rbdDestPath);
+                String rbdDestFile = KVMPhysicalDisk.RBDStringBuilder(destPool, rbdDestPath);
                 destFile = new QemuImgFile(rbdDestFile, destFormat);
 
                 logger.debug("Starting copy from source image " + srcFile.getFileName() + " to RBD image " + rbdDestPath);
@@ -1450,9 +1678,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 We let Qemu-Img do the work here. Although we could work with librbd and have that do the cloning
                 it doesn't benefit us. It's better to keep the current code in place which works
              */
-            srcFile =
-                    new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(srcPool.getSourceHost(), srcPool.getSourcePort(), srcPool.getAuthUserName(), srcPool.getAuthSecret(),
-                            sourcePath));
+            srcFile = new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(srcPool, sourcePath));
             srcFile.setFormat(sourceFormat);
             destFile = new QemuImgFile(destPath);
             destFile.setFormat(destFormat);

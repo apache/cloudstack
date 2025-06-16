@@ -19,6 +19,8 @@
 
 package com.cloud.agent.api;
 
+import com.cloud.host.Host;
+
 import java.util.List;
 
 public class ReadyCommand extends Command {
@@ -30,19 +32,25 @@ public class ReadyCommand extends Command {
 
     private Long dcId;
     private Long hostId;
+    private String hostUuid;
+    private String hostName;
     private List<String> msHostList;
+    private List<String> avoidMsHostList;
     private String lbAlgorithm;
     private Long lbCheckInterval;
     private Boolean enableHumanReadableSizes;
+    private String arch;
 
     public ReadyCommand(Long dcId) {
         super();
         this.dcId = dcId;
     }
 
-    public ReadyCommand(final Long dcId, final Long hostId, boolean enableHumanReadableSizes) {
-        this(dcId);
-        this.hostId = hostId;
+    public ReadyCommand(final Host host, boolean enableHumanReadableSizes) {
+        this(host.getDataCenterId());
+        this.hostId = host.getId();
+        this.hostUuid = host.getUuid();
+        this.hostName = host.getName();
         this.enableHumanReadableSizes = enableHumanReadableSizes;
     }
 
@@ -67,12 +75,28 @@ public class ReadyCommand extends Command {
         return hostId;
     }
 
+    public String getHostUuid() {
+        return hostUuid;
+    }
+
+    public String getHostName() {
+        return hostName;
+    }
+
     public List<String> getMsHostList() {
         return msHostList;
     }
 
     public void setMsHostList(List<String> msHostList) {
         this.msHostList = msHostList;
+    }
+
+    public List<String> getAvoidMsHostList() {
+        return avoidMsHostList;
+    }
+
+    public void setAvoidMsHostList(List<String> msHostList) {
+        this.avoidMsHostList = avoidMsHostList;
     }
 
     public String getLbAlgorithm() {
@@ -93,5 +117,13 @@ public class ReadyCommand extends Command {
 
     public Boolean getEnableHumanReadableSizes() {
         return enableHumanReadableSizes;
+    }
+
+    public String getArch() {
+        return arch;
+    }
+
+    public void setArch(String arch) {
+        this.arch = arch;
     }
 }

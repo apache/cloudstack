@@ -111,6 +111,9 @@ public class SAML2LoginAPIAuthenticatorCmdTest {
     @Mock
     HttpServletRequest req;
 
+    @Mock
+    Object _responseObject;
+
     @Spy
     @InjectMocks
     private SAML2LoginAPIAuthenticatorCmd cmdSpy;
@@ -279,7 +282,7 @@ public class SAML2LoginAPIAuthenticatorCmdTest {
 
     @Test
     public void testFailOnSAMLSignatureCheckWhenFalse() throws NoSuchFieldException, IllegalAccessException {
-        overrideDefaultConfigValue(SAML2AuthManager.SAMLCheckSignature, "_defaultValue", "false");
+        overrideDefaultConfigValue(SAML2AuthManager.SAMLCheckSignature, "_value", false);
         SAML2LoginAPIAuthenticatorCmd cmd = new SAML2LoginAPIAuthenticatorCmd();
         try {
             cmd.checkAndFailOnMissingSAMLSignature(null);
@@ -290,7 +293,7 @@ public class SAML2LoginAPIAuthenticatorCmdTest {
 
     @Test(expected = ServerApiException.class)
     public void testFailOnSAMLSignatureCheckWhenTrue() throws NoSuchFieldException, IllegalAccessException {
-        overrideDefaultConfigValue(SAML2AuthManager.SAMLCheckSignature, "_defaultValue", "true");
+        overrideDefaultConfigValue(SAML2AuthManager.SAMLCheckSignature, "_value", true);
         SAML2LoginAPIAuthenticatorCmd cmd = new SAML2LoginAPIAuthenticatorCmd();
         cmd.checkAndFailOnMissingSAMLSignature(null);
     }

@@ -21,11 +21,14 @@ Tests DRS on a cluster
 
 import logging
 import time
+from collections.abc import Iterable
 
+from marvin.codes import FAILED
 from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.cloudstackAPI import (migrateSystemVm, listRouters, listSystemVms)
 from marvin.lib.base import (Cluster, Configurations, Host, Network, NetworkOffering, ServiceOffering, VirtualMachine,
                              Zone)
-from marvin.lib.common import (get_domain, get_zone, get_template)
+from marvin.lib.common import (get_domain, get_zone, get_test_template)
 from marvin.lib.utils import wait_until
 from marvin import jsonHelper
 from nose.plugins.attrib import attr
@@ -41,7 +44,15 @@ class TestClusterDRS(cloudstackTestCase):
 
         zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.zone = Zone(zone.__dict__)
-        cls.template = get_template(cls.apiclient, cls.zone.id)
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        cls.template = get_test_template(
+            cls.apiclient,
+            cls.zone.id,
+            cls.hypervisor
+        )
+        if cls.template == FAILED:
+            assert False, "get_test_template() failed to return template\
+                        with hypervisor %s" % cls.hypervisor
         cls._cleanup = []
 
         cls.logger = logging.getLogger("TestClusterDRS")
@@ -98,6 +109,43 @@ class TestClusterDRS(cloudstackTestCase):
         )
         cls._cleanup.append(cls.network)
 
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        if cls.hypervisor.lower() not in ['simulator']:
+            cls.migrateSvms(cls.cluster)
+
+    @classmethod
+    def migrateSvms(cls, cluster):
+        """
+            for testing the balanced algorithm we must make sure there is at least as more free memory on host[1] than on
+            host[0]. As a grude measure we migrate any and all system vms to host[0] before the testing commences
+
+        :param cluster: the cluser to check
+        :return: None
+        """
+
+        systemVmIds = []
+        cmds = listSystemVms.listSystemVmsCmd()
+        responseS = cls.apiclient.listSystemVms(cmds)
+        if isinstance(responseS, Iterable):
+            for svm in responseS:
+                if svm.hostid != cls.hosts[0].id:
+                    systemVmIds.append(svm.id)
+        cmdv = listRouters.listRoutersCmd()
+        responseR = cls.apiclient.listRouters(cmdv)
+        if isinstance(responseR, Iterable):
+            for svm in responseR:
+                if svm.hostid != cls.hosts[0].id:
+                    systemVmIds.append(svm.id)
+        numToMigrate = len(systemVmIds)
+        cls.logger.debug(f'system vms and routers to migrate -- {numToMigrate}')
+        cmdM = migrateSystemVm.migrateSystemVmCmd()
+        cmdM.hostId=cls.hosts[0].id
+        for id in systemVmIds:
+            cmdM.virtualmachineid=id
+            responseM = cls.apiclient.migrateSystemVm(cmdM)
+            cls.logger.debug(f'migrated {responseM}')
+
+
     @classmethod
     def tearDownClass(cls):
         super(TestClusterDRS, cls).tearDownClass()
@@ -111,7 +159,6 @@ class TestClusterDRS(cloudstackTestCase):
     def tearDown(self):
         super(TestClusterDRS, self).tearDown()
 
-    @classmethod
     def get_vm_host_id(cls, vm_id):
         list_vms = VirtualMachine.list(cls.apiclient, id=vm_id)
         vm = list_vms[0]
@@ -188,8 +235,8 @@ class TestClusterDRS(cloudstackTestCase):
                                                        serviceofferingid=self.service_offering.id,
                                                        templateid=self.template.id, zoneid=self.zone.id,
                                                        networkids=self.network.id, hostid=self.hosts[1].id)
-        vm_2_host_id = self.get_vm_host_id(self.virtual_machine_2.id)
         self.cleanup.append(self.virtual_machine_2)
+        vm_2_host_id = self.get_vm_host_id(self.virtual_machine_2.id)
 
         self.assertNotEqual(vm_1_host_id, vm_2_host_id, msg="Both VMs should be on different hosts")
         self.wait_for_vm_start(self.virtual_machine_1)
@@ -216,13 +263,15 @@ class TestClusterDRS(cloudstackTestCase):
 
     @attr(tags=["advanced"], required_hardware="false")
     def test_02_balanced_drs_algorithm(self):
-        """ Verify DRS algorithm - balanced"""
+        """
+            Verify DRS algorithm - balanced
 
-        # 1. Deploy vm-1 on host 1
-        # 2. Deploy vm-2 on host 2
-        # 3. Execute DRS to move all VMs on different hosts
-
+            # 1. Deploy vm-1 on host 1
+            # 2. Deploy vm-2 on host 2
+            # 3. Execute DRS to move all VMs on different hosts
+        """
         self.logger.debug("=== Running test_02_balanced_drs_algorithm ===")
+
         # 1. Deploy vm-1 on host 1
         self.services["virtual_machine"]["name"] = "virtual-machine-1"
         self.services["virtual_machine"]["displayname"] = "virtual-machine-1"
@@ -240,8 +289,8 @@ class TestClusterDRS(cloudstackTestCase):
                                                        serviceofferingid=self.service_offering.id,
                                                        templateid=self.template.id, zoneid=self.zone.id,
                                                        networkids=self.network.id, hostid=self.hosts[0].id)
-        vm_2_host_id = self.get_vm_host_id(self.virtual_machine_2.id)
         self.cleanup.append(self.virtual_machine_2)
+        vm_2_host_id = self.get_vm_host_id(self.virtual_machine_2.id)
 
         self.assertEqual(vm_1_host_id, vm_2_host_id, msg="Both VMs should be on same hosts")
         self.wait_for_vm_start(self.virtual_machine_1)
@@ -256,7 +305,8 @@ class TestClusterDRS(cloudstackTestCase):
             migration["virtualmachineid"]: migration["destinationhostid"] for migration in migrations
         }
 
-        self.assertEqual(len(vm_to_dest_host_map), 1, msg="DRS plan should have 1 migrations")
+        # this is one if no svm is considered to be migrated, it might be higher
+        self.assertTrue(len(vm_to_dest_host_map) >= 1, msg="DRS plan should have at least 1 migrations")
 
         executed_plan = self.cluster.executeDrsPlan(self.apiclient, vm_to_dest_host_map)
         self.wait_for_plan_completion(executed_plan)
@@ -264,4 +314,6 @@ class TestClusterDRS(cloudstackTestCase):
         vm_1_host_id = self.get_vm_host_id(self.virtual_machine_1.id)
         vm_2_host_id = self.get_vm_host_id(self.virtual_machine_2.id)
 
-        self.assertNotEqual(vm_1_host_id, vm_2_host_id, msg="Both VMs should be on different hosts")
+        self.assertTrue(
+            vm_1_host_id != self.virtual_machine_1.hostid or vm_2_host_id != self.virtual_machine_2.hostid,
+                        msg="At least one VM should have been migrated to a different host")

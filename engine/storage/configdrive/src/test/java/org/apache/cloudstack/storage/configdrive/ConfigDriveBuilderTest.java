@@ -20,6 +20,7 @@ package org.apache.cloudstack.storage.configdrive;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 
 import java.io.File;
@@ -27,14 +28,21 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.network.Network;
+import com.cloud.vm.NicProfile;
+import com.google.gson.JsonParser;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.InOrder;
 import org.mockito.MockedConstruction;
@@ -48,6 +56,13 @@ import com.google.gson.JsonObject;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ConfigDriveBuilderTest {
+
+    private static Map<Long, List<Network.Service>> supportedServices;
+
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        supportedServices = Map.of(1L, List.of(Network.Service.UserData, Network.Service.Dhcp, Network.Service.Dns));
+    }
 
     @Test
     public void writeFileTest() {
@@ -112,16 +127,16 @@ public class ConfigDriveBuilderTest {
     }
 
     @Test(expected = CloudRuntimeException.class)
-    public void buildConfigDriveTestNoVmData() {
-        ConfigDriveBuilder.buildConfigDrive(null, "teste", "C:", null);
+    public void buildConfigDriveTestNoVmDataAndNic() {
+        ConfigDriveBuilder.buildConfigDrive(null, null, "teste", "C:", null, null);
     }
 
     @Test(expected = CloudRuntimeException.class)
     public void buildConfigDriveTestIoException() {
         try (MockedStatic<ConfigDriveBuilder> configDriveBuilderMocked = Mockito.mockStatic(ConfigDriveBuilder.class)) {
-            configDriveBuilderMocked.when(() -> ConfigDriveBuilder.writeVendorAndNetworkEmptyJsonFile(nullable(File.class))).thenThrow(CloudRuntimeException.class);
-            Mockito.when(ConfigDriveBuilder.buildConfigDrive(new ArrayList<>(), "teste", "C:", null)).thenCallRealMethod();
-            ConfigDriveBuilder.buildConfigDrive(new ArrayList<>(), "teste", "C:", null);
+            configDriveBuilderMocked.when(() -> ConfigDriveBuilder.writeVendorDataJsonFile(nullable(File.class))).thenThrow(CloudRuntimeException.class);
+            Mockito.when(ConfigDriveBuilder.buildConfigDrive(null, new ArrayList<>(), "teste", "C:", null, supportedServices)).thenCallRealMethod();
+            ConfigDriveBuilder.buildConfigDrive(null, new ArrayList<>(), "teste", "C:", null, supportedServices);
         }
     }
 
@@ -129,22 +144,26 @@ public class ConfigDriveBuilderTest {
     public void buildConfigDriveTest() {
         try (MockedStatic<ConfigDriveBuilder> configDriveBuilderMocked = Mockito.mockStatic(ConfigDriveBuilder.class)) {
 
-            configDriveBuilderMocked.when(() -> ConfigDriveBuilder.writeVendorAndNetworkEmptyJsonFile(Mockito.any(File.class))).then(invocationOnMock -> null);
+            configDriveBuilderMocked.when(() -> ConfigDriveBuilder.writeVendorDataJsonFile(Mockito.any(File.class))).then(invocationOnMock -> null);
 
             configDriveBuilderMocked.when(() -> ConfigDriveBuilder.writeVmMetadata(Mockito.anyList(), Mockito.anyString(), Mockito.any(File.class), anyMap())).then(invocationOnMock -> null);
 
             configDriveBuilderMocked.when(() -> ConfigDriveBuilder.linkUserData((Mockito.anyString()))).then(invocationOnMock -> null);
 
             configDriveBuilderMocked.when(() -> ConfigDriveBuilder.generateAndRetrieveIsoAsBase64Iso(Mockito.anyString(), Mockito.anyString(), Mockito.anyString())).thenAnswer(invocation -> "mockIsoDataBase64");
-            //force execution of real method
-            Mockito.when(ConfigDriveBuilder.buildConfigDrive(new ArrayList<>(), "teste", "C:", null)).thenCallRealMethod();
 
-            String returnedIsoData = ConfigDriveBuilder.buildConfigDrive(new ArrayList<>(), "teste", "C:", null);
+            NicProfile mockedNicProfile = Mockito.mock(NicProfile.class);
+            Mockito.when(mockedNicProfile.getId()).thenReturn(1L);
+
+            //force execution of real method
+            Mockito.when(ConfigDriveBuilder.buildConfigDrive(List.of(mockedNicProfile), new ArrayList<>(), "teste", "C:", null, supportedServices)).thenCallRealMethod();
+
+            String returnedIsoData = ConfigDriveBuilder.buildConfigDrive(List.of(mockedNicProfile), new ArrayList<>(), "teste", "C:", null, supportedServices);
 
             Assert.assertEquals("mockIsoDataBase64", returnedIsoData);
 
             configDriveBuilderMocked.verify(() -> {
-                ConfigDriveBuilder.writeVendorAndNetworkEmptyJsonFile(Mockito.any(File.class));
+                ConfigDriveBuilder.writeVendorDataJsonFile(Mockito.any(File.class));
                 ConfigDriveBuilder.writeVmMetadata(Mockito.anyList(), Mockito.anyString(), Mockito.any(File.class), anyMap());
                 ConfigDriveBuilder.linkUserData(Mockito.anyString());
                 ConfigDriveBuilder.generateAndRetrieveIsoAsBase64Iso(Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
@@ -153,23 +172,23 @@ public class ConfigDriveBuilderTest {
     }
 
     @Test(expected = CloudRuntimeException.class)
-    public void writeVendorAndNetworkEmptyJsonFileTestCannotCreateOpenStackFolder() {
+    public void writeVendorDataJsonFileTestCannotCreateOpenStackFolder() {
         File folderFileMock = Mockito.mock(File.class);
         Mockito.doReturn(false).when(folderFileMock).mkdirs();
 
-        ConfigDriveBuilder.writeVendorAndNetworkEmptyJsonFile(folderFileMock);
+        ConfigDriveBuilder.writeVendorDataJsonFile(folderFileMock);
     }
 
     @Test(expected = CloudRuntimeException.class)
-    public void writeVendorAndNetworkEmptyJsonFileTest() {
+    public void writeVendorDataJsonFileTest() {
         File folderFileMock = Mockito.mock(File.class);
         Mockito.doReturn(false).when(folderFileMock).mkdirs();
 
-        ConfigDriveBuilder.writeVendorAndNetworkEmptyJsonFile(folderFileMock);
+        ConfigDriveBuilder.writeVendorDataJsonFile(folderFileMock);
     }
 
     @Test
-    public void writeVendorAndNetworkEmptyJsonFileTestCreatingFolder() {
+    public void writeVendorDataJsonFileTestCreatingFolder() {
         try (MockedStatic<ConfigDriveBuilder> configDriveBuilderMocked = Mockito.mockStatic(ConfigDriveBuilder.class)) {
 
             File folderFileMock = Mockito.mock(File.class);
@@ -177,9 +196,9 @@ public class ConfigDriveBuilderTest {
             Mockito.doReturn(true).when(folderFileMock).mkdirs();
 
             //force execution of real method
-            configDriveBuilderMocked.when(() -> ConfigDriveBuilder.writeVendorAndNetworkEmptyJsonFile(folderFileMock)).thenCallRealMethod();
+            configDriveBuilderMocked.when(() -> ConfigDriveBuilder.writeVendorDataJsonFile(folderFileMock)).thenCallRealMethod();
 
-            ConfigDriveBuilder.writeVendorAndNetworkEmptyJsonFile(folderFileMock);
+            ConfigDriveBuilder.writeVendorDataJsonFile(folderFileMock);
 
             Mockito.verify(folderFileMock).exists();
             Mockito.verify(folderFileMock).mkdirs();
@@ -500,5 +519,144 @@ public class ConfigDriveBuilderTest {
             Mockito.verify(mkIsoProgramInMacOsFileMock, Mockito.times(1)).canExecute();
             Mockito.verify(mkIsoProgramInMacOsFileMock, Mockito.times(1)).getCanonicalPath();
         }
+    }
+
+    @Test
+    public void testWriteNetworkData() throws Exception {
+        // Setup
+        NicProfile nicp = mock(NicProfile.class);
+        Mockito.when(nicp.getId()).thenReturn(1L);
+
+        Mockito.when(nicp.getMacAddress()).thenReturn("00:00:00:00:00:00");
+        Mockito.when(nicp.getMtu()).thenReturn(2000);
+
+        Mockito.when(nicp.getIPv4Address()).thenReturn("172.31.0.10");
+        Mockito.when(nicp.getDeviceId()).thenReturn(1);
+        Mockito.when(nicp.getIPv4Netmask()).thenReturn("255.255.255.0");
+        Mockito.when(nicp.getUuid()).thenReturn("NETWORK UUID");
+        Mockito.when(nicp.getIPv4Gateway()).thenReturn("172.31.0.1");
+
+
+        Mockito.when(nicp.getIPv6Address()).thenReturn("2001:db8:0:1234:0:567:8:1");
+        Mockito.when(nicp.getIPv6Cidr()).thenReturn("2001:db8:0:1234:0:567:8:1/64");
+        Mockito.when(nicp.getIPv6Gateway()).thenReturn("2001:db8:0:1234:0:567:8::1");
+
+        Mockito.when(nicp.getIPv4Dns1()).thenReturn("8.8.8.8");
+        Mockito.when(nicp.getIPv4Dns2()).thenReturn("1.1.1.1");
+        Mockito.when(nicp.getIPv6Dns1()).thenReturn("2001:4860:4860::8888");
+        Mockito.when(nicp.getIPv6Dns2()).thenReturn("2001:4860:4860::8844");
+
+
+        List<Network.Service> services1 = Arrays.asList(Network.Service.Dhcp, Network.Service.Dns);
+
+        Map<Long, List<Network.Service>> supportedServices = new HashMap<>();
+        supportedServices.put(1L, services1);
+
+        TemporaryFolder folder = new TemporaryFolder();
+        folder.create();
+        File openStackFolder = folder.newFolder("openStack");
+
+        // Expected JSON structure
+        String expectedJson = "{" +
+                "  \"links\": [" +
+                "    {" +
+                "      \"ethernet_mac_address\": \"00:00:00:00:00:00\"," +
+                "      \"id\": \"eth1\"," +
+                "      \"mtu\": 2000," +
+                "      \"type\": \"phy\"" +
+                "    }" +
+                "  ]," +
+                "  \"networks\": [" +
+                "    {" +
+                "      \"id\": \"eth1\"," +
+                "      \"ip_address\": \"172.31.0.10\"," +
+                "      \"link\": \"eth1\"," +
+                "      \"netmask\": \"255.255.255.0\"," +
+                "      \"network_id\": \"NETWORK UUID\"," +
+                "      \"type\": \"ipv4\"," +
+                "      \"routes\": [" +
+                "        {" +
+                "          \"gateway\": \"172.31.0.1\"," +
+                "          \"netmask\": \"0.0.0.0\"," +
+                "          \"network\": \"0.0.0.0\"" +
+                "        }" +
+                "      ]" +
+                "    }," +
+                "    {" +
+                "      \"id\": \"eth1\"," +
+                "      \"ip_address\": \"2001:db8:0:1234:0:567:8:1\"," +
+                "      \"link\": \"eth1\"," +
+                "      \"netmask\": \"64\"," +
+                "      \"network_id\": \"NETWORK UUID\"," +
+                "      \"type\": \"ipv6\"," +
+                "      \"routes\": [" +
+                "        {" +
+                "          \"gateway\": \"2001:db8:0:1234:0:567:8::1\"," +
+                "          \"netmask\": \"0\"," +
+                "          \"network\": \"::\"" +
+                "        }" +
+                "      ]" +
+                "    }" +
+                "  ]," +
+                "  \"services\": [" +
+                "    {" +
+                "      \"address\": \"8.8.8.8\"," +
+                "      \"type\": \"dns\"" +
+                "    }," +
+                "    {" +
+                "      \"address\": \"1.1.1.1\"," +
+                "      \"type\": \"dns\"" +
+                "    }," +
+                "    {" +
+                "      \"address\": \"2001:4860:4860::8888\"," +
+                "      \"type\": \"dns\"" +
+                "    }," +
+                "    {" +
+                "      \"address\": \"2001:4860:4860::8844\"," +
+                "      \"type\": \"dns\"" +
+                "    }" +
+                "  ]" +
+                "}";
+
+        // Action
+        ConfigDriveBuilder.writeNetworkData(Arrays.asList(nicp), supportedServices, openStackFolder);
+
+        // Verify
+        File networkDataFile = new File(openStackFolder, "network_data.json");
+        String content = FileUtils.readFileToString(networkDataFile, StandardCharsets.UTF_8);
+        JsonObject actualJson = new JsonParser().parse(content).getAsJsonObject();
+        JsonObject expectedJsonObject = new JsonParser().parse(expectedJson).getAsJsonObject();
+
+        Assert.assertEquals(expectedJsonObject, actualJson);
+        folder.delete();
+    }
+
+    @Test
+    public void testWriteNetworkDataEmptyJson() throws Exception {
+        // Setup
+        NicProfile nicp = mock(NicProfile.class);
+        List<Network.Service> services1 = Collections.emptyList();
+
+        Map<Long, List<Network.Service>> supportedServices = new HashMap<>();
+        supportedServices.put(1L, services1);
+
+        TemporaryFolder folder = new TemporaryFolder();
+        folder.create();
+        File openStackFolder = folder.newFolder("openStack");
+
+        // Expected JSON structure
+        String expectedJson = "{}";
+
+        // Action
+        ConfigDriveBuilder.writeNetworkData(Arrays.asList(nicp), supportedServices, openStackFolder);
+
+        // Verify
+        File networkDataFile = new File(openStackFolder, "network_data.json");
+        String content = FileUtils.readFileToString(networkDataFile, StandardCharsets.UTF_8);
+        JsonObject actualJson = new JsonParser().parse(content).getAsJsonObject();
+        JsonObject expectedJsonObject = new JsonParser().parse(expectedJson).getAsJsonObject();
+
+        Assert.assertEquals(expectedJsonObject, actualJson);
+        folder.delete();
     }
 }

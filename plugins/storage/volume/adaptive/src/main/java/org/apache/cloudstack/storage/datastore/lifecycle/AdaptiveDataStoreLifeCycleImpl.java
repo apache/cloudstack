@@ -57,17 +57,13 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.host.Host;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 /**
  * Manages the lifecycle of a Managed Data Store in CloudStack
  */
-public class AdaptiveDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
+public class AdaptiveDataStoreLifeCycleImpl extends BasePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     @Inject
     private PrimaryDataStoreDao _storagePoolDao;
-    protected Logger logger = LogManager.getLogger(getClass());
-
     @Inject
     PrimaryDataStoreHelper _dataStoreHelper;
     @Inject
@@ -190,7 +186,6 @@ public class AdaptiveDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle
             parameters.setName(dsName);
             parameters.setProviderName(providerName);
             parameters.setManaged(true);
-            parameters.setCapacityBytes(capacityBytes);
             parameters.setUsedBytes(0);
             parameters.setCapacityIops(capacityIops);
             parameters.setHypervisorType(HypervisorType.KVM);
@@ -224,7 +219,7 @@ public class AdaptiveDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle
 
             // if we have user-provided capacity bytes, validate they do not exceed the manaaged storage capacity bytes
             ProviderVolumeStorageStats stats = api.getManagedStorageStats();
-            if (capacityBytes != null && capacityBytes != 0) {
+            if (capacityBytes != null && capacityBytes != 0 && stats != null) {
                 if (stats.getCapacityInBytes() > 0) {
                     if (stats.getCapacityInBytes() < capacityBytes) {
                         throw new InvalidParameterValueException("Capacity bytes provided exceeds the capacity of the storage endpoint: provided by user: " + capacityBytes + ", storage capacity from storage provider: " + stats.getCapacityInBytes());
@@ -234,8 +229,8 @@ public class AdaptiveDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle
             }
             // if we have no user-provided capacity bytes, use the ones provided by storage
             else {
-                if (stats.getCapacityInBytes() <= 0) {
-                    throw new InvalidParameterValueException("Capacity bytes note available from the storage provider, user provided capacity bytes must be specified");
+                if (stats == null || stats.getCapacityInBytes() <= 0) {
+                    throw new InvalidParameterValueException("Capacity bytes not available from the storage provider, user provided capacity bytes must be specified");
                 }
                 parameters.setCapacityBytes(stats.getCapacityInBytes());
             }
@@ -267,7 +262,8 @@ public class AdaptiveDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle
      */
     @Override
     public boolean attachCluster(DataStore store, ClusterScope scope) {
-        logger.info("Attaching storage pool [" + store.getName() + "] to cluster [" + scope.getScopeId() + "]");
+        ClusterVO cluster = _clusterDao.findById(scope.getScopeId());
+        logger.info("Attaching storage pool {} to cluster {}", store, cluster);
         _dataStoreHelper.attachCluster(store);
 
         StoragePoolVO dataStoreVO = _storagePoolDao.findById(store.getId());
@@ -277,29 +273,29 @@ public class AdaptiveDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle
         List<HostVO> allHosts = _resourceMgr.listAllUpHosts(Host.Type.Routing, primarystore.getClusterId(), primarystore.getPodId(), primarystore.getDataCenterId());
         if (allHosts.isEmpty()) {
             _primaryDataStoreDao.expunge(primarystore.getId());
-            throw new CloudRuntimeException("No host up to associate a storage pool with in cluster " + primarystore.getClusterId());
+            throw new CloudRuntimeException(String.format("No host up to associate a storage pool with in cluster %s", cluster));
         }
 
         if (dataStoreVO.isManaged()) {
             //boolean success = false;
-            for (HostVO h : allHosts) {
-                logger.debug("adding host " + h.getName() + " to storage pool " + store.getName());
+            for (HostVO host : allHosts) {
+                logger.debug("adding host {} to storage pool {}", host, store);
             }
         }
 
         logger.debug("In createPool Adding the pool to each of the hosts");
         List<HostVO> poolHosts = new ArrayList<HostVO>();
-        for (HostVO h : allHosts) {
+        for (HostVO host : allHosts) {
             try {
-                _storageMgr.connectHostToSharedPool(h.getId(), primarystore.getId());
-                poolHosts.add(h);
+                _storageMgr.connectHostToSharedPool(host, primarystore.getId());
+                poolHosts.add(host);
             } catch (Exception e) {
-                logger.warn("Unable to establish a connection between " + h + " and " + primarystore, e);
+                logger.warn("Unable to establish a connection between {} and {}", host, primarystore, e);
             }
         }
 
         if (poolHosts.isEmpty()) {
-            logger.warn("No host can access storage pool " + primarystore + " on cluster " + primarystore.getClusterId());
+            logger.warn("No host can access storage pool {} on cluster {}", primarystore, cluster);
             _primaryDataStoreDao.expunge(primarystore.getId());
             throw new CloudRuntimeException("Failed to access storage pool");
         }
@@ -309,19 +305,19 @@ public class AdaptiveDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle
 
     @Override
     public boolean attachHost(DataStore store, HostScope scope, StoragePoolInfo existingInfo) {
-        logger.info("Attaching storage pool [" + store.getName() + "] to host [" + scope.getScopeId() + "]");
+        logger.info("Attaching storage pool {} to host {}", store::toString, () -> hostDao.findById(scope.getScopeId()));
         _dataStoreHelper.attachHost(store, scope, existingInfo);
         return true;
     }
 
     @Override
     public boolean attachZone(DataStore dataStore, ZoneScope scope, HypervisorType hypervisorType) {
-        logger.info("Attaching storage pool [" + dataStore.getName() + "] to zone [" + scope.getScopeId() + "]");
+        logger.info("Attaching storage pool {} to zone {}", dataStore, zoneDao.findById(scope.getScopeId()));
         List<HostVO> hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(hypervisorType, scope.getScopeId());
         List<HostVO> poolHosts = new ArrayList<HostVO>();
         for (HostVO host : hosts) {
             try {
-                _storageMgr.connectHostToSharedPool(host.getId(), dataStore.getId());
+                _storageMgr.connectHostToSharedPool(host, dataStore.getId());
                 poolHosts.add(host);
             } catch (Exception e) {
                 logger.warn("Unable to establish a connection between " + host + " and " + dataStore, e);
@@ -341,7 +337,7 @@ public class AdaptiveDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle
      */
     @Override
     public boolean maintain(DataStore store) {
-        logger.info("Placing storage pool [" + store.getName() + "] in maintainence mode");
+        logger.info("Placing storage pool {} in maintenance mode", store);
         if (_storagePoolAutomation.maintain(store)) {
             return _dataStoreHelper.maintain(store);
         } else {
@@ -354,7 +350,7 @@ public class AdaptiveDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle
      */
     @Override
     public boolean cancelMaintain(DataStore store) {
-        logger.info("Canceling storage pool maintainence for [" + store.getName() + "]");
+        logger.info("Canceling storage pool maintenance for {}", store);
         if (_dataStoreHelper.cancelMaintain(store)) {
             return _storagePoolAutomation.cancelMaintain(store);
         } else {
@@ -367,7 +363,7 @@ public class AdaptiveDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle
      */
     @Override
     public boolean deleteDataStore(DataStore store) {
-        logger.info("Delete datastore called for [" + store.getName() + "]");
+        logger.info("Delete datastore called for {}", store);
         return _dataStoreHelper.deletePrimaryDataStore(store);
     }
 
@@ -376,7 +372,7 @@ public class AdaptiveDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle
      */
     @Override
     public boolean migrateToObjectStore(DataStore store) {
-        logger.info("Migrate datastore called for [" + store.getName() + "].  This is not currently implemented for this provider at this time");
+        logger.info("Migrate datastore called for {}. This is not currently implemented for this provider at this time", store);
         return false;
     }
 
@@ -384,8 +380,8 @@ public class AdaptiveDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle
      * Update the storage pool configuration
      */
     @Override
-    public void updateStoragePool(StoragePool storagePool, Map<String, String> details) {
-        _adapterFactoryMap.updateAPI(storagePool.getUuid(), storagePool.getStorageProviderName(), details);
+    public void updateStoragePool(StoragePool storagePool, Map<String, String> newDetails) {
+        _adapterFactoryMap.updateAPI(storagePool.getUuid(), storagePool.getStorageProviderName(), newDetails);
     }
 
     /**
@@ -393,7 +389,7 @@ public class AdaptiveDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle
      */
     @Override
     public void enableStoragePool(DataStore store) {
-        logger.info("Enabling storage pool [" + store.getName() + "]");
+        logger.info("Enabling storage pool {}", store);
         _dataStoreHelper.enable(store);
     }
 
@@ -402,7 +398,7 @@ public class AdaptiveDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle
      */
     @Override
     public void disableStoragePool(DataStore store) {
-        logger.info("Disabling storage pool [" + store.getName() + "]");
+        logger.info("Disabling storage pool {}", store);
         _dataStoreHelper.disable(store);
     }
 }

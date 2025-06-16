@@ -18,6 +18,7 @@
 package org.apache.cloudstack.backup;
 
 import java.util.Date;
+import java.util.List;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
@@ -30,6 +31,28 @@ public interface Backup extends ControlledEntity, InternalIdentity, Identity {
 
     enum Status {
         Allocated, Queued, BackingUp, BackedUp, Error, Failed, Restoring, Removed, Expunged
+    }
+
+    public enum Type {
+        MANUAL, HOURLY, DAILY, WEEKLY, MONTHLY;
+        private int max = 8;
+
+        public void setMax(int max) {
+            this.max = max;
+        }
+
+        public int getMax() {
+            return max;
+        }
+
+        @Override
+        public String toString() {
+            return this.name();
+        }
+
+        public boolean equals(String snapshotType) {
+            return this.toString().equalsIgnoreCase(snapshotType);
+        }
     }
 
     class Metric {
@@ -134,11 +157,13 @@ public interface Backup extends ControlledEntity, InternalIdentity, Identity {
     }
 
     long getVmId();
+    long getBackupOfferingId();
     String getExternalId();
     String getType();
     Date getDate();
     Backup.Status getStatus();
     Long getSize();
     Long getProtectedSize();
+    List<VolumeInfo> getBackedUpVolumes();
     long getZoneId();
 }

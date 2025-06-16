@@ -24,9 +24,11 @@ import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.VsphereStoragePolicyVO;
 import com.cloud.dc.dao.VsphereStoragePolicyDao;
 import com.cloud.storage.StorageManager;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.secret.dao.PassphraseDao;
 import org.apache.cloudstack.secret.PassphraseVO;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
@@ -82,6 +84,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
@@ -114,12 +117,18 @@ public class VolumeObject implements VolumeInfo {
     VsphereStoragePolicyDao vsphereStoragePolicyDao;
     @Inject
     PassphraseDao passphraseDao;
+    @Inject
+    VolumeOrchestrationService
+    orchestrationService;
 
     private Object payload;
     private MigrationOptions migrationOptions;
     private boolean directDownload;
     private String vSphereStoragePolicyId;
     private boolean followRedirects;
+
+    private List<String> checkpointPaths;
+    private Set<String> checkpointImageStoreUrls;
 
     private final List<Volume.State> volumeStatesThatShouldNotTransitWhenDataStoreRoleIsImage = Arrays.asList(Volume.State.Migrating, Volume.State.Uploaded, Volume.State.Copying,
       Volume.State.Expunged);
@@ -136,6 +145,9 @@ public class VolumeObject implements VolumeInfo {
     protected void configure(DataStore dataStore, VolumeVO volumeVO) {
         this.volumeVO = volumeVO;
         this.dataStore = dataStore;
+        Pair<List<String>, Set<String>> volumeCheckPointPathsAndImageStoreUrls = orchestrationService.getVolumeCheckpointPathsAndImageStoreUrls(volumeVO.getId(), getHypervisorType());
+        this.checkpointPaths = volumeCheckPointPathsAndImageStoreUrls.first();
+        this.checkpointImageStoreUrls = volumeCheckPointPathsAndImageStoreUrls.second();
     }
 
     public static VolumeObject getVolumeObject(DataStore dataStore, VolumeVO volumeVO) {
@@ -900,7 +912,7 @@ public class VolumeObject implements VolumeInfo {
                     volumeVO.setPassphraseId(null);
                     volumeDao.persist(volumeVO);
 
-                    logger.debug(String.format("Checking to see if we can delete passphrase id %s", passphraseId));
+                    logger.debug("Checking to see if we can delete passphrase id {} for volume {}", passphraseId, volumeVO);
                     List<VolumeVO> volumes = volumeDao.listVolumesByPassphraseId(passphraseId);
 
                     if (volumes != null && !volumes.isEmpty()) {
@@ -936,7 +948,29 @@ public class VolumeObject implements VolumeInfo {
     }
 
     @Override
+    public boolean isDeleteProtection() {
+        return volumeVO.isDeleteProtection();
+    }
+
+    @Override
     public boolean isFollowRedirects() {
         return followRedirects;
+    }
+
+    @Override
+    public List<String> getCheckpointPaths() {
+        return checkpointPaths;
+    }
+
+    @Override
+    public Set<String> getCheckpointImageStoreUrls() {
+        return checkpointImageStoreUrls;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("VolumeObject %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "volumeVO", "dataStore"));
     }
 }

@@ -17,6 +17,8 @@
 package com.cloud.utils.db;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -55,6 +57,10 @@ public interface GenericDao<T, ID extends Serializable> {
 
     // Finds one unique VO using uuid
     T findByUuid(String uuid);
+
+    default List<T> listByUuids(Collection<String> uuids) {
+        return new ArrayList<>();
+    }
 
     // Finds one unique VO using uuid including removed entities
     T findByUuidIncludingRemoved(String uuid);
@@ -149,6 +155,11 @@ public interface GenericDao<T, ID extends Serializable> {
     List<T> listAll(Filter filter);
 
     /**
+     * Look IDs for all active rows.
+     */
+    List<ID> listAllIds();
+
+    /**
      * Search for the entity beans
      * @param sc
      * @param filter
@@ -228,6 +239,24 @@ public interface GenericDao<T, ID extends Serializable> {
      * @return number of rows deleted
      */
     int expunge(final SearchCriteria<T> sc);
+
+    /**
+     * remove the entity bean specified by the search criteria and filter
+     * @param sc
+     * @param filter
+     * @return number of rows deleted
+     */
+    int expunge(final SearchCriteria<T> sc, final Filter filter);
+
+    /**
+     * remove the entity bean specified by the search criteria and batchSize
+     * @param sc
+     * @param batchSize
+     * @return number of rows deleted
+     */
+    int batchExpunge(final SearchCriteria<T> sc, final Long batchSize);
+
+    int expungeList(List<ID> ids);
 
     /**
      * expunge the removed rows.

@@ -44,6 +44,10 @@ export default {
     styles: {
       type: Object,
       default: () => {}
+    },
+    vmState: {
+      type: Boolean,
+      default: false
     }
   },
   methods: {
@@ -87,6 +91,12 @@ export default {
           case 'InProgress':
             state = this.$t('state.inprogress')
             break
+          case 'Down':
+            state = this.$t('state.down')
+            break
+          case 'Up':
+            state = this.$t('state.up')
+            break
         }
         return state.charAt(0).toUpperCase() + state.slice(1)
       }
@@ -113,6 +123,7 @@ export default {
         case 'up':
         case 'success':
         case 'poweron':
+        case 'primary':
           status = 'success'
           break
         case 'alert':
@@ -149,6 +160,7 @@ export default {
         case 'pending':
         case 'unsecure':
         case 'warning':
+        case 'backup':
           status = 'warning'
           break
       }
@@ -174,7 +186,11 @@ export default {
       } else if (this.$route.path === '/vm' || this.$route.path.includes('/vm/')) {
         result = this.$t('message.vm.state.' + state.toLowerCase())
       } else if (this.$route.path === '/volume' || this.$route.path.includes('/volume/')) {
-        result = this.$t('message.volume.state.' + state.toLowerCase())
+        if (this.vmState) {
+          result = this.$t('message.vm.state.' + state.toLowerCase())
+        } else {
+          result = this.$t('message.volume.state.' + state.toLowerCase())
+        }
       } else if (this.$route.path === '/guestnetwork' || this.$route.path.includes('/guestnetwork/')) {
         result = this.$t('message.guestnetwork.state.' + state.toLowerCase())
       } else if (this.$route.path === '/publicip' || this.$route.path.includes('/publicip/')) {

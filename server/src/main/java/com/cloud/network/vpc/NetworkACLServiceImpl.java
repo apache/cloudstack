@@ -264,7 +264,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             }
             _accountMgr.checkAccess(caller, null, true, vpc);
             if (!gateway.getVpcId().equals(acl.getVpcId())) {
-                throw new InvalidParameterValueException("private gateway: " + privateGatewayId + " and ACL: " + aclId + " do not belong to the same VPC");
+                throw new InvalidParameterValueException(String.format("private gateway: %s and ACL: %s do not belong to the same VPC", vo, acl));
             }
         }
 
@@ -301,7 +301,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             validateAclAssociatedToVpc(acl.getVpcId(), caller, acl.getUuid());
 
             if (!network.getVpcId().equals(acl.getVpcId())) {
-                throw new InvalidParameterValueException("Network: " + networkId + " and ACL: " + aclId + " do not belong to the same VPC");
+                throw new InvalidParameterValueException(String.format("Network: %s and ACL: %s do not belong to the same VPC", network, acl));
             }
         }
 
@@ -325,8 +325,8 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     public NetworkACLItem createNetworkACLItem(CreateNetworkACLCmd createNetworkACLCmd) {
         Long aclId = createAclListIfNeeded(createNetworkACLCmd);
 
-        Integer sourcePortStart = createNetworkACLCmd.getSourcePortStart();
-        Integer sourcePortEnd = createNetworkACLCmd.getSourcePortEnd();
+        Integer sourcePortStart = createNetworkACLCmd.getPublicStartPort();
+        Integer sourcePortEnd = createNetworkACLCmd.getPublicEndPort();
         String protocol = createNetworkACLCmd.getProtocol();
         List<String> sourceCidrList = createNetworkACLCmd.getSourceCidrList();
         Integer icmpCode = createNetworkACLCmd.getIcmpCode();
@@ -510,7 +510,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
      * @return the Id of the network ACL that is created.
      */
     protected Long createAclListForNetworkAndReturnAclListId(CreateNetworkACLCmd aclItemCmd, Network network) {
-        logger.debug("Network " + network.getId() + " is not associated with any ACL. Creating an ACL before adding acl item");
+        logger.debug("Network {} is not associated with any ACL. Creating an ACL before adding acl item", network);
 
         if (!networkModel.areServicesSupportedByNetworkOffering(network.getNetworkOfferingId(), Network.Service.NetworkACL)) {
             throw new InvalidParameterValueException("Network Offering does not support NetworkACL service");
@@ -525,18 +525,18 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         String description = "ACL for " + aclName;
         NetworkACL acl = _networkAclMgr.createNetworkACL(aclName, description, network.getVpcId(), aclItemCmd.isDisplay());
         if (acl == null) {
-            throw new CloudRuntimeException("Error while create ACL before adding ACL Item for network " + network.getId());
+            throw new CloudRuntimeException(String.format("Error while create ACL before adding ACL Item for network %s", network));
         }
-        logger.debug("Created ACL: " + aclName + " for network " + network.getId());
+        logger.debug("Created ACL: {} for network {}", aclName, network);
         Long aclId = acl.getId();
         //Apply acl to network
         try {
             if (!_networkAclMgr.replaceNetworkACL(acl, (NetworkVO)network)) {
-                throw new CloudRuntimeException("Unable to apply auto created ACL to network " + network.getId());
+                throw new CloudRuntimeException(String.format("Unable to apply auto created ACL to network %s", network));
             }
-            logger.debug("Created ACL is applied to network " + network.getId());
+            logger.debug("Created ACL is applied to network {}", network);
         } catch (ResourceUnavailableException e) {
-            throw new CloudRuntimeException("Unable to apply auto created ACL to network " + network.getId(), e);
+            throw new CloudRuntimeException(String.format("Unable to apply auto created ACL to network %s", network), e);
         }
         return aclId;
     }
@@ -697,6 +697,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         final String trafficType = cmd.getTrafficType();
         final String protocol = cmd.getProtocol();
         final String action = cmd.getAction();
+        final String keyword = cmd.getKeyword();
         final Map<String, String> tags = cmd.getTags();
         final Account caller = CallContext.current().getCallingAccount();
 
@@ -708,6 +709,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         sb.and("trafficType", sb.entity().getTrafficType(), Op.EQ);
         sb.and("protocol", sb.entity().getProtocol(), Op.EQ);
         sb.and("action", sb.entity().getAction(), Op.EQ);
+        sb.and("reason", sb.entity().getReason(), Op.EQ);
 
         if (tags != null && !tags.isEmpty()) {
             final SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
@@ -730,6 +732,12 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
         final SearchCriteria<NetworkACLItemVO> sc = sb.create();
 
+        if (StringUtils.isNotBlank(keyword)) {
+            final SearchCriteria<NetworkACLItemVO> ssc = _networkACLItemDao.createSearchCriteria();
+            ssc.addOr("protocol", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("reason", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.addAnd("acl_id", SearchCriteria.Op.SC, ssc);
+        }
         if (id != null) {
             sc.setParameters("id", id);
         }
@@ -747,7 +755,6 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         if (trafficType != null) {
             sc.setParameters("trafficType", trafficType);
         }
-
         if (aclId != null) {
             // Get VPC and check access
             final NetworkACL acl = _networkACLDao.findById(aclId);
@@ -764,7 +771,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
             // aclId is not specified
             // List permitted VPCs and filter aclItems
-            final List<Long> permittedAccounts = new ArrayList<Long>();
+            final List<Long> permittedAccounts = new ArrayList<>();
             Long domainId = cmd.getDomainId();
             boolean isRecursive = cmd.isRecursive();
             final String accountName = cmd.getAccountName();
@@ -780,7 +787,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             final SearchCriteria<VpcVO> scVpc = sbVpc.create();
             _accountMgr.buildACLSearchCriteria(scVpc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
             final List<VpcVO> vpcs = _vpcDao.search(scVpc, null);
-            final List<Long> vpcIds = new ArrayList<Long>();
+            final List<Long> vpcIds = new ArrayList<>();
             for (final VpcVO vpc : vpcs) {
                 vpcIds.add(vpc.getId());
             }
@@ -1056,7 +1063,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
      */
     protected void validateAclConsistency(MoveNetworkAclItemCmd moveNetworkAclItemCmd, NetworkACLVO lockedAcl, List<NetworkACLItemVO> allAclRules) {
         if (CollectionUtils.isEmpty(allAclRules)) {
-            logger.debug(String.format("No ACL rules for [id=%s, name=%s]. Therefore, there is no need for consistency validation.", lockedAcl.getUuid(), lockedAcl.getName()));
+            logger.debug("No ACL rules for {}. Therefore, there is no need for consistency validation.", lockedAcl);
             return;
         }
         String aclConsistencyHash = moveNetworkAclItemCmd.getAclConsistencyHash();

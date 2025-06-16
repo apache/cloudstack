@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 
@@ -37,8 +38,26 @@ import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 public interface VpcManager {
+    ConfigKey<Boolean> VpcTierNamePrepend = new ConfigKey<>(Boolean.class,
+            "vpc.tier.name.prepend",
+            ConfigKey.CATEGORY_NETWORK,
+            "false",
+            "Whether to prepend the VPC name to the VPC tier network name",
+            true,
+            ConfigKey.Scope.Global,
+            null);
+    ConfigKey<String> VpcTierNamePrependDelimiter = new ConfigKey<>(String.class,
+            "vpc.tier.name.prepend.delimiter",
+            ConfigKey.CATEGORY_NETWORK,
+            " ",
+            "Delimiter string to use between the VPC and the VPC tier name",
+            true,
+            ConfigKey.Scope.Global,
+            null);
+
     /**
      * Returns all the Guest networks that are part of VPC
      *
@@ -82,6 +101,8 @@ public interface VpcManager {
      */
     void unassignIPFromVpcNetwork(long ipId, long networkId);
 
+    void unassignIPFromVpcNetwork(final IPAddressVO ip, final Network network);
+
     /**
      * Creates guest network in the VPC
      *
@@ -110,11 +131,13 @@ public interface VpcManager {
     Network
         createVpcGuestNetwork(long ntwkOffId, String name, String displayText, String gateway, String cidr, String vlanId, String networkDomain, Account owner,
             Long domainId, PhysicalNetwork pNtwk, long zoneId, ACLType aclType, Boolean subdomainAccess, long vpcId, Long aclId, Account caller,
-            Boolean displayNetworkEnabled, String externalId, String ip6Gateway, String ip6Cidr, String ip4Dns1, String ip4Dns2, String ip6Dns1, String ip6Dns2, Pair<Integer, Integer> vrIfaceMTUs)
+            Boolean displayNetworkEnabled, String externalId, String ip6Gateway, String ip6Cidr, String ip4Dns1, String ip4Dns2, String ip6Dns1, String ip6Dns2,
+            Pair<Integer, Integer> vrIfaceMTUs, Integer networkCidrSize)
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
 
     /**
-     * Assigns source nat public IP address to VPC
+     * Assigns source nat public IP address to VPC.
+     * In case of NSX backed VPCs: CloudStack deploys VRs with Public NIC IP different to the VPC source NAT IP, the source NAT IP is on the NSX Public range
      *
      * @param owner
      * @param vpc
@@ -122,7 +145,7 @@ public interface VpcManager {
      * @throws InsufficientAddressCapacityException
      * @throws ConcurrentOperationException
      */
-    PublicIp assignSourceNatIpAddressToVpc(Account owner, Vpc vpc) throws InsufficientAddressCapacityException, ConcurrentOperationException;
+    PublicIp assignSourceNatIpAddressToVpc(Account owner, Vpc vpc, Long podId) throws InsufficientAddressCapacityException, ConcurrentOperationException;
 
     /**
      * Validates network offering to find if it can be used for network creation in VPC

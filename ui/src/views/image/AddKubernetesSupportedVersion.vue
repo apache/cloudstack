@@ -106,6 +106,25 @@
             v-model:checked="form.directdownload"
             :placeholder="apiParams.directdownload.description"/>
         </a-form-item>
+        <a-form-item
+          name="arch"
+          ref="arch">
+          <template #label>
+            <tooltip-label :title="$t('label.arch')" :tooltip="apiParams.arch.description"/>
+          </template>
+          <a-select
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            v-model:value="form.arch"
+            :placeholder="apiParams.arch.description">
+            <a-select-option v-for="opt in architectureTypes.opts" :key="opt.id">
+              {{ opt.name || opt.description }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
 
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
@@ -135,7 +154,8 @@ export default {
       loading: false,
       selectedZone: {},
       directDownloadDisabled: false,
-      lastNonEdgeDirectDownloadUserSelection: false
+      lastNonEdgeDirectDownloadUserSelection: false,
+      architectureTypes: {}
     }
   },
   beforeCreate () {
@@ -196,6 +216,7 @@ export default {
       })
     },
     fetchData () {
+      this.architectureTypes.opts = this.$fetchCpuArchitectureTypes()
       this.fetchZoneData()
     },
     isValidValueForKey (obj, key) {

@@ -45,5 +45,5 @@
 
     <bean id="primaryDataStoreProviderMgr"
         class="org.apache.cloudstack.storage.datastore.manager.PrimaryDataStoreProviderManagerImpl" />
- 
+
 </beans>

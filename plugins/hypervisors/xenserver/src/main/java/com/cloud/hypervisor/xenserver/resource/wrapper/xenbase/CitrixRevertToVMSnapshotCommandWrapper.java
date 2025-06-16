@@ -51,12 +51,12 @@ public final class CitrixRevertToVMSnapshotCommandWrapper extends CommandWrapper
         final VMSnapshot.Type vmSnapshotType = command.getTarget().getType();
         final Boolean snapshotMemory = vmSnapshotType == VMSnapshot.Type.DiskAndMemory;
         final Connection conn = citrixResourceBase.getConnection();
-        PowerState vmState = null;
-        VM vm = null;
+        PowerState vmState;
+        VM vm;
         try {
 
             final Set<VM> vmSnapshots = VM.getByNameLabel(conn, command.getTarget().getSnapshotName());
-            if (vmSnapshots == null || vmSnapshots.size() == 0) {
+            if (vmSnapshots == null || vmSnapshots.isEmpty()) {
                 return new RevertToVMSnapshotAnswer(command, false, "Cannot find vmSnapshot with name: " + command.getTarget().getSnapshotName());
             }
 
@@ -66,6 +66,7 @@ public final class CitrixRevertToVMSnapshotCommandWrapper extends CommandWrapper
             try {
                 vm = citrixResourceBase.getVM(conn, vmName);
             } catch (final Exception e) {
+                logger.debug("Failed to find VM with name: {} due to:", vmName, e);
                 vm = citrixResourceBase.createWorkingVM(conn, vmName, command.getGuestOSType(), command.getPlatformEmulator(), listVolumeTo);
             }
 
@@ -77,7 +78,7 @@ public final class CitrixRevertToVMSnapshotCommandWrapper extends CommandWrapper
             citrixResourceBase.revertToSnapshot(conn, vmSnapshot, vmName, vm.getUuid(conn), snapshotMemory, citrixResourceBase.getHost().getUuid());
             vm = citrixResourceBase.getVM(conn, vmName);
             final Set<VBD> vbds = vm.getVBDs(conn);
-            final Map<String, VDI> vdiMap = new HashMap<String, VDI>();
+            final Map<String, VDI> vdiMap = new HashMap<>();
             // get vdi:vbdr to a map
             for (final VBD vbd : vbds) {
                 final VBD.Record vbdr = vbd.getRecord(conn);
@@ -88,7 +89,7 @@ public final class CitrixRevertToVMSnapshotCommandWrapper extends CommandWrapper
             }
 
             if (!snapshotMemory) {
-                vm.destroy(conn);
+                citrixResourceBase.destroyVm(vm, conn);
                 vmState = PowerState.PowerOff;
             } else {
                 vmState = PowerState.PowerOn;
@@ -103,7 +104,7 @@ public final class CitrixRevertToVMSnapshotCommandWrapper extends CommandWrapper
 
             return new RevertToVMSnapshotAnswer(command, listVolumeTo, vmState);
         } catch (final Exception e) {
-            logger.error("revert vm " + vmName + " to snapshot " + command.getTarget().getSnapshotName() + " failed due to " + e.getMessage());
+            logger.error("revert vm {} to snapshot {} failed due to {}", vmName, command.getTarget().getSnapshotName(), e.getMessage());
             return new RevertToVMSnapshotAnswer(command, false, e.getMessage());
         }
     }

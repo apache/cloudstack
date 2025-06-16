@@ -30,6 +30,11 @@ public interface RoleService {
     ConfigKey<Boolean> EnableDynamicApiChecker = new ConfigKey<>("Advanced", Boolean.class, "dynamic.apichecker.enabled", "false",
             "If set to true, this enables the dynamic role-based api access checker and disables the default static role-based api access checker.", true);
 
+    ConfigKey<Integer> DynamicApiCheckerCachePeriod = new ConfigKey<>("Advanced", Integer.class,
+            "dynamic.apichecker.cache.period", "0",
+            "Defines the expiration time in seconds for the Dynamic API Checker cache, determining how long cached data is retained before being refreshed. If set to zero then caching will be disabled",
+            false);
+
     boolean isEnabled();
 
     /**
@@ -54,6 +59,10 @@ public interface RoleService {
 
     boolean deleteRole(Role role);
 
+    boolean enableRole(Role role);
+
+    boolean disableRole(Role role);
+
     RolePermission findRolePermission(Long id);
 
     RolePermission findRolePermissionByRoleIdAndRule(Long roleId, String rule);
@@ -76,7 +85,7 @@ public interface RoleService {
      */
     List<Role> listRoles();
 
-    Pair<List<Role>, Integer> listRoles(Long startIndex, Long limit);
+    Pair<List<Role>, Integer> listRoles(String state, Long startIndex, Long limit);
 
     /**
      *  Find all roles that have the giving {@link String} as part of their name.
@@ -84,14 +93,14 @@ public interface RoleService {
      */
     List<Role> findRolesByName(String name);
 
-    Pair<List<Role>, Integer> findRolesByName(String name, String keyword, Long startIndex, Long limit);
+    Pair<List<Role>, Integer> findRolesByName(String name, String keyword, String state, Long startIndex, Long limit);
 
     /**
      *  Find all roles by {@link RoleType}. If the role type is {@link RoleType#Admin}, the calling account must be a root admin, otherwise we return an empty list.
      */
     List<Role> findRolesByType(RoleType roleType);
 
-    Pair<List<Role>, Integer> findRolesByType(RoleType roleType, Long startIndex, Long limit);
+    Pair<List<Role>, Integer> findRolesByType(RoleType roleType, String state, Long startIndex, Long limit);
 
     List<RolePermission> findAllPermissionsBy(Long roleId);
 

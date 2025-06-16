@@ -18,8 +18,14 @@
 package org.apache.cloudstack.backup;
 
 import com.cloud.utils.db.GenericDao;
+import com.google.gson.Gson;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.commons.lang3.StringUtils;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -82,8 +88,20 @@ public class BackupVO implements Backup {
     @Column(name = "zone_id")
     private long zoneId;
 
+    @Column(name = "backup_interval_type")
+    private short backupIntervalType;
+
+    @Column(name = "backed_volumes", length = 65535)
+    protected String backedUpVolumes;
+
     public BackupVO() {
         this.uuid = UUID.randomUUID().toString();
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Backup %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                this, "id", "uuid", "vmId", "backupType", "externalId"));
     }
 
     @Override
@@ -158,6 +176,7 @@ public class BackupVO implements Backup {
         this.status = status;
     }
 
+    @Override
     public long getBackupOfferingId() {
         return backupOfferingId;
     }
@@ -192,6 +211,14 @@ public class BackupVO implements Backup {
         this.zoneId = zoneId;
     }
 
+    public short getBackupIntervalType() {
+        return backupIntervalType;
+    }
+
+    public void setBackupIntervalType(short backupIntervalType) {
+        this.backupIntervalType = backupIntervalType;
+    }
+
     @Override
     public Class<?> getEntityType() {
         return Backup.class;
@@ -200,6 +227,17 @@ public class BackupVO implements Backup {
     @Override
     public String getName() {
         return null;
+    }
+
+    public List<VolumeInfo> getBackedUpVolumes() {
+        if (StringUtils.isEmpty(this.backedUpVolumes)) {
+            return Collections.emptyList();
+        }
+        return Arrays.asList(new Gson().fromJson(this.backedUpVolumes, Backup.VolumeInfo[].class));
+    }
+
+    public void setBackedUpVolumes(String backedUpVolumes) {
+        this.backedUpVolumes = backedUpVolumes;
     }
 
     public Date getRemoved() {

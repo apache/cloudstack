@@ -121,6 +121,9 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             /* In order to revert userSpecified network setup */
             config.setState(State.Allocated);
         }
+
+        getOrCreateIpv4SubnetForGuestNetwork(offering, config, userSpecified, owner);
+
         return updateNetworkDesignForIPv6IfNeeded(config, userSpecified);
     }
 

@@ -19,7 +19,6 @@ package org.apache.cloudstack.service;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.nsx.NsxService;
-import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcVO;
@@ -37,6 +36,8 @@ import org.apache.cloudstack.agent.api.DeleteNsxLoadBalancerRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxSegmentCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxNatRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxTier1GatewayCommand;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.resource.NsxNetworkRule;
 import org.apache.cloudstack.utils.NsxControllerUtils;
 import org.apache.cloudstack.utils.NsxHelper;
@@ -47,13 +48,11 @@ import javax.inject.Inject;
 import java.util.List;
 import java.util.Objects;
 
-public class NsxServiceImpl implements NsxService {
+public class NsxServiceImpl implements NsxService, Configurable {
     @Inject
     NsxControllerUtils nsxControllerUtils;
     @Inject
     VpcDao vpcDao;
-    @Inject
-    NetworkDao networkDao;
 
     protected Logger logger = LogManager.getLogger(getClass());
 
@@ -74,13 +73,13 @@ public class NsxServiceImpl implements NsxService {
         long zoneId = vpc.getZoneId();
         long vpcId = vpc.getId();
 
-        logger.debug(String.format("Updating the source NAT IP for NSX VPC %s to IP: %s", vpc.getName(), address.getAddress().addr()));
+        logger.debug("Updating the source NAT IP for NSX VPC {} to IP: {}", vpc, address.getAddress().addr());
         String tier1GatewayName = NsxControllerUtils.getTier1GatewayName(domainId, accountId, zoneId, vpcId, true);
         String sourceNatRuleId = NsxControllerUtils.getNsxNatRuleId(domainId, accountId, zoneId, vpcId, true);
         CreateOrUpdateNsxTier1NatRuleCommand cmd = NsxHelper.createOrUpdateNsxNatRuleCommand(domainId, accountId, zoneId, tier1GatewayName, "SNAT", address.getAddress().addr(), sourceNatRuleId);
         NsxAnswer answer = nsxControllerUtils.sendNsxCommand(cmd, zoneId);
         if (!answer.getResult()) {
-            logger.error(String.format("Could not update the source NAT IP address for VPC %s: %s", vpc.getName(), answer.getDetails()));
+            logger.error("Could not update the source NAT IP address for VPC {}: {}", vpc, answer.getDetails());
             return false;
         }
         return true;
@@ -110,7 +109,7 @@ public class NsxServiceImpl implements NsxService {
                 network.getVpcId(), vpcName, network.getId(), network.getName());
         NsxAnswer result = nsxControllerUtils.sendNsxCommand(deleteNsxSegmentCommand, network.getDataCenterId());
         if (!result.getResult()) {
-            String msg = String.format("Could not remove the NSX segment for network %s: %s", network.getName(), result.getDetails());
+            String msg = String.format("Could not remove the NSX segment for network %s: %s", network, result.getDetails());
             logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
@@ -139,14 +138,13 @@ public class NsxServiceImpl implements NsxService {
         return result.getResult();
     }
 
-    public boolean createPortForwardRule(NsxNetworkRule netRule) {
+    public NsxAnswer createPortForwardRule(NsxNetworkRule netRule) {
         // TODO: if port doesn't exist in default list of services, create a service entry
         CreateNsxPortForwardRuleCommand createPortForwardCmd = new CreateNsxPortForwardRuleCommand(netRule.getDomainId(),
                 netRule.getAccountId(), netRule.getZoneId(), netRule.getNetworkResourceId(),
                 netRule.getNetworkResourceName(), netRule.isVpcResource(), netRule.getVmId(), netRule.getRuleId(),
                 netRule.getPublicIp(), netRule.getVmIp(), netRule.getPublicPort(), netRule.getPrivatePort(), netRule.getProtocol());
-        NsxAnswer result = nsxControllerUtils.sendNsxCommand(createPortForwardCmd, netRule.getZoneId());
-        return result.getResult();
+        return nsxControllerUtils.sendNsxCommand(createPortForwardCmd, netRule.getZoneId());
     }
 
     public boolean deletePortForwardRule(NsxNetworkRule netRule) {
@@ -189,5 +187,17 @@ public class NsxServiceImpl implements NsxService {
                 network.getAccountId(), network.getDataCenterId(), network.getVpcId(), network.getId(), netRules);
         NsxAnswer result = nsxControllerUtils.sendNsxCommand(command, network.getDataCenterId());
         return result.getResult();
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return NsxApiClient.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {
+            NSX_API_FAILURE_RETRIES, NSX_API_FAILURE_INTERVAL
+        };
     }
 }

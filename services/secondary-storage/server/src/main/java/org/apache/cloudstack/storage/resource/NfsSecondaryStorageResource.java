@@ -54,6 +54,7 @@ import java.util.stream.Stream;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.ConvertSnapshotCommand;
 import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
 import org.apache.cloudstack.storage.NfsMountManagerImpl.PathParser;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
@@ -71,6 +72,7 @@ import org.apache.cloudstack.storage.command.UploadStatusCommand;
 import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsCommand;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.configdrive.ConfigDriveBuilder;
+import org.apache.cloudstack.storage.formatinspector.Qcow2Inspector;
 import org.apache.cloudstack.storage.template.DownloadManager;
 import org.apache.cloudstack.storage.template.DownloadManagerImpl;
 import org.apache.cloudstack.storage.template.UploadEntity;
@@ -204,6 +206,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     private static final String ORIGINAL_FILE_EXTENSION = ".orig";
 
     private static final String USE_HTTPS_TO_UPLOAD = "useHttpsToUpload";
+
+    private static final String CHECKPOINT_ROOT_DIR = "checkpoints";
 
     private static final Map<String, String> updatableConfigData = Maps.newHashMap();
     static {
@@ -976,6 +980,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             String destFileFullPath = destFile.getAbsolutePath() + File.separator + fileName;
             logger.debug("copy snapshot " + srcFile.getAbsolutePath() + " to template " + destFileFullPath);
             Script.runSimpleBashScript("cp " + srcFile.getAbsolutePath() + " " + destFileFullPath);
+            removeConvertedSnapshotIfNeeded(srcFile.getAbsolutePath());
             String metaFileName = destFile.getAbsolutePath() + File.separator + _tmpltpp;
             File metaFile = new File(metaFileName);
             try {
@@ -1036,6 +1041,12 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
 
         return new CopyCmdAnswer("");
+    }
+
+    protected void removeConvertedSnapshotIfNeeded(String path) {
+        if (path.contains(ConvertSnapshotCommand.TEMP_SNAPSHOT_NAME)) {
+            Script.runSimpleBashScript(String.format("rm %s", path));
+        }
     }
 
     protected File getFile(String path, String nfsPath, String nfsVersion) {
@@ -2067,29 +2078,30 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             // snapshot file name. If so, since backupSnapshot process has already deleted snapshot in cache, so we just do nothing
             // and return true.
             String fullSnapPath = parent + snapshotPath;
-            File snapDir = new File(fullSnapPath);
-            if (snapDir.exists() && snapDir.isDirectory()) {
+            File snapshotFile = new File(fullSnapPath);
+            if (snapshotFile.exists() && snapshotFile.isDirectory()) {
                 logger.debug("snapshot path " + snapshotPath + " is a directory, already deleted during backup snapshot, so no need to delete");
                 return new Answer(cmd, true, null);
             }
-            // passed snapshot path is a snapshot file path, then get snapshot directory first
-            int index = snapshotPath.lastIndexOf("/");
-            String snapshotName = snapshotPath.substring(index + 1);
-            snapshotPath = snapshotPath.substring(0, index);
-            String absoluteSnapshotPath = parent + snapshotPath;
             // check if snapshot directory exists
-            File snapshotDir = new File(absoluteSnapshotPath);
-            String details = null;
+            String absoluteSnapshotDirPath = snapshotFile.getParent();
+            File snapshotDir = new File(absoluteSnapshotDirPath);
+            String details;
             if (!snapshotDir.exists()) {
                 details = "snapshot directory " + snapshotDir.getName() + " doesn't exist";
                 logger.debug(details);
                 return new Answer(cmd, true, details);
             }
             // delete snapshot in the directory if exists
-            String lPath = getSnapshotFilepathForDelete(absoluteSnapshotPath, snapshotName);
-            String result = deleteLocalFile(lPath);
-            if (result != null) {
-                details = "failed to delete snapshot " + lPath + " , err=" + result;
+            String lPath = absoluteSnapshotDirPath + "/*" + snapshotFile.getName() + "*";
+            String snapshotDeleteResult = deleteLocalFile(lPath);
+            String checkpointDeleteResult = null;
+            if (obj instanceof SnapshotObjectTO) {
+                checkpointDeleteResult = deleteCheckpointIfExists(obj, parent);
+            }
+
+            if (snapshotDeleteResult != null || checkpointDeleteResult != null) {
+                details = String.format("Failed to delete snapshot [%s]. Snapshot delete result = [%s], Checkpoint delete result = [%s].", lPath, snapshotDeleteResult, checkpointDeleteResult);
                 logger.warn(details);
                 return new Answer(cmd, false, details);
             }
@@ -2125,7 +2137,20 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     }
 
-    Map<String, TemplateProp> swiftListTemplate(SwiftTO swift) {
+    private String deleteCheckpointIfExists(DataTO obj, String parent) {
+        SnapshotObjectTO snapshotObjectTO = (SnapshotObjectTO) obj;
+        String checkpointPath = snapshotObjectTO.getCheckpointPath();
+
+        if (checkpointPath == null) {
+            return null;
+        }
+
+        checkpointPath = checkpointPath.substring(checkpointPath.indexOf(CHECKPOINT_ROOT_DIR));
+
+        return deleteLocalFile(parent + checkpointPath);
+    }
+
+    private Map<String, TemplateProp> swiftListTemplate(SwiftTO swift) {
         String[] containers = SwiftUtil.list(swift, "", null);
         if (containers == null) {
             return null;
@@ -3482,8 +3507,19 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return result;
         }
 
+        String finalFilename = resourcePath + "/" + templateFilename;
+
+        if (ImageStoreUtil.isCorrectExtension(finalFilename, "qcow2")) {
+            try {
+                Qcow2Inspector.validateQcow2File(finalFilename);
+            } catch (RuntimeException e) {
+                logger.error(String.format("Uploaded file [%s] is not a valid QCOW2.", finalFilename), e);
+                return "The uploaded file is not a valid QCOW2. Ask the administrator to check the logs for more details.";
+            }
+        }
+
         // Set permissions for the downloaded template
-        File downloadedTemplate = new File(resourcePath + "/" + templateFilename);
+        File downloadedTemplate = new File(finalFilename);
         _storage.setWorldReadableAndWriteable(downloadedTemplate);
 
         // Set permissions for template/volume.properties

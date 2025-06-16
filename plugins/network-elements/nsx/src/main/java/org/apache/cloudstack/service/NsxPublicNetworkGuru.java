@@ -116,7 +116,7 @@ public class NsxPublicNetworkGuru extends PublicNetworkGuru {
         // For NSX, use VR Public IP != Source NAT
         List<IPAddressVO> ips = _ipAddressDao.listByAssociatedVpc(vpc.getId(), true);
         if (CollectionUtils.isEmpty(ips)) {
-            String err = String.format("Cannot find a source NAT IP for the VPC %s", vpc.getName());
+            String err = String.format("Cannot find a source NAT IP for the VPC %s", vpc);
             logger.error(err);
             throw new CloudRuntimeException(err);
         }
@@ -133,20 +133,20 @@ public class NsxPublicNetworkGuru extends PublicNetworkGuru {
                 Network.Service[] services = { Network.Service.SourceNat };
                 long networkOfferingId = vpc.getVpcOfferingId();
                 VpcOfferingVO vpcVO = vpcOfferingDao.findById(networkOfferingId);
-                boolean sourceNatEnabled = !NetworkOffering.NsxMode.ROUTED.name().equals(vpcVO.getNsxMode()) &&
+                boolean sourceNatEnabled = !NetworkOffering.NetworkMode.ROUTED.equals(vpcVO.getNetworkMode()) &&
                         vpcOfferingServiceMapDao.areServicesSupportedByVpcOffering(vpc.getVpcOfferingId(), services);
 
-                logger.info(String.format("Creating Tier 1 Gateway for VPC %s", vpc.getName()));
+                logger.info("Creating Tier 1 Gateway for VPC {}", vpc);
                 boolean result = nsxService.createVpcNetwork(dataCenterId, accountId, domainId, resourceId, vpc.getName(), sourceNatEnabled);
                 if (!result) {
-                    String msg = String.format("Error creating Tier 1 Gateway for VPC %s", vpc.getName());
+                    String msg = String.format("Error creating Tier 1 Gateway for VPC %s", vpc);
                     logger.error(msg);
                     throw new CloudRuntimeException(msg);
                 }
 
                 boolean hasNatSupport = false;
                 VpcOffering vpcOffering = vpcOfferingDao.findById(vpc.getVpcOfferingId());
-                hasNatSupport = NetworkOffering.NsxMode.NATTED.name().equals(vpcOffering.getNsxMode());
+                hasNatSupport = NetworkOffering.NetworkMode.NATTED.equals(vpcOffering.getNetworkMode());
 
                 if (!hasNatSupport) {
                     return nic;

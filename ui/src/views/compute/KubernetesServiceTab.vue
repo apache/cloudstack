@@ -25,7 +25,7 @@
       <a-tab-pane :tab="$t('label.details')" key="details">
         <DetailsTab :resource="resource" :loading="loading" />
       </a-tab-pane>
-      <a-tab-pane v-if="resource.clustertype == 'CloudManaged'" :tab="$t('label.access')" key="access">
+      <a-tab-pane v-if="resource.clustertype === 'CloudManaged'" :tab="$t('label.access')" key="access">
         <a-card :title="$t('label.kubeconfig.cluster')" :loading="versionLoading">
           <div v-if="clusterConfig !== ''">
             <a-textarea :value="clusterConfig" :rows="5" readonly />
@@ -114,7 +114,12 @@
               <status :text="text ? text : ''" displayText />
             </template>
             <template v-if="column.key === 'port'" :name="text" :record="record">
-              {{ cksSshStartingPort + index }}
+              <div v-if="network.type === 'Shared' || network.ip4routing">
+                {{ cksSshPortSharedNetwork }}
+              </div>
+              <div v-else>
+                {{ cksSshStartingPort + index }}
+              </div>
             </template>
             <template v-if="column.key === 'actions'">
               <a-tooltip placement="bottom" >
@@ -214,6 +219,7 @@ export default {
       publicIpAddress: null,
       currentTab: 'details',
       cksSshStartingPort: 2222,
+      cksSshPortSharedNetwork: 22,
       annotations: []
     }
   },
@@ -278,7 +284,7 @@ export default {
     }
   },
   mounted () {
-    if (this.$store.getters.apis.scaleKubernetesCluster.params.filter(x => x.name === 'nodeids').length > 0) {
+    if (this.$store.getters.apis.scaleKubernetesCluster?.params?.filter(x => x.name === 'nodeids').length > 0 && this.resource.clustertype === 'CloudManaged') {
       this.vmColumns.push({
         key: 'actions',
         title: this.$t('label.actions'),
@@ -402,13 +408,14 @@ export default {
           if (this.arrayHasItems(networks)) {
             this.network = networks[0]
           }
+          resolve(this.network)
         })
         this.networkLoading = false
       })
     },
     async fetchPublicIpAddress () {
       await this.fetchNetwork()
-      if (this.network && this.network.type === 'Shared') {
+      if (this.network && (this.network.type === 'Shared' || this.network.ip4routing)) {
         this.publicIpAddress = null
         return
       }

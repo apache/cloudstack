@@ -511,4 +511,57 @@ public class DatabaseAccessObjectTest {
         verify(loggerMock, times(1)).warn(anyString(), eq(sqlException));
     }
 
+    @Test
+    public void testGetColumnType() throws Exception {
+        when(connectionMock.prepareStatement(contains("DESCRIBE"))).thenReturn(preparedStatementMock);
+        when(preparedStatementMock.executeQuery()).thenReturn(resultSetMock);
+        when(resultSetMock.next()).thenReturn(true);
+        when(resultSetMock.getString("Type")).thenReturn("type");
+
+        Connection conn = connectionMock;
+        String tableName = "tableName";
+        String columnName = "columnName";
+
+        Assert.assertEquals("type", dao.getColumnType(conn, tableName, columnName));
+
+        verify(connectionMock, times(1)).prepareStatement(anyString());
+        verify(preparedStatementMock, times(1)).executeQuery();
+        verify(preparedStatementMock, times(1)).close();
+        verify(loggerMock, times(0)).debug(anyString());
+    }
+
+    @Test
+    public void testAddColumn() throws Exception {
+        when(connectionMock.prepareStatement(contains("ADD COLUMN"))).thenReturn(preparedStatementMock);
+        when(preparedStatementMock.executeUpdate()).thenReturn(1);
+
+        Connection conn = connectionMock;
+        String tableName = "tableName";
+        String columnName = "columnName";
+        String columnType = "columnType";
+
+        dao.addColumn(conn, tableName, columnName, columnType);
+
+        verify(connectionMock, times(1)).prepareStatement(anyString());
+        verify(preparedStatementMock, times(1)).executeUpdate();
+        verify(preparedStatementMock, times(1)).close();
+    }
+
+    @Test
+    public void testChangeColumn() throws Exception {
+        when(connectionMock.prepareStatement(contains("CHANGE COLUMN"))).thenReturn(preparedStatementMock);
+        when(preparedStatementMock.executeUpdate()).thenReturn(1);
+
+        Connection conn = connectionMock;
+        String tableName = "tableName";
+        String columnName = "columnName";
+        String newColumnName = "columnName2";
+        String columnDefinition = "columnDefinition";
+
+        dao.changeColumn(conn, tableName, columnName, newColumnName, columnDefinition);
+
+        verify(connectionMock, times(1)).prepareStatement(anyString());
+        verify(preparedStatementMock, times(1)).executeUpdate();
+        verify(preparedStatementMock, times(1)).close();
+    }
 }

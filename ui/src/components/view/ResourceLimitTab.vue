@@ -27,7 +27,7 @@
     >
       <div v-for="(item, index) in dataResource" :key="index">
         <a-form-item
-          v-if="item.resourcetypename !== 'project'"
+          v-if="item.resourcetypename !== 'project' || !$route.path.startsWith('/project')"
           :v-bind="item.resourcetypename"
           :label="$t('label.max' + (item.resourcetypename ? item.resourcetypename.replace('_', '') : '')) + (item.tag ? ' [' + item.tag + ']': '')"
           :name="item.key"
@@ -103,6 +103,7 @@ export default {
     this.form = reactive({})
     this.rules = reactive({})
     this.dataResource = this.resource
+    this.origValues = []
     this.fetchData()
   },
   watch: {
@@ -137,7 +138,7 @@ export default {
         this.dataResource.forEach(item => {
           this.resourceTypeIdNames[item.resourcetype] = item.resourcetypename
           item.key = item.tag ? (item.resourcetype + '-' + item.tag) : item.resourcetype
-          form[item.key] = item.max || -1
+          this.origValues[item.key] = form[item.key] = item.max || -1
           item.taggedresource.forEach(subItem => {
             subItem.key = subItem.tag ? (subItem.resourcetype + '-' + subItem.tag) : subItem.resourcetype
             form[subItem.key] = subItem.max || -1
@@ -170,6 +171,9 @@ export default {
         for (const key in values) {
           const input = values[key]
 
+          if (input === this.origValues[key]) {
+            continue
+          }
           if (input === undefined) {
             continue
           }

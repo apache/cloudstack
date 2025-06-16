@@ -159,4 +159,9 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
 
     List<VolumeVO> listAllocatedVolumesForAccountDiskOfferingIdsAndNotForVms(long accountId, List<Long> diskOfferingIds, List<Long> vmIds);
 
+    List<VolumeVO> searchRemovedByVms(List<Long> vmIds, Long batchSize);
+
+    VolumeVO findOneByIScsiName(String iScsiName);
+
+    VolumeVO findByLastIdAndState(long lastVolumeId, Volume.State...states);
 }

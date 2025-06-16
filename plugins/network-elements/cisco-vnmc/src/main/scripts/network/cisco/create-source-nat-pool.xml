@@ -22,7 +22,7 @@ under the License.
   <inConfigs>
     <pair key="%snatpoolexprdn%" >
       <policyObjectGroupExpression
-        dn="%snatpoolexprdn%" 
+        dn="%snatpoolexprdn%"
         opr="eq"
         order="unspecified"
         status="created"/>

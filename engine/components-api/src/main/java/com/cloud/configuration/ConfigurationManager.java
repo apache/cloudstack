@@ -61,9 +61,6 @@ public interface ConfigurationManager {
     public static final String MESSAGE_CREATE_VLAN_IP_RANGE_EVENT = "Message.CreateVlanIpRange.Event";
     public static final String MESSAGE_DELETE_VLAN_IP_RANGE_EVENT = "Message.DeleteVlanIpRange.Event";
 
-    static final String VM_USERDATA_MAX_LENGTH_STRING = "vm.userdata.max.length";
-    static final ConfigKey<Integer> VM_USERDATA_MAX_LENGTH = new ConfigKey<>("Advanced", Integer.class, VM_USERDATA_MAX_LENGTH_STRING, "32768",
-            "Max length of vm userdata after base64 decoding. Default is 32768 and maximum is 1048576", true);
     public static final ConfigKey<Boolean> AllowNonRFC1918CompliantIPs = new ConfigKey<>(Boolean.class,
             "allow.non.rfc1918.compliant.ips", "Advanced", "false",
             "Allows non-compliant RFC 1918 IPs for Shared, Isolated networks and VPCs", true, null);
@@ -80,12 +77,14 @@ public interface ConfigurationManager {
 
     /**
      * Updates a configuration entry with a new value
-     *
      * @param userId
      * @param name
+     * @param category
      * @param value
+     * @param scope
+     * @param id
      */
-    String updateConfiguration(long userId, String name, String category, String value, String scope, Long id);
+    String updateConfiguration(long userId, String name, String category, String value, ConfigKey.Scope scope, Long id);
 
 //    /**
 //     * Creates a new service offering
@@ -150,12 +149,12 @@ public interface ConfigurationManager {
      * @param startIp
      * @param endIp
      * @param allocationState
-     * @param skipGatewayOverlapCheck
-     *            (true if it is ok to not validate that gateway IP address overlap with Start/End IP of the POD)
+     * @param skipGatewayOverlapCheck (true if it is ok to not validate that gateway IP address overlap with Start/End IP of the POD)
+     * @param storageAccessGroups
      * @return Pod
      */
     HostPodVO createPod(long userId, String podName, DataCenter zone, String gateway, String cidr, String startIp, String endIp, String allocationState,
-        boolean skipGatewayOverlapCheck);
+                        boolean skipGatewayOverlapCheck, List<String> storageAccessGroups);
 
     /**
      * Creates a new zone
@@ -173,13 +172,14 @@ public interface ConfigurationManager {
      * @param isSecurityGroupEnabled
      * @param ip6Dns1
      * @param ip6Dns2
+     * @param storageAccessGroups
      * @return
      * @throws
      * @throws
      */
     DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String guestCidr, String domain,
         Long domainId, NetworkType zoneType, String allocationState, String networkDomain, boolean isSecurityGroupEnabled, boolean isLocalStorageEnabled, String ip6Dns1,
-        String ip6Dns2, boolean isEdge);
+        String ip6Dns2, boolean isEdge, List<String> storageAccessGroups);
 
     /**
      * Deletes a VLAN from the database, along with all of its IP addresses. Will not delete VLANs that have allocated
@@ -226,7 +226,8 @@ public interface ConfigurationManager {
                                             Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type, boolean systemOnly, Long serviceOfferingId,
                                             boolean conserveMode, Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges, boolean isPersistent,
                                             Map<NetworkOffering.Detail, String> details, boolean egressDefaultPolicy, Integer maxconn, boolean enableKeepAlive, Boolean forVpc,
-                                            Boolean forTungsten, boolean forNsx, String mode, List<Long> domainIds, List<Long> zoneIds, boolean enableOffering, final NetUtils.InternetProtocol internetProtocol);
+                                            Boolean forTungsten, boolean forNsx, NetworkOffering.NetworkMode networkMode, List<Long> domainIds, List<Long> zoneIds, boolean enableOffering, final NetUtils.InternetProtocol internetProtocol,
+                                            NetworkOffering.RoutingMode routingMode, boolean specifyAsNumber);
 
     Vlan createVlanAndPublicIpRange(long zoneId, long networkId, long physicalNetworkId, boolean forVirtualNetwork, boolean forSystemVms, Long podId, String startIP, String endIP,
         String vlanGateway, String vlanNetmask, String vlanId, boolean bypassVlanOverlapCheck, Domain domain, Account vlanOwner, String startIPv6, String endIPv6, String vlanIp6Gateway, String vlanIp6Cidr, boolean forNsx)
@@ -240,7 +241,7 @@ public interface ConfigurationManager {
      * @param domainId
      * @return success/failure
      */
-    boolean releaseDomainSpecificVirtualRanges(long domainId);
+    boolean releaseDomainSpecificVirtualRanges(Domain domain);
 
     /**
      * Release dedicated virtual ip ranges of an account.
@@ -248,7 +249,7 @@ public interface ConfigurationManager {
      * @param accountId
      * @return success/failure
      */
-    boolean releaseAccountSpecificVirtualRanges(long accountId);
+    boolean releaseAccountSpecificVirtualRanges(Account account);
 
     /**
      * Edits a pod in the database. Will not allow you to edit pods that are being used anywhere in the system.

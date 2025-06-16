@@ -35,6 +35,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 import com.cloud.network.Network.Service;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
 @Table(name = "physical_network_service_providers")
@@ -107,6 +108,13 @@ public class PhysicalNetworkServiceProviderVO implements PhysicalNetworkServiceP
         this.providerName = name;
         this.state = State.Disabled;
         this.uuid = UUID.randomUUID().toString();
+    }
+
+
+    @Override
+    public String toString() {
+        return String.format("PhysicalNetworkServiceProvider %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                this, "id", "uuid", "name", "providerName"));
     }
 
     @Override

@@ -31,13 +31,13 @@ import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponseWithTagInformation;
 import org.apache.cloudstack.api.EntityReference;
+import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.serializer.Param;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 import com.google.gson.annotations.SerializedName;
-import org.apache.commons.collections.CollectionUtils;
 
 @SuppressWarnings("unused")
 @EntityReference(value = {VirtualMachine.class, UserVm.class, VirtualRouter.class})
@@ -81,6 +81,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "the name of the domain in which the virtual machine exists")
     private String domainName;
+
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the domain in which the virtual machine exists", since = "4.19.2.0")
+    private String domainPath;
 
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "the date when this virtual machine was created")
@@ -316,6 +320,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "true if vm contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory.")
     private Boolean isDynamicallyScalable;
 
+    @SerializedName(ApiConstants.DELETE_PROTECTION)
+    @Param(description = "true if vm has delete protection.", since = "4.20.0")
+    private boolean deleteProtection;
+
     @SerializedName(ApiConstants.SERVICE_STATE)
     @Param(description = "State of the Service from LB rule")
     private String serviceState;
@@ -383,6 +391,26 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @SerializedName(ApiConstants.VNF_DETAILS)
     @Param(description = "VNF details", since = "4.19.0")
     private Map<String, String> vnfDetails;
+
+    @SerializedName(ApiConstants.VM_TYPE)
+    @Param(description = "User VM type", since = "4.20.0")
+    private String vmType;
+
+    @SerializedName(ApiConstants.ARCH)
+    @Param(description = "CPU arch of the VM", since = "4.20.1")
+    private String arch;
+
+    @SerializedName(ApiConstants.INSTANCE_LEASE_DURATION)
+    @Param(description = "Instance lease duration in days", since = "4.21.0")
+    private Integer leaseDuration;
+
+    @SerializedName(ApiConstants.INSTANCE_LEASE_EXPIRY_DATE)
+    @Param(description = "Instance lease expiry date", since = "4.21.0")
+    private Date leaseExpiryDate;
+
+    @SerializedName(ApiConstants.INSTANCE_LEASE_EXPIRY_ACTION)
+    @Param(description = "Instance lease expiry action", since = "4.21.0")
+    private String leaseExpiryAction;
 
     public UserVmResponse() {
         securityGroupList = new LinkedHashSet<>();
@@ -703,6 +731,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         this.domainName = domainName;
     }
 
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
+    }
     public void setCreated(Date created) {
         this.created = created;
     }
@@ -983,6 +1015,14 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         isDynamicallyScalable = dynamicallyScalable;
     }
 
+    public boolean isDeleteProtection() {
+        return deleteProtection;
+    }
+
+    public void setDeleteProtection(boolean deleteProtection) {
+        this.deleteProtection = deleteProtection;
+    }
+
     public String getOsTypeId() {
         return osTypeId;
     }
@@ -1133,4 +1173,49 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         }
         this.vnfDetails.put(key,value);
     }
+
+    public void setVmType(String vmType) {
+        this.vmType = vmType;
+    }
+
+    public String getVmType() {
+        return vmType;
+    }
+
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
+    }
+
+    public String getArch() {
+        return arch;
+    }
+
+    public void setArch(String arch) {
+        this.arch = arch;
+    }
+
+    public Integer getLeaseDuration() {
+        return leaseDuration;
+    }
+
+    public void setLeaseDuration(Integer leaseDuration) {
+        this.leaseDuration = leaseDuration;
+    }
+
+    public String getLeaseExpiryAction() {
+        return leaseExpiryAction;
+    }
+
+    public void setLeaseExpiryAction(String leaseExpiryAction) {
+        this.leaseExpiryAction = leaseExpiryAction;
+    }
+
+    public Date getLeaseExpiryDate() {
+        return leaseExpiryDate;
+    }
+
+    public void setLeaseExpiryDate(Date leaseExpiryDate) {
+        this.leaseExpiryDate = leaseExpiryDate;
+    }
+
 }

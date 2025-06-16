@@ -5,9 +5,9 @@
 -- to you under the Apache License, Version 2.0 (the
 -- "License"); you may not use this file except in compliance
 -- with the License.  You may obtain a copy of the License at
--- 
+--
 --   http://www.apache.org/licenses/LICENSE-2.0
--- 
+--
 -- Unless required by applicable law or agreed to in writing,
 -- software distributed under the License is distributed on an
 -- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -43,6 +43,7 @@ CREATE TABLE  `simulator`.`mockhost` (
   `cpus` int(10) unsigned,
   `speed` int(10) unsigned,
   `ram` bigint unsigned,
+  `arch` varchar(8) DEFAULT "x86_64" COMMENT "the CPU architecture of the host",
   `capabilities` varchar(255) COMMENT 'host capabilities in comma separated list',
   `vm_id` bigint unsigned,
   `resource` varchar(255) DEFAULT NULL COMMENT 'If it is a local resource, this is the class name',
@@ -64,7 +65,8 @@ CREATE TABLE `simulator`.`mockstoragepool` (
   `capacity` bigint,
   `pool_type` varchar(40),
   `hostguid` varchar(255) UNIQUE,
-  PRIMARY KEY  (`id`)
+  PRIMARY KEY  (`id`),
+  INDEX `i_mockstoragepool__guid`(`guid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 

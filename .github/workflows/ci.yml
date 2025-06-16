@@ -35,6 +35,7 @@ jobs:
       fail-fast: false
       matrix:
         tests: [ "smoke/test_accounts
+                  smoke/test_account_access
                   smoke/test_affinity_groups
                   smoke/test_affinity_groups_projects
                   smoke/test_annotations
@@ -87,7 +88,8 @@ jobs:
                   smoke/test_multipleips_per_nic
                   smoke/test_nested_virtualization
                   smoke/test_set_sourcenat
-                  smoke/test_webhook_lifecycle",
+                  smoke/test_webhook_lifecycle
+                  smoke/test_purge_expunged_vms",
                 "smoke/test_network
                   smoke/test_network_acl
                   smoke/test_network_ipv6
@@ -133,6 +135,7 @@ jobs:
                   smoke/test_usage
                   smoke/test_usage_events
                   smoke/test_vm_deployment_planner
+                  smoke/test_vm_strict_host_tags
                   smoke/test_vm_schedule
                   smoke/test_vm_life_cycle
                   smoke/test_vm_lifecycle_unmanage_import
@@ -161,7 +164,8 @@ jobs:
                   component/test_cpu_limits
                   component/test_cpu_max_limits
                   component/test_cpu_project_limits
-                  component/test_deploy_vm_userdata_multi_nic",
+                  component/test_deploy_vm_userdata_multi_nic
+                  component/test_deploy_vm_lease",
                 "component/test_egress_fw_rules
                   component/test_invalid_gw_nm
                   component/test_ip_reservation",
@@ -223,7 +227,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.8'
+          python-version: '3.10'
           architecture: 'x64'
 
       - name: Install Build Dependencies
@@ -233,7 +237,7 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          python3 -m pip install --user --upgrade urllib3 lxml paramiko nose texttable ipmisim pyopenssl pycrypto mock flask netaddr pylint pycodestyle six astroid
+          python3 -m pip install --user --upgrade urllib3 lxml paramiko nose texttable ipmisim pyopenssl pycryptodome mock flask netaddr pylint pycodestyle six astroid pynose
 
       - name: Install jacoco dependencies
         run: |
@@ -281,7 +285,7 @@ jobs:
 
       - name: Start CloudStack Management Server with Simulator
         run: |
-          export MAVEN_OPTS="-Xmx4096m -XX:MaxPermSize=800m -Djava.security.egd=file:/dev/urandom  -javaagent:jacoco/lib/jacocoagent.jar=address=*,port=36320,output=tcpserver"
+          export MAVEN_OPTS="-Xmx4096m -XX:MaxMetaspaceSize=800m -Djava.security.egd=file:/dev/urandom  -javaagent:jacoco/lib/jacocoagent.jar=address=*,port=36320,output=tcpserver --add-opens=java.base/java.lang=ALL-UNNAMED --add-exports=java.base/sun.security.x509=ALL-UNNAMED --add-opens=java.base/jdk.internal.reflect=ALL-UNNAMED"
           echo -e "\nStarting simulator"
           set +e
           mvn -Dsimulator -Dorg.eclipse.jetty.annotations.maxWait=120 -pl :cloud-client-ui jetty:run 2>&1 > /tmp/jetty-log || true &

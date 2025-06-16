@@ -17,6 +17,9 @@
 
 package org.apache.cloudstack.storage.datastore.util;
 
+import java.util.List;
+
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -50,6 +53,16 @@ public class ScaleIOUtil {
 
     private static final String RESCAN_CMD = "drv_cfg --rescan";
 
+    private static final String SDC_SERVICE_STATUS_CMD = "systemctl status scini";
+    private static final String SDC_SERVICE_START_CMD = "systemctl start scini";
+    private static final String SDC_SERVICE_STOP_CMD = "systemctl stop scini";
+    private static final String SDC_SERVICE_RESTART_CMD = "systemctl restart scini";
+
+    private static final String SDC_SERVICE_IS_ACTIVE_CMD = "systemctl is-active scini";
+    private static final String SDC_SERVICE_IS_ENABLED_CMD = "systemctl is-enabled scini";
+    private static final String SDC_SERVICE_ENABLE_CMD = "systemctl enable scini";
+
+    public static final String CONNECTED_SDC_COUNT_STAT = "ConnectedSDCCount";
     /**
      * Cmd for querying volumes in SDC
      * Sample output for cmd: drv_cfg --query_vols:
@@ -74,6 +87,54 @@ public class ScaleIOUtil {
      * MDM-ID 2e706b2740ec200f SDC ID 301b852c00000003 INSTALLATION ID 33f8662e7a5c1e6c IPs [0]-x.x.x.x [1]-x.x.x.x
      */
     private static final String QUERY_MDMS_CMD = "drv_cfg --query_mdms";
+
+    private static final String ADD_MDMS_CMD = "drv_cfg --add_mdm";
+    private static final String DRV_CFG_FILE = "/etc/emc/scaleio/drv_cfg.txt";
+
+    public static void addMdms(List<String> mdmAddresses) {
+        if (CollectionUtils.isEmpty(mdmAddresses)) {
+            return;
+        }
+        // Sample Cmd - /opt/emc/scaleio/sdc/bin/drv_cfg --add_mdm --ip x.x.x.x,x.x.x.x --file /etc/emc/scaleio/drv_cfg.txt
+        String addMdmsCmd = ScaleIOUtil.SDC_HOME_PATH + "/bin/" + ScaleIOUtil.ADD_MDMS_CMD;
+        addMdmsCmd += " --ip " + String.join(",", mdmAddresses);
+        addMdmsCmd += " --file " + DRV_CFG_FILE;
+        String result = Script.runSimpleBashScript(addMdmsCmd);
+        if (result == null) {
+            LOGGER.warn("Failed to add mdms");
+        }
+    }
+
+    public static void removeMdms(List<String> mdmAddresses) {
+        if (CollectionUtils.isEmpty(mdmAddresses)) {
+            return;
+        }
+        // (i) Remove MDMs from config file (ii) Restart scini
+        //  Sample Cmd - sed -i '/x.x.x.x\,/d' /etc/emc/scaleio/drv_cfg.txt
+        boolean restartSDC = false;
+        String removeMdmsCmdFormat = "sed -i '/%s\\,/d' %s";
+        for (String mdmAddress : mdmAddresses) {
+            if (mdmAdded(mdmAddress)) {
+                restartSDC = true;
+            }
+            String removeMdmsCmd = String.format(removeMdmsCmdFormat, mdmAddress, DRV_CFG_FILE);
+            Script.runSimpleBashScript(removeMdmsCmd);
+        }
+        if (restartSDC) {
+            restartSDCService();
+        }
+    }
+
+    public static boolean mdmAdded(String mdmAddress) {
+        //query_mdms outputs "MDM-ID <System/MDM-Id> SDC ID <SDC-Id> INSTALLATION ID <Installation-Id> IPs [0]-x.x.x.x [1]-x.x.x.x" for a MDM with ID: <MDM-Id>
+        String queryMdmsCmd = ScaleIOUtil.SDC_HOME_PATH + "/bin/" + ScaleIOUtil.QUERY_MDMS_CMD;
+        queryMdmsCmd += "|grep " + mdmAddress;
+        String result = Script.runSimpleBashScript(queryMdmsCmd);
+        if (StringUtils.isNotBlank(result) && result.contains(mdmAddress)) {
+            return true;
+        }
+        return false;
+    }
 
     public static String getSdcHomePath() {
         String sdcHomePath = DEFAULT_SDC_HOME_PATH;
@@ -182,5 +243,40 @@ public class ScaleIOUtil {
         }
 
         return String.format("%s:%s", volumePath, volumeName);
+    }
+
+    public static boolean isSDCServiceInstalled() {
+        int exitValue = Script.runSimpleBashScriptForExitValue(SDC_SERVICE_STATUS_CMD);
+        return exitValue != 4;
+    }
+
+    public static boolean isSDCServiceActive() {
+        int exitValue = Script.runSimpleBashScriptForExitValue(SDC_SERVICE_IS_ACTIVE_CMD);
+        return exitValue == 0;
+    }
+
+    public static boolean isSDCServiceEnabled() {
+        int exitValue = Script.runSimpleBashScriptForExitValue(SDC_SERVICE_IS_ENABLED_CMD);
+        return exitValue == 0;
+    }
+
+    public static boolean enableSDCService() {
+        int exitValue = Script.runSimpleBashScriptForExitValue(SDC_SERVICE_ENABLE_CMD);
+        return exitValue == 0;
+    }
+
+    public static boolean startSDCService() {
+        int exitValue = Script.runSimpleBashScriptForExitValue(SDC_SERVICE_START_CMD);
+        return exitValue == 0;
+    }
+
+    public static boolean stopSDCService() {
+        int exitValue = Script.runSimpleBashScriptForExitValue(SDC_SERVICE_STOP_CMD);
+        return exitValue == 0;
+    }
+
+    public static boolean restartSDCService() {
+        int exitValue = Script.runSimpleBashScriptForExitValue(SDC_SERVICE_RESTART_CMD);
+        return exitValue == 0;
     }
 }

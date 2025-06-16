@@ -17,7 +17,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack-plugins</artifactId>
-        <version>4.20.0.0-SNAPSHOT</version>
+        <version>4.21.0.0-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
     <dependencies>
@@ -56,7 +56,7 @@
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
-            <artifactId>mockito-inline</artifactId>
+            <artifactId>mockito-core</artifactId>
             <version>${cs.mockito.version}</version>
         </dependency>
         <dependency>
@@ -68,9 +68,16 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.codehaus.gmaven</groupId>
-                <artifactId>gmaven-plugin</artifactId>
-                <version>1.5</version>
+                <groupId>org.codehaus.gmavenplus</groupId>
+                <artifactId>gmavenplus-plugin</artifactId>
+                <version>${cs.gmavenplus.version}</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.codehaus.groovy</groupId>
+                        <artifactId>groovy-all</artifactId>
+                        <version>${cs.groovy.version}</version>
+                    </dependency>
+                </dependencies>
                 <executions>
                     <execution>
                         <id>set-properties</id>
@@ -79,15 +86,16 @@
                             <goal>execute</goal>
                         </goals>
                         <configuration>
-                            <providerSelection>1.7</providerSelection>
-                            <source>
-                                File git = new File("./.git")
-                                if (!git.exists()) {
-                                    pom.properties['storpool.skip.git.properties'] = 'true'
-                                } else {
-                                    pom.properties['storpool.skip.git.properties'] = 'false'
-                                }
-                            </source>
+                            <scripts>
+                                <script><![CDATA[
+                                    File git = new File("./.git")
+                                    if (!git.exists()) {
+                                        project.properties['storpool.skip.git.properties'] = 'true'
+                                    } else {
+                                        project.properties['storpool.skip.git.properties'] = 'false'
+                                    }
+                                ]]></script>
+                            </scripts>
                         </configuration>
                     </execution>
                 </executions>

@@ -353,6 +353,9 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 if (defaultIp6Dns2 != null) {
                     buf.append(" ip6dns2=").append(defaultIp6Dns2);
                 }
+                if (routedIpv4Manager.isRoutedVpc(vpc)) {
+                    buf.append(" is_routed=true");
+                }
             }
         }
 
@@ -461,6 +464,9 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                             domainRouterVO.getInstanceName(), domainRouterVO.getType(), details);
                     cmds.addCommand(plugNicCmd);
                     final VpcVO vpc = _vpcDao.findById(domainRouterVO.getVpcId());
+                    if (routedIpv4Manager.isRoutedVpc(vpc)) {
+                        continue;
+                    }
                     final NetworkUsageCommand netUsageCmd = new NetworkUsageCommand(domainRouterVO.getPrivateIpAddress(), domainRouterVO.getInstanceName(), true, publicNic.getIPv4Address(), vpc.getCidr());
                     usageCmds.add(netUsageCmd);
                     UserStatisticsVO stats = _userStatsDao.findBy(domainRouterVO.getAccountId(), domainRouterVO.getDataCenterId(), publicNtwk.getId(), publicNic.getIPv4Address(), domainRouterVO.getId(),
@@ -632,7 +638,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.NetworkACL, Provider.VPCVirtualRouter)) {
                     final List<NetworkACLItemVO> networkACLs = _networkACLMgr.listNetworkACLItems(guestNetworkId);
                     if (networkACLs != null && !networkACLs.isEmpty()) {
-                        logger.debug("Found " + networkACLs.size() + " network ACLs to apply as a part of VPC VR " + domainRouterVO + " start for guest network id=" + guestNetworkId);
+                        logger.debug("Found {} network ACLs to apply as a part of VPC VR {} start for guest network {}", networkACLs.size(), domainRouterVO, _networkModel.getNetwork(guestNetworkId));
                         _commandSetupHelper.createNetworkACLsCommands(networkACLs, domainRouterVO, cmds, guestNetworkId, false);
                     }
                 }
@@ -757,7 +763,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         }
 
         if (domainRouterVO.getState() == State.Starting || domainRouterVO.getState() == State.Running) {
-            final ArrayList<? extends PublicIpAddress> publicIps = getPublicIpsToApply(domainRouterVO, provider, guestNetworkId, IpAddress.State.Releasing);
+            final ArrayList<? extends PublicIpAddress> publicIps = getPublicIpsToApply(provider, guestNetworkId, IpAddress.State.Releasing);
 
             if (publicIps != null && !publicIps.isEmpty()) {
                 logger.debug("Found " + publicIps.size() + " ip(s) to apply as a part of domR " + domainRouterVO + " start.");
@@ -914,18 +920,18 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         Answer answer = cmds.getAnswer("users");
         if (answer == null || !answer.getResult()) {
             String errorMessage = (answer == null) ? "null answer object" : answer.getDetails();
-            logger.error("Unable to start vpn: unable add users to vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: "
-                    + router.getInstanceName() + " due to " + errorMessage);
-            throw new ResourceUnavailableException("Unable to start vpn: Unable to add users to vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId()
-            + " on domR: " + router.getInstanceName() + " due to " + errorMessage, DataCenter.class, router.getDataCenterId());
+            DataCenter zone = _entityMgr.findById(DataCenter.class, router.getDataCenterId());
+            Account account = _entityMgr.findById(Account.class, vpn.getAccountId());
+            logger.error("Unable to start vpn: unable add users to vpn in zone {} for account {} on domR: {} due to {}", zone, account, router, errorMessage);
+            throw new ResourceUnavailableException(String.format("Unable to start vpn: Unable to add users to vpn in zone %s for account %s on domR: %s due to %s", zone, account, router.getInstanceName(), errorMessage), DataCenter.class, router.getDataCenterId());
         }
         answer = cmds.getAnswer("startVpn");
         if (answer == null || !answer.getResult()) {
             String errorMessage = (answer == null) ? "null answer object" : answer.getDetails();
-            logger.error("Unable to start vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: " + router.getInstanceName() + " due to "
-                    + errorMessage);
-            throw new ResourceUnavailableException("Unable to start vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: "
-                    + router.getInstanceName() + " due to " + errorMessage, DataCenter.class, router.getDataCenterId());
+            DataCenter zone = _entityMgr.findById(DataCenter.class, router.getDataCenterId());
+            Account account = _entityMgr.findById(Account.class, vpn.getAccountId());
+            logger.error("Unable to start vpn in zone {} for account {} on domR: {} due to {}", zone, account, router, errorMessage);
+            throw new ResourceUnavailableException(String.format("Unable to start vpn in zone %s for account %s on domR: %s due to %s", zone, account, router.getInstanceName(), errorMessage), DataCenter.class, router.getDataCenterId());
         }
 
         return true;

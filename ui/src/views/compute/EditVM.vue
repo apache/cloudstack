@@ -84,7 +84,7 @@
           }"
           :options="groups.opts" />
       </a-form-item>
-      <a-form-item>
+      <a-form-item v-if="userDataEnabled">
         <template #label>
           <tooltip-label :title="$t('label.userdata')" :tooltip="apiParams.userdata.description"/>
         </template>
@@ -110,6 +110,41 @@
           </a-select-option>
         </a-select>
       </a-form-item>
+
+      <a-form-item name="deleteprotection" ref="deleteprotection">
+        <template #label>
+          <tooltip-label :title="$t('label.deleteprotection')" :tooltip="apiParams.deleteprotection.description"/>
+        </template>
+        <a-switch v-model:checked="form.deleteprotection" />
+      </a-form-item>
+      <a-form-item name="showLeaseOptions" ref="showLeaseOptions" v-if="isLeaseEditable">
+        <template #label>
+          <tooltip-label :title="$t('label.lease.enable')" :tooltip="$t('label.lease.enable.tooltip')" />
+        </template>
+        <a-switch v-model:checked="showLeaseOptions" @change="onToggleLeaseData"/>
+      </a-form-item>
+      <a-row :gutter="12" v-if="showLeaseOptions">
+        <a-col :md="12" :lg="12">
+          <a-form-item name="leaseduration" ref="leaseduration">
+            <template #label>
+              <tooltip-label :title="$t('label.leaseduration')" />
+            </template>
+            <a-input
+              v-model:value="form.leaseduration"
+              :placeholder="$t('label.instance.lease.placeholder')"/>
+          </a-form-item>
+        </a-col>
+        <a-col :md="12" :lg="12">
+          <a-form-item name="leaseexpiryaction" ref="leaseexpiryaction">
+            <template #label>
+              <tooltip-label :title="$t('label.leaseexpiryaction')"  />
+            </template>
+            <a-select v-model:value="form.leaseexpiryaction" :defaultValue="expiryActions">
+              <a-select-option v-for="action in expiryActions" :key="action" :label="action" />
+            </a-select>
+          </a-form-item>
+        </a-col>
+      </a-row>
 
       <div :span="24" class="action-button">
         <a-button :loading="loading" @click="onCloseAction">{{ $t('label.cancel') }}</a-button>
@@ -143,6 +178,7 @@ export default {
     return {
       serviceOffering: {},
       template: {},
+      userDataEnabled: false,
       securityGroupsEnabled: false,
       dynamicScalingVmConfig: false,
       loading: false,
@@ -157,6 +193,15 @@ export default {
       groups: {
         loading: false,
         opts: []
+      },
+      isLeaseEditable: this.$store.getters.features.instanceleaseenabled && this.resource.leaseduration > -1,
+      showLeaseOptions: false,
+      leaseduration: this.resource.leaseduration === undefined ? 90 : this.resource.leaseduration,
+      leaseexpiryaction: this.resource.leaseexpiryaction === undefined ? 'STOP' : this.resource.leaseexpiryaction,
+      expiryActions: ['STOP', 'DESTROY'],
+      naturalNumberRule: {
+        type: 'number',
+        validator: this.validateNumber
       }
     }
   },
@@ -175,12 +220,17 @@ export default {
         displayname: this.resource.displayname,
         ostypeid: this.resource.ostypeid,
         isdynamicallyscalable: this.resource.isdynamicallyscalable,
+        deleteprotection: this.resource.deleteprotection,
         group: this.resource.group,
-        securitygroupids: this.resource.securitygroup.map(x => x.id),
         userdata: '',
-        haenable: this.resource.haenable
+        haenable: this.resource.haenable,
+        leaseduration: this.resource.leaseduration,
+        leaseexpiryaction: this.resource.leaseexpiryaction
       })
-      this.rules = reactive({})
+      this.rules = reactive({
+        leaseduration: [this.naturalNumberRule]
+      })
+      this.showLeaseOptions = this.isLeaseEditable
     },
     fetchData () {
       this.fetchZoneDetails()
@@ -194,10 +244,10 @@ export default {
     },
     fetchZoneDetails () {
       api('listZones', {
-        zoneid: this.resource.zoneid
+        id: this.resource.zoneid
       }).then(response => {
         const zone = response?.listzonesresponse?.zone || []
-        this.securityGroupsEnabled = zone?.[0]?.securitygroupsenabled
+        this.securityGroupsEnabled = zone?.[0]?.securitygroupsenabled || this.$store.getters.showSecurityGroups
       })
     },
     fetchSecurityGroups () {
@@ -289,13 +339,34 @@ export default {
       return decodedData.toString('utf-8')
     },
     fetchUserData () {
-      const params = {
-        id: this.resource.id,
-        userdata: true
+      let networkId
+      this.resource.nic.forEach(nic => {
+        if (nic.isdefault) {
+          networkId = nic.networkid
+        }
+      })
+      if (!networkId) {
+        return
       }
+      const listNetworkParams = {
+        id: networkId,
+        listall: true
+      }
+      api(`listNetworks`, listNetworkParams).then(json => {
+        json.listnetworksresponse.network[0].service.forEach(service => {
+          if (service.name === 'UserData') {
+            this.userDataEnabled = true
 
-      api('listVirtualMachines', params).then(json => {
-        this.form.userdata = this.decodeUserData(json.listvirtualmachinesresponse.virtualmachine[0].userdata || '')
+            const listVmParams = {
+              id: this.resource.id,
+              userdata: true,
+              listall: true
+            }
+            api('listVirtualMachines', listVmParams).then(json => {
+              this.form.userdata = atob(json.listvirtualmachinesresponse.virtualmachine[0].userdata || '')
+            })
+          }
+        })
       })
     },
     handleSubmit () {
@@ -306,13 +377,14 @@ export default {
         params.name = values.name
         params.displayname = values.displayname
         params.ostypeid = values.ostypeid
-        if (this.securityGroupsEnabled) {
-          if (values.securitygroupids) {
-            params.securitygroupids = values.securitygroupids
-          }
+        if (this.securityGroupsEnabled && Array.isArray(values.securitygroupids) && values.securitygroupids.length > 0) {
+          params.securitygroupids = values.securitygroupids
         }
         if (values.isdynamicallyscalable !== undefined) {
           params.isdynamicallyscalable = values.isdynamicallyscalable
+        }
+        if (values.deleteprotection !== undefined) {
+          params.deleteprotection = values.deleteprotection
         }
         if (values.haenable !== undefined) {
           params.haenable = values.haenable
@@ -322,6 +394,12 @@ export default {
         }
         if (values.userdata && values.userdata.length > 0) {
           params.userdata = this.$toBase64AndURIEncoded(values.userdata)
+        }
+        if (values.leaseduration !== undefined && (values.leaseduration === -1 || values.leaseduration > 0)) {
+          params.leaseduration = values.leaseduration
+          if (values.leaseexpiryaction !== undefined) {
+            params.leaseexpiryaction = values.leaseexpiryaction
+          }
         }
         this.loading = true
 
@@ -341,6 +419,21 @@ export default {
     },
     onCloseAction () {
       this.$emit('close-action')
+    },
+    onToggleLeaseData () {
+      if (this.showLeaseOptions === false) {
+        this.form.leaseduration = -1
+        this.form.leaseexpiryaction = undefined
+      } else {
+        this.form.leaseduration = this.leaseduration
+        this.form.leaseexpiryaction = this.leaseexpiryaction
+      }
+    },
+    async validateNumber (rule, value) {
+      if (value && (isNaN(value) || value <= 0)) {
+        return Promise.reject(this.$t('message.error.number'))
+      }
+      return Promise.resolve()
     }
   }
 }

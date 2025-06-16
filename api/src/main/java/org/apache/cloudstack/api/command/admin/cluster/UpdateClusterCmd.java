@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.cluster;
 
+import com.cloud.cpu.CPU;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 
 import org.apache.cloudstack.api.APICommand;
@@ -29,6 +30,7 @@ import org.apache.cloudstack.api.response.ClusterResponse;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.org.Cluster;
 import com.cloud.user.Account;
+import org.apache.commons.lang3.StringUtils;
 
 @APICommand(name = "updateCluster", description = "Updates an existing cluster", responseObject = ClusterResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -52,6 +54,11 @@ public class UpdateClusterCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.MANAGED_STATE, type = CommandType.STRING, description = "whether this cluster is managed by cloudstack")
     private String managedState;
+
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+            description = "the CPU arch of the cluster. Valid options are: x86_64, aarch64",
+            since = "4.20")
+    private String arch;
 
     public String getClusterName() {
         return clusterName;
@@ -108,6 +115,13 @@ public class UpdateClusterCmd extends BaseCmd {
         return ApiCommandResourceType.Cluster;
     }
 
+    public CPU.CPUArch getArch() {
+        if (StringUtils.isBlank(arch)) {
+            return null;
+        }
+        return CPU.CPUArch.fromType(arch);
+    }
+
     @Override
     public void execute() {
         Cluster cluster = _resourceService.getCluster(getId());
@@ -116,7 +130,7 @@ public class UpdateClusterCmd extends BaseCmd {
         }
         Cluster result = _resourceService.updateCluster(this);
         if (result != null) {
-            ClusterResponse clusterResponse = _responseGenerator.createClusterResponse(cluster, false);
+            ClusterResponse clusterResponse = _responseGenerator.createClusterResponse(result, false);
             clusterResponse.setResponseName(getCommandName());
             this.setResponseObject(clusterResponse);
         } else {

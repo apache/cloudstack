@@ -18,9 +18,13 @@ package com.cloud.api.query.dao;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.cpu.CPU;
+import com.cloud.dc.ASNumberRangeVO;
+import com.cloud.dc.dao.ASNumberRangeDao;
 import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.element.NsxProviderVO;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -30,6 +34,8 @@ import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.stereotype.Component;
 
@@ -56,6 +62,8 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
     private AnnotationDao annotationDao;
     @Inject
     private NsxProviderDao nsxProviderDao;
+    @Inject
+    private ASNumberRangeDao asNumberRangeDao;
 
     protected DataCenterJoinDaoImpl() {
 
@@ -67,6 +75,15 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
     }
 
     @Override
+    public ZoneResponse newMinimalDataCenterResponse(ResponseView view, DataCenterJoinVO dataCenter) {
+        ZoneResponse zoneResponse = new ZoneResponse(null);
+        zoneResponse.setId(dataCenter.getUuid());
+        zoneResponse.setName(dataCenter.getName());
+        zoneResponse.setObjectName("zone");
+        return zoneResponse;
+    }
+
+    @Override
     public ZoneResponse newDataCenterResponse(ResponseView view, DataCenterJoinVO dataCenter, Boolean showCapacities, Boolean showResourceImage) {
         ZoneResponse zoneResponse = new ZoneResponse();
         zoneResponse.setId(dataCenter.getUuid());
@@ -74,6 +91,7 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
         zoneResponse.setSecurityGroupsEnabled(ApiDBUtils.isSecurityGroupEnabledInZone(dataCenter.getId()));
         zoneResponse.setLocalStorageEnabled(dataCenter.isLocalStorageEnabled());
         zoneResponse.setType(ObjectUtils.defaultIfNull(dataCenter.getType(), DataCenter.Type.Core).toString());
+        zoneResponse.setStorageAccessGroups(dataCenter.getStorageAccessGroups());
 
         if ((dataCenter.getDescription() != null) && !dataCenter.getDescription().equalsIgnoreCase("null")) {
             zoneResponse.setDescription(dataCenter.getDescription());
@@ -90,7 +108,7 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
             zoneResponse.setGuestCidrAddress(dataCenter.getGuestNetworkCidr());
 
             if (showCapacities != null && showCapacities) {
-                zoneResponse.setCapacitites(ApiResponseHelper.getDataCenterCapacityResponse(dataCenter.getId()));
+                zoneResponse.setCapacities(ApiResponseHelper.getDataCenterCapacityResponse(dataCenter.getId()));
             }
         }
 
@@ -126,6 +144,15 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
         if (Objects.nonNull(nsxProviderVO)) {
             zoneResponse.setNsxEnabled(true);
         }
+
+        List<CPU.CPUArch> clusterArchs = ApiDBUtils.listZoneClustersArchs(dataCenter.getId());
+        zoneResponse.setMultiArch(CollectionUtils.isNotEmpty(clusterArchs) && clusterArchs.size() > 1);
+
+        List<ASNumberRangeVO> asNumberRange = asNumberRangeDao.listByZoneId(dataCenter.getId());
+        String asRange = asNumberRange.stream().map(range -> range.getStartASNumber() + "-" + range.getEndASNumber()).collect(Collectors.joining(", "));
+        zoneResponse.setAsnRange(asRange);
+
+        zoneResponse.setRoutedModeEnabled(RoutedIpv4Manager.RoutedNetworkVpcEnabled.valueIn(dataCenter.getId()));
 
         zoneResponse.setResourceDetails(ApiDBUtils.getResourceDetails(dataCenter.getId(), ResourceObjectType.Zone));
         zoneResponse.setHasAnnotation(annotationDao.hasAnnotations(dataCenter.getUuid(), AnnotationService.EntityType.ZONE.name(),

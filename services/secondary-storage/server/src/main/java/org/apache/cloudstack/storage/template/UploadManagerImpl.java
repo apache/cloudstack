@@ -17,8 +17,11 @@
 package org.apache.cloudstack.storage.template;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
@@ -31,6 +34,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.Answer;
 
+import com.cloud.agent.api.ConvertSnapshotCommand;
 import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
 
 import com.cloud.agent.api.storage.CreateEntityDownloadURLAnswer;
@@ -266,6 +270,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
         }
         // Create the directory structure so that its visible under apache server root
         String extractDir = "/var/www/html/userdata/";
+        extractDir = extractDir + cmd.getFilepathInExtractURL() + File.separator;
         Script command = new Script("/bin/su", logger);
         command.add("-s");
         command.add("/bin/bash");
@@ -288,18 +293,29 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
         }
 
         // Create a random file under the directory for security reasons.
-        String uuid = cmd.getExtractLinkUUID();
+        String filename = cmd.getFilenameInExtractURL();
         // Create a symbolic link from the actual directory to the template location. The entity would be directly visible under /var/www/html/userdata/cmd.getInstallPath();
         command = new Script("/bin/bash", logger);
         command.add("-c");
-        command.add("ln -sf /mnt/SecStorage/" + cmd.getParent() + File.separator + cmd.getInstallPath() + " " + extractDir + uuid);
+        command.add("ln -sf /mnt/SecStorage/" + cmd.getParent() + File.separator + cmd.getInstallPath() + " " + extractDir + filename);
         result = command.execute();
         if (result != null) {
             String errorString = "Error in linking  err=" + result;
             logger.error(errorString);
             return new CreateEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
         }
-
+        File parentFolder = file.getParentFile();
+        if (parentFolder != null && parentFolder.exists()) {
+            Path folderPath = parentFolder.toPath();
+            Script script = new Script(true, "chmod", 1440 * 1000, logger);
+            script.add("755", folderPath.toString());
+            result = script.execute();
+            if (result != null) {
+                String errMsg = "Unable to set permissions for " + folderPath + " due to " + result;
+                logger.error(errMsg);
+                throw new CloudRuntimeException(errMsg);
+            }
+        }
         return new CreateEntityDownloadURLAnswer("", CreateEntityDownloadURLAnswer.RESULT_SUCCESS);
 
     }
@@ -336,6 +352,18 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
             if (result != null) {
                 String errorString = "Error in deleting volume " + path + " : " + result;
                 logger.warn(errorString);
+                return new Answer(cmd, false, errorString);
+            }
+        }
+
+        if (Upload.Type.SNAPSHOT.equals(cmd.getType())) {
+            try {
+                path = path.replace(ConvertSnapshotCommand.TEMP_SNAPSHOT_NAME, "");
+                String fullPath = String.format("/mnt/SecStorage/%s%s%s%s", cmd.getParentPath(), File.separator, path, ConvertSnapshotCommand.TEMP_SNAPSHOT_NAME);
+                Files.deleteIfExists(Path.of(fullPath));
+            } catch (IOException e) {
+                String errorString = String.format("Error deleting temporary snapshot %s%s.", path, ConvertSnapshotCommand.TEMP_SNAPSHOT_NAME);
+                logger.warn(errorString, e);
                 return new Answer(cmd, false, errorString);
             }
         }

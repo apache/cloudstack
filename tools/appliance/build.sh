@@ -27,6 +27,8 @@ Usage:
      (or use command line arg, default systemvmtemplate)
    * Set \$version to provide version to apply to built appliance
      (or use command line arg, default empty)
+   * Set \$target_arch to provide target architecture
+     (or use command line arg, default to current architecture. Currently x86_64 and aarch64 are implemented)
    * Set \$BUILD_NUMBER to provide build number to apply to built appliance
      (or use command line arg, default empty)
    * Set \$DEBUG=1 to enable debug logging
@@ -85,11 +87,17 @@ if [[ ! -z "${JENKINS_HOME}" ]]; then
   DEBUG=1
 fi
 
+# get current system architecture
+base_arch=`arch`
+
 # which packer definition to use
 appliance="${1:-${appliance:-systemvmtemplate}}"
 
 # optional version tag to put into the image filename
 version="${2:-${version:-}}"
+
+# which architecture to build the template for
+target_arch="${3:-${target_arch:-${base_arch}}}"
 
 # optional (jenkins) build number tag to put into the image filename
 BUILD_NUMBER="${4:-${BUILD_NUMBER:-}}"
@@ -105,7 +113,7 @@ elif [ ! -z "${BUILD_NUMBER}" ]; then
   version_tag="-${BUILD_NUMBER}"
 fi
 
-appliance_build_name=${appliance}${version_tag}
+appliance_build_name="${appliance}${version_tag}-${target_arch}"
 
 ###
 ### Generic helper functions
@@ -218,7 +226,7 @@ function prepare() {
 
 function packer_build() {
   log INFO "building new image with packer"
-  cd ${appliance_build_name} && packer build template.json && cd ..
+  cd ${appliance_build_name} && packer build template-base_${base_arch}-target_${target_arch}.json && cd ..
 }
 
 function stage_vmx() {
@@ -227,7 +235,7 @@ function stage_vmx() {
 displayname = "${1}"
 annotation = "${1}"
 guestos = "otherlinux-64"
-virtualHW.version = "11"
+virtualHW.version = "13"
 config.version = "8"
 numvcpus = "1"
 cpuid.coresPerSocket = "1"
@@ -349,10 +357,12 @@ function main() {
 
   # process the disk at dist
   kvm_export
-  ovm_export
-  xen_server_export
-  vmware_export
-  hyperv_export
+  if [ "${target_arch}" == "x86_64" ]; then
+    ovm_export
+    xen_server_export
+    vmware_export
+    hyperv_export
+  fi
   rm -f "dist/${appliance}"
   cd dist && chmod +r * && cd ..
   cd dist && md5sum * > md5sum.txt && cd ..

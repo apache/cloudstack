@@ -178,6 +178,17 @@
             <a-input v-model:value="form.path" :placeholder="$t('message.path.description')"/>
           </a-form-item>
         </div>
+        <div
+          v-if="form.protocol === 'nfs' &&
+            ((form.scope === 'zone' && (form.hypervisor === 'KVM' || form.hypervisor === 'Simulator')) ||
+             (form.scope === 'cluster' && (hypervisorType === 'KVM' || hypervisorType === 'Simulator')))">
+          <a-form-item name="nfsMountOpts" ref="nfsMountOpts">
+            <template #label>
+              <tooltip-label :title="$t('label.nfsmountopts')" :tooltip="$t('message.nfs.mount.options.description')"/>
+            </template>
+            <a-input v-model:value="form.nfsMountOpts" :placeholder="$t('message.nfs.mount.options.description')" />
+          </a-form-item>
+        </div>
         <div v-if="form.protocol === 'SMB'">
           <a-form-item :label="$t('label.smbusername')" name="smbUsername" ref="smbUsername">
             <a-input v-model:value="form.smbUsername"/>
@@ -359,6 +370,12 @@
           <a-form-item name="radospool" ref="radospool" :label="$t('label.rados.pool')">
             <a-input v-model:value="form.radospool" :placeholder="$t('label.rados.pool')"/>
           </a-form-item>
+          <a-form-item name="datapool" ref="datapool">
+            <template #label>
+              <tooltip-label :title="$t('label.data.pool')" :tooltip="$t('label.data.pool.description')"/>
+            </template>
+            <a-input v-model:value="form.datapool" :placeholder="$t('label.data.pool')"/>
+          </a-form-item>
           <a-form-item name="radosuser" ref="radosuser" :label="$t('label.rados.user')">
             <a-input v-model:value="form.radosuser" :placeholder="$t('label.rados.user')" />
           </a-form-item>
@@ -488,6 +505,10 @@ export default {
         powerflexGatewayUsername: [{ required: true, message: this.$t('label.required') }],
         powerflexGatewayPassword: [{ required: true, message: this.$t('label.required') }],
         powerflexStoragePool: [{ required: true, message: this.$t('label.required') }],
+        radosmonitor: [{ required: true, message: this.$t('label.required') }],
+        radospool: [{ required: true, message: this.$t('label.required') }],
+        radosuser: [{ required: true, message: this.$t('label.required') }],
+        radossecret: [{ required: true, message: this.$t('label.required') }],
         username: [{ required: true, message: this.$t('label.required') }],
         password: [{ required: true, message: this.$t('label.required') }],
         primeraURL: [{ required: true, message: this.$t('label.url') }],
@@ -794,6 +815,9 @@ export default {
         var url = ''
         if (values.protocol === 'nfs') {
           url = this.nfsURL(server, path)
+          if (values.nfsMountOpts) {
+            params['details[0].nfsmountopts'] = values.nfsMountOpts
+          }
         } else if (values.protocol === 'SMB') {
           url = this.smbURL(server, path)
           const smbParams = {
@@ -831,6 +855,9 @@ export default {
           url = this.clvmURL(vg)
         } else if (values.protocol === 'RBD') {
           url = this.rbdURL(values.radosmonitor, values.radospool, values.radosuser, values.radossecret)
+          if (values.datapool) {
+            params['details[0].rbd_default_data_pool'] = values.datapool
+          }
         } else if (values.protocol === 'vmfs') {
           path = values.vCenterDataCenter
           if (path.substring(0, 1) !== '/') {
@@ -865,7 +892,7 @@ export default {
           url = values.flashArrayURL
         }
 
-        if (values.provider === 'Linstor') {
+        if (values.provider === 'Linstor' || values.protocol === 'Linstor') {
           url = this.linstorURL(server)
           values.managed = false
           params['details[0].resourceGroup'] = values.resourcegroup

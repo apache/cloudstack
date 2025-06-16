@@ -20,6 +20,9 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 
 public class NsxAnswer extends Answer {
+
+    private boolean objectExists;
+
     public NsxAnswer(final Command command, final boolean success, final String details) {
         super(command, success, details);
     }
@@ -28,4 +31,11 @@ public class NsxAnswer extends Answer {
         super(command, e);
     }
 
+    public boolean isObjectExistent() {
+        return objectExists;
+    }
+
+    public void setObjectExists(boolean objectExisted) {
+        this.objectExists = objectExisted;
+    }
 }

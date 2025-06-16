@@ -16,16 +16,11 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.template;
 
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.server.ResourceIcon;
-import com.cloud.server.ResourceTag;
-import org.apache.cloudstack.api.response.ResourceIconResponse;
-import org.apache.commons.collections.CollectionUtils;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -33,11 +28,17 @@ import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.UserCmd;
+import org.apache.cloudstack.api.response.GuestOSCategoryResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
+import com.cloud.cpu.CPU;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.server.ResourceTag;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
@@ -103,6 +104,16 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
             description = "flag to list VNF templates or not; true if need to list VNF templates, false otherwise.",
             since = "4.19.0")
     private Boolean isVnf;
+
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+            description = "the CPU arch of the template. Valid options are: x86_64, aarch64",
+            since = "4.20")
+    private String arch;
+
+    @Parameter(name = ApiConstants.OS_CATEGORY_ID, type = CommandType.UUID, entityType= GuestOSCategoryResponse.class,
+            description = "the ID of the OS category for the template",
+            since = "4.21.0")
+    private Long osCategoryId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -191,6 +202,17 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
         return isVnf;
     }
 
+    public CPU.CPUArch getArch() {
+        if (StringUtils.isBlank(arch)) {
+            return null;
+        }
+        return CPU.CPUArch.fromType(arch);
+    }
+
+    public Long getOsCategoryId() {
+        return osCategoryId;
+    }
+
     @Override
     public String getCommandName() {
         return s_name;
@@ -204,22 +226,12 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
     @Override
     public void execute() {
         ListResponse<TemplateResponse> response = _queryService.listTemplates(this);
-        if (response != null && response.getCount() > 0 && getShowIcon()) {
-            updateTemplateResponse(response.getResponses());
+        if (response != null && getShowIcon()) {
+            _responseGenerator.updateTemplateIsoResponsesForIcons(response.getResponses(),
+                    ResourceTag.ResourceObjectType.Template);
         }
         response.setResponseName(getCommandName());
         setResponseObject(response);
-    }
-
-    private void updateTemplateResponse(List<TemplateResponse> response) {
-        for (TemplateResponse templateResponse : response) {
-            ResourceIcon resourceIcon = resourceIconManager.getByResourceTypeAndUuid(ResourceTag.ResourceObjectType.Template, templateResponse.getId());
-            if (resourceIcon == null) {
-                continue;
-            }
-            ResourceIconResponse iconResponse = _responseGenerator.createResourceIconResponse(resourceIcon);
-            templateResponse.setResourceIconResponse(iconResponse);
-        }
     }
 
     public List<Long> getIds() {

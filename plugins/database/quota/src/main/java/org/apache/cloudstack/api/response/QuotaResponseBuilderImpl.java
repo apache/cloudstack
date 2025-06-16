@@ -16,6 +16,7 @@
 //under the License.
 package org.apache.cloudstack.api.response;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
@@ -34,16 +35,23 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.user.User;
+import com.cloud.user.UserVO;
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.QuotaBalanceCmd;
 import org.apache.cloudstack.api.command.QuotaConfigureEmailCmd;
+import org.apache.cloudstack.api.command.QuotaCreditsListCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateListCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateUpdateCmd;
 import org.apache.cloudstack.api.command.QuotaPresetVariablesListCmd;
@@ -51,7 +59,10 @@ import org.apache.cloudstack.api.command.QuotaStatementCmd;
 import org.apache.cloudstack.api.command.QuotaTariffCreateCmd;
 import org.apache.cloudstack.api.command.QuotaTariffListCmd;
 import org.apache.cloudstack.api.command.QuotaTariffUpdateCmd;
+import org.apache.cloudstack.api.command.QuotaValidateActivationRuleCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.discovery.ApiDiscoveryService;
+import org.apache.cloudstack.jsinterpreter.JsInterpreterHelper;
 import org.apache.cloudstack.quota.QuotaManager;
 import org.apache.cloudstack.quota.QuotaManagerImpl;
 import org.apache.cloudstack.quota.QuotaService;
@@ -77,9 +88,11 @@ import org.apache.cloudstack.quota.vo.QuotaEmailConfigurationVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
 import org.apache.cloudstack.quota.vo.QuotaUsageVO;
+import org.apache.cloudstack.utils.jsinterpreter.JsInterpreter;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
@@ -90,7 +103,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
-import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
@@ -107,7 +119,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     @Inject
     private QuotaBalanceDao _quotaBalanceDao;
     @Inject
-    private QuotaCreditsDao _quotaCreditsDao;
+    private QuotaCreditsDao quotaCreditsDao;
     @Inject
     private QuotaUsageDao _quotaUsageDao;
     @Inject
@@ -131,11 +143,16 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     private QuotaManager _quotaManager;
     @Inject
     private QuotaEmailConfigurationDao quotaEmailConfigurationDao;
+    @Inject
+    private JsInterpreterHelper jsInterpreterHelper;
+    @Inject
+    private ApiDiscoveryService apiDiscoveryService;
 
     private final Class<?>[] assignableClasses = {GenericPresetVariable.class, ComputingResources.class};
 
+
     @Override
-    public QuotaTariffResponse createQuotaTariffResponse(QuotaTariffVO tariff) {
+    public QuotaTariffResponse createQuotaTariffResponse(QuotaTariffVO tariff, boolean returnActivationRule) {
         final QuotaTariffResponse response = new QuotaTariffResponse();
         response.setUsageType(tariff.getUsageType());
         response.setUsageName(tariff.getUsageName());
@@ -145,12 +162,15 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         response.setEffectiveOn(tariff.getEffectiveOn());
         response.setUsageTypeDescription(tariff.getUsageTypeDescription());
         response.setCurrency(QuotaConfig.QuotaCurrencySymbol.value());
-        response.setActivationRule(tariff.getActivationRule());
         response.setName(tariff.getName());
         response.setEndDate(tariff.getEndDate());
         response.setDescription(tariff.getDescription());
         response.setId(tariff.getUuid());
         response.setRemoved(tariff.getRemoved());
+        response.setPosition(tariff.getPosition());
+        if (returnActivationRule) {
+            response.setActivationRule(tariff.getActivationRule());
+        }
         return response;
     }
 
@@ -224,6 +244,11 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         } else {
             return new QuotaSummaryResponse();
         }
+    }
+
+    public boolean isUserAllowedToSeeActivationRules(User user) {
+        List<ApiDiscoveryResponse> apiList = (List<ApiDiscoveryResponse>) apiDiscoveryService.listApis(user, null).getResponses();
+        return apiList.stream().anyMatch(response -> StringUtils.equalsAny(response.getName(), "quotaTariffCreate", "quotaTariffUpdate"));
     }
 
     @Override
@@ -398,11 +423,14 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         boolean listAll = cmd.isListAll();
         Long startIndex = cmd.getStartIndex();
         Long pageSize = cmd.getPageSizeVal();
+        String uuid = cmd.getId();
+        boolean listOnlyRemoved = cmd.isListOnlyRemoved();
+        String keyword = cmd.getKeyword();
 
-        logger.debug(String.format("Listing quota tariffs for parameters [%s].", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(cmd, "effectiveDate",
-                "endDate", "listAll", "name", "page", "pageSize", "usageType")));
+        logger.debug("Listing quota tariffs for parameters [{}].", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(cmd, "effectiveDate",
+                "endDate", "listAll", "name", "page", "pageSize", "usageType", "uuid", "listOnlyRemoved", "keyword"));
 
-        return _quotaTariffDao.listQuotaTariffs(startDate, endDate, usageType, name, null, listAll, startIndex, pageSize);
+        return _quotaTariffDao.listQuotaTariffs(startDate, endDate, usageType, name, uuid, listAll, listOnlyRemoved, startIndex, pageSize, keyword);
     }
 
     @Override
@@ -414,6 +442,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         String description = cmd.getDescription();
         String activationRule = cmd.getActivationRule();
         Date now = new Date();
+        Integer position = cmd.getPosition();
 
         warnQuotaTariffUpdateDeprecatedFields(cmd);
 
@@ -428,7 +457,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         currentQuotaTariff.setRemoved(now);
 
         QuotaTariffVO newQuotaTariff = persistNewQuotaTariff(currentQuotaTariff, name, 0, currentQuotaTariffStartDate, cmd.getEntityOwnerId(), endDate, value, description,
-                activationRule);
+                activationRule, position);
         _quotaTariffDao.updateQuotaTariff(currentQuotaTariff);
 
         CallContext.current().setEventResourceId(newQuotaTariff.getId());
@@ -449,7 +478,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     }
 
     protected QuotaTariffVO persistNewQuotaTariff(QuotaTariffVO currentQuotaTariff, String name, int usageType, Date startDate, Long entityOwnerId, Date endDate, Double value,
-            String description, String activationRule) {
+            String description, String activationRule, Integer position) {
 
         QuotaTariffVO newQuotaTariff = getNewQuotaTariffObject(currentQuotaTariff, name, usageType);
 
@@ -461,6 +490,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         validateValueOnCreatingNewQuotaTariff(newQuotaTariff, value);
         validateStringsOnCreatingNewQuotaTariff(newQuotaTariff::setDescription, description);
         validateStringsOnCreatingNewQuotaTariff(newQuotaTariff::setActivationRule, activationRule);
+        validatePositionOnCreatingNewQuotaTariff(newQuotaTariff, position);
 
         _quotaTariffDao.addQuotaTariff(newQuotaTariff);
         return newQuotaTariff;
@@ -480,6 +510,13 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         newQuotaTariff.setName(name);
         return newQuotaTariff;
     }
+
+    protected void validatePositionOnCreatingNewQuotaTariff(QuotaTariffVO newQuotaTariff, Integer position) {
+        if (position != null) {
+            newQuotaTariff.setPosition(position);
+        }
+    }
+
 
     protected void validateStringsOnCreatingNewQuotaTariff(Consumer<String> method, String value){
         if (value != null) {
@@ -514,28 +551,32 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
     @Override
     public QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Double amount, Long updatedBy, Boolean enforce) {
-        Date despositedOn = new Date();
-        QuotaBalanceVO qb = _quotaBalanceDao.findLaterBalanceEntry(accountId, domainId, despositedOn);
+        Date depositedOn = new Date();
+        QuotaBalanceVO qb = _quotaBalanceDao.findLaterBalanceEntry(accountId, domainId, depositedOn);
 
         if (qb != null) {
             throw new InvalidParameterValueException(String.format("Incorrect deposit date [%s], as there are balance entries after this date.",
-                    despositedOn));
+                    depositedOn));
         }
 
         QuotaCreditsVO credits = new QuotaCreditsVO(accountId, domainId, new BigDecimal(amount), updatedBy);
-        credits.setUpdatedOn(despositedOn);
-        QuotaCreditsVO result = _quotaCreditsDao.saveCredits(credits);
+        credits.setUpdatedOn(depositedOn);
+        QuotaCreditsVO result = quotaCreditsDao.saveCredits(credits);
+        if (result == null) {
+            logger.error("Unable to add credits to account ID [{}].", accountId);
+            throw new CloudRuntimeException("Unable to add credits to account.");
+        }
 
         final AccountVO account = _accountDao.findById(accountId);
         if (account == null) {
             throw new InvalidParameterValueException("Account does not exist with account id " + accountId);
         }
         final boolean lockAccountEnforcement = "true".equalsIgnoreCase(QuotaConfig.QuotaEnableEnforcement.value());
-        final BigDecimal currentAccountBalance = _quotaBalanceDao.lastQuotaBalance(accountId, domainId, startOfNextDay(new Date(despositedOn.getTime())));
+        final BigDecimal currentAccountBalance = _quotaBalanceDao.lastQuotaBalance(accountId, domainId, startOfNextDay(new Date(depositedOn.getTime())));
         logger.debug("Depositing [{}] credits on adjusted date [{}]; current balance is [{}].", amount,
-                DateUtil.displayDateInTimezone(QuotaManagerImpl.getUsageAggregationTimeZone(), despositedOn), currentAccountBalance);
+                DateUtil.displayDateInTimezone(QuotaManagerImpl.getUsageAggregationTimeZone(), depositedOn), currentAccountBalance);
         // update quota account with the balance
-        _quotaService.saveQuotaAccount(account, currentAccountBalance, despositedOn);
+        _quotaService.saveQuotaAccount(account, currentAccountBalance, depositedOn);
         if (lockAccountEnforcement) {
             if (currentAccountBalance.compareTo(new BigDecimal(0)) >= 0) {
                 if (account.getState() == Account.State.LOCKED) {
@@ -550,14 +591,8 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             }
         }
 
-        String creditor = String.valueOf(Account.ACCOUNT_ID_SYSTEM);
-        User creditorUser = _userDao.getUser(updatedBy);
-        if (creditorUser != null) {
-            creditor = creditorUser.getUsername();
-        }
-        QuotaCreditsResponse response = new QuotaCreditsResponse(result, creditor);
-        response.setCurrency(QuotaConfig.QuotaCurrencySymbol.value());
-        return response;
+        UserVO creditor = getCreditorForQuotaCredits(result);
+        return createQuotaCreditsResponse(result, creditor);
     }
 
     private QuotaEmailTemplateResponse createQuotaEmailResponse(QuotaEmailTemplatesVO template) {
@@ -663,6 +698,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         Double value = cmd.getValue();
         String description = cmd.getDescription();
         String activationRule = cmd.getActivationRule();
+        Integer position = ObjectUtils.defaultIfNull(cmd.getPosition(), 1);
 
         QuotaTariffVO currentQuotaTariff = _quotaTariffDao.findByName(name);
 
@@ -675,7 +711,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
                     "Please, inform a date in the future or do not pass the parameter to use the current date and time.", startDate));
         }
 
-        QuotaTariffVO newQuotaTariff = persistNewQuotaTariff(null, name, usageType, startDate, cmd.getEntityOwnerId(), endDate, value, description, activationRule);
+        QuotaTariffVO newQuotaTariff = persistNewQuotaTariff(null, name, usageType, startDate, cmd.getEntityOwnerId(), endDate, value, description, activationRule, position);
 
         CallContext.current().setEventResourceId(newQuotaTariff.getId());
 
@@ -763,7 +799,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
      */
     public void filterSupportedTypes(List<Pair<String, String>> variables, QuotaTypes quotaType, PresetVariableDefinition presetVariableDefinitionAnnotation, Class<?> fieldClass,
                                      String presetVariableName) {
-        if (Arrays.stream(presetVariableDefinitionAnnotation.supportedTypes()).noneMatch(supportedType ->
+        if (quotaType != null && Arrays.stream(presetVariableDefinitionAnnotation.supportedTypes()).noneMatch(supportedType ->
                 supportedType == quotaType.getQuotaType() || supportedType == 0)) {
             return;
         }
@@ -901,5 +937,168 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         quotaConfigureEmailResponse.setMinBalance(quotaAccountVO.getQuotaMinBalance().doubleValue());
 
         return quotaConfigureEmailResponse;
+    }
+
+    @Override
+    public Pair<List<QuotaCreditsResponse>, Integer> createQuotaCreditsListResponse(QuotaCreditsListCmd cmd) {
+        List<QuotaCreditsVO> credits = getCreditsForQuotaCreditsList(cmd);
+
+        List<QuotaCreditsResponse> creditResponses = new ArrayList<>();
+        Map<Long, UserVO> userMap = new HashMap<>();
+
+        for (QuotaCreditsVO credit : credits) {
+            UserVO creditor = getCreditorForQuotaCreditsList(credit, userMap);
+            QuotaCreditsResponse response = createQuotaCreditsResponse(credit, creditor);
+            creditResponses.add(response);
+        }
+
+        return new Pair<>(creditResponses, creditResponses.size());
+    }
+
+    protected List<QuotaCreditsVO> getCreditsForQuotaCreditsList(QuotaCreditsListCmd cmd) {
+        Long accountId = cmd.getAccountId();
+        Long domainId = cmd.getDomainId();
+        Date startDate = cmd.getStartDate();
+        Date endDate = cmd.getEndDate();
+        boolean isRecursive = cmd.getRecursive();
+
+        if (ObjectUtils.allNull(accountId, domainId)) {
+            throw new InvalidParameterValueException("Please provide either account ID or domain ID.");
+        }
+
+        if (startDate.after(endDate)) {
+            throw new InvalidParameterValueException("The start date must be before the end date.");
+        }
+
+        Account caller = CallContext.current().getCallingAccount();
+        if (domainId != null && _accountMgr.isNormalUser(caller.getAccountId())) {
+            throw new PermissionDeniedException("Regular users are not allowed to generate domain statements.");
+        }
+
+        return quotaCreditsDao.findCredits(accountId, domainId, startDate, endDate, isRecursive);
+    }
+
+    /**
+     * Returns the creditor user of a <code>QuotaCreditsVO</code>. If <code>userMap</code> contains the user, returns the
+     * user from the map; otherwise, obtains the user from the database and adds it to the map.
+     */
+    protected UserVO getCreditorForQuotaCreditsList(QuotaCreditsVO credit, Map<Long, UserVO> userMap) {
+        Long creditorUserId = credit.getUpdatedBy();
+
+        UserVO userVo = userMap.get(creditorUserId);
+        if (userVo != null) {
+            return userVo;
+        }
+
+        userVo = getCreditorForQuotaCredits(credit);
+        userMap.put(creditorUserId, userVo);
+        return userVo;
+    }
+
+    /**
+     * Returns the creditor user of a <code>QuotaCreditsVO</code> by obtaining it from the database.
+     */
+    protected UserVO getCreditorForQuotaCredits(QuotaCreditsVO credit) {
+        Long creditorUserId = credit.getUpdatedBy();
+        UserVO userVo = _userDao.findByIdIncludingRemoved(creditorUserId);
+        if (userVo == null) {
+            logger.error("Could not find creditor user with ID [{}] for credit [{}].", creditorUserId, credit.toString());
+            throw new CloudRuntimeException("Could not find creditor user.");
+        }
+        return userVo;
+    }
+
+    protected QuotaCreditsResponse createQuotaCreditsResponse(QuotaCreditsVO credit, UserVO creditor) {
+        QuotaCreditsResponse response = new QuotaCreditsResponse();
+
+        if (credit != null) {
+            response.setCredit(credit.getCredit());
+            response.setCreditedOn(credit.getUpdatedOn());
+            response.setCurrency(QuotaConfig.QuotaCurrencySymbol.value());
+        }
+        if (creditor != null) {
+            response.setCreditorUserId(creditor.getUuid());
+            response.setCreditorUsername(creditor.getUsername());
+        }
+        response.setObjectName("credit");
+        return response;
+    }
+
+    @Override
+    public QuotaValidateActivationRuleResponse validateActivationRule(QuotaValidateActivationRuleCmd cmd) {
+        String message;
+        String activationRule = cmd.getActivationRule();
+        QuotaTypes quotaType = cmd.getQuotaType();
+        String quotaName = quotaType.getQuotaName();
+        List<Pair<String, String>> usageTypeVariablesAndDescriptions = new ArrayList<>();
+
+        addAllPresetVariables(PresetVariables.class, quotaType, usageTypeVariablesAndDescriptions, null);
+        List<String> usageTypeVariables = usageTypeVariablesAndDescriptions.stream().map(Pair::first).collect(Collectors.toList());
+
+        try (JsInterpreter jsInterpreter = new JsInterpreter(QuotaConfig.QuotaActivationRuleTimeout.value())) {
+            Map<String, String> newVariables = injectUsageTypeVariables(jsInterpreter, usageTypeVariables);
+            String scriptToExecute = jsInterpreterHelper.replaceScriptVariables(activationRule, newVariables);
+            jsInterpreter.executeScript(String.format("new Function(\"%s\")", scriptToExecute.replaceAll("\n", "")));
+        } catch (IOException | CloudRuntimeException e) {
+            logger.error("Unable to execute activation rule due to: [{}].", e.getMessage(), e);
+            message = "Error while executing activation rule. Check if there are no syntax errors and all variables are compatible with the given usage type.";
+            return createValidateActivationRuleResponse(activationRule, quotaName, false, message);
+        }
+
+        Set<String> scriptVariables = jsInterpreterHelper.getScriptVariables(activationRule);
+        if (isScriptVariablesValid(scriptVariables, usageTypeVariables)) {
+            message = "The script has no syntax errors and all variables are compatible with the given usage type.";
+            return createValidateActivationRuleResponse(activationRule, quotaName, true, message);
+        }
+
+        message = "Found variables that are not compatible with the given usage type.";
+        return createValidateActivationRuleResponse(activationRule, quotaName, false, message);
+    }
+
+    /**
+     * Checks whether script variables are compatible with the usage type. First, we remove all script variables that correspond to the script's usage type variables.
+     * Then, returns true if none of the remaining script variables match any usage types variables, and false otherwise.
+     *
+     * @param scriptVariables Script variables.
+     * @param scriptUsageTypeVariables Script usage type variables.
+     * @return True if the script variables are valid, false otherwise.
+     */
+    protected boolean isScriptVariablesValid(Set<String> scriptVariables, List<String> scriptUsageTypeVariables) {
+        List<Pair<String, String>> allUsageTypeVariablesAndDescriptions = new ArrayList<>();
+        addAllPresetVariables(PresetVariables.class, null, allUsageTypeVariablesAndDescriptions, null);
+        List<String> allUsageTypesVariables = allUsageTypeVariablesAndDescriptions.stream().map(Pair::first).collect(Collectors.toList());
+
+        List<String> matchVariables = scriptVariables.stream().filter(scriptUsageTypeVariables::contains).collect(Collectors.toList());
+        matchVariables.forEach(scriptVariables::remove);
+
+        return scriptVariables.stream().noneMatch(allUsageTypesVariables::contains);
+    }
+
+    /**
+     *  Injects variables into JavaScript interpreter. It's necessary to remove all dots from the given variables, as the interpreter
+     *  does not interpret the variables as attributes of objects.
+     *
+     * @param jsInterpreter the {@link JsInterpreter} which the variables will be injected.
+     * @param variables the {@link List} with variables to format and inject the formatted variables into interpreter.
+     * @return A {@link Map} which has the key as the given variable and the value as the given variable formatted (without dots).
+     */
+    protected Map<String, String> injectUsageTypeVariables(JsInterpreter jsInterpreter, List<String> variables) {
+        Map<String, String> formattedVariables = new HashMap<>();
+        for (String variable : variables) {
+            String formattedVariable = variable.replace(".", "");
+            formattedVariables.put(variable, formattedVariable);
+            jsInterpreter.injectVariable(formattedVariable, "false");
+        }
+
+        return formattedVariables;
+    }
+
+    public QuotaValidateActivationRuleResponse createValidateActivationRuleResponse(String activationRule, String quotaType, Boolean isValid, String message) {
+        QuotaValidateActivationRuleResponse response = new QuotaValidateActivationRuleResponse();
+        response.setActivationRule(activationRule);
+        response.setQuotaType(quotaType);
+        response.setValid(isValid);
+        response.setMessage(message);
+        return response;
     }
 }

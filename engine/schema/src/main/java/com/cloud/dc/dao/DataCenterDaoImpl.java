@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.db.GenericSearchBuilder;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
@@ -164,8 +165,8 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     }
 
     @Override
-    public void releasePrivateIpAddress(String ipAddress, long dcId, Long instanceId) {
-        _ipAllocDao.releaseIpAddress(ipAddress, dcId, instanceId);
+    public void releasePrivateIpAddress(String ipAddress, long dcId, Long nicId) {
+        _ipAllocDao.releaseIpAddress(ipAddress, dcId, nicId);
     }
 
     @Override
@@ -179,8 +180,8 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     }
 
     @Override
-    public void releaseLinkLocalIpAddress(String ipAddress, long dcId, Long instanceId) {
-        _linkLocalIpAllocDao.releaseIpAddress(ipAddress, dcId, instanceId);
+    public void releaseLinkLocalIpAddress(String ipAddress, long dcId, Long nicId) {
+        _linkLocalIpAllocDao.releaseIpAddress(ipAddress, dcId, nicId);
     }
 
     @Override
@@ -226,9 +227,9 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     }
 
     @Override
-    public PrivateAllocationData allocatePrivateIpAddress(long dcId, long podId, long instanceId, String reservationId, boolean forSystemVms) {
-        _ipAllocDao.releaseIpAddress(instanceId);
-        DataCenterIpAddressVO vo = _ipAllocDao.takeIpAddress(dcId, podId, instanceId, reservationId, forSystemVms);
+    public PrivateAllocationData allocatePrivateIpAddress(long dcId, long podId, long nicId, String reservationId, boolean forSystemVms) {
+        _ipAllocDao.releaseIpAddress(nicId);
+        DataCenterIpAddressVO vo = _ipAllocDao.takeIpAddress(dcId, podId, nicId, reservationId, forSystemVms);
         if (vo == null) {
             return null;
         }
@@ -242,8 +243,8 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     }
 
     @Override
-    public String allocateLinkLocalIpAddress(long dcId, long podId, long instanceId, String reservationId) {
-        DataCenterLinkLocalIpAddressVO vo = _linkLocalIpAllocDao.takeIpAddress(dcId, podId, instanceId, reservationId);
+    public String allocateLinkLocalIpAddress(long dcId, long podId, long nicId, String reservationId) {
+        DataCenterLinkLocalIpAddressVO vo = _linkLocalIpAllocDao.takeIpAddress(dcId, podId, nicId, reservationId);
         if (vo == null) {
             return null;
         }
@@ -440,5 +441,37 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         SearchCriteria<DataCenterVO> sc = idsSearch.create();
         sc.setParameters("ids", ids.toArray());
         return listBy(sc);
+    }
+
+    @Override
+    public List<String> listDistinctStorageAccessGroups(String name, String keyword) {
+        GenericSearchBuilder<DataCenterVO, String> searchBuilder = createSearchBuilder(String.class);
+
+        searchBuilder.select(null, SearchCriteria.Func.DISTINCT, searchBuilder.entity().getStorageAccessGroups());
+        if (name != null) {
+            searchBuilder.and().op("storageAccessGroupExact", searchBuilder.entity().getStorageAccessGroups(), SearchCriteria.Op.EQ);
+            searchBuilder.or("storageAccessGroupPrefix", searchBuilder.entity().getStorageAccessGroups(), SearchCriteria.Op.LIKE);
+            searchBuilder.or("storageAccessGroupSuffix", searchBuilder.entity().getStorageAccessGroups(), SearchCriteria.Op.LIKE);
+            searchBuilder.or("storageAccessGroupMiddle", searchBuilder.entity().getStorageAccessGroups(), SearchCriteria.Op.LIKE);
+            searchBuilder.cp();
+        }
+        if (keyword != null) {
+            searchBuilder.and("keyword", searchBuilder.entity().getStorageAccessGroups(), SearchCriteria.Op.LIKE);
+        }
+        searchBuilder.done();
+
+        SearchCriteria<String> sc = searchBuilder.create();
+        if (name != null) {
+            sc.setParameters("storageAccessGroupExact", name);
+            sc.setParameters("storageAccessGroupPrefix", name + ",%");
+            sc.setParameters("storageAccessGroupSuffix", "%," + name);
+            sc.setParameters("storageAccessGroupMiddle", "%," + name + ",%");
+        }
+
+        if (keyword != null) {
+            sc.setParameters("keyword", "%" + keyword + "%");
+        }
+
+        return customSearch(sc, null);
     }
 }

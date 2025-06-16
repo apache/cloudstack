@@ -92,6 +92,10 @@ public class CapabilitiesResponse extends BaseResponse {
     @Param(description = "true if users can see all accounts within the same domain, false otherwise")
     private boolean allowUserViewAllDomainAccounts;
 
+    @SerializedName(ApiConstants.ALLOW_USER_FORCE_STOP_VM)
+    @Param(description = "true if users are allowed to force stop a vm, false otherwise", since = "4.20.0")
+    private boolean allowUserForceStopVM;
+
     @SerializedName("kubernetesserviceenabled")
     @Param(description = "true if Kubernetes Service plugin is enabled, false otherwise")
     private boolean kubernetesServiceEnabled;
@@ -123,6 +127,18 @@ public class CapabilitiesResponse extends BaseResponse {
     @SerializedName(ApiConstants.INSTANCES_DISKS_STATS_RETENTION_TIME)
     @Param(description = "the retention time for Instances disks stats", since = "4.18.0")
     private Integer instancesDisksStatsRetentionTime;
+
+    @SerializedName(ApiConstants.SHAREDFSVM_MIN_CPU_COUNT)
+    @Param(description = "the min CPU count for the service offering used by the shared filesystem instance", since = "4.20.0")
+    private Integer sharedFsVmMinCpuCount;
+
+    @SerializedName(ApiConstants.SHAREDFSVM_MIN_RAM_SIZE)
+    @Param(description = "the min Ram size for the service offering used by the shared filesystem instance", since = "4.20.0")
+    private Integer sharedFsVmMinRamSize;
+
+    @SerializedName(ApiConstants.INSTANCE_LEASE_ENABLED)
+    @Param(description = "true if instance lease feature is enabled", since = "4.21.0")
+    private Boolean instanceLeaseEnabled;
 
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
         this.securityGroupsEnabled = securityGroupsEnabled;
@@ -192,6 +208,10 @@ public class CapabilitiesResponse extends BaseResponse {
         this.allowUserViewAllDomainAccounts = allowUserViewAllDomainAccounts;
     }
 
+    public void setAllowUserForceStopVM(boolean allowUserForceStopVM) {
+        this.allowUserForceStopVM = allowUserForceStopVM;
+    }
+
     public void setKubernetesServiceEnabled(boolean kubernetesServiceEnabled) {
         this.kubernetesServiceEnabled = kubernetesServiceEnabled;
     }
@@ -222,5 +242,17 @@ public class CapabilitiesResponse extends BaseResponse {
 
     public void setCustomHypervisorDisplayName(String customHypervisorDisplayName) {
         this.customHypervisorDisplayName = customHypervisorDisplayName;
+    }
+
+    public void setSharedFsVmMinCpuCount(Integer sharedFsVmMinCpuCount) {
+        this.sharedFsVmMinCpuCount = sharedFsVmMinCpuCount;
+    }
+
+    public void setSharedFsVmMinRamSize(Integer sharedFsVmMinRamSize) {
+        this.sharedFsVmMinRamSize = sharedFsVmMinRamSize;
+    }
+
+    public void setInstanceLeaseEnabled(Boolean instanceLeaseEnabled) {
+        this.instanceLeaseEnabled = instanceLeaseEnabled;
     }
 }

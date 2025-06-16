@@ -132,6 +132,43 @@ export default {
       ]
     },
     {
+      name: 'backuprepository',
+      title: 'label.backup.repository',
+      icon: 'inbox-outlined',
+      docHelp: 'adminguide/backup_and_recovery.html',
+      permission: ['listBackupRepositories'],
+      searchFilters: ['zoneid'],
+      columns: ['name', 'provider', 'type', 'address', 'zonename'],
+      details: ['name', 'type', 'address', 'provider', 'zonename'],
+      actions: [
+        {
+          api: 'addBackupRepository',
+          icon: 'plus-outlined',
+          label: 'label.backup.repository.add',
+          listView: true,
+          args: [
+            'name', 'provider', 'address', 'type', 'mountopts', 'zoneid'
+          ],
+          mapping: {
+            type: {
+              options: ['nfs', 'cifs']
+            },
+            provider: {
+              value: (record) => { return 'nas' }
+            }
+          }
+        },
+        {
+          api: 'deleteBackupRepository',
+          icon: 'delete-outlined',
+          label: 'label.backup.repository.remove',
+          message: 'message.action.delete.backup.repository',
+          dataView: true,
+          popup: true
+        }
+      ]
+    },
+    {
       name: 'hypervisorcapability',
       title: 'label.hypervisor.capabilities',
       icon: 'database-outlined',
@@ -151,6 +188,56 @@ export default {
       ]
     },
     {
+      name: 'guestoscategory',
+      title: 'label.guest.os.categories',
+      docHelp: 'adminguide/guest_os.html#guest-os-categories',
+      icon: 'group-outlined',
+      permission: ['listOsCategories', 'addOsCategory'],
+      columns: ['name', 'isfeatured', 'created', 'order'],
+      details: ['name', 'isfeatured', 'created'],
+      related: [{
+        name: 'guestos',
+        title: 'label.guest.os',
+        param: 'oscategoryid'
+      },
+      {
+        name: 'template',
+        title: 'label.templates',
+        param: 'oscategoryid'
+      },
+      {
+        name: 'iso',
+        title: 'label.isos',
+        param: 'oscategoryid'
+      }],
+      actions: [
+        {
+          api: 'addOsCategory',
+          icon: 'plus-outlined',
+          label: 'label.add.guest.os.category',
+          listView: true,
+          dataView: false,
+          args: ['name', 'isfeatured']
+        },
+        {
+          api: 'updateOsCategory',
+          icon: 'edit-outlined',
+          label: 'label.edit',
+          dataView: true,
+          popup: true,
+          args: ['name', 'isfeatured']
+        },
+        {
+          api: 'deleteOsCategory',
+          icon: 'delete-outlined',
+          label: 'label.action.delete.guest.os.category',
+          message: 'message.action.delete.guest.os.category',
+          dataView: true,
+          popup: true
+        }
+      ]
+    },
+    {
       name: 'guestos',
       title: 'label.guest.os',
       docHelp: 'adminguide/guest_os.html#guest-os',
@@ -158,6 +245,7 @@ export default {
       permission: ['listOsTypes', 'listOsCategories'],
       columns: ['name', 'oscategoryname', 'isuserdefined'],
       details: ['name', 'oscategoryname', 'isuserdefined'],
+      searchFilters: ['oscategoryid'],
       related: [{
         name: 'guestoshypervisormapping',
         title: 'label.guest.os.hypervisor.mappings',
@@ -184,7 +272,14 @@ export default {
           label: 'label.edit',
           dataView: true,
           popup: true,
-          args: ['osdisplayname']
+          groupAction: true,
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, oscategoryid: values.oscategoryid } }) },
+          args: (record, store, isGroupAction) => {
+            if (isGroupAction) {
+              return ['oscategoryid']
+            }
+            return ['osdisplayname', 'oscategoryid']
+          }
         },
         {
           api: 'addGuestOsMapping',

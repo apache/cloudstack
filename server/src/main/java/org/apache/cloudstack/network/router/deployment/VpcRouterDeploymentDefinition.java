@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.Objects;
 
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.Vlan;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.element.NsxProviderVO;
 
@@ -37,7 +36,6 @@ import com.cloud.network.Network;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.VirtualRouterProvider.Type;
-import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.dao.VpcDao;
@@ -51,7 +49,6 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
 
     protected VpcDao vpcDao;
     protected VpcOfferingDao vpcOffDao;
-    protected PhysicalNetworkDao pNtwkDao;
     protected VpcManager vpcMgr;
     protected VlanDao vlanDao;
 
@@ -79,7 +76,7 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
     protected void lock() {
         final Vpc vpcLock = vpcDao.acquireInLockTable(vpc.getId());
         if (vpcLock == null) {
-            throw new ConcurrentOperationException("Unable to lock vpc " + vpc.getId());
+            throw new ConcurrentOperationException(String.format("Unable to lock vpc %s", vpc));
         }
         tableLockId = vpcLock.getId();
     }
@@ -89,7 +86,7 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
         if (tableLockId != null) {
             vpcDao.releaseFromLockTable(tableLockId);
             if (logger.isDebugEnabled()) {
-                logger.debug("Lock is released for vpc id " + tableLockId + " as a part of router startup in " + dest);
+                logger.debug(String.format("Lock is released for vpc [id: %d] (%s) as a part of router startup in %s", tableLockId, vpc, dest));
             }
         }
     }
@@ -132,10 +129,9 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
 
         if (isPublicNetwork) {
             if (Objects.isNull(nsxProvider)) {
-                sourceNatIp = vpcMgr.assignSourceNatIpAddressToVpc(owner, vpc);
+                sourceNatIp = vpcMgr.assignSourceNatIpAddressToVpc(owner, vpc, null);
             } else {
-                // NSX deploys VRs with Public NIC != to the source NAT, the source NAT IP is on the NSX Public range
-                sourceNatIp = ipAddrMgr.assignPublicIpAddress(zoneId, getPodId(), owner, Vlan.VlanType.VirtualNetwork, null, null, false, true);
+                sourceNatIp = vpcMgr.assignSourceNatIpAddressToVpc(owner, vpc, getPodId());
                 if (vpc != null) {
                     IPAddressVO routerPublicIp = ipAddressDao.findByIp(sourceNatIp.getAddress().toString());
                     routerPublicIp.setVpcId(vpc.getId());
@@ -168,7 +164,7 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
         for (final PhysicalNetwork pNtwk : pNtwks) {
             final PhysicalNetworkServiceProvider provider = physicalProviderDao.findByServiceProvider(pNtwk.getId(), Type.VPCVirtualRouter.toString());
             if (provider == null) {
-                throw new CloudRuntimeException("Cannot find service provider " + Type.VPCVirtualRouter.toString() + " in physical network " + pNtwk.getId());
+                throw new CloudRuntimeException(String.format("Cannot find service provider %s in physical network %s", Type.VPCVirtualRouter.toString(), pNtwk));
             }
             vrProvider = vrProviderDao.findByNspIdAndType(provider.getId(), Type.VPCVirtualRouter);
             if (vrProvider != null) {

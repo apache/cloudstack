@@ -20,6 +20,7 @@ package org.apache.cloudstack.api.command.admin.cluster;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.cloud.cpu.CPU;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 
 import org.apache.cloudstack.api.APICommand;
@@ -67,6 +68,11 @@ public class AddClusterCmd extends BaseCmd {
                description = "hypervisor type of the cluster: XenServer,KVM,VMware,Hyperv,BareMetal,Simulator,Ovm3")
     private String hypervisor;
 
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+            description = "the CPU arch of the cluster. Valid options are: x86_64, aarch64",
+            since = "4.20")
+    private String arch;
+
     @Parameter(name = ApiConstants.CLUSTER_TYPE, type = CommandType.STRING, required = true, description = "type of the cluster: CloudManaged, ExternalManaged")
     private String clusterType;
 
@@ -112,6 +118,12 @@ public class AddClusterCmd extends BaseCmd {
     private String ovm3cluster;
     @Parameter(name = ApiConstants.OVM3_VIP, type = CommandType.STRING, required = false,  description = "Ovm3 vip to use for pool (and cluster)")
     private String ovm3vip;
+    @Parameter(name = ApiConstants.STORAGE_ACCESS_GROUPS,
+            type = CommandType.LIST, collectionType = CommandType.STRING,
+            description = "comma separated list of storage access groups for the hosts in the cluster",
+            since = "4.21.0")
+    private List<String> storageAccessGroups;
+
     public String getOvm3Pool() {
          return ovm3pool;
     }
@@ -186,6 +198,10 @@ public class AddClusterCmd extends BaseCmd {
         this.clusterType = type;
     }
 
+    public List<String> getStorageAccessGroups() {
+        return storageAccessGroups;
+    }
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
@@ -202,6 +218,10 @@ public class AddClusterCmd extends BaseCmd {
     @Override
     public ApiCommandResourceType getApiResourceType() {
         return ApiCommandResourceType.Cluster;
+    }
+
+    public CPU.CPUArch getArch() {
+        return CPU.CPUArch.fromType(arch);
     }
 
     @Override

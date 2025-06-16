@@ -39,6 +39,7 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolAutomation;
+import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -51,12 +52,8 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.LinstorUtil;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 
-public class LinstorPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
-    protected Logger logger = LogManager.getLogger(getClass());
-
+public class LinstorPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     @Inject
     private ClusterDao clusterDao;
     @Inject
@@ -71,6 +68,8 @@ public class LinstorPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLif
     private StoragePoolAutomation storagePoolAutomation;
     @Inject
     private CapacityManager _capacityMgr;
+    @Inject
+    private StoragePoolAndAccessGroupMapDao storagePoolAndAccessGroupMapDao;
     @Inject
     AgentManager _agentMgr;
 
@@ -177,22 +176,22 @@ public class LinstorPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLif
         return dataStoreHelper.createPrimaryDataStore(parameters);
     }
 
-    protected boolean createStoragePool(long hostId, StoragePool pool) {
-        logger.debug("creating pool " + pool.getName() + " on  host " + hostId);
+    protected boolean createStoragePool(Host host, StoragePool pool) {
+        logger.debug(String.format("creating pool %s on  host %s", pool, host));
 
         if (pool.getPoolType() != Storage.StoragePoolType.Linstor) {
             logger.warn(" Doesn't support storage pool type " + pool.getPoolType());
             return false;
         }
         CreateStoragePoolCommand cmd = new CreateStoragePoolCommand(true, pool);
-        final Answer answer = _agentMgr.easySend(hostId, cmd);
+        final Answer answer = _agentMgr.easySend(host.getId(), cmd);
         if (answer != null && answer.getResult()) {
             return true;
         } else {
             _primaryDataStoreDao.expunge(pool.getId());
             String msg = answer != null ?
-                "Can not create storage pool through host " + hostId + " due to " + answer.getDetails() :
-                "Can not create storage pool through host " + hostId + " due to CreateStoragePoolCommand returns null";
+                    String.format("Can not create storage pool %s through host %s due to %s", pool, host, answer.getDetails()) :
+                    String.format("Can not create storage pool %s through host %s due to CreateStoragePoolCommand returns null", pool, host);
             logger.warn(msg);
             throw new CloudRuntimeException(msg);
         }
@@ -208,24 +207,16 @@ public class LinstorPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLif
             throw new CloudRuntimeException(hypervisorType + " is not a supported hypervisor type.");
         }
 
-        // check if there is at least one host up in this cluster
-        List<HostVO> allHosts = resourceMgr.listAllUpAndEnabledHosts(Host.Type.Routing,
-            primaryDataStoreInfo.getClusterId(), primaryDataStoreInfo.getPodId(),
-            primaryDataStoreInfo.getDataCenterId());
-
-        if (allHosts.isEmpty()) {
-            _primaryDataStoreDao.expunge(primaryDataStoreInfo.getId());
-
-            throw new CloudRuntimeException(
-                "No host up to associate a storage pool with in cluster " + primaryDataStoreInfo.getClusterId());
-        }
+        PrimaryDataStoreInfo primarystore = (PrimaryDataStoreInfo) dataStore;
+        List<HostVO> hostsToConnect = resourceMgr.getEligibleUpAndEnabledHostsInClusterForStorageConnection(primarystore);
+        logger.debug(String.format("Attaching the pool to each of the hosts %s in the cluster: %s", hostsToConnect, primarystore.getClusterId()));
 
         List<HostVO> poolHosts = new ArrayList<>();
-        for (HostVO host : allHosts) {
+        for (HostVO host : hostsToConnect) {
             try {
-                createStoragePool(host.getId(), primaryDataStoreInfo);
+                createStoragePool(host, primaryDataStoreInfo);
 
-                _storageMgr.connectHostToSharedPool(host.getId(), primaryDataStoreInfo.getId());
+                _storageMgr.connectHostToSharedPool(host, primaryDataStoreInfo.getId());
 
                 poolHosts.add(host);
             } catch (Exception e) {
@@ -253,12 +244,13 @@ public class LinstorPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLif
             throw new CloudRuntimeException(hypervisorType + " is not a supported hypervisor type.");
         }
 
-        List<HostVO> hosts = resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(hypervisorType,
-            scope.getScopeId());
+        List<HostVO> hostsToConnect = resourceMgr.getEligibleUpAndEnabledHostsInZoneForStorageConnection(dataStore, scope.getScopeId(), hypervisorType);
 
-        for (HostVO host : hosts) {
+        logger.debug(String.format("In createPool. Attaching the pool to each of the hosts in %s.", hostsToConnect));
+
+        for (HostVO host : hostsToConnect) {
             try {
-                _storageMgr.connectHostToSharedPool(host.getId(), dataStore.getId());
+                _storageMgr.connectHostToSharedPool(host, dataStore.getId());
             } catch (Exception e) {
                 logger.warn("Unable to establish a connection between " + host + " and " + dataStore, e);
             }
@@ -290,7 +282,10 @@ public class LinstorPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLif
 
     @Override
     public boolean deleteDataStore(DataStore store) {
-        return dataStoreHelper.deletePrimaryDataStore(store);
+        if (cleanupDatastore(store)) {
+            return dataStoreHelper.deletePrimaryDataStore(store);
+        }
+        return false;
     }
 
     /* (non-Javadoc)

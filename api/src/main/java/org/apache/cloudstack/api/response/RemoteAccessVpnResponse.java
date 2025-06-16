@@ -65,6 +65,10 @@ public class RemoteAccessVpnResponse extends BaseResponse implements ControlledE
     @Param(description = "the domain name of the account of the remote access vpn")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the domain to which the remote access vpn belongs", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName(ApiConstants.STATE)
     @Param(description = "the state of the rule")
     private String state;
@@ -104,6 +108,10 @@ public class RemoteAccessVpnResponse extends BaseResponse implements ControlledE
         this.domainName = name;
     }
 
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
+    }
     public void setState(String state) {
         this.state = state;
     }

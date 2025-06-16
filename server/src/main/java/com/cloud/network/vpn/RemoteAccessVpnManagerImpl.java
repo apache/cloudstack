@@ -153,6 +153,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         return vpns;
     }
 
+
     @Override
     @DB
     public RemoteAccessVpn createRemoteAccessVpn(final long publicIpId, String ipRange, boolean openFirewall, final Boolean forDisplay) throws NetworkRuleConflictException {
@@ -170,92 +171,97 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
             throw new InvalidParameterValueException("The Ip address is not ready to be used yet: " + ipAddr.getAddress());
         }
 
-        IPAddressVO ipAddress = _ipAddressDao.findById(publicIpId);
+        try {
+            IPAddressVO ipAddress = _ipAddressDao.acquireInLockTable(publicIpId);
 
-        Long networkId = ipAddress.getAssociatedWithNetworkId();
-        if (networkId != null) {
-            _networkMgr.checkIpForService(ipAddress, Service.Vpn, null);
-        }
-
-        final Long vpcId = ipAddress.getVpcId();
-        if (vpcId != null && ipAddress.isSourceNat()) {
-            assert networkId == null;
-            openFirewall = false;
-        }
-
-        final boolean openFirewallFinal = openFirewall;
-
-        if (networkId == null && vpcId == null) {
-            throw new InvalidParameterValueException("Unable to create remote access vpn for the ipAddress: " + ipAddr.getAddress().addr() +
-                    " as ip is not associated with any network or VPC");
-        }
-
-        RemoteAccessVpnVO vpnVO = _remoteAccessVpnDao.findByPublicIpAddress(publicIpId);
-
-        if (vpnVO != null) {
-            if (vpnVO.getState() == RemoteAccessVpn.State.Added) {
-                return vpnVO;
+            if (ipAddress == null) {
+                logger.error(String.format("Unable to acquire lock on public IP %s.", publicIpId));
+                throw new CloudRuntimeException("Unable to acquire lock on public IP.");
             }
 
-            throw new InvalidParameterValueException(String.format("A remote Access VPN already exists for the public IP address [%s].", ipAddr.getAddress().toString()));
-        }
+            Long networkId = ipAddress.getAssociatedWithNetworkId();
+            if (networkId != null) {
+                _networkMgr.checkIpForService(ipAddress, Service.Vpn, null);
+            }
 
-        if (ipRange == null) {
-            ipRange = RemoteAccessVpnClientIpRange.valueIn(ipAddr.getAccountId());
-        }
+            final Long vpcId = ipAddress.getVpcId();
+            if (vpcId != null && ipAddress.isSourceNat()) {
+                assert networkId == null;
+                openFirewall = false;
+            }
 
-        validateIpRange(ipRange, InvalidParameterValueException.class);
+            final boolean openFirewallFinal = openFirewall;
 
-        String[] range = ipRange.split("-");
+            if (networkId == null && vpcId == null) {
+                throw new InvalidParameterValueException("Unable to create remote access vpn for the ipAddress: " + ipAddr.getAddress().addr() +
+                        " as ip is not associated with any network or VPC");
+            }
 
-        Pair<String, Integer> cidr = null;
+            RemoteAccessVpnVO vpnVO = _remoteAccessVpnDao.findByPublicIpAddress(publicIpId);
 
-        if (networkId != null) {
-            long ipAddressOwner = ipAddr.getAccountId();
-            vpnVO = _remoteAccessVpnDao.findByAccountAndNetwork(ipAddressOwner, networkId);
             if (vpnVO != null) {
                 if (vpnVO.getState() == RemoteAccessVpn.State.Added) {
                     return vpnVO;
                 }
 
-                throw new InvalidParameterValueException(String.format("A remote access VPN already exists for the account [%s].", ipAddressOwner));
+                throw new InvalidParameterValueException(String.format("A remote Access VPN already exists for the public IP address [%s].", ipAddr.getAddress().toString()));
             }
-            Network network = _networkMgr.getNetwork(networkId);
-            if (!_networkMgr.areServicesSupportedInNetwork(network.getId(), Service.Vpn)) {
-                throw new InvalidParameterValueException("Vpn service is not supported in network id=" + ipAddr.getAssociatedWithNetworkId());
+
+            if (ipRange == null) {
+                ipRange = RemoteAccessVpnClientIpRange.valueIn(ipAddr.getAccountId());
             }
-            cidr = NetUtils.getCidr(network.getCidr());
-        } else {
-            Vpc vpc = _vpcDao.findById(vpcId);
-            cidr = NetUtils.getCidr(vpc.getCidr());
-        }
 
-        String[] guestIpRange = NetUtils.getIpRangeFromCidr(cidr.first(), cidr.second());
-        if (NetUtils.ipRangesOverlap(range[0], range[1], guestIpRange[0], guestIpRange[1])) {
-            throw new InvalidParameterValueException("Invalid ip range: " + ipRange + " overlaps with guest ip range " + guestIpRange[0] + "-" + guestIpRange[1]);
-        }
+            validateIpRange(ipRange, InvalidParameterValueException.class);
 
-        long startIp = NetUtils.ip2Long(range[0]);
-        final String newIpRange = NetUtils.long2Ip(++startIp) + "-" + range[1];
-        final String sharedSecret = PasswordGenerator.generatePresharedKey(_pskLength);
+            String[] range = ipRange.split("-");
 
-        return Transaction.execute(new TransactionCallbackWithException<RemoteAccessVpn, NetworkRuleConflictException>() {
-            @Override
-            public RemoteAccessVpn doInTransaction(TransactionStatus status) throws NetworkRuleConflictException {
+            Pair<String, Integer> cidr = null;
+
+            if (networkId != null) {
+                long ipAddressOwner = ipAddr.getAccountId();
+                vpnVO = _remoteAccessVpnDao.findByAccountAndNetwork(ipAddressOwner, networkId);
+                if (vpnVO != null) {
+                    if (vpnVO.getState() == RemoteAccessVpn.State.Added) {
+                        return vpnVO;
+                    }
+
+                    throw new InvalidParameterValueException(String.format("A remote access VPN already exists for the account [%s].", ipAddressOwner));
+                }
+                Network network = _networkMgr.getNetwork(networkId);
+                if (!_networkMgr.areServicesSupportedInNetwork(network.getId(), Service.Vpn)) {
+                    throw new InvalidParameterValueException("Vpn service is not supported in network id=" + ipAddr.getAssociatedWithNetworkId());
+                }
+                cidr = NetUtils.getCidr(network.getCidr());
+            } else {
+                Vpc vpc = _vpcDao.findById(vpcId);
+                cidr = NetUtils.getCidr(vpc.getCidr());
+            }
+
+            String[] guestIpRange = NetUtils.getIpRangeFromCidr(cidr.first(), cidr.second());
+            if (NetUtils.ipRangesOverlap(range[0], range[1], guestIpRange[0], guestIpRange[1])) {
+                throw new InvalidParameterValueException("Invalid ip range: " + ipRange + " overlaps with guest ip range " + guestIpRange[0] + "-" + guestIpRange[1]);
+            }
+
+            long startIp = NetUtils.ip2Long(range[0]);
+            final String newIpRange = NetUtils.long2Ip(++startIp) + "-" + range[1];
+            final String sharedSecret = PasswordGenerator.generatePresharedKey(_pskLength);
+
+            return Transaction.execute((TransactionCallbackWithException<RemoteAccessVpn, NetworkRuleConflictException>) status -> {
                 if (vpcId == null) {
                     _rulesMgr.reservePorts(ipAddr, NetUtils.UDP_PROTO, Purpose.Vpn, openFirewallFinal, caller, NetUtils.VPN_PORT, NetUtils.VPN_L2TP_PORT,
-                        NetUtils.VPN_NATT_PORT);
+                            NetUtils.VPN_NATT_PORT);
                 }
-                RemoteAccessVpnVO vpnVO =
-                    new RemoteAccessVpnVO(ipAddr.getAccountId(), ipAddr.getDomainId(), ipAddr.getAssociatedWithNetworkId(), publicIpId, vpcId, range[0], newIpRange,
-                        sharedSecret);
+                RemoteAccessVpnVO remoteAccessVpnVO = new RemoteAccessVpnVO(ipAddr.getAccountId(), ipAddr.getDomainId(), ipAddr.getAssociatedWithNetworkId(),
+                        publicIpId, vpcId, range[0], newIpRange, sharedSecret);
 
                 if (forDisplay != null) {
-                    vpnVO.setDisplay(forDisplay);
+                    remoteAccessVpnVO.setDisplay(forDisplay);
                 }
-                return _remoteAccessVpnDao.persist(vpnVO);
-            }
-        });
+                return _remoteAccessVpnDao.persist(remoteAccessVpnVO);
+            });
+        } finally {
+            _ipAddressDao.releaseFromLockTable(publicIpId);
+        }
     }
 
     private void validateRemoteAccessVpnConfiguration() throws ConfigurationException {
@@ -323,8 +329,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         }catch (ResourceUnavailableException ex) {
             vpn.setState(prevState);
             _remoteAccessVpnDao.update(vpn.getId(), vpn);
-            logger.debug("Failed to stop the vpn " + vpn.getId() + " , so reverted state to "+
-                    RemoteAccessVpn.State.Running);
+            logger.debug("Failed to stop the vpn {}, so reverted state to {}", vpn, RemoteAccessVpn.State.Running);
             success = false;
         } finally {
             if (success|| forceCleanup) {
@@ -429,10 +434,10 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
     @DB
     @Override
-    public boolean removeVpnUser(long vpnOwnerId, String username, Account caller) {
-        final VpnUserVO user = _vpnUsersDao.findByAccountAndUsername(vpnOwnerId, username);
+    public boolean removeVpnUser(Account vpnOwner, String username, Account caller) {
+        final VpnUserVO user = _vpnUsersDao.findByAccountAndUsername(vpnOwner.getId(), username);
         if (user == null) {
-            String errorMessage = String.format("Could not find VPN user=[%s]. VPN owner id=[%s]", username, vpnOwnerId);
+            String errorMessage = String.format("Could not find VPN user=[%s]. VPN owner=[%s]", username, vpnOwner);
             logger.debug(errorMessage);
             throw new InvalidParameterValueException(errorMessage);
         }
@@ -515,14 +520,14 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     }
 
     @DB
-    private boolean removeVpnUserWithoutRemoteAccessVpn(long vpnOwnerId, String userName) {
-        VpnUserVO vpnUser = _vpnUsersDao.findByAccountAndUsername(vpnOwnerId, userName);
+    private boolean removeVpnUserWithoutRemoteAccessVpn(Account vpnOwner, String userName) {
+        VpnUserVO vpnUser = _vpnUsersDao.findByAccountAndUsername(vpnOwner.getId(), userName);
         if (vpnUser == null) {
-            logger.error(String.format("VPN user not found with ownerId: %d and username: %s", vpnOwnerId, userName));
+            logger.error("VPN user not found with owner: {} and username: {}", vpnOwner, userName);
             return false;
         }
         if (!State.Revoke.equals(vpnUser.getState())) {
-            logger.error(String.format("VPN user with ownerId: %d and username: %s is not in revoked state, current state: %s", vpnOwnerId, userName, vpnUser.getState()));
+            logger.error("VPN user with owner: {} and username: {} is not in revoked state, current state: {}", vpnOwner, userName, vpnUser.getState());
             return false;
         }
         return _vpnUsersDao.remove(vpnUser.getId());
@@ -540,7 +545,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
         if (CollectionUtils.isEmpty(vpns)) {
             if (forRemove) {
-                return removeVpnUserWithoutRemoteAccessVpn(vpnOwnerId, userName);
+                return removeVpnUserWithoutRemoteAccessVpn(owner, userName);
             }
             logger.warn(String.format("Unable to apply VPN user due to there are no remote access VPNs configured on %s to apply VPN user.", owner.toString()));
             return true;
@@ -572,7 +577,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                             if (indexUser == users.size()) {
                                 indexUser = 0;
                             }
-                            logger.debug("VPN User " + users.get(indexUser) + (result == null ? " is set on " : (" couldn't be set due to " + result) + " on ") + vpn.getUuid());
+                            logger.debug("VPN User {}{}{}", users.get(indexUser), result == null ? " is set on " : (" couldn't be set due to " + result) + " on ", vpn);
                             if (result == null) {
                                 if (finals[indexUser] == null) {
                                     finals[indexUser] = true;
