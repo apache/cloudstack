@@ -1189,9 +1189,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             allDetails.put(VmDetailConstants.KVM_VNC_PASSWORD, unmanagedInstance.getVncPassword());
         }
 
-        if (StringUtils.isNotBlank(bootType) && bootType.equalsIgnoreCase("uefi") && StringUtils.isNotBlank(bootMode)) {
-            allDetails.put("UEFI", bootMode);
-        }
+        addImportingVMBootTypeAndModeDetails(bootType, bootMode, allDetails);
 
         VirtualMachine.PowerState powerState = VirtualMachine.PowerState.PowerOff;
         if (unmanagedInstance.getPowerState().equals(UnmanagedInstanceTO.PowerState.PowerOn)) {
@@ -1262,6 +1260,12 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
         publishVMUsageUpdateResourceCount(userVm, validatedServiceOffering, template);
         return userVm;
+    }
+
+    private void addImportingVMBootTypeAndModeDetails(String bootType, String bootMode, Map<String, String> allDetails) {
+        if (StringUtils.isNotBlank(bootType) && bootType.equalsIgnoreCase("uefi") && StringUtils.isNotBlank(bootMode)) {
+            allDetails.put("UEFI", bootMode);
+        }
     }
 
     private HashMap<String, UnmanagedInstanceTO> getUnmanagedInstancesForHost(HostVO host, String instanceName, List<String> managedVms) {
