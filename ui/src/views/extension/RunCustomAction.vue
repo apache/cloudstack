@@ -50,7 +50,7 @@
         <div v-for="(field, fieldIndex) in currentParameters" :key="fieldIndex">
           <a-form-item :name="field.name" :ref="field.name">
             <template #label>
-              <tooltip-label :title="$t('label.' + field.name)" :tooltip="$t('label.' + field.name)"/>
+              <tooltip-label :title="field.name" :tooltip="field.name"/>
             </template>
             <a-switch
               v-if="field.type === 'BOOLEAN'"
