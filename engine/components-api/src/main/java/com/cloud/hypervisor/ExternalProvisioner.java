@@ -41,7 +41,7 @@ public interface ExternalProvisioner extends Manager {
 
     void cleanupExtensionEntryPoint(String extensionName, String extensionRelativeEntryPoint);
 
-    void cleanupExtensionPayloads(String extensionName, int olderThanDays, boolean cleanupDirectory);
+    void cleanupExtensionData(String extensionName, int olderThanDays, boolean cleanupDirectory);
 
     PrepareExternalProvisioningAnswer prepareExternalProvisioning(String hostGuid, String extensionName, String extensionRelativeEntryPoint, PrepareExternalProvisioningCommand cmd);
 

@@ -273,7 +273,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     protected Pair<Boolean, String> cleanupExtensionFilesOnCurrentServer(String name, String relativeEntryPoint) {
         try {
             externalProvisioner.cleanupExtensionEntryPoint(name, relativeEntryPoint);
-            externalProvisioner.cleanupExtensionPayloads(name, 0, true);
+            externalProvisioner.cleanupExtensionData(name, 0, true);
         } catch (CloudRuntimeException e) {
             logger.error("Failed to cleanup entry-point files for Extension [name: {}, relativeEntryPoint: {}] on this server",
                     name, relativeEntryPoint, e);

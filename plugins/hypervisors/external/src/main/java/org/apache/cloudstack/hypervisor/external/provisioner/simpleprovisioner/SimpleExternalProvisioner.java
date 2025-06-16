@@ -537,7 +537,7 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     }
 
     @Override
-    public void cleanupExtensionPayloads(String extensionName, int olderThanDays, boolean cleanupDirectory) {
+    public void cleanupExtensionData(String extensionName, int olderThanDays, boolean cleanupDirectory) {
         String extensionPayloadDirPath = extensionsDataDirectory + File.separator + extensionName;
         Path dirPath = Paths.get(extensionPayloadDirPath);
         if (!Files.exists(dirPath)) {
@@ -710,7 +710,7 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
         if (!Files.exists(payloadDirPath)) {
             Files.createDirectories(payloadDirPath);
         } else {
-            cleanupExtensionPayloads(extensionName, 1, false);
+            cleanupExtensionData(extensionName, 1, false);
         }
         Path payloadFile = payloadDirPath.resolve(fileName);
         Files.writeString(payloadFile, json, StandardOpenOption.CREATE_NEW);
