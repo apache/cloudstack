@@ -109,7 +109,7 @@ public class ScaleIOUtil {
     private static final String REMOVE_MDMS_CMD = "drv_cfg " + REMOVE_MDM_PARAMETER;
 
     /**
-     * Command to get back "Usage" response. As of ow it is just drv_cfg without parameters.
+     * Command to get back "Usage" response. As of now it is just drv_cfg without parameters.
      */
     private static final String USAGE_CMD = "drv_cfg";
 
@@ -260,7 +260,7 @@ public class ScaleIOUtil {
      * Returns Volume Ids from {@link ScaleIOUtil#DRV_CFG_FILE}.
      */
     public static Collection<String> getVolumeIds() {
-        String command = ScaleIOUtil.SDC_HOME_PATH + "/bin/" + ScaleIOUtil.QUERY_VOLUMES_CMD + " --file " + DRV_CFG_FILE;
+        String command = ScaleIOUtil.SDC_HOME_PATH + "/bin/" + ScaleIOUtil.QUERY_VOLUMES_CMD;
         Pair<String, String> result = Script.executeCommand(command);
         String stdOut = result.first();
 
@@ -279,7 +279,7 @@ public class ScaleIOUtil {
      * Returns MDM entries from CLI using {@code --query_mdms}.
      */
     public static Collection<String> getMdmsFromCli() {
-        String command = ScaleIOUtil.SDC_HOME_PATH + "/bin/" + ScaleIOUtil.QUERY_MDMS_CMD + " --file " + DRV_CFG_FILE;
+        String command = ScaleIOUtil.SDC_HOME_PATH + "/bin/" + ScaleIOUtil.QUERY_MDMS_CMD;
         Pair<String, String> result = Script.executeCommand(command);
         String stdOut = result.first();
 
@@ -317,7 +317,7 @@ public class ScaleIOUtil {
         String stdOut = result.second();
 
         /*
-         * Check whether stderr or stdout contains mdm removal parameter.
+         * Check whether stderr or stdout contains mdm removal "--remove_mdm" parameter.
          *
          * Current version returns "Usage" in stderr, check stdout as well in case this will be changed in the future,
          * as returned "Usage" is not an error.
@@ -330,7 +330,7 @@ public class ScaleIOUtil {
      */
     public static boolean isMdmPresent(String mdmAddress) {
         //query_mdms outputs "MDM-ID <System/MDM-Id> SDC ID <SDC-Id> INSTALLATION ID <Installation-Id> IPs [0]-x.x.x.x [1]-x.x.x.x" for a MDM with ID: <MDM-Id>
-        String queryMdmsCmd = ScaleIOUtil.SDC_HOME_PATH + "/bin/" + ScaleIOUtil.QUERY_MDMS_CMD + " --file " + DRV_CFG_FILE;
+        String queryMdmsCmd = ScaleIOUtil.SDC_HOME_PATH + "/bin/" + ScaleIOUtil.QUERY_MDMS_CMD;
         queryMdmsCmd += "|grep " + mdmAddress;
         String result = Script.runSimpleBashScript(queryMdmsCmd);
 
@@ -354,7 +354,7 @@ public class ScaleIOUtil {
 
     public static void rescanForNewVolumes() {
         // Detecting new volumes
-        String rescanCmd = ScaleIOUtil.SDC_HOME_PATH + "/bin/" + ScaleIOUtil.RESCAN_CMD + " --file " + DRV_CFG_FILE;
+        String rescanCmd = ScaleIOUtil.SDC_HOME_PATH + "/bin/" + ScaleIOUtil.RESCAN_CMD;
 
         String result = Script.runSimpleBashScript(rescanCmd);
         if (result == null) {
@@ -364,7 +364,7 @@ public class ScaleIOUtil {
 
     public static String getSystemIdForVolume(String volumeId) {
         //query_vols outputs "VOL-ID <VolumeID> MDM-ID <SystemID>" for a volume with ID: <VolumeID>
-        String queryDiskCmd = SDC_HOME_PATH + "/bin/" + ScaleIOUtil.QUERY_VOLUMES_CMD + " --file " + DRV_CFG_FILE;
+        String queryDiskCmd = SDC_HOME_PATH + "/bin/" + ScaleIOUtil.QUERY_VOLUMES_CMD;
         queryDiskCmd += "|grep " + volumeId + "|awk '{print $4}'";
 
         String result = Script.runSimpleBashScript(queryDiskCmd);
@@ -382,7 +382,7 @@ public class ScaleIOUtil {
     }
 
     public static String getSdcGuid() {
-        String queryGuidCmd = ScaleIOUtil.SDC_HOME_PATH + "/bin/" + ScaleIOUtil.QUERY_GUID_CMD + " --file " + DRV_CFG_FILE;
+        String queryGuidCmd = ScaleIOUtil.SDC_HOME_PATH + "/bin/" + ScaleIOUtil.QUERY_GUID_CMD;
         String result = Script.runSimpleBashScript(queryGuidCmd);
         if (result == null) {
             LOGGER.warn("Failed to get SDC guid");
@@ -404,7 +404,7 @@ public class ScaleIOUtil {
 
     public static String getSdcId(String mdmId) {
         //query_mdms outputs "MDM-ID <System/MDM-Id> SDC ID <SDC-Id> INSTALLATION ID <Installation-Id> IPs [0]-x.x.x.x [1]-x.x.x.x" for a MDM with ID: <MDM-Id>
-        String queryMdmsCmd = ScaleIOUtil.SDC_HOME_PATH + "/bin/" + ScaleIOUtil.QUERY_MDMS_CMD + " --file " + DRV_CFG_FILE;
+        String queryMdmsCmd = ScaleIOUtil.SDC_HOME_PATH + "/bin/" + ScaleIOUtil.QUERY_MDMS_CMD;
         queryMdmsCmd += "|grep " + mdmId + "|awk '{print $5}'";
         String result = Script.runSimpleBashScript(queryMdmsCmd);
         if (result == null) {
