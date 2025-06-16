@@ -19,8 +19,6 @@ package com.cloud.hypervisor;
 import java.util.Map;
 
 import com.cloud.agent.api.HostVmStateReportEntry;
-import com.cloud.agent.api.PostExternalProvisioningAnswer;
-import com.cloud.agent.api.PostExternalProvisioningCommand;
 import com.cloud.agent.api.PrepareExternalProvisioningAnswer;
 import com.cloud.agent.api.PrepareExternalProvisioningCommand;
 import com.cloud.agent.api.RebootAnswer;
@@ -54,8 +52,6 @@ public interface ExternalProvisioner extends Manager {
     RebootAnswer rebootInstance(String hostGuid, String extensionName, String extensionRelativeEntryPoint, RebootCommand cmd);
 
     StopAnswer expungeInstance(String hostGuid, String extensionName, String extensionRelativeEntryPoint, StopCommand cmd);
-
-    PostExternalProvisioningAnswer postSetupInstance(String hostGuid, String extensionName, String extensionRelativeEntryPoint, PostExternalProvisioningCommand cmd);
 
     Map<String, HostVmStateReportEntry> getHostVmStateReport(long hostId, String extensionName, String extensionRelativeEntryPoint);
 

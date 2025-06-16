@@ -44,8 +44,6 @@ import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingTestCommand;
-import com.cloud.agent.api.PostExternalProvisioningAnswer;
-import com.cloud.agent.api.PostExternalProvisioningCommand;
 import com.cloud.agent.api.PrepareExternalProvisioningAnswer;
 import com.cloud.agent.api.PrepareExternalProvisioningCommand;
 import com.cloud.agent.api.ReadyAnswer;
@@ -281,13 +279,6 @@ public class ExternalResource implements ServerResource {
             return new PrepareExternalProvisioningAnswer(cmd, false, logAndGetExtensionNotConnectedOrDisabledError());
         }
         return externalProvisioner.prepareExternalProvisioning(guid, extensionName, extensionRelativeEntryPoint, cmd);
-    }
-
-    public PostExternalProvisioningAnswer execute(PostExternalProvisioningCommand cmd) {
-        if (isExtensionDisconnected() || isExtensionNotEnabled()) {
-            return new PostExternalProvisioningAnswer(cmd, false, logAndGetExtensionNotConnectedOrDisabledError());
-        }
-        return externalProvisioner.postSetupInstance(guid, extensionName, extensionRelativeEntryPoint, cmd);
     }
 
     public RunCustomActionAnswer execute(RunCustomActionCommand cmd) {

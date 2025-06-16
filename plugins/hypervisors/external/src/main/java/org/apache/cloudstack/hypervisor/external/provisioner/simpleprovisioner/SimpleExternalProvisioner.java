@@ -51,8 +51,6 @@ import org.apache.commons.collections.MapUtils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.HostVmStateReportEntry;
-import com.cloud.agent.api.PostExternalProvisioningAnswer;
-import com.cloud.agent.api.PostExternalProvisioningCommand;
 import com.cloud.agent.api.PrepareExternalProvisioningAnswer;
 import com.cloud.agent.api.PrepareExternalProvisioningCommand;
 import com.cloud.agent.api.RebootAnswer;
@@ -384,12 +382,6 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
         } else {
             return new StopAnswer(cmd, result.second(), false);
         }
-    }
-
-    @Override
-    public PostExternalProvisioningAnswer postSetupInstance(String hostGuid, String extensionName,
-                            String extensionRelativeEntryPoint, PostExternalProvisioningCommand cmd) {
-        return new PostExternalProvisioningAnswer(cmd, null, null);
     }
 
     @Override
