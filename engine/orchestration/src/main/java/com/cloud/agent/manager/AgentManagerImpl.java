@@ -704,8 +704,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             Map<String, String> detailsMap = readyAnswer.getDetailsMap();
             if (detailsMap != null) {
                 String uefiEnabled = detailsMap.get(Host.HOST_UEFI_ENABLE);
-                String virtv2vVersion = detailsMap.get(Host.KVM_HOST_VIRTV2V_VERSION);
-                String ovftoolVersion = detailsMap.get(Host.KVM_HOST_OVFTOOL_VERSION);
+                String virtv2vVersion = detailsMap.get(Host.HOST_VIRTV2V_VERSION);
+                String ovftoolVersion = detailsMap.get(Host.HOST_OVFTOOL_VERSION);
                 logger.debug("Got HOST_UEFI_ENABLE [{}] for host [{}]:", uefiEnabled, host);
                 if (ObjectUtils.anyNotNull(uefiEnabled, virtv2vVersion, ovftoolVersion)) {
                     _hostDao.loadDetails(host);
@@ -714,12 +714,12 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                         host.getDetails().put(Host.HOST_UEFI_ENABLE, uefiEnabled);
                         updateNeeded = true;
                     }
-                    if (StringUtils.isNotBlank(virtv2vVersion) && !virtv2vVersion.equals(host.getDetails().get(Host.KVM_HOST_VIRTV2V_VERSION))) {
-                        host.getDetails().put(Host.KVM_HOST_VIRTV2V_VERSION, virtv2vVersion);
+                    if (StringUtils.isNotBlank(virtv2vVersion) && !virtv2vVersion.equals(host.getDetails().get(Host.HOST_VIRTV2V_VERSION))) {
+                        host.getDetails().put(Host.HOST_VIRTV2V_VERSION, virtv2vVersion);
                         updateNeeded = true;
                     }
-                    if (StringUtils.isNotBlank(ovftoolVersion) && !ovftoolVersion.equals(host.getDetails().get(Host.KVM_HOST_OVFTOOL_VERSION))) {
-                        host.getDetails().put(Host.KVM_HOST_OVFTOOL_VERSION, ovftoolVersion);
+                    if (StringUtils.isNotBlank(ovftoolVersion) && !ovftoolVersion.equals(host.getDetails().get(Host.HOST_OVFTOOL_VERSION))) {
+                        host.getDetails().put(Host.HOST_OVFTOOL_VERSION, ovftoolVersion);
                         updateNeeded = true;
                     }
                     if (updateNeeded) {

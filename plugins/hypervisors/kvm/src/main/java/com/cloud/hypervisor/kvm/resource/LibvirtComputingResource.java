@@ -17,6 +17,8 @@
 package com.cloud.hypervisor.kvm.resource;
 
 import static com.cloud.host.Host.HOST_INSTANCE_CONVERSION;
+import static com.cloud.host.Host.HOST_OVFTOOL_VERSION;
+import static com.cloud.host.Host.HOST_VIRTV2V_VERSION;
 import static com.cloud.host.Host.HOST_VOLUME_ENCRYPTION;
 
 import java.io.BufferedReader;
@@ -3766,7 +3768,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.setIqn(getIqn());
         cmd.getHostDetails().put(HOST_VOLUME_ENCRYPTION, String.valueOf(hostSupportsVolumeEncryption()));
         cmd.setHostTags(getHostTags());
-        cmd.getHostDetails().put(HOST_INSTANCE_CONVERSION, String.valueOf(hostSupportsInstanceConversion()));
+        boolean instanceConversionSupported = hostSupportsInstanceConversion();
+        cmd.getHostDetails().put(HOST_INSTANCE_CONVERSION, String.valueOf(instanceConversionSupported));
+        if (instanceConversionSupported) {
+            cmd.getHostDetails().put(HOST_VIRTV2V_VERSION, getHostVirtV2vVersion());
+            cmd.getHostDetails().put(HOST_OVFTOOL_VERSION, getHostOvfToolVersion());
+        }
         HealthCheckResult healthCheckResult = getHostHealthCheckResult();
         if (healthCheckResult != HealthCheckResult.IGNORE) {
             cmd.setHostHealthCheckResult(healthCheckResult == HealthCheckResult.SUCCESS);

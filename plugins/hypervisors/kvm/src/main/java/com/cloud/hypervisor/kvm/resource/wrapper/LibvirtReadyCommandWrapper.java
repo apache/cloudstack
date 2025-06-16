@@ -48,11 +48,11 @@ public final class LibvirtReadyCommandWrapper extends CommandWrapper<ReadyComman
         }
 
         if (libvirtComputingResource.hostSupportsInstanceConversion()) {
-            hostDetails.put(Host.KVM_HOST_VIRTV2V_VERSION, libvirtComputingResource.getHostVirtV2vVersion());
+            hostDetails.put(Host.HOST_VIRTV2V_VERSION, libvirtComputingResource.getHostVirtV2vVersion());
         }
 
         if (libvirtComputingResource.hostSupportsOvfExport()) {
-            hostDetails.put(Host.KVM_HOST_OVFTOOL_VERSION, libvirtComputingResource.getHostOvfToolVersion());
+            hostDetails.put(Host.HOST_OVFTOOL_VERSION, libvirtComputingResource.getHostOvfToolVersion());
         }
 
         return new ReadyAnswer(command, hostDetails);
