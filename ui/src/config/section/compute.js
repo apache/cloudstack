@@ -219,9 +219,9 @@ export default {
           dataView: true,
           popup: true,
           show: (record, store) => {
-            return record.hypervisor !== 'External' && (record.hypervisor !== 'KVM') ||
+            return record.hypervisor !== 'External' && ((record.hypervisor !== 'KVM') ||
               ['Stopped', 'Destroyed'].includes(record.state) ||
-              store.features.kvmsnapshotenabled
+              store.features.kvmsnapshotenabled)
           },
           disabled: (record) => { return record.hostcontrolstate === 'Offline' && record.hypervisor === 'KVM' },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/CreateSnapshotWizard.vue')))
