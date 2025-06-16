@@ -715,17 +715,17 @@
                     </dependency>
                     <dependency>
                         <groupId>org.bouncycastle</groupId>
-                        <artifactId>bcprov-jdk15on</artifactId>
+                        <artifactId>bcprov-jdk18on</artifactId>
                         <version>${cs.bcprov.version}</version>
                     </dependency>
                     <dependency>
                         <groupId>org.bouncycastle</groupId>
-                        <artifactId>bcpkix-jdk15on</artifactId>
+                        <artifactId>bcpkix-jdk18on</artifactId>
                         <version>${cs.bcprov.version}</version>
                     </dependency>
                     <dependency>
                         <groupId>org.bouncycastle</groupId>
-                        <artifactId>bctls-jdk15on</artifactId>
+                        <artifactId>bctls-jdk18on</artifactId>
                         <version>${cs.bcprov.version}</version>
                     </dependency>
                 </dependencies>
@@ -905,13 +905,13 @@
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.bouncycastle</groupId>
-                                    <artifactId>bcprov-jdk15on</artifactId>
+                                    <artifactId>bcprov-jdk18on</artifactId>
                                     <overWrite>false</overWrite>
                                     <outputDirectory>${project.build.directory}/lib</outputDirectory>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.bouncycastle</groupId>
-                                    <artifactId>bcpkix-jdk15on</artifactId>
+                                    <artifactId>bcpkix-jdk18on</artifactId>
                                     <overWrite>false</overWrite>
                                     <outputDirectory>${project.build.directory}/lib</outputDirectory>
 			        </artifactItem>
@@ -935,7 +935,7 @@
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.bouncycastle</groupId>
-                                    <artifactId>bctls-jdk15on</artifactId>
+                                    <artifactId>bctls-jdk18on</artifactId>
                                     <overWrite>false</overWrite>
                                     <outputDirectory>${project.build.directory}/lib</outputDirectory>
                                 </artifactItem>
@@ -970,9 +970,9 @@
                                     <exclude>org.apache.tomcat.embed:tomcat-embed-core</exclude>
                                     <exclude>org.apache.geronimo.specs:geronimo-servlet_3.0_spec</exclude>
                                     <exclude>org.apache.geronimo.specs:geronimo-javamail_1.4_spec</exclude>
-                                    <exclude>org.bouncycastle:bcprov-jdk15on</exclude>
-                                    <exclude>org.bouncycastle:bcpkix-jdk15on</exclude>
-                                    <exclude>org.bouncycastle:bctls-jdk15on</exclude>
+                                    <exclude>org.bouncycastle:bcprov-jdk18on</exclude>
+                                    <exclude>org.bouncycastle:bcpkix-jdk18on</exclude>
+                                    <exclude>org.bouncycastle:bctls-jdk18on</exclude>
                                     <exclude>com.mysql:mysql-connector-j</exclude>
                                     <exclude>org.apache.cloudstack:cloud-plugin-storage-volume-storpool</exclude>
                                     <exclude>org.apache.cloudstack:cloud-plugin-storage-volume-linstor</exclude>

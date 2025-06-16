@@ -46,11 +46,11 @@
         <!-- Another implementation of SSL protocol. Does not work with broken MS RDP SSL too. -->
         <dependency>
             <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk15on</artifactId>
+            <artifactId>bcprov-jdk18on</artifactId>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
-            <artifactId>bctls-jdk15on</artifactId>
+            <artifactId>bctls-jdk18on</artifactId>
         </dependency>
         <dependency>
             <groupId>com.sun.xml.security</groupId>
