@@ -87,7 +87,7 @@ public class ExternalHypervisorGuru extends HypervisorGuruBase implements Hyperv
     }
 
     protected void updateStopCommandForExternalHypervisorType(final Hypervisor.HypervisorType hypervisorType,
-                  final Long hostId, final StopCommand stopCommand) {
+                  final Long hostId, final Map<String, String> vmExternalDetails, final StopCommand stopCommand) {
         if (!Hypervisor.HypervisorType.External.equals(hypervisorType) || hostId == null) {
             return;
         }
@@ -95,7 +95,7 @@ public class ExternalHypervisorGuru extends HypervisorGuruBase implements Hyperv
         if (host == null) {
             return;
         }
-        stopCommand.setExternalDetails(extensionsManager.getExternalAccessDetails(host));
+        stopCommand.setExternalDetails(extensionsManager.getExternalAccessDetails(host, vmExternalDetails));
         stopCommand.setExpungeVM(true);
     }
 
@@ -103,9 +103,11 @@ public class ExternalHypervisorGuru extends HypervisorGuruBase implements Hyperv
         List<Command> commands = new ArrayList<>();
         final StopCommand stop = new StopCommand(vm, virtualMachineManager.getExecuteInSequence(vm.getHypervisorType()), false, false);
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
-        stop.setVirtualMachine(toVirtualMachineTO(profile));
+        VirtualMachineTO virtualMachineTO = toVirtualMachineTO(profile);
+        stop.setVirtualMachine(virtualMachineTO);
         final Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
-        updateStopCommandForExternalHypervisorType(vm.getHypervisorType(), hostId, stop);
+        updateStopCommandForExternalHypervisorType(vm.getHypervisorType(), hostId,
+                virtualMachineTO.getExternalDetails(), stop);
         commands.add(stop);
         return commands;
     }

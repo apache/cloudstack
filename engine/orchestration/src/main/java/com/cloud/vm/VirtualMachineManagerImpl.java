@@ -1518,7 +1518,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (!HypervisorType.External.equals(host.getHypervisorType())) {
             return;
         }
-        Map<String, Object> externalDetails = extensionsManager.getExternalAccessDetails(host);
         Map<String, String> vmExternalDetails = vmTO.getExternalDetails();
         for (NicTO nic : vmTO.getNics()) {
             if (!nic.isDefaultNic()) {
@@ -1533,7 +1532,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 vmExternalDetails.put(VmDetailConstants.CLOUDSTACK_VLAN, Networks.BroadcastDomainType.getValue(nic.getBroadcastUri()));
             }
         }
-        externalDetails.put(ApiConstants.VIRTUAL_MACHINE_ID, vmExternalDetails);
+        Map<String, Object> externalDetails = extensionsManager.getExternalAccessDetails(host, vmExternalDetails);
         command.setExternalDetails(externalDetails);
     }
 
@@ -1547,11 +1546,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             return;
         }
         VirtualMachineTO vmTO = ObjectUtils.defaultIfNull(stopCommand.getVirtualMachine(), toVmTO(vmProfile));
-        Map<String, Object> externalDetails = extensionsManager.getExternalAccessDetails(host);
-        Map<String, String> vmExternalDetails = vmTO.getExternalDetails();
-        if (MapUtils.isNotEmpty(vmExternalDetails)) {
-            externalDetails.put(ApiConstants.VIRTUAL_MACHINE_ID, vmExternalDetails);
-        }
+        Map<String, Object> externalDetails = extensionsManager.getExternalAccessDetails(host, vmTO.getExternalDetails());
         stopCommand.setVirtualMachine(vmTO);
         stopCommand.setExternalDetails(externalDetails);
     }
@@ -1560,11 +1555,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (!HypervisorType.External.equals(host.getHypervisorType())) {
             return;
         }
-        Map<String, Object> externalDetails = extensionsManager.getExternalAccessDetails(host);
-        Map<String, String> vmExternalDetails = vmTO.getExternalDetails();
-        if (MapUtils.isNotEmpty(vmExternalDetails)) {
-            externalDetails.put(ApiConstants.VIRTUAL_MACHINE_ID, vmExternalDetails);
-        }
+        Map<String, Object> externalDetails = extensionsManager.getExternalAccessDetails(host, vmTO.getExternalDetails());
         rebootCmd.setExternalDetails(externalDetails);
     }
 

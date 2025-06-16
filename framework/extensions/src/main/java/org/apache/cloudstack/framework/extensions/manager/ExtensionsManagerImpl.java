@@ -448,6 +448,26 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         executorService.shutdown();
     }
 
+    protected Map<String, Object> getExternalAccessDetails(Map<String, String> actionDetails, long hostId,
+                           ExtensionResourceMap resourceMap) {
+        Map<String, Object> externalDetails = new HashMap<>();
+        if (MapUtils.isNotEmpty(actionDetails)) {
+            externalDetails.put(ApiConstants.ACTION, actionDetails);
+        }
+        Map<String, String> hostDetails = getFilteredExternalDetails(hostDetailsDao.findDetails(hostId));
+        externalDetails.put(ApiConstants.HOST, hostDetails);
+        if (resourceMap == null) {
+            return externalDetails;
+        }
+        Map<String, String> resourceDetails = extensionResourceMapDetailsDao.listDetailsKeyPairs(resourceMap.getId());
+        if (MapUtils.isNotEmpty(resourceDetails)) {
+            externalDetails.put(ApiConstants.RESOURCE_MAP, resourceDetails);
+        }
+        Map<String, String> extensionDetails = extensionDetailsDao.listDetailsKeyPairs(resourceMap.getExtensionId());
+        externalDetails.put(ApiConstants.EXTENSION, extensionDetails);
+        return externalDetails;
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_EXTENSION_CREATE, eventDescription = "creating extension")
     public Extension createExtension(CreateExtensionCmd cmd) {
@@ -1165,7 +1185,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         response.setSuccess(false);
         result.put(ApiConstants.MESSAGE, getActionMessage(false, customActionVO, extensionVO,
                 actionResourceType, entity));
-        Map<String, Object> externalDetails = getExternalAccessDetails(details, hostId, extensionResource, extensionVO);
+        Map<String, Object> externalDetails = getExternalAccessDetails(details, hostId, extensionResource);
         runCustomActionCommand.setParameters(parameters);
         runCustomActionCommand.setExternalDetails(externalDetails);
         try {
@@ -1234,40 +1254,15 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     }
 
     @Override
-    public Map<String, Object> getExternalAccessDetails(Host host) {
-        Map<String, Object> externalDetails = new HashMap<>();
-        Map<String, String> hostDetails = getFilteredExternalDetails(hostDetailsDao.findDetails(host.getId()));
-        externalDetails.put(ApiConstants.HOST_ID, hostDetails);
+    public Map<String, Object> getExternalAccessDetails(Host host, Map<String, String> vmDetails) {
         long clusterId = host.getClusterId();
         ExtensionResourceMapVO resourceMap = extensionResourceMapDao.findByResourceIdAndType(clusterId,
                 ExtensionResourceMap.ResourceType.Cluster);
-        if (resourceMap == null) {
-            return externalDetails;
+        Map<String, Object> details = getExternalAccessDetails(null, host.getId(), resourceMap);
+        if (MapUtils.isNotEmpty(vmDetails)) {
+            details.put(ApiConstants.VIRTUAL_MACHINE, vmDetails);
         }
-        Map<String, String> resourceDetails = extensionResourceMapDetailsDao.listDetailsKeyPairs(resourceMap.getId());
-        externalDetails.put(ApiConstants.RESOURCE_ID, resourceDetails);
-        Map<String, String> extensionDetails = extensionDetailsDao.listDetailsKeyPairs(resourceMap.getExtensionId());
-        externalDetails.put(ApiConstants.EXTENSION_ID, extensionDetails);
-        return externalDetails;
-    }
-
-    private Map<String, Object> getExternalAccessDetails(Map<String, String> actionDetails, long hostId,
-                 ExtensionResourceMap resourceMap, Extension extension) {
-        Map<String, Object> externalDetails = new HashMap<>();
-        externalDetails.put(ApiConstants.CUSTOM_ACTION_ID, actionDetails);
-        Map<String, String> hostDetails = getFilteredExternalDetails(hostDetailsDao.findDetails(hostId));
-        externalDetails.put(ApiConstants.HOST_ID, hostDetails);
-        if (resourceMap == null) {
-            return externalDetails;
-        }
-        Map<String, String> resourceDetails = extensionResourceMapDetailsDao.listDetailsKeyPairs(resourceMap.getId());
-        externalDetails.put(ApiConstants.RESOURCE_ID, resourceDetails);
-        if (extension == null) {
-            return externalDetails;
-        }
-        Map<String, String> extensionDetails = extensionDetailsDao.listDetailsKeyPairs(resourceMap.getExtensionId());
-        externalDetails.put(ApiConstants.EXTENSION_ID, extensionDetails);
-        return externalDetails;
+        return details;
     }
 
     @Override

@@ -82,7 +82,7 @@ public interface ExtensionsManager extends Manager {
 
     ExtensionCustomActionResponse createCustomActionResponse(ExtensionCustomAction customAction);
 
-    Map<String, Object> getExternalAccessDetails(Host host);
+    Map<String, Object> getExternalAccessDetails(Host host, Map<String, String> vmDetails);
 
     String handleExtensionServerCommands(ExtensionServerActionBaseCommand cmd);
 }

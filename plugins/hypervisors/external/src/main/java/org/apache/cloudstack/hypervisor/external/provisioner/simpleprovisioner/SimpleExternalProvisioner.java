@@ -128,7 +128,7 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
                             VirtualMachineTO virtualMachineTO) {
         Map<String, Object> modifiedDetails = new HashMap<>();
         if (MapUtils.isNotEmpty(externalDetails)) {
-            modifiedDetails.put(ApiConstants.EXTERNAL, externalDetails);
+            modifiedDetails.put(ApiConstants.EXTERNAL_DETAILS, externalDetails);
         }
         if (virtualMachineTO != null) {
             modifiedDetails.put(ApiConstants.VIRTUAL_MACHINE_ID, virtualMachineTO.getUuid());
