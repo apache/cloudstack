@@ -18,12 +18,12 @@ Install tools and dependencies used for development:
     # yum -y install git java-17-openjdk java-17-openjdk-devel \
       mysql mysql-server mkisofs git gcc python MySQL-python openssh-clients wget
 
-Set up Maven (3.9.9):
+Set up Maven (3.9.10):
 
-    # wget https://dlcdn.apache.org/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.tar.gz
-    # tar -zxvf apache-maven-3.9.9-bin.tar.gz -C /usr/local
+    # wget https://dlcdn.apache.org/maven/maven-3/3.9.10/binaries/apache-maven-3.9.10-bin.tar.gz
+    # sudo tar -zxvf apache-maven-3.9.10-bin.tar.gz -C /usr/local
     # cd /usr/local
-    # ln -s apache-maven-3.9.9 maven
+    # sudo ln -s apache-maven-3.9.10 maven
     # echo export M2_HOME=/usr/local/maven >> ~/.bashrc # or .zshrc or .profile
     # echo export PATH=/usr/local/maven/bin:${PATH} >> ~/.bashrc # or .zshrc or .profile
     # source ~/.bashrc
