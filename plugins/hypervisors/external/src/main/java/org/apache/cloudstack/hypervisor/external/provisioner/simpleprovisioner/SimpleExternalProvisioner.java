@@ -672,9 +672,7 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
             ProcessBuilder builder = new ProcessBuilder(command);
             builder.redirectErrorStream(true);
 
-            logger.trace("Executable: {}",executablePath);
-            logger.debug("Executing command: {} with wait: {}", action, wait);
-            logger.trace("Data file: {}", dataFile);
+            logger.debug("Executing {} for command: {} with wait: {} and data file: {}", executablePath, action, wait, dataFile);
 
             Process process = builder.start();
             boolean finished = process.waitFor(wait, TimeUnit.SECONDS);
