@@ -41,7 +41,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
-import org.apache.cloudstack.agent.manager.ExternalAgentManagerImpl;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
@@ -60,7 +59,6 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.network.dao.NetworkPermissionDao;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -76,15 +74,12 @@ import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.CleanupPersistentNetworkResourceAnswer;
 import com.cloud.agent.api.CleanupPersistentNetworkResourceCommand;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.PrepareExternalProvisioningAnswer;
-import com.cloud.agent.api.PrepareExternalProvisioningCommand;
 import com.cloud.agent.api.SetupPersistentNetworkAnswer;
 import com.cloud.agent.api.SetupPersistentNetworkCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.NicTO;
-import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.query.dao.DomainRouterJoinDao;
@@ -132,9 +127,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
-import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
@@ -264,7 +257,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicExtraDhcpOptionDao;
@@ -2239,64 +2231,65 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     private void prepareNicIfExternalProvisionerInvolved(VirtualMachineProfile vmProfile, DeployDestination dest, long nicId) {
-        if (!Hypervisor.HypervisorType.External.equals(vmProfile.getHypervisorType())) {
-            return;
-        }
-        if (userVmDetailsDao.findDetail(vmProfile.getId(), VmDetailConstants.DEPLOY_VM) == null) {
-            return;
-        }
-        HypervisorGuru hvGuru = hvGuruMgr.getGuru(vmProfile.getHypervisorType());
-        VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
-
-        HostVO host = _hostDao.findById(dest.getHost().getId());
-        PrepareExternalProvisioningCommand command = new PrepareExternalProvisioningCommand(vmTO, host.getClusterId());
-        Map<String, Object> externalDetails = extensionsManager.getExternalAccessDetails(host, vmTO.getExternalDetails());
-        command.setExternalDetails(externalDetails);
-        final PrepareExternalProvisioningAnswer prepareExternalProvisioningAnswer;
-        try {
-            Long hostID = dest.getHost().getId();
-            final Answer answer = _agentMgr.send(hostID, command);
-
-            if (!(answer instanceof PrepareExternalProvisioningAnswer)) {
-                String errorMsg = String.format("Trying to prepare the instance on external hypervisor for the CloudStack instance %s failed: %s", vmProfile.getUuid(), answer.getDetails());
-                logger.debug(errorMsg);
-                throw new CloudRuntimeException(errorMsg);
-            }
-
-            prepareExternalProvisioningAnswer = (PrepareExternalProvisioningAnswer) answer;
-        } catch (AgentUnavailableException | OperationTimedoutException e) {
-            String errorMsg = String.format("Trying to prepare the instance on external hypervisor for the CloudStack instance %s failed: %s", vmProfile.getUuid(), e);
-            logger.debug(errorMsg);
-            throw new CloudRuntimeException(errorMsg);
-        }
-
-        if (prepareExternalProvisioningAnswer == null || !prepareExternalProvisioningAnswer.getResult()) {
-            if (prepareExternalProvisioningAnswer != null && StringUtils.isNotBlank(prepareExternalProvisioningAnswer.getDetails())) {
-                throw new CloudRuntimeException(String.format("Unable to prepare the instance on external system due to %s", prepareExternalProvisioningAnswer.getDetails()));
-            } else {
-                throw new CloudRuntimeException("Unable to prepare the instance on external system, please check the access details");
-            }
-        }
-
-        Map<String, String> serverDetails = prepareExternalProvisioningAnswer.getServerDetails();
-        if (ExternalAgentManagerImpl.expectMacAddressFromExternalProvisioner.valueIn(host.getClusterId())) {
-            String macAddress = serverDetails.get(VmDetailConstants.MAC_ADDRESS);
-            if (StringUtils.isEmpty(macAddress)) {
-                throw new CloudRuntimeException("Unable to fetch macaddress from the external provisioner while preparing the instance");
-            }
-            final NicVO nic = _nicDao.findById(nicId);
-            nic.setMacAddress(macAddress);
-            _nicDao.update(nicId, nic);
-        }
-
-        if (MapUtils.isNotEmpty(serverDetails)) {
-            UserVmVO userVm = _userVmDao.findById(vmProfile.getId());
-            _userVmDao.loadDetails(userVm);
-            Map<String, String> details = userVm.getDetails();
-            details.putAll(serverDetails);
-            userVm.setDetails(details);
-            _userVmDao.saveDetails(userVm);
-        }
+        logger.debug("SimpleEx {}, {}, {}", vmProfile.getId(), dest, nicId);
+//        if (!Hypervisor.HypervisorType.External.equals(vmProfile.getHypervisorType())) {
+//            return;
+//        }
+//        if (userVmDetailsDao.findDetail(vmProfile.getId(), VmDetailConstants.DEPLOY_VM) == null) {
+//            return;
+//        }
+//        HypervisorGuru hvGuru = hvGuruMgr.getGuru(vmProfile.getHypervisorType());
+//        VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
+//
+//        HostVO host = _hostDao.findById(dest.getHost().getId());
+//        PrepareExternalProvisioningCommand command = new PrepareExternalProvisioningCommand(vmTO, host.getClusterId());
+//        Map<String, Object> externalDetails = extensionsManager.getExternalAccessDetails(host, vmTO.getExternalDetails());
+//        command.setExternalDetails(externalDetails);
+//        final PrepareExternalProvisioningAnswer prepareExternalProvisioningAnswer;
+//        try {
+//            Long hostID = dest.getHost().getId();
+//            final Answer answer = _agentMgr.send(hostID, command);
+//
+//            if (!(answer instanceof PrepareExternalProvisioningAnswer)) {
+//                String errorMsg = String.format("Trying to prepare the instance on external hypervisor for the CloudStack instance %s failed: %s", vmProfile.getUuid(), answer.getDetails());
+//                logger.debug(errorMsg);
+//                throw new CloudRuntimeException(errorMsg);
+//            }
+//
+//            prepareExternalProvisioningAnswer = (PrepareExternalProvisioningAnswer) answer;
+//        } catch (AgentUnavailableException | OperationTimedoutException e) {
+//            String errorMsg = String.format("Trying to prepare the instance on external hypervisor for the CloudStack instance %s failed: %s", vmProfile.getUuid(), e);
+//            logger.debug(errorMsg);
+//            throw new CloudRuntimeException(errorMsg);
+//        }
+//
+//        if (prepareExternalProvisioningAnswer == null || !prepareExternalProvisioningAnswer.getResult()) {
+//            if (prepareExternalProvisioningAnswer != null && StringUtils.isNotBlank(prepareExternalProvisioningAnswer.getDetails())) {
+//                throw new CloudRuntimeException(String.format("Unable to prepare the instance on external system due to %s", prepareExternalProvisioningAnswer.getDetails()));
+//            } else {
+//                throw new CloudRuntimeException("Unable to prepare the instance on external system, please check the access details");
+//            }
+//        }
+//
+//        Map<String, String> serverDetails = prepareExternalProvisioningAnswer.getServerDetails();
+//        if (ExternalAgentManagerImpl.expectMacAddressFromExternalProvisioner.valueIn(host.getClusterId())) {
+//            String macAddress = serverDetails.get(VmDetailConstants.MAC_ADDRESS);
+//            if (StringUtils.isEmpty(macAddress)) {
+//                throw new CloudRuntimeException("Unable to fetch macaddress from the external provisioner while preparing the instance");
+//            }
+//            final NicVO nic = _nicDao.findById(nicId);
+//            nic.setMacAddress(macAddress);
+//            _nicDao.update(nicId, nic);
+//        }
+//
+//        if (MapUtils.isNotEmpty(serverDetails)) {
+//            UserVmVO userVm = _userVmDao.findById(vmProfile.getId());
+//            _userVmDao.loadDetails(userVm);
+//            Map<String, String> details = userVm.getDetails();
+//            details.putAll(serverDetails);
+//            userVm.setDetails(details);
+//            _userVmDao.saveDetails(userVm);
+//        }
     }
 
     @Override

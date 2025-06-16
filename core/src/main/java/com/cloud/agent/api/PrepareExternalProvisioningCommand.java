@@ -28,17 +28,12 @@ public class PrepareExternalProvisioningCommand extends Command {
     Long clusterId;
     Map<String, Object> externalDetails;
 
-    public PrepareExternalProvisioningCommand(VirtualMachineTO vmUUID, Long clusterId) {
-        this.virtualMachineTO = vmUUID;
-        this.clusterId = clusterId;
+    public PrepareExternalProvisioningCommand(VirtualMachineTO vmTO) {
+        this.virtualMachineTO = vmTO;
     }
 
     public VirtualMachineTO getVirtualMachineTO() {
         return virtualMachineTO;
-    }
-
-    public Long getClusterId() {
-        return clusterId;
     }
 
     public Map<String, Object> getExternalDetails() {

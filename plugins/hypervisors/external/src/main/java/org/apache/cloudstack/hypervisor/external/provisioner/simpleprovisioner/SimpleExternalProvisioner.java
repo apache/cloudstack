@@ -273,7 +273,7 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
         } catch (CloudRuntimeException e) {
             logger.warn("Failed to parse the output from preparing external provisioning operation as part of VM deployment");
         }
-        return new PrepareExternalProvisioningAnswer(cmd, resultMap, null);
+        return new PrepareExternalProvisioningAnswer(cmd, resultMap, null, null);
     }
 
     @Override

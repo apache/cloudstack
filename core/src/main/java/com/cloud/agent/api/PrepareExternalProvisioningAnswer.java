@@ -20,17 +20,21 @@ package com.cloud.agent.api;
 
 import java.util.Map;
 
+import com.cloud.agent.api.to.VirtualMachineTO;
+
 public class PrepareExternalProvisioningAnswer extends Answer {
 
     Map<String, String> serverDetails;
+    VirtualMachineTO virtualMachineTO;
 
     public PrepareExternalProvisioningAnswer() {
         super();
     }
 
-    public PrepareExternalProvisioningAnswer(PrepareExternalProvisioningCommand cmd, Map<String, String> serverDetails, String details) {
+    public PrepareExternalProvisioningAnswer(PrepareExternalProvisioningCommand cmd, Map<String, String> externalDetails, VirtualMachineTO virtualMachineTO, String details) {
         super(cmd, true, details);
-        this.serverDetails = serverDetails;
+        this.serverDetails = externalDetails;
+        this.virtualMachineTO = virtualMachineTO;
     }
 
     public PrepareExternalProvisioningAnswer(PrepareExternalProvisioningCommand cmd, boolean success, String details) {
@@ -39,5 +43,9 @@ public class PrepareExternalProvisioningAnswer extends Answer {
 
     public Map<String, String> getServerDetails() {
         return serverDetails;
+    }
+
+    public VirtualMachineTO getVirtualMachineTO() {
+        return virtualMachineTO;
     }
 }

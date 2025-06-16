@@ -124,6 +124,8 @@ import com.cloud.agent.api.ModifyTargetsCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PlugNicAnswer;
 import com.cloud.agent.api.PlugNicCommand;
+import com.cloud.agent.api.PrepareExternalProvisioningAnswer;
+import com.cloud.agent.api.PrepareExternalProvisioningCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.RebootAnswer;
@@ -1161,6 +1163,70 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         vmTO.setMetadataProductName(metadataProduct);
     }
 
+    protected void updateExternalVm(VirtualMachineTO vmTO, VirtualMachineTO updatedTO) {
+        if (updatedTO == null) {
+            return;
+        }
+        Map<String, NicTO> originalNicsByUuid = new HashMap<>();
+        for (NicTO nic : vmTO.getNics()) {
+            originalNicsByUuid.put(nic.getUuid(), nic);
+        }
+        for (NicTO updatedNicTO : updatedTO.getNics()) {
+            if (StringUtils.isNotBlank(updatedNicTO.getMac())) {
+                NicVO nicVO = _nicsDao.findByUuid(updatedNicTO.getUuid());
+                if (nicVO == null || Objects.equals(nicVO.getMacAddress(), updatedNicTO.getMac())) {
+                    continue;
+                }
+                nicVO.setMacAddress(updatedNicTO.getMac());
+                _nicsDao.update(nicVO.getId(), nicVO);
+                NicTO originalNicTO = originalNicsByUuid.get(updatedNicTO.getUuid());
+                if (originalNicTO != null) {
+                    originalNicTO.setMac(updatedNicTO.getMac());
+                }
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    protected void processPrepareExternalProvisioning(Host host, VirtualMachineTO virtualMachineTO) {
+        if (host == null || !HypervisorType.External.equals(host.getHypervisorType()) || host.getName() != null) {
+            return;
+        }
+        Map<String, String> vmDetails = virtualMachineTO.getExternalDetails();
+        Map<String, Object> externalDetails = extensionsManager.getExternalAccessDetails(host,
+                vmDetails);
+        Map<String, String> extensionDetails = (Map<String, String>)externalDetails.get(ApiConstants.EXTENSION);
+        Map<String, String> resourceMapDetails = (Map<String, String>)externalDetails.get(ApiConstants.RESOURCE_MAP);
+        Map<String, String> hostDetails = (Map<String, String>)externalDetails.get(ApiConstants.EXTENSION);
+        boolean shouldPrepareVm =
+                Boolean.parseBoolean(extensionDetails.get(ApiConstants.PREPARE_VM)) ||
+                        Boolean.parseBoolean(resourceMapDetails.get(ApiConstants.PREPARE_VM)) ||
+                        Boolean.parseBoolean(hostDetails.get(ApiConstants.PREPARE_VM));
+        if (!shouldPrepareVm) {
+            return;
+        }
+        PrepareExternalProvisioningCommand cmd = new PrepareExternalProvisioningCommand(virtualMachineTO);
+        cmd.setExternalDetails(externalDetails);
+        Answer answer = null;
+        try {
+            answer = _agentMgr.send(host.getId(), cmd);
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
+            logger.error("Failed PrepareExternalProvisioningCommand due to : {}", e.getMessage(), e);
+            return;
+        }
+        if (answer == null) {
+            logger.error("Invalid answer received for PrepareExternalProvisioningCommand");
+            return;
+        }
+        if (!(answer instanceof PrepareExternalProvisioningAnswer)) {
+            logger.error("Unexpected answer received for PrepareExternalProvisioningCommand: [result: {}, details: {}]",
+                    answer.getResult(), answer.getDetails());
+            return;
+        }
+        PrepareExternalProvisioningAnswer prepareAnswer = (PrepareExternalProvisioningAnswer)answer;
+        updateExternalVm(virtualMachineTO, prepareAnswer.getVirtualMachineTO());
+    }
+
     @Override
     public void orchestrateStart(final String vmUuid, final Map<VirtualMachineProfile.Param, Object> params, final DeploymentPlan planToDeploy, final DeploymentPlanner planner)
             throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
@@ -1334,6 +1400,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     handlePath(vmTO.getDisks(), vm.getHypervisorType());
                     setVmNetworkDetails(vm, vmTO);
 
+                    processPrepareExternalProvisioning(dest.getHost(), vmTO);
 
                     Commands cmds = new Commands(Command.OnError.Stop);
                     final Map<String, String> sshAccessDetails = _networkMgr.getSystemVMAccessDetails(vm);
