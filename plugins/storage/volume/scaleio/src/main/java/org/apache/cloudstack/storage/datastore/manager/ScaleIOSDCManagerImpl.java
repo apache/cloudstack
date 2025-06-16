@@ -207,7 +207,7 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
         Map<String, String> details = new HashMap<>();
         details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
         details.put(ScaleIOGatewayClient.STORAGE_POOL_MDMS, mdms);
-        details.put(MdmsChangeApplyTimeout.key(), String.valueOf(MdmsChangeApplyTimeout.value()));
+        details.put(MdmsChangeApplyTimeout.key(), String.valueOf(MdmsChangeApplyTimeout.valueIn(host.getDataCenterId())));
 
         PrepareStorageClientCommand cmd = new PrepareStorageClientCommand(((PrimaryDataStore) dataStore).getPoolType(), dataStore.getUuid(), details);
         int timeoutSeconds = 60;
@@ -326,7 +326,7 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
         logger.debug(String.format("Unpreparing SDC on the host %s (%s)", host.getId(), host.getName()));
         Map<String,String> details = new HashMap<>();
         details.put(ScaleIOGatewayClient.STORAGE_POOL_MDMS, mdms);
-        details.put(MdmsChangeApplyTimeout.key(), String.valueOf(MdmsChangeApplyTimeout.value()));
+        details.put(MdmsChangeApplyTimeout.key(), String.valueOf(MdmsChangeApplyTimeout.valueIn(host.getDataCenterId())));
         UnprepareStorageClientCommand cmd = new UnprepareStorageClientCommand(((PrimaryDataStore) dataStore).getPoolType(), dataStore.getUuid(), details);
         int timeoutSeconds = 60;
         cmd.setWait(timeoutSeconds);
