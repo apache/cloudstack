@@ -66,7 +66,7 @@ public interface ExtensionsManager extends Manager {
 
     ExtensionResponse createExtensionResponse(Extension extension, EnumSet<ApiConstants.ExtensionDetails> viewDetails);
 
-    ExtensionResourceMap registerExtensionWithCluster(Cluster cluster, long extensionId, Map<String, String> externalDetails);
+    ExtensionResourceMap registerExtensionWithCluster(Cluster cluster, Extension extension, Map<String, String> externalDetails);
 
     void unregisterExtensionWithCluster(Cluster cluster, Long extensionId);
 

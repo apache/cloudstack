@@ -36,7 +36,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -67,6 +71,7 @@ import org.apache.cloudstack.framework.extensions.api.UnregisterExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.UpdateCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.UpdateExtensionCmd;
 import org.apache.cloudstack.framework.extensions.command.CleanupExtensionFilesCommand;
+import org.apache.cloudstack.framework.extensions.command.ExtensionRoutingUpdateCommand;
 import org.apache.cloudstack.framework.extensions.command.ExtensionServerActionBaseCommand;
 import org.apache.cloudstack.framework.extensions.command.GetExtensionEntryPointChecksumCommand;
 import org.apache.cloudstack.framework.extensions.command.PrepareExtensionEntryPointCommand;
@@ -411,6 +416,38 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         extensionDao.update(extensionId, extensionVO);
     }
 
+    protected void updateAllExtensionHosts(Extension extension, Long clusterId, boolean remove) {
+        List<Long> hostIds = new ArrayList<>();
+        List<Long> clusterIds = clusterId == null ?
+                extensionResourceMapDao.listResourceIdsByExtensionIdAndType(extension.getId(),
+                        ExtensionResourceMap.ResourceType.Cluster) :
+                Collections.singletonList(clusterId);
+        for (Long cId : clusterIds) {
+            hostIds.addAll(hostDao.listIdsByClusterId(cId));
+        }
+        if (CollectionUtils.isEmpty(hostIds)) {
+            return;
+        }
+        ConcurrentHashMap<Long, Future<Void>> futures = new ConcurrentHashMap<>();
+        ExecutorService executorService = Executors.newFixedThreadPool(3, new NamedThreadFactory("ExtensionHostUpdateWorker"));
+        for (Long hostId : hostIds) {
+            futures.put(hostId, executorService.submit(() -> {
+                ExtensionRoutingUpdateCommand cmd = new ExtensionRoutingUpdateCommand(extension, remove);
+                agentMgr.send(hostId, cmd);
+                return null;
+            }));
+        }
+        for (Map.Entry<Long, Future<Void>> entry: futures.entrySet()) {
+            try {
+                entry.getValue().get();
+            } catch (InterruptedException | ExecutionException e) {
+                logger.error(String.format("Error during updating %s for host: %d due to : %s",
+                        extension, entry.getKey(), e.getMessage()), e);
+            }
+        }
+        executorService.shutdown();
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_EXTENSION_CREATE, eventDescription = "creating extension")
     public Extension createExtension(CreateExtensionCmd cmd) {
@@ -570,12 +607,15 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             }
             return extensionVO;
         });
-        if (StringUtils.isNotBlank(stateStr) && Extension.State.Enabled.equals(result.getState()) &&
+        if (StringUtils.isNotBlank(stateStr)) {
+            if (Extension.State.Enabled.equals(result.getState()) &&
                 !prepareExtensionEntryPointAcrossServers(result)) {
-            disableExtension(result.getId());
-            throw new CloudRuntimeException(String.format(
-                    "Failed to enable extension: %s as it entry-point is not ready",
-                    extensionVO.getName()));
+                disableExtension(result.getId());
+                throw new CloudRuntimeException(String.format(
+                        "Failed to enable extension: %s as it entry-point is not ready",
+                        extensionVO.getName()));
+            }
+            updateAllExtensionHosts(extensionVO, null, false);
         }
         return result;
     }
@@ -623,13 +663,17 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         if (clusterVO == null) {
             throw new InvalidParameterValueException("Invalid cluster ID specified");
         }
-        ExtensionResourceMap extensionResourceMap = registerExtensionWithCluster(clusterVO, extensionId, cmd.getDetails());
+        ExtensionVO extension = extensionDao.findById(extensionId);
+        if (extension == null) {
+            throw new InvalidParameterValueException("Invalid extension specified");
+        }
+        ExtensionResourceMap extensionResourceMap = registerExtensionWithCluster(clusterVO, extension, cmd.getDetails());
         return extensionDao.findById(extensionResourceMap.getExtensionId());
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_EXTENSION_RESOURCE_REGISTER, eventDescription = "registering extension resource")
-    public ExtensionResourceMap registerExtensionWithCluster(Cluster cluster, long extensionId,
+    public ExtensionResourceMap registerExtensionWithCluster(Cluster cluster, Extension extension,
                   Map<String, String> details) {
         if (!Hypervisor.HypervisorType.External.equals(cluster.getHypervisorType())) {
             throw new CloudRuntimeException(
@@ -642,8 +686,8 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         if (existing != null) {
             throw new CloudRuntimeException("Extension already registered with this resource");
         }
-        return Transaction.execute((TransactionCallbackWithException<ExtensionResourceMap, CloudRuntimeException>) status -> {
-            ExtensionResourceMapVO extensionMap = new ExtensionResourceMapVO(extensionId, cluster.getId(), resourceType);
+        ExtensionResourceMap result = Transaction.execute((TransactionCallbackWithException<ExtensionResourceMap, CloudRuntimeException>) status -> {
+            ExtensionResourceMapVO extensionMap = new ExtensionResourceMapVO(extension.getId(), cluster.getId(), resourceType);
             ExtensionResourceMapVO savedExtensionMap = extensionResourceMapDao.persist(extensionMap);
             List<ExtensionResourceMapDetailsVO> detailsVOList = new ArrayList<>();
             if (MapUtils.isNotEmpty(details)) {
@@ -655,6 +699,8 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             }
             return extensionMap;
         });
+        updateAllExtensionHosts(extension, cluster.getId(), false);
+        return result;
     }
 
     @Override
@@ -673,6 +719,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_EXTENSION_RESOURCE_UNREGISTER, eventDescription = "unregistering extension resource")
     public void unregisterExtensionWithCluster(Cluster cluster, Long extensionId) {
         ExtensionResourceMapVO existing = extensionResourceMapDao.findByResourceIdAndType(cluster.getId(),
                 ExtensionResourceMap.ResourceType.Cluster);
@@ -681,6 +728,10 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         }
         extensionResourceMapDao.remove(existing.getId());
         extensionResourceMapDetailsDao.removeDetails(existing.getId());
+        ExtensionVO extensionVO = extensionDao.findById(extensionId);
+        if (extensionVO != null) {
+            updateAllExtensionHosts(extensionVO, cluster.getId(), true);
+        }
     }
 
     @Override

@@ -18,8 +18,6 @@ package com.cloud.hypervisor;
 
 import java.util.Map;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.PostExternalProvisioningAnswer;
 import com.cloud.agent.api.PostExternalProvisioningCommand;
@@ -62,6 +60,4 @@ public interface ExternalProvisioner extends Manager {
     Map<String, HostVmStateReportEntry> getHostVmStateReport(long hostId, String extensionName, String extensionRelativeEntryPoint);
 
     RunCustomActionAnswer runCustomAction(String hostGuid, String extensionName, String extensionRelativeEntryPoint, RunCustomActionCommand cmd);
-
-    Answer checkHealth(String hostGuid, String extensionName, String extensionRelativeEntryPoint, CheckHealthCommand cmd);
 }

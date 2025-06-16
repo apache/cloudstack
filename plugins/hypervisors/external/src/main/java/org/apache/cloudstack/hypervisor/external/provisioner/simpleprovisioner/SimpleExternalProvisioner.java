@@ -47,8 +47,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.PostExternalProvisioningAnswer;
 import com.cloud.agent.api.PostExternalProvisioningCommand;
@@ -204,7 +202,7 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
                  String extensionName, String extensionRelativeEntryPoint, PrepareExternalProvisioningCommand cmd) {
         String extensionPath = getExtensionCheckedEntryPointPath(extensionName, extensionRelativeEntryPoint);
         if (StringUtils.isEmpty(extensionPath)) {
-            return new PrepareExternalProvisioningAnswer(cmd, "Extension not configured", false);
+            return new PrepareExternalProvisioningAnswer(cmd, false, "Extension not configured");
         }
         VirtualMachineTO vmTO = cmd.getVirtualMachineTO();
         String vmUUID = vmTO.getUuid();
@@ -216,10 +214,10 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
         Pair<Boolean, String> result = prepareExternalProvisioningInternal(prepareExternalScript, vmUUID, accessDetails, cmd.getWait());
         String output = result.second();
         if (!result.first()) {
-            return new PrepareExternalProvisioningAnswer(cmd, output, false);
+            return new PrepareExternalProvisioningAnswer(cmd, false, output);
         }
         if (StringUtils.isEmpty(output)) {
-            return new PrepareExternalProvisioningAnswer(cmd, "", true);
+            return new PrepareExternalProvisioningAnswer(cmd, true, "");
         }
         Map<String, String> resultMap = null;
         try {
@@ -647,16 +645,6 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
             logger.error("{}: External operation failed", errorLogPrefix, e);
             throw new CloudRuntimeException(String.format("%s: External operation failed", errorLogPrefix), e);
         }
-    }
-
-    @Override
-    public Answer checkHealth(String hostGuid, String extensionName, String extensionRelativeEntryPoint, CheckHealthCommand cmd) {
-        String extensionPath = getExtensionCheckedEntryPointPath(extensionName, extensionRelativeEntryPoint);
-        if (StringUtils.isEmpty(extensionPath)) {
-            return new Answer(cmd, false, "Extension not configured");
-        }
-        // ToDo: should we check with provisioner script?
-        return new Answer(cmd);
     }
 
     private String prepareExternalPayload(String extensionName, Map<String, Object> details) throws IOException {

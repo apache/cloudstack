@@ -21,10 +21,15 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.extension.Extension;
+import org.apache.cloudstack.framework.extensions.command.ExtensionRoutingUpdateCommand;
 import org.apache.cloudstack.hypervisor.external.provisioner.simpleprovisioner.SimpleExternalProvisioner;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CheckHealthAnswer;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckNetworkAnswer;
 import com.cloud.agent.api.CheckNetworkCommand;
@@ -63,7 +68,8 @@ import com.cloud.resource.ServerResource;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentContext;
 
-public class ExternalResourceBase implements ServerResource {
+public class ExternalResource implements ServerResource {
+    protected Logger logger = LogManager.getLogger(getClass());
     protected static final int CPU = 4;
     protected static final long CPU_SPEED = 4000L;
     protected static final long RAM = 16000 * 1024 * 1024L;
@@ -83,12 +89,17 @@ public class ExternalResourceBase implements ServerResource {
 
     private String extensionName;
     private String extensionRelativeEntryPoint;
+    private Extension.State extensionState;
 
-    protected boolean isExtensionConnected() {
-        return StringUtils.isNoneBlank(extensionName, extensionRelativeEntryPoint);
+    protected boolean isExtensionDisconnected() {
+        return StringUtils.isAnyBlank(extensionName, extensionRelativeEntryPoint);
     }
 
-    public ExternalResourceBase() {
+    protected boolean isExtensionNotEnabled() {
+        return !Extension.State.Enabled.equals(extensionState);
+    }
+
+    public ExternalResource() {
         type = Host.Type.Routing;
     }
 
@@ -110,13 +121,13 @@ public class ExternalResourceBase implements ServerResource {
         cmd.setPrivateIpAddress(Hypervisor.HypervisorType.External.toString());
         cmd.setGuid(guid);
         cmd.setIqn(guid);
-        cmd.setVersion(ExternalResourceBase.class.getPackage().getImplementationVersion());
+        cmd.setVersion(ExternalResource.class.getPackage().getImplementationVersion());
         return new StartupCommand[] {cmd};
     }
 
     @Override
     public PingCommand getCurrentStatus(long id) {
-        if (isExtensionConnected()) {
+        if (isExtensionDisconnected()) {
             return null;
         }
         final Map<String, HostVmStateReportEntry> vmStates = externalProvisioner.getHostVmStateReport(id, extensionName,
@@ -127,11 +138,22 @@ public class ExternalResourceBase implements ServerResource {
     @Override
     public Answer executeRequest(Command cmd) {
         try {
-            if (cmd instanceof CheckNetworkCommand) {
-                return new CheckNetworkAnswer((CheckNetworkCommand) cmd, true, "Network Setup check by names is done");
-            }
-            if (cmd instanceof ReadyCommand) {
-                return new ReadyAnswer((ReadyCommand) cmd);
+            if (cmd instanceof ExtensionRoutingUpdateCommand) {
+                return execute((ExtensionRoutingUpdateCommand)cmd);
+            } else if (cmd instanceof PingTestCommand) {
+                return execute((PingTestCommand) cmd);
+            } else if (cmd instanceof ReadyCommand) {
+                return execute((ReadyCommand)cmd);
+            } else if (cmd instanceof CheckHealthCommand) {
+                return execute((CheckHealthCommand) cmd);
+            } else if (cmd instanceof CheckNetworkCommand) {
+                return execute((CheckNetworkCommand)cmd);
+            }else if (cmd instanceof CleanupNetworkRulesCmd) {
+                return execute((CleanupNetworkRulesCmd) cmd);
+            } else if (cmd instanceof GetVmStatsCommand) {
+                return execute((GetVmStatsCommand) cmd);
+            } else if (cmd instanceof MaintainCommand) {
+                return execute((MaintainCommand) cmd);
             } else if (cmd instanceof StartCommand) {
                 return execute((StartCommand) cmd);
             } else if (cmd instanceof StopCommand) {
@@ -142,16 +164,6 @@ public class ExternalResourceBase implements ServerResource {
                 return execute((PrepareExternalProvisioningCommand) cmd);
             } else if (cmd instanceof GetHostStatsCommand) {
                 return execute((GetHostStatsCommand) cmd);
-            } else if (cmd instanceof PingTestCommand) {
-                return execute((PingTestCommand) cmd);
-            } else if (cmd instanceof MaintainCommand) {
-                return execute((MaintainCommand) cmd);
-            } else if (cmd instanceof CheckHealthCommand) {
-                return execute((CheckHealthCommand) cmd);
-            } else if (cmd instanceof CleanupNetworkRulesCmd) {
-                return execute((CleanupNetworkRulesCmd) cmd);
-            } else if (cmd instanceof GetVmStatsCommand) {
-                return execute((GetVmStatsCommand) cmd);
             } else if (cmd instanceof RunCustomActionCommand) {
                 return execute((RunCustomActionCommand) cmd);
             } else {
@@ -162,26 +174,95 @@ public class ExternalResourceBase implements ServerResource {
         }
     }
 
+    protected String logAndGetExtensionNotConnectedOrDisabledError() {
+        if (isExtensionDisconnected()) {
+            logger.error("Extension not connected to host: {}", name);
+            return "Extension not connected";
+        }
+        logger.error("Extension: {} connected to host: {} is not in Enabled state", extensionName, name);
+        return "Extension is disabled";
+    }
+
+    private Answer execute(ExtensionRoutingUpdateCommand cmd) {
+        if (StringUtils.isNotBlank(extensionName) && !extensionName.equals(cmd.getExtensionName())) {
+            return new Answer(cmd, false, "Not same extension");
+        }
+        if (cmd.isRemoved()) {
+            extensionName = null;
+            extensionRelativeEntryPoint = null;
+            extensionState = Extension.State.Disabled;
+            return new Answer(cmd);
+        }
+        extensionName = cmd.getExtensionName();
+        extensionRelativeEntryPoint = cmd.getExtensionRelativeEntryPointPath();
+        extensionState = cmd.getExtensionState();
+        return new Answer(cmd);
+    }
+
     private Answer execute(PingTestCommand cmd) {
         return new Answer(cmd);
     }
 
+    private Answer execute(ReadyCommand cmd) {
+        if (isExtensionDisconnected()) {
+            return new ReadyAnswer(cmd, logAndGetExtensionNotConnectedOrDisabledError());
+        }
+        return new ReadyAnswer(cmd);
+    }
+
+    private Answer execute(CheckHealthCommand cmd) {
+        if (isExtensionDisconnected()) {
+            logAndGetExtensionNotConnectedOrDisabledError();
+        }
+        return new CheckHealthAnswer(cmd, !isExtensionDisconnected());
+    }
+
+    private Answer execute(CheckNetworkCommand cmd) {
+        if (isExtensionDisconnected()) {
+            return new CheckNetworkAnswer(cmd, false, logAndGetExtensionNotConnectedOrDisabledError());
+        }
+        return new CheckNetworkAnswer(cmd, true, "Network Setup check by names is done");
+    }
+
+    private Answer execute(CleanupNetworkRulesCmd cmd) {
+        if (isExtensionDisconnected()) {
+            return new Answer(cmd, false, logAndGetExtensionNotConnectedOrDisabledError());
+        }
+        return new Answer(cmd, false, "Not supported");
+    }
+
+    private Answer execute(GetVmStatsCommand cmd) {
+        if (isExtensionDisconnected()) {
+            return new Answer(cmd, false, logAndGetExtensionNotConnectedOrDisabledError());
+        }
+        return new Answer(cmd, false, "Not supported");
+    }
+
     private MaintainAnswer execute(MaintainCommand cmd) {
+        if (isExtensionDisconnected()) {
+            return new MaintainAnswer(cmd, false, logAndGetExtensionNotConnectedOrDisabledError());
+        }
         return new MaintainAnswer(cmd, false);
     }
 
-    public RunCustomActionAnswer execute(RunCustomActionCommand cmd) {
-        return externalProvisioner.runCustomAction(guid, extensionName, extensionRelativeEntryPoint, cmd);
+    public GetHostStatsAnswer execute(GetHostStatsCommand cmd) {
+        if (isExtensionDisconnected()) {
+            logAndGetExtensionNotConnectedOrDisabledError();
+        }
+        return new GetHostStatsAnswer(cmd, null);
     }
 
-    public Answer execute(Command cmd) {
-        RunCustomActionCommand runCustomActionCommand = new RunCustomActionCommand(cmd.toString());
-        RunCustomActionAnswer customActionAnswer = externalProvisioner.runCustomAction(guid, extensionName,
-                extensionRelativeEntryPoint, runCustomActionCommand);
-        return new Answer(cmd, customActionAnswer.getResult(), customActionAnswer.getDetails());
+    public StartAnswer execute(StartCommand cmd) {
+        if (isExtensionDisconnected() || isExtensionNotEnabled()) {
+            return new StartAnswer(cmd, logAndGetExtensionNotConnectedOrDisabledError());
+        }
+        return externalProvisioner.startInstance(guid, extensionName, extensionRelativeEntryPoint, cmd);
     }
 
     public StopAnswer execute(StopCommand cmd) {
+        if (isExtensionDisconnected() || isExtensionNotEnabled()) {
+            return new StopAnswer(cmd, logAndGetExtensionNotConnectedOrDisabledError(), false);
+        }
         if (cmd.isExpungeVM()) {
             return externalProvisioner.expungeInstance(guid, extensionName, extensionRelativeEntryPoint, cmd);
         }
@@ -189,35 +270,41 @@ public class ExternalResourceBase implements ServerResource {
     }
 
     public RebootAnswer execute(RebootCommand cmd) {
+        if (isExtensionDisconnected() || isExtensionNotEnabled()) {
+            return new RebootAnswer(cmd, logAndGetExtensionNotConnectedOrDisabledError(), false);
+        }
         return externalProvisioner.rebootInstance(guid, extensionName, extensionRelativeEntryPoint, cmd);
     }
 
-    public PostExternalProvisioningAnswer execute(PostExternalProvisioningCommand cmd) {
-        return externalProvisioner.postSetupInstance(guid, extensionName, extensionRelativeEntryPoint, cmd);
-    }
-
-    public GetHostStatsAnswer execute(GetHostStatsCommand cmd) {
-        return new GetHostStatsAnswer(cmd, null);
-    }
-
     public PrepareExternalProvisioningAnswer execute(PrepareExternalProvisioningCommand cmd) {
+        if (isExtensionDisconnected() || isExtensionNotEnabled()) {
+            return new PrepareExternalProvisioningAnswer(cmd, false, logAndGetExtensionNotConnectedOrDisabledError());
+        }
         return externalProvisioner.prepareExternalProvisioning(guid, extensionName, extensionRelativeEntryPoint, cmd);
     }
 
-    public StartAnswer execute(StartCommand cmd) {
-        return externalProvisioner.startInstance(guid, extensionName, extensionRelativeEntryPoint, cmd);
+    public PostExternalProvisioningAnswer execute(PostExternalProvisioningCommand cmd) {
+        if (isExtensionDisconnected() || isExtensionNotEnabled()) {
+            return new PostExternalProvisioningAnswer(cmd, false, logAndGetExtensionNotConnectedOrDisabledError());
+        }
+        return externalProvisioner.postSetupInstance(guid, extensionName, extensionRelativeEntryPoint, cmd);
     }
 
-    private Answer execute(CheckHealthCommand cmd) {
-        return externalProvisioner.checkHealth(guid, extensionName, extensionRelativeEntryPoint, cmd);
+    public RunCustomActionAnswer execute(RunCustomActionCommand cmd) {
+        if (isExtensionDisconnected() || isExtensionNotEnabled()) {
+            return new RunCustomActionAnswer(cmd, false, logAndGetExtensionNotConnectedOrDisabledError());
+        }
+        return externalProvisioner.runCustomAction(guid, extensionName, extensionRelativeEntryPoint, cmd);
     }
 
-    private Answer execute(CleanupNetworkRulesCmd cmd) {
-        return new Answer(cmd, false, "Not supported");
-    }
-
-    private Answer execute(GetVmStatsCommand cmd) {
-        return new Answer(cmd, false, "Not supported");
+    public Answer execute(Command cmd) {
+        if (isExtensionDisconnected() || isExtensionNotEnabled()) {
+            return new Answer(cmd, false, logAndGetExtensionNotConnectedOrDisabledError());
+        }
+        RunCustomActionCommand runCustomActionCommand = new RunCustomActionCommand(cmd.toString());
+        RunCustomActionAnswer customActionAnswer = externalProvisioner.runCustomAction(guid, extensionName,
+                extensionRelativeEntryPoint, runCustomActionCommand);
+        return new Answer(cmd, customActionAnswer.getResult(), customActionAnswer.getDetails());
     }
 
     @Override
@@ -269,14 +356,14 @@ public class ExternalResourceBase implements ServerResource {
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         externalProvisioner = ComponentContext.inject(SimpleExternalProvisioner.class);
         externalProvisioner.configure(name, params);
-        dcId = (String) params.get("zone");
-        pod = (String) params.get("pod");
-        cluster = (String) params.get("cluster");
-        this.name = (String)params.get("name");
-        guid = (String) params.get("guid");
-        url = (String) params.get("url");
-        extensionName = (String) params.get("extensionName");
-        extensionRelativeEntryPoint = (String) params.get("extensionRelativeEntryPoint");
+        dcId = (String)params.get("zone");
+        pod = (String)params.get("pod");
+        cluster = (String)params.get("cluster");
+        this.name = name;
+        guid = (String)params.get("guid");
+        extensionName = (String)params.get("extensionName");
+        extensionRelativeEntryPoint = (String)params.get("extensionRelativeEntryPoint");
+        extensionState = (Extension.State)params.get("extensionState");
         return true;
     }
 

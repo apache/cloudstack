@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,18 +14,21 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
 
-package com.cloud.agent.api;
+package org.apache.cloudstack.framework.extensions.command;
 
-public class CheckHealthCommand extends Command {
+import org.apache.cloudstack.extension.Extension;
 
-    public CheckHealthCommand() {
-        setWait(50);
+public class ExtensionRoutingUpdateCommand extends ExtensionBaseCommand {
+
+    final boolean removed;
+
+    public ExtensionRoutingUpdateCommand(Extension extension, boolean removed) {
+        super(extension);
+        this.removed = removed;
     }
 
-    @Override
-    public boolean executeInSequence() {
-        return false;
+    public boolean isRemoved() {
+        return removed;
     }
 }

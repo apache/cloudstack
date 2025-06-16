@@ -17,16 +17,8 @@
 
 package org.apache.cloudstack.agent.manager;
 
-import org.apache.cloudstack.hypervisor.external.resource.ExternalResourceBase;
 import com.cloud.utils.component.Manager;
 
-import javax.naming.ConfigurationException;
-import java.util.Map;
-
 public interface ExternalAgentManager extends Manager {
-
-    boolean configure(String name, Map<String, Object> params) throws ConfigurationException;
-
-    Map<ExternalResourceBase, Map<String, String>> createServerResources(Map<String, Object> params);
 
 }
