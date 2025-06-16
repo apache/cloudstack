@@ -55,3 +55,6 @@ webapp.dir=/usr/share/cloudstack-management/webapp
 
 # The path to access log file
 access.log=/var/log/cloudstack/management/access.log
+
+# The path for extensions data directory where payload data will be kept
+extensions.data.root=@EXTENSIONSDATAROOTDIR@
