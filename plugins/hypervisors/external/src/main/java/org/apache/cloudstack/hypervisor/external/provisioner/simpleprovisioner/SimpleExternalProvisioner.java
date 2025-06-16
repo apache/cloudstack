@@ -668,6 +668,9 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
                 logger.error("{}: File is not executable: {}", errorLogPrefix, executablePath);
                 return new Pair<>(false, "File is not executable");
             }
+            if (wait == 0) {
+                wait = AgentManager.Wait.value();
+            }
             List<String> command = new ArrayList<>();
             command.add(executablePath.toString());
             command.add(action);
