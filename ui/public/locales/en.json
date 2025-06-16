@@ -1005,7 +1005,7 @@
 "label.for": "for",
 "label.forbidden": "Forbidden",
 "label.forced": "Force",
-"label.force.ms.to.import.vm.files": "Force MS to export OVF from VMware to temporary storage",
+"label.force.ms.to.import.vm.files": "Enable to force Management Server to export OVF from VMware to temporary storage. Disable to use KVM Host ovftool (if installed)",
 "label.force.stop": "Force stop",
 "label.force.reboot": "Force reboot",
 "label.forceencap": "Force UDP encapsulation of ESP packets",
