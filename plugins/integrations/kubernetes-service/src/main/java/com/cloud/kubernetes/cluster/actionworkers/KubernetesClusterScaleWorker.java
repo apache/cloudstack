@@ -532,8 +532,8 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         }
         scaleTimeoutTime = System.currentTimeMillis() + KubernetesClusterService.KubernetesClusterScaleTimeout.value() * 1000;
         final long originalClusterSize = kubernetesCluster.getNodeCount();
-        boolean hasDefaultOffering = serviceOfferingNodeTypeMap.containsKey(DEFAULT.name());
-        if (hasDefaultOffering) {
+        boolean scaleClusterDefaultOffering = serviceOfferingNodeTypeMap.containsKey(DEFAULT.name());
+        if (scaleClusterDefaultOffering) {
             final ServiceOffering existingServiceOffering = serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId());
             final ServiceOffering existingControlOffering = serviceOfferingDao.findById(kubernetesCluster.getControlNodeServiceOfferingId());
             final ServiceOffering existingWorkerOffering = serviceOfferingDao.findById(kubernetesCluster.getWorkerNodeServiceOfferingId());
@@ -548,14 +548,17 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         for (KubernetesClusterNodeType nodeType : Arrays.asList(CONTROL, ETCD, WORKER)) {
             boolean isWorkerNodeOrAllNodes = WORKER == nodeType;
             final long newVMRequired = (!isWorkerNodeOrAllNodes || clusterSize == null) ? 0 : clusterSize - originalClusterSize;
-            if (!hasDefaultOffering && !serviceOfferingNodeTypeMap.containsKey(nodeType.name()) && newVMRequired == 0) {
+            if (!scaleClusterDefaultOffering && !serviceOfferingNodeTypeMap.containsKey(nodeType.name()) && newVMRequired == 0) {
                 continue;
             }
 
+            Long existingNodeTypeOfferingId = getKubernetesClusterNodeTypeOfferingId(kubernetesCluster, nodeType);
+            boolean clusterHasExistingOfferingForNodeType = existingNodeTypeOfferingId != null;
             boolean serviceOfferingScalingNeeded = isServiceOfferingScalingNeededForNodeType(nodeType, serviceOfferingNodeTypeMap, kubernetesCluster);
             ServiceOffering serviceOffering = serviceOfferingNodeTypeMap.getOrDefault(nodeType.name(), defaultServiceOffering);
-            boolean updateNodeOffering = serviceOfferingNodeTypeMap.containsKey(nodeType.name());
-            boolean updateClusterOffering = isWorkerNodeOrAllNodes && hasDefaultOffering;
+            boolean updateNodeOffering = serviceOfferingNodeTypeMap.containsKey(nodeType.name()) ||
+                    scaleClusterDefaultOffering && clusterHasExistingOfferingForNodeType;
+            boolean updateClusterOffering = isWorkerNodeOrAllNodes && scaleClusterDefaultOffering;
             if (isWorkerNodeOrAllNodes && autoscalingChanged) {
                 boolean autoScaled = autoscaleCluster(this.isAutoscalingEnabled, minSize, maxSize);
                 if (autoScaled && serviceOfferingScalingNeeded) {
@@ -582,6 +585,17 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
 
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
         return true;
+    }
+
+    private Long getKubernetesClusterNodeTypeOfferingId(KubernetesCluster kubernetesCluster, KubernetesClusterNodeType nodeType) {
+        if (nodeType == WORKER) {
+            return kubernetesCluster.getWorkerNodeServiceOfferingId();
+        } else if (nodeType == ETCD) {
+            return kubernetesCluster.getEtcdNodeServiceOfferingId();
+        } else if (nodeType == CONTROL) {
+            return kubernetesCluster.getControlNodeServiceOfferingId();
+        }
+        return null;
     }
 
     protected boolean isServiceOfferingScalingNeededForNodeType(KubernetesClusterNodeType nodeType,
