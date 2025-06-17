@@ -33,7 +33,7 @@ public class PrepareExternalProvisioningAnswer extends Answer {
         this.serverDetails = serverDetails;
     }
 
-    public PrepareExternalProvisioningAnswer(PrepareExternalProvisioningCommand cmd, String details, boolean success) {
+    public PrepareExternalProvisioningAnswer(PrepareExternalProvisioningCommand cmd, boolean success, String details) {
         super(cmd, success, details);
     }
 

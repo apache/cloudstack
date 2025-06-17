@@ -19,10 +19,10 @@
   <div>
     <div class="input-row">
       <a-form-item no-style>
-        <a-input v-model:value="newKey" placeholder="Key" class="input-field" />
+        <a-input v-model:value="newKey" :placeholder="$t('label.key')" class="input-field" />
       </a-form-item>
       <a-form-item no-style>
-        <a-input v-model:value="newValue" placeholder="Value" class="input-field" />
+        <a-input v-model:value="newValue" :placeholder="$t('label.value')" class="input-field" />
       </a-form-item>
       <a-button type="primary" class="add-button" @click="addEntry" :disabled="!newKey || !newValue">
         Add
@@ -87,9 +87,9 @@ export default {
   data () {
     return {
       columns: [
-        { title: 'Key', dataIndex: 'key', key: 'key', width: '40%' },
-        { title: 'Value', dataIndex: 'value', key: 'value', width: '40%' },
-        { title: 'Action', key: 'action', width: '20%' }
+        { title: this.$t('label.key'), dataIndex: 'key', key: 'key', width: '40%' },
+        { title: this.$t('label.value'), dataIndex: 'value', key: 'value', width: '40%' },
+        { title: this.$t('label.actions'), key: 'action', width: '20%' }
       ],
       newKey: '',
       newValue: '',

@@ -114,6 +114,9 @@
                   }"/>
               </a-tooltip>
           </span>
+          <span v-if="$route.path.startsWith('/xaas') && !record.isuserdefined" style="padding-left: 10px;">
+            <a-tag :color="this.$config.theme['@link-color']">{{ $t('label.inbuilt') }}</a-tag>
+          </span>
         </span>
       </template>
       <template v-if="column.key === 'templatetype'">
@@ -273,8 +276,8 @@
       <template v-if="column.key === 'agentstate'">
         <status :text="text ? text : ''" displayText />
       </template>
-      <template v-if="column.key === 'entrypointsync'">
-        <status :text="text ? 'Yes' : 'No'" displayText />
+      <template v-if="column.key === 'entrypointstate'">
+        <status :text="text ? text : ''" displayText :styles="{ 'min-width': '80px' }" />
       </template>
       <template v-if="column.key === 'cpunumber'">
         <span>{{ record.serviceofferingdetails?.mincpunumber && record.serviceofferingdetails?.maxcpunumber ? `${record.serviceofferingdetails.mincpunumber} - ${record.serviceofferingdetails.maxcpunumber}` : record.cpunumber }}</span>

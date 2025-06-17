@@ -2250,11 +2250,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         HostVO host = _hostDao.findById(dest.getHost().getId());
         PrepareExternalProvisioningCommand command = new PrepareExternalProvisioningCommand(vmTO, host.getClusterId());
-        Map<String, Object> externalDetails = extensionsManager.getExternalAccessDetails(host);
-        Map<String, String> vmExternalDetails = vmTO.getExternalDetails();
-        if (MapUtils.isNotEmpty(vmExternalDetails)) {
-            externalDetails.put(ApiConstants.VIRTUAL_MACHINE_ID, vmExternalDetails);
-        }
+        Map<String, Object> externalDetails = extensionsManager.getExternalAccessDetails(host, vmTO.getExternalDetails());
         command.setExternalDetails(externalDetails);
         final PrepareExternalProvisioningAnswer prepareExternalProvisioningAnswer;
         try {

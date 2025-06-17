@@ -61,14 +61,12 @@
             </a-form-item>
           </a-col>
           <a-col :span="12">
-            <a-form-item
-              no-style
-            >
-              <tooltip-label :title="$t('label.format')" />
+            <a-form-item no-style>
+              <tooltip-label :title="$t('label.validationformat')" :tooltip="$t('message.desc.validationformat')" />
               <a-select
                 :disabled="!['NUMBER', 'STRING'].includes(newParam.type)"
-                v-model:value="newParam.format"
-                :placeholder="$t('label.format')"
+                v-model:value="newParam.validationformat"
+                :placeholder="$t('message.desc.validationformat')"
                 class="input-field"
               >
                 <a-select-option
@@ -83,15 +81,12 @@
           </a-col>
           <!-- Row 3 -->
           <a-col :span="24">
-            <a-form-item
-              :label="$t('label.options')"
-              no-style
-            >
-              <tooltip-label :title="$t('label.options')" />
+            <a-form-item no-style>
+              <tooltip-label :title="$t('label.valueoptions')" :tooltip="$t('message.desc.valueoptions')" />
               <a-input
                 :disabled="!['NUMBER', 'STRING'].includes(newParam.type)"
-                v-model:value="newParam.options"
-                :placeholder="$t('label.options')"
+                v-model:value="newParam.valueoptions"
+                :placeholder="$t('message.desc.valueoptions')"
                 class="input-field"
               />
             </a-form-item>
@@ -144,12 +139,12 @@
             </a-select>
           </a-form-item>
           <a-form-item no-style>
-            <a-select v-if="column.key === 'format'" :disabled="!['NUMBER', 'STRING'].includes(editBuffer.type)" v-model:value="editBuffer.format">
+            <a-select v-if="column.key === 'validationformat'" :disabled="!['NUMBER', 'STRING'].includes(editBuffer.type)" v-model:value="editBuffer.validationformat">
               <a-select-option v-for="t in editBufferFormats" :key="t" :value="t">{{ t }}</a-select-option>
             </a-select>
           </a-form-item>
           <a-form-item no-style>
-            <a-input v-if="column.key === 'options'" :disabled="!['NUMBER', 'STRING'].includes(editBuffer.type)" v-model:value="editBuffer.options" />
+            <a-input v-if="column.key === 'valueoptions'" :disabled="!['NUMBER', 'STRING'].includes(editBuffer.type)" v-model:value="editBuffer.valueoptions" />
           </a-form-item>
           <a-form-item no-style>
             <a-checkbox v-if="column.key === 'required'" v-model:checked="editBuffer.required" />
@@ -189,12 +184,12 @@ export default {
     return {
       newParam: {},
       columns: [
-        { title: 'Name', dataIndex: 'name', key: 'name', width: '20%' },
-        { title: 'Type', dataIndex: 'type', key: 'type', width: '15%' },
-        { title: 'Format', dataIndex: 'format', key: 'format', width: '15%' },
-        { title: 'Options', dataIndex: 'options', key: 'options', width: '25%' },
-        { title: 'Required', dataIndex: 'required', key: 'required', width: '10%' },
-        { title: 'Action', key: 'action', width: '15%' }
+        { title: this.$t('label.name'), dataIndex: 'name', key: 'name', width: '20%' },
+        { title: this.$t('label.type'), dataIndex: 'type', key: 'type', width: '15%' },
+        { title: this.$t('label.validationformat'), dataIndex: 'validationformat', key: 'validationformat', width: '15%' },
+        { title: this.$t('label.valueoptions'), dataIndex: 'valueoptions', key: 'valueoptions', width: '25%' },
+        { title: this.$t('label.required'), dataIndex: 'required', key: 'required', width: '10%' },
+        { title: this.$t('label.actions'), key: 'actions', width: '15%' }
       ],
       tableData: [],
       editBuffer: null
@@ -239,8 +234,8 @@ export default {
       return formats
     },
     resetFormatAndOptions (obj) {
-      delete obj.format
-      delete obj.options
+      delete obj.validationformat
+      delete obj.valueoptions
     },
     onNewParamTypeChange () {
       this.resetFormatAndOptions(this.newParam)
@@ -273,18 +268,18 @@ export default {
     saveEdit (record) {
       if (!this.editBuffer) return
       Object.assign(record, this.editBuffer)
-      if (!this.editBuffer.format) {
-        delete record.format
+      if (!this.editBuffer.validationformat) {
+        delete record.validationformat
       }
-      if (!this.editBuffer.options) {
-        delete record.options
+      if (!this.editBuffer.valueoptions) {
+        delete record.valueoptions
       }
       record.editing = false
       this.updateData()
       this.editBuffer = {}
     },
     updateData () {
-      const data = this.tableData.map(({ name, type, format, options, required }) => ({ name, type, format, options, required }))
+      const data = this.tableData.map(({ name, type, validationformat, valueoptions, required }) => ({ name, type, validationformat, valueoptions, required }))
       this.$emit('update:value', data)
     }
   }

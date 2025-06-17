@@ -62,7 +62,7 @@
         <template #label>
           <tooltip-label :title="$t('label.details')" :tooltip="apiParams.details.description"/>
         </template>
-        <div style="margin-bottom: 10px">{{ $t('message.add.external.details') }}</div>
+        <div style="margin-bottom: 10px">{{ $t('message.add.extension.resource.details') }}</div>
         <details-input
           v-model:value="form.details" />
       </a-form-item>

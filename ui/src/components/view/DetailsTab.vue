@@ -127,7 +127,7 @@
           <div v-else-if="item === 'usersource'">
             {{ $t(getUserSourceLabel(dataResource[item])) }}
           </div>
-          <div v-else-if="item === 'roles' && Array.isArray(dataResource[item])">
+          <div v-else-if="item === 'allowedroletypes' && Array.isArray(dataResource[item])">
             {{ dataResource[item].join(', ') }}
           </div>
           <div v-else>{{ dataResource[item] }}</div>
@@ -177,7 +177,7 @@
           </div>
         </div>
       </a-list-item>
-      <a-list-item v-else-if="item === 'parameters' && ['extca'].includes($route.meta.name)">
+      <a-list-item v-else-if="item === 'parameters' && ['extca'].includes($route.meta.name) && Array.isArray(dataResource[item]) && dataResource[item].length > 0">
         <div>
           <strong>{{ $t('label.' + String(item).toLowerCase()) }}</strong>
           <br/>

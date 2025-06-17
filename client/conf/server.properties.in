@@ -58,3 +58,6 @@ access.log=/var/log/cloudstack/management/access.log
 
 # The path to the extensions directory
 extensions.file.path=@EXTENSIONSDIR@
+
+# The path for extensions data directory where payload data will be kept
+extensions.data.file.path=@EXTENSIONSDATADIR@

@@ -618,7 +618,7 @@
           </template>
           <a-switch v-model:checked="externalDetailsEnabled" @change="onExternalDetailsEnabledChange"/>
           <a-card v-if="externalDetailsEnabled" style="margin-top: 10px">
-            <div style="margin-bottom: 10px">{{ $t('message.add.external.details') }}</div>
+            <div style="margin-bottom: 10px">{{ $t('message.add.orchestrator.resource.details') }}</div>
             <details-input
               v-model:value="form.externaldetails" />
           </a-card>

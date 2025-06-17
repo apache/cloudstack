@@ -61,11 +61,11 @@ public class UpdateCustomActionCmd extends BaseCmd {
             description = "Type of the resource for actions")
     private String resourceType;
 
-    @Parameter(name = ApiConstants.ROLES,
+    @Parameter(name = ApiConstants.ALLOWED_ROLE_TYPES,
             type = CommandType.LIST,
             collectionType = CommandType.STRING,
-            description = "The list of allowed role types")
-    private List<String> roles;
+            description = "List of role types allowed for the action")
+    private List<String> allowedRoleTypes;
 
     @Parameter(name = ApiConstants.ENABLED,
             type = CommandType.BOOLEAN,
@@ -98,6 +98,11 @@ public class UpdateCustomActionCmd extends BaseCmd {
                     + "Example: Failed to complete {{actionName}} for {{extensionName")
     protected String errorMessage;
 
+    @Parameter(name = ApiConstants.TIMEOUT,
+            type = CommandType.INTEGER,
+            description = "Specifies the timeout in seconds to wait for the action to complete before failing. Default value is 3 seconds")
+    private Integer timeout;
+
     @Parameter(name = ApiConstants.DETAILS,
             type = CommandType.MAP,
             description = "Details in key/value pairs using format details[i].keyname=keyvalue. "
@@ -127,12 +132,8 @@ public class UpdateCustomActionCmd extends BaseCmd {
         return resourceType;
     }
 
-    public Boolean isEnabled() {
-        return enabled;
-    }
-
-    public List<String> getRoles() {
-        return roles;
+    public List<String> getAllowedRoleTypes() {
+        return allowedRoleTypes;
     }
 
     public Map getParametersMap() {
@@ -149,6 +150,14 @@ public class UpdateCustomActionCmd extends BaseCmd {
 
     public String getErrorMessage() {
         return errorMessage;
+    }
+
+    public Integer getTimeout() {
+        return timeout;
+    }
+
+    public Boolean isEnabled() {
+        return enabled;
     }
 
     public Map<String, String> getDetails() {

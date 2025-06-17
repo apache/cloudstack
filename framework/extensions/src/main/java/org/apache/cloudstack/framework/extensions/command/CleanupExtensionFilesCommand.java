@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,29 +14,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
-package com.cloud.agent.api;
 
-import java.util.Map;
+package org.apache.cloudstack.framework.extensions.command;
 
-public class PostExternalProvisioningAnswer extends Answer {
+import org.apache.cloudstack.extension.Extension;
 
-    Map<String, String> serverDetails;
+public class CleanupExtensionFilesCommand extends ExtensionServerActionBaseCommand {
 
-    public PostExternalProvisioningAnswer() {
-        super();
-    }
-
-    public PostExternalProvisioningAnswer(PostExternalProvisioningCommand cmd, Map<String, String> serverDetails, String details) {
-        super(cmd, true, details);
-        this.serverDetails = serverDetails;
-    }
-
-    public PostExternalProvisioningAnswer(PostExternalProvisioningCommand cmd, String details, boolean success) {
-        super(cmd, success, details);
-    }
-
-    public Map<String, String> getServerDetails() {
-        return serverDetails;
+    public CleanupExtensionFilesCommand(long msId, Extension extension) {
+        super(msId, extension);
     }
 }

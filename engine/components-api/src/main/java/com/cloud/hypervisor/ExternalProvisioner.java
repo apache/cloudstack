@@ -18,11 +18,7 @@ package com.cloud.hypervisor;
 
 import java.util.Map;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.HostVmStateReportEntry;
-import com.cloud.agent.api.PostExternalProvisioningAnswer;
-import com.cloud.agent.api.PostExternalProvisioningCommand;
 import com.cloud.agent.api.PrepareExternalProvisioningAnswer;
 import com.cloud.agent.api.PrepareExternalProvisioningCommand;
 import com.cloud.agent.api.RebootAnswer;
@@ -36,17 +32,6 @@ import com.cloud.agent.api.StopCommand;
 import com.cloud.utils.component.Manager;
 
 public interface ExternalProvisioner extends Manager {
-    /**
-     * Returns the unique name of the provider
-     * @return returns provider name
-     */
-    String getName();
-
-    /**
-     * Returns description about the provider
-     * @return returns description
-     */
-    String getDescription();
 
     String getExtensionEntryPoint(String relativeEntryPoint);
 
@@ -55,6 +40,8 @@ public interface ExternalProvisioner extends Manager {
     void prepareExtensionEntryPoint(String extensionName, boolean userDefined, String extensionRelativeEntryPoint);
 
     void cleanupExtensionEntryPoint(String extensionName, String extensionRelativeEntryPoint);
+
+    void cleanupExtensionData(String extensionName, int olderThanDays, boolean cleanupDirectory);
 
     PrepareExternalProvisioningAnswer prepareExternalProvisioning(String hostGuid, String extensionName, String extensionRelativeEntryPoint, PrepareExternalProvisioningCommand cmd);
 
@@ -66,11 +53,7 @@ public interface ExternalProvisioner extends Manager {
 
     StopAnswer expungeInstance(String hostGuid, String extensionName, String extensionRelativeEntryPoint, StopCommand cmd);
 
-    PostExternalProvisioningAnswer postSetupInstance(String hostGuid, String extensionName, String extensionRelativeEntryPoint, PostExternalProvisioningCommand cmd);
-
     Map<String, HostVmStateReportEntry> getHostVmStateReport(long hostId, String extensionName, String extensionRelativeEntryPoint);
 
     RunCustomActionAnswer runCustomAction(String hostGuid, String extensionName, String extensionRelativeEntryPoint, RunCustomActionCommand cmd);
-
-    Answer checkHealth(String hostGuid, String extensionName, String extensionRelativeEntryPoint, CheckHealthCommand cmd);
 }

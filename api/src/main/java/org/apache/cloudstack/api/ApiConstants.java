@@ -32,6 +32,7 @@ public class ApiConstants {
     public static final String ALLOCATED_DATE = "allocateddate";
     public static final String ALLOCATED_ONLY = "allocatedonly";
     public static final String ALLOCATED_TIME = "allocated";
+    public static final String ALLOWED_ROLE_TYPES = "allowedroletypes";
     public static final String ALLOW_USER_FORCE_STOP_VM = "allowuserforcestopvm";
     public static final String ANNOTATION = "annotation";
     public static final String API_KEY = "apikey";
@@ -198,7 +199,7 @@ public class ApiConstants {
     public static final String END_IPV6 = "endipv6";
     public static final String END_PORT = "endport";
     public static final String ENTRY_POINT = "entrypoint";
-    public static final String ENTRY_POINT_SYNC = "entrypointsync";
+    public static final String ENTRY_POINT_READY = "entrypointready";
     public static final String ENTRY_TIME = "entrytime";
     public static final String ERROR_MESSAGE = "errormessage";
     public static final String EVENT_ID = "eventid";
@@ -213,6 +214,7 @@ public class ApiConstants {
     public static final String EXTERNAL_UUID = "externaluuid";
     public static final String EXTERNAL_DETAILS = "externaldetails";
     public static final String PARAMETERS = "parameters";
+    public static final String EXTENSION = "extension";
     public static final String EXTENSION_ID = "extensionid";
     public static final String EXTENSION_NAME = "extensionname";
     public static final String FENCE = "fence";
@@ -559,7 +561,10 @@ public class ApiConstants {
     public static final String USER_SECRET_KEY = "usersecretkey";
     public static final String USE_VIRTUAL_NETWORK = "usevirtualnetwork";
     public static final String UPDATE_IN_SEQUENCE = "updateinsequence";
+    public static final String VALIDATION_FORMAT = "validationformat";
     public static final String VALUE = "value";
+    public static final String VALUE_OPTIONS = "valueoptions";
+    public static final String VIRTUAL_MACHINE = "virtualmachine";
     public static final String VIRTUAL_MACHINE_ID = "virtualmachineid";
     public static final String VIRTUAL_MACHINE_IDS = "virtualmachineids";
     public static final String VIRTUAL_MACHINE_NAME = "virtualmachinename";
@@ -682,7 +687,6 @@ public class ApiConstants {
     public static final String PROJECT_ROLE_NAME = "projectrolename";
     public static final String ROLE_TYPE = "roletype";
     public static final String ROLE_NAME = "rolename";
-    public static final String ROLES = "roles";
     public static final String PERMISSION = "permission";
     public static final String RULE = "rule";
     public static final String RULES = "rules";
@@ -1045,6 +1049,7 @@ public class ApiConstants {
 
     public static final String RESOURCE_DETAILS = "resourcedetails";
     public static final String RESOURCE_ICON = "icon";
+    public static final String RESOURCE_MAP = "resourcemap";
     public static final String EXPUNGE = "expunge";
     public static final String FOR_DISPLAY = "fordisplay";
     public static final String PASSIVE = "passive";

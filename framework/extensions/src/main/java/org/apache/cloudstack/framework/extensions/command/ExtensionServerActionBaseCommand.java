@@ -19,45 +19,15 @@ package org.apache.cloudstack.framework.extensions.command;
 
 import org.apache.cloudstack.extension.Extension;
 
-import com.cloud.agent.api.Command;
-
-public class ExtensionServerActionBaseCommand  extends Command {
-    long msId;
-    long extensionId;
-    String extensionName;
-    boolean extensionUserDefined;
-    String extensionRelativeEntryPointPath;
+public class ExtensionServerActionBaseCommand  extends ExtensionBaseCommand {
+    private final long msId;
 
     protected ExtensionServerActionBaseCommand(long msId, Extension extension) {
+        super(extension);
         this.msId = msId;
-        this.extensionId = extension.getId();
-        this.extensionName = extension.getName();
-        this.extensionUserDefined = extension.isUserDefined();
-        this.extensionRelativeEntryPointPath = extension.getRelativeEntryPoint();
     }
 
     public long getMsId() {
         return msId;
-    }
-
-    public long getExtensionId() {
-        return extensionId;
-    }
-
-    public String getExtensionName() {
-        return extensionName;
-    }
-
-    public boolean isExtensionUserDefined() {
-        return extensionUserDefined;
-    }
-
-    public String getExtensionRelativeEntryPointPath() {
-        return extensionRelativeEntryPointPath;
-    }
-
-    @Override
-    public boolean executeInSequence() {
-        return false;
     }
 }

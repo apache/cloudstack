@@ -29,11 +29,14 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -45,11 +48,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.HostVmStateReportEntry;
-import com.cloud.agent.api.PostExternalProvisioningAnswer;
-import com.cloud.agent.api.PostExternalProvisioningCommand;
 import com.cloud.agent.api.PrepareExternalProvisioningAnswer;
 import com.cloud.agent.api.PrepareExternalProvisioningCommand;
 import com.cloud.agent.api.RebootAnswer;
@@ -90,7 +89,8 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     public static final String BASE_EXTERNAL_PROVISIONER_SCRIPTS_DIR = "scripts/vm/hypervisor/external/simpleExternalProvisioner";
     public static final String BASE_EXTERNAL_PROVISIONER_SCRIPT = BASE_EXTERNAL_PROVISIONER_SCRIPTS_DIR + "/provisioner.sh";
 
-    private static final boolean IS_DEBUG = true;
+    private static final String PROPERTIES_FILE = "server.properties";
+    private static final String DATA_DIR_CONFIG_NAME = "extensions.data.file.path";
 
     @Inject
     UserVmDao _uservmDao;
@@ -104,30 +104,29 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     @Inject
     HypervisorGuruManager hypervisorGuruManager;
 
-    @Override
-    public String getName() {
-        return "simpleExternalProvisioner";
-    }
-
-    @Override
-    public String getDescription() {
-        return "Simple external provisioner";
-    }
+    private static final AtomicReference<Properties> propertiesRef = new AtomicReference<>();
 
     private String defaultExtensionsDirectory = "/usr/share/cloudstack-management/extensions";
     private String extensionsDirectory;
 
-    protected Map<String, Object> loadAccessDetails(Map<String, Object> externalDetails, VirtualMachineTO virtualMachineTO) {
+    private String extensionsDataDirectory;
+
+    @Override
+    public String getName() {
+        return getClass().getSimpleName();
+    }
+
+    protected Map<String, Object> loadAccessDetails(Map<String, Object> externalDetails,
+                            VirtualMachineTO virtualMachineTO) {
         Map<String, Object> modifiedDetails = new HashMap<>();
         if (MapUtils.isNotEmpty(externalDetails)) {
-            modifiedDetails.put(ApiConstants.EXTERNAL, externalDetails);
+            modifiedDetails.put(ApiConstants.EXTERNAL_DETAILS, externalDetails);
         }
         if (virtualMachineTO != null) {
             modifiedDetails.put(ApiConstants.VIRTUAL_MACHINE_ID, virtualMachineTO.getUuid());
             modifiedDetails.put(ApiConstants.VIRTUAL_MACHINE_NAME, virtualMachineTO.getName());
             modifiedDetails.put(VmDetailConstants.CLOUDSTACK_VM_DETAILS, virtualMachineTO);
         }
-        logger.debug("Using these access details for VM instance operation: {}", modifiedDetails);
         return modifiedDetails;
     }
 
@@ -162,7 +161,55 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
                     extensionsDirectory);
             return false;
         }
+        logger.info("Extensions directory path: {}", extensionsDirectory);
         return true;
+    }
+
+    protected void createOrCheckExtensionsDataDirectory() throws ConfigurationException {
+        String dataDir = getServerProperty("extensions.data.root");
+        if (StringUtils.isBlank(dataDir)) {
+            throw new ConfigurationException("Extensions data directory path is blank");
+        }
+        File dir = new File(dataDir);
+        if (!dir.exists()) {
+            try {
+                Files.createDirectories(dir.toPath());
+            } catch (IOException e) {
+                logger.error("Unable to create extensions data directory [{}] specified by config - {}",
+                        dir.getAbsolutePath(), DATA_DIR_CONFIG_NAME, e);
+                throw new ConfigurationException("Unable to create extensions data directory path");
+            }
+        }
+        if (!dir.isDirectory() || !dir.canWrite()) {
+            logger.error("Extensions data directory [{}] specified by config - {} is not properly set up. It must exist, be a directory, and be writeable",
+                    dir.getAbsolutePath(), DATA_DIR_CONFIG_NAME);
+            throw new ConfigurationException("Extensions data directory path is not accessible");
+        }
+        extensionsDataDirectory = dir.getAbsolutePath();
+        logger.info("Extensions data directory path: {}", extensionsDataDirectory);
+    }
+
+    private String getServerProperty(String name) {
+        Properties props = propertiesRef.get();
+        if (props == null) {
+            File propsFile = PropertiesUtil.findConfigFile(PROPERTIES_FILE);
+            if (propsFile == null) {
+                logger.error("{} file not found", PROPERTIES_FILE);
+                return null;
+            }
+            Properties tempProps = new Properties();
+            try (FileInputStream is = new FileInputStream(propsFile)) {
+                tempProps.load(is);
+            } catch (IOException e) {
+                logger.error("Error loading {}: {}", PROPERTIES_FILE, e.getMessage(), e);
+                return null;
+            }
+            if (!propertiesRef.compareAndSet(null, tempProps)) {
+                tempProps = propertiesRef.get();
+            }
+            props = tempProps;
+        }
+        return props.getProperty(name);
     }
 
     @Override
@@ -192,6 +239,7 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
         }
 
         checkExtensionsDirectory();
+        createOrCheckExtensionsDataDirectory();
         return true;
     }
 
@@ -218,22 +266,21 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
                  String extensionName, String extensionRelativeEntryPoint, PrepareExternalProvisioningCommand cmd) {
         String extensionPath = getExtensionCheckedEntryPointPath(extensionName, extensionRelativeEntryPoint);
         if (StringUtils.isEmpty(extensionPath)) {
-            return new PrepareExternalProvisioningAnswer(cmd, "Extension not configured", false);
+            return new PrepareExternalProvisioningAnswer(cmd, false, "Extension not configured");
         }
         VirtualMachineTO vmTO = cmd.getVirtualMachineTO();
         String vmUUID = vmTO.getUuid();
         logger.debug("Executing PrepareExternalProvisioningCommand in the external provisioner " +
                 "for the VM {} as part of VM deployment", vmUUID);
-
-        String prepareExternalScript = Script.findScript("", extensionPath);
         Map<String, Object> accessDetails = loadAccessDetails(cmd.getExternalDetails(), vmTO);
-        Pair<Boolean, String> result = prepareExternalProvisioningInternal(prepareExternalScript, vmUUID, accessDetails, cmd.getWait());
+        Pair<Boolean, String> result = prepareExternalProvisioningInternal(extensionName, extensionPath,
+                vmUUID, accessDetails, cmd.getWait());
         String output = result.second();
         if (!result.first()) {
-            return new PrepareExternalProvisioningAnswer(cmd, output, false);
+            return new PrepareExternalProvisioningAnswer(cmd, false, output);
         }
         if (StringUtils.isEmpty(output)) {
-            return new PrepareExternalProvisioningAnswer(cmd, "", true);
+            return new PrepareExternalProvisioningAnswer(cmd, true, "");
         }
         Map<String, String> resultMap = null;
         try {
@@ -245,7 +292,8 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     }
 
     @Override
-    public StartAnswer startInstance(String hostGuid, String extensionName, String extensionRelativeEntryPoint, StartCommand cmd) {
+    public StartAnswer startInstance(String hostGuid, String extensionName, String extensionRelativeEntryPoint,
+                             StartCommand cmd) {
         String extensionPath = getExtensionCheckedEntryPointPath(extensionName, extensionRelativeEntryPoint);
         if (StringUtils.isEmpty(extensionPath)) {
             return new StartAnswer(cmd, "Extension not configured");
@@ -259,10 +307,9 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
         Object deployvm = accessDetails.get("deployvm");
         boolean isDeploy = (deployvm != null && Boolean.parseBoolean((String)deployvm));
         String operation = isDeploy ? "Deploying" : "Starting";
-        String prepareExternalScript = Script.findScript("", extensionPath);
-
         try {
-            Pair<Boolean, String> result = executeStartCommandOnExternalSystem(isDeploy, prepareExternalScript, vmUUID, accessDetails, cmd.getWait());
+            Pair<Boolean, String> result = executeStartCommandOnExternalSystem(extensionName, isDeploy,
+                    extensionPath, vmUUID, accessDetails, cmd.getWait());
 
             if (!result.first()) {
                 String errMsg = String.format("%s VM %s on the external system failed: %s", operation, vmUUID, result.second());
@@ -279,16 +326,18 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
         }
     }
 
-    private Pair<Boolean, String> executeStartCommandOnExternalSystem(boolean isDeploy, String filename, String vmUUID, Map<String, Object> accessDetails, int wait) {
+    private Pair<Boolean, String> executeStartCommandOnExternalSystem(String extensionName, boolean isDeploy,
+                          String filename, String vmUUID, Map<String, Object> accessDetails, int wait) {
         if (isDeploy) {
-            return deployInstanceOnExternalSystem(filename, vmUUID, accessDetails, wait);
+            return deployInstanceOnExternalSystem(extensionName, filename, vmUUID, accessDetails, wait);
         } else {
-            return startInstanceOnExternalSystem(filename, vmUUID, accessDetails, wait);
+            return startInstanceOnExternalSystem(extensionName, filename, vmUUID, accessDetails, wait);
         }
     }
 
     @Override
-    public StopAnswer stopInstance(String hostGuid, String extensionName, String extensionRelativeEntryPoint, StopCommand cmd) {
+    public StopAnswer stopInstance(String hostGuid, String extensionName, String extensionRelativeEntryPoint,
+                           StopCommand cmd) {
         String extensionPath = getExtensionCheckedEntryPointPath(extensionName, extensionRelativeEntryPoint);
         if (StringUtils.isEmpty(extensionPath)) {
             return new StopAnswer(cmd, "Extension not configured", false);
@@ -297,11 +346,9 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
         VirtualMachineTO virtualMachineTO = cmd.getVirtualMachine();
         String vmUUID = cmd.getVirtualMachine().getUuid();
         logger.debug("Executing stop command in the external system for the VM {}", vmUUID);
-
-        String prepareExternalScript = Script.findScript("", extensionPath);
         Map<String, Object> accessDetails = loadAccessDetails(cmd.getExternalDetails(), virtualMachineTO);
-
-        Pair<Boolean, String> result = stopInstanceOnExternalSystem(prepareExternalScript, vmUUID, accessDetails, cmd.getWait());
+        Pair<Boolean, String> result = stopInstanceOnExternalSystem(extensionName, extensionPath, vmUUID,
+                accessDetails, cmd.getWait());
         if (result.first()) {
             return new StopAnswer(cmd, null, true);
         } else {
@@ -310,7 +357,8 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     }
 
     @Override
-    public RebootAnswer rebootInstance(String hostGuid, String extensionName, String extensionRelativeEntryPoint, RebootCommand cmd) {
+    public RebootAnswer rebootInstance(String hostGuid, String extensionName, String extensionRelativeEntryPoint,
+                           RebootCommand cmd) {
         String extensionPath = getExtensionCheckedEntryPointPath(extensionName, extensionRelativeEntryPoint);
         if (StringUtils.isEmpty(extensionPath)) {
             return new RebootAnswer(cmd, "Extension not configured", false);
@@ -319,11 +367,9 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
         VirtualMachineTO virtualMachineTO = cmd.getVirtualMachine();
         String vmUUID = virtualMachineTO.getUuid();
         logger.debug("Executing reboot command in the external system for the VM {}", vmUUID);
-
-        String prepareExternalScript = Script.findScript("", extensionPath);
         Map<String, Object> accessDetails = loadAccessDetails(cmd.getExternalDetails(), virtualMachineTO);
-
-        Pair<Boolean, String> result = rebootInstanceOnExternalSystem(prepareExternalScript, vmUUID, accessDetails, cmd.getWait());
+        Pair<Boolean, String> result = rebootInstanceOnExternalSystem(extensionName, extensionPath, vmUUID,
+                accessDetails, cmd.getWait());
         if (result.first()) {
             return new RebootAnswer(cmd, null, true);
         } else {
@@ -332,7 +378,8 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     }
 
     @Override
-    public StopAnswer expungeInstance(String hostGuid, String extensionName, String extensionRelativeEntryPoint, StopCommand cmd) {
+    public StopAnswer expungeInstance(String hostGuid, String extensionName, String extensionRelativeEntryPoint,
+                          StopCommand cmd) {
         String extensionPath = getExtensionCheckedEntryPointPath(extensionName, extensionRelativeEntryPoint);
         if (StringUtils.isEmpty(extensionPath)) {
             return new StopAnswer(cmd, "Extension not configured", false);
@@ -340,11 +387,9 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
         VirtualMachineTO virtualMachineTO = cmd.getVirtualMachine();
         String vmUUID = virtualMachineTO.getUuid();
         logger.debug("Executing stop command as part of expunge in the external system for the VM {}", vmUUID);
-
-        String prepareExternalScript = Script.findScript("", extensionPath);
         Map<String, Object> accessDetails = loadAccessDetails(cmd.getExternalDetails(), virtualMachineTO);
-
-        Pair<Boolean, String> result = deleteInstanceOnExternalSystem(prepareExternalScript, vmUUID, accessDetails, cmd.getWait());
+        Pair<Boolean, String> result = deleteInstanceOnExternalSystem(extensionName, extensionPath, vmUUID,
+                accessDetails, cmd.getWait());
         if (result.first()) {
             return new StopAnswer(cmd, null, true);
         } else {
@@ -353,12 +398,8 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     }
 
     @Override
-    public PostExternalProvisioningAnswer postSetupInstance(String hostGuid, String extensionName, String extensionRelativeEntryPoint, PostExternalProvisioningCommand cmd) {
-        return new PostExternalProvisioningAnswer(cmd, null, null);
-    }
-
-    @Override
-    public Map<String, HostVmStateReportEntry> getHostVmStateReport(long hostId, String extensionName, String extensionRelativeEntryPoint) {
+    public Map<String, HostVmStateReportEntry> getHostVmStateReport(long hostId, String extensionName,
+                            String extensionRelativeEntryPoint) {
         final Map<String, HostVmStateReportEntry> vmStates = new HashMap<>();
         String extensionPath = getExtensionCheckedEntryPointPath(extensionName, extensionRelativeEntryPoint);
         if (StringUtils.isEmpty(extensionPath)) {
@@ -378,14 +419,15 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
             return vmStates;
         }
         for (UserVmVO vm: allVms) {
-            VirtualMachine.PowerState powerState = getVmPowerState(vm, accessDetails, extensionPath);
+            VirtualMachine.PowerState powerState = getVmPowerState(vm, accessDetails, extensionName, extensionPath);
             vmStates.put(vm.getInstanceName(), new HostVmStateReportEntry(powerState, "host-" + hostId));
         }
         return vmStates;
     }
 
     @Override
-    public RunCustomActionAnswer runCustomAction(String hostGuid, String extensionName, String extensionRelativeEntryPoint, RunCustomActionCommand cmd) {
+    public RunCustomActionAnswer runCustomAction(String hostGuid, String extensionName,
+                         String extensionRelativeEntryPoint, RunCustomActionCommand cmd) {
         String extensionPath = getExtensionCheckedEntryPointPath(extensionName, extensionRelativeEntryPoint);
         if (StringUtils.isEmpty(extensionPath)) {
             return new RunCustomActionAnswer(cmd, false, "Extension not configured");
@@ -401,15 +443,14 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
             VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
             virtualMachineTO = hvGuru.implement(profile);
         }
-
         logger.debug("Executing custom action '{}' in the external system", actionName);
-        String prepareExternalScript = Script.findScript("", extensionPath);
         Map<String, Object> accessDetails = loadAccessDetails(externalDetails, virtualMachineTO);
         accessDetails.put(ApiConstants.ACTION, actionName);
         if (MapUtils.isNotEmpty(parameters)) {
             accessDetails.put(ApiConstants.PARAMETERS, GsonHelper.getGson().toJson(parameters));
         }
-        Pair<Boolean, String> result = runCustomActionOnExternalSystem(prepareExternalScript, actionName, accessDetails, cmd.getWait());
+        Pair<Boolean, String> result = runCustomActionOnExternalSystem(extensionName, extensionPath,
+                actionName, accessDetails, cmd.getWait());
         return new RunCustomActionAnswer(cmd, result.first(), result.second());
     }
 
@@ -432,7 +473,8 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     }
 
     @Override
-    public void prepareExtensionEntryPoint(String extensionName, boolean userDefined, String extensionRelativeEntryPoint) {
+    public void prepareExtensionEntryPoint(String extensionName, boolean userDefined,
+                           String extensionRelativeEntryPoint) {
         logger.debug("Preparing entry point for extension: {}, user-defined: {}", extensionName, userDefined);
         String destinationPath = getExtensionEntryPoint(extensionRelativeEntryPoint);
         if (userDefined && !destinationPath.endsWith(".sh")) {
@@ -470,7 +512,8 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
                 throw exception;
             }
         } catch (IOException e) {
-            logger.error("Failed to copy entry point file to [{}] for extension: {}", destinationPath, extensionName, e);
+            logger.error("Failed to copy entry point file to [{}] for extension: {}",
+                    destinationPath, extensionName, e);
             throw exception;
         }
         logger.debug("Successfully prepared entry point [{}] for extension: {}", destinationPath,
@@ -506,12 +549,53 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
         }
     }
 
-    public Pair<Boolean, String> runCustomActionOnExternalSystem(String filename, String actionName, Map<String, Object> accessDetails, int wait) {
-        return executeExternalCommand(filename, actionName, accessDetails, wait,
-                String.format("Failed to execute custom action '%s' on external system", actionName));
+    @Override
+    public void cleanupExtensionData(String extensionName, int olderThanDays, boolean cleanupDirectory) {
+        String extensionPayloadDirPath = extensionsDataDirectory + File.separator + extensionName;
+        Path dirPath = Paths.get(extensionPayloadDirPath);
+        if (!Files.exists(dirPath)) {
+            return;
+        }
+        try {
+            if (cleanupDirectory) {
+                try (Stream<Path> paths = Files.walk(dirPath)) {
+                    paths.sorted(Comparator.reverseOrder())
+                            .map(Path::toFile)
+                            .forEach(File::delete);
+                }
+                return;
+            }
+            long cutoffMillis = System.currentTimeMillis() - (olderThanDays * 24L * 60 * 60 * 1000);
+            long lastModified = Files.getLastModifiedTime(dirPath).toMillis();
+            if (lastModified < cutoffMillis) {
+                return;
+            }
+            try (Stream<Path> paths = Files.walk(dirPath)) {
+                paths.filter(path -> !path.equals(dirPath))
+                        .filter(path -> {
+                            try {
+                                return Files.getLastModifiedTime(path).toMillis() < cutoffMillis;
+                            } catch (IOException e) {
+                                return false;
+                            }
+                        })
+                        .sorted(Comparator.reverseOrder())
+                        .map(Path::toFile)
+                        .forEach(File::delete);
+            }
+        } catch (IOException e) {
+            logger.warn("Failed to clean up extension payloads for {}: {}", extensionName, e.getMessage());
+        }
     }
 
-    private VirtualMachine.PowerState getVmPowerState(UserVmVO userVmVO, Map<String, Object> accessDetails, String extensionPath) {
+    public Pair<Boolean, String> runCustomActionOnExternalSystem(String extensionName, String filename,
+                 String actionName, Map<String, Object> accessDetails, int wait) {
+        return executeExternalCommand(extensionName, actionName, accessDetails, wait,
+                String.format("Failed to execute custom action '%s' on external system", actionName), filename);
+    }
+
+    private VirtualMachine.PowerState getVmPowerState(UserVmVO userVmVO, Map<String, Object> accessDetails,
+                  String extensionName, String extensionPath) {
         // ToDo: ExternalHypervisorGuru.loadExternalResourceAccessDetails(userVmVO.getDetails(), accessDetails);
         final HypervisorGuru hvGuru = hypervisorGuruManager.getGuru(Hypervisor.HypervisorType.External);
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(userVmVO);
@@ -522,9 +606,8 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
         String vmUUID = userVmVO.getUuid();
         logger.debug("Trying to get VM power status from the external system for the VM {}", vmUUID);
 
-        String prepareExternalScript = Script.findScript("", extensionPath);
-
-        Pair<Boolean, String> result = getInstanceStatusOnExternalSystem(prepareExternalScript, vmUUID, modifiedDetails, AgentManager.Wait.value());
+        Pair<Boolean, String> result = getInstanceStatusOnExternalSystem(extensionName, extensionPath, vmUUID,
+                modifiedDetails, AgentManager.Wait.value());
         if (result.first()) {
             if (result.second().equalsIgnoreCase(VirtualMachine.PowerState.PowerOn.toString())) {
                 return VirtualMachine.PowerState.PowerOn;
@@ -539,64 +622,71 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
         }
     }
 
-    public Pair<Boolean, String> prepareExternalProvisioningInternal(String filename, String vmUUID, Map<String, Object> accessDetails, int wait) {
-        return executeExternalCommand(filename, "prepare", accessDetails, wait,
-                String.format("Failed to prepare external provisioner for deploying VM %s on external system", vmUUID));
+    public Pair<Boolean, String> prepareExternalProvisioningInternal(String extensionName, String filename,
+                             String vmUUID, Map<String, Object> accessDetails, int wait) {
+        return executeExternalCommand(extensionName, "prepare", accessDetails, wait,
+                String.format("Failed to prepare external provisioner for deploying VM %s on external system", vmUUID),
+                filename);
     }
 
-    public Pair<Boolean, String> deployInstanceOnExternalSystem(String filename, String vmUUID, Map<String, Object> accessDetails, int wait) {
-        return executeExternalCommand(filename, "create", accessDetails, wait,
-                String.format("Failed to create the instance %s on external system", vmUUID));
+    public Pair<Boolean, String> deployInstanceOnExternalSystem(String extensionName, String filename, String vmUUID,
+                            Map<String, Object> accessDetails, int wait) {
+        return executeExternalCommand(extensionName, "create", accessDetails, wait,
+                String.format("Failed to create the instance %s on external system", vmUUID), filename);
     }
 
-    public Pair<Boolean, String> startInstanceOnExternalSystem(String filename, String vmUUID, Map<String, Object> accessDetails, int wait) {
-        return executeExternalCommand(filename, "start", accessDetails, wait,
-                String.format("Failed to start the instance %s on external system", vmUUID));
+    public Pair<Boolean, String> startInstanceOnExternalSystem(String extensionName, String filename, String vmUUID,
+                               Map<String, Object> accessDetails, int wait) {
+        return executeExternalCommand(extensionName, "start", accessDetails, wait,
+                String.format("Failed to start the instance %s on external system", vmUUID), filename);
     }
 
-    public Pair<Boolean, String> stopInstanceOnExternalSystem(String filename, String vmUUID, Map<String, Object> accessDetails, int wait) {
-        return executeExternalCommand(filename, "stop", accessDetails, wait,
-                String.format("Failed to stop the instance %s on external system", vmUUID));
+    public Pair<Boolean, String> stopInstanceOnExternalSystem(String extensionName, String filename, String vmUUID,
+                              Map<String, Object> accessDetails, int wait) {
+        return executeExternalCommand(extensionName, "stop", accessDetails, wait,
+                String.format("Failed to stop the instance %s on external system", vmUUID), filename);
     }
 
-    public Pair<Boolean, String> rebootInstanceOnExternalSystem(String filename, String vmUUID, Map<String, Object> accessDetails, int wait) {
-        return executeExternalCommand(filename, "reboot", accessDetails, wait,
-                String.format("Failed to reboot the instance %s on external system", vmUUID));
+    public Pair<Boolean, String> rebootInstanceOnExternalSystem(String extensionName, String filename, String vmUUID,
+                                Map<String, Object> accessDetails, int wait) {
+        return executeExternalCommand(extensionName, "reboot", accessDetails, wait,
+                String.format("Failed to reboot the instance %s on external system", vmUUID), filename);
     }
 
-    public Pair<Boolean, String> deleteInstanceOnExternalSystem(String filename, String vmUUID, Map<String, Object> accessDetails, int wait) {
-        return executeExternalCommand(filename, "delete", accessDetails, wait,
-                String.format("Failed to delete the instance %s on external system", vmUUID));
+    public Pair<Boolean, String> deleteInstanceOnExternalSystem(String extensionName, String filename, String vmUUID,
+                                Map<String, Object> accessDetails, int wait) {
+        return executeExternalCommand(extensionName, "delete", accessDetails, wait,
+                String.format("Failed to delete the instance %s on external system", vmUUID), filename);
     }
 
-    public Pair<Boolean, String> getInstanceStatusOnExternalSystem(String filename, String vmUUID, Map<String, Object> accessDetails, int wait) {
-        return executeExternalCommand(filename, "status", accessDetails, wait,
-                String.format("Failed to get the instance power status %s on external system", vmUUID));
+    public Pair<Boolean, String> getInstanceStatusOnExternalSystem(String extensionName, String filename, String vmUUID,
+                               Map<String, Object> accessDetails, int wait) {
+        return executeExternalCommand(extensionName, "status", accessDetails, wait,
+                String.format("Failed to get the instance power status %s on external system", vmUUID), filename);
     }
 
-    public Pair<Boolean, String> executeExternalCommand(String file, String action, Map<String, Object> accessDetails, int wait, String errorLogPrefix) {
+    public Pair<Boolean, String> executeExternalCommand(String extensionName, String action,
+                        Map<String, Object> accessDetails, int wait, String errorLogPrefix, String file) {
         try {
             Path executablePath = Paths.get(file).toAbsolutePath().normalize();
             if (!Files.isExecutable(executablePath)) {
                 logger.error("{}: File is not executable: {}", errorLogPrefix, executablePath);
                 return new Pair<>(false, "File is not executable");
             }
+            if (wait == 0) {
+                wait = AgentManager.Wait.value();
+            }
             List<String> command = new ArrayList<>();
             command.add(executablePath.toString());
             command.add(action);
-            String dataFile = prepareActionData(accessDetails);
+            String dataFile = prepareExternalPayload(extensionName, accessDetails);
             command.add(dataFile);
             command.add(Integer.toString(wait));
             ProcessBuilder builder = new ProcessBuilder(command);
             builder.redirectErrorStream(true);
 
-            if (IS_DEBUG) {
-                logger.debug("Executable: {}",executablePath);
-                logger.debug("Action: {} with wait: {}", action, wait);
-                logger.debug("Data file: {}", dataFile);
-//                return new Pair<>(true, "Operation successful!");
-            }
-            logger.debug("Executing command: {}", action);
+            logger.debug("Executing {} for command: {} with wait: {} and data file: {}", executablePath, action, wait, dataFile);
+
             Process process = builder.start();
             boolean finished = process.waitFor(wait, TimeUnit.SECONDS);
             if (!finished) {
@@ -624,26 +714,20 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
         }
     }
 
-    @Override
-    public Answer checkHealth(String hostGuid, String extensionName, String extensionRelativeEntryPoint, CheckHealthCommand cmd) {
-        String extensionPath = getExtensionCheckedEntryPointPath(extensionName, extensionRelativeEntryPoint);
-        if (StringUtils.isEmpty(extensionPath)) {
-            return new Answer(cmd, false, "Extension not configured");
-        }
-        // ToDo: should we check with provisioner script?
-        return new Answer(cmd);
-    }
-
-    private String prepareActionData(Map<String, Object> details) throws IOException {
-        // ToDo: some mechanism to clean up these data files
+    private String prepareExternalPayload(String extensionName, Map<String, Object> details) throws IOException {
         String json = GsonHelper.getGson().toJson(details);
-        logger.debug("Data: {}", json);
         long epochMillis = System.currentTimeMillis();
         String fileName = epochMillis + ".json";
-        Path tempDir = Files.createTempDirectory("orchestrator");
-        Path tempFile = tempDir.resolve(fileName);
-        Files.writeString(tempFile, json, StandardOpenOption.CREATE_NEW);
-        return tempFile.toAbsolutePath().toString();
+        String extensionPayloadDir = extensionsDataDirectory + File.separator + extensionName;
+        Path payloadDirPath = Paths.get(extensionPayloadDir);
+        if (!Files.exists(payloadDirPath)) {
+            Files.createDirectories(payloadDirPath);
+        } else {
+            cleanupExtensionData(extensionName, 1, false);
+        }
+        Path payloadFile = payloadDirPath.resolve(fileName);
+        Files.writeString(payloadFile, json, StandardOpenOption.CREATE_NEW);
+        return payloadFile.toAbsolutePath().toString();
     }
 
     @Override

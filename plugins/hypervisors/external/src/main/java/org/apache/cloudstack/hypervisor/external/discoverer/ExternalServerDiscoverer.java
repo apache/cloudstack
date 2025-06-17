@@ -25,14 +25,13 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.agent.manager.ExternalAgentManager;
 import org.apache.cloudstack.extension.ExtensionResourceMap;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionDao;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionResourceMapDao;
 import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionResourceMapVO;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionVO;
-import org.apache.cloudstack.hypervisor.external.resource.ExternalResourceBase;
+import org.apache.cloudstack.hypervisor.external.resource.ExternalResource;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -65,9 +64,6 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
 
     @Inject
     ExtensionResourceMapDao extensionResourceMapDao;
-
-    @Inject
-    ExternalAgentManager externalAgentManager;
 
     @Inject
     ExtensionsManager extensionsManager;
@@ -135,58 +131,65 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
         return true;
     }
 
+    protected String getResourceGuidFromName(String name) {
+        return "External:" + UUID.nameUUIDFromBytes(name.getBytes());
+    }
+
+    protected void addExtensionDataToResourceParams(ExtensionVO extension, Map<String, Object> params) {
+        params.put("extensionName", extension.getName());
+        params.put("extensionRelativeEntryPoint", extension.getRelativeEntryPoint());
+        params.put("extensionState", extension.getState());
+    }
+
     @Override
     public Map<? extends ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI uri, String username, String password, List<String> hostTags) throws DiscoveryException {
-        Map<ExternalResourceBase, Map<String, String>> resources;
-
-        try {
-            String cluster = null;
-            if (clusterId == null) {
-                String msg = "must specify cluster Id when adding host";
-                logger.debug(msg);
-                throw new RuntimeException(msg);
-            } else {
-                ClusterVO clu = _clusterDao.findById(clusterId);
-                if (clu == null || (clu.getHypervisorType() != Hypervisor.HypervisorType.External)) {
-                    logger.info("invalid cluster id or cluster is not for Simulator hypervisors");
-                    return null;
-                }
-                cluster = Long.toString(clusterId);
-                if (clu.getGuid() == null) {
-                    clu.setGuid(UUID.randomUUID().toString());
-                }
-                _clusterDao.update(clusterId, clu);
-            }
-
-            String pod;
-            if (podId == null) {
-                String msg = "must specify pod Id when adding host";
-                logger.debug(msg);
-                throw new RuntimeException(msg);
-            } else {
-                pod = Long.toString(podId);
-            }
-
-            Map<String, Object> params = new HashMap<String, Object>();
-            params.put("username", username);
-            params.put("password", password);
-            params.put("zone", Long.toString(dcId));
-            params.put("pod", pod);
-            params.put("cluster", cluster);
-            params.put("guid", uri.toString());
-
-            ExtensionResourceMapVO extensionResourceMapVO = extensionResourceMapDao.findByResourceIdAndType(clusterId,
-                    ExtensionResourceMap.ResourceType.Cluster);
-            ExtensionVO extensionVO = extensionDao.findById(extensionResourceMapVO.getExtensionId());
-            params.put("extensionName", extensionVO.getName());
-            params.put("extensionRelativeEntryPoint", extensionVO.getRelativeEntryPoint());
-
-            resources = createAgentResources(params);
-            return resources;
-        } catch (Exception ex) {
-            logger.error("Exception when discovering external hosts: {}", ex.getMessage(), ex);
+        Map<ExternalResource, Map<String, String>> resources;
+        String errorMessage;
+        if (clusterId == null) {
+            errorMessage = "Must specify cluster Id when adding host";
+            logger.error(errorMessage);
+            throw new DiscoveryException(errorMessage);
         }
-        return null;
+        ClusterVO cluster = _clusterDao.findById(clusterId);
+        if (cluster == null || (cluster.getHypervisorType() != Hypervisor.HypervisorType.External)) {
+            errorMessage = "Invalid cluster id or cluster is not for External hypervisors";
+            logger.error(errorMessage);
+            throw new DiscoveryException(errorMessage);
+        }
+        if (podId == null) {
+            errorMessage = "Must specify pod when adding host";
+            logger.error(errorMessage);
+            throw new DiscoveryException(errorMessage);
+        }
+        ExtensionResourceMapVO extensionResourceMapVO = extensionResourceMapDao.findByResourceIdAndType(clusterId,
+                ExtensionResourceMap.ResourceType.Cluster);
+        if (extensionResourceMapVO == null) {
+            logger.error("External hypervisor {} must be registered with an extension when adding host",
+                    cluster);
+            throw new DiscoveryException(String.format("Cluster: %s is not registered with an extension",
+                    cluster.getName()));
+        }
+        ExtensionVO extensionVO = extensionDao.findById(extensionResourceMapVO.getExtensionId());
+        if (extensionVO == null) {
+            logger.error("Extension ID: {} to which {} cluster is registered is not found",
+                    extensionResourceMapVO.getExtensionId(), cluster);
+            throw new DiscoveryException(String.format("Cluster: %s is registered with an inexistent extension",
+                    cluster.getName()));
+        }
+        Map<String, Object> params = new HashMap<>();
+        params.put("username", username);
+        params.put("password", password);
+        params.put("zone", Long.toString(dcId));
+        params.put("pod", Long.toString(podId));
+        params.put("cluster", Long.toString(clusterId));
+        String name = uri.toString();
+        params.put("guid", getResourceGuidFromName(name));
+        addExtensionDataToResourceParams(extensionVO, params);
+        resources = createAgentResource(name, params);
+        if (resources == null) {
+            throw new DiscoveryException("Failed to create external agent");
+        }
+        return resources;
     }
 
     @Override
@@ -205,17 +208,30 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
             logger.error("Extension with ID: {} not found", extensionResourceMapVO.getExtensionId());
             return params;
         }
-        params.put("extensionName", extensionVO.getName());
-        params.put("extensionRelativeEntryPoint", extensionVO.getRelativeEntryPoint());
+        addExtensionDataToResourceParams(extensionVO, params);
         return params;
     }
 
-    private Map<ExternalResourceBase, Map<String, String>> createAgentResources(Map<String, Object> params) {
+    private Map<ExternalResource, Map<String, String>> createAgentResource(String name, Map<String, Object> params) {
         try {
-            logger.info("Creating External Server Resources");
-            return externalAgentManager.createServerResources(params);
+            logger.info("Creating external server resource: {}", name);
+            Map<String, String> args = new HashMap<>();
+            Map<ExternalResource, Map<String, String>> newResources = new HashMap<>();
+            ExternalResource agentResource;
+            synchronized (this) {
+                agentResource = new ExternalResource();
+                try {
+                    agentResource.start();
+                    agentResource.configure(name, params);
+                    args.put("guid", (String)params.get("guid"));
+                    newResources.put(agentResource, args);
+                } catch (ConfigurationException e) {
+                    logger.error("Error while configuring server resource {}", e.getMessage());
+                }
+            }
+            return newResources;
         } catch (Exception ex) {
-            logger.warn("Caught exception at agent resource creation: {}", ex.getMessage(), ex);
+            logger.warn("Caught creating external server resources {}", name, ex);
         }
         return null;
     }

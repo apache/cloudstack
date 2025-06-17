@@ -52,7 +52,7 @@ public interface ExtensionsManager extends Manager {
 
     Extension createExtension(CreateExtensionCmd cmd);
 
-    void prepareExtensionEntryPointAcrossServers(Extension extension);
+    boolean prepareExtensionEntryPointAcrossServers(Extension extension);
 
     List<ExtensionResponse> listExtensions(ListExtensionsCmd cmd);
 
@@ -66,7 +66,7 @@ public interface ExtensionsManager extends Manager {
 
     ExtensionResponse createExtensionResponse(Extension extension, EnumSet<ApiConstants.ExtensionDetails> viewDetails);
 
-    ExtensionResourceMap registerExtensionWithCluster(Cluster cluster, long extensionId, Map<String, String> externalDetails);
+    ExtensionResourceMap registerExtensionWithCluster(Cluster cluster, Extension extension, Map<String, String> externalDetails);
 
     void unregisterExtensionWithCluster(Cluster cluster, Long extensionId);
 
@@ -82,7 +82,7 @@ public interface ExtensionsManager extends Manager {
 
     ExtensionCustomActionResponse createCustomActionResponse(ExtensionCustomAction customAction);
 
-    Map<String, Object> getExternalAccessDetails(Host host);
+    Map<String, Object> getExternalAccessDetails(Host host, Map<String, String> vmDetails);
 
     String handleExtensionServerCommands(ExtensionServerActionBaseCommand cmd);
 }

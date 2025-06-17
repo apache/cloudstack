@@ -19,9 +19,16 @@ package org.apache.cloudstack.framework.extensions.command;
 
 import org.apache.cloudstack.extension.Extension;
 
-public class CleanupExtensionEntryPointCommand extends ExtensionServerActionBaseCommand {
+public class ExtensionRoutingUpdateCommand extends ExtensionBaseCommand {
 
-    public CleanupExtensionEntryPointCommand(long msId, Extension extension) {
-        super(msId, extension);
+    final boolean removed;
+
+    public ExtensionRoutingUpdateCommand(Extension extension, boolean removed) {
+        super(extension);
+        this.removed = removed;
+    }
+
+    public boolean isRemoved() {
+        return removed;
     }
 }

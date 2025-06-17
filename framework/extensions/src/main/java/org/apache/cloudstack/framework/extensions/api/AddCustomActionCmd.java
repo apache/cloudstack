@@ -48,13 +48,13 @@ public class AddCustomActionCmd extends BaseCmd {
     ExtensionsManager extensionsManager;
 
     @Parameter(name = ApiConstants.EXTENSION_ID, type = CommandType.UUID, required = true,
-            entityType = ExtensionResponse.class, description = "the extension id used to call the custom action")
+            entityType = ExtensionResponse.class, description = "The ID of the extension to associate the action with")
     private Long extensionId;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the command")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Name of the action")
     private String name;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "The description of the command")
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "Description of the action")
     private String description;
 
     @Parameter(name = ApiConstants.RESOURCE_TYPE,
@@ -62,11 +62,11 @@ public class AddCustomActionCmd extends BaseCmd {
             description = "Resource type for which the action is available")
     private String resourceType;
 
-    @Parameter(name = ApiConstants.ROLES,
+    @Parameter(name = ApiConstants.ALLOWED_ROLE_TYPES,
             type = CommandType.LIST,
             collectionType = CommandType.STRING,
-            description = "The list of allowed role types")
-    private List<String> rolesList;
+            description = "List of role types allowed for the action")
+    private List<String> allowedRoleTypes;
 
     @Parameter(name = ApiConstants.PARAMETERS, type = CommandType.MAP,
             description = "Parameters mapping for the action using keys - name, type, required. " +
@@ -77,15 +77,20 @@ public class AddCustomActionCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.SUCCESS_MESSAGE, type = CommandType.STRING,
             description = "Success message that will be used on successful execution of the action. " +
-                    "Name of the action and and extension can be used in the - actionName, extensionName. "
-                    + "Example: Successfully complete {{actionName}} for {{extensionName")
+                    "Name of the action, extension, resource can be used as - actionName, extensionName, resourceName. "
+                    + "Example: Successfully complete {{actionName}} for {{resourceName}} with {{extensionName}}")
     protected String successMessage;
 
     @Parameter(name = ApiConstants.ERROR_MESSAGE, type = CommandType.STRING,
             description = "Error message that will be used on failure during execution of the action. " +
-                    "Name of the action and and extension can be used in the - actionName, extensionName. "
-                    + "Example: Failed to complete {{actionName}} for {{extensionName")
+                    "Name of the action, extension, resource can be used as - actionName, extensionName, resourceName. "
+                    + "Example: Failed to complete {{actionName}} for {{resourceName}} with {{extensionName}}")
     protected String errorMessage;
+
+    @Parameter(name = ApiConstants.TIMEOUT,
+            type = CommandType.INTEGER,
+            description = "Specifies the timeout in seconds to wait for the action to complete before failing. Default value is 3 seconds")
+    private Integer timeout;
 
     @Parameter(name = ApiConstants.ENABLED,
             type = CommandType.BOOLEAN,
@@ -118,12 +123,8 @@ public class AddCustomActionCmd extends BaseCmd {
         return resourceType;
     }
 
-    public List<String> getRolesList() {
-        return rolesList;
-    }
-
-    public boolean isEnabled() {
-        return Boolean.TRUE.equals(enabled);
+    public List<String> getAllowedRoleTypes() {
+        return allowedRoleTypes;
     }
 
     public Map getParametersMap() {
@@ -136,6 +137,14 @@ public class AddCustomActionCmd extends BaseCmd {
 
     public String getErrorMessage() {
         return errorMessage;
+    }
+
+    public Integer getTimeout() {
+        return timeout;
+    }
+
+    public boolean isEnabled() {
+        return Boolean.TRUE.equals(enabled);
     }
 
     public Map<String, String> getDetails() {

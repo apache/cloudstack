@@ -33,7 +33,7 @@ public interface Extension extends InternalIdentity, Identity {
     String getDescription();
     Type getType();
     String getRelativeEntryPoint();
-    boolean isEntryPointSync();
+    boolean isEntryPointReady();
     boolean isUserDefined();
     State getState();
     Date getCreated();

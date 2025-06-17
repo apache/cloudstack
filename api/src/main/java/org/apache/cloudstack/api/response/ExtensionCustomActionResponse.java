@@ -34,32 +34,32 @@ import com.google.gson.annotations.SerializedName;
 public class ExtensionCustomActionResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "ID of the extension custom action")
+    @Param(description = "ID of the custom action")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "Name of the extension custom action")
+    @Param(description = "Name of the custom action")
     private String name;
 
     @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "Description of the extension custom action")
+    @Param(description = "Description of the custom action")
     private String description;
 
     @SerializedName(ApiConstants.EXTENSION_ID)
-    @Param(description = "ID of the extension that this extension custom action belongs to")
+    @Param(description = "ID of the extension that this custom action belongs to")
     private String extensionId;
 
     @SerializedName(ApiConstants.EXTENSION_NAME)
-    @Param(description = "Name of the extension that this extension custom action belongs to")
+    @Param(description = "Name of the extension that this custom action belongs to")
     private String extensionName;
 
     @SerializedName(ApiConstants.RESOURCE_TYPE)
     @Param(description = "Resource type for which the action is available")
     private String resourceType;
 
-    @SerializedName(ApiConstants.ROLES)
-    @Param(description = "List of roles associated with the extension custom action")
-    private List<String> roles;
+    @SerializedName(ApiConstants.ALLOWED_ROLE_TYPES)
+    @Param(description = "List of role types allowed for the custom action")
+    private List<String> allowedRoleTypes;
 
     @SerializedName(ApiConstants.SUCCESS_MESSAGE)
     @Param(description = "Message that will be used on successful execution of the action")
@@ -69,12 +69,16 @@ public class ExtensionCustomActionResponse extends BaseResponse {
     @Param(description = "Message that will be used on failure during execution of the action")
     private String errorMessage;
 
+    @SerializedName(ApiConstants.TIMEOUT)
+    @Param(description = "Specifies the timeout in seconds to wait for the action to complete before failing")
+    private Integer timeout;
+
     @SerializedName(ApiConstants.ENABLED)
-    @Param(description = "Whether the extension custom action is enabled or not")
+    @Param(description = "Whether the custom action is enabled or not")
     private Boolean enabled;
 
     @SerializedName(ApiConstants.DETAILS)
-    @Param(description = "Details of the extension custom action")
+    @Param(description = "Details of the custom action")
     private Map<String, String> details;
 
     @SerializedName(ApiConstants.PARAMETERS)
@@ -82,7 +86,7 @@ public class ExtensionCustomActionResponse extends BaseResponse {
     private Set<ExtensionCustomActionParameterResponse> parameters;
 
     @SerializedName(ApiConstants.CREATED)
-    @Param(description = "Creation timestamp of the extension custom action")
+    @Param(description = "Creation timestamp of the custom action")
     private Date created;
 
     public ExtensionCustomActionResponse(String id, String name, String description) {
@@ -131,12 +135,12 @@ public class ExtensionCustomActionResponse extends BaseResponse {
         this.resourceType = resourceType;
     }
 
-    public List<String> getRoles() {
-        return roles;
+    public List<String> getAllowedRoleTypes() {
+        return allowedRoleTypes;
     }
 
-    public void setRoles(List<String> roles) {
-        this.roles = roles;
+    public void setAllowedRoleTypes(List<String> allowedRoleTypes) {
+        this.allowedRoleTypes = allowedRoleTypes;
     }
 
     public void setSuccessMessage(String successMessage) {
@@ -145,6 +149,10 @@ public class ExtensionCustomActionResponse extends BaseResponse {
 
     public void setErrorMessage(String errorMessage) {
         this.errorMessage = errorMessage;
+    }
+
+    public void setTimeout(Integer timeout) {
+        this.timeout = timeout;
     }
 
     public void setEnabled(Boolean enabled) {

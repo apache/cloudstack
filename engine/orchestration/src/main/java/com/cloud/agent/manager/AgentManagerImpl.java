@@ -51,7 +51,6 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.maintenance.ManagementServerMaintenanceListener;
@@ -195,9 +194,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
     @Inject
     private ManagementServerMaintenanceManager managementServerMaintenanceManager;
-
-    @Inject
-    ExtensionsManager extensionsManager;
 
     protected int _retry = 2;
 
@@ -685,11 +681,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             return Status.Alert;
         }
         logger.debug("Checking if agent ({}) is alive", host);
-        CheckHealthCommand cmd = new CheckHealthCommand();
-        if (HypervisorType.External.equals(host.getHypervisorType())) {
-            cmd.setExternalDetails(extensionsManager.getExternalAccessDetails(host));
-        }
-        final Answer answer = easySend(hostId, cmd);
+        final Answer answer = easySend(hostId, new CheckHealthCommand());
         if (answer != null && answer.getResult()) {
             final Status status = Status.Up;
             logger.debug("Agent ({}) responded to checkHealthCommand, reporting that agent is {}", host, status);
