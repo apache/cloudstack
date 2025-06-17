@@ -725,7 +725,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             proxy = createOrUpdateConsoleProxy(proxy, dataCenterId, id, name, serviceOffering, template, systemAcct);
             try {
                 virtualMachineManager.allocate(name, template, serviceOffering, networks, plan,
-                        template.getHypervisorType());
+                        template.getHypervisorType(), null, null);
                 proxy = consoleProxyDao.findById(proxy.getId());
                 virtualMachineManager.checkDeploymentPlan(proxy, template, serviceOffering, systemAcct, plan);
                 break;
