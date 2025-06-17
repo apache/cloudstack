@@ -47,7 +47,7 @@ public class FirewallRuleTO implements InternalIdentity {
     int[] srcPortRange;
     boolean revoked;
     boolean alreadyAdded;
-    private List<String> sourceCidrList;
+    protected List<String> sourceCidrList;
     private List<String> destCidrList;
     FirewallRule.Purpose purpose;
     private Integer icmpType;
