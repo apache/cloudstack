@@ -285,11 +285,11 @@
         </a-form-item>
         <a-form-item v-if="form.advancedmode" name="etcdnodes" ref="etcdnodes">
           <template #label>
-            <tooltip-label :title="$t('label.cks.cluster.etcd.nodes')" :tooltip="apiParams.controlnodes.description"/>
+            <tooltip-label :title="$t('label.cks.cluster.etcd.nodes')" :tooltip="apiParams.etcdnodes.description"/>
           </template>
           <a-input
             v-model:value="form.etcdnodes"
-            :placeholder="apiParams.controlnodes.description"/>
+            :placeholder="apiParams.etcdnodes.description"/>
         </a-form-item>
         <a-form-item v-if="form.advancedmode && form.etcdnodes && form.etcdnodes > 0" name="etcdofferingid" ref="etcdofferingid">
           <template #label>

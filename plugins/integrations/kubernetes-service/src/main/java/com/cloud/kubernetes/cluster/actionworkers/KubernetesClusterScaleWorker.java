@@ -223,6 +223,9 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         } else {
             long nodeCount = getNodeCountForType(nodeType, kubernetesCluster);
             Long existingOfferingId = getExistingOfferingIdForNodeType(nodeType, kubernetesCluster);
+            if (existingOfferingId == null) {
+                existingOfferingId = serviceOffering.getId();
+            }
             ServiceOfferingVO previousOffering = serviceOfferingDao.findById(existingOfferingId);
             Pair<Long, Long> previousNodesCapacity = calculateNodesCapacity(previousOffering, nodeCount);
             if (WORKER == nodeType) {
