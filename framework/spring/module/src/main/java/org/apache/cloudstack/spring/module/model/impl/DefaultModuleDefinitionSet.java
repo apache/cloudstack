@@ -18,6 +18,20 @@
  */
 package org.apache.cloudstack.spring.module.model.impl;
 
+import org.apache.cloudstack.spring.module.context.ResourceApplicationContext;
+import org.apache.cloudstack.spring.module.model.ModuleDefinition;
+import org.apache.cloudstack.spring.module.model.ModuleDefinitionSet;
+import org.apache.commons.io.IOUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.util.StringUtils;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -31,21 +45,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.Stack;
-
-import org.apache.commons.io.IOUtils;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
-import org.springframework.util.StringUtils;
-
-import org.apache.cloudstack.spring.module.context.ResourceApplicationContext;
-import org.apache.cloudstack.spring.module.model.ModuleDefinition;
-import org.apache.cloudstack.spring.module.model.ModuleDefinitionSet;
 
 public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
 
@@ -61,6 +60,9 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
     String root;
     Map<String, ModuleDefinition> modules;
     Map<String, ApplicationContext> contexts = new HashMap<String, ApplicationContext>();
+
+    Map<String, Set<Resource>> configResourcesMap = new HashMap<String, Set<Resource>>();
+
     ApplicationContext rootContext = null;
     Set<String> excludes = new HashSet<String>();
     Properties configProperties = null;
@@ -72,8 +74,9 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
     }
 
     public void load() throws IOException {
-        if (!loadRootContext())
+        if (!loadRootContext()) {
             return;
+        }
 
         printHierarchy();
         loadContexts();
@@ -83,8 +86,9 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
     protected boolean loadRootContext() {
         ModuleDefinition def = modules.get(root);
 
-        if (def == null)
+        if (def == null) {
             return false;
+        }
 
         ApplicationContext defaultsContext = getDefaultsContext();
 
@@ -190,8 +194,7 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
         context.setApplicationName("/defaults");
         context.refresh();
 
-        @SuppressWarnings("unchecked")
-        final List<Resource> resources = (List<Resource>)context.getBean(DEFAULT_CONFIG_RESOURCES);
+        @SuppressWarnings("unchecked") final List<Resource> resources = (List<Resource>) context.getBean(DEFAULT_CONFIG_RESOURCES);
 
         withModule(new WithModule() {
             @Override
@@ -202,12 +205,12 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
             }
         });
 
-        configProperties = (Properties)context.getBean(DEFAULT_CONFIG_PROPERTIES);
+        configProperties = (Properties) context.getBean(DEFAULT_CONFIG_PROPERTIES);
         for (Resource resource : resources) {
             load(resource, configProperties);
         }
 
-        for (Resource resource : (Resource[])context.getBean(MODULE_PROPERITES)) {
+        for (Resource resource : (Resource[]) context.getBean(MODULE_PROPERITES)) {
             load(resource, configProperties);
         }
 
@@ -263,8 +266,9 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
     }
 
     protected void withModule(ModuleDefinition def, Stack<ModuleDefinition> parents, WithModule with) {
-        if (def == null)
+        if (def == null) {
             return;
+        }
 
         if (!shouldLoad(def)) {
             logger.info("Excluding context [" + def.getName() + "] based on configuration");
@@ -314,24 +318,35 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
 
     @Override
     public Resource[] getConfigResources(String name) {
-        Set<Resource> resources = new LinkedHashSet<Resource>();
-
-        ModuleDefinition original = null;
-        ModuleDefinition def = original = modules.get(name);
-
-        if (def == null)
+        ModuleDefinition def = modules.get(name);
+        if (def == null) {
             return new Resource[] {};
+        }
+
+        Set<Resource> resources = new LinkedHashSet<>();
 
         resources.addAll(def.getContextLocations());
 
-        while (def != null) {
-            resources.addAll(def.getInheritableContextLocations());
-            def = modules.get(def.getParentName());
+        resources.addAll(collectInheritedResources(def));
+
+        resources.addAll(def.getOverrideContextLocations());
+
+        return resources.toArray(Resource[]::new);
+    }
+
+    private Set<Resource> collectInheritedResources(ModuleDefinition def) {
+        if (def == null) {
+            return new LinkedHashSet<>();
         }
 
-        resources.addAll(original.getOverrideContextLocations());
+        if (configResourcesMap.containsKey(def.getName())) {
+            return configResourcesMap.get(def.getName());
+        }
 
-        return resources.toArray(new Resource[resources.size()]);
+        Set<Resource> inheritableResources = new LinkedHashSet<>(def.getInheritableContextLocations());
+        inheritableResources.addAll(collectInheritedResources(modules.get(def.getParentName())));
+        configResourcesMap.put(def.getName(), inheritableResources);
+        return inheritableResources;
     }
 
     @Override
