@@ -41,6 +41,7 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentClusterPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
+import com.cloud.deploy.FirstFitPlanner;
 import com.cloud.gpu.GPU;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
@@ -66,7 +67,6 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
-import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
@@ -408,7 +408,8 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
     private Pair<List<Long>, Map<Long, Double>> getOrderedHostsByCapacity(Long zoneId, Long clusterId) {
         double cpuToMemoryWeight = ConfigurationManager.HostCapacityTypeCpuMemoryWeight.value();
         // Get capacity by which we should reorder
-        short capacityType = getCapacityType(cpuToMemoryWeight);
+        short capacityType = FirstFitPlanner.getHostCapacityTypeToOrderCluster(
+                _configDao.getValue(Config.HostCapacityTypeToOrderClusters.key()), cpuToMemoryWeight);
         if (capacityType >= 0) { // for CPU or RAM
             return _capacityDao.orderHostsByFreeCapacity(zoneId, clusterId, capacityType);
         }
@@ -418,27 +419,8 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
         return new Pair<>(new ArrayList<>(hostByComputedCapacity.keySet()), hostByComputedCapacity);
     }
 
-    short getCapacityType(double cpuToMemoryWeight) {
-        String capacityTypeToOrder = _configDao.getValue(Config.HostCapacityTypeToOrderClusters.key());
-        short capacityType = CapacityVO.CAPACITY_TYPE_CPU;
-        if (ApiConstants.RAM.equalsIgnoreCase(capacityTypeToOrder)){
-            capacityType = CapacityVO.CAPACITY_TYPE_MEMORY;
-        } else if (ApiConstants.COMBINED_CAPACITY_ORDERING.equalsIgnoreCase(capacityTypeToOrder)) {
-            capacityType = -1;
-        }
-
-        if (cpuToMemoryWeight == 1) {
-            capacityType = CapacityVO.CAPACITY_TYPE_CPU;
-        }
-        if (cpuToMemoryWeight == 0) {
-            capacityType = CapacityVO.CAPACITY_TYPE_MEMORY;
-        }
-        return capacityType;
-    }
-
-
     @NotNull
-    private static Map<Long, Double> getHostByCombinedCapacities(List<CapacityVO> capacities, double cpuToMemoryWeight) {
+    public static Map<Long, Double> getHostByCombinedCapacities(List<CapacityVO> capacities, double cpuToMemoryWeight) {
         Map<Long, Double> hostByComputedCapacity = new HashMap<>();
         for (CapacityVO capacityVO : capacities) {
             long hostId = capacityVO.getHostOrPoolId();

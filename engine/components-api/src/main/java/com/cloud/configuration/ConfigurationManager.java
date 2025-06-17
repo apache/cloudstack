@@ -65,7 +65,8 @@ public interface ConfigurationManager {
             "allow.non.rfc1918.compliant.ips", "Advanced", "false",
             "Allows non-compliant RFC 1918 IPs for Shared, Isolated networks and VPCs", true, null);
 
-    ConfigKey<Float> HostCapacityTypeCpuMemoryWeight = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Float.class, "host.capacityType.to.order.clusters.cputomemoryweight",
+    ConfigKey<Float> HostCapacityTypeCpuMemoryWeight = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Float.class,
+            "host.capacityType.to.order.clusters.cputomemoryweight",
             "0.5",
             "CPU to Memory weight used for COMBINED capacityTye to order cluster and host",
             true, ConfigKey.Scope.Global);

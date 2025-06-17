@@ -70,5 +70,5 @@ public interface CapacityDao extends GenericDao<CapacityVO, Long> {
 
     List<CapacityVO> listPodCapacityByCapacityTypes(Long zoneId, List<Short> capacityTypes);
 
-    List<CapacityVO> listClusterCapacityByCapacityTypes(Long zoneId, Long podId, long vmId, List<Short> capacityTypes);
+    List<CapacityVO> listClusterCapacityByCapacityTypes(Long zoneId, Long podId, List<Short> capacityTypes);
 }

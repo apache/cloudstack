@@ -516,7 +516,8 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
 
     private Pair<List<Long>, Map<Long, Double>> getOrderedPodsByCapacity(long zoneId) {
         double cpuToMemoryWeight = ConfigurationManager.HostCapacityTypeCpuMemoryWeight.value();
-        short capacityType = getCapacityType(cpuToMemoryWeight);
+        short capacityType = getHostCapacityTypeToOrderCluster(
+                configDao.getValue(Config.HostCapacityTypeToOrderClusters.key()), cpuToMemoryWeight);
         if (capacityType >= 0) { // for capacityType other than COMBINED
             return capacityDao.orderPodsByAggregateCapacity(zoneId, capacityType);
         }
@@ -526,7 +527,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
     }
 
     // order pods by combining cpu and memory capacity considering cpuToMemoeryWeight
-    private Map<Long, Double> getPodByCombinedCapacities(List<CapacityVO> capacities, double cpuToMemoryWeight) {
+    public Map<Long, Double> getPodByCombinedCapacities(List<CapacityVO> capacities, double cpuToMemoryWeight) {
         Map<Long, Double> podByCombinedCapacity = new HashMap<>();
         for (CapacityVO capacityVO : capacities) {
             boolean isCPUCapacity = capacityVO.getCapacityType() == Capacity.CAPACITY_TYPE_CPU;
@@ -548,21 +549,22 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
 
     private Pair<List<Long>, Map<Long, Double>> getOrderedClustersByCapacity(long id, long vmId, boolean isZone) {
         double cpuToMemoryWeight = ConfigurationManager.HostCapacityTypeCpuMemoryWeight.value();
-        short capacityType = getCapacityType(cpuToMemoryWeight);
+        short capacityType = getHostCapacityTypeToOrderCluster(
+                configDao.getValue(Config.HostCapacityTypeToOrderClusters.key()), cpuToMemoryWeight);
         if (capacityType >= 0) { // for capacityType other than COMBINED
             return capacityDao.orderClustersByAggregateCapacity(id, vmId, capacityType, isZone);
         }
 
         Long zoneId = isZone ? id : null;
         Long podId = isZone ? null : id;
-        List<CapacityVO> capacities = capacityDao.listClusterCapacityByCapacityTypes(zoneId, podId, vmId,
+        List<CapacityVO> capacities = capacityDao.listClusterCapacityByCapacityTypes(zoneId, podId,
                 List.of(Capacity.CAPACITY_TYPE_CPU, Capacity.CAPACITY_TYPE_MEMORY));
 
         Map<Long, Double> clusterByCombinedCapacities = getClusterByCombinedCapacities(capacities, cpuToMemoryWeight);
         return new Pair<>(new ArrayList<>(clusterByCombinedCapacities.keySet()), clusterByCombinedCapacities);
     }
 
-    private Map<Long, Double> getClusterByCombinedCapacities(List<CapacityVO> capacities, double cpuToMemoryWeight) {
+    public Map<Long, Double> getClusterByCombinedCapacities(List<CapacityVO> capacities, double cpuToMemoryWeight) {
         Map<Long, Double> clusterByCombinedCapacity = new HashMap<>();
         for (CapacityVO capacityVO : capacities) {
             boolean isCPUCapacity = capacityVO.getCapacityType() == Capacity.CAPACITY_TYPE_CPU;
@@ -581,22 +583,20 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
     }
 
-    short getCapacityType(double cpuToMemoryWeight) {
-        String capacityTypeToOrder = configDao.getValue(Config.HostCapacityTypeToOrderClusters.key());
-        short capacityType = CapacityVO.CAPACITY_TYPE_CPU;
-        if (ApiConstants.RAM.equalsIgnoreCase(capacityTypeToOrder)){
-            capacityType = CapacityVO.CAPACITY_TYPE_MEMORY;
-        } else if (ApiConstants.COMBINED_CAPACITY_ORDERING.equalsIgnoreCase(capacityTypeToOrder)) {
-            capacityType = -1;
+    public static short getHostCapacityTypeToOrderCluster(String capacityTypeToOrder, double cpuToMemoryWeight) {
+        if (ApiConstants.RAM.equalsIgnoreCase(capacityTypeToOrder)) {
+            return CapacityVO.CAPACITY_TYPE_MEMORY;
         }
-
-        if (cpuToMemoryWeight == 1) {
-            capacityType = CapacityVO.CAPACITY_TYPE_CPU;
+        if (ApiConstants.COMBINED_CAPACITY_ORDERING.equalsIgnoreCase(capacityTypeToOrder)) {
+            if (cpuToMemoryWeight == 1.0) {
+                return CapacityVO.CAPACITY_TYPE_CPU;
+            }
+            if (cpuToMemoryWeight == 0.0) {
+                return CapacityVO.CAPACITY_TYPE_MEMORY;
+            }
+            return -1; // represents COMBINED
         }
-        if (cpuToMemoryWeight == 0) {
-            capacityType = CapacityVO.CAPACITY_TYPE_MEMORY;
-        }
-        return capacityType;
+        return CapacityVO.CAPACITY_TYPE_CPU;
     }
 
     private void removeClustersWithoutMatchingTag(List<Long> clusterListForVmAllocation, String hostTagOnOffering) {

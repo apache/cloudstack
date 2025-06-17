@@ -1105,7 +1105,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     }
 
     @Override
-    public List<CapacityVO> listClusterCapacityByCapacityTypes(Long zoneId, Long podId, long vmId, List<Short> capacityTypes) {
+    public List<CapacityVO> listClusterCapacityByCapacityTypes(Long zoneId, Long podId, List<Short> capacityTypes) {
         SearchBuilder<CapacityVO> sb = createSearchBuilder();
         sb.and("zoneId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
