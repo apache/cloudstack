@@ -390,7 +390,7 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         sb.done();
         SearchCriteria<Long> sc = sb.create();
         sc.setParameters("allocationState", Grouping.AllocationState.Enabled);
-        sc.setParameters("allocationState", Managed.ManagedState.Managed);
+        sc.setParameters("managedState", Managed.ManagedState.Managed);
         if (zoneId != null) {
             sc.setParameters("zoneId", zoneId);
         }

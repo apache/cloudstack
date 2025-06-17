@@ -243,7 +243,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`extension_custom_action_details` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `extension_custom_action_id` bigint(20) unsigned NOT NULL,
   `name` varchar(255) NOT NULL,
-  `value` varchar(255) NOT NULL,
+  `value` TEXT NOT NULL,
   `display` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_custom_action_details__action_id` FOREIGN KEY (`extension_custom_action_id`)
