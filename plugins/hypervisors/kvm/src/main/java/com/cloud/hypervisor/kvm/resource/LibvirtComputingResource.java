@@ -571,9 +571,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * 1st parameter: VM's name;<br>
      * 2nd parameter: disk's label (target.dev tag from VM's XML);<br>
      * 3rd parameter: the absolute path of the base file;
-     * 4th parameter: the flag '--delete', if Libvirt supports it. Libvirt started to support it on version <b>6.0.0</b>;
      */
-    private static final String COMMAND_MERGE_SNAPSHOT = "virsh blockcommit %s %s --base %s --active --wait %s --pivot";
+    private static final String COMMAND_MERGE_SNAPSHOT = "virsh blockcommit %s %s --base %s";
 
     public long getHypervisorLibvirtVersion() {
         return hypervisorLibvirtVersion;
@@ -5878,7 +5877,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LIBVIRT_EVENTS_ENABLED)) {
             mergeSnapshotIntoBaseFileWithEventsAndConfigurableTimeout(vm, diskLabel, baseFilePath, topFilePath, active, snapshotName, volume, conn);
         } else {
-            mergeSnapshotIntoBaseFileWithoutEvents(vm, diskLabel, baseFilePath, snapshotName, volume, conn);
+            mergeSnapshotIntoBaseFileWithoutEvents(vm, diskLabel, baseFilePath, topFilePath, active, snapshotName, volume, conn);
         }
     }
 
@@ -5949,10 +5948,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * @param snapshotName Name of the snapshot;
      * @throws LibvirtException
      */
-    protected void mergeSnapshotIntoBaseFileWithoutEvents(Domain vm, String diskLabel, String baseFilePath, String snapshotName, VolumeObjectTO volume, Connect conn) throws LibvirtException {
+    protected void mergeSnapshotIntoBaseFileWithoutEvents(Domain vm, String diskLabel, String baseFilePath, String topFilePath, boolean active, String snapshotName, VolumeObjectTO volume, Connect conn) throws LibvirtException {
         boolean isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit = LibvirtUtilitiesHelper.isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit(conn);
         String vmName = vm.getName();
-        String mergeCommand = String.format(COMMAND_MERGE_SNAPSHOT, vmName, diskLabel, baseFilePath, isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit ? "--delete" : "");
+        String mergeCommand = buildMergeCommand(vmName, diskLabel, baseFilePath, topFilePath, active, isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit);
         String mergeResult = Script.runSimpleBashScript(mergeCommand);
 
         if (mergeResult == null) {
@@ -5967,6 +5966,22 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         logger.warn("%s VM XML: [{}].", errorMsg, vm.getXMLDesc(0));
         throw new CloudRuntimeException(errorMsg);
+    }
+
+    protected String buildMergeCommand(String vmName, String diskLabel, String baseFilePath, String topFilePath, boolean active, boolean delete) {
+        StringBuilder cmd = new StringBuilder(COMMAND_MERGE_SNAPSHOT);
+        if (StringUtils.isNotEmpty(topFilePath)) {
+            cmd.append(" --top ");
+            cmd.append(topFilePath);
+        }
+        if (active) {
+            cmd.append(" --active --pivot");
+        }
+        if (delete) {
+            cmd.append(" --delete");
+        }
+        cmd.append(" --wait");
+        return String.format(cmd.toString(), vmName, diskLabel, baseFilePath);
     }
 
     /**

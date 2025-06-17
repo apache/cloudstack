@@ -123,7 +123,7 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
         transitStateWithoutThrow(vmSnapshotBeingDeleted, VMSnapshot.Event.ExpungeRequested);
 
         List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(vmSnapshotBeingDeleted.getVmId());
-        List<VMSnapshotVO> snapshotChildren = vmSnapshotDao.listByParent(vmSnapshotBeingDeleted.getId());
+        List<VMSnapshotVO> snapshotChildren = vmSnapshotDao.listByParentAndStateIn(vmSnapshotBeingDeleted.getId(), VMSnapshot.State.Ready, VMSnapshot.State.Hidden);
 
         long realSize = getVMSnapshotRealSize(vmSnapshotBeingDeleted);
         int numberOfChildren = snapshotChildren.size();
@@ -248,10 +248,10 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
         if (oldParent.getCurrent()) {
             snapshotVos = mergeCurrentDeltaOnSnapshot(oldParent, userVm, hostId, volumeTOs);
         } else {
-            List<VMSnapshotVO> oldSiblings = vmSnapshotDao.listByParent(oldParent.getId());
+            List<VMSnapshotVO> oldSiblings = vmSnapshotDao.listByParentAndStateIn(oldParent.getId(), VMSnapshot.State.Ready, VMSnapshot.State.Hidden);
 
             if (oldSiblings.size() > 1) {
-                logger.debug("The old snapshot [{}] is dead and still has more than one live snapshot. We will keep it on storage still.", oldParent.getUuid());
+                logger.debug("The old snapshot [{}] is dead and still has more than one live child snapshot. We will keep it on storage still.", oldParent.getUuid());
                 return;
             }
 
@@ -366,7 +366,7 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
     private List<SnapshotVO> mergeSnapshots(VMSnapshotVO vmSnapshotVO, VMSnapshotVO childSnapshot, UserVmVO userVm, List<VolumeObjectTO> volumeObjectTOS, Long hostId) {
         logger.debug("Merging VM snapshot [{}] with its child [{}].", vmSnapshotVO.getUuid(), childSnapshot.getUuid());
 
-        List<VMSnapshotVO> snapshotGrandChildren = vmSnapshotDao.listByParent(childSnapshot.getId());
+        List<VMSnapshotVO> snapshotGrandChildren = vmSnapshotDao.listByParentAndStateIn(childSnapshot.getId(), VMSnapshot.State.Ready, VMSnapshot.State.Hidden);
 
         if (userVm.getState().equals(VirtualMachine.State.Running) && !snapshotGrandChildren.isEmpty()) {
             logger.debug("Removing VM snapshots that are part of the VM's [{}] current backing chain from the list of snapshots to be rebased.", userVm.getUuid());
