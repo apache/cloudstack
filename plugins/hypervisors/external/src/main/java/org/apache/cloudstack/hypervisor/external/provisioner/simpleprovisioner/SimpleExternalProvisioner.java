@@ -439,14 +439,8 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
         return new RunCustomActionAnswer(cmd, result.first(), result.second());
     }
 
-    protected boolean createEntryPoint(String extensionName, boolean userDefined, String extensionRelativeEntryPoint,
-               Path destinationPathObj) throws IOException {
-        String baseEntryPointPath = BASE_EXTERNAL_PROVISIONER_SCRIPT;
-        if (!userDefined) {
-            String fileName = Paths.get(extensionRelativeEntryPoint).getFileName().toString();
-            baseEntryPointPath = BASE_EXTERNAL_PROVISIONER_SCRIPTS_DIR + File.separator + fileName;
-        }
-        String sourceScriptPath = Script.findScript("", baseEntryPointPath);
+    protected boolean createEntryPoint(String extensionName, Path destinationPathObj) throws IOException {
+        String sourceScriptPath = Script.findScript("", BASE_EXTERNAL_PROVISIONER_SCRIPT);
         if(sourceScriptPath == null) {
             logger.error("Failed to find base script for preparing extension: {}",
                     extensionName);
@@ -460,9 +454,12 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     @Override
     public void prepareExtensionEntryPoint(String extensionName, boolean userDefined,
                            String extensionRelativeEntryPoint) {
-        logger.debug("Preparing entry point for extension: {}, user-defined: {}", extensionName, userDefined);
+        logger.debug("Preparing entry point for Extension [name: {}, user-defined: {}]", extensionName, userDefined);
+        if (!userDefined) {
+            logger.debug("Skipping preparing entry point for inbuilt extension: {}", extensionName);
+        }
         String destinationPath = getExtensionEntryPoint(extensionRelativeEntryPoint);
-        if (userDefined && !destinationPath.endsWith(".sh")) {
+        if (!destinationPath.endsWith(".sh")) {
             logger.info("File {} for extension: {} is not a bash script, skipping copy.", destinationPath,
                     extensionName);
             return;
@@ -493,7 +490,7 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
             throw exception;
         }
         try {
-            if (!createEntryPoint(extensionName, userDefined, extensionRelativeEntryPoint, destinationPathObj)) {
+            if (!createEntryPoint(extensionName, destinationPathObj)) {
                 throw exception;
             }
         } catch (IOException e) {
