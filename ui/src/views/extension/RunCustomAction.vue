@@ -247,7 +247,7 @@ export default {
         api('runCustomAction', args, httpMethod, data).then(response => {
           this.$pollJob({
             jobId: response.runcustomactionresponse.jobid,
-            title: this.$t('label.run.custom.action'),
+            title: this.currentAction.name || this.$t('label.run.custom.action'),
             description: this.currentAction.description || this.currentAction.name,
             successMethod: (result) => {
               this.$emit('refresh-data')
@@ -256,19 +256,19 @@ export default {
               const message = actionResponse?.result?.message || (success ? 'success' : 'fail')
               if (actionResponse.success) {
                 this.$notification.success({
-                  message: this.$t('label.run.custom.action'),
+                  message: this.currentAction.name || this.$t('label.run.custom.action'),
                   description: message,
                   duration: 0
                 })
               } else {
                 this.$notification.error({
-                  message: this.$t('error.run.custom.action'),
+                  message: this.currentAction.name || this.$t('label.run.custom.action'),
                   description: message,
                   duration: 0
                 })
               }
             },
-            errorMessage: this.$t('error.run.custom.action'),
+            errorMessage: this.currentAction.name || this.$t('label.run.custom.action'),
             loadingMessage: this.$t('message.running.custom.action'),
             catchMessage: this.$t('error.fetching.async.job.result')
           })
