@@ -266,7 +266,7 @@ BEGIN
     ) THEN
         INSERT INTO extension (
             uuid, name, description, type,
-            relative_entry_point, entry_point_sync,
+            relative_entry_point, entry_point_ready,
             is_user_defined, state, created, removed
         )
         VALUES (
