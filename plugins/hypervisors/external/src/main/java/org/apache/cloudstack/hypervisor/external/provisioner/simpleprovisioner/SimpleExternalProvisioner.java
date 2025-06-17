@@ -166,7 +166,7 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     }
 
     protected void createOrCheckExtensionsDataDirectory() throws ConfigurationException {
-        String dataDir = getServerProperty("extensions.data.root");
+        String dataDir = getServerProperty(DATA_DIR_CONFIG_NAME);
         if (StringUtils.isBlank(dataDir)) {
             throw new ConfigurationException("Extensions data directory path is blank");
         }
