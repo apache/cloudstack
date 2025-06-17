@@ -47,7 +47,6 @@ import org.apache.cloudstack.spring.module.context.ResourceApplicationContext;
 import org.apache.cloudstack.spring.module.model.ModuleDefinition;
 import org.apache.cloudstack.spring.module.model.ModuleDefinitionSet;
 
-
 public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
 
     protected Logger logger = LogManager.getLogger(getClass());
