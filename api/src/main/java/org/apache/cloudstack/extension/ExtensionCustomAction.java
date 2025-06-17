@@ -133,15 +133,15 @@ public interface ExtensionCustomAction extends InternalIdentity, Identity {
 
         private final String name;
         private final Type type;
-        private final ValidationFormat validationFormat;
-        private final List<Object> valueOptions;
+        private final ValidationFormat validationformat;
+        private final List<Object> valueoptions;
         private final boolean required;
 
-        public Parameter(String name, Type type, ValidationFormat validationFormat, List<Object> valueOptions, boolean required) {
+        public Parameter(String name, Type type, ValidationFormat validationformat, List<Object> valueoptions, boolean required) {
             this.name = name;
             this.type = type;
-            this.validationFormat = validationFormat;
-            this.valueOptions = valueOptions;
+            this.validationformat = validationformat;
+            this.valueoptions = valueoptions;
             this.required = required;
         }
 
@@ -248,11 +248,11 @@ public interface ExtensionCustomAction extends InternalIdentity, Identity {
         }
 
         public ValidationFormat getValidationFormat() {
-            return validationFormat;
+            return validationformat;
         }
 
         public List<Object> getValueOptions() {
-            return valueOptions;
+            return valueoptions;
         }
 
         public boolean isRequired() {
@@ -275,7 +275,7 @@ public interface ExtensionCustomAction extends InternalIdentity, Identity {
         }
 
         private void validateValueInOptions(Object value) {
-            if (CollectionUtils.isNotEmpty(valueOptions) && !valueOptions.contains(value)) {
+            if (CollectionUtils.isNotEmpty(valueoptions) && !valueoptions.contains(value)) {
                 throw new InvalidParameterException();
             }
         }
@@ -291,11 +291,11 @@ public interface ExtensionCustomAction extends InternalIdentity, Identity {
                     case DATE:
                         return DateUtil.parseTZDateString(value);
                     case NUMBER:
-                        Object obj = parseNumber(value, validationFormat);
+                        Object obj = parseNumber(value, validationformat);
                         validateValueInOptions(obj);
                         return obj;
                     default:
-                        if (!isValidStringValue(value, validationFormat)) {
+                        if (!isValidStringValue(value, validationformat)) {
                             throw new IllegalArgumentException();
                         }
                         validateValueInOptions(value);
