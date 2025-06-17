@@ -194,7 +194,7 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
         context.refresh();
 
         @SuppressWarnings("unchecked")
-        final List<Resource> resources = (List<Resource>) context.getBean(DEFAULT_CONFIG_RESOURCES);
+        final List<Resource> resources = (List<Resource>)context.getBean(DEFAULT_CONFIG_RESOURCES);
 
         withModule(new WithModule() {
             @Override
