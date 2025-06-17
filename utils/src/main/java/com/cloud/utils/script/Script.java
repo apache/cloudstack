@@ -687,7 +687,7 @@ public class Script implements Callable<String> {
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
         String stdErr = script.execute(parser);
         String stdOut = parser.getLines();
-        return new Pair(stdOut, stdErr);
+        return new Pair<>(stdOut, stdErr);
     }
 
     public static int executeCommandForExitValue(long timeout, String... command) {
