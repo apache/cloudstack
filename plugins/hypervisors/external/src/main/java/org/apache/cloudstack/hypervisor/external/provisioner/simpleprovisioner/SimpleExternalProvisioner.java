@@ -114,7 +114,7 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
         return "Simple external provisioner";
     }
 
-    private String defaultExtensionsDirectory = "/etc/cloudstack/extensions";
+    private String defaultExtensionsDirectory = "/usr/share/cloudstack-management/extensions";
     private String extensionsDirectory;
 
     protected Map<String, Object> loadAccessDetails(Map<String, Object> externalDetails, VirtualMachineTO virtualMachineTO) {

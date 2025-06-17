@@ -779,10 +779,6 @@
                                 </copy>
                                 <!-- CLOUDSTACK-1304 -->
                                 <chmod perm="755" file="${project.build.directory}/common/scripts/**" type="both" />
-                                <copy todir="/etc/cloudstack/extensions/ext">
-                                    <fileset dir="${basedir}/../scripts/vm/hypervisor/external/simpleExternalProvisioner/extensions" />
-                                </copy>
-                                <chmod perm="755" file="/etc/cloudstack/extensions/ext**" type="both" />
                                 <copy todir="${project.build.directory}/classes/META-INF/webapp/WEB-INF/">
                                     <fileset dir="${basedir}/src/main/webapp/WEB-INF/">
                                         <include name="web.xml" />
