@@ -1163,7 +1163,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         vmTO.setMetadataProductName(metadataProduct);
     }
 
-    protected void updateExternalVm(VirtualMachineTO vmTO, VirtualMachineTO updatedTO) {
+    protected void updateExternalVmPrepareAnswer(VirtualMachineTO vmTO, VirtualMachineTO updatedTO) {
         if (updatedTO == null) {
             return;
         }
@@ -1224,7 +1224,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             return;
         }
         PrepareExternalProvisioningAnswer prepareAnswer = (PrepareExternalProvisioningAnswer)answer;
-        updateExternalVm(virtualMachineTO, prepareAnswer.getVirtualMachineTO());
+        updateExternalVmPrepareAnswer(virtualMachineTO, prepareAnswer.getVirtualMachineTO());
     }
 
     @Override

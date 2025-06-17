@@ -83,6 +83,7 @@ import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.google.gson.JsonSyntaxException;
 
 public class SimpleExternalProvisioner extends ManagerBase implements ExternalProvisioner, PluggableService {
 
@@ -267,13 +268,13 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
         if (StringUtils.isEmpty(output)) {
             return new PrepareExternalProvisioningAnswer(cmd, true, "");
         }
-        Map<String, String> resultMap = null;
+        VirtualMachineTO virtualMachineTO = null;
         try {
-            resultMap = StringUtils.parseJsonToMap(output);
-        } catch (CloudRuntimeException e) {
+            virtualMachineTO = GsonHelper.getGson().fromJson(output, VirtualMachineTO.class);
+        } catch (JsonSyntaxException e) {
             logger.warn("Failed to parse the output from preparing external provisioning operation as part of VM deployment");
         }
-        return new PrepareExternalProvisioningAnswer(cmd, resultMap, null, null);
+        return new PrepareExternalProvisioningAnswer(cmd, null, virtualMachineTO, null);
     }
 
     @Override

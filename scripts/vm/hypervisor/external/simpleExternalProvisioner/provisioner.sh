@@ -33,9 +33,18 @@ prepare() {
     mac_address=$(generate_random_mac)
 
     local response
-    response=$(jq -n --arg mac "$mac_address" \
-        '{status: "success", mac_address: $mac}')
-
+    $response='{"nics":['
+    first=1
+    while read -r uuid; do
+        new_mac=$(generate_random_mac)
+        if [ $first -eq 1 ]; then
+            first=0
+        else
+            $response+=','
+        fi
+        $response+='{"uuid":"'"$uuid"'","mac":"'"$new_mac"'"}'
+    done <<< "$nics_json"
+    $response+=']}'
     echo "$response"
 }
 
