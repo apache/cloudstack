@@ -341,7 +341,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ChangeBgpPeersForNetwork from '@/views/network/ChangeBgpPeerForNetwork.vue'
@@ -458,7 +458,7 @@ export default {
     },
     fetchDomains () {
       this.domainsLoading = true
-      api('listDomains', {
+      getAPI('listDomains', {
         details: 'min',
         listAll: true
       }).then(response => {
@@ -482,7 +482,7 @@ export default {
     },
     fetchZoneBgpPeer () {
       this.componentLoading = true
-      api('listBgpPeers', {
+      getAPI('listBgpPeers', {
         zoneid: this.resource.id,
         projectid: -1,
         showicon: true,
@@ -516,7 +516,7 @@ export default {
         params.account = this.addAccountForBgpPeer.account
       }
 
-      api('dedicateBgpPeer', params).then(response => {
+      postAPI('dedicateBgpPeer', params).then(response => {
         this.$pollJob({
           jobId: response.dedicatebgppeerresponse.jobid,
           title: this.$t('label.dedicate.bgp.peer'),
@@ -546,7 +546,7 @@ export default {
     },
     handleRemoveAccountFromBgpPeer (id) {
       this.componentLoading = true
-      api('releaseBgpPeer', { id }).then(response => {
+      postAPI('releaseBgpPeer', { id }).then(response => {
         this.$pollJob({
           jobId: response.releasebgppeerresponse.jobid,
           title: this.$t('label.release.dedicated.bgp.peer'),
@@ -598,7 +598,7 @@ export default {
     },
     handleDeleteBgpPeer (id) {
       this.componentLoading = true
-      api('deleteBgpPeer', { id }).then(response => {
+      postAPI('deleteBgpPeer', { id }).then(response => {
         this.$pollJob({
           jobId: response.deletebgppeerresponse.jobid,
           title: this.$t('label.delete.bgp.peer'),
@@ -641,7 +641,7 @@ export default {
           domainid: values.domain,
           account: values.account
         }
-        api('createBgpPeer', params).then(response => {
+        postAPI('createBgpPeer', params).then(response => {
           this.$pollJob({
             jobId: response.createbgppeerresponse.jobid,
             title: this.$t('label.add.bgp.peer'),
@@ -689,7 +689,7 @@ export default {
           ip6address: values.ip6address,
           password: values.password
         }
-        api('updateBgpPeer', params).then(response => {
+        postAPI('updateBgpPeer', params).then(response => {
           this.$pollJob({
             jobId: response.updatebgppeerresponse.jobid,
             title: this.$t('label.update.bgp.peer'),

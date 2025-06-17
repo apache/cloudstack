@@ -169,7 +169,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import router from '@/router'
 
 import Breadcrumb from '@/components/widgets/Breadcrumb'
@@ -229,7 +229,7 @@ export default {
     },
     listInfra () {
       this.loading = true
-      api('listInfrastructure').then(json => {
+      getAPI('listInfrastructure').then(json => {
         this.stats = []
         if (json && json.listinfrastructureresponse && json.listinfrastructureresponse.infrastructure) {
           this.stats = json.listinfrastructureresponse.infrastructure
@@ -255,7 +255,7 @@ export default {
     },
 
     pollActionCompletion (jobId, count) {
-      api('queryAsyncJobResult', { jobid: jobId }).then(json => {
+      getAPI('queryAsyncJobResult', { jobid: jobId }).then(json => {
         const result = json.queryasyncjobresultresponse
         if (result.jobstatus === 1 && this.maxCerts === count) {
           this.$message.success(`${this.$t('label.certificate.upload')}: ${result.jobresult.customcertificate.message}`)
@@ -294,7 +294,7 @@ export default {
           domainsuffix: formValues.dns,
           name: 'root'
         }
-        api('uploadCustomCertificate', {}, 'POST', data).then(response => {
+        postAPI('uploadCustomCertificate', data).then(response => {
           this.pollActionCompletion(response.uploadcustomcertificateresponse.jobid, count)
         }).then(() => {
           this.sslModalClose()
@@ -309,7 +309,7 @@ export default {
               domainsuffix: formValues.dns,
               name: key
             }
-            api('uploadCustomCertificate', {}, 'POST', data).then(response => {
+            postAPI('uploadCustomCertificate', data).then(response => {
               this.pollActionCompletion(response.uploadcustomcertificateresponse.jobid, count)
             }).then(() => {
               this.sslModalClose()
@@ -324,7 +324,7 @@ export default {
           domainsuffix: formValues.dns,
           privatekey: formValues.pkcs
         }
-        api('uploadCustomCertificate', {}, 'POST', data).then(response => {
+        postAPI('uploadCustomCertificate', data).then(response => {
           this.pollActionCompletion(response.uploadcustomcertificateresponse.jobid, count)
         }).then(() => {
           this.sslModalClose()

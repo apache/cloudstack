@@ -51,7 +51,7 @@
 
 <script>
 import store from '@/store'
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import _ from 'lodash'
 
 export default {
@@ -73,7 +73,7 @@ export default {
       const samlAccounts = []
       const getNextPage = () => {
         this.loading = true
-        api('listAndSwitchSamlAccount', { details: 'min', page: page, pageSize: 500 }).then(json => {
+        postAPI('listAndSwitchSamlAccount', { details: 'min', page: page, pageSize: 500 }).then(json => {
           if (json && json.listandswitchsamlaccountresponse && json.listandswitchsamlaccountresponse.samluseraccount) {
             samlAccounts.push(...json.listandswitchsamlaccountresponse.samluseraccount)
           }
@@ -102,7 +102,7 @@ export default {
     },
     changeAccount (index) {
       const account = this.samlAccounts[index]
-      api('listAndSwitchSamlAccount', {}, 'POST', {
+      postAPI('listAndSwitchSamlAccount', {
         userid: account.userId,
         domainid: account.domainId
       }).then(response => {

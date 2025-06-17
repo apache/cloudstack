@@ -214,7 +214,7 @@
 </template>
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -310,7 +310,7 @@ export default {
         if (values.perfectForwardSecrecy !== 'None') {
           esppolicy += ';' + (values.perfectForwardSecrecy)
         }
-        api('createVpnCustomerGateway', {
+        postAPI('createVpnCustomerGateway', {
           name: values.name,
           gateway: values.gateway,
           cidrlist: values.cidrlist,
