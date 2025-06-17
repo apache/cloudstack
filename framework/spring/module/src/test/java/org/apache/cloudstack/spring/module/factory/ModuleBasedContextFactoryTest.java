@@ -91,14 +91,40 @@ public class ModuleBasedContextFactoryTest {
     }
 
     @Test
-    public void testConfigResources() throws IOException {
+    public void testEmptyNameConfigResources() throws IOException {
         ModuleDefinitionSet set = factory.loadModules(defs, "base");
-
         testConfigResourcesArray(new String[] {}, set.getConfigResources(""));
+    }
+
+    @Test
+    public void testBaseConfigResources() throws IOException {
+        ModuleDefinitionSet set = factory.loadModules(defs, "base");
         testConfigResourcesArray(new String[] {"base-context.xml", "base-context-inheritable.xml"}, set.getConfigResources("base"));
-        testConfigResourcesArray(new String[] {"child1-context.xml", "child1-context-inheritable.xml", "base-context-inheritable.xml", "chil1-context-override.xml"}, set.getConfigResources("child1"));
-        testConfigResourcesArray(new String[] {"child2-context.xml", "base-context-inheritable.xml"}, set.getConfigResources("child2"));
-        testConfigResourcesArray(new String[] {"chil1-1-context.xml", "child1-context-inheritable.xml", "base-context-inheritable.xml"}, set.getConfigResources("child1-1"));
+    }
+
+    @Test
+    public void testChild1ConfigResources() throws IOException {
+        ModuleDefinitionSet set = factory.loadModules(defs, "base");
+        testConfigResourcesArray(new String[] {
+                "child1-context.xml", "child1-context-inheritable.xml",
+                "base-context-inheritable.xml", "chil1-context-override.xml"
+        }, set.getConfigResources("child1"));
+    }
+
+    @Test
+    public void testChild2ConfigResources() throws IOException {
+        ModuleDefinitionSet set = factory.loadModules(defs, "base");
+        testConfigResourcesArray(new String[] {
+                "child2-context.xml", "base-context-inheritable.xml"
+        }, set.getConfigResources("child2"));
+    }
+
+    @Test
+    public void testChild11ConfigResources() throws IOException {
+        ModuleDefinitionSet set = factory.loadModules(defs, "base");
+        testConfigResourcesArray(new String[] {
+                "chil1-1-context.xml", "child1-context-inheritable.xml", "base-context-inheritable.xml"
+        }, set.getConfigResources("child1-1"));
     }
 
     private void testConfigResourcesArray(String[] expected, Resource[] actual) {
