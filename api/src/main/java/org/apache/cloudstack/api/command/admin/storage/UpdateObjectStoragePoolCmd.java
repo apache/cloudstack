@@ -44,7 +44,7 @@ public class UpdateObjectStoragePoolCmd extends BaseCmd {
     @Parameter(name = ApiConstants.URL, type = CommandType.STRING, description = "the url for the object store")
     private String url;
 
-    @Parameter(name = ApiConstants.SIZE, type = CommandType.LONG, description = "the total size of the object store in GiB. Used for tracking capacity and sending alerts", since = "4.21")
+    @Parameter(name = ApiConstants.SIZE, type = CommandType.LONG, description = "the total size of the object store in GiB. Used for tracking capacity and sending alerts. Set to 0 to stop tracking.", since = "4.21")
     private Long size;
 
     /////////////////////////////////////////////////////

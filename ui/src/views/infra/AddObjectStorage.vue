@@ -166,7 +166,8 @@ export default {
         const values = this.handleRemoveFields(formRaw)
 
         var data = {
-          name: values.name
+          name: values.name,
+          size: values.size
         }
         var provider = values.provider
 

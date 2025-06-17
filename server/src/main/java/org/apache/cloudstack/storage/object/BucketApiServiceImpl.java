@@ -173,6 +173,14 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
             if (cmd.getQuota() != null) {
                 objectStore.setQuota(bucketTO, cmd.getQuota());
                 resourceLimitManager.incrementResourceCount(bucket.getAccountId(), Resource.ResourceType.object_storage, (cmd.getQuota() * Resource.ResourceType.bytesToGiB));
+                if (objectStoreVO.getTotalSize() != null && objectStoreVO.getTotalSize() != 0 && objectStoreVO.getAllocatedSize() != null) {
+                    Long allocatedSize = objectStoreVO.getAllocatedSize() / Resource.ResourceType.bytesToGiB;
+                    Long totalSize = objectStoreVO.getTotalSize() / Resource.ResourceType.bytesToGiB;
+                    if (cmd.getQuota() + objectStoreVO.getAllocatedSize() > objectStoreVO.getTotalSize()) {
+                        logger.error("Object store {}'s allocated size has reached the total size limit of {}GiB.", objectStoreVO.getName(), (objectStoreVO.getTotalSize() / Resource.ResourceType.bytesToGiB));
+                        throw new CloudRuntimeException("Not enough space in object store to create the bucket");
+                    }
+                }
             }
 
             if (cmd.getPolicy() != null) {

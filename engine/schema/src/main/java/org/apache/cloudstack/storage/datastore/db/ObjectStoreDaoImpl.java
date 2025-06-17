@@ -146,7 +146,7 @@ public class ObjectStoreDaoImpl extends GenericDaoBase<ObjectStoreVO, Long> impl
         ObjectStoreResponse osResponse = new ObjectStoreResponse();
         osResponse.setId(store.getUuid());
         osResponse.setName(store.getName());
-        if (store.getTotalSize() != null) {
+        if (store.getTotalSize() != null && store.getTotalSize() != 0L) {
             osResponse.setStorageTotal(store.getTotalSize());
         }
         if (store.getUsedSize() == null) {
