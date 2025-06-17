@@ -183,16 +183,16 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
 
         // be as much verbose as possible, otherwise it will be difficult to troubleshoot operational issue without logs
         if (StringUtils.isEmpty(configValue)) {
-            LOGGER.debug(String.format("Skipped ScaleIO validation as property %s not sent by Management Server", configKey));
+            logger.debug(String.format("Skipped ScaleIO validation as property %s not sent by Management Server", configKey));
         } else if (Boolean.valueOf(configValue).equals(Boolean.FALSE)) {
-            LOGGER.debug(String.format("Skipped ScaleIO validation as property %s received as %s", configKey, configValue));
+            logger.debug(String.format("Skipped ScaleIO validation as property %s received as %s", configKey, configValue));
         } else {
             Collection<String> mdmsConfig = ScaleIOUtil.getMdmsFromConfig();
             Collection<String> mdmsCli = ScaleIOUtil.getMdmsFromCli();
             if (!mdmsCli.equals(mdmsConfig)) {
                 String msg = String.format("MDM addresses from memory and configuration file don't match. " +
                         "Memory values: %s, configuration file values: %s", mdmsCli, mdmsConfig);
-                LOGGER.warn(msg);
+                logger.warn(msg);
                 throw new CloudRuntimeException(msg);
             }
         }
@@ -661,7 +661,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
                 if (!ScaleIOUtil.isMdmPresent(mdmAddresses[0])) {
                     return new Ternary<>(false, null, "Failed to add MDMs");
                 } else {
-                    LOGGER.debug(String.format("MDMs %s added to storage pool %s", mdms, uuid));
+                    logger.debug(String.format("MDMs %s added to storage pool %s", mdms, uuid));
                     applyTimeout(details);
                 }
             }
@@ -692,9 +692,9 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
                     String configValue = details.get(configKey);
 
                     if (StringUtils.isEmpty(configValue)) {
-                        LOGGER.debug(String.format("Configuration key %s not provided", configKey));
+                        logger.debug(String.format("Configuration key %s not provided", configKey));
                     } else {
-                        LOGGER.debug(String.format("Configuration key %s provided as %s", configKey, configValue));
+                        logger.debug(String.format("Configuration key %s provided as %s", configKey, configValue));
                     }
                     Boolean blockUnprepare = Boolean.valueOf(configValue);
                     if (!ScaleIOUtil.isRemoveMdmCliSupported() && !ScaleIOUtil.getVolumeIds().isEmpty() && Boolean.TRUE.equals(blockUnprepare)) {
@@ -706,7 +706,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
                 if (ScaleIOUtil.isMdmPresent(mdmAddresses[0])) {
                     return new Pair<>(false, "Failed to remove MDMs, unable to unprepare the SDC client");
                 } else {
-                    LOGGER.debug(String.format("MDMs %s removed from storage pool %s", mdms, uuid));
+                    logger.debug(String.format("MDMs %s removed from storage pool %s", mdms, uuid));
                     applyTimeout(details);
                 }
             }
@@ -735,24 +735,24 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
         String configValue = details.get(configKey);
 
         if (StringUtils.isEmpty(configValue)) {
-            LOGGER.debug(String.format("Apply timeout value not defined in property %s, skip", configKey));
+            logger.debug(String.format("Apply timeout value not defined in property %s, skip", configKey));
             return;
         }
         long timeoutMs;
         try {
             timeoutMs = Long.parseLong(configValue);
         } catch (NumberFormatException e) {
-            LOGGER.warn(String.format("Invalid apply timeout value defined in property %s, skip", configKey), e);
+            logger.warn(String.format("Invalid apply timeout value defined in property %s, skip", configKey), e);
             return;
         }
         if (timeoutMs < 1) {
-            LOGGER.warn(String.format("Apply timeout value is too small (%s ms), skipping", timeoutMs));
+            logger.warn(String.format("Apply timeout value is too small (%s ms), skipping", timeoutMs));
             return;
         }
         try {
             Thread.sleep(timeoutMs);
         } catch (InterruptedException e) {
-            LOGGER.warn(String.format("Apply timeout %s ms interrupted", timeoutMs), e);
+            logger.warn(String.format("Apply timeout %s ms interrupted", timeoutMs), e);
         }
     }
 
