@@ -90,7 +90,9 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     public static final String BASE_EXTERNAL_PROVISIONER_SCRIPT = BASE_EXTERNAL_PROVISIONER_SCRIPTS_DIR + "/provisioner.sh";
 
     private static final String PROPERTIES_FILE = "server.properties";
+    private static final String ENTRY_POINT_DIR_CONFIG_NAME = "extensions.file.path";
     private static final String DATA_DIR_CONFIG_NAME = "extensions.data.file.path";
+    private static final String DEFAULT_EXTENSIONS_DIRECTORY = "/usr/share/cloudstack-management/extensions";
 
     @Inject
     UserVmDao _uservmDao;
@@ -105,8 +107,6 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     HypervisorGuruManager hypervisorGuruManager;
 
     private static final AtomicReference<Properties> propertiesRef = new AtomicReference<>();
-
-    private String defaultExtensionsDirectory = "/usr/share/cloudstack-management/extensions";
     private String extensionsDirectory;
 
     private String extensionsDataDirectory;
@@ -216,26 +216,11 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
 
-        final File extensionsPropertiesFile = PropertiesUtil.findConfigFile("server.properties");
-
-        if (extensionsPropertiesFile == null) {
-            logger.debug("extensions.properties file not found, using default extensions directory");
-            extensionsDirectory = defaultExtensionsDirectory;
-        } else {
-            Properties properties = new Properties();
-            try (FileInputStream fis = new FileInputStream(extensionsPropertiesFile)) {
-                properties.load(fis);
-                extensionsDirectory = properties.getProperty("extensions.file.path");
-                logger.debug("Loaded extensions directory from properties file: {}", extensionsDirectory);
-
-                if (StringUtils.isBlank(extensionsDirectory)) {
-                    logger.warn("extensions.file.path property is blank in extensions.properties, using default");
-                    extensionsDirectory = defaultExtensionsDirectory;
-                }
-            } catch (IOException e) {
-                logger.warn("Failed to load extensions.properties file, falling back to default", e);
-                extensionsDirectory = defaultExtensionsDirectory;
-            }
+        extensionsDirectory = getServerProperty(ENTRY_POINT_DIR_CONFIG_NAME);
+        if (StringUtils.isEmpty(extensionsDirectory)) {
+            logger.debug("extensions.file.path is found empty, using default extensions directory: {}",
+                    DEFAULT_EXTENSIONS_DIRECTORY);
+            extensionsDirectory = DEFAULT_EXTENSIONS_DIRECTORY;
         }
 
         checkExtensionsDirectory();
