@@ -382,6 +382,7 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     @Override
     public List<Long> listEnabledClusterIdsByZoneHypervisorArch(Long zoneId, HypervisorType hypervisorType, CPU.CPUArch arch) {
         GenericSearchBuilder<ClusterVO, Long> sb = createSearchBuilder(Long.class);
+        sb.selectFields(sb.entity().getId());
         sb.and("zoneId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("allocationState", sb.entity().getAllocationState(), Op.EQ);
         sb.and("managedState", sb.entity().getManagedState(), Op.EQ);
