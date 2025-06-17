@@ -361,9 +361,9 @@ export default {
         }).finally(() => {
           this.clusterConfigLoading = false
           if (!this.isObjectEmpty(this.kubernetesVersion) && this.isValidValueForKey(this.kubernetesVersion, 'semanticversion')) {
-            this.kubectlLinuxLink = 'https://storage.googleapis.com/kubernetes-release/release/v' + this.kubernetesVersion.semanticversion + '/bin/linux/amd64/kubectl'
-            this.kubectlMacLink = 'https://storage.googleapis.com/kubernetes-release/release/v' + this.kubernetesVersion.semanticversion + '/bin/darwin/amd64/kubectl'
-            this.kubectlWindowsLink = 'https://storage.googleapis.com/kubernetes-release/release/v' + this.kubernetesVersion.semanticversion + '/bin/windows/amd64/kubectl.exe'
+            this.kubectlLinuxLink = 'https://dl.k8s.io/release/v' + this.kubernetesVersion.semanticversion + '/bin/linux/amd64/kubectl'
+            this.kubectlMacLink = 'https://dl.k8s.io/release/v' + this.kubernetesVersion.semanticversion + '/bin/darwin/amd64/kubectl'
+            this.kubectlWindowsLink = 'https://dl.k8s.io/release/v' + this.kubernetesVersion.semanticversion + '/bin/windows/amd64/kubectl.exe'
           }
         })
       }
@@ -384,9 +384,9 @@ export default {
         }).finally(() => {
           this.versionLoading = false
           if (!this.isObjectEmpty(this.kubernetesVersion) && this.isValidValueForKey(this.kubernetesVersion, 'semanticversion')) {
-            this.kubectlLinuxLink = 'https://storage.googleapis.com/kubernetes-release/release/v' + this.kubernetesVersion.semanticversion + '/bin/linux/amd64/kubectl'
-            this.kubectlMacLink = 'https://storage.googleapis.com/kubernetes-release/release/v' + this.kubernetesVersion.semanticversion + '/bin/darwin/amd64/kubectl'
-            this.kubectlWindowsLink = 'https://storage.googleapis.com/kubernetes-release/release/v' + this.kubernetesVersion.semanticversion + '/bin/windows/amd64/kubectl.exe'
+            this.kubectlLinuxLink = 'https://dl.k8s.io/release/v' + this.kubernetesVersion.semanticversion + '/bin/linux/amd64/kubectl'
+            this.kubectlMacLink = 'https://dl.k8s.io/release/v' + this.kubernetesVersion.semanticversion + '/bin/darwin/amd64/kubectl'
+            this.kubectlWindowsLink = 'https://dl.k8s.io/release/v' + this.kubernetesVersion.semanticversion + '/bin/windows/amd64/kubectl.exe'
           }
         })
       }
