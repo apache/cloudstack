@@ -206,7 +206,7 @@ public class ScaleIOUtil {
         boolean removeMdmCliSupported = isRemoveMdmCliSupported();
         boolean restartSDC = false;
         for (String mdmAddress : mdmAddresses) {
-            // continue to next address if current MDM is not present in configuratino
+            // continue to next address if current MDM is not present in configuration
             if (!isMdmPresent(mdmAddress)) {
                 continue;
             }
