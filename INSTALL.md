@@ -28,7 +28,7 @@ Set up Maven (3.9.10):
     # echo export PATH=/usr/local/maven/bin:${PATH} >> ~/.bashrc # or .zshrc or .profile
     # source ~/.bashrc
 
-Setup up NodeJS (LTS):
+Setup up Node.js 16:
 
     # curl -sL https://rpm.nodesource.com/setup_16.x | sudo -E bash -
     # sudo yum install nodejs
