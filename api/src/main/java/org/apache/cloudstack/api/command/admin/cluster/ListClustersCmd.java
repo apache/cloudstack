@@ -128,19 +128,19 @@ public class ListClustersCmd extends BaseListCmd {
 
     protected Pair<List<ClusterResponse>, Integer> getClusterResponses() {
         Pair<List<? extends Cluster>, Integer> result = _mgr.searchForClusters(this);
-        List<ClusterResponse> clusterResponses = new ArrayList<ClusterResponse>();
+        List<ClusterResponse> clusterResponses = new ArrayList<>();
         for (Cluster cluster : result.first()) {
             ClusterResponse clusterResponse = _responseGenerator.createClusterResponse(cluster, showCapacities);
             clusterResponse.setObjectName("cluster");
             clusterResponses.add(clusterResponse);
         }
-        return new Pair<List<ClusterResponse>, Integer>(clusterResponses, result.second());
+        return new Pair<>(clusterResponses, result.second());
     }
 
     @Override
     public void execute() {
         Pair<List<ClusterResponse>, Integer> clusterResponses = getClusterResponses();
-        ListResponse<ClusterResponse> response = new ListResponse<ClusterResponse>();
+        ListResponse<ClusterResponse> response = new ListResponse<>();
         response.setResponses(clusterResponses.first(), clusterResponses.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
