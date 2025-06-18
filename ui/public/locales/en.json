@@ -2085,6 +2085,7 @@
 "label.sharewith": "Share with",
 "label.showing": "Showing",
 "label.show.usage.records": "Show usage records",
+"label.showing.results.for": "Showing results for \"%x\"",
 "label.shrinkok": "Shrink OK",
 "label.shutdown": "Shutdown",
 "label.shutdown.provider": "Shutdown provider",
