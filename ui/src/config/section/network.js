@@ -182,7 +182,7 @@ export default {
         {
           api: 'replaceNetworkACLList',
           icon: 'swap-outlined',
-          label: 'label.replace.acl.list',
+          label: 'label.replace.acl',
           message: 'message.confirm.replace.acl.new.one',
           docHelp: 'adminguide/networking_and_traffic.html#configuring-network-access-control-list',
           dataView: true,
@@ -965,7 +965,7 @@ export default {
         {
           api: 'replaceNetworkACLList',
           icon: 'swap-outlined',
-          label: 'label.replace.acl.list',
+          label: 'label.replace.acl',
           message: 'message.confirm.replace.acl.new.one',
           docHelp: 'adminguide/networking_and_traffic.html#acl-on-private-gateway',
           dataView: true,

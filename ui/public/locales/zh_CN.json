@@ -2136,7 +2136,6 @@
   "label.removing.user": "\u6B63\u5728\u5220\u9664\u7528\u6237",
 
   "label.replace.acl": "\u66FF\u6362 ACL",
-  "label.replace.acl.list": "\u66FF\u6362 ACL \u5217\u8868",
   "label.report.bug": "\u62A5\u544A\u95EE\u9898",
 
   "label.required": "\u5FC5\u586B\u9879",
@@ -2667,7 +2666,6 @@
   "label.user.source": "\u6765\u6E90",
   "label.user.vm": "\u7528\u6237\u865A\u62DF\u673A",
   "label.user.data": "\u7528\u6237\u6570\u636E",
-  "label.user.data.l2": "\u7528\u6237\u6570\u636E",
   "label.username": "\u7528\u6237\u540D",
   "label.users": "\u7528\u6237",
   "label.usersource": "\u7528\u6237\u7C7B\u578B",
