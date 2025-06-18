@@ -54,6 +54,21 @@
           </span>
           <span style="margin-right: 5px">
             <a-popconfirm
+              v-if="'updateCustomAction' in $store.getters.apis"
+              placement="topRight"
+              :title="record.enabled ? $t('message.confirm.disable.custom.action') : $t('message.confirm.enable.custom.action')"
+              :ok-text="$t('label.yes')"
+              :cancel-text="$t('label.no')"
+              :loading="updateLoading"
+              @confirm="updateCustomAction(record)"
+            >
+              <tooltip-button
+                :tooltip="record.enabled ? $t('label.disable.custom.action') : $t('label.enable.custom.action')"
+                :icon="record.enabled ? 'pause-circle-outlined' : 'play-circle-outlined'" />
+            </a-popconfirm>
+          </span>
+          <span style="margin-right: 5px">
+            <a-popconfirm
               v-if="'deleteCustomAction' in $store.getters.apis"
               placement="topRight"
               :title="$t('message.action.delete.custom.action')"
@@ -158,6 +173,7 @@ export default {
       pageSize: 20,
       totalCount: 0,
       showAddCustomAction: false,
+      updateLoading: false,
       deleteLoading: false,
       showUpdateCustomAction: false,
       customActionForUpdate: {}
@@ -215,10 +231,29 @@ export default {
       this.showUpdateCustomAction = false
       this.customActionForUpdate = {}
     },
+    updateCustomAction (record) {
+      const params = {
+        id: record.id,
+        enabled: !record.enabled
+      }
+      this.updateLoading = true
+      api('updateCustomAction', params).then(json => {
+        this.fetchCustomActions()
+        this.$notification.success({
+          message: record.enabled ? this.$t('label.disable.custom.action') : this.$t('label.enable.custom.action'),
+          description: this.$t('message.success.update.custom.action')
+        })
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.updateLoading = false
+      })
+    },
     deleteCustomAction (record) {
       const params = {
         id: record.id
       }
+      this.deleteLoading = true
       api('deleteCustomAction', params).then(json => {
         this.fetchCustomActions()
         this.$notification.success({

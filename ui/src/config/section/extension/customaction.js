@@ -58,6 +58,30 @@ export default {
       component: shallowRef(defineAsyncComponent(() => import('@/views/extension/UpdateCustomAction.vue')))
     },
     {
+      api: 'updateCustomAction',
+      icon: 'play-circle-outlined',
+      label: 'label.enable.custom.action',
+      message: 'message.confirm.enable.custom.action',
+      dataView: true,
+      groupAction: true,
+      popup: true,
+      defaultArgs: { enabled: true },
+      groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
+      show: (record) => { return !record.enabled }
+    },
+    {
+      api: 'updateCustomAction',
+      icon: 'pause-circle-outlined',
+      label: 'label.disable.custom.action',
+      message: 'message.confirm.disable.custom.action',
+      dataView: true,
+      groupAction: true,
+      popup: true,
+      defaultArgs: { enabled: false },
+      groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
+      show: (record) => { return record.enabled }
+    },
+    {
       api: 'deleteCustomAction',
       icon: 'delete-outlined',
       label: 'label.delete.custom.action',

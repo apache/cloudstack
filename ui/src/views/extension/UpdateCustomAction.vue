@@ -92,12 +92,6 @@
           :placeholder="apiParams.timeout.description"
           :min="1" />
       </a-form-item>
-      <a-form-item name="enabled" ref="enabled">
-        <template #label>
-          <tooltip-label :title="$t('label.enabled')" :tooltip="apiParams.enabled.description"/>
-        </template>
-        <a-switch v-model:checked="form.enabled" />
-      </a-form-item>
       <div :span="24" class="action-button">
         <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
         <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -161,7 +155,7 @@ export default {
       const formData = {
         parameters: this.fixParamatersOptions(this.resource.parameters)
       }
-      const keys = ['description', 'allowedroletypes', 'successmessage', 'errormessage', 'details', 'timeout', 'enabled']
+      const keys = ['description', 'allowedroletypes', 'successmessage', 'errormessage', 'details', 'timeout']
       for (const key of keys) {
         formData[key] = this.resource[key]
       }
@@ -185,8 +179,7 @@ export default {
         const values = toRaw(this.form)
         this.loading = true
         const params = {
-          id: this.resource.id,
-          enabled: values.enabled
+          id: this.resource.id
         }
         const keys = ['description', 'allowedroletypes', 'successmessage', 'errormessage', 'timeout']
         for (const key of keys) {
