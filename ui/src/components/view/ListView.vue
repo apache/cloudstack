@@ -115,7 +115,7 @@
               </a-tooltip>
           </span>
           <span v-if="$route.path.startsWith('/xaas') && !record.isuserdefined" style="padding-left: 10px;">
-            <a-tag :color="this.$config.theme['@link-color']">{{ $t('label.inbuilt') }}</a-tag>
+            <a-tag :color="$config.theme['@link-color']">{{ $t('label.inbuilt') }}</a-tag>
           </span>
         </span>
       </template>
