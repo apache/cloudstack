@@ -165,7 +165,7 @@
                           :key="templateKey"
                           @handle-search-filter="filters => fetchAllTemplates(filters)"
                           @update-template-iso="updateFieldValue" />
-                        <div v-if="template.hypervisor !== 'External'">
+                        <div v-if="!isTemplateHypervisorExternal">
                           {{ $t('label.override.rootdisk.size') }}
                           <a-switch
                             v-model:checked="form.rootdisksizeitem"
@@ -291,7 +291,7 @@
                         <a-input v-model:value="form.memory"/>
                       </a-form-item>
                     </span>
-                    <span v-if="imageType!=='isoid' && template.hypervisor !== 'External'">
+                    <span v-if="imageType!=='isoid' && !isTemplateHypervisorExternal">
                       {{ $t('label.override.root.diskoffering') }}
                       <a-switch
                         v-model:checked="showOverrideDiskOfferingOption"
@@ -370,10 +370,10 @@
               <a-step
                 v-else
                 :title="imageType === 'templateid' ? $t('label.data.disk') : $t('label.disk.size')"
-                :disabled="template.hypervisor === 'External' ? true : false"
+                :disabled="isTemplateHypervisorExternal ? true : false"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description>
-                  <div v-if="zoneSelected && template.hypervisor !== 'External'">
+                  <div v-if="zoneSelected && !isTemplateHypervisorExternal">
                     <disk-offering-selection
                       :items="options.diskOfferings"
                       :row-count="rowCount.diskOfferings"
@@ -399,7 +399,7 @@
                       <a-input v-model:value="form.size"/>
                     </a-form-item>
                   </div>
-                  <div v-else-if="template.hypervisor === 'External'" style="margin-bottom: 20px; margin-top: 7px">
+                  <div v-else-if="isTemplateHypervisorExternal" style="margin-bottom: 20px; margin-top: 7px">
                     {{ $t('message.host.external.datadisk') }}
                   </div>
                 </template>
@@ -575,7 +575,7 @@
                       ref="bootintosetup">
                       <a-switch v-model:checked="form.bootintosetup" />
                     </a-form-item>
-                    <a-form-item name="dynamicscalingenabled" ref="dynamicscalingenabled" v-if="template.hypervisor !== 'External'">
+                    <a-form-item name="dynamicscalingenabled" ref="dynamicscalingenabled" v-if="!!template && !isTemplateHypervisorExternal">
                       <template #label>
                         <tooltip-label :title="$t('label.dynamicscalingenabled')" :tooltip="$t('label.dynamicscalingenabled.tooltip')"/>
                       </template>
@@ -815,7 +815,7 @@
                         :filterOption="filterOption"
                       ></a-select>
                     </a-form-item>
-                    <a-form-item name="externaldetails" ref="externaldetails" v-if="imageType === 'templateid' && template.hypervisor === 'External'">
+                    <a-form-item name="externaldetails" ref="externaldetails" v-if="imageType === 'templateid' && isTemplateHypervisorExternal">
                       <template #label>
                         <tooltip-label :title="$t('label.externaldetails')" :tooltip="apiParams.externaldetails.description" />
                       </template>
@@ -1489,6 +1489,9 @@ export default {
     },
     guestOsCategoriesSelectionDisallowed () {
       return (!this.queryGuestOsCategoryId || this.options.guestOsCategories.length === 0) && (!!this.queryTemplateId || !!this.queryIsoId)
+    },
+    isTemplateHypervisorExternal () {
+      return !!this.template && this.template.hypervisor === 'External'
     }
   },
   watch: {
@@ -2376,7 +2379,7 @@ export default {
           deployVmData.projectid = this.owner.projectid
         }
 
-        if (this.imageType === 'templateid' && this.template === 'External' && values.externaldetails) {
+        if (this.imageType === 'templateid' && this.template && this.template.hypervisor === 'External' && values.externaldetails) {
           Object.entries(values.externaldetails).forEach(([key, value]) => {
             deployVmData['externaldetails[0].' + key] = value
           })
