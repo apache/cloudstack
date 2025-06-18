@@ -3772,6 +3772,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.getHostDetails().put(HOST_INSTANCE_CONVERSION, String.valueOf(instanceConversionSupported));
         if (instanceConversionSupported) {
             cmd.getHostDetails().put(HOST_VIRTV2V_VERSION, getHostVirtV2vVersion());
+        }
+        if (hostSupportsOvfExport()) {
             cmd.getHostDetails().put(HOST_OVFTOOL_VERSION, getHostOvfToolVersion());
         }
         HealthCheckResult healthCheckResult = getHostHealthCheckResult();
@@ -5376,11 +5378,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public String getHostVirtV2vVersion() {
+        if (!hostSupportsInstanceConversion()) {
+            return "";
+        }
         String cmd = String.format("%s | awk '{print $2}'", INSTANCE_CONVERSION_SUPPORTED_CHECK_CMD);
-        return Script.runSimpleBashScript(cmd);
+        String version = Script.runSimpleBashScript(cmd);
+        return StringUtils.isNotBlank(version) ? version.split(",")[0] : "";
     }
 
     public String getHostOvfToolVersion() {
+        if (!hostSupportsOvfExport()) {
+            return "";
+        }
         return Script.runSimpleBashScript(OVF_EXPORT_TOOl_GET_VERSION_CMD);
     }
 
