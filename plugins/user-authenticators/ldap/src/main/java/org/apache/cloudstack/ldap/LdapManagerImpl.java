@@ -186,6 +186,11 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
             } catch (NamingException | IOException e) {
                 LOGGER.debug("NamingException while doing an LDAP bind", e);
                 throw new InvalidParameterValueException("Unable to bind to the given LDAP server");
+            } catch (RuntimeException e) {
+                if (e.getMessage().contains("Invalid truststore")) {
+                    throw new InvalidParameterValueException("Invalid truststore or truststore password");
+                }
+                throw e;
             } finally {
                 closeContext(context);
             }

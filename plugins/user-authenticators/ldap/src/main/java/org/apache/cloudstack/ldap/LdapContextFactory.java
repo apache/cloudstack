@@ -72,8 +72,32 @@ public class LdapContextFactory {
         if (sslStatus) {
             s_logger.info("LDAP SSL enabled.");
             environment.put(Context.SECURITY_PROTOCOL, "ssl");
-            System.setProperty("javax.net.ssl.trustStore", _ldapConfiguration.getTrustStore(domainId));
-            System.setProperty("javax.net.ssl.trustStorePassword", _ldapConfiguration.getTrustStorePassword(domainId));
+            String trustStore = _ldapConfiguration.getTrustStore(domainId);
+            String trustStorePassword = _ldapConfiguration.getTrustStorePassword(domainId);
+
+            if (!validateTrustStore(trustStore, trustStorePassword)) {
+                throw new RuntimeException("Invalid truststore or truststore password");
+            }
+
+            System.setProperty("javax.net.ssl.trustStore", trustStore);
+            System.setProperty("javax.net.ssl.trustStorePassword", trustStorePassword);
+        }
+    }
+
+    private boolean validateTrustStore(String trustStore, String trustStorePassword) {
+        if (trustStore == null || trustStorePassword == null) {
+            return false;
+        }
+
+        try {
+            java.security.KeyStore.getInstance("JKS").load(
+                new java.io.FileInputStream(trustStore),
+                trustStorePassword.toCharArray()
+            );
+            return true;
+        } catch (Exception e) {
+            s_logger.warn("Failed to validate truststore: " + e.getMessage());
+            return false;
         }
     }
 
