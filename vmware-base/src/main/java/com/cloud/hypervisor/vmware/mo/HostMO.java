@@ -75,7 +75,7 @@ import com.cloud.utils.Pair;
 
 public class HostMO extends BaseMO implements VmwareHypervisorHost {
     private static final Logger s_logger = Logger.getLogger(HostMO.class);
-    Map<String, VirtualMachineMO> _vmCache = new HashMap<String, VirtualMachineMO>();
+    Map<String, VirtualMachineMO> _vmCache = new HashMap<>();
 
     //Map<String, String> _vmInternalNameMapCache = new HashMap<String, String>();
 
@@ -320,6 +320,11 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 
     public VmwareHostType getHostType() throws Exception {
         AboutInfo aboutInfo = getHostAboutInfo();
+        if (aboutInfo == null) {
+            String msg = "no type info about host known"
+            s_logger.error(msg)
+            throw new Exception(msg);
+        }
         if ("VMware ESXi".equals(aboutInfo.getName()))
             return VmwareHostType.ESXi;
         else if ("VMware ESX".equals(aboutInfo.getName()))
