@@ -94,6 +94,7 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     private static final String ENTRY_POINT_DIR_CONFIG_NAME = "extensions.file.path";
     private static final String DATA_DIR_CONFIG_NAME = "extensions.data.file.path";
     private static final String DEFAULT_EXTENSIONS_DIRECTORY = "/usr/share/cloudstack-management/extensions";
+    private static final String DEFAULT_EXTENSIONS_DATA_DIRECTORY = "/var/lib/cloudstack/management/extensions";
 
     @Inject
     UserVmDao _uservmDao;
@@ -162,6 +163,9 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
                     extensionsDirectory);
             return false;
         }
+        if (!extensionsDirectory.equals(dir.getAbsolutePath())) {
+            extensionsDirectory = dir.getAbsolutePath();
+        }
         logger.info("Extensions directory path: {}", extensionsDirectory);
         return true;
     }
@@ -169,7 +173,9 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     protected void createOrCheckExtensionsDataDirectory() throws ConfigurationException {
         String dataDir = getServerProperty(DATA_DIR_CONFIG_NAME);
         if (StringUtils.isBlank(dataDir)) {
-            throw new ConfigurationException("Extensions data directory path is blank");
+            logger.warn("Extensions data directory path is blank, using default: {}",
+                    DEFAULT_EXTENSIONS_DATA_DIRECTORY);
+            dataDir = DEFAULT_EXTENSIONS_DATA_DIRECTORY;
         }
         File dir = new File(dataDir);
         if (!dir.exists()) {
