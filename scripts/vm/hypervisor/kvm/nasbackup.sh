@@ -16,7 +16,7 @@
 ## specific language governing permissions and limitations
 ## under the License.
 
-set -e
+set -eo pipefail
 
 # CloudStack B&R NAS Backup and Recovery Tool for KVM
 
@@ -108,9 +108,15 @@ backup_running_vm() {
   virsh -c qemu:///system domiflist $VM > $dest/domiflist.xml 2>/dev/null
   virsh -c qemu:///system domblklist $VM > $dest/domblklist.xml 2>/dev/null
 
-  until virsh -c qemu:///system domjobinfo $VM --completed --keep-completed 2>/dev/null | grep "Completed" > /dev/null; do
+  while true; do
+    status=$(virsh -c qemu:///system domjobinfo $VM --completed --keep-completed | awk '/Job type:/ {print $3}')
+    case "$status" in
+      Completed) break ;;
+      Failed) log -ne "Virsh backup job failed"; exit 1 ;;
+    esac
     sleep 5
   done
+
   rm -f $dest/backup.xml
   sync
 
@@ -163,7 +169,7 @@ mount_operation() {
   if [ ${NAS_TYPE} == "cifs" ]; then
     MOUNT_OPTS="${MOUNT_OPTS},nobrl"
   fi
-  mount -t ${NAS_TYPE} ${NAS_ADDRESS} ${mount_point} $([[ ! -z "${MOUNT_OPTS}" ]] && echo -o ${MOUNT_OPTS}) | tee -a "$logFile"
+  mount -t ${NAS_TYPE} ${NAS_ADDRESS} ${mount_point} $([[ ! -z "${MOUNT_OPTS}" ]] && echo -o ${MOUNT_OPTS}) 2>&1 | tee -a "$logFile"
   if [ $? -eq 0 ]; then
       log -ne "Successfully mounted ${NAS_TYPE} store"
   else
