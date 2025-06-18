@@ -17,6 +17,7 @@
 
 <template>
     <div>
+      <a-card class="ant-form-text" style="text-align: justify; margin: 10px 0; padding: 15px;" v-html="$t('message.desc.register.template')" />
       <a-table
         :columns="columns"
         :dataSource="predefinedTemplates"
@@ -70,6 +71,9 @@ export default {
   created () {
     this.initForm()
   },
+  mounted () {
+    this.fetchPredefinedTemplates()
+  },
   computed: {
     rowSelection () {
       return {
@@ -106,154 +110,7 @@ export default {
           key: 'url'
         }
       ]
-      this.predefinedTemplates = [
-        {
-          id: 1,
-          name: 'Ubuntu 24.04',
-          version: '24.04',
-          distroName: 'Ubuntu',
-          arch: 'x86_64',
-          filename: 'ubuntu-24.04-server-cloudimg-amd64.img'
-        },
-        {
-          id: 2,
-          name: 'Ubuntu 22.04',
-          version: '22.04',
-          distroName: 'Ubuntu',
-          arch: 'x86_64',
-          filename: 'ubuntu-22.04-server-cloudimg-amd64.img'
-        },
-        {
-          id: 3,
-          name: 'Ubuntu 20.04',
-          version: '20.04',
-          distroName: 'Ubuntu',
-          arch: 'x86_64',
-          filename: 'ubuntu-20.04-server-cloudimg-amd64.img'
-        },
-        {
-          id: 4,
-          name: 'Debian GNU/Linux 12 (64-bit)',
-          version: '12',
-          distroName: 'Debian',
-          arch: 'x86_64',
-          filename: 'debian-12-genericcloud-amd64.qcow2'
-        },
-        {
-          id: 5,
-          name: 'Rocky Linux 8',
-          version: '8',
-          distroName: 'Rockylinux',
-          arch: 'x86_64',
-          filename: 'Rocky-8-GenericCloud.latest.x86_64.qcow2'
-        },
-        {
-          id: 6,
-          name: 'Rocky Linux 9',
-          version: '9',
-          distroName: 'Rockylinux',
-          arch: 'x86_64',
-          filename: 'Rocky-9-GenericCloud.latest.x86_64.qcow2'
-        },
-        {
-          id: 7,
-          name: 'OpenSUSE 15.5',
-          version: '15.5',
-          distroName: 'OpenSUSE',
-          arch: 'x86_64',
-          filename: 'openSUSE-Leap-15.5-Minimal-VM.x86_64-Cloud.qcow2'
-        },
-        {
-          id: 8,
-          name: 'Ubuntu 24.04',
-          version: '24.04',
-          distroName: 'Ubuntu',
-          arch: 'aarch64',
-          filename: 'ubuntu-24.04-server-cloudimg-arm64.img'
-        },
-        {
-          id: 9,
-          name: 'Ubuntu 22.04',
-          version: '22.04',
-          distroName: 'Ubuntu',
-          arch: 'aarch64',
-          filename: 'ubuntu-22.04-server-cloudimg-arm64.img'
-        },
-        {
-          id: 10,
-          name: 'Ubuntu 20.04',
-          version: '20.04',
-          distroName: 'Ubuntu',
-          arch: 'aarch64',
-          filename: 'ubuntu-20.04-server-cloudimg-arm64.img'
-        },
-        {
-          id: 11,
-          name: 'Debian GNU/Linux 12 (64-bit)',
-          version: '12',
-          distroName: 'Debian',
-          arch: 'aarch64',
-          filename: 'debian-12-genericcloud-arm64.qcow2'
-        },
-        {
-          id: 12,
-          name: 'Rocky Linux 8',
-          version: '8',
-          distroName: 'Rockylinux',
-          arch: 'aarch64',
-          filename: 'Rocky-8-GenericCloud.latest.aarch64.qcow2'
-        },
-        {
-          id: 13,
-          name: 'Rocky Linux 9',
-          version: '9',
-          distroName: 'Rockylinux',
-          arch: 'aarch64',
-          filename: 'Rocky-9-GenericCloud.latest.aarch64.qcow2'
-        },
-        {
-          id: 14,
-          name: 'OpenSUSE 15.5',
-          version: '15.5',
-          distroName: 'OpenSUSE',
-          arch: 'aarch64',
-          filename: 'openSUSE-Leap-15.5-Minimal-VM.aarch64-Cloud.qcow2'
-        },
-        {
-          id: 15,
-          name: 'Oracle Linux 8',
-          version: '8.10',
-          distroName: 'OracleLinux',
-          arch: 'aarch64',
-          filename: 'OL8U10_aarch64-kvm-b122.qcow2'
-        },
-        {
-          id: 16,
-          name: 'Oracle Linux 8',
-          version: '8.10',
-          distroName: 'OracleLinux',
-          arch: 'x86_64',
-          filename: 'OL8U10_x86_64-kvm-b258.qcow2'
-        },
-        {
-          id: 17,
-          name: 'Oracle Linux 9',
-          version: '9.5',
-          distroName: 'OracleLinux',
-          arch: 'aarch64',
-          filename: 'OL9U5_aarch64-kvm-b126.qcow2'
-        },
-        {
-          id: 18,
-          name: 'Oracle Linux 9',
-          version: '9.5',
-          distroName: 'OracleLinux',
-          arch: 'x86_64',
-          filename: 'OL9U5_x86_64-kvm-b259.qcow2'
-        }
-      ]
       this.defaultOsTypeId = await this.fetchOsTypeId('Other Linux (64-bit)')
-      this.prepareDownloadUrls()
     },
     handleDone () {
       this.$emit('refresh-data')
@@ -359,10 +216,24 @@ export default {
       }
       return format
     },
-    prepareDownloadUrls () {
-      const templatesBaseUrl = 'https://download.cloudstack.org/templates/cloud-images/'
-      for (const template of this.predefinedTemplates) {
-        template.url = templatesBaseUrl + template.distroName.toLowerCase() + '/' + template.filename
+    async fetchPredefinedTemplates () {
+      this.loading = true
+      try {
+        const response = await fetch('./cloud-image-templates.json')
+        if (!response.ok) {
+          throw new Error(`Error fetching predefined templates, status_code: ${response.status}`)
+        }
+        const templates = await response.json()
+        const templatesBaseUrl = 'https://download.cloudstack.org/templates/cloud-images/'
+        for (const template of templates) {
+          template.url = templatesBaseUrl + template.distro.toLowerCase() + '/' + template.filename
+        }
+        this.predefinedTemplates = templates
+      } catch (error) {
+        console.error('Error fetching predefined templates:', error)
+        this.predefinedTemplates = []
+      } finally {
+        this.loading = false
       }
     }
   }
