@@ -110,7 +110,7 @@ For Development Mode.
 
     $ npm start
 
-Make sure to set CS_URL=http://localhost:8080 on .env.local file on ui.
+Make sure to set `CS_URL=http://localhost:8080` on the `.env.local` file on UI.
 
 You should be able to run the management server on http://localhost:5050
 
