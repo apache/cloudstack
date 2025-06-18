@@ -29,23 +29,34 @@ generate_random_mac() {
 prepare() {
     parse_json "$1" || exit 1
 
-    local mac_address
-    mac_address=$(generate_random_mac)
+    local input_json="$1"
+    local nics_json
+    nics_json=$(echo "$input_json" | jq '.["cloudstack.vm.details"].nics')
 
-    local response
-    $response='{"nics":['
-    first=1
-    while read -r uuid; do
-        new_mac=$(generate_random_mac)
+    # If NICs array is empty, return empty string
+    if [ "$(echo "$nics_json" | jq 'length // 0')" -eq 0 ]; then
+        echo ""
+        return
+    fi
+
+    local result='{"nics":['
+    local first=1
+
+    while IFS= read -r uuid; do
+        local mac
+        mac=$(generate_random_mac)
+
         if [ $first -eq 1 ]; then
             first=0
         else
-            $response+=','
+            result+=','
         fi
-        $response+='{"uuid":"'"$uuid"'","mac":"'"$new_mac"'"}'
-    done <<< "$nics_json"
-    $response+=']}'
-    echo "$response"
+
+        result+='{"uuid":"'"$uuid"'","mac":"'"$mac"'"}'
+    done < <(echo "$nics_json" | jq -r '.[].uuid')
+
+    result+=']}'
+    echo "$result"
 }
 
 create() {

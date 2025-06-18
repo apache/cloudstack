@@ -58,6 +58,11 @@ public class UpdateExtensionCmd extends BaseCmd {
             description = "Description of the extension")
     private String description;
 
+    @Parameter(name = ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM,
+            type = CommandType.BOOLEAN,
+            description = "Only honored when type is Orchestrator. Whether prepare VM is needed or not")
+    private Boolean orchestratorRequiresPrepareVm;
+
     @Parameter(name = ApiConstants.STATE, type = CommandType.STRING,
             description = "State of the extension")
     private String state;
@@ -83,6 +88,10 @@ public class UpdateExtensionCmd extends BaseCmd {
 
     public String getDescription() {
         return description;
+    }
+
+    public Boolean isOrchestratorRequiresPrepareVm() {
+        return orchestratorRequiresPrepareVm;
     }
 
     public String getState() {

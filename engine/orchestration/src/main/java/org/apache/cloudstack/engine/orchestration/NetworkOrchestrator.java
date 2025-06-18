@@ -52,7 +52,6 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
@@ -126,9 +125,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
-import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Ipv6Service;
@@ -265,7 +262,6 @@ import com.cloud.vm.dao.NicIpAliasVO;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.googlecode.ipv6.IPv6Address;
 
@@ -288,8 +284,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     ConfigurationDao _configDao;
     @Inject
     UserVmDao _userVmDao;
-    @Inject
-    UserVmDetailsDao userVmDetailsDao;
     @Inject
     AlertManager _alertMgr;
     @Inject
@@ -364,10 +358,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     private ASNumberDao asNumberDao;
     @Inject
     private BGPService bgpService;
-    @Inject
-    private HypervisorGuruManager hvGuruMgr;
-    @Inject
-    ExtensionsManager extensionsManager;
 
     @Override
     public List<NetworkGuru> getNetworkGurus() {
@@ -434,8 +424,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     AgentManager _agentMgr;
     @Inject
     HostDao _hostDao;
-    @Inject
-    HostDetailsDao hostDetailsDao;
     @Inject
     NetworkServiceMapDao _ntwkSrvcDao;
     @Inject
@@ -2160,8 +2148,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         final Integer networkRate = _networkModel.getNetworkRate(network.getId(), vmProfile.getId());
         final NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
-
-        prepareNicIfExternalProvisionerInvolved(vmProfile, dest, nicId);
         final NicVO nic = _nicDao.findById(nicId);
 
         NicProfile profile = null;
@@ -2228,68 +2214,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         updateRouterDefaultDns(vmProfile, profile);
         configureExtraDhcpOptions(network, nicId);
         return profile;
-    }
-
-    private void prepareNicIfExternalProvisionerInvolved(VirtualMachineProfile vmProfile, DeployDestination dest, long nicId) {
-        logger.debug("SimpleEx {}, {}, {}", vmProfile.getId(), dest, nicId);
-//        if (!Hypervisor.HypervisorType.External.equals(vmProfile.getHypervisorType())) {
-//            return;
-//        }
-//        if (userVmDetailsDao.findDetail(vmProfile.getId(), VmDetailConstants.DEPLOY_VM) == null) {
-//            return;
-//        }
-//        HypervisorGuru hvGuru = hvGuruMgr.getGuru(vmProfile.getHypervisorType());
-//        VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
-//
-//        HostVO host = _hostDao.findById(dest.getHost().getId());
-//        PrepareExternalProvisioningCommand command = new PrepareExternalProvisioningCommand(vmTO, host.getClusterId());
-//        Map<String, Object> externalDetails = extensionsManager.getExternalAccessDetails(host, vmTO.getExternalDetails());
-//        command.setExternalDetails(externalDetails);
-//        final PrepareExternalProvisioningAnswer prepareExternalProvisioningAnswer;
-//        try {
-//            Long hostID = dest.getHost().getId();
-//            final Answer answer = _agentMgr.send(hostID, command);
-//
-//            if (!(answer instanceof PrepareExternalProvisioningAnswer)) {
-//                String errorMsg = String.format("Trying to prepare the instance on external hypervisor for the CloudStack instance %s failed: %s", vmProfile.getUuid(), answer.getDetails());
-//                logger.debug(errorMsg);
-//                throw new CloudRuntimeException(errorMsg);
-//            }
-//
-//            prepareExternalProvisioningAnswer = (PrepareExternalProvisioningAnswer) answer;
-//        } catch (AgentUnavailableException | OperationTimedoutException e) {
-//            String errorMsg = String.format("Trying to prepare the instance on external hypervisor for the CloudStack instance %s failed: %s", vmProfile.getUuid(), e);
-//            logger.debug(errorMsg);
-//            throw new CloudRuntimeException(errorMsg);
-//        }
-//
-//        if (prepareExternalProvisioningAnswer == null || !prepareExternalProvisioningAnswer.getResult()) {
-//            if (prepareExternalProvisioningAnswer != null && StringUtils.isNotBlank(prepareExternalProvisioningAnswer.getDetails())) {
-//                throw new CloudRuntimeException(String.format("Unable to prepare the instance on external system due to %s", prepareExternalProvisioningAnswer.getDetails()));
-//            } else {
-//                throw new CloudRuntimeException("Unable to prepare the instance on external system, please check the access details");
-//            }
-//        }
-//
-//        Map<String, String> serverDetails = prepareExternalProvisioningAnswer.getServerDetails();
-//        if (ExternalAgentManagerImpl.expectMacAddressFromExternalProvisioner.valueIn(host.getClusterId())) {
-//            String macAddress = serverDetails.get(VmDetailConstants.MAC_ADDRESS);
-//            if (StringUtils.isEmpty(macAddress)) {
-//                throw new CloudRuntimeException("Unable to fetch macaddress from the external provisioner while preparing the instance");
-//            }
-//            final NicVO nic = _nicDao.findById(nicId);
-//            nic.setMacAddress(macAddress);
-//            _nicDao.update(nicId, nic);
-//        }
-//
-//        if (MapUtils.isNotEmpty(serverDetails)) {
-//            UserVmVO userVm = _userVmDao.findById(vmProfile.getId());
-//            _userVmDao.loadDetails(userVm);
-//            Map<String, String> details = userVm.getDetails();
-//            details.putAll(serverDetails);
-//            userVm.setDetails(details);
-//            _userVmDao.saveDetails(userVm);
-//        }
     }
 
     @Override

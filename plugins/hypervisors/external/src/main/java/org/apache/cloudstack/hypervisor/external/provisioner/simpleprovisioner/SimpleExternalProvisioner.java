@@ -74,6 +74,7 @@ import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.json.JsonMergeUtil;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -83,7 +84,6 @@ import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.google.gson.JsonSyntaxException;
 
 public class SimpleExternalProvisioner extends ManagerBase implements ExternalProvisioner, PluggableService {
 
@@ -266,15 +266,16 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
             return new PrepareExternalProvisioningAnswer(cmd, false, output);
         }
         if (StringUtils.isEmpty(output)) {
-            return new PrepareExternalProvisioningAnswer(cmd, true, "");
+            return new PrepareExternalProvisioningAnswer(cmd, result.first(), "");
         }
-        VirtualMachineTO virtualMachineTO = null;
         try {
-            virtualMachineTO = GsonHelper.getGson().fromJson(output, VirtualMachineTO.class);
-        } catch (JsonSyntaxException e) {
-            logger.warn("Failed to parse the output from preparing external provisioning operation as part of VM deployment");
+            String merged = JsonMergeUtil.mergeJsonPatch(GsonHelper.getGson().toJson(vmTO), result.second());
+            VirtualMachineTO virtualMachineTO  = GsonHelper.getGson().fromJson(merged, VirtualMachineTO.class);
+            return new PrepareExternalProvisioningAnswer(cmd, null, virtualMachineTO, null);
+        } catch (Exception e) {
+            logger.warn("Failed to parse the output from preparing external provisioning operation as part of VM deployment: {}", e.getMessage(), e);
+            return new PrepareExternalProvisioningAnswer(cmd, false, "Failed to parse VM");
         }
-        return new PrepareExternalProvisioningAnswer(cmd, null, virtualMachineTO, null);
     }
 
     @Override

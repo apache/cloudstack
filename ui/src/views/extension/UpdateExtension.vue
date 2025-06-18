@@ -32,6 +32,12 @@
           :placeholder="apiParams.description.description"
           v-focus="true" />
       </a-form-item>
+      <a-form-item name="orchestratorrequirespreparevm" ref="orchestratorrequirespreparevm" v-if="resource.type === 'Orchestrator'">
+        <template #label>
+          <tooltip-label :title="$t('label.orchestratorrequirespreparevm')" :tooltip="apiParams.orchestratorrequirespreparevm.description"/>
+        </template>
+        <a-switch v-model:checked="form.orchestratorrequirespreparevm" />
+      </a-form-item>
       <a-form-item name="details" ref="details">
         <template #label>
           <tooltip-label :title="$t('label.configuration.details')" :tooltip="apiParams.details.description"/>
@@ -83,7 +89,8 @@ export default {
       this.formRef = ref()
       this.form = reactive({
         description: this.resource.description,
-        details: this.resource.details
+        details: this.resource.details,
+        orchestratorrequirespreparevm: this.resource.orchestratorrequirespreparevm
       })
     },
     fetchData () {
@@ -103,8 +110,11 @@ export default {
         const params = {
           id: this.resource.id
         }
-        if (values.description != null && values.description !== undefined) {
-          params.description = values.description
+        const keys = ['description', 'orchestratorrequirespreparevm']
+        for (const key of keys) {
+          if (values[key] !== undefined || values[key] !== null) {
+            params[key] = values[key]
+          }
         }
         if (values.details) {
           Object.entries(values.details).forEach(([key, value]) => {

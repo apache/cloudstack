@@ -75,6 +75,12 @@
           </a-select-option>
         </a-select>
       </a-form-item>
+      <a-form-item name="orchestratorrequirespreparevm" ref="orchestratorrequirespreparevm" v-if="form.type === 'Orchestrator'">
+        <template #label>
+          <tooltip-label :title="$t('label.orchestratorrequirespreparevm')" :tooltip="apiParams.orchestratorrequirespreparevm.description"/>
+        </template>
+        <a-switch v-model:checked="form.orchestratorrequirespreparevm" />
+      </a-form-item>
       <a-form-item name="details" ref="details">
         <template #label>
           <tooltip-label :title="$t('label.configuration.details')" :tooltip="apiParams.details.description"/>

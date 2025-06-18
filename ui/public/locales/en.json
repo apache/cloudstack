@@ -1682,6 +1682,7 @@
 "label.optional": "Optional",
 "label.options": "Options",
 "label.orchestrator": "Orchestrator",
+"label.orchestratorrequirespreparevm": "Requires Prepare Instance",
 "label.order": "Order",
 "label.os": "Operating System",
 "label.oscategoryid": "OS category",

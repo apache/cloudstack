@@ -44,7 +44,7 @@ export default {
       }, 'created']
     return fields
   },
-  details: ['name', 'id', 'type', 'details', 'entrypoint', 'entrypointready', 'isuserdefined', 'created'],
+  details: ['name', 'id', 'type', 'details', 'entrypoint', 'entrypointready', 'isuserdefined', 'orchestratorrequirespreparevm', 'created'],
   filters: ['orchestrator'],
   tabs: [{
     name: 'details',

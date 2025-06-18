@@ -70,6 +70,11 @@ public class CreateExtensionCmd extends BaseCmd {
             description = "Relative path for entry point for extension")
     private String entryPoint;
 
+    @Parameter(name = ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM,
+            type = CommandType.BOOLEAN,
+            description = "Only honored when type is Orchestrator. Whether prepare VM is needed or not")
+    private Boolean orchestratorRequiresPrepareVm;
+
     @Parameter(name = ApiConstants.STATE, type = CommandType.STRING,
             description = "State of the extension")
     private String state;
@@ -96,6 +101,10 @@ public class CreateExtensionCmd extends BaseCmd {
 
     public String getEntryPoint() {
         return entryPoint;
+    }
+
+    public Boolean isOrchestratorRequiresPrepareVm() {
+        return orchestratorRequiresPrepareVm;
     }
 
     public String getState() {

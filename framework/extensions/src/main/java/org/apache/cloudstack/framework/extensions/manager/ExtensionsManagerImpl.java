@@ -475,12 +475,14 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         final String description = cmd.getDescription();
         final String typeStr = cmd.getType();
         String entryPoint = cmd.getEntryPoint();
+        final Boolean orchestratorRequiresPrepareVm = cmd.isOrchestratorRequiresPrepareVm();
         final String stateStr = cmd.getState();
         ExtensionVO extensionByName = extensionDao.findByName(name);
         if (extensionByName != null) {
             throw new CloudRuntimeException("Extension by name already exists");
         }
-        if (!EnumUtils.isValidEnum(Extension.Type.class, typeStr)) {
+        final Extension.Type type = EnumUtils.getEnum(Extension.Type.class, typeStr);
+        if (type == null) {
             throw new CloudRuntimeException(String.format("Invalid type specified - %s", typeStr));
         }
         if (StringUtils.isBlank(entryPoint)) {
@@ -496,10 +498,14 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                 throw new InvalidParameterValueException("Invalid state specified");
             }
         }
+        if (orchestratorRequiresPrepareVm != null && !Extension.Type.Orchestrator.equals(type)) {
+            throw new InvalidParameterValueException(String.format("%s is applicable only with %s type",
+                    ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM, type.name()));
+        }
         final String entryPointFinal = entryPoint;
         final Extension.State stateFinal = state;
         ExtensionVO extensionVO = Transaction.execute((TransactionCallbackWithException<ExtensionVO, CloudRuntimeException>) status -> {
-            ExtensionVO extension = new ExtensionVO(name, description, EnumUtils.getEnum(Extension.Type.class, typeStr),
+            ExtensionVO extension = new ExtensionVO(name, description, type,
                     entryPointFinal, stateFinal);
             extension = extensionDao.persist(extension);
 
@@ -509,6 +515,13 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                 for (Map.Entry<String, String> entry : details.entrySet()) {
                     detailsVOList.add(new ExtensionDetailsVO(extension.getId(), entry.getKey(), entry.getValue()));
                 }
+            }
+            if (orchestratorRequiresPrepareVm != null) {
+                detailsVOList.add(new ExtensionDetailsVO(extension.getId(),
+                        ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM, String.valueOf(orchestratorRequiresPrepareVm),
+                        false));
+            }
+            if (CollectionUtils.isNotEmpty(detailsVOList)) {
                 extensionDetailsDao.saveDetails(detailsVOList);
             }
             CallContext.current().setEventResourceId(extension.getId());
@@ -584,6 +597,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     public Extension updateExtension(UpdateExtensionCmd cmd) {
         final long id = cmd.getId();
         final String description = cmd.getDescription();
+        final Boolean orchestratorRequiresPrepareVm = cmd.isOrchestratorRequiresPrepareVm();
         final String stateStr = cmd.getState();
         final Map<String, String> details = cmd.getDetails();
         final Boolean cleanupDetails = cmd.isCleanupDetails();
@@ -600,6 +614,10 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                         extensionVO.getName()));
             }
         }
+        if (orchestratorRequiresPrepareVm != null && !Extension.Type.Orchestrator.equals(extensionVO.getType())) {
+            throw new InvalidParameterValueException(String.format("%s is applicable only with %s type",
+                    ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM, extensionVO.getType().name()));
+        }
         if (StringUtils.isNotBlank(stateStr) && !stateStr.equalsIgnoreCase(extensionVO.getState().name())) {
             try {
                 Extension.State state = Extension.State.valueOf(stateStr);
@@ -615,15 +633,41 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                 throw new CloudRuntimeException(String.format("Failed to updated the extension: %s",
                         extensionVO.getName()));
             }
-            if (Boolean.TRUE.equals(cleanupDetails) || MapUtils.isNotEmpty(details)) {
-                extensionDetailsDao.removeDetails(extensionVO.getId());
-                List<ExtensionDetailsVO> detailsVOList = new ArrayList<>();
-                if (!Boolean.TRUE.equals(cleanupDetails) && MapUtils.isNotEmpty(details)) {
-                    for (Map.Entry<String, String> entry : details.entrySet()) {
-                        detailsVOList.add(new ExtensionDetailsVO(extensionVO.getId(), entry.getKey(), entry.getValue()));
+            final boolean needToUpdateAllDetails = Boolean.TRUE.equals(cleanupDetails) || MapUtils.isNotEmpty(details);
+            if (needToUpdateAllDetails || orchestratorRequiresPrepareVm != null) {
+                if (needToUpdateAllDetails) {
+                    Map<String, String> hiddenDetails =
+                            extensionDetailsDao.listDetailsKeyPairs(id, false);
+                    List<ExtensionDetailsVO> detailsVOList = new ArrayList<>();
+                    if (orchestratorRequiresPrepareVm != null) {
+                        hiddenDetails.put(ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM,
+                                String.valueOf(orchestratorRequiresPrepareVm));
+                    }
+                    if (MapUtils.isNotEmpty(hiddenDetails)) {
+                        hiddenDetails.forEach((key, value) -> detailsVOList.add(
+                                new ExtensionDetailsVO(id, key, value, false)));
+                    }
+                    if (!Boolean.TRUE.equals(cleanupDetails) && MapUtils.isNotEmpty(details)) {
+                        details.forEach((key, value) -> detailsVOList.add(
+                                new ExtensionDetailsVO(id, key, value)));
+                    }
+                    if (CollectionUtils.isNotEmpty(detailsVOList)) {
+                        extensionDetailsDao.saveDetails(detailsVOList);
+                    } else if (Boolean.TRUE.equals(cleanupDetails)) {
+                        extensionDetailsDao.removeDetails(id);
+                    }
+                } else {
+                    ExtensionDetailsVO detailsVO = extensionDetailsDao.findDetail(id,
+                            ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM);
+                    if (detailsVO == null) {
+                        extensionDetailsDao.persist(new ExtensionDetailsVO(id,
+                                ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM,
+                                String.valueOf(orchestratorRequiresPrepareVm), false));
+                    } else if (Boolean.parseBoolean(detailsVO.getValue()) != orchestratorRequiresPrepareVm) {
+                        detailsVO.setValue(String.valueOf(orchestratorRequiresPrepareVm));
+                        extensionDetailsDao.update(detailsVO.getId(), detailsVO);
                     }
                 }
-                extensionDetailsDao.saveDetails(detailsVOList);
             }
             return extensionVO;
         });
@@ -789,12 +833,22 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                 response.setResources(resourcesResponse);
             }
         }
+        Map<String, String> hiddenDetails;
         if (viewDetails.contains(ApiConstants.ExtensionDetails.all) ||
                 viewDetails.contains(ApiConstants.ExtensionDetails.external)) {
-            Map<String, String> extensionDetails = extensionDetailsDao.listDetailsKeyPairs(extension.getId(), true);
-            if (MapUtils.isNotEmpty(extensionDetails)) {
-                response.setDetails(extensionDetails);
+            Pair<Map<String, String>, Map<String, String>> extensionDetails =
+                    extensionDetailsDao.listDetailsKeyPairsWithVisibility(extension.getId());
+            if (MapUtils.isNotEmpty(extensionDetails.first())) {
+                response.setDetails(extensionDetails.first());
             }
+            hiddenDetails = extensionDetails.second();
+        } else {
+            hiddenDetails = extensionDetailsDao.listDetailsKeyPairs(extension.getId(),
+                    List.of(ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM));
+        }
+        if (hiddenDetails.containsKey(ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM)) {
+            response.setOrchestratorRequiresPrepareVm(Boolean.parseBoolean(
+                    hiddenDetails.get(ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM)));
         }
         response.setObjectName(Extension.class.getSimpleName().toLowerCase());
         return response;
@@ -1040,19 +1094,61 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                             customAction.getName()));
                 }
             }
+            final boolean needToUpdateAllDetails = Boolean.TRUE.equals(cleanupDetails) || MapUtils.isNotEmpty(details);
+            final boolean needToUpdateParameters = Boolean.TRUE.equals(cleanupParameters) || CollectionUtils.isNotEmpty(parametersFinal);
+            if (needToUpdateAllDetails || needToUpdateParameters) {
+                if (needToUpdateAllDetails) {
+                    Map<String, String> hiddenDetails =
+                            extensionCustomActionDetailsDao.listDetailsKeyPairs(id, false);
+                    List<ExtensionCustomActionDetailsVO> detailsVOList = new ArrayList<>();
+                    if (Boolean.TRUE.equals(cleanupParameters)) {
+                        hiddenDetails.remove(ApiConstants.PARAMETERS);
+                    } else if (CollectionUtils.isNotEmpty(parametersFinal)) {
+                        hiddenDetails.put(ApiConstants.PARAMETERS,
+                                ExtensionCustomAction.Parameter.toJsonFromList(parametersFinal));
+                    }
+                    if (MapUtils.isNotEmpty(hiddenDetails)) {
+                        hiddenDetails.forEach((key, value) -> detailsVOList.add(
+                                new ExtensionCustomActionDetailsVO(id, key, value, false)));
+                    }
+                    if (!Boolean.TRUE.equals(cleanupDetails) && MapUtils.isNotEmpty(details)) {
+                        details.forEach((key, value) -> detailsVOList.add(
+                                new ExtensionCustomActionDetailsVO(id, key, value)));
+                    }
+                    if (CollectionUtils.isNotEmpty(detailsVOList)) {
+                        extensionCustomActionDetailsDao.saveDetails(detailsVOList);
+                    } else if (Boolean.TRUE.equals(cleanupDetails)) {
+                        extensionCustomActionDetailsDao.removeDetails(id);
+                    }
+                } else {
+                    if (Boolean.TRUE.equals(cleanupParameters)) {
+                        extensionCustomActionDetailsDao.removeDetail(id, ApiConstants.PARAMETERS);
+                    } else if (CollectionUtils.isNotEmpty(parametersFinal)) {
+                        ExtensionCustomActionDetailsVO detailsVO = extensionCustomActionDetailsDao.findDetail(id,
+                                ApiConstants.PARAMETERS);
+                        if (detailsVO == null) {
+                            extensionCustomActionDetailsDao.persist(new ExtensionCustomActionDetailsVO(id,
+                                    ApiConstants.PARAMETERS,
+                                    ExtensionCustomAction.Parameter.toJsonFromList(parametersFinal), false));
+                        } else {
+                            detailsVO.setValue(ExtensionCustomAction.Parameter.toJsonFromList(parametersFinal));
+                            extensionCustomActionDetailsDao.update(detailsVO.getId(), detailsVO);
+                        }
+                    }
+                }
+            }
             List<ExtensionCustomActionDetailsVO> detailsVOList = new ArrayList<>();
             if (Boolean.TRUE.equals(cleanupParameters) || CollectionUtils.isNotEmpty(parametersFinal)) {
-                extensionCustomActionDetailsDao.removeDetail(customAction.getId(), ApiConstants.PARAMETERS);
+                extensionCustomActionDetailsDao.removeDetail(id, ApiConstants.PARAMETERS);
                 if (CollectionUtils.isNotEmpty(parametersFinal)) {
                     detailsVOList.add(new ExtensionCustomActionDetailsVO(
-                            customAction.getId(),
+                            id,
                             ApiConstants.PARAMETERS,
                             ExtensionCustomAction.Parameter.toJsonFromList(parametersFinal),
                             false
                     ));
                 }
             }
-
             if (Boolean.TRUE.equals(cleanupDetails) || MapUtils.isNotEmpty(details)) {
                 if (CollectionUtils.isNotEmpty(detailsVOList)) {
                     ExtensionCustomActionDetailsVO paramDetails =
@@ -1061,7 +1157,6 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                         detailsVOList.add(paramDetails);
                     }
                 }
-                extensionCustomActionDetailsDao.removeDetails(customAction.getId());
                 if (!Boolean.TRUE.equals(cleanupDetails) && MapUtils.isNotEmpty(details)) {
                     details.forEach((key, value) -> detailsVOList.add(
                             new ExtensionCustomActionDetailsVO(customAction.getId(), key, value)));

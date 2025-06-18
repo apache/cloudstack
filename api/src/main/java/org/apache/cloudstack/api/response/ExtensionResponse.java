@@ -17,16 +17,18 @@
 
 package org.apache.cloudstack.api.response;
 
-import org.apache.cloudstack.extension.Extension;
-import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.EntityReference;
-
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.EntityReference;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.extension.Extension;
+
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = Extension.class)
 public class ExtensionResponse extends BaseResponse {
@@ -58,6 +60,10 @@ public class ExtensionResponse extends BaseResponse {
     @SerializedName(ApiConstants.IS_USER_DEFINED)
     @Param(description = "True if the extension is added by admin")
     private Boolean userDefined;
+
+    @SerializedName(ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM)
+    @Parameter(description = "Only honored when type is Orchestrator. Whether prepare VM is needed or not")
+    private Boolean orchestratorRequiresPrepareVm;
 
     @SerializedName(ApiConstants.STATE)
     @Param(description = "The state of the extension")
@@ -96,6 +102,10 @@ public class ExtensionResponse extends BaseResponse {
 
     public void setUserDefined(Boolean userDefined) {
         this.userDefined = userDefined;
+    }
+
+    public void setOrchestratorRequiresPrepareVm(Boolean orchestratorRequiresPrepareVm) {
+        this.orchestratorRequiresPrepareVm = orchestratorRequiresPrepareVm;
     }
 
     public void setState(String state) {
