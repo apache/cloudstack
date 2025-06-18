@@ -592,7 +592,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             throw new InvalidParameterValueException("Failed to find the extension");
         }
         boolean updateNeeded = false;
-        if (description != null) {
+        if (description != null && !description.equals(extensionVO.getDescription())) {
             extensionVO.setDescription(description);
             updateNeeded = true;
             if (!extensionDao.update(id, extensionVO)) {
@@ -600,7 +600,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                         extensionVO.getName()));
             }
         }
-        if (StringUtils.isNotBlank(stateStr)) {
+        if (StringUtils.isNotBlank(stateStr) && !stateStr.equalsIgnoreCase(extensionVO.getState().name())) {
             try {
                 Extension.State state = Extension.State.valueOf(stateStr);
                 extensionVO.setState(state);
