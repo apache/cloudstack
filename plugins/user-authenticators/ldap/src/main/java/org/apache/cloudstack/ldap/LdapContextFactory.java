@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.ldap;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Hashtable;
 
@@ -24,6 +25,7 @@ import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.naming.ldap.InitialLdapContext;
 import javax.naming.ldap.LdapContext;
+import java.security.KeyStore;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -85,13 +87,17 @@ public class LdapContextFactory {
     }
 
     private boolean validateTrustStore(String trustStore, String trustStorePassword) {
-        if (trustStore == null || trustStorePassword == null) {
+        if (trustStore == null) {
+            return true;
+        }
+
+        if (trustStorePassword == null) {
             return false;
         }
 
         try {
-            java.security.KeyStore.getInstance("JKS").load(
-                new java.io.FileInputStream(trustStore),
+            KeyStore.getInstance("JKS").load(
+                new FileInputStream(trustStore),
                 trustStorePassword.toCharArray()
             );
             return true;
