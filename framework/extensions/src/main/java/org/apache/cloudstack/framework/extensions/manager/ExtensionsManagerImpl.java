@@ -459,11 +459,11 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         if (resourceMap == null) {
             return externalDetails;
         }
-        Map<String, String> resourceDetails = extensionResourceMapDetailsDao.listDetailsKeyPairs(resourceMap.getId());
+        Map<String, String> resourceDetails = extensionResourceMapDetailsDao.listDetailsKeyPairs(resourceMap.getId(), true);
         if (MapUtils.isNotEmpty(resourceDetails)) {
             externalDetails.put(ApiConstants.RESOURCE_MAP, resourceDetails);
         }
-        Map<String, String> extensionDetails = extensionDetailsDao.listDetailsKeyPairs(resourceMap.getExtensionId());
+        Map<String, String> extensionDetails = extensionDetailsDao.listDetailsKeyPairs(resourceMap.getExtensionId(), true);
         externalDetails.put(ApiConstants.EXTENSION, extensionDetails);
         return externalDetails;
     }
@@ -779,7 +779,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                     extensionResourceResponse.setName(cluster.getName());
                 }
                 Map<String, String> details = extensionResourceMapDetailsDao.listDetailsKeyPairs(
-                        extensionResourceMapVO.getId());
+                        extensionResourceMapVO.getId(), true);
                 if (MapUtils.isNotEmpty(details)) {
                     extensionResourceResponse.setDetails(details);
                 }
@@ -791,7 +791,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         }
         if (viewDetails.contains(ApiConstants.ExtensionDetails.all) ||
                 viewDetails.contains(ApiConstants.ExtensionDetails.external)) {
-            Map<String, String> extensionDetails = extensionDetailsDao.listDetailsKeyPairs(extension.getId());
+            Map<String, String> extensionDetails = extensionDetailsDao.listDetailsKeyPairs(extension.getId(), true);
             if (MapUtils.isNotEmpty(extensionDetails)) {
                 response.setDetails(extensionDetails);
             }
@@ -1165,12 +1165,11 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         }
 
         List<ExtensionCustomAction.Parameter> actionParameters = null;
-        Map<String, String> details =
-                extensionCustomActionDetailsDao.listDetailsKeyPairs(customActionVO.getId());
-        if (details.containsKey(ApiConstants.PARAMETERS)) {
+        Pair<Map<String, String>, Map<String, String>> allDetails =
+                extensionCustomActionDetailsDao.listDetailsKeyPairsWithVisibility(customActionVO.getId());
+        if (allDetails.second().containsKey(ApiConstants.PARAMETERS)) {
             actionParameters =
-                    ExtensionCustomAction.Parameter.toListFromJson(details.get(ApiConstants.PARAMETERS));
-            details.remove(ApiConstants.PARAMETERS);
+                    ExtensionCustomAction.Parameter.toListFromJson(allDetails.second().get(ApiConstants.PARAMETERS));
         }
         Map<String, Object> parameters = null;
         if (CollectionUtils.isNotEmpty(actionParameters)) {
@@ -1185,7 +1184,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         response.setSuccess(false);
         result.put(ApiConstants.MESSAGE, getActionMessage(false, customActionVO, extensionVO,
                 actionResourceType, entity));
-        Map<String, Object> externalDetails = getExternalAccessDetails(details, hostId, extensionResource);
+        Map<String, Object> externalDetails = getExternalAccessDetails(allDetails.first(), hostId, extensionResource);
         runCustomActionCommand.setParameters(parameters);
         runCustomActionCommand.setExternalDetails(externalDetails);
         try {
@@ -1236,8 +1235,9 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             response.setExtensionId(extensionVO.getUuid());
             response.setExtensionName(extensionVO.getName());
         });
-        Optional.ofNullable(extensionCustomActionDetailsDao.findDetail(customAction.getId(), ApiConstants.PARAMETERS))
-                .map(ExtensionCustomActionDetailsVO::getValue)
+        Pair<Map<String, String>, Map<String, String>> allDetails =
+                extensionCustomActionDetailsDao.listDetailsKeyPairsWithVisibility(customAction.getId());
+        Optional.ofNullable(allDetails.second().get(ApiConstants.PARAMETERS))
                 .map(ExtensionCustomAction.Parameter::toListFromJson)
                 .ifPresent(parameters -> {
                     Set<ExtensionCustomActionParameterResponse> paramResponses = parameters.stream()
@@ -1246,9 +1246,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                             .collect(Collectors.toSet());
                     response.setParameters(paramResponses);
                 });
-        Map<String, String> details =
-                extensionCustomActionDetailsDao.listDetailsKeyPairs(customAction.getId(), true);
-        response.setDetails(details);
+        response.setDetails(allDetails.first());
         response.setObjectName(ExtensionCustomAction.class.getSimpleName().toLowerCase());
         return response;
     }

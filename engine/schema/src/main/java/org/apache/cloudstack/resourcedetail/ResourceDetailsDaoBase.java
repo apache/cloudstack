@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
 
+import com.cloud.utils.Pair;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
@@ -125,6 +126,19 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
             details.put(result.getName(), result.isDisplay());
         }
         return details;
+    }
+
+    @Override
+    public Pair<Map<String, String>, Map<String, String>> listDetailsKeyPairsWithVisibility(long resourceId) {
+        SearchCriteria<R> sc = AllFieldsSearch.create();
+        sc.setParameters("resourceId", resourceId);
+        List<R> results = search(sc, null);
+        Map<Boolean, Map<String, String>> partitioned = results.stream()
+                .collect(Collectors.partitioningBy(
+                        R::isDisplay,
+                        Collectors.toMap(R::getName, R::getValue)
+                ));
+        return new Pair<>(partitioned.get(true), partitioned.get(false));
     }
 
     public List<R> listDetails(long resourceId) {
