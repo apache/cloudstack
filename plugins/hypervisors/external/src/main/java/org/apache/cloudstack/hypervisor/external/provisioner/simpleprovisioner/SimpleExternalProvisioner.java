@@ -91,10 +91,11 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     public static final String BASE_EXTERNAL_PROVISIONER_SCRIPT = BASE_EXTERNAL_PROVISIONER_SCRIPTS_DIR + "/provisioner.sh";
 
     private static final String PROPERTIES_FILE = "server.properties";
-    private static final String ENTRY_POINT_DIR_CONFIG_NAME = "extensions.file.path";
-    private static final String DATA_DIR_CONFIG_NAME = "extensions.data.file.path";
-    private static final String DEFAULT_EXTENSIONS_DIRECTORY = "/usr/share/cloudstack-management/extensions";
-    private static final String DEFAULT_EXTENSIONS_DATA_DIRECTORY = "/var/lib/cloudstack/management/extensions";
+    private static final String EXTENSIONS_DEPLOYMENT_MODE_NAME = "extensions.deployment.mode";
+    private static final String EXTENSIONS_DIRECTORY_PROD = "/usr/share/cloudstack-management/extensions";
+    private static final String EXTENSIONS_DATA_DIRECTORY_PROD = "/var/lib/cloudstack/management/extensions";
+    private static final String EXTENSIONS_DIRECTORY_DEV = "extensions";
+    private static final String EXTENSIONS_DATA_DIRECTORY_DEV = "client/target/extensions-data";
 
     @Inject
     UserVmDao _uservmDao;
@@ -160,7 +161,7 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
         File dir = new File(extensionsDirectory);
         if (!dir.exists() || !dir.isDirectory() || !dir.canWrite()) {
             logger.error("Extension directory [{}] is not properly set up. It must exist, be a directory, and be writeable",
-                    extensionsDirectory);
+                    dir.getAbsolutePath());
             return false;
         }
         if (!extensionsDirectory.equals(dir.getAbsolutePath())) {
@@ -171,25 +172,18 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     }
 
     protected void createOrCheckExtensionsDataDirectory() throws ConfigurationException {
-        String dataDir = getServerProperty(DATA_DIR_CONFIG_NAME);
-        if (StringUtils.isBlank(dataDir)) {
-            logger.warn("Extensions data directory path is blank, using default: {}",
-                    DEFAULT_EXTENSIONS_DATA_DIRECTORY);
-            dataDir = DEFAULT_EXTENSIONS_DATA_DIRECTORY;
-        }
-        File dir = new File(dataDir);
+        File dir = new File(extensionsDataDirectory);
         if (!dir.exists()) {
             try {
                 Files.createDirectories(dir.toPath());
             } catch (IOException e) {
-                logger.error("Unable to create extensions data directory [{}] specified by config - {}",
-                        dir.getAbsolutePath(), DATA_DIR_CONFIG_NAME, e);
+                logger.error("Unable to create extensions data directory [{}]", dir.getAbsolutePath(), e);
                 throw new ConfigurationException("Unable to create extensions data directory path");
             }
         }
         if (!dir.isDirectory() || !dir.canWrite()) {
-            logger.error("Extensions data directory [{}] specified by config - {} is not properly set up. It must exist, be a directory, and be writeable",
-                    dir.getAbsolutePath(), DATA_DIR_CONFIG_NAME);
+            logger.error("Extensions data directory [{}] is not properly set up. It must exist, be a directory, and be writeable",
+                    dir.getAbsolutePath());
             throw new ConfigurationException("Extensions data directory path is not accessible");
         }
         extensionsDataDirectory = dir.getAbsolutePath();
@@ -223,13 +217,14 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
 
-        extensionsDirectory = getServerProperty(ENTRY_POINT_DIR_CONFIG_NAME);
-        if (StringUtils.isEmpty(extensionsDirectory)) {
-            logger.debug("extensions.file.path is found empty, using default extensions directory: {}",
-                    DEFAULT_EXTENSIONS_DIRECTORY);
-            extensionsDirectory = DEFAULT_EXTENSIONS_DIRECTORY;
+        String deploymentMode = getServerProperty(EXTENSIONS_DEPLOYMENT_MODE_NAME);
+        if ("developer".equals(deploymentMode)) {
+            extensionsDirectory = EXTENSIONS_DIRECTORY_DEV;
+            extensionsDataDirectory = EXTENSIONS_DATA_DIRECTORY_DEV;
+        } else {
+            extensionsDirectory = EXTENSIONS_DIRECTORY_PROD;
+            extensionsDataDirectory = EXTENSIONS_DATA_DIRECTORY_PROD;
         }
-
         checkExtensionsDirectory();
         createOrCheckExtensionsDataDirectory();
         return true;

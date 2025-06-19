@@ -299,13 +299,13 @@ BEGIN
     ;END IF
 ;END;
 
-CALL `cloud`.`INSERT_EXTENSION_IF_NOT_EXISTS`('org.apache.cloudstack.extension.Proxmox', 'Sample extension for Proxmox written in bash', 'Proxmox/proxmox.sh');
-CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('org.apache.cloudstack.extension.Proxmox', 'url', '', 1);
-CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('org.apache.cloudstack.extension.Proxmox', 'user', '', 1);
-CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('org.apache.cloudstack.extension.Proxmox', 'token', '', 1);
-CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('org.apache.cloudstack.extension.Proxmox', 'secret', '', 0);
+CALL `cloud`.`INSERT_EXTENSION_IF_NOT_EXISTS`('Proxmox', 'Sample extension for Proxmox written in bash', 'Proxmox/proxmox.sh');
+CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('Proxmox', 'url', '', 1);
+CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('Proxmox', 'user', '', 1);
+CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('Proxmox', 'token', '', 1);
+CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('Proxmox', 'secret', '', 0);
 
-CALL `cloud`.`INSERT_EXTENSION_IF_NOT_EXISTS`('org.apache.cloudstack.extension.HyperV', 'Sample extension for HyperV written in python', 'HyperV/hyperv.py');
-CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('org.apache.cloudstack.extension.HyperV', 'url', '', 1);
-CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('org.apache.cloudstack.extension.HyperV', 'username', '', 1);
-CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('org.apache.cloudstack.extension.HyperV', 'password', '', 0);
+CALL `cloud`.`INSERT_EXTENSION_IF_NOT_EXISTS`('HyperV', 'Sample extension for HyperV written in python', 'HyperV/hyperv.py');
+CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('HyperV', 'url', '', 1);
+CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('HyperV', 'username', '', 1);
+CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('HyperV', 'password', '', 0);

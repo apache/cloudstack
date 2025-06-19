@@ -315,7 +315,7 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/templates/systemvm/md5sum
 
 # Sample Extensions
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/extensions
-cp -r client/target/common/scripts/vm/hypervisor/external/simpleExternalProvisioner/extensions/* ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/extensions
+cp -r extensions/* ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/extensions
 ln -sf %{_sysconfdir}/%{name}/extensions ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/extensions
 
 # UI
