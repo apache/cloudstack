@@ -614,6 +614,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         weightBasedParametersForValidation.add(CapacityManager.SecondaryStorageCapacityThreshold.key());
         weightBasedParametersForValidation.add(ClusterDrsService.ClusterDrsImbalanceThreshold.key());
         weightBasedParametersForValidation.add(ClusterDrsService.ClusterDrsImbalanceSkipThreshold.key());
+        weightBasedParametersForValidation.add(ConfigurationManager.HostCapacityTypeCpuMemoryWeight.key());
     }
 
     protected void overProvisioningFactorsForValidation() {
