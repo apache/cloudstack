@@ -85,7 +85,7 @@ public enum ApiCommandResourceType {
     ObjectStore(org.apache.cloudstack.storage.object.ObjectStore.class),
     Bucket(org.apache.cloudstack.storage.object.Bucket.class),
     QuotaTariff(org.apache.cloudstack.quota.QuotaTariff.class),
-    KubernetesCluster(null),
+    KubernetesCluster(com.cloud.kubernetes.cluster.KubernetesCluster.class),
     KubernetesSupportedVersion(null),
     SharedFS(org.apache.cloudstack.storage.sharedfs.SharedFS.class),
     Extension(org.apache.cloudstack.extension.Extension.class),

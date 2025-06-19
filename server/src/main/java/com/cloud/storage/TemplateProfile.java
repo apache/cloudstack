@@ -55,6 +55,7 @@ public class TemplateProfile {
     TemplateType templateType;
     Boolean directDownload;
     Boolean deployAsIs;
+    Boolean forCks;
     Long size;
     Long extensionId;
 
@@ -342,6 +343,14 @@ public class TemplateProfile {
 
     public boolean isDeployAsIs() {
         return this.deployAsIs;
+    }
+
+    public Boolean isForCks() {
+        return forCks;
+    }
+
+    public void setForCks(Boolean forCks) {
+        this.forCks = forCks;
     }
 
     public CPU.CPUArch getArch() {

@@ -89,6 +89,9 @@ public interface VmDetailConstants {
     String DEPLOY_AS_IS_CONFIGURATION = "configurationId";
     String KEY_PAIR_NAMES = "keypairnames";
     String CKS_CONTROL_NODE_LOGIN_USER = "controlNodeLoginUser";
+    String CKS_NODE_TYPE = "node";
+    String OFFERING = "offering";
+    String TEMPLATE = "template";
 
     // VMware to KVM VM migrations specific
     String VMWARE_TO_KVM_PREFIX = "vmware-to-kvm";

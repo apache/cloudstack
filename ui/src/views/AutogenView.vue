@@ -921,6 +921,10 @@ export default {
       }
 
       this.loading = true
+      if (this.$route.path.startsWith('/cniconfiguration')) {
+        params.forcks = true
+        console.log('here')
+      }
       if (this.$route.params && this.$route.params.id) {
         params.id = this.$route.params.id
         if (['listNetworks'].includes(this.apiName) && 'displaynetwork' in this.$route.query) {
