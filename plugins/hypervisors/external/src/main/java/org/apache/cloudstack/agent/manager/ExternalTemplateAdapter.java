@@ -98,7 +98,7 @@ public class ExternalTemplateAdapter extends TemplateAdapterBase implements Temp
         return prepare(false, CallContext.current().getCallingUserId(), cmd.getTemplateName(), cmd.getDisplayText(), cmd.getArch(), cmd.getBits(), cmd.isPasswordEnabled(), cmd.getRequiresHvm(),
                 cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), cmd.getFormat(), cmd.getOsTypeId(), zoneId, hypervisorType, cmd.getChecksum(), true,
                 cmd.getTemplateTag(), owner, details, cmd.isSshKeyEnabled(), null, cmd.isDynamicallyScalable(), templateType,
-                cmd.isDirectDownload(), cmd.isDeployAsIs(), cmd.getExtensionId());
+                cmd.isDirectDownload(), cmd.isDeployAsIs(), cmd.isForCks(), cmd.getExtensionId());
     }
 
     @Override
