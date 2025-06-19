@@ -47,6 +47,12 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long>, StateDao<State,
 
     int getOtherPersistentNetworksCount(long id, String broadcastURI, boolean isPersistent);
 
+    List<NetworkVO> listByNetworkDomains(List<String> uniqueNtwkDomains);
+
+    List<NetworkVO> listByNetworkDomainsAndAccountIds(List<String> uniqueNtwkDomains, List<Long> accountIds);
+
+    List<NetworkVO> listByNetworkDomainsAndDomainIds(List<String> uniqueNtwkDomains, List<Long> domainIds);
+
     /**
      * Retrieves the next available mac address in this network configuration.
      *
