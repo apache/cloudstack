@@ -1249,6 +1249,7 @@
 "label.isoname": "Attached ISO",
 "label.isos": "ISOs",
 "label.isostate": "ISO state",
+"label.isourl": "ISO URL",
 "label.ispersistent": "Persistent ",
 "label.ispublic": "Public",
 "label.isready": "Ready",
