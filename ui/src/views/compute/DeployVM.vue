@@ -1124,7 +1124,8 @@ export default {
       architectureTypes: {
         opts: []
       },
-      externalDetailsEnabled: false
+      externalDetailsEnabled: false,
+      selectedExtensionId: null
     }
   },
   computed: {
@@ -2605,6 +2606,9 @@ export default {
       if (this.isZoneSelectedMultiArch) {
         args.arch = this.selectedArchitecture
       }
+      if (this.selectedExtensionId) {
+        args.extensionid = this.selectedExtensionId
+      }
       args.account = store.getters.project?.id ? null : this.owner.account
       args.domainid = store.getters.project?.id ? null : this.owner.domainid
       args.projectid = store.getters.project?.id || this.owner.projectid
@@ -2804,7 +2808,7 @@ export default {
       this.fetchOptions(this.params.hosts, 'hosts')
       if (this.clusterId && Array.isArray(this.options.clusters)) {
         const cluster = this.options.clusters.find(c => c.id === this.clusterId)
-        this.handleArchResourceSelected(cluster.arch)
+        this.handleComputeResourceSelected(cluster)
       }
     },
     onSelectHostId (value) {
@@ -2814,15 +2818,37 @@ export default {
       }
       if (this.hostId && Array.isArray(this.options.hosts)) {
         const host = this.options.hosts.find(h => h.id === this.hostId)
-        this.handleArchResourceSelected(host.arch)
+        this.handleComputeResourceSelected(host)
       }
     },
-    handleArchResourceSelected (resourceArch) {
-      if (!resourceArch || !this.isZoneSelectedMultiArch || this.selectedArchitecture === resourceArch) {
+    handleComputeResourceSelected (computeResource) {
+      if (!computeResource) {
+        this.selectedExtensionId = null
         return
       }
-      this.selectedArchitecture = resourceArch
-      this.changeArchitecture(resourceArch, this.imageType === 'templateid')
+      const resourceArch = computeResource.arch
+      const needArchChange = resourceArch &&
+        this.isZoneSelectedMultiArch &&
+        this.selectedArchitecture !== resourceArch
+      const resourceHypervisor = computeResource.hypervisor || computeResource.hypervisortype
+      const resourceExtensionId = resourceHypervisor === 'External' ? computeResource.extensionid : null
+      const needExtensionIdChange = this.selectedExtensionId !== resourceExtensionId
+      if (!needArchChange && !needExtensionIdChange) {
+        return
+      }
+      if (needArchChange && !needExtensionIdChange) {
+        this.changeArchitecture(resourceArch, this.imageType === 'templateid')
+        return
+      }
+      this.selectedExtensionId = resourceExtensionId
+      if (needArchChange) {
+        this.selectedArchitecture = resourceArch
+      }
+      if (this.isModernImageSelection) {
+        this.fetchGuestOsCategories()
+        return
+      }
+      this.fetchImages()
     },
     onSelectGuestOsCategory (value) {
       this.form.guestoscategoryid = value

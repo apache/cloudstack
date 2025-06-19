@@ -248,10 +248,10 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @SerializedName(ApiConstants.USER_DATA_PARAMS) @Param(description="list of parameters which contains the list of keys or string parameters that are needed to be passed for any variables declared in userdata", since = "4.18.0")
     private String userDataParams;
 
-    @SerializedName(ApiConstants.EXTENSION_ID) @Param(description="the id of extension linked to this template", since = "4.21.0")
+    @SerializedName(ApiConstants.EXTENSION_ID) @Param(description="The ID of extension linked to this template", since = "4.21.0")
     private String extensionId;
 
-    @SerializedName(ApiConstants.EXTENSION_NAME) @Param(description="the name of extension linked to this template", since = "4.21.0")
+    @SerializedName(ApiConstants.EXTENSION_NAME) @Param(description="The name of extension linked to this template", since = "4.21.0")
     private String extensionName;
 
     public TemplateResponse() {

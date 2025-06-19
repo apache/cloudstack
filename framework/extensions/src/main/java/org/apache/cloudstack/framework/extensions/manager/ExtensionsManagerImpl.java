@@ -57,6 +57,7 @@ import org.apache.cloudstack.api.response.ExtensionResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.extension.CustomActionResultResponse;
 import org.apache.cloudstack.extension.Extension;
+import org.apache.cloudstack.extension.ExtensionApiService;
 import org.apache.cloudstack.extension.ExtensionCustomAction;
 import org.apache.cloudstack.extension.ExtensionResourceMap;
 import org.apache.cloudstack.framework.extensions.api.AddCustomActionCmd;
@@ -137,7 +138,7 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.VMInstanceDao;
 
-public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsManager, PluggableService {
+public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsManager, ExtensionApiService, PluggableService {
 
     @Inject
     ExtensionDao extensionDao;
@@ -1385,6 +1386,30 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         final Answer[] answers = new Answer[1];
         answers[0] = answer;
         return GsonHelper.getGson().toJson(answers);
+    }
+
+    @Override
+    public Long getExtensionIdForCluster(long clusterId) {
+        ExtensionResourceMapVO map = extensionResourceMapDao.findByResourceIdAndType(clusterId,
+                ExtensionResourceMap.ResourceType.Cluster);
+        if (map == null) {
+            return null;
+        }
+        return map.getExtensionId();
+    }
+
+    @Override
+    public Extension getExtension(long id) {
+        return extensionDao.findById(id);
+    }
+
+    @Override
+    public Extension getExtensionForCluster(long clusterId) {
+        Long extensionId = getExtensionIdForCluster(clusterId);
+        if (extensionId == null) {
+            return null;
+        }
+        return extensionDao.findById(extensionId);
     }
 
     @Override

@@ -147,6 +147,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
+import org.apache.cloudstack.extension.Extension;
+import org.apache.cloudstack.extension.ExtensionApiService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
@@ -649,6 +651,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     GuestOSDao guestOSDao;
+
+    @Inject
+    ExtensionApiService extensionApiService;
 
     private SearchCriteria<ServiceOfferingJoinVO> getMinimumCpuServiceOfferingJoinSearchCriteria(int cpu) {
         SearchCriteria<ServiceOfferingJoinVO> sc = _srvOfferingJoinDao.createSearchCriteria();
@@ -2378,6 +2383,25 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         return _projectAccountJoinDao.searchAndCount(sc, searchFilter);
     }
 
+    protected void updateHostsExtensions(final List<HostResponse> hostResponses) {
+        if (CollectionUtils.isEmpty(hostResponses)) {
+            return;
+        }
+        Map<Long, Extension> clusterIdExtensionMap = new HashMap<>();
+        for  (HostResponse response : hostResponses) {
+            if (!Hypervisor.HypervisorType.External.getHypervisorDisplayName().equals(response.getHypervisor())) {
+                continue;
+            }
+            Extension extension = clusterIdExtensionMap.computeIfAbsent(response.getClusterInternalId(),
+                    id -> extensionApiService.getExtensionForCluster(id));
+            if (extension == null) {
+                continue;
+            }
+            response.setExtensionId(extension.getUuid());
+            response.setExtensionName(extension.getName());
+        }
+    }
+
     @Override
     public ListResponse<HostResponse> searchForServers(ListHostsCmd cmd) {
         // FIXME: do we need to support list hosts with VmId, maybe we should
@@ -2388,6 +2412,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         ListResponse<HostResponse> response = new ListResponse<>();
         logger.debug(">>>Generating Response>>>");
         List<HostResponse> hostResponses = ViewResponseHelper.createHostResponse(cmd.getDetails(), hosts.first().toArray(new HostJoinVO[hosts.first().size()]));
+        updateHostsExtensions(hostResponses);
         response.setResponses(hostResponses, hosts.second());
         return response;
     }
@@ -4803,7 +4828,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 null, cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), cmd.getStoragePoolId(),
                 cmd.getImageStoreId(), hypervisorType, showDomr, cmd.listInReadyState(), permittedAccounts, caller,
                 listProjectResourcesCriteria, tags, showRemovedTmpl, cmd.getIds(), parentTemplateId, cmd.getShowUnique(),
-                templateType, isVnf, cmd.getArch(), cmd.getOsCategoryId());
+                templateType, isVnf, cmd.getArch(), cmd.getOsCategoryId(), cmd.getExtensionId());
     }
 
     private Pair<List<TemplateJoinVO>, Integer> searchForTemplatesInternal(Long templateId, String name, String keyword,
@@ -4812,7 +4837,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             boolean showDomr, boolean onlyReady, List<Account> permittedAccounts, Account caller,
             ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags,
             boolean showRemovedTmpl, List<Long> ids, Long parentTemplateId, Boolean showUnique, String templateType,
-            Boolean isVnf, CPU.CPUArch arch, Long osCategoryId) {
+            Boolean isVnf, CPU.CPUArch arch, Long osCategoryId, Long extensionId) {
 
         // check if zone is configured, if not, just return empty list
         List<HypervisorType> hypers = null;
@@ -4845,6 +4870,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sb.and("guestOsIdIN", sb.entity().getGuestOSId(), Op.IN);
         }
 
+        if (extensionId != null) {
+            sb.and("extensionId", sb.entity().getExtensionId(), Op.IN);
+        }
+
         SearchCriteria<TemplateJoinVO> sc = sb.create();
 
         if (imageStoreId != null) {
@@ -4866,6 +4895,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             } else {
                 return new Pair<>(new ArrayList<>(), 0);
             }
+        }
+
+        if (extensionId != null) {
+            sc.setParameters("extensionId", extensionId);
         }
 
         // verify templateId parameter and specially handle it
@@ -5254,7 +5287,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), cmd.getStoragePoolId(), cmd.getImageStoreId(),
                 hypervisorType, true, cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria,
                 tags, showRemovedISO, null, null, cmd.getShowUnique(), null, null,
-                cmd.getArch(), cmd.getOsCategoryId());
+                cmd.getArch(), cmd.getOsCategoryId(), null);
     }
 
     @Override
