@@ -130,7 +130,7 @@
         <cs.axiom.version>1.2.8</cs.axiom.version>
         <cs.axis2.version>1.6.4</cs.axis2.version>
         <cs.batik.version>1.14</cs.batik.version>
-        <cs.bcprov.version>1.70</cs.bcprov.version>
+        <cs.bcprov.version>1.81</cs.bcprov.version>
         <cs.cglib.version>3.3.0</cs.cglib.version>
         <cs.checkstyle-lib.version>8.18</cs.checkstyle-lib.version>
         <cs.cron-utils.version>9.2.0</cs.cron-utils.version>
@@ -586,17 +586,17 @@
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bcpkix-jdk15on</artifactId>
+                <artifactId>bcpkix-jdk18on</artifactId>
                 <version>${cs.bcprov.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bcprov-jdk15on</artifactId>
+                <artifactId>bcprov-jdk18on</artifactId>
                 <version>${cs.bcprov.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bctls-jdk15on</artifactId>
+                <artifactId>bctls-jdk18on</artifactId>
                 <version>${cs.bcprov.version}</version>
             </dependency>
             <dependency>
