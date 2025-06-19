@@ -28,9 +28,9 @@ Set up Maven (3.9.10):
     # echo export PATH=/usr/local/maven/bin:${PATH} >> ~/.bashrc # or .zshrc or .profile
     # source ~/.bashrc
 
-Setup up NodeJS (LTS):
+Setup up Node.js 16:
 
-    # curl -sL https://rpm.nodesource.com/setup_12.x | sudo bash -
+    # curl -sL https://rpm.nodesource.com/setup_16.x | sudo -E bash -
     # sudo yum install nodejs
     # sudo npm install -g @vue/cli npm-check-updates
 
@@ -104,13 +104,13 @@ To install dependencies.
 
 To build the project.
 
-    $ npm build
+    $ npm run build
 
 For Development Mode.
 
     $ npm start
 
-Make sure to set CS_URL=http://localhost:8080/client on .env.local file on ui.
+Make sure to set `CS_URL=http://localhost:8080` on the `.env.local` file on UI.
 
 You should be able to run the management server on http://localhost:5050
 
