@@ -916,6 +916,14 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         return listBy(sc);
     }
 
+    @Override
+    public List<StoragePoolVO> findPoolsByStorageTypeAndZone(Storage.StoragePoolType storageType, Long zoneId) {
+        SearchCriteria<StoragePoolVO> sc = AllFieldSearch.create();
+        sc.setParameters("poolType", storageType);
+        sc.addAnd("dataCenterId", Op.EQ, zoneId);
+        return listBy(sc);
+    }
+
     private SearchCriteria<StoragePoolVO> createStoragePoolSearchCriteria(Long storagePoolId, String storagePoolName,
                                                                           Long zoneId, String path, Long podId, Long clusterId, Long hostId, String address, ScopeType scopeType,
                                                                           StoragePoolStatus status, String keyword, String storageAccessGroup) {
