@@ -155,7 +155,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
         String elbEnabledString = _configDao.getValue(Config.ElasticLoadBalancerEnabled.key());
-        _elbEnabled = Boolean.parseBoolean(elbEnabledString);
+        _elbEnabled = elbEnabledString == null ? false : Boolean.parseBoolean(elbEnabledString);
         if (_ipAddrMgr.RulesContinueOnError.value() != null) {
             rulesContinueOnErrFlag = _ipAddrMgr.RulesContinueOnError.value();
         }
