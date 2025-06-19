@@ -16,7 +16,7 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-package org.apache.cloudstack.hypervisor.external.provisioner.simpleprovisioner;
+package org.apache.cloudstack.hypervisor.external.provisioner;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -85,9 +85,9 @@ import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
-public class SimpleExternalProvisioner extends ManagerBase implements ExternalProvisioner, PluggableService {
+public class ExternalEntryPointPayloadProvisioner extends ManagerBase implements ExternalProvisioner, PluggableService {
 
-    public static final String BASE_EXTERNAL_PROVISIONER_SCRIPTS_DIR = "scripts/vm/hypervisor/external/simpleExternalProvisioner";
+    public static final String BASE_EXTERNAL_PROVISIONER_SCRIPTS_DIR = "scripts/vm/hypervisor/external/provisioner";
     public static final String BASE_EXTERNAL_PROVISIONER_SCRIPT = BASE_EXTERNAL_PROVISIONER_SCRIPTS_DIR + "/provisioner.sh";
 
     private static final String PROPERTIES_FILE = "server.properties";

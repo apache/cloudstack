@@ -26,6 +26,6 @@
                       http://www.springframework.org/schema/context
                       http://www.springframework.org/schema/context/spring-context.xsd"
                       >
-    <bean id="ExternalProvisioner" class="org.apache.cloudstack.hypervisor.external.provisioner.simpleprovisioner.SimpleExternalProvisioner"/>
+    <bean id="ExternalProvisioner" class="org.apache.cloudstack.hypervisor.external.provisioner.ExternalEntryPointPayloadProvisioner"/>
     <bean id="ExternalAgentManager" class="org.apache.cloudstack.agent.manager.ExternalAgentManagerImpl" />
 </beans>

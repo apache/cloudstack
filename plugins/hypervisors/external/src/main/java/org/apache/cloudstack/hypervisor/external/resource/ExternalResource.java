@@ -23,7 +23,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.extension.Extension;
 import org.apache.cloudstack.framework.extensions.command.ExtensionRoutingUpdateCommand;
-import org.apache.cloudstack.hypervisor.external.provisioner.simpleprovisioner.SimpleExternalProvisioner;
+import org.apache.cloudstack.hypervisor.external.provisioner.ExternalEntryPointPayloadProvisioner;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -345,7 +345,7 @@ public class ExternalResource implements ServerResource {
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        externalProvisioner = ComponentContext.inject(SimpleExternalProvisioner.class);
+        externalProvisioner = ComponentContext.inject(ExternalEntryPointPayloadProvisioner.class);
         externalProvisioner.configure(name, params);
         dcId = (String)params.get("zone");
         pod = (String)params.get("pod");
