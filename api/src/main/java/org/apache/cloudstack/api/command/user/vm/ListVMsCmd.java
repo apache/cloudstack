@@ -173,7 +173,7 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
     private Boolean onlyLeasedInstances = false;
 
     @Parameter(name = ApiConstants.EXTENSION_ID, type = CommandType.UUID,
-            entityType = ExtensionResponse.class, description = "UUID of the extension",
+            entityType = ExtensionResponse.class, description = "The ID of the Orchestrator extension for the VM",
             since = "4.21.0")
     private Long extensionId;
 
