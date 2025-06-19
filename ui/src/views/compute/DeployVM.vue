@@ -1457,6 +1457,9 @@ export default {
     isCustomizedIOPS () {
       return this.rootDiskSelected?.iscustomizediops || this.serviceOffering?.iscustomizediops || false
     },
+    deployMenuOptions () {
+      return [this.form.startvm ? this.$t('label.launch.vm.and.stay') : this.$t('label.create.vm.and.stay')]
+    },
     isModernImageSelection () {
       return this.$config.imageSelectionInterface === undefined || this.$config.imageSelectionInterface === 'modern'
     },
