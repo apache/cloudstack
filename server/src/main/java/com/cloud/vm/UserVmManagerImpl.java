@@ -755,7 +755,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         String networkCidr;
         String macAddress;
 
-        public VmIpAddrFetchThread(long vmId, long nicId, String instanceName, boolean windows, Long hostId, String networkCidr, String macAddress) {
+        public VmIpAddrFetchThread(long vmId, String vmUuid, long nicId, String instanceName, boolean windows, Long hostId, String networkCidr, String macAddress) {
             this.vmId = vmId;
             this.vmUuid = vmUuid;
             this.nicId = nicId;
@@ -777,8 +777,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 Answer answer = _agentMgr.send(hostId, cmd);
                 if (answer.getResult()) {
                     String vmIp = answer.getDetails();
-
-                    if (NetUtils.isValidIp4(vmIp)) {
+                    if (null == vmIp) {
+                        // we got a valid response and the NIC does not have an IP assigned, as such we will update the database with null
+                        if (nic.getIPv4Address() != null) {
+                            nic.setIPv4Address(null);
+                            _nicDao.update(nicId, nic);
+                        }
+                    } else if (NetUtils.isValidIp4(vmIp)) {
                         // set this vm ip addr in vm nic.
                         if (nic != null) {
                             nic.setIPv4Address(vmIp);
@@ -793,12 +798,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         }
                     }
                 } else {
-                    //previously vm has ip and nic table has ip address. After vm restart or stop/start
-                    //if vm doesnot get the ip then set the ip in nic table to null
-                    if (nic.getIPv4Address() != null) {
-                        nic.setIPv4Address(null);
-                        _nicDao.update(nicId, nic);
-                    }
+                    // since no changes are being done, we should not decrement IP usage
+                    decrementCount = false;
                     if (answer.getDetails() != null) {
                         logger.debug("Failed to get vm ip for Vm [id: {}, uuid: {}, name: {}], details: {}",
                                 vmId, vmUuid, vmName, answer.getDetails());
@@ -2692,7 +2693,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(userVm);
                             VirtualMachine vm = vmProfile.getVirtualMachine();
                             boolean isWindows = _guestOSCategoryDao.findById(_guestOSDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
-                            _vmIpFetchThreadExecutor.execute(new VmIpAddrFetchThread(vmId, nicId, vmInstance.getInstanceName(),
+
+                            _vmIpFetchThreadExecutor.execute(new VmIpAddrFetchThread(vmId, vmInstance.getUuid(), nicId, vmInstance.getInstanceName(),
                                     isWindows, vm.getHostId(), network.getCidr(), nicVo.getMacAddress()));
 
                         }
