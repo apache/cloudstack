@@ -104,7 +104,7 @@ To install dependencies.
 
 To build the project.
 
-    $ npm run build 
+    $ npm run build
 
 For Development Mode.
 
