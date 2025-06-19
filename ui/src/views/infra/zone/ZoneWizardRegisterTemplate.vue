@@ -223,12 +223,7 @@ export default {
         if (!response.ok) {
           throw new Error(`Error fetching predefined templates, status_code: ${response.status}`)
         }
-        const templates = await response.json()
-        const templatesBaseUrl = 'https://download.cloudstack.org/templates/cloud-images/'
-        for (const template of templates) {
-          template.url = templatesBaseUrl + template.distro.toLowerCase() + '/' + template.filename
-        }
-        this.predefinedTemplates = templates
+        this.predefinedTemplates = await response.json()
       } catch (error) {
         console.error('Error fetching predefined templates:', error)
         this.predefinedTemplates = []
