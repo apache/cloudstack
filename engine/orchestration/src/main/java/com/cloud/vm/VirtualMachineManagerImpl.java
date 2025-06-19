@@ -1246,9 +1246,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         updateExternalVmNicsFromPrepareAnswer(vmTO, updatedTO);
     }
 
-    protected void processPrepareExternalProvisioning(Host host, VirtualMachineTO virtualMachineTO,
+    protected void processPrepareExternalProvisioning(boolean firstStart, Host host, VirtualMachineTO virtualMachineTO,
               VirtualMachineTemplate template) {
-        if (host == null || !HypervisorType.External.equals(host.getHypervisorType()) ||
+        if (!firstStart || host == null || !HypervisorType.External.equals(host.getHypervisorType()) ||
                 template.getExtensionId() == null) {
             return;
         }
@@ -1257,6 +1257,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (detailsVO == null || !Boolean.parseBoolean(detailsVO.getValue())) {
             return;
         }
+        logger.debug("Sending PrepareExternalProvisioningCommand for {}", virtualMachineTO);
         Map<String, String> vmDetails = virtualMachineTO.getExternalDetails();
         Map<String, Object> externalDetails = extensionsManager.getExternalAccessDetails(host,
                 vmDetails);
@@ -1298,6 +1299,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final User caller = cctxt.getCallingUser();
 
         VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
+
+        final boolean firstStart = vm.getUpdated() == 0;
 
         final VirtualMachineGuru vmGuru = getVmGuru(vm);
 
@@ -1461,7 +1464,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     handlePath(vmTO.getDisks(), vm.getHypervisorType());
                     setVmNetworkDetails(vm, vmTO);
 
-                    processPrepareExternalProvisioning(dest.getHost(), vmTO, template);
+                    processPrepareExternalProvisioning(firstStart, dest.getHost(), vmTO, template);
 
                     Commands cmds = new Commands(Command.OnError.Stop);
                     final Map<String, String> sshAccessDetails = _networkMgr.getSystemVMAccessDetails(vm);
