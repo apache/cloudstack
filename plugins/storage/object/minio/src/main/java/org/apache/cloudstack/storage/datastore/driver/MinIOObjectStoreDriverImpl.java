@@ -181,6 +181,12 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     }
 
     @Override
+    public void verifyServiceConnectivity(long storeId) {
+        // ideally ping the service. For now, listBuckets() will do.
+        listBuckets(storeId);
+    }
+
+    @Override
     public boolean deleteBucket(BucketTO bucket, long storeId) {
         String bucketName = bucket.getName();
         MinioClient minioClient = getMinIOClient(storeId);
