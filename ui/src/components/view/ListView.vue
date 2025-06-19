@@ -276,6 +276,9 @@
       <template v-if="column.key === 'agentstate'">
         <status :text="text ? text : ''" displayText />
       </template>
+      <template v-if="column.key === 'entrypoint'">
+        {{ text ? text.replace('/home/abhishek/lab/shapeblue/cloudstack', '/var/lib/cloudstack/management') : '' }}
+      </template>
       <template v-if="column.key === 'entrypointstate'">
         <status :text="text ? text : ''" displayText :styles="{ 'min-width': '80px' }" />
       </template>

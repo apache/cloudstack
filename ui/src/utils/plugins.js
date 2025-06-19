@@ -569,3 +569,19 @@ export const imagesUtilPlugin = {
     }
   }
 }
+
+export const extensionsUtilPlugin = {
+  install (app) {
+    app.config.globalProperties.$fetchCustomActionRoleTypes = function () {
+      const roleTypes = []
+      const roleTypesList = ['Admin', 'Resource Admin', 'Domain Admin', 'User']
+      roleTypesList.forEach((item) => {
+        roleTypes.push({
+          id: item.replace(' ', ''),
+          description: item
+        })
+      })
+      return roleTypes
+    }
+  }
+}

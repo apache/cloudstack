@@ -1336,10 +1336,10 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         Optional.ofNullable(allDetails.second().get(ApiConstants.PARAMETERS))
                 .map(ExtensionCustomAction.Parameter::toListFromJson)
                 .ifPresent(parameters -> {
-                    Set<ExtensionCustomActionParameterResponse> paramResponses = parameters.stream()
+                    List<ExtensionCustomActionParameterResponse> paramResponses = parameters.stream()
                             .map(p -> new ExtensionCustomActionParameterResponse(p.getName(),
                                     p.getType().name(), p.getValidationFormat().name(), p.getValueOptions(), p.isRequired()))
-                            .collect(Collectors.toSet());
+                            .collect(Collectors.toList());
                     response.setParameters(paramResponses);
                 });
         response.setDetails(allDetails.first());

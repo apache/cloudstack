@@ -40,7 +40,6 @@
               </a-checkbox>
             </a-form-item>
           </a-col>
-          <!-- Row 2 -->
           <a-col :span="12">
             <a-form-item no-style>
               <tooltip-label :title="$t('label.type')" />
@@ -79,7 +78,6 @@
               </a-select>
             </a-form-item>
           </a-col>
-          <!-- Row 3 -->
           <a-col :span="24">
             <a-form-item no-style>
               <tooltip-label :title="$t('label.valueoptions')" :tooltip="$t('message.desc.valueoptions')" />
@@ -114,7 +112,10 @@
       class="table"
     >
       <template #bodyCell="{ column, record }">
-        <template v-if="column.key === 'action'">
+        <template v-if="column.key === 'valueoptions'">
+          {{ Array.isArray(record.valueoptions) ? record.valueoptions.join(',') : record.valueoptions }}
+        </template>
+        <template v-if="column.key === 'actions'">
           <template v-if="record.editing">
             <div class="flex-gap">
               <tooltip-button :tooltip="$t('label.ok')" icon="check-outlined" @onClick="saveEdit(record)" />
@@ -227,7 +228,7 @@ export default {
     getFormatOptions (type) {
       const formats = ['NONE']
       if (type === 'STRING') {
-        formats.push('UUID', 'EMAIL', 'PASSWORD', 'URL')
+        formats.push('EMAIL', 'PASSWORD', 'URL', 'UUID')
       } else if (type === 'NUMBER') {
         formats.push('DECIMAL')
       }
@@ -259,6 +260,9 @@ export default {
     },
     editRow (record) {
       this.editBuffer = { ...record }
+      if (Array.isArray(this.editBuffer.valueoptions)) {
+        this.editBuffer.valueoptions = this.editBuffer.valueoptions.join(',')
+      }
       record.editing = true
     },
     cancelEdit (record) {
@@ -279,7 +283,13 @@ export default {
       this.editBuffer = {}
     },
     updateData () {
-      const data = this.tableData.map(({ name, type, validationformat, valueoptions, required }) => ({ name, type, validationformat, valueoptions, required }))
+      const data = this.tableData.map(({ name, type, validationformat, valueoptions, required }) => ({
+        name,
+        type,
+        validationformat,
+        valueoptions: Array.isArray(valueoptions) ? valueoptions.join(',') : null,
+        required
+      }))
       this.$emit('update:value', data)
     }
   }

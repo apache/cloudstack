@@ -26,7 +26,7 @@
       @finish="handleSubmit">
       <a-form-item name="customactionid" ref="customactionid">
         <template #label>
-          <tooltip-label :title="$t('label.customactionid')" :tooltip="apiParams.customactionid.description"/>
+          <tooltip-label :title="$t('label.action')" :tooltip="apiParams.customactionid.description"/>
         </template>
         <a-select
           showSearch
@@ -186,7 +186,7 @@ export default {
           if (required) {
             fieldRules.push({
               required: true,
-              message: `${this.$t('message.error.field.required', { field: field.name })}`
+              message: `${this.$t('message.error.input.value', { field: field.name })}`
             })
           }
           if (field.type === 'STRING' && field.validationformat) {

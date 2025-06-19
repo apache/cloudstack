@@ -166,7 +166,7 @@ export default {
     if (this.extension) {
       this.form.extensionid = this.extension.id
     }
-    this.fetchRoleTypes()
+    this.roleTypes = this.$fetchCustomActionRoleTypes()
   },
   methods: {
     initForm () {
@@ -178,16 +178,6 @@ export default {
       this.rules = reactive({
         extensionid: [{ required: true, message: `${this.$t('message.error.select')}` }],
         name: [{ required: true, message: `${this.$t('message.error.name')}` }]
-      })
-    },
-    fetchRoleTypes () {
-      this.roleTypes = []
-      const roleTypesList = ['Admin', 'ResourceAdmin', 'DomainAdmin', 'User']
-      roleTypesList.forEach((item) => {
-        this.roleTypes.push({
-          id: item,
-          description: item
-        })
       })
     },
     handleSubmit (e) {

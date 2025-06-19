@@ -135,7 +135,7 @@ export default {
   },
   created () {
     this.initForm()
-    this.fetchRoleTypes()
+    this.roleTypes = this.$fetchCustomActionRoleTypes()
   },
   methods: {
     fixParamatersOptions (params) {
@@ -161,16 +161,6 @@ export default {
       }
       this.form = reactive(formData)
       this.rules = reactive({})
-    },
-    fetchRoleTypes () {
-      this.roleTypes = []
-      const roleTypesList = ['Admin', 'ResourceAdmin', 'DomainAdmin', 'User']
-      roleTypesList.forEach((item) => {
-        this.roleTypes.push({
-          id: item,
-          description: item
-        })
-      })
     },
     handleSubmit (e) {
       e.preventDefault()

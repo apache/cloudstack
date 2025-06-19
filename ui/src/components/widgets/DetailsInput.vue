@@ -39,7 +39,7 @@
       class="table"
     >
       <template #bodyCell="{ column, record }">
-        <template v-if="column.key === 'action'">
+        <template v-if="column.key === 'actions'">
           <template v-if="record.editing">
             <div class="flex-gap">
               <tooltip-button :tooltip="$t('label.ok')" icon="check-outlined" @onClick="saveEdit(record)" />

@@ -138,7 +138,7 @@ export default {
       return value.replace(/[^a-zA-Z0-9._-]/g, '').toLowerCase()
     },
     extenstionBasePath () {
-      return '[EXTENSIONS_DIRECTORY]/' + this.safeName + '/'
+      return '/var/lib/cloudstack/management/extensions/' + this.safeName + '/'
     }
   },
   methods: {

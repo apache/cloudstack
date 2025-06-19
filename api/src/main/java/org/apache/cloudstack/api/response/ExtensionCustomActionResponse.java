@@ -20,7 +20,6 @@ package org.apache.cloudstack.api.response;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
@@ -83,7 +82,7 @@ public class ExtensionCustomActionResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.PARAMETERS)
     @Param(description = "List of the parameters for the action", responseObject = ExtensionCustomActionParameterResponse.class)
-    private Set<ExtensionCustomActionParameterResponse> parameters;
+    private List<ExtensionCustomActionParameterResponse> parameters;
 
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "Creation timestamp of the custom action")
@@ -159,7 +158,7 @@ public class ExtensionCustomActionResponse extends BaseResponse {
         this.enabled = enabled;
     }
 
-    public void setParameters(Set<ExtensionCustomActionParameterResponse> parameters) {
+    public void setParameters(List<ExtensionCustomActionParameterResponse> parameters) {
         this.parameters = parameters;
     }
 
