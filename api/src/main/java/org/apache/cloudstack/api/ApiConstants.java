@@ -121,6 +121,10 @@ public class ApiConstants {
     public static final String CN = "cn";
     public static final String COMMAND = "command";
     public static final String CMD_EVENT_TYPE = "cmdeventtype";
+    public static final String CNI_CONFIG = "cniconfig";
+    public static final String CNI_CONFIG_ID = "cniconfigurationid";
+    public static final String CNI_CONFIG_DETAILS = "cniconfigdetails";
+    public static final String CNI_CONFIG_NAME = "cniconfigname";
     public static final String COMPONENT = "component";
     public static final String CPU_CORE_PER_SOCKET = "cpucorepersocket";
     public static final String CPU_NUMBER = "cpunumber";
@@ -142,6 +146,7 @@ public class ApiConstants {
     public static final String ENCRYPT_FORMAT = "encryptformat";
     public static final String ENCRYPT_ROOT = "encryptroot";
     public static final String ENCRYPTION_SUPPORTED = "encryptionsupported";
+    public static final String ETCD_IPS = "etcdips";
     public static final String MIN_IOPS = "miniops";
     public static final String MAX_IOPS = "maxiops";
     public static final String HYPERVISOR_SNAPSHOT_RESERVE = "hypervisorsnapshotreserve";
@@ -339,6 +344,7 @@ public class ApiConstants {
     public static final String LB_PROVIDER = "lbprovider";
     public static final String MAC_ADDRESS = "macaddress";
     public static final String MAC_ADDRESSES = "macaddresses";
+    public static final String MANUAL_UPGRADE = "manualupgrade";
     public static final String MAX = "max";
     public static final String MAX_SNAPS = "maxsnaps";
     public static final String MAX_BACKUPS = "maxbackups";
@@ -350,6 +356,7 @@ public class ApiConstants {
     public static final String MIGRATIONS = "migrations";
     public static final String MEMORY = "memory";
     public static final String MODE = "mode";
+    public static final String MOUNT_CKS_ISO_ON_VR = "mountcksisoonvr";
     public static final String MULTI_ARCH = "ismultiarch";
     public static final String NSX_MODE = "nsxmode";
     public static final String NETWORK_MODE = "networkmode";
@@ -366,6 +373,7 @@ public class ApiConstants {
     public static final String NIC_PACKED_VIRTQUEUES_ENABLED = "nicpackedvirtqueuesenabled";
     public static final String NEW_START_IP = "newstartip";
     public static final String NEW_END_IP = "newendip";
+    public static final String KUBERNETES_NODE_VERSION = "kubernetesnodeversion";
     public static final String NUM_RETRIES = "numretries";
     public static final String OFFER_HA = "offerha";
     public static final String OS_DISTRIBUTION = "osdistribution";
@@ -555,6 +563,7 @@ public class ApiConstants {
     public static final String USER_SECURITY_GROUP_LIST = "usersecuritygrouplist";
     public static final String USER_SECRET_KEY = "usersecretkey";
     public static final String USE_VIRTUAL_NETWORK = "usevirtualnetwork";
+    public static final String USE_VIRTUAL_ROUTER_IP_RESOLVER = "userouteripresolver";
     public static final String UPDATE_IN_SEQUENCE = "updateinsequence";
     public static final String VALUE = "value";
     public static final String VIRTUAL_MACHINE_ID = "virtualmachineid";
@@ -571,6 +580,12 @@ public class ApiConstants {
 
     public static final String VLAN = "vlan";
     public static final String VLAN_RANGE = "vlanrange";
+    public static final String WORKER_SERVICE_OFFERING_ID = "workerofferingid";
+    public static final String WORKER_SERVICE_OFFERING_NAME = "workerofferingname";
+    public static final String CONTROL_SERVICE_OFFERING_ID = "controlofferingid";
+    public static final String CONTROL_SERVICE_OFFERING_NAME = "controlofferingname";
+    public static final String ETCD_SERVICE_OFFERING_ID = "etcdofferingid";
+    public static final String ETCD_SERVICE_OFFERING_NAME = "etcdofferingname";
     public static final String REMOVE_VLAN = "removevlan";
     public static final String VLAN_ID = "vlanid";
     public static final String ISOLATED_PVLAN = "isolatedpvlan";
@@ -923,6 +938,7 @@ public class ApiConstants {
     public static final String SPLIT_CONNECTIONS = "splitconnections";
     public static final String FOR_VPC = "forvpc";
     public static final String FOR_NSX = "fornsx";
+    public static final String FOR_CKS = "forcks";
     public static final String NSX_SUPPORT_LB = "nsxsupportlb";
     public static final String NSX_SUPPORTS_INTERNAL_LB = "nsxsupportsinternallb";
     public static final String FOR_TUNGSTEN = "fortungsten";
@@ -1131,6 +1147,10 @@ public class ApiConstants {
     public static final String MASTER_NODES = "masternodes";
     public static final String NODE_IDS = "nodeids";
     public static final String CONTROL_NODES = "controlnodes";
+    public static final String ETCD_NODES = "etcdnodes";
+    public static final String EXTERNAL_NODES = "externalnodes";
+    public static final String IS_EXTERNAL_NODE = "isexternalnode";
+    public static final String IS_ETCD_NODE = "isetcdnode";
     public static final String MIN_SEMANTIC_VERSION = "minimumsemanticversion";
     public static final String MIN_KUBERNETES_VERSION_ID = "minimumkubernetesversionid";
     public static final String NODE_ROOT_DISK_SIZE = "noderootdisksize";
@@ -1139,6 +1159,8 @@ public class ApiConstants {
     public static final String AUTOSCALING_ENABLED = "autoscalingenabled";
     public static final String MIN_SIZE = "minsize";
     public static final String MAX_SIZE = "maxsize";
+    public static final String NODE_TYPE_OFFERING_MAP = "nodeofferings";
+    public static final String NODE_TYPE_TEMPLATE_MAP = "nodetemplates";
 
     public static final String BOOT_TYPE = "boottype";
     public static final String BOOT_MODE = "bootmode";

@@ -199,7 +199,7 @@ public class StorageVmSharedFSLifeCycle implements SharedFSLifeCycle {
                         customParameterMap, null, null, null, null,
                         true, UserVmManager.SHAREDFSVM, null);
                 vmContext.setEventResourceId(vm.getId());
-                userVmService.startVirtualMachine(vm);
+                userVmService.startVirtualMachine(vm, null);
             } catch (InsufficientCapacityException ex) {
                 if (vm != null) {
                     expungeVm(vm.getId());
@@ -243,7 +243,7 @@ public class StorageVmSharedFSLifeCycle implements SharedFSLifeCycle {
     @Override
     public void startSharedFS(SharedFS sharedFS) throws OperationTimedoutException, ResourceUnavailableException, InsufficientCapacityException {
         UserVmVO vm = userVmDao.findById(sharedFS.getVmId());
-        userVmService.startVirtualMachine(vm);
+        userVmService.startVirtualMachine(vm, null);
     }
 
     @Override
