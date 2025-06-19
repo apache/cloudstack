@@ -260,8 +260,11 @@ export default {
       })
       if (!this.loading) {
         if (this.preFillContent.networkids) {
-          this.selectedRowKeys = this.preFillContent.networkids
-          this.$emit('select-network-item', this.preFillContent.networkids)
+          const validNetworkIds = this.preFillContent.networkids.filter(networkId =>
+            this.items.some(item => item.id === networkId)
+          )
+          this.selectedRowKeys = validNetworkIds
+          this.$emit('select-network-item', validNetworkIds)
         } else {
           if (this.items && this.items.length > 0) {
             if (this.oldZoneId === this.zoneId) {
