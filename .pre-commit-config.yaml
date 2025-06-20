@@ -101,5 +101,5 @@ repos:
       - id: yamllint
         name: run yamllint
         description: check YAML files with yamllint
-        args: [--config-file=.yamllint.yml]
-        files: \.(yaml|yml)$
+        args: [--config-file=.github/linters/.yamllint.yml]
+        files: \.ya?ml$
