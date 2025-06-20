@@ -48,17 +48,17 @@ public interface VpcService {
      * @param vpcName
      * @param displayText
      * @param cidr
-     * @param networkDomain TODO
+     * @param networkDomain   TODO
      * @param ip4Dns1
      * @param ip4Dns2
-     * @param displayVpc TODO
+     * @param displayVpc      TODO
+     * @param useVrIpResolver
      * @return
      * @throws ResourceAllocationException TODO
      */
     Vpc createVpc(long zoneId, long vpcOffId, long vpcOwnerId, String vpcName, String displayText, String cidr, String networkDomain,
                   String ip4Dns1, String ip4Dns2, String ip6Dns1, String ip6Dns2, Boolean displayVpc, Integer publicMtu, Integer cidrSize,
-                  Long asNumber, List<Long> bgpPeerIds)
-            throws ResourceAllocationException;
+                  Long asNumber, List<Long> bgpPeerIds, Boolean useVrIpResolver) throws ResourceAllocationException;
 
     /**
      * Persists VPC record in the database

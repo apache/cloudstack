@@ -531,9 +531,13 @@ import org.apache.cloudstack.api.command.user.template.ListTemplatesCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplatePermissionsCmd;
+import org.apache.cloudstack.api.command.user.userdata.BaseRegisterUserDataCmd;
+import org.apache.cloudstack.api.command.user.userdata.DeleteCniConfigurationCmd;
 import org.apache.cloudstack.api.command.user.userdata.DeleteUserDataCmd;
 import org.apache.cloudstack.api.command.user.userdata.LinkUserDataToTemplateCmd;
+import org.apache.cloudstack.api.command.user.userdata.ListCniConfigurationCmd;
 import org.apache.cloudstack.api.command.user.userdata.ListUserDataCmd;
+import org.apache.cloudstack.api.command.user.userdata.RegisterCniConfigurationCmd;
 import org.apache.cloudstack.api.command.user.userdata.RegisterUserDataCmd;
 import org.apache.cloudstack.api.command.user.vm.AddIpToVmNicCmd;
 import org.apache.cloudstack.api.command.user.vm.AddNicToVMCmd;
@@ -4218,6 +4222,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(DeleteUserDataCmd.class);
         cmdList.add(ListUserDataCmd.class);
         cmdList.add(LinkUserDataToTemplateCmd.class);
+        cmdList.add(RegisterCniConfigurationCmd.class);
+        cmdList.add(ListCniConfigurationCmd.class);
+        cmdList.add(DeleteCniConfigurationCmd.class);
 
         //object store APIs
         cmdList.add(AddObjectStoragePoolCmd.class);
@@ -5030,7 +5037,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
-    public Pair<List<? extends UserData>, Integer> listUserDatas(final ListUserDataCmd cmd) {
+    @ActionEvent(eventType = EventTypes.EVENT_DELETE_CNI_CONFIG, eventDescription = "CNI Configuration deletion")
+    public boolean deleteCniConfiguration(DeleteCniConfigurationCmd cmd) {
+        return deleteUserData(cmd);
+    }
+
+    @Override
+    public Pair<List<? extends UserData>, Integer> listUserDatas(final ListUserDataCmd cmd, final boolean forCks) {
         final Long id = cmd.getId();
         final String name = cmd.getName();
         final String keyword = cmd.getKeyword();
@@ -5050,6 +5063,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("keyword", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
+        sb.and("forCks", sb.entity().isForCks(), SearchCriteria.Op.EQ);
         final SearchCriteria<UserDataVO> sc = sb.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
@@ -5065,8 +5080,25 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             sc.setParameters("keyword",  "%" + keyword + "%");
         }
 
+        sc.setParameters("forCks", forCks);
+
         final Pair<List<UserDataVO>, Integer> result = userDataDao.searchAndCount(sc, searchFilter);
         return new Pair<>(result.first(), result.second());
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_REGISTER_CNI_CONFIG, eventDescription = "registering CNI configuration", async = true)
+    public UserData registerCniConfiguration(RegisterCniConfigurationCmd cmd) {
+        final Account owner = getOwner(cmd);
+        checkForUserDataByName(cmd, owner);
+        final String name = cmd.getName();
+
+        String userdata = cmd.getCniConfig();
+        final String params = cmd.getParams();
+
+        userdata = userDataManager.validateUserData(userdata, cmd.getHttpMethod());
+
+        return createAndSaveUserData(name, userdata, params, owner, true);
     }
 
     @Override
@@ -5074,15 +5106,15 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public UserData registerUserData(final RegisterUserDataCmd cmd) {
         final Account owner = getOwner(cmd);
         checkForUserDataByName(cmd, owner);
-        checkForUserData(cmd, owner);
-
         final String name = cmd.getName();
+
         String userdata = cmd.getUserData();
+        checkForUserData(cmd, owner);
         final String params = cmd.getParams();
 
         userdata = userDataManager.validateUserData(userdata, cmd.getHttpMethod());
 
-        return createAndSaveUserData(name, userdata, params, owner);
+        return createAndSaveUserData(name, userdata, params, owner, false);
     }
 
     /**
@@ -5102,7 +5134,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
      * @param owner
      * @throws InvalidParameterValueException
      */
-    private void checkForUserDataByName(final RegisterUserDataCmd cmd, final Account owner) throws InvalidParameterValueException {
+    private void checkForUserDataByName(final BaseRegisterUserDataCmd cmd, final Account owner) throws InvalidParameterValueException {
         final UserDataVO userData = userDataDao.findByName(owner.getAccountId(), owner.getDomainId(), cmd.getName());
         if (userData != null) {
             throw new InvalidParameterValueException(String.format("A userdata with name %s already exists for this account.", cmd.getName()));
@@ -5171,7 +5203,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
      * @param cmd
      * @return Account
      */
-    protected Account getOwner(final RegisterUserDataCmd cmd) {
+    protected Account getOwner(final BaseRegisterUserDataCmd cmd) {
         final Account caller = getCaller();
         return  _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
     }
@@ -5184,7 +5216,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return caller;
     }
 
-    private SSHKeyPair createAndSaveSSHKeyPair(final String name, final String fingerprint, final String publicKey, final String privateKey, final Account owner) {
+    private SSHKeyPair  createAndSaveSSHKeyPair(final String name, final String fingerprint, final String publicKey, final String privateKey, final Account owner) {
         final SSHKeyPairVO newPair = new SSHKeyPairVO();
 
         newPair.setAccountId(owner.getAccountId());
@@ -5199,7 +5231,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return newPair;
     }
 
-    private UserData createAndSaveUserData(final String name, final String userdata, final String params, final Account owner) {
+    private UserData createAndSaveUserData(final String name, final String userdata, final String params, final Account owner, final boolean isForCks) {
         final UserDataVO userDataVO = new UserDataVO();
 
         userDataVO.setAccountId(owner.getAccountId());
@@ -5207,6 +5239,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         userDataVO.setName(name);
         userDataVO.setUserData(userdata);
         userDataVO.setParams(params);
+        userDataVO.setForCks(isForCks);
 
         userDataDao.persist(userDataVO);
 

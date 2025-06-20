@@ -323,6 +323,7 @@ import com.googlecode.ipv6.IPv6Network;
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, Configurable {
     public static final String PERACCOUNT = "peraccount";
     public static final String PERZONE = "perzone";
+    public static final String CLUSTER_NODES_DEFAULT_START_SSH_PORT = "2222";
 
     @Inject
     EntityManager _entityMgr;
@@ -684,6 +685,17 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
     }
 
+    protected void validateConflictingConfigValue(final String configName, final String value) {
+        if (configName.equals("cloud.kubernetes.etcd.node.start.port")) {
+            if (value.equals(CLUSTER_NODES_DEFAULT_START_SSH_PORT)) {
+                String errorMessage = "This range is reserved for Kubernetes cluster nodes." +
+                        "Please choose a value in a higher range would does not conflict with a kubernetes cluster deployed";
+                logger.error(errorMessage);
+                throw new InvalidParameterValueException(errorMessage);
+            }
+        }
+    }
+
     @Override
     public boolean start() {
 
@@ -995,6 +1007,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         } else {
             category = config.getCategory();
         }
+
+        validateIpAddressRelatedConfigValues(name, value);
+        validateConflictingConfigValue(name, value);
 
         if (CATEGORY_SYSTEM.equals(category) && !_accountMgr.isRootAdmin(caller.getId())) {
             logger.warn("Only Root Admin is allowed to edit the configuration " + name);

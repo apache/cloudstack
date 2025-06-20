@@ -530,7 +530,7 @@ public class ManagementServerImplTest {
             Pair<List<UserDataVO>, Integer> result = new Pair(userDataList, 1);
             when(_userDataDao.searchAndCount(nullable(SearchCriteria.class), nullable(Filter.class))).thenReturn(result);
 
-            Pair<List<? extends UserData>, Integer> userdataResultList = spy.listUserDatas(cmd);
+            Pair<List<? extends UserData>, Integer> userdataResultList = spy.listUserDatas(cmd, false);
 
             Assert.assertEquals(userdataResultList.first().get(0), userDataList.get(0));
         }
@@ -563,7 +563,7 @@ public class ManagementServerImplTest {
             Pair<List<UserDataVO>, Integer> result = new Pair(userDataList, 1);
             when(_userDataDao.searchAndCount(nullable(SearchCriteria.class), nullable(Filter.class))).thenReturn(result);
 
-            Pair<List<? extends UserData>, Integer> userdataResultList = spy.listUserDatas(cmd);
+            Pair<List<? extends UserData>, Integer> userdataResultList = spy.listUserDatas(cmd, false);
 
             Assert.assertEquals(userdataResultList.first().get(0), userDataList.get(0));
         }
@@ -596,7 +596,7 @@ public class ManagementServerImplTest {
             Pair<List<UserDataVO>, Integer> result = new Pair(userDataList, 1);
             when(_userDataDao.searchAndCount(nullable(SearchCriteria.class), nullable(Filter.class))).thenReturn(result);
 
-            Pair<List<? extends UserData>, Integer> userdataResultList = spy.listUserDatas(cmd);
+            Pair<List<? extends UserData>, Integer> userdataResultList = spy.listUserDatas(cmd, false);
 
             Assert.assertEquals(userdataResultList.first().get(0), userDataList.get(0));
         }

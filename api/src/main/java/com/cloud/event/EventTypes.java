@@ -289,6 +289,8 @@ public class EventTypes {
 
     //registering userdata events
     public static final String EVENT_REGISTER_USER_DATA = "REGISTER.USER.DATA";
+    public static final String EVENT_REGISTER_CNI_CONFIG = "REGISTER.CNI.CONFIG";
+    public static final String EVENT_DELETE_CNI_CONFIG = "DELETE.CNI.CONFIG";
 
     //register for user API and secret keys
     public static final String EVENT_REGISTER_FOR_SECRET_API_KEY = "REGISTER.USER.KEY";
