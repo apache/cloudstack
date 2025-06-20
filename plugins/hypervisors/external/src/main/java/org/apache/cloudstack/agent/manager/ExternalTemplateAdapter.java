@@ -24,6 +24,7 @@ package org.apache.cloudstack.agent.manager;
 
 import java.util.Arrays;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -32,6 +33,7 @@ import org.apache.cloudstack.api.command.user.iso.GetUploadParamsForIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
@@ -55,6 +57,8 @@ import com.cloud.template.TemplateAdapterBase;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class ExternalTemplateAdapter extends TemplateAdapterBase implements TemplateAdapter {
@@ -147,8 +151,40 @@ public class ExternalTemplateAdapter extends TemplateAdapterBase implements Temp
 
     @Override
     public List<TemplateOrVolumePostUploadCommand> createTemplateForPostUpload(TemplateProfile profile) {
-        // TODO: support External hypervisor for postupload
-        return null;
+        return Transaction.execute((TransactionCallback<List<TemplateOrVolumePostUploadCommand>>) status -> {
+            if (Storage.ImageFormat.ISO.equals(profile.getFormat())) {
+                throw new CloudRuntimeException("ISO upload is not supported for External hypervisor");
+            }
+            List<Long> zoneIdList = profile.getZoneIdList();
+            if (zoneIdList == null) {
+                throw new CloudRuntimeException("Zone ID is null, cannot upload template.");
+            }
+            if (zoneIdList.size() > 1) {
+                throw new CloudRuntimeException("Operation is not supported for more than one zone id at a time.");
+            }
+            VMTemplateVO template = persistTemplate(profile, VirtualMachineTemplate.State.NotUploaded);
+            if (template == null) {
+                throw new CloudRuntimeException("Unable to persist the template " + profile.getTemplate());
+            }
+            // Set Event Details for Template/ISO Upload
+            String eventResourceId = template.getUuid();
+            CallContext.current().setEventDetails(String.format("Template Id: %s", eventResourceId));
+            CallContext.current().putContextParameter(VirtualMachineTemplate.class, eventResourceId);
+            Long zoneId = zoneIdList.get(0);
+            DataStore imageStore = verifyHeuristicRulesForZone(template, zoneId);
+            List<TemplateOrVolumePostUploadCommand> payloads = new LinkedList<>();
+            if (imageStore == null) {
+                List<DataStore> imageStores = getImageStoresThrowsExceptionIfNotFound(zoneId, profile);
+                postUploadAllocation(imageStores, template, payloads);
+            } else {
+                postUploadAllocation(List.of(imageStore), template, payloads);
+            }
+            if (payloads.isEmpty()) {
+                throw new CloudRuntimeException("Unable to find zone or an image store with enough capacity");
+            }
+            _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), Resource.ResourceType.template);
+            return payloads;
+        });
     }
 
     @Override
