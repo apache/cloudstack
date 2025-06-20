@@ -2146,19 +2146,11 @@ export default {
     },
     changeArchitecture (arch) {
       this.selectedArchitecture = arch
-      if (this.isModernImageSelection) {
-        this.fetchGuestOsCategories()
-        return
-      }
-      this.fetchImages()
+      this.updateImages()
     },
     changeImageType (imageType) {
       this.imageType = imageType
-      if (this.isModernImageSelection) {
-        this.fetchGuestOsCategories()
-      } else {
-        this.fetchImages()
-      }
+      this.updateImages()
     },
     handleSubmitAndStay (e) {
       this.form.stayonpage = true
@@ -2821,6 +2813,13 @@ export default {
         this.handleComputeResourceSelected(host)
       }
     },
+    updateImages () {
+      if (this.isModernImageSelection) {
+        this.fetchGuestOsCategories()
+        return
+      }
+      this.fetchImages()
+    },
     handleComputeResourceSelected (computeResource) {
       if (!computeResource) {
         this.selectedExtensionId = null
@@ -2844,11 +2843,7 @@ export default {
       if (needArchChange) {
         this.selectedArchitecture = resourceArch
       }
-      if (this.isModernImageSelection) {
-        this.fetchGuestOsCategories()
-        return
-      }
-      this.fetchImages()
+      this.updateImages()
     },
     onSelectGuestOsCategory (value) {
       this.form.guestoscategoryid = value
