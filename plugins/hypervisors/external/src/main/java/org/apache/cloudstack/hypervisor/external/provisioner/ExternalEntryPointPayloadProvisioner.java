@@ -43,6 +43,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.extension.Extension;
+import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -108,6 +109,9 @@ public class ExternalEntryPointPayloadProvisioner extends ManagerBase implements
 
     @Inject
     HypervisorGuruManager hypervisorGuruManager;
+
+    @Inject
+    ExtensionsManager extensionsManager;
 
     private static final AtomicReference<Properties> propertiesRef = new AtomicReference<>();
     private String extensionsDirectory;
@@ -398,14 +402,13 @@ public class ExternalEntryPointPayloadProvisioner extends ManagerBase implements
             logger.error("Host with ID: {} not found", hostId);
             return vmStates;
         }
-        // ToDo: ExternalHypervisorGuru.loadExternalResourceAccessDetails(userVmVO.getDetails(), accessDetails);
-        Map<String, Object> accessDetails = new HashMap<>();
         List<UserVmVO> allVms = _uservmDao.listByHostId(hostId);
         allVms.addAll(_uservmDao.listByLastHostId(hostId));
         if (CollectionUtils.isEmpty(allVms)) {
             logger.debug("No VMs found for the {}", host);
             return vmStates;
         }
+        Map<String, Object> accessDetails = extensionsManager.getExternalAccessDetails(host, null);
         for (UserVmVO vm: allVms) {
             VirtualMachine.PowerState powerState = getVmPowerState(vm, accessDetails, extensionName, extensionPath);
             vmStates.put(vm.getInstanceName(), new HostVmStateReportEntry(powerState, "host-" + hostId));
@@ -582,16 +585,13 @@ public class ExternalEntryPointPayloadProvisioner extends ManagerBase implements
 
     private VirtualMachine.PowerState getVmPowerState(UserVmVO userVmVO, Map<String, Object> accessDetails,
                   String extensionName, String extensionPath) {
-        // ToDo: ExternalHypervisorGuru.loadExternalResourceAccessDetails(userVmVO.getDetails(), accessDetails);
         final HypervisorGuru hvGuru = hypervisorGuruManager.getGuru(Hypervisor.HypervisorType.External);
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(userVmVO);
         VirtualMachineTO virtualMachineTO = hvGuru.implement(profile);
-
+        accessDetails.put(ApiConstants.VIRTUAL_MACHINE, virtualMachineTO.getExternalDetails());
         Map<String, Object> modifiedDetails = loadAccessDetails(accessDetails, virtualMachineTO);
-
         String vmUUID = userVmVO.getUuid();
         logger.debug("Trying to get VM power status from the external system for the VM {}", vmUUID);
-
         Pair<Boolean, String> result = getInstanceStatusOnExternalSystem(extensionName, extensionPath, vmUUID,
                 modifiedDetails, AgentManager.Wait.value());
         if (result.first()) {
