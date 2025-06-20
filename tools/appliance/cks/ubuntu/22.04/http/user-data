@@ -1,0 +1,103 @@
+#cloud-config
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+autoinstall:
+  version: 1
+  # Disable ssh server during installation, otherwise packer tries to connect and exceed max attempts
+  early-commands:
+    - systemctl stop ssh
+  # Configure the locale
+  locale: en_US
+  keyboard:
+    layout: us
+  refresh-installer:
+      update: yes
+      channel: stable
+  # Create a single-partition with no swap space. Kubernetes
+  # really dislikes the idea of anyone else managing memory.
+  # For more information on how partitioning is configured,
+  # please refer to https://curtin.readthedocs.io/en/latest/topics/storage.html.
+  storage:
+    swap:
+      size: 0
+    grub:
+      replace_linux_default: false
+    config:
+      - type: disk
+        id: disk-0
+        size: smallest
+        grub_device: true
+        preserve: false
+        ptable: msdos
+        wipe: superblock
+      - type: partition
+        id: partition-0
+        device: disk-0
+        size: -1
+        number: 1
+        preserve: false
+        flag: boot
+      - type: format
+        id: format-0
+        volume: partition-0
+        fstype: ext4
+        preserve: false
+      - type: mount
+        id: mount-0
+        device: format-0
+        path: /
+  updates: 'all'
+  ssh:
+    install-server: true
+    allow-pw: true
+  # Customize the list of packages installed.
+  packages:
+    - open-vm-tools
+    - openssh-server
+    - cloud-init
+    - wget
+    - tasksel
+  # Create the default user.
+  # Ensures the "cloud" user doesn't require a password to use sudo.
+  user-data:
+    disable_root: false
+    timezone: UTC
+    users:
+      - name: cloud
+        # openssl passwd -6 -stdin <<< cloud
+        passwd: $6$pAFEBhaCDzN4ZmrO$kMmUuxhPMx447lJ8Mtas8n6uqkojh94nQ7I8poI6Kl4vRGeZKE57utub1cudS1fGyG8HUxK9YHIygd7vCpRFN0
+        groups: [adm, cdrom, dip, plugdev, lxd, sudo]
+        lock-passwd: false
+        sudo: ALL=(ALL) NOPASSWD:ALL
+        shell: /bin/bash
+
+  # This command runs after all other steps; it:
+  # 1. Disables swapfiles
+  # 2. Removes the existing swapfile
+  # 3. Removes the swapfile entry from /etc/fstab
+  # 4. Removes snapd, https://bugs.launchpad.net/subiquity/+bug/1946609
+  # 5. Cleans up any packages that are no longer required
+  # 6. Removes the cached list of packages
+  late-commands:
+    - curtin in-target --target=/target -- swapoff -a
+    - curtin in-target --target=/target -- rm -f /swap.img
+    - curtin in-target --target=/target -- sed -ri '/\sswap\s/s/^#?/#/' /etc/fstab
+    - chroot /target apt-get purge -y snapd
+    - curtin in-target --target=/target -- apt-get purge --auto-remove -y
+    - curtin in-target --target=/target -- apt-get clean
+    - curtin in-target --target=/target -- rm -rf /var/lib/apt/lists/*
