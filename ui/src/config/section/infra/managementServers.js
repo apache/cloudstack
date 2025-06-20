@@ -110,7 +110,6 @@ export default {
       icon: 'close-circle-outlined',
       label: 'label.cancel.shutdown',
       message: 'message.cancel.shutdown',
-      docHelp: 'installguide/configuration.html#adding-a-zone',
       dataView: true,
       popup: true,
       show: (record, store) => { return ['PreparingForShutDown', 'ReadyToShutDown', 'ShuttingDown'].includes(record.state) },
