@@ -103,7 +103,7 @@ public class StartInternalLBVMCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        CallContext.current().setEventDetails("Internal Lb VM Id: " + getId());
+        CallContext.current().setEventDetails("Internal Lb VM ID: " + getId());
         VirtualRouter result = null;
         VirtualRouter router = _routerService.findRouter(getId());
         if (router == null || router.getRole() != Role.INTERNAL_LB_VM) {
