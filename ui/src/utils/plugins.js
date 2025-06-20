@@ -338,7 +338,7 @@ export const showIconPlugin = {
       if (resource) {
         resourceType = resource
       }
-      if (['zone', 'zones', 'template', 'iso', 'account', 'accountuser', 'vm', 'domain', 'project', 'vpc', 'guestnetwork'].includes(resourceType)) {
+      if (['zone', 'zones', 'template', 'iso', 'account', 'accountuser', 'vm', 'domain', 'project', 'vpc', 'guestnetwork', 'guestoscategory'].includes(resourceType)) {
         return true
       } else {
         return false
@@ -412,6 +412,7 @@ export const resourceTypePlugin = {
         case 'VpnCustomerGateway':
         case 'AutoScaleVmGroup':
         case 'QuotaTariff':
+        case 'GuestOsCategory':
           return resourceType.toLowerCase()
       }
       return ''
@@ -421,6 +422,9 @@ export const resourceTypePlugin = {
       var routePath = this.$getRouteFromResourceType(resourceType)
       if (!routePath) return ''
       var route = this.$router.resolve('/' + routePath)
+      if (routePath === 'kubernetes') {
+        return route?.meta?.icon[0]
+      }
       return route?.meta?.icon || ''
     }
   }
@@ -543,10 +547,24 @@ export const cpuArchitectureUtilPlugin = {
   install (app) {
     app.config.globalProperties.$fetchCpuArchitectureTypes = function () {
       const architectures = [
-        { id: 'x86_64', name: 'AMD 64 bits (x86_64)' },
+        { id: 'x86_64', name: 'Intel/AMD 64 bits (x86_64)' },
         { id: 'aarch64', name: 'ARM 64 bits (aarch64)' }
       ]
       return architectures.map(item => ({ ...item, description: item.name }))
+    }
+  }
+}
+
+export const imagesUtilPlugin = {
+  install (app) {
+    app.config.globalProperties.$fetchTemplateTypes = function () {
+      const baseTypes = ['USER', 'VNF']
+      const adminTypes = ['SYSTEM', 'BUILTIN', 'ROUTING']
+      const types = [...baseTypes]
+      if (store.getters.userInfo?.roletype === 'Admin') {
+        types.push(...adminTypes)
+      }
+      return types.map(type => ({ id: type, name: type, description: type }))
     }
   }
 }

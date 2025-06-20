@@ -25,12 +25,15 @@ import org.apache.cloudstack.api.command.admin.cluster.ListClustersCmd;
 import org.apache.cloudstack.api.command.admin.config.ListCfgGroupsByCmd;
 import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateHypervisorCapabilitiesCmd;
+import org.apache.cloudstack.api.command.admin.guest.AddGuestOsCategoryCmd;
 import org.apache.cloudstack.api.command.admin.guest.AddGuestOsCmd;
 import org.apache.cloudstack.api.command.admin.guest.AddGuestOsMappingCmd;
+import org.apache.cloudstack.api.command.admin.guest.DeleteGuestOsCategoryCmd;
 import org.apache.cloudstack.api.command.admin.guest.GetHypervisorGuestOsNamesCmd;
 import org.apache.cloudstack.api.command.admin.guest.ListGuestOsMappingCmd;
 import org.apache.cloudstack.api.command.admin.guest.RemoveGuestOsCmd;
 import org.apache.cloudstack.api.command.admin.guest.RemoveGuestOsMappingCmd;
+import org.apache.cloudstack.api.command.admin.guest.UpdateGuestOsCategoryCmd;
 import org.apache.cloudstack.api.command.admin.guest.UpdateGuestOsCmd;
 import org.apache.cloudstack.api.command.admin.guest.UpdateGuestOsMappingCmd;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
@@ -59,8 +62,10 @@ import org.apache.cloudstack.api.command.user.ssh.CreateSSHKeyPairCmd;
 import org.apache.cloudstack.api.command.user.ssh.DeleteSSHKeyPairCmd;
 import org.apache.cloudstack.api.command.user.ssh.ListSSHKeyPairsCmd;
 import org.apache.cloudstack.api.command.user.ssh.RegisterSSHKeyPairCmd;
+import org.apache.cloudstack.api.command.user.userdata.DeleteCniConfigurationCmd;
 import org.apache.cloudstack.api.command.user.userdata.DeleteUserDataCmd;
 import org.apache.cloudstack.api.command.user.userdata.ListUserDataCmd;
+import org.apache.cloudstack.api.command.user.userdata.RegisterCniConfigurationCmd;
 import org.apache.cloudstack.api.command.user.userdata.RegisterUserDataCmd;
 import org.apache.cloudstack.api.command.user.vm.GetVMPasswordCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.UpdateVMGroupCmd;
@@ -167,6 +172,12 @@ public interface ManagementService {
      * @return list of GuestOSCategories
      */
     Pair<List<? extends GuestOsCategory>, Integer> listGuestOSCategoriesByCriteria(ListGuestOsCategoriesCmd cmd);
+
+    GuestOsCategory addGuestOsCategory(AddGuestOsCategoryCmd cmd);
+
+    GuestOsCategory updateGuestOsCategory(UpdateGuestOsCategoryCmd cmd);
+
+    boolean deleteGuestOsCategory(DeleteGuestOsCategoryCmd cmd);
 
     /**
      * Obtains a list of all guest OS mappings
@@ -360,17 +371,23 @@ public interface ManagementService {
      *            The api command class.
      * @return The list of userdatas found.
      */
-    Pair<List<? extends UserData>, Integer> listUserDatas(ListUserDataCmd cmd);
+    Pair<List<? extends UserData>, Integer> listUserDatas(ListUserDataCmd cmd, boolean forCks);
+
+    /**
+     * Registers a cni configuration.
+     *
+     * @param cmd    The api command class.
+     * @return A VO with the registered user data.
+     */
+    UserData registerCniConfiguration(RegisterCniConfigurationCmd cmd);
 
     /**
      * Registers a userdata.
      *
-     * @param cmd
-     *            The api command class.
+     * @param cmd    The api command class.
      * @return A VO with the registered userdata.
      */
     UserData registerUserData(RegisterUserDataCmd cmd);
-
     /**
      * Deletes a userdata.
      *
@@ -380,6 +397,14 @@ public interface ManagementService {
      */
     boolean deleteUserData(DeleteUserDataCmd cmd);
 
+    /**
+     * Deletes user data.
+     *
+     * @param cmd
+     *            The api command class.
+     * @return True on success. False otherwise.
+     */
+    boolean deleteCniConfiguration(DeleteCniConfigurationCmd cmd);
     /**
      * Search registered key pairs for the logged in user.
      *

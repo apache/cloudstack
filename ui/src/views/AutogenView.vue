@@ -923,6 +923,10 @@ export default {
       }
 
       this.loading = true
+      if (this.$route.path.startsWith('/cniconfiguration')) {
+        params.forcks = true
+        console.log('here')
+      }
       if (this.$route.params && this.$route.params.id) {
         params.id = this.$route.params.id
         if (['listNetworks'].includes(this.apiName) && 'displaynetwork' in this.$route.query) {
@@ -1261,6 +1265,9 @@ export default {
       }
       var paramName = param.name
       var extractedParamName = paramName.replace('ids', '').replace('id', '').toLowerCase()
+      if (extractedParamName.endsWith('ory')) {
+        extractedParamName = extractedParamName.slice(0, -3) + 'orie'
+      }
       var params = { listall: true }
       for (const filter in filters) {
         params[filter] = filters[filter]

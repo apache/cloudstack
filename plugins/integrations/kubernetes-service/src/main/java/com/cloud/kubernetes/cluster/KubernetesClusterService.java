@@ -16,6 +16,10 @@
 // under the License.
 package com.cloud.kubernetes.cluster;
 
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ManagementServerException;
+import com.cloud.exception.ResourceUnavailableException;
+import org.apache.cloudstack.api.command.user.kubernetes.cluster.AddNodesToKubernetesClusterCmd;
 import java.util.List;
 
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.AddVirtualMachinesToKubernetesClusterCmd;
@@ -23,6 +27,7 @@ import org.apache.cloudstack.api.command.user.kubernetes.cluster.CreateKubernete
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.DeleteKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.GetKubernetesClusterConfigCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.ListKubernetesClustersCmd;
+import org.apache.cloudstack.api.command.user.kubernetes.cluster.RemoveNodesFromKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.RemoveVirtualMachinesFromKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.ScaleKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.StartKubernetesClusterCmd;
@@ -82,6 +87,18 @@ public interface KubernetesClusterService extends PluggableService, Configurable
             "The number of retries if fail to upgrade kubernetes cluster due to some reasons (e.g. drain node, etcdserver leader changed)",
             true,
             KubernetesServiceEnabled.key());
+    static final ConfigKey<Long> KubernetesClusterAddNodeTimeout = new ConfigKey<Long>("Advanced", Long.class,
+            "cloud.kubernetes.cluster.add.node.timeout",
+            "3600",
+            "Timeout interval (in seconds) in which an external node (VM / baremetal host) addition to a cluster should be completed",
+            true,
+            KubernetesServiceEnabled.key());
+    static final ConfigKey<Long> KubernetesClusterRemoveNodeTimeout = new ConfigKey<Long>("Advanced", Long.class,
+            "cloud.kubernetes.cluster.remove.node.timeout",
+            "900",
+            "Timeout interval (in seconds) in which an external node (VM / baremetal host) removal from a cluster should be completed",
+            true,
+            KubernetesServiceEnabled.key());
     static final ConfigKey<Boolean> KubernetesClusterExperimentalFeaturesEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class,
             "cloud.kubernetes.cluster.experimental.features.enabled",
             "false",
@@ -95,6 +112,36 @@ public interface KubernetesClusterService extends PluggableService, Configurable
             true,
             ConfigKey.Scope.Account,
             KubernetesServiceEnabled.key());
+    static final ConfigKey<Long> KubernetesControlNodeInstallAttemptWait = new ConfigKey<Long>("Advanced", Long.class,
+            "cloud.kubernetes.control.node.install.attempt.wait.duration",
+            "15",
+            "Control Nodes: Time in seconds for the installation process to wait before it re-attempts",
+            true,
+            KubernetesServiceEnabled.key());
+    static final ConfigKey<Long> KubernetesControlNodeInstallReattempts = new ConfigKey<Long>("Advanced", Long.class,
+            "cloud.kubernetes.control.node.install.reattempt.count",
+            "100",
+            "Control Nodes: Number of times the offline installation of K8S will be re-attempted",
+            true,
+            KubernetesServiceEnabled.key());
+    final ConfigKey<Long> KubernetesWorkerNodeInstallAttemptWait = new ConfigKey<Long>("Advanced", Long.class,
+            "cloud.kubernetes.worker.node.install.attempt.wait.duration",
+            "30",
+            "Worker Nodes: Time in seconds for the installation process to wait before it re-attempts",
+            true,
+            KubernetesServiceEnabled.key());
+    static final ConfigKey<Long> KubernetesWorkerNodeInstallReattempts = new ConfigKey<Long>("Advanced", Long.class,
+            "cloud.kubernetes.worker.node.install.reattempt.count",
+            "40",
+            "Worker Nodes: Number of times the offline installation of K8S will be re-attempted",
+            true,
+            KubernetesServiceEnabled.key());
+    static final ConfigKey<Integer> KubernetesEtcdNodeStartPort = new ConfigKey<Integer>("Advanced", Integer.class,
+            "cloud.kubernetes.etcd.node.start.port",
+            "50000",
+            "Start port for Port forwarding rules for etcd nodes",
+            true,
+            KubernetesServiceEnabled.key());
 
     KubernetesCluster findById(final Long id);
 
@@ -102,9 +149,11 @@ public interface KubernetesClusterService extends PluggableService, Configurable
 
     KubernetesCluster createManagedKubernetesCluster(CreateKubernetesClusterCmd cmd) throws CloudRuntimeException;
 
-    void startKubernetesCluster(CreateKubernetesClusterCmd cmd) throws CloudRuntimeException;
+    void startKubernetesCluster(CreateKubernetesClusterCmd cmd) throws CloudRuntimeException, ManagementServerException, ResourceUnavailableException, InsufficientCapacityException;
 
-    void startKubernetesCluster(StartKubernetesClusterCmd cmd) throws CloudRuntimeException;
+    void startKubernetesCluster(StartKubernetesClusterCmd cmd) throws CloudRuntimeException, ManagementServerException, ResourceUnavailableException, InsufficientCapacityException;
+
+    boolean startKubernetesCluster(long kubernetesClusterId, Long domainId, String accountName, Long asNumber, boolean onCreate) throws CloudRuntimeException, ManagementServerException, ResourceUnavailableException, InsufficientCapacityException;
 
     boolean stopKubernetesCluster(StopKubernetesClusterCmd cmd) throws CloudRuntimeException;
 
@@ -123,6 +172,10 @@ public interface KubernetesClusterService extends PluggableService, Configurable
     boolean upgradeKubernetesCluster(UpgradeKubernetesClusterCmd cmd) throws CloudRuntimeException;
 
     boolean addVmsToCluster(AddVirtualMachinesToKubernetesClusterCmd cmd);
+
+    boolean addNodesToKubernetesCluster(AddNodesToKubernetesClusterCmd cmd);
+
+    boolean removeNodesFromKubernetesCluster(RemoveNodesFromKubernetesClusterCmd cmd) throws Exception;
 
     List<RemoveVirtualMachinesFromKubernetesClusterResponse> removeVmsFromCluster(RemoveVirtualMachinesFromKubernetesClusterCmd cmd);
 

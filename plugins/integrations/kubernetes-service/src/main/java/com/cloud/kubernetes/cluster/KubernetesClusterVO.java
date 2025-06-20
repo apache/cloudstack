@@ -118,6 +118,33 @@ public class KubernetesClusterVO implements KubernetesCluster {
     @Column(name = "cluster_type")
     private ClusterType clusterType;
 
+    @Column(name = "control_node_service_offering_id")
+    private Long controlNodeServiceOfferingId;
+
+    @Column(name = "worker_node_service_offering_id")
+    private Long workerNodeServiceOfferingId;
+
+    @Column(name = "etcd_node_service_offering_id")
+    private Long etcdNodeServiceOfferingId;
+
+    @Column(name = "etcd_node_count")
+    private Long etcdNodeCount;
+
+    @Column(name = "control_node_template_id")
+    private Long controlNodeTemplateId;
+
+    @Column(name = "worker_node_template_id")
+    private Long workerNodeTemplateId;
+
+    @Column(name = "etcd_node_template_id")
+    private Long etcdNodeTemplateId;
+
+    @Column(name = "cni_config_id", nullable = true)
+    private Long cniConfigId = null;
+
+    @Column(name = "cni_config_details", updatable = true, length = 4096)
+    private String cniConfigDetails;
+
     @Override
     public long getId() {
         return id;
@@ -237,7 +264,7 @@ public class KubernetesClusterVO implements KubernetesCluster {
 
     @Override
     public long getTotalNodeCount() {
-        return this.controlNodeCount + this.nodeCount;
+        return this.controlNodeCount + this.nodeCount + this.getEtcdNodeCount();
     }
 
     @Override
@@ -414,4 +441,77 @@ public class KubernetesClusterVO implements KubernetesCluster {
     public Class<?> getEntityType() {
         return KubernetesCluster.class;
     }
+
+    public Long getControlNodeServiceOfferingId() {
+        return controlNodeServiceOfferingId;
+    }
+
+    public void setControlNodeServiceOfferingId(Long controlNodeServiceOfferingId) {
+        this.controlNodeServiceOfferingId = controlNodeServiceOfferingId;
+    }
+
+    public Long getWorkerNodeServiceOfferingId() {
+        return workerNodeServiceOfferingId;
+    }
+
+    public void setWorkerNodeServiceOfferingId(Long workerNodeServiceOfferingId) {
+        this.workerNodeServiceOfferingId = workerNodeServiceOfferingId;
+    }
+
+    public Long getEtcdNodeServiceOfferingId() {
+        return etcdNodeServiceOfferingId;
+    }
+
+    public void setEtcdNodeServiceOfferingId(Long etcdNodeServiceOfferingId) {
+        this.etcdNodeServiceOfferingId = etcdNodeServiceOfferingId;
+    }
+
+    public Long getEtcdNodeCount() {
+        return etcdNodeCount != null ? etcdNodeCount : 0L;
+    }
+
+    public void setEtcdNodeCount(Long etcdNodeCount) {
+        this.etcdNodeCount = etcdNodeCount;
+    }
+
+    public Long getEtcdNodeTemplateId() {
+        return etcdNodeTemplateId;
+    }
+
+    public void setEtcdNodeTemplateId(Long etcdNodeTemplateId) {
+        this.etcdNodeTemplateId = etcdNodeTemplateId;
+    }
+
+    public Long getWorkerNodeTemplateId() {
+        return workerNodeTemplateId;
+    }
+
+    public void setWorkerNodeTemplateId(Long workerNodeTemplateId) {
+        this.workerNodeTemplateId = workerNodeTemplateId;
+    }
+
+    public Long getControlNodeTemplateId() {
+        return controlNodeTemplateId;
+    }
+
+    public void setControlNodeTemplateId(Long controlNodeTemplateId) {
+        this.controlNodeTemplateId = controlNodeTemplateId;
+    }
+
+    public Long getCniConfigId() {
+        return cniConfigId;
+    }
+
+    public void setCniConfigId(Long cniConfigId) {
+        this.cniConfigId = cniConfigId;
+    }
+
+    public String getCniConfigDetails() {
+        return cniConfigDetails;
+    }
+
+    public void setCniConfigDetails(String cniConfigDetails) {
+        this.cniConfigDetails = cniConfigDetails;
+    }
+
 }

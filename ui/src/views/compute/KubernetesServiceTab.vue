@@ -117,9 +117,15 @@
               <div v-if="network.type === 'Shared' || network.ip4routing">
                 {{ cksSshPortSharedNetwork }}
               </div>
-              <div v-else>
+              <div v-else-if="record.isexternalnode || (!record.isexternalnode && !record.isetcdnode)">
                 {{ cksSshStartingPort + index }}
               </div>
+              <div v-else>
+                {{ parseInt(etcdSshPort) + parseInt(getEtcdIndex(record.name)) - 1 }}
+              </div>
+            </template>
+            <template v-if="column.key === 'kubernetesnodeversion'">
+              <span> {{ text ? text : '' }} </span>
             </template>
             <template v-if="column.key === 'actions'">
               <a-tooltip placement="bottom" >
@@ -219,6 +225,7 @@ export default {
       publicIpAddress: null,
       currentTab: 'details',
       cksSshStartingPort: 2222,
+      etcdSshPort: 50000,
       cksSshPortSharedNetwork: 22,
       annotations: []
     }
@@ -247,6 +254,11 @@ export default {
         key: 'port',
         title: this.$t('label.ssh.port'),
         dataIndex: 'port'
+      },
+      {
+        key: 'kubernetesnodeversion',
+        title: this.$t('label.node.version'),
+        dataIndex: 'kubernetesnodeversion'
       },
       {
         title: this.$t('label.zonename'),
@@ -291,6 +303,7 @@ export default {
         dataIndex: 'actions'
       })
     }
+    this.fetchEtcdSshPort()
     this.handleFetchData()
     this.setCurrentTab()
   },
@@ -361,9 +374,9 @@ export default {
         }).finally(() => {
           this.clusterConfigLoading = false
           if (!this.isObjectEmpty(this.kubernetesVersion) && this.isValidValueForKey(this.kubernetesVersion, 'semanticversion')) {
-            this.kubectlLinuxLink = 'https://storage.googleapis.com/kubernetes-release/release/v' + this.kubernetesVersion.semanticversion + '/bin/linux/amd64/kubectl'
-            this.kubectlMacLink = 'https://storage.googleapis.com/kubernetes-release/release/v' + this.kubernetesVersion.semanticversion + '/bin/darwin/amd64/kubectl'
-            this.kubectlWindowsLink = 'https://storage.googleapis.com/kubernetes-release/release/v' + this.kubernetesVersion.semanticversion + '/bin/windows/amd64/kubectl.exe'
+            this.kubectlLinuxLink = 'https://dl.k8s.io/release/v' + this.kubernetesVersion.semanticversion + '/bin/linux/amd64/kubectl'
+            this.kubectlMacLink = 'https://dl.k8s.io/release/v' + this.kubernetesVersion.semanticversion + '/bin/darwin/amd64/kubectl'
+            this.kubectlWindowsLink = 'https://dl.k8s.io/release/v' + this.kubernetesVersion.semanticversion + '/bin/windows/amd64/kubectl.exe'
           }
         })
       }
@@ -384,16 +397,19 @@ export default {
         }).finally(() => {
           this.versionLoading = false
           if (!this.isObjectEmpty(this.kubernetesVersion) && this.isValidValueForKey(this.kubernetesVersion, 'semanticversion')) {
-            this.kubectlLinuxLink = 'https://storage.googleapis.com/kubernetes-release/release/v' + this.kubernetesVersion.semanticversion + '/bin/linux/amd64/kubectl'
-            this.kubectlMacLink = 'https://storage.googleapis.com/kubernetes-release/release/v' + this.kubernetesVersion.semanticversion + '/bin/darwin/amd64/kubectl'
-            this.kubectlWindowsLink = 'https://storage.googleapis.com/kubernetes-release/release/v' + this.kubernetesVersion.semanticversion + '/bin/windows/amd64/kubectl.exe'
+            this.kubectlLinuxLink = 'https://dl.k8s.io/release/v' + this.kubernetesVersion.semanticversion + '/bin/linux/amd64/kubectl'
+            this.kubectlMacLink = 'https://dl.k8s.io/release/v' + this.kubernetesVersion.semanticversion + '/bin/darwin/amd64/kubectl'
+            this.kubectlWindowsLink = 'https://dl.k8s.io/release/v' + this.kubernetesVersion.semanticversion + '/bin/windows/amd64/kubectl.exe'
           }
         })
       }
     },
     fetchInstances () {
       this.instanceLoading = true
-      this.virtualmachines = this.resource.virtualmachines || []
+      var defaultNodes = this.resource.virtualmachines.filter(x => !x.isexternalnode && !x.isetcdnode)
+      var externalNodes = this.resource.virtualmachines.filter(x => x.isexternalnode)
+      var etcdNodes = this.resource.virtualmachines.filter(x => x.isetcdnode)
+      this.virtualmachines = defaultNodes.concat(externalNodes).concat(etcdNodes)
       this.virtualmachines.map(x => { x.ipaddress = x.nic[0].ipaddress })
       this.instanceLoading = false
     },
@@ -445,6 +461,15 @@ export default {
         this.networkLoading = false
       })
     },
+    fetchEtcdSshPort () {
+      const params = {}
+      params.name = 'cloud.kubernetes.etcd.node.start.port'
+      var apiName = 'listConfigurations'
+      api(apiName, params).then(json => {
+        const configResponse = json.listconfigurationsresponse.configuration
+        this.etcdSshPort = configResponse[0]?.value
+      })
+    },
     downloadKubernetesClusterConfig () {
       var blob = new Blob([this.clusterConfig], { type: 'text/plain' })
       var filename = 'kube.conf'
@@ -487,6 +512,14 @@ export default {
       }).finally(() => {
         this.parentFetchData()
       })
+    },
+    getEtcdIndex (name) {
+      const lastIndex = name.lastIndexOf('-')
+      if (lastIndex > 0) {
+        return name.charAt(lastIndex - 1)
+      } else {
+        return null
+      }
     }
   }
 }

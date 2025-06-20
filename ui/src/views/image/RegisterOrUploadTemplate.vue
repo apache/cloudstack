@@ -452,6 +452,11 @@
                       {{ $t('label.ispublic') }}
                     </a-checkbox>
                   </a-col>
+                  <a-col :span="12">
+                    <a-checkbox value="forCks" v-if="currentForm === 'Create'">
+                      {{ $t('label.forcks') }}
+                    </a-checkbox>
+                  </a-col>
                 </a-row>
               </a-checkbox-group>
             </a-form-item>
@@ -582,7 +587,7 @@ export default {
       this.fetchCustomHypervisorName()
       this.fetchZone()
       this.fetchOsTypes()
-      this.fetchTemplateTypes()
+      this.templateTypes.opts = this.$fetchTemplateTypes()
       this.architectureTypes.opts = this.$fetchCpuArchitectureTypes()
       this.fetchUserData()
       this.fetchUserdataPolicy()
@@ -725,33 +730,6 @@ export default {
       }).finally(() => {
         this.osTypes.loading = false
       })
-    },
-    fetchTemplateTypes () {
-      this.templateTypes.opts = []
-      const templatetypes = []
-      templatetypes.push({
-        id: 'USER',
-        description: 'USER'
-      })
-      templatetypes.push({
-        id: 'VNF',
-        description: 'VNF'
-      })
-      if (this.isAdminRole) {
-        templatetypes.push({
-          id: 'SYSTEM',
-          description: 'SYSTEM'
-        })
-        templatetypes.push({
-          id: 'BUILTIN',
-          description: 'BUILTIN'
-        })
-        templatetypes.push({
-          id: 'ROUTING',
-          description: 'ROUTING'
-        })
-      }
-      this.templateTypes.opts = templatetypes
     },
     fetchUserData () {
       const params = {}
