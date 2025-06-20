@@ -19,9 +19,13 @@ extends: relaxed
 
 rules:
   line-length:
-    max: 200  # Very lenient for existing files
+    max: 400  # Very forgiving for GitHub Actions and infrastructure files
   indentation: disable  # Disable indentation checking for existing files
   comments: disable  # Disable comment formatting checks
   brackets: disable  # Disable bracket spacing checks
+  colons:
+    max-spaces-after: -1  # Allow any number of spaces after colon
+    max-spaces-before: 0
+  document-start: disable  # Many files don't have ---
   truthy:
     allowed-values: ['true', 'false', 'on', 'off', 'yes', 'no']

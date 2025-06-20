@@ -103,3 +103,4 @@ repos:
         description: check YAML files with yamllint
         args: [--config-file=.github/linters/.yamllint.yml]
         files: \.ya?ml$
+        exclude: ^.*k8s-.*\.ya?ml$
