@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EmptyStackException;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -335,7 +336,7 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
 
     private Set<Resource> collectInheritedResources(ModuleDefinition def) {
         if (def == null) {
-            return new LinkedHashSet<>();
+            return Collections.emptySet();
         }
 
         if (configResourcesMap.containsKey(def.getName())) {
