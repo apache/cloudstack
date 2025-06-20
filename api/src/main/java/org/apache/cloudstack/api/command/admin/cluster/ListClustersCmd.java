@@ -32,7 +32,7 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.extension.Extension;
-import org.apache.cloudstack.extension.ExtensionApiService;
+import org.apache.cloudstack.extension.ExtensionHelper;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -46,7 +46,7 @@ import com.cloud.utils.Pair;
 public class ListClustersCmd extends BaseListCmd {
 
     @Inject
-    ExtensionApiService extensionApiService;
+    ExtensionHelper extensionHelper;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -162,11 +162,11 @@ public class ListClustersCmd extends BaseListCmd {
             if (!Hypervisor.HypervisorType.External.getHypervisorDisplayName().equals(response.getHypervisorType())) {
                 continue;
             }
-            Long extensionId = extensionApiService.getExtensionIdForCluster(response.getInternalId());
+            Long extensionId = extensionHelper.getExtensionIdForCluster(response.getInternalId());
             if (extensionId == null) {
                 continue;
             }
-            Extension extension = idExtensionMap.computeIfAbsent(extensionId, id -> extensionApiService.getExtension(id));
+            Extension extension = idExtensionMap.computeIfAbsent(extensionId, id -> extensionHelper.getExtension(id));
             if (extension == null) {
                 continue;
             }

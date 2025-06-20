@@ -148,7 +148,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.cloudstack.extension.Extension;
-import org.apache.cloudstack.extension.ExtensionApiService;
+import org.apache.cloudstack.extension.ExtensionHelper;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
@@ -653,7 +653,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     GuestOSDao guestOSDao;
 
     @Inject
-    ExtensionApiService extensionApiService;
+    ExtensionHelper extensionHelper;
 
     private SearchCriteria<ServiceOfferingJoinVO> getMinimumCpuServiceOfferingJoinSearchCriteria(int cpu) {
         SearchCriteria<ServiceOfferingJoinVO> sc = _srvOfferingJoinDao.createSearchCriteria();
@@ -2393,7 +2393,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 continue;
             }
             Extension extension = clusterIdExtensionMap.computeIfAbsent(response.getClusterInternalId(),
-                    id -> extensionApiService.getExtensionForCluster(id));
+                    id -> extensionHelper.getExtensionForCluster(id));
             if (extension == null) {
                 continue;
             }

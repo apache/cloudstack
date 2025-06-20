@@ -17,7 +17,7 @@
 
 package org.apache.cloudstack.extension;
 
-public interface ExtensionApiService {
+public interface ExtensionHelper {
     Long getExtensionIdForCluster(long clusterId);
     Extension getExtension(long id);
     Extension getExtensionForCluster(long clusterId);

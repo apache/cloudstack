@@ -57,7 +57,7 @@ import org.apache.cloudstack.api.response.ExtensionResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.extension.CustomActionResultResponse;
 import org.apache.cloudstack.extension.Extension;
-import org.apache.cloudstack.extension.ExtensionApiService;
+import org.apache.cloudstack.extension.ExtensionHelper;
 import org.apache.cloudstack.extension.ExtensionCustomAction;
 import org.apache.cloudstack.extension.ExtensionResourceMap;
 import org.apache.cloudstack.framework.extensions.api.AddCustomActionCmd;
@@ -138,7 +138,7 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.VMInstanceDao;
 
-public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsManager, ExtensionApiService, PluggableService {
+public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsManager, ExtensionHelper, PluggableService {
 
     @Inject
     ExtensionDao extensionDao;
@@ -1294,7 +1294,6 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                 response.setSuccess(answer.getResult());
                 result.put(ApiConstants.MESSAGE, getActionMessage(answer.getResult(), customActionVO, extensionVO,
                         actionResourceType, entity));
-                // ToDo: Check if we should pass the details for an errored action or pass it at all
                 result.put(ApiConstants.DETAILS, customActionAnswer.getDetails());
             }
         } catch (AgentUnavailableException e) {
