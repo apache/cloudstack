@@ -16,7 +16,7 @@
      specific language governing permissions and limitations
      under the License.
 -->
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en-gb">
   <head>
     <meta charset="utf-8">
@@ -54,7 +54,7 @@
       <div class="loader"></div>
     </div>
   </body>
-  <script type="text/javascript">
+  <script>
     fetch('./config.json?ts=' + Date.now())
       .then(response => response.json())
       .then(data => {
