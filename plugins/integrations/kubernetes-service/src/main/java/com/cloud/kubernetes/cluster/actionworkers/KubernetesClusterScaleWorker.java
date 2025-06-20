@@ -557,12 +557,13 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
             ServiceOffering existingServiceOffering = getExistingServiceOfferingForNodeType(nodeType, kubernetesCluster);
             ServiceOffering scalingServiceOffering = serviceOfferingNodeTypeMap.getOrDefault(nodeType.name(), defaultServiceOffering);
             boolean isNodeOfferingScalingNeeded = isServiceOfferingScalingNeededForNodeType(existingServiceOffering, scalingServiceOffering);
+            boolean updateNodeOffering = serviceOfferingNodeTypeMap.containsKey(nodeType.name()) || isNodeOfferingScalingNeeded;
 
             boolean updateClusterOffering = isWorkerNode && scaleClusterDefaultOffering;
             if (isWorkerNode && autoscalingChanged) {
                 boolean autoScaled = autoscaleCluster(this.isAutoscalingEnabled, minSize, maxSize);
                 if (autoScaled && isNodeOfferingScalingNeeded) {
-                    scaleKubernetesClusterOffering(nodeType, scalingServiceOffering, true, updateClusterOffering);
+                    scaleKubernetesClusterOffering(nodeType, scalingServiceOffering, updateNodeOffering, updateClusterOffering);
                 }
                 stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
                 return autoScaled;
@@ -570,14 +571,14 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
             final boolean clusterSizeScalingNeeded = isWorkerNode && clusterSize != null && clusterSize != originalClusterSize;
             if (isNodeOfferingScalingNeeded && clusterSizeScalingNeeded) {
                 if (newVMRequired > 0) {
-                    scaleKubernetesClusterOffering(nodeType, scalingServiceOffering, true, updateClusterOffering);
+                    scaleKubernetesClusterOffering(nodeType, scalingServiceOffering, updateNodeOffering, updateClusterOffering);
                     scaleKubernetesClusterSize(nodeType);
                 } else {
                     scaleKubernetesClusterSize(nodeType);
-                    scaleKubernetesClusterOffering(nodeType, scalingServiceOffering, true, updateClusterOffering);
+                    scaleKubernetesClusterOffering(nodeType, scalingServiceOffering, updateNodeOffering, updateClusterOffering);
                 }
             } else if (isNodeOfferingScalingNeeded) {
-                scaleKubernetesClusterOffering(nodeType, scalingServiceOffering, true, updateClusterOffering);
+                scaleKubernetesClusterOffering(nodeType, scalingServiceOffering, updateNodeOffering, updateClusterOffering);
             } else if (clusterSizeScalingNeeded) {
                 scaleKubernetesClusterSize(nodeType);
             }
