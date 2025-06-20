@@ -435,7 +435,7 @@ public class ExternalEntryPointPayloadProvisioner extends ManagerBase implements
         Map<String, Object> accessDetails = loadAccessDetails(externalDetails, virtualMachineTO);
         accessDetails.put(ApiConstants.ACTION, actionName);
         if (MapUtils.isNotEmpty(parameters)) {
-            accessDetails.put(ApiConstants.PARAMETERS, GsonHelper.getGson().toJson(parameters));
+            accessDetails.put(ApiConstants.PARAMETERS, parameters);
         }
         Pair<Boolean, String> result = runCustomActionOnExternalSystem(extensionName, extensionPath,
                 actionName, accessDetails, cmd.getWait());
