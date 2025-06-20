@@ -56,11 +56,11 @@ cloudstack_vm_internal_name_to_proxmox_vmid() {
     echo "$vmid"
 }
 
-validate_vm_name() {
-    local name="$1"
-
+validate_name() {
+    local entity="$1"
+    local name="$2"
     if [[ ! "$name" =~ ^[a-zA-Z0-9-]+$ ]]; then
-        echo "{\"error\":\"Invalid VM name '$name'. Only alphanumeric characters and dashes (-) are allowed.\"}"
+        echo "{\"error\":\"Invalid $entity name '$name'. Only alphanumeric characters and dashes (-) are allowed.\"}"
         exit 1
     fi
 }
@@ -86,7 +86,10 @@ parse_json() {
         "vmmemory": (."cloudstack.vm.details".minRam // ""),
         "vmcpus": (."cloudstack.vm.details".cpus // ""),
         "vlan": (."cloudstack.vm.details".nics[0].broadcastUri // "" | sub("vlan://"; "")),
-        "mac_address": (."cloudstack.vm.details".nics[0].mac // "")
+        "mac_address": (."cloudstack.vm.details".nics[0].mac // ""),
+        "snap_name": (.parameters.snap_name // ""),
+        "snap_description": (.parameters.snap_description // ""),
+        "snap_save_memory": (.parameters.snap_save_memory // "")
     } | to_entries | .[] | "\(.key)=\(.value)"')
 
     for key in "${!details[@]}"; do
@@ -98,7 +101,7 @@ parse_json() {
     if [[ -z "$vm_name" ]]; then
         vm_name="$vm_internal_name"
     fi
-    validate_vm_name "$vm_name"
+    validate_name "VM" "$vm_name"
     vmid=$(cloudstack_vm_internal_name_to_proxmox_vmid "$vm_internal_name")
 }
 
@@ -193,6 +196,8 @@ create() {
     parse_json "$1" || exit 1
 
     check_required_fields vm_name vlan mac_address
+    validate_name "VM" "$vm_name"
+
     if [[ "${template_type^^}" == "ISO" ]]; then
         check_required_fields iso_path vmcpus vmmemory
         local data="vmid=$vmid"
@@ -210,7 +215,7 @@ create() {
     else
         check_required_fields template_id
         local data="newid=$vmid"
-        data+="&name=\"$vm_name\""
+        data+="&name=$vm_name"
         execute_and_wait POST "/nodes/${node}/qemu/${template_id}/clone" "$data"
     fi
 
@@ -261,6 +266,51 @@ status() {
     echo "{\"status\": \"success\", \"power_state\": \"$powerstate\"}"
 }
 
+create_snapshot() {
+    parse_json "$1" || exit 1
+
+    check_required_fields snap_name
+    validate_name "Snapshot" "$snap_name"
+
+    local data, vmstate
+    data="snapname=$snap_name"
+    if [[ -n "$snap_description" ]]; then
+        data+="&description=$snap_description"
+    fi
+    if [[ -n "$snap_save_memory" && "$snap_save_memory" == "true" ]]; then
+        vmstate="1"
+    else
+        vmstate="0"
+    fi
+    data+="&vmstate=$vmstate"
+
+    execute_and_wait POST "/nodes/${node}/qemu/${vmid}/snapshot" "$data"
+    echo '{"status": "success", "message": "Instance Snapshot created"}'
+}
+
+restore_snapshot() {
+    parse_json "$1" || exit 1
+
+    check_required_fields snap_name
+    validate_name "Snapshot" "$snap_name"
+
+    execute_and_wait POST "/nodes/${node}/qemu/${vmid}/snapshot/${snap_name}/rollback"
+
+    execute_and_wait POST "/nodes/${node}/qemu/${vmid}/status/start"
+
+    echo '{"status": "success", "message": "Instance Snapshot restored"}'
+}
+
+delete_snapshot() {
+    parse_json "$1" || exit 1
+
+    check_required_fields snap_name
+    validate_name "Snapshot" "$snap_name"
+
+    execute_and_wait DELETE "/nodes/${node}/qemu/${vmid}/snapshot/${snap_name}"
+    echo '{"status": "success", "message": "Instance Snapshot deleted"}'
+}
+
 action=$1
 parameters_file="$2"
 wait_time=$3
@@ -294,6 +344,15 @@ case $action in
         ;;
     status)
         status "$parameters"
+        ;;
+    CreateSnapshot)
+        create_snapshot "$parameters"
+        ;;
+    RestoreSnapshot)
+        restore_snapshot "$parameters"
+        ;;
+    DeleteSnapshot)
+        delete_snapshot "$parameters"
         ;;
     *)
         echo '{"error":"Invalid action"}'

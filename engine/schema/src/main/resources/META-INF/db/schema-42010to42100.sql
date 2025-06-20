@@ -289,7 +289,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`extension_custom_action_details` (
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vm_template', 'extension_id', 'bigint unsigned DEFAULT NULL COMMENT "id of the extension"');
 
--- Add built-in extensions
+-- Add built-in Extensions and Custom Actions
 
 DROP PROCEDURE IF EXISTS `cloud`.`INSERT_EXTENSION_IF_NOT_EXISTS`;
 CREATE PROCEDURE `cloud`.`INSERT_EXTENSION_IF_NOT_EXISTS`(
@@ -299,18 +299,18 @@ CREATE PROCEDURE `cloud`.`INSERT_EXTENSION_IF_NOT_EXISTS`(
 )
 BEGIN
     IF NOT EXISTS (
-        SELECT 1 FROM extension WHERE name = ext_name
+        SELECT 1 FROM `cloud`.`extension` WHERE `name` = ext_name
     ) THEN
-        INSERT INTO extension (
-            uuid, name, description, type,
-            relative_entry_point, entry_point_ready,
-            is_user_defined, state, created, removed
+        INSERT INTO `cloud`.`extension` (
+            `uuid`, `name`, `description`, `type`,
+            `relative_entry_point`, `entry_point_ready`,
+            `is_user_defined`, `state`, `created`, `removed`
         )
         VALUES (
             UUID(), ext_name, ext_desc, 'Orchestrator',
             entry_point, 1, 0, 'Enabled', NOW(), NULL
         )
-    ;END IF
+;   END IF
 ;END;
 
 DROP PROCEDURE IF EXISTS `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`;
@@ -321,18 +321,18 @@ CREATE PROCEDURE `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`(
 )
 BEGIN
     DECLARE ext_id BIGINT
-;   SELECT id INTO ext_id FROM extension WHERE name = ext_name LIMIT 1
+;   SELECT `id` INTO ext_id FROM `cloud`.`extension` WHERE `name` = ext_name LIMIT 1
 ;   IF NOT EXISTS (
-        SELECT 1 FROM extension_details
-        WHERE extension_id = ext_id AND name = detail_key
+        SELECT 1 FROM `cloud`.`extension_details`
+        WHERE `extension_id` = ext_id AND `name` = detail_key
     ) THEN
-        INSERT INTO extension_details (
-            extension_id, name, value, display
+        INSERT INTO `cloud`.`extension_details` (
+            `extension_id`, `name`, `value`, `display`
         )
         VALUES (
             ext_id, detail_key, detail_value, 1
         )
-    ;END IF
+;   END IF
 ;END;
 
 CALL `cloud`.`INSERT_EXTENSION_IF_NOT_EXISTS`('Proxmox', 'Sample extension for Proxmox written in bash', 'Proxmox/proxmox.sh');
@@ -345,3 +345,116 @@ CALL `cloud`.`INSERT_EXTENSION_IF_NOT_EXISTS`('HyperV', 'Sample extension for Hy
 CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('HyperV', 'url', '');
 CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('HyperV', 'username', '');
 CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('HyperV', 'password', '');
+
+DROP PROCEDURE IF EXISTS `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_IF_NOT_EXISTS`;
+CREATE PROCEDURE `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_IF_NOT_EXISTS`(
+    IN ext_name VARCHAR(255),
+    IN action_name VARCHAR(255),
+    IN action_desc VARCHAR(4096),
+    IN resource_type VARCHAR(255),
+    IN allowed_roles INT UNSIGNED,
+    IN success_msg VARCHAR(4096),
+    IN error_msg VARCHAR(4096),
+    IN timeout_seconds INT UNSIGNED
+)
+BEGIN
+    DECLARE ext_id BIGINT
+;   SELECT `id` INTO ext_id FROM `cloud`.`extension` WHERE `name` = ext_name LIMIT 1
+;   IF NOT EXISTS (
+        SELECT 1 FROM `cloud`.`extension_custom_action` WHERE `name` = action_name AND `extension_id` = ext_id
+    ) THEN
+        INSERT INTO `cloud`.`extension_custom_action` (
+            `uuid`, `name`, `description`, `extension_id`, `resource_type`,
+            `allowed_role_types`, `success_message`, `error_message`,
+            `enabled`, `timeout`, `created`, `removed`
+        )
+        VALUES (
+            UUID(), action_name, action_desc, ext_id, resource_type,
+            allowed_roles, success_msg, error_msg,
+            1, timeout_seconds, NOW(), NULL
+        )
+;   END IF
+;END;
+
+DROP PROCEDURE IF EXISTS `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_DETAILS_IF_NOT_EXISTS`;
+CREATE PROCEDURE `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_DETAILS_IF_NOT_EXISTS` (
+    IN ext_name VARCHAR(255),
+    IN action_name VARCHAR(255),
+    IN param_json TEXT
+)
+BEGIN
+    DECLARE action_id BIGINT UNSIGNED
+;   SELECT `eca`.`id` INTO action_id FROM `cloud`.`extension_custom_action` `eca`
+    JOIN `cloud`.`extension` `e` ON `e`.`id` = `eca`.`extension_id`
+    WHERE `eca`.`name` = action_name AND `e`.`name` = ext_name LIMIT 1
+;   IF NOT EXISTS (
+        SELECT 1 FROM `cloud`.`extension_custom_action_details`
+        WHERE `extension_custom_action_id` = action_id
+          AND `name` = 'parameters'
+    ) THEN
+        INSERT INTO `cloud`.`extension_custom_action_details` (
+            `extension_custom_action_id`,
+            `name`,
+            `value`,
+            `display`
+        ) VALUES (
+            action_id,
+            'parameters',
+            param_json,
+            0
+        )
+;   END IF
+;END;
+
+CALL `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_IF_NOT_EXISTS`('Proxmox', 'CreateSnapshot', 'Create Instance Snapshot', 'VirtualMachine', 15, 'Snapshot created for {{resourceName}} in {{extensionName}}', 'Snapshot creation failed for {{resourceName}}', 60);
+CALL `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_IF_NOT_EXISTS`('Proxmox', 'RestoreSnapshot', 'Restore Instance Snapshot', 'VirtualMachine', 15, 'Successfully restored snapshot for {{resourceName}} in {{extensionName}}', 'Restore snapshot failed for {{resourceName}}', 60);
+CALL `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_IF_NOT_EXISTS`('Proxmox', 'DeleteSnapshot', 'Delete Instance Snapshot', 'VirtualMachine', 15, 'Successfully deleted snapshot for {{resourceName}} in {{extensionName}}', 'Delete snapshot failed for {{resourceName}}', 60);
+
+CALL cloud.INSERT_EXTENSION_CUSTOM_ACTION_DETAILS_IF_NOT_EXISTS(
+    'Proxmox',
+    'CreateSnapshot',
+    '[
+      {
+        "name": "snap_name",
+        "type": "STRING",
+        "validationformat": "NONE",
+        "required": true
+      },
+      {
+        "name": "snap_description",
+        "type": "STRING",
+        "validationformat": "NONE",
+        "required": false
+      },
+      {
+        "name": "snap_save_memory",
+        "type": "BOOLEAN",
+        "validationformat": "NONE",
+        "required": false
+      }
+    ]'
+);
+CALL cloud.INSERT_EXTENSION_CUSTOM_ACTION_DETAILS_IF_NOT_EXISTS(
+    'Proxmox',
+    'RestoreSnapshot',
+    '[
+      {
+        "name": "snap_name",
+        "type": "STRING",
+        "validationformat": "NONE",
+        "required": true
+      }
+    ]'
+);
+CALL cloud.INSERT_EXTENSION_CUSTOM_ACTION_DETAILS_IF_NOT_EXISTS(
+    'Proxmox',
+    'DeleteSnapshot',
+    '[
+      {
+        "name": "snap_name",
+        "type": "STRING",
+        "validationformat": "NONE",
+        "required": true
+      }
+    ]'
+);
