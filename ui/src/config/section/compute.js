@@ -465,7 +465,7 @@ export default {
           },
           popup: true,
           groupMap: (selection, values) => { return selection.map(x => { return { id: x, expunge: values.expunge } }) },
-          show: (record) => { return record.hypervisor !== 'External' && ['Running', 'Stopped', 'Error'].includes(record.state) && record.vmtype !== 'sharedfsvm' },
+          show: (record) => { return ['Running', 'Stopped', 'Error'].includes(record.state) && record.vmtype !== 'sharedfsvm' },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/DestroyVM.vue')))
         }
       ]

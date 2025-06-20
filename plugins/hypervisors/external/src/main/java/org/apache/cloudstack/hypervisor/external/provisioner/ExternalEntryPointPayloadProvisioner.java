@@ -292,7 +292,7 @@ public class ExternalEntryPointPayloadProvisioner extends ManagerBase implements
 
         logger.debug(String.format("Executing StartCommand in the external provisioner for VM %s", vmUUID));
 
-        Object deployvm = accessDetails.get("deployvm");
+        Object deployvm = virtualMachineTO.getDetails().get("deployvm");
         boolean isDeploy = (deployvm != null && Boolean.parseBoolean((String)deployvm));
         String operation = isDeploy ? "Deploying" : "Starting";
         try {
