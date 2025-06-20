@@ -40,6 +40,15 @@ public interface ManagementServerMaintenanceManager {
             ConfigKey.Scope.Global,
             null);
 
+    ConfigKey<Boolean> ManagementServerMaintenanceIgnoreMaintenanceHosts = new ConfigKey<>(Boolean.class,
+            "management.server.maintenance.ignore.maintenance.hosts",
+            "Advanced",
+            String.valueOf(Boolean.FALSE),
+            "Host in Maintenance state can sometimes block Management Server to go to Maintenance; this setting skips Host(s) in Maintenance state during Management Server Maintenance, default: false.",
+            true,
+            ConfigKey.Scope.Global,
+            null);
+
     void registerListener(ManagementServerMaintenanceListener listener);
 
     void unregisterListener(ManagementServerMaintenanceListener listener);
@@ -83,7 +92,7 @@ public interface ManagementServerMaintenanceManager {
     String getLbAlgorithm();
 
     // Prepares the current management server for maintenance by migrating the agents and not accepting any more async jobs
-    void prepareForMaintenance(String lbAlorithm);
+    void prepareForMaintenance(String lbAlorithm, boolean forced);
 
     // Cancels maintenance of the current management server
     void cancelMaintenance();
