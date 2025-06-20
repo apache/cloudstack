@@ -24,6 +24,7 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
 import org.junit.Assert;
@@ -34,10 +35,14 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.DEFAULT;
 import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.CONTROL;
+import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.ETCD;
+import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.WORKER;
 
 @RunWith(MockitoJUnitRunner.class)
 public class KubernetesClusterScaleWorkerTest {
@@ -124,5 +129,121 @@ public class KubernetesClusterScaleWorkerTest {
         long expectedMemory = remainingClusterMemory + (controlNodes * newMemory);
         Assert.assertEquals(expectedCores, newClusterCapacity.first().longValue());
         Assert.assertEquals(expectedMemory, newClusterCapacity.second().longValue());
+    }
+
+    private KubernetesCluster createExistingKubernetesClusterForTesting(Long defaultOfferingId, Long workerOfferingId,
+                                                                        Long controlOfferingId) {
+        KubernetesCluster kubernetesClusterMock = Mockito.mock(KubernetesCluster.class);
+        Mockito.when(kubernetesClusterMock.getServiceOfferingId()).thenReturn(defaultOfferingId);
+        Mockito.when(kubernetesClusterMock.getWorkerNodeServiceOfferingId()).thenReturn(workerOfferingId);
+        Mockito.when(kubernetesClusterMock.getControlNodeServiceOfferingId()).thenReturn(controlOfferingId);
+        return kubernetesClusterMock;
+    }
+
+    private ServiceOffering createServiceOfferingForTesting(Long offeringId) {
+        ServiceOffering cksOffering = Mockito.mock(ServiceOffering.class);
+        Mockito.when(cksOffering.getId()).thenReturn(offeringId);
+        return cksOffering;
+    }
+
+    @Test
+    public void testCheckScalingKubernetesClusterOfferingsPerNodeTypeToNewDefaultOffering() {
+        Long cksOfferingId = 20L;
+
+        ServiceOffering newCksOffering = createServiceOfferingForTesting(21L);
+
+        KubernetesCluster kubernetesClusterMock = createExistingKubernetesClusterForTesting(cksOfferingId,
+                null, null);
+
+        Map<String, ServiceOffering> scalingMap = new HashMap<>();
+        scalingMap.put(DEFAULT.name(), newCksOffering);
+
+        worker.checkScalingKubernetesClusterOfferingsPerNodeType(scalingMap, kubernetesClusterMock);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testCheckScalingKubernetesClusterOfferingsPerNodeTypeToSameDefaultOffering() {
+        Long cksOfferingId = 20L;
+        ServiceOffering cksOffering = createServiceOfferingForTesting(cksOfferingId);
+
+        KubernetesCluster kubernetesClusterMock = createExistingKubernetesClusterForTesting(cksOfferingId,
+                null, null);
+
+        Map<String, ServiceOffering> scalingMap = new HashMap<>();
+        scalingMap.put(DEFAULT.name(), cksOffering);
+
+        worker.checkScalingKubernetesClusterOfferingsPerNodeType(scalingMap, kubernetesClusterMock);
+    }
+
+    @Test
+    public void testCheckScalingKubernetesClusterOfferingsPerNodeTypeWorkerAndControlNodes() {
+        Long cksOfferingId = 20L;
+        Long workerOfferingId = 21L;
+        Long controlOfferingId = 22L;
+        ServiceOffering scalingWorkerOffering = createServiceOfferingForTesting(30L);
+        ServiceOffering scalingControlOffering = createServiceOfferingForTesting(31L);
+
+        KubernetesCluster kubernetesClusterMock = createExistingKubernetesClusterForTesting(cksOfferingId,
+                workerOfferingId, controlOfferingId);
+
+        Map<String, ServiceOffering> scalingMap = new HashMap<>();
+        scalingMap.put(WORKER.name(), scalingWorkerOffering);
+        scalingMap.put(CONTROL.name(), scalingControlOffering);
+
+        worker.checkScalingKubernetesClusterOfferingsPerNodeType(scalingMap, kubernetesClusterMock);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testCheckScalingKubernetesClusterOfferingsPerNodeTypeWorkerAndControlNodesUseSameOffering() {
+        Long cksOfferingId = 20L;
+        Long workerOfferingId = 21L;
+        Long controlOfferingId = 22L;
+        ServiceOffering scalingWorkerOffering = createServiceOfferingForTesting(30L);
+        ServiceOffering controlOffering = createServiceOfferingForTesting(controlOfferingId);
+
+        KubernetesCluster kubernetesClusterMock = createExistingKubernetesClusterForTesting(cksOfferingId,
+                workerOfferingId, controlOfferingId);
+
+        Map<String, ServiceOffering> scalingMap = new HashMap<>();
+        scalingMap.put(WORKER.name(), scalingWorkerOffering);
+        scalingMap.put(CONTROL.name(), controlOffering);
+
+        worker.checkScalingKubernetesClusterOfferingsPerNodeType(scalingMap, kubernetesClusterMock);
+    }
+
+    @Test
+    public void testCheckScalingKubernetesClusterOfferingsPerNodeTypeWorkerAndControlNodesByDefaultOffering() {
+        Long cksOfferingId = 20L;
+        Long workerOfferingId = 21L;
+        Long controlOfferingId = 22L;
+        ServiceOffering scalingOffering = createServiceOfferingForTesting(30L);
+
+        KubernetesCluster kubernetesClusterMock = createExistingKubernetesClusterForTesting(cksOfferingId,
+                workerOfferingId, controlOfferingId);
+
+        Map<String, ServiceOffering> scalingMap = new HashMap<>();
+        scalingMap.put(DEFAULT.name(), scalingOffering);
+
+        worker.checkScalingKubernetesClusterOfferingsPerNodeType(scalingMap, kubernetesClusterMock);
+    }
+
+    @Test
+    public void testCheckScalingKubernetesClusterOfferingsPerNodeTypeWorkerEtcdAndControlNodes() {
+        Long cksOfferingId = 20L;
+        Long workerOfferingId = 21L;
+        Long controlOfferingId = 22L;
+        Long etcdOfferingId = 23L;
+        ServiceOffering scalingOffering = createServiceOfferingForTesting(30L);
+
+        KubernetesCluster kubernetesClusterMock = createExistingKubernetesClusterForTesting(cksOfferingId,
+                workerOfferingId, controlOfferingId);
+        Mockito.when(kubernetesClusterMock.getEtcdNodeServiceOfferingId()).thenReturn(etcdOfferingId);
+
+        Map<String, ServiceOffering> scalingMap = new HashMap<>();
+        scalingMap.put(WORKER.name(), scalingOffering);
+        scalingMap.put(CONTROL.name(), scalingOffering);
+        scalingMap.put(ETCD.name(), scalingOffering);
+
+        worker.checkScalingKubernetesClusterOfferingsPerNodeType(scalingMap, kubernetesClusterMock);
     }
 }
