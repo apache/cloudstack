@@ -19,6 +19,8 @@
 
 package com.cloud.agent.api;
 
+import java.util.Map;
+
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.Host;
 
@@ -29,6 +31,7 @@ public class StartCommand extends Command {
     String hostIp;
     boolean executeInSequence = false;
     String secondaryStorage;
+    Map<String, Object> externalDetails;
 
     public VirtualMachineTO getVirtualMachine() {
         return vm;
@@ -63,5 +66,13 @@ public class StartCommand extends Command {
 
     public void setSecondaryStorage(String secondary) {
         this.secondaryStorage = secondary;
+    }
+
+    public Map<String, Object> getExternalDetails() {
+        return externalDetails;
+    }
+
+    public void setExternalDetails(Map<String, Object> externalDetails) {
+        this.externalDetails = externalDetails;
     }
 }

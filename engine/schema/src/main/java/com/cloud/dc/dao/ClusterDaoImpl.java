@@ -378,4 +378,29 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
 
         return customSearch(sc, null);
     }
+
+    @Override
+    public List<Long> listEnabledClusterIdsByZoneHypervisorArch(Long zoneId, HypervisorType hypervisorType, CPU.CPUArch arch) {
+        GenericSearchBuilder<ClusterVO, Long> sb = createSearchBuilder(Long.class);
+        sb.selectFields(sb.entity().getId());
+        sb.and("zoneId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.and("allocationState", sb.entity().getAllocationState(), Op.EQ);
+        sb.and("managedState", sb.entity().getManagedState(), Op.EQ);
+        sb.and("hypervisor", sb.entity().getHypervisorType(), Op.EQ);
+        sb.and("arch", sb.entity().getArch(), Op.EQ);
+        sb.done();
+        SearchCriteria<Long> sc = sb.create();
+        sc.setParameters("allocationState", Grouping.AllocationState.Enabled);
+        sc.setParameters("managedState", Managed.ManagedState.Managed);
+        if (zoneId != null) {
+            sc.setParameters("zoneId", zoneId);
+        }
+        if (hypervisorType != null) {
+            sc.setParameters("hypervisor", hypervisorType);
+        }
+        if (arch != null) {
+            sc.setParameters("arch", arch);
+        }
+        return customSearch(sc, null);
+    }
 }

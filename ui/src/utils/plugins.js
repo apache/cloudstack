@@ -384,6 +384,10 @@ export const resourceTypePlugin = {
           return 'kubernetes'
         case 'KubernetesSupportedVersion':
           return 'kubernetesiso'
+        case 'Extension':
+          return 'xaas'
+        case 'ExtensionCustomAction':
+          return 'extca'
         case 'SystemVm':
         case 'PhysicalNetwork':
         case 'Backup':
@@ -565,6 +569,22 @@ export const imagesUtilPlugin = {
         types.push(...adminTypes)
       }
       return types.map(type => ({ id: type, name: type, description: type }))
+    }
+  }
+}
+
+export const extensionsUtilPlugin = {
+  install (app) {
+    app.config.globalProperties.$fetchCustomActionRoleTypes = function () {
+      const roleTypes = []
+      const roleTypesList = ['Admin', 'Resource Admin', 'Domain Admin', 'User']
+      roleTypesList.forEach((item) => {
+        roleTypes.push({
+          id: item.replace(' ', ''),
+          description: item
+        })
+      })
+      return roleTypes
     }
   }
 }

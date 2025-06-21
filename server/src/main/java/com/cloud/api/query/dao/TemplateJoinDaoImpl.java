@@ -240,7 +240,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         templateResponse.setDisplayText(template.getDisplayText());
         templateResponse.setPublic(template.isPublicTemplate());
         templateResponse.setCreated(template.getCreatedOnStore());
-        if (template.getFormat() == Storage.ImageFormat.BAREMETAL) {
+        if (template.getFormat() == Storage.ImageFormat.BAREMETAL || template.getFormat() == Storage.ImageFormat.EXTERNAL) {
             // for baremetal template, we didn't download, but is ready to use.
             templateResponse.setReady(true);
         } else {
@@ -252,12 +252,12 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         templateResponse.setDynamicallyScalable(template.isDynamicallyScalable());
         templateResponse.setSshKeyEnabled(template.isEnableSshKey());
         templateResponse.setCrossZones(template.isCrossZones());
-        templateResponse.setFormat(template.getFormat());
         if (template.getTemplateType() != null) {
             templateResponse.setTemplateType(template.getTemplateType().toString());
         }
 
         templateResponse.setHypervisor(template.getHypervisorType().getHypervisorDisplayName());
+        templateResponse.setFormat(template.getFormat());
 
         templateResponse.setOsTypeId(template.getGuestOSUuid());
         templateResponse.setOsTypeName(template.getGuestOSName());
@@ -330,6 +330,10 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         templateResponse.setRequiresHvm(template.isRequiresHvm());
         if (template.getArch() != null) {
             templateResponse.setArch(template.getArch().getType());
+        }
+        if (template.getExtensionId() != null) {
+            templateResponse.setExtensionId(template.getExtensionUuid());
+            templateResponse.setExtensionName(template.getExtensionName());
         }
 
         //set template children disks
