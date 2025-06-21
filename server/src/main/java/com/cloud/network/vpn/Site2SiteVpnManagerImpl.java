@@ -343,7 +343,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
     private void validatePrerequisiteVpnGateway(Site2SiteVpnGateway vpnGateway) {
         // check if gateway has been defined on the VPC
         if (_vpnGatewayDao.findByVpcId(vpnGateway.getVpcId()) == null) {
-            throw new InvalidParameterValueException("we can not create a VPN connection for a VPC that does not have a VPN gateway defined");
+            throw new InvalidParameterValueException("We can not create a VPN connection for a VPC that does not have a VPN gateway defined");
         }
     }
 
@@ -590,7 +590,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
     private void stopVpnConnection(Long id) throws ResourceUnavailableException {
         Site2SiteVpnConnectionVO conn = _vpnConnectionDao.acquireInLockTable(id);
         if (conn == null) {
-            throw new CloudRuntimeException("Unable to acquire lock for stopping of VPN connection with ID " + id);
+            throw new CloudRuntimeException("Unable to acquire lock for stopping VPN connection with ID " + id);
         }
         try {
             if (conn.getState() == State.Pending) {

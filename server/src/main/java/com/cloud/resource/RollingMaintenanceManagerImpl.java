@@ -32,7 +32,7 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.command.admin.cluster.UpdateClusterCmd;
-import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.host.PrepareForHostMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.resource.StartRollingMaintenanceCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -405,7 +405,7 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
      */
     private void putHostIntoMaintenance(Host host) throws InterruptedException, AgentUnavailableException {
         logger.debug(String.format("Trying to set %s into maintenance", host));
-        PrepareForMaintenanceCmd cmd = new PrepareForMaintenanceCmd();
+        PrepareForHostMaintenanceCmd cmd = new PrepareForHostMaintenanceCmd();
         cmd.setId(host.getId());
         resourceManager.maintain(cmd);
         waitForHostInMaintenance(host.getId());
@@ -652,7 +652,7 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
                     continue;
                 }
                 boolean maxGuestLimit = capacityManager.checkIfHostReachMaxGuestLimit(host);
-                boolean hostHasCPUCapacity = capacityManager.checkIfHostHasCpuCapability(hostInCluster.getId(), cpu, speed);
+                boolean hostHasCPUCapacity = capacityManager.checkIfHostHasCpuCapability(hostInCluster, cpu, speed);
                 int cpuRequested = cpu * speed;
                 long ramRequested = ramSize * 1024L * 1024L;
                 ClusterDetailsVO clusterDetailsCpuOvercommit = clusterDetailsDao.findDetail(cluster.getId(), "cpuOvercommitRatio");

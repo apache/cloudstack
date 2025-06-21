@@ -214,8 +214,8 @@
             </a-form-item>
           </a-col>
         </a-row>
-        <a-row :gutter="12" v-if="allowed && (hyperKVMShow || hyperCustomShow) && currentForm === 'Create'">
-          <a-col :md="24" :lg="12">
+        <a-row :gutter="12">
+          <a-col :md="24" :lg="12" v-if="(hyperKVMShow || hyperCustomShow) && currentForm === 'Create'">
             <a-form-item ref="directdownload" name="directdownload">
               <template #label>
                 <tooltip-label :title="$t('label.directdownload')" :tooltip="apiParams.directdownload.description"/>
@@ -223,7 +223,7 @@
               <a-switch v-model:checked="form.directdownload" @change="handleChangeDirect" />
             </a-form-item>
           </a-col>
-          <a-col :md="24" :lg="12" v-if="allowDirectDownload">
+          <a-col :md="24" :lg="12">
             <a-form-item ref="checksum" name="checksum">
               <template #label>
                 <tooltip-label :title="$t('label.checksum')" :tooltip="apiParams.checksum.description"/>
@@ -583,7 +583,7 @@ export default {
       this.fetchZone()
       this.fetchOsTypes()
       this.fetchTemplateTypes()
-      this.fetchArchitectureTypes()
+      this.architectureTypes.opts = this.$fetchCpuArchitectureTypes()
       this.fetchUserData()
       this.fetchUserdataPolicy()
       if ('listDomains' in this.$store.getters.apis) {
@@ -752,19 +752,6 @@ export default {
         })
       }
       this.templateTypes.opts = templatetypes
-    },
-    fetchArchitectureTypes () {
-      this.architectureTypes.opts = []
-      const typesList = []
-      typesList.push({
-        id: 'x86_64',
-        description: 'AMD 64 bits (x86_64)'
-      })
-      typesList.push({
-        id: 'aarch64',
-        description: 'ARM 64 bits (aarch64)'
-      })
-      this.architectureTypes.opts = typesList
     },
     fetchUserData () {
       const params = {}

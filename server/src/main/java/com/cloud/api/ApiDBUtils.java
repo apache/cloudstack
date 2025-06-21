@@ -2008,6 +2008,10 @@ public class ApiDBUtils {
         return s_projectInvitationJoinDao.newProjectInvitationView(proj);
     }
 
+    public static HostResponse newMinimalHostResponse(HostJoinVO vr) {
+        return s_hostJoinDao.newMinimalHostResponse(vr);
+    }
+
     public static HostResponse newHostResponse(HostJoinVO vr, EnumSet<HostDetails> details) {
         return s_hostJoinDao.newHostResponse(vr, details);
     }
@@ -2034,6 +2038,10 @@ public class ApiDBUtils {
 
     public static StoragePoolResponse newStoragePoolResponse(StoragePoolJoinVO vr, boolean customStats) {
         return s_poolJoinDao.newStoragePoolResponse(vr, customStats);
+    }
+
+    public static StoragePoolResponse newMinimalStoragePoolResponse(StoragePoolJoinVO vr) {
+        return s_poolJoinDao.newMinimalStoragePoolResponse(vr);
     }
 
     public static StorageTagResponse newStorageTagResponse(StoragePoolTagVO vr) {
@@ -2138,7 +2146,7 @@ public class ApiDBUtils {
         for (DiskOfferingJoinVO offering : offerings) {
             DiskOfferingResponse response = s_diskOfferingJoinDao.newDiskOfferingResponse(offering);
             if (vmId != null) {
-                response.setSuitableForVm(suitability.get(offering.getId()));
+                response.setSuitableForVm(suitability.getOrDefault(offering.getId(), true));
             }
             list.add(response);
         }
@@ -2163,6 +2171,10 @@ public class ApiDBUtils {
 
     public static ZoneResponse newDataCenterResponse(ResponseView view, DataCenterJoinVO dc, Boolean showCapacities, Boolean showResourceImage) {
         return s_dcJoinDao.newDataCenterResponse(view, dc, showCapacities, showResourceImage);
+    }
+
+    public static ZoneResponse newMinimalDataCenterResponse(ResponseView view, DataCenterJoinVO dc) {
+        return s_dcJoinDao.newMinimalDataCenterResponse(view, dc);
     }
 
     public static DataCenterJoinVO newDataCenterView(DataCenter dc) {

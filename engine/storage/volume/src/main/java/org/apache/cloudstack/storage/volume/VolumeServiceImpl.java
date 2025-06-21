@@ -328,6 +328,11 @@ public class VolumeServiceImpl implements VolumeService {
         } else {
             vo.processEvent(Event.OperationFailed);
             errMsg = result.getResult();
+            VolumeVO volume = volDao.findById(vo.getId());
+            if (volume != null && volume.getState() == State.Allocated && volume.getPodId() != null) {
+                volume.setPoolId(null);
+                volDao.update(volume.getId(), volume);
+            }
         }
         VolumeApiResult volResult = new VolumeApiResult((VolumeObject)vo);
         if (errMsg != null) {
@@ -497,6 +502,9 @@ public class VolumeServiceImpl implements VolumeService {
                     long storagePoolId = snapStoreVo.getDataStoreId();
                     StoragePoolVO storagePoolVO = storagePoolDao.findById(storagePoolId);
 
+                    if (StoragePoolType.StorPool.equals(storagePoolVO.getPoolType())) {
+                        continue;
+                    }
                     if (storagePoolVO.isManaged()) {
                         DataStore primaryDataStore = dataStoreMgr.getPrimaryDataStore(storagePoolId);
                         Map<String, String> mapCapabilities = primaryDataStore.getDriver().getCapabilities();
@@ -507,10 +515,10 @@ public class VolumeServiceImpl implements VolumeService {
                         if (!supportsStorageSystemSnapshots) {
                             _snapshotStoreDao.remove(snapStoreVo.getId());
                         }
+                    } else if (HypervisorType.KVM.equals(vo.getHypervisorType())) {
+                        deleteKvmSnapshotOnPrimary(snapStoreVo);
                     } else {
-                        if (!StoragePoolType.StorPool.equals(storagePoolVO.getPoolType())) {
-                            _snapshotStoreDao.remove(snapStoreVo.getId());
-                        }
+                        _snapshotStoreDao.remove(snapStoreVo.getId());
                     }
                 }
                 snapshotApiService.markVolumeSnapshotsAsDestroyed(vo);
@@ -523,6 +531,21 @@ public class VolumeServiceImpl implements VolumeService {
         }
         context.getFuture().complete(apiResult);
         return null;
+    }
+
+    /**
+     * Deletes the snapshot from primary storage if the only storage associated with the snapshot is of the Primary role; else, just removes the primary record on the DB.
+     * */
+    protected void deleteKvmSnapshotOnPrimary(SnapshotDataStoreVO snapshotDataStoreVO) {
+        List<SnapshotDataStoreVO> snapshotDataStoreVOList = _snapshotStoreDao.findBySnapshotId(snapshotDataStoreVO.getSnapshotId());
+        for (SnapshotDataStoreVO snapshotStore : snapshotDataStoreVOList) {
+            if (DataStoreRole.Image.equals(snapshotStore.getRole())) {
+                _snapshotStoreDao.remove(snapshotDataStoreVO.getId());
+                return;
+            }
+        }
+
+        snapshotApiService.deleteSnapshot(snapshotDataStoreVO.getSnapshotId(), null);
     }
 
     @Override
@@ -622,7 +645,7 @@ public class VolumeServiceImpl implements VolumeService {
             try {
                 Thread.sleep(sleepTime * 1000);
             } catch (InterruptedException e) {
-                logger.debug("waiting for template download been interrupted: " + e.toString());
+                logger.debug("waiting for template download been interrupted: " + e);
             }
             tries--;
         }
@@ -691,7 +714,6 @@ public class VolumeServiceImpl implements VolumeService {
             }
             _tmpltPoolDao.releaseFromLockTable(templatePoolRefId);
         }
-        return;
     }
 
     protected Void managedCopyBaseImageCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback, ManagedCreateBaseImageContext<VolumeApiResult> context) {
@@ -1039,7 +1061,7 @@ public class VolumeServiceImpl implements VolumeService {
             try {
                 grantAccess(templateOnPrimary, destHost, destPrimaryDataStore);
             } catch (Exception e) {
-                throw new StorageAccessException(String.format("Unable to grant access to template: %s on host: %s", templateOnPrimary.getImage(), destHost));
+                throw new StorageAccessException(String.format("Unable to grant access to template: %s on host: %s", templateOnPrimary.getImage(), destHost), e);
             }
 
             templateOnPrimary.processEvent(Event.CopyingRequested);
@@ -1161,7 +1183,7 @@ public class VolumeServiceImpl implements VolumeService {
             try {
                 grantAccess(srcTemplateOnPrimary, destHost, destPrimaryDataStore);
             } catch (Exception e) {
-                throw new StorageAccessException(String.format("Unable to grant access to src template: %s on host: %s", srcTemplateOnPrimary, destHost));
+                throw new StorageAccessException(String.format("Unable to grant access to src template: %s on host: %s", srcTemplateOnPrimary, destHost), e);
             }
 
             _volumeDetailsDao.addDetail(volumeInfo.getId(), volumeDetailKey, String.valueOf(templatePoolRef.getId()), false);
@@ -1238,6 +1260,10 @@ public class VolumeServiceImpl implements VolumeService {
         }
 
         if (volume.getState() == State.Allocated) { // Possible states here: Allocated, Ready & Creating
+            if (volume.getPodId() != null) {
+                volume.setPoolId(null);
+                volDao.update(volume.getId(), volume);
+            }
             return;
         }
 
@@ -1408,7 +1434,7 @@ public class VolumeServiceImpl implements VolumeService {
                 try {
                     grantAccess(templateOnPrimary, destHost, destPrimaryDataStore);
                 } catch (Exception e) {
-                    throw new StorageAccessException(String.format("Unable to grant access to template: %s on host: %s", templateOnPrimary, destHost));
+                    throw new StorageAccessException(String.format("Unable to grant access to template: %s on host: %s", templateOnPrimary, destHost), e);
                 }
 
                 templateOnPrimary.processEvent(Event.CopyingRequested);
@@ -2477,7 +2503,7 @@ public class VolumeServiceImpl implements VolumeService {
         try {
             volume.processEvent(Event.ResizeRequested);
         } catch (Exception e) {
-            logger.debug("Failed to change state to resize", e);
+            logger.debug("Failed to change volume state to resize", e);
             result.setResult(e.toString());
             future.complete(result);
             return future;
@@ -2489,10 +2515,8 @@ public class VolumeServiceImpl implements VolumeService {
         try {
             volume.getDataStore().getDriver().resize(volume, caller);
         } catch (Exception e) {
-            logger.debug("Failed to change state to resize", e);
-
+            logger.debug("Failed to resize volume", e);
             result.setResult(e.toString());
-
             future.complete(result);
         }
 
@@ -2536,7 +2560,7 @@ public class VolumeServiceImpl implements VolumeService {
             try {
                 volume.processEvent(Event.OperationFailed);
             } catch (Exception e) {
-                logger.debug("Failed to change state", e);
+                logger.debug("Failed to change volume state (after resize failure)", e);
             }
             VolumeApiResult res = new VolumeApiResult(volume);
             res.setResult(result.getResult());
@@ -2547,13 +2571,8 @@ public class VolumeServiceImpl implements VolumeService {
         try {
             volume.processEvent(Event.OperationSuccessed);
         } catch (Exception e) {
-            logger.debug("Failed to change state", e);
-            VolumeApiResult res = new VolumeApiResult(volume);
-            res.setResult(result.getResult());
-            future.complete(res);
-            return null;
+            logger.debug("Failed to change volume state (after resize success)", e);
         }
-
         VolumeApiResult res = new VolumeApiResult(volume);
         future.complete(res);
 

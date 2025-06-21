@@ -58,7 +58,15 @@ select
     `primary_storage_limit`.`max` AS `primaryStorageLimit`,
     `primary_storage_count`.`count` AS `primaryStorageTotal`,
     `secondary_storage_limit`.`max` AS `secondaryStorageLimit`,
-    `secondary_storage_count`.`count` AS `secondaryStorageTotal`
+    `secondary_storage_count`.`count` AS `secondaryStorageTotal`,
+    `backup_limit`.`max` AS `backupLimit`,
+    `backup_count`.`count` AS `backupTotal`,
+    `backup_storage_limit`.`max` AS `backupStorageLimit`,
+    `backup_storage_count`.`count` AS `backupStorageTotal`,
+    `bucket_limit`.`max` AS `bucketLimit`,
+    `bucket_count`.`count` AS `bucketTotal`,
+    `object_storage_limit`.`max` AS `objectStorageLimit`,
+    `object_storage_count`.`count` AS `objectStorageTotal`
 from
     `cloud`.`domain`
         left join
@@ -132,4 +140,28 @@ from
         and secondary_storage_limit.type = 'secondary_storage'
         left join
     `cloud`.`resource_count` secondary_storage_count ON domain.id = secondary_storage_count.domain_id
-        and secondary_storage_count.type = 'secondary_storage';
+        and secondary_storage_count.type = 'secondary_storage'
+        left join
+    `cloud`.`resource_limit` backup_limit ON domain.id = backup_limit.domain_id
+        and backup_limit.type = 'backup'
+        left join
+    `cloud`.`resource_count` backup_count ON domain.id = backup_count.domain_id
+        and backup_count.type = 'backup'
+        left join
+    `cloud`.`resource_limit` backup_storage_limit ON domain.id = backup_storage_limit.domain_id
+        and backup_storage_limit.type = 'backup_storage'
+        left join
+    `cloud`.`resource_count` backup_storage_count ON domain.id = backup_storage_count.domain_id
+        and backup_storage_count.type = 'backup_storage'
+        left join
+    `cloud`.`resource_limit` bucket_limit ON domain.id = bucket_limit.domain_id
+        and bucket_limit.type = 'bucket'
+        left join
+    `cloud`.`resource_count` bucket_count ON domain.id = bucket_count.domain_id
+        and bucket_count.type = 'bucket'
+        left join
+    `cloud`.`resource_limit` object_storage_limit ON domain.id = object_storage_limit.domain_id
+        and object_storage_limit.type = 'object_storage'
+        left join
+    `cloud`.`resource_count` object_storage_count ON domain.id = object_storage_count.domain_id
+        and object_storage_count.type = 'object_storage';

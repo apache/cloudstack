@@ -33,7 +33,7 @@
         <a-menu>
           <a-menu-item v-for="(column, idx) in columnKeys" :key="idx" @click="updateSelectedColumns(column)">
             <a-checkbox :id="idx.toString()" :checked="selectedColumns.includes(getColumnKey(column))"/>
-            {{ $t('label.' + String(getColumTitle(column)).toLowerCase()) }}
+            {{ $t('label.' + String(getColumnTitle(column)).toLowerCase()) }}
           </a-menu-item>
         </a-menu>
       </div>
@@ -65,7 +65,6 @@
           <span v-else :style="{ 'margin-right': record.ostypename ? '5px' : '0' }">
             <os-logo v-if="record.ostypename" :osName="record.ostypename" size="xl" />
           </span>
-
           <span v-if="record.hasannotations">
             <span v-if="record.id">
               <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
@@ -100,6 +99,20 @@
                 <warning-outlined style="color: #f5222d"/>
               </a-tooltip>
             </span>
+          </span>
+          <span
+            v-if="record.leaseduration !== undefined"
+            :style="{
+              'margin-right': '5px',
+              'float': 'right'}">
+              <a-tooltip>
+                <template #title>{{ $t('label.remainingdays')  + ": " + getRemainingLeaseText(record.leaseduration) }}</template>
+                <field-time-outlined
+                  :style="{
+                    color: getLeaseColor(record.leaseduration),
+                    fontSize: '20px'
+                  }"/>
+              </a-tooltip>
           </span>
         </span>
       </template>
@@ -159,6 +172,10 @@
         <span v-if="record.isstaticnat">
           &nbsp;
           <a-tag>static-nat</a-tag>
+        </span>
+        <span v-if="record.issystem">
+          &nbsp;
+          <a-tag>system</a-tag>
         </span>
       </template>
       <template v-if="column.key === 'ip6address'" href="javascript:;">
@@ -255,6 +272,12 @@
       </template>
       <template v-if="column.key === 'quotastate'">
         <status :text="text ? text : ''" displayText />
+      </template>
+      <template v-if="column.key === 'vmstate'">
+        <status :text="text ? text : ''" displayText vmState/>
+      </template>
+      <template v-if="column.key === 'offerha'">
+        {{ text ? $t('state.enabled') : $t('state.disabled')}}
       </template>
       <template v-if="column.key === 'vlan'">
         <a href="javascript:;">
@@ -415,8 +438,8 @@
         <status :text="record.enabled ? record.enabled.toString() : 'false'" />
         {{ record.enabled ? 'Enabled' : 'Disabled' }}
       </template>
-      <template v-if="['created', 'sent', 'removed', 'effectiveDate', 'endDate'].includes(column.key) || (['startdate'].includes(column.key) && ['webhook'].includes($route.path.split('/')[1])) || (column.key === 'allocated' && ['asnumbers', 'publicip', 'ipv4subnets'].includes($route.meta.name) && text)">
-        {{ $toLocaleDate(text) }}
+      <template v-if="['created', 'sent', 'removed', 'effectiveDate', 'endDate', 'allocated'].includes(column.key) || (['startdate'].includes(column.key) && ['webhook'].includes($route.path.split('/')[1])) || (column.key === 'allocated' && ['asnumbers', 'publicip', 'ipv4subnets'].includes($route.meta.name) && text)">
+        {{ text && $toLocaleDate(text) }}
       </template>
       <template v-if="['startdate', 'enddate'].includes(column.key) && ['vm', 'vnfapp'].includes($route.path.split('/')[1])">
         {{ getDateAtTimeZone(text, record.timezone) }}
@@ -533,7 +556,7 @@
           iconTwoToneColor="#52c41a" />
         <tooltip-button
           :tooltip="$t('label.reset.config.value')"
-          @onClick="resetConfig(record)"
+          @onClick="$resetConfigurationValueConfirm(item, resetConfig)"
           v-if="editableValueKey !== record.key"
           icon="reload-outlined"
           :disabled="!('updateConfiguration' in $store.getters.apis)" />
@@ -725,7 +748,7 @@ export default {
         '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm', '/annotation',
         '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering',
         '/tungstenfabric', '/oauthsetting', '/guestos', '/guestoshypervisormapping', '/webhook', 'webhookdeliveries', '/quotatariff', '/sharedfs',
-        '/ipv4subnets'].join('|'))
+        '/ipv4subnets', '/managementserver'].join('|'))
         .test(this.$route.path)
     },
     enableGroupAction () {
@@ -1005,16 +1028,16 @@ export default {
       return host.state
     },
     getColumnKey (name) {
-      if (typeof name === 'object') {
-        name = Object.keys(name).includes('field') ? name.field : name.customTitle
+      if (typeof name !== 'object' || name === null) {
+        return name
       }
-      return name
+      return name.field ?? name.customTitle ?? Object.keys(name)[0]
     },
-    getColumTitle (name) {
-      if (typeof name === 'object') {
-        name = Object.keys(name).includes('customTitle') ? name.customTitle : name.field
+    getColumnTitle (name) {
+      if (typeof name !== 'object' || name === null) {
+        return name
       }
-      return name
+      return name.customTitle ?? name.field ?? Object.keys(name)[0]
     },
     handleResizeColumn (w, col) {
       col.width = w
@@ -1059,6 +1082,24 @@ export default {
             }
           }
         })
+      }
+    },
+    getRemainingLeaseText (leaseDuration) {
+      if (leaseDuration > 0) {
+        return leaseDuration + (leaseDuration === 1 ? ' day' : ' days')
+      } else if (leaseDuration === 0) {
+        return 'expiring today'
+      } else {
+        return 'over'
+      }
+    },
+    getLeaseColor (leaseDuration) {
+      if (leaseDuration >= 7) {
+        return '#888'
+      } else if (leaseDuration >= 0) {
+        return '#ffbf00'
+      } else {
+        return '#fd7e14'
       }
     }
   }

@@ -26,6 +26,9 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -39,6 +42,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -55,6 +59,7 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.cloud.network.NetworkService;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -134,11 +139,13 @@ import org.apache.cloudstack.storage.template.VnfTemplateManager;
 import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.security.ParserUtils;
-import org.apache.cloudstack.vm.UnmanagedVMsManager;
+import org.apache.cloudstack.vm.lease.VMLeaseManager;
 import org.apache.cloudstack.vm.schedule.VMScheduleManager;
+import org.apache.cloudstack.vm.UnmanagedVMsManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -606,6 +613,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Inject
     NsxProviderDao nsxProviderDao;
 
+    @Inject
+    NetworkService networkService;
+
 
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;
@@ -750,8 +760,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         boolean isWindows;
         Long hostId;
         String networkCidr;
+        String macAddress;
 
-        public VmIpAddrFetchThread(long vmId, String vmUuid, long nicId, String instanceName, boolean windows, Long hostId, String networkCidr) {
+        public VmIpAddrFetchThread(long vmId, long nicId, String instanceName, boolean windows, Long hostId, String networkCidr, String macAddress) {
             this.vmId = vmId;
             this.vmUuid = vmUuid;
             this.nicId = nicId;
@@ -759,11 +770,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             this.isWindows = windows;
             this.hostId = hostId;
             this.networkCidr = networkCidr;
+            this.macAddress = macAddress;
         }
 
         @Override
         protected void runInContext() {
-            GetVmIpAddressCommand cmd = new GetVmIpAddressCommand(vmName, networkCidr, isWindows);
+            GetVmIpAddressCommand cmd = new GetVmIpAddressCommand(vmName, networkCidr, isWindows, macAddress);
             boolean decrementCount = true;
 
             NicVO nic = _nicDao.findById(nicId);
@@ -2098,7 +2110,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                     // #1 Check existing host has capacity & and the correct tags
                     if (!excludes.shouldAvoid(ApiDBUtils.findHostById(vmInstance.getHostId()))) {
-                        existingHostHasCapacity = _capacityMgr.checkIfHostHasCpuCapability(vmInstance.getHostId(), newCpu, newSpeed)
+                        existingHostHasCapacity = _capacityMgr.checkIfHostHasCpuCapability(host, newCpu, newSpeed)
                                 && _capacityMgr.checkIfHostHasCapacity(host, cpuDiff, ByteScaleUtils.mebibytesToBytes(memoryDiff), false,
                                         _capacityMgr.getClusterOverProvisioningFactor(host.getClusterId(), Capacity.CAPACITY_TYPE_CPU),
                                         _capacityMgr.getClusterOverProvisioningFactor(host.getClusterId(), Capacity.CAPACITY_TYPE_MEMORY), false)
@@ -2140,7 +2152,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Unable to Scale VM, since disk offering strictness flag is not same for new service offering and old service offering");
         }
 
-        if (currentServiceOffering.getDiskOfferingStrictness() && currentServiceOffering.getDiskOfferingId() != newServiceOffering.getDiskOfferingId()) {
+        if (currentServiceOffering.getDiskOfferingStrictness() && !currentServiceOffering.getDiskOfferingId().equals(newServiceOffering.getDiskOfferingId())) {
             throw new InvalidParameterValueException("Unable to Scale VM, since disk offering id associated with the old service offering is not same for new service offering");
         }
 
@@ -2436,9 +2448,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private void loadVmDetailsInMapForExternalDhcpIp() {
 
         List<NetworkVO> networks = _networkDao.listByGuestType(Network.GuestType.Shared);
+        networks.addAll(_networkDao.listByGuestType(Network.GuestType.L2));
 
         for (NetworkVO network: networks) {
-            if(_networkModel.isSharedNetworkWithoutServices(network.getId())) {
+            if (GuestType.L2.equals(network.getGuestType()) || _networkModel.isSharedNetworkWithoutServices(network.getId())) {
                 List<NicVO> nics = _nicDao.listByNetworkId(network.getId());
 
                 for (NicVO nic : nics) {
@@ -2686,9 +2699,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(userVm);
                             VirtualMachine vm = vmProfile.getVirtualMachine();
                             boolean isWindows = _guestOSCategoryDao.findById(_guestOSDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
-
-                            _vmIpFetchThreadExecutor.execute(new VmIpAddrFetchThread(vmId, vmInstance.getUuid(), nicId, vmInstance.getInstanceName(),
-                                    isWindows, vm.getHostId(), network.getCidr()));
+                            _vmIpFetchThreadExecutor.execute(new VmIpAddrFetchThread(vmId, nicId, vmInstance.getInstanceName(),
+                                    isWindows, vm.getHostId(), network.getCidr(), nicVo.getMacAddress()));
 
                         }
                     } catch (Exception e) {
@@ -2840,6 +2852,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         final List<String> userDenyListedSettings = Stream.of(QueryService.UserVMDeniedDetails.value().split(","))
                 .map(item -> (item).trim())
                 .collect(Collectors.toList());
+        userDenyListedSettings.addAll(QueryService.RootAdminOnlyVmSettings);
         final List<String> userReadOnlySettings = Stream.of(QueryService.UserVMReadOnlyDetails.value().split(","))
                 .map(item -> (item).trim())
                 .collect(Collectors.toList());
@@ -2862,6 +2875,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         } else {
             if (MapUtils.isNotEmpty(details)) {
+                // error out if lease related keys are passed in details
+                if (details.containsKey(VmDetailConstants.INSTANCE_LEASE_EXECUTION)
+                        || details.containsKey(VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE)
+                        || details.containsKey(VmDetailConstants.INSTANCE_LEASE_EXPIRY_ACTION)) {
+                    throw new InvalidParameterValueException("lease parameters should not be included in details as key");
+                }
+
                 if (details.containsKey("extraconfig")) {
                     throw new InvalidParameterValueException("'extraconfig' should not be included in details as key");
                 }
@@ -2909,6 +2929,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
             }
         }
+
+        if (VMLeaseManager.InstanceLeaseEnabled.value() && cmd.getLeaseDuration() != null) {
+            applyLeaseOnUpdateInstance(vmInstance, cmd.getLeaseDuration(), cmd.getLeaseExpiryAction());
+        }
+
         return updateVirtualMachine(id, displayName, group, ha, isDisplayVm,
                 cmd.getDeleteProtection(), osTypeId, userData,
                 userDataId, userDataDetails, isDynamicallyScalable, cmd.getHttpMethod(),
@@ -3105,42 +3130,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
-        boolean isVMware = (vm.getHypervisorType() == HypervisorType.VMware);
-
-        if (securityGroupIdList != null && isVMware) {
-            throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
-        } else {
-            // Get default guest network in Basic zone
-            Network defaultNetwork = null;
-            try {
-                DataCenterVO zone = _dcDao.findById(vm.getDataCenterId());
-                if (zone.getNetworkType() == NetworkType.Basic) {
-                    // Get default guest network in Basic zone
-                    defaultNetwork = _networkModel.getExclusiveGuestNetwork(zone.getId());
-                } else if (_networkModel.checkSecurityGroupSupportForNetwork(_accountMgr.getActiveAccountById(vm.getAccountId()), zone, Collections.emptyList(), securityGroupIdList)) {
-                    NicVO defaultNic = _nicDao.findDefaultNicForVM(vm.getId());
-                    if (defaultNic != null) {
-                        defaultNetwork = _networkDao.findById(defaultNic.getNetworkId());
-                    }
-                }
-            } catch (InvalidParameterValueException e) {
-                if(logger.isDebugEnabled()) {
-                    logger.debug(e.getMessage(),e);
-                }
-                defaultNetwork = _networkModel.getDefaultNetworkForVm(id);
-            }
-
-            if (securityGroupIdList != null && _networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork) && _networkModel.canAddDefaultSecurityGroup()) {
-                if (vm.getState() == State.Stopped) {
-                    // Remove instance from security groups
-                    _securityGroupMgr.removeInstanceFromGroups(vm);
-                    // Add instance in provided groups
-                    _securityGroupMgr.addInstanceToGroups(vm, securityGroupIdList);
-                } else {
-                    throw new InvalidParameterValueException("Virtual machine must be stopped prior to update security groups ");
-                }
-            }
-        }
         List<? extends Nic> nics = _nicDao.listByVmId(vm.getId());
         if (hostName != null) {
             // Check is hostName is RFC compliant
@@ -3173,6 +3162,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     .getUuid(), nic.getId(), extraDhcpOptionsMap);
         }
 
+        checkAndUpdateSecurityGroupForVM(securityGroupIdList, vm, networks);
+
         _vmDao.updateVM(id, displayName, ha, osTypeId, userData, userDataId,
                 userDataDetails, isDisplayVmEnabled, isDynamicallyScalable,
                 deleteProtection, customId, hostName, instanceName);
@@ -3186,6 +3177,48 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         return _vmDao.findById(id);
+    }
+
+    private void checkAndUpdateSecurityGroupForVM(List<Long> securityGroupIdList, UserVmVO vm, List<NetworkVO> networks) {
+        boolean isVMware = (vm.getHypervisorType() == HypervisorType.VMware);
+
+        if (securityGroupIdList != null && isVMware) {
+            throw new InvalidParameterValueException("Security group feature is not supported for VMware hypervisor");
+        } else if (securityGroupIdList != null) {
+            DataCenterVO zone = _dcDao.findById(vm.getDataCenterId());
+            List<Long> networkIds = new ArrayList<>();
+            try {
+                if (zone.getNetworkType() == NetworkType.Basic) {
+                    // Get default guest network in Basic zone
+                    Network defaultNetwork = _networkModel.getExclusiveGuestNetwork(zone.getId());
+                    networkIds.add(defaultNetwork.getId());
+                } else {
+                    networkIds = networks.stream().map(Network::getId).collect(Collectors.toList());
+                }
+            } catch (InvalidParameterValueException e) {
+                if(logger.isDebugEnabled()) {
+                    logger.debug(e.getMessage(),e);
+                }
+            }
+
+            if (_networkModel.checkSecurityGroupSupportForNetwork(
+                            _accountMgr.getActiveAccountById(vm.getAccountId()),
+                            zone, networkIds, securityGroupIdList)
+            ) {
+                updateSecurityGroup(vm, securityGroupIdList);
+            }
+        }
+    }
+
+    private void updateSecurityGroup(UserVmVO vm, List<Long> securityGroupIdList) {
+        if (vm.getState() == State.Stopped) {
+            // Remove instance from security groups
+            _securityGroupMgr.removeInstanceFromGroups(vm);
+            // Add instance in provided groups
+            _securityGroupMgr.addInstanceToGroups(vm, securityGroupIdList);
+        } else {
+            throw new InvalidParameterValueException(String.format("VM %s must be stopped prior to update security groups", vm.getUuid()));
+        }
     }
 
     protected void updateUserData(UserVm vm) throws ResourceUnavailableException, InsufficientCapacityException {
@@ -3344,8 +3377,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             final List<NicVO> nics = _nicDao.listByVmId(vmId);
             for (NicVO nic : nics) {
                 Network network = _networkModel.getNetwork(nic.getNetworkId());
-                if (_networkModel.isSharedNetworkWithoutServices(network.getId())) {
-                    logger.debug("Adding vm {} nic {} into vmIdCountMap as part of vm reboot for vm ip fetch ", userVm, nic);
+                if (GuestType.L2.equals(network.getGuestType()) || _networkModel.isSharedNetworkWithoutServices(network.getId())) {
+                    logger.debug("Adding vm " +vmId +" nic id "+ nic.getId() +" into vmIdCountMap as part of vm " +
+                            "reboot for vm ip fetch ");
                     vmIdCountMap.put(nic.getId(), new VmAndCountDetails(nic.getInstanceId(), VmIpFetchTrialMax.value()));
                 }
             }
@@ -3695,7 +3729,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         boolean isVmWare = (template.getHypervisorType() == HypervisorType.VMware || (hypervisor != null && hypervisor == HypervisorType.VMware));
 
         if (securityGroupIdList != null && isVmWare) {
-            throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
+            throw new InvalidParameterValueException("Security group feature is not supported for VMware hypervisor");
         } else if (!isVmWare && _networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork) && _networkModel.canAddDefaultSecurityGroup()) {
             //add the default securityGroup only if no security group is specified
             if (securityGroupIdList == null || securityGroupIdList.isEmpty()) {
@@ -3755,7 +3789,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         } else if (securityGroupIdList != null && !securityGroupIdList.isEmpty()) {
             if (isVmWare) {
-                throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
+                throw new InvalidParameterValueException("Security group feature is not supported for VMware hypervisor");
             }
             // Only one network can be specified, and it should be security group enabled
             if (networkIdList.size() > 1 && template.getHypervisorType() != HypervisorType.KVM && hypervisor != HypervisorType.KVM) {
@@ -4526,7 +4560,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if (customParameters.containsKey(VmDetailConstants.ROOT_DISK_SIZE)) {
-            Long rootDiskSize = rootDiskSizeCustomParam * GiB_TO_BYTES;
+            Long rootDiskSize = NumbersUtil.parseLong(customParameters.get(VmDetailConstants.ROOT_DISK_SIZE), -1);
+            if (rootDiskSize <= 0) {
+                throw new InvalidParameterValueException("Root disk size should be a positive number.");
+            }
+            rootDiskSize = rootDiskSizeCustomParam * GiB_TO_BYTES;
             _volumeService.validateVolumeSizeInBytes(rootDiskSize);
             return rootDiskSize;
         } else {
@@ -5354,7 +5392,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 final List<NicVO> nics = _nicDao.listByVmId(vm.getId());
                 for (NicVO nic : nics) {
                     Network network = _networkModel.getNetwork(nic.getNetworkId());
-                    if (_networkModel.isSharedNetworkWithoutServices(network.getId())) {
+                    if (GuestType.L2.equals(network.getGuestType()) || _networkModel.isSharedNetworkWithoutServices(network.getId())) {
                         vmIdCountMap.put(nic.getId(), new VmAndCountDetails(nic.getInstanceId(), VmIpFetchTrialMax.value()));
                     }
                 }
@@ -6149,6 +6187,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
+        boolean isLeaseFeatureEnabled = VMLeaseManager.InstanceLeaseEnabled.value();
+        if (isLeaseFeatureEnabled) {
+            validateLeaseProperties(cmd.getLeaseDuration(), cmd.getLeaseExpiryAction());
+        }
+
         List<Long> networkIds = cmd.getNetworkIds();
         LinkedHashMap<Integer, Long> userVmNetworkMap = getVmOvfNetworkMapping(zone, owner, template, cmd.getVmNetworkMap());
         if (MapUtils.isNotEmpty(userVmNetworkMap)) {
@@ -6247,7 +6290,115 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
             }
         }
+        if (isLeaseFeatureEnabled) {
+            applyLeaseOnCreateInstance(vm, cmd.getLeaseDuration(), cmd.getLeaseExpiryAction(), svcOffering);
+        }
         return vm;
+    }
+
+    protected void validateLeaseProperties(Integer leaseDuration, VMLeaseManager.ExpiryAction leaseExpiryAction) {
+        if (ObjectUtils.allNull(leaseDuration, leaseExpiryAction) // both are null
+                || (leaseDuration != null && leaseDuration == -1)) { // special condition to disable lease for instance
+            return;
+        }
+
+        // any one of them have value
+        // validate leaseduration
+        if (leaseDuration == null || leaseDuration < 1 || leaseDuration > VMLeaseManager.MAX_LEASE_DURATION_DAYS) {
+            throw new InvalidParameterValueException("Invalid leaseduration: must be a natural number (>=1) or -1, max supported value is 36500");
+        }
+
+        if (leaseExpiryAction == null) {
+            throw new InvalidParameterValueException("Provide values for both: leaseduration and leaseexpiryaction");
+        }
+    }
+
+    /**
+     * if lease feature is enabled
+     * use leaseDuration and leaseExpiryAction passed in the cmd
+     * get leaseDuration from service_offering if leaseDuration is not passed
+     * @param vm
+     * @param leaseDuration
+     * @param leaseExpiryAction
+     * @param serviceOfferingJoinVO
+     */
+    void applyLeaseOnCreateInstance(UserVm vm, Integer leaseDuration, VMLeaseManager.ExpiryAction leaseExpiryAction, ServiceOfferingJoinVO serviceOfferingJoinVO) {
+        if (leaseDuration == null) {
+            leaseDuration = serviceOfferingJoinVO.getLeaseDuration();
+        }
+        // if leaseDuration is null or < 1, instance will never expire, nothing to be done
+        if  (leaseDuration == null || leaseDuration < 1) {
+            return;
+        }
+        leaseExpiryAction = leaseExpiryAction != null ? leaseExpiryAction : serviceOfferingJoinVO.getLeaseExpiryAction();
+        if (leaseExpiryAction == null) {
+            return;
+        }
+        addLeaseDetailsForInstance(vm, leaseDuration, leaseExpiryAction);
+    }
+
+    protected void applyLeaseOnUpdateInstance(UserVm instance, Integer leaseDuration, VMLeaseManager.ExpiryAction leaseExpiryAction) {
+        validateLeaseProperties(leaseDuration, leaseExpiryAction);
+        String instanceUuid = instance.getUuid();
+
+        // vm must have active lease associated during deployment
+        Map<String, String> vmDetails = userVmDetailsDao.listDetailsKeyPairs(instance.getId(),
+                List.of(VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE, VmDetailConstants.INSTANCE_LEASE_EXECUTION));
+        String leaseExecution = vmDetails.get(VmDetailConstants.INSTANCE_LEASE_EXECUTION);
+        String leaseExpiryDate = vmDetails.get(VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE);
+
+        if (StringUtils.isEmpty(leaseExpiryDate)) {
+            String errorMsg = "Lease can't be applied on instance with id: " + instanceUuid + ", it doesn't have lease associated during deployment";
+            logger.debug(errorMsg);
+            throw new CloudRuntimeException(errorMsg);
+        }
+
+        if (!VMLeaseManager.LeaseActionExecution.PENDING.name().equals(leaseExecution)) {
+            String errorMsg = "Lease can't be applied on instance with id: " + instanceUuid + ", it doesn't have active lease";
+            logger.debug(errorMsg);
+            throw new CloudRuntimeException(errorMsg);
+        }
+
+        // proceed if lease is yet to expire
+        long leaseExpiryTimeDiff;
+        try {
+             leaseExpiryTimeDiff = DateUtil.getTimeDifference(
+                     DateUtil.parseDateString(TimeZone.getTimeZone("UTC"), leaseExpiryDate), new Date());
+        } catch (Exception ex) {
+            logger.error("Error occurred computing time difference for instance lease expiry, " +
+                            "will skip applying lease for vm with id: {}", instanceUuid, ex);
+            return;
+        }
+        if (leaseExpiryTimeDiff < 0) {
+            logger.debug("Lease has expired for instance with id: {}, can't modify lease information", instanceUuid);
+            throw new CloudRuntimeException("Lease is not allowed to be redefined on expired leased instance");
+        }
+
+        if (leaseDuration < 1) {
+            userVmDetailsDao.addDetail(instance.getId(), VmDetailConstants.INSTANCE_LEASE_EXECUTION,
+                    VMLeaseManager.LeaseActionExecution.DISABLED.name(), false);
+            ActionEventUtils.onActionEvent(CallContext.current().getCallingUserId(), instance.getAccountId(), instance.getDomainId(),
+                    EventTypes.VM_LEASE_DISABLED, "Disabling lease on the instance", instance.getId(), ApiCommandResourceType.VirtualMachine.toString());
+            return;
+        }
+        addLeaseDetailsForInstance(instance, leaseDuration, leaseExpiryAction);
+    }
+
+    protected void addLeaseDetailsForInstance(UserVm vm, Integer leaseDuration, VMLeaseManager.ExpiryAction leaseExpiryAction) {
+        if (ObjectUtils.anyNull(vm, leaseDuration) || leaseDuration < 1) {
+            logger.debug("Lease can't be applied for given vm: {}, leaseduration: {} and leaseexpiryaction: {}", vm, leaseDuration, leaseExpiryAction);
+            return;
+        }
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+        LocalDateTime leaseExpiryDateTime = now.plusDays(leaseDuration);
+        Date leaseExpiryDate = Date.from(leaseExpiryDateTime.atZone(ZoneOffset.UTC).toInstant());
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+        String formattedLeaseExpiryDate = sdf.format(leaseExpiryDate);
+        userVmDetailsDao.addDetail(vm.getId(), VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE, formattedLeaseExpiryDate, false);
+        userVmDetailsDao.addDetail(vm.getId(), VmDetailConstants.INSTANCE_LEASE_EXPIRY_ACTION, leaseExpiryAction.name(), false);
+        userVmDetailsDao.addDetail(vm.getId(), VmDetailConstants.INSTANCE_LEASE_EXECUTION, "PENDING", false);
+        logger.debug("Instance lease for instanceId: {} is configured to expire on: {} with action: {}", vm.getUuid(), formattedLeaseExpiryDate, leaseExpiryAction);
     }
 
     /**
@@ -6632,11 +6783,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         VMInstanceVO vm = preVmStorageMigrationCheck(vmId);
         Map<Long, Long> volumeToPoolIds = new HashMap<>();
         checkDestinationHypervisorType(destPool, vm);
+        checkIfDestinationPoolHasSameStorageAccessGroups(destPool, vm);
         List<VolumeVO> volumes = _volsDao.findByInstance(vm.getId());
         StoragePoolVO destinationPoolVo = _storagePoolDao.findById(destPool.getId());
         Long destPoolPodId = ScopeType.CLUSTER.equals(destinationPoolVo.getScope()) || ScopeType.HOST.equals(destinationPoolVo.getScope()) ?
                 destinationPoolVo.getPodId() : null;
         for (VolumeVO volume : volumes) {
+            snapshotHelper.checkKvmVolumeSnapshotsOnlyInPrimaryStorage(volume, vm.getHypervisorType());
             if (!VirtualMachine.Type.User.equals(vm.getType())) {
                 // Migrate within same pod as source storage and same cluster for all disks only. Hypervisor check already done
                 StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
@@ -6645,6 +6798,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         !destPoolPodId.equals(pool.getPodId())) {
                     throw new InvalidParameterValueException("Storage migration of non-user VMs cannot be done between storage pools of different pods");
                 }
+            }
+            Pair<Boolean, String> checkResult = storageManager.checkIfReadyVolumeFitsInStoragePoolWithStorageAccessGroups(destPool, volume);
+            if (!checkResult.first()) {
+                throw new CloudRuntimeException(String.format("Storage suitability check failed for volume %s with error, %s", volume, checkResult.second()));
             }
             volumeToPoolIds.put(volume.getId(), destPool.getId());
         }
@@ -6658,7 +6815,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Map<Long, Long> volumeToPoolIds = new HashMap<>();
         Long poolClusterId = null;
         for (Map.Entry<String, String> entry : volumeToPool.entrySet()) {
-            Volume volume = _volsDao.findByUuid(entry.getKey());
+            VolumeVO volume = _volsDao.findByUuid(entry.getKey());
+            snapshotHelper.checkKvmVolumeSnapshotsOnlyInPrimaryStorage(volume, vm.getHypervisorType());
             StoragePoolVO pool = _storagePoolDao.findPoolByUUID(entry.getValue());
             if (poolClusterId != null &&
                     (ScopeType.CLUSTER.equals(pool.getScope()) || ScopeType.HOST.equals(pool.getScope())) &&
@@ -6669,10 +6827,25 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 poolClusterId = pool.getClusterId();
             }
             checkDestinationHypervisorType(pool, vm);
+            Pair<Boolean, String> checkResult = storageManager.checkIfReadyVolumeFitsInStoragePoolWithStorageAccessGroups(pool, volume);
+            if (!checkResult.first()) {
+                throw new CloudRuntimeException(String.format("Storage suitability check failed for volume %s with error %s", volume, checkResult.second()));
+            }
+
             volumeToPoolIds.put(volume.getId(), pool.getId());
         }
         _itMgr.storageMigration(vm.getUuid(), volumeToPoolIds);
         return findMigratedVm(vm.getId(), vm.getType());
+    }
+
+    private void checkIfDestinationPoolHasSameStorageAccessGroups(StoragePool destPool, VMInstanceVO vm) {
+        Long hostId = vm.getHostId();
+        if (hostId != null) {
+            Host host = _hostDao.findById(hostId);
+            if (!storageManager.checkIfHostAndStoragePoolHasCommonStorageAccessGroups(host, destPool)) {
+                throw new InvalidParameterValueException(String.format("Destination pool %s does not have matching storage access groups as host %s", destPool.getName(), host.getName()));
+            }
+        }
     }
 
     private void checkDestinationHypervisorType(StoragePool destPool, VMInstanceVO vm) {
@@ -6794,6 +6967,26 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return host.checkHostServiceOfferingAndTemplateTags(serviceOffering, template, strictHostTags);
     }
 
+    protected void validateStorageAccessGroupsOnHosts(Host srcHost, Host destinationHost) {
+        String[] storageAccessGroupsOnSrcHost = storageManager.getStorageAccessGroups(null, null, null, srcHost.getId());
+        String[] storageAccessGroupsOnDestHost = storageManager.getStorageAccessGroups(null, null, null, destinationHost.getId());
+
+        List<String> srcHostStorageAccessGroupsList = storageAccessGroupsOnSrcHost != null ? Arrays.asList(storageAccessGroupsOnSrcHost) : Collections.emptyList();
+        List<String> destHostStorageAccessGroupsList = storageAccessGroupsOnDestHost != null ? Arrays.asList(storageAccessGroupsOnDestHost) : Collections.emptyList();
+
+        if (CollectionUtils.isEmpty(srcHostStorageAccessGroupsList)) {
+            return;
+        }
+
+        if (CollectionUtils.isEmpty(destHostStorageAccessGroupsList)) {
+            throw new CloudRuntimeException("Source host has storage access groups, but destination host has none.");
+        }
+
+        if (!destHostStorageAccessGroupsList.containsAll(srcHostStorageAccessGroupsList)) {
+            throw new CloudRuntimeException("Storage access groups on the source and destination hosts did not match.");
+        }
+    }
+
     protected void validateStrictHostTagCheck(VMInstanceVO vm, HostVO host) {
         ServiceOffering serviceOffering = serviceOfferingDao.findByIdIncludingRemoved(vm.getServiceOfferingId());
         VirtualMachineTemplate template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
@@ -6836,6 +7029,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         HostVO destinationHostVO = _hostDao.findById(destinationHost.getId());
         _hostDao.loadHostTags(destinationHostVO);
         validateStrictHostTagCheck(vm, destinationHostVO);
+        validateStorageAccessGroupsOnHosts(srcHost, destinationHost);
 
         checkHostsDedication(vm, srcHost.getId(), destinationHost.getId());
 
@@ -7196,6 +7390,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     destinationHost.getName(), destinationHost.getUuid()));
         }
 
+        validateStorageAccessGroupsOnHosts(srcHost, destinationHost);
+
         return new Pair<>(srcHost, destinationHost);
     }
 
@@ -7233,8 +7429,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     }
                     volToPoolObjectMap.put(volume.getId(), pool.getId());
                 }
-                HypervisorType hypervisorType = _volsDao.getHypervisorType(volume.getId());
+                HostVO host = _hostDao.findById(vm.getHostId());
+                if (!storageManager.checkIfHostAndStoragePoolHasCommonStorageAccessGroups(host, pool)) {
+                    throw new InvalidParameterValueException(String.format("Destination pool %s for the volume %s does not have matching storage access groups as host %s", pool.getName(), volume.getName(), host.getName()));
+                }
 
+                HypervisorType hypervisorType = _volsDao.getHypervisorType(volume.getId());
                 try {
                     snapshotHelper.checkKvmVolumeSnapshotsOnlyInPrimaryStorage(volume, hypervisorType);
                 } catch (CloudRuntimeException ex) {
@@ -7430,12 +7630,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         logger.trace("Verifying if the new account [{}] has access to the specified domain [{}].", newAccount, domain);
         _accountMgr.checkAccess(newAccount, domain);
 
-        Transaction.execute(new TransactionCallbackNoReturn() {
-            @Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
-                executeStepsToChangeOwnershipOfVm(cmd, caller, oldAccount, newAccount, vm, offering, volumes, template, domainId);
+        Network newNetwork = ensureDestinationNetwork(cmd, vm, newAccount);
+        try {
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(TransactionStatus status) {
+                    executeStepsToChangeOwnershipOfVm(cmd, caller, oldAccount, newAccount, vm, offering, volumes, template, domainId);
+                }
+            });
+        } catch (Exception e) {
+            if (newNetwork != null) {
+                logger.debug("Cleaning up the created network.");
+                networkService.deleteNetwork(newNetwork.getId(), false);
             }
-        });
+            throw e;
+        }
 
         logger.info("VM [{}] now belongs to account [{}].", vm.getInstanceName(), newAccountName);
         return vm;
@@ -7542,6 +7751,67 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     /**
+     * This method will create an isolated network for the new account to allocate the virtual machine if:
+     * <ul>
+     * <li>no networks were specified to the command, AND</li>
+     * <li>the zone uses advanced networks without security groups, AND</li>
+     * <li>the VM does not belong to any shared or L2 network that the new owner can access, AND</li>
+     * <li>the new owner does not have any isolated networks</li>
+     * </ul>
+     * @return the created isolated network, or null if it was not created.
+     */
+    protected Network ensureDestinationNetwork(AssignVMCmd cmd, UserVmVO vm, Account newAccount) throws InsufficientCapacityException, ResourceAllocationException {
+        DataCenterVO zone = _dcDao.findById(vm.getDataCenterId());
+        if (zone.getNetworkType() == NetworkType.Basic) {
+            logger.debug("No need to ensure an isolated network for the VM because the zone uses basic networks.");
+            return null;
+        }
+
+        List<Long> networkIdList = cmd.getNetworkIds();
+        List<Long> securityGroupIdList = cmd.getSecurityGroupIdList();
+        if (_networkModel.checkSecurityGroupSupportForNetwork(newAccount, zone, networkIdList, securityGroupIdList)) {
+            logger.debug("No need to ensure an isolated network for the VM because security groups is enabled for this zone.");
+            return null;
+        }
+        if (CollectionUtils.isNotEmpty(securityGroupIdList)) {
+            throw new InvalidParameterValueException("Cannot move VM with security groups; security group feature is not enabled in this zone.");
+        }
+
+        LinkedHashSet<NetworkVO> applicableNetworks = new LinkedHashSet<>();
+        addNetworksToNetworkIdList(vm, newAccount, networkIdList, applicableNetworks, new HashMap<>(), new HashMap<>());
+        if (!applicableNetworks.isEmpty()) {
+            logger.debug("No need to create an isolated network for the VM because there are other applicable networks.");
+            return null;
+        }
+
+        List<? extends Network> virtualNetworks = _networkModel.listNetworksForAccount(newAccount.getId(), zone.getId(), Network.GuestType.Isolated);
+        if (!virtualNetworks.isEmpty()) {
+            logger.debug("No need create a new isolated network for the VM because the owner already has existing isolated networks.");
+            return null;
+        }
+
+        return createApplicableNetworkToCreateVm(newAccount, zone);
+    }
+
+    /**
+     * @return a network offering with required availability that will be used to create a new isolated network for the VM
+     * assignment process.
+     */
+    protected NetworkOfferingVO getOfferingWithRequiredAvailabilityForNetworkCreation() {
+        List<NetworkOfferingVO> requiredOfferings = _networkOfferingDao.listByAvailability(Availability.Required, false);
+        if (CollectionUtils.isEmpty(requiredOfferings)) {
+            throw new InvalidParameterValueException(String.format("Unable to find network offering with availability [%s] to automatically create the network as a part of VM "
+                    + "creation.", Availability.Required));
+        }
+        NetworkOfferingVO firstRequiredOffering = requiredOfferings.get(0);
+        if (firstRequiredOffering.getState() != NetworkOffering.State.Enabled) {
+            throw new InvalidParameterValueException(String.format("Required network offering ID [%s] is not in [%s] state.", firstRequiredOffering.getId(),
+                    NetworkOffering.State.Enabled));
+        }
+        return firstRequiredOffering;
+    }
+
+    /**
      * Executes all ownership steps necessary to assign a VM to another user:
      * generating a destroy VM event ({@link EventTypes}),
      * decrementing the old user resource count ({@link #resourceCountDecrement(long, Boolean, ServiceOffering, VirtualMachineTemplate)}),
@@ -7634,9 +7904,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     /**
      * Updates the network for a VM being assigned to a new account.
      * If the network type for the zone is basic, calls
-     * {@link #updateBasicTypeNetworkForVm(AssignVMCmd, UserVmVO, Account, VirtualMachineTemplate, VirtualMachineProfileImpl, DataCenterVO, List, List)}.
+     * {@link #updateBasicTypeNetworkForVm(UserVmVO, Account, VirtualMachineTemplate, VirtualMachineProfileImpl, DataCenterVO, List, List)}.
      * If the network type for the zone is advanced, calls
-     * {@link #updateAdvancedTypeNetworkForVm(AssignVMCmd, Account, UserVmVO, Account, VirtualMachineTemplate, VirtualMachineProfileImpl, DataCenterVO, List, List)}.
+     * {@link #updateAdvancedTypeNetworkForVm(Account, UserVmVO, Account, VirtualMachineTemplate, VirtualMachineProfileImpl, DataCenterVO, List, List)}.
      * @param cmd The assignVMCmd.
      * @param caller The account calling the assignVMCmd.
      * @param vm The VM to be assigned to another user, which has to have networks updated.
@@ -7659,11 +7929,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         List<Long> securityGroupIdList = cmd.getSecurityGroupIdList();
 
         if (zone.getNetworkType() == NetworkType.Basic) {
-            updateBasicTypeNetworkForVm(cmd, vm, newAccount, template, vmOldProfile, zone, networkIdList, securityGroupIdList);
+            updateBasicTypeNetworkForVm(vm, newAccount, template, vmOldProfile, zone, networkIdList, securityGroupIdList);
             return;
         }
 
-        updateAdvancedTypeNetworkForVm(cmd, caller, vm, newAccount, template, vmOldProfile, zone, networkIdList, securityGroupIdList);
+        updateAdvancedTypeNetworkForVm(caller, vm, newAccount, template, vmOldProfile, zone, networkIdList, securityGroupIdList);
     }
 
     /**
@@ -7716,7 +7986,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      * allocating all networks ({@link #allocateNetworksForVm(UserVmVO, LinkedHashMap)}),
      * and adding security groups to the VM ({@link #addSecurityGroupsToVm(Account, UserVmVO, VirtualMachineTemplate, List, Network)}).
      * If the network has network IDs, throws a {@link InvalidParameterValueException}.
-     * @param cmd The assignVMCmd which attempts to update a basic network.
      * @param vm The VM for which the networks are allocated.
      * @param newAccount The new account to which the VM will be assigned to.
      * @param template The template of the VM.
@@ -7726,7 +7995,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      * @param securityGroupIdList The list of security groups provided to the assignVMCmd.
      * @throws InsufficientCapacityException
      */
-    protected void updateBasicTypeNetworkForVm(AssignVMCmd cmd, UserVmVO vm, Account newAccount, VirtualMachineTemplate template, VirtualMachineProfileImpl vmOldProfile,
+    protected void updateBasicTypeNetworkForVm(UserVmVO vm, Account newAccount, VirtualMachineTemplate template, VirtualMachineProfileImpl vmOldProfile,
                                                DataCenterVO zone, List<Long> networkIdList, List<Long> securityGroupIdList) throws InsufficientCapacityException {
 
         if (networkIdList != null && !networkIdList.isEmpty()) {
@@ -7756,11 +8025,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      * Updates an advanced type network by:
      * adding NICs to the networks ({@link #addNicsToApplicableNetworksAndReturnDefaultNetwork(LinkedHashSet, Map, Map, LinkedHashMap)}),
      * allocating - if security groups are enabled ({@link #allocateNetworksForVm(UserVmVO, LinkedHashMap)}) -
-     * or selecting applicable networks otherwise ({@link #selectApplicableNetworkToCreateVm(Account, Account, DataCenterVO, Set)}),
+     * or selecting applicable networks otherwise ({@link #selectApplicableNetworkToCreateVm(Account, DataCenterVO, Set)}),
      * and adding security groups to the VM ({@link #addSecurityGroupsToVm(Account, UserVmVO, VirtualMachineTemplate, List, Network)}) - if enabled in the zone.
      * If no applicable network is provided and the zone has security groups enabled, throws a {@link InvalidParameterValueException}.
      * If security groups are not enabled, but security groups have been provided, throws a {@link InvalidParameterValueException}.
-     * @param cmd The assignVMCmd which attempts to update an advanced network.
      * @param caller The caller of the assignVMCmd.
      * @param vm The VM for which the networks are allocated or selected.
      * @param newAccount The new account to which the VM will be assigned to.
@@ -7773,7 +8041,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      * @throws ResourceAllocationException
      * @throws InvalidParameterValueException
      */
-    protected void updateAdvancedTypeNetworkForVm(AssignVMCmd cmd, Account caller, UserVmVO vm, Account newAccount, VirtualMachineTemplate template,
+    protected void updateAdvancedTypeNetworkForVm(Account caller, UserVmVO vm, Account newAccount, VirtualMachineTemplate template,
                                                   VirtualMachineProfileImpl vmOldProfile, DataCenterVO zone, List<Long> networkIdList, List<Long> securityGroupIdList)
             throws InsufficientCapacityException, ResourceAllocationException, InvalidParameterValueException {
 
@@ -7786,7 +8054,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             logger.debug("Cleanup of old security groups for VM [{}]. They will be recreated for the new account once the VM is started.", vm);
             _securityGroupMgr.removeInstanceFromGroups(vm);
 
-            addNetworksToNetworkIdList(vm, newAccount, vmOldProfile, networkIdList, applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics);
+            addNetworksToNetworkIdList(vm, newAccount, networkIdList, applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics);
+            cleanupOfOldOwnerNicsForNetwork(vmOldProfile);
 
             NetworkVO defaultNetwork = addNicsToApplicableNetworksAndReturnDefaultNetwork(applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics, networks);
 
@@ -7804,10 +8073,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Cannot move VM with security groups; security group feature is not enabled in this zone.");
         }
 
-        addNetworksToNetworkIdList(vm, newAccount, vmOldProfile, networkIdList, applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics);
+        addNetworksToNetworkIdList(vm, newAccount, networkIdList, applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics);
+        cleanupOfOldOwnerNicsForNetwork(vmOldProfile);
 
         if (applicableNetworks.isEmpty()) {
-            selectApplicableNetworkToCreateVm(caller, newAccount, zone, applicableNetworks);
+            selectApplicableNetworkToCreateVm(newAccount, zone, applicableNetworks);
         }
 
         addNicsToApplicableNetworksAndReturnDefaultNetwork(applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics, networks);
@@ -7863,16 +8133,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      * Adds all networks to the list of network IDs by:
      * attempting to keep the shared network for the VM ({@link #keepOldSharedNetworkForVm(UserVmVO, Account, List, Set, Map, Map)}),
      * adding any additional applicable networks to the VM ({@link #addAdditionalNetworksToVm(UserVmVO, Account, List, Set, Map, Map)}),
-     * and cleaning up the network associated to the old owner ({@link #cleanupOfOldOwnerNicsForNetwork(VirtualMachineProfileImpl)}).
      * @param vm The VM to add the networks to.
      * @param newAccount The account to access the networks.
-     * @param vmOldProfile The old profile of the VM.
      * @param networkIdList The network IDs which have to be added to the VM.
      * @param applicableNetworks The applicable networks which have to be added to the VM.
      * @param requestedIPv4ForNics All requested IPv4 for NICs.
      * @param requestedIPv6ForNics All requested IPv6 for NICs.
      */
-    protected void addNetworksToNetworkIdList(UserVmVO vm, Account newAccount, VirtualMachineProfileImpl vmOldProfile, List<Long> networkIdList, Set<NetworkVO> applicableNetworks,
+    protected void addNetworksToNetworkIdList(UserVmVO vm, Account newAccount, List<Long> networkIdList, Set<NetworkVO> applicableNetworks,
                                               Map<Long, String> requestedIPv4ForNics, Map<Long, String> requestedIPv6ForNics) {
 
         logger.trace("Adding networks to network list.");
@@ -7880,8 +8148,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         keepOldSharedNetworkForVm(vm, newAccount, networkIdList, applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics);
 
         addAdditionalNetworksToVm(vm, newAccount, networkIdList, applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics);
-
-        cleanupOfOldOwnerNicsForNetwork(vmOldProfile);
     }
 
     /**
@@ -7922,34 +8188,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      * If the network offering applicable is not enabled, throws a {@link InvalidParameterValueException}.
      * If more than one default isolated network is related to the account, throws a {@link InvalidParameterValueException}, since the ID of the network to be used has to be
      * specified.
-     * @param caller The account which calls to select the applicable network.
      * @param newAccount The new account associated to the selected network.
      * @param zone The zone where the network is selected.
      * @param applicableNetworks The applicable networks to which the selected network has to be added to.
      * @throws InsufficientCapacityException
      * @throws ResourceAllocationException
      */
-    protected void selectApplicableNetworkToCreateVm(Account caller, Account newAccount, DataCenterVO zone, Set<NetworkVO> applicableNetworks)
+    protected void selectApplicableNetworkToCreateVm(Account newAccount, DataCenterVO zone, Set<NetworkVO> applicableNetworks)
             throws InsufficientCapacityException, ResourceAllocationException {
 
         logger.trace("Selecting the applicable network to create the VM.");
 
-        List<NetworkOfferingVO> requiredOfferings = _networkOfferingDao.listByAvailability(Availability.Required, false);
-        if (CollectionUtils.isEmpty(requiredOfferings)) {
-            throw new InvalidParameterValueException(String.format("Unable to find network offering with availability [%s] to automatically create the network as a part of VM "
-                    + "creation.", Availability.Required));
-        }
-
-        NetworkOfferingVO firstRequiredOffering = requiredOfferings.get(0);
-        if (firstRequiredOffering.getState() != NetworkOffering.State.Enabled) {
-            throw new InvalidParameterValueException(String.format("Required network offering ID [%s] is not in [%s] state.", firstRequiredOffering.getId(),
-                    NetworkOffering.State.Enabled));
-        }
-
         NetworkVO defaultNetwork;
         List<? extends Network> virtualNetworks = _networkModel.listNetworksForAccount(newAccount.getId(), zone.getId(), Network.GuestType.Isolated);
         if (virtualNetworks.isEmpty()) {
-            defaultNetwork = createApplicableNetworkToCreateVm(caller, newAccount, zone, firstRequiredOffering);
+            throw new CloudRuntimeException(String.format("Could not find an applicable network to create virtual machine for account [%s].", newAccount));
         } else if (virtualNetworks.size() > 1) {
             throw new InvalidParameterValueException(String.format("More than one default isolated network has been found for account [%s]; please specify networkIDs.",
                     newAccount));
@@ -8081,13 +8334,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      * @throws InsufficientCapacityException
      * @throws ResourceAllocationException
      */
-    protected NetworkVO createApplicableNetworkToCreateVm(Account caller, Account newAccount, DataCenterVO zone, NetworkOfferingVO requiredOffering)
+    protected NetworkVO createApplicableNetworkToCreateVm(Account newAccount, DataCenterVO zone)
             throws InsufficientCapacityException, ResourceAllocationException {
 
         logger.trace("Creating an applicable network to create the VM.");
 
         NetworkVO defaultNetwork;
         Long zoneId = zone.getId();
+        Account caller = CallContext.current().getCallingAccount();
+        NetworkOfferingVO requiredOffering = getOfferingWithRequiredAvailabilityForNetworkCreation();
         String requiredOfferingTags = requiredOffering.getTags();
 
         long physicalNetworkId = _networkModel.findPhysicalNetworkId(zoneId, requiredOfferingTags, requiredOffering.getTrafficType());
@@ -8097,14 +8352,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException(String.format("Unable to find physical network with ID [%s] and tag [%s].", physicalNetworkId, requiredOfferingTags));
         }
 
-        Long requiredOfferingId = requiredOffering.getId();
+        long requiredOfferingId = requiredOffering.getId();
         logger.debug("Creating network for account [{}] from the network offering [{}] as a part of VM deployment process.", newAccount, requiredOfferingId);
 
-        String newAccountName = newAccount.getAccountName();
-        Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferingId, newAccountName + "-network",
-                newAccountName + "-network", null, null, null, false, null, newAccount,
-                null, physicalNetwork, zoneId, ACLType.Account, null, null,
-                null, null, true, null, null, null, null, null, null, null, null, null, null, null);
+        String networkName = String.format("%s-network", newAccount.getAccountName());
+        Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferingId, networkName, networkName, null, null, null,
+                false, null, newAccount, null, physicalNetwork, zoneId, ACLType.Account, null, null, null, null, true, null,
+                null, null, null, null, null, null, null, null, null, null);
 
         if (requiredOffering.isPersistent()) {
             newNetwork = implementNetwork(caller, zone, newNetwork);
@@ -8379,6 +8633,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                         getRootVolumeSizeForVmRestore(newVol, template, userVm, diskOffering, details, true);
                         volumeMgr.saveVolumeDetails(newVol.getDiskOfferingId(), newVol.getId());
+                        newVol = _volsDao.findById(newVol.getId());
 
                         // 1. Save usage event and update resource count for user vm volumes
                         try {
@@ -8478,7 +8733,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     Long getRootVolumeSizeForVmRestore(Volume vol, VMTemplateVO template, UserVmVO userVm, DiskOffering diskOffering, Map<String, String> details, boolean update) {
         VolumeVO resizedVolume = (VolumeVO) vol;
-
         Long size = null;
         if (template != null && template.getSize() != null) {
             UserVmDetailVO vmRootDiskSizeDetail = userVmDetailsDao.findDetail(userVm.getId(), VmDetailConstants.ROOT_DISK_SIZE);

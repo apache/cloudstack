@@ -39,22 +39,33 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.HostPodVO;
+import com.cloud.dc.dao.HostPodDao;
+import com.cloud.resource.ResourceManager;
+import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.ChangeStoragePoolScopeCmd;
+import org.apache.cloudstack.api.command.admin.storage.ConfigureStorageAccessCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteImageStoreCmd;
@@ -62,8 +73,8 @@ import org.apache.cloudstack.api.command.admin.storage.DeleteObjectStoragePoolCm
 import org.apache.cloudstack.api.command.admin.storage.DeletePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.SyncStoragePoolCmd;
-import org.apache.cloudstack.api.command.admin.storage.UpdateObjectStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateImageStoreCmd;
+import org.apache.cloudstack.api.command.admin.storage.UpdateObjectStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.heuristics.CreateSecondaryStorageSelectorCmd;
 import org.apache.cloudstack.api.command.admin.storage.heuristics.RemoveSecondaryStorageSelectorCmd;
@@ -86,6 +97,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
@@ -139,6 +151,7 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.springframework.stereotype.Component;
 
@@ -173,6 +186,7 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.configuration.Resource.ResourceType;
+import com.cloud.cpu.CPU;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.VsphereStoragePolicyVO;
@@ -234,8 +248,8 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.UriUtils;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -362,6 +376,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Inject
     StoragePoolTagsDao _storagePoolTagsDao;
     @Inject
+    StoragePoolAndAccessGroupMapDao _storagePoolAccessGroupMapDao;
+    @Inject
     PrimaryDataStoreDao primaryStoreDao;
     @Inject
     DiskOfferingDetailsDao _diskOfferingDetailsDao;
@@ -391,6 +407,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     ConfigurationDao configurationDao;
     @Inject
     private ImageStoreDetailsUtil imageStoreDetailsUtil;
+    @Inject
+    protected HostPodDao _podDao;
+    @Inject
+    ResourceManager _resourceMgr;
+    @Inject
+    StorageManager storageManager;
 
     protected List<StoragePoolDiscoverer> _discoverers;
 
@@ -499,8 +521,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     public boolean isLocalStorageActiveOnHost(Long hostId) {
         List<StoragePoolHostVO> storagePoolHostRefs = _storagePoolHostDao.listByHostId(hostId);
         for (StoragePoolHostVO storagePoolHostRef : storagePoolHostRefs) {
-            StoragePoolVO PrimaryDataStoreVO = _storagePoolDao.findById(storagePoolHostRef.getPoolId());
-            if (PrimaryDataStoreVO.getPoolType() == StoragePoolType.LVM || PrimaryDataStoreVO.getPoolType() == StoragePoolType.EXT) {
+            StoragePoolVO primaryDataStoreVO = _storagePoolDao.findById(storagePoolHostRef.getPoolId());
+            if (primaryDataStoreVO != null && (primaryDataStoreVO.getPoolType() == StoragePoolType.LVM || primaryDataStoreVO.getPoolType() == StoragePoolType.EXT)) {
                 SearchBuilder<VolumeVO> volumeSB = volumeDao.createSearchBuilder();
                 volumeSB.and("poolId", volumeSB.entity().getPoolId(), SearchCriteria.Op.EQ);
                 volumeSB.and("removed", volumeSB.entity().getRemoved(), SearchCriteria.Op.NULL);
@@ -511,7 +533,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 volumeSB.join("activeVmSB", activeVmSB, volumeSB.entity().getInstanceId(), activeVmSB.entity().getId(), JoinBuilder.JoinType.INNER);
 
                 SearchCriteria<VolumeVO> volumeSC = volumeSB.create();
-                volumeSC.setParameters("poolId", PrimaryDataStoreVO.getId());
+                volumeSC.setParameters("poolId", primaryDataStoreVO.getId());
                 volumeSC.setParameters("state", Volume.State.Expunging, Volume.State.Destroy);
                 volumeSC.setJoinParameters("activeVmSB", "state", State.Starting, State.Running, State.Stopping, State.Migrating);
 
@@ -667,7 +689,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         _storagePoolAcquisitionWaitSeconds = NumbersUtil.parseInt(configs.get("pool.acquisition.wait.seconds"), 1800);
         logger.info("pool.acquisition.wait.seconds is configured as " + _storagePoolAcquisitionWaitSeconds + " seconds");
 
-        _agentMgr.registerForHostEvents(new StoragePoolMonitor(this, _storagePoolDao, _dataStoreProviderMgr), true, false, true);
+        _agentMgr.registerForHostEvents(new StoragePoolMonitor(this, _storagePoolDao, _storagePoolHostDao, _dataStoreProviderMgr), true, false, true);
 
         logger.info("Storage cleanup enabled: " + StorageCleanupEnabled.value() + ", interval: " + StorageCleanupInterval.value() + ", delay: " + StorageCleanupDelay.value()
         + ", template cleanup enabled: " + TemplateCleanupEnabled.value());
@@ -1015,6 +1037,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         params.put("hypervisorType", hypervisorType);
         params.put("url", cmd.getUrl());
         params.put("tags", cmd.getTags());
+        params.put(ApiConstants.STORAGE_ACCESS_GROUPS, cmd.getStorageAccessGroups());
         params.put("isTagARule", cmd.isTagARule());
         params.put("name", cmd.getStoragePoolName());
         params.put("details", details);
@@ -1383,6 +1406,232 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_CONFIGURE_STORAGE_ACCESS, eventDescription = "configuring storage groups", async = true)
+    public boolean configureStorageAccess(ConfigureStorageAccessCmd cmd) {
+        Long zoneId = cmd.getZoneId();
+        Long podId = cmd.getPodId();
+        Long clusterId = cmd.getClusterId();
+        Long hostId = cmd.getHostId();
+        Long storagePoolId = cmd.getStorageId();
+
+        long nonNullCount = Stream.of(zoneId, podId, clusterId, hostId, storagePoolId)
+                .filter(Objects::nonNull)
+                .count();
+
+        if (nonNullCount != 1) {
+            throw new IllegalArgumentException("Exactly one of zoneid, podid, clusterid, hostid or storagepoolid is required");
+        }
+
+        // SAG -> Storage Access Group
+        List<String> storageAccessGroups = cmd.getStorageAccessGroups();
+        if (storageAccessGroups == null) {
+            throw new InvalidParameterValueException("storageaccessgroups parameter is required");
+        }
+
+        if (zoneId != null) {
+            DataCenterVO zone = _dcDao.findById(zoneId);
+            Set<String> existingSAGsSet = (zone.getStorageAccessGroups() == null || zone.getStorageAccessGroups().isEmpty())
+                    ? Collections.emptySet()
+                    : new HashSet<>(Arrays.asList(zone.getStorageAccessGroups().split(",")));
+
+            Set<String> storagePoolSAGsSet = new HashSet<>(storageAccessGroups);
+            if (!existingSAGsSet.equals(storagePoolSAGsSet)) {
+                _resourceMgr.updateZoneStorageAccessGroups(zone.getId(), storageAccessGroups);
+                String preparedStoragePoolTags = CollectionUtils.isEmpty(storageAccessGroups) ? null : String.join(",", storageAccessGroups);
+                zone.setStorageAccessGroups(preparedStoragePoolTags);
+
+                if (!_dcDao.update(zoneId, zone)) {
+                    throw new CloudRuntimeException("Failed to update zone with the storage access groups.");
+                }
+            }
+        }
+
+        if (podId != null) {
+            HostPodVO pod = _podDao.findById(podId);
+            Set<String> existingTagsSet = (pod.getStorageAccessGroups() == null || pod.getStorageAccessGroups().isEmpty())
+                    ? Collections.emptySet()
+                    : new HashSet<>(Arrays.asList(pod.getStorageAccessGroups().split(",")));
+
+            if (CollectionUtils.isNotEmpty(storageAccessGroups)) {
+                checkIfStorageAccessGroupsExistsOnZone(pod.getDataCenterId(), storageAccessGroups);
+            }
+
+            Set<String> storagePoolTagsSet = new HashSet<>(storageAccessGroups);
+            if (!existingTagsSet.equals(storagePoolTagsSet)) {
+                _resourceMgr.updatePodStorageAccessGroups(podId, storageAccessGroups);
+                String preparedStoragePoolTags = CollectionUtils.isEmpty(storageAccessGroups) ? null : String.join(",", storageAccessGroups);
+                pod.setStorageAccessGroups(preparedStoragePoolTags);
+
+                if (!_podDao.update(podId, pod)) {
+                    throw new CloudRuntimeException("Failed to update pod with the storage access groups.");
+                }
+            }
+        }
+
+        if (clusterId != null) {
+            ClusterVO cluster = _clusterDao.findById(clusterId);
+            Set<String> existingTagsSet = (cluster.getStorageAccessGroups() == null || cluster.getStorageAccessGroups().isEmpty())
+                    ? Collections.emptySet()
+                    : new HashSet<>(Arrays.asList(cluster.getStorageAccessGroups().split(",")));
+
+            if (CollectionUtils.isNotEmpty(storageAccessGroups)) {
+                checkIfStorageAccessGroupsExistsOnPod(cluster.getPodId(), storageAccessGroups);
+            }
+
+            Set<String> storagePoolTagsSet = new HashSet<>(storageAccessGroups);
+            if (!existingTagsSet.equals(storagePoolTagsSet)) {
+                _resourceMgr.updateClusterStorageAccessGroups(cluster.getId(), storageAccessGroups);
+                String preparedStoragePoolTags = CollectionUtils.isEmpty(storageAccessGroups) ? null : String.join(",", storageAccessGroups);
+                cluster.setStorageAccessGroups(preparedStoragePoolTags);
+
+                if (!_clusterDao.update(clusterId, cluster)) {
+                    throw new CloudRuntimeException("Failed to update cluster with the storage access groups.");
+                }
+            }
+        }
+
+        if (hostId != null) {
+            HostVO host = _hostDao.findById(hostId);
+            Set<String> existingTagsSet = (host.getStorageAccessGroups() == null || host.getStorageAccessGroups().isEmpty())
+                    ? Collections.emptySet()
+                    : new HashSet<>(Arrays.asList(host.getStorageAccessGroups().split(",")));
+
+            if (CollectionUtils.isNotEmpty(storageAccessGroups)) {
+                checkIfStorageAccessGroupsExistsOnCluster(host.getClusterId(), storageAccessGroups);
+            }
+
+            Set<String> storageAccessGroupsSet = new HashSet<>(storageAccessGroups);
+            if (!existingTagsSet.equals(storageAccessGroupsSet)) {
+                _resourceMgr.updateHostStorageAccessGroups(hostId, storageAccessGroups);
+                String preparedStoragePoolTags = CollectionUtils.isEmpty(storageAccessGroups) ? null : String.join(",", storageAccessGroups);
+                host.setStorageAccessGroups(preparedStoragePoolTags);
+
+                if (!_hostDao.update(hostId, host)) {
+                    throw new CloudRuntimeException("Failed to update host with the storage access groups.");
+                }
+            }
+        }
+
+        if (storagePoolId != null) {
+            StoragePoolVO storagePool = _storagePoolDao.findById(storagePoolId);
+            if (ScopeType.HOST.equals(storagePool.getScope())) {
+                throw new CloudRuntimeException("Storage Access Groups are not suitable for local storage");
+            }
+
+            if (logger.isDebugEnabled()) {
+                logger.debug("Updating Storage Pool Access Group Maps to :" + storageAccessGroups);
+            }
+
+            if (storagePool.getPoolType() == StoragePoolType.DatastoreCluster) {
+                List<StoragePoolVO> childStoragePools = _storagePoolDao.listChildStoragePoolsInDatastoreCluster(storagePool.getId());
+                for (StoragePoolVO childPool : childStoragePools) {
+                    _resourceMgr.updateStoragePoolConnectionsOnHosts(childPool.getId(), storageAccessGroups);
+                    _storagePoolAccessGroupMapDao.persist(childPool.getId(), storageAccessGroups);
+                }
+            } else {
+                _resourceMgr.updateStoragePoolConnectionsOnHosts(storagePool.getId(), storageAccessGroups);
+            }
+
+            _storagePoolAccessGroupMapDao.persist(storagePool.getId(), storageAccessGroups);
+        }
+
+        return true;
+    }
+
+    protected void checkIfStorageAccessGroupsExistsOnZone(long zoneId, List<String> storageAccessGroups) {
+        DataCenterVO zoneVO = _dcDao.findById(zoneId);
+
+        String storageAccessGroupsOnZone = zoneVO.getStorageAccessGroups();
+        List<String> zoneTagsList = parseTags(storageAccessGroupsOnZone);
+        List<String> newTags = storageAccessGroups;
+
+        List<String> existingTagsOnZone = (List<String>) CollectionUtils.intersection(newTags, zoneTagsList);
+
+        if (CollectionUtils.isNotEmpty(existingTagsOnZone)) {
+            throw new CloudRuntimeException(String.format("access groups already exist on the zone: %s", existingTagsOnZone));
+        }
+    }
+
+    protected void checkIfStorageAccessGroupsExistsOnPod(long podId, List<String> storageAccessGroups) {
+        HostPodVO podVO = _podDao.findById(podId);
+        DataCenterVO zoneVO = _dcDao.findById(podVO.getDataCenterId());
+
+        String storageAccessGroupsOnPod = podVO.getStorageAccessGroups();
+        String storageAccessGroupsOnZone = zoneVO.getStorageAccessGroups();
+
+        List<String> podTagsList = parseTags(storageAccessGroupsOnPod);
+        List<String> zoneTagsList = parseTags(storageAccessGroupsOnZone);
+        List<String> newTags = storageAccessGroups;
+
+        List<String> existingTagsOnPod = (List<String>) CollectionUtils.intersection(newTags, podTagsList);
+        List<String> existingTagsOnZone = (List<String>) CollectionUtils.intersection(newTags, zoneTagsList);
+
+        if (CollectionUtils.isNotEmpty(existingTagsOnPod) || CollectionUtils.isNotEmpty(existingTagsOnZone)) {
+            String message = "access groups already exist ";
+
+            if (CollectionUtils.isNotEmpty(existingTagsOnPod)) {
+                message += String.format("on the pod: %s", existingTagsOnPod);
+            }
+            if (CollectionUtils.isNotEmpty(existingTagsOnZone)) {
+                if (CollectionUtils.isNotEmpty(existingTagsOnPod)) {
+                    message += ", ";
+                }
+                message += String.format("on the zone: %s", existingTagsOnZone);
+            }
+
+            throw new CloudRuntimeException(message);
+        }
+    }
+
+    protected void checkIfStorageAccessGroupsExistsOnCluster(long clusterId, List<String> storageAccessGroups) {
+        ClusterVO clusterVO = _clusterDao.findById(clusterId);
+        HostPodVO podVO = _podDao.findById(clusterVO.getPodId());
+        DataCenterVO zoneVO = _dcDao.findById(podVO.getDataCenterId());
+
+        String storageAccessGroupsOnCluster = clusterVO.getStorageAccessGroups();
+        String storageAccessGroupsOnPod = podVO.getStorageAccessGroups();
+        String storageAccessGroupsOnZone = zoneVO.getStorageAccessGroups();
+
+        List<String> podTagsList = parseTags(storageAccessGroupsOnPod);
+        List<String> zoneTagsList = parseTags(storageAccessGroupsOnZone);
+        List<String> clusterTagsList = parseTags(storageAccessGroupsOnCluster);
+        List<String> newTags = storageAccessGroups;
+
+        List<String> existingTagsOnCluster = (List<String>) CollectionUtils.intersection(newTags, clusterTagsList);
+        List<String> existingTagsOnPod = (List<String>) CollectionUtils.intersection(newTags, podTagsList);
+        List<String> existingTagsOnZone = (List<String>) CollectionUtils.intersection(newTags, zoneTagsList);
+
+        if (CollectionUtils.isNotEmpty(existingTagsOnCluster) || CollectionUtils.isNotEmpty(existingTagsOnPod) || CollectionUtils.isNotEmpty(existingTagsOnZone)) {
+            String message = "access groups already exist ";
+
+            if (CollectionUtils.isNotEmpty(existingTagsOnCluster)) {
+                message += String.format("on the cluster: %s", existingTagsOnCluster);
+            }
+            if (CollectionUtils.isNotEmpty(existingTagsOnPod)) {
+                if (CollectionUtils.isNotEmpty(existingTagsOnCluster)) {
+                    message += ", ";
+                }
+                message += String.format("on the pod: %s", existingTagsOnPod);
+            }
+            if (CollectionUtils.isNotEmpty(existingTagsOnZone)) {
+                if (CollectionUtils.isNotEmpty(existingTagsOnCluster) || CollectionUtils.isNotEmpty(existingTagsOnPod)) {
+                    message += ", ";
+                }
+                message += String.format("on the zone: %s", existingTagsOnZone);
+            }
+
+            throw new CloudRuntimeException(message);
+        }
+    }
+
+    private List<String> parseTags(String tags) {
+        if (tags == null || tags.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+        return Arrays.asList(tags.split(","));
+    }
+
+    @Override
     public void removeStoragePoolFromCluster(long hostId, String iScsiName, StoragePool storagePool) {
         final Map<String, String> details = new HashMap<>();
 
@@ -1555,6 +1804,82 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         sb.append("]");
 
         return sb.toString();
+    }
+
+    protected void cleanupConnectedHostConnectionForFailedStorage(DataStore primaryStore, List<Long> poolHostIds) {
+        List<HostVO> hosts = _hostDao.listByIds(poolHostIds);
+        StoragePool pool = _storagePoolDao.findById(primaryStore.getId());
+        for (HostVO host : hosts) {
+            try {
+                disconnectHostFromSharedPool(host, pool);
+            } catch (StorageUnavailableException | StorageConflictException e) {
+                logger.error("Error during cleaning up failed storage host connection", e);
+            }
+        }
+    }
+
+    @Override
+    public void connectHostsToPool(DataStore primaryStore, List<Long> hostIds, Scope scope,
+              boolean handleExceptionsPartially, boolean errorOnNoUpHost) throws CloudRuntimeException {
+        if (CollectionUtils.isEmpty(hostIds)) {
+            return;
+        }
+        CopyOnWriteArrayList<Long> poolHostIds = new CopyOnWriteArrayList<>();
+        ExecutorService executorService = Executors.newFixedThreadPool(Math.max(1, Math.min(hostIds.size(),
+                StoragePoolHostConnectWorkers.value())));
+        List<Future<Void>> futures = new ArrayList<>();
+        AtomicBoolean exceptionOccurred = new AtomicBoolean(false);
+        for (Long hostId : hostIds) {
+            futures.add(executorService.submit(() -> {
+                if (exceptionOccurred.get()) {
+                    return null;
+                }
+                HostVO host = _hostDao.findById(hostId);
+                try {
+                    connectHostToSharedPool(host, primaryStore.getId());
+                    poolHostIds.add(hostId);
+                } catch (Exception e) {
+                    if (handleExceptionsPartially && e.getCause() instanceof StorageConflictException) {
+                        exceptionOccurred.set(true);
+                        throw e;
+                    }
+                    logger.warn("Unable to establish a connection between {} and {}", host, primaryStore, e);
+                    String reason = getStoragePoolMountFailureReason(e.getMessage());
+                    if (handleExceptionsPartially && reason != null) {
+                        exceptionOccurred.set(true);
+                        throw new CloudRuntimeException(reason);
+                    }
+                }
+                return null;
+            }));
+        }
+        for (Future<Void> future : futures) {
+            try {
+                future.get();
+            } catch (Exception e) {
+                Throwable cause = e.getCause();
+                if (cause instanceof StorageConflictException || cause instanceof CloudRuntimeException) {
+                    executorService.shutdown();
+                    cleanupConnectedHostConnectionForFailedStorage(primaryStore, poolHostIds);
+                    primaryStoreDao.expunge(primaryStore.getId());
+                    if (cause instanceof CloudRuntimeException) {
+                        throw (CloudRuntimeException)cause;
+                    }
+                    throw new CloudRuntimeException("Storage has already been added as local storage", e);
+                } else {
+                    logger.error("Error occurred while connecting host to shared pool", e);
+                }
+            }
+        }
+        executorService.shutdown();
+        if (poolHostIds.isEmpty()) {
+            logger.warn("No host can access storage pool {} in {}: {}.",
+                    primaryStore, scope.getScopeType(), scope.getScopeId());
+            if (errorOnNoUpHost) {
+                primaryStoreDao.expunge(primaryStore.getId());
+                throw new CloudRuntimeException("Failed to access storage pool");
+            }
+        }
     }
 
     @Override
@@ -2122,7 +2447,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                             logger.debug("Deleting snapshot store DB entry: " + destroyedSnapshotStoreVO);
                         }
 
-                        List<SnapshotDataStoreVO> imageStoreRefs = _snapshotStoreDao.listBySnapshot(destroyedSnapshotStoreVO.getSnapshotId(), DataStoreRole.Image);
+                        List<SnapshotDataStoreVO> imageStoreRefs = _snapshotStoreDao.listBySnapshotAndDataStoreRole(destroyedSnapshotStoreVO.getSnapshotId(), DataStoreRole.Image);
                         if (imageStoreRefs.size() <= 1) {
                             _snapshotDao.remove(destroyedSnapshotStoreVO.getSnapshotId());
                         }
@@ -2171,9 +2496,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         // poolId is null only if volume is destroyed, which has been checked
         // before.
         assert poolId != null;
-        StoragePoolVO PrimaryDataStoreVO = _storagePoolDao.findById(poolId);
-        assert PrimaryDataStoreVO != null;
-        return PrimaryDataStoreVO.getUuid();
+        StoragePoolVO primaryDataStoreVO = _storagePoolDao.findById(poolId);
+        assert primaryDataStoreVO != null;
+        return primaryDataStoreVO.getUuid();
     }
 
     @Override
@@ -2527,9 +2852,150 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             storagePoolTags = storagePoolTagVOList.parallelStream().map(StoragePoolTagVO::getTag).collect(Collectors.toList());
             isTagARule = storagePoolTagVOList.get(0).isTagARule();
         }
+        List<String> storageAccessGroups = _storagePoolAccessGroupMapDao.getStorageAccessGroups(datastoreClusterPool.getId());
 
-        _storagePoolDao.persist(dataStoreVO, details, storagePoolTags, isTagARule);
+        _storagePoolDao.persist(dataStoreVO, details, storagePoolTags, isTagARule, storageAccessGroups);
         return dataStoreVO;
+    }
+
+    @Override
+    public boolean checkIfHostAndStoragePoolHasCommonStorageAccessGroups(Host host, StoragePool pool) {
+        String[] hostStorageAccessGroups = getStorageAccessGroups(null, null, null, host.getId());
+        List<String> storagePoolAccessGroups = _storagePoolAccessGroupMapDao.getStorageAccessGroups(pool.getId());
+
+        if (CollectionUtils.isEmpty(storagePoolAccessGroups)) {
+            return true;
+        }
+
+        if (ArrayUtils.isEmpty(hostStorageAccessGroups)) {
+            return false;
+        }
+
+        if (ArrayUtils.isNotEmpty(hostStorageAccessGroups)) {
+            logger.debug(String.format("Storage access groups on the host %s are %s", host, hostStorageAccessGroups));
+        }
+
+        if (CollectionUtils.isNotEmpty(storagePoolAccessGroups)) {
+            logger.debug(String.format("Storage access groups on the storage pool %s are %s", host, storagePoolAccessGroups));
+        }
+
+        List<String> hostTagList = Arrays.asList(hostStorageAccessGroups);
+        return CollectionUtils.containsAny(hostTagList, storagePoolAccessGroups);
+    }
+
+    @Override
+    public Pair<Boolean, String> checkIfReadyVolumeFitsInStoragePoolWithStorageAccessGroups(StoragePool destPool, Volume volume) {
+        if (Volume.State.Ready.equals(volume.getState())) {
+            Long vmId = volume.getInstanceId();
+            VMInstanceVO vm = null;
+            if (vmId != null) {
+                vm = _vmInstanceDao.findById(vmId);
+            }
+
+            if (vm == null || State.Stopped.equals(vm.getState())) {
+                Long srcPoolId = volume.getPoolId();
+                StoragePoolVO srcPool = _storagePoolDao.findById(srcPoolId);
+                List<String> srcStorageAccessGroups = _storagePoolAccessGroupMapDao.getStorageAccessGroups(srcPoolId);
+                List<String> destStorageAccessGroups = _storagePoolAccessGroupMapDao.getStorageAccessGroups(destPool.getId());
+
+                if (CollectionUtils.isNotEmpty(srcStorageAccessGroups) && CollectionUtils.isNotEmpty(destStorageAccessGroups)) {
+                    logger.debug(String.format("Storage access groups on source storage %s are %s and destination storage %s are %s",
+                            srcPool, srcStorageAccessGroups, destPool, destStorageAccessGroups));
+                    List<String> intersection = new ArrayList<>(srcStorageAccessGroups);
+                    intersection.retainAll(destStorageAccessGroups);
+                    if (CollectionUtils.isNotEmpty(intersection)) {
+                        return new Pair<>(true, "Success");
+                    } else {
+                        List<Long> poolIds = new ArrayList<>();
+                        poolIds.add(srcPool.getId());
+                        poolIds.add(destPool.getId());
+                        Host hostWithPoolsAccess = findUpAndEnabledHostWithAccessToStoragePools(poolIds);
+                        if (hostWithPoolsAccess == null) {
+                            logger.debug("Storage access groups on source and destination storages do not match, and there is no common host connected to these storages");
+                            return new Pair<>(false, "No common host connected to source and destination storages");
+                        }
+                    }
+                }
+                return new Pair<>(true, "Success");
+            } else {
+                if (State.Running.equals(vm.getState())) {
+                    Long hostId = vm.getHostId();
+                    String[] hostStorageAccessGroups = getStorageAccessGroups(null, null, null, hostId);
+                    Long srcPoolId = volume.getPoolId();
+                    StoragePoolVO srcPool = _storagePoolDao.findById(srcPoolId);
+                    List<String> srcStorageAccessGroups = _storagePoolAccessGroupMapDao.getStorageAccessGroups(srcPoolId);
+                    List<String> destStorageAccessGroups = _storagePoolAccessGroupMapDao.getStorageAccessGroups(destPool.getId());
+
+                    logger.debug(String.format("Storage access groups on source storage %s are %s and destination storage %s are %s",
+                            srcPool, srcStorageAccessGroups, destPool, destStorageAccessGroups));
+
+                    if (CollectionUtils.isEmpty(srcStorageAccessGroups) && CollectionUtils.isEmpty(destStorageAccessGroups)) {
+                        return new Pair<>(true, "Success");
+                    }
+
+                    if (CollectionUtils.isNotEmpty(srcStorageAccessGroups) && CollectionUtils.isNotEmpty(destStorageAccessGroups)) {
+                        List<String> intersection = new ArrayList<>(srcStorageAccessGroups);
+                        intersection.retainAll(destStorageAccessGroups);
+
+                        if (ArrayUtils.isNotEmpty(hostStorageAccessGroups)) {
+                            boolean hasSrcCommon = srcStorageAccessGroups.stream()
+                                    .anyMatch(group -> Arrays.asList(hostStorageAccessGroups).contains(group));
+                            boolean hasDestCommon = destStorageAccessGroups.stream()
+                                    .anyMatch(group -> Arrays.asList(hostStorageAccessGroups).contains(group));
+                            if (hasSrcCommon && hasDestCommon) {
+                                return new Pair<>(true, "Success");
+                            }
+                        }
+
+                        return new Pair<>(false, "No common storage access groups between source, destination pools and host");
+                    }
+
+                    if (CollectionUtils.isEmpty(srcStorageAccessGroups)) {
+                        if (ArrayUtils.isNotEmpty(hostStorageAccessGroups)) {
+                            List<String> hostAccessGroupList = Arrays.asList(hostStorageAccessGroups);
+                            hostAccessGroupList.retainAll(destStorageAccessGroups);
+                            if (CollectionUtils.isNotEmpty(hostAccessGroupList)) {
+                                return new Pair<>(true, "Success");
+                            }
+                        }
+                        return new Pair<>(false, "Host lacks access to destination storage groups");
+                    }
+
+                    return new Pair<>(true, "Success");
+                }
+            }
+        }
+        return new Pair<>(true, "Success");
+    }
+
+    @Override
+    public String[] getStorageAccessGroups(Long zoneId, Long podId, Long clusterId, Long hostId) {
+        List<String> storageAccessGroups = new ArrayList<>();
+        if (hostId != null) {
+            HostVO host = _hostDao.findById(hostId);
+            ClusterVO cluster = _clusterDao.findById(host.getClusterId());
+            HostPodVO pod = _podDao.findById(cluster.getPodId());
+            DataCenterVO zone = _dcDao.findById(pod.getDataCenterId());
+            storageAccessGroups.addAll(List.of(com.cloud.utils.StringUtils.splitCommaSeparatedStrings(host.getStorageAccessGroups(), cluster.getStorageAccessGroups(), pod.getStorageAccessGroups(), zone.getStorageAccessGroups())));
+        } else if (clusterId != null) {
+            ClusterVO cluster = _clusterDao.findById(clusterId);
+            HostPodVO pod = _podDao.findById(cluster.getPodId());
+            DataCenterVO zone = _dcDao.findById(pod.getDataCenterId());
+            storageAccessGroups.addAll(List.of(com.cloud.utils.StringUtils.splitCommaSeparatedStrings(cluster.getStorageAccessGroups(), pod.getStorageAccessGroups(), zone.getStorageAccessGroups())));
+        } else if (podId != null) {
+            HostPodVO pod = _podDao.findById(podId);
+            DataCenterVO zone = _dcDao.findById(pod.getDataCenterId());
+            storageAccessGroups.addAll(List.of(com.cloud.utils.StringUtils.splitCommaSeparatedStrings(pod.getStorageAccessGroups(), zone.getStorageAccessGroups())));
+        } else if (zoneId != null) {
+            DataCenterVO zone = _dcDao.findById(zoneId);
+            storageAccessGroups.addAll(List.of(com.cloud.utils.StringUtils.splitCommaSeparatedStrings(zone.getStorageAccessGroups())));
+        }
+
+        storageAccessGroups.removeIf(tag -> tag == null || tag.trim().isEmpty());
+
+        return storageAccessGroups.isEmpty()
+                ? new String[0]
+                : storageAccessGroups.toArray(org.apache.commons.lang.ArrayUtils.EMPTY_STRING_ARRAY);
     }
 
     private void handleRemoveChildStoragePoolFromDatastoreCluster(Set<String> childDatastoreUUIDs) {
@@ -2724,8 +3190,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         CapacityVO capacity = new CapacityVO(poolId, zoneId, podId, clusterId, 0, 0, Capacity.CAPACITY_TYPE_STORAGE);
-        for (StoragePoolVO pool : pools) {
-            StorageStats stats = ApiDBUtils.getStoragePoolStatistics(pool.getId());
+        for (StoragePoolVO primaryDataStoreVO : pools) {
+            StorageStats stats = ApiDBUtils.getStoragePoolStatistics(primaryDataStoreVO.getId());
             if (stats == null) {
                 continue;
             }
@@ -2842,6 +3308,17 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
+    public boolean canDisconnectHostFromStoragePool(Host host, StoragePool pool) {
+        if (pool == null || !pool.isManaged()) {
+            return true;
+        }
+
+        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
+        DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
+        return storeDriver instanceof PrimaryDataStoreDriver && ((PrimaryDataStoreDriver)storeDriver).canDisconnectHostFromStoragePool(host, pool);
+    }
+
+    @Override
     @DB
     public Host getHost(long hostId) {
         return _hostDao.findById(hostId);
@@ -2929,7 +3406,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         long totalSize = pool.getCapacityBytes();
         long usedSize = getUsedSize(pool);
         double usedPercentage = ((double)usedSize / (double)totalSize);
-        double storageUsedThreshold = CapacityManager.StorageCapacityDisableThreshold.valueIn(pool.getDataCenterId());
+        double storageUsedThreshold = CapacityManager.StorageCapacityDisableThreshold.valueIn(pool.getId());
         if (logger.isDebugEnabled()) {
             logger.debug("Checking pool {} for storage, totalSize: {}, usedBytes: {}, usedPct: {}, disable threshold: {}", pool, pool.getCapacityBytes(), pool.getUsedBytes(), usedPercentage, storageUsedThreshold);
         }
@@ -3201,7 +3678,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         logger.debug("Total capacity of the pool {} is {}", poolVO, toHumanReadableSize(totalOverProvCapacity));
 
-        double storageAllocatedThreshold = CapacityManager.StorageAllocatedCapacityDisableThreshold.valueIn(pool.getDataCenterId());
+        double storageAllocatedThreshold = CapacityManager.StorageAllocatedCapacityDisableThreshold.valueIn(pool.getId());
 
         if (logger.isDebugEnabled()) {
             logger.debug("Checking pool: {} for storage allocation , maxSize : {}, " +
@@ -3221,12 +3698,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             if (!forVolumeResize) {
                 return false;
             }
-            if (!AllowVolumeReSizeBeyondAllocation.valueIn(pool.getDataCenterId())) {
+            if (!AllowVolumeReSizeBeyondAllocation.valueIn(pool.getId())) {
                 logger.debug(String.format("Skipping the pool %s as %s is false", pool, AllowVolumeReSizeBeyondAllocation.key()));
                 return false;
             }
 
-            double storageAllocatedThresholdForResize = CapacityManager.StorageAllocatedCapacityDisableThresholdForVolumeSize.valueIn(pool.getDataCenterId());
+            double storageAllocatedThresholdForResize = CapacityManager.StorageAllocatedCapacityDisableThresholdForVolumeSize.valueIn(pool.getId());
             if (usedPercentage > storageAllocatedThresholdForResize) {
                 logger.debug(String.format("Skipping the pool %s since its allocated percentage: %s has crossed the allocated %s: %s",
                         pool, usedPercentage, CapacityManager.StorageAllocatedCapacityDisableThresholdForVolumeSize.key(), storageAllocatedThresholdForResize));
@@ -3504,17 +3981,49 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return (ImageStore)_dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Image);
     }
 
+    protected void registerSystemVmTemplateForHypervisorArch(final HypervisorType hypervisorType,
+                 final CPU.CPUArch arch, final Long zoneId, final String url, final DataStore store,
+                 final SystemVmTemplateRegistration systemVmTemplateRegistration, final String filePath,
+                 final Pair<String, Long> storeUrlAndId, final String nfsVersion) {
+        if (HypervisorType.Simulator.equals(hypervisorType)) {
+            return;
+        }
+        String templateName = getValidTemplateName(zoneId, hypervisorType);
+        VMTemplateVO registeredTemplate = systemVmTemplateRegistration.getRegisteredTemplate(templateName, arch);
+        TemplateDataStoreVO templateDataStoreVO = null;
+        if (registeredTemplate != null) {
+            templateDataStoreVO = _templateStoreDao.findByStoreTemplate(store.getId(), registeredTemplate.getId());
+            if (templateDataStoreVO != null) {
+                try {
+                    if (systemVmTemplateRegistration.validateIfSeeded(templateDataStoreVO, url,
+                            templateDataStoreVO.getInstallPath(), nfsVersion)) {
+                        return;
+                    }
+                } catch (Exception e) {
+                    logger.error("Failed to validated if template is seeded", e);
+                }
+            }
+        }
+        SystemVmTemplateRegistration.mountStore(storeUrlAndId.first(), filePath, nfsVersion);
+        if (templateDataStoreVO != null) {
+            systemVmTemplateRegistration.validateAndRegisterTemplate(hypervisorType, templateName,
+                    storeUrlAndId.second(), registeredTemplate, templateDataStoreVO, filePath);
+        } else {
+            systemVmTemplateRegistration.validateAndRegisterTemplateForNonExistingEntries(hypervisorType, arch,
+                    templateName, storeUrlAndId, filePath);
+        }
+    }
+
     private void registerSystemVmTemplateOnFirstNfsStore(Long zoneId, String providerName, String url, DataStore store) {
         if (DataStoreProvider.NFS_IMAGE.equals(providerName) && zoneId != null) {
             Transaction.execute(new TransactionCallbackNoReturn() {
                 @Override
                 public void doInTransactionWithoutResult(final TransactionStatus status) {
-                    List<ImageStoreVO> stores = _imageStoreDao.listAllStoresInZone(zoneId, providerName, DataStoreRole.Image);
-                    stores = stores.stream().filter(str -> str.getId() != store.getId()).collect(Collectors.toList());
-                    // Check if it's the only/first store in the zone
-                    if (stores.size() == 0) {
-                        List<HypervisorType> hypervisorTypes = _clusterDao.getAvailableHypervisorInZone(zoneId);
-                        Set<HypervisorType> hypSet = new HashSet<>(hypervisorTypes);
+                    List<ImageStoreVO> stores = _imageStoreDao.listAllStoresInZoneExceptId(zoneId, providerName,
+                            DataStoreRole.Image, store.getId());
+                    if (CollectionUtils.isEmpty(stores)) {
+                        List<Pair<HypervisorType, CPU.CPUArch>> hypervisorTypes =
+                                _clusterDao.listDistinctHypervisorsArchAcrossClusters(zoneId);
                         TransactionLegacy txn = TransactionLegacy.open("AutomaticTemplateRegister");
                         SystemVmTemplateRegistration systemVmTemplateRegistration = new SystemVmTemplateRegistration();
                         String filePath = null;
@@ -3525,40 +4034,15 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                             }
                             Pair<String, Long> storeUrlAndId = new Pair<>(url, store.getId());
                             String nfsVersion = imageStoreDetailsUtil.getNfsVersion(store.getId());
-                            for (HypervisorType hypervisorType : hypSet) {
+                            for (Pair<HypervisorType, CPU.CPUArch> hypervisorArchType : hypervisorTypes) {
                                 try {
-                                    if (HypervisorType.Simulator == hypervisorType) {
-                                        continue;
-                                    }
-                                    String templateName = getValidTemplateName(zoneId, hypervisorType);
-                                    Pair<Hypervisor.HypervisorType, String> hypervisorAndTemplateName =
-                                            new Pair<>(hypervisorType, templateName);
-                                    Long templateId = systemVmTemplateRegistration.getRegisteredTemplateId(hypervisorAndTemplateName);
-                                    VMTemplateVO vmTemplateVO = null;
-                                    TemplateDataStoreVO templateVO = null;
-                                    if (templateId != null) {
-                                        vmTemplateVO = _templateDao.findById(templateId);
-                                        templateVO = _templateStoreDao.findByStoreTemplate(store.getId(), templateId);
-                                        if (templateVO != null) {
-                                            try {
-                                                if (SystemVmTemplateRegistration.validateIfSeeded(
-                                                        url, templateVO.getInstallPath(), nfsVersion)) {
-                                                    continue;
-                                                }
-                                            } catch (Exception e) {
-                                                logger.error("Failed to validated if template is seeded", e);
-                                            }
-                                        }
-                                    }
-                                    SystemVmTemplateRegistration.mountStore(storeUrlAndId.first(), filePath, nfsVersion);
-                                    if (templateVO != null && vmTemplateVO != null) {
-                                        systemVmTemplateRegistration.registerTemplate(hypervisorAndTemplateName, storeUrlAndId, vmTemplateVO, templateVO, filePath);
-                                    } else {
-                                        systemVmTemplateRegistration.registerTemplate(hypervisorAndTemplateName, storeUrlAndId, filePath);
-                                    }
+                                    registerSystemVmTemplateForHypervisorArch(hypervisorArchType.first(),
+                                            hypervisorArchType.second(), zoneId, url, store,
+                                            systemVmTemplateRegistration, filePath, storeUrlAndId, nfsVersion);
                                 } catch (CloudRuntimeException e) {
                                     SystemVmTemplateRegistration.unmountStore(filePath);
-                                    logger.error(String.format("Failed to register systemVM template for hypervisor: %s", hypervisorType.name()), e);
+                                    logger.error("Failed to register system VM template for hypervisor: {} {}",
+                                            hypervisorArchType.first().name(), hypervisorArchType.second().name(), e);
                                 }
                             }
                         } catch (Exception e) {
@@ -3995,6 +4479,17 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 logger.warn("caught exception while deleting download url {} for object {}", imageStoreObjectDownloadVO.getDownloadUrl(), imageStoreObjectDownloadVO, th);
             }
         }
+
+        List <SnapshotDataStoreVO> snapshotDataStoreVos = _snapshotStoreDao.listExtractedSnapshotsBeforeDate(DateUtils.addSeconds(DateUtil.now(), -_downloadUrlExpirationInterval));
+
+        for (SnapshotDataStoreVO snapshotDataStoreVo : snapshotDataStoreVos) {
+            ImageStoreEntity secStore = (ImageStoreEntity)_dataStoreMgr.getDataStore(snapshotDataStoreVo.getDataStoreId(), DataStoreRole.Image);
+            secStore.deleteExtractUrl(snapshotDataStoreVo.getInstallPath(), snapshotDataStoreVo.getExtractUrl(), Upload.Type.SNAPSHOT);
+
+            snapshotDataStoreVo.setExtractUrl(null);
+            snapshotDataStoreVo.setExtractUrlCreated(null);
+            _snapshotStoreDao.update(snapshotDataStoreVo.getId(), snapshotDataStoreVo);
+        }
     }
 
     // get bytesReadRate from service_offering, disk_offering and vm.disk.throttling.bytes_read_rate
@@ -4086,7 +4581,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 VmwareCreateCloneFull,
                 VmwareAllowParallelExecution,
                 DataStoreDownloadFollowRedirects,
-                AllowVolumeReSizeBeyondAllocation
+                AllowVolumeReSizeBeyondAllocation,
+                StoragePoolHostConnectWorkers
         };
     }
 

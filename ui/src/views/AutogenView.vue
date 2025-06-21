@@ -17,7 +17,7 @@
 
 <template>
   <div>
-    <a-affix :offsetTop="this.$store.getters.shutdownTriggered ? 103 : 78">
+    <a-affix :offsetTop="this.$store.getters.maintenanceInitiated || this.$store.getters.shutdownTriggered ? 103 : 78">
       <a-card class="breadcrumb-card" style="z-index: 10">
         <a-row>
           <a-col :span="device === 'mobile' ? 24 : 12" style="padding-left: 12px; margin-top: 10px">
@@ -402,7 +402,7 @@
       </a-modal>
     </div>
 
-    <div :style="this.$store.getters.shutdownTriggered ? 'margin-top: 24px; margin-bottom: 12px' : null">
+    <div :style="this.$store.getters.maintenanceInitiated || this.$store.getters.shutdownTriggered ? 'margin-top: 24px; margin-bottom: 12px' : null">
       <div v-if="dataView">
         <slot name="resource" v-if="$route.path.startsWith('/quotasummary') || $route.path.startsWith('/publicip')"></slot>
         <resource-view
@@ -829,7 +829,12 @@ export default {
       }
 
       if (this.$route && this.$route.meta && this.$route.meta.permission) {
-        this.apiName = (this.$route.meta.getApiToCall && this.$route.meta.getApiToCall()) || this.$route.meta.permission[0]
+        this.apiName = this.$route.meta.permission[0]
+        if (!store.getters.metrics && !this.dataView &&
+            this.apiName && this.apiName.endsWith('Metrics') &&
+            store.getters.apis[this.apiName.replace(/Metrics$/, '')]) {
+          this.apiName = this.apiName.replace(/Metrics$/, '')
+        }
         if (this.$route.meta.columns) {
           const columns = this.$route.meta.columns
           if (columns && typeof columns === 'function') {
@@ -914,7 +919,7 @@ export default {
       if (['listVirtualMachinesMetrics'].includes(this.apiName) && this.dataView) {
         delete params.details
         delete params.isvnf
-        params.details = 'group,nics,secgrp,tmpl,servoff,diskoff,iso,volume,affgrp'
+        params.details = 'group,nics,secgrp,tmpl,servoff,diskoff,iso,volume,affgrp,backoff'
       }
 
       this.loading = true
@@ -1186,7 +1191,7 @@ export default {
       this.showAction = true
       const listIconForFillValues = ['copy-outlined', 'CopyOutlined', 'edit-outlined', 'EditOutlined', 'share-alt-outlined', 'ShareAltOutlined']
       for (const param of this.currentAction.paramFields) {
-        if (param.type === 'list' && ['tags', 'hosttags', 'storagetags', 'files'].includes(param.name)) {
+        if (param.type === 'list' && ['tags', 'hosttags', 'storagetags', 'storageaccessgroups', 'files'].includes(param.name)) {
           param.type = 'string'
         }
         this.setRules(param)
@@ -1581,7 +1586,7 @@ export default {
               }
               break
             }
-            if (input === '' && !['tags', 'hosttags', 'storagetags', 'dns2', 'ip6dns1',
+            if (input === '' && !['tags', 'hosttags', 'storagetags', 'storageaccessgroups', 'dns2', 'ip6dns1',
               'ip6dns2', 'internaldns2', 'networkdomain', 'secretkey'].includes(key)) {
               break
             }
@@ -1719,6 +1724,7 @@ export default {
       delete query.domainid
       delete query.state
       delete query.annotationfilter
+      delete query.leased
       if (this.$route.name === 'template') {
         query.templatefilter = filter
       } else if (this.$route.name === 'iso') {
@@ -1755,7 +1761,7 @@ export default {
         if (filter === 'all') {
           delete query.resourcestate
           delete query.state
-        } else if (['up', 'down', 'alert'].includes(filter)) {
+        } else if (['up', 'down', 'disconnected', 'alert'].includes(filter)) {
           delete query.resourcestate
           query.state = filter
         } else {
@@ -1768,6 +1774,8 @@ export default {
           query.domainid = this.$store.getters.userInfo.domainid
         } else if (['running', 'stopped'].includes(filter)) {
           query.state = filter
+        } else if (filter === 'leased') {
+          query.leased = true
         }
       } else if (this.$route.name === 'comment') {
         query.annotationfilter = filter

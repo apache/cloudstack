@@ -22,11 +22,11 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.doReturn;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -38,15 +38,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.cloud.domain.Domain;
-import com.cloud.domain.DomainVO;
-import com.cloud.domain.dao.DomainDao;
-import com.cloud.network.dao.NsxProviderDao;
-import com.cloud.network.dao.PublicIpQuarantineDao;
-import com.cloud.network.vo.PublicIpQuarantineVO;
-import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.net.Ip;
-import com.cloud.exception.InsufficientAddressCapacityException;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkCmdByAdmin;
 import org.apache.cloudstack.api.command.user.address.UpdateQuarantinedIpCmd;
@@ -56,6 +47,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -64,8 +56,10 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.agent.api.to.IpAddressTO;
@@ -75,6 +69,10 @@ import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.domain.Domain;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
@@ -82,10 +80,13 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.dao.PublicIpQuarantineDao;
 import com.cloud.network.router.CommandSetupHelper;
 import com.cloud.network.router.NetworkHelper;
+import com.cloud.network.vo.PublicIpQuarantineVO;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
@@ -103,21 +104,25 @@ import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.Ip;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
-import org.junit.After;
-import org.mockito.MockedStatic;
-import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class NetworkServiceImplTest {
+    @Mock
+    Object job;
+    @Mock
+    Object _responseObject;
+
     @Mock
     AccountManager accountManager;
     @Mock
@@ -141,11 +146,11 @@ public class NetworkServiceImplTest {
     @Mock
     VpcManager vpcMgr;
     @Mock
-    NetworkOrchestrationService networkManager;
+    NetworkOrchestrationService _networkMgr;
     @Mock
     AlertManager alertManager;
     @Mock
-    DataCenterDao dcDao;
+    DataCenterDao _dcDao;
     @Mock
     UserDao userDao;
     @Mock
@@ -165,7 +170,7 @@ public class NetworkServiceImplTest {
     @Mock
     DomainRouterDao routerDao;
     @Mock
-    AccountService accountService;
+    AccountService _accountService;
     @Mock
     NetworkHelper networkHelper;
     @Mock
@@ -192,7 +197,7 @@ public class NetworkServiceImplTest {
     @Mock
     private DomainVO domainVOMock;
     @InjectMocks
-    NetworkServiceImpl service = new NetworkServiceImpl();
+    NetworkServiceImpl service;
 
     @Mock
     DomainDao domainDaoMock;
@@ -297,14 +302,11 @@ public class NetworkServiceImplTest {
         vpc = Mockito.mock(VpcVO.class);
         service._networkOfferingDao = networkOfferingDao;
         service._physicalNetworkDao = physicalNetworkDao;
-        service._dcDao = dcDao;
         service._accountMgr = accountManager;
-        service._networkMgr = networkManager;
         service.alertManager = alertManager;
         service._configMgr = configMgr;
         service._vpcDao = vpcDao;
         service._vpcMgr = vpcMgr;
-        service._accountService = accountService;
         service._networksDao = networkDao;
         service._nicDao = nicDao;
         service._ipAddressDao = ipAddressDao;
@@ -323,7 +325,7 @@ public class NetworkServiceImplTest {
         Mockito.when(entityMgr.findById(NetworkOffering.class, 1L)).thenReturn(networkOffering);
         Mockito.when(networkOfferingDao.findById(1L)).thenReturn(offering);
         Mockito.when(physicalNetworkDao.findById(Mockito.anyLong())).thenReturn(phyNet);
-        Mockito.when(dcDao.findById(Mockito.anyLong())).thenReturn(dc);
+        Mockito.when(_dcDao.findById(Mockito.anyLong())).thenReturn(dc);
         Mockito.when(accountManager.isRootAdmin(accountMock.getId())).thenReturn(true);
     }
 
@@ -442,12 +444,12 @@ public class NetworkServiceImplTest {
         Mockito.when(dc.getId()).thenReturn(1L);
         Mockito.when(dc.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
         Map<String, String> networkProvidersMap = new HashMap<String, String>();
-        Mockito.when(networkManager.finalizeServicesAndProvidersForNetwork(ArgumentMatchers.any(NetworkOffering.class), anyLong())).thenReturn(networkProvidersMap);
+        Mockito.when(_networkMgr.finalizeServicesAndProvidersForNetwork(ArgumentMatchers.any(NetworkOffering.class), anyLong())).thenReturn(networkProvidersMap);
         Mockito.when(configMgr.isOfferingForVpc(offering)).thenReturn(false);
         Mockito.when(offering.isInternalLb()).thenReturn(false);
 
         service.createGuestNetwork(createNetworkCmd);
-        Mockito.verify(networkManager, times(1)).createGuestNetwork(1L, "testNetwork", "Test Network", null,
+        Mockito.verify(_networkMgr, times(1)).createGuestNetwork(1L, "testNetwork", "Test Network", null,
                 null, null, false, null, accountMock, null, phyNet,
                 1L, null, null, null, null, null,
                 true, null, null, null, null, null,
@@ -555,7 +557,7 @@ public class NetworkServiceImplTest {
         Mockito.when(vpcVO.getPublicMtu()).thenReturn(vpcMtu);
 
         Pair<Integer, Integer> updatedMtus = service.validateMtuConfig(publicMtu, privateMtu, zoneId);
-        service.mtuCheckForVpcNetwork(vpcId, updatedMtus, publicMtu, privateMtu);
+        service.mtuCheckForVpcNetwork(vpcId, updatedMtus, publicMtu);
         Assert.assertEquals(vpcMtu, updatedMtus.first());
         Assert.assertEquals(privateMtu, updatedMtus.second());
     }
@@ -769,7 +771,7 @@ public class NetworkServiceImplTest {
 
         DataCenterVO zone = Mockito.mock(DataCenterVO.class);
         when(cmd.getZoneId()).thenReturn(zoneId);
-        when(dcDao.findById(zoneId)).thenReturn(zone);
+        when(_dcDao.findById(zoneId)).thenReturn(zone);
         when(zone.getId()).thenReturn(zoneId);
 
         try {
@@ -795,7 +797,7 @@ public class NetworkServiceImplTest {
         ReflectionTestUtils.setField(createNetworkCmd, "vpcId", vpcId);
 
         dc = Mockito.mock(DataCenterVO.class);
-        Mockito.when(dcDao.findById(zoneId)).thenReturn(dc);
+        Mockito.when(_dcDao.findById(zoneId)).thenReturn(dc);
         Mockito.when(dc.getId()).thenReturn(zoneId);
         vpc = Mockito.mock(VpcVO.class);
         Mockito.when(vpc.getName()).thenReturn("Vpc 1");
@@ -831,7 +833,7 @@ public class NetworkServiceImplTest {
 
         DataCenterVO zone = Mockito.mock(DataCenterVO.class);
         when(cmd.getZoneId()).thenReturn(zoneId);
-        when(dcDao.findById(zoneId)).thenReturn(zone);
+        when(_dcDao.findById(zoneId)).thenReturn(zone);
         when(zone.getId()).thenReturn(zoneId);
 
         try {
@@ -859,7 +861,7 @@ public class NetworkServiceImplTest {
 
         DataCenterVO zone = Mockito.mock(DataCenterVO.class);
         when(cmd.getZoneId()).thenReturn(zoneId);
-        when(dcDao.findById(zoneId)).thenReturn(zone);
+        when(_dcDao.findById(zoneId)).thenReturn(zone);
         when(zone.getId()).thenReturn(zoneId);
 
         try {
@@ -889,7 +891,7 @@ public class NetworkServiceImplTest {
 
         DataCenterVO zone = Mockito.mock(DataCenterVO.class);
         when(cmd.getZoneId()).thenReturn(zoneId);
-        when(dcDao.findById(zoneId)).thenReturn(zone);
+        when(_dcDao.findById(zoneId)).thenReturn(zone);
         when(zone.getId()).thenReturn(zoneId);
 
         try {

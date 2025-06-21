@@ -20,10 +20,10 @@ Install tools and dependencies used for development:
 
 Set up Maven (3.6.0):
 
-    # wget http://www.us.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.tar.gz
-    # tar -zxvf apache-maven-3.6.3-bin.tar.gz -C /usr/local
+    # wget https://dlcdn.apache.org/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.tar.gz
+    # tar -zxvf apache-maven-3.9.9-bin.tar.gz -C /usr/local
     # cd /usr/local
-    # ln -s apache-maven-3.6.3 maven
+    # ln -s apache-maven-3.9.9 maven
     # echo export M2_HOME=/usr/local/maven >> ~/.bashrc # or .zshrc or .profile
     # echo export PATH=/usr/local/maven/bin:${PATH} >> ~/.bashrc # or .zshrc or .profile
     # source ~/.bashrc
@@ -37,6 +37,7 @@ Setup up NodeJS (LTS):
 Start the MySQL service:
 
     $ service mysqld start
+    $ mysql_secure_installation
 
 ### Using jenv and/or pyenv for Version Management
 
@@ -86,12 +87,32 @@ Start the management server:
 
 If this works, you've successfully setup a single server Apache CloudStack installation.
 
-Open the following URL on your browser to access the Management Server UI:
-
-    http://localhost:8080/client/
+To access the Management Server UI, follow the following procedure:
 
 The default credentials are; user: admin, password: password and the domain
 field should be left blank which is defaulted to the ROOT domain.
+
+## To bring up CloudStack UI
+
+Move to UI Directory
+
+    $ cd /path/to/cloudstack/ui
+
+To install dependencies.
+
+    $ npm install
+
+To build the project.
+
+    $ npm build
+
+For Development Mode.
+
+    $ npm start
+
+Make sure to set CS_URL=http://localhost:8080/client on .env.local file on ui.
+
+You should be able to run the management server on http://localhost:5050
 
 ## Building with non-redistributable plugins
 

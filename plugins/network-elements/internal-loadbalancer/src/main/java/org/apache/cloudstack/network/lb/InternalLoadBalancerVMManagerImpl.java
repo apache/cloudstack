@@ -16,6 +16,12 @@
 // under the License.
 package org.apache.cloudstack.network.lb;
 
+import static com.cloud.hypervisor.Hypervisor.HypervisorType.Hyperv;
+import static com.cloud.hypervisor.Hypervisor.HypervisorType.KVM;
+import static com.cloud.hypervisor.Hypervisor.HypervisorType.LXC;
+import static com.cloud.hypervisor.Hypervisor.HypervisorType.VMware;
+import static com.cloud.hypervisor.Hypervisor.HypervisorType.XenServer;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -31,6 +37,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
+import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -117,12 +124,6 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
-
-import static com.cloud.hypervisor.Hypervisor.HypervisorType.Hyperv;
-import static com.cloud.hypervisor.Hypervisor.HypervisorType.KVM;
-import static com.cloud.hypervisor.Hypervisor.HypervisorType.LXC;
-import static com.cloud.hypervisor.Hypervisor.HypervisorType.VMware;
-import static com.cloud.hypervisor.Hypervisor.HypervisorType.XenServer;
 
 public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements InternalLoadBalancerVMManager, InternalLoadBalancerVMService, VirtualMachineGuru {
     static final private String InternalLbVmNamePrefix = "b";
@@ -732,6 +733,70 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
         return internalLbVms;
     }
 
+    protected String getRouterTemplateForHypervisor(HypervisorType hypervisorType, long dataCenterId) {
+        String templateName = null;
+        if (XenServer.equals(hypervisorType)) {
+            templateName = VirtualNetworkApplianceManager.RouterTemplateXen.valueIn(dataCenterId);
+        } else if (KVM.equals(hypervisorType)) {
+            templateName = VirtualNetworkApplianceManager.RouterTemplateKvm.valueIn(dataCenterId);
+        } else if (VMware.equals(hypervisorType)) {
+            templateName = VirtualNetworkApplianceManager.RouterTemplateVmware.valueIn(dataCenterId);
+        } else if (Hyperv.equals(hypervisorType)) {
+            templateName = VirtualNetworkApplianceManager.RouterTemplateHyperV.valueIn(dataCenterId);
+        } else if (LXC.equals(hypervisorType)) {
+            templateName = VirtualNetworkApplianceManager.RouterTemplateLxc.valueIn(dataCenterId);
+        }
+        return templateName;
+    }
+
+    protected DomainRouterVO createOrUpdateInternalLb(DomainRouterVO internalLbVm, final long id,
+                  final long internalLbProviderId, final Account owner, final long userId, final Long vpcId,
+                  final ServiceOffering routerOffering, final VMTemplateVO template) {
+        if (internalLbVm == null) {
+            internalLbVm = new DomainRouterVO(id, routerOffering.getId(), internalLbProviderId,
+                    VirtualMachineName.getSystemVmName(id, _instance, InternalLbVmNamePrefix),
+                    template.getId(), template.getHypervisorType(), template.getGuestOSId(),
+                    owner.getDomainId(), owner.getId(), userId, false,
+                    RedundantState.UNKNOWN, false, false,
+                    VirtualMachine.Type.InternalLoadBalancerVm, vpcId);
+            internalLbVm.setRole(Role.INTERNAL_LB_VM);
+            internalLbVm.setLimitCpuUse(routerOffering.getLimitCpuUse());
+            internalLbVm.setDynamicallyScalable(template.isDynamicallyScalable());
+            return _internalLbVmDao.persist(internalLbVm);
+        }
+        internalLbVm.setTemplateId(template.getId());
+        internalLbVm.setDynamicallyScalable(template.isDynamicallyScalable());
+        _internalLbVmDao.update(internalLbVm.getId(), internalLbVm);
+        return internalLbVm;
+    }
+
+    protected DomainRouterVO deployInternalLbVmWithTemplates(DomainRouterVO internalLbVm, final long id,
+                 final DeploymentPlan plan, final long internalLbProviderId, final Account owner, final long userId,
+                 final Long vpcId, final ServiceOffering routerOffering,
+                 final LinkedHashMap<Network, List<? extends NicProfile>> networks, final List<VMTemplateVO> templates)
+            throws InsufficientCapacityException {
+        for (final Iterator<VMTemplateVO> templatesIterator = templates.iterator(); templatesIterator.hasNext();) {
+            final VMTemplateVO template = templatesIterator.next();
+            try {
+                internalLbVm = createOrUpdateInternalLb(internalLbVm, id, internalLbProviderId, owner, userId, vpcId,
+                        routerOffering, template);
+                _itMgr.allocate(internalLbVm.getInstanceName(), template, routerOffering, networks, plan, null);
+                internalLbVm = _internalLbVmDao.findById(internalLbVm.getId());
+                if (templatesIterator.hasNext()) {
+                    _itMgr.checkDeploymentPlan(internalLbVm, template, routerOffering, owner, plan);
+                }
+                return internalLbVm;
+            } catch (InsufficientCapacityException ex) {
+                if (templatesIterator.hasNext()) {
+                    logger.debug("Failed to allocate the VR with hypervisor {} and {}, retrying with another template", template.getHypervisorType(), template);
+                } else {
+                    throw ex;
+                }
+            }
+        }
+        return null;
+    }
+
     protected DomainRouterVO deployInternalLbVm(final Account owner, final DeployDestination dest, final DeploymentPlan plan, final Map<Param, Object> params, final long internalLbProviderId,
             final long svcOffId, final Long vpcId, final LinkedHashMap<Network, List<? extends NicProfile>> networks, final boolean startVm) throws ConcurrentOperationException,
             InsufficientAddressCapacityException, InsufficientServerCapacityException, InsufficientCapacityException, StorageUnavailableException,
@@ -743,6 +808,14 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
         // Try to allocate the internal lb twice using diff hypervisors, and when failed both times, throw the exception up
         final List<HypervisorType> hypervisors = getHypervisors(dest, plan, null);
 
+        long userId = CallContext.current().getCallingUserId();
+        if (CallContext.current().getCallingAccount().getId() != owner.getId()) {
+            List<UserVO> userVOs = _userDao.listByAccount(owner.getAccountId());
+            if (!userVOs.isEmpty()) {
+                userId =  userVOs.get(0).getId();
+            }
+        }
+
         int allocateRetry = 0;
         int startRetry = 0;
         DomainRouterVO internalLbVm = null;
@@ -751,45 +824,23 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
             try {
                 final long id = _internalLbVmDao.getNextInSequence(Long.class, "id");
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Creating the internal lb vm " + id + " in datacenter " + dest.getDataCenter() + " with hypervisor type " + hType);
+                    logger.debug("Creating the internal lb vm {} in datacenter {} with hypervisor type {}",
+                            id, dest.getDataCenter(), hType);
                 }
-                String templateName = null;
-                if (hType.equals(XenServer)) {
-                    templateName = VirtualNetworkApplianceManager.RouterTemplateXen.valueIn(dest.getDataCenter().getId());
-                } else if (hType.equals(KVM)) {
-                    templateName = VirtualNetworkApplianceManager.RouterTemplateKvm.valueIn(dest.getDataCenter().getId());
-                } else if (hType.equals(VMware)) {
-                    templateName = VirtualNetworkApplianceManager.RouterTemplateVmware.valueIn(dest.getDataCenter().getId());
-                } else if (hType.equals(Hyperv)) {
-                    templateName = VirtualNetworkApplianceManager.RouterTemplateHyperV.valueIn(dest.getDataCenter().getId());
-                } else if (hType.equals(LXC)) {
-                    templateName = VirtualNetworkApplianceManager.RouterTemplateLxc.valueIn(dest.getDataCenter().getId());
-                }
-                final VMTemplateVO template = _templateDao.findRoutingTemplate(hType, templateName);
-
-                if (template == null) {
-                    logger.debug(hType + " won't support system vm, skip it");
+                final long zoneId = dest.getDataCenter().getId();
+                final String templateName = getRouterTemplateForHypervisor(hType, zoneId);
+                final String preferredArch = ResourceManager.SystemVmPreferredArchitecture.valueIn(zoneId);
+                final List<VMTemplateVO> templates = _templateDao.findRoutingTemplates(hType, templateName,
+                        preferredArch);
+                if (CollectionUtils.isEmpty(templates)) {
+                    logger.debug("{} won't support system vm, skip it", hType);
                     continue;
                 }
-
-                long userId = CallContext.current().getCallingUserId();
-                if (CallContext.current().getCallingAccount().getId() != owner.getId()) {
-                    List<UserVO> userVOs = _userDao.listByAccount(owner.getAccountId());
-                    if (!userVOs.isEmpty()) {
-                        userId =  userVOs.get(0).getId();
-                    }
-                }
-
-                internalLbVm =
-                        new DomainRouterVO(id, routerOffering.getId(), internalLbProviderId, VirtualMachineName.getSystemVmName(id, _instance, InternalLbVmNamePrefix),
-                                template.getId(), template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(), userId, false, RedundantState.UNKNOWN, false, false, VirtualMachine.Type.InternalLoadBalancerVm, vpcId);
-                internalLbVm.setRole(Role.INTERNAL_LB_VM);
-                internalLbVm = _internalLbVmDao.persist(internalLbVm);
-                _itMgr.allocate(internalLbVm.getInstanceName(), template, routerOffering, networks, plan, null);
-                internalLbVm = _internalLbVmDao.findById(internalLbVm.getId());
+                internalLbVm = deployInternalLbVmWithTemplates(internalLbVm, id, plan, internalLbProviderId, owner,
+                        userId, vpcId, routerOffering, networks, templates);
             } catch (final InsufficientCapacityException ex) {
                 if (allocateRetry < 2 && iter.hasNext()) {
-                    logger.debug("Failed to allocate the Internal lb vm with hypervisor type " + hType + ", retrying one more time");
+                    logger.debug("Failed to allocate the Internal lb vm with hypervisor type {}, retrying one more time", hType);
                     continue;
                 } else {
                     throw ex;
@@ -804,8 +855,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
                     break;
                 } catch (final InsufficientCapacityException ex) {
                     if (startRetry < 2 && iter.hasNext()) {
-                        logger.debug("Failed to start the Internal lb vm  " + internalLbVm + " with hypervisor type " + hType + ", " +
-                                "destroying it and recreating one more time");
+                        logger.debug("Failed to start the Internal lb vm  {} with hypervisor type {}, destroying it and recreating one more time", internalLbVm, hType);
                         // destroy the internal lb vm
                         destroyInternalLbVm(internalLbVm.getId(), _accountMgr.getSystemAccount(), User.UID_SYSTEM);
                         continue;

@@ -55,9 +55,9 @@ public class BaseAllocatorTest {
 
     private final Long clusterId = 1L;
 
-    private final Long podId = 1L;
+    private final Long podId = 2L;
 
-    private final Long dcId = 1L;
+    private final Long dcId = 3L;
 
     private final HostVO host1 = Mockito.mock(HostVO.class);
 
@@ -77,7 +77,7 @@ public class BaseAllocatorTest {
         String hostTagOnOffering = null;
 
         Mockito.doReturn(hostsWithMathingTags).when(hostDaoMock).listByHostTag(type, clusterId, podId, dcId, hostTagOnTemplate);
-        baseAllocator.retainHostsMatchingServiceOfferingAndTemplateTags(suitableHosts, type, clusterId, podId, dcId, hostTagOnTemplate, hostTagOnOffering);
+        baseAllocator.retainHostsMatchingServiceOfferingAndTemplateTags(suitableHosts, type, dcId, podId, clusterId, hostTagOnOffering, hostTagOnTemplate);
 
         Assert.assertEquals(2, suitableHosts.size());
         Assert.assertEquals(host1, suitableHosts.get(0));
@@ -94,7 +94,7 @@ public class BaseAllocatorTest {
 
         Mockito.doReturn(hostsWithMathingTemplateTags).when(hostDaoMock).listByHostTag(type, clusterId, podId, dcId, hostTagOnTemplate);
         Mockito.doReturn(hostsWithMathingServiceTags).when(hostDaoMock).listByHostTag(type, clusterId, podId, dcId, hostTagOnOffering);
-        baseAllocator.retainHostsMatchingServiceOfferingAndTemplateTags(suitableHosts, type, clusterId, podId, dcId, hostTagOnTemplate, hostTagOnOffering);
+        baseAllocator.retainHostsMatchingServiceOfferingAndTemplateTags(suitableHosts, type, dcId, podId, clusterId, hostTagOnOffering, hostTagOnTemplate);
 
         Assert.assertEquals(1, suitableHosts.size());
         Assert.assertEquals(host1, suitableHosts.get(0));
@@ -108,7 +108,7 @@ public class BaseAllocatorTest {
         String hostTagOnOffering = "hostTagOnOffering";
 
         Mockito.doReturn(hostsWithMathingServiceTags).when(hostDaoMock).listByHostTag(type, clusterId, podId, dcId, hostTagOnOffering);
-        baseAllocator.retainHostsMatchingServiceOfferingAndTemplateTags(suitableHosts, type, clusterId, podId, dcId, hostTagOnTemplate, hostTagOnOffering);
+        baseAllocator.retainHostsMatchingServiceOfferingAndTemplateTags(suitableHosts, type, dcId, podId, clusterId, hostTagOnOffering, hostTagOnTemplate);
 
         Assert.assertEquals(2, suitableHosts.size());
         Assert.assertEquals(host1, suitableHosts.get(0));
@@ -121,7 +121,7 @@ public class BaseAllocatorTest {
         String hostTagOnTemplate = null;
         String hostTagOnOffering = null;
 
-        baseAllocator.retainHostsMatchingServiceOfferingAndTemplateTags(suitableHosts, type, clusterId, podId, dcId, hostTagOnTemplate, hostTagOnOffering);
+        baseAllocator.retainHostsMatchingServiceOfferingAndTemplateTags(suitableHosts, type, dcId, podId, clusterId, hostTagOnOffering, hostTagOnTemplate);
 
         Assert.assertEquals(3, suitableHosts.size());
         Assert.assertEquals(host1, suitableHosts.get(0));

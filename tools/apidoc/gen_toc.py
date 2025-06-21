@@ -233,7 +233,8 @@ known_categories = {
     'listQuarantinedIp': 'IP Quarantine',
     'updateQuarantinedIp': 'IP Quarantine',
     'removeQuarantinedIp': 'IP Quarantine',
-    'Shutdown': 'Management',
+    'Shutdown': 'Maintenance',
+    'Maintenance': 'Maintenance',
     'addObjectStoragePool': 'Object Store',
     'listObjectStoragePools': 'Object Store',
     'deleteObjectStoragePool': 'Object Store',
@@ -256,6 +257,8 @@ known_categories = {
     'deleteASNRange': 'AS Number Range',
     'listASNumbers': 'AS Number',
     'releaseASNumber': 'AS Number',
+    'configureStorageAccess': 'Storage Access Groups',
+    'listStorageAccessGroups': 'Storage Access Groups'
 }
 
 

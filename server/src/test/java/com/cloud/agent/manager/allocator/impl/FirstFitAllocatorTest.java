@@ -17,6 +17,7 @@
 package com.cloud.agent.manager.allocator.impl;
 
 import com.cloud.agent.manager.allocator.HostAllocator;
+import com.cloud.capacity.CapacityManager;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.host.Host;
@@ -29,13 +30,17 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -44,6 +49,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -60,6 +66,12 @@ public class FirstFitAllocatorTest {
 
     @Mock
     ServiceOfferingDetailsDao serviceOfferingDetailsDao;
+
+    @Mock
+    CapacityManager capacityMgr;
+
+    @Mock
+    ConfigurationDao configDao;
 
     @Spy
     @InjectMocks
@@ -97,7 +109,86 @@ public class FirstFitAllocatorTest {
 
     private final DeploymentPlan deploymentPlan = Mockito.mock(DeploymentPlan.class);
 
+    private final DeploymentPlanner.ExcludeList avoid = Mockito.mock(DeploymentPlanner.ExcludeList.class);
+
+    private final ServiceOffering offering = Mockito.mock(ServiceOffering.class);
+
     private final boolean considerReservedCapacity = true;
+
+    @Before
+    public void setUp() {
+        Mockito.when(deploymentPlan.getDataCenterId()).thenReturn(1L);
+        Mockito.when(offering.getId()).thenReturn(123L);
+    }
+
+    @Test
+    public void testConfigure() throws Exception {
+        Mockito.when(configDao.getConfiguration(ArgumentMatchers.anyMap())).thenReturn(new HashMap<>());
+        Assert.assertTrue(firstFitAllocatorSpy._checkHvm);
+        Assert.assertTrue(firstFitAllocatorSpy.configure("test", new HashMap<>()));
+    }
+
+    @Test
+    public void testAllocateTo_SuccessfulMatch() {
+        List<Host> inputHosts = Arrays.asList(host1, host2);
+
+        // All hosts are allowed
+        Mockito.when(avoid.shouldAvoid(host1)).thenReturn(false);
+        Mockito.when(avoid.shouldAvoid(host2)).thenReturn(false);
+
+        // No GPU requirement
+        Mockito.when(serviceOfferingDetailsDao.findDetail(ArgumentMatchers.eq(123L), ArgumentMatchers.anyString())).thenReturn(null);
+
+        // CPU capability and capacity is met
+        Mockito.when(capacityMgr.checkIfHostReachMaxGuestLimit(ArgumentMatchers.any())).thenReturn(false);
+        Mockito.when(capacityMgr.checkIfHostHasCpuCapabilityAndCapacity(ArgumentMatchers.eq(host1), ArgumentMatchers.eq(offering),
+                        ArgumentMatchers.eq(true)))
+                .thenReturn(new Pair<>(true, true));
+        Mockito.when(capacityMgr.checkIfHostHasCpuCapabilityAndCapacity(ArgumentMatchers.eq(host2), ArgumentMatchers.eq(offering),
+                        ArgumentMatchers.eq(true)))
+                .thenReturn(new Pair<>(true, false));
+
+        List<Host> result = firstFitAllocatorSpy.allocateTo(deploymentPlan, offering, null, avoid, inputHosts, 2, true, account);
+
+        // Only host1 should be returned
+        Assert.assertEquals(1, result.size());
+        Assert.assertTrue(result.contains(host1));
+        Assert.assertFalse(result.contains(host2));
+    }
+
+    @Test
+    public void testAllocateTo_AvoidSetAndGuestLimit() {
+        List<Host> inputHosts = Arrays.asList(host1, host2);
+
+        Mockito.when(avoid.shouldAvoid(host1)).thenReturn(true); // Avoided
+        Mockito.when(avoid.shouldAvoid(host2)).thenReturn(false);
+
+        Mockito.when(capacityMgr.checkIfHostReachMaxGuestLimit(host2)).thenReturn(true); // Reached limit
+
+        List<Host> result = firstFitAllocatorSpy.allocateTo(deploymentPlan, offering, null, avoid, inputHosts, 2, true, account);
+
+        Assert.assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void testAllocateTo_GPUNotAvailable() {
+        List<Host> inputHosts = Arrays.asList(host1);
+        Mockito.when(avoid.shouldAvoid(host1)).thenReturn(false);
+
+        // GPU required but not available
+        var vgpuDetail = Mockito.mock(com.cloud.service.ServiceOfferingDetailsVO.class);
+        var pciDetail = Mockito.mock(com.cloud.service.ServiceOfferingDetailsVO.class);
+        Mockito.when(serviceOfferingDetailsDao.findDetail(ArgumentMatchers.eq(123L), ArgumentMatchers.eq("vgpuType"))).thenReturn(vgpuDetail);
+        Mockito.when(serviceOfferingDetailsDao.findDetail(ArgumentMatchers.eq(123L), ArgumentMatchers.eq("pciDevice"))).thenReturn(pciDetail);
+        Mockito.when(pciDetail.getValue()).thenReturn("NVIDIA");
+        Mockito.when(vgpuDetail.getValue()).thenReturn("GRID");
+
+        Mockito.when(resourceManagerMock.isGPUDeviceAvailable(ArgumentMatchers.eq(host1), ArgumentMatchers.eq("NVIDIA"), ArgumentMatchers.eq("GRID"))).thenReturn(false);
+
+        List<Host> result = firstFitAllocatorSpy.allocateTo(deploymentPlan, offering, null, avoid, inputHosts, 1, true, account);
+
+        Assert.assertTrue(result.isEmpty());
+    }
 
     @Test
     public void allocateToTestHostTypeStorageShouldReturnNull() {
