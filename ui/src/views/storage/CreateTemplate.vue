@@ -129,6 +129,25 @@
           </a-select-option>
           </a-select>
       </a-form-item>
+      <a-form-item
+        name="arch"
+        ref="arch">
+        <template #label>
+          <tooltip-label :title="$t('label.arch')" :tooltip="apiParams.arch.description"/>
+        </template>
+        <a-select
+          showSearch
+          optionFilterProp="label"
+          :filterOption="(input, option) => {
+            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }"
+          v-model:value="form.arch"
+          :placeholder="apiParams.arch.description">
+          <a-select-option v-for="opt in architectureTypes.opts" :key="opt.id">
+            {{ opt.name || opt.description }}
+          </a-select-option>
+        </a-select>
+      </a-form-item>
       <a-row :gutter="12">
         <a-col :md="24" :lg="12">
           <a-form-item ref="isdynamicallyscalable" name="isdynamicallyscalable">
@@ -163,7 +182,7 @@
                 <tooltip-label :title="$t('label.isfeatured')" :tooltip="apiParams.isfeatured.description"/>
               </template>
               <a-switch v-model:checked="form.isfeatured" />
-            </a-form-item>
+          </a-form-item>
         </a-col>
       </a-row>
       <div :span="24" class="action-button">
@@ -204,7 +223,8 @@ export default {
       accounts: [],
       domainLoading: false,
       domainid: null,
-      account: null
+      account: null,
+      architectureTypes: {}
     }
   },
   computed: {
@@ -239,6 +259,7 @@ export default {
       if ('listDomains' in this.$store.getters.apis) {
         this.fetchDomains()
       }
+      this.architectureTypes.opts = this.$fetchCpuArchitectureTypes()
     },
     fetchOsTypes () {
       this.osTypes.opts = []
