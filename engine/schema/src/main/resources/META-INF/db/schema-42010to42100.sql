@@ -406,9 +406,9 @@ BEGIN
 ;   END IF
 ;END;
 
-CALL `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_IF_NOT_EXISTS`('Proxmox', 'CreateSnapshot', 'Create Instance Snapshot', 'VirtualMachine', 15, 'Snapshot created for {{resourceName}} in {{extensionName}}', 'Snapshot creation failed for {{resourceName}}', 60);
-CALL `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_IF_NOT_EXISTS`('Proxmox', 'RestoreSnapshot', 'Restore Instance Snapshot', 'VirtualMachine', 15, 'Successfully restored snapshot for {{resourceName}} in {{extensionName}}', 'Restore snapshot failed for {{resourceName}}', 60);
-CALL `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_IF_NOT_EXISTS`('Proxmox', 'DeleteSnapshot', 'Delete Instance Snapshot', 'VirtualMachine', 15, 'Successfully deleted snapshot for {{resourceName}} in {{extensionName}}', 'Delete snapshot failed for {{resourceName}}', 60);
+CALL `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_IF_NOT_EXISTS`('Proxmox', 'CreateSnapshot', 'Create an Instance snapshot', 'VirtualMachine', 15, 'Snapshot created for {{resourceName}} in {{extensionName}}', 'Snapshot creation failed for {{resourceName}}', 60);
+CALL `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_IF_NOT_EXISTS`('Proxmox', 'RestoreSnapshot', 'Restore Instance to the specifeid snapshot', 'VirtualMachine', 15, 'Successfully restored snapshot for {{resourceName}} in {{extensionName}}', 'Restore snapshot failed for {{resourceName}}', 60);
+CALL `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_IF_NOT_EXISTS`('Proxmox', 'DeleteSnapshot', 'Delete the specified snapshot', 'VirtualMachine', 15, 'Successfully deleted snapshot for {{resourceName}} in {{extensionName}}', 'Delete snapshot failed for {{resourceName}}', 60);
 
 CALL cloud.INSERT_EXTENSION_CUSTOM_ACTION_DETAILS_IF_NOT_EXISTS(
     'Proxmox',
@@ -457,4 +457,57 @@ CALL cloud.INSERT_EXTENSION_CUSTOM_ACTION_DETAILS_IF_NOT_EXISTS(
         "required": true
       }
     ]'
+);
+
+CALL `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_IF_NOT_EXISTS`('HyperV', 'CreateSnapshot', 'Create a checkpoint/snapshot for the Instance', 'VirtualMachine', 15, 'Snapshot created for {{resourceName}} in {{extensionName}}', 'Snapshot creation failed for {{resourceName}}', 60);
+CALL `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_IF_NOT_EXISTS`('HyperV', 'RestoreSnapshot', 'Restore Instance to the specified snapshot', 'VirtualMachine', 15, 'Successfully restored snapshot for {{resourceName}} in {{extensionName}}', 'Restore snapshot failed for {{resourceName}}', 60);
+CALL `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_IF_NOT_EXISTS`('HyperV', 'DeleteSnapshot', 'Delete the specified snapshot', 'VirtualMachine', 15, 'Successfully deleted snapshot for {{resourceName}} in {{extensionName}}', 'Delete snapshot failed for {{resourceName}}', 60);
+CALL `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_IF_NOT_EXISTS`('HyperV', 'Suspend', 'Suspend the Instance by freezing its current state in RAM', 'VirtualMachine', 15, 'Successfully suspended {{resourceName}} in {{extensionName}}', 'Suspend failed for {{resourceName}}', 60);
+CALL `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_IF_NOT_EXISTS`('HyperV', 'Resume', 'Resumes a suspended Instance, restoring CPU execution from memory.', 'VirtualMachine', 15, 'Successfully resumed {{resourceName}} in {{extensionName}}', 'Resume failed for {{resourceName}}', 60);
+
+CALL cloud.INSERT_EXTENSION_CUSTOM_ACTION_DETAILS_IF_NOT_EXISTS(
+    'HyperV',
+    'CreateSnapshot',
+    '[
+      {
+        "name": "snapshot_name",
+        "type": "STRING",
+        "validationformat": "NONE",
+        "required": true
+      }
+    ]'
+);
+CALL cloud.INSERT_EXTENSION_CUSTOM_ACTION_DETAILS_IF_NOT_EXISTS(
+    'HyperV',
+    'RestoreSnapshot',
+    '[
+      {
+        "name": "snapshot_name",
+        "type": "STRING",
+        "validationformat": "NONE",
+        "required": true
+      }
+    ]'
+);
+CALL cloud.INSERT_EXTENSION_CUSTOM_ACTION_DETAILS_IF_NOT_EXISTS(
+    'HyperV',
+    'DeleteSnapshot',
+    '[
+      {
+        "name": "snapshot_name",
+        "type": "STRING",
+        "validationformat": "NONE",
+        "required": true
+      }
+    ]'
+);
+CALL cloud.INSERT_EXTENSION_CUSTOM_ACTION_DETAILS_IF_NOT_EXISTS(
+    'HyperV',
+    'Suspend',
+    '[]'
+);
+CALL cloud.INSERT_EXTENSION_CUSTOM_ACTION_DETAILS_IF_NOT_EXISTS(
+    'HyperV',
+    'Resume',
+    '[]'
 );

@@ -31,25 +31,28 @@ def succeed(data):
     sys.exit(0)
 
 
+def run_powershell_ssh_int(command, url, username, password):
+    #print(f"[INFO] Connecting to {url} as {username}...")
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(url, username=username, password=password)
+
+    ps_command = f'powershell -NoProfile -Command "{command.strip()}"'
+    #print(f"[INFO] Executing: {ps_command}")
+    stdin, stdout, stderr = ssh.exec_command(ps_command)
+
+    output = stdout.read().decode().strip()
+    error = stderr.read().decode().strip()
+    ssh.close()
+
+    if error:
+        raise Exception(error)
+    return output
+
 def run_powershell_ssh(command, url, username, password):
     try:
-        print(f"[INFO] Connecting to {url} as {username}...")
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(url, username=username, password=password)
-
-        ps_command = f'powershell -NoProfile -Command "{command.strip()}"'
-        print(f"[INFO] Executing: {ps_command}")
-        stdin, stdout, stderr = ssh.exec_command(ps_command)
-
-        output = stdout.read().decode().strip()
-        error = stderr.read().decode().strip()
-        ssh.close()
-
-        if error:
-            fail(error)
-        else:
-            return output
+        output = run_powershell_ssh_int(command, url, username, password)
+        return output
     except Exception as e:
         fail(str(e))
 
@@ -79,49 +82,65 @@ def create(data):
     memory = data["memory"]
     memory_mb = int(memory) / 1024 / 1024
     template_path = data["template_path"]
-    #template_path = data.get("template_path", f"C:\\ProgramData\\Microsoft\\Windows\\Virtual Hard Disks\\m12-template.vhdx")
     vhd_path = data["default_vhd_path"] + "\\" + vm_name + ".vhdx"
     vhd_size_gb = data["vhd_size_gb"]
     generation = data["generation"]
     iso_path = data["iso_path"]
-    #iso_path = data.get("iso_path", "C:\\Users\\Abhisar\\Downloads\\ubuntu-25.04-live-server-amd64.iso")
-    switch_name = data.get["switch_name"]
-    vm_path = data.get["vm_path"]
+    switch_name = data["switch_name"]
+    vm_path = data["default_vm_path"]
     template_type = data.get("template_type", "template")
 
-    command = (
-        f'New-VM -Name \\"{vm_name}\\" -MemoryStartupBytes {memory_mb}MB '
-        f'-Generation {generation}  -Path \\"{vm_path}\\" '
-    )
-    if template_type == "iso":
-        if (iso_path == ""):
-            fail("ISO path is required")
-        command += (
-            f'-NewVHDPath \\"{vhd_path}\\" -NewVHDSizeBytes {vhd_size_gb}GB; '
-            f'Add-VMDvdDrive -VMName \\"{vm_name}\\" -Path \\"{iso_path}\\"; '
+    if (data["mac_address"] == ""):
+        fail("Mac address not found")
+
+    vhd_created = False
+    vm_created = False
+    vm_started = False
+    try:
+        command = (
+            f'New-VM -Name \\"{vm_name}\\" -MemoryStartupBytes {memory_mb}MB '
+            f'-Generation {generation}  -Path \\"{vm_path}\\" '
         )
-    else:
-        if (template_path == ""):
-            fail("Template path is required")
-        run_powershell_ssh(f'Copy-Item \\"{template_path}\\" \\"{vhd_path}\\"', data["url"], data["username"], data["password"])
-        command += f'-VHDPath \\"{vhd_path}\\"; '
+        if template_type == "iso":
+            if (iso_path == ""):
+                fail("ISO path is required")
+            command += (
+                f'-NewVHDPath \\"{vhd_path}\\" -NewVHDSizeBytes {vhd_size_gb}GB; '
+                f'Add-VMDvdDrive -VMName \\"{vm_name}\\" -Path \\"{iso_path}\\"; '
+            )
+        else:
+            if (template_path == ""):
+                fail("Template path is required")
+            run_powershell_ssh_int(f'Copy-Item \\"{template_path}\\" \\"{vhd_path}\\"', data["url"], data["username"], data["password"])
+            vhd_created = True
+            command += f'-VHDPath \\"{vhd_path}\\"; '
 
-    command += (
-        f'Set-VMProcessor -VMName \\"{vm_name}\\" -Count \\"{cpus}\\"; '
-        f'Connect-VMNetworkAdapter -VMName \\"{vm_name}\\" -SwitchName \\"{switch_name}\\"; '
-        f'Set-VMNetworkAdapter -VMName "{vm_name}" -StaticMacAddress "{data["mac_address"]}"; '
-        f'Set-VMFirmware -VMName "{vm_name}" -EnableSecureBoot Off; '
-    )
+        run_powershell_ssh_int(command, data["url"], data["username"], data["password"])
+        vm_created = True
 
-    run_powershell_ssh(command, data["url"], data["username"], data["password"])
+        command = (
+            f'Set-VMProcessor -VMName \\"{vm_name}\\" -Count \\"{cpus}\\"; '
+            f'Connect-VMNetworkAdapter -VMName \\"{vm_name}\\" -SwitchName \\"{switch_name}\\"; '
+            f'Set-VMNetworkAdapter -VMName "{vm_name}" -StaticMacAddress "{data["mac_address"]}"; '
+            f'Set-VMFirmware -VMName "{vm_name}" -EnableSecureBoot Off; '
+        )
+        run_powershell_ssh_int(command, data["url"], data["username"], data["password"])
 
-    # Switch should have vlan support (External/Internal)
-    # run_powershell_ssh(f'Set-VMNetworkAdapterVlan -VMName "{"vm_name"}" -Access -VlanId "{data["cloudstack.vlan"]}"', data["url"], data["username"], data["password"])
+        # Switch should have vlan support (External/Internal)
+        # run_powershell_ssh_int(f'Set-VMNetworkAdapterVlan -VMName "{"vm_name"}" -Access -VlanId "{data["cloudstack.vlan"]}"', data["url"], data["username"], data["password"])
+        run_powershell_ssh_int(f'Start-VM -Name "{vm_name}"', data["url"], data["username"], data["password"])
+        vm_started = True
 
-    run_powershell_ssh(f'Start-VM -Name "{data["virtualmachinename"]}"', data["url"], data["username"], data["password"])
+        succeed({"status": "success", "message": "Instance created"})
 
-    succeed({"status": "success", "message": "Instance created"})
-
+    except Exception as e:
+        if vm_started:
+            run_powershell_ssh_int(f'Stop-VM -Name "{vm_name}" -Force -TurnOff', data["url"], data["username"], data["password"])
+        if vm_created:
+            run_powershell_ssh_int(f'Remove-VM -Name "{vm_name}" -Force', data["url"], data["username"], data["password"])
+        if vhd_created:
+            run_powershell_ssh_int(f'Remove-Item -Path \\"{vhd_path}\\" -Force', data["url"], data["username"], data["password"])
+        fail(str(e))
 
 def start(data):
     run_powershell_ssh(f'Start-VM -Name "{data["virtualmachinename"]}"', data["url"], data["username"], data["password"])
@@ -138,21 +157,6 @@ def reboot(data):
     succeed({"status": "success", "message": "Instance rebooted"})
 
 
-def pause(data):
-    run_powershell_ssh(f'Suspend-VM -Name "{data["virtualmachinename"]}"', data["url"], data["username"], data["password"])
-    succeed({"status": "success", "message": "Instance paused"})
-
-
-def resume(data):
-    run_powershell_ssh(f'Resume-VM -Name "{data["virtualmachinename"]}"', data["url"], data["username"], data["password"])
-    succeed({"status": "success", "message": "Instance resumed"})
-
-
-def delete(data):
-    run_powershell_ssh(f'Remove-VM -Name "{data["virtualmachinename"]}" -Force', data["url"], data["username"], data["password"])
-    succeed({"status": "success", "message": "Instance deleted"})
-
-
 def status(data):
     command = f'(Get-VM -Name "{data["virtualmachinename"]}").State'
     state = run_powershell_ssh(command, data["url"], data["username"], data["password"])
@@ -164,25 +168,82 @@ def status(data):
         power_state = "unknown"
     succeed({"status": "success", "power_state": power_state})
 
+
+def delete(data):
+    run_powershell_ssh(f'Remove-VM -Name "{data["virtualmachinename"]}" -Force', data["url"], data["username"], data["password"])
+    succeed({"status": "success", "message": "Instance deleted"})
+
+
+def suspend(data):
+    run_powershell_ssh(f'Suspend-VM -Name "{data["virtualmachinename"]}"', data["url"], data["username"], data["password"])
+    succeed({"status": "success", "message": "Instance suspended"})
+
+
+def resume(data):
+    run_powershell_ssh(f'Resume-VM -Name "{data["virtualmachinename"]}"', data["url"], data["username"], data["password"])
+    succeed({"status": "success", "message": "Instance resumed"})
+
+
+def create_snapshot(data):
+    snapshot_name = data["snapshot_name"]
+    if snapshot_name == "":
+        fail("Missing snapshot_name in parameters")
+    command = f'Checkpoint-VM -VMName \\"{data["virtualmachinename"]}\\" -SnapshotName \\"{snapshot_name}\\"'
+    run_powershell_ssh(command, data["url"], data["username"], data["password"])
+    succeed({"status": "success", "message": f"Snapshot '{snapshot_name}' created"})
+
+
+def restore_snapshot(data):
+    snapshot_name = data["snapshot_name"]
+    if snapshot_name == "":
+        fail("Missing snapshot_name in parameters")
+    command = f'Restore-VMSnapshot -VMName \\"{data["virtualmachinename"]}\\" -Name \\"{snapshot_name}\\" -Confirm:$false'
+    run_powershell_ssh(command, data["url"], data["username"], data["password"])
+    succeed({"status": "success", "message": f"Snapshot '{snapshot_name}' restored"})
+
+
+def delete_snapshot(data):
+    snapshot_name = data["snapshot_name"]
+    if snapshot_name == "":
+        fail("Missing snapshot_name in parameters")
+    command = f'Remove-VMSnapshot -VMName \\"{data["virtualmachinename"]}\\" -Name \\"{snapshot_name}\\" -Confirm:$false'
+    run_powershell_ssh(command, data["url"], data["username"], data["password"])
+    succeed({"status": "success", "message": f"Snapshot '{snapshot_name}' deleted"})
+
+
 def parse_json(json_data):
     try:
         data = {
-            "url": json_data["external"]["extensionid"]["url"],
-            "username": json_data["external"]["extensionid"]["user"],
-            "password": json_data["external"]["extensionid"]["secret"],
-            "switch_name": json_data["external"]["hostid"].get("switch_name", "Default Switch"),
-            "default_vhd_path": json_data["external"]["hostid"].get("default_vhd_path", "C:\\ProgramData\\Microsoft\\Windows\\Virtual Hard Disks"),
-            "default_vm_path": json_data["external"]["hostid"].get("default_vm_path", "C:\\ProgramData\\Microsoft\\Windows\\Hyper-V"),
-            "template_type": json_data["external"]["virtualmachineid"].get("template_type", "template"),
-            "template_path": json_data["external"]["virtualmachineid"].get("template_path", ""),
-            "vhd_size_gb": json_data["external"]["virtualmachineid"].get("vhd_size_gb", 25),
-            "iso_path": json_data["external"]["virtualmachineid"].get("iso_path", ""),
-            "generation": json_data["external"]["virtualmachineid"].get("generation", 2),
-            "virtualmachinename": json_data["cloudstack.vm.details"]["name"],
-            "cpus": json_data["cloudstack.vm.details"].get("cpus", 2),
-            "memory": json_data["cloudstack.vm.details"].get("minRam", 536870912),
-            "mac_address": json_data["cloudstack.vm.details"]["nics"][0]["mac"]
+            "url": json_data["externaldetails"]["extension"]["url"],
+            "username": json_data["externaldetails"]["extension"]["username"],
+            "password": json_data["externaldetails"]["extension"]["password"],
+            "virtualmachinename": json_data["cloudstack.vm.details"]["name"]
         }
+
+        external_host_details = json_data["externaldetails"].get("host", [])
+        data["switch_name"] = external_host_details.get("switch_name", "Default Switch")
+        data["default_vhd_path"] = external_host_details.get("default_vhd_path", "C:\\ProgramData\\Microsoft\\Windows\\Virtual Hard Disks")
+        data["default_vm_path"] = external_host_details.get("default_vm_path", "C:\\ProgramData\\Microsoft\\Windows\\Hyper-V")
+
+        external_vm_details = json_data["externaldetails"].get("virtualmachine", [])
+        if external_vm_details:
+            data["template_type"] = external_vm_details.get("template_type", "template")
+            data["template_path"] = external_vm_details.get("template_path", "")
+            data["vhd_size_gb"] = external_vm_details.get("vhd_size_gb", 25)
+            data["iso_path"] = external_vm_details.get("iso_path", "")
+            data["generation"] = external_vm_details.get("generation", 2)
+
+        data["cpus"] = json_data["cloudstack.vm.details"].get("cpus", 2)
+        data["memory"] = json_data["cloudstack.vm.details"].get("minRam", 536870912)
+
+        nics = json_data["cloudstack.vm.details"].get("nics", [])
+        if nics:
+            data["mac_address"] = nics[0].get("mac", "")
+
+        parameters = json_data.get("parameters", [])
+        if parameters:
+            data["snapshot_name"] = parameters.get("snapshot_name", "")
+
         return data
     except KeyError as e:
         fail(f"Missing required field in JSON: {str(e)}")
@@ -211,10 +272,13 @@ def main():
         "start": start,
         "stop": stop,
         "reboot": reboot,
-        "pause": pause,
-        "resume": resume,
         "delete": delete,
         "status": status,
+        "suspend": suspend,
+        "resume": resume,
+        "createsnapshot": create_snapshot,
+        "restoresnapshot": restore_snapshot,
+        "deletesnapshot": delete_snapshot
     }
 
     if operation not in operations:
