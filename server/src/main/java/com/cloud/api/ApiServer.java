@@ -444,14 +444,14 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
         final Long snapshotLimit = ConcurrentSnapshotsThresholdPerHost.value();
         if (snapshotLimit == null || snapshotLimit <= 0) {
-            logger.debug("Global concurrent snapshot config parameter " + ConcurrentSnapshotsThresholdPerHost.value() + " is less or equal 0; defaulting to unlimited");
+            logger.debug("Global concurrent snapshot config parameter {} is less or equal 0; defaulting to unlimited", ConcurrentSnapshotsThresholdPerHost.value());
         } else {
             dispatcher.setCreateSnapshotQueueSizeLimit(snapshotLimit);
         }
 
         final Long migrationLimit = VolumeApiService.ConcurrentMigrationsThresholdPerDatastore.value();
         if (migrationLimit == null || migrationLimit <= 0) {
-            logger.debug("Global concurrent migration config parameter " + VolumeApiService.ConcurrentMigrationsThresholdPerDatastore.value() + " is less or equal 0; defaulting to unlimited");
+            logger.debug("Global concurrent migration config parameter {} is less or equal 0; defaulting to unlimited", VolumeApiService.ConcurrentMigrationsThresholdPerDatastore.value());
         } else {
             dispatcher.setMigrateQueueSizeLimit(migrationLimit);
         }
@@ -617,7 +617,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                     for (final  Object key : params.keySet()) {
                         final String keyStr = (String)key;
                         final String[] value = (String[])params.get(key);
-                        logger.trace("   key: " + keyStr + ", value: " + ((value == null) ? "'null'" : value[0]));
+                        logger.trace("   key: {}, value: {}", keyStr, (value == null) ? "'null'" : value[0]);
                     }
                 }
                 throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "Invalid request, no command sent");
@@ -677,7 +677,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                     buf.append(obj.getUuid());
                     buf.append(" ");
                 }
-                logger.info("PermissionDenied: " + ex.getMessage() + " on objs: [" + buf + "]");
+                logger.info("PermissionDenied: {} on objs: [{}]", ex.getMessage(), buf);
             } else {
                 logger.info("PermissionDenied: {}", ex.getMessage());
             }
@@ -998,7 +998,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
             // if api/secret key are passed to the parameters
             if ((signature == null) || (apiKey == null)) {
-                logger.debug("Expired session, missing signature, or missing apiKey -- ignoring request. Signature: " + signature + ", apiKey: " + apiKey);
+                logger.debug("Expired session, missing signature, or missing apiKey -- ignoring request. Signature: {}, apiKey: {}", signature, apiKey);
                 return false; // no signature, bad request
             }
 
@@ -1211,7 +1211,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             float offsetInHrs = 0f;
             if (timezone != null) {
                 final TimeZone t = TimeZone.getTimeZone(timezone);
-                logger.info("Current user logged in under " + timezone + " timezone");
+                logger.info("Current user logged in under {} timezone", timezone);
 
                 final java.util.Date date = new java.util.Date();
                 final long longDate = date.getTime();
@@ -1363,9 +1363,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         final Boolean apiSourceCidrChecksEnabled = ApiServiceConfiguration.ApiSourceCidrChecksEnabled.value();
 
         if (apiSourceCidrChecksEnabled) {
-            logger.debug("CIDRs from which account '" + account.toString() + "' is allowed to perform API calls: " + accessAllowedCidrs);
+            logger.debug("CIDRs from which account '{}' is allowed to perform API calls: {}", account.toString(), accessAllowedCidrs);
             if (!NetUtils.isIpInCidrList(remoteAddress, accessAllowedCidrs.split(","))) {
-                logger.warn("Request by account '" + account.toString() + "' was denied since " + remoteAddress + " does not match " + accessAllowedCidrs);
+                logger.warn("Request by account '{}' was denied since {} does not match {}", account.toString(), remoteAddress, accessAllowedCidrs);
                 throw new OriginDeniedException("Calls from disallowed origin", account, remoteAddress);
                 }
         }
