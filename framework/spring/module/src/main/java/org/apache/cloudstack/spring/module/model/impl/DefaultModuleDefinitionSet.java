@@ -334,7 +334,7 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
         return resources.toArray(Resource[]::new);
     }
 
-    private Set<Resource> collectInheritedResources(ModuleDefinition def) {
+    private Set<Resource> collectInheritedResources(final ModuleDefinition def) {
         if (def == null) {
             return Collections.emptySet();
         }
@@ -343,7 +343,7 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
             return configResourcesMap.get(def.getName());
         }
 
-        Set<Resource> inheritableResources = new LinkedHashSet<>(def.getInheritableContextLocations());
+        final Set<Resource> inheritableResources = new LinkedHashSet<>(def.getInheritableContextLocations());
         inheritableResources.addAll(collectInheritedResources(modules.get(def.getParentName())));
         configResourcesMap.put(def.getName(), inheritableResources);
         return inheritableResources;
