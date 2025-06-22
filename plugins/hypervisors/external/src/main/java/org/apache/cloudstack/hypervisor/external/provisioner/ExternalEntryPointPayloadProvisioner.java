@@ -460,6 +460,7 @@ public class ExternalEntryPointPayloadProvisioner extends ManagerBase implements
         logger.debug("Preparing entry point for Extension [name: {}, user-defined: {}]", extensionName, userDefined);
         if (!userDefined) {
             logger.debug("Skipping preparing entry point for inbuilt extension: {}", extensionName);
+            return;
         }
         String destinationPath = getExtensionEntryPoint(extensionRelativeEntryPoint);
         if (!destinationPath.endsWith(".sh")) {
