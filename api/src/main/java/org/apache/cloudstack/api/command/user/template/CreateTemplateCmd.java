@@ -151,7 +151,7 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
             description = "the CPU arch of the template. Valid options are: x86_64, aarch64",
-            since = "4.20.1")
+            since = "4.20.2")
     private String arch;
 
     // ///////////////////////////////////////////////////
