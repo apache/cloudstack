@@ -26,8 +26,8 @@
                       http://www.springframework.org/schema/context
                       http://www.springframework.org/schema/context/spring-context.xsd"
 >
-    <bean id="ExternalOrchestratorDaoImpl" class="org.apache.cloudstack.framework.extensions.dao.ExternalOrchestratorDaoImpl" />
-    <bean id="ExternalOrchestratorDetailDaoImpl" class="org.apache.cloudstack.framework.extensions.dao.ExternalOrchestratorDetailDaoImpl" />
+    <bean id="ExternalOrchestratorDaoImpl" class="org.apache.cloudstack.framework.extensions.dao.ExtensionDaoImpl" />
+    <bean id="ExternalOrchestratorDetailDaoImpl" class="org.apache.cloudstack.framework.extensions.dao.ExtensionDetailsDaoImpl" />
     <bean id="ExtensionResourceMapDaoImpl" class="org.apache.cloudstack.framework.extensions.dao.ExtensionResourceMapDaoImpl" />
     <bean id="ExtensionResourceMapDetailsDaoImpl" class="org.apache.cloudstack.framework.extensions.dao.ExtensionResourceMapDetailsDaoImpl" />
     <bean id="ExtensionsManager" class="org.apache.cloudstack.framework.extensions.manager.ExtensionsManagerImpl" />

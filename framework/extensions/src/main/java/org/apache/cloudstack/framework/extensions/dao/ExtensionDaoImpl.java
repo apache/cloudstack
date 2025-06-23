@@ -26,11 +26,11 @@ import com.cloud.utils.db.SearchCriteria;
 import org.apache.cloudstack.extension.Extension;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionVO;
 
-public class ExternalOrchestratorDaoImpl extends GenericDaoBase<ExtensionVO, Long> implements ExtensionDao {
+public class ExtensionDaoImpl extends GenericDaoBase<ExtensionVO, Long> implements ExtensionDao {
 
     private final SearchBuilder<ExtensionVO> AllFieldSearch;
 
-    public ExternalOrchestratorDaoImpl() {
+    public ExtensionDaoImpl() {
         AllFieldSearch = createSearchBuilder();
         AllFieldSearch.and("name", AllFieldSearch.entity().getName(), SearchCriteria.Op.EQ);
         AllFieldSearch.and("type", AllFieldSearch.entity().getType(), SearchCriteria.Op.EQ);

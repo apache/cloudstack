@@ -20,7 +20,7 @@ package org.apache.cloudstack.framework.extensions.dao;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionDetailsVO;
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 
-public class ExternalOrchestratorDetailDaoImpl extends ResourceDetailsDaoBase<ExtensionDetailsVO> implements ExtensionDetailsDao {
+public class ExtensionDetailsDaoImpl extends ResourceDetailsDaoBase<ExtensionDetailsVO> implements ExtensionDetailsDao {
     @Override
     public void addDetail(long resourceId, String key, String value, boolean display) {
         super.addDetail(new ExtensionDetailsVO(resourceId, key, value, display));
