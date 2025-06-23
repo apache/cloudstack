@@ -162,8 +162,16 @@ public class ExtensionCustomActionResponse extends BaseResponse {
         this.parameters = parameters;
     }
 
+    public List<ExtensionCustomActionParameterResponse> getParameters() {
+        return parameters;
+    }
+
     public void setDetails(Map<String, String> details) {
         this.details = details;
+    }
+
+    public Map<String, String> getDetails() {
+        return details;
     }
 
     public Date getCreated() {

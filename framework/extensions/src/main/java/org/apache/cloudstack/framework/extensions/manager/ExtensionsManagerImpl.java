@@ -640,7 +640,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         }
         if (orchestratorRequiresPrepareVm != null && !Extension.Type.Orchestrator.equals(extensionVO.getType())) {
             throw new InvalidParameterValueException(String.format("%s is applicable only with %s type",
-                    ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM, extensionVO.getType().name()));
+                    ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM, extensionVO.getType()));
         }
         if (StringUtils.isNotBlank(stateStr) && !stateStr.equalsIgnoreCase(extensionVO.getState().name())) {
             try {
@@ -969,7 +969,9 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         }
         return Transaction.execute((TransactionCallbackWithException<Boolean, CloudRuntimeException>) status -> {
             extensionCustomActionDetailsDao.removeDetails(customActionId);
-            extensionCustomActionDao.remove(customActionId);
+            if (!extensionCustomActionDao.remove(customActionId)) {
+                throw new CloudRuntimeException("Failed to delete custom action");
+            }
             return true;
         });
     }
@@ -1211,6 +1213,10 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         ExtensionCustomActionVO customActionVO = extensionCustomActionDao.findById(id);
         if (customActionVO == null) {
             logger.error("Invalid custom action specified with ID: {}", id);
+            throw new InvalidParameterValueException(error);
+        }
+        if (!customActionVO.isEnabled()) {
+            logger.error("Failed to run {} as it is not enabled", customActionVO);
             throw new InvalidParameterValueException(error);
         }
         final String actionName = customActionVO.getName();

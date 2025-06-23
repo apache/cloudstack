@@ -92,6 +92,46 @@ public class ExtensionResponse extends BaseResponse {
         this.type = type;
     }
 
+    public String getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public String getEntryPoint() {
+        return entryPoint;
+    }
+
+    public Boolean isEntryPointReady() {
+        return entryPointReady;
+    }
+
+    public Boolean isUserDefined() {
+        return userDefined;
+    }
+
+    public Boolean isOrchestratorRequiresPrepareVm() {
+        return orchestratorRequiresPrepareVm;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public Map<String, String> getDetails() {
+        return details;
+    }
+
     public void setEntryPoint(String entryPoint) {
         this.entryPoint = entryPoint;
     }

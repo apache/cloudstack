@@ -55,6 +55,10 @@ public class CustomActionResultResponse extends BaseResponse {
         this.success = success;
     }
 
+    public Boolean getSuccess() {
+        return success;
+    }
+
     public void setResult(Map<String, String> result) {
         this.result = result;
     }
