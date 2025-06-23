@@ -348,7 +348,7 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
                 // we won't, however, shrink a volume if its smaller.
                 long size = destdata.getSize();
                 if (outVolume.getAllocatedSizeInBytes() < destdata.getSize()) {
-                    logger.info("Resizing volume " + destdata.getUuid() + " to requested target volume size of " + destdata.getSize());
+                    logger.info("Resizing volume {} to requested target volume size of {}", destdata.getUuid(), destdata.getSize());
                     api.resize(context, destIn, destdata.getSize());
                 } else if (outVolume.getAllocatedSizeInBytes() > destdata.getSize()) {
                     size = outVolume.getAllocatedSizeInBytes();
