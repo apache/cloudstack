@@ -117,7 +117,7 @@ public class ExternalEntryPointPayloadProvisionerTest {
     private File testScript;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() throws IOException {
         tempDir = Files.createTempDirectory("extensions-test").toFile();
         tempDataDir = Files.createTempDirectory("extensions-data-test").toFile();
 
@@ -138,7 +138,7 @@ public class ExternalEntryPointPayloadProvisionerTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         if (tempDir != null && tempDir.exists()) {
             deleteDirectory(tempDir);
         }
@@ -159,13 +159,10 @@ public class ExternalEntryPointPayloadProvisionerTest {
         dir.delete();
     }
 
-    private void resetTestScript() throws IOException {
-        // Reset script to default state (executable, readable, writable)
+    private void resetTestScript() {
         testScript.setExecutable(true);
         testScript.setReadable(true);
         testScript.setWritable(true);
-        // Clear any content
-        Files.write(testScript.toPath(), new byte[0]);
     }
 
     @Test
@@ -201,7 +198,7 @@ public class ExternalEntryPointPayloadProvisionerTest {
     }
 
     @Test
-    public void testGetExtensionCheckedEntryPointPathValidFile() throws IOException {
+    public void testGetExtensionCheckedEntryPointPathValidFile() {
         String result = provisioner.getExtensionCheckedEntryPointPath("test-extension", "test-extension.sh");
 
         assertEquals(testScript.getAbsolutePath(), result);
@@ -215,7 +212,7 @@ public class ExternalEntryPointPayloadProvisionerTest {
     }
 
     @Test
-    public void testGetExtensionCheckedEntryPointPathPermissions() throws IOException {
+    public void testGetExtensionCheckedEntryPointPathPermissions() {
         testScript.setExecutable(false);
 
         String result = provisioner.getExtensionCheckedEntryPointPath("test-extension", "test-extension.sh");
@@ -239,7 +236,7 @@ public class ExternalEntryPointPayloadProvisionerTest {
     }
 
     @Test
-    public void testCheckExtensionsDirectoryInvalid() throws Exception {
+    public void testCheckExtensionsDirectoryInvalid() {
         ReflectionTestUtils.setField(provisioner, "extensionsDirectory", "/nonexistent/path");
 
         boolean result = provisioner.checkExtensionsDirectory();
@@ -247,13 +244,13 @@ public class ExternalEntryPointPayloadProvisionerTest {
     }
 
     @Test
-    public void testCreateOrCheckExtensionsDataDirectory() throws Exception {
+    public void testCreateOrCheckExtensionsDataDirectory() throws ConfigurationException {
         provisioner.createOrCheckExtensionsDataDirectory();
         Mockito.verify(logger).info("Extensions data directory path: {}", tempDataDir.getAbsolutePath());
     }
 
     @Test(expected = ConfigurationException.class)
-    public void testCreateOrCheckExtensionsDataDirectoryInvalidPath() throws Exception {
+    public void testCreateOrCheckExtensionsDataDirectoryInvalidPath() throws ConfigurationException {
         ReflectionTestUtils.setField(provisioner, "extensionsDataDirectory", "/nonexistent/path");
 
         provisioner.createOrCheckExtensionsDataDirectory();
@@ -267,7 +264,7 @@ public class ExternalEntryPointPayloadProvisionerTest {
     }
 
     @Test
-    public void testGetChecksumForExtensionEntryPoint() throws IOException {
+    public void testGetChecksumForExtensionEntryPoint() {
         String result = provisioner.getChecksumForExtensionEntryPoint("test-extension", "test-extension.sh");
 
         assertNotNull(result);
@@ -281,7 +278,7 @@ public class ExternalEntryPointPayloadProvisionerTest {
     }
 
     @Test
-    public void testPrepareExternalProvisioning() throws Exception {
+    public void testPrepareExternalProvisioning() {
         try (MockedStatic<Script> scriptMock = Mockito.mockStatic(Script.class)) {
             scriptMock.when(() -> Script.findScript(anyString(), anyString())).thenReturn(testScript.getAbsolutePath());
 
@@ -318,7 +315,7 @@ public class ExternalEntryPointPayloadProvisionerTest {
     }
 
     @Test
-    public void testStartInstance() throws IOException {
+    public void testStartInstance() {
         StartCommand cmd = mock(StartCommand.class);
         VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
         when(vmTO.getUuid()).thenReturn("test-uuid");
@@ -336,7 +333,7 @@ public class ExternalEntryPointPayloadProvisionerTest {
     }
 
     @Test
-    public void testStartInstanceDeploy() throws IOException {
+    public void testStartInstanceDeploy() {
         StartCommand cmd = mock(StartCommand.class);
         VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
         when(vmTO.getUuid()).thenReturn("test-uuid");
@@ -357,7 +354,7 @@ public class ExternalEntryPointPayloadProvisionerTest {
     }
 
     @Test
-    public void testStartInstanceError() throws IOException {
+    public void testStartInstanceError() {
         StartCommand cmd = mock(StartCommand.class);
         VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
         when(vmTO.getUuid()).thenReturn("test-uuid");
@@ -376,7 +373,7 @@ public class ExternalEntryPointPayloadProvisionerTest {
     }
 
     @Test
-    public void testStopInstance() throws Exception {
+    public void testStopInstance() {
         StopCommand cmd = mock(StopCommand.class);
         VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
         when(vmTO.getUuid()).thenReturn("test-uuid");
@@ -393,7 +390,7 @@ public class ExternalEntryPointPayloadProvisionerTest {
     }
 
     @Test
-    public void testRebootInstance() throws Exception {
+    public void testRebootInstance() {
         RebootCommand cmd = mock(RebootCommand.class);
         VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
         when(vmTO.getUuid()).thenReturn("test-uuid");
@@ -410,7 +407,7 @@ public class ExternalEntryPointPayloadProvisionerTest {
     }
 
     @Test
-    public void testExpungeInstance() throws Exception {
+    public void testExpungeInstance() {
         StopCommand cmd = mock(StopCommand.class);
         VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
         when(vmTO.getUuid()).thenReturn("test-uuid");
@@ -427,7 +424,7 @@ public class ExternalEntryPointPayloadProvisionerTest {
     }
 
     @Test
-    public void testGetHostVmStateReport() throws Exception {
+    public void testGetHostVmStateReport() {
         HostVO host = mock(HostVO.class);
         when(hostDao.findById(anyLong())).thenReturn(host);
 
@@ -455,7 +452,7 @@ public class ExternalEntryPointPayloadProvisionerTest {
     }
 
     @Test
-    public void testGetHostVmStateReportHostNotFound() throws IOException {
+    public void testGetHostVmStateReportHostNotFound() {
         Map<String, HostVmStateReportEntry> result = provisioner.getHostVmStateReport(1L, "test-extension", "test-extension.sh");
 
         assertNotNull(result);
@@ -464,7 +461,7 @@ public class ExternalEntryPointPayloadProvisionerTest {
     }
 
     @Test
-    public void testRunCustomAction() throws IOException {
+    public void testRunCustomAction() {
         RunCustomActionCommand cmd = mock(RunCustomActionCommand.class);
         when(cmd.getActionName()).thenReturn("test-action");
         when(cmd.getParameters()).thenReturn(new HashMap<>());
@@ -495,27 +492,22 @@ public class ExternalEntryPointPayloadProvisionerTest {
             mockScript.createNewFile();
             scriptMock.when(() -> Script.findScript(anyString(), anyString())).thenReturn(mockScript.getAbsolutePath());
 
-            provisioner.prepareExtensionEntryPoint("test-extension", true, "test-extension.sh");
+            provisioner.prepareExtensionEntryPoint("test-extension", true, "test-extension-new.sh");
 
-            File createdFile = new File(tempDir, "test-extension.sh");
+            File createdFile = new File(tempDir, "test-extension-new.sh");
             assertTrue(createdFile.exists());
         }
     }
 
     @Test
-    public void testPrepareExtensionEntryPointNotUserDefined() throws Exception {
-        // Delete the test script since this test expects it to not exist
-        if (testScript.exists()) {
-            testScript.delete();
-        }
-
-        provisioner.prepareExtensionEntryPoint("test-extension", false, "test-extension.sh");
-        File createdFile = new File(tempDir, "test-extension.sh");
+    public void testPrepareExtensionEntryPointNotUserDefined() {
+        provisioner.prepareExtensionEntryPoint("test-extension", false, "test-extension-builtin.sh");
+        File createdFile = new File(tempDir, "test-extension-builtin.sh");
         assertFalse(createdFile.exists());
     }
 
     @Test
-    public void testPrepareExtensionEntryPointNotBashScript() throws Exception {
+    public void testPrepareExtensionEntryPointNotBashScript() {
         provisioner.prepareExtensionEntryPoint("test-extension", true, "test-extension.txt");
 
         File createdFile = new File(tempDir, "test-extension.txt");
@@ -523,9 +515,8 @@ public class ExternalEntryPointPayloadProvisionerTest {
     }
 
     @Test
-    public void testPrepareExtensionEntryPointFileAlreadyExists() throws Exception {
+    public void testPrepareExtensionEntryPointFileAlreadyExists() {
         File existingFile = new File(tempDir, "test-extension.sh");
-        existingFile.createNewFile();
 
         provisioner.prepareExtensionEntryPoint("test-extension", true, "test-extension.sh");
 
@@ -533,7 +524,7 @@ public class ExternalEntryPointPayloadProvisionerTest {
     }
 
     @Test
-    public void testCleanupExtensionEntryPoint() throws Exception {
+    public void testCleanupExtensionEntryPoint() throws IOException {
         String extensionDirName = Extension.getDirectoryName("test-extension");
         File extensionDir = new File(tempDir, extensionDirName);
         extensionDir.mkdirs();
@@ -546,7 +537,7 @@ public class ExternalEntryPointPayloadProvisionerTest {
     }
 
     @Test
-    public void testCleanupExtensionData() throws Exception {
+    public void testCleanupExtensionData() throws IOException {
         File extensionDataDir = new File(tempDataDir, "test-extension");
         extensionDataDir.mkdirs();
         File testFile = new File(extensionDataDir, "test-file.txt");
@@ -558,7 +549,7 @@ public class ExternalEntryPointPayloadProvisionerTest {
     }
 
     @Test
-    public void testExecuteExternalCommand() throws Exception {
+    public void testExecuteExternalCommand() throws IOException {
         String scriptContent = "#!/bin/bash\nif grep -q '{\"test\":\"value\"}' \"$2\"; then\necho 'success'\nexit 0\nelse\necho 'fail'\nexit 1\nfi";
         Files.write(testScript.toPath(), scriptContent.getBytes());
 
