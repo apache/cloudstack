@@ -533,6 +533,7 @@ class TestExtensions(cloudstackTestCase):
             self.apiclient,
             extensionid=self.extension.id,
             name=name,
+            enabled=True,
             details=details,
             parameters=parameters,
             successmessage='Successfully completed {{actionName}}'
@@ -579,6 +580,7 @@ class TestExtensions(cloudstackTestCase):
             self.apiclient,
             extensionid=self.extension.id,
             name=name,
+            enabled=True,
             errormessage='Failed {{actionName}}'
         )
         self.cleanup.append(self.custom_action)

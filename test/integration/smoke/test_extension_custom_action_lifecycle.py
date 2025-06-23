@@ -236,12 +236,36 @@ class TestExtensions(cloudstackTestCase):
                 self.assertEqual(v, actual, f"Parameter property for key '{k}' should be '{v}'")
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
-    def test_05_extension_run_custom_action_fail(self):
+    def test_05_extension_run_custom_action_invalid_resource_type_fail(self):
         name = random_gen()
         self.custom_action = ExtensionCustomAction.create(
             self.apiclient,
             extensionid=self.extension.id,
-            name=name
+            name=name,
+            enabled=True
+        )
+        self.cleanup.append(self.custom_action)
+        try:
+            self.custom_action.run(
+                self.apiclient,
+                resourcetype='Host',
+                resourceid='abcd'
+            )
+            self.fail(f"Invalid resource custom action: {name} ran successfully")
+        except Exception as e:
+            msg = str(e)
+            if msg.startswith("Job failed") == False or "Internal error running action" not in msg == False:
+                self.fail(f"Unknown exception occurred: {e}")
+            pass
+
+    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    def test_06_extension_run_custom_action_fail(self):
+        name = random_gen()
+        self.custom_action = ExtensionCustomAction.create(
+            self.apiclient,
+            extensionid=self.extension.id,
+            name=name,
+            enabled=True
         )
         self.cleanup.append(self.custom_action)
         try:
@@ -251,6 +275,7 @@ class TestExtensions(cloudstackTestCase):
             )
             self.fail(f"Invalid resource custom action: {name} ran successfully")
         except Exception as e:
-            if str(e).startswith("Job failed") == False:
+            msg = str(e)
+            if msg.startswith("Job failed") == False or "Invalid action" not in msg == False:
                 self.fail(f"Unknown exception occurred: {e}")
             pass
