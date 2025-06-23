@@ -45,6 +45,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.extension.Extension;
+import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
@@ -110,6 +111,9 @@ public class ExternalEntryPointPayloadProvisionerTest {
 
     @Mock
     private Logger logger;
+
+    @Mock
+    private ExtensionsManager extensionsManager;
 
     private File tempDir;
     private File tempDataDir;
