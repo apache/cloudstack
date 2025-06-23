@@ -57,9 +57,11 @@ import org.apache.cloudstack.api.response.ExtensionResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.extension.CustomActionResultResponse;
 import org.apache.cloudstack.extension.Extension;
-import org.apache.cloudstack.extension.ExtensionHelper;
 import org.apache.cloudstack.extension.ExtensionCustomAction;
+import org.apache.cloudstack.extension.ExtensionHelper;
 import org.apache.cloudstack.extension.ExtensionResourceMap;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.extensions.api.AddCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.CreateExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.DeleteCustomActionCmd;
@@ -121,6 +123,7 @@ import com.cloud.hypervisor.ExternalProvisioner;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.org.Cluster;
 import com.cloud.serializer.GsonHelper;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
@@ -138,7 +141,12 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.VMInstanceDao;
 
-public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsManager, ExtensionHelper, PluggableService {
+public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsManager, ExtensionHelper, PluggableService, Configurable {
+
+    ConfigKey<Integer> EntryPointStateCheckInterval = new ConfigKey<>("Advanced", Integer.class,
+            "extension.entrypoint.state.check.interval", "60",
+            "Interval (in seconds) for checking entry-point state of extensions",
+            false, ConfigKey.Scope.Global);
 
     @Inject
     ExtensionDao extensionDao;
@@ -190,6 +198,9 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
 
     @Inject
     AlertManager alertManager;
+
+    @Inject
+    VMTemplateDao templateDao;
 
     private ScheduledExecutorService entryPointSyncCheckExecutor;
 
@@ -469,6 +480,18 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         return externalDetails;
     }
 
+    protected void checkOrchestratorTemplates(Long extensionId) {
+        List<Long> extensionTemplateIds = templateDao.listIdsByExtensionId(extensionId);
+        if (CollectionUtils.isNotEmpty(extensionTemplateIds)) {
+            throw new CloudRuntimeException("Orchestrator extension has associated templates, remove them to delete the extension");
+        }
+    }
+
+    @Override
+    public String getExtensionsPath() {
+        return externalProvisioner.getExtensionsPath();
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_EXTENSION_CREATE, eventDescription = "creating extension")
     public Extension createExtension(CreateExtensionCmd cmd) {
@@ -701,6 +724,12 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         if (CollectionUtils.isNotEmpty(registeredResources)) {
             throw new CloudRuntimeException("Extension has associated resources, unregister them to delete the extension");
         }
+        List<Long> customActionIds = extensionCustomActionDao.listIdsByExtensionId(extensionId);
+        if (CollectionUtils.isNotEmpty(customActionIds)) {
+            throw new CloudRuntimeException(String.format("Extension has %d custom actions, delete them to delete the extension",
+                    customActionIds.size()));
+        }
+        checkOrchestratorTemplates(extensionId);
 
         boolean result = Transaction.execute((TransactionCallbackWithException<Boolean, CloudRuntimeException>) status -> {
             extensionDetailsDao.removeDetails(extensionId);
@@ -1413,8 +1442,8 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
 
     @Override
     public boolean start() {
-        long syncCheckInitialDelay = 120;
-        long syncCheckInterval = 600;
+        long syncCheckInterval = EntryPointStateCheckInterval.value();
+        long syncCheckInitialDelay = Math.max(60, syncCheckInterval);
         logger.debug("Scheduling extensions entrypoint sync check task with initial delay={}s and interval={}s",
                 syncCheckInitialDelay, syncCheckInterval);
         entryPointSyncCheckExecutor.scheduleWithFixedDelay(new EntryPointSyncCheckWorker(),
@@ -1449,6 +1478,18 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         cmds.add(RegisterExtensionCmd.class);
         cmds.add(UnregisterExtensionCmd.class);
         return cmds;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return ExtensionsManager.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey[]{
+                EntryPointStateCheckInterval
+        };
     }
 
     public class EntryPointSyncCheckWorker extends ManagedContextRunnable {

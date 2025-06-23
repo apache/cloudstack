@@ -50,6 +50,8 @@ import com.cloud.utils.component.Manager;
 
 public interface ExtensionsManager extends Manager {
 
+    String getExtensionsPath();
+
     Extension createExtension(CreateExtensionCmd cmd);
 
     boolean prepareExtensionEntryPointAcrossServers(Extension extension);

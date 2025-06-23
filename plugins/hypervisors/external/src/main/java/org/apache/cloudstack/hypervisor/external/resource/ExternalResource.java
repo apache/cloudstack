@@ -18,14 +18,13 @@ package org.apache.cloudstack.hypervisor.external.resource;
 
 import java.util.Map;
 
-import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.extension.Extension;
 import org.apache.cloudstack.framework.extensions.command.ExtensionRoutingUpdateCommand;
-import org.apache.cloudstack.hypervisor.external.provisioner.ExternalEntryPointPayloadProvisioner;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
@@ -74,8 +73,7 @@ public class ExternalResource implements ServerResource {
     protected static final long DOM0_RAM = 768 * 1024 * 1024L;
     protected static final String CAPABILITIES = "hvm";
 
-    @Inject
-    ExternalProvisioner externalProvisioner;
+    protected ExternalProvisioner externalProvisioner;
 
     protected String url;
     protected String dcId;
@@ -345,7 +343,13 @@ public class ExternalResource implements ServerResource {
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        externalProvisioner = ComponentContext.inject(ExternalEntryPointPayloadProvisioner.class);
+        try {
+            externalProvisioner = ComponentContext.getDelegateComponentOfType(ExternalProvisioner.class);
+        } catch (NoSuchBeanDefinitionException e) {
+            throw new ConfigurationException(
+                    String.format("Unable to find an ExternalProvisioner for the external resource: %s", name)
+            );
+        }
         externalProvisioner.configure(name, params);
         dcId = (String)params.get("zone");
         pod = (String)params.get("pod");

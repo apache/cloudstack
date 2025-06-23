@@ -33,6 +33,8 @@ import com.cloud.utils.component.Manager;
 
 public interface ExternalProvisioner extends Manager {
 
+    String getExtensionsPath();
+
     String getExtensionEntryPoint(String relativeEntryPoint);
 
     String getChecksumForExtensionEntryPoint(String extensionName, String relativeEntryPoint);

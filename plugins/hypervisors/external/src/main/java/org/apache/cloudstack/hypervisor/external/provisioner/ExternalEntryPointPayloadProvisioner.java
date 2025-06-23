@@ -34,6 +34,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
@@ -89,7 +94,8 @@ import com.cloud.vm.dao.VMInstanceDao;
 public class ExternalEntryPointPayloadProvisioner extends ManagerBase implements ExternalProvisioner, PluggableService {
 
     public static final String BASE_EXTERNAL_PROVISIONER_SCRIPTS_DIR = "scripts/vm/hypervisor/external/provisioner";
-    public static final String BASE_EXTERNAL_PROVISIONER_SCRIPT = BASE_EXTERNAL_PROVISIONER_SCRIPTS_DIR + "/provisioner.sh";
+    public static final String BASE_EXTERNAL_PROVISIONER_SHELL_SCRIPT =
+            BASE_EXTERNAL_PROVISIONER_SCRIPTS_DIR + "/provisioner.sh";
 
     private static final String PROPERTIES_FILE = "server.properties";
     private static final String EXTENSIONS_DEPLOYMENT_MODE_NAME = "extensions.deployment.mode";
@@ -115,8 +121,9 @@ public class ExternalEntryPointPayloadProvisioner extends ManagerBase implements
 
     private static final AtomicReference<Properties> propertiesRef = new AtomicReference<>();
     private String extensionsDirectory;
-
     private String extensionsDataDirectory;
+    private ExecutorService payloadCleanupExecutor;
+    private ScheduledExecutorService payloadCleanupScheduler;
 
     @Override
     public String getName() {
@@ -235,6 +242,25 @@ public class ExternalEntryPointPayloadProvisioner extends ManagerBase implements
     }
 
     @Override
+    public boolean start() {
+        payloadCleanupExecutor = Executors.newSingleThreadExecutor();
+        payloadCleanupScheduler = Executors.newSingleThreadScheduledExecutor();
+        return true;
+    }
+
+    @Override
+    public boolean stop() {
+        payloadCleanupExecutor.shutdown();
+        payloadCleanupScheduler.shutdown();
+        return true;
+    }
+
+    @Override
+    public String getExtensionsPath() {
+        return extensionsDirectory;
+    }
+
+    @Override
     public String getExtensionEntryPoint(String relativeEntryPoint) {
         return String.format("%s%s%s", extensionsDirectory, File.separator, relativeEntryPoint);
     }
@@ -278,7 +304,8 @@ public class ExternalEntryPointPayloadProvisioner extends ManagerBase implements
             VirtualMachineTO virtualMachineTO  = GsonHelper.getGson().fromJson(merged, VirtualMachineTO.class);
             return new PrepareExternalProvisioningAnswer(cmd, null, virtualMachineTO, null);
         } catch (Exception e) {
-            logger.warn("Failed to parse the output from preparing external provisioning operation as part of VM deployment: {}", e.getMessage(), e);
+            logger.warn("Failed to parse the output from preparing external provisioning operation as " +
+                    "part of VM deployment: {}", e.getMessage(), e);
             return new PrepareExternalProvisioningAnswer(cmd, false, "Failed to parse VM");
         }
     }
@@ -446,7 +473,7 @@ public class ExternalEntryPointPayloadProvisioner extends ManagerBase implements
     }
 
     protected boolean createEntryPoint(String extensionName, Path destinationPathObj) throws IOException {
-        String sourceScriptPath = Script.findScript("", BASE_EXTERNAL_PROVISIONER_SCRIPT);
+        String sourceScriptPath = Script.findScript("", BASE_EXTERNAL_PROVISIONER_SHELL_SCRIPT);
         if(sourceScriptPath == null) {
             logger.error("Failed to find base script for preparing extension: {}",
                     extensionName);
@@ -523,7 +550,8 @@ public class ExternalEntryPointPayloadProvisioner extends ManagerBase implements
                     .normalize();
             if (!Files.isDirectory(filePath) && !Files.isRegularFile(filePath)) {
                 throw new CloudRuntimeException(
-                        String.format("Failed to cleanup extension entry-point: %s for extension: %s as it either does not exist or is not a regular file/directory",
+                        String.format("Failed to cleanup extension entry-point: %s for extension: %s as it either " +
+                                        "does not exist or is not a regular file/directory",
                                 extensionName, extensionRelativeEntryPoint));
             }
             if (!FileUtil.deleteRecursively(filePath)) {
@@ -671,7 +699,8 @@ public class ExternalEntryPointPayloadProvisioner extends ManagerBase implements
             ProcessBuilder builder = new ProcessBuilder(command);
             builder.redirectErrorStream(true);
 
-            logger.debug("Executing {} for command: {} with wait: {} and data file: {}", executablePath, action, wait, dataFile);
+            logger.debug("Executing {} for command: {} with wait: {} and data file: {}", executablePath,
+                    action, wait, dataFile);
 
             Process process = builder.start();
             boolean finished = process.waitFor(wait, TimeUnit.SECONDS);
@@ -700,7 +729,39 @@ public class ExternalEntryPointPayloadProvisioner extends ManagerBase implements
         }
     }
 
-    private String prepareExternalPayload(String extensionName, Map<String, Object> details) throws IOException {
+    protected void scheduleExtensionPayloadDirectoryCleanup(String extensionName) {
+        try {
+            Future<?> future = payloadCleanupExecutor.submit(() -> {
+                try {
+                    cleanupExtensionData(extensionName, 1, false);
+                    logger.trace("Cleaned up payload directory for extension: {}", extensionName);
+                } catch (Exception e) {
+                    logger.warn("Exception during payload cleanup for extension: {} due to {}", extensionName,
+                            e.getMessage());
+                    logger.trace(e);
+                }
+            });
+            payloadCleanupScheduler.schedule(() -> {
+                try {
+                    if (!future.isDone()) {
+                        future.cancel(true);
+                        logger.trace("Cancelled cleaning up payload directory for extension: {} as it " +
+                                "running for more than 3 seconds", extensionName);
+                    }
+                } catch (Exception e) {
+                    logger.warn("Failed to cancel payload cleanup task for extension: {} due to {}",
+                            extensionName, e.getMessage());
+                    logger.trace(e);
+                }
+            }, 3, TimeUnit.SECONDS);
+        } catch (RejectedExecutionException e) {
+            logger.warn("Payload cleanup task for extension: {} was rejected due to: {}", extensionName,
+                    e.getMessage());
+            logger.trace(e);
+        }
+    }
+
+    protected String prepareExternalPayload(String extensionName, Map<String, Object> details) throws IOException {
         String json = GsonHelper.getGson().toJson(details);
         long epochMillis = System.currentTimeMillis();
         String fileName = epochMillis + ".json";
@@ -709,7 +770,7 @@ public class ExternalEntryPointPayloadProvisioner extends ManagerBase implements
         if (!Files.exists(payloadDirPath)) {
             Files.createDirectories(payloadDirPath);
         } else {
-            cleanupExtensionData(extensionName, 1, false);
+            scheduleExtensionPayloadDirectoryCleanup(extensionName);
         }
         Path payloadFile = payloadDirPath.resolve(fileName);
         Files.writeString(payloadFile, json, StandardOpenOption.CREATE_NEW);

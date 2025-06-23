@@ -16,9 +16,12 @@
 // under the License.
 package org.apache.cloudstack.framework.extensions.dao;
 
+import java.util.List;
+
 import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionCustomActionVO;
 
 public interface ExtensionCustomActionDao extends GenericDao<ExtensionCustomActionVO, Long> {
-    ExtensionCustomActionVO findByNameAndExtensionId(Long extensionId, String name);
+    ExtensionCustomActionVO findByNameAndExtensionId(long extensionId, String name);
+    List<Long> listIdsByExtensionId(long extensionId);
 }
