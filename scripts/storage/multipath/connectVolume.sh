@@ -46,7 +46,7 @@ fi
 // wait for the device path to show up
 while [ ! -e /dev/mapper/3${WWID} ]; do
    echo "$(date): Waiting for /dev/mapper/3${WWID} to appear"
-   sleep
+   sleep 1
 done
 
 FINISH_CONNECT=$(dirname $0)/finishConnect.sh
