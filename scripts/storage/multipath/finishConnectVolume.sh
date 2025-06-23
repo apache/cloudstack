@@ -19,7 +19,7 @@
 #####################################################################################
 #
 # Given a lun # and a WWID for a volume provisioned externally, find the volume
-# through the SCSI bus and make sure its visable via multipath
+# through the SCSI bus and make sure its visible via multipath
 #
 #####################################################################################
 
