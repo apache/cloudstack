@@ -57,25 +57,6 @@ def run_powershell_ssh(command, url, username, password):
         fail(str(e))
 
 
-def generate_random_mac():
-    hexchars = "0123456789ABCDEF"
-    return "52:54:00:{:02X}:{:02X}:{:02X}".format(
-        random.randint(0, 255),
-        random.randint(0, 255),
-        random.randint(0, 255)
-    )
-
-
-def prepare(data):
-    mac_address = generate_random_mac()
-    response = {
-        "status": "success",
-        "mac_address": mac_address,
-        "message": "Instance prepared"
-    }
-    print(json.dumps(response))
-
-
 def create(data):
     vm_name = data["virtualmachinename"]
     cpus = data["cpus"]
@@ -267,7 +248,6 @@ def main():
         fail("Invalid JSON in file")
 
     operations = {
-        "prepare": prepare,
         "create": create,
         "start": start,
         "stop": stop,

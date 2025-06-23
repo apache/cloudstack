@@ -308,7 +308,7 @@ BEGIN
         )
         VALUES (
             UUID(), ext_name, ext_desc, 'Orchestrator',
-            entry_point, 1, 0, 'Enabled', NOW(), NULL
+            entry_point, 1, 0, 'Disabled', NOW(), NULL
         )
 ;   END IF
 ;END;

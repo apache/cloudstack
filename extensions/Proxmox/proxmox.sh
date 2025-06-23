@@ -16,11 +16,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-generate_random_mac() {
-    hexchars="0123456789ABCDEF"
-    echo "52:54:00:$(for i in {1..3}; do echo -n ${hexchars:$(( RANDOM % 16 )):1}${hexchars:$(( RANDOM % 16 )):1}; [[ $i -lt 3 ]] && echo -n ':'; done)"
-}
-
 urlencode() {
     encoded_data=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$1'''))")
     echo "$encoded_data"
@@ -110,7 +105,7 @@ call_proxmox_api() {
     local path=$2
     local data=$3
 
-    echo "curl -sk --fail -X $method -H \"Authorization: PVEAPIToken=${user}!${token}=${secret}\" ${data:+-d \"$data\"} https://${url}:8006/api2/json${path}" >&2
+    #echo "curl -sk --fail -X $method -H \"Authorization: PVEAPIToken=${user}!${token}=${secret}\" ${data:+-d \"$data\"} https://${url}:8006/api2/json${path}" >&2
     response=$(curl -sk --fail -X "$method" \
         -H "Authorization: PVEAPIToken=${user}!${token}=${secret}" \
         ${data:+-d "$data"} \
@@ -177,19 +172,6 @@ execute_and_wait() {
     fi
 
     wait_for_proxmox_task "$upid"
-}
-
-prepare() {
-    parse_json "$1" || exit 1
-
-    local mac_address
-    mac_address=$(generate_random_mac)
-
-    local response
-    response=$(jq -n --arg mac "$mac_address" \
-        '{status: "success", mac_address: $mac}')
-
-    echo "$response"
 }
 
 create() {
@@ -324,9 +306,6 @@ fi
 parameters=$(<"$parameters_file")
 
 case $action in
-    prepare)
-        prepare "$parameters"
-        ;;
     create)
         create "$parameters"
         ;;
