@@ -99,7 +99,7 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
 
         connectScript = Script.findScript(STORAGE_SCRIPTS_DIR.getFinalValue(), connectScript);
         if (connectScript == null) {
-            throw new Error("Unable to find the connectScript.sh script");
+            throw new Error("Unable to find the connectVolume.sh script");
         }
 
         startConnectScript = Script.findScript(STORAGE_SCRIPTS_DIR.getFinalValue(), startConnectScript);
