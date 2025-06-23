@@ -53,9 +53,12 @@ public interface Host extends StateObject<Status>, Identity, Partition, HAResour
             return strs;
         }
     }
-    public static final String HOST_UEFI_ENABLE = "host.uefi.enable";
-    public static final String HOST_VOLUME_ENCRYPTION = "host.volume.encryption";
-    public static final String HOST_INSTANCE_CONVERSION = "host.instance.conversion";
+
+    String HOST_UEFI_ENABLE = "host.uefi.enable";
+    String HOST_VOLUME_ENCRYPTION = "host.volume.encryption";
+    String HOST_INSTANCE_CONVERSION = "host.instance.conversion";
+    String HOST_OVFTOOL_VERSION = "host.ovftool.version";
+    String HOST_VIRTV2V_VERSION = "host.virtv2v.version";
 
     /**
      * @return name of the machine.
