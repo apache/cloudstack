@@ -73,6 +73,7 @@
                 </dependencies>
                 <executions>
                     <execution>
+                        <?m2e execute onConfiguration,onIncremental?>
                         <id>setproperty</id>
                         <phase>validate</phase>
                         <goals>
@@ -90,6 +91,7 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <?m2e execute onConfiguration,onIncremental?>
                         <id>set-properties</id>
                         <phase>generate-sources</phase>
                         <goals>
@@ -106,7 +108,7 @@
                                     templateList.add("systemvmtemplate-${csVersion}.${patch}-x86_64-xen")
                                     templateList.add("systemvmtemplate-${csVersion}.${patch}-x86_64-ovm")
                                     templateList.add("systemvmtemplate-${csVersion}.${patch}-x86_64-hyperv")
-                                    File file = new File("./engine/schema/dist/systemvm-templates/md5sum.txt")
+                                    File file = new File("${basedir}/../../engine/schema/dist/systemvm-templates/md5sum.txt")
                                     def lines = file.readLines()
                                     for (template in templateList) {
                                         def data = lines.findAll { it.contains(template) }
@@ -128,6 +130,7 @@
                 <artifactId>download-maven-plugin</artifactId>
                 <version>1.6.3</version>
                 <executions>
+                    <?m2e execute onConfiguration,onIncremental?>
                     <execution>
                         <id>download-checksums</id>
                         <phase>validate</phase>

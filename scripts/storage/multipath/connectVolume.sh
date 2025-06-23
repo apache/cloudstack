@@ -29,102 +29,39 @@ WWID=${2:?"WWID required"}
 
 WWID=$(echo $WWID | tr '[:upper:]' '[:lower:]')
 
-systemctl is-active multipathd || systemctl restart multipathd || {
-   echo "$(date): Multipathd is NOT running and cannot be started.  This must be corrected before this host can access this storage volume."
-   logger -t "CS_SCSI_VOL_FIND" "${WWID} cannot be mapped to this host because multipathd is not currently running and cannot be started"
+START_CONNECT=$(dirname $0)/startConnect.sh
+if [ -x "${START_CONNECT}" ]; then
+   echo "$(date): Starting connect process for ${WWID} on lun ${LUN}"
+   ${START_CONNECT} ${LUN} ${WWID}
+   if [ $? -ne 0 ]; then
+      echo "$(date): Failed to start connect process for ${WWID} on lun ${LUN}"
+      logger -t "CS_SCSI_VOL_FIND" "${WWID} failed to start connect process on lun ${LUN}"
+      exit 1
+   fi
+else
+   echo "$(date): Unable to find startConnect.sh script!"
    exit 1
-}
-
-echo "$(date): Looking for ${WWID} on lun ${LUN}"
-
-# get vendor OUI.  we will only delete a device on the designated lun if it matches the
-# incoming WWN OUI value.  This is because multiple storage arrays may be mapped to the
-# host on different fiber channel hosts with the same LUN
-INCOMING_OUI=$(echo ${WWID} | cut -c2-7)
-echo "$(date): Incoming OUI: ${INCOMING_OUI}"
-
-# first we need to check if any stray references are left from a previous use of this lun
-for fchost in $(ls /sys/class/fc_host | sed -e 's/host//g'); do
-   lingering_devs=$(lsscsi -w "${fchost}:*:*:${LUN}" | grep /dev | awk '{if (NF > 6) { printf("%s:%s ", $NF, $(NF-1));} }' | sed -e 's/0x/3/g')
-
-   if [ ! -z "${lingering_devs}" ]; then
-     for dev in ${lingering_devs}; do
-       LSSCSI_WWID=$(echo $dev | awk -F: '{print $2}' | sed -e 's/0x/3/g')
-       FOUND_OUI=$(echo ${LSSCSI_WWID} | cut -c3-8)
-       if [ "${INCOMING_OUI}" != "${FOUND_OUI}" ]; then
-           continue;
-       fi
-       dev=$(echo $dev | awk -F: '{ print $1}')
-       logger -t "CS_SCSI_VOL_FIND" "${WWID} processing identified a lingering device ${dev} from previous lun use, attempting to clean up"
-       MP_WWID=$(multipath -l ${dev} | head -1 | awk '{print $1}')
-       MP_WWID=${MP_WWID:1} # strip first character (3) off
-       # don't do this if the WWID passed in matches the WWID from multipath
-       if [ ! -z "${MP_WWID}" ] && [ "${MP_WWID}" != "${WWID}" ]; then
-          # run full removal again so all devices and multimap are cleared
-          $(dirname $0)/disconnectVolume.sh ${MP_WWID}
-       # we don't have a multimap but we may still have some stranded devices to clean up
-       elif [ "${LSSCSI_WWID}" != "${WWID}" ]; then
-           echo "1" > /sys/block/$(echo ${dev} | awk -F'/' '{print $NF}')/device/delete
-       fi
-     done
-     sleep 3
-   fi
-done
-
-logger -t "CS_SCSI_VOL_FIND" "${WWID} awaiting disk path at /dev/mapper/3${WWID}"
-
-# wait for multipath to map the new lun to the WWID
-echo "$(date): Waiting for multipath entry to show up for the WWID"
-while true; do
-   ls /dev/mapper/3${WWID} >/dev/null 2>&1
-   if [ $? == 0 ]; then
-      break
-   fi
-
-   logger -t "CS_SCSI_VOL_FIND" "${WWID} not available yet, triggering scan"
-
-   # instruct bus to scan for new lun
-   for fchost in $(ls /sys/class/fc_host); do
-      echo "   --> Scanning ${fchost}"
-      echo "- - ${LUN}" > /sys/class/scsi_host/${fchost}/scan
-   done
-
-   multipath -v2 2>/dev/null
-
-   ls /dev/mapper/3${WWID} >/dev/null 2>&1
-   if [ $? == 0 ]; then
-      break
-   fi
-
-   sleep 5
-done
-
-echo "$(date): Doing a recan to make sure we have proper current size locally"
-for device in $(multipath -ll 3${WWID} | egrep '^  ' | awk '{print $2}'); do
-    echo "1" > /sys/bus/scsi/drivers/sd/${device}/rescan;
-done
-
-sleep 3
-
-multipathd reconfigure
-
-sleep 3
-
-# cleanup any old/faulty paths
-delete_needed=false
-multipath -l 3${WWID}
-for dev in $(multipath -l 3${WWID} 2>/dev/null| grep failed  | awk '{print $3}' ); do
-   logger -t "CS_SCSI_VOL_FIND" "${WWID} multipath contains faulty path ${dev}, removing"
-   echo 1 > /sys/block/${dev}/device/delete;
-   delete_needed=true
-done
-
-if [ "${delete_needed}" == "true" ]; then
-    sleep 10
-    multipath -v2 >/dev/null
 fi
 
-multipath -l 3${WWID}
+// wait for the device path to show up
+while [ ! -e /dev/mapper/3${WWID} ]; do
+   echo "$(date): Waiting for /dev/mapper/3${WWID} to appear"
+   sleep
+done
+
+FINISH_CONNECT=$(dirname $0)/finishConnect.sh
+if [ -x "${FINISH_CONNECT}" ]; then
+   echo "$(date): Starting post-connect validation for ${WWID} on lun ${LUN}"
+   ${FINISH_CONNECT} ${LUN} ${WWID}
+   if [ $? -ne 0 ]; then
+      echo "$(date): Failed to finish connect process for ${WWID} on lun ${LUN}"
+      logger -t "CS_SCSI_VOL_CONN_FINISH" "${WWID} failed to finish connect process on lun ${LUN}"
+      exit 1
+   fi
+else
+   echo "$(date): Unable to find finishConnect.sh script!"
+   exit 1
+fi
 
 logger -t "CS_SCSI_VOL_FIND" "${WWID} successfully discovered and available"
 

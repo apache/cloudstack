@@ -52,6 +52,7 @@
                 </dependencies>
                 <executions>
                     <execution>
+                        <?m2e execute onConfiguration,onIncremental?>
                         <goals>
                             <goal>compile</goal>
                             <goal>compileTests</goal>
@@ -114,11 +115,10 @@
             <version>${groovy.version}</version>
             <scope>test</scope>
         </dependency>
-        <!-- Optional dependencies for using Spock -->
-        <dependency> <!-- enables mocking of classes (in addition to interfaces) -->
+        <dependency>
             <groupId>cglib</groupId>
             <artifactId>cglib-nodep</artifactId>
-            <scope>test</scope>
+            <version>${cs.cglib.version}</version>
         </dependency>
         <dependency>
             <groupId>org.zapodot</groupId>

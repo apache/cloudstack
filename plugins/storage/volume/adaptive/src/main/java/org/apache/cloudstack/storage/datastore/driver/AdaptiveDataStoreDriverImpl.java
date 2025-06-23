@@ -269,7 +269,7 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
             dataIn.setExternalUuid(volume.getExternalUuid());
 
             // update the cloudstack metadata about the volume
-            persistVolumeOrTemplateData(storagePool, details, dataObject, volume, null);
+            persistVolumeOrTemplateData(storagePool, details, dataObject, volume, null, volume.getAllocatedSizeInBytes());
 
             result = new CreateCmdResult(dataObject.getUuid(), new Answer(null));
             result.setSuccess(true);
@@ -346,14 +346,17 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
 
                 // if we copied from one volume to another, the target volume's disk offering or user input may be of a larger size
                 // we won't, however, shrink a volume if its smaller.
+                long size = destdata.getSize();
                 if (outVolume.getAllocatedSizeInBytes() < destdata.getSize()) {
-                    logger.info("Resizing volume {} to requested target volume size of {}", destdata, destdata.getSize());
+                    logger.info("Resizing volume " + destdata.getUuid() + " to requested target volume size of " + destdata.getSize());
                     api.resize(context, destIn, destdata.getSize());
+                } else if (outVolume.getAllocatedSizeInBytes() > destdata.getSize()) {
+                    size = outVolume.getAllocatedSizeInBytes();
                 }
 
                 // initial volume info does not have connection map yet.  That is added when grantAccess is called later.
                 String finalPath = generatePathInfo(outVolume, null);
-                persistVolumeData(storagePool, details, destdata, outVolume, null);
+                persistVolumeData(storagePool, details, destdata, outVolume, null, size);
                 logger.info("Copy completed from [{}] to [{}]", srcdata, destdata);
 
                 VolumeObjectTO voto = new VolumeObjectTO();
@@ -384,15 +387,11 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
         logger.debug("canCopy: Checking srcData [{}:{}:{} AND destData [{}:{}:{}]",
                 srcData, srcData.getType(), srcData.getDataStore(), destData, destData.getType(), destData.getDataStore());
         try {
-            if (!isSameProvider(srcData)) {
+            if (!srcData.getDataStore().getUuid().equals(destData.getDataStore().getUuid())) {
                 logger.debug("canCopy: No we can't -- the source provider is NOT the correct type for this driver!");
                 return false;
             }
 
-            if (!isSameProvider(destData)) {
-                logger.debug("canCopy: No we can't -- the destination provider is NOT the correct type for this driver!");
-                return false;
-            }
             logger.debug(
                     "canCopy: Source and destination are the same so we can copy via storage endpoint, checking that the source actually exists");
             StoragePoolVO poolVO = _storagePoolDao.findById(srcData.getDataStore().getId());
@@ -500,7 +499,7 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
             ProviderVolume vol = api.getVolume(context, sourceIn);
             ProviderAdapterDataObject dataIn = newManagedDataObject(dataObject, storagePool);
             Map<String,String> connIdMap = api.getConnectionIdMap(dataIn);
-            persistVolumeOrTemplateData(storagePool, details, dataObject, vol, connIdMap);
+            persistVolumeOrTemplateData(storagePool, details, dataObject, vol, connIdMap, null);
 
 
             logger.info("Granted host {} access to volume {}", host, dataObject);
@@ -534,7 +533,7 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
             ProviderVolume vol = api.getVolume(context, sourceIn);
             ProviderAdapterDataObject dataIn = newManagedDataObject(dataObject, storagePool);
             Map<String,String> connIdMap = api.getConnectionIdMap(dataIn);
-            persistVolumeOrTemplateData(storagePool, details, dataObject, vol, connIdMap);
+            persistVolumeOrTemplateData(storagePool, details, dataObject, vol, connIdMap, null);
 
             logger.info("Revoked access for host {} to volume {}", host, dataObject);
         } catch (Throwable e) {
@@ -725,6 +724,7 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
         mapCapabilities.put(DataStoreCapabilities.CAN_CREATE_VOLUME_FROM_SNAPSHOT.toString(), Boolean.TRUE.toString());
         mapCapabilities.put(DataStoreCapabilities.CAN_CREATE_VOLUME_FROM_VOLUME.toString(), Boolean.TRUE.toString()); // set to false because it causes weird behavior when copying templates to root volumes
         mapCapabilities.put(DataStoreCapabilities.CAN_REVERT_VOLUME_TO_SNAPSHOT.toString(), Boolean.TRUE.toString());
+        mapCapabilities.put("CAN_CLONE_VOLUME_FROM_TEMPLATE", Boolean.TRUE.toString());
         ProviderAdapterFactory factory = _adapterFactoryMap.getFactory(this.getProviderName());
         if (factory != null) {
             mapCapabilities.put("CAN_DIRECT_ATTACH_SNAPSHOT", factory.canDirectAttachSnapshot().toString());
@@ -840,55 +840,95 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
     }
 
     void persistVolumeOrTemplateData(StoragePoolVO storagePool, Map<String, String> storagePoolDetails,
-            DataObject dataObject, ProviderVolume volume, Map<String,String> connIdMap) {
+            DataObject dataObject, ProviderVolume volume, Map<String,String> connIdMap, Long size) {
         if (dataObject.getType() == DataObjectType.VOLUME) {
-            persistVolumeData(storagePool, storagePoolDetails, dataObject, volume, connIdMap);
+            persistVolumeData(storagePool, storagePoolDetails, dataObject, volume, connIdMap, size);
         } else if (dataObject.getType() == DataObjectType.TEMPLATE) {
-            persistTemplateData(storagePool, storagePoolDetails, dataObject, volume, connIdMap);
+            persistTemplateData(storagePool, storagePoolDetails, dataObject, volume, connIdMap, size);
         }
     }
 
     void persistVolumeData(StoragePoolVO storagePool, Map<String, String> details, DataObject dataObject,
-            ProviderVolume managedVolume, Map<String,String> connIdMap) {
+             ProviderVolume managedVolume, Map<String,String> connIdMap, Long size) {
+
+        // Get the volume by dataObject id
         VolumeVO volumeVO = _volumeDao.findById(dataObject.getId());
+        long volumeId = volumeVO.getId();
 
+        // Generate path for volume and details
         String finalPath = generatePathInfo(managedVolume, connIdMap);
-        volumeVO.setPath(finalPath);
-        volumeVO.setFormat(ImageFormat.RAW);
-        volumeVO.setPoolId(storagePool.getId());
-        volumeVO.setExternalUuid(managedVolume.getExternalUuid());
-        volumeVO.setDisplay(true);
-        volumeVO.setDisplayVolume(true);
-        _volumeDao.update(volumeVO.getId(), volumeVO);
 
-        volumeVO = _volumeDao.findById(volumeVO.getId());
+        try {
+            if (finalPath != null) {
+                volumeVO.setPath(finalPath);
+            }
+            volumeVO.setFormat(ImageFormat.RAW);
+            volumeVO.setPoolId(storagePool.getId());
+            volumeVO.setExternalUuid(managedVolume.getExternalUuid());
+            volumeVO.setDisplay(true);
+            volumeVO.setDisplayVolume(true);
+            // the size may have been adjusted by the storage provider
+            if (size != null) {
+                volumeVO.setSize(size);
+            }
+            _volumeDao.update(volumeVO.getId(), volumeVO);
+        } catch (Throwable e) {
+            logger.error("Failed to persist volume path", e);
+            throw e;
+        }
 
-        VolumeDetailVO volumeDetailVO = new VolumeDetailVO(volumeVO.getId(),
-                DiskTO.PATH, finalPath, true);
-        _volumeDetailsDao.persist(volumeDetailVO);
+        // PATH
+        try {
+            // If volume_detail exist
+            _volumeDetailsDao.removeDetail(volumeId, DiskTO.PATH);
+            VolumeDetailVO volumeDetailVO = new VolumeDetailVO(volumeId, DiskTO.PATH, finalPath, true);
+            _volumeDetailsDao.persist(volumeDetailVO);
+        } catch (Exception e) {
+            logger.error("Failed to persist volume path", e);
+            throw e;
+        }
 
-        volumeDetailVO = new VolumeDetailVO(volumeVO.getId(),
-                ProviderAdapterConstants.EXTERNAL_NAME, managedVolume.getExternalName(), true);
-        _volumeDetailsDao.persist(volumeDetailVO);
+        // EXTERNAL_NAME
+        try {
+            _volumeDetailsDao.removeDetail(volumeId,  ProviderAdapterConstants.EXTERNAL_NAME);
+            VolumeDetailVO volumeDetailVO = new VolumeDetailVO(volumeId,  ProviderAdapterConstants.EXTERNAL_NAME, managedVolume.getExternalName(), true);
+            _volumeDetailsDao.persist(volumeDetailVO);
+        } catch (Exception e) {
+            logger.error("Failed to persist volume external name", e);
+            throw e;
+        }
 
-        volumeDetailVO = new VolumeDetailVO(volumeVO.getId(),
-                ProviderAdapterConstants.EXTERNAL_UUID, managedVolume.getExternalUuid(), true);
-        _volumeDetailsDao.persist(volumeDetailVO);
+        // EXTERNAL_UUID
+        try {
+            _volumeDetailsDao.removeDetail(volumeId,  ProviderAdapterConstants.EXTERNAL_UUID);
+            VolumeDetailVO volumeDetailVO = new VolumeDetailVO(volumeId,  ProviderAdapterConstants.EXTERNAL_UUID, managedVolume.getExternalUuid(), true);
+            _volumeDetailsDao.persist(volumeDetailVO);
+        } catch (Exception e) {
+            logger.error("Failed to persist volume external uuid", e);
+            throw e;
+        }
     }
 
     void persistTemplateData(StoragePoolVO storagePool, Map<String, String> details, DataObject dataObject,
-            ProviderVolume volume, Map<String,String> connIdMap) {
+            ProviderVolume volume, Map<String,String> connIdMap, Long size) {
         TemplateInfo templateInfo = (TemplateInfo) dataObject;
         VMTemplateStoragePoolVO templatePoolRef = _vmTemplatePoolDao.findByPoolTemplate(storagePool.getId(),
                 templateInfo.getId(), null);
 
         templatePoolRef.setInstallPath(generatePathInfo(volume, connIdMap));
         templatePoolRef.setLocalDownloadPath(volume.getExternalName());
-        templatePoolRef.setTemplateSize(volume.getAllocatedSizeInBytes());
-        _vmTemplatePoolDao.update(templatePoolRef.getId(), templatePoolRef);
+        if (size == null) {
+            templatePoolRef.setTemplateSize(volume.getAllocatedSizeInBytes());
+        } else {
+            templatePoolRef.setTemplateSize(size);
+        }        _vmTemplatePoolDao.update(templatePoolRef.getId(), templatePoolRef);
     }
 
     String generatePathInfo(ProviderVolume volume, Map<String,String> connIdMap) {
+        if (volume == null) {
+            return null;
+        }
+
         String finalPath = String.format("type=%s; address=%s; providerName=%s; providerID=%s;",
             volume.getAddressType().toString(), volume.getAddress().toLowerCase(), volume.getExternalName(), volume.getExternalUuid());
 
@@ -936,15 +976,6 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
         }
 
         return ctx;
-    }
-
-    boolean isSameProvider(DataObject obj) {
-        StoragePoolVO storagePool = this._storagePoolDao.findById(obj.getDataStore().getId());
-        if (storagePool != null && storagePool.getStorageProviderName().equals(this.getProviderName())) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     ProviderAdapterDataObject newManagedDataObject(DataObject data, StoragePool storagePool) {
@@ -1000,6 +1031,10 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
     }
 
     public boolean volumesRequireGrantAccessWhenUsed() {
+        return true;
+    }
+
+    public boolean zoneWideVolumesAvailableWithoutClusterMotion() {
         return true;
     }
 }

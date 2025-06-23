@@ -1608,8 +1608,20 @@ public class KVMStorageProcessor implements StorageProcessor {
             storagePoolMgr.disconnectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), vol.getPath());
 
             return new DettachAnswer(disk);
-        } catch (final LibvirtException | InternalErrorException | CloudRuntimeException e) {
-            logger.debug(String.format("Failed to detach volume [id: %d, uuid: %s, name: %s, path: %s], due to ", vol.getId(), vol.getUuid(), vol.getName(), vol.getPath()), e);
+        } catch (final LibvirtException e) {
+            // check if the error was related to an already unplugged event - we can safely ignore
+            if (e.getMessage() != null && e.getMessage().contains("is already in the process of unplug")) {
+                logger.debug("Volume: " + vol.getPath() + " is already unplugged, ignoring the error");
+                return new DettachAnswer(disk);
+            } else {
+                logger.debug("Failed to detach volume: " + vol.getPath() + ", due to ", e);
+                return new DettachAnswer(e.toString());
+            }
+        } catch (final InternalErrorException e) {
+            logger.debug("Failed to detach volume: " + vol.getPath() + ", due to ", e);
+            return new DettachAnswer(e.toString());
+        } catch (final CloudRuntimeException e) {
+            logger.debug("Failed to detach volume: " + vol.getPath() + ", due to ", e);
             return new DettachAnswer(e.toString());
         } finally {
             vol.clearPassphrase();

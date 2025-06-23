@@ -65,11 +65,13 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
      * Property keys and defaults
      */
     static final Property<Integer> CLEANUP_FREQUENCY_SECS = new Property<Integer>("multimap.cleanup.frequency.secs", 60);
-    static final Property<Integer> CLEANUP_TIMEOUT_SECS = new Property<Integer>("multimap.cleanup.timeout.secs", 4);
+    static final Property<Integer> CLEANUP_TIMEOUT_SECS = new Property<Integer>("multimap.cleanup.timeout.secs", 600);
     static final Property<Boolean> CLEANUP_ENABLED = new Property<Boolean>("multimap.cleanup.enabled", true);
     static final Property<String> CLEANUP_SCRIPT = new Property<String>("multimap.cleanup.script", "cleanStaleMaps.sh");
     static final Property<String> CONNECT_SCRIPT = new Property<String>("multimap.connect.script", "connectVolume.sh");
-    static final Property<String> COPY_SCRIPT = new Property<String>("multimap.copy.script", "copyVolume.sh");
+    static final Property<String> START_CONNECT_SCRIPT = new Property<String>("multimap.startconnect.script", "startConnectVolume.sh");
+    static final Property<String> FINISH_CONNECT_SCRIPT = new Property<String>("multimap.finishconnect.script", "finishConnectVolume.sh");
+     static final Property<String> COPY_SCRIPT = new Property<String>("multimap.copy.script", "copyVolume.sh");
     static final Property<String> DISCONNECT_SCRIPT = new Property<String>("multimap.disconnect.script", "disconnectVolume.sh");
     static final Property<String> RESIZE_SCRIPT = new Property<String>("multimap.resize.script", "resizeVolume.sh");
     static final Property<Integer> DISK_WAIT_SECS = new Property<Integer>("multimap.disk.wait.secs", 240);
@@ -78,6 +80,8 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
     static Timer cleanupTimer = new Timer();
     private static int cleanupTimeoutSecs = CLEANUP_TIMEOUT_SECS.getFinalValue();
     private static String connectScript = CONNECT_SCRIPT.getFinalValue();
+    private static String startConnectScript = START_CONNECT_SCRIPT.getFinalValue();
+    private static String finishConnectScript = FINISH_CONNECT_SCRIPT.getFinalValue();
     private static String disconnectScript = DISCONNECT_SCRIPT.getFinalValue();
     private static String cleanupScript = CLEANUP_SCRIPT.getFinalValue();
     private static String resizeScript = RESIZE_SCRIPT.getFinalValue();
@@ -95,7 +99,17 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
 
         connectScript = Script.findScript(STORAGE_SCRIPTS_DIR.getFinalValue(), connectScript);
         if (connectScript == null) {
-            throw new Error("Unable to find the connectVolume.sh script");
+            throw new Error("Unable to find the connectScript.sh script");
+        }
+
+        startConnectScript = Script.findScript(STORAGE_SCRIPTS_DIR.getFinalValue(), startConnectScript);
+        if (startConnectScript == null) {
+            throw new Error("Unable to find the startConnectScript.sh script");
+        }
+
+        finishConnectScript = Script.findScript(STORAGE_SCRIPTS_DIR.getFinalValue(), finishConnectScript);
+        if (finishConnectScript == null) {
+            throw new Error("Unable to find the finishConnectScript.sh script");
         }
 
         disconnectScript = Script.findScript(STORAGE_SCRIPTS_DIR.getFinalValue(), disconnectScript);
@@ -164,9 +178,10 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
 
         // validate we have a connection, if not we need to connect first.
         if (!isConnected(address.getPath())) {
-            if (!connectPhysicalDisk(address, pool, null)) {
-                throw new CloudRuntimeException("Unable to connect to volume " + address.getPath());
-            }
+            LOGGER.debug("Physical disk " + address.getPath() + " is not connected, a request to connectPhysicalDisk must be made before it can be used.");
+        } else {
+            LOGGER.debug("Physical disk " + address.getPath() + " is connected, proceeding to get its size.");
+
         }
 
         long diskSize = getPhysicalDiskSize(address.getPath());
@@ -222,8 +237,91 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
             if (StringUtils.isNotEmpty(waitTime)) {
                 waitTimeInSec = Integer.valueOf(waitTime).intValue();
             }
+        } else {
+            // wait at least 60 seconds even if input was lower
+            if (waitTimeInSec < 60) {
+                LOGGER.debug(String.format("multimap.disk.wait.secs was less than 60.  Increasing to 60"));
+                waitTimeInSec = 60;
+            }
         }
-        return waitForDiskToBecomeAvailable(address, pool, waitTimeInSec);
+
+        if (!startConnect(address, pool, waitTimeInSec)) {
+            LOGGER.error("Failed to trigger connect for address [" + address.getPath() + "] of the storage pool: " + pool.getUuid());
+            return false;
+        }
+
+        LOGGER.debug("Waiting for disk to become available after connect for address [" + address.getPath() + "] of the storage pool: " + pool.getUuid());
+
+        // loop through and call isConnected() until true or the waitTimeInSec is exceeded
+        long startTime = System.currentTimeMillis();
+        while (System.currentTimeMillis() - startTime < TimeUnit.SECONDS.toMillis(waitTimeInSec)) {
+            if (isConnected(address.getPath())) {
+                LOGGER.info("Disk " + address.getPath() + " of the storage pool: " + pool.getUuid() + " is connected");
+                return true;
+            }
+            try {
+                Thread.sleep(1000); // wait 1 second before checking again
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        LOGGER.error("Disk " + address.getPath() + " of the storage pool: " + pool.getUuid() + " is not connected after waiting for " + waitTimeInSec + " seconds");
+        return false;
+    }
+
+    public boolean startConnectPhysicalDisk(String volumePath, KVMStoragePool pool, Map<String,String> details) {
+        LOGGER.info("startConnectPhysicalDisk called for [" + volumePath + "]");
+
+        if (StringUtils.isEmpty(volumePath)) {
+            LOGGER.error("Unable to connect physical disk due to insufficient data - volume path is undefined");
+            return false;
+        }
+
+        if (pool == null) {
+            LOGGER.error("Unable to connect physical disk due to insufficient data - pool is not set");
+            return false;
+        }
+
+        // we expect WWN values in the volumePath so need to convert it to an actual physical path
+        AddressInfo address = this.parseAndValidatePath(volumePath);
+
+        return startConnect(address, pool, diskWaitTimeSecs);
+    }
+
+    public boolean finishConnectPhysicalDisk(String volumePath, KVMStoragePool pool, Map<String,String> details) throws Exception {
+        LOGGER.info("finishConnectPhysicalDisk called for [" + volumePath + "]");
+
+        if (StringUtils.isEmpty(volumePath)) {
+            LOGGER.error("Unable to finish connect physical disk due to insufficient data - volume path is undefined");
+            return false;
+        }
+
+        if (pool == null) {
+            LOGGER.error("Unable to finish connect physical disk due to insufficient data - pool is not set");
+            return false;
+        }
+
+        // we expect WWN values in the volumePath so need to convert it to an actual physical path
+        AddressInfo address = this.parseAndValidatePath(volumePath);
+
+        return finishConnect(address, pool, diskWaitTimeSecs);
+    }
+
+
+    /**
+     * Tests if the physical disk is connected
+     */
+    public boolean isConnected(String path, KVMStoragePool pool, Map<String,String> details) {
+        AddressInfo address = this.parseAndValidatePath(path);
+        if (address.getAddress() == null) {
+            LOGGER.debug(String.format("isConnected(path,pool) returning FALSE, volume path has no address field: %s", path));
+            return false;
+        }
+        if (isConnected(address.getPath())) {
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -441,24 +539,18 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
         }
     }
 
-    boolean waitForDiskToBecomeAvailable(AddressInfo address, KVMStoragePool pool, long waitTimeInSec) {
-        LOGGER.debug("Waiting for the volume with id: " + address.getPath() + " of the storage pool: " + pool.getUuid() + " to become available for " + waitTimeInSec + " secs");
-
-        long scriptTimeoutSecs = 30; // how long to wait for each script execution to run
-        long maxTries = 10; // how many max retries to attempt the script
-        long waitTimeInMillis = waitTimeInSec * 1000; // how long overall to wait
-        int timeBetweenTries = 1000; // how long to sleep between tries
-        // wait at least 60 seconds even if input was lower
-        if (waitTimeInSec < 60) {
-            waitTimeInSec = 60;
-        }
-        KVMPhysicalDisk physicalDisk = null;
-
-        // Rescan before checking for the physical disk
-        int tries = 0;
-        while (waitTimeInMillis > 0 && tries < maxTries) {
-            tries++;
-            long start = System.currentTimeMillis();
+    /**
+     * Trigger (but does not wait for success) a LUN connect operation for the given address and storage pool.
+     * @param address
+     * @param pool
+     * @param waitTimeInSec
+     * @return
+     */
+    boolean startConnect(AddressInfo address, KVMStoragePool pool, long waitTimeInSec) {
+        LOGGER.debug("Triggering connect for : " + address.getPath() + " of the storage pool: " + pool.getUuid());
+        long scriptTimeoutSecs = waitTimeInSec - 1; // how long to wait for each script execution to run
+        Process p = null;
+        try {
             String lun;
             if (address.getConnectionId() == null) {
                 lun = "-";
@@ -466,59 +558,97 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
                 lun = address.getConnectionId();
             }
 
-            Process p = null;
-            try {
-                ProcessBuilder builder = new ProcessBuilder(connectScript, lun, address.getAddress());
-                p = builder.start();
-                if (p.waitFor(scriptTimeoutSecs, TimeUnit.SECONDS)) {
-                    int rc = p.exitValue();
-                    StringBuffer output = new StringBuffer();
-                    if (rc == 0) {
-                        BufferedReader input = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                        String line = null;
-                        while ((line = input.readLine()) != null) {
-                            output.append(line);
-                            output.append(" ");
-                        }
-
-                        physicalDisk = getPhysicalDisk(address, pool);
-                        if (physicalDisk != null && physicalDisk.getSize() > 0) {
-                            LOGGER.debug("Found the volume using id: " + address.getPath() + " of the storage pool: " + pool.getUuid());
-                            return true;
-                        }
-
-                        break;
-                    } else {
-                        LOGGER.warn("Failure discovering LUN via " + connectScript);
-                        BufferedReader error = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-                        String line = null;
-                        while ((line = error.readLine()) != null) {
-                            LOGGER.warn("error --> " + line);
-                        }
+            ProcessBuilder builder = new ProcessBuilder(startConnectScript, lun, address.getAddress());
+            p = builder.start();
+            if (p.waitFor(scriptTimeoutSecs, TimeUnit.SECONDS)) {
+                int rc = p.exitValue();
+                StringBuffer output = new StringBuffer();
+                if (rc == 0) {
+                    BufferedReader input = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                    String line = null;
+                    while ((line = input.readLine()) != null) {
+                        output.append(line);
+                        output.append(" ");
                     }
+                    LOGGER.debug("LUN discovery triggered for " + address.getPath() + " of the storage pool: " + pool.getUuid() + ", output: " + output.toString());
                 } else {
-                    LOGGER.debug("Timeout waiting for " + connectScript + " to complete - try " + tries);
+                    LOGGER.warn("Failure triggering LUN discovery via " + startConnectScript);
+                    BufferedReader error = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+                    String line = null;
+                    while ((line = error.readLine()) != null) {
+                        LOGGER.warn("error --> " + line);
+                    }
                 }
-            } catch (IOException | InterruptedException | IllegalThreadStateException e) {
-                LOGGER.warn("Problem performing scan on SCSI hosts - try " + tries, e);
-            } finally {
-                if (p != null && p.isAlive()) {
-                    p.destroyForcibly();
-                }
+            } else {
+                LOGGER.debug(String.format("Timeout [%s] waiting for %s to complete", scriptTimeoutSecs, startConnectScript));
+                return false;
             }
-
-            long elapsed = System.currentTimeMillis() - start;
-            waitTimeInMillis = waitTimeInMillis - elapsed;
-
-            try {
-                Thread.sleep(timeBetweenTries);
-            } catch (Exception ex) {
-                // don't do anything
+        } catch (IOException | InterruptedException | IllegalThreadStateException e) {
+            LOGGER.warn("Problem performing LUN discovery for " + address.getPath() + " of the storage pool: " + pool.getUuid(), e);
+            return false;
+        } finally {
+            if (p != null && p.isAlive()) {
+                p.destroyForcibly();
             }
         }
 
-        LOGGER.debug("Unable to find the volume with id: " + address.getPath() + " of the storage pool: " + pool.getUuid());
-        return false;
+       return true;
+    }
+
+        /**
+     * Trigger (but does not wait for success) a LUN connect operation for the given address and storage pool.
+     * @param address
+     * @param pool
+     * @param waitTimeInSec
+     * @return
+     */
+    boolean finishConnect(AddressInfo address, KVMStoragePool pool, long waitTimeInSec) {
+        LOGGER.debug("Triggering connect for : " + address.getPath() + " of the storage pool: " + pool.getUuid());
+        long scriptTimeoutSecs = waitTimeInSec - 1; // how long to wait for each script execution to run
+        Process p = null;
+        try {
+            String lun;
+            if (address.getConnectionId() == null) {
+                lun = "-";
+            } else {
+                lun = address.getConnectionId();
+            }
+
+            ProcessBuilder builder = new ProcessBuilder(finishConnectScript, lun, address.getAddress());
+            p = builder.start();
+            if (p.waitFor(scriptTimeoutSecs, TimeUnit.SECONDS)) {
+                int rc = p.exitValue();
+                StringBuffer output = new StringBuffer();
+                if (rc == 0) {
+                    BufferedReader input = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                    String line = null;
+                    while ((line = input.readLine()) != null) {
+                        output.append(line);
+                        output.append(" ");
+                    }
+                    LOGGER.debug("LUN discovery triggered for " + address.getPath() + " of the storage pool: " + pool.getUuid() + ", output: " + output.toString());
+                } else {
+                    LOGGER.warn("Failure triggering LUN discovery via " + finishConnectScript);
+                    BufferedReader error = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+                    String line = null;
+                    while ((line = error.readLine()) != null) {
+                        LOGGER.warn("error --> " + line);
+                    }
+                }
+            } else {
+                LOGGER.debug(String.format("Timeout [%s] waiting for %s to complete", scriptTimeoutSecs, finishConnectScript));
+                return false;
+            }
+        } catch (IOException | InterruptedException | IllegalThreadStateException e) {
+            LOGGER.warn("Problem performing LUN discovery for " + address.getPath() + " of the storage pool: " + pool.getUuid(), e);
+            return false;
+        } finally {
+            if (p != null && p.isAlive()) {
+                p.destroyForcibly();
+            }
+        }
+
+        return true;
     }
 
     boolean isConnected(String path) {
