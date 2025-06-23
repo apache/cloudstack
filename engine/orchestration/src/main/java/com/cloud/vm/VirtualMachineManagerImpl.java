@@ -1169,7 +1169,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     protected void updateExternalVmDetailsFromPrepareAnswer(VirtualMachineTO vmTO, UserVmVO userVmVO,
                             Map<String, String> newDetails) {
-        if (newDetails != null || newDetails.equals(vmTO.getDetails())) {
+        if (newDetails == null || newDetails.equals(vmTO.getDetails())) {
             return;
         }
         vmTO.setDetails(newDetails);
@@ -1645,7 +1645,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    private void updateStartCommandWithExternalDetails(Host host, VirtualMachineTO vmTO, StartCommand command) {
+    protected void updateStartCommandWithExternalDetails(Host host, VirtualMachineTO vmTO, StartCommand command) {
         if (!HypervisorType.External.equals(host.getHypervisorType())) {
             return;
         }
@@ -1682,7 +1682,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         stopCommand.setExternalDetails(externalDetails);
     }
 
-    private void updateRebootCommandWithExternalDetails(Host host, VirtualMachineTO vmTO, RebootCommand rebootCmd) {
+    protected void updateRebootCommandWithExternalDetails(Host host, VirtualMachineTO vmTO, RebootCommand rebootCmd) {
         if (!HypervisorType.External.equals(host.getHypervisorType())) {
             return;
         }
