@@ -35,7 +35,7 @@
                       <resource-icon :image="resourceIcon" size="4x" style="margin-right: 5px"/>
                     </span>
                     <span v-else>
-                      <os-logo v-if="resource.ostypeid || resource.ostypename || ['guestoscategory'].includes($route.path.split('/')[1])" :osId="resource.ostypeid" :osName="resource.ostypename || resource.name" size="3x" @update-osname="setResourceOsType"/>
+                      <os-logo v-if="resource.ostypeid || resource.ostypename || ['guestoscategory'].includes($route.path.split('/')[1])" :osId="resource.ostypeid" :osName="resource.ostypename || resource.osdisplayname || resource.name" size="3x" @update-osname="setResourceOsType"/>
                       <render-icon v-else-if="typeof $route.meta.icon ==='string'" style="font-size: 36px" :icon="$route.meta.icon" />
                       <font-awesome-icon
                         v-else-if="$route.meta.icon && Array.isArray($route.meta.icon)"
