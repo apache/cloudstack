@@ -83,7 +83,7 @@ public class DeleteExtensionCmd extends BaseCmd {
             response.setSuccess(result);
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete userdata");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete extension");
         }
     }
 
