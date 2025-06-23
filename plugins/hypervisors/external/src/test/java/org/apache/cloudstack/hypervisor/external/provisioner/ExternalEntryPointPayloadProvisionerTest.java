@@ -35,6 +35,7 @@ import static org.mockito.Mockito.when;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -254,10 +255,21 @@ public class ExternalEntryPointPayloadProvisionerTest {
     }
 
     @Test(expected = ConfigurationException.class)
-    public void testCreateOrCheckExtensionsDataDirectoryInvalidPath() throws ConfigurationException {
+    public void testCreateOrCheckExtensionsDataDirectoryCreateThrowsExceptionFail() throws ConfigurationException {
         ReflectionTestUtils.setField(provisioner, "extensionsDataDirectory", "/nonexistent/path");
+        try(MockedStatic<Files> filesMock = Mockito.mockStatic(Files.class)) {
+            filesMock.when(() -> Files.createDirectories(any())).thenThrow(new IOException("fail"));
+            provisioner.createOrCheckExtensionsDataDirectory();
+        }
+    }
 
-        provisioner.createOrCheckExtensionsDataDirectory();
+    @Test(expected = ConfigurationException.class)
+    public void testCreateOrCheckExtensionsDataDirectoryNoCreateFail() throws ConfigurationException {
+        ReflectionTestUtils.setField(provisioner, "extensionsDataDirectory", "/nonexistent/path");
+        try(MockedStatic<Files> filesMock = Mockito.mockStatic(Files.class)) {
+            filesMock.when(() -> Files.createDirectories(any())).thenReturn(mock(Path.class));
+            provisioner.createOrCheckExtensionsDataDirectory();
+        }
     }
 
     @Test
