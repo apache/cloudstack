@@ -49,6 +49,7 @@ import org.apache.cloudstack.extension.Extension;
 import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -128,7 +129,7 @@ public class ExternalEntryPointPayloadProvisionerTest {
 
         testScript = new File(tempDir, "test-extension.sh");
         testScript.createNewFile();
-        testScript.setExecutable(true);
+        resetTestScript();
 
         testProperties = new Properties();
         testProperties.setProperty("extensions.deployment.mode", "developer");
@@ -217,21 +218,21 @@ public class ExternalEntryPointPayloadProvisionerTest {
     }
 
     @Test
-    public void testGetExtensionCheckedEntryPointPathPermissions() {
+    public void testGetExtensionCheckedEntryPointPathNoExecutePermissions() {
         testScript.setExecutable(false);
-
         String result = provisioner.getExtensionCheckedEntryPointPath("test-extension", "test-extension.sh");
         assertNull(result);
         Mockito.verify(logger).error("{} is not executable", "Entry point [" + testScript.getAbsolutePath() + "] for extension: test-extension");
+    }
 
-        testScript.setExecutable(true);
+    @Test
+    public void testGetExtensionCheckedEntryPointPathNoReadPermissions() {
+        testScript.setWritable(false);
         testScript.setReadable(false);
-
-        result = provisioner.getExtensionCheckedEntryPointPath("test-extension", "test-extension.sh");
+        Assume.assumeFalse("Skipping test as file can not be marked unreadable", testScript.canRead());
+        String result = provisioner.getExtensionCheckedEntryPointPath("test-extension", "test-extension.sh");
         assertNull(result);
         Mockito.verify(logger).error("{} is not readable", "Entry point [" + testScript.getAbsolutePath() + "] for extension: test-extension");
-
-        resetTestScript();
     }
 
     @Test
@@ -577,8 +578,6 @@ public class ExternalEntryPointPayloadProvisionerTest {
 
         assertTrue(result.first());
         assertTrue(result.second().contains("success"));
-
-        resetTestScript();
     }
 
     @Test
