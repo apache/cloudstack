@@ -20,6 +20,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -42,9 +43,11 @@ import com.cloud.hypervisor.kvm.resource.KVMHABase;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.PoolType;
 import com.cloud.hypervisor.kvm.resource.KVMHAMonitor;
 import com.cloud.storage.Storage;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.Volume;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -164,12 +167,29 @@ public class KVMStoragePoolManager {
         return adaptor.connectPhysicalDisk(volPath, pool, details, false);
     }
 
+        private static class ConnectingDiskInfo {
+        ConnectingDiskInfo(VolumeObjectTO volume, StorageAdaptor adaptor, KVMStoragePool pool, Map<String, String> details) {
+            this.volume = volume;
+            this.adapter = adaptor;
+            this.pool = pool;
+            this.details = details;
+        }
+        VolumeObjectTO volume;
+        KVMStoragePool pool = null;
+        StorageAdaptor adapter = null;
+        Map<String,String> details = null;
+    }
+
     public boolean connectPhysicalDisksViaVmSpec(VirtualMachineTO vmSpec, boolean isVMMigrate) {
         boolean result = false;
 
         final String vmName = vmSpec.getName();
 
         List<DiskTO> disks = Arrays.asList(vmSpec.getDisks());
+
+
+        // disks that connect in background
+        List<ConnectingDiskInfo> connectingDisks = new ArrayList<>();
 
         for (DiskTO disk : disks) {
             if (disk.getType() == Volume.Type.ISO) {
@@ -187,15 +207,77 @@ public class KVMStoragePoolManager {
             KVMStoragePool pool = getStoragePool(store.getPoolType(), store.getUuid());
             StorageAdaptor adaptor = getStorageAdaptor(pool.getType());
 
-            result = adaptor.connectPhysicalDisk(vol.getPath(), pool, disk.getDetails(), isVMMigrate);
+            if (adaptor instanceof AsyncPhysicalDiskConnectorDecorator) {
+                // If the adaptor supports async disk connection, we can start the connection
+                // and return immediately, allowing the connection to complete in the background.
+                result = ((AsyncPhysicalDiskConnectorDecorator) adaptor).startConnectPhysicalDisk(vol.getPath(), pool, disk.getDetails());
+                if (!result) {
+                    logger.error("Failed to start connecting disks via vm spec for vm: " + vmName + " volume:" + vol.toString());
+                    return false;
+                }
 
-            if (!result) {
-                logger.error("Failed to connect disks via vm spec for vm: " + vmName + " volume:" + vol.toString());
-                return result;
+                // add disk to list of disks to check later
+                connectingDisks.add(new ConnectingDiskInfo(vol, adaptor, pool, disk.getDetails()));
+            } else {
+                result = adaptor.connectPhysicalDisk(vol.getPath(), pool, disk.getDetails(), isVMMigrate);
+
+                if (!result) {
+                    logger.error("Failed to connect disks via vm spec for vm: " + vmName + " volume:" + vol.toString());
+                    return result;
+                }
+            }
+        }
+
+        // if we have any connecting disks to check, wait for them to connect or timeout
+        if (!connectingDisks.isEmpty()) {
+            for (ConnectingDiskInfo connectingDisk : connectingDisks) {
+                StorageAdaptor adaptor = connectingDisk.adapter;
+                KVMStoragePool pool = connectingDisk.pool;
+                VolumeObjectTO volume = connectingDisk.volume;
+                Map<String, String> details = connectingDisk.details;
+                long diskWaitTimeMillis = getDiskWaitTimeMillis(details);
+
+                // wait for the disk to connect
+                long startTime = System.currentTimeMillis();
+                while (System.currentTimeMillis() - startTime < diskWaitTimeMillis) {
+                    if (((AsyncPhysicalDiskConnectorDecorator) adaptor).isConnected(volume.getPath(), pool, details)) {
+                        logger.debug(String.format("Disk %s connected successfully for VM %s", volume.getPath(), vmName));
+                        break;
+                    }
+
+                    sleep(1000); // wait for 1 second before checking again
+                }
             }
         }
 
         return result;
+    }
+
+        private long getDiskWaitTimeMillis(Map<String,String> details) {
+        int waitTimeInSec = 60; // default wait time in seconds
+        if (details != null && details.containsKey(StorageManager.STORAGE_POOL_DISK_WAIT.toString())) {
+            String waitTime = details.get(StorageManager.STORAGE_POOL_DISK_WAIT.toString());
+            if (StringUtils.isNotEmpty(waitTime)) {
+                waitTimeInSec = Integer.valueOf(waitTime).intValue();
+                logger.debug(String.format("%s set to %s", waitTimeInSec, StorageManager.STORAGE_POOL_DISK_WAIT.toString()));
+            }
+        } else {
+            // wait at least 60 seconds even if input was lower
+            if (waitTimeInSec < 60) {
+                logger.debug(String.format("%s was less than 60s.  Increasing to 60s default.", StorageManager.STORAGE_POOL_DISK_WAIT.toString()));
+                waitTimeInSec = 60;
+            }
+        }
+        return waitTimeInSec * 1000; // convert to milliseconds
+    }
+
+    private boolean sleep(long millis) {
+        try {
+            Thread.sleep(millis);
+            return true;
+        } catch (InterruptedException e) {
+            return false;
+        }
     }
 
     public boolean disconnectPhysicalDisk(Map<String, String> volumeToDisconnect) {
