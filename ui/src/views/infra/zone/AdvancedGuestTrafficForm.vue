@@ -39,6 +39,7 @@
         <a-form-item
           name="vlanRangeStart"
           ref="vlanRangeStart"
+          :validate-status="validStatus"
           has-feedback
           :style="{ display: 'inline-block', width: 'calc(50% - 12px)' }">
           <a-input-number
@@ -53,7 +54,6 @@
         <a-form-item
           name="vlanRangeEnd"
           ref="vlanRangeEnd"
-          has-feedback
           :style="{ display: 'inline-block', width: 'calc(50% - 12px)' }">
           <a-input-number
             v-model:value="form.vlanRangeEnd"
@@ -102,9 +102,24 @@ export default {
         labelCol: { span: 8 },
         wrapperCol: { span: 12 }
       },
-      validStatus: '',
-      validMessage: '',
-      formModel: {}
+      validStatus: 'error',
+      validMessage: this.$t('message.error.vlan.range'),
+      formModel: {},
+      rangeLimits: {
+        VLAN: {
+          min: 1,
+          max: 4094
+        },
+        VXLAN: {
+          min: 4096,
+          max: 16777214
+        },
+        GRE: {
+          min: 0,
+          max: 4294967295
+        }
+      },
+      isolationMethod: ''
     }
   },
   watch: {
@@ -120,6 +135,7 @@ export default {
     this.initForm()
   },
   mounted () {
+    this.getIsolationMethod()
     this.fillValue()
   },
   methods: {
@@ -143,9 +159,15 @@ export default {
       })
     },
     fillValue () {
-      this.form.vlanRangeStart = this.getPrefilled('vlanRangeStart')
-      this.form.vlanRangeEnd = this.getPrefilled('vlanRangeEnd')
+      const vlanStart = this.getPrefilled('vlanRangeStart')
+      const vlanEnd = this.getPrefilled('vlanRangeEnd')
+      this.form.vlanRangeStart = vlanStart
+      this.form.vlanRangeEnd = vlanEnd
       this.formModel = toRaw(this.form)
+      if (this.checkFromTo(vlanStart, vlanEnd)) {
+        this.validStatus = 'success'
+        this.validMessage = ''
+      }
     },
     getPrefilled (key) {
       return this.prefillContent?.[key] || null
@@ -156,7 +178,7 @@ export default {
 
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
-        if (!values.vlanRangeStart || (values.vlanRangeEnd && !this.checkFromTo(values.vlanRangeStart, values.vlanRangeEnd))) {
+        if (!this.checkFromTo(values.vlanRangeStart, values.vlanRangeEnd)) {
           this.validStatus = 'error'
           this.validMessage = this.$t('message.error.vlan.range')
           return
@@ -185,19 +207,30 @@ export default {
         toVal = value
         fromVal = this.form[rule.compare]
       }
-      if (fromVal && toVal && !this.checkFromTo(fromVal, toVal)) {
+      if (!this.checkFromTo(fromVal, toVal)) {
         this.validStatus = 'error'
         this.validMessage = this.$t('message.error.vlan.range')
       }
       return Promise.resolve()
     },
     checkFromTo (fromVal, toVal) {
-      if (!fromVal) fromVal = 0
-      if (!toVal) toVal = 0
-      if (fromVal > toVal) {
-        return false
+      const vlanRange = this.rangeLimits[this.isolationMethod] ? this.rangeLimits[this.isolationMethod] : this.rangeLimits.VLAN
+      switch (true) {
+        case ((fromVal === null) || (toVal === null)):
+        case fromVal === toVal:
+        case fromVal > toVal:
+        case toVal > vlanRange.max:
+        case fromVal < vlanRange.min:
+          return false
+        default:
+          this.validStatus = 'success'
+          this.validMessage = ''
+          return true
       }
-      return true
+    },
+    getIsolationMethod () {
+      const phyNetworks = this.getPrefilled('physicalNetworks')
+      this.isolationMethod = phyNetworks[phyNetworks.length - 1].isolationMethod
     }
   }
 }
