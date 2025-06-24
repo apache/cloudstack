@@ -1516,7 +1516,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                     logger.debug("Skipping the extensions entrypoint sync check on this management server");
                     return;
                 }
-                List<ExtensionVO> extensions = extensionDao.listAllEnabled();
+                List<ExtensionVO> extensions = extensionDao.listAll();
                 for (ExtensionVO extension : extensions) {
                     checkExtensionEntryPointSync(extension, msHosts);
                 }

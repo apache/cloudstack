@@ -17,14 +17,11 @@
 
 package org.apache.cloudstack.framework.extensions.dao;
 
-import java.util.List;
+import org.apache.cloudstack.framework.extensions.vo.ExtensionVO;
 
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-
-import org.apache.cloudstack.extension.Extension;
-import org.apache.cloudstack.framework.extensions.vo.ExtensionVO;
 
 public class ExtensionDaoImpl extends GenericDaoBase<ExtensionVO, Long> implements ExtensionDao {
 
@@ -44,12 +41,5 @@ public class ExtensionDaoImpl extends GenericDaoBase<ExtensionVO, Long> implemen
         sc.setParameters("name", name);
 
         return findOneBy(sc);
-    }
-
-    @Override
-    public List<ExtensionVO> listAllEnabled() {
-        SearchCriteria<ExtensionVO> sc = AllFieldSearch.create();
-        sc.setParameters("state", Extension.State.Enabled);
-        return listBy(sc);
     }
 }

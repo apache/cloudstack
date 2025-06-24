@@ -19,13 +19,9 @@ package org.apache.cloudstack.framework.extensions.dao;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.util.List;
-
-import org.apache.cloudstack.extension.Extension;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionVO;
 import org.junit.Before;
 import org.junit.Test;
@@ -51,22 +47,5 @@ public class ExtensionDaoImplTest {
         expected.setName("extensionName");
         when(dao.findByName("extensionName")).thenReturn(expected);
         assertEquals(expected, dao.findByName("extensionName"));
-    }
-
-    @Test
-    public void listAllEnabledReturnsEmptyListWhenNoEnabledExtensions() {
-        when(dao.listAllEnabled()).thenReturn(List.of());
-        assertTrue(dao.listAllEnabled().isEmpty());
-    }
-
-    @Test
-    public void listAllEnabledReturnsCorrectEntities() {
-        ExtensionVO enabled1 = new ExtensionVO();
-        enabled1.setState(Extension.State.Enabled);
-        ExtensionVO enabled2 = new ExtensionVO();
-        enabled2.setState(Extension.State.Enabled);
-        List<ExtensionVO> expected = List.of(enabled1, enabled2);
-        when(dao.listAllEnabled()).thenReturn(expected);
-        assertEquals(expected, dao.listAllEnabled());
     }
 }
