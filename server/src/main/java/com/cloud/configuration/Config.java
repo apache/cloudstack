@@ -897,8 +897,9 @@ public enum Config {
             String.class,
             "host.capacityType.to.order.clusters",
             "CPU",
-            "The host capacity type (CPU or RAM) is used by deployment planner to order clusters during VM resource allocation",
-            "CPU,RAM"),
+            "The host capacity type (CPU, RAM, COMBINED) is used by deployment planner to order clusters during VM resource allocation",
+            "CPU,RAM,COMBINED"),
+
     ApplyAllocationAlgorithmToPods(
             "Advanced",
             ManagementServer.class,
