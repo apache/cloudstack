@@ -309,6 +309,6 @@ public class ConsoleAccessManagerImplTest {
     @Test
     public void listConsoleSessionByIdTestShouldCallDbLayer() {
         consoleAccessManager.listConsoleSessionById(1L);
-        Mockito.verify(consoleSessionDaoMock).findById(1L);
+        Mockito.verify(consoleSessionDaoMock).findByIdIncludingRemoved(1L);
     }
 }

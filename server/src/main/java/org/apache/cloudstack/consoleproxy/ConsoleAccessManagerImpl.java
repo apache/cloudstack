@@ -268,7 +268,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
 
     @Override
     public ConsoleSession listConsoleSessionById(long id) {
-        return consoleSessionDao.findById(id);
+        return consoleSessionDao.findByIdIncludingRemoved(id);
     }
 
     @Override
