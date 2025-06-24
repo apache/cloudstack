@@ -423,7 +423,7 @@ class TestRestoreVMStrictTags(cloudstackTestCase):
             vm.restore(self.apiclient, templateid=self.template_t2.id, expunge=True)
             self.fail("VM should not be restored")
         except Exception as e:
-            self.assertTrue("Unable to start VM with specified id" in str(e))
+            self.assertTrue("Unable to start VM with specified ID" in str(e))
 
 
 class TestMigrateVMStrictTags(cloudstackTestCase):
