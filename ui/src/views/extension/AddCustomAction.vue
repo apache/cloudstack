@@ -42,7 +42,8 @@
         </template>
         <a-input
           v-model:value="form.name"
-          :placeholder="apiParams.name.description" />
+          :placeholder="apiParams.name.description"
+          v-focus="true" />
       </a-form-item>
       <a-form-item name="description" ref="description">
         <template #label>
@@ -50,8 +51,7 @@
         </template>
         <a-input
           v-model:value="form.description"
-          :placeholder="apiParams.description.description"
-          v-focus="true" />
+          :placeholder="apiParams.description.description" />
       </a-form-item>
       <a-form-item ref="allowedroletypes" name="allowedroletypes">
         <template #label>

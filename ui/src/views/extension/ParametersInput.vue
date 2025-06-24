@@ -112,9 +112,6 @@
       class="table"
     >
       <template #bodyCell="{ column, record }">
-        <template v-if="column.key === 'valueoptions'">
-          {{ Array.isArray(record.valueoptions) ? record.valueoptions.join(',') : record.valueoptions }}
-        </template>
         <template v-if="column.key === 'actions'">
           <template v-if="record.editing">
             <div class="flex-gap">
@@ -154,6 +151,9 @@
 
         <template v-else>
           <template v-if="column.key === 'required'">{{ record.required ? 'Yes' : 'No' }}</template>
+          <template v-else-if="column.key === 'valueoptions'">
+            {{ Array.isArray(record.valueoptions) ? record.valueoptions.join(',') : record.valueoptions }}
+          </template>
           <template v-else>{{ record[column.key] }}</template>
         </template>
       </template>
@@ -287,7 +287,7 @@ export default {
         name,
         type,
         validationformat,
-        valueoptions: Array.isArray(valueoptions) ? valueoptions.join(',') : null,
+        valueoptions: Array.isArray(valueoptions) ? valueoptions.join(',') : valueoptions,
         required
       }))
       this.$emit('update:value', data)

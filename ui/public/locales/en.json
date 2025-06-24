@@ -3685,6 +3685,7 @@
 "message.success.delete.acl.rule": "Successfully removed ACL rule",
 "message.success.delete.backup.schedule": "Successfully deleted configure Instance backup schedule",
 "message.success.delete.bgp.peer": "Successfully deleted BGP peer",
+"message.success.delete.custom.action": "Successfully deleted Custom Action",
 "message.success.delete.icon": "Successfully deleted icon of",
 "message.success.delete.interface.static.route": "Successfully removed interface Static Route",
 "message.success.delete.ipv4.subnet": "Successfully removed IPv4 subnet",

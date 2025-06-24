@@ -180,7 +180,8 @@ export default {
         if (values.parameters && values.parameters.length > 0) {
           values.parameters.forEach((param, index) => {
             Object.keys(param).forEach(key => {
-              params['parameters[' + index + '].' + key] = param[key]
+              const val = param[key]
+              params['parameters[' + index + '].' + key] = Array.isArray(val) ? val.join(',') : val
             })
           })
         } else {

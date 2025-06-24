@@ -176,9 +176,9 @@
           <div>{{ dataResource[item].rbd_default_data_pool }}</div>
         </div>
       </a-list-item>
-      <a-list-item v-else-if="item === 'details' && ['xaas'].includes($route.meta.name)">
+      <a-list-item v-else-if="item === 'details' && ['xaas', 'extca'].includes($route.meta.name) && dataResource[item] && Object.keys(dataResource[item]).length > 0">
         <div>
-          <strong>{{ $t('label.' + String(item).toLowerCase()) }}</strong>
+          <strong>{{ $t('label.configuration.details') }}</strong>
           <br/>
           <div>
             <object-list-table :data-map="dataResource[item]" />
