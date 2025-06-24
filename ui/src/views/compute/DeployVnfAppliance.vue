@@ -1338,6 +1338,9 @@ export default {
     isCustomizedIOPS () {
       return this.rootDiskSelected?.iscustomizediops || this.serviceOffering?.iscustomizediops || false
     },
+    deployMenuOptions () {
+      return [this.$t('label.launch.vnf.appliance.and.stay')]
+    },
     isModernImageSelection () {
       return this.$config.imageSelectionInterface === undefined || this.$config.imageSelectionInterface === 'modern'
     },
