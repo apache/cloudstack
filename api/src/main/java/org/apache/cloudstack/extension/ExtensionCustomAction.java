@@ -17,7 +17,6 @@
 
 package org.apache.cloudstack.extension;
 
-import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -161,7 +160,7 @@ public interface ExtensionCustomAction extends InternalIdentity, Identity {
                     if (parsedFormat != null && parsedFormat != ValidationFormat.NONE) {
                         for (String value : values) {
                             if (!isValidStringValue(value, parsedFormat)) {
-                                throw new InvalidParameterException(String.format("Invalid value options with validation format: %s for parameter: %s", parsedFormat.name(), name));
+                                throw new InvalidParameterValueException(String.format("Invalid value options with validation format: %s for parameter: %s", parsedFormat.name(), name));
                             }
                         }
                     }
@@ -172,10 +171,10 @@ public interface ExtensionCustomAction extends InternalIdentity, Identity {
                                 .map(v -> parseNumber(v, parsedFormat))
                                 .collect(Collectors.toList());
                     } catch (NumberFormatException ignored) {
-                        throw new InvalidParameterException(String.format("Invalid value options with validation format: %s for parameter: %s", parsedFormat.name(), name));
+                        throw new InvalidParameterValueException(String.format("Invalid value options with validation format: %s for parameter: %s", parsedFormat.name(), name));
                     }
                 default:
-                    throw new InvalidParameterException(String.format("Options not supported for type: %s for parameter: %s", parsedType, name));
+                    throw new InvalidParameterValueException(String.format("Options not supported for type: %s for parameter: %s", parsedType, name));
             }
         }
 
@@ -213,7 +212,7 @@ public interface ExtensionCustomAction extends InternalIdentity, Identity {
             }
         }
 
-        public static Parameter fromMap(Map<String, String> map) throws InvalidParameterException {
+        public static Parameter fromMap(Map<String, String> map) throws InvalidParameterValueException {
             final String name = map.get(ApiConstants.NAME);
             final String typeStr = map.get(ApiConstants.TYPE);
             final String validationFormatStr = map.get(ApiConstants.VALIDATION_FORMAT);
@@ -223,20 +222,20 @@ public interface ExtensionCustomAction extends InternalIdentity, Identity {
                 throw new InvalidParameterValueException("Invalid parameter specified with empty name");
             }
             if (StringUtils.isBlank(typeStr)) {
-                throw new InvalidParameterException(String.format("No type specified for parameter: %s", name));
+                throw new InvalidParameterValueException(String.format("No type specified for parameter: %s", name));
             }
             Type parsedType = EnumUtils.getEnumIgnoreCase(Type.class, typeStr);
             if (parsedType == null) {
                 throw new InvalidParameterValueException(String.format("Invalid type: %s specified for parameter: %s",
                         typeStr, name));
             }
-            ValidationFormat parsedFormat = EnumUtils.getEnumIgnoreCase(ValidationFormat.class, validationFormatStr, ValidationFormat.NONE);
-            if (ValidationFormat.NONE.equals(parsedFormat)) {
+            ValidationFormat parsedFormat = StringUtils.isBlank(validationFormatStr) ?
+                    ValidationFormat.NONE : EnumUtils.getEnumIgnoreCase(ValidationFormat.class, validationFormatStr);
+            if (parsedFormat == null || (!ValidationFormat.NONE.equals(parsedFormat) &&
+                    parsedFormat.getBaseType() != parsedType)) {
                 throw new InvalidParameterValueException(
-                        String.format("Invalid validation format: %s", validationFormatStr));
-            } else if (parsedFormat.getBaseType() != parsedType) {
-                throw new InvalidParameterValueException(
-                        String.format("Invalid validation format: %s specified for type: %s", parsedFormat.name(), parsedType.name()));
+                        String.format("Invalid validation format: %s specified for type: %s",
+                                parsedFormat, parsedType.name()));
             }
             List<Object> valueOptions = parseValueOptions(name, valueOptionsStr, parsedType, parsedFormat);
             return new Parameter(name, parsedType, parsedFormat, valueOptions, Boolean.parseBoolean(required));
@@ -279,13 +278,14 @@ public interface ExtensionCustomAction extends InternalIdentity, Identity {
 
         private void validateValueInOptions(Object value) {
             if (CollectionUtils.isNotEmpty(valueoptions) && !valueoptions.contains(value)) {
-                throw new InvalidParameterException();
+                throw new InvalidParameterValueException("Invalid value for parameter '" + name + "': " + value +
+                        ". Valid options are: " + valueoptions.stream().map(Object::toString).collect(Collectors.joining(", ")));
             }
         }
 
         public Object validatedValue(String value) {
             if (StringUtils.isBlank(value)) {
-                throw new InvalidParameterException("Empty value for parameter '" + name + "': " + value);
+                throw new InvalidParameterValueException("Empty value for parameter '" + name + "': " + value);
             }
             try {
                 switch (type) {
@@ -305,12 +305,12 @@ public interface ExtensionCustomAction extends InternalIdentity, Identity {
                         return value;
                 }
             } catch (Exception e) {
-                throw new InvalidParameterException("Invalid value for parameter '" + name + "': " + value);
+                throw new InvalidParameterValueException("Invalid value for parameter '" + name + "': " + value);
             }
         }
 
         public static Map<String, Object> validateParameterValues(List<Parameter> parameterDefinitions,
-                   Map<String, String> suppliedValues) throws InvalidParameterException {
+                   Map<String, String> suppliedValues) throws InvalidParameterValueException {
             if (suppliedValues == null) {
                 suppliedValues = new HashMap<>();
             }
@@ -318,7 +318,7 @@ public interface ExtensionCustomAction extends InternalIdentity, Identity {
                 String value = suppliedValues.get(param.getName());
                 if (param.isRequired()) {
                     if (value == null || value.trim().isEmpty()) {
-                        throw new InvalidParameterException("Missing or empty required parameter: " + param.getName());
+                        throw new InvalidParameterValueException("Missing or empty required parameter: " + param.getName());
                     }
                 }
             }

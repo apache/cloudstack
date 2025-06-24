@@ -22,7 +22,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import java.security.InvalidParameterException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -93,7 +92,7 @@ public class ExtensionCustomActionTest {
         ExtensionCustomAction.Parameter.fromMap(map);
     }
 
-    @Test(expected = InvalidParameterException.class)
+    @Test(expected = InvalidParameterValueException.class)
     public void testParameterFromMapNoType() {
         Map<String, String> map = new HashMap<>();
         map.put(ApiConstants.NAME, "testParam");
@@ -158,7 +157,7 @@ public class ExtensionCustomActionTest {
         ExtensionCustomAction.Parameter.fromMap(map);
     }
 
-    @Test(expected = InvalidParameterException.class)
+    @Test(expected = InvalidParameterValueException.class)
     public void testParameterFromMapInvalidEmailOptions() {
         Map<String, String> map = new HashMap<>();
         map.put(ApiConstants.NAME, "testParam");
@@ -183,7 +182,7 @@ public class ExtensionCustomActionTest {
         assertEquals("test@example.com", result);
     }
 
-    @Test(expected = InvalidParameterException.class)
+    @Test(expected = InvalidParameterValueException.class)
     public void testValidatedValueInvalidEmail() {
         ExtensionCustomAction.Parameter param = new ExtensionCustomAction.Parameter(
             "testParam",
@@ -211,7 +210,7 @@ public class ExtensionCustomActionTest {
         assertEquals(validUUID, result);
     }
 
-    @Test(expected = InvalidParameterException.class)
+    @Test(expected = InvalidParameterValueException.class)
     public void testValidatedValueInvalidUUID() {
         ExtensionCustomAction.Parameter param = new ExtensionCustomAction.Parameter(
             "testParam",
@@ -238,7 +237,7 @@ public class ExtensionCustomActionTest {
         assertEquals("https://example.com", result);
     }
 
-    @Test(expected = InvalidParameterException.class)
+    @Test(expected = InvalidParameterValueException.class)
     public void testValidatedValueInvalidURL() {
         ExtensionCustomAction.Parameter param = new ExtensionCustomAction.Parameter(
             "testParam",
@@ -265,7 +264,7 @@ public class ExtensionCustomActionTest {
         assertEquals("mypassword", result);
     }
 
-    @Test(expected = InvalidParameterException.class)
+    @Test(expected = InvalidParameterValueException.class)
     public void testValidatedValueEmptyPassword() {
         ExtensionCustomAction.Parameter param = new ExtensionCustomAction.Parameter(
             "testParam",
@@ -306,7 +305,7 @@ public class ExtensionCustomActionTest {
         assertEquals(3.14f, result);
     }
 
-    @Test(expected = InvalidParameterException.class)
+    @Test(expected = InvalidParameterValueException.class)
     public void testValidatedValueInvalidNumber() {
         ExtensionCustomAction.Parameter param = new ExtensionCustomAction.Parameter(
             "testParam",
@@ -362,7 +361,7 @@ public class ExtensionCustomActionTest {
         assertEquals("option2", result);
     }
 
-    @Test(expected = InvalidParameterException.class)
+    @Test(expected = InvalidParameterValueException.class)
     public void testValidatedValueNotInOptions() {
         List<Object> options = Arrays.asList("option1", "option2", "option3");
         ExtensionCustomAction.Parameter param = new ExtensionCustomAction.Parameter(
@@ -376,7 +375,7 @@ public class ExtensionCustomActionTest {
         param.validatedValue("option4");
     }
 
-    @Test(expected = InvalidParameterException.class)
+    @Test(expected = InvalidParameterValueException.class)
     public void testValidatedValueEmpty() {
         ExtensionCustomAction.Parameter param = new ExtensionCustomAction.Parameter(
             "testParam",
@@ -412,7 +411,7 @@ public class ExtensionCustomActionTest {
         assertEquals("optionalValue", result.get("optional"));
     }
 
-    @Test(expected = InvalidParameterException.class)
+    @Test(expected = InvalidParameterValueException.class)
     public void testValidateParameterValuesMissingRequired() {
         List<ExtensionCustomAction.Parameter> paramDefs = Arrays.asList(
             new ExtensionCustomAction.Parameter("required1", ExtensionCustomAction.Parameter.Type.STRING,
@@ -424,7 +423,7 @@ public class ExtensionCustomActionTest {
         ExtensionCustomAction.Parameter.validateParameterValues(paramDefs, suppliedValues);
     }
 
-    @Test(expected = InvalidParameterException.class)
+    @Test(expected = InvalidParameterValueException.class)
     public void testValidateParameterValuesEmptyRequired() {
         List<ExtensionCustomAction.Parameter> paramDefs = Arrays.asList(
             new ExtensionCustomAction.Parameter("required1", ExtensionCustomAction.Parameter.Type.STRING,
