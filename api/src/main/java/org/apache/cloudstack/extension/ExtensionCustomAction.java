@@ -231,7 +231,10 @@ public interface ExtensionCustomAction extends InternalIdentity, Identity {
                         typeStr, name));
             }
             ValidationFormat parsedFormat = EnumUtils.getEnumIgnoreCase(ValidationFormat.class, validationFormatStr, ValidationFormat.NONE);
-            if (!ValidationFormat.NONE.equals(parsedFormat) && parsedFormat.getBaseType() != parsedType) {
+            if (ValidationFormat.NONE.equals(parsedFormat)) {
+                throw new InvalidParameterValueException(
+                        String.format("Invalid validation format: %s", validationFormatStr));
+            } else if (parsedFormat.getBaseType() != parsedType) {
                 throw new InvalidParameterValueException(
                         String.format("Invalid validation format: %s specified for type: %s", parsedFormat.name(), parsedType.name()));
             }
