@@ -5617,6 +5617,66 @@ protected Map<String, ResourceIcon> getResourceIconsUsingOsCategory(List<Templat
         return guiThemeResponse;
     }
 
+    private void populateDomainFieldsOnConsoleSessionResponse(ConsoleSession consoleSession, ConsoleSessionResponse consoleSessionResponse) {
+        if (consoleSession == null) {
+            return;
+        }
+
+        Domain domain = ApiDBUtils.findDomainById(consoleSession.getDomainId());
+        if (domain != null) {
+            consoleSessionResponse.setDomain(domain.getName());
+            consoleSessionResponse.setDomainPath(domain.getPath());
+            consoleSessionResponse.setDomainId(domain.getUuid());
+        }
+    }
+
+    private void populateUserFieldsOnConsoleSessionResponse(ConsoleSession consoleSession, ConsoleSessionResponse consoleSessionResponse) {
+        if (consoleSession == null) {
+            return;
+        }
+
+        User user = findUserById(consoleSession.getUserId());
+        if (user != null) {
+            consoleSessionResponse.setUser(user.getUsername());
+            consoleSessionResponse.setUserId(user.getUuid());
+        }
+    }
+
+    private void populateAccountFieldsOnConsoleSessionResponse(ConsoleSession consoleSession, ConsoleSessionResponse consoleSessionResponse) {
+        if (consoleSession == null) {
+            return;
+        }
+
+        Account account = ApiDBUtils.findAccountById(consoleSession.getAccountId());
+        if (account != null) {
+            consoleSessionResponse.setAccount(account.getAccountName());
+            consoleSessionResponse.setAccountId(account.getUuid());
+        }
+    }
+
+    private void populateHostFieldsOnConsoleSessionResponse(ConsoleSession consoleSession, ConsoleSessionResponse consoleSessionResponse) {
+        if (consoleSession == null) {
+            return;
+        }
+
+        Host host = findHostById(consoleSession.getHostId());
+        if (host != null) {
+            consoleSessionResponse.setHostId(host.getUuid());
+            consoleSessionResponse.setHostName(host.getName());
+        }
+    }
+
+    private void populateInstanceFieldsOnConsoleSessionResponse(ConsoleSession consoleSession, ConsoleSessionResponse consoleSessionResponse) {
+        if (consoleSession == null) {
+            return;
+        }
+
+        VMInstanceVO instance = ApiDBUtils.findVMInstanceById(consoleSession.getInstanceId());
+        if (instance != null) {
+            consoleSessionResponse.setInstanceId(instance.getUuid());
+        }
+    }
+
     @Override
     public ConsoleSessionResponse createConsoleSessionResponse(ConsoleSession consoleSession, ResponseView responseView) {
         ConsoleSessionResponse consoleSessionResponse = new ConsoleSessionResponse();
@@ -5627,34 +5687,12 @@ protected Map<String, ResourceIcon> getResourceIconsUsingOsCategory(List<Templat
         consoleSessionResponse.setConsoleEndpointCreatorAddress(consoleSession.getConsoleEndpointCreatorAddress());
         consoleSessionResponse.setClientAddress(consoleSession.getClientAddress());
 
-        Domain domain = ApiDBUtils.findDomainById(consoleSession.getDomainId());
-        if (domain != null) {
-            consoleSessionResponse.setDomain(domain.getName());
-            consoleSessionResponse.setDomainPath(domain.getPath());
-            consoleSessionResponse.setDomainId(domain.getUuid());
-        }
-
-        User user = findUserById(consoleSession.getUserId());
-        if (user != null) {
-            consoleSessionResponse.setUser(user.getUsername());
-            consoleSessionResponse.setUserId(user.getUuid());
-        }
-
-        Account account = ApiDBUtils.findAccountById(consoleSession.getAccountId());
-        if (account != null) {
-            consoleSessionResponse.setAccount(account.getAccountName());
-            consoleSessionResponse.setAccountId(account.getUuid());
-        }
-
-        Host host = findHostById(consoleSession.getHostId());
-        if (responseView == ResponseView.Full && host != null) {
-            consoleSessionResponse.setHostId(host.getUuid());
-            consoleSessionResponse.setHostName(host.getName());
-        }
-
-        VMInstanceVO instance = ApiDBUtils.findVMInstanceById(consoleSession.getInstanceId());
-        if (instance != null) {
-            consoleSessionResponse.setInstanceId(instance.getUuid());
+        populateDomainFieldsOnConsoleSessionResponse(consoleSession, consoleSessionResponse);
+        populateUserFieldsOnConsoleSessionResponse(consoleSession, consoleSessionResponse);
+        populateAccountFieldsOnConsoleSessionResponse(consoleSession, consoleSessionResponse);
+        populateInstanceFieldsOnConsoleSessionResponse(consoleSession, consoleSessionResponse);
+        if (responseView == ResponseView.Full) {
+            populateHostFieldsOnConsoleSessionResponse(consoleSession, consoleSessionResponse);
         }
 
         consoleSessionResponse.setObjectName("consolesession");
