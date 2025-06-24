@@ -1533,6 +1533,83 @@ public class VirtualMachineManagerImplTest {
     }
 
     @Test
+    public void updateExternalVmNicsFromPrepareAnswer_updatesNicsSuccessfully() {
+        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+        VirtualMachineTO updatedTO = mock(VirtualMachineTO.class);
+        NicTO nicTO = mock(NicTO.class);
+        NicTO updatedNicTO = mock(NicTO.class);
+
+        when(vmTO.getNics()).thenReturn(new NicTO[]{nicTO});
+        when(updatedTO.getNics()).thenReturn(new NicTO[]{updatedNicTO});
+        when(nicTO.getNicUuid()).thenReturn("nic-uuid");
+        when(nicTO.getMac()).thenReturn("mac-a");
+        when(updatedNicTO.getNicUuid()).thenReturn("nic-uuid");
+        when(updatedNicTO.getMac()).thenReturn("mac-b");
+        when(_nicsDao.findByUuid("nic-uuid")).thenReturn(mock(NicVO.class));
+
+        virtualMachineManagerImpl.updateExternalVmNicsFromPrepareAnswer(vmTO, updatedTO);
+
+        verify(_nicsDao).findByUuid("nic-uuid");
+        verify(_nicsDao).update(anyLong(), any(NicVO.class));
+    }
+
+    @Test
+    public void updateExternalVmNicsFromPrepareAnswer_noMatchingNicUuid_noAction() {
+        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+        VirtualMachineTO updatedTO = mock(VirtualMachineTO.class);
+        NicTO nicTO = mock(NicTO.class);
+        NicTO updatedNicTO = mock(NicTO.class);
+
+        when(vmTO.getNics()).thenReturn(new NicTO[]{nicTO});
+        when(updatedTO.getNics()).thenReturn(new NicTO[]{updatedNicTO});
+        when(nicTO.getNicUuid()).thenReturn("nic-uuid");
+        when(updatedNicTO.getNicUuid()).thenReturn("different-uuid");
+
+        virtualMachineManagerImpl.updateExternalVmNicsFromPrepareAnswer(vmTO, updatedTO);
+
+        verify(_nicsDao, never()).findByUuid(anyString());
+    }
+
+    @Test
+    public void updateExternalVmNicsFromPrepareAnswer_nullUpdatedNics_noAction() {
+        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+        VirtualMachineTO updatedTO = mock(VirtualMachineTO.class);
+
+        when(vmTO.getNics()).thenReturn(new NicTO[]{mock(NicTO.class)});
+        when(updatedTO.getNics()).thenReturn(null);
+
+        virtualMachineManagerImpl.updateExternalVmNicsFromPrepareAnswer(vmTO, updatedTO);
+
+        verify(_nicsDao, never()).findByUuid(anyString());
+    }
+
+    @Test
+    public void updateExternalVmNicsFromPrepareAnswer_nullVmNics_noAction() {
+        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+        VirtualMachineTO updatedTO = mock(VirtualMachineTO.class);
+
+        when(vmTO.getNics()).thenReturn(null);
+        when(updatedTO.getNics()).thenReturn(new NicTO[]{mock(NicTO.class)});
+
+        virtualMachineManagerImpl.updateExternalVmNicsFromPrepareAnswer(vmTO, updatedTO);
+
+        verify(_nicsDao, never()).findByUuid(anyString());
+    }
+
+    @Test
+    public void updateExternalVmNicsFromPrepareAnswer_emptyNics_noAction() {
+        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+        VirtualMachineTO updatedTO = mock(VirtualMachineTO.class);
+
+        when(vmTO.getNics()).thenReturn(new NicTO[]{});
+        when(updatedTO.getNics()).thenReturn(new NicTO[]{});
+
+        virtualMachineManagerImpl.updateExternalVmNicsFromPrepareAnswer(vmTO, updatedTO);
+
+        verify(_nicsDao, never()).findByUuid(anyString());
+    }
+
+    @Test
     public void processPrepareExternalProvisioning_nonExternalHypervisor_noAction() throws OperationTimedoutException, AgentUnavailableException {
         Host host = mock(Host.class);
         VirtualMachineTO vmTO = mock(VirtualMachineTO.class);

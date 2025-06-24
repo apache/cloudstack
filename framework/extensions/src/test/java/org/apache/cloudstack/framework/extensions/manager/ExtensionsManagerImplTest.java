@@ -30,6 +30,7 @@ import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -45,6 +46,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ExtensionCustomActionResponse;
@@ -74,6 +76,7 @@ import org.apache.cloudstack.framework.extensions.dao.ExtensionDao;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionDetailsDao;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionResourceMapDao;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionResourceMapDetailsDao;
+import org.apache.cloudstack.framework.extensions.vo.ExtensionCustomActionDetailsVO;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionCustomActionVO;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionResourceMapVO;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionVO;
@@ -98,13 +101,16 @@ import com.cloud.alert.AlertManager;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
+import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.ExternalProvisioner;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.org.Cluster;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.utils.Pair;
@@ -275,6 +281,59 @@ public class ExtensionsManagerImplTest {
     }
 
     @Test
+    public void getActionMessageReturnsDefaultMessageForSuccessWithoutCustomMessage() {
+        ExtensionCustomAction action = mock(ExtensionCustomAction.class);
+        Extension extension = mock(Extension.class);
+        when(action.getSuccessMessage()).thenReturn(null);
+
+        String result = extensionsManager.getActionMessage(true, action, extension, ExtensionCustomAction.ResourceType.VirtualMachine, null);
+
+        assertTrue(result.contains("Successfully completed"));
+    }
+
+    @Test
+    public void getActionMessageReturnsCustomSuccessMessage() {
+        ExtensionCustomAction action = mock(ExtensionCustomAction.class);
+        when(action.getName()).thenReturn("actionName");
+        Extension extension = mock(Extension.class);
+        when(extension.getName()).thenReturn("extension");
+        when(action.getSuccessMessage()).thenReturn("Custom success message");
+        String result = extensionsManager.getActionMessage(true, action, extension, ExtensionCustomAction.ResourceType.VirtualMachine, null);
+        assertEquals("Custom success message", result);
+    }
+
+    @Test
+    public void getActionMessageReturnsDefaultMessageForFailureWithoutCustomMessage() {
+        ExtensionCustomAction action = mock(ExtensionCustomAction.class);
+        Extension extension = mock(Extension.class);
+        when(action.getErrorMessage()).thenReturn(null);
+
+        String result = extensionsManager.getActionMessage(false, action, extension, ExtensionCustomAction.ResourceType.VirtualMachine, null);
+
+        assertTrue(result.contains("Failed to complete"));
+    }
+
+    @Test
+    public void getActionMessageReturnsCustomFailureMessage() {
+        ExtensionCustomAction action = mock(ExtensionCustomAction.class);
+        when(action.getName()).thenReturn("actionName");
+        Extension extension = mock(Extension.class);
+        when(extension.getName()).thenReturn("extension");
+        when(action.getErrorMessage()).thenReturn("Custom failure message");
+        String result = extensionsManager.getActionMessage(false, action, extension, ExtensionCustomAction.ResourceType.VirtualMachine, null);
+        assertEquals("Custom failure message", result);
+    }
+
+    @Test
+    public void getActionMessageHandlesNullActionMessage() {
+        ExtensionCustomAction action = mock(ExtensionCustomAction.class);
+        when(action.getSuccessMessage()).thenReturn(null);
+        Extension extension = mock(Extension.class);
+        String result = extensionsManager.getActionMessage(true, action, extension, ExtensionCustomAction.ResourceType.VirtualMachine, null);
+        assertTrue(result.contains("Successfully completed"));
+    }
+
+    @Test
     public void getFilteredExternalDetailsReturnsFilteredMap() {
         Map<String, String> details = new HashMap<>();
         String key = "detail.key";
@@ -311,6 +370,128 @@ public class ExtensionsManagerImplTest {
         when(extensionDao.update(1L, vo)).thenReturn(true);
         extensionsManager.disableExtension(1L);
         verify(extensionDao).update(1L, vo);
+    }
+
+    @Test
+    public void getExtensionFromResourceReturnsExtensionForValidResource() {
+        VirtualMachine vm = mock(VirtualMachine.class);
+        when(entityManager.findByUuid(eq(VirtualMachine.class), eq("vm-uuid"))).thenReturn(vm);
+        when(virtualMachineManager.findClusterAndHostIdForVm(vm, false)).thenReturn(new Pair<>(1L, 1L));
+        ExtensionResourceMapVO mapVO = mock(ExtensionResourceMapVO.class);
+        when(mapVO.getExtensionId()).thenReturn(100L);
+        when(extensionResourceMapDao.findByResourceIdAndType(1L, ExtensionResourceMap.ResourceType.Cluster)).thenReturn(mapVO);
+        ExtensionVO extension = mock(ExtensionVO.class);
+        when(extensionDao.findById(100L)).thenReturn(extension);
+
+        Extension result = extensionsManager.getExtensionFromResource(ExtensionCustomAction.ResourceType.VirtualMachine, "vm-uuid");
+
+        assertEquals(extension, result);
+    }
+
+    @Test
+    public void getExtensionFromResourceReturnsNullForInvalidResourceUuid() {
+        when(entityManager.findByUuid(eq(VirtualMachine.class), eq("invalid-uuid"))).thenReturn(null);
+
+        Extension result = extensionsManager.getExtensionFromResource(ExtensionCustomAction.ResourceType.VirtualMachine, "invalid-uuid");
+
+        assertNull(result);
+    }
+
+    @Test
+    public void getExtensionFromResourceReturnsNullForMissingClusterMapping() {
+        VirtualMachine vm = mock(VirtualMachine.class);
+        when(entityManager.findByUuid(eq(VirtualMachine.class), eq("vm-uuid"))).thenReturn(vm);
+        when(virtualMachineManager.findClusterAndHostIdForVm(vm, false)).thenReturn(new Pair<>(null, null));
+
+        Extension result = extensionsManager.getExtensionFromResource(ExtensionCustomAction.ResourceType.VirtualMachine, "vm-uuid");
+
+        assertNull(result);
+    }
+
+    @Test
+    public void getExtensionFromResourceReturnsNullForMissingExtensionMapping() {
+        VirtualMachine vm = mock(VirtualMachine.class);
+        when(entityManager.findByUuid(eq(VirtualMachine.class), eq("vm-uuid"))).thenReturn(vm);
+        when(virtualMachineManager.findClusterAndHostIdForVm(vm, false)).thenReturn(new Pair<>(1L, 1L));
+        when(extensionResourceMapDao.findByResourceIdAndType(1L, ExtensionResourceMap.ResourceType.Cluster)).thenReturn(null);
+
+        Extension result = extensionsManager.getExtensionFromResource(ExtensionCustomAction.ResourceType.VirtualMachine, "vm-uuid");
+
+        assertNull(result);
+    }
+
+    @Test
+    public void updateExtensionEntryPointReadyUpdatesStateWhenNotReady() {
+        Extension ext = mock(Extension.class);
+        when(ext.getId()).thenReturn(1L);
+        when(ext.isEntryPointReady()).thenReturn(true);
+        ExtensionVO vo = mock(ExtensionVO.class);
+        when(extensionDao.createForUpdate(1L)).thenReturn(vo);
+        when(extensionDao.update(1L, vo)).thenReturn(true);
+
+        extensionsManager.updateExtensionEntryPointReady(ext, false);
+
+        verify(extensionDao).update(1L, vo);
+    }
+
+    @Test
+    public void updateExtensionEntryPointReadyDoesNotUpdateWhenStateUnchanged() {
+        Extension ext = mock(Extension.class);
+        when(ext.isEntryPointReady()).thenReturn(true);
+        extensionsManager.updateExtensionEntryPointReady(ext, true);
+        verify(extensionDao, never()).update(anyLong(), any());
+    }
+
+    @Test
+    public void disableExtensionChangesStateToDisabled() {
+        ExtensionVO vo = mock(ExtensionVO.class);
+        when(extensionDao.createForUpdate(1L)).thenReturn(vo);
+        when(extensionDao.update(1L, vo)).thenReturn(true);
+
+        extensionsManager.disableExtension(1L);
+
+        verify(vo).setState(Extension.State.Disabled);
+        verify(extensionDao).update(1L, vo);
+    }
+
+    @Test
+    public void updateAllExtensionHostsRemovesHostsSuccessfully() throws OperationTimedoutException, AgentUnavailableException {
+        Extension extension = mock(Extension.class);
+        when(extension.getId()).thenReturn(1L);
+        Long clusterId = 100L;
+        Long hostId = 200L;
+        when(hostDao.listIdsByClusterId(clusterId)).thenReturn(List.of(hostId));
+        extensionsManager.updateAllExtensionHosts(extension, clusterId, true);
+        verify(agentMgr).send(eq(hostId), any(Command.class));
+    }
+
+    @Test
+    public void updateAllExtensionHostsAddsHostsSuccessfully() throws OperationTimedoutException, AgentUnavailableException {
+        Extension extension = mock(Extension.class);
+        when(extension.getId()).thenReturn(1L);
+        Long clusterId = 100L;
+        Long hostId = 200L;
+        when(hostDao.listIdsByClusterId(clusterId)).thenReturn(List.of(hostId));
+        extensionsManager.updateAllExtensionHosts(extension, clusterId, false);
+        verify(agentMgr).send(eq(hostId), any(Command.class));
+    }
+
+    @Test
+    public void updateAllExtensionHostsHandlesEmptyHostListGracefully() throws OperationTimedoutException, AgentUnavailableException {
+        Extension extension = mock(Extension.class);
+        Long clusterId = 100L;
+        when(hostDao.listIdsByClusterId(clusterId)).thenReturn(Collections.emptyList());
+        extensionsManager.updateAllExtensionHosts(extension, clusterId, false);
+        verify(agentMgr, never()).send(anyLong(), any(Command.class));
+    }
+
+    @Test
+    public void updateAllExtensionHostsHandlesNullClusterId() throws OperationTimedoutException, AgentUnavailableException {
+        Extension extension = mock(Extension.class);
+        when(extension.getId()).thenReturn(1L);
+        when(extensionResourceMapDao.listResourceIdsByExtensionIdAndType(eq(1L), any())).thenReturn(Collections.emptyList());
+        extensionsManager.updateAllExtensionHosts(extension, null, false);
+        verify(agentMgr, never()).send(anyLong(), any(Command.class));
     }
 
     @Test
@@ -376,6 +557,71 @@ public class ExtensionsManagerImplTest {
         ExtensionVO ext = mock(ExtensionVO.class);
         when(extensionDao.findById(5L)).thenReturn(ext);
         assertEquals(ext, extensionsManager.getExtensionForCluster(1L));
+    }
+
+    @Test
+    public void checkExtensionEntryPointSyncUpdatesReadyWhenChecksumIsBlank() {
+        Extension ext = mock(Extension.class);
+        when(ext.getName()).thenReturn("ext");
+        when(ext.getRelativeEntryPoint()).thenReturn("entry.sh");
+        when(externalProvisioner.getChecksumForExtensionEntryPoint("ext", "entry.sh")).thenReturn("");
+
+        extensionsManager.checkExtensionEntryPointSync(ext, Collections.emptyList());
+
+        verify(extensionsManager).updateExtensionEntryPointReady(ext, false);
+    }
+
+    @Test
+    public void checkExtensionEntryPointSyncUpdatesReadyWhenNoHostsProvided() {
+        ExtensionVO ext = mock(ExtensionVO.class);
+        when(ext.getName()).thenReturn("ext");
+        when(ext.getRelativeEntryPoint()).thenReturn("entry.sh");
+        when(externalProvisioner.getChecksumForExtensionEntryPoint("ext", "entry.sh")).thenReturn("checksum123");
+        when(extensionDao.createForUpdate(anyLong())).thenReturn(ext);
+        extensionsManager.checkExtensionEntryPointSync(ext, Collections.emptyList());
+        verify(extensionsManager).updateExtensionEntryPointReady(ext, true);
+    }
+
+    @Test
+    public void checkExtensionEntryPointSyncUpdatesReadyWhenChecksumsMatchAcrossHosts() {
+        ExtensionVO ext = mock(ExtensionVO.class);
+        when(ext.getName()).thenReturn("ext");
+        when(ext.getRelativeEntryPoint()).thenReturn("entry.sh");
+        when(externalProvisioner.getChecksumForExtensionEntryPoint("ext", "entry.sh")).thenReturn("checksum123");
+        when(extensionDao.createForUpdate(anyLong())).thenReturn(ext);
+        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
+        doReturn(new Pair<>(true, "checksum123")).when(extensionsManager).getChecksumForExtensionEntryPointOnMSPeer(ext, msHost);
+        extensionsManager.checkExtensionEntryPointSync(ext, Collections.singletonList(msHost));
+        verify(extensionsManager).updateExtensionEntryPointReady(ext, true);
+    }
+
+    @Test
+    public void checkExtensionEntryPointSyncUpdatesNotReadyWhenChecksumsDifferAcrossHosts() {
+        Extension ext = mock(Extension.class);
+        when(ext.getName()).thenReturn("ext");
+        when(ext.getRelativeEntryPoint()).thenReturn("entry.sh");
+        when(externalProvisioner.getChecksumForExtensionEntryPoint("ext", "entry.sh")).thenReturn("checksum123");
+        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
+        when(msHost.getMsid()).thenReturn(1L);
+        doReturn(new Pair<>(true, "checksum456")).when(extensionsManager).getChecksumForExtensionEntryPointOnMSPeer(ext, msHost);
+        extensionsManager.checkExtensionEntryPointSync(ext, Collections.singletonList(msHost));
+        verify(extensionsManager).updateExtensionEntryPointReady(ext, false);
+    }
+
+    @Test
+    public void checkExtensionEntryPointSyncUpdatesNotReadyWhenPeerChecksumFails() {
+        Extension ext = mock(Extension.class);
+        when(ext.getName()).thenReturn("ext");
+        when(ext.getRelativeEntryPoint()).thenReturn("entry.sh");
+        when(externalProvisioner.getChecksumForExtensionEntryPoint("ext", "entry.sh")).thenReturn("checksum123");
+
+        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
+        when(msHost.getMsid()).thenReturn(1L);
+        doReturn(new Pair<>(false, null)).when(extensionsManager).getChecksumForExtensionEntryPointOnMSPeer(ext, msHost);
+
+        extensionsManager.checkExtensionEntryPointSync(ext, Collections.singletonList(msHost));
+
+        verify(extensionsManager).updateExtensionEntryPointReady(ext, false);
     }
 
     @Test
@@ -658,6 +904,45 @@ public class ExtensionsManagerImplTest {
     }
 
     @Test
+    public void updateExtensionsDetails_SavesDetails_WhenDetailsProvided() {
+        long extensionId = 10L;
+        Map<String, String> details = Map.of("foo", "bar", "baz", "qux");
+        extensionsManager.updateExtensionsDetails(false, details, null, extensionId);
+        verify(extensionDetailsDao).saveDetails(any());
+    }
+
+    @Test
+    public void updateExtensionsDetails_DoesNothing_WhenDetailsAndCleanupAreNull() {
+        long extensionId = 11L;
+        extensionsManager.updateExtensionsDetails(null, null, null, extensionId);
+        verify(extensionDetailsDao, never()).removeDetails(anyLong());
+        verify(extensionDetailsDao, never()).saveDetails(any());
+    }
+
+    @Test
+    public void updateExtensionsDetails_RemovesDetailsOnly_WhenCleanupIsTrue() {
+        long extensionId = 12L;
+        extensionsManager.updateExtensionsDetails(true, null, null, extensionId);
+        verify(extensionDetailsDao).removeDetails(extensionId);
+        verify(extensionDetailsDao, never()).saveDetails(any());
+    }
+
+    @Test
+    public void updateExtensionsDetails_PersistsOrchestratorFlag_WhenFlagIsNotNull() {
+        long extensionId = 13L;
+        extensionsManager.updateExtensionsDetails(false, null, true, extensionId);
+        verify(extensionDetailsDao).persist(any());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void updateExtensionsDetails_ThrowsException_WhenPersistFails() {
+        long extensionId = 14L;
+        Map<String, String> details = Map.of("foo", "bar");
+        doThrow(CloudRuntimeException.class).when(extensionDetailsDao).saveDetails(any());
+        extensionsManager.updateExtensionsDetails(false, details, null, extensionId);
+    }
+
+    @Test
     public void testDeleteExtension_Success() {
         DeleteExtensionCmd cmd = mock(DeleteExtensionCmd.class);
         when(cmd.getId()).thenReturn(1L);
@@ -683,11 +968,110 @@ public class ExtensionsManagerImplTest {
     }
 
     @Test
+    public void registerExtensionWithResourceRegistersSuccessfullyForValidResourceType() {
+        RegisterExtensionCmd cmd = mock(RegisterExtensionCmd.class);
+        when(cmd.getResourceType()).thenReturn(ExtensionResourceMap.ResourceType.Cluster.name());
+        when(cmd.getResourceId()).thenReturn(UUID.randomUUID().toString());
+        when(cmd.getExtensionId()).thenReturn(1L);
+        ExtensionVO extension = mock(ExtensionVO.class);
+        ClusterVO clusterVO = mock(ClusterVO.class);
+        when(clusterVO.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.External);
+        when(clusterDao.findByUuid(anyString())).thenReturn(clusterVO);
+        ExtensionResourceMapVO resourceMap = mock(ExtensionResourceMapVO.class);
+        when(extensionResourceMapDao.persist(any())).thenReturn(resourceMap);
+        when(extensionDao.findById(anyLong())).thenReturn(extension);
+        Extension result = extensionsManager.registerExtensionWithResource(cmd);
+        assertEquals(extension, result);
+        verify(extensionResourceMapDao).persist(any());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void registerExtensionWithResourceThrowsForInvalidResourceType() {
+        RegisterExtensionCmd cmd = mock(RegisterExtensionCmd.class);
+        when(cmd.getResourceType()).thenReturn("InvalidType");
+
+        extensionsManager.registerExtensionWithResource(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void registerExtensionWithResourceThrowsForMissingExtension() {
+        RegisterExtensionCmd cmd = mock(RegisterExtensionCmd.class);
+        when(cmd.getResourceType()).thenReturn(ExtensionResourceMap.ResourceType.Cluster.name());
+        when(cmd.getResourceId()).thenReturn(UUID.randomUUID().toString());
+        ClusterVO clusterVO = mock(ClusterVO.class);
+        when(clusterDao.findByUuid(anyString())).thenReturn(clusterVO);
+        extensionsManager.registerExtensionWithResource(cmd);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void registerExtensionWithResourceThrowsForPersistFailure() {
+        RegisterExtensionCmd cmd = mock(RegisterExtensionCmd.class);
+        when(cmd.getResourceType()).thenReturn(ExtensionResourceMap.ResourceType.Cluster.name());
+        when(cmd.getResourceId()).thenReturn(UUID.randomUUID().toString());
+        when(cmd.getExtensionId()).thenReturn(1L);
+        ClusterVO clusterVO = mock(ClusterVO.class);
+        when(clusterVO.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.External);
+        when(clusterDao.findByUuid(anyString())).thenReturn(clusterVO);
+        ExtensionVO extension = mock(ExtensionVO.class);
+        when(extensionDao.findById(1L)).thenReturn(extension);
+        when(extensionResourceMapDao.persist(any())).thenThrow(CloudRuntimeException.class);
+        extensionsManager.registerExtensionWithResource(cmd);
+    }
+
+    @Test
+    public void registerExtensionWithClusterRegistersSuccessfullyForValidCluster() {
+        Cluster cluster = mock(Cluster.class);
+        when(cluster.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.External);
+        Extension extension = mock(Extension.class);
+        Map<String, String> details = Map.of("key1", "value1");
+        ExtensionResourceMapVO resourceMap = mock(ExtensionResourceMapVO.class);
+        when(extensionResourceMapDao.persist(any())).thenReturn(resourceMap);
+        ExtensionResourceMap result = extensionsManager.registerExtensionWithCluster(cluster, extension, details);
+        assertNotNull(result);
+        verify(extensionResourceMapDao).persist(any());
+    }
+
+    @Test
+    public void registerExtensionWithClusterHandlesNullDetails() {
+        Cluster cluster = mock(Cluster.class);
+        when(cluster.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.External);
+        Extension extension = mock(Extension.class);
+        ExtensionResourceMapVO resourceMap = mock(ExtensionResourceMapVO.class);
+        when(extensionResourceMapDao.persist(any())).thenReturn(resourceMap);
+        ExtensionResourceMap result = extensionsManager.registerExtensionWithCluster(cluster, extension, null);
+        assertNotNull(result);
+        verify(extensionResourceMapDao).persist(any());
+    }
+
+    @Test
     public void testUnregisterExtensionWithResource_InvalidResourceType() {
         UnregisterExtensionCmd cmd = mock(UnregisterExtensionCmd.class);
         when(cmd.getResourceType()).thenReturn("InvalidType");
 
         assertThrows(InvalidParameterValueException.class, () -> extensionsManager.unregisterExtensionWithResource(cmd));
+    }
+
+    @Test
+    public void unregisterExtensionWithClusterRemovesMappingSuccessfully() {
+        Cluster cluster = mock(Cluster.class);
+        when(cluster.getId()).thenReturn(100L);
+        Long extensionId = 1L;
+        ExtensionResourceMapVO resourceMap = mock(ExtensionResourceMapVO.class);
+        when(extensionResourceMapDao.findByResourceIdAndType(eq(100L), eq(ExtensionResourceMap.ResourceType.Cluster)))
+            .thenReturn(resourceMap);
+        extensionsManager.unregisterExtensionWithCluster(cluster, extensionId);
+        verify(extensionResourceMapDao).remove(resourceMap.getId());
+    }
+
+    @Test
+    public void unregisterExtensionWithClusterHandlesMissingMappingGracefully() {
+        Cluster cluster = mock(Cluster.class);
+        when(cluster.getId()).thenReturn(100L);
+        Long extensionId = 1L;
+        when(extensionResourceMapDao.findByResourceIdAndType(eq(100L), eq(ExtensionResourceMap.ResourceType.Cluster)))
+            .thenReturn(null);
+        extensionsManager.unregisterExtensionWithCluster(cluster, extensionId);
+        verify(extensionResourceMapDao, never()).remove(anyLong());
     }
 
     @Test
@@ -987,6 +1371,81 @@ public class ExtensionsManagerImplTest {
         when(extensionCustomActionDao.update(eq(1L), any())).thenReturn(false);
 
         extensionsManager.updateCustomAction(cmd);
+    }
+
+    @Test
+    public void updatedCustomActionDetails_RemovesDetails_WhenCleanupDetailsIsTrue() {
+        long actionId = 1L;
+        Boolean cleanupDetails = true;
+        extensionsManager.updatedCustomActionDetails(actionId, cleanupDetails, null, false, null);
+        verify(extensionCustomActionDetailsDao).removeDetails(actionId);
+        verify(extensionCustomActionDetailsDao, never()).saveDetails(any());
+    }
+
+    @Test
+    public void updatedCustomActionDetails_SavesDetails_WhenDetailsProvided() {
+        long actionId = 2L;
+        Map<String, String> details = Map.of("key1", "value1", "key2", "value2");
+        extensionsManager.updatedCustomActionDetails(actionId, false, details, false, null);
+        verify(extensionCustomActionDetailsDao).saveDetails(any());
+        verify(extensionCustomActionDetailsDao, never()).removeDetails(anyLong());
+    }
+
+    @Test
+    public void updatedCustomActionDetails_DoesNothing_WhenDetailsAndCleanupDetailsAreNull() {
+        long actionId = 3L;
+        extensionsManager.updatedCustomActionDetails(actionId, null, null, false, null);
+        verify(extensionCustomActionDetailsDao, never()).removeDetails(anyLong());
+        verify(extensionCustomActionDetailsDao, never()).saveDetails(any());
+    }
+
+    @Test
+    public void updatedCustomActionDetails_HandlesEmptyDetailsGracefully() {
+        long actionId = 4L;
+        Map<String, String> details = Collections.emptyMap();
+        extensionsManager.updatedCustomActionDetails(actionId, false, details, false, null);
+        verify(extensionCustomActionDetailsDao, never()).saveDetails(any());
+        verify(extensionCustomActionDetailsDao, never()).removeDetails(anyLong());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void updatedCustomActionDetails_ThrowsException_WhenSaveDetailsFails() {
+        long actionId = 5L;
+        Map<String, String> details = Map.of("key1", "value1");
+        doThrow(CloudRuntimeException.class).when(extensionCustomActionDetailsDao).saveDetails(any());
+        extensionsManager.updatedCustomActionDetails(actionId, false, details, false, null);
+    }
+
+    @Test
+    public void updatedCustomActionDetails_RemovesDetails_WhenCleanupDetailsParametersAreTrue() {
+        long actionId = 1L;
+        Map<String, String> hiddenDetails = new HashMap<>();
+        hiddenDetails.put(ApiConstants.PARAMETERS, "Test");
+        when(extensionCustomActionDetailsDao.listDetailsKeyPairs(actionId, false)).thenReturn(hiddenDetails);
+        extensionsManager.updatedCustomActionDetails(actionId, true, null, true, null);
+        verify(extensionCustomActionDetailsDao).removeDetails(actionId);
+        verify(extensionCustomActionDetailsDao, never()).saveDetails(any());
+    }
+
+    @Test
+    public void updatedCustomActionDetails_RemovesDetails_WhenCleanupDetailsTrueCleanupParametersFalse() {
+        long actionId = 1L;
+        Map<String, String> hiddenDetails = new HashMap<>();
+        hiddenDetails.put(ApiConstants.PARAMETERS, "Test");
+        when(extensionCustomActionDetailsDao.listDetailsKeyPairs(actionId, false)).thenReturn(hiddenDetails);
+        extensionsManager.updatedCustomActionDetails(actionId, true, null, false, null);
+        verify(extensionCustomActionDetailsDao, never()).removeDetails(actionId);
+        verify(extensionCustomActionDetailsDao).saveDetails(any());
+    }
+
+    @Test
+    public void updatedCustomActionDetails_RemovesDetails_WhenParameterGiven() {
+        long actionId = 1L;
+        extensionsManager.updatedCustomActionDetails(actionId, false, null, false,
+                List.of(mock(ExtensionCustomAction.Parameter.class)));
+        verify(extensionCustomActionDetailsDao, never()).removeDetails(actionId);
+        verify(extensionCustomActionDetailsDao, never()).saveDetails(any());
+        verify(extensionCustomActionDetailsDao).persist(any(ExtensionCustomActionDetailsVO.class));
     }
 
     @Test
