@@ -50,6 +50,7 @@ public class ListConsoleSessionsCmd extends BaseListCmd {
     @Inject
     private ConsoleAccessManager consoleAccessManager;
 
+    @ACL
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ConsoleSessionResponse.class, description = "The ID of the console session.")
     private Long id;
 
