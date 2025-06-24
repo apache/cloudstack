@@ -556,6 +556,9 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         ExtensionVO extensionVO = Transaction.execute((TransactionCallbackWithException<ExtensionVO, CloudRuntimeException>) status -> {
             ExtensionVO extension = new ExtensionVO(name, description, type,
                     entryPointFinal, stateFinal);
+            if (!Extension.State.Enabled.equals(stateFinal)) {
+                extension.setEntryPointReady(false);
+            }
             extension = extensionDao.persist(extension);
 
             Map<String, String> details = cmd.getDetails();
@@ -658,10 +661,6 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         if (description != null && !description.equals(extensionVO.getDescription())) {
             extensionVO.setDescription(description);
             updateNeeded = true;
-            if (!extensionDao.update(id, extensionVO)) {
-                throw new CloudRuntimeException(String.format("Failed to updated the extension: %s",
-                        extensionVO.getName()));
-            }
         }
         if (orchestratorRequiresPrepareVm != null && !Extension.Type.Orchestrator.equals(extensionVO.getType())) {
             throw new InvalidParameterValueException(String.format("%s is applicable only with %s type",

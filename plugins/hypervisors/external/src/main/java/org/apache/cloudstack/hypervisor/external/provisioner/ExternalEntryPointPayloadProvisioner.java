@@ -548,6 +548,9 @@ public class ExternalEntryPointPayloadProvisioner extends ManagerBase implements
             Path filePath = rootPath
                     .resolve(normalizedPath.startsWith(extensionDirName) ? extensionDirName : normalizedPath)
                     .normalize();
+            if (!Files.exists(filePath)) {
+                return;
+            }
             if (!Files.isDirectory(filePath) && !Files.isRegularFile(filePath)) {
                 throw new CloudRuntimeException(
                         String.format("Failed to cleanup extension entry-point: %s for extension: %s as it either " +
