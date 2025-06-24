@@ -404,10 +404,18 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
         String destinationPrefix;
         if ("INGRESS".equals(trafficType)) {
             sourcePrefix = baseNetworkRule.getSourceCidrList().get(0);
-            destinationPrefix = network.getCidr();
+            if (NetUtils.isValidIp4Cidr(sourcePrefix)) {
+                destinationPrefix = network.getCidr();
+            } else {
+                destinationPrefix = network.getIp6Cidr();
+            }
         } else {
-            sourcePrefix = network.getCidr();
             destinationPrefix = baseNetworkRule.getSourceCidrList().get(0);
+            if (NetUtils.isValidIp4Cidr(destinationPrefix)) {
+                sourcePrefix = network.getCidr();
+            } else {
+                sourcePrefix = network.getIp6Cidr();
+            }
         }
         String srcPort;
         String dstPort;
