@@ -85,7 +85,7 @@ public interface ManagementServerMaintenanceManager {
     // Indicates whether the current management server is preparing to maintenance
     boolean isPreparingForMaintenance();
 
-    void resetPreparingForMaintenance();
+    void resetMaintenanceParams();
 
     long getMaintenanceStartTime();
 
