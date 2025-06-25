@@ -402,42 +402,43 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
         String trafficType = baseNetworkRule.getTrafficType().toUpperCase(Locale.ROOT);
         String sourcePrefix;
         String destinationPrefix;
-        if ("INGRESS".equals(trafficType)) {
-            sourcePrefix = baseNetworkRule.getSourceCidrList().get(0);
-            if (NetUtils.isValidIp4Cidr(sourcePrefix)) {
-                destinationPrefix = network.getCidr();
+        boolean result = true;
+        List<String> sourceCidrs = baseNetworkRule.getSourceCidrList();
+        int index = 1;
+        for (String sourceCidr : sourceCidrs) {
+            if ("INGRESS".equals(trafficType)) {
+                sourcePrefix = sourceCidr;
+                destinationPrefix = NetUtils.isValidIp4Cidr(sourcePrefix) ? network.getCidr() : network.getIp6Cidr();
             } else {
-                destinationPrefix = network.getIp6Cidr();
+                destinationPrefix = sourceCidr;
+                sourcePrefix = NetUtils.isValidIp4Cidr(destinationPrefix) ? network.getCidr() : network.getIp6Cidr();
             }
-        } else {
-            destinationPrefix = baseNetworkRule.getSourceCidrList().get(0);
-            if (NetUtils.isValidIp4Cidr(destinationPrefix)) {
-                sourcePrefix = network.getCidr();
+            String srcPort;
+            String dstPort;
+            if (baseNetworkRule.getPrivatePort().contains("-")) {
+                srcPort = baseNetworkRule.getPrivatePort().split("-")[0];
+                dstPort = baseNetworkRule.getPrivatePort().split("-")[1];
             } else {
-                sourcePrefix = network.getIp6Cidr();
+                srcPort = dstPort = baseNetworkRule.getPrivatePort();
             }
+            CreateOrUpdateNetrisACLCommand cmd = new CreateOrUpdateNetrisACLCommand(zoneId, accountId, domainId, networkName, networkId,
+                    vpcName, vpcId, Objects.nonNull(vpcId), rule.getAclAction().name().toLowerCase(Locale.ROOT), getPrefix(sourcePrefix), getPrefix(destinationPrefix),
+                    "null".equals(srcPort) ? 1 : Integer.parseInt(srcPort),
+                    "null".equals(dstPort) ? 65535 : Integer.parseInt(dstPort), baseNetworkRule.getProtocol());
+            String aclName = String.format("V%s-N%s-ACL%s", vpcId, networkId, rule.getBaseRule().getRuleId());
+            if (sourceCidrs.size() > 1) {
+                aclName = aclName + "-" + index++;
+            }
+            String netrisAclName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.ACL, aclName);
+            cmd.setNetrisAclName(netrisAclName);
+            cmd.setReason(rule.getReason());
+            if ("ICMP".equals(baseNetworkRule.getProtocol())) {
+                cmd.setIcmpType(baseNetworkRule.getIcmpType());
+            }
+            NetrisAnswer answer = sendNetrisCommand(cmd, zoneId);
+            result = result && answer.getResult();
         }
-        String srcPort;
-        String dstPort;
-        if (baseNetworkRule.getPrivatePort().contains("-")) {
-            srcPort = baseNetworkRule.getPrivatePort().split("-")[0];
-            dstPort = baseNetworkRule.getPrivatePort().split("-")[1];
-        } else {
-            srcPort = dstPort = baseNetworkRule.getPrivatePort();
-        }
-        CreateOrUpdateNetrisACLCommand cmd = new CreateOrUpdateNetrisACLCommand(zoneId, accountId, domainId, networkName, networkId,
-                vpcName, vpcId, Objects.nonNull(vpcId), rule.getAclAction().name().toLowerCase(Locale.ROOT), getPrefix(sourcePrefix), getPrefix(destinationPrefix),
-                "null".equals(srcPort) ? 1 : Integer.parseInt(srcPort),
-                "null".equals(dstPort) ? 65535 : Integer.parseInt(dstPort), baseNetworkRule.getProtocol());
-        String aclName = String.format("V%s-N%s-ACL%s", vpcId, networkId, rule.getBaseRule().getRuleId());
-        String netrisAclName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.ACL, aclName);
-        cmd.setNetrisAclName(netrisAclName);
-        cmd.setReason(rule.getReason());
-        if ("ICMP".equals(baseNetworkRule.getProtocol())) {
-            cmd.setIcmpType(baseNetworkRule.getIcmpType());
-        }
-        NetrisAnswer answer = sendNetrisCommand(cmd, zoneId);
-        return answer.getResult();
+        return result;
     }
 
     public static String getPrefix(String prefix) {
