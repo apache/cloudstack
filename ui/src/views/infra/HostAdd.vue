@@ -244,7 +244,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import DedicateDomain from '../../components/view/DedicateDomain'
 import ResourceIcon from '@/components/view/ResourceIcon'
@@ -334,7 +334,7 @@ export default {
     },
     fetchZones () {
       this.loading = true
-      api('listZones', { showicon: true }).then(response => {
+      getAPI('listZones', { showicon: true }).then(response => {
         this.zonesList = response.listzonesresponse.zone || []
         this.form.zoneid = this.zonesList[0].id || null
         this.fetchPods(this.form.zoneid)
@@ -347,7 +347,7 @@ export default {
     fetchPods (zoneId) {
       this.form.zoneid = zoneId
       this.loading = true
-      api('listPods', {
+      getAPI('listPods', {
         zoneid: this.form.zoneid
       }).then(response => {
         this.podsList = response.listpodsresponse.pod || []
@@ -367,7 +367,7 @@ export default {
       if (!podId) return
       this.podId = podId
       this.loading = true
-      api('listClusters', {
+      getAPI('listClusters', {
         podid: this.form.podid
       }).then(response => {
         this.clustersList = response.listclustersresponse.cluster || []
@@ -385,7 +385,7 @@ export default {
     },
     fetchHostTags () {
       this.loading = true
-      api('listHostTags').then(response => {
+      getAPI('listHostTags').then(response => {
         const listTagExists = []
         const hostTagsList = response.listhosttagsresponse.hosttag || []
         hostTagsList.forEach(tag => {
@@ -451,7 +451,7 @@ export default {
         }
         Object.keys(args).forEach((key) => (args[key] == null) && delete args[key])
         this.loading = true
-        api('addHost', {}, 'POST', args).then(response => {
+        postAPI('addHost', args).then(response => {
           const host = response.addhostresponse.host[0] || {}
           if (host.id && this.showDedicated) {
             this.dedicateHost(host.id)
@@ -473,7 +473,7 @@ export default {
     },
     dedicateHost (hostId) {
       this.loading = true
-      api('dedicateHost', {
+      postAPI('dedicateHost', {
         hostId,
         domainId: this.dedicatedDomainId,
         account: this.dedicatedAccount

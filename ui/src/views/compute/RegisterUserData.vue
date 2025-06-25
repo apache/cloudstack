@@ -129,7 +129,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
@@ -192,7 +192,7 @@ export default {
     fetchDomainData () {
       const params = {}
       this.domainLoading = true
-      api('listDomains', params).then(json => {
+      getAPI('listDomains', params).then(json => {
         const listdomains = json.listdomainsresponse.domain
         this.domains = this.domains.concat(listdomains)
       }).finally(() => {
@@ -240,7 +240,7 @@ export default {
           params.params = userdataparams
         }
 
-        api(apiName, {}, 'POST', params).then(json => {
+        postAPI(apiName, params).then(json => {
           this.$message.success(this.$t('message.success.register.user.data') + ' ' + values.name)
         }).catch(error => {
           this.$notifyError(error)

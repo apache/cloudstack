@@ -880,7 +880,7 @@
 <script>
 import { ref, reactive, toRaw, nextTick, h } from 'vue'
 import { Button } from 'ant-design-vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import _ from 'lodash'
 import { mixin, mixinDevice } from '@/utils/mixin.js'
 import store from '@/store'
@@ -1781,7 +1781,7 @@ export default {
         }
         if (!apiName) return resolve(zones)
 
-        api(apiName, params).then(json => {
+        postAPI(apiName, params).then(json => {
           let objectName
           const responseName = [apiName.toLowerCase(), 'response'].join('')
           for (const key in json[responseName]) {
@@ -1879,7 +1879,7 @@ export default {
     },
     fetchInstaceGroups () {
       this.options.instanceGroups = []
-      api('listInstanceGroups', {
+      getAPI('listInstanceGroups', {
         account: this.$store.getters.project?.id ? null : this.$store.getters.userInfo.account,
         domainid: this.$store.getters.project?.id ? null : this.$store.getters.userInfo.domainid,
         listall: true
@@ -2025,7 +2025,7 @@ export default {
 
       this.form.userdataid = id
       this.userDataParams = []
-      api('listUserData', { id: id }).then(json => {
+      getAPI('listUserData', { id: id }).then(json => {
         const resp = json?.listuserdataresponse?.userdata || []
         if (resp[0]) {
           const params = resp[0].params
@@ -2045,7 +2045,7 @@ export default {
       }
       this.templateUserDataParams = []
 
-      api('listUserData', { id: id }).then(json => {
+      getAPI('listUserData', { id: id }).then(json => {
         const resp = json.listuserdataresponse.userdata || []
         if (resp.length > 0) {
           var params = resp[0].params
@@ -2378,11 +2378,7 @@ export default {
           }
         }
 
-        const httpMethod = deployVmData.userdata ? 'POST' : 'GET'
-        const args = httpMethod === 'POST' ? {} : deployVmData
-        const data = httpMethod === 'POST' ? deployVmData : {}
-
-        api('deployVirtualMachine', args, httpMethod, data).then(response => {
+        postAPI('deployVirtualMachine', deployVmData).then(response => {
           const jobId = response.deployvirtualmachineresponse.jobid
           if (jobId) {
             this.$pollJob({
@@ -2479,7 +2475,7 @@ export default {
         const param = this.params.zones
         const args = { showicon: true }
         if (zoneId) args.id = zoneId
-        api(param.list, args).then(json => {
+        postAPI(param.list, args).then(json => {
           const zoneResponse = json.listzonesresponse.zone || []
           if (listZoneAllow && listZoneAllow.length > 0) {
             zoneResponse.map(zone => {
@@ -2511,7 +2507,7 @@ export default {
         if (!('listall' in options) && !['zones', 'pods', 'clusters', 'hosts', 'dynamicScalingVmConfig', 'hypervisors'].includes(name)) {
           options.listall = true
         }
-        api(param.list, options).then((response) => {
+        postAPI(param.list, options).then((response) => {
           param.loading = false
           _.map(response, (responseItem, responseKey) => {
             if (Object.keys(responseItem).length === 0) {
@@ -2591,7 +2587,7 @@ export default {
       delete args.featured
 
       return new Promise((resolve, reject) => {
-        api('listTemplates', args).then((response) => {
+        getAPI('listTemplates', args).then((response) => {
           resolve(response)
         }).catch((reason) => {
           // ToDo: Handle errors
@@ -2625,7 +2621,7 @@ export default {
       delete args.featured
 
       return new Promise((resolve, reject) => {
-        api('listIsos', args).then((response) => {
+        getAPI('listIsos', args).then((response) => {
           resolve(response)
         }).catch((reason) => {
           // ToDo: Handle errors
