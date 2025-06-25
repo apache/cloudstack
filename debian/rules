@@ -180,6 +180,11 @@ override_dh_auto_install:
 	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-integration-tests
 	cp -r test/integration/* $(DESTDIR)/usr/share/$(PACKAGE)-integration-tests/
 
+	# Sample Extensions
+	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/extensions
+	cp -r extensions/* $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/extensions/
+	ln -s /$(SYSCONFDIR)/$(PACKAGE)/extensions $(DESTDIR)/usr/share/$(PACKAGE)-management/extensions
+
 override_dh_systemd_enable:
 	dh_systemd_enable -pcloudstack-management -pcloudstack-agent -pcloudstack-usage
 
