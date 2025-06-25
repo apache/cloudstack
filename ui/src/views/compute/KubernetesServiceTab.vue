@@ -465,7 +465,7 @@ export default {
       const params = {}
       params.name = 'cloud.kubernetes.etcd.node.start.port'
       var apiName = 'listConfigurations'
-      api(apiName, params).then(json => {
+      getAPI(apiName, params).then(json => {
         const configResponse = json.listconfigurationsresponse.configuration
         this.etcdSshPort = configResponse[0]?.value
       })

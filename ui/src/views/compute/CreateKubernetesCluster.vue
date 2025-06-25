@@ -674,7 +674,7 @@ export default {
           forcks: true
         }
         this.templateLoading = true
-        api('listTemplates', params).then(json => {
+        getAPI('listTemplates', params).then(json => {
           var templates = json?.listtemplatesresponse?.template || []
           ckstemplates.push(...templates)
         }).finally(() => {
@@ -730,7 +730,7 @@ export default {
       }
       this.hypervisorLoading = true
 
-      api('listHypervisors', params).then(json => {
+      getAPI('listHypervisors', params).then(json => {
         const listResponse = json.listhypervisorsresponse.hypervisor || []
         if (listResponse) {
           this.selectedZoneHypervisors = listResponse
@@ -747,7 +747,7 @@ export default {
         name: 'cloud.kubernetes.cluster.network.offering'
       }
       this.configLoading = true
-      api('listConfigurations', params).then(json => {
+      getAPI('listConfigurations', params).then(json => {
         if (json.listconfigurationsresponse.configuration !== null) {
           const config = json.listconfigurationsresponse.configuration[0]
           if (config && config.name === params.name) {
@@ -766,7 +766,7 @@ export default {
           name: offeringName
         }
 
-        api('listNetworkOfferings', args).then(json => {
+        getAPI('listNetworkOfferings', args).then(json => {
           const listNetworkOfferings = json.listnetworkofferingsresponse.networkoffering || []
           resolve(listNetworkOfferings)
           this.cksNetworkOffering = listNetworkOfferings[0] || {}
@@ -779,13 +779,13 @@ export default {
       const params = {}
       params.zoneid = this.selectedZone.id
       params.isallocated = false
-      api('listASNumbers', params).then(json => {
+      getAPI('listASNumbers', params).then(json => {
         this.asNumbersZone = json.listasnumbersresponse.asnumber
       })
     },
     fetchCniConfigurations () {
       this.cniConfigLoading = true
-      api('listCniConfiguration', {}).then(
+      getAPI('listCniConfiguration', {}).then(
         response => {
           const listResponse = response.listcniconfigurationresponse.cniconfig || []
           if (listResponse) {
@@ -802,7 +802,7 @@ export default {
       }
       this.form.cniconfigurationid = id
       this.cniConfigParams = []
-      api('listCniConfiguration', { id: id }).then(json => {
+      getAPI('listCniConfiguration', { id: id }).then(json => {
         const resp = json?.listcniconfigurationresponse?.cniconfig || []
         if (resp) {
           var params = resp[0].params
