@@ -904,8 +904,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         boolean result = snapshotStrategy.deleteSnapshot(snapshotId, zoneId);
         if (result) {
             for (Long zId : zoneIds) {
-                List<SnapshotDataStoreVO> listActiveSnapshots = _snapshotStoreDao.listReadyBySnapshotId(snapshotId);
-                if (snapshotCheck.getState() == Snapshot.State.BackedUp && CollectionUtils.isEmpty(listActiveSnapshots)) {
+                if (snapshotCheck.getState() == Snapshot.State.BackedUp) {
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_DELETE, snapshotCheck.getAccountId(), zId, snapshotId,
                             snapshotCheck.getName(), null, null, 0L, snapshotCheck.getClass().getName(), snapshotCheck.getUuid());
                 }
@@ -1738,7 +1737,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             _resourceLimitMgr.incrementResourceCount(CallContext.current().getCallingUserId(), ResourceType.primary_storage, snapshot.getSize());
             if (CallContext.current().getCallingUserId() != Account.ACCOUNT_ID_SYSTEM) {
                 SnapshotVO snapshotVO = _snapshotDao.findByIdIncludingRemoved(snapshot.getSnapshotId());
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_COPY, CallContext.current().getCallingUserId(), snapshotOnStore.getDataCenterId(), snapshotVO.getId(), null, null, null, snapshotVO.getSize(),
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_COPY, CallContext.current().getCallingAccountId(), snapshotOnStore.getDataCenterId(), snapshotVO.getId(), null, null, null, snapshotVO.getSize(),
                         snapshotVO.getSize(), snapshotVO.getClass().getName(), snapshotVO.getUuid());
             }
         } catch (InterruptedException | ExecutionException e) {

@@ -367,6 +367,8 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
         List<SnapshotDataStoreVO> storeRefs = _snapshotStoreDao.listBySnapshotAndDataStoreRole(snapshotId, DataStoreRole.Image);
         if (zoneId != null) {
             storeRefs.removeIf(ref -> !zoneId.equals(dataStoreMgr.getStoreZoneId(ref.getDataStoreId(), ref.getRole())));
+        } else {
+            storeRefs.removeIf(ref -> !ref.getState().equals(State.Ready));
         }
         for (SnapshotDataStoreVO ref : storeRefs) {
             if (!deleteSnapshotOnImageAndPrimary(snapshotId, dataStoreMgr.getDataStore(ref.getDataStoreId(), ref.getRole()))) {
