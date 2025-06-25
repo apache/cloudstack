@@ -191,6 +191,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
 
         searchBySnapshotId = createSearchBuilder();
         searchBySnapshotId.and(SNAPSHOT_ID, searchBySnapshotId.entity().getSnapshotId(), SearchCriteria.Op.EQ);
+        searchBySnapshotId.and(STATE, searchBySnapshotId.entity().getState(), SearchCriteria.Op.EQ);
         searchBySnapshotId.done();
 
         return true;
@@ -426,6 +427,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     @Override
     public List<SnapshotDataStoreVO> listReadyBySnapshotId(long snapshotId) {
         SearchCriteria<SnapshotDataStoreVO> sc = searchBySnapshotId.create();
+        sc.setParameters(SNAPSHOT_ID, snapshotId);
         sc.setParameters(STATE, State.Ready);
         return listBy(sc);
     }
