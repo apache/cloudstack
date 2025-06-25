@@ -345,7 +345,7 @@ public class SnapshotHelper {
             if (volume == null) {
                 throw new InvalidParameterValueException("Could not find volume of a snapshot");
             }
-            if (CollectionUtils.isEmpty(destZoneIds) && CollectionUtils.isEmpty(storagePoolIds)) {
+            if (CollectionUtils.isEmpty(destZoneIds)) {
                 throw new InvalidParameterValueException("There is no destination zone provided");
             }
             if (CollectionUtils.isEmpty(storagePoolIds)) {
