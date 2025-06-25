@@ -42,10 +42,10 @@
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-card v-if="form.customactionid" style="margin-bottom: 10px;">
+      <a-card v-if="form.customactionid && (!!currentDescription || !!currentParameters && currentParameters.length > 0)" style="margin-bottom: 10px;">
         <div v-if="!!currentDescription">
           {{ currentDescription }}
-          <a-divider />
+          <a-divider v-if="!!currentParameters && currentParameters.length > 0"/>
         </div>
         <div v-for="(field, fieldIndex) in currentParameters" :key="fieldIndex">
           <a-form-item :name="field.name" :ref="field.name">
@@ -99,7 +99,7 @@
 </template>
 
 <script>
-import { ref, reactive, toRaw } from 'vue'
+import { ref, reactive, toRaw, h } from 'vue'
 import { api } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import DetailsInput from '@/components/widgets/DetailsInput'
@@ -249,24 +249,40 @@ export default {
             jobId: response.runcustomactionresponse.jobid,
             title: this.currentAction.name || this.$t('label.run.custom.action'),
             description: this.currentAction.description || this.currentAction.name,
+            showSuccessMessage: false,
             successMethod: (result) => {
               this.$emit('refresh-data')
               const actionResponse = result.jobresult?.customactionresult || {}
               const success = actionResponse.success || false
-              const message = actionResponse?.result?.message || (success ? 'success' : 'fail')
-              if (actionResponse.success) {
-                this.$notification.success({
-                  message: this.currentAction.name || this.$t('label.run.custom.action'),
-                  description: message,
-                  duration: 0
-                })
-              } else {
-                this.$notification.error({
-                  message: this.currentAction.name || this.$t('label.run.custom.action'),
-                  description: message,
-                  duration: 0
-                })
-              }
+              const message = actionResponse?.result?.message || (success ? 'Success' : 'Failed')
+              let details = actionResponse?.result?.details
+              try {
+                details = JSON.stringify(JSON.parse(details), null, 2)
+              } catch (_) {}
+              const modalType = success ? this.$success : this.$error
+              modalType({
+                title: this.currentAction.name || this.$t('label.run.custom.action'),
+                content: h('div', [
+                  h('p', `${message}`),
+                  details
+                    ? h('div', {
+                      style: {
+                        marginTop: '1em',
+                        maxHeight: '50vh',
+                        overflowY: 'auto',
+                        backgroundColor: '#f6f6f6',
+                        padding: '12px',
+                        borderRadius: '4px',
+                        fontFamily: 'monospace',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word'
+                      }
+                    }, details)
+                    : null
+                ]),
+                width: '700px',
+                okText: this.$t('label.ok')
+              })
             },
             errorMessage: this.currentAction.name || this.$t('label.run.custom.action'),
             loadingMessage: this.$t('message.running.custom.action'),
