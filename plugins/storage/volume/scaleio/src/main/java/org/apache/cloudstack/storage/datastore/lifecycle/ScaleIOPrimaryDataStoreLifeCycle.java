@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 
 import com.cloud.host.HostVO;
-import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
@@ -105,8 +104,6 @@ public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCy
     @Inject
     private AgentManager agentMgr;
     private ScaleIOSDCManager sdcManager;
-    @Inject
-    private StoragePoolAndAccessGroupMapDao storagePoolAndAccessGroupMapDao;
 
     public ScaleIOPrimaryDataStoreLifeCycle() {
         sdcManager = new ScaleIOSDCManagerImpl();
@@ -306,13 +303,10 @@ public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCy
 
     @Override
     public boolean maintain(DataStore store) {
-        Map<String,String> details = new HashMap<>();
+        Map<String, String> details = new HashMap<>();
         StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(store.getId());
         if (storagePoolVO != null) {
-            details.put(ScaleIOSDCManager.MdmsChangeApplyTimeout.key(), String.valueOf(ScaleIOSDCManager.MdmsChangeApplyTimeout.valueIn(storagePoolVO.getDataCenterId())));
-            details.put(ScaleIOSDCManager.ValidateMdmsOnConnect.key(), String.valueOf(ScaleIOSDCManager.ValidateMdmsOnConnect.valueIn(storagePoolVO.getDataCenterId())));
-            details.put(ScaleIOSDCManager.BlockSdcUnprepareIfRestartNeededAndVolumesAreAttached.key(), String.valueOf(ScaleIOSDCManager.BlockSdcUnprepareIfRestartNeededAndVolumesAreAttached.valueIn(storagePoolVO.getDataCenterId())));
-
+            populateScaleIOConfiguration(details, storagePoolVO.getDataCenterId());
             StoragePoolDetailVO systemIdDetail = storagePoolDetailsDao.findDetail(store.getId(), ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
             if (systemIdDetail != null) {
                 details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemIdDetail.getValue());
@@ -331,13 +325,10 @@ public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCy
 
     @Override
     public boolean cancelMaintain(DataStore store) {
-        Map<String,String> details = new HashMap<>();
+        Map<String, String> details = new HashMap<>();
         StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(store.getId());
         if (storagePoolVO != null) {
-            details.put(ScaleIOSDCManager.MdmsChangeApplyTimeout.key(), String.valueOf(ScaleIOSDCManager.MdmsChangeApplyTimeout.valueIn(storagePoolVO.getDataCenterId())));
-            details.put(ScaleIOSDCManager.ValidateMdmsOnConnect.key(), String.valueOf(ScaleIOSDCManager.ValidateMdmsOnConnect.valueIn(storagePoolVO.getDataCenterId())));
-            details.put(ScaleIOSDCManager.BlockSdcUnprepareIfRestartNeededAndVolumesAreAttached.key(), String.valueOf(ScaleIOSDCManager.BlockSdcUnprepareIfRestartNeededAndVolumesAreAttached.valueIn(storagePoolVO.getDataCenterId())));
-
+            populateScaleIOConfiguration(details, storagePoolVO.getDataCenterId());
             StoragePoolDetailVO systemIdDetail = storagePoolDetailsDao.findDetail(store.getId(), ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
             if (systemIdDetail != null) {
                 details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemIdDetail.getValue());
@@ -419,5 +410,15 @@ public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCy
 
     private static boolean isSupportedHypervisorType(Hypervisor.HypervisorType hypervisorType) {
         return Hypervisor.HypervisorType.KVM.equals(hypervisorType);
+    }
+
+    private void populateScaleIOConfiguration(Map<String, String> details, long dataCenterId) {
+        if (details == null) {
+            details = new HashMap<>();
+        }
+
+        details.put(ScaleIOSDCManager.MdmsChangeApplyTimeout.key(), String.valueOf(ScaleIOSDCManager.MdmsChangeApplyTimeout.valueIn(dataCenterId)));
+        details.put(ScaleIOSDCManager.ValidateMdmsOnConnect.key(), String.valueOf(ScaleIOSDCManager.ValidateMdmsOnConnect.valueIn(dataCenterId)));
+        details.put(ScaleIOSDCManager.BlockSdcUnprepareIfRestartNeededAndVolumesAreAttached.key(), String.valueOf(ScaleIOSDCManager.BlockSdcUnprepareIfRestartNeededAndVolumesAreAttached.valueIn(dataCenterId)));
     }
 }
