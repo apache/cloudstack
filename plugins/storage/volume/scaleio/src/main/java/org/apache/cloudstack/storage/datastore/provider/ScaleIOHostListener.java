@@ -27,7 +27,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.manager.ScaleIOSDCManager;
@@ -59,7 +58,6 @@ public class ScaleIOHostListener implements HypervisorHostListener {
     @Inject private DataStoreManager _dataStoreMgr;
     @Inject private HostDao _hostDao;
     @Inject private StoragePoolHostDao _storagePoolHostDao;
-    @Inject private PrimaryDataStoreDao _primaryDataStoreDao;
     @Inject private StoragePoolDetailsDao _storagePoolDetailsDao;
     private ScaleIOSDCManager _sdcManager = new ScaleIOSDCManagerImpl();
 
@@ -109,11 +107,9 @@ public class ScaleIOHostListener implements HypervisorHostListener {
         if (systemId == null) {
             throw new CloudRuntimeException("Failed to get the system id for PowerFlex storage pool " + storagePool.getName());
         }
-        Map<String,String> details = new HashMap<>();
+        Map<String, String> details = new HashMap<>();
         details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
-        details.put(ScaleIOSDCManager.MdmsChangeApplyTimeout.key(), String.valueOf(ScaleIOSDCManager.MdmsChangeApplyTimeout.valueIn(host.getDataCenterId())));
-        details.put(ScaleIOSDCManager.ValidateMdmsOnConnect.key(), String.valueOf(ScaleIOSDCManager.ValidateMdmsOnConnect.valueIn(host.getDataCenterId())));
-        details.put(ScaleIOSDCManager.BlockSdcUnprepareIfRestartNeededAndVolumesAreAttached.key(), String.valueOf(ScaleIOSDCManager.BlockSdcUnprepareIfRestartNeededAndVolumesAreAttached.valueIn(host.getDataCenterId())));
+        populateScaleIOConfiguration(details,host.getDataCenterId());
         _sdcManager = ComponentContext.inject(_sdcManager);
         if (_sdcManager.areSDCConnectionsWithinLimit(poolId)) {
             details.put(ScaleIOSDCManager.ConnectOnDemand.key(), String.valueOf(ScaleIOSDCManager.ConnectOnDemand.valueIn(host.getDataCenterId())));
@@ -123,7 +119,7 @@ public class ScaleIOHostListener implements HypervisorHostListener {
 
         ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, storagePool, storagePool.getPath(), details);
         ModifyStoragePoolAnswer answer  = sendModifyStoragePoolCommand(cmd, storagePool, host);
-        Map<String,String> poolDetails = answer.getPoolInfo().getDetails();
+        Map<String, String> poolDetails = answer.getPoolInfo().getDetails();
         if (MapUtils.isEmpty(poolDetails)) {
             String msg = String.format("PowerFlex storage SDC details not found on the host: %s, (re)install SDC and restart agent", host);
             logger.warn(msg);
@@ -204,11 +200,9 @@ public class ScaleIOHostListener implements HypervisorHostListener {
         if (systemId == null) {
             throw new CloudRuntimeException("Failed to get the system id for PowerFlex storage pool " + storagePool.getName());
         }
-        Map<String,String> details = new HashMap<>();
+        Map<String, String> details = new HashMap<>();
         details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
-        details.put(ScaleIOSDCManager.MdmsChangeApplyTimeout.key(), String.valueOf(ScaleIOSDCManager.MdmsChangeApplyTimeout.valueIn(host.getDataCenterId())));
-        details.put(ScaleIOSDCManager.ValidateMdmsOnConnect.key(), String.valueOf(ScaleIOSDCManager.ValidateMdmsOnConnect.valueIn(host.getDataCenterId())));
-        details.put(ScaleIOSDCManager.BlockSdcUnprepareIfRestartNeededAndVolumesAreAttached.key(), String.valueOf(ScaleIOSDCManager.BlockSdcUnprepareIfRestartNeededAndVolumesAreAttached.valueIn(host.getDataCenterId())));
+        populateScaleIOConfiguration(details,host.getDataCenterId());
         _sdcManager = ComponentContext.inject(_sdcManager);
         if (_sdcManager.canUnprepareSDC(host, dataStore)) {
             details.put(ScaleIOSDCManager.ConnectOnDemand.key(), String.valueOf(ScaleIOSDCManager.ConnectOnDemand.valueIn(host.getDataCenterId())));
@@ -252,5 +246,15 @@ public class ScaleIOHostListener implements HypervisorHostListener {
             poolDetails = String.format("%s (id: %d, uuid: %s)", storagePool.getName(), storagePool.getId(), storagePool.getUuid());
         }
         return poolDetails;
+    }
+
+    private void populateScaleIOConfiguration(Map<String, String> details, long dataCenterId) {
+        if (details == null) {
+            details = new HashMap<>();
+        }
+
+        details.put(ScaleIOSDCManager.MdmsChangeApplyTimeout.key(), String.valueOf(ScaleIOSDCManager.MdmsChangeApplyTimeout.valueIn(dataCenterId)));
+        details.put(ScaleIOSDCManager.ValidateMdmsOnConnect.key(), String.valueOf(ScaleIOSDCManager.ValidateMdmsOnConnect.valueIn(dataCenterId)));
+        details.put(ScaleIOSDCManager.BlockSdcUnprepareIfRestartNeededAndVolumesAreAttached.key(), String.valueOf(ScaleIOSDCManager.BlockSdcUnprepareIfRestartNeededAndVolumesAreAttached.valueIn(dataCenterId)));
     }
 }
