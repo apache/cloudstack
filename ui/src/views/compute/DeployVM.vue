@@ -996,8 +996,7 @@ export default {
         keyboards: [],
         bootTypes: [],
         bootModes: [],
-        ioPolicyTypes: [],
-        dynamicScalingVmConfig: false
+        ioPolicyTypes: []
       },
       rowCount: {},
       loading: {
@@ -1284,13 +1283,6 @@ export default {
           },
           field: 'hostid'
         },
-        dynamicScalingVmConfig: {
-          list: 'listConfigurations',
-          options: {
-            zoneid: _.get(this.zone, 'id'),
-            name: 'enable.dynamic.scale.vm'
-          }
-        },
         guestOsCategories: {
           list: 'listOsCategories',
           options: {
@@ -1449,7 +1441,7 @@ export default {
       return Boolean('listUserData' in this.$store.getters.apis)
     },
     dynamicScalingVmConfigValue () {
-      return this.options.dynamicScalingVmConfig?.[0]?.value === 'true'
+      return this.$store.getters.features.dynamicscalingenabled
     },
     isCustomizedDiskIOPS () {
       return this.diskSelected?.iscustomizediops || false
@@ -2508,7 +2500,7 @@ export default {
         param.loading = true
         param.opts = []
         const options = param.options || {}
-        if (!('listall' in options) && !['zones', 'pods', 'clusters', 'hosts', 'dynamicScalingVmConfig', 'hypervisors'].includes(name)) {
+        if (!('listall' in options) && !['zones', 'pods', 'clusters', 'hosts', 'hypervisors'].includes(name)) {
           options.listall = true
         }
         api(param.list, options).then((response) => {
