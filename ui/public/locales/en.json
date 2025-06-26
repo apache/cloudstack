@@ -1531,6 +1531,7 @@
 "label.more.access.dashboard.ui": "More about accessing dashboard UI",
 "label.mount.cks.iso.on.vr": "Use CKS packages from Virtual Router",
 "label.mount.sharedfs": "Mount Shared FileSystem via NFS",
+"label.mountopts": "Mount options",
 "label.move.down.row": "Move down one row",
 "label.move.to.bottom": "Move to bottom",
 "label.move.to.top": "Move to top",

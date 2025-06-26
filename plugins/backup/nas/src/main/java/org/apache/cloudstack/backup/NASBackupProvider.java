@@ -171,12 +171,14 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         try {
             answer = (BackupAnswer) agentManager.send(host.getId(), command);
         } catch (AgentUnavailableException e) {
-            backupVO.setStatus(Backup.Status.Error);
-            backupDao.update(backupVO.getId(), backupVO);
+            logger.error("Unable to contact backend control plane to initiate backup for VM {}", vm.getInstanceName());
+            backupVO.setStatus(Backup.Status.Failed);
+            backupDao.remove(backupVO.getId());
             throw new CloudRuntimeException("Unable to contact backend control plane to initiate backup");
         } catch (OperationTimedoutException e) {
-            backupVO.setStatus(Backup.Status.Error);
-            backupDao.update(backupVO.getId(), backupVO);
+            logger.error("Operation to initiate backup timed out for VM {}", vm.getInstanceName());
+            backupVO.setStatus(Backup.Status.Failed);
+            backupDao.remove(backupVO.getId());
             throw new CloudRuntimeException("Operation to initiate backup timed out, please try again");
         }
 
@@ -192,8 +194,15 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
                 throw new CloudRuntimeException("Failed to update backup");
             }
         } else {
-            backupVO.setStatus(Backup.Status.Failed);
-            backupDao.remove(backupVO.getId());
+            logger.error("Failed to take backup for VM {}: {}", vm.getInstanceName(), answer != null ? answer.getDetails() : "No answer received");
+            if (answer.getNeedsCleanup()) {
+                logger.error("Backup cleanup failed for VM {}. Leaving the backup in Error state.", vm.getInstanceName());
+                backupVO.setStatus(Backup.Status.Error);
+                backupDao.update(backupVO.getId(), backupVO);
+            } else {
+                backupVO.setStatus(Backup.Status.Failed);
+                backupDao.remove(backupVO.getId());
+            }
             return new Pair<>(false, null);
         }
     }

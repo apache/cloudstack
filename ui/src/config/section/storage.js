@@ -432,7 +432,7 @@ export default {
           label: 'label.backup.restore',
           message: 'message.backup.restore',
           dataView: true,
-          show: (record) => { return record.state !== 'Destroyed' }
+          show: (record) => { return record.status === 'BackedUp' }
         },
         {
           api: 'restoreVolumeFromBackupAndAttachToVM',
@@ -440,7 +440,7 @@ export default {
           label: 'label.backup.attach.restore',
           message: 'message.backup.attach.restore',
           dataView: true,
-          show: (record) => { return record.state !== 'Destroyed' },
+          show: (record) => { return record.status === 'BackedUp' },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/RestoreAttachBackupVolume.vue')))
         },
@@ -452,7 +452,7 @@ export default {
           message: 'message.backup.restore',
           dataView: true,
           popup: true,
-          show: (record) => { return record.state !== 'Destroyed' },
+          show: (record) => { return record.status === 'BackedUp' },
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/CreateVMFromBackup.vue')))
         },
         {

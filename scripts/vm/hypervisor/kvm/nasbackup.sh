@@ -33,6 +33,8 @@ BACKUP_DIR=""
 DISK_PATHS=""
 logFile="/var/log/cloudstack/agent/agent.log"
 
+EXIT_CLEANUP_FAILED=20
+
 log() {
   [[ "$verb" -eq 1 ]] && builtin echo "$@"
   if [[ "$1" == "-ne"  || "$1" == "-e" || "$1" == "-n" ]]; then
@@ -88,7 +90,7 @@ sanity_checks() {
 
 backup_running_vm() {
   mount_operation
-  mkdir -p $dest
+  mkdir -p "$dest" || { echo "Failed to create backup directory $dest"; exit 1; }
 
   name="root"
   echo "<domainbackup mode='push'><disks>" > $dest/backup.xml
@@ -111,8 +113,11 @@ backup_running_vm() {
   while true; do
     status=$(virsh -c qemu:///system domjobinfo $VM --completed --keep-completed | awk '/Job type:/ {print $3}')
     case "$status" in
-      Completed) break ;;
-      Failed) log -ne "Virsh backup job failed"; exit 1 ;;
+      Completed)
+        break ;;
+      Failed)
+        echo "Virsh backup job failed"
+        cleanup ;;
     esac
     sleep 5
   done
@@ -130,14 +135,18 @@ backup_running_vm() {
 
 backup_stopped_vm() {
   mount_operation
-  mkdir -p $dest
+  mkdir -p "$dest" || { echo "Failed to create backup directory $dest"; exit 1; }
 
   IFS=","
 
   name="root"
   for disk in $DISK_PATHS; do
     volUuid="${disk##*/}"
-    qemu-img convert -O qcow2 $disk $dest/$name.$volUuid.qcow2  | tee -a "$logFile"
+    output="$dest/$name.$volUuid.qcow2"
+    if ! qemu-img convert -O qcow2 "$disk" "$output" > "$logFile" 2> >(cat >&2); then
+      echo "qemu-img convert failed for $disk $output"
+      cleanup
+    fi
     name="datadisk"
   done
   sync
@@ -175,6 +184,19 @@ mount_operation() {
   else
       echo "Failed to mount ${NAS_TYPE} store"
       exit 1
+  fi
+}
+
+cleanup() {
+  local status=0
+
+  rm -rf "$dest" || { echo "Failed to delete $dest"; status=1; }
+  umount "$mount_point" || { echo "Failed to unmount $mount_point"; status=1; }
+  rmdir "$mount_point" || { echo "Failed to remove mount point $mount_point"; status=1; }
+
+  if [[ $status -ne 0 ]]; then
+    echo "Backup cleanup failed"
+    exit $EXIT_CLEANUP_FAILED
   fi
 }
 

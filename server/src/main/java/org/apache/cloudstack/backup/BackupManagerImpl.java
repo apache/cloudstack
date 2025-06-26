@@ -656,6 +656,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException("VM backup offering not found");
         }
 
+        final BackupProvider backupProvider = getBackupProvider(offering.getProvider());
+        if (offering == null) {
+            throw new CloudRuntimeException("VM backup provider not found for the offering");
+        }
+
         if (!offering.isUserDrivenBackupAllowed()) {
             throw new CloudRuntimeException("The assigned backup offering does not allow ad-hoc user backup");
         }
@@ -702,30 +707,26 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 true, 0);
 
 
-        final BackupProvider backupProvider = getBackupProvider(offering.getProvider());
-        if (backupProvider != null) {
-            Pair<Boolean, Backup> result = backupProvider.takeBackup(vm);
-            if (!result.first()) {
-                throw new CloudRuntimeException("Failed to create VM backup");
-            }
-            Backup backup = result.second();
-            if (backup != null) {
-                BackupVO vmBackup = backupDao.findById(result.second().getId());
-                vmBackup.setBackupIntervalType((short) type.ordinal());
-                if (cmd.getName() != null) {
-                    vmBackup.setName(cmd.getName());
-                }
-                vmBackup.setDescription(cmd.getDescription());
-                backupDao.update(vmBackup.getId(), vmBackup);
-                resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup);
-                resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, backup.getSize());
-            }
-            if (type != Backup.Type.MANUAL) {
-                postCreateScheduledBackup(type, vm.getId());
-            }
-            return true;
+        Pair<Boolean, Backup> result = backupProvider.takeBackup(vm);
+        if (!result.first()) {
+            throw new CloudRuntimeException("Failed to create VM backup");
         }
-        throw new CloudRuntimeException("Failed to create VM backup");
+        Backup backup = result.second();
+        if (backup != null) {
+            BackupVO vmBackup = backupDao.findById(result.second().getId());
+            vmBackup.setBackupIntervalType((short) type.ordinal());
+            if (cmd.getName() != null) {
+                vmBackup.setName(cmd.getName());
+            }
+            vmBackup.setDescription(cmd.getDescription());
+            backupDao.update(vmBackup.getId(), vmBackup);
+            resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup);
+            resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, backup.getSize());
+        }
+        if (type != Backup.Type.MANUAL) {
+            postCreateScheduledBackup(type, vm.getId());
+        }
+        return true;
     }
 
     @Override
@@ -839,6 +840,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         final BackupVO backup = backupDao.findById(backupId);
         if (backup == null) {
             throw new CloudRuntimeException("Backup " + backupId + " does not exist");
+        }
+        if (backup.getStatus() != Backup.Status.BackedUp) {
+            throw new CloudRuntimeException("Backup should be in BackedUp state");
         }
         validateBackupForZone(backup.getZoneId());
 
@@ -1119,6 +1123,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (backup == null) {
             throw new CloudRuntimeException("Backup " + backupId + " does not exist");
         }
+        if (backup.getStatus() != Backup.Status.BackedUp) {
+            throw new CloudRuntimeException("Backup should be in BackedUp state");
+        }
         validateBackupForZone(backup.getZoneId());
 
         VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(vmId);
@@ -1199,6 +1206,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         final BackupVO backup = backupDao.findById(backupId);
         if (backup == null) {
             throw new CloudRuntimeException("Provided backup not found");
+        }
+        if (backup.getStatus() != Backup.Status.BackedUp) {
+            throw new CloudRuntimeException("Backup should be in BackedUp state");
         }
         validateBackupForZone(backup.getZoneId());
 
@@ -1315,7 +1325,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         boolean result = backupProvider.deleteBackup(backup, forced);
         if (result) {
             resourceLimitMgr.decrementResourceCount(backup.getAccountId(), Resource.ResourceType.backup);
-            resourceLimitMgr.decrementResourceCount(backup.getAccountId(), Resource.ResourceType.backup_storage, backup.getSize());
+            Long backupSize = backup.getSize() != null ? backup.getSize() : 0L;
+            resourceLimitMgr.decrementResourceCount(backup.getAccountId(), Resource.ResourceType.backup_storage, backupSize);
             if (backupDao.remove(backup.getId())) {
                 checkAndGenerateUsageForLastBackupDeletedAfterOfferingRemove(vm, backup);
                 return true;

@@ -238,7 +238,7 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
     public Long countBackupsForAccount(long accountId) {
         SearchCriteria<Long> sc = CountBackupsByAccount.create();
         sc.setParameters("account", accountId);
-        sc.setParameters("status", Backup.Status.Error, Backup.Status.Failed, Backup.Status.Removed, Backup.Status.Expunged);
+        sc.setParameters("status", Backup.Status.Failed, Backup.Status.Removed, Backup.Status.Expunged);
         return customSearch(sc, null).get(0);
     }
 
@@ -246,7 +246,7 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
     public Long calculateBackupStorageForAccount(long accountId) {
         SearchCriteria<SumCount> sc = CalculateBackupStorageByAccount.create();
         sc.setParameters("account", accountId);
-        sc.setParameters("status", Backup.Status.Error, Backup.Status.Failed, Backup.Status.Removed, Backup.Status.Expunged);
+        sc.setParameters("status", Backup.Status.Failed, Backup.Status.Removed, Backup.Status.Expunged);
         return customSearch(sc, null).get(0).sum;
     }
 
