@@ -70,6 +70,10 @@ public class ConsoleSessionResponse extends BaseResponse {
     @Param(description = "ID of the instance.")
     private String instanceId;
 
+    @SerializedName(ApiConstants.INSTANCE_NAME)
+    @Param(description = "Name of the instance.")
+    private String instanceName;
+
     @SerializedName(ApiConstants.HOST_ID)
     @Param(description = "ID of the host.")
     private String hostId;
@@ -134,6 +138,10 @@ public class ConsoleSessionResponse extends BaseResponse {
         this.instanceId = instanceId;
     }
 
+    public void setInstanceName(String instanceName) {
+        this.instanceName = instanceName;
+    }
+
     public void setHostId(String hostId) {
         this.hostId = hostId;
     }
@@ -196,6 +204,10 @@ public class ConsoleSessionResponse extends BaseResponse {
 
     public String getInstanceId() {
         return instanceId;
+    }
+
+    public String getInstanceName() {
+        return instanceName;
     }
 
     public String getHostId() {

@@ -5635,6 +5635,7 @@ protected Map<String, ResourceIcon> getResourceIconsUsingOsCategory(List<Templat
         VMInstanceVO instance = ApiDBUtils.findVMInstanceById(consoleSession.getInstanceId());
         if (instance != null) {
             consoleSessionResponse.setInstanceId(instance.getUuid());
+            consoleSessionResponse.setInstanceName(instance.getInstanceName());
         }
     }
 
