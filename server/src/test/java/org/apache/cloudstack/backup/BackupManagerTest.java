@@ -660,6 +660,7 @@ public class BackupManagerTest {
         BackupOfferingVO offering = Mockito.mock(BackupOfferingVO.class);
         when(backupOfferingDao.findById(backupOfferingId)).thenReturn(offering);
         when(offering.isUserDrivenBackupAllowed()).thenReturn(true);
+        when(offering.getProvider()).thenReturn("testbackupprovider");
 
         BackupScheduleVO schedule = mock(BackupScheduleVO.class);
         when(schedule.getScheduleType()).thenReturn(DateUtil.IntervalType.DAILY);
@@ -699,6 +700,7 @@ public class BackupManagerTest {
         BackupOfferingVO offering = Mockito.mock(BackupOfferingVO.class);
         when(backupOfferingDao.findById(backupOfferingId)).thenReturn(offering);
         when(offering.isUserDrivenBackupAllowed()).thenReturn(true);
+        when(offering.getProvider()).thenReturn("testbackupprovider");
 
         BackupScheduleVO schedule = mock(BackupScheduleVO.class);
         when(schedule.getScheduleType()).thenReturn(DateUtil.IntervalType.DAILY);
@@ -1122,6 +1124,7 @@ public class BackupManagerTest {
 
         BackupVO backup = mock(BackupVO.class);
         when(backup.getBackupOfferingId()).thenReturn(offeringId);
+        when(backup.getStatus()).thenReturn(Backup.Status.BackedUp);
 
         VMInstanceVO vm = mock(VMInstanceVO.class);
         when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
@@ -1177,6 +1180,7 @@ public class BackupManagerTest {
 
         BackupVO backup = mock(BackupVO.class);
         when(backup.getBackupOfferingId()).thenReturn(offeringId);
+        when(backup.getStatus()).thenReturn(Backup.Status.BackedUp);
 
         VMInstanceVO vm = mock(VMInstanceVO.class);
         when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
