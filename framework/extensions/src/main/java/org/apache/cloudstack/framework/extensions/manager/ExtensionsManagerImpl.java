@@ -404,6 +404,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                         Map.Entry::getValue
                 ));
     }
+
     protected void sendExtensionEntryPointOutOfSyncAlert(Extension extension) {
         String msg = String.format("Entry-point for %s are out of sync across management servers",
                 extension);
@@ -927,6 +928,10 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         final String successMessage = cmd.getSuccessMessage();
         final String errorMessage = cmd.getErrorMessage();
         Map<String, String> details = cmd.getDetails();
+        if (name == null || !name.matches("^[a-zA-Z0-9 _-]+$")) {
+            throw new InvalidParameterValueException(String.format("Invalid action name: %s. It can contain " +
+                    "only alphabets, numbers, hyphen, underscore and space", name));
+        }
         ExtensionCustomActionVO existingCustomAction = extensionCustomActionDao.findByNameAndExtensionId(extensionId, name);
         if (existingCustomAction != null) {
             throw new CloudRuntimeException("Action by name already exists");

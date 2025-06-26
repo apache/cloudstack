@@ -1211,6 +1211,13 @@ public class ExtensionsManagerImplTest {
         extensionsManager.addCustomAction(cmd);
     }
 
+    @Test(expected = InvalidParameterValueException.class)
+    public void testAddCustomAction_InvalidName() {
+        AddCustomActionCmd cmd = mock(AddCustomActionCmd.class);
+        when(cmd.getName()).thenReturn("action;1");
+        extensionsManager.addCustomAction(cmd);
+    }
+
     @Test
     public void deleteCustomAction_RemovesActionAndDetails_ReturnsTrue() {
         long actionId = 10L;
