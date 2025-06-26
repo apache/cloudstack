@@ -152,3 +152,6 @@ class CsConfig(object):
             return 'mangle'
         else:
             return ""
+
+    def has_public_network(self):
+        return self.cmdline().idata().get('has_public_network', 'true') == 'true'

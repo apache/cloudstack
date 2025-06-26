@@ -33,8 +33,20 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.VlanDetailsVO;
+import com.cloud.dc.dao.VlanDetailsDao;
+import com.cloud.network.dao.NetrisProviderDao;
+import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.dao.PublicIpQuarantineDao;
+import com.cloud.network.dao.RemoteAccessVpnDao;
+import com.cloud.network.dao.Site2SiteVpnGatewayDao;
+import com.cloud.network.element.NetrisProviderVO;
+import com.cloud.network.element.NsxProviderVO;
 import com.cloud.network.vo.PublicIpQuarantineVO;
+import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcOffering;
+import com.cloud.network.vpc.VpcOfferingServiceMapVO;
+import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.resourcelimit.CheckedReservation;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -189,6 +201,7 @@ import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.commons.lang3.ObjectUtils;
 
 public class IpAddressManagerImpl extends ManagerBase implements IpAddressManager, Configurable {
 
@@ -266,6 +279,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @Inject
     NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;
     @Inject
+    VpcOfferingServiceMapDao vpcOfferingServiceMapDao;
+    @Inject
     PhysicalNetworkDao _physicalNetworkDao;
     @Inject
     PhysicalNetworkServiceProviderDao _pNSPDao;
@@ -313,9 +328,19 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     private AnnotationDao annotationDao;
     @Inject
     MessageBus messageBus;
+    @Inject
+    NsxProviderDao nsxProviderDao;
+    @Inject
+    NetrisProviderDao netrisProviderDao;
+    @Inject
+    VlanDetailsDao vlanDetailsDao;
 
     @Inject
     PublicIpQuarantineDao publicIpQuarantineDao;
+    @Inject
+    RemoteAccessVpnDao remoteAccessVpnDao;
+    @Inject
+    Site2SiteVpnGatewayDao site2SiteVpnGatewayDao;
 
     SearchBuilder<IPAddressVO> AssignIpAddressSearch;
     SearchBuilder<IPAddressVO> AssignIpAddressFromPodVlanSearch;
@@ -733,6 +758,21 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 throw new CloudRuntimeException("Unable to acquire lock on public IP.");
             }
 
+            if (ipToBeDisassociated.isForRouter()) {
+                if (remoteAccessVpnDao.findByPublicIpAddress(ipToBeDisassociated.getId()) != null) {
+                    InvalidParameterValueException ex = new InvalidParameterValueException("Can't release IP address as the IP address is used by a Remote Access VPN");
+                    ex.addProxyObject(ipToBeDisassociated.getUuid(), "ipId");
+                    throw ex;
+
+                }
+                if (site2SiteVpnGatewayDao.findByPublicIpAddress(ipToBeDisassociated.getId()) != null) {
+                    InvalidParameterValueException ex = new InvalidParameterValueException("Can't release IP address as the IP address is used by a VPC gateway");
+                    ex.addProxyObject(ipToBeDisassociated.getUuid(), "ipId");
+                    throw ex;
+
+                }
+            }
+
             PublicIpQuarantine publicIpQuarantine = null;
             // Cleanup all ip address resources - PF/LB/Static nat rules
             if (!cleanupIpResources(ipAddress, userId, caller)) {
@@ -773,6 +813,28 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 logger.debug("Released a public ip {}", ip);
             } else if (publicIpQuarantine != null) {
                 removePublicIpAddressFromQuarantine(publicIpQuarantine.getId(), "Public IP address removed from quarantine as there was an error while disassociating it.");
+            }
+            Network network = _networksDao.findById(ipToBeDisassociated.getAssociatedWithNetworkId());
+            Vpc vpc = _vpcDao.findById(ip.getVpcId());
+            if (ObjectUtils.allNull(network, vpc)) {
+                return success;
+            }
+            List<String> providers;
+            if (Objects.nonNull(network)) {
+                NetworkOffering offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+                providers = _ntwkOfferingSrvcDao.listProvidersForServiceForNetworkOffering(offering.getId(), Service.NetworkACL);
+            } else {
+                VpcOffering offering = vpcOfferingDao.findById(vpc.getVpcOfferingId());
+                List<VpcOfferingServiceMapVO> servicesMap = vpcOfferingServiceMapDao.listProvidersForServiceForVpcOffering(offering.getId(), Service.NetworkACL);
+                providers = servicesMap.stream().map(VpcOfferingServiceMapVO::getProvider).collect(Collectors.toList());
+            }
+
+            if (!providers.isEmpty()) {
+                String provider = providers.get(0);
+                NetworkElement element = _networkModel.getElementImplementingProvider(provider);
+                if (element != null) {
+                    element.releaseIp(ipToBeDisassociated);
+                }
             }
         } finally {
             _ipAddressDao.releaseFromLockTable(addrId);
@@ -1315,6 +1377,30 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         }
     }
 
+    /**
+     * When the zone is linked to external provider NSX or Netris: check if the IP to be associated is from the suitable pool
+     * Otherwise, no checks are performed
+     */
+    private void checkPublicIpOnExternalProviderZone(DataCenter zone, String ip) {
+        long zoneId = zone.getId();
+        NetrisProviderVO netrisProvider = netrisProviderDao.findByZoneId(zoneId);
+        NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(zoneId);
+        if (ObjectUtils.allNull(netrisProvider, nsxProvider)) {
+            return;
+        }
+        IPAddressVO ipAddress = _ipAddressDao.findByIpAndDcId(zoneId, ip);
+        if (ipAddress != null) {
+            String detailKey = nsxProvider != null ? ApiConstants.NSX_DETAIL_KEY : ApiConstants.NETRIS_DETAIL_KEY;
+            VlanDetailsVO vlanDetailVO = vlanDetailsDao.findDetail(ipAddress.getVlanId(), detailKey);
+            if (vlanDetailVO == null || vlanDetailVO.getValue().equalsIgnoreCase("false")) {
+                String msg = String.format("Cannot acquire IP %s on the zone %s as the IP is not from the reserved pool " +
+                        "for the external provider", ip, zone.getName());
+                logger.error(msg);
+                throw new CloudRuntimeException(msg);
+            }
+        }
+    }
+
     @DB
     @Override
     public IpAddress allocateIp(final Account ipOwner, final boolean isSystem, Account caller, User callerUser, final DataCenter zone, final Boolean displayIp, final String ipaddress)
@@ -1322,6 +1408,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
         final VlanType vlanType = VlanType.VirtualNetwork;
         final boolean assign = false;
+
+        checkPublicIpOnExternalProviderZone(zone, ipaddress);
 
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())) {
             // zone is of type DataCenter. See DataCenterVO.java.

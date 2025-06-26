@@ -34,6 +34,9 @@ class CsGuestNetwork:
     def is_guestnetwork(self):
         return self.guest
 
+    def is_vr_guest_gateway(self):
+        return self.guest and ('is_vr_guest_gateway' not in self.data or self.data['is_vr_guest_gateway'])
+
     def get_dns(self):
         if not self.guest:
             return self.config.get_dns()
@@ -42,8 +45,11 @@ class CsGuestNetwork:
             return [self.data['router_guest_ip']]
 
         dns = []
-        if 'router_guest_gateway' in self.data and not self.config.use_extdns() and ('is_vr_guest_gateway' not in self.data or not self.data['is_vr_guest_gateway']):
-            dns.append(self.data['router_guest_gateway'])
+        if not self.config.use_extdns():
+            if 'router_guest_gateway' in self.data and self.is_vr_guest_gateway():
+                dns.append(self.data['router_guest_gateway'])
+            elif 'router_guest_ip' in self.data and not self.is_vr_guest_gateway():
+                dns.append(self.data['router_guest_ip'])
 
         if 'dns' in self.data:
             dns.extend(self.data['dns'].split(','))
