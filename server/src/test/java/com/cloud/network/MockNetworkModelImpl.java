@@ -775,6 +775,11 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
         return null;
     }
 
+    @Override
+    public NicProfile getNicProfile(VirtualMachine vm, Nic nic, DataCenter dataCenter) {
+        return null;
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkModel#getAvailableIps(com.cloud.network.Network, java.lang.String)
      */

@@ -1244,10 +1244,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
         updateExternalVmDataFromPrepareAnswer(vmTO, updatedTO);
         updateExternalVmNicsFromPrepareAnswer(vmTO, updatedTO);
+        return;
     }
 
-    protected void processPrepareExternalProvisioning(boolean firstStart, Host host, VirtualMachineTO virtualMachineTO,
-              VirtualMachineTemplate template) {
+    protected void processPrepareExternalProvisioning(boolean firstStart, Host host,
+                 VirtualMachineProfile vmProfile, DataCenter dataCenter) throws CloudRuntimeException {
+        VirtualMachineTemplate template = vmProfile.getTemplate();
         if (!firstStart || host == null || !HypervisorType.External.equals(host.getHypervisorType()) ||
                 template.getExtensionId() == null) {
             return;
@@ -1257,7 +1259,18 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (detailsVO == null || !Boolean.parseBoolean(detailsVO.getValue())) {
             return;
         }
-        logger.debug("Sending PrepareExternalProvisioningCommand for {}", virtualMachineTO);
+        logger.debug("Sending PrepareExternalProvisioningCommand for {}", vmProfile);
+        VirtualMachineTO virtualMachineTO = toVmTO(vmProfile);
+        if (virtualMachineTO.getNics() == null || virtualMachineTO.getNics().length == 0) {
+            List<NicVO> nics = _nicsDao.listByVmId(vmProfile.getId());
+            NicTO[] nicTOs = new NicTO[nics.size()];
+            nics.forEach(nicVO -> {
+                NicTO nicTO = toNicTO(_networkModel.getNicProfile(vmProfile.getVirtualMachine(), nicVO, dataCenter),
+                        HypervisorType.External);
+                nicTOs[nicTO.getDeviceId()] = nicTO;
+            });
+            virtualMachineTO.setNics(nicTOs);
+        }
         Map<String, String> vmDetails = virtualMachineTO.getExternalDetails();
         Map<String, Object> externalDetails = extensionsManager.getExternalAccessDetails(host,
                 vmDetails);
@@ -1401,7 +1414,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     }
                 }
 
-                final VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm, template, offering, owner, params);
+                VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm, template, offering, owner, params);
                 logBootModeParameters(params);
                 DeployDestination dest = null;
                 try {
@@ -1444,6 +1457,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                 try {
                     resetVmNicsDeviceId(vm.getId());
+
+                    processPrepareExternalProvisioning(firstStart, dest.getHost(), vmProfile, dest.getDataCenter());
+
                     _networkMgr.prepare(vmProfile, dest, ctx);
                     if (vm.getHypervisorType() != HypervisorType.BareMetal && vm.getHypervisorType() != HypervisorType.External) {
                         checkAndAttemptMigrateVmAcrossCluster(vm, clusterId, dest.getStorageForDisks());
@@ -1463,8 +1479,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                     handlePath(vmTO.getDisks(), vm.getHypervisorType());
                     setVmNetworkDetails(vm, vmTO);
-
-                    processPrepareExternalProvisioning(firstStart, dest.getHost(), vmTO, template);
 
                     Commands cmds = new Commands(Command.OnError.Stop);
                     final Map<String, String> sshAccessDetails = _networkMgr.getSystemVMAccessDetails(vm);

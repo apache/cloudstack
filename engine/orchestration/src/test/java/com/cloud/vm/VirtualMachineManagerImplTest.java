@@ -86,6 +86,7 @@ import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.dao.ClusterDao;
@@ -1612,18 +1613,24 @@ public class VirtualMachineManagerImplTest {
     @Test
     public void processPrepareExternalProvisioning_nonExternalHypervisor_noAction() throws OperationTimedoutException, AgentUnavailableException {
         Host host = mock(Host.class);
-        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+        VirtualMachineProfile vmProfile = mock(VirtualMachineProfile.class);
         VirtualMachineTemplate template = mock(VirtualMachineTemplate.class);
+        when(vmProfile.getTemplate()).thenReturn(template);
         when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
-        virtualMachineManagerImpl.processPrepareExternalProvisioning(true, host, vmTO, template);
+        virtualMachineManagerImpl.processPrepareExternalProvisioning(true, host, vmProfile, mock(DataCenter.class));
         verify(agentManagerMock, never()).send(anyLong(), any(Command.class));
     }
 
     @Test
     public void processPrepareExternalProvisioning_externalHypervisor_sendsCommand() throws OperationTimedoutException, AgentUnavailableException {
         Host host = mock(Host.class);
-        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+        VirtualMachineProfile vmProfile = mock(VirtualMachineProfile.class);
         VirtualMachineTemplate template = mock(VirtualMachineTemplate.class);
+        when(vmProfile.getTemplate()).thenReturn(template);
+        NicTO[] nics = new NicTO[]{mock(NicTO.class)};
+        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+        when(vmTO.getNics()).thenReturn(nics);
+        doReturn(vmTO).when(virtualMachineManagerImpl).toVmTO(vmProfile);
         ExtensionDetailsVO detailsVO = mock(ExtensionDetailsVO.class);
         when(host.getHypervisorType()).thenReturn(HypervisorType.External);
         when(template.getExtensionId()).thenReturn(1L);
@@ -1631,8 +1638,9 @@ public class VirtualMachineManagerImplTest {
         when(detailsVO.getValue()).thenReturn("true");
         PrepareExternalProvisioningAnswer answer = mock(PrepareExternalProvisioningAnswer.class);
         when(answer.getResult()).thenReturn(true);
+        when(answer.getVirtualMachineTO()).thenReturn(vmTO);
         when(agentManagerMock.send(anyLong(), any(Command.class))).thenReturn(answer);
-        virtualMachineManagerImpl.processPrepareExternalProvisioning(true, host, vmTO, template);
+        virtualMachineManagerImpl.processPrepareExternalProvisioning(true, host, vmProfile, mock(DataCenter.class));
         verify(agentManagerMock).send(anyLong(), any(Command.class));
     }
 }

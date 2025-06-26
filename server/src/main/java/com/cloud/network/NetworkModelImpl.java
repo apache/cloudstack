@@ -17,6 +17,8 @@
 
 package com.cloud.network;
 
+import static com.cloud.network.Network.Service.SecurityGroup;
+
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -144,8 +146,6 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.VMInstanceDao;
-
-import static com.cloud.network.Network.Service.SecurityGroup;
 
 public class NetworkModelImpl extends ManagerBase implements NetworkModel, Configurable {
     public static final String UNABLE_TO_USE_NETWORK = "Unable to use network with id= %s, permission denied";
@@ -2195,29 +2195,29 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         if (nic == null) {
             return null;
         }
-        NetworkVO network = _networksDao.findById(networkId);
-        Integer networkRate = getNetworkRate(network.getId(), vm.getId());
+        DataCenter dc = _dcDao.findById(vm.getDataCenterId());
+        return getNicProfile(vm, nic, dc);
+    }
 
+    @Override
+    public NicProfile getNicProfile(VirtualMachine vm, Nic nic, DataCenter dataCenter) {
+        NetworkVO network = _networksDao.findById(nic.getNetworkId());
+        Integer networkRate = getNetworkRate(network.getId(), vm.getId());
         NicProfile profile =
-            new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate, isSecurityGroupSupportedInNetwork(network), getNetworkTag(
-                vm.getHypervisorType(), network));
+                new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate,
+                        isSecurityGroupSupportedInNetwork(network), getNetworkTag(vm.getHypervisorType(), network));
         if (network.getTrafficType() == TrafficType.Public && network.getPublicMtu() != null) {
             profile.setMtu(network.getPublicMtu());
         }
         if (network.getTrafficType() == TrafficType.Guest && network.getPrivateMtu() != null) {
             profile.setMtu(network.getPrivateMtu());
         }
-
-        DataCenter dc = _dcDao.findById(network.getDataCenterId());
-
-        Pair<String, String> ip4Dns = getNetworkIp4Dns(network, dc);
+        Pair<String, String> ip4Dns = getNetworkIp4Dns(network, dataCenter);
         profile.setIPv4Dns1(ip4Dns.first());
         profile.setIPv4Dns2(ip4Dns.second());
-
-        Pair<String, String> ip6Dns = getNetworkIp6Dns(network, dc);
+        Pair<String, String> ip6Dns = getNetworkIp6Dns(network, dataCenter);
         profile.setIPv6Dns1(ip6Dns.first());
         profile.setIPv6Dns2(ip6Dns.second());
-
         return profile;
     }
 

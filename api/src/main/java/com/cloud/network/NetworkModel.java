@@ -305,6 +305,8 @@ public interface NetworkModel {
 
     NicProfile getNicProfile(VirtualMachine vm, long networkId, String broadcastUri);
 
+    NicProfile getNicProfile(VirtualMachine vm, Nic nic, DataCenter dataCenter);
+
     Set<Long> getAvailableIps(Network network, String requestedIp);
 
     String getDomainNetworkDomain(long domainId, long zoneId);
