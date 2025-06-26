@@ -34,6 +34,7 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.element.NetrisProviderVO;
 import com.cloud.network.netris.NetrisService;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.dao.VpcDao;
@@ -74,6 +75,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -399,37 +402,46 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
         String networkName = network.getName();
         NetrisNetworkRule rule = firewallRules.get(0);
         SDNProviderNetworkRule baseNetworkRule = rule.getBaseRule();
-        String trafficType = baseNetworkRule.getTrafficType().toUpperCase(Locale.ROOT);
+        String trafficType = baseNetworkRule.getTrafficType();
         String sourcePrefix;
         String destinationPrefix;
-        if ("INGRESS".equals(trafficType)) {
-            sourcePrefix = baseNetworkRule.getSourceCidrList().get(0);
-            destinationPrefix = network.getCidr();
-        } else {
-            sourcePrefix = network.getCidr();
-            destinationPrefix = baseNetworkRule.getSourceCidrList().get(0);
+        boolean result = true;
+        List<String> sourceCidrs = baseNetworkRule.getSourceCidrList();
+        int index = 1;
+        for (String sourceCidr : sourceCidrs) {
+            if (FirewallRule.TrafficType.Ingress.name().equalsIgnoreCase(trafficType)) {
+                sourcePrefix = sourceCidr;
+                destinationPrefix = NetUtils.isValidIp4Cidr(sourcePrefix) ? network.getCidr() : network.getIp6Cidr();
+            } else {
+                destinationPrefix = sourceCidr;
+                sourcePrefix = NetUtils.isValidIp4Cidr(destinationPrefix) ? network.getCidr() : network.getIp6Cidr();
+            }
+            String srcPort;
+            String dstPort;
+            if (baseNetworkRule.getPrivatePort().contains("-")) {
+                srcPort = baseNetworkRule.getPrivatePort().split("-")[0];
+                dstPort = baseNetworkRule.getPrivatePort().split("-")[1];
+            } else {
+                srcPort = dstPort = baseNetworkRule.getPrivatePort();
+            }
+            CreateOrUpdateNetrisACLCommand cmd = new CreateOrUpdateNetrisACLCommand(zoneId, accountId, domainId, networkName, networkId,
+                    vpcName, vpcId, Objects.nonNull(vpcId), rule.getAclAction().name().toLowerCase(Locale.ROOT), getPrefix(sourcePrefix), getPrefix(destinationPrefix),
+                    "null".equals(srcPort) ? 1 : Integer.parseInt(srcPort),
+                    "null".equals(dstPort) ? 65535 : Integer.parseInt(dstPort), baseNetworkRule.getProtocol());
+            String aclName = String.format("V%s-N%s-ACL%s", vpcId, networkId, rule.getBaseRule().getRuleId());
+            if (sourceCidrs.size() > 1) {
+                aclName = aclName + "-" + index++;
+            }
+            String netrisAclName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.ACL, aclName);
+            cmd.setNetrisAclName(netrisAclName);
+            cmd.setReason(rule.getReason());
+            if (NetUtils.ICMP_PROTO.equals(baseNetworkRule.getProtocol().toLowerCase(Locale.ROOT))) {
+                cmd.setIcmpType(baseNetworkRule.getIcmpType());
+            }
+            NetrisAnswer answer = sendNetrisCommand(cmd, zoneId);
+            result = result && answer.getResult();
         }
-        String srcPort;
-        String dstPort;
-        if (baseNetworkRule.getPrivatePort().contains("-")) {
-            srcPort = baseNetworkRule.getPrivatePort().split("-")[0];
-            dstPort = baseNetworkRule.getPrivatePort().split("-")[1];
-        } else {
-            srcPort = dstPort = baseNetworkRule.getPrivatePort();
-        }
-        CreateOrUpdateNetrisACLCommand cmd = new CreateOrUpdateNetrisACLCommand(zoneId, accountId, domainId, networkName, networkId,
-                vpcName, vpcId, Objects.nonNull(vpcId), rule.getAclAction().name().toLowerCase(Locale.ROOT), getPrefix(sourcePrefix), getPrefix(destinationPrefix),
-                "null".equals(srcPort) ? 1 : Integer.parseInt(srcPort),
-                "null".equals(dstPort) ? 65535 : Integer.parseInt(dstPort), baseNetworkRule.getProtocol());
-        String aclName = String.format("V%s-N%s-ACL%s", vpcId, networkId, rule.getBaseRule().getRuleId());
-        String netrisAclName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.ACL, aclName);
-        cmd.setNetrisAclName(netrisAclName);
-        cmd.setReason(rule.getReason());
-        if ("ICMP".equals(baseNetworkRule.getProtocol())) {
-            cmd.setIcmpType(baseNetworkRule.getIcmpType());
-        }
-        NetrisAnswer answer = sendNetrisCommand(cmd, zoneId);
-        return answer.getResult();
+        return result;
     }
 
     public static String getPrefix(String prefix) {
@@ -452,12 +464,20 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
             vpcName = vpcDao.findById(vpcId).getName();
         }
         DeleteNetrisACLCommand cmd = new DeleteNetrisACLCommand(zoneId, accountId, domainId, networkName, networkId, Objects.nonNull(network.getVpcId()), vpcId, vpcName);
-        List<String> aclRuleNames = firewallRules.stream()
-                .map(rule -> {
-                    String aclName = String.format("V%s-N%s-ACL%s", vpcId, networkId, rule.getBaseRule().getRuleId());
-                    return NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.ACL, aclName);
-                })
-                .collect(Collectors.toList());
+        List<String> aclRuleNames = new ArrayList<>();
+        for (NetrisNetworkRule rule : firewallRules) {
+            List<String> sourceCidrs = rule.getBaseRule().getSourceCidrList();
+            int cidrCount = sourceCidrs.size();
+            if (cidrCount > 1) {
+                for (int i = 0; i < cidrCount; i++) {
+                    String aclName = String.format("V%s-N%s-ACL%s-%d", vpcId, networkId, rule.getBaseRule().getRuleId(), (i + 1));
+                    aclRuleNames.add(NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.ACL, aclName));
+                }
+            } else {
+                String aclName = String.format("V%s-N%s-ACL%s", vpcId, networkId, rule.getBaseRule().getRuleId());
+                aclRuleNames.add(NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.ACL, aclName));
+            }
+        }
         cmd.setAclRuleNames(aclRuleNames);
 
         NetrisAnswer answer = sendNetrisCommand(cmd, zoneId);
