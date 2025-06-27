@@ -1,0 +1,452 @@
+Added commands:
+
+    startRollingMaintenance (Start rolling maintenance)
+
+    createBackupSchedule (Creates a user-defined VM backup schedule)
+
+    listBackupOfferings (Lists backup offerings)
+
+    createBackup (Create VM backup)
+
+    stopKubernetesCluster (Stops a running Kubernetes cluster)
+
+    listKubernetesClusters (Lists Kubernetes clusters)
+
+    scaleKubernetesCluster (Scales a created, running or stopped Kubernetes cluster)
+
+    destroyVolume (Destroys a Volume.)
+
+    deleteBackupOffering (Deletes a backup offering)
+
+    updateSecurityGroup (Updates a security group)
+
+    getRouterHealthCheckResults (Starts a router.)
+
+    listBackups (Lists VM backups)
+
+    listBackupProviders (Lists Backup and Recovery providers)
+
+    deleteKubernetesSupportedVersion (Deletes a Kubernetes cluster)
+
+    restoreBackup (Restores an existing stopped or deleted VM using a VM backup)
+
+    addKubernetesSupportedVersion (Add a supported Kubernetes version)
+
+    deleteKubernetesCluster (Deletes a Kubernetes cluster)
+
+    getKubernetesClusterConfig (Get Kubernetes cluster config)
+
+    updateKubernetesSupportedVersion (Update a supported Kubernetes version)
+
+    upgradeKubernetesCluster (Upgrades a running Kubernetes cluster)
+
+    deleteBackupSchedule (Deletes the backup schedule of a VM)
+
+    listBackupProviderOfferings (Lists external backup offerings of the provider)
+
+    createKubernetesCluster (Creates a Kubernetes cluster)
+
+    importBackupOffering (Imports a backup offering using a backup provider)
+
+    removeVirtualMachineFromBackupOffering (Removes a VM from any existing backup offering)
+
+    listKubernetesSupportedVersions (Lists container clusters)
+
+    recoverVolume (Recovers a Destroy volume.)
+
+    listUnmanagedInstances (Lists unmanaged virtual machines for a given cluster.)
+
+    importUnmanagedInstance (Import unmanaged virtual machine from a given cluster.)
+
+    getDiagnosticsData (Get diagnostics and files from system VMs)
+
+    startKubernetesCluster (Starts a stopped Kubernetes cluster)
+
+    listBackupSchedule (List backup schedule of a VM)
+
+    restoreVolumeFromBackupAndAttachToVM (Restore and attach a backed up volume to VM)
+
+    updateBackupSchedule (Updates a user-defined VM backup schedule)
+
+    deleteBackup (Delete VM backup)
+
+    assignVirtualMachineToBackupOffering (Assigns a VM to a backup offering)
+
+Removed commands:
+
+Changes in command type (sync versus async)
+
+
+Changes in commands arguments:
+
+	listHosts
+
+		Response:
+
+			New parameters: cpuloadaverage, ueficapability 
+
+			Removed parameters: averageload 
+
+	importLdapUsers
+
+		Response:
+
+			New parameters: conflictingusersource 
+
+	listHostsMetrics
+
+		Response:
+
+			New parameters: cpuloadaverage 
+
+	restoreVirtualMachine
+
+		Response:
+
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+
+	updateHost
+
+		Response:
+
+			New parameters: cpuloadaverage, ueficapability 
+
+			Removed parameters: averageload 
+
+	stopRouter
+
+		Response:
+
+			New parameters: healthchecksfailed, healthcheckresults(*) 
+
+	changeServiceForVirtualMachine
+
+		Response:
+
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+
+	startRouter
+
+		Response:
+
+			New parameters: healthchecksfailed, healthcheckresults(*) 
+
+	rebootVirtualMachine
+
+		Response:
+
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+
+	listVolumesMetrics
+
+		Request:
+
+			New parameters: state (optional) 
+
+	updateVmNicIp
+
+		Response:
+
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+
+	startInternalLoadBalancerVM
+
+		Response:
+
+			New parameters: healthchecksfailed, healthcheckresults(*) 
+
+	searchLdap
+
+		Response:
+
+			New parameters: conflictingusersource 
+
+	stopNetScalerVpx
+
+		Response:
+
+			New parameters: healthchecksfailed, healthcheckresults(*) 
+
+	listCapabilities
+
+		Response:
+
+			New parameters: allowuserexpungerecovervolume, kubernetesclusterexperimentalfeaturesenabled, kubernetesserviceenabled 
+
+	listLdapUsers
+
+		Request:
+
+			New parameters: domainid (optional), userfilter (optional) 
+
+		Response:
+
+			New parameters: conflictingusersource 
+
+	rebootRouter
+
+		Response:
+
+			New parameters: healthchecksfailed, healthcheckresults(*) 
+
+	listNics
+
+		Response:
+
+			New parameters: adaptertype, ipaddresses, isolatedpvlan, isolatedpvlantype, vlanid 
+
+	addNicToVirtualMachine
+
+		Response:
+
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+
+	listExternalLoadBalancers
+
+		Response:
+
+			New parameters: cpuloadaverage, ueficapability 
+
+			Removed parameters: averageload 
+
+	updateDefaultNicForVirtualMachine
+
+		Response:
+
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+
+	stopInternalLoadBalancerVM
+
+		Response:
+
+			New parameters: healthchecksfailed, healthcheckresults(*) 
+
+	createServiceOffering
+
+		Request:
+
+			New parameters: cachemode (optional) 
+
+		Response:
+
+			New parameters: cacheMode 
+
+	assignVirtualMachine
+
+		Response:
+
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+
+	changeServiceForRouter
+
+		Response:
+
+			New parameters: healthchecksfailed, healthcheckresults(*) 
+
+	updateVirtualMachine
+
+		Response:
+
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+
+	migrateVirtualMachine
+
+		Response:
+
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+
+	resetPasswordForVirtualMachine
+
+		Response:
+
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+
+	associateIpAddress
+
+		Request:
+
+			New parameters: ipaddress (optional) 
+
+	resetSSHKeyForVirtualMachine
+
+		Response:
+
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+
+	listInternalLoadBalancerVMs
+
+		Request:
+
+			New parameters: fetchhealthcheckresults (optional) 
+
+		Response:
+
+			New parameters: healthchecksfailed, healthcheckresults(*) 
+
+	detachIso
+
+		Response:
+
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+
+	prepareHostForMaintenance
+
+		Response:
+
+			New parameters: cpuloadaverage, ueficapability 
+
+			Removed parameters: averageload 
+
+	listVirtualMachines
+
+		Response:
+
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+
+	revertToVMSnapshot
+
+		Response:
+
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+
+	deployVirtualMachine
+
+		Request:
+
+			New parameters: bootmode (optional), boottype (optional) 
+
+		Response:
+
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+
+	cancelHostMaintenance
+
+		Response:
+
+			New parameters: cpuloadaverage, ueficapability 
+
+			Removed parameters: averageload 
+
+	createDiskOffering
+
+		Request:
+
+			New parameters: cachemode (optional) 
+
+	listVolumes
+
+		Request:
+
+			New parameters: state (optional) 
+
+	createNetwork
+
+		Request:
+
+			New parameters: isolatedpvlantype (optional) 
+
+	migrateVirtualMachineWithVolume
+
+		Response:
+
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+
+	addHost
+
+		Response:
+
+			New parameters: cpuloadaverage, ueficapability 
+
+			Removed parameters: averageload 
+
+	updateVMAffinityGroup
+
+		Response:
+
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+
+	recoverVirtualMachine
+
+		Response:
+
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+
+	listRouters
+
+		Request:
+
+			New parameters: fetchhealthcheckresults (optional) 
+
+		Response:
+
+			New parameters: healthchecksfailed, healthcheckresults(*) 
+
+	attachIso
+
+		Response:
+
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+
+	destroyRouter
+
+		Response:
+
+			New parameters: healthchecksfailed, healthcheckresults(*) 
+
+	removeNicFromVirtualMachine
+
+		Response:
+
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+
+	reconnectHost
+
+		Response:
+
+			New parameters: cpuloadaverage, ueficapability 
+
+			Removed parameters: averageload 
+
+	createPrivateGateway
+
+		Request:
+
+			New parameters: bypassvlanoverlapcheck (optional) 
+
+	addBaremetalHost
+
+		Response:
+
+			New parameters: cpuloadaverage, ueficapability 
+
+			Removed parameters: averageload 
+
+	destroyVirtualMachine
+
+		Response:
+
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+
+	listServiceOfferings
+
+		Response:
+
+			New parameters: cacheMode 
+
+	startVirtualMachine
+
+		Response:
+
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+
+	stopVirtualMachine
+
+		Response:
+
+			New parameters: backupofferingid, backupofferingname, bootmode, boottype 
+
+	updateServiceOffering
+
+		Response:
+
+			New parameters: cacheMode 

@@ -1,0 +1,1156 @@
+Added commands:
+
+    listTungstenFabricTag (Lists Tungsten-Fabric tags)
+
+    listTungstenFabricLBHealthMonitor (list Tungsten-Fabric LB health monitor)
+
+    getLoadBalancerSslCertificate (get load balancer certificate)
+
+    listTungstenFabricApplicationPolicySet (list Tungsten-Fabric application policy set)
+
+    listUserData (List registered userdatas)
+
+    applyTungstenFabricTag (apply Tungsten-Fabric tag)
+
+    createTungstenFabricFirewallPolicy (create Tungsten-Fabric firewall policy)
+
+    createTungstenFabricPolicy (create Tungsten-Fabric policy)
+
+    removeTungstenFabricPolicyRule (remove Tungsten-Fabric policy)
+
+    createTungstenFabricProvider (Create Tungsten-Fabric provider in cloudstack)
+
+    listTungstenFabricLogicalRouter (list Tungsten-Fabric logical router)
+
+    deleteTungstenFabricAddressGroup (delete Tungsten-Fabric address group)
+
+    deleteTungstenFabricLogicalRouter (delete Tungsten-Fabric logical router)
+
+    createTungstenFabricLogicalRouter (create Tungsten-Fabric logical router)
+
+    createTungstenFabricFirewallRule (create Tungsten-Fabric firewall)
+
+    createTungstenFabricManagementNetwork (create Tungsten-Fabric management network)
+
+    listTungstenFabricFirewallRule (list Tungsten-Fabric firewall rule)
+
+    listTungstenFabricAddressGroup (list Tungsten-Fabric address group)
+
+    listTungstenFabricServiceGroup (list Tungsten-Fabric service group)
+
+    isAccountAllowedToCreateOfferingsWithTags (Return true if the specified account is allowed to create offerings with tags.)
+
+    createTungstenFabricTagType (create Tungsten-Fabric tag type)
+
+    assignVolume (Changes ownership of a Volume from one account to another.)
+
+    deleteUserData (Deletes a userdata)
+
+    quotaTariffDelete (Marks a quota tariff as removed.)
+
+    deleteTungstenFabricServiceGroup (delete Tungsten-Fabric service group)
+
+    validateUserTwoFactorAuthenticationCode (Checks the 2FA code for the user.)
+
+    synchronizeTungstenFabricData (Synchronize Tungsten-Fabric data)
+
+    deleteTungstenFabricPolicy (delete Tungsten-Fabric policy)
+
+    listTungstenFabricPolicyRule (list Tungsten-Fabric policy)
+
+    resetUserDataForVirtualMachine (Resets the UserData for virtual machine. The virtual machine must be in a "Stopped" state. [async])
+
+    listTungstenFabricNetwork (list Tungsten-Fabric network)
+
+    setupUserTwoFactorAuthentication (Setup the 2FA for the user.)
+
+    linkUserDataToTemplate (Link or unlink a userdata to a template.)
+
+    listTungstenFabricProviders (Lists Tungsten-Fabric providers)
+
+    deleteTungstenFabricTag (delete Tungsten-Fabric tag)
+
+    createTungstenFabricServiceGroup (create Tungsten-Fabric service group)
+
+    deleteTungstenFabricApplicationPolicySet (delete Tungsten-Fabric application policy set)
+
+    removeTungstenFabricPolicy (remove Tungsten-Fabric policy)
+
+    addTungstenFabricNetworkGatewayToLogicalRouter (add Tungsten-Fabric network gateway to logical router)
+
+    listTungstenFabricNic (list Tungsten-Fabric nic)
+
+    applyTungstenFabricPolicy (apply Tungsten-Fabric policy)
+
+    createTungstenFabricPublicNetwork (create Tungsten-Fabric public network)
+
+    listTungstenFabricFirewallPolicy (list Tungsten-Fabric firewall policy)
+
+    createTungstenFabricApplicationPolicySet (create Tungsten-Fabric application policy set)
+
+    createTungstenFabricAddressGroup (create Tungsten-Fabric address group)
+
+    listVolumesUsageHistory (Lists volume stats)
+
+    createConsoleEndpoint (Create a console endpoint to connect to a VM console)
+
+    deleteTungstenFabricFirewallPolicy (delete Tungsten-Fabric firewall policy)
+
+    updateTungstenFabricLBHealthMonitor (update Tungsten-Fabric loadbalancer health monitor)
+
+    updateCondition (Updates a condition for VM auto scaling)
+
+    removeTungstenFabricTag (remove Tungsten-Fabric tag)
+
+    listTungstenFabricPolicy (list Tungsten-Fabric policy)
+
+    listTungstenFabricVm (list Tungsten-Fabric vm)
+
+    addTungstenFabricPolicyRule (add Tungsten-Fabric policy rule)
+
+    deleteTungstenFabricTagType (delete Tungsten-Fabric tag type)
+
+    removeTungstenFabricNetworkGatewayFromLogicalRouter (remove Tungsten-Fabric network gateway from logical router)
+
+    quotaTariffCreate (Creates a quota tariff for a resource.)
+
+    createTungstenFabricTag (create Tungsten-Fabric tag)
+
+    deleteTungstenFabricFirewallRule (delete Tungsten-Fabric firewall rule)
+
+    listSystemVmsUsageHistory (Lists System VM stats)
+
+    registerUserData (Register a new userdata.)
+
+    listTungstenFabricTagType (Lists Tungsten-Fabric tags)
+
+    configTungstenFabricService (config Tungsten-Fabric service)
+
+    listConfigurationGroups (Lists all configuration groups (primarily used for UI).)
+
+    listUserTwoFactorAuthenticatorProviders (Lists user two factor authenticator providers)
+
+Removed commands:
+
+	addExternalFirewall (Adds an external firewall appliance)
+
+	listSrxFirewalls (lists SRX firewall devices in a physical network)
+
+	deleteExternalFirewall (Deletes an external firewall appliance.)
+
+	addSrxFirewall (Adds a SRX firewall device)
+
+	deleteSrxFirewall ( delete a SRX firewall device)
+
+	listExternalFirewalls (List external firewall appliances.)
+
+	listSrxFirewallNetworks (lists network that are using SRX firewall device)
+
+	configureSrxFirewall (Configures a SRX firewall device)
+
+Changes in command type (sync versus async)
+
+
+Changes in commands arguments:
+
+	createPod
+
+		Request:
+
+			Changed parameters: startip (old version - required, new version - optional), netmask (old version - required, new version - optional), gateway (old version - required, new version - optional) 
+
+	copyIso
+
+		Response:
+
+			New parameters: userdataid, userdataname, userdataparams, userdatapolicy 
+
+	listVirtualMachinesMetrics
+
+		Request:
+
+			New parameters: autoscalevmgroupid (optional), clusterid (optional), hostid (optional), podid (optional), storageid (optional), userdata (optional) 
+
+	listHosts
+
+		Response:
+
+			New parameters: encryptionsupported 
+
+	rebootSystemVm
+
+		Response:
+
+			New parameters: hostcontrolstate 
+
+	listNetworks
+
+		Response:
+
+			New parameters: ip6dns1, ip6dns2, privatemtu, publicmtu, supportsvmautoscaling, tungstenvirtualrouteruuid 
+
+	registerSSHKeyPair
+
+		Response:
+
+			New parameters: project, projectid 
+
+	restoreVirtualMachine
+
+		Response:
+
+			New parameters: autoscalevmgroupid, autoscalevmgroupname, hostcontrolstate, userdata, userdatadetails, userdataid, userdataname, userdatapolicy 
+
+	updateHost
+
+		Response:
+
+			New parameters: encryptionsupported 
+
+	listVPCOfferings
+
+		Request:
+
+			New parameters: domainid (optional) 
+
+	uploadVolume
+
+		Response:
+
+			New parameters: vmtype 
+
+	destroySystemVm
+
+		Response:
+
+			New parameters: hostcontrolstate 
+
+	scaleSystemVm
+
+		Response:
+
+			New parameters: hostcontrolstate 
+
+	stopRouter
+
+		Response:
+
+			New parameters: hostcontrolstate 
+
+	changeServiceForVirtualMachine
+
+		Response:
+
+			New parameters: autoscalevmgroupid, autoscalevmgroupname, hostcontrolstate, userdata, userdatadetails, userdataid, userdataname, userdatapolicy 
+
+	startRouter
+
+		Response:
+
+			New parameters: hostcontrolstate 
+
+	listTemplates
+
+		Response:
+
+			New parameters: userdataid, userdataname, userdataparams, userdatapolicy 
+
+	resetConfiguration
+
+		Response:
+
+			New parameters: component, defaultvalue, displaytext, group, options, parent, subgroup, type 
+
+	createAutoScalePolicy
+
+		Request:
+
+			New parameters: name (optional) 
+
+		Response:
+
+			New parameters: name 
+
+	rebootVirtualMachine
+
+		Response:
+
+			New parameters: autoscalevmgroupid, autoscalevmgroupname, hostcontrolstate, userdata, userdatadetails, userdataid, userdataname, userdatapolicy 
+
+	updateNetworkOffering
+
+		Response:
+
+			New parameters: fortungsten 
+
+	updateVPC
+
+		Request:
+
+			New parameters: publicmtu (optional) 
+
+		Response:
+
+			New parameters: dns1, dns2, ip6dns1, ip6dns2, publicmtu 
+
+	stopSystemVm
+
+		Response:
+
+			New parameters: hostcontrolstate 
+
+	createNetworkOffering
+
+		Request:
+
+			New parameters: fortungsten (optional) 
+
+		Response:
+
+			New parameters: fortungsten 
+
+	listVolumesMetrics
+
+		Request:
+
+			New parameters: listsystemvms (optional) 
+
+	updateVmNicIp
+
+		Response:
+
+			New parameters: autoscalevmgroupid, autoscalevmgroupname, hostcontrolstate, userdata, userdatadetails, userdataid, userdataname, userdatapolicy 
+
+	startInternalLoadBalancerVM
+
+		Response:
+
+			New parameters: hostcontrolstate 
+
+	updateDiskOffering
+
+		Response:
+
+			New parameters: details, encrypt 
+
+	quotaTariffList
+
+		Request:
+
+			New parameters: enddate (optional), listall (optional), name (optional) 
+
+		Response:
+
+			New parameters: activationRule, endDate, name, removed, usageTypeDescription, uuid 
+
+	listKubernetesClusters
+
+		Response:
+
+			New parameters: created 
+
+	createAutoScaleVmGroup
+
+		Request:
+
+			New parameters: name (optional) 
+
+		Response:
+
+			New parameters: associatednetworkid, associatednetworkname, availablevirtualmachinecount, created, lbprovider, name, privateport, publicip, publicipid, publicport 
+
+	listConfigurations
+
+		Request:
+
+			New parameters: group (optional), parent (optional), subgroup (optional) 
+
+		Response:
+
+			New parameters: component, defaultvalue, displaytext, group, options, parent, subgroup, type 
+
+	quotaTariffUpdate
+
+		Request:
+
+			New parameters: name (required), activationrule (optional), description (optional), enddate (optional) 
+
+			Changed parameters: usagetype (old version - required, new version - optional), startdate (old version - required, new version - optional), value (old version - required, new version - optional) 
+
+		Response:
+
+			New parameters: activationRule, endDate, name, removed, usageTypeDescription, uuid 
+
+	scaleKubernetesCluster
+
+		Response:
+
+			New parameters: created 
+
+	stopNetScalerVpx
+
+		Response:
+
+			New parameters: hostcontrolstate 
+
+	listCapabilities
+
+		Response:
+
+			New parameters: instancesdisksstatsretentionenabled, instancesdisksstatsretentiontime, instancesstatsretentiontime, instancesstatsuseronly 
+
+	listConditions
+
+		Request:
+
+			New parameters: projectid (optional) 
+
+		Response:
+
+			New parameters: counterid, countername 
+
+	destroyVolume
+
+		Response:
+
+			New parameters: vmtype 
+
+	disableAutoScaleVmGroup
+
+		Response:
+
+			New parameters: associatednetworkid, associatednetworkname, availablevirtualmachinecount, created, lbprovider, name, privateport, publicip, publicipid, publicport 
+
+	listSystemVms
+
+		Response:
+
+			New parameters: hostcontrolstate 
+
+	detachVolume
+
+		Response:
+
+			New parameters: vmtype 
+
+	changeServiceForSystemVm
+
+		Response:
+
+			New parameters: hostcontrolstate 
+
+	listNics
+
+		Response:
+
+			New parameters: mtu, vpcid, vpcname 
+
+	rebootRouter
+
+		Response:
+
+			New parameters: hostcontrolstate 
+
+	addNicToVirtualMachine
+
+		Response:
+
+			New parameters: autoscalevmgroupid, autoscalevmgroupname, hostcontrolstate, userdata, userdatadetails, userdataid, userdataname, userdatapolicy 
+
+	updateIso
+
+		Response:
+
+			New parameters: userdataid, userdataname, userdataparams, userdatapolicy 
+
+	updateDefaultNicForVirtualMachine
+
+		Response:
+
+			New parameters: autoscalevmgroupid, autoscalevmgroupname, hostcontrolstate, userdata, userdatadetails, userdataid, userdataname, userdatapolicy 
+
+	prepareTemplate
+
+		Response:
+
+			New parameters: userdataid, userdataname, userdataparams, userdatapolicy 
+
+	stopInternalLoadBalancerVM
+
+		Response:
+
+			New parameters: hostcontrolstate 
+
+	samlSso
+
+		Response:
+
+			New parameters: is2faenabled, is2faverified, issuerfor2fa, providerfor2fa 
+
+	login
+
+		Response:
+
+			New parameters: is2faenabled, is2faverified, issuerfor2fa, providerfor2fa 
+
+	copyTemplate
+
+		Response:
+
+			New parameters: userdataid, userdataname, userdataparams, userdatapolicy 
+
+	createServiceOffering
+
+		Request:
+
+			New parameters: encryptroot (optional) 
+
+		Response:
+
+			New parameters: encryptroot 
+
+	listNiciraNvpDeviceNetworks
+
+		Response:
+
+			New parameters: ip6dns1, ip6dns2, privatemtu, publicmtu, supportsvmautoscaling, tungstenvirtualrouteruuid 
+
+	assignVirtualMachine
+
+		Response:
+
+			New parameters: autoscalevmgroupid, autoscalevmgroupname, hostcontrolstate, userdata, userdatadetails, userdataid, userdataname, userdatapolicy 
+
+	resizeVolume
+
+		Response:
+
+			New parameters: vmtype 
+
+	updateTemplate
+
+		Response:
+
+			New parameters: userdataid, userdataname, userdataparams, userdatapolicy 
+
+	listPaloAltoFirewallNetworks
+
+		Response:
+
+			New parameters: ip6dns1, ip6dns2, privatemtu, publicmtu, supportsvmautoscaling, tungstenvirtualrouteruuid 
+
+	changeOfferingForVolume
+
+		Response:
+
+			New parameters: vmtype 
+
+	changeServiceForRouter
+
+		Response:
+
+			New parameters: hostcontrolstate 
+
+	updateVolume
+
+		Response:
+
+			New parameters: vmtype 
+
+	updateVirtualMachine
+
+		Request:
+
+			New parameters: userdatadetails (optional), userdataid (optional) 
+
+		Response:
+
+			New parameters: autoscalevmgroupid, autoscalevmgroupname, hostcontrolstate, userdata, userdatadetails, userdataid, userdataname, userdatapolicy 
+
+	updateNetwork
+
+		Request:
+
+			New parameters: dns1 (optional), dns2 (optional), ip6dns1 (optional), ip6dns2 (optional), privatemtu (optional), publicmtu (optional) 
+
+		Response:
+
+			New parameters: ip6dns1, ip6dns2, privatemtu, publicmtu, supportsvmautoscaling, tungstenvirtualrouteruuid 
+
+	migrateVirtualMachine
+
+		Response:
+
+			New parameters: autoscalevmgroupid, autoscalevmgroupname, hostcontrolstate, userdata, userdatadetails, userdataid, userdataname, userdatapolicy 
+
+	createTemplate
+
+		Response:
+
+			New parameters: userdataid, userdataname, userdataparams, userdatapolicy 
+
+	resetPasswordForVirtualMachine
+
+		Response:
+
+			New parameters: autoscalevmgroupid, autoscalevmgroupname, hostcontrolstate, userdata, userdatadetails, userdataid, userdataname, userdatapolicy 
+
+	resetSSHKeyForVirtualMachine
+
+		Response:
+
+			New parameters: autoscalevmgroupid, autoscalevmgroupname, hostcontrolstate, userdata, userdatadetails, userdataid, userdataname, userdatapolicy 
+
+	addKubernetesSupportedVersion
+
+		Response:
+
+			New parameters: created 
+
+	createVPC
+
+		Request:
+
+			New parameters: dns1 (optional), dns2 (optional), ip6dns1 (optional), ip6dns2 (optional), publicmtu (optional) 
+
+		Response:
+
+			New parameters: dns1, dns2, ip6dns1, ip6dns2, publicmtu 
+
+	listInternalLoadBalancerVMs
+
+		Response:
+
+			New parameters: hostcontrolstate 
+
+	updateKubernetesSupportedVersion
+
+		Response:
+
+			New parameters: created 
+
+	detachIso
+
+		Response:
+
+			New parameters: autoscalevmgroupid, autoscalevmgroupname, hostcontrolstate, userdata, userdatadetails, userdataid, userdataname, userdatapolicy 
+
+	prepareHostForMaintenance
+
+		Response:
+
+			New parameters: encryptionsupported 
+
+	updateAutoScaleVmGroup
+
+		Request:
+
+			New parameters: name (optional) 
+
+		Response:
+
+			New parameters: associatednetworkid, associatednetworkname, availablevirtualmachinecount, created, lbprovider, name, privateport, publicip, publicipid, publicport 
+
+	updateAutoScaleVmProfile
+
+		Request:
+
+			New parameters: expungevmgraceperiod (optional), otherdeployparams (optional), serviceofferingid (optional), userdata (optional) 
+
+			Removed parameters: destroyvmgraceperiod 
+
+		Response:
+
+			New parameters: expungevmgraceperiod, userdata 
+
+			Removed parameters: destroyvmgraceperiod 
+
+	enableAutoScaleVmGroup
+
+		Response:
+
+			New parameters: associatednetworkid, associatednetworkname, availablevirtualmachinecount, created, lbprovider, name, privateport, publicip, publicipid, publicport 
+
+	listVirtualMachines
+
+		Request:
+
+			New parameters: autoscalevmgroupid (optional), userdata (optional) 
+
+		Response:
+
+			New parameters: autoscalevmgroupid, autoscalevmgroupname, hostcontrolstate, userdata, userdatadetails, userdataid, userdataname, userdatapolicy 
+
+	listDiskOfferings
+
+		Request:
+
+			New parameters: encrypt (optional) 
+
+		Response:
+
+			New parameters: details, encrypt 
+
+	upgradeKubernetesCluster
+
+		Response:
+
+			New parameters: created 
+
+	createCondition
+
+		Request:
+
+			New parameters: projectid (optional) 
+
+		Response:
+
+			New parameters: counterid, countername 
+
+	revertToVMSnapshot
+
+		Response:
+
+			New parameters: autoscalevmgroupid, autoscalevmgroupname, hostcontrolstate, userdata, userdatadetails, userdataid, userdataname, userdatapolicy 
+
+	registerIso
+
+		Response:
+
+			New parameters: userdataid, userdataname, userdataparams, userdatapolicy 
+
+	deployVirtualMachine
+
+		Request:
+
+			New parameters: iodriverpolicy (optional), iothreadsenabled (optional), userdatadetails (optional), userdataid (optional) 
+
+		Response:
+
+			New parameters: autoscalevmgroupid, autoscalevmgroupname, hostcontrolstate, userdata, userdatadetails, userdataid, userdataname, userdatapolicy 
+
+	updateZone
+
+		Response:
+
+			New parameters: allowuserspecifyvrmtu, routerprivateinterfacemaxmtu, routerpublicinterfacemaxmtu, type 
+
+	cancelHostMaintenance
+
+		Response:
+
+			New parameters: encryptionsupported 
+
+	updateAutoScalePolicy
+
+		Request:
+
+			New parameters: name (optional) 
+
+		Response:
+
+			New parameters: name 
+
+	createDiskOffering
+
+		Request:
+
+			New parameters: encrypt (optional) 
+
+		Response:
+
+			New parameters: details, encrypt 
+
+	listVolumes
+
+		Request:
+
+			New parameters: listsystemvms (optional) 
+
+		Response:
+
+			New parameters: vmtype 
+
+	lockUser
+
+		Response:
+
+			New parameters: is2faenabled, is2famandated 
+
+	createNetwork
+
+		Request:
+
+			New parameters: dns1 (optional), dns2 (optional), ip6dns1 (optional), ip6dns2 (optional), privatemtu (optional), publicmtu (optional), tungstenvirtualrouteruuid (optional) 
+
+			Changed parameters: displaytext (old version - required, new version - optional) 
+
+		Response:
+
+			New parameters: ip6dns1, ip6dns2, privatemtu, publicmtu, supportsvmautoscaling, tungstenvirtualrouteruuid 
+
+	listNetworkOfferings
+
+		Response:
+
+			New parameters: fortungsten 
+
+	listVPCs
+
+		Response:
+
+			New parameters: dns1, dns2, ip6dns1, ip6dns2, publicmtu 
+
+	migrateVirtualMachineWithVolume
+
+		Response:
+
+			New parameters: autoscalevmgroupid, autoscalevmgroupname, hostcontrolstate, userdata, userdatadetails, userdataid, userdataname, userdatapolicy 
+
+	updateUser
+
+		Request:
+
+			New parameters: mandate2fa (optional) 
+
+		Response:
+
+			New parameters: is2faenabled, is2famandated 
+
+	attachVolume
+
+		Response:
+
+			New parameters: vmtype 
+
+	addHost
+
+		Response:
+
+			New parameters: encryptionsupported 
+
+	listUsers
+
+		Response:
+
+			New parameters: is2faenabled, is2famandated 
+
+	disableUser
+
+		Response:
+
+			New parameters: is2faenabled, is2famandated 
+
+	listIsos
+
+		Response:
+
+			New parameters: userdataid, userdataname, userdataparams, userdatapolicy 
+
+	listAutoScalePolicies
+
+		Request:
+
+			New parameters: name (optional), projectid (optional) 
+
+		Response:
+
+			New parameters: name 
+
+	listZones
+
+		Response:
+
+			New parameters: allowuserspecifyvrmtu, routerprivateinterfacemaxmtu, routerpublicinterfacemaxmtu, type 
+
+	listNetscalerLoadBalancerNetworks
+
+		Response:
+
+			New parameters: ip6dns1, ip6dns2, privatemtu, publicmtu, supportsvmautoscaling, tungstenvirtualrouteruuid 
+
+	startSystemVm
+
+		Response:
+
+			New parameters: hostcontrolstate 
+
+	createKubernetesCluster
+
+		Response:
+
+			New parameters: created 
+
+	declareHostAsDegraded
+
+		Response:
+
+			New parameters: encryptionsupported 
+
+	migrateVolume
+
+		Response:
+
+			New parameters: vmtype 
+
+	updateVMAffinityGroup
+
+		Response:
+
+			New parameters: autoscalevmgroupid, autoscalevmgroupname, hostcontrolstate, userdata, userdatadetails, userdataid, userdataname, userdatapolicy 
+
+	migrateVPC
+
+		Response:
+
+			New parameters: dns1, dns2, ip6dns1, ip6dns2, publicmtu 
+
+	updateConfiguration
+
+		Response:
+
+			New parameters: component, defaultvalue, displaytext, group, options, parent, subgroup, type 
+
+	recoverVirtualMachine
+
+		Response:
+
+			New parameters: autoscalevmgroupid, autoscalevmgroupname, hostcontrolstate, userdata, userdatadetails, userdataid, userdataname, userdatapolicy 
+
+	listCounters
+
+		Request:
+
+			New parameters: provider (optional) 
+
+		Response:
+
+			New parameters: provider 
+
+	migrateSystemVm
+
+		Response:
+
+			New parameters: hostcontrolstate 
+
+	listAutoScaleVmProfiles
+
+		Response:
+
+			New parameters: expungevmgraceperiod, userdata 
+
+			Removed parameters: destroyvmgraceperiod 
+
+	cancelHostAsDegraded
+
+		Response:
+
+			New parameters: encryptionsupported 
+
+	listRouters
+
+		Response:
+
+			New parameters: hostcontrolstate 
+
+	listBrocadeVcsDeviceNetworks
+
+		Response:
+
+			New parameters: ip6dns1, ip6dns2, privatemtu, publicmtu, supportsvmautoscaling, tungstenvirtualrouteruuid 
+
+	listKubernetesSupportedVersions
+
+		Response:
+
+			New parameters: created 
+
+	recoverVolume
+
+		Response:
+
+			New parameters: vmtype 
+
+	enableUser
+
+		Response:
+
+			New parameters: is2faenabled, is2famandated 
+
+	migrateNetwork
+
+		Response:
+
+			New parameters: ip6dns1, ip6dns2, privatemtu, publicmtu, supportsvmautoscaling, tungstenvirtualrouteruuid 
+
+	registerTemplate
+
+		Response:
+
+			New parameters: userdataid, userdataname, userdataparams, userdatapolicy 
+
+	createZone
+
+		Request:
+
+			New parameters: isedge (optional) 
+
+		Response:
+
+			New parameters: allowuserspecifyvrmtu, routerprivateinterfacemaxmtu, routerpublicinterfacemaxmtu, type 
+
+	importUnmanagedInstance
+
+		Response:
+
+			New parameters: autoscalevmgroupid, autoscalevmgroupname, hostcontrolstate, userdata, userdatadetails, userdataid, userdataname, userdatapolicy 
+
+	listAutoScaleVmGroups
+
+		Request:
+
+			New parameters: name (optional) 
+
+		Response:
+
+			New parameters: associatednetworkid, associatednetworkname, availablevirtualmachinecount, created, lbprovider, name, privateport, publicip, publicipid, publicport 
+
+	createVolume
+
+		Response:
+
+			New parameters: vmtype 
+
+	attachIso
+
+		Response:
+
+			New parameters: autoscalevmgroupid, autoscalevmgroupname, hostcontrolstate, userdata, userdatadetails, userdataid, userdataname, userdatapolicy 
+
+	createUser
+
+		Response:
+
+			New parameters: is2faenabled, is2famandated 
+
+	listSSHKeyPairs
+
+		Response:
+
+			New parameters: project, projectid 
+
+	destroyRouter
+
+		Response:
+
+			New parameters: hostcontrolstate 
+
+	quotaSummary
+
+		Response:
+
+			New parameters: quotaenabled 
+
+	createCounter
+
+		Request:
+
+			New parameters: provider (required) 
+
+		Response:
+
+			New parameters: provider 
+
+	removeNicFromVirtualMachine
+
+		Response:
+
+			New parameters: autoscalevmgroupid, autoscalevmgroupname, hostcontrolstate, userdata, userdatadetails, userdataid, userdataname, userdatapolicy 
+
+	deleteAutoScaleVmGroup
+
+		Request:
+
+			New parameters: cleanup (optional) 
+
+	createAutoScaleVmProfile
+
+		Request:
+
+			New parameters: account (optional), domainid (optional), expungevmgraceperiod (optional), projectid (optional), userdata (optional) 
+
+			Removed parameters: destroyvmgraceperiod 
+
+		Response:
+
+			New parameters: expungevmgraceperiod, userdata 
+
+			Removed parameters: destroyvmgraceperiod 
+
+	reconnectHost
+
+		Response:
+
+			New parameters: encryptionsupported 
+
+	startKubernetesCluster
+
+		Response:
+
+			New parameters: created 
+
+	getUser
+
+		Response:
+
+			New parameters: is2faenabled, is2famandated 
+
+	deleteBackup
+
+		Request:
+
+			New parameters: forced (optional) 
+
+	addBaremetalHost
+
+		Response:
+
+			New parameters: encryptionsupported 
+
+	destroyVirtualMachine
+
+		Response:
+
+			New parameters: autoscalevmgroupid, autoscalevmgroupname, hostcontrolstate, userdata, userdatadetails, userdataid, userdataname, userdatapolicy 
+
+	listServiceOfferings
+
+		Request:
+
+			New parameters: encryptroot (optional) 
+
+		Response:
+
+			New parameters: encryptroot 
+
+	startVirtualMachine
+
+		Request:
+
+			New parameters: considerlasthost (optional) 
+
+		Response:
+
+			New parameters: autoscalevmgroupid, autoscalevmgroupname, hostcontrolstate, userdata, userdatadetails, userdataid, userdataname, userdatapolicy 
+
+	stopVirtualMachine
+
+		Response:
+
+			New parameters: autoscalevmgroupid, autoscalevmgroupname, hostcontrolstate, userdata, userdatadetails, userdataid, userdataname, userdatapolicy 
+
+	updateServiceOffering
+
+		Response:
+
+			New parameters: encryptroot 

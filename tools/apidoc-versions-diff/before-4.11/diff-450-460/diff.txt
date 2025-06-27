@@ -1,0 +1,410 @@
+Added commands:
+
+    listIdps (Returns list of discovered SAML Identity Providers)
+
+    authorizeSamlSso (Allow or disallow a user to use SAML SSO)
+
+    listSamlAuthorization (Lists authorized users who can used SAML SSO)
+
+    listAndSwitchSamlAccount (Lists and switches to other SAML accounts owned by the SAML user)
+
+    removeRawUsageRecords (Safely removes raw records from cloud_usage table)
+
+    addBigSwitchBcfDevice (Adds a BigSwitch BCF Controller device)
+
+    deleteBigSwitchBcfDevice ( delete a BigSwitch BCF Controller device)
+
+    listBigSwitchBcfDevices (Lists BigSwitch BCF Controller devices)
+
+    linkDomainToLdap (link an existing cloudstack domain to group or OU in ldap)
+
+    getUploadParamsForVolume (Upload a data disk to the cloudstack cloud.)
+
+    getUploadParamsForTemplate (upload an existing template into the CloudStack cloud. )
+
+Removed commands:
+
+	addBigSwitchVnsDevice (Adds a BigSwitch VNS device)
+
+	deleteBigSwitchVnsDevice ( delete a bigswitch vns device)
+
+	listBigSwitchVnsDevices (Lists BigSwitch Vns devices)
+
+Changes in command type (sync versus async)
+
+
+Changes in commands arguments:
+
+	addNicToVirtualMachine
+
+		Response:
+
+			New parameters: userid, username 
+
+	addCluster
+
+		Request:
+
+			New parameters: ovm3cluster (optional), ovm3pool (optional), ovm3vip (optional) 
+
+		Response:
+
+			New parameters: ovm3vip 
+
+	createTemplate
+
+		Request:
+
+			New parameters: projectid (optional) 
+
+	registerSSHKeyPair
+
+		Response:
+
+			New parameters: account, domain, domainid 
+
+	listClusters
+
+		Response:
+
+			New parameters: ovm3vip 
+
+	resetSSHKeyForVirtualMachine
+
+		Response:
+
+			New parameters: userid, username 
+
+	createSecurityGroup
+
+		Response:
+
+			New parameters: virtualmachinecount, virtualmachineids 
+
+	updateStoragePool
+
+		Request:
+
+			New parameters: enabled (optional) 
+
+	updateHostPassword
+
+		Request:
+
+			New parameters: update_passwd_on_host (optional) 
+
+	listSSHKeyPairs
+
+		Response:
+
+			New parameters: account, domain, domainid 
+
+	recoverVirtualMachine
+
+		Response:
+
+			New parameters: userid, username 
+
+	listCapabilities
+
+		Response:
+
+			New parameters: allowuserexpungerecovervm, allowuserviewdestroyedvm 
+
+	updateVPC
+
+		Response:
+
+			New parameters: redundantvpcrouter 
+
+	updatePortForwardingRule
+
+		Request:
+
+			New parameters: vmguestip (optional) 
+
+			Removed parameters: ipaddressid, privateip, protocol, publicport 
+
+	deployVirtualMachine
+
+		Response:
+
+			New parameters: userid, username 
+
+	updateTrafficType
+
+		Request:
+
+			New parameters: ovm3networklabel (optional), xennetworklabel (optional) 
+
+			Removed parameters: xenservernetworklabel 
+
+		Response:
+
+			New parameters: ovm3networklabel, xennetworklabel 
+
+			Removed parameters: xenservernetworklabel 
+
+	createDomain
+
+		Response:
+
+			New parameters: cpuavailable, cpulimit, cputotal, ipavailable, iplimit, iptotal, memoryavailable, memorylimit, memorytotal, networkavailable, networklimit, networktotal, primarystorageavailable, primarystoragelimit, primarystoragetotal, projectavailable, projectlimit, projecttotal, secondarystorageavailable, secondarystoragelimit, secondarystoragetotal, snapshotavailable, snapshotlimit, snapshottotal, state, templateavailable, templatelimit, templatetotal, vmavailable, vmlimit, vmtotal, volumeavailable, volumelimit, volumetotal, vpcavailable, vpclimit, vpctotal 
+
+	listLBHealthCheckPolicies
+
+		Request:
+
+			New parameters: id (optional) 
+
+			Changed parameters: lbruleid (old version - required, new version - optional) 
+
+	createVpnCustomerGateway
+
+		Request:
+
+			New parameters: projectid (optional) 
+
+	listDiskOfferings
+
+		Request:
+
+			New parameters: isrecursive (optional), listall (optional) 
+
+	listSnapshots
+
+		Response:
+
+			New parameters: physicalsize 
+
+	addS3
+
+		Request:
+
+			New parameters: connectionttl (optional), usetcpkeepalive (optional) 
+
+	attachIso
+
+		Response:
+
+			New parameters: userid, username 
+
+	listDomains
+
+		Response:
+
+			New parameters: cpuavailable, cpulimit, cputotal, ipavailable, iplimit, iptotal, memoryavailable, memorylimit, memorytotal, networkavailable, networklimit, networktotal, primarystorageavailable, primarystoragelimit, primarystoragetotal, projectavailable, projectlimit, projecttotal, secondarystorageavailable, secondarystoragelimit, secondarystoragetotal, snapshotavailable, snapshotlimit, snapshottotal, state, templateavailable, templatelimit, templatetotal, vmavailable, vmlimit, vmtotal, volumeavailable, volumelimit, volumetotal, vpcavailable, vpclimit, vpctotal 
+
+	updateCluster
+
+		Response:
+
+			New parameters: ovm3vip 
+
+	prepareTemplate
+
+		Request:
+
+			New parameters: storageid (optional) 
+
+	rebootVirtualMachine
+
+		Response:
+
+			New parameters: userid, username 
+
+	listSecurityGroups
+
+		Response:
+
+			New parameters: virtualmachinecount, virtualmachineids 
+
+	updateVMAffinityGroup
+
+		Response:
+
+			New parameters: userid, username 
+
+	addTrafficType
+
+		Request:
+
+			New parameters: ovm3networklabel (optional), xennetworklabel (optional) 
+
+			Removed parameters: xenservernetworklabel 
+
+		Response:
+
+			New parameters: ovm3networklabel, xennetworklabel 
+
+			Removed parameters: xenservernetworklabel 
+
+	updateTemplate
+
+		Request:
+
+			New parameters: requireshvm (optional) 
+
+	removeNicFromVirtualMachine
+
+		Response:
+
+			New parameters: userid, username 
+
+	updateDefaultNicForVirtualMachine
+
+		Response:
+
+			New parameters: userid, username 
+
+	createVPC
+
+		Response:
+
+			New parameters: redundantvpcrouter 
+
+	resetPasswordForVirtualMachine
+
+		Response:
+
+			New parameters: userid, username 
+
+	changeServiceForVirtualMachine
+
+		Response:
+
+			New parameters: userid, username 
+
+	startVirtualMachine
+
+		Response:
+
+			New parameters: userid, username 
+
+	detachIso
+
+		Response:
+
+			New parameters: userid, username 
+
+	migrateVirtualMachine
+
+		Response:
+
+			New parameters: userid, username 
+
+	updateDomain
+
+		Response:
+
+			New parameters: cpuavailable, cpulimit, cputotal, ipavailable, iplimit, iptotal, memoryavailable, memorylimit, memorytotal, networkavailable, networklimit, networktotal, primarystorageavailable, primarystoragelimit, primarystoragetotal, projectavailable, projectlimit, projecttotal, secondarystorageavailable, secondarystoragelimit, secondarystoragetotal, snapshotavailable, snapshotlimit, snapshottotal, state, templateavailable, templatelimit, templatetotal, vmavailable, vmlimit, vmtotal, volumeavailable, volumelimit, volumetotal, vpcavailable, vpclimit, vpctotal 
+
+	listVPCs
+
+		Response:
+
+			New parameters: redundantvpcrouter 
+
+	assignVirtualMachine
+
+		Response:
+
+			New parameters: userid, username 
+
+	updateVirtualMachine
+
+		Response:
+
+			New parameters: userid, username 
+
+	listServiceOfferings
+
+		Request:
+
+			New parameters: isrecursive (optional), listall (optional) 
+
+	samlSso
+
+		Request:
+
+			New parameters: idpid (required) 
+
+			Removed parameters: idpurl 
+
+	restoreVirtualMachine
+
+		Response:
+
+			New parameters: userid, username 
+
+	listDomainChildren
+
+		Response:
+
+			New parameters: cpuavailable, cpulimit, cputotal, ipavailable, iplimit, iptotal, memoryavailable, memorylimit, memorytotal, networkavailable, networklimit, networktotal, primarystorageavailable, primarystoragelimit, primarystoragetotal, projectavailable, projectlimit, projecttotal, secondarystorageavailable, secondarystoragelimit, secondarystoragetotal, snapshotavailable, snapshotlimit, snapshottotal, state, templateavailable, templatelimit, templatetotal, vmavailable, vmlimit, vmtotal, volumeavailable, volumelimit, volumetotal, vpcavailable, vpclimit, vpctotal 
+
+	migrateVirtualMachineWithVolume
+
+		Response:
+
+			New parameters: userid, username 
+
+	stopVirtualMachine
+
+		Response:
+
+			New parameters: userid, username 
+
+	createSnapshot
+
+		Request:
+
+			New parameters: name (optional) 
+
+		Response:
+
+			New parameters: physicalsize 
+
+	updateIso
+
+		Request:
+
+			New parameters: requireshvm (optional) 
+
+	destroyVirtualMachine
+
+		Response:
+
+			New parameters: userid, username 
+
+	revertToVMSnapshot
+
+		Response:
+
+			New parameters: userid, username 
+
+	listVirtualMachines
+
+		Request:
+
+			New parameters: keypair (optional), userid (optional) 
+
+		Response:
+
+			New parameters: userid, username 
+
+	restartVPC
+
+		Request:
+
+			New parameters: cleanup (optional), makeredundant (optional) 
+
+		Response:
+
+			New parameters: redundantvpcrouter 
+
+	revertSnapshot
+
+		Response:
+
+			New parameters: physicalsize 

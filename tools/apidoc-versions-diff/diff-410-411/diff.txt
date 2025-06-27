@@ -1,0 +1,722 @@
+Added commands:
+
+    provisionCertificate (Issues and propagates client certificate on a connected host/agent using configured CA plugin)
+
+    listElastistorPool (Lists the pools of elastistor)
+
+    deleteServicePackageOffering (Delete Service Package)
+
+    listAnnotations (Lists annotations.)
+
+    enableHAForZone (Enables HA for a zone)
+
+    enableHAForCluster (Enables HA cluster-wide)
+
+    listNuageVspDomainTemplates (Lists Nuage VSP domain templates)
+
+    listElastistorInterface (Lists the network Interfaces of elastistor)
+
+    stopNetScalerVpx (Stops a NetScalervm.)
+
+    disableHAForZone (Disables HA for a zone)
+
+    revokeCertificate (Revokes certificate using configured CA plugin)
+
+    updateSiocInfo (Update SIOC info)
+
+    cloudianSsoLogin (Generates single-sign-on login url for logged-in CloudStack user to access the Cloudian Management Console)
+
+    issueCertificate (Issues a client certificate using configured or provided CA plugin)
+
+    listNetscalerControlCenter (list control center)
+
+    listCAProviders (Lists available certificate authority providers in CloudStack)
+
+    acquirePodIpAddress (Allocates IP addresses in respective Pod of a Zone)
+
+    deleteManagementNetworkIpRange (Deletes a management network IP range. This action is only allowed when no IPs in this range are allocated.)
+
+    addAnnotation (add an annotation.)
+
+    deployNetscalerVpx (Creates new NS Vpx)
+
+    listElastistorVolume (Lists the volumes of elastistor)
+
+    cloudianIsEnabled (Checks if the Cloudian Connector is enabled)
+
+    listNuageVspGlobalDomainTemplate (Lists Nuage VSP domain templates)
+
+    listHostHAResources (Lists host HA resources)
+
+    enableHAForHost (Enables HA for a host)
+
+    registerNetscalerServicePackage (Registers NCC Service Package)
+
+    listHostHAProviders (Lists HA providers)
+
+    listCaCertificate (Lists the CA public certificate(s) as support by the configured/provided CA plugin)
+
+    migrateVPC (moves a vpc to another physical network)
+
+    configureHAForHost (Configures HA for a host)
+
+    listRegisteredServicePackages (lists registered service packages)
+
+    disableHAForCluster (Disables HA cluster-wide)
+
+    linkAccountToLdap (link a cloudstack account to a group or OU in ldap)
+
+    associateNuageVspDomainTemplate (associate a vpc with a domain template)
+
+    moveUser (Moves a user to another account)
+
+    disableHAForHost (Disables HA for a host)
+
+    deleteNetscalerControlCenter (Delete Netscaler Control Center)
+
+    migrateNetwork (moves a network to another physical network)
+
+    uploadTemplateDirectDownloadCertificate (Upload a certificate for HTTPS direct template download on KVM hosts)
+
+    registerNetscalerControlCenter (Adds a netscaler control center device)
+
+    createManagementNetworkIpRange (Creates a Management network IP range.)
+
+    removeAnnotation (remove an annotation.)
+
+    releasePodIpAddress (Releases a Pod IP back to the Pod)
+
+Removed commands:
+
+Changes in command type (sync versus async)
+
+
+Changes in commands arguments:
+
+	createPod
+
+		Response:
+
+			New parameters: forsystemvms, vlanid 
+
+	copyIso
+
+		Response:
+
+			New parameters: childtemplates, directdownload, parenttemplateid, physicalsize 
+
+	listHosts
+
+		Response:
+
+			New parameters: annotation, hostha, lastannotated, username 
+
+	updateStoragePool
+
+		Response:
+
+			New parameters: allocatediops, provider 
+
+	rebootSystemVm
+
+		Response:
+
+			New parameters: guestvlan, publicvlan 
+
+	listNetworks
+
+		Response:
+
+			New parameters: externalid 
+
+	updateResourceLimit
+
+		Response:
+
+			New parameters: resourcetypename 
+
+	updateHost
+
+		Request:
+
+			New parameters: annotation (optional) 
+
+		Response:
+
+			New parameters: annotation, hostha, lastannotated, username 
+
+	uploadVolume
+
+		Response:
+
+			New parameters: clusterid, clustername, physicalsize, podid, podname, utilization, virtualsize 
+
+	destroySystemVm
+
+		Response:
+
+			New parameters: guestvlan, publicvlan 
+
+	scaleSystemVm
+
+		Response:
+
+			New parameters: guestvlan, publicvlan 
+
+	listLdapConfigurations
+
+		Request:
+
+			New parameters: domainid (optional) 
+
+		Response:
+
+			New parameters: domainid 
+
+	listTemplates
+
+		Request:
+
+			New parameters: parenttemplateid (optional) 
+
+		Response:
+
+			New parameters: childtemplates, directdownload, parenttemplateid, physicalsize 
+
+	createLoadBalancerRule
+
+		Response:
+
+			New parameters: zonename 
+
+	updateNetworkOffering
+
+		Request:
+
+			New parameters: tags (optional) 
+
+	stopSystemVm
+
+		Response:
+
+			New parameters: guestvlan, publicvlan 
+
+	createNetworkOffering
+
+		Request:
+
+			New parameters: forvpc (optional) 
+
+	listVolumesMetrics
+
+		Request:
+
+			New parameters: clusterid (optional) 
+
+	listSslCerts
+
+		Response:
+
+			New parameters: name 
+
+	listPods
+
+		Response:
+
+			New parameters: forsystemvms, vlanid 
+
+	listSnapshots
+
+		Response:
+
+			New parameters: virtualsize 
+
+	listConfigurations
+
+		Request:
+
+			New parameters: domainid (optional) 
+
+	listSystemVms
+
+		Response:
+
+			New parameters: guestvlan, publicvlan 
+
+	detachVolume
+
+		Response:
+
+			New parameters: clusterid, clustername, physicalsize, podid, podname, utilization, virtualsize 
+
+	changeServiceForSystemVm
+
+		Response:
+
+			New parameters: guestvlan, publicvlan 
+
+	createSnapshot
+
+		Request:
+
+			New parameters: asyncbackup (optional) 
+
+		Response:
+
+			New parameters: virtualsize 
+
+	listNics
+
+		Response:
+
+			New parameters: extradhcpoption 
+
+	createSnapshotFromVMSnapshot
+
+		Response:
+
+			New parameters: virtualsize 
+
+	listStoragePools
+
+		Response:
+
+			New parameters: allocatediops, provider 
+
+	addNicToVirtualMachine
+
+		Request:
+
+			New parameters: dhcpoptions (optional), macaddress (optional) 
+
+	updateIso
+
+		Response:
+
+			New parameters: childtemplates, directdownload, parenttemplateid, physicalsize 
+
+	listExternalLoadBalancers
+
+		Response:
+
+			New parameters: annotation, hostha, lastannotated, username 
+
+	prepareTemplate
+
+		Response:
+
+			New parameters: childtemplates, directdownload, parenttemplateid, physicalsize 
+
+	copyTemplate
+
+		Response:
+
+			New parameters: childtemplates, directdownload, parenttemplateid, physicalsize 
+
+	listNiciraNvpDeviceNetworks
+
+		Response:
+
+			New parameters: externalid 
+
+	resizeVolume
+
+		Response:
+
+			New parameters: clusterid, clustername, physicalsize, podid, podname, utilization, virtualsize 
+
+	updateTemplate
+
+		Response:
+
+			New parameters: childtemplates, directdownload, parenttemplateid, physicalsize 
+
+	createVlanIpRange
+
+		Request:
+
+			New parameters: forsystemvms (optional) 
+
+		Response:
+
+			New parameters: forsystemvms 
+
+	listPaloAltoFirewallNetworks
+
+		Response:
+
+			New parameters: externalid 
+
+	deleteLdapConfiguration
+
+		Request:
+
+			New parameters: domainid (optional), port (optional) 
+
+		Response:
+
+			New parameters: domainid 
+
+	updateVolume
+
+		Response:
+
+			New parameters: clusterid, clustername, physicalsize, podid, podname, utilization, virtualsize 
+
+	updateVirtualMachine
+
+		Request:
+
+			New parameters: dhcpoptionsnetworklist (optional) 
+
+	listDomains
+
+		Request:
+
+			New parameters: details (optional) 
+
+	updateNetwork
+
+		Response:
+
+			New parameters: externalid 
+
+	deleteTemplate
+
+		Request:
+
+			New parameters: forced (optional) 
+
+	createTemplate
+
+		Response:
+
+			New parameters: childtemplates, directdownload, parenttemplateid, physicalsize 
+
+	updatePortForwardingRule
+
+		Request:
+
+			New parameters: privateendport (optional) 
+
+	linkDomainToLdap
+
+		Request:
+
+			New parameters: ldapdomain (optional) 
+
+			Changed parameters: name (old version - required, new version - optional) 
+
+		Response:
+
+			New parameters: ldapdomain 
+
+	listSrxFirewallNetworks
+
+		Response:
+
+			New parameters: externalid 
+
+	prepareHostForMaintenance
+
+		Response:
+
+			New parameters: annotation, hostha, lastannotated, username 
+
+	registerIso
+
+		Request:
+
+			New parameters: directdownload (optional) 
+
+		Response:
+
+			New parameters: childtemplates, directdownload, parenttemplateid, physicalsize 
+
+	deployVirtualMachine
+
+		Request:
+
+			New parameters: datadiskofferinglist (optional), dhcpoptionsnetworklist (optional), macaddress (optional) 
+
+	cancelHostMaintenance
+
+		Response:
+
+			New parameters: annotation, hostha, lastannotated, username 
+
+	listVlanIpRanges
+
+		Response:
+
+			New parameters: forsystemvms 
+
+	listVolumes
+
+		Request:
+
+			New parameters: clusterid (optional) 
+
+		Response:
+
+			New parameters: clusterid, clustername, physicalsize, podid, podname, utilization, virtualsize 
+
+	lockUser
+
+		Response:
+
+			New parameters: usersource 
+
+	createNetwork
+
+		Request:
+
+			New parameters: bypassvlanoverlapcheck (optional), externalid (optional) 
+
+		Response:
+
+			New parameters: externalid 
+
+	updateUser
+
+		Response:
+
+			New parameters: usersource 
+
+	attachVolume
+
+		Response:
+
+			New parameters: clusterid, clustername, physicalsize, podid, podname, utilization, virtualsize 
+
+	addHost
+
+		Response:
+
+			New parameters: annotation, hostha, lastannotated, username 
+
+	listUsers
+
+		Response:
+
+			New parameters: usersource 
+
+	listResourceLimits
+
+		Request:
+
+			New parameters: resourcetypename (optional) 
+
+		Response:
+
+			New parameters: resourcetypename 
+
+	disableUser
+
+		Response:
+
+			New parameters: usersource 
+
+	listIsos
+
+		Response:
+
+			New parameters: childtemplates, directdownload, parenttemplateid, physicalsize 
+
+	listNetscalerLoadBalancerNetworks
+
+		Response:
+
+			New parameters: externalid 
+
+	startSystemVm
+
+		Response:
+
+			New parameters: guestvlan, publicvlan 
+
+	migrateVolume
+
+		Response:
+
+			New parameters: clusterid, clustername, physicalsize, podid, podname, utilization, virtualsize 
+
+	listEvents
+
+		Request:
+
+			New parameters: startid (optional) 
+
+	addLdapConfiguration
+
+		Request:
+
+			New parameters: domainid (optional) 
+
+		Response:
+
+			New parameters: domainid 
+
+	updateConfiguration
+
+		Request:
+
+			New parameters: domainid (optional) 
+
+	dedicatePublicIpRange
+
+		Response:
+
+			New parameters: forsystemvms 
+
+	revertSnapshot
+
+		Response:
+
+			New parameters: virtualsize 
+
+	migrateSystemVm
+
+		Response:
+
+			New parameters: guestvlan, publicvlan 
+
+	updateResourceCount
+
+		Response:
+
+			New parameters: resourcetypename 
+
+	listBrocadeVcsDeviceNetworks
+
+		Response:
+
+			New parameters: externalid 
+
+	listUsageRecords
+
+		Request:
+
+			New parameters: includetags (optional) 
+
+	enableUser
+
+		Response:
+
+			New parameters: usersource 
+
+	registerTemplate
+
+		Request:
+
+			New parameters: directdownload (optional) 
+
+		Response:
+
+			New parameters: childtemplates, directdownload, parenttemplateid, physicalsize 
+
+	findStoragePoolsForMigration
+
+		Response:
+
+			New parameters: allocatediops, provider 
+
+	createStoragePool
+
+		Response:
+
+			New parameters: allocatediops, provider 
+
+	createVolume
+
+		Response:
+
+			New parameters: clusterid, clustername, physicalsize, podid, podname, utilization, virtualsize 
+
+	listF5LoadBalancerNetworks
+
+		Response:
+
+			New parameters: externalid 
+
+	updatePod
+
+		Response:
+
+			New parameters: forsystemvms, vlanid 
+
+	enableStorageMaintenance
+
+		Response:
+
+			New parameters: allocatediops, provider 
+
+	createUser
+
+		Response:
+
+			New parameters: usersource 
+
+	updateRolePermission
+
+		Request:
+
+			New parameters: permission (optional), ruleid (optional) 
+
+			Changed parameters: ruleorder (old version - required, new version - optional) 
+
+	cancelStorageMaintenance
+
+		Response:
+
+			New parameters: allocatediops, provider 
+
+	updateLoadBalancerRule
+
+		Request:
+
+			New parameters: protocol (optional) 
+
+		Response:
+
+			New parameters: zonename 
+
+	reconnectHost
+
+		Response:
+
+			New parameters: annotation, hostha, lastannotated, username 
+
+	getUser
+
+		Response:
+
+			New parameters: usersource 
+
+	listLoadBalancerRules
+
+		Response:
+
+			New parameters: zonename 
+
+	uploadSslCert
+
+		Request:
+
+			New parameters: name (required) 
+
+		Response:
+
+			New parameters: name 
+
+	addBaremetalHost
+
+		Response:
+
+			New parameters: annotation, hostha, lastannotated, username 
+
+	listCapacity
+
+		Response:
+
+			New parameters: capacityallocated, name 
