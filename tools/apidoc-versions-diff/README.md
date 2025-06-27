@@ -6,7 +6,6 @@ Collection of API commands.xml of [Apache CloudStack](http://cloudstack.apache.o
 
 [How To Generate CloudStack API Documentation](https://cwiki.apache.org/confluence/display/CLOUDSTACK/How+To+Generate+CloudStack+API+Documentation)
 
-
 Install NonOSS Dependencies
 ---------------------------
 
