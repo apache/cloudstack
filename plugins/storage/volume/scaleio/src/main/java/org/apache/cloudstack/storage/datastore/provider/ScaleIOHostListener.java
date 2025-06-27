@@ -102,12 +102,12 @@ public class ScaleIOHostListener implements HypervisorHostListener {
         if (systemId == null) {
             throw new CloudRuntimeException("Failed to get the system id for PowerFlex storage pool " + storagePool.getName());
         }
-        Map<String,String> details = new HashMap<>();
+        Map<String, String> details = new HashMap<>();
         details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
 
         ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, storagePool, storagePool.getPath(), details);
         ModifyStoragePoolAnswer answer  = sendModifyStoragePoolCommand(cmd, storagePool, host);
-        Map<String,String> poolDetails = answer.getPoolInfo().getDetails();
+        Map<String, String> poolDetails = answer.getPoolInfo().getDetails();
         if (MapUtils.isEmpty(poolDetails)) {
             String msg = String.format("PowerFlex storage SDC details not found on the host: %s, (re)install SDC and restart agent", host);
             logger.warn(msg);
