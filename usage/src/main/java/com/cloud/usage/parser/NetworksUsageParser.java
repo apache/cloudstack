@@ -48,7 +48,7 @@ public class NetworksUsageParser extends UsageParser {
 
         final List<UsageNetworksVO> usageNetworksVO = networksDao.getUsageRecords(account.getId(), startDate, endDate);
         if (CollectionUtils.isEmpty(usageNetworksVO)) {
-            logger.debug("Cannot find any VPC usage for account [{}] in period between [{}] and [{}].", account, startDate, endDate);
+            logger.debug("Cannot find any Networks usage for account [{}] in period between [{}] and [{}].", account, startDate, endDate);
             return true;
         }
 
