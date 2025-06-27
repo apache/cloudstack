@@ -41,6 +41,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.management.ManagementServerHost.State;
 import org.apache.cloudstack.maintenance.command.CancelMaintenanceManagementServerHostCommand;
 import org.apache.cloudstack.maintenance.command.CancelShutdownManagementServerHostCommand;
@@ -245,6 +246,9 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
         this.shutdownTriggered = true;
         prepareForShutdown(true);
         ManagementServerHostVO msHost = msHostDao.findByMsid(ManagementServerNode.getManagementServerId());
+        if (msHost == null) {
+            throw new CloudRuntimeException("Invalid node id for the management server");
+        }
         msHostDao.updateState(msHost.getId(), State.ShuttingDown);
     }
 
@@ -269,12 +273,18 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
     public void prepareForShutdown() {
         prepareForShutdown(false);
         ManagementServerHostVO msHost = msHostDao.findByMsid(ManagementServerNode.getManagementServerId());
+        if (msHost == null) {
+            throw new CloudRuntimeException("Invalid node id for the management server");
+        }
         msHostDao.updateState(msHost.getId(), State.PreparingForShutDown);
     }
 
     @Override
     public void cancelShutdown() {
         ManagementServerHostVO msHost = msHostDao.findByMsid(ManagementServerNode.getManagementServerId());
+        if (msHost == null) {
+            throw new CloudRuntimeException("Invalid node id for the management server");
+        }
         if (!this.preparingForShutdown && !(State.PreparingForShutDown.equals(msHost.getState()) || State.ReadyToShutDown.equals(msHost.getState()))) {
             throw new CloudRuntimeException("Shutdown has not been triggered");
         }
@@ -295,19 +305,26 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
         if (this.preparingForMaintenance) {
             throw new CloudRuntimeException("Maintenance has already been initiated");
         }
+
+        ManagementServerHostVO msHost = msHostDao.findByMsid(ManagementServerNode.getManagementServerId());
+        if (msHost == null) {
+            throw new CloudRuntimeException("Invalid node id for the management server");
+        }
         this.preparingForMaintenance = true;
         this.maintenanceStartTime = System.currentTimeMillis();
         this.lbAlgorithm = lbAlorithm;
         jobManager.disableAsyncJobs();
         onPreparingForMaintenance();
         waitForPendingJobs(forced);
-        ManagementServerHostVO msHost = msHostDao.findByMsid(ManagementServerNode.getManagementServerId());
         msHostDao.updateState(msHost.getId(), State.PreparingForMaintenance);
     }
 
     @Override
     public void cancelMaintenance() {
         ManagementServerHostVO msHost = msHostDao.findByMsid(ManagementServerNode.getManagementServerId());
+        if (msHost == null) {
+            throw new CloudRuntimeException("Invalid node id for the management server");
+        }
         if (!this.preparingForMaintenance && !(State.Maintenance.equals(msHost.getState()) || State.PreparingForMaintenance.equals(msHost.getState()))) {
             throw new CloudRuntimeException("Maintenance has not been initiated");
         }
@@ -315,16 +332,21 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
         resetShutdownParams();
         jobManager.enableAsyncJobs();
         cancelWaitForPendingJobs();
-        if (msHost != null) {
-            if (State.PreparingForMaintenance.equals(msHost.getState())) {
-                onCancelPreparingForMaintenance();
-            }
-            if (State.Maintenance.equals(msHost.getState())) {
-                onCancelMaintenance();
-            }
-        }
-
         msHostDao.updateState(msHost.getId(), State.Up);
+        ScheduledExecutorService cancelMaintenanceService = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("CancelMaintenance-Job"));
+        cancelMaintenanceService.schedule(() -> {
+            cancelMaintenanceTask(msHost.getState());
+        }, 0, TimeUnit.SECONDS);
+        cancelMaintenanceService.shutdown();
+    }
+
+    private void cancelMaintenanceTask(ManagementServerHost.State msState) {
+        if (State.PreparingForMaintenance.equals(msState)) {
+            onCancelPreparingForMaintenance();
+        }
+        if (State.Maintenance.equals(msState)) {
+            onCancelMaintenance();
+        }
     }
 
     private void waitForPendingJobs(boolean forceMaintenance) {
@@ -509,6 +531,9 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
         jobManager.enableAsyncJobs();
         if (msHost == null) {
             msHost = msHostDao.findByMsid(ManagementServerNode.getManagementServerId());
+            if (msHost == null) {
+                throw new CloudRuntimeException("Invalid node id for the management server");
+            }
         }
         onCancelPreparingForMaintenance();
         msHostDao.updateState(msHost.getId(), State.Up);
@@ -595,6 +620,10 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
                     if (forceMaintenance) {
                         logger.debug("Maintenance window timeout, MS is forced to Maintenance Mode");
                         ManagementServerHostVO msHost = msHostDao.findByMsid(ManagementServerNode.getManagementServerId());
+                        if (msHost == null) {
+                            logger.warn("Unable to find the management server, invalid node id");
+                            return;
+                        }
                         msHostDao.updateState(msHost.getId(), State.Maintenance);
                         managementServerMaintenanceManager.onMaintenance();
                         managementServerMaintenanceManager.cancelWaitForPendingJobs();
@@ -627,6 +656,10 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
                 }
                 if (managementServerMaintenanceManager.isPreparingForMaintenance()) {
                     ManagementServerHostVO msHost = msHostDao.findByMsid(ManagementServerNode.getManagementServerId());
+                    if (msHost == null) {
+                        logger.warn("Unable to find the management server, invalid node id");
+                        return;
+                    }
                     if (totalAgents == 0) {
                         logger.info("MS is in Maintenance Mode");
                         msHostDao.updateState(msHost.getId(), State.Maintenance);
@@ -654,14 +687,16 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
                         logger.warn(String.format("Unable to prepare for maintenance, cannot transfer direct agents on this management server node %d (id: %s)", ManagementServerNode.getManagementServerId(), msHost.getUuid()));
                         managementServerMaintenanceManager.cancelPreparingForMaintenance(msHost);
                         managementServerMaintenanceManager.cancelWaitForPendingJobs();
-                        return;
                     }
                 } else if (managementServerMaintenanceManager.isPreparingForShutdown()) {
                     logger.info("MS is Ready To Shutdown");
                     ManagementServerHostVO msHost = msHostDao.findByMsid(ManagementServerNode.getManagementServerId());
+                    if (msHost == null) {
+                        logger.warn("Unable to find the management server, invalid node id");
+                        return;
+                    }
                     msHostDao.updateState(msHost.getId(), State.ReadyToShutDown);
                     managementServerMaintenanceManager.cancelWaitForPendingJobs();
-                    return;
                 }
             } catch (final Exception e) {
                 logger.error("Error trying to check/run pending jobs task", e);

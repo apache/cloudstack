@@ -943,9 +943,9 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         shell.setAvoidHosts(avoidMsList);
         if (triggerHostLB) {
             logger.info("Triggering preferred host task");
-            hostLbCheckExecutor = Executors.newSingleThreadScheduledExecutor((new NamedThreadFactory("HostLB-Executor")));
-            ScheduledExecutorService hostLbExecutor = Executors.newScheduledThreadPool(1);
+            ScheduledExecutorService hostLbExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("HostLB-Executor"));
             hostLbExecutor.schedule(new PreferredHostCheckerTask(), 0, TimeUnit.MILLISECONDS);
+            hostLbExecutor.shutdown();
         }
         if ("shuffle".equals(lbAlgorithm)) {
             scheduleHostLBCheckerTask(0);

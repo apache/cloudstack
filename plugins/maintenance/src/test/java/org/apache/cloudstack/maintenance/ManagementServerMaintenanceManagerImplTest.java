@@ -325,7 +325,6 @@ public class ManagementServerMaintenanceManagerImplTest {
         Mockito.doNothing().when(jobManagerMock).enableAsyncJobs();
         spy.cancelMaintenance();
         Mockito.verify(jobManagerMock).enableAsyncJobs();
-        Mockito.verify(spy, Mockito.times(1)).onCancelMaintenance();
     }
 
     @Test
@@ -344,7 +343,6 @@ public class ManagementServerMaintenanceManagerImplTest {
         Mockito.doNothing().when(jobManagerMock).enableAsyncJobs();
         spy.cancelMaintenance();
         Mockito.verify(jobManagerMock).enableAsyncJobs();
-        Mockito.verify(spy, Mockito.times(1)).onCancelPreparingForMaintenance();
     }
 
     @Test
