@@ -175,6 +175,7 @@ class TestDeployVMFromSnapshotOrVolume(cloudstackTestCase):
                     "ispublic": "true"}
 
         template = Template.create_from_snapshot(self.apiclient, self.snapshot, services)
+        self._cleanup.append(template)
         virtual_machine = VirtualMachine.create(self.apiclient,
                                                 {"name": "Test-%s" % uuid.uuid4()},
                                                 accountid=self.account.name,
@@ -201,7 +202,6 @@ class TestDeployVMFromSnapshotOrVolume(cloudstackTestCase):
             root_volume.id,
         )
         VirtualMachine.delete(virtual_machine, self.apiclient, expunge=True)
-        Template.delete(template, self.apiclient, self.zone.id)
         self.create_volume_from_snapshot_deploy_vm(snapshot.id)
 
     @attr(tags=["advanced"], required_hardware="false")
@@ -213,6 +213,7 @@ class TestDeployVMFromSnapshotOrVolume(cloudstackTestCase):
                     "ispublic": "true"}
 
         template = Template.create_from_snapshot(self.apiclient, self.snapshot, services)
+        self._cleanup.append(template)
         virtual_machine = VirtualMachine.create(self.apiclient,
                                                 {"name": "Test-%s" % uuid.uuid4()},
                                                 accountid=self.account.name,
@@ -239,7 +240,6 @@ class TestDeployVMFromSnapshotOrVolume(cloudstackTestCase):
             root_volume.id,
         )
         VirtualMachine.delete(virtual_machine, self.apiclient, expunge=True)
-        Template.delete(template, self.apiclient, self.zone.id)
         self.deploy_vm_from_snapshot(snapshot)
 
     @attr(tags=["advanced"], required_hardware="false")
