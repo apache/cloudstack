@@ -79,14 +79,14 @@
         </template>
         <template v-if="column.key === 'traffics'">
           <div v-for="traffic in record.traffics" :key="traffic.type">
-            <a-tooltip :title="traffic.type.toUpperCase() + ' (' + traffic.label + ')'">
+            <a-tooltip :title="traffic.type.toUpperCase() + ' (' + (hypervisor !== 'VMware' ? traffic.label : traffic.vSwitchName || '') + ')'">
               <a-tag
                 :color="trafficColors[traffic.type]"
                 style="margin:2px"
               >
 
-                {{ (traffic.type.toUpperCase() + ' (' + traffic.label + ')').slice(0, 20) }}
-                {{ (traffic.type.toUpperCase() + ' (' + traffic.label + ')').length > 20 ? '...' : '' }}
+                {{ (traffic.type.toUpperCase() + ' (' + (hypervisor !== 'VMware' ? traffic.label : traffic.vSwitchName || '') + ')').slice(0, 20) }}
+                {{ (traffic.type.toUpperCase() + ' (' + (hypervisor !== 'VMware' ? traffic.label : traffic.vSwitchName || '') + ')').length > 20 ? '...' : '' }}
                 <edit-outlined class="traffic-type-action" @click="editTraffic(record.key, traffic, $event)"/>
                 <delete-outlined class="traffic-type-action" @click="deleteTraffic(record.key, traffic, $event)"/>
               </a-tag>
