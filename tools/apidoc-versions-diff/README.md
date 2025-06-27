@@ -33,7 +33,7 @@ Generate Diff
 
 ```bash
 $ cd /path/to/cloudstack
-$ export COMMANDS=/path/to/acs-api-commands
+$ export COMMANDS=/path/to/tools/apidoc-versions-diff
 $ export OLD_RELEASE=4.13
 $ export NEW_RELEASE=4.14
 $ cp tools/apidoc/target/commands.xml $COMMANDS/${NEW_RELEASE}_commands.xml
