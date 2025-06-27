@@ -216,16 +216,38 @@ public class ScaleIOUtil {
 
     public static boolean startSDCService() {
         int exitValue = Script.runSimpleBashScriptForExitValue(SDC_SERVICE_START_CMD);
-        return exitValue == 0;
+        if (exitValue != 0) {
+            return false;
+        }
+        waitForSecs(3);
+        return true;
     }
 
     public static boolean stopSDCService() {
         int exitValue = Script.runSimpleBashScriptForExitValue(SDC_SERVICE_STOP_CMD);
-        return exitValue == 0;
+        if (exitValue != 0) {
+            return false;
+        }
+        waitForSecs(1);
+        return true;
     }
 
     public static boolean restartSDCService() {
         int exitValue = Script.runSimpleBashScriptForExitValue(SDC_SERVICE_RESTART_CMD);
-        return exitValue == 0;
+        if (exitValue != 0) {
+            return false;
+        }
+        waitForSecs(3);
+        return true;
+    }
+
+    private static void waitForSecs(long waitTimeInSecs) {
+        if (waitTimeInSecs < 0) {
+            waitTimeInSecs = 1;
+        }
+        try {
+            Thread.sleep(waitTimeInSecs * 1000);
+        } catch (InterruptedException ignore) {
+        }
     }
 }
