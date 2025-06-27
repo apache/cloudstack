@@ -864,7 +864,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     @Override
     public void create() throws ResourceAllocationException {
         if (Stream.of(templateId, snapshotId, volumeId).filter(Objects::nonNull).count() != 1) {
-            throw new CloudRuntimeException(String.format("Only one of the parameters - template ID [%s], volume ID [%s] or snapshot ID [%s] - should be provided to deploy a Virtual machine", templateId, volumeId, snapshotId));
+            throw new CloudRuntimeException("Please provide only one of the following parameters - template ID, volume ID or snapshot ID");
         }
 
         try {
