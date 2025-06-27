@@ -37,6 +37,7 @@ import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.cloudstack.utils.qemu.QemuObject;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -581,14 +582,23 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
         }
 
         if (!ScaleIOUtil.isSDCServiceActive()) {
+            logger.debug("SDC service is not active on host, starting it");
             if (!ScaleIOUtil.startSDCService()) {
                 return new Ternary<>(false, null, "Couldn't start SDC service on host");
             }
-        } else if (!ScaleIOUtil.restartSDCService()) {
-            return new Ternary<>(false, null, "Couldn't restart SDC service on host");
+        } else {
+            logger.debug("SDC service is active on host, re-starting it");
+            if (!ScaleIOUtil.restartSDCService()) {
+                return new Ternary<>(false, null, "Couldn't restart SDC service on host");
+            }
         }
 
-        return new Ternary<>( true, getSDCDetails(details), "Prepared client successfully");
+        Map<String, String> sdcDetails = getSDCDetails(details);
+        if (MapUtils.isEmpty(sdcDetails)) {
+            return new Ternary<>(false, null, "Couldn't get the SDC details on the host");
+        }
+
+        return new Ternary<>( true, sdcDetails, "Prepared client successfully");
     }
 
     public Pair<Boolean, String> unprepareStorageClient(Storage.StoragePoolType type, String uuid) {
@@ -611,20 +621,37 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
 
     private Map<String, String> getSDCDetails(Map<String, String> details) {
         Map<String, String> sdcDetails = new HashMap<String, String>();
-        if (details == null || !details.containsKey(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID))  {
+        if (MapUtils.isEmpty(details)  || !details.containsKey(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID))  {
             return sdcDetails;
         }
 
         String storageSystemId = details.get(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
-        String sdcId = ScaleIOUtil.getSdcId(storageSystemId);
-        if (sdcId != null) {
-            sdcDetails.put(ScaleIOGatewayClient.SDC_ID, sdcId);
-        } else {
-            String sdcGuId = ScaleIOUtil.getSdcGuid();
-            if (sdcGuId != null) {
-                sdcDetails.put(ScaleIOGatewayClient.SDC_GUID, sdcGuId);
-            }
+        if (StringUtils.isEmpty(storageSystemId)) {
+            return sdcDetails;
         }
+
+        int waitTimeInSecs = 5;
+        int timeBetweenTries = 1000; // Try more frequently (every sec) and return early when SDC Id or Guid found
+        do {
+            String sdcId = ScaleIOUtil.getSdcId(storageSystemId);
+            if (sdcId != null) {
+                sdcDetails.put(ScaleIOGatewayClient.SDC_ID, sdcId);
+                return sdcDetails;
+            } else {
+                String sdcGuId = ScaleIOUtil.getSdcGuid();
+                if (sdcGuId != null) {
+                    sdcDetails.put(ScaleIOGatewayClient.SDC_GUID, sdcGuId);
+                    return sdcDetails;
+                }
+            }
+
+            try {
+                Thread.sleep(timeBetweenTries);
+            } catch (Exception ignore) {
+            }
+            waitTimeInSecs--;
+        } while (waitTimeInSecs > 0);
+
         return sdcDetails;
     }
 
