@@ -32,6 +32,7 @@ export const pollJobPlugin = {
        * @param {String} [name='']
        * @param {String} [title='']
        * @param {String} [description='']
+       * @param {Boolean} [showSuccessMessage=true]
        * @param {String} [successMessage=Success]
        * @param {Function} [successMethod=() => {}]
        * @param {String} [errorMessage=Error]
@@ -49,6 +50,7 @@ export const pollJobPlugin = {
         name = '',
         title = '',
         description = '',
+        showSuccessMessage = true,
         successMessage = i18n.global.t('label.success'),
         successMethod = () => {},
         errorMessage = i18n.global.t('label.error'),
@@ -92,18 +94,20 @@ export const pollJobPlugin = {
         const result = json.queryasyncjobresultresponse
         eventBus.emit('update-job-details', { jobId, resourceId })
         if (result.jobstatus === 1) {
-          var content = successMessage
-          if (successMessage === 'Success' && action && action.label) {
-            content = i18n.global.t(action.label)
+          if (showSuccessMessage) {
+            var content = successMessage
+            if (successMessage === 'Success' && action && action.label) {
+              content = i18n.global.t(action.label)
+            }
+            if (name) {
+              content = content + ' - ' + name
+            }
+            message.success({
+              content,
+              key: jobId,
+              duration: 2
+            })
           }
-          if (name) {
-            content = content + ' - ' + name
-          }
-          message.success({
-            content,
-            key: jobId,
-            duration: 2
-          })
           store.dispatch('AddHeaderNotice', {
             key: jobId,
             title,
@@ -384,6 +388,10 @@ export const resourceTypePlugin = {
           return 'kubernetes'
         case 'KubernetesSupportedVersion':
           return 'kubernetesiso'
+        case 'Extension':
+          return 'xaas'
+        case 'ExtensionCustomAction':
+          return 'extca'
         case 'SystemVm':
         case 'PhysicalNetwork':
         case 'Backup':
@@ -565,6 +573,22 @@ export const imagesUtilPlugin = {
         types.push(...adminTypes)
       }
       return types.map(type => ({ id: type, name: type, description: type }))
+    }
+  }
+}
+
+export const extensionsUtilPlugin = {
+  install (app) {
+    app.config.globalProperties.$fetchCustomActionRoleTypes = function () {
+      const roleTypes = []
+      const roleTypesList = ['Admin', 'Resource Admin', 'Domain Admin', 'User']
+      roleTypesList.forEach((item) => {
+        roleTypes.push({
+          id: item.replace(' ', ''),
+          description: item
+        })
+      })
+      return roleTypes
     }
   }
 }

@@ -31,6 +31,8 @@ import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = Cluster.class)
 public class ClusterResponse extends BaseResponseWithAnnotations {
+    private transient long internalId;
+
     @SerializedName(ApiConstants.ID)
     @Param(description = "the cluster ID")
     private String id;
@@ -106,6 +108,22 @@ public class ClusterResponse extends BaseResponseWithAnnotations {
     @SerializedName(ApiConstants.ZONE_STORAGE_ACCESS_GROUPS)
     @Param(description = "comma-separated list of storage access groups on the zone", since = "4.21.0")
     private String zoneStorageAccessGroups;
+
+    @SerializedName(ApiConstants.EXTENSION_ID)
+    @Param(description="The ID of extension for this cluster", since = "4.21.0")
+    private String extensionId;
+
+    @SerializedName(ApiConstants.EXTENSION_NAME)
+    @Param(description="The name of extension for this cluster", since = "4.21.0")
+    private String extensionName;
+
+    public void setInternalId(long internalId) {
+        this.internalId = internalId;
+    }
+
+    public long getInternalId() {
+        return internalId;
+    }
 
     public String getId() {
         return id;
@@ -294,5 +312,21 @@ public class ClusterResponse extends BaseResponseWithAnnotations {
 
     public void setZoneStorageAccessGroups(String zoneStorageAccessGroups) {
         this.zoneStorageAccessGroups = zoneStorageAccessGroups;
+    }
+
+    public void setExtensionId(String extensionId) {
+        this.extensionId = extensionId;
+    }
+
+    public String getExtensionId() {
+        return extensionId;
+    }
+
+    public void setExtensionName(String extensionName) {
+        this.extensionName = extensionName;
+    }
+
+    public String getExtensionName() {
+        return extensionName;
     }
 }
