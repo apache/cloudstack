@@ -16,6 +16,52 @@
 # specific language governing permissions and limitations
 # under the License.
 
+parse_json() {
+    local json_string="$1"
+    echo "$json_string" | jq '.' > /dev/null || { echo '{"error":"Invalid JSON input"}'; exit 1; }
+
+    local -A details
+    while IFS="=" read -r key value; do
+        details[$key]="$value"
+    done < <(echo "$json_string" | jq -r '{
+        "extension_url":    (.externaldetails.extension.url // ""),
+        "extension_user":   (.externaldetails.extension.user // ""),
+        "extension_token":  (.externaldetails.extension.token // ""),
+        "extension_secret": (.externaldetails.extension.secret // ""),
+        "host_url":         (.externaldetails.host.url // ""),
+        "host_user":        (.externaldetails.host.user // ""),
+        "host_token":       (.externaldetails.host.token // ""),
+        "host_secret":      (.externaldetails.host.secret // ""),
+        "node":             (.externaldetails.host.node // ""),
+        "network_bridge":   (.externaldetails.host.network_bridge // ""),
+        "vm_name":          (.externaldetails.virtualmachine.vm_name // ""),
+        "template_id":      (.externaldetails.virtualmachine.template_id // ""),
+        "template_type":    (.externaldetails.virtualmachine.template_type // ""),
+        "iso_path":         (.externaldetails.virtualmachine.iso_path // ""),
+        "snap_name":        (.parameters.snap_name // ""),
+        "snap_description": (.parameters.snap_description // ""),
+        "snap_save_memory": (.parameters.snap_save_memory // ""),
+        "vmid":             (."cloudstack.vm.details".details.proxmox_vmid // ""),
+        "vm_internal_name": (."cloudstack.vm.details".name // ""),
+        "vmmemory":         (."cloudstack.vm.details".minRam // ""),
+        "vmcpus":           (."cloudstack.vm.details".cpus // ""),
+        "vlans":            ([."cloudstack.vm.details".nics[]?.broadcastUri // "" | sub("vlan://"; "")] | join(",")),
+        "mac_addresses":    ([."cloudstack.vm.details".nics[]?.mac // ""] | join(","))
+    } | to_entries | .[] | "\(.key)=\(.value)"')
+
+    for key in "${!details[@]}"; do
+        declare -g "$key=${details[$key]}"
+    done
+
+    # set url, user, token, secret to host values if present, otherwise use extension values
+    url="${host_url:-$extension_url}"
+    user="${host_user:-$extension_user}"
+    token="${host_token:-$extension_token}"
+    secret="${host_secret:-$extension_secret}"
+
+    check_required_fields vm_internal_name url user token secret node
+}
+
 urlencode() {
     encoded_data=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$1'''))")
     echo "$encoded_data"
@@ -36,21 +82,6 @@ check_required_fields() {
     fi
 }
 
-cloudstack_vm_internal_name_to_proxmox_vmid() {
-    local vm_internal_name="$1"
-    if [[ -z "$vm_internal_name" || ! "$vm_internal_name" =~ ^i-[0-9]+-[0-9]+ ]]; then
-            echo "{\"error\":\"Invalid VM Internal Name: '$vm_internal_name'\"}"
-            exit 1
-        fi
-
-    local account id vmid
-    account=$(echo "$vm_internal_name" | cut -d '-' -f2)
-    id=$(echo "$vm_internal_name" | cut -d '-' -f3)
-    id=$(printf "%04d" "$id")
-    vmid="${account}${id}"
-    echo "$vmid"
-}
-
 validate_name() {
     local entity="$1"
     local name="$2"
@@ -58,46 +89,6 @@ validate_name() {
         echo "{\"error\":\"Invalid $entity name '$name'. Only alphanumeric characters and dashes (-) are allowed.\"}"
         exit 1
     fi
-}
-
-parse_json() {
-    local json_string="$1"
-    echo "$json_string" | jq '.' > /dev/null || { echo '{"error":"Invalid JSON input"}'; exit 1; }
-
-    local -A details
-    while IFS="=" read -r key value; do
-        details[$key]="$value"
-    done < <(echo "$json_string" | jq -r '{
-        "url": (.externaldetails.extension.url // ""),
-        "user": (.externaldetails.extension.user // ""),
-        "token": (.externaldetails.extension.token // ""),
-        "secret": (.externaldetails.extension.secret // ""),
-        "node": (.externaldetails.host.node // ""),
-        "vm_name": (.externaldetails.virtualmachine.vm_name // ""),
-        "template_id": (.externaldetails.virtualmachine.template_id // ""),
-        "template_type": (.externaldetails.virtualmachine.template_type // ""),
-        "iso_path": (.externaldetails.virtualmachine.iso_path // ""),
-        "vm_internal_name": (."cloudstack.vm.details".name // ""),
-        "vmmemory": (."cloudstack.vm.details".minRam // ""),
-        "vmcpus": (."cloudstack.vm.details".cpus // ""),
-        "vlan": (."cloudstack.vm.details".nics[0].broadcastUri // "" | sub("vlan://"; "")),
-        "mac_address": (."cloudstack.vm.details".nics[0].mac // ""),
-        "snap_name": (.parameters.snap_name // ""),
-        "snap_description": (.parameters.snap_description // ""),
-        "snap_save_memory": (.parameters.snap_save_memory // "")
-    } | to_entries | .[] | "\(.key)=\(.value)"')
-
-    for key in "${!details[@]}"; do
-        declare -g "$key=${details[$key]}"
-    done
-
-    check_required_fields vm_internal_name url user token secret node
-
-    if [[ -z "$vm_name" ]]; then
-        vm_name="$vm_internal_name"
-    fi
-    validate_name "VM" "$vm_name"
-    vmid=$(cloudstack_vm_internal_name_to_proxmox_vmid "$vm_internal_name")
 }
 
 call_proxmox_api() {
@@ -174,11 +165,23 @@ execute_and_wait() {
     wait_for_proxmox_task "$upid"
 }
 
+prepare() {
+    parse_json "$1" || exit 1
+
+    response=$(call_proxmox_api GET "/cluster/nextid")
+    vmid=$(echo "$response" | jq -r '.data // ""')
+
+    echo "{\"details\":{\"proxmox_vmid\": \"$vmid\"}}"
+}
+
 create() {
     parse_json "$1" || exit 1
 
-    check_required_fields vm_name vlan mac_address
+    if [[ -z "$vm_name" ]]; then
+        vm_name="$vm_internal_name"
+    fi
     validate_name "VM" "$vm_name"
+    check_required_fields vmid network_bridge
 
     if [[ "${template_type^^}" == "ISO" ]]; then
         check_required_fields iso_path vmcpus vmmemory
@@ -201,8 +204,12 @@ create() {
         execute_and_wait POST "/nodes/${node}/qemu/${template_id}/clone" "$data"
     fi
 
-    network="net0=$(urlencode "virtio=${mac_address},bridge=vmbr0,tag=${vlan},firewall=1")"
-    call_proxmox_api PUT "/nodes/${node}/qemu/${vmid}/config/" "$network" > /dev/null
+    IFS=',' read -ra vlan_array <<< "$vlans"
+    IFS=',' read -ra mac_array <<< "$mac_addresses"
+    for i in "${!vlan_array[@]}"; do
+        network="net${i}=$(urlencode "virtio=${mac_array[i]},bridge=${network_bridge},tag=${vlan_array[i]},firewall=0")"
+        call_proxmox_api PUT "/nodes/${node}/qemu/${vmid}/config/" "$network" > /dev/null
+    done
 
     execute_and_wait POST "/nodes/${node}/qemu/${vmid}/status/start"
 
@@ -306,6 +313,9 @@ fi
 parameters=$(<"$parameters_file")
 
 case $action in
+    prepare)
+        prepare "$parameters"
+        ;;
     create)
         create "$parameters"
         ;;

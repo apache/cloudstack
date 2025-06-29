@@ -317,7 +317,8 @@ DROP PROCEDURE IF EXISTS `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`;
 CREATE PROCEDURE `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`(
     IN ext_name VARCHAR(255),
     IN detail_key VARCHAR(255),
-    IN detail_value TEXT
+    IN detail_value TEXT,
+    IN display TINYINT(1)
 )
 BEGIN
     DECLARE ext_id BIGINT
@@ -330,21 +331,22 @@ BEGIN
             `extension_id`, `name`, `value`, `display`
         )
         VALUES (
-            ext_id, detail_key, detail_value, 1
+            ext_id, detail_key, detail_value, display
         )
 ;   END IF
 ;END;
 
 CALL `cloud`.`INSERT_EXTENSION_IF_NOT_EXISTS`('Proxmox', 'Sample extension for Proxmox written in bash', 'Proxmox/proxmox.sh');
-CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('Proxmox', 'url', '');
-CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('Proxmox', 'user', '');
-CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('Proxmox', 'token', '');
-CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('Proxmox', 'secret', '');
+CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('Proxmox', 'url', '', 1);
+CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('Proxmox', 'user', '', 1);
+CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('Proxmox', 'token', '', 1);
+CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('Proxmox', 'secret', '', 1);
+CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('Proxmox', 'orchestratorrequirespreparevm', 'true', 0);
 
 CALL `cloud`.`INSERT_EXTENSION_IF_NOT_EXISTS`('HyperV', 'Sample extension for HyperV written in python', 'HyperV/hyperv.py');
-CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('HyperV', 'url', '');
-CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('HyperV', 'username', '');
-CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('HyperV', 'password', '');
+CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('HyperV', 'url', '', 1);
+CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('HyperV', 'username', '', 1);
+CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('HyperV', 'password', '', 1);
 
 DROP PROCEDURE IF EXISTS `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_IF_NOT_EXISTS`;
 CREATE PROCEDURE `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_IF_NOT_EXISTS`(
