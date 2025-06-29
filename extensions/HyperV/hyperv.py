@@ -21,6 +21,51 @@ import json
 import sys
 import random
 
+
+def parse_json(json_data):
+    try:
+        data = {}
+
+        data["vmname"] = json_data["cloudstack.vm.details"]["name"] + "-" + json_data["virtualmachineid"]
+
+        external_host_details = json_data["externaldetails"].get("host", [])
+        data["url"] = external_host_details["url"]
+        data["username"] = external_host_details["username"]
+        data["password"] = external_host_details["password"]
+        data["network_switch"] = external_host_details["network_switch"]
+        data["default_vhd_path"] = external_host_details.get("default_vhd_path", "C:\\ProgramData\\Microsoft\\Windows\\Virtual Hard Disks")
+        data["default_vm_path"] = external_host_details.get("default_vm_path", "C:\\ProgramData\\Microsoft\\Windows\\Hyper-V")
+
+        external_vm_details = json_data["externaldetails"].get("virtualmachine", [])
+        if external_vm_details:
+            data["template_type"] = external_vm_details.get("template_type", "template")
+            data["template_path"] = external_vm_details.get("template_path", "")
+            data["vhd_size_gb"] = external_vm_details.get("vhd_size_gb", 25)
+            data["iso_path"] = external_vm_details.get("iso_path", "")
+            data["generation"] = external_vm_details.get("generation", 2)
+
+        data["cpus"] = json_data["cloudstack.vm.details"].get("cpus", 2)
+        data["memory"] = json_data["cloudstack.vm.details"].get("minRam", 536870912)
+
+        nics = json_data["cloudstack.vm.details"].get("nics", [])
+        data["nics"] = []
+        for nic in nics:
+            data["interfaces"].append({
+                "mac": nic["mac_address"],
+                "vlan": nic["broadcastUri"].replace("vlan://", "")
+        })
+
+        parameters = json_data.get("parameters", [])
+        if parameters:
+            data["snapshot_name"] = parameters.get("snapshot_name", "")
+
+        return data
+    except KeyError as e:
+        fail(f"Missing required field in JSON: {str(e)}")
+    except Exception as e:
+        fail(f"Error parsing JSON: {str(e)}")
+
+
 def fail(message):
     print(json.dumps({"error": message}))
     sys.exit(1)
@@ -58,7 +103,7 @@ def run_powershell_ssh(command, url, username, password):
 
 
 def create(data):
-    vm_name = data["virtualmachinename"]
+    vm_name = data["vmname"]
     cpus = data["cpus"]
     memory = data["memory"]
     memory_mb = int(memory) / 1024 / 1024
@@ -102,13 +147,14 @@ def create(data):
         command = (
             f'Set-VMProcessor -VMName \\"{vm_name}\\" -Count \\"{cpus}\\"; '
             f'Connect-VMNetworkAdapter -VMName \\"{vm_name}\\" -SwitchName \\"{switch_name}\\"; '
-            f'Set-VMNetworkAdapter -VMName "{vm_name}" -StaticMacAddress "{data["mac_address"]}"; '
             f'Set-VMFirmware -VMName "{vm_name}" -EnableSecureBoot Off; '
         )
         run_powershell_ssh_int(command, data["url"], data["username"], data["password"])
 
-        # Switch should have vlan support (External/Internal)
-        # run_powershell_ssh_int(f'Set-VMNetworkAdapterVlan -VMName "{"vm_name"}" -Access -VlanId "{data["cloudstack.vlan"]}"', data["url"], data["username"], data["password"])
+        for nic in data["nics"]:
+            run_powershell_ssh_int(f'Set-VMNetworkAdapter -VMName "{vm_name}" -StaticMacAddress "{nic["mac"]}"', data["url"], data["username"], data["password"])
+            run_powershell_ssh_int(f'Set-VMNetworkAdapterVlan -VMName "{"vm_name"}" -Access -VlanId "{nic["vlan"]}"', data["url"], data["username"], data["password"])
+
         run_powershell_ssh_int(f'Start-VM -Name "{vm_name}"', data["url"], data["username"], data["password"])
         vm_started = True
 
@@ -124,22 +170,22 @@ def create(data):
         fail(str(e))
 
 def start(data):
-    run_powershell_ssh(f'Start-VM -Name "{data["virtualmachinename"]}"', data["url"], data["username"], data["password"])
+    run_powershell_ssh(f'Start-VM -Name "{data["vmname"]}"', data["url"], data["username"], data["password"])
     succeed({"status": "success", "message": "Instance started"})
 
 
 def stop(data):
-    run_powershell_ssh(f'Stop-VM -Name "{data["virtualmachinename"]}"', data["url"], data["username"], data["password"])
+    run_powershell_ssh(f'Stop-VM -Name "{data["vmname"]}"', data["url"], data["username"], data["password"])
     succeed({"status": "success", "message": "Instance stopped"})
 
 
 def reboot(data):
-    run_powershell_ssh(f'Restart-VM -Name "{data["virtualmachinename"]}" -Force', data["url"], data["username"], data["password"])
+    run_powershell_ssh(f'Restart-VM -Name "{data["vmname"]}" -Force', data["url"], data["username"], data["password"])
     succeed({"status": "success", "message": "Instance rebooted"})
 
 
 def status(data):
-    command = f'(Get-VM -Name "{data["virtualmachinename"]}").State'
+    command = f'(Get-VM -Name "{data["vmname"]}").State'
     state = run_powershell_ssh(command, data["url"], data["username"], data["password"])
     if state.lower() == "running":
         power_state = "poweron"
@@ -151,17 +197,17 @@ def status(data):
 
 
 def delete(data):
-    run_powershell_ssh(f'Remove-VM -Name "{data["virtualmachinename"]}" -Force', data["url"], data["username"], data["password"])
+    run_powershell_ssh(f'Remove-VM -Name "{data["vmname"]}" -Force', data["url"], data["username"], data["password"])
     succeed({"status": "success", "message": "Instance deleted"})
 
 
 def suspend(data):
-    run_powershell_ssh(f'Suspend-VM -Name "{data["virtualmachinename"]}"', data["url"], data["username"], data["password"])
+    run_powershell_ssh(f'Suspend-VM -Name "{data["vmname"]}"', data["url"], data["username"], data["password"])
     succeed({"status": "success", "message": "Instance suspended"})
 
 
 def resume(data):
-    run_powershell_ssh(f'Resume-VM -Name "{data["virtualmachinename"]}"', data["url"], data["username"], data["password"])
+    run_powershell_ssh(f'Resume-VM -Name "{data["vmname"]}"', data["url"], data["username"], data["password"])
     succeed({"status": "success", "message": "Instance resumed"})
 
 
@@ -169,7 +215,7 @@ def create_snapshot(data):
     snapshot_name = data["snapshot_name"]
     if snapshot_name == "":
         fail("Missing snapshot_name in parameters")
-    command = f'Checkpoint-VM -VMName \\"{data["virtualmachinename"]}\\" -SnapshotName \\"{snapshot_name}\\"'
+    command = f'Checkpoint-VM -VMName \\"{data["vmname"]}\\" -SnapshotName \\"{snapshot_name}\\"'
     run_powershell_ssh(command, data["url"], data["username"], data["password"])
     succeed({"status": "success", "message": f"Snapshot '{snapshot_name}' created"})
 
@@ -178,7 +224,7 @@ def restore_snapshot(data):
     snapshot_name = data["snapshot_name"]
     if snapshot_name == "":
         fail("Missing snapshot_name in parameters")
-    command = f'Restore-VMSnapshot -VMName \\"{data["virtualmachinename"]}\\" -Name \\"{snapshot_name}\\" -Confirm:$false'
+    command = f'Restore-VMSnapshot -VMName \\"{data["vmname"]}\\" -Name \\"{snapshot_name}\\" -Confirm:$false'
     run_powershell_ssh(command, data["url"], data["username"], data["password"])
     succeed({"status": "success", "message": f"Snapshot '{snapshot_name}' restored"})
 
@@ -187,49 +233,10 @@ def delete_snapshot(data):
     snapshot_name = data["snapshot_name"]
     if snapshot_name == "":
         fail("Missing snapshot_name in parameters")
-    command = f'Remove-VMSnapshot -VMName \\"{data["virtualmachinename"]}\\" -Name \\"{snapshot_name}\\" -Confirm:$false'
+    command = f'Remove-VMSnapshot -VMName \\"{data["vmname"]}\\" -Name \\"{snapshot_name}\\" -Confirm:$false'
     run_powershell_ssh(command, data["url"], data["username"], data["password"])
     succeed({"status": "success", "message": f"Snapshot '{snapshot_name}' deleted"})
 
-
-def parse_json(json_data):
-    try:
-        data = {
-            "url": json_data["externaldetails"]["extension"]["url"],
-            "username": json_data["externaldetails"]["extension"]["username"],
-            "password": json_data["externaldetails"]["extension"]["password"],
-            "virtualmachinename": json_data["cloudstack.vm.details"]["name"]
-        }
-
-        external_host_details = json_data["externaldetails"].get("host", [])
-        data["switch_name"] = external_host_details.get("switch_name", "Default Switch")
-        data["default_vhd_path"] = external_host_details.get("default_vhd_path", "C:\\ProgramData\\Microsoft\\Windows\\Virtual Hard Disks")
-        data["default_vm_path"] = external_host_details.get("default_vm_path", "C:\\ProgramData\\Microsoft\\Windows\\Hyper-V")
-
-        external_vm_details = json_data["externaldetails"].get("virtualmachine", [])
-        if external_vm_details:
-            data["template_type"] = external_vm_details.get("template_type", "template")
-            data["template_path"] = external_vm_details.get("template_path", "")
-            data["vhd_size_gb"] = external_vm_details.get("vhd_size_gb", 25)
-            data["iso_path"] = external_vm_details.get("iso_path", "")
-            data["generation"] = external_vm_details.get("generation", 2)
-
-        data["cpus"] = json_data["cloudstack.vm.details"].get("cpus", 2)
-        data["memory"] = json_data["cloudstack.vm.details"].get("minRam", 536870912)
-
-        nics = json_data["cloudstack.vm.details"].get("nics", [])
-        if nics:
-            data["mac_address"] = nics[0].get("mac", "")
-
-        parameters = json_data.get("parameters", [])
-        if parameters:
-            data["snapshot_name"] = parameters.get("snapshot_name", "")
-
-        return data
-    except KeyError as e:
-        fail(f"Missing required field in JSON: {str(e)}")
-    except Exception as e:
-        fail(f"Error parsing JSON: {str(e)}")
 
 def main():
     if len(sys.argv) < 3:
