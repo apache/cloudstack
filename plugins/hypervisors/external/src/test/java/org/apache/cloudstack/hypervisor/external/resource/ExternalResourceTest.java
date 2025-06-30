@@ -42,17 +42,17 @@ public class ExternalResourceTest {
     }
 
     @Test
-    public void isExtensionDisconnected_WhenExtensionNameAndEntryPointAreBlank_ReturnsTrue() {
+    public void isExtensionDisconnected_WhenExtensionNameAndPathAreBlank_ReturnsTrue() {
         ReflectionTestUtils.setField(externalResource, "extensionName", "");
-        ReflectionTestUtils.setField(externalResource, "extensionRelativeEntryPoint", "");
+        ReflectionTestUtils.setField(externalResource, "extensionRelativePath", "");
         boolean result = externalResource.isExtensionDisconnected();
         assertTrue(result);
     }
 
     @Test
-    public void isExtensionDisconnected_WhenExtensionNameAndEntryPointAreNotBlank_ReturnsFalse() {
+    public void isExtensionDisconnected_WhenExtensionNameAndPathAreNotBlank_ReturnsFalse() {
         ReflectionTestUtils.setField(externalResource, "extensionName", "testExtension");
-        ReflectionTestUtils.setField(externalResource, "extensionRelativeEntryPoint", "entryPoint");
+        ReflectionTestUtils.setField(externalResource, "extensionRelativePath", "path");
         boolean result = externalResource.isExtensionDisconnected();
         assertFalse(result);
     }
@@ -75,7 +75,7 @@ public class ExternalResourceTest {
     @Test
     public void logAndGetExtensionNotConnectedOrDisabledError_WhenExtensionDisconnected_LogsErrorAndReturnsMessage() {
         ReflectionTestUtils.setField(externalResource, "extensionName", null);
-        ReflectionTestUtils.setField(externalResource, "extensionRelativeEntryPoint", null);
+        ReflectionTestUtils.setField(externalResource, "extensionRelativePath", null);
         String result = externalResource.logAndGetExtensionNotConnectedOrDisabledError();
         verify(logger).error("Extension not connected to host: {}", externalResource.getName());
         assertEquals("Extension not connected", result);
@@ -84,7 +84,7 @@ public class ExternalResourceTest {
     @Test
     public void logAndGetExtensionNotConnectedOrDisabledError_WhenExtensionDisabled_LogsErrorAndReturnsMessage() {
         ReflectionTestUtils.setField(externalResource, "extensionName", "testExtension");
-        ReflectionTestUtils.setField(externalResource, "extensionRelativeEntryPoint", "entryPoint");
+        ReflectionTestUtils.setField(externalResource, "extensionRelativePath", "path");
         ReflectionTestUtils.setField(externalResource, "extensionState", Extension.State.Disabled);
         String result = externalResource.logAndGetExtensionNotConnectedOrDisabledError();
         verify(logger).error("Extension: {} connected to host: {} is not in Enabled state", "testExtension", externalResource.getName());

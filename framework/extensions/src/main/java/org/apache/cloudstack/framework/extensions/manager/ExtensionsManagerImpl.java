@@ -76,8 +76,8 @@ import org.apache.cloudstack.framework.extensions.api.UpdateExtensionCmd;
 import org.apache.cloudstack.framework.extensions.command.CleanupExtensionFilesCommand;
 import org.apache.cloudstack.framework.extensions.command.ExtensionRoutingUpdateCommand;
 import org.apache.cloudstack.framework.extensions.command.ExtensionServerActionBaseCommand;
-import org.apache.cloudstack.framework.extensions.command.GetExtensionEntryPointChecksumCommand;
-import org.apache.cloudstack.framework.extensions.command.PrepareExtensionEntryPointCommand;
+import org.apache.cloudstack.framework.extensions.command.GetExtensionPathChecksumCommand;
+import org.apache.cloudstack.framework.extensions.command.PrepareExtensionPathCommand;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionCustomActionDao;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionCustomActionDetailsDao;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionDao;
@@ -143,8 +143,8 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsManager, ExtensionHelper, PluggableService, Configurable {
 
-    ConfigKey<Integer> EntryPointStateCheckInterval = new ConfigKey<>("Advanced", Integer.class,
-            "extension.entrypoint.state.check.interval", "300",
+    ConfigKey<Integer> PathStateCheckInterval = new ConfigKey<>("Advanced", Integer.class,
+            "extension.path.state.check.interval", "300",
             "Interval (in seconds) for checking entry-point state of extensions",
             false, ConfigKey.Scope.Global);
 
@@ -202,16 +202,16 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     @Inject
     VMTemplateDao templateDao;
 
-    private ScheduledExecutorService entryPointSyncCheckExecutor;
+    private ScheduledExecutorService extensionPathStateCheckExecutor;
 
-    protected String getDefaultExtensionRelativeEntryPoint(String name) {
+    protected String getDefaultExtensionRelativePath(String name) {
         String safeName = Extension.getDirectoryName(name);
         return String.format("%s%s%s.sh", safeName, File.separator, safeName);
     }
 
-    protected String getValidatedExtensionRelativeEntryPoint(String name, String relativeEntryPointPath) {
+    protected String getValidatedExtensionRelativePath(String name, String relativePathPath) {
         String safeName = Extension.getDirectoryName(name);
-        String normalizedPath = relativeEntryPointPath.replace("\\", "/");
+        String normalizedPath = relativePathPath.replace("\\", "/");
         if (normalizedPath.startsWith("/")) {
             normalizedPath = normalizedPath.substring(1);
         }
@@ -252,22 +252,22 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         return new Pair<>(true, details);
     }
 
-    protected boolean prepareExtensionEntryPointOnMSPeer(Extension extension, ManagementServerHostVO msHost) {
+    protected boolean prepareExtensionPathOnMSPeer(Extension extension, ManagementServerHostVO msHost) {
         final String msPeer = Long.toString(msHost.getMsid());
         logger.debug("Sending prepare extension entry-point for {} command to MS: {}", extension, msPeer);
         final Command[] commands = new Command[1];
-        commands[0] = new PrepareExtensionEntryPointCommand(ManagementServerNode.getManagementServerId(), extension);
+        commands[0] = new PrepareExtensionPathCommand(ManagementServerNode.getManagementServerId(), extension);
         String answersStr = clusterManager.execute(msPeer, 0L, GsonHelper.getGson().toJson(commands), true);
         return getResultFromAnswersString(answersStr, extension, msHost, "prepare entry-point").first();
     }
 
-    protected Pair<Boolean, String> prepareExtensionEntryPointOnCurrentServer(String name, boolean userDefined,
-                                                                              String relativeEntryPoint) {
+    protected Pair<Boolean, String> prepareExtensionPathOnCurrentServer(String name, boolean userDefined,
+                                                                              String relativePath) {
         try {
-            externalProvisioner.prepareExtensionEntryPoint(name, userDefined, relativeEntryPoint);
+            externalProvisioner.prepareExtensionPath(name, userDefined, relativePath);
         } catch (CloudRuntimeException e) {
-            logger.error("Failed to prepare entry-point for Extension [name: {}, userDefined: {}, relativeEntryPoint: {}] on this server",
-                    name, userDefined, relativeEntryPoint, e);
+            logger.error("Failed to prepare entry-point for Extension [name: {}, userDefined: {}, relativePath: {}] on this server",
+                    name, userDefined, relativePath, e);
             return new Pair<>(false, e.getMessage());
         }
         return new Pair<>(true, null);
@@ -282,13 +282,13 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         return getResultFromAnswersString(answersStr, extension, msHost, "cleanup entry-point").first();
     }
 
-    protected Pair<Boolean, String> cleanupExtensionFilesOnCurrentServer(String name, String relativeEntryPoint) {
+    protected Pair<Boolean, String> cleanupExtensionFilesOnCurrentServer(String name, String relativePath) {
         try {
-            externalProvisioner.cleanupExtensionEntryPoint(name, relativeEntryPoint);
+            externalProvisioner.cleanupExtensionPath(name, relativePath);
             externalProvisioner.cleanupExtensionData(name, 0, true);
         } catch (CloudRuntimeException e) {
-            logger.error("Failed to cleanup entry-point files for Extension [name: {}, relativeEntryPoint: {}] on this server",
-                    name, relativeEntryPoint, e);
+            logger.error("Failed to cleanup entry-point files for Extension [name: {}, relativePath: {}] on this server",
+                    name, relativePath, e);
             return new Pair<>(false, e.getMessage());
         }
         return new Pair<>(true, null);
@@ -300,7 +300,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         for (ManagementServerHostVO msHost : msHosts) {
             if (msHost.getMsid() == ManagementServerNode.getManagementServerId()) {
                 cleanup = cleanup && cleanupExtensionFilesOnCurrentServer(extension.getName(),
-                        extension.getRelativeEntryPoint()).first();
+                        extension.getRelativePath()).first();
                 continue;
             }
             cleanup = cleanup && cleanupExtensionFilesOnMSPeer(extension, msHost);
@@ -310,11 +310,11 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         }
     }
 
-    protected Pair<Boolean, String> getChecksumForExtensionEntryPointOnMSPeer(Extension extension, ManagementServerHostVO msHost) {
+    protected Pair<Boolean, String> getChecksumForExtensionPathOnMSPeer(Extension extension, ManagementServerHostVO msHost) {
         final String msPeer = Long.toString(msHost.getMsid());
         logger.debug("Retrieving checksum for {} from MS: {}", extension, msPeer);
         final Command[] cmds = new Command[1];
-        cmds[0] = new GetExtensionEntryPointChecksumCommand(ManagementServerNode.getManagementServerId(),
+        cmds[0] = new GetExtensionPathChecksumCommand(ManagementServerNode.getManagementServerId(),
                 extension);
         String answersStr = clusterManager.execute(msPeer, 0L, GsonHelper.getGson().toJson(cmds), true);
         return getResultFromAnswersString(answersStr, extension, msHost, "prepare entry-point");
@@ -405,21 +405,21 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                 ));
     }
 
-    protected void sendExtensionEntryPointOutOfSyncAlert(Extension extension) {
-        String msg = String.format("Entry-point for %s are out of sync across management servers",
+    protected void sendExtensionPathNotReadyAlert(Extension extension) {
+        String msg = String.format("Path for %s not ready across management servers",
                 extension);
-        alertManager.sendAlert(AlertManager.AlertType.ALERT_TYPE_USERVM, 0L, 0L, msg, msg);
+        alertManager.sendAlert(AlertManager.AlertType.ALERT_TYPE_EXTENSION_PATH_NOT_READY, 0L, 0L, msg, msg);
     }
 
-    protected void updateExtensionEntryPointReady(Extension extension, boolean ready) {
+    protected void updateExtensionPathReady(Extension extension, boolean ready) {
         if (!ready) {
-            sendExtensionEntryPointOutOfSyncAlert(extension);
+            sendExtensionPathNotReadyAlert(extension);
         }
-        if (extension.isEntryPointReady() == ready) {
+        if (extension.isPathReady() == ready) {
             return;
         }
         ExtensionVO extensionVO = extensionDao.createForUpdate(extension.getId());
-        extensionVO.setEntryPointReady(ready);
+        extensionVO.setPathReady(ready);
         extensionDao.update(extension.getId(), extensionVO);
     }
 
@@ -488,29 +488,29 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         }
     }
 
-    protected void checkExtensionEntryPointSync(Extension extension, List<ManagementServerHostVO> msHosts) {
-        String checksum = externalProvisioner.getChecksumForExtensionEntryPoint(extension.getName(),
-                extension.getRelativeEntryPoint());
+    protected void checkExtensionPathState(Extension extension, List<ManagementServerHostVO> msHosts) {
+        String checksum = externalProvisioner.getChecksumForExtensionPath(extension.getName(),
+                extension.getRelativePath());
         if (StringUtils.isBlank(checksum)) {
-            updateExtensionEntryPointReady(extension, false);
+            updateExtensionPathReady(extension, false);
             return;
         }
         if (CollectionUtils.isEmpty(msHosts)) {
-            updateExtensionEntryPointReady(extension, true);
+            updateExtensionPathReady(extension, true);
             return;
         }
         for (ManagementServerHostVO msHost : msHosts) {
-            final Pair<Boolean, String> msPeerChecksumResult = getChecksumForExtensionEntryPointOnMSPeer(extension,
+            final Pair<Boolean, String> msPeerChecksumResult = getChecksumForExtensionPathOnMSPeer(extension,
                     msHost);
             if (!msPeerChecksumResult.first() || !checksum.equals(msPeerChecksumResult.second())) {
                 logger.error("Entry-point checksum for {} is different [msid: {}, checksum: {}] and [msid: {}, checksum: {}]",
                         extension, ManagementServerNode.getManagementServerId(), checksum, msHost.getMsid(),
                         (msPeerChecksumResult.first() ? msPeerChecksumResult.second() : "unknown"));
-                updateExtensionEntryPointReady(extension, false);
+                updateExtensionPathReady(extension, false);
                 return;
             }
         }
-        updateExtensionEntryPointReady(extension, true);
+        updateExtensionPathReady(extension, true);
     }
 
     @Override
@@ -524,7 +524,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         final String name = cmd.getName();
         final String description = cmd.getDescription();
         final String typeStr = cmd.getType();
-        String entryPoint = cmd.getEntryPoint();
+        String relativePath = cmd.getPath();
         final Boolean orchestratorRequiresPrepareVm = cmd.isOrchestratorRequiresPrepareVm();
         final String stateStr = cmd.getState();
         ExtensionVO extensionByName = extensionDao.findByName(name);
@@ -535,10 +535,10 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         if (type == null) {
             throw new CloudRuntimeException(String.format("Invalid type specified - %s", typeStr));
         }
-        if (StringUtils.isBlank(entryPoint)) {
-            entryPoint = getDefaultExtensionRelativeEntryPoint(name);
+        if (StringUtils.isBlank(relativePath)) {
+            relativePath = getDefaultExtensionRelativePath(name);
         } else {
-            entryPoint = getValidatedExtensionRelativeEntryPoint(name, entryPoint);
+            relativePath = getValidatedExtensionRelativePath(name, relativePath);
         }
         Extension.State state = Extension.State.Enabled;
         if (StringUtils.isNotEmpty(stateStr)) {
@@ -552,13 +552,13 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             throw new InvalidParameterValueException(String.format("%s is applicable only with %s type",
                     ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM, type.name()));
         }
-        final String entryPointFinal = entryPoint;
+        final String relativePathFinal = relativePath;
         final Extension.State stateFinal = state;
         ExtensionVO extensionVO = Transaction.execute((TransactionCallbackWithException<ExtensionVO, CloudRuntimeException>) status -> {
             ExtensionVO extension = new ExtensionVO(name, description, type,
-                    entryPointFinal, stateFinal);
+                    relativePathFinal, stateFinal);
             if (!Extension.State.Enabled.equals(stateFinal)) {
-                extension.setEntryPointReady(false);
+                extension.setPathReady(false);
             }
             extension = extensionDao.persist(extension);
 
@@ -581,7 +581,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             return extension;
         });
         if (Extension.State.Enabled.equals(extensionVO.getState()) &&
-                !prepareExtensionEntryPointAcrossServers(extensionVO)) {
+                !prepareExtensionPathAcrossServers(extensionVO)) {
             disableExtension(extensionVO.getId());
             throw new CloudRuntimeException(String.format(
                     "Failed to enable extension: %s as it entry-point is not ready",
@@ -591,20 +591,20 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     }
 
     @Override
-    public boolean prepareExtensionEntryPointAcrossServers(Extension extension) {
+    public boolean prepareExtensionPathAcrossServers(Extension extension) {
         boolean prepared = true;
         List<ManagementServerHostVO> msHosts = managementServerHostDao.listBy(ManagementServerHost.State.Up);
         for (ManagementServerHostVO msHost : msHosts) {
             if (msHost.getMsid() == ManagementServerNode.getManagementServerId()) {
-                prepared = prepared && prepareExtensionEntryPointOnCurrentServer(extension.getName(), extension.isUserDefined(),
-                        extension.getRelativeEntryPoint()).first();
+                prepared = prepared && prepareExtensionPathOnCurrentServer(extension.getName(), extension.isUserDefined(),
+                        extension.getRelativePath()).first();
                 continue;
             }
-            prepared = prepared && prepareExtensionEntryPointOnMSPeer(extension, msHost);
+            prepared = prepared && prepareExtensionPathOnMSPeer(extension, msHost);
         }
-        if (extension.isEntryPointReady() != prepared) {
+        if (extension.isPathReady() != prepared) {
             ExtensionVO updateExtension = extensionDao.createForUpdate(extension.getId());
-            updateExtension.setEntryPointReady(prepared);
+            updateExtension.setPathReady(prepared);
             extensionDao.update(extension.getId(), updateExtension);
         }
         return prepared;
@@ -687,7 +687,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         });
         if (StringUtils.isNotBlank(stateStr)) {
             if (Extension.State.Enabled.equals(result.getState()) &&
-                !prepareExtensionEntryPointAcrossServers(result)) {
+                !prepareExtensionPathAcrossServers(result)) {
                 disableExtension(result.getId());
                 throw new CloudRuntimeException(String.format(
                         "Failed to enable extension: %s as it entry-point is not ready",
@@ -864,8 +864,8 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         ExtensionResponse response = new ExtensionResponse(extension.getUuid(), extension.getName(),
                 extension.getDescription(), extension.getType().name());
         response.setCreated(extension.getCreated());
-        response.setEntryPoint(externalProvisioner.getExtensionEntryPoint(extension.getRelativeEntryPoint()));
-        response.setEntryPointReady(extension.isEntryPointReady());
+        response.setPath(externalProvisioner.getExtensionPath(extension.getRelativePath()));
+        response.setPathReady(extension.isPathReady());
         response.setUserDefined(extension.isUserDefined());
         response.setState(extension.getState().name());
         if (viewDetails.contains(ApiConstants.ExtensionDetails.all) ||
@@ -1407,25 +1407,25 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     @Override
     public String handleExtensionServerCommands(ExtensionServerActionBaseCommand command) {
         final String extensionName = command.getExtensionName();
-        final String extensionRelativeEntryPointPath = command.getExtensionRelativeEntryPointPath();
-        logger.debug("Received {} from MS: {} for extension [id: {}, name: {}, relativeEntryPoint: {}]",
+        final String extensionRelativePath = command.getExtensionRelativePath();
+        logger.debug("Received {} from MS: {} for extension [id: {}, name: {}, relativePath: {}]",
                 command.getClass().getSimpleName(), command.getMsId(), command.getExtensionId(),
-                extensionName, extensionRelativeEntryPointPath);
+                extensionName, extensionRelativePath);
         Answer answer = new Answer(command, false, "Unsupported command");
-        if (command instanceof GetExtensionEntryPointChecksumCommand) {
-            final GetExtensionEntryPointChecksumCommand cmd = (GetExtensionEntryPointChecksumCommand)command;
-            String checksum = externalProvisioner.getChecksumForExtensionEntryPoint(extensionName,
-                    extensionRelativeEntryPointPath);
+        if (command instanceof GetExtensionPathChecksumCommand) {
+            final GetExtensionPathChecksumCommand cmd = (GetExtensionPathChecksumCommand)command;
+            String checksum = externalProvisioner.getChecksumForExtensionPath(extensionName,
+                    extensionRelativePath);
             answer = new Answer(cmd, StringUtils.isNotBlank(checksum), checksum);
-        } else if (command instanceof PrepareExtensionEntryPointCommand) {
-            final PrepareExtensionEntryPointCommand cmd = (PrepareExtensionEntryPointCommand)command;
-            Pair<Boolean, String> result = prepareExtensionEntryPointOnCurrentServer(
-                    extensionName, cmd.isExtensionUserDefined(), extensionRelativeEntryPointPath);
+        } else if (command instanceof PrepareExtensionPathCommand) {
+            final PrepareExtensionPathCommand cmd = (PrepareExtensionPathCommand)command;
+            Pair<Boolean, String> result = prepareExtensionPathOnCurrentServer(
+                    extensionName, cmd.isExtensionUserDefined(), extensionRelativePath);
             answer = new Answer(cmd, result.first(), result.second());
         } else if (command instanceof CleanupExtensionFilesCommand) {
             final CleanupExtensionFilesCommand cmd = (CleanupExtensionFilesCommand)command;
             Pair<Boolean, String> result = cleanupExtensionFilesOnCurrentServer(extensionName,
-                    extensionRelativeEntryPointPath);
+                    extensionRelativePath);
             answer = new Answer(cmd, result.first(), result.second());
         }
         final Answer[] answers = new Answer[1];
@@ -1459,20 +1459,20 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
 
     @Override
     public boolean start() {
-        long syncCheckInterval = EntryPointStateCheckInterval.value();
-        long syncCheckInitialDelay = Math.min(60, syncCheckInterval);
-        logger.debug("Scheduling extensions entrypoint sync check task with initial delay={}s and interval={}s",
-                syncCheckInitialDelay, syncCheckInterval);
-        entryPointSyncCheckExecutor.scheduleWithFixedDelay(new EntryPointSyncCheckWorker(),
-                syncCheckInitialDelay, syncCheckInterval, TimeUnit.SECONDS);
+        long pathStateCheckInterval = PathStateCheckInterval.value();
+        long pathStateCheckInitialDelay = Math.min(60, pathStateCheckInterval);
+        logger.debug("Scheduling extensions path state check task with initial delay={}s and interval={}s",
+                pathStateCheckInitialDelay, pathStateCheckInterval);
+        extensionPathStateCheckExecutor.scheduleWithFixedDelay(new PathStateCheckWorker(),
+                pathStateCheckInitialDelay, pathStateCheckInterval, TimeUnit.SECONDS);
         return true;
     }
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         try {
-            entryPointSyncCheckExecutor = Executors.newScheduledThreadPool(1,
-                    new NamedThreadFactory("Extension-EntryPoint-Sync-Check"));
+            extensionPathStateCheckExecutor = Executors.newScheduledThreadPool(1,
+                    new NamedThreadFactory("Extension-Path-State-Check"));
         } catch (final Exception e) {
             throw new ConfigurationException("Unable to to configure ExtensionsManagerImpl");
         }
@@ -1505,11 +1505,11 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey[]{
-                EntryPointStateCheckInterval
+                PathStateCheckInterval
         };
     }
 
-    public class EntryPointSyncCheckWorker extends ManagedContextRunnable {
+    public class PathStateCheckWorker extends ManagedContextRunnable {
 
         protected void runCleanupForLongestRunningManagementServer() {
             try {
@@ -1517,21 +1517,21 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                 msHosts.sort(Comparator.comparingLong(ManagementServerHostVO::getRunid));
                 ManagementServerHostVO msHost = msHosts.remove(0);
                 if (msHost == null || (msHost.getMsid() != ManagementServerNode.getManagementServerId())) {
-                    logger.debug("Skipping the extensions entrypoint sync check on this management server");
+                    logger.debug("Skipping the extensions path state check on this management server");
                     return;
                 }
                 List<ExtensionVO> extensions = extensionDao.listAll();
                 for (ExtensionVO extension : extensions) {
-                    checkExtensionEntryPointSync(extension, msHosts);
+                    checkExtensionPathState(extension, msHosts);
                 }
             } catch (Exception e) {
-                logger.warn("Extensions entrypoint sync check failed", e);
+                logger.warn("Extensions path state check failed", e);
             }
         }
 
         @Override
         protected void runInContext() {
-            GlobalLock gcLock = GlobalLock.getInternLock("ExtensionEntryPointSyncCheck");
+            GlobalLock gcLock = GlobalLock.getInternLock("ExtensionPathStateCheck");
             try {
                 if (gcLock.lock(3)) {
                     try {

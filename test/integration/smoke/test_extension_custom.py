@@ -245,7 +245,7 @@ class TestExtensions(cloudstackTestCase):
             type='Orchestrator'
         )
         cls._cleanup.append(cls.extension)
-        cls.update_extension_entry_point(cls.extension.entrypoint)
+        cls.update_extension_path(cls.extension.path)
         cls.extension.register(cls.apiclient, cls.cluster.id, 'Cluster')
         details = {
             'url': f"host-{cls.resource_name_suffix}",
@@ -323,30 +323,30 @@ class TestExtensions(cloudstackTestCase):
         return active_server_ips
 
     @classmethod
-    def update_entry_point_locally(cls, path):
+    def update_path_locally(cls, path):
         try:
             file = Path(path)
             file.write_text(CUSTOM_EXTENSION_CONTENT)
             file.chmod(file.stat().st_mode | 0o111)  # Make executable
         except Exception as e:
-            cls.fail(f"Failed to update entry-point on localhost: {str(e)}")
+            cls.fail(f"Failed to update path on localhost: {str(e)}")
 
     @classmethod
-    def update_extension_entry_point(cls, path):
-        logging.info(f"Updating extension entry-point {path}")
+    def update_extension_path(cls, path):
+        logging.info(f"Updating extension path {path}")
         server_ips = cls.getManagementServerIps()
         if server_ips is None:
             if cls.mgtSvrDetails["mgtSvrIp"] in ('localhost', '127.0.0.1'):
-                cls.update_entry_point_locally(path)
+                cls.update_path_locally(path)
                 return
-            cls.fail(f"Extension entry-point update cannot be done on {cls.mgtSvrDetails['mgtSvrIp']}")
-        logging.info("Updating extension entry-point on all management server")
+            cls.fail(f"Extension path update cannot be done on {cls.mgtSvrDetails['mgtSvrIp']}")
+        logging.info("Updating extension path on all management server")
         command = (
             f"cat << 'EOF' > {path}\n{CUSTOM_EXTENSION_CONTENT}\nEOF\n"
             f"chmod +x {path}"
         )
         for idx, server_ip in enumerate(server_ips):
-            logging.info(f"Updating extension entry-point on management server #{idx} with IP {server_ip}")
+            logging.info(f"Updating extension path on management server #{idx} with IP {server_ip}")
             sshClient = SshClient(
                 server_ip,
                 22,
@@ -361,8 +361,8 @@ class TestExtensions(cloudstackTestCase):
     def tearDown(self):
         super(TestExtensions, self).tearDown()
 
-    def get_vm_content_path(self, entry_point_path, vm_name):
-        directory = entry_point_path.rsplit('/', 1)[0] if '/' in entry_point_path else '.'
+    def get_vm_content_path(self, extension_path, vm_name):
+        directory = extension_path.rsplit('/', 1)[0] if '/' in extension_path else '.'
         path = f"{directory}/{vm_name}"
         return path
 
@@ -375,8 +375,8 @@ class TestExtensions(cloudstackTestCase):
         except Exception:
             return None
 
-    def get_vm_content(self, entry_point_path, vm_name):
-        path = self.get_vm_content_path(entry_point_path, vm_name)
+    def get_vm_content(self, extension_path, vm_name):
+        path = self.get_vm_content_path(extension_path, vm_name)
         server_ips = self.getManagementServerIps()
         if not server_ips:
             if self.mgtSvrDetails["mgtSvrIp"] in ('localhost', '127.0.0.1'):
@@ -432,8 +432,8 @@ class TestExtensions(cloudstackTestCase):
             "VM status mismatch"
         )
 
-    def check_vm_status_from_content(self, entry_point_path, vm_name, status):
-        content = self.get_vm_content(entry_point_path, vm_name)
+    def check_vm_status_from_content(self, extension_path, vm_name, status):
+        content = self.get_vm_content(extension_path, vm_name)
         if content is None:
             self.fail("VM content is empty")
 
@@ -458,8 +458,8 @@ class TestExtensions(cloudstackTestCase):
         except Exception:
             return None
 
-    def check_vm_content_exist(self, entry_point_path, vm_name):
-        path = self.get_vm_content_path(entry_point_path, vm_name)
+    def check_vm_content_exist(self, extension_path, vm_name):
+        path = self.get_vm_content_path(extension_path, vm_name)
         server_ips = self.getManagementServerIps()
         if not server_ips:
             if self.mgtSvrDetails["mgtSvrIp"] in ('localhost', '127.0.0.1'):
@@ -501,18 +501,18 @@ class TestExtensions(cloudstackTestCase):
             'Running',
             "VM not in Running state"
         )
-        content = self.get_vm_content(self.extension.entrypoint, self.virtual_machine.instancename)
+        content = self.get_vm_content(self.extension.path, self.virtual_machine.instancename)
         self.check_vm_content_values(content)
         self.virtual_machine.stop(self.apiclient)
-        self.check_vm_status_from_content(self.extension.entrypoint, self.virtual_machine.instancename, 'Stopped')
+        self.check_vm_status_from_content(self.extension.path, self.virtual_machine.instancename, 'Stopped')
         self.virtual_machine.start(self.apiclient)
-        self.check_vm_status_from_content(self.extension.entrypoint, self.virtual_machine.instancename, 'Running')
+        self.check_vm_status_from_content(self.extension.path, self.virtual_machine.instancename, 'Running')
         self.virtual_machine.reboot(self.apiclient)
-        self.check_vm_status_from_content(self.extension.entrypoint, self.virtual_machine.instancename, 'Running')
+        self.check_vm_status_from_content(self.extension.path, self.virtual_machine.instancename, 'Running')
         self.virtual_machine.delete(self.apiclient, expunge=True)
         self.popItemFromCleanup(self.virtual_machine.id)
         self.assertFalse(
-            self.check_vm_content_exist(self.extension.entrypoint, self.virtual_machine.instancename),
+            self.check_vm_content_exist(self.extension.path, self.virtual_machine.instancename),
             "VM content exist event after expunge"
         )
 

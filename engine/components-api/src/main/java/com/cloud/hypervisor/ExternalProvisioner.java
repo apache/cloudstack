@@ -35,27 +35,27 @@ public interface ExternalProvisioner extends Manager {
 
     String getExtensionsPath();
 
-    String getExtensionEntryPoint(String relativeEntryPoint);
+    String getExtensionPath(String relativePath);
 
-    String getChecksumForExtensionEntryPoint(String extensionName, String relativeEntryPoint);
+    String getChecksumForExtensionPath(String extensionName, String relativePath);
 
-    void prepareExtensionEntryPoint(String extensionName, boolean userDefined, String extensionRelativeEntryPoint);
+    void prepareExtensionPath(String extensionName, boolean userDefined, String extensionRelativePath);
 
-    void cleanupExtensionEntryPoint(String extensionName, String extensionRelativeEntryPoint);
+    void cleanupExtensionPath(String extensionName, String extensionRelativePath);
 
     void cleanupExtensionData(String extensionName, int olderThanDays, boolean cleanupDirectory);
 
-    PrepareExternalProvisioningAnswer prepareExternalProvisioning(String hostGuid, String extensionName, String extensionRelativeEntryPoint, PrepareExternalProvisioningCommand cmd);
+    PrepareExternalProvisioningAnswer prepareExternalProvisioning(String hostGuid, String extensionName, String extensionRelativePath, PrepareExternalProvisioningCommand cmd);
 
-    StartAnswer startInstance(String hostGuid, String extensionName, String extensionRelativeEntryPoint, StartCommand cmd);
+    StartAnswer startInstance(String hostGuid, String extensionName, String extensionRelativePath, StartCommand cmd);
 
-    StopAnswer stopInstance(String hostGuid, String extensionName, String extensionRelativeEntryPoint, StopCommand cmd);
+    StopAnswer stopInstance(String hostGuid, String extensionName, String extensionRelativePath, StopCommand cmd);
 
-    RebootAnswer rebootInstance(String hostGuid, String extensionName, String extensionRelativeEntryPoint, RebootCommand cmd);
+    RebootAnswer rebootInstance(String hostGuid, String extensionName, String extensionRelativePath, RebootCommand cmd);
 
-    StopAnswer expungeInstance(String hostGuid, String extensionName, String extensionRelativeEntryPoint, StopCommand cmd);
+    StopAnswer expungeInstance(String hostGuid, String extensionName, String extensionRelativePath, StopCommand cmd);
 
-    Map<String, HostVmStateReportEntry> getHostVmStateReport(long hostId, String extensionName, String extensionRelativeEntryPoint);
+    Map<String, HostVmStateReportEntry> getHostVmStateReport(long hostId, String extensionName, String extensionRelativePath);
 
-    RunCustomActionAnswer runCustomAction(String hostGuid, String extensionName, String extensionRelativeEntryPoint, RunCustomActionCommand cmd);
+    RunCustomActionAnswer runCustomAction(String hostGuid, String extensionName, String extensionRelativePath, RunCustomActionCommand cmd);
 }

@@ -19,7 +19,7 @@ import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 
 export default {
-  name: 'extca',
+  name: 'customaction',
   title: 'label.custom.actions',
   icon: 'play-square-outlined',
   docHelp: 'adminguide/extensions.html#custom-actions',
@@ -39,15 +39,16 @@ export default {
     show: () => { return 'listEvents' in store.getters.apis }
   }],
   actions: [
-    // {
-    //   api: 'addCustomAction',
-    //   icon: 'plus-outlined',
-    //   label: 'label.add.custom.action',
-    //   docHelp: 'adminguide/extensions.html#custom-actions',
-    //   listView: true,
-    //   popup: true,
-    //   component: shallowRef(defineAsyncComponent(() => import('@/views/extension/AddCustomAction.vue')))
-    // },
+    {
+      api: 'addCustomAction',
+      icon: 'plus-outlined',
+      label: 'label.add.custom.action',
+      docHelp: 'adminguide/extensions.html#custom-actions',
+      listView: true,
+      popup: true,
+      show: (record) => { return false }, // Hidden for now
+      component: shallowRef(defineAsyncComponent(() => import('@/views/extension/AddCustomAction.vue')))
+    },
     {
       api: 'updateCustomAction',
       icon: 'edit-outlined',

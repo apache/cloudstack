@@ -84,11 +84,11 @@ public class ExternalResource implements ServerResource {
     private final Host.Type type;
 
     private String extensionName;
-    private String extensionRelativeEntryPoint;
+    private String extensionRelativePath;
     private Extension.State extensionState;
 
     protected boolean isExtensionDisconnected() {
-        return StringUtils.isAnyBlank(extensionName, extensionRelativeEntryPoint);
+        return StringUtils.isAnyBlank(extensionName, extensionRelativePath);
     }
 
     protected boolean isExtensionNotEnabled() {
@@ -127,7 +127,7 @@ public class ExternalResource implements ServerResource {
             return null;
         }
         final Map<String, HostVmStateReportEntry> vmStates = externalProvisioner.getHostVmStateReport(id, extensionName,
-                extensionRelativeEntryPoint);
+                extensionRelativePath);
         return new PingRoutingCommand(Host.Type.Routing, id, vmStates);
     }
 
@@ -185,12 +185,12 @@ public class ExternalResource implements ServerResource {
         }
         if (cmd.isRemoved()) {
             extensionName = null;
-            extensionRelativeEntryPoint = null;
+            extensionRelativePath = null;
             extensionState = Extension.State.Disabled;
             return new Answer(cmd);
         }
         extensionName = cmd.getExtensionName();
-        extensionRelativeEntryPoint = cmd.getExtensionRelativeEntryPointPath();
+        extensionRelativePath = cmd.getExtensionRelativePath();
         extensionState = cmd.getExtensionState();
         return new Answer(cmd);
     }
@@ -252,7 +252,7 @@ public class ExternalResource implements ServerResource {
         if (isExtensionDisconnected() || isExtensionNotEnabled()) {
             return new StartAnswer(cmd, logAndGetExtensionNotConnectedOrDisabledError());
         }
-        return externalProvisioner.startInstance(guid, extensionName, extensionRelativeEntryPoint, cmd);
+        return externalProvisioner.startInstance(guid, extensionName, extensionRelativePath, cmd);
     }
 
     public StopAnswer execute(StopCommand cmd) {
@@ -260,30 +260,30 @@ public class ExternalResource implements ServerResource {
             return new StopAnswer(cmd, logAndGetExtensionNotConnectedOrDisabledError(), false);
         }
         if (cmd.isExpungeVM()) {
-            return externalProvisioner.expungeInstance(guid, extensionName, extensionRelativeEntryPoint, cmd);
+            return externalProvisioner.expungeInstance(guid, extensionName, extensionRelativePath, cmd);
         }
-        return externalProvisioner.stopInstance(guid, extensionName, extensionRelativeEntryPoint, cmd);
+        return externalProvisioner.stopInstance(guid, extensionName, extensionRelativePath, cmd);
     }
 
     public RebootAnswer execute(RebootCommand cmd) {
         if (isExtensionDisconnected() || isExtensionNotEnabled()) {
             return new RebootAnswer(cmd, logAndGetExtensionNotConnectedOrDisabledError(), false);
         }
-        return externalProvisioner.rebootInstance(guid, extensionName, extensionRelativeEntryPoint, cmd);
+        return externalProvisioner.rebootInstance(guid, extensionName, extensionRelativePath, cmd);
     }
 
     public PrepareExternalProvisioningAnswer execute(PrepareExternalProvisioningCommand cmd) {
         if (isExtensionDisconnected() || isExtensionNotEnabled()) {
             return new PrepareExternalProvisioningAnswer(cmd, false, logAndGetExtensionNotConnectedOrDisabledError());
         }
-        return externalProvisioner.prepareExternalProvisioning(guid, extensionName, extensionRelativeEntryPoint, cmd);
+        return externalProvisioner.prepareExternalProvisioning(guid, extensionName, extensionRelativePath, cmd);
     }
 
     public RunCustomActionAnswer execute(RunCustomActionCommand cmd) {
         if (isExtensionDisconnected() || isExtensionNotEnabled()) {
             return new RunCustomActionAnswer(cmd, false, logAndGetExtensionNotConnectedOrDisabledError());
         }
-        return externalProvisioner.runCustomAction(guid, extensionName, extensionRelativeEntryPoint, cmd);
+        return externalProvisioner.runCustomAction(guid, extensionName, extensionRelativePath, cmd);
     }
 
     public Answer execute(Command cmd) {
@@ -292,7 +292,7 @@ public class ExternalResource implements ServerResource {
         }
         RunCustomActionCommand runCustomActionCommand = new RunCustomActionCommand(cmd.toString());
         RunCustomActionAnswer customActionAnswer = externalProvisioner.runCustomAction(guid, extensionName,
-                extensionRelativeEntryPoint, runCustomActionCommand);
+                extensionRelativePath, runCustomActionCommand);
         return new Answer(cmd, customActionAnswer.getResult(), customActionAnswer.getDetails());
     }
 
@@ -357,7 +357,7 @@ public class ExternalResource implements ServerResource {
         this.name = name;
         guid = (String)params.get("guid");
         extensionName = (String)params.get("extensionName");
-        extensionRelativeEntryPoint = (String)params.get("extensionRelativeEntryPoint");
+        extensionRelativePath = (String)params.get("extensionRelativePath");
         extensionState = (Extension.State)params.get("extensionState");
         return true;
     }

@@ -42,8 +42,9 @@ import random
 import string
 import time
 
-
 _multiprocess_shared_ = True
+
+CONFIG_EXTENSION_PATH_STATE_CHECK_NAME = "extension.path.state.check.interval"
 
 class TestExtensions(cloudstackTestCase):
 
@@ -167,29 +168,29 @@ class TestExtensions(cloudstackTestCase):
         )
         self.cleanup.append(self.cluster)
 
-    def move_extension_entry_point_locally(self, source, target):
+    def move_extension_path_locally(self, source, target):
         try:
             Path(source).rename(target)
         except Exception as e:
-            self.fail(f"Failed to move extension entry-point on localhost: {str(e)}")
+            self.fail(f"Failed to move extension path on localhost: {str(e)}")
 
-    def move_extension_entry_point(self, entry_point, restore=False):
-        logging.info(f"Moving entry-point {entry_point}")
-        source = entry_point
-        target = f"{entry_point}-backup"
+    def move_extension_path(self, path, restore=False):
+        logging.info(f"Moving path {path}")
+        source = path
+        target = f"{path}-backup"
         if restore:
             source = target
-            target = entry_point
+            target = path
         server_ips = self.getManagementServerIps()
         if server_ips is None:
             if self.mgtSvrDetails["mgtSvrIp"] in ('localhost', '127.0.0.1'):
-                self.move_extension_entry_point_locally(source, target)
+                self.move_extension_path_locally(source, target)
                 return
-            self.fail(f"Extension entry-point cannot be moved on {cls.mgtSvrDetails['mgtSvrIp']}")
-        logging.info(f"Moving {entry_point} on all management servers")
+            self.fail(f"Extension path cannot be moved on {cls.mgtSvrDetails['mgtSvrIp']}")
+        logging.info(f"Moving {path} on all management servers")
         command = f"mv {source} {target}"
         for idx, server_ip in enumerate(server_ips):
-            logging.info(f"Moving {entry_point} on management server #{idx} with IP {server_ip}")
+            logging.info(f"Moving {path} on management server #{idx} with IP {server_ip}")
             sshClient = SshClient(
                 server_ip,
                 22,
@@ -227,8 +228,8 @@ class TestExtensions(cloudstackTestCase):
             "Check extension state failed"
         )
         self.assertTrue(
-            self.extension.entrypointready,
-            "Check extension entrypoint failed"
+            self.extension.pathready,
+            "Check extension path ready failed"
         )
         extension_details = self.extension.details.__dict__
         for k, v in details[0].items():
@@ -367,7 +368,7 @@ class TestExtensions(cloudstackTestCase):
     def test_08_extension_sync(self):
         sync_task_interval = 60
         if self.mgtSvrDetails["mgtSvrIp"] in ('localhost', '127.0.0.1'):
-            sync_config = Configurations.list(self.apiclient, name='extension.entrypoint.state.check.interval')[0]
+            sync_config = Configurations.list(self.apiclient, name=CONFIG_EXTENSION_PATH_STATE_CHECK_NAME)[0]
             if sync_config.value != str(sync_task_interval):
                 self.skipTest("Test running on localhost, MS cannot be restarted to change config")
         self.extension = Extension.create(
@@ -375,11 +376,11 @@ class TestExtensions(cloudstackTestCase):
             name=random_gen(),
             type='Orchestrator'
         )
-        self.assertTrue(self.extension.entrypointready, "Entry point not ready")
-        self.changeConfiguration('extension.entrypoint.state.check.interval', sync_task_interval)
+        self.assertTrue(self.extension.pathready, "Path not ready")
+        self.changeConfiguration(CONFIG_EXTENSION_PATH_STATE_CHECK_NAME, sync_task_interval)
         if len(self.staticConfigurations) > 0:
             self.restartAllManagementServers()
-        self.move_extension_entry_point(self.extension.entrypoint)
+        self.move_extension_path(self.extension.path)
         wait_multiple = 1.5
         wait = wait_multiple * sync_task_interval
         logging.info(f"Waiting for {wait_multiple}x{sync_task_interval} = {wait} seconds for background task to execute")
@@ -388,15 +389,15 @@ class TestExtensions(cloudstackTestCase):
             self.apiclient,
             id=self.extension.id
         )[0]
-        self.assertFalse(ext.entrypointready, "Entry point is still ready")
-        self.move_extension_entry_point(self.extension.entrypoint, True)
+        self.assertFalse(ext.pathready, "Path is still ready")
+        self.move_extension_path(self.extension.path, True)
         logging.info(f"Waiting for {wait_multiple}x{sync_task_interval} = {wait} seconds for background task to execute")
         time.sleep(wait)
         ext = Extension.list(
             self.apiclient,
             id=self.extension.id
         )[0]
-        self.assertTrue(ext.entrypointready, "Entry point not ready")
+        self.assertTrue(ext.pathready, "Path not ready")
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_09_extension_deploy_vm(self):

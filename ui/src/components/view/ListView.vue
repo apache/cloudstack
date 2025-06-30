@@ -114,7 +114,7 @@
                   }"/>
               </a-tooltip>
           </span>
-          <span v-if="$route.path.startsWith('/xaas') && !record.isuserdefined" style="padding-left: 10px;">
+          <span v-if="$route.path.startsWith('/extension') && !record.isuserdefined" style="padding-left: 10px;">
             <a-tag :color="$config.theme['@link-color']">{{ $t('label.inbuilt') }}</a-tag>
           </span>
         </span>
@@ -276,11 +276,8 @@
       <template v-if="column.key === 'agentstate'">
         <status :text="text ? text : ''" displayText />
       </template>
-      <template v-if="column.key === 'entrypoint'">
-        {{ text }}
-      </template>
-      <template v-if="column.key === 'entrypointstate'">
-        <status :text="text ? text : ''" displayText :styles="{ 'min-width': '80px' }" />
+      <template v-if="column.key === 'availability' && $route.path.startsWith('/extension')">
+        <status :text="text ? text : ''" displayText />
       </template>
       <template v-if="column.key === 'cpunumber'">
         <span>{{ record.serviceofferingdetails?.mincpunumber && record.serviceofferingdetails?.maxcpunumber ? `${record.serviceofferingdetails.mincpunumber} - ${record.serviceofferingdetails.maxcpunumber}` : record.cpunumber }}</span>
@@ -492,7 +489,7 @@
         <span v-else>  {{ text }} </span>
       </template>
       <template v-if="column.key === 'extensionname'">
-        <router-link v-if="$router.resolve('/xaas/' + record.extensionid).matched[0].redirect !== '/exception/404'" :to="{ path: '/xaas/' + record.extensionid }">{{ text }}</router-link>
+        <router-link v-if="$router.resolve('/extension/' + record.extensionid).matched[0].redirect !== '/exception/404'" :to="{ path: '/extension/' + record.extensionid }">{{ text }}</router-link>
         <span v-else>  {{ text + record}} </span>
       </template>
       <template v-if="column.key === 'success'">
@@ -773,7 +770,7 @@ export default {
         '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm', '/annotation',
         '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering',
         '/tungstenfabric', '/oauthsetting', '/guestos', '/guestoshypervisormapping', '/webhook', 'webhookdeliveries', '/quotatariff', '/sharedfs',
-        '/ipv4subnets', '/managementserver', '/xaas'].join('|'))
+        '/ipv4subnets', '/managementserver', '/extension'].join('|'))
         .test(this.$route.path)
     },
     enableGroupAction () {

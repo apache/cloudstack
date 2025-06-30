@@ -61,7 +61,7 @@
                   <a-tag v-if="resource.instancename">
                     {{ resource.instancename }}
                   </a-tag>
-                  <a-tag :color="$config.theme['@link-color']" v-if="$route.path.startsWith('/xaas') && !resource.isuserdefined">
+                  <a-tag :color="$config.theme['@link-color']" v-if="$route.path.startsWith('/extension') && !resource.isuserdefined">
                     {{ $t('label.inbuilt') }}
                   </a-tag>
                   <a-tag v-if="resource.type">
@@ -709,7 +709,7 @@
               <div class="resource-detail-item__label">{{ $t('label.extensionid') }}</div>
               <div class="resource-detail-item__details">
                 <node-expand-outlined />
-                <router-link v-if="$router.resolve('/xaas/' + resource.extensionid).matched[0].redirect !== '/exception/404'" :to="{ path: '/xaas/' + resource.extensionid }">{{ resource.extensionname || resource.extensionid }}</router-link>
+                <router-link v-if="$router.resolve('/extension/' + resource.extensionid).matched[0].redirect !== '/exception/404'" :to="{ path: '/extension/' + resource.extensionid }">{{ resource.extensionname || resource.extensionid }}</router-link>
                 <span v-else>{{ resource.extensionname || resource.extensionid }}</span>
               </div>
             </div>

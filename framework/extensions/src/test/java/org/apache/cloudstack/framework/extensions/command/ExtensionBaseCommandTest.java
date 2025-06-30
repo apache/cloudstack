@@ -53,11 +53,11 @@ public class ExtensionBaseCommandTest {
     }
 
     @Test
-    public void extensionRelativeEntryPointPathReturnsCorrectValue() {
+    public void extensionRelativePathReturnsCorrectValue() {
         Extension extension = mock(Extension.class);
-        when(extension.getRelativeEntryPoint()).thenReturn("/entry/point");
+        when(extension.getRelativePath()).thenReturn("/entry/point");
         ExtensionBaseCommand command = new ExtensionBaseCommand(extension);
-        assertEquals("/entry/point", command.getExtensionRelativeEntryPointPath());
+        assertEquals("/entry/point", command.getExtensionRelativePath());
     }
 
     @Test

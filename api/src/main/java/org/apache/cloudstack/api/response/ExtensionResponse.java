@@ -49,13 +49,13 @@ public class ExtensionResponse extends BaseResponse {
     @Param(description = "Type of the extension")
     private String type;
 
-    @SerializedName(ApiConstants.ENTRY_POINT)
+    @SerializedName(ApiConstants.PATH)
     @Param(description = "The path of the entry point fo the extension")
-    private String entryPoint;
+    private String path;
 
-    @SerializedName(ApiConstants.ENTRY_POINT_READY)
-    @Param(description = "True if the extension entry point is in ready state across management servers")
-    private Boolean entryPointReady;
+    @SerializedName(ApiConstants.PATH_READY)
+    @Param(description = "True if the extension path is in ready state across management servers")
+    private Boolean pathReady;
 
     @SerializedName(ApiConstants.IS_USER_DEFINED)
     @Param(description = "True if the extension is added by admin")
@@ -108,12 +108,12 @@ public class ExtensionResponse extends BaseResponse {
         return type;
     }
 
-    public String getEntryPoint() {
-        return entryPoint;
+    public String getPath() {
+        return path;
     }
 
-    public Boolean isEntryPointReady() {
-        return entryPointReady;
+    public Boolean isPathReady() {
+        return pathReady;
     }
 
     public Boolean isUserDefined() {
@@ -132,12 +132,12 @@ public class ExtensionResponse extends BaseResponse {
         return details;
     }
 
-    public void setEntryPoint(String entryPoint) {
-        this.entryPoint = entryPoint;
+    public void setPath(String path) {
+        this.path = path;
     }
 
-    public void setEntryPointReady(Boolean entryPointReady) {
-        this.entryPointReady = entryPointReady;
+    public void setPathReady(Boolean pathReady) {
+        this.pathReady = pathReady;
     }
 
     public void setUserDefined(Boolean userDefined) {

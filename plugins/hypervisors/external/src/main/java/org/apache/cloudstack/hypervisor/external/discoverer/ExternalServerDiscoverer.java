@@ -138,7 +138,7 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
 
     protected void addExtensionDataToResourceParams(ExtensionVO extension, Map<String, Object> params) {
         params.put("extensionName", extension.getName());
-        params.put("extensionRelativeEntryPoint", extension.getRelativeEntryPoint());
+        params.put("extensionRelativePath", extension.getRelativePath());
         params.put("extensionState", extension.getState());
     }
 
@@ -275,7 +275,7 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
                         ExtensionResourceMap.ResourceType.Cluster);
         ExtensionVO extension = extensionDao.findById(extensionResourceMapVO.getExtensionId());
         logger.debug("Creating host for {}", extension);
-        extensionsManager.prepareExtensionEntryPointAcrossServers(extension);
+        extensionsManager.prepareExtensionPathAcrossServers(extension);
         return _resourceMgr.fillRoutingHostVO(host, ssCmd, Hypervisor.HypervisorType.External, details, hostTags);
     }
 

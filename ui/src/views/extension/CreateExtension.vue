@@ -31,7 +31,7 @@
         <a-input
           v-model:value="form.name"
           :placeholder="apiParams.name.description"
-          @change="updateEntryPoint"
+          @change="updatePath"
           v-focus="true" />
       </a-form-item>
       <a-form-item name="description" ref="description">
@@ -42,18 +42,18 @@
           v-model:value="form.description"
           :placeholder="apiParams.description.description" />
       </a-form-item>
-      <a-form-item name="entrypoint" ref="entrypoint">
+      <a-form-item name="path" ref="path">
         <template #label>
-          <tooltip-label :title="$t('label.entrypoint')" :tooltip="apiParams.entrypoint.description"/>
+          <tooltip-label :title="$t('label.path')" :tooltip="apiParams.path.description"/>
         </template>
         <div class="entry-point-input-container">
           <span v-if="!!safeName" :title="extenstionBasePath" class="entry-point-input-base-path">
             {{ extenstionBasePath }}
           </span>
           <a-input
-            v-model:value="form.entrypoint"
-            :placeholder="apiParams.entrypoint.description"
-            @input="markEntryPointModified"
+            v-model:value="form.path"
+            :placeholder="apiParams.path.description"
+            @input="markPathModified"
             class="entry-point-input-relative-path"
           />
         </div>
@@ -117,7 +117,7 @@ export default {
   },
   data () {
     return {
-      entryPointModified: false,
+      pathModified: false,
       extensionTypes: [],
       loading: false
     }
@@ -163,19 +163,19 @@ export default {
       })
       this.form.type = this.extensionTypes?.[0]?.id
     },
-    markEntryPointModified () {
-      this.entryPointModified = true
+    markPathModified () {
+      this.pathModified = true
     },
-    updateEntryPoint () {
-      if (this.entryPointModified) {
+    updatePath () {
+      if (this.pathModified) {
         return
       }
       var value = this.safeName
       if (value.length === 0) {
-        this.form.entrypoint = undefined
+        this.form.path = undefined
         return
       }
-      this.form.entrypoint = value + '.sh'
+      this.form.path = value + '.sh'
     },
     handleSubmit (e) {
       e.preventDefault()
@@ -191,11 +191,11 @@ export default {
         if (values.description) {
           params.description = values.description
         }
-        var entryPoint = values.entrypoint
-        if (!entryPoint) {
-          entryPoint = this.safeName + '.sh'
+        var path = values.path
+        if (!path) {
+          path = this.safeName + '.sh'
         }
-        params.entrypoint = this.safeName + '/' + entryPoint
+        params.path = this.safeName + '/' + path
         if (values.details) {
           Object.entries(values.details).forEach(([key, value]) => {
             params['details[0].' + key] = value

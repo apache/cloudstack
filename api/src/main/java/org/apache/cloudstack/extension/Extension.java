@@ -32,8 +32,8 @@ public interface Extension extends InternalIdentity, Identity {
     String getName();
     String getDescription();
     Type getType();
-    String getRelativeEntryPoint();
-    boolean isEntryPointReady();
+    String getRelativePath();
+    boolean isPathReady();
     boolean isUserDefined();
     State getState();
     Date getCreated();

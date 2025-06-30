@@ -213,8 +213,8 @@ CREATE TABLE IF NOT EXISTS `cloud`.`extension` (
   `name` varchar(255) NOT NULL,
   `description` varchar(4096),
   `type` varchar(255) NOT NULL COMMENT 'Type of the extension: Orchestrator, etc',
-  `relative_entry_point` varchar(2048) NOT NULL COMMENT 'Path of entry point for the extension relative to the root extensions directory',
-  `entry_point_ready` tinyint(1) DEFAULT '0' COMMENT 'True if the extension entry point is in ready state across management servers',
+  `relative_path` varchar(2048) NOT NULL COMMENT 'Path for the extension relative to the root extensions directory',
+  `path_ready` tinyint(1) DEFAULT '0' COMMENT 'True if the extension path is in ready state across management servers',
   `is_user_defined` tinyint(1) DEFAULT '0' COMMENT 'True if the extension is added by admin',
   `state` char(32) NOT NULL COMMENT 'State of the extension - Enabled or Disabled',
   `created` datetime NOT NULL,
@@ -295,7 +295,7 @@ DROP PROCEDURE IF EXISTS `cloud`.`INSERT_EXTENSION_IF_NOT_EXISTS`;
 CREATE PROCEDURE `cloud`.`INSERT_EXTENSION_IF_NOT_EXISTS`(
     IN ext_name VARCHAR(255),
     IN ext_desc VARCHAR(255),
-    IN entry_point VARCHAR(255)
+    IN ext_path VARCHAR(255)
 )
 BEGIN
     IF NOT EXISTS (
@@ -303,12 +303,12 @@ BEGIN
     ) THEN
         INSERT INTO `cloud`.`extension` (
             `uuid`, `name`, `description`, `type`,
-            `relative_entry_point`, `entry_point_ready`,
+            `relative_path`, `path_ready`,
             `is_user_defined`, `state`, `created`, `removed`
         )
         VALUES (
             UUID(), ext_name, ext_desc, 'Orchestrator',
-            entry_point, 1, 0, 'Disabled', NOW(), NULL
+            ext_path, 1, 0, 'Disabled', NOW(), NULL
         )
 ;   END IF
 ;END;

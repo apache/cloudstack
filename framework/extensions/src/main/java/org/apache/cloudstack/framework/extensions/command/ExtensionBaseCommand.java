@@ -25,14 +25,14 @@ public class ExtensionBaseCommand extends Command {
     private final long extensionId;
     private final String extensionName;
     private final boolean extensionUserDefined;
-    private final String extensionRelativeEntryPointPath;
+    private final String extensionRelativePath;
     private final Extension.State extensionState;
 
     protected ExtensionBaseCommand(Extension extension) {
         this.extensionId = extension.getId();
         this.extensionName = extension.getName();
         this.extensionUserDefined = extension.isUserDefined();
-        this.extensionRelativeEntryPointPath = extension.getRelativeEntryPoint();
+        this.extensionRelativePath = extension.getRelativePath();
         this.extensionState = extension.getState();
     }
 
@@ -48,8 +48,8 @@ public class ExtensionBaseCommand extends Command {
         return extensionUserDefined;
     }
 
-    public String getExtensionRelativeEntryPointPath() {
-        return extensionRelativeEntryPointPath;
+    public String getExtensionRelativePath() {
+        return extensionRelativePath;
     }
 
     public Extension.State getExtensionState() {

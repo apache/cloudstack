@@ -19,7 +19,7 @@ import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 
 export default {
-  name: 'xaas',
+  name: 'extension',
   title: 'label.extensions',
   icon: 'node-expand-outlined',
   docHelp: 'adminguide/extensions.html',
@@ -33,10 +33,10 @@ export default {
   },
   resourceType: 'Extension',
   columns: () => {
-    var fields = ['name', 'state', 'type', 'entrypoint',
+    var fields = ['name', 'state', 'type', 'path',
       {
-        entrypointstate: (record) => {
-          if (record.entrypointready) {
+        availability: (record) => {
+          if (record.pathready) {
             return 'Ready'
           }
           return 'Not Ready'
@@ -44,7 +44,7 @@ export default {
       }, 'created']
     return fields
   },
-  details: ['name', 'description', 'id', 'type', 'details', 'entrypoint', 'entrypointready', 'isuserdefined', 'orchestratorrequirespreparevm', 'created'],
+  details: ['name', 'description', 'id', 'type', 'details', 'path', 'pathready', 'isuserdefined', 'orchestratorrequirespreparevm', 'created'],
   filters: ['orchestrator'],
   tabs: [{
     name: 'details',

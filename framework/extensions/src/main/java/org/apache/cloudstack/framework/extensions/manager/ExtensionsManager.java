@@ -54,7 +54,7 @@ public interface ExtensionsManager extends Manager {
 
     Extension createExtension(CreateExtensionCmd cmd);
 
-    boolean prepareExtensionEntryPointAcrossServers(Extension extension);
+    boolean prepareExtensionPathAcrossServers(Extension extension);
 
     List<ExtensionResponse> listExtensions(ListExtensionsCmd cmd);
 

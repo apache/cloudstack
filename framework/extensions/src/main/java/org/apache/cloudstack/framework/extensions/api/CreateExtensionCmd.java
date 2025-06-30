@@ -66,9 +66,9 @@ public class CreateExtensionCmd extends BaseCmd {
             description = "Type of the extension")
     private String type;
 
-    @Parameter(name = ApiConstants.ENTRY_POINT, type = CommandType.STRING,
-            description = "Relative path for entry point for extension")
-    private String entryPoint;
+    @Parameter(name = ApiConstants.PATH, type = CommandType.STRING,
+            description = "Relative path for the extension")
+    private String path;
 
     @Parameter(name = ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM,
             type = CommandType.BOOLEAN,
@@ -99,8 +99,8 @@ public class CreateExtensionCmd extends BaseCmd {
         return type;
     }
 
-    public String getEntryPoint() {
-        return entryPoint;
+    public String getPath() {
+        return path;
     }
 
     public Boolean isOrchestratorRequiresPrepareVm() {

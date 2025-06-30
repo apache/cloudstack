@@ -90,11 +90,11 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @RunWith(MockitoJUnitRunner.class)
-public class ExternalEntryPointPayloadProvisionerTest {
+public class ExternalPathPayloadProvisionerTest {
 
     @Spy
     @InjectMocks
-    private ExternalEntryPointPayloadProvisioner provisioner;
+    private ExternalPathPayloadProvisioner provisioner;
 
     @Mock
     private UserVmDao userVmDao;
@@ -204,33 +204,33 @@ public class ExternalEntryPointPayloadProvisionerTest {
     }
 
     @Test
-    public void testGetExtensionCheckedEntryPointPathValidFile() {
-        String result = provisioner.getExtensionCheckedEntryPointPath("test-extension", "test-extension.sh");
+    public void testGetExtensionCheckedPathValidFile() {
+        String result = provisioner.getExtensionCheckedPath("test-extension", "test-extension.sh");
 
         assertEquals(testScript.getAbsolutePath(), result);
     }
 
     @Test
-    public void testGetExtensionCheckedEntryPointPathFileNotExists() {
-        String result = provisioner.getExtensionCheckedEntryPointPath("test-extension", "nonexistent.sh");
+    public void testGetExtensionCheckedPathFileNotExists() {
+        String result = provisioner.getExtensionCheckedPath("test-extension", "nonexistent.sh");
 
         assertNull(result);
     }
 
     @Test
-    public void testGetExtensionCheckedEntryPointPathNoExecutePermissions() {
+    public void testGetExtensionCheckedPathNoExecutePermissions() {
         testScript.setExecutable(false);
-        String result = provisioner.getExtensionCheckedEntryPointPath("test-extension", "test-extension.sh");
+        String result = provisioner.getExtensionCheckedPath("test-extension", "test-extension.sh");
         assertNull(result);
         Mockito.verify(logger).error("{} is not executable", "Entry point [" + testScript.getAbsolutePath() + "] for extension: test-extension");
     }
 
     @Test
-    public void testGetExtensionCheckedEntryPointPathNoReadPermissions() {
+    public void testGetExtensionCheckedPathNoReadPermissions() {
         testScript.setWritable(false);
         testScript.setReadable(false);
         Assume.assumeFalse("Skipping test as file can not be marked unreadable", testScript.canRead());
-        String result = provisioner.getExtensionCheckedEntryPointPath("test-extension", "test-extension.sh");
+        String result = provisioner.getExtensionCheckedPath("test-extension", "test-extension.sh");
         assertNull(result);
         Mockito.verify(logger).error("{} is not readable", "Entry point [" + testScript.getAbsolutePath() + "] for extension: test-extension");
     }
@@ -274,22 +274,22 @@ public class ExternalEntryPointPayloadProvisionerTest {
     }
 
     @Test
-    public void testGetExtensionEntryPoint() {
-        String result = provisioner.getExtensionEntryPoint("test-extension.sh");
+    public void testGetExtensionPath() {
+        String result = provisioner.getExtensionPath("test-extension.sh");
         String expected = tempDir.getAbsolutePath() + File.separator + "test-extension.sh";
         assertEquals(expected, result);
     }
 
     @Test
-    public void testGetChecksumForExtensionEntryPoint() {
-        String result = provisioner.getChecksumForExtensionEntryPoint("test-extension", "test-extension.sh");
+    public void testGetChecksumForExtensionPath() {
+        String result = provisioner.getChecksumForExtensionPath("test-extension", "test-extension.sh");
 
         assertNotNull(result);
     }
 
     @Test
-    public void testGetChecksumForExtensionEntryPoint_InvalidFile() {
-        String result = provisioner.getChecksumForExtensionEntryPoint("test-extension", "nonexistent.sh");
+    public void testGetChecksumForExtensionPath_InvalidFile() {
+        String result = provisioner.getChecksumForExtensionPath("test-extension", "nonexistent.sh");
 
         assertNull(result);
     }
@@ -503,13 +503,13 @@ public class ExternalEntryPointPayloadProvisionerTest {
     }
 
     @Test
-    public void testPrepareExtensionEntryPoint() throws IOException {
+    public void testPrepareExtensionPath() throws IOException {
         try (MockedStatic<Script> scriptMock = Mockito.mockStatic(Script.class)) {
             File mockScript = new File(tempDir, "provisioner.sh");
             mockScript.createNewFile();
             scriptMock.when(() -> Script.findScript(anyString(), anyString())).thenReturn(mockScript.getAbsolutePath());
 
-            provisioner.prepareExtensionEntryPoint("test-extension", true, "test-extension-new.sh");
+            provisioner.prepareExtensionPath("test-extension", true, "test-extension-new.sh");
 
             File createdFile = new File(tempDir, "test-extension-new.sh");
             assertTrue(createdFile.exists());
@@ -517,38 +517,38 @@ public class ExternalEntryPointPayloadProvisionerTest {
     }
 
     @Test
-    public void testPrepareExtensionEntryPointNotUserDefined() {
-        provisioner.prepareExtensionEntryPoint("test-extension", false, "test-extension-builtin.sh");
+    public void testPrepareExtensionPathNotUserDefined() {
+        provisioner.prepareExtensionPath("test-extension", false, "test-extension-builtin.sh");
         File createdFile = new File(tempDir, "test-extension-builtin.sh");
         assertFalse(createdFile.exists());
     }
 
     @Test
-    public void testPrepareExtensionEntryPointNotBashScript() {
-        provisioner.prepareExtensionEntryPoint("test-extension", true, "test-extension.txt");
+    public void testPrepareExtensionPathNotBashScript() {
+        provisioner.prepareExtensionPath("test-extension", true, "test-extension.txt");
 
         File createdFile = new File(tempDir, "test-extension.txt");
         assertFalse(createdFile.exists());
     }
 
     @Test
-    public void testPrepareExtensionEntryPointFileAlreadyExists() {
+    public void testPrepareExtensionPathFileAlreadyExists() {
         File existingFile = new File(tempDir, "test-extension.sh");
 
-        provisioner.prepareExtensionEntryPoint("test-extension", true, "test-extension.sh");
+        provisioner.prepareExtensionPath("test-extension", true, "test-extension.sh");
 
         assertTrue(existingFile.exists());
     }
 
     @Test
-    public void testCleanupExtensionEntryPoint() throws IOException {
+    public void testCleanupExtensionPath() throws IOException {
         String extensionDirName = Extension.getDirectoryName("test-extension");
         File extensionDir = new File(tempDir, extensionDirName);
         extensionDir.mkdirs();
         File testFile = new File(extensionDir, "test-file.txt");
         testFile.createNewFile();
 
-        provisioner.cleanupExtensionEntryPoint("test-extension", extensionDirName + "/test-file.txt");
+        provisioner.cleanupExtensionPath("test-extension", extensionDirName + "/test-file.txt");
 
         assertFalse(testFile.exists());
     }

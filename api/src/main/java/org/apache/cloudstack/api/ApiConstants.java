@@ -204,8 +204,6 @@ public class ApiConstants {
     public static final String END_IP = "endip";
     public static final String END_IPV6 = "endipv6";
     public static final String END_PORT = "endport";
-    public static final String ENTRY_POINT = "entrypoint";
-    public static final String ENTRY_POINT_READY = "entrypointready";
     public static final String ENTRY_TIME = "entrytime";
     public static final String ERROR_MESSAGE = "errormessage";
     public static final String EVENT_ID = "eventid";
@@ -416,6 +414,7 @@ public class ApiConstants {
     public static final String PASSWORD_ENABLED = "passwordenabled";
     public static final String SSHKEY_ENABLED = "sshkeyenabled";
     public static final String PATH = "path";
+    public static final String PATH_READY = "pathready";
     public static final String PAYLOAD = "payload";
     public static final String PAYLOAD_URL = "payloadurl";
     public static final String PEERS = "peers";

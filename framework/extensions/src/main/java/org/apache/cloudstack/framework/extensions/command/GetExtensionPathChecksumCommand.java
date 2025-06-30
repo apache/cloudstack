@@ -19,9 +19,9 @@ package org.apache.cloudstack.framework.extensions.command;
 
 import org.apache.cloudstack.extension.Extension;
 
-public class PrepareExtensionEntryPointCommand extends ExtensionServerActionBaseCommand {
+public class GetExtensionPathChecksumCommand extends ExtensionServerActionBaseCommand {
 
-    public PrepareExtensionEntryPointCommand(long msId, Extension extension) {
+    public GetExtensionPathChecksumCommand(long msId, Extension extension) {
         super(msId, extension);
     }
 }

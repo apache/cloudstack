@@ -93,13 +93,13 @@ public class ExternalServerDiscovererTest {
     public void testAddExtensionDataToResourceParams() {
         Map<String, Object> params = new HashMap<>();
         when(extensionVO.getName()).thenReturn("ext");
-        when(extensionVO.getRelativeEntryPoint()).thenReturn("entry.sh");
+        when(extensionVO.getRelativePath()).thenReturn("entry.sh");
         when(extensionVO.getState()).thenReturn(ExtensionVO.State.Enabled);
 
         discoverer.addExtensionDataToResourceParams(extensionVO, params);
 
         assertEquals("ext", params.get("extensionName"));
-        assertEquals("entry.sh", params.get("extensionRelativeEntryPoint"));
+        assertEquals("entry.sh", params.get("extensionRelativePath"));
         assertEquals(ExtensionVO.State.Enabled, params.get("extensionState"));
     }
 
@@ -151,14 +151,14 @@ public class ExternalServerDiscovererTest {
         when(extensionResourceMapVO.getExtensionId()).thenReturn(10L);
         when(extensionDao.findById(10L)).thenReturn(extensionVO);
         when(extensionVO.getName()).thenReturn("ext");
-        when(extensionVO.getRelativeEntryPoint()).thenReturn("entry.sh");
+        when(extensionVO.getRelativePath()).thenReturn("entry.sh");
         when(extensionVO.getState()).thenReturn(ExtensionVO.State.Enabled);
         when(_clusterDao.findById(anyLong())).thenReturn(clusterVO);
         when(clusterVO.getGuid()).thenReturn(UUID.randomUUID().toString());
 
         HashMap<String, Object> result = discoverer.buildConfigParams(hostVO);
         assertEquals("ext", result.get("extensionName"));
-        assertEquals("entry.sh", result.get("extensionRelativeEntryPoint"));
+        assertEquals("entry.sh", result.get("extensionRelativePath"));
         assertEquals(ExtensionVO.State.Enabled, result.get("extensionState"));
     }
 

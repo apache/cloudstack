@@ -58,10 +58,10 @@ public class CreateExtensionCmdTest {
     }
 
     @Test
-    public void testGetEntryPointReturnsValueWhenSet() {
-        String entryPoint = "/entry";
-        setField(cmd, "entryPoint", entryPoint);
-        assertEquals(entryPoint, cmd.getEntryPoint());
+    public void testGetPathReturnsValueWhenSet() {
+        String path = "/entry";
+        setField(cmd, "path", path);
+        assertEquals(path, cmd.getPath());
     }
 
     @Test

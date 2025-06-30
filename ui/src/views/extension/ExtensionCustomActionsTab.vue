@@ -34,7 +34,7 @@
       :rowExpandable="(record) => record.parameters && Object.keys(record.parameters).length > 0">
       <template #bodyCell="{ column, text, record }">
         <template v-if="column.key === 'name'">
-          <router-link :to="{ path: '/extca/' + record.id }">
+          <router-link :to="{ path: '/customaction/' + record.id }">
             {{ text }}
           </router-link>
         </template>

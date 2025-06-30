@@ -45,14 +45,14 @@ public class ExtensionVO implements Extension {
         this.created = new Date();
     }
 
-    public ExtensionVO(String name, String description, Type type, String relativeEntryPoint, State state) {
+    public ExtensionVO(String name, String description, Type type, String relativePath, State state) {
         this.uuid = UUID.randomUUID().toString();
         this.name = name;
         this.description = description;
         this.type = type;
-        this.relativeEntryPoint = relativeEntryPoint;
+        this.relativePath = relativePath;
         this.userDefined = true;
-        this.entryPointReady = true;
+        this.pathReady = true;
         this.state = state;
         this.created = new Date();
     }
@@ -75,11 +75,11 @@ public class ExtensionVO implements Extension {
     @Enumerated(value = EnumType.STRING)
     private Type type;
 
-    @Column(name = "relative_entry_point", nullable = false, length = 2048)
-    private String relativeEntryPoint;
+    @Column(name = "relative_path", nullable = false, length = 2048)
+    private String relativePath;
 
-    @Column(name = "entry_point_ready")
-    private boolean entryPointReady;
+    @Column(name = "path_ready")
+    private boolean pathReady;
 
     @Column(name = "is_user_defined")
     private boolean userDefined;
@@ -128,21 +128,21 @@ public class ExtensionVO implements Extension {
     }
 
     @Override
-    public String getRelativeEntryPoint() {
-        return relativeEntryPoint;
+    public String getRelativePath() {
+        return relativePath;
     }
 
-    public void setRelativeEntryPoint(String relativeEntryPoint) {
-        this.relativeEntryPoint = relativeEntryPoint;
+    public void setRelativePath(String relativePath) {
+        this.relativePath = relativePath;
     }
 
     @Override
-    public boolean isEntryPointReady() {
-        return entryPointReady;
+    public boolean isPathReady() {
+        return pathReady;
     }
 
-    public void setEntryPointReady(boolean entryPointReady) {
-        this.entryPointReady = entryPointReady;
+    public void setPathReady(boolean pathReady) {
+        this.pathReady = pathReady;
     }
 
     @Override

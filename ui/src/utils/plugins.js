@@ -388,10 +388,8 @@ export const resourceTypePlugin = {
           return 'kubernetes'
         case 'KubernetesSupportedVersion':
           return 'kubernetesiso'
-        case 'Extension':
-          return 'xaas'
         case 'ExtensionCustomAction':
-          return 'extca'
+          return 'customaction'
         case 'SystemVm':
         case 'PhysicalNetwork':
         case 'Backup':

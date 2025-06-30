@@ -91,7 +91,7 @@ import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
-public class ExternalEntryPointPayloadProvisioner extends ManagerBase implements ExternalProvisioner, PluggableService {
+public class ExternalPathPayloadProvisioner extends ManagerBase implements ExternalProvisioner, PluggableService {
 
     public static final String BASE_EXTERNAL_PROVISIONER_SCRIPTS_DIR = "scripts/vm/hypervisor/external/provisioner";
     public static final String BASE_EXTERNAL_PROVISIONER_SHELL_SCRIPT =
@@ -144,8 +144,8 @@ public class ExternalEntryPointPayloadProvisioner extends ManagerBase implements
         return modifiedDetails;
     }
 
-    protected String getExtensionCheckedEntryPointPath(String extensionName, String extensionRelativeEntryPoint) {
-        String path = getExtensionEntryPoint(extensionRelativeEntryPoint);
+    protected String getExtensionCheckedPath(String extensionName, String extensionRelativePath) {
+        String path = getExtensionPath(extensionRelativePath);
         File file = new File(path);
         String errorSuffix = String.format("Entry point [%s] for extension: %s", path, extensionName);
         if (!file.exists()) {
@@ -261,18 +261,18 @@ public class ExternalEntryPointPayloadProvisioner extends ManagerBase implements
     }
 
     @Override
-    public String getExtensionEntryPoint(String relativeEntryPoint) {
-        return String.format("%s%s%s", extensionsDirectory, File.separator, relativeEntryPoint);
+    public String getExtensionPath(String relativePath) {
+        return String.format("%s%s%s", extensionsDirectory, File.separator, relativePath);
     }
 
     @Override
-    public String getChecksumForExtensionEntryPoint(String extensionName, String relativeEntryPoint) {
-        String entryPoint = getExtensionCheckedEntryPointPath(extensionName, relativeEntryPoint);
-        if (StringUtils.isBlank(entryPoint)) {
+    public String getChecksumForExtensionPath(String extensionName, String relativePath) {
+        String path = getExtensionCheckedPath(extensionName, relativePath);
+        if (StringUtils.isBlank(path)) {
             return null;
         }
         try {
-            return DigestHelper.calculateChecksum(new File(entryPoint));
+            return DigestHelper.calculateChecksum(new File(path));
         } catch (CloudRuntimeException ignored) {
             return null;
         }
@@ -280,8 +280,8 @@ public class ExternalEntryPointPayloadProvisioner extends ManagerBase implements
 
     @Override
     public PrepareExternalProvisioningAnswer prepareExternalProvisioning(String hostGuid,
-                 String extensionName, String extensionRelativeEntryPoint, PrepareExternalProvisioningCommand cmd) {
-        String extensionPath = getExtensionCheckedEntryPointPath(extensionName, extensionRelativeEntryPoint);
+                 String extensionName, String extensionRelativePath, PrepareExternalProvisioningCommand cmd) {
+        String extensionPath = getExtensionCheckedPath(extensionName, extensionRelativePath);
         if (StringUtils.isEmpty(extensionPath)) {
             return new PrepareExternalProvisioningAnswer(cmd, false, "Extension not configured");
         }
@@ -311,9 +311,9 @@ public class ExternalEntryPointPayloadProvisioner extends ManagerBase implements
     }
 
     @Override
-    public StartAnswer startInstance(String hostGuid, String extensionName, String extensionRelativeEntryPoint,
+    public StartAnswer startInstance(String hostGuid, String extensionName, String extensionRelativePath,
                              StartCommand cmd) {
-        String extensionPath = getExtensionCheckedEntryPointPath(extensionName, extensionRelativeEntryPoint);
+        String extensionPath = getExtensionCheckedPath(extensionName, extensionRelativePath);
         if (StringUtils.isEmpty(extensionPath)) {
             return new StartAnswer(cmd, "Extension not configured");
         }
@@ -355,9 +355,9 @@ public class ExternalEntryPointPayloadProvisioner extends ManagerBase implements
     }
 
     @Override
-    public StopAnswer stopInstance(String hostGuid, String extensionName, String extensionRelativeEntryPoint,
+    public StopAnswer stopInstance(String hostGuid, String extensionName, String extensionRelativePath,
                            StopCommand cmd) {
-        String extensionPath = getExtensionCheckedEntryPointPath(extensionName, extensionRelativeEntryPoint);
+        String extensionPath = getExtensionCheckedPath(extensionName, extensionRelativePath);
         if (StringUtils.isEmpty(extensionPath)) {
             return new StopAnswer(cmd, "Extension not configured", false);
         }
@@ -376,9 +376,9 @@ public class ExternalEntryPointPayloadProvisioner extends ManagerBase implements
     }
 
     @Override
-    public RebootAnswer rebootInstance(String hostGuid, String extensionName, String extensionRelativeEntryPoint,
+    public RebootAnswer rebootInstance(String hostGuid, String extensionName, String extensionRelativePath,
                            RebootCommand cmd) {
-        String extensionPath = getExtensionCheckedEntryPointPath(extensionName, extensionRelativeEntryPoint);
+        String extensionPath = getExtensionCheckedPath(extensionName, extensionRelativePath);
         if (StringUtils.isEmpty(extensionPath)) {
             return new RebootAnswer(cmd, "Extension not configured", false);
         }
@@ -397,9 +397,9 @@ public class ExternalEntryPointPayloadProvisioner extends ManagerBase implements
     }
 
     @Override
-    public StopAnswer expungeInstance(String hostGuid, String extensionName, String extensionRelativeEntryPoint,
+    public StopAnswer expungeInstance(String hostGuid, String extensionName, String extensionRelativePath,
                           StopCommand cmd) {
-        String extensionPath = getExtensionCheckedEntryPointPath(extensionName, extensionRelativeEntryPoint);
+        String extensionPath = getExtensionCheckedPath(extensionName, extensionRelativePath);
         if (StringUtils.isEmpty(extensionPath)) {
             return new StopAnswer(cmd, "Extension not configured", false);
         }
@@ -418,9 +418,9 @@ public class ExternalEntryPointPayloadProvisioner extends ManagerBase implements
 
     @Override
     public Map<String, HostVmStateReportEntry> getHostVmStateReport(long hostId, String extensionName,
-                            String extensionRelativeEntryPoint) {
+                            String extensionRelativePath) {
         final Map<String, HostVmStateReportEntry> vmStates = new HashMap<>();
-        String extensionPath = getExtensionCheckedEntryPointPath(extensionName, extensionRelativeEntryPoint);
+        String extensionPath = getExtensionCheckedPath(extensionName, extensionRelativePath);
         if (StringUtils.isEmpty(extensionPath)) {
             return vmStates;
         }
@@ -445,8 +445,8 @@ public class ExternalEntryPointPayloadProvisioner extends ManagerBase implements
 
     @Override
     public RunCustomActionAnswer runCustomAction(String hostGuid, String extensionName,
-                         String extensionRelativeEntryPoint, RunCustomActionCommand cmd) {
-        String extensionPath = getExtensionCheckedEntryPointPath(extensionName, extensionRelativeEntryPoint);
+                         String extensionRelativePath, RunCustomActionCommand cmd) {
+        String extensionPath = getExtensionCheckedPath(extensionName, extensionRelativePath);
         if (StringUtils.isEmpty(extensionPath)) {
             return new RunCustomActionAnswer(cmd, false, "Extension not configured");
         }
@@ -472,7 +472,7 @@ public class ExternalEntryPointPayloadProvisioner extends ManagerBase implements
         return new RunCustomActionAnswer(cmd, result.first(), result.second());
     }
 
-    protected boolean createEntryPoint(String extensionName, Path destinationPathObj) throws IOException {
+    protected boolean createExtensionPath(String extensionName, Path destinationPathObj) throws IOException {
         String sourceScriptPath = Script.findScript("", BASE_EXTERNAL_PROVISIONER_SHELL_SCRIPT);
         if(sourceScriptPath == null) {
             logger.error("Failed to find base script for preparing extension: {}",
@@ -485,14 +485,14 @@ public class ExternalEntryPointPayloadProvisioner extends ManagerBase implements
     }
 
     @Override
-    public void prepareExtensionEntryPoint(String extensionName, boolean userDefined,
-                           String extensionRelativeEntryPoint) {
+    public void prepareExtensionPath(String extensionName, boolean userDefined,
+                           String extensionRelativePath) {
         logger.debug("Preparing entry point for Extension [name: {}, user-defined: {}]", extensionName, userDefined);
         if (!userDefined) {
             logger.debug("Skipping preparing entry point for inbuilt extension: {}", extensionName);
             return;
         }
-        String destinationPath = getExtensionEntryPoint(extensionRelativeEntryPoint);
+        String destinationPath = getExtensionPath(extensionRelativePath);
         if (!destinationPath.endsWith(".sh")) {
             logger.info("File {} for extension: {} is not a bash script, skipping copy.", destinationPath,
                     extensionName);
@@ -524,7 +524,7 @@ public class ExternalEntryPointPayloadProvisioner extends ManagerBase implements
             throw exception;
         }
         try {
-            if (!createEntryPoint(extensionName, destinationPathObj)) {
+            if (!createExtensionPath(extensionName, destinationPathObj)) {
                 throw exception;
             }
         } catch (IOException e) {
@@ -537,8 +537,8 @@ public class ExternalEntryPointPayloadProvisioner extends ManagerBase implements
     }
 
     @Override
-    public void cleanupExtensionEntryPoint(String extensionName, String extensionRelativeEntryPoint) {
-        String normalizedPath = extensionRelativeEntryPoint;
+    public void cleanupExtensionPath(String extensionName, String extensionRelativePath) {
+        String normalizedPath = extensionRelativePath;
         if (normalizedPath.startsWith("/")) {
             normalizedPath = normalizedPath.substring(1);
         }
@@ -555,7 +555,7 @@ public class ExternalEntryPointPayloadProvisioner extends ManagerBase implements
                 throw new CloudRuntimeException(
                         String.format("Failed to cleanup extension entry-point: %s for extension: %s as it either " +
                                         "does not exist or is not a regular file/directory",
-                                extensionName, extensionRelativeEntryPoint));
+                                extensionName, extensionRelativePath));
             }
             if (!FileUtil.deleteRecursively(filePath)) {
                 throw new CloudRuntimeException(
