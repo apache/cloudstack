@@ -100,9 +100,27 @@ backup_running_vm() {
     name="datadisk"
   done
   echo "</disks></domainbackup>" >> $dest/backup.xml
+d
+  local thaw=0
+  if virsh -c qemu:///system qemu-agent-command "$VM" '{"execute":"guest-fsfreeze-freeze"}' > /dev/null 2>/dev/null; then
+    thaw=1
+  fi
 
   # Start push backup
-  virsh -c qemu:///system backup-begin --domain $VM --backupxml $dest/backup.xml > /dev/null 2>/dev/null
+  local backup_begin=0
+  if virsh -c qemu:///system backup-begin --domain $VM --backupxml $dest/backup.xml > /dev/null 2>&1; then
+    backup_begin=1;
+  fi
+
+  if [[ $thaw -eq 1 ]]; then
+    if ! virsh -c qemu:///system qemu-agent-command "$VM" '{"execute":"guest-fsfreeze-thaw"}' > /dev/null 2>&1; then
+      echo "FS thaw failed for $VM"
+    fi
+  fi
+
+  if [[ $backup_begin -ne 1 ]]; then
+    exit 1
+  fi
 
   # Backup domain information
   virsh -c qemu:///system dumpxml $VM > $dest/domain-config.xml 2>/dev/null
