@@ -6246,11 +6246,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             networkIds = new ArrayList<>(userVmNetworkMap.values());
         }
 
-        return createVirtualMachine(cmd, zone, owner, serviceOffering, template, diskOfferingId, cmd.getSize(), overrideDiskOfferingId, dataDiskOfferingsInfo, networkIds, cmd.getIpToNetworkMap());
+        return createVirtualMachine(cmd, zone, owner, serviceOffering, template, cmd.getHypervisor(), diskOfferingId, cmd.getSize(), overrideDiskOfferingId, dataDiskOfferingsInfo, networkIds, cmd.getIpToNetworkMap());
     }
 
     private UserVm createVirtualMachine(BaseDeployVMCmd cmd, DataCenter zone, Account owner, ServiceOffering serviceOffering, VirtualMachineTemplate template,
-                                        Long diskOfferingId, Long size, Long overrideDiskOfferingId, List<DiskOfferingInfo> dataDiskOfferingsInfo,
+                                        HypervisorType hypervisor, Long diskOfferingId, Long size, Long overrideDiskOfferingId, List<DiskOfferingInfo> dataDiskOfferingsInfo,
                                         List<Long> networkIds, Map<Long, IpAddresses> ipToNetworkMap) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, ResourceAllocationException {
 
         ServiceOfferingJoinVO svcOffering = serviceOfferingJoinDao.findById(serviceOffering.getId());
@@ -6306,7 +6306,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 throw new InvalidParameterValueException("Can't specify network Ids in Basic zone");
             } else {
                 vm = createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, getSecurityGroupIdList(cmd, zone, template, owner), owner, name, displayName, diskOfferingId,
-                        size , dataDiskOfferingsInfo, group , cmd.getHypervisor(), cmd.getHttpMethod(), userData, userDataId, userDataDetails, sshKeyPairNames, ipToNetworkMap, addrs, displayVm , keyboard , cmd.getAffinityGroupIdList(),
+                        size , dataDiskOfferingsInfo, group , hypervisor, cmd.getHttpMethod(), userData, userDataId, userDataDetails, sshKeyPairNames, ipToNetworkMap, addrs, displayVm , keyboard , cmd.getAffinityGroupIdList(),
                         cmd.getDetails(), cmd.getCustomId(), cmd.getDhcpOptionsMap(),
                         dataDiskTemplateToDiskOfferingMap, userVmOVFProperties, dynamicScalingEnabled, overrideDiskOfferingId);
             }
@@ -6314,7 +6314,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (_networkModel.checkSecurityGroupSupportForNetwork(owner, zone, networkIds,
                     cmd.getSecurityGroupIdList()))  {
                 vm = createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, networkIds, getSecurityGroupIdList(cmd, zone, template, owner), owner, name,
-                        displayName, diskOfferingId, size, dataDiskOfferingsInfo, group, cmd.getHypervisor(), cmd.getHttpMethod(), userData, userDataId, userDataDetails, sshKeyPairNames, ipToNetworkMap, addrs, displayVm, keyboard,
+                        displayName, diskOfferingId, size, dataDiskOfferingsInfo, group, hypervisor, cmd.getHttpMethod(), userData, userDataId, userDataDetails, sshKeyPairNames, ipToNetworkMap, addrs, displayVm, keyboard,
                         cmd.getAffinityGroupIdList(), cmd.getDetails(), cmd.getCustomId(), cmd.getDhcpOptionsMap(),
                         dataDiskTemplateToDiskOfferingMap, userVmOVFProperties, dynamicScalingEnabled, overrideDiskOfferingId, null);
 
@@ -6323,7 +6323,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     throw new InvalidParameterValueException("Can't create vm with security groups; security group feature is not enabled per zone");
                 }
                 vm = createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner, name, displayName, diskOfferingId, size, dataDiskOfferingsInfo, group,
-                        cmd.getHypervisor(), cmd.getHttpMethod(), userData, userDataId, userDataDetails, sshKeyPairNames, ipToNetworkMap, addrs, displayVm, keyboard, cmd.getAffinityGroupIdList(), cmd.getDetails(),
+                        hypervisor, cmd.getHttpMethod(), userData, userDataId, userDataDetails, sshKeyPairNames, ipToNetworkMap, addrs, displayVm, keyboard, cmd.getAffinityGroupIdList(), cmd.getDetails(),
                         cmd.getCustomId(), cmd.getDhcpOptionsMap(), dataDiskTemplateToDiskOfferingMap, userVmOVFProperties, dynamicScalingEnabled, null, overrideDiskOfferingId);
                 if (cmd instanceof DeployVnfApplianceCmd) {
                     vnfTemplateManager.createIsolatedNetworkRulesForVnfAppliance(zone, template, owner, vm, (DeployVnfApplianceCmd) cmd);
@@ -9429,7 +9429,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             size = cmd.getSize();
         }
 
-        return createVirtualMachine(cmd, zone, owner, serviceOffering, template, diskOfferingId, size, overrideDiskOfferingId, dataDiskOfferingsInfo, networkIds, ipToNetworkMap);
+        return createVirtualMachine(cmd, zone, owner, serviceOffering, template, hypervisorType, diskOfferingId, size, overrideDiskOfferingId, dataDiskOfferingsInfo, networkIds, ipToNetworkMap);
     }
 
     @Override
@@ -9450,9 +9450,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 throw new CloudRuntimeException("Unable to stop the instance before restore");
             }
 
+            Long isoId = vm.getIsoId();
+            if (isoId != null) {
+                UserVmVO vmVO = _vmDao.findById(vmId);
+                vmVO.setIsoId(null);
+                _vmDao.update(vm.getId(), vmVO);
+            }
+
             backupManager.restoreBackupToVM(cmd.getBackupId(), vmId);
 
-        } catch (Exception e) {
+        } catch (CloudRuntimeException e) {
             UserVmVO vmVO = _vmDao.findById(vmId);
             try {
                 expunge(vmVO);

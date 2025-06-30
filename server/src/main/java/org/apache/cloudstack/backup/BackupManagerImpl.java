@@ -1180,7 +1180,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             if (!backupProvider.restoreBackupToVM(vm, backup, host, dataStore)) {
                 throw new CloudRuntimeException(String.format("Error restoring backup [%s] to VM %s.", backupDetailsInMessage, vm.getUuid()));
             }
-        } catch (CloudRuntimeException e) {
+        } catch (Exception e) {
             updateVolumeState(vm, Volume.Event.RestoreFailed, Volume.State.Ready);
             updateVmState(vm, VirtualMachine.Event.RestoringFailed, VirtualMachine.State.Stopped);
             logger.error(String.format("Failed to restore backup [%s] to VM %s due to: [%s].", backupDetailsInMessage, vm.getInstanceName(), e.getMessage()), e);
