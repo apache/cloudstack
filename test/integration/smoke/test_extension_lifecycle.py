@@ -303,10 +303,10 @@ class TestExtensions(cloudstackTestCase):
             updated_extension.details is not None,
             "Check extension details not None"
         )
-#         updated_details = updated_extension.details.__dict__
-#         for k, v in details[0].items():
-#             self.assertIn(k, updated_details, f"Key '{k}' should be present in updated details")
-#             self.assertEqual(v, updated_details[k], f"Value for key '{k}' should be '{v}'")
+        updated_details = updated_extension.details.__dict__
+        for k, v in details[0].items():
+            self.assertIn(k, updated_details, f"Key '{k}' should be present in updated details")
+            self.assertEqual(v, updated_details[k], f"Value for key '{k}' should be '{v}'")
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_05_register_unregister_extension(self):

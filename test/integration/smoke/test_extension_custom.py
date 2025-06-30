@@ -393,8 +393,8 @@ class TestExtensions(cloudstackTestCase):
                 self.mgtSvrDetails["passwd"]
             )
             results = sshClient.execute(command)
-            if results and len(results) > 0:
-                return results[0].strip()
+            if isinstance(results, list) and len(results) > 0:
+                return '\n'.join(line.strip() for line in results)
         return None
 
     def check_vm_content_values(self, content):
@@ -476,7 +476,7 @@ class TestExtensions(cloudstackTestCase):
                 self.mgtSvrDetails["passwd"]
             )
             results = sshClient.execute(command)
-            if result and result[0].strip() == "EXISTS":
+            if results is not None and results[0].strip() == "EXISTS":
                 return True
         return False
 
