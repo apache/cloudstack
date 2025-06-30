@@ -453,22 +453,30 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         certExecutor.schedule(new PostCertificateRenewalTask(this), 5, TimeUnit.SECONDS);
     }
 
-    private void scheduleHostLBCheckerTask(final long checkInterval) {
+    private void scheduleHostLBCheckerTask(final String lbAlgorithm, final long checkInterval) {
         String name = "HostLBCheckerTask";
         if (hostLbCheckExecutor != null && !hostLbCheckExecutor.isShutdown()) {
+            logger.info("Shutting down the preferred host checker task {}", name);
             hostLbCheckExecutor.shutdown();
             try {
                 if (!hostLbCheckExecutor.awaitTermination(1, TimeUnit.SECONDS)) {
                     hostLbCheckExecutor.shutdownNow();
                 }
             } catch (InterruptedException e) {
-                logger.debug("Forcing {} shutdown as it did not shutdown in the desired time due to: {}",
+                logger.debug("Forcing the preferred host checker task {} shutdown as it did not shutdown in the desired time due to: {}",
                         name, e.getMessage());
                 hostLbCheckExecutor.shutdownNow();
             }
         }
         if (checkInterval > 0L) {
-            logger.info("Scheduling preferred host task with host.lb.interval={}ms", checkInterval);
+            if ("shuffle".equalsIgnoreCase(lbAlgorithm)) {
+                logger.info("Scheduling the preferred host checker task to trigger once (to apply lb algorithm '{}') after host.lb.interval={} ms", lbAlgorithm, checkInterval);
+                hostLbCheckExecutor = Executors.newSingleThreadScheduledExecutor((new NamedThreadFactory(name)));
+                hostLbCheckExecutor.schedule(new PreferredHostCheckerTask(), checkInterval, TimeUnit.MILLISECONDS);
+                return;
+            }
+
+            logger.info("Scheduling a recurring preferred host checker task with lb algorithm '{}' and host.lb.interval={} ms", lbAlgorithm, checkInterval);
             hostLbCheckExecutor = Executors.newSingleThreadScheduledExecutor((new NamedThreadFactory(name)));
             hostLbCheckExecutor.scheduleAtFixedRate(new PreferredHostCheckerTask(), checkInterval, checkInterval,
                     TimeUnit.MILLISECONDS);
@@ -942,16 +950,12 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         }
         shell.setAvoidHosts(avoidMsList);
         if (triggerHostLB) {
-            logger.info("Triggering preferred host task");
+            logger.info("Triggering the preferred host checker task now");
             ScheduledExecutorService hostLbExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("HostLB-Executor"));
             hostLbExecutor.schedule(new PreferredHostCheckerTask(), 0, TimeUnit.MILLISECONDS);
             hostLbExecutor.shutdown();
         }
-        if ("shuffle".equals(lbAlgorithm)) {
-            scheduleHostLBCheckerTask(0);
-        } else {
-            scheduleHostLBCheckerTask(shell.getLbCheckerInterval(lbCheckInterval));
-        }
+        scheduleHostLBCheckerTask(lbAlgorithm, shell.getLbCheckerInterval(lbCheckInterval));
     }
 
     private Answer setupManagementServerList(final SetupMSListCommand cmd) {

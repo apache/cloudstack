@@ -63,7 +63,8 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
 
     public static final ConfigKey<String> IndirectAgentLBAlgorithm = new ConfigKey<>(String.class,
     "indirect.agent.lb.algorithm", "Advanced", "static",
-            "The algorithm to be applied on the provided management server list in the 'host' config that that is sent to indirect agents. Allowed values are: static, roundrobin and shuffle.",
+            "The algorithm to be applied on the provided management server list in the 'host' config that that is sent to indirect agents. Allowed values are: static, roundrobin and shuffle. " +
+                    "Note: The lb algorithm 'shuffle' disables the indirect agent lb check background task once the algorithm is applied on the agent.",
             true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.Select, "static,roundrobin,shuffle");
 
     public static final ConfigKey<Long> IndirectAgentLBCheckInterval = new ConfigKey<>("Advanced", Long.class,

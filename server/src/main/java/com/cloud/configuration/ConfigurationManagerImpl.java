@@ -631,7 +631,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     private void initMessageBusListener() {
         messageBus.subscribe(EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, new MessageSubscriber() {
             @Override
-            public void onPublishMessage(String serderAddress, String subject, Object args) {
+            public void onPublishMessage(String senderAddress, String subject, Object args) {
                 Ternary<String, ConfigKey.Scope, Long> settingUpdated = (Ternary<String, ConfigKey.Scope, Long>) args;
                 String settingNameUpdated = settingUpdated.first();
                 if (StringUtils.isEmpty(settingNameUpdated)) {
