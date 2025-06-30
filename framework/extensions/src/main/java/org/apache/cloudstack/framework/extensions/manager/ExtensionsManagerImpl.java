@@ -144,7 +144,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsManager, ExtensionHelper, PluggableService, Configurable {
 
     ConfigKey<Integer> EntryPointStateCheckInterval = new ConfigKey<>("Advanced", Integer.class,
-            "extension.entrypoint.state.check.interval", "60",
+            "extension.entrypoint.state.check.interval", "300",
             "Interval (in seconds) for checking entry-point state of extensions",
             false, ConfigKey.Scope.Global);
 
@@ -1460,7 +1460,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     @Override
     public boolean start() {
         long syncCheckInterval = EntryPointStateCheckInterval.value();
-        long syncCheckInitialDelay = Math.max(60, syncCheckInterval);
+        long syncCheckInitialDelay = Math.min(60, syncCheckInterval);
         logger.debug("Scheduling extensions entrypoint sync check task with initial delay={}s and interval={}s",
                 syncCheckInitialDelay, syncCheckInterval);
         entryPointSyncCheckExecutor.scheduleWithFixedDelay(new EntryPointSyncCheckWorker(),
