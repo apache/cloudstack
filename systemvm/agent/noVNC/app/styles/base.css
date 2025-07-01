@@ -1,6 +1,6 @@
 /*
  * noVNC base CSS
- * Copyright (C) 2019 The noVNC Authors
+ * Copyright (C) 2019 The noVNC authors
  * noVNC is licensed under the MPL 2.0 (see LICENSE.txt)
  * This file is licensed under the 2-Clause BSD license (see LICENSE.txt).
  */
@@ -14,7 +14,7 @@
  * 60: Connection popups
  * 100: Status bar
  * ...
- * 1000: JavaScript crash
+ * 1000: Javascript crash
  * ...
  * 10000: Max (used for polyfills)
  */
@@ -31,6 +31,7 @@
 
 :root {
   font-family: sans-serif;
+  line-height: 1.6;
 }
 
 body {
@@ -53,7 +54,7 @@ html {
 }
 
 .noVNC_disabled {
-  color: rgb(128, 128, 128);
+  color: var(--novnc-grey);
 }
 
 /* ----------------------------------------
@@ -174,7 +175,7 @@ html {
   font-weight: bold;
   color: #fff;
 
-  border-radius: 10px;
+  border-radius: 12px;
   box-shadow: 6px 6px 0px rgba(0, 0, 0, 0.5);
   background: rgba(200,55,55,0.8);
 }
@@ -213,7 +214,7 @@ html {
 }
 
 /* ----------------------------------------
- * Control Bar
+ * Control bar
  * ----------------------------------------
  */
 
@@ -224,7 +225,7 @@ html {
 
   transition: 0.5s ease-in-out;
 
-  /* Edge misrenders animations without this */
+  /* Edge misrenders animations wihthout this */
   transform: translateX(0);
 }
 :root.noVNC_connected #noVNC_control_bar_anchor.noVNC_idle {
@@ -241,8 +242,8 @@ html {
 
   transition: 0.5s ease-in-out;
 
-  background-color: rgb(110, 132, 163);
-  border-radius: 0 10px 10px 0;
+  background-color: var(--novnc-blue);
+  border-radius: 0 12px 12px 0;
 
   user-select: none;
   -webkit-user-select: none;
@@ -267,7 +268,7 @@ html {
 }
 .noVNC_right #noVNC_control_bar {
   left: 100%;
-  border-radius: 10px 0 0 10px;
+  border-radius: 12px 0 0 12px;
 }
 .noVNC_right #noVNC_control_bar.noVNC_open {
   left: 0;
@@ -285,8 +286,8 @@ html {
   height: 50px;
   z-index: -1;
   cursor: pointer;
-  border-radius: 5px;
-  background-color: rgb(83, 99, 122);
+  border-radius: 6px;
+  background-color: var(--novnc-darkblue);
   background-image: url("../images/handle_bg.png");
   background-repeat: no-repeat;
   background-position: right;
@@ -371,8 +372,8 @@ html {
   opacity: 0;
   transition: 0.2s ease-in-out;
   background: transparent;
-  box-shadow: 0 0 10px black, inset 0 0 10px 10px rgba(110, 132, 163, 0.8);
-  border-radius: 10px;
+  box-shadow: 0 0 10px black, inset 0 0 10px 10px var(--novnc-darkblue);
+  border-radius: 12px;
   transition-delay: 0s;
 }
 #noVNC_control_bar_hint.noVNC_active {
@@ -387,44 +388,20 @@ html {
 
 /* Control bar buttons */
 #noVNC_control_bar .noVNC_button {
+  min-width: unset;
   padding: 4px 4px;
   vertical-align: middle;
   border:1px solid rgba(255, 255, 255, 0.2);
   border-radius: 6px;
   background-color: transparent;
-  background-image: unset; /* we don't want the gradiant from input.css */
 }
 #noVNC_control_bar .noVNC_button.noVNC_selected {
   border-color: rgba(0, 0, 0, 0.8);
   background-color: rgba(0, 0, 0, 0.5);
 }
-#noVNC_control_bar .noVNC_button.noVNC_selected:not(:disabled):hover {
-  border-color: rgba(0, 0, 0, 0.4);
-  background-color: rgba(0, 0, 0, 0.2);
-}
-#noVNC_control_bar .noVNC_button:not(:disabled):hover {
-  background-color: rgba(255, 255, 255, 0.2);
-}
-#noVNC_control_bar .noVNC_button:not(:disabled):active {
-  padding-top: 5px;
-  padding-bottom: 3px;
-}
 #noVNC_control_bar .noVNC_button.noVNC_hidden {
   display: none !important;
 }
-
-/* Android browsers don't properly update hover state if touch events are
- * intercepted, like they are when clicking on the remote screen. */
-@media (any-pointer: coarse) {
-  #noVNC_control_bar .noVNC_button:not(:disabled):hover {
-    background-color: transparent;
-  }
-  #noVNC_control_bar .noVNC_button.noVNC_selected:not(:disabled):hover {
-    border-color: rgba(0, 0, 0, 0.8);
-    background-color: rgba(0, 0, 0, 0.5);
-  }
-}
-
 
 /* Panels */
 .noVNC_panel {
@@ -444,7 +421,7 @@ html {
   padding: 15px;
 
   background: #fff;
-  border-radius: 10px;
+  border-radius: 12px;
   color: #000;
   border: 2px solid #E0E0E0;
   box-shadow: 6px 6px 0px rgba(0, 0, 0, 0.5);
@@ -478,7 +455,8 @@ html {
 
 .noVNC_panel hr {
   border: none;
-  border-top: 1px solid rgb(192, 192, 192);
+  border-top: 1px solid var(--novnc-lightgrey);
+  width: 100%; /* <hr> inside a flexbox will otherwise be 0px wide */
 }
 
 .noVNC_panel label {
@@ -486,27 +464,58 @@ html {
   white-space: nowrap;
   margin: 5px;
 }
+@media (max-width: 540px) {
+  /* Allow wrapping on small screens */
+  .noVNC_panel label {
+    white-space: unset;
+  }
+}
 
 .noVNC_panel li {
   margin: 5px;
 }
 
+.noVNC_panel button,
+.noVNC_panel select,
+.noVNC_panel textarea,
+.noVNC_panel input:not([type=checkbox]):not([type=radio]) {
+  margin-left: 6px;
+  /* Prevent inputs in panels from being too wide */
+  max-width: calc(100% - 6px - var(--input-xpadding) * 2);
+}
+
 .noVNC_panel .noVNC_heading {
-  background-color: rgb(110, 132, 163);
-  border-radius: 5px;
-  padding: 5px;
+  background-color: var(--novnc-blue);
+  border-radius: 6px;
+  padding: 5px 8px;
   /* Compensate for padding in image */
-  padding-right: 8px;
+  padding-right: 11px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   color: white;
   font-size: 20px;
+  font-weight: bold;
   white-space: nowrap;
 }
 .noVNC_panel .noVNC_heading img {
   vertical-align: bottom;
 }
 
-.noVNC_submit {
-  float: right;
+.noVNC_panel form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px
+}
+
+.noVNC_panel .button_row {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+.noVNC_panel .button_row *:only-child {
+  margin-left: auto; /* Align single buttons to the right */
 }
 
 /* Expanders */
@@ -526,8 +535,8 @@ html {
   margin: 5px;
   margin-left: 10px;
   padding: 5px;
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 6px;
 }
 .noVNC_expander:not(.noVNC_open) ~ * {
   display: none;
@@ -540,9 +549,9 @@ html {
 }
 
 .noVNC_logo + hr {
-    /* Remove all but top border */
-    border: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
+  /* Remove all but top border */
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 :root:not(.noVNC_connected) #noVNC_view_drag_button {
@@ -570,7 +579,7 @@ html {
 }
 
 #noVNC_modifiers {
-  background-color: rgb(92, 92, 92);
+  background-color: var(--novnc-darkgrey);
   border: none;
   padding: 10px;
 }
@@ -633,13 +642,13 @@ html {
   margin-left: 1rem;
 }
 
-/* Connection Controls */
+/* Connection controls */
 :root:not(.noVNC_connected) #noVNC_disconnect_button {
   display: none;
 }
 
 /* ----------------------------------------
- * Status Dialog
+ * Status dialog
  * ----------------------------------------
  */
 
@@ -665,7 +674,7 @@ html {
   justify-content: center;
   align-content: center;
 
-  line-height: 25px;
+  line-height: 1.6;
   word-wrap: break-word;
   color: #fff;
 
@@ -711,7 +720,7 @@ html {
 }
 
 /* ----------------------------------------
- * Connect Dialog
+ * Connect dialog
  * ----------------------------------------
  */
 
@@ -735,7 +744,7 @@ html {
   font-size: 80px;
   text-align: center;
 
-  border-radius: 5px;
+  border-radius: 6px;
 }
 @media (max-width: 440px) {
   #noVNC_connect_dlg {
@@ -746,9 +755,9 @@ html {
   }
 }
 #noVNC_connect_dlg div {
-  padding: 12px;
+  padding: 18px;
 
-  background-color: rgb(110, 132, 163);
+  background-color: var(--novnc-darkgrey);
   border-radius: 12px;
   text-align: center;
   font-size: 20px;
@@ -757,21 +766,17 @@ html {
 }
 #noVNC_connect_button {
   width: 100%;
-  padding: 5px 30px;
-
+  padding: 6px 30px;
   cursor: pointer;
-
-  border-color: rgb(83, 99, 122);
-  border-radius: 5px;
-
-  background: linear-gradient(to top, rgb(110, 132, 163), rgb(99, 119, 147));
+  border-color: transparent;
+  border-radius: 12px;
+  background-color: var(--novnc-blue);
   color: white;
 
-  /* This avoids it jumping around when :active */
-  vertical-align: middle;
-}
-#noVNC_connect_button:hover {
-  background: linear-gradient(to top, rgb(110, 132, 163), rgb(105, 125, 155));
+  display: flex;
+  justify-content: center;
+  place-items: center;
+  gap: 4px;
 }
 
 #noVNC_connect_button img {
@@ -780,7 +785,7 @@ html {
 }
 
 /* ----------------------------------------
- * Server verification Dialog
+ * Server verification dialog
  * ----------------------------------------
  */
 
@@ -797,7 +802,7 @@ html {
 }
 
 /* ----------------------------------------
- * Password Dialog
+ * Password dialog
  * ----------------------------------------
  */
 
@@ -816,7 +821,7 @@ html {
 
 
 /* ----------------------------------------
- * Main Area
+ * Main area
  * ----------------------------------------
  */
 
@@ -891,17 +896,17 @@ html {
   font-style: normal;
   font-weight: 700;
   src: local('?'), url('Orbitron700.woff') format('woff'),
-                   url('Orbitron700.ttf') format('truetype');
+  url('Orbitron700.ttf') format('truetype');
 }
 
 .noVNC_logo {
-  color:yellow;
+  color: var(--novnc-yellow);
   font-family: 'Orbitron', 'OrbitronTTF', sans-serif;
-  line-height:90%;
+  line-height: 0.9;
   text-shadow: 0.1em 0.1em 0 black;
 }
 .noVNC_logo span{
-  color:green;
+  color: var(--novnc-green);
 }
 
 #noVNC_bell {
