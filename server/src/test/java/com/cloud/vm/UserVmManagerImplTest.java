@@ -3328,6 +3328,7 @@ public class UserVmManagerImplTest {
         when(cmd.getNetworkIds()).thenReturn(null);
         when(cmd.getIpToNetworkMap()).thenReturn(null);
         when(cmd.getDataDiskOfferingsInfo()).thenReturn(null);
+        when(cmd.getOverrideDiskOfferingId()).thenReturn(null);
 
         Account owner = mock(Account.class);
         when(accountService.getActiveAccountById(accountId)).thenReturn(owner);
@@ -3440,7 +3441,8 @@ public class UserVmManagerImplTest {
         ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
         DiskOfferingVO rootDiskOffering = mock(DiskOfferingVO.class);
         when(_serviceOfferingDao.findById(serviceOfferingId)).thenReturn(serviceOffering);
-        when(entityManager.findById(DiskOffering.class, rootDiskOfferingId)).thenReturn(rootDiskOffering);
+        when(rootDiskOffering.getDiskSize()).thenReturn(100000000L);
+        when(diskOfferingDao.findById(rootDiskOfferingId)).thenReturn(rootDiskOffering);
 
         Map<String, String> diskDetails = new HashMap<>();
         diskDetails.put(ApiConstants.DISK_OFFERING_ID, "disk-offering-uuid");

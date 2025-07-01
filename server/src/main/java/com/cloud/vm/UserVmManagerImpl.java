@@ -9369,14 +9369,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         VirtualMachineTemplate template = _templateDao.findById(templateId);
         verifyTemplate(cmd, template, serviceOffering.getId());
 
-        Long size = null;
+        Long size = cmd.getSize();
+
         Long diskOfferingId = cmd.getDiskOfferingId();
         Boolean isIso = template.getFormat().equals(ImageFormat.ISO);
         if (diskOfferingId != null) {
             if (!isIso) {
                 throw new InvalidParameterValueException(ApiConstants.DISK_OFFERING_ID + " parameter is supported for creating instance from backup only for ISO. For creating VMs with templates, please use the parameter " + ApiConstants.DATADISKS_DETAILS);
             }
-            DiskOffering diskOffering = _entityMgr.findById(DiskOffering.class, diskOfferingId);
+            DiskOffering diskOffering = _diskOfferingDao.findById(diskOfferingId);
             if (diskOffering == null) {
                 throw new InvalidParameterValueException("Unable to find disk offering " + diskOfferingId);
             }
@@ -9387,28 +9388,45 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         Long overrideDiskOfferingId = cmd.getOverrideDiskOfferingId();
 
-        if (isIso && diskOfferingId == null) {
-            DiskOfferingInfo rootDiskOfferingInfo = backupManager.getRootDiskOfferingInfoFromBackup(backup);
-            if (rootDiskOfferingInfo == null) {
-                throw new CloudRuntimeException("Unable to find root disk offering with the uuid stored in backup. Please specify a valid root disk offering id while creating instance");
-            }
-            diskOfferingId = rootDiskOfferingInfo.getDiskOffering().getId();
-            updateDetailsWithRootDiskAttributes(cmd.getDetails(), rootDiskOfferingInfo);
-            size = rootDiskOfferingInfo.getSize();
-        }
-
-        if (!isIso && overrideDiskOfferingId == null) {
-            DiskOfferingInfo rootDiskOfferingInfo = backupManager.getRootDiskOfferingInfoFromBackup(backup);
-            if (rootDiskOfferingInfo != null &&
-                serviceOffering.getDiskOfferingId() != rootDiskOfferingInfo.getDiskOffering().getId()) {
-                overrideDiskOfferingId = rootDiskOfferingInfo.getDiskOffering().getId();
+        DiskOfferingInfo rootDiskOfferingInfo = backupManager.getRootDiskOfferingInfoFromBackup(backup);
+        if (isIso) {
+            if (diskOfferingId == null) {
+                if (rootDiskOfferingInfo == null) {
+                    throw new CloudRuntimeException("Unable to find root disk offering with the uuid stored in backup. Please specify a valid root disk offering id while creating instance");
+                }
+                diskOfferingId = rootDiskOfferingInfo.getDiskOffering().getId();
                 updateDetailsWithRootDiskAttributes(cmd.getDetails(), rootDiskOfferingInfo);
+                size = rootDiskOfferingInfo.getSize();
+            } else {
+                DiskOffering rootDiskOffering = _diskOfferingDao.findById(diskOfferingId);
+                Long rootDiskSize = rootDiskOffering.isCustomized() ? size : rootDiskOffering.getDiskSize() / GiB_TO_BYTES;
+                if (rootDiskOfferingInfo != null && rootDiskSize < rootDiskOfferingInfo.getSize()) {
+                    throw new InvalidParameterValueException(
+                            String.format("Instance volume size %d[GiB] cannot be less than the backed-up volume size %d[GiB].",
+                            rootDiskSize, rootDiskOfferingInfo.getSize()));
+                }
+            }
+        } else {
+            if (overrideDiskOfferingId == null) {
+                if (rootDiskOfferingInfo != null && serviceOffering.getDiskOfferingId() != rootDiskOfferingInfo.getDiskOffering().getId()) {
+                    overrideDiskOfferingId = rootDiskOfferingInfo.getDiskOffering().getId();
+                    updateDetailsWithRootDiskAttributes(cmd.getDetails(), rootDiskOfferingInfo);
+                }
+            } else {
+                DiskOffering overrideDiskOffering = _diskOfferingDao.findById(overrideDiskOfferingId);
+                String diskSizeDetail = cmd.getDetails().get(VmDetailConstants.ROOT_DISK_SIZE);
+                Long diskSize = diskSizeDetail != null ? Long.parseLong(diskSizeDetail) : overrideDiskOffering.getDiskSize() / GiB_TO_BYTES;
+                if (rootDiskOfferingInfo != null && diskSize < rootDiskOfferingInfo.getSize()) {
+                    throw new InvalidParameterValueException(
+                            String.format("Instance volume size %d[GiB] cannot be less than the backed-up volume size %d[GiB].",
+                            diskSize, rootDiskOfferingInfo.getSize()));
+                }
             }
         }
 
         List<DiskOfferingInfo> dataDiskOfferingsInfo = cmd.getDataDiskOfferingsInfo();
         if (dataDiskOfferingsInfo != null) {
-            backupManager.updateDiskOfferingSizeFromBackup(dataDiskOfferingsInfo, backup);
+            backupManager.checkDiskOfferingSizeAgainstBackup(dataDiskOfferingsInfo, backup);
         } else {
             dataDiskOfferingsInfo = backupManager.getDataDiskOfferingListFromBackup(backup);
         }
@@ -9423,10 +9441,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (networkIds == null && ipToNetworkMap == null) {
             networkIds = new ArrayList<Long>();
             ipToNetworkMap = backupManager.getIpToNetworkMapFromBackup(backup, cmd.getPreserveIp(), networkIds);
-        }
-
-        if (size == null) {
-            size = cmd.getSize();
         }
 
         return createVirtualMachine(cmd, zone, owner, serviceOffering, template, hypervisorType, diskOfferingId, size, overrideDiskOfferingId, dataDiskOfferingsInfo, networkIds, ipToNetworkMap);

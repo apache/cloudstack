@@ -1007,7 +1007,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     @Override
-    public void updateDiskOfferingSizeFromBackup(List<DiskOfferingInfo> dataDiskOfferingsInfo, Backup backup) {
+    public void checkDiskOfferingSizeAgainstBackup(List<DiskOfferingInfo> dataDiskOfferingsInfo, Backup backup) {
         List<DiskOfferingInfo> dataDiskOfferingsInfoFromBackup = getDataDiskOfferingListFromBackup(backup);
         if (dataDiskOfferingsInfoFromBackup == null) {
             return;
@@ -1016,8 +1016,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         for (DiskOfferingInfo diskOfferingInfo : dataDiskOfferingsInfo) {
             if (index < dataDiskOfferingsInfoFromBackup.size()) {
                 if (diskOfferingInfo.getSize() < dataDiskOfferingsInfoFromBackup.get(index).getSize()) {
-                    throw new InvalidParameterValueException(String.format("Backed-up volume size [%d]GiB cannot be greater than the instance volume size [%d]GiB.",
-                            dataDiskOfferingsInfoFromBackup.get(index).getSize(), diskOfferingInfo.getSize()));
+                    throw new InvalidParameterValueException(
+                            String.format("Instance volume size %d[GiB] cannot be less than the backed-up volume size %d[GiB].",
+                            diskOfferingInfo.getSize(), dataDiskOfferingsInfoFromBackup.get(index).getSize()));
                 }
             }
             index++;

@@ -902,7 +902,7 @@ public class BackupManagerTest {
     }
 
     @Test (expected = InvalidParameterValueException.class)
-    public void testUpdateDiskOfferingSizeFromBackup() {
+    public void testCheckDiskOfferingSizeAgainstBackup() {
         Long sizeInBackup = 5L * 1024 * 1024 * 1024;
         Long sizeInCmd = 2L;
         Backup backup = mock(Backup.class);
@@ -917,7 +917,7 @@ public class BackupManagerTest {
         when(diskOfferingDao.findByUuid("disk-offering-uuid-1")).thenReturn(diskOffering);
         List<DiskOfferingInfo> diskOfferingInfoList = List.of(new DiskOfferingInfo(diskOffering, sizeInCmd, 1L, null, null));
 
-        backupManager.updateDiskOfferingSizeFromBackup(diskOfferingInfoList, backup);
+        backupManager.checkDiskOfferingSizeAgainstBackup(diskOfferingInfoList, backup);
     }
 
     @Test
