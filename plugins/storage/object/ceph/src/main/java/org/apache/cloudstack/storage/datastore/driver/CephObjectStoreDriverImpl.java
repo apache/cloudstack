@@ -193,19 +193,19 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             policyConfig = "{\"Version\":\"2012-10-17\",\"Statement\":[]}";
         }
 
-        AmazonS3 client = getS3Client(getStoreURL(storeId), bucket.getAccessKey(), bucket.getAccessKey());
+        AmazonS3 client = getS3Client(getStoreURL(storeId), bucket.getAccessKey(), bucket.getSecretKey());
         client.setBucketPolicy(new SetBucketPolicyRequest(bucket.getName(), policyConfig));
     }
 
     @Override
     public BucketPolicy getBucketPolicy(BucketTO bucket, long storeId) {
-        AmazonS3 client = getS3Client(getStoreURL(storeId), bucket.getAccessKey(), bucket.getAccessKey());
+        AmazonS3 client = getS3Client(getStoreURL(storeId), bucket.getAccessKey(), bucket.getSecretKey());
         return client.getBucketPolicy(new GetBucketPolicyRequest(bucket.getName()));
     }
 
     @Override
     public void deleteBucketPolicy(BucketTO bucket, long storeId) {
-        AmazonS3 client = getS3Client(getStoreURL(storeId), bucket.getAccessKey(), bucket.getAccessKey());
+        AmazonS3 client = getS3Client(getStoreURL(storeId), bucket.getAccessKey(), bucket.getSecretKey());
         client.deleteBucketPolicy(new DeleteBucketPolicyRequest(bucket.getName()));
     }
 
@@ -255,7 +255,7 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
 
     @Override
     public boolean setBucketVersioning(BucketTO bucket, long storeId) {
-        AmazonS3 client = getS3Client(getStoreURL(storeId), bucket.getAccessKey(), bucket.getAccessKey());
+        AmazonS3 client = getS3Client(getStoreURL(storeId), bucket.getAccessKey(), bucket.getSecretKey());
         try {
             BucketVersioningConfiguration configuration =
                     new BucketVersioningConfiguration().withStatus("Enabled");
@@ -272,7 +272,7 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
 
     @Override
     public boolean deleteBucketVersioning(BucketTO bucket, long storeId) {
-        AmazonS3 client = getS3Client(getStoreURL(storeId), bucket.getAccessKey(), bucket.getAccessKey());
+        AmazonS3 client = getS3Client(getStoreURL(storeId), bucket.getAccessKey(), bucket.getSecretKey());
         try {
             BucketVersioningConfiguration configuration =
                     new BucketVersioningConfiguration().withStatus("Suspended");
