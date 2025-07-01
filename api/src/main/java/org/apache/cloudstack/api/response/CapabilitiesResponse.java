@@ -141,7 +141,7 @@ public class CapabilitiesResponse extends BaseResponse {
     private Boolean instanceLeaseEnabled;
 
     @SerializedName(ApiConstants.DYNAMIC_SCALING_ENABLED)
-    @Param(description = "true if dynamically scaling for instance is enabled", since = "4.21.0")
+    @Param(description = "true if dynamically scaling for instances is enabled", since = "4.21.0")
     private Boolean dynamicScalingEnabled;
 
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {

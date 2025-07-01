@@ -289,7 +289,7 @@ export default {
         this.template = templateResponses[0]
       })
     },
-    canDynamicScalingEnabled () {
+    isDynamicScalingEnabled () {
       return this.template.isdynamicallyscalable && this.serviceOffering.dynamicscalingenabled && this.$store.getters.features.dynamicscalingenabled
     },
     fetchOsTypes () {
