@@ -151,9 +151,11 @@ def create(data):
         )
         run_powershell_ssh_int(command, data["url"], data["username"], data["password"])
 
-        for nic in data["nics"]:
-            run_powershell_ssh_int(f'Set-VMNetworkAdapter -VMName "{vm_name}" -StaticMacAddress "{nic["mac"]}"', data["url"], data["username"], data["password"])
-            run_powershell_ssh_int(f'Set-VMNetworkAdapterVlan -VMName "{"vm_name"}" -Access -VlanId "{nic["vlan"]}"', data["url"], data["username"], data["password"])
+        for idx, nic in enumerate(data["nics"]):
+            adapter_name = f"NIC{idx+1}"
+            run_powershell_ssh_int(f'Add-VMNetworkAdapter -VMName "{vm_name}" -Name "{adapter_name}"', data["url"], data["username"], data["password"])
+            run_powershell_ssh_int(f'Set-VMNetworkAdapter -VMName "{vm_name}" -Name "{adapter_name}" -StaticMacAddress "{nic["mac"]}"', data["url"], data["username"], data["password"])
+            run_powershell_ssh_int(f'Set-VMNetworkAdapterVlan -VMName "{vm_name}" -VMNetworkAdapterName "{adapter_name}" -Access -VlanId "{nic["vlan"]}"', data["url"], data["username"], data["password"])
 
         run_powershell_ssh_int(f'Start-VM -Name "{vm_name}"', data["url"], data["username"], data["password"])
         vm_started = True
