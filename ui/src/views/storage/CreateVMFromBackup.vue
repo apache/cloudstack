@@ -125,6 +125,7 @@ export default {
       this.dataPreFill.backupid = this.resource.id
       this.dataPreFill.computeofferingid = this.vmdetails.serviceofferingid
       this.dataPreFill.templateid = this.vmdetails.templateid
+      this.dataPreFill.isoid = this.vmdetails.templateid
       this.dataPreFill.allowIpAddressesFetch = !this.resource.virtualmachineid
       this.dataPreFill.networkids = (this.vmdetails.networkids || '').split(',')
       this.dataPreFill.ipAddresses = (this.vmdetails.ipaddresses || '').split(',')

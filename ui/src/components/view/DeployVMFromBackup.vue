@@ -2266,7 +2266,7 @@ export default {
       this.form.templateid = undefined
       this.form.isoid = undefined
       this.tabKey = 'templateid'
-      if (this.isoId) {
+      if (this.isoId || this.dataPreFill.isIso) {
         this.tabKey = 'isoid'
       }
       _.each(this.params, (param, name) => {
