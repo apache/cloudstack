@@ -55,12 +55,6 @@ public interface QuotaResponseBuilder {
 
     Pair<List<QuotaSummaryResponse>, Integer> createQuotaSummaryResponse(QuotaSummaryCmd cmd);
 
-    Pair<List<QuotaSummaryResponse>, Integer> createQuotaSummaryResponse(Boolean listAll);
-
-    Pair<List<QuotaSummaryResponse>, Integer> createQuotaSummaryResponse(Boolean listAll, String keyword, Long startIndex, Long pageSize);
-
-    Pair<List<QuotaSummaryResponse>, Integer> createQuotaSummaryResponse(String accountName, Long domainId);
-
     QuotaBalanceResponse createQuotaLastBalanceResponse(List<QuotaBalanceVO> quotaBalance, Date startDate);
 
     List<QuotaUsageVO> getQuotaUsage(QuotaStatementCmd cmd);

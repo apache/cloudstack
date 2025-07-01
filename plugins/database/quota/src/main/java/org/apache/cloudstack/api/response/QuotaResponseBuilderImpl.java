@@ -307,51 +307,6 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         return response;
     }
 
-    @Override
-    public Pair<List<QuotaSummaryResponse>, Integer> createQuotaSummaryResponse(final String accountName, final Long domainId) {
-        List<QuotaSummaryResponse> result = new ArrayList<QuotaSummaryResponse>();
-
-        if (accountName != null && domainId != null) {
-            Account account = _accountDao.findActiveAccount(accountName, domainId);
-            QuotaSummaryResponse qr = getQuotaSummaryResponse(account);
-            result.add(qr);
-        }
-
-        return new Pair<>(result, result.size());
-    }
-
-    @Override
-    public Pair<List<QuotaSummaryResponse>, Integer> createQuotaSummaryResponse(Boolean listAll) {
-        return createQuotaSummaryResponse(listAll, null, null, null);
-    }
-
-    @Override
-    public Pair<List<QuotaSummaryResponse>, Integer> createQuotaSummaryResponse(Boolean listAll, final String keyword, final Long startIndex, final Long pageSize) {
-        List<QuotaSummaryResponse> result = new ArrayList<QuotaSummaryResponse>();
-        Integer count = 0;
-        if (listAll) {
-            Filter filter = new Filter(AccountVO.class, "accountName", true, startIndex, pageSize);
-            Pair<List<AccountVO>, Integer> data = _accountDao.findAccountsLike(keyword, filter);
-            count = data.second();
-            for (final AccountVO account : data.first()) {
-                QuotaSummaryResponse qr = getQuotaSummaryResponse(account);
-                result.add(qr);
-            }
-        } else {
-            Pair<List<QuotaAccountVO>, Integer> data = quotaAccountDao.listAllQuotaAccount(startIndex, pageSize);
-            count = data.second();
-            for (final QuotaAccountVO quotaAccount : data.first()) {
-                AccountVO account = _accountDao.findById(quotaAccount.getId());
-                if (account == null) {
-                    continue;
-                }
-                QuotaSummaryResponse qr = getQuotaSummaryResponse(account);
-                result.add(qr);
-            }
-        }
-        return new Pair<>(result, count);
-    }
-
     protected QuotaSummaryResponse getQuotaSummaryResponse(final Account account) {
         Calendar[] period = quotaStatement.getCurrentStatementTime();
 
