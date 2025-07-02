@@ -19,14 +19,11 @@
 
 package com.cloud.agent.api;
 
-import java.util.Map;
-
 import com.cloud.agent.api.to.VirtualMachineTO;
 
 public class RebootCommand extends Command {
     String vmName;
     VirtualMachineTO vm;
-    private Map<String, Object> externalDetails;
     protected boolean executeInSequence = false;
 
     protected RebootCommand() {
@@ -47,14 +44,6 @@ public class RebootCommand extends Command {
 
     public VirtualMachineTO getVirtualMachine() {
         return vm;
-    }
-
-    public void setExternalDetails(Map<String, Object> externalDetails) {
-        this.externalDetails = externalDetails;
-    }
-
-    public Map<String, Object> getExternalDetails() {
-        return externalDetails;
     }
 
     @Override

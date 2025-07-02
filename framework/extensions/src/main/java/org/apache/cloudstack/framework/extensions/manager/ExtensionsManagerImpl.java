@@ -461,14 +461,16 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         executorService.shutdown();
     }
 
-    protected Map<String, Object> getExternalAccessDetails(Map<String, String> actionDetails, long hostId,
+    protected Map<String, Map<String, String>> getExternalAccessDetails(Map<String, String> actionDetails, long hostId,
                            ExtensionResourceMap resourceMap) {
-        Map<String, Object> externalDetails = new HashMap<>();
+        Map<String, Map<String, String>> externalDetails = new HashMap<>();
         if (MapUtils.isNotEmpty(actionDetails)) {
             externalDetails.put(ApiConstants.ACTION, actionDetails);
         }
         Map<String, String> hostDetails = getFilteredExternalDetails(hostDetailsDao.findDetails(hostId));
-        externalDetails.put(ApiConstants.HOST, hostDetails);
+        if (MapUtils.isNotEmpty(hostDetails)) {
+            externalDetails.put(ApiConstants.HOST, hostDetails);
+        }
         if (resourceMap == null) {
             return externalDetails;
         }
@@ -477,7 +479,9 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             externalDetails.put(ApiConstants.RESOURCE_MAP, resourceDetails);
         }
         Map<String, String> extensionDetails = extensionDetailsDao.listDetailsKeyPairs(resourceMap.getExtensionId(), true);
-        externalDetails.put(ApiConstants.EXTENSION, extensionDetails);
+        if (MapUtils.isNotEmpty(extensionDetails)) {
+            externalDetails.put(ApiConstants.EXTENSION, extensionDetails);
+        }
         return externalDetails;
     }
 
@@ -1326,10 +1330,12 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         response.setSuccess(false);
         result.put(ApiConstants.MESSAGE, getActionMessage(false, customActionVO, extensionVO,
                 actionResourceType, entity));
-        Map<String, Object> externalDetails = getExternalAccessDetails(allDetails.first(), hostId, extensionResource);
+        Map<String, Map<String, String>> externalDetails =
+                getExternalAccessDetails(allDetails.first(), hostId, extensionResource);
         runCustomActionCommand.setParameters(parameters);
         runCustomActionCommand.setExternalDetails(externalDetails);
         try {
+            logger.info("Running custom action: {}", GsonHelper.getGson().toJson(runCustomActionCommand));
             Answer answer = agentMgr.send(hostId, runCustomActionCommand);
             if (!(answer instanceof RunCustomActionAnswer)) {
                 logger.error("Unexpected answer [{}] received for {}", answer.getClass().getSimpleName(),
@@ -1393,11 +1399,11 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     }
 
     @Override
-    public Map<String, Object> getExternalAccessDetails(Host host, Map<String, String> vmDetails) {
+    public Map<String, Map<String, String>> getExternalAccessDetails(Host host, Map<String, String> vmDetails) {
         long clusterId = host.getClusterId();
         ExtensionResourceMapVO resourceMap = extensionResourceMapDao.findByResourceIdAndType(clusterId,
                 ExtensionResourceMap.ResourceType.Cluster);
-        Map<String, Object> details = getExternalAccessDetails(null, host.getId(), resourceMap);
+        Map<String, Map<String, String>> details = getExternalAccessDetails(null, host.getId(), resourceMap);
         if (MapUtils.isNotEmpty(vmDetails)) {
             details.put(ApiConstants.VIRTUAL_MACHINE, vmDetails);
         }

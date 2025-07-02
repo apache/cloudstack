@@ -130,7 +130,7 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
         return getClass().getSimpleName();
     }
 
-    protected Map<String, Object> loadAccessDetails(Map<String, Object> externalDetails,
+    protected Map<String, Object> loadAccessDetails(Map<String, Map<String, String>> externalDetails,
                             VirtualMachineTO virtualMachineTO) {
         Map<String, Object> modifiedDetails = new HashMap<>();
         if (MapUtils.isNotEmpty(externalDetails)) {
@@ -435,7 +435,8 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
             logger.debug("No VMs found for the {}", host);
             return vmStates;
         }
-        Map<String, Object> accessDetails = extensionsManager.getExternalAccessDetails(host, null);
+        Map<String, Map<String, String>> accessDetails =
+                extensionsManager.getExternalAccessDetails(host, null);
         for (UserVmVO vm: allVms) {
             VirtualMachine.PowerState powerState = getVmPowerState(vm, accessDetails, extensionName, extensionPath);
             vmStates.put(vm.getInstanceName(), new HostVmStateReportEntry(powerState, "host-" + hostId));
@@ -452,7 +453,6 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
         }
         final String actionName = cmd.getActionName();
         final Map<String, Object> parameters = cmd.getParameters();
-        final Map<String, Object> externalDetails = cmd.getExternalDetails();
         logger.debug("Executing custom action '{}' in the external provisioner", actionName);
         VirtualMachineTO virtualMachineTO = null;
         if (cmd.getVmId() != null) {
@@ -462,7 +462,7 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
             virtualMachineTO = hvGuru.implement(profile);
         }
         logger.debug("Executing custom action '{}' in the external system", actionName);
-        Map<String, Object> accessDetails = loadAccessDetails(externalDetails, virtualMachineTO);
+        Map<String, Object> accessDetails = loadAccessDetails(cmd.getExternalDetails(), virtualMachineTO);
         accessDetails.put(ApiConstants.ACTION, actionName);
         if (MapUtils.isNotEmpty(parameters)) {
             accessDetails.put(ApiConstants.PARAMETERS, parameters);
@@ -614,7 +614,7 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
                 String.format("Failed to execute custom action '%s' on external system", actionName), filename);
     }
 
-    private VirtualMachine.PowerState getVmPowerState(UserVmVO userVmVO, Map<String, Object> accessDetails,
+    private VirtualMachine.PowerState getVmPowerState(UserVmVO userVmVO, Map<String, Map<String, String>> accessDetails,
                   String extensionName, String extensionPath) {
         final HypervisorGuru hvGuru = hypervisorGuruManager.getGuru(Hypervisor.HypervisorType.External);
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(userVmVO);

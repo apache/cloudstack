@@ -26,7 +26,6 @@ public class RunCustomActionCommand extends Command {
     String actionName;
     Long vmId;
     Map<String, Object> parameters;
-    Map<String, Object> externalDetails;
 
     public RunCustomActionCommand(String actionName) {
         this.actionName = actionName;
@@ -51,14 +50,6 @@ public class RunCustomActionCommand extends Command {
 
     public void setParameters(Map<String, Object> parameters) {
         this.parameters = parameters;
-    }
-
-    public Map<String, Object> getExternalDetails() {
-        return externalDetails;
-    }
-
-    public void setExternalDetails(Map<String, Object> externalDetails) {
-        this.externalDetails = externalDetails;
     }
 
     @Override

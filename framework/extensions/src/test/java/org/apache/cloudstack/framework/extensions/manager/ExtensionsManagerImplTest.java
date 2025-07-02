@@ -497,17 +497,19 @@ public class ExtensionsManagerImplTest {
 
     @Test
     public void getExternalAccessDetailsReturnsMapWithHostAndExtension() {
-        Map<String, String> actionDetails = new HashMap<>();
-        actionDetails.put("external.detail.key", "value");
+        Map<String, String> map = new HashMap<>();
+        map.put("external.detail.key", "value");
         long hostId = 1L;
         ExtensionResourceMap resourceMap = mock(ExtensionResourceMap.class);
         when(resourceMap.getId()).thenReturn(2L);
         when(resourceMap.getExtensionId()).thenReturn(3L);
-        when(hostDetailsDao.findDetails(hostId)).thenReturn(actionDetails);
-        when(extensionResourceMapDetailsDao.listDetailsKeyPairs(2L, true)).thenReturn(actionDetails);
-        when(extensionDetailsDao.listDetailsKeyPairs(3L, true)).thenReturn(actionDetails);
-        Map<String, Object> result = extensionsManager.getExternalAccessDetails(actionDetails, hostId, resourceMap);
-        assertTrue(result.containsKey(ApiConstants.HOST));
+        when(hostDetailsDao.findDetails(hostId)).thenReturn(null);
+        when(extensionResourceMapDetailsDao.listDetailsKeyPairs(2L, true)).thenReturn(Collections.emptyMap());
+        when(extensionDetailsDao.listDetailsKeyPairs(3L, true)).thenReturn(map);
+        Map<String, Map<String, String>> result = extensionsManager.getExternalAccessDetails(map, hostId, resourceMap);
+        assertTrue(result.containsKey(ApiConstants.ACTION));
+        assertFalse(result.containsKey(ApiConstants.HOST));
+        assertFalse(result.containsKey(ApiConstants.RESOURCE_MAP));
         assertTrue(result.containsKey(ApiConstants.EXTENSION));
     }
 

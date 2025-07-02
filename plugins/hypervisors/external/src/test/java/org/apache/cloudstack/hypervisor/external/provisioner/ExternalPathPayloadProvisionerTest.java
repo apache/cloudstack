@@ -173,8 +173,8 @@ public class ExternalPathPayloadProvisionerTest {
 
     @Test
     public void testLoadAccessDetails() {
-        Map<String, Object> externalDetails = new HashMap<>();
-        externalDetails.put("key1", "value1");
+        Map<String, Map<String, String>> externalDetails = new HashMap<>();
+        externalDetails.put(ApiConstants.EXTENSION, Map.of("key1", "value1"));
 
         VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
         when(vmTO.getUuid()).thenReturn("test-uuid");
