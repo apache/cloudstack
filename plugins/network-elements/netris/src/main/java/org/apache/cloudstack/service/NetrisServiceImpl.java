@@ -411,10 +411,14 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
         for (String sourceCidr : sourceCidrs) {
             if (FirewallRule.TrafficType.Ingress.name().equalsIgnoreCase(trafficType)) {
                 sourcePrefix = sourceCidr;
-                destinationPrefix = NetUtils.isValidIp4Cidr(sourcePrefix) ? network.getCidr() : network.getIp6Cidr();
+                destinationPrefix = NetUtils.isValidIp4Cidr(sourcePrefix) ||
+                        (Objects.isNull(network.getIp6Cidr()) && NetUtils.ANY_PROTO.equalsIgnoreCase(sourceCidr)) ?
+                        network.getCidr() : network.getIp6Cidr();
             } else {
                 destinationPrefix = sourceCidr;
-                sourcePrefix = NetUtils.isValidIp4Cidr(destinationPrefix) ? network.getCidr() : network.getIp6Cidr();
+                sourcePrefix = NetUtils.isValidIp4Cidr(destinationPrefix) ||
+                        (Objects.isNull(network.getIp6Cidr()) && NetUtils.ANY_PROTO.equalsIgnoreCase(sourceCidr)) ?
+                        network.getCidr() : network.getIp6Cidr();
             }
             String srcPort;
             String dstPort;
