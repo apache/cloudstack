@@ -674,8 +674,7 @@ public class ApiConstants {
     public static final String NETWORK_DEVICE_PARAMETER_LIST = "networkdeviceparameterlist";
     public static final String ZONE_TOKEN = "zonetoken";
     public static final String DHCP_PROVIDER = "dhcpprovider";
-    public static final String RESULT = "success";
-    public static final String RESULT1 = "result";
+    public static final String RESULT = "result";
     public static final String RESUME = "resume";
     public static final String LUN_ID = "lunId";
     public static final String IQN = "iqn";

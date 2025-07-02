@@ -228,6 +228,13 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
 
+        initializeExtensionDirectories();
+        checkExtensionsDirectory();
+        createOrCheckExtensionsDataDirectory();
+        return true;
+    }
+
+    private void initializeExtensionDirectories() {
         String deploymentMode = getServerProperty(EXTENSIONS_DEPLOYMENT_MODE_NAME);
         if ("developer".equals(deploymentMode)) {
             extensionsDirectory = EXTENSIONS_DIRECTORY_DEV;
@@ -236,9 +243,6 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
             extensionsDirectory = EXTENSIONS_DIRECTORY_PROD;
             extensionsDataDirectory = EXTENSIONS_DATA_DIRECTORY_PROD;
         }
-        checkExtensionsDirectory();
-        createOrCheckExtensionsDataDirectory();
-        return true;
     }
 
     @Override

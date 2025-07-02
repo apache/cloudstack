@@ -39,7 +39,7 @@ public class CustomActionResultResponse extends BaseResponse {
     @Param(description = "Whether custom action succeed or not")
     private Boolean success;
 
-    @SerializedName(ApiConstants.RESULT1)
+    @SerializedName(ApiConstants.RESULT)
     @Param(description = "Result of the action execution")
     private Map<String, String> result;
 

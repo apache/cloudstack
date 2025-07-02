@@ -121,7 +121,7 @@ public interface VmDetailConstants {
 
     // External orchestrator related
     String MAC_ADDRESS = "mac_address";
-    String EXPUNGE_EXTERNAL_SERVER = "expunge.external.server";
+    String EXPUNGE_EXTERNAL_VM = "expunge.external.vm";
     String EXTERNAL_DETAIL_PREFIX = "External:";
     String CLOUDSTACK_VM_DETAILS = "cloudstack.vm.details";
     String CLOUDSTACK_VLAN = "cloudstack.vlan";

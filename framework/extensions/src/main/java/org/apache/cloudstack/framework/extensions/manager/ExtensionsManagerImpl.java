@@ -812,7 +812,11 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         ExtensionResourceMapVO existing =
                 extensionResourceMapDao.findByResourceIdAndType(cluster.getId(), resourceType);
         if (existing != null) {
-            throw new CloudRuntimeException("Extension already registered with this resource");
+            if (existing.getExtensionId() == extension.getId()) {
+                throw new CloudRuntimeException("Extension is already registered with this resource");
+            } else {
+                throw new CloudRuntimeException("Another extension is already registered with this resource");
+            }
         }
         ExtensionResourceMap result = Transaction.execute((TransactionCallbackWithException<ExtensionResourceMap, CloudRuntimeException>) status -> {
             ExtensionResourceMapVO extensionMap = new ExtensionResourceMapVO(extension.getId(), cluster.getId(), resourceType);

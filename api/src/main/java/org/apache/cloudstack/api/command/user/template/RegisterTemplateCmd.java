@@ -186,7 +186,7 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
             since = "4.20")
     private String arch;
 
-    @Parameter(name = ApiConstants.EXTENSION_ID, type = CommandType.UUID, entityType = ExtensionResponse.class, description = "UUID of the extension")
+    @Parameter(name = ApiConstants.EXTENSION_ID, type = CommandType.UUID, entityType = ExtensionResponse.class, description = "UUID of the extension", since = "4.21.0")
     private Long extensionId;
 
     @Parameter(name = ApiConstants.EXTERNAL_DETAILS, type = CommandType.MAP, description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].endpoint.url=urlvalue", since = "4.21.0")

@@ -671,7 +671,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (HypervisorType.External.equals(vm.getHypervisorType())) {
             UserVmVO userVM = _userVmDao.findById(vm.getId());
             _userVmDao.loadDetails(userVM);
-            userVM.setDetail(VmDetailConstants.EXPUNGE_EXTERNAL_SERVER, Boolean.TRUE.toString());
+            userVM.setDetail(VmDetailConstants.EXPUNGE_EXTERNAL_VM, Boolean.TRUE.toString());
             _userVmDao.saveDetails(userVM);
         }
 
