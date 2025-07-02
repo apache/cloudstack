@@ -114,7 +114,6 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
-import com.cloud.utils.db.Filter;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 
