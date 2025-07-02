@@ -3761,6 +3761,7 @@
 "message.warn.change.primary.storage.scope": "This feature is tested and supported for the following configurations:<br>KVM - NFS/Ceph - DefaultPrimary<br>VMware - NFS - DefaultPrimary<br>*There might be extra steps involved to make it work for other configurations.",
 "message.warn.filetype": "jpg, jpeg, png, bmp and svg are the only supported image formats.",
 "message.warn.importing.instance.without.nic": "WARNING: This Instance is being imported without NICs and many Network resources will not be available. Consider creating a NIC via vCenter before importing or as soon as the Instance is imported.",
+"message.warn.select.template": "Please select a Template for Registration.",
 "message.warn.zone.mtu.update": "Please note that this limit won't affect pre-existing Network’s MTU settings",
 "message.webhook.deliveries.time.filter": "Webhook deliveries list can be filtered based on date-time. Select 'Custom' for specifying start and end date range.",
 "message.zone.creation.complete": "Zone creation complete.",

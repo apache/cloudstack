@@ -91,6 +91,8 @@
       <zone-wizard-register-template
         v-else-if="zoneSteps[currentStep].name === 'registerTemplate'"
         :zoneid="returnedZoneId"
+        :arch="selectedArch"
+        :zoneSuperType="selectedZoneSuperType"
         @closeAction="onCloseAction"
         @refresh-data="onRefreshData"
       />
@@ -177,7 +179,9 @@ export default {
         }
       ],
       zoneConfig: {},
-      returnedZoneId: null
+      returnedZoneId: null,
+      selectedArch: null,
+      selectedZoneSuperType: 'Core'
     }
   },
   computed: {
@@ -222,11 +226,15 @@ export default {
         data.zoneType !== this.zoneConfig.zoneType) {
         this.zoneConfig.physicalNetworks = null
       }
-
-      if (data.zoneReturned) {
+      if (data.zoneSuperType && data.zoneSuperType !== this.selectedZoneSuperType) {
+        this.selectedZoneSuperType = data.zoneSuperType
+      }
+      if (data.arch && data.arch !== this.selectedArch) {
+        this.selectedArch = data.arch
+      }
+      if (data.zoneReturned?.id) {
         this.returnedZoneId = data.zoneReturned.id
       }
-
       this.zoneConfig = { ...this.zoneConfig, ...data }
     },
     onCloseAction () {

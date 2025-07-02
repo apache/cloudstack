@@ -40,6 +40,25 @@
         <a-button class="button-back" @click="handleDone">{{ selectedRowKeys.length > 0 ? $t('label.done') : $t('label.skip') }}</a-button>
         <a-button class="button-next" type="primary" @click="handleSubmit" ref="submit">{{ $t('label.register.template') }}</a-button>
       </div>
+
+      <a-modal
+      :visible="showAlert"
+      :footer="null"
+      style="top: 20px;"
+      centered
+      width="auto"
+      @cancel="showAlert = false"
+      >
+      <template #title>
+        {{ $t('label.warning') }}
+      </template>
+      <a-alert type="warning">
+        <template #message>
+          <span v-html="$t('message.warn.select.template')" />
+        </template>
+      </a-alert>
+      <a-divider style="margin-top: 0;"></a-divider>
+    </a-modal>
     </div>
   </template>
 
@@ -57,6 +76,14 @@ export default {
     zoneid: {
       type: String,
       required: false
+    },
+    arch: {
+      type: String,
+      required: false
+    },
+    zoneSuperType: {
+      type: String,
+      required: false
     }
   },
   data: () => ({
@@ -66,7 +93,8 @@ export default {
     rowKey: 0,
     selectedRowKeys: [],
     defaultOsTypeId: null,
-    deployedTemplates: {}
+    deployedTemplates: {},
+    showAlert: false
   }),
   created () {
     this.initForm()
@@ -132,6 +160,9 @@ export default {
         ostypeid: await this.fetchOsTypeId(templateData.name),
         zoneid: this.zoneid
       }
+      if (this.zoneSuperType === 'Edge') {
+        params.directdownload = true
+      }
       return new Promise((resolve, reject) => {
         api('registerTemplate', params).then(json => {
           const result = json.registertemplateresponse.template[0]
@@ -144,6 +175,10 @@ export default {
     },
     async stepRegisterTemplates () {
       const templatesToRegister = this.predefinedTemplates.filter(template => this.selectedRowKeys.includes(template.id) && this.deployedTemplates[template.id] !== true)
+      if (templatesToRegister.length === 0) {
+        this.showAlert = true
+        return
+      }
       const registrationResults = []
       for (const templateData of templatesToRegister) {
         const promise = this.registerTemplate(templateData)
@@ -223,7 +258,10 @@ export default {
         if (!response.ok) {
           throw new Error(`Error fetching predefined templates, status_code: ${response.status}`)
         }
-        this.predefinedTemplates = await response.json()
+        const templates = await response.json()
+        this.predefinedTemplates = this.arch
+          ? templates.filter(template => template.arch === this.arch)
+          : templates
       } catch (error) {
         console.error('Error fetching predefined templates:', error)
         this.predefinedTemplates = []
