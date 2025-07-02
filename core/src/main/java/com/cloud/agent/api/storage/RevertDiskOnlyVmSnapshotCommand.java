@@ -44,7 +44,7 @@ public class RevertDiskOnlyVmSnapshotCommand extends Command {
 
     @Override
     public boolean executeInSequence() {
-        return true;
+        return false;
     }
 
 }
