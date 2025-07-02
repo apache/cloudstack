@@ -153,6 +153,10 @@ public class CapabilitiesResponse extends BaseResponse {
     @Param(description = "true if additional configurations or extraconfig can be passed to Instances", since = "4.20.2")
     private Boolean additionalConfigEnabled;
 
+    @SerializedName(ApiConstants.LOGS_WEB_SERVER_ENABLED)
+    @Param(description = "true if Logs Web Server plugin is enabled, false otherwise", since = "4.21.0")
+    private boolean logsWebServerEnabled;
+
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
         this.securityGroupsEnabled = securityGroupsEnabled;
     }
@@ -279,5 +283,10 @@ public class CapabilitiesResponse extends BaseResponse {
 
     public void setAdditionalConfigEnabled(Boolean additionalConfigEnabled) {
         this.additionalConfigEnabled = additionalConfigEnabled;
+
+    }
+
+    public void setLogsWebServerEnabled(boolean logsWebServerEnabled) {
+        this.logsWebServerEnabled = logsWebServerEnabled;
     }
 }

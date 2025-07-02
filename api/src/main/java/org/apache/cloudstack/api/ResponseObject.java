@@ -76,6 +76,9 @@ public interface ResponseObject {
      */
     void setJobStatus(Integer jobStatus);
 
+    String getContextId();
+    void setContextId(String contextId);
+
     public enum ResponseView {
         Full,
         Restricted

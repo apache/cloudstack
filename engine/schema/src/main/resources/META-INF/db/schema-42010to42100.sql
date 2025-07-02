@@ -208,6 +208,7 @@ SET `sort_key` = CASE
 END;
 -- End: Changes for Guest OS category cleanup
 
+<<<<<<< HEAD
 -- Update description for configuration: host.capacityType.to.order.clusters
 UPDATE `cloud`.`configuration` SET
     `description` = 'The host capacity type (CPU, RAM or COMBINED) is used by deployment planner to order clusters during VM resource allocation'
@@ -757,3 +758,19 @@ SET `cs`.`domain_id` = (
 
 -- Re-apply VPC: update default network offering for vpc tier to conserve_mode=1 (#8309)
 UPDATE `cloud`.`network_offerings` SET conserve_mode = 1 WHERE name = 'DefaultIsolatedNetworkOfferingForVpcNetworks';
+
+-- Create table for logs web session
+CREATE TABLE IF NOT EXISTS `cloud`.`logs_web_session` (
+    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `uuid` varchar(40) NOT NULL COMMENT 'UUID generated for the session',
+    `filter` varchar(64) DEFAULT NULL COMMENT 'Filter keyword for the session',
+    `created` datetime NOT NULL COMMENT 'When the session was created',
+    `domain_id` bigint(20) unsigned NOT NULL COMMENT 'Domain of the account who generated the session',
+    `account_id` bigint(20) unsigned NOT NULL COMMENT 'Account who generated the session',
+    `creator_address` VARCHAR(45) DEFAULT NULL COMMENT 'Address of the creator of the session',
+    `connections` int unsigned NOT NULL DEFAULT 0 COMMENT 'Number of connections for the session',
+    `connected_time` datetime DEFAULT NULL COMMENT 'When the session was connected',
+    `client_address` VARCHAR(45) DEFAULT NULL COMMENT 'Address of the client that connected to the session',
+    `removed` datetime COMMENT 'When the session was removed/used',
+    CONSTRAINT `uc_logs_web_session__uuid` UNIQUE (`uuid`)
+);

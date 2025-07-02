@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.api;
 
+import static com.cloud.user.AccountManagerImpl.apiKeyAccess;
+import static org.apache.cloudstack.user.UserPasswordResetManager.UserPasswordResetEnabled;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InterruptedIOException;
@@ -57,15 +60,6 @@ import javax.naming.ConfigurationException;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import com.cloud.cluster.ManagementServerHostVO;
-import com.cloud.cluster.dao.ManagementServerHostDao;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.AccountManagerImpl;
-import com.cloud.user.DomainManager;
-import com.cloud.user.User;
-import com.cloud.user.UserAccount;
-import com.cloud.user.UserVO;
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -105,6 +99,7 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.LoginCmdResponse;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.context.LogContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.events.EventDistributor;
@@ -154,6 +149,8 @@ import org.springframework.stereotype.Component;
 import com.cloud.api.dispatch.DispatchChainFactory;
 import com.cloud.api.dispatch.DispatchTask;
 import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -172,14 +169,22 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnavailableCommandException;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.storage.VolumeApiService;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.AccountManagerImpl;
+import com.cloud.user.DomainManager;
+import com.cloud.user.User;
+import com.cloud.user.UserAccount;
+import com.cloud.user.UserVO;
 import com.cloud.utils.ConstantTimeComparator;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.HttpUtils;
-import com.cloud.utils.HttpUtils.ApiSessionKeySameSite;
 import com.cloud.utils.HttpUtils.ApiSessionKeyCheckOption;
+import com.cloud.utils.HttpUtils.ApiSessionKeySameSite;
 import com.cloud.utils.Pair;
 import com.cloud.utils.ReflectUtil;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
@@ -191,9 +196,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionProxyObject;
 import com.cloud.utils.net.NetUtils;
 import com.google.gson.reflect.TypeToken;
-
-import static com.cloud.user.AccountManagerImpl.apiKeyAccess;
-import static org.apache.cloudstack.user.UserPasswordResetManager.UserPasswordResetEnabled;
 
 @Component
 public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiServerService, Configurable {
@@ -735,12 +737,17 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         return isPostRequestsAndTimestampsEnforced;
     }
 
+    private String getCurrentContextId() {
+        return UuidUtils.first(LogContext.current().getLogContextId());
+    }
+
     private String getBaseAsyncResponse(final long jobId, final BaseAsyncCmd cmd) {
         final AsyncJobResponse response = new AsyncJobResponse();
 
         final AsyncJob job = entityMgr.findByIdIncludingRemoved(AsyncJob.class, jobId);
         response.setJobId(job.getUuid());
         response.setResponseName(cmd.getCommandName());
+        response.setContextId(getCurrentContextId());
         return ApiResponseSerializer.toSerializedString(response, cmd.getResponseType());
     }
 
@@ -750,6 +757,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         response.setJobId(job.getUuid());
         response.setId(objectUuid);
         response.setResponseName(cmd.getCommandName());
+        response.setContextId(getCurrentContextId());
         return ApiResponseSerializer.toSerializedString(response, cmd.getResponseType());
     }
 
@@ -867,7 +875,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             }
 
             SerializationContext.current().setUuidTranslation(true);
-            return ApiResponseSerializer.toSerializedStringWithSecureLogs((ResponseObject)cmdObj.getResponseObject(), cmdObj.getResponseType(), log);
+            ResponseObject responseObject = (ResponseObject)cmdObj.getResponseObject();
+            responseObject.setContextId(getCurrentContextId());
+            return ApiResponseSerializer.toSerializedStringWithSecureLogs(responseObject, cmdObj.getResponseType(), log);
         }
     }
 
@@ -902,6 +912,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                     final AsyncJob job = objectJobMap.get(response.getObjectId());
                     response.setJobId(job.getUuid());
                     response.setJobStatus(job.getStatus().ordinal());
+                    response.setContextId(getCurrentContextId());
                 }
             }
         }

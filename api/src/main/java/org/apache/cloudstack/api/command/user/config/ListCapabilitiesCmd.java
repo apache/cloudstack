@@ -76,6 +76,7 @@ public class ListCapabilitiesCmd extends BaseCmd {
         response.setExtensionsPath((String)capabilities.get(ApiConstants.EXTENSIONS_PATH));
         response.setDynamicScalingEnabled((Boolean) capabilities.get(ApiConstants.DYNAMIC_SCALING_ENABLED));
         response.setAdditionalConfigEnabled((Boolean) capabilities.get(ApiConstants.ADDITONAL_CONFIG_ENABLED));
+        response.setLogsWebServerEnabled((Boolean)capabilities.get(ApiConstants.LOGS_WEB_SERVER_ENABLED));
         response.setObjectName("capability");
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
