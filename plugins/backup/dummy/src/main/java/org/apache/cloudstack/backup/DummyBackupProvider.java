@@ -148,7 +148,7 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     }
 
     @Override
-    public Pair<Boolean, Backup> takeBackup(VirtualMachine vm) {
+    public Pair<Boolean, Backup> takeBackup(VirtualMachine vm, Boolean quiesceVM) {
         logger.debug("Starting backup for VM {} on Dummy provider", vm);
 
         BackupVO backup = new BackupVO();

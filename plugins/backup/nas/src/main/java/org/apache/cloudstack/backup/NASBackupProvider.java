@@ -143,7 +143,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     }
 
     @Override
-    public Pair<Boolean, Backup> takeBackup(final VirtualMachine vm) {
+    public Pair<Boolean, Backup> takeBackup(final VirtualMachine vm, Boolean quiesceVM) {
         final Host host = getVMHypervisorHost(vm);
 
         final BackupRepository backupRepository = backupRepositoryDao.findByBackupOfferingId(vm.getBackupOfferingId());
@@ -160,6 +160,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         command.setBackupRepoType(backupRepository.getType());
         command.setBackupRepoAddress(backupRepository.getAddress());
         command.setMountOptions(backupRepository.getMountOptions());
+        command.setQuiesce(quiesceVM);
 
         if (VirtualMachine.State.Stopped.equals(vm.getState())) {
             List<VolumeVO> vmVolumes = volumeDao.findByInstance(vm.getId());

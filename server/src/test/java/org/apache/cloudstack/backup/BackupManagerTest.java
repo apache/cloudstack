@@ -482,6 +482,7 @@ public class BackupManagerTest {
         when(cmd.getIntervalType()).thenReturn(DateUtil.IntervalType.DAILY);
         when(cmd.getMaxBackups()).thenReturn(8);
         when(cmd.getSchedule()).thenReturn("00:00:00");
+        when(cmd.getQuiesceVM()).thenReturn(null);
 
         VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
         when(vmInstanceDao.findById(vmId)).thenReturn(vm);
@@ -593,7 +594,7 @@ public class BackupManagerTest {
         when(backup.getId()).thenReturn(backupId);
         when(backup.getSize()).thenReturn(newBackupSize);
         when(backupProvider.getName()).thenReturn("testbackupprovider");
-        when(backupProvider.takeBackup(vm)).thenReturn(new Pair<>(true, backup));
+        when(backupProvider.takeBackup(vm, null)).thenReturn(new Pair<>(true, backup));
         Map<String, BackupProvider> backupProvidersMap = new HashMap<>();
         backupProvidersMap.put(backupProvider.getName().toLowerCase(), backupProvider);
         ReflectionTestUtils.setField(backupManager, "backupProvidersMap", backupProvidersMap);
@@ -620,6 +621,7 @@ public class BackupManagerTest {
         when(cmd.getVmId()).thenReturn(vmId);
         when(cmd.getName()).thenReturn("new-backup1");
         when(cmd.getScheduleId()).thenReturn(scheduleId);
+        when(cmd.getQuiesceVM()).thenReturn(null);
 
         try (MockedStatic<ActionEventUtils> ignored = Mockito.mockStatic(ActionEventUtils.class)) {
             Mockito.when(ActionEventUtils.onActionEvent(Mockito.anyLong(), Mockito.anyLong(),
@@ -674,6 +676,7 @@ public class BackupManagerTest {
         CreateBackupCmd cmd = Mockito.mock(CreateBackupCmd.class);
         when(cmd.getVmId()).thenReturn(vmId);
         when(cmd.getScheduleId()).thenReturn(scheduleId);
+        when(cmd.getQuiesceVM()).thenReturn(null);
 
         backupManager.createBackup(cmd);
 
@@ -714,6 +717,7 @@ public class BackupManagerTest {
         CreateBackupCmd cmd = Mockito.mock(CreateBackupCmd.class);
         when(cmd.getVmId()).thenReturn(vmId);
         when(cmd.getScheduleId()).thenReturn(scheduleId);
+        when(cmd.getQuiesceVM()).thenReturn(null);
 
         backupManager.createBackup(cmd);
 

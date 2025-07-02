@@ -70,10 +70,12 @@ public interface BackupProvider {
     /**
      * Starts and creates an adhoc backup process
      * for a previously registered VM backup
-     * @param vm the machine to make a backup of
+     *
+     * @param vm        the machine to make a backup of
+     * @param quiesceVM instance will be quiesced for checkpointing for backup. Applicable only to NAS plugin.
      * @return the result and {code}Backup{code} {code}Object{code}
      */
-    Pair<Boolean, Backup> takeBackup(VirtualMachine vm);
+    Pair<Boolean, Backup> takeBackup(VirtualMachine vm, Boolean quiesceVM);
 
     /**
      * Delete an existing backup

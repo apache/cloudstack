@@ -30,6 +30,7 @@ public class TakeBackupCommand extends Command {
     private String backupRepoType;
     private String backupRepoAddress;
     private List<String> volumePaths;
+    private Boolean quiesce;
     @LogLevel(LogLevel.Log4jLevel.Off)
     private String mountOptions;
 
@@ -85,6 +86,14 @@ public class TakeBackupCommand extends Command {
 
     public void setVolumePaths(List<String> volumePaths) {
         this.volumePaths = volumePaths;
+    }
+
+    public Boolean getQuiesce() {
+        return quiesce;
+    }
+
+    public void setQuiesce(Boolean quiesce) {
+        this.quiesce = quiesce;
     }
 
     @Override

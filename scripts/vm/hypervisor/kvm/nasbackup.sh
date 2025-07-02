@@ -31,6 +31,7 @@ NAS_ADDRESS=""
 MOUNT_OPTS=""
 BACKUP_DIR=""
 DISK_PATHS=""
+QUIESCE=""
 logFile="/var/log/cloudstack/agent/agent.log"
 
 EXIT_CLEANUP_FAILED=20
@@ -100,25 +101,30 @@ backup_running_vm() {
     name="datadisk"
   done
   echo "</disks></domainbackup>" >> $dest/backup.xml
-d
+
   local thaw=0
-  if virsh -c qemu:///system qemu-agent-command "$VM" '{"execute":"guest-fsfreeze-freeze"}' > /dev/null 2>/dev/null; then
-    thaw=1
+  if [[ ${QUIESCE} == "true" ]]; then
+    if virsh -c qemu:///system qemu-agent-command "$VM" '{"execute":"guest-fsfreeze-freeze"}' > /dev/null 2>/dev/null; then
+      thaw=1
+    fi
   fi
 
   # Start push backup
   local backup_begin=0
-  if virsh -c qemu:///system backup-begin --domain $VM --backupxml $dest/backup.xml > /dev/null 2>&1; then
+  if virsh -c qemu:///system backup-begin --domain $VM --backupxml $dest/backup.xml 2>&1 > /dev/null; then
     backup_begin=1;
   fi
 
   if [[ $thaw -eq 1 ]]; then
-    if ! virsh -c qemu:///system qemu-agent-command "$VM" '{"execute":"guest-fsfreeze-thaw"}' > /dev/null 2>&1; then
-      echo "FS thaw failed for $VM"
+    if ! response=$(virsh -c qemu:///system qemu-agent-command "$VM" '{"execute":"guest-fsfreeze-thaw"}' 2>&1 > /dev/null); then
+      echo "Failed to thaw the filesystem for vm $VM: $response"
+      cleanup
+      exit 1
     fi
   fi
 
   if [[ $backup_begin -ne 1 ]]; then
+    cleanup
     exit 1
   fi
 
@@ -220,7 +226,7 @@ cleanup() {
 
 function usage {
   echo ""
-  echo "Usage: $0 -o <operation> -v|--vm <domain name> -t <storage type> -s <storage address> -m <mount options> -p <backup path> -d <disks path>"
+  echo "Usage: $0 -o <operation> -v|--vm <domain name> -t <storage type> -s <storage address> -m <mount options> -p <backup path> -d <disks path> -q|--quiesce <true|false>"
   echo ""
   exit 1
 }
@@ -254,6 +260,11 @@ while [[ $# -gt 0 ]]; do
       ;;
     -p|--path)
       BACKUP_DIR="$2"
+      shift
+      shift
+      ;;
+    -q|--quiesce)
+      QUIESCE="$2"
       shift
       shift
       ;;

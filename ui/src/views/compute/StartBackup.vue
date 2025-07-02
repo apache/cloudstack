@@ -40,6 +40,12 @@
             <a-input v-model:value="form.description"/>
           </a-form-item>
         </div>
+        <a-form-item v-if="provider === 'nas'" name="quiescevm" ref="quiescevm">
+          <a-switch v-model:checked="form.quiescevm" />
+          <template #label>
+            <tooltip-label :title="$t('label.quiescevm')" :tooltip="apiParams.quiescevm.description"/>
+          </template>
+        </a-form-item>
       </a-form>
       <div :span="24" class="action-button">
         <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
@@ -49,13 +55,18 @@
   </div>
 </template>
 <script>
-import { ref, toRaw } from 'vue'
+
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { mixinForm } from '@/utils/mixin'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'StartBackup',
   mixins: [mixinForm],
+  components: {
+    TooltipLabel
+  },
   props: {
     resource: {
       type: Object,
@@ -67,6 +78,9 @@ export default {
       provider: null,
       loading: false
     }
+  },
+  beforeCreate () {
+    this.apiParams = this.$getApiParams('createBackup')
   },
   created () {
     this.initForm()
@@ -80,7 +94,7 @@ export default {
   methods: {
     initForm () {
       this.formRef = ref()
-      this.form = ({})
+      this.form = reactive({})
     },
     getBackupProvider () {
       this.loading = true
@@ -104,7 +118,8 @@ export default {
         var data = {
           virtualmachineid: this.resource.id,
           name: this.form.name,
-          description: this.form.description
+          description: this.form.description,
+          quiescevm: this.form.quiescevm
         }
         this.loading = true
         api('createBackup', data).then(response => {
