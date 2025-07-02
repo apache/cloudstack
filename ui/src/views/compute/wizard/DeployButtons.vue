@@ -86,7 +86,7 @@ export default {
       this.$emit('handle-deploy', e)
     },
     handleMenu (e) {
-      this.$emit('handle-deploy-menu', e.key - 1)
+      this.$emit('handle-deploy-menu', e.key - 1, e)
     }
   }
 }
