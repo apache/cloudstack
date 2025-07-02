@@ -294,8 +294,13 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 Math.min(CapacityManager.CapacityCalculateWorkers.value(), hostIds.size())));
         for (Long hostId : hostIds) {
             futures.put(hostId, executorService.submit(() -> {
-                final HostVO host = hostDao.findById(hostId);
-                _capacityMgr.updateCapacityForHost(host);
+                Transaction.execute(new TransactionCallbackNoReturn() {
+                    @Override
+                    public void doInTransactionWithoutResult(TransactionStatus status) {
+                        final HostVO host = hostDao.findById(hostId);
+                        _capacityMgr.updateCapacityForHost(host);
+                    }
+                });
                 return null;
             }));
         }
