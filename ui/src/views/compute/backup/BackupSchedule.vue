@@ -142,7 +142,7 @@ export default {
           dataIndex: 'maxbackups'
         }
       ]
-      const hasQuiesce = this.dataSchedules.some(item => 'quiescevm' in item)
+      const hasQuiesce = this.dataSource.some(item => 'quiescevm' in item)
       if (hasQuiesce) {
         cols.push({
           key: 'quiescevm',
