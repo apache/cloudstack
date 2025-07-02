@@ -5618,10 +5618,6 @@ protected Map<String, ResourceIcon> getResourceIconsUsingOsCategory(List<Templat
     }
 
     private void populateDomainFieldsOnConsoleSessionResponse(ConsoleSession consoleSession, ConsoleSessionResponse consoleSessionResponse) {
-        if (consoleSession == null) {
-            return;
-        }
-
         Domain domain = ApiDBUtils.findDomainById(consoleSession.getDomainId());
         if (domain != null) {
             consoleSessionResponse.setDomain(domain.getName());
@@ -5631,10 +5627,6 @@ protected Map<String, ResourceIcon> getResourceIconsUsingOsCategory(List<Templat
     }
 
     private void populateUserFieldsOnConsoleSessionResponse(ConsoleSession consoleSession, ConsoleSessionResponse consoleSessionResponse) {
-        if (consoleSession == null) {
-            return;
-        }
-
         User user = findUserById(consoleSession.getUserId());
         if (user != null) {
             consoleSessionResponse.setUser(user.getUsername());
@@ -5643,10 +5635,6 @@ protected Map<String, ResourceIcon> getResourceIconsUsingOsCategory(List<Templat
     }
 
     private void populateAccountFieldsOnConsoleSessionResponse(ConsoleSession consoleSession, ConsoleSessionResponse consoleSessionResponse) {
-        if (consoleSession == null) {
-            return;
-        }
-
         Account account = ApiDBUtils.findAccountById(consoleSession.getAccountId());
         if (account != null) {
             consoleSessionResponse.setAccount(account.getAccountName());
@@ -5655,10 +5643,6 @@ protected Map<String, ResourceIcon> getResourceIconsUsingOsCategory(List<Templat
     }
 
     private void populateHostFieldsOnConsoleSessionResponse(ConsoleSession consoleSession, ConsoleSessionResponse consoleSessionResponse) {
-        if (consoleSession == null) {
-            return;
-        }
-
         Host host = findHostById(consoleSession.getHostId());
         if (host != null) {
             consoleSessionResponse.setHostId(host.getUuid());
@@ -5667,10 +5651,6 @@ protected Map<String, ResourceIcon> getResourceIconsUsingOsCategory(List<Templat
     }
 
     private void populateInstanceFieldsOnConsoleSessionResponse(ConsoleSession consoleSession, ConsoleSessionResponse consoleSessionResponse) {
-        if (consoleSession == null) {
-            return;
-        }
-
         VMInstanceVO instance = ApiDBUtils.findVMInstanceById(consoleSession.getInstanceId());
         if (instance != null) {
             consoleSessionResponse.setInstanceId(instance.getUuid());
@@ -5681,6 +5661,10 @@ protected Map<String, ResourceIcon> getResourceIconsUsingOsCategory(List<Templat
     @Override
     public ConsoleSessionResponse createConsoleSessionResponse(ConsoleSession consoleSession, ResponseView responseView) {
         ConsoleSessionResponse consoleSessionResponse = new ConsoleSessionResponse();
+        if (consoleSession == null) {
+            return consoleSessionResponse;
+        }
+
         consoleSessionResponse.setId(consoleSession.getUuid());
         consoleSessionResponse.setCreated(consoleSession.getCreated());
         consoleSessionResponse.setAcquired(consoleSession.getAcquired());
