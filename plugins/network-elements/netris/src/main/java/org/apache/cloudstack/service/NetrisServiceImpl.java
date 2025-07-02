@@ -386,6 +386,7 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
 
     @Override
     public boolean addFirewallRules(Network network, List<NetrisNetworkRule> firewallRules) {
+
         Long zoneId = network.getDataCenterId();
         Long accountId = network.getAccountId();
         Long domainId = network.getDomainId();
@@ -411,10 +412,14 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
         for (String sourceCidr : sourceCidrs) {
             if (FirewallRule.TrafficType.Ingress.name().equalsIgnoreCase(trafficType)) {
                 sourcePrefix = sourceCidr;
-                destinationPrefix = NetUtils.isValidIp4Cidr(sourcePrefix) ? network.getCidr() : network.getIp6Cidr();
+                destinationPrefix = NetUtils.isValidIp4Cidr(sourcePrefix) ||
+                        (Objects.isNull(network.getIp6Cidr()) && NetUtils.ANY_PROTO.equalsIgnoreCase(sourceCidr)) ?
+                        network.getCidr() : network.getIp6Cidr();
             } else {
                 destinationPrefix = sourceCidr;
-                sourcePrefix = NetUtils.isValidIp4Cidr(destinationPrefix) ? network.getCidr() : network.getIp6Cidr();
+                sourcePrefix = NetUtils.isValidIp4Cidr(destinationPrefix) ||
+                        (Objects.isNull(network.getIp6Cidr()) && NetUtils.ANY_PROTO.equalsIgnoreCase(sourceCidr)) ?
+                        network.getCidr() : network.getIp6Cidr();
             }
             String srcPort;
             String dstPort;
