@@ -93,6 +93,7 @@ public class ListCapabilitiesCmd extends BaseCmd {
             Map<String, Object> vpnCustomerGatewayParameters = (Map<String, Object>) capabilities.get(ApiConstants.VPN_CUSTOMER_GATEWAY_PARAMETERS);
             response.setVpnCustomerGatewayParameters(vpnCustomerGatewayParameters);
         }
+        response.setLogsWebServerEnabled((Boolean)capabilities.get(ApiConstants.LOGS_WEB_SERVER_ENABLED));
         response.setObjectName("capability");
         response.setResponseName(getCommandName());
         this.setResponseObject(response);

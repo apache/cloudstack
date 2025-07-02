@@ -191,6 +191,7 @@
         <cs.ini.version>0.5.4</cs.ini.version>
         <cs.caffeine.version>3.1.7</cs.caffeine.version>
         <cs.protobuf.version>3.25.5</cs.protobuf.version>
+        <cs.netty.all.version>4.1.95.Final</cs.netty.all.version>
     </properties>
 
     <distributionManagement>
@@ -742,6 +743,11 @@
                 <groupId>com.linbit.linstor.api</groupId>
                 <artifactId>java-linstor</artifactId>
                 <version>${cs.java-linstor.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-all</artifactId>
+                <version>${cs.netty.all.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

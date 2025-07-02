@@ -19,6 +19,7 @@ import _ from 'lodash'
 import { i18n } from '@/locales'
 import { getAPI } from '@/api'
 import { message, notification, Modal } from 'ant-design-vue'
+import { h } from 'vue'
 import eventBus from '@/config/eventBus'
 import store from '@/store'
 import { sourceToken } from '@/utils/request'
@@ -26,6 +27,26 @@ import { toLocalDate, toLocaleDate } from '@/utils/date'
 
 export const pollJobPlugin = {
   install (app) {
+    function canViewLogs (contexts) {
+      return store.getters.features.logswebserverenabled &&
+        'createLogsWebSession' in store.getters.apis &&
+        contexts && contexts.length > 0
+    }
+
+    function handleViewLogs (contexts) {
+      eventBus.emit('view-logs', contexts)
+    }
+
+    function getMessageContent (message, contexts) {
+      if (canViewLogs(contexts)) {
+        return h('span', [
+          message + ' ',
+          h(Button, { type: 'link', onClick: () => { handleViewLogs(contexts) } }, i18n.global.t('label.view.logs'))
+        ])
+      }
+      return message
+    }
+
     app.config.globalProperties.$pollJob = function (options) {
       /**
        * @param {String} jobId
@@ -44,6 +65,7 @@ export const pollJobPlugin = {
        * @param {Object} [action=null]
        * @param {Object} [bulkAction=false]
        * @param {String} resourceId
+       * @param {String} [contextId=null]
        */
       const {
         jobId,
@@ -61,7 +83,9 @@ export const pollJobPlugin = {
         catchMethod = () => {},
         action = null,
         bulkAction = false,
-        resourceId = null
+        resourceId = null,
+        contextId = null,
+        contexts = []
       } = options
 
       store.dispatch('AddHeaderNotice', {
@@ -71,6 +95,10 @@ export const pollJobPlugin = {
         status: 'progress',
         timestamp: new Date()
       })
+
+      if (contextId) {
+        contexts.push(contextId)
+      }
 
       eventBus.on('update-job-details', (args) => {
         const { jobId, resourceId } = args
@@ -93,6 +121,9 @@ export const pollJobPlugin = {
       getAPI('queryAsyncJobResult', { jobId }).then(json => {
         const result = json.queryasyncjobresultresponse
         eventBus.emit('update-job-details', { jobId, resourceId })
+        if (result.contextid) {
+          contexts.push(result.contextid)
+        }
         if (result.jobstatus === 1) {
           if (showSuccessMessage) {
             var content = successMessage
@@ -103,7 +134,7 @@ export const pollJobPlugin = {
               content = content + ' - ' + name
             }
             message.success({
-              content,
+              content: getMessageContent(content, contexts),
               key: jobId,
               duration: 2
             })
@@ -129,7 +160,7 @@ export const pollJobPlugin = {
         } else if (result.jobstatus === 2) {
           if (!bulkAction) {
             message.error({
-              content: errorMessage,
+              content: getMessageContent(errorMessage, contexts),
               key: jobId,
               duration: 1
             })
@@ -153,14 +184,26 @@ export const pollJobPlugin = {
               store.commit('SET_COUNT_NOTIFY', countNotify)
             }
           }
-          notification.error({
+          const errorConfig = {
             top: '65px',
             message: errMessage,
             description: desc,
             key: jobId,
             duration: 0,
             onClose: onClose
-          })
+          }
+          if (canViewLogs(contexts)) {
+            errorConfig.btn = h(
+              Button,
+              {
+                type: 'secondary',
+                size: 'small',
+                onClick: () => handleViewLogs(contexts)
+              },
+              i18n.global.t('label.view.logs')
+            )
+          }
+          notification.error(errorConfig)
           store.dispatch('AddHeaderNotice', {
             key: jobId,
             title,
@@ -180,7 +223,7 @@ export const pollJobPlugin = {
         } else if (result.jobstatus === 0) {
           if (showLoading) {
             message.loading({
-              content: loadingMessage,
+              content: getMessageContent(loadingMessage, contexts),
               key: jobId,
               duration: 0
             })

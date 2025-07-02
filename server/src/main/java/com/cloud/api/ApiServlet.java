@@ -115,6 +115,7 @@ public class ApiServlet extends HttpServlet {
             "listandswitchsamlaccount",
             "uploadresourceicon"
     ));
+    public static final String CLIENT_INET_ADDRESS_KEY = "client-inet-address";
 
     @Inject
     ApiServerService apiServer;
