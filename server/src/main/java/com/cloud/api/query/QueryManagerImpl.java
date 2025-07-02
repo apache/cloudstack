@@ -629,7 +629,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         List<Long> permittedAccounts = new ArrayList<>();
 
         boolean listAll = true;
-        // TODO fix bug : id is always null from here
         Long id = null;
 
         if (caller.getType() == Account.Type.NORMAL) {
