@@ -253,7 +253,7 @@ public class ScaleIOHostListener implements HypervisorHostListener {
             details = new HashMap<>();
         }
 
-        details.put(ScaleIOSDCManager.MdmsChangeApplyTimeout.key(), String.valueOf(ScaleIOSDCManager.MdmsChangeApplyTimeout.valueIn(dataCenterId)));
+        details.put(ScaleIOSDCManager.MdmsChangeApplyWaitTime.key(), String.valueOf(ScaleIOSDCManager.MdmsChangeApplyWaitTime.valueIn(dataCenterId)));
         details.put(ScaleIOSDCManager.ValidateMdmsOnConnect.key(), String.valueOf(ScaleIOSDCManager.ValidateMdmsOnConnect.valueIn(dataCenterId)));
         details.put(ScaleIOSDCManager.BlockSdcUnprepareIfRestartNeededAndVolumesAreAttached.key(), String.valueOf(ScaleIOSDCManager.BlockSdcUnprepareIfRestartNeededAndVolumesAreAttached.valueIn(dataCenterId)));
     }

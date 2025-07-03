@@ -152,7 +152,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
     @Override
     public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, Storage.StoragePoolType type, Map<String, String> details, boolean isPrimaryStorage) {
         ScaleIOStoragePool storagePool = new ScaleIOStoragePool(uuid, host, port, path, type, details, this);
-        if (details != null && details.containsKey(ScaleIOSDCManager.ConnectOnDemand.key())) {
+        if (MapUtils.isNotEmpty(details) && details.containsKey(ScaleIOSDCManager.ConnectOnDemand.key())) {
             String connectOnDemand = details.get(ScaleIOSDCManager.ConnectOnDemand.key());
             if (connectOnDemand != null && !Boolean.parseBoolean(connectOnDemand)) {
                 Ternary<Boolean, Map<String, String>, String> prepareStorageClientStatus = prepareStorageClient(uuid, details);
@@ -180,19 +180,24 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
      */
     private void validateMdmState(Map<String, String> details) {
         String configKey = ScaleIOSDCManager.ValidateMdmsOnConnect.key();
+        if (MapUtils.isEmpty(details) || !details.containsKey(configKey)) {
+            logger.debug(String.format("Skipped PowerFlex MDMs validation as property %s not sent by Management Server", configKey));
+            return;
+        }
+
         String configValue = details.get(configKey);
 
         // be as much verbose as possible, otherwise it will be difficult to troubleshoot operational issue without logs
         if (StringUtils.isEmpty(configValue)) {
-            logger.debug(String.format("Skipped ScaleIO validation as property %s not sent by Management Server", configKey));
+            logger.debug(String.format("Skipped PowerFlex MDMs validation as property %s sent by Management Server is empty", configKey));
         } else if (Boolean.valueOf(configValue).equals(Boolean.FALSE)) {
-            logger.debug(String.format("Skipped ScaleIO validation as property %s received as %s", configKey, configValue));
+            logger.debug(String.format("Skipped PowerFlex MDMs validation as property %s received as %s", configKey, configValue));
         } else {
-            Collection<String> mdmsConfig = ScaleIOUtil.getMdmsFromConfig();
-            Collection<String> mdmsCli = ScaleIOUtil.getMdmsFromCli();
-            if (!mdmsCli.equals(mdmsConfig)) {
-                String msg = String.format("MDM addresses from memory and configuration file don't match. " +
-                        "Memory values: %s, configuration file values: %s", mdmsCli, mdmsConfig);
+            Collection<String> mdmsFromConfigFile = ScaleIOUtil.getMdmsFromConfigFile();
+            Collection<String> mdmsFromCliCmd = ScaleIOUtil.getMdmsFromCliCmd();
+            if (!mdmsFromCliCmd.equals(mdmsFromConfigFile)) {
+                String msg = String.format("PowerFlex MDM addresses from CLI and Configuration File doesn't match. " +
+                        "CLI values: %s, Configuration File values: %s", mdmsFromCliCmd, mdmsFromConfigFile);
                 logger.warn(msg);
                 throw new CloudRuntimeException(msg);
             }
@@ -210,7 +215,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
 
     @Override
     public boolean deleteStoragePool(String uuid, Map<String, String> details) {
-        if (details != null && details.containsKey(ScaleIOSDCManager.ConnectOnDemand.key())) {
+        if (MapUtils.isNotEmpty(details) && details.containsKey(ScaleIOSDCManager.ConnectOnDemand.key())) {
             String connectOnDemand = details.get(ScaleIOSDCManager.ConnectOnDemand.key());
             if (connectOnDemand != null && !Boolean.parseBoolean(connectOnDemand)) {
                 Pair<Boolean, String> unprepareStorageClientStatus = unprepareStorageClient(uuid, details);
@@ -296,7 +301,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
         volumePath = ScaleIOUtil.getVolumePath(volumePath);
 
         int waitTimeInSec = DEFAULT_DISK_WAIT_TIME_IN_SECS;
-        if (details != null && details.containsKey(StorageManager.STORAGE_POOL_DISK_WAIT.toString())) {
+        if (MapUtils.isNotEmpty(details) && details.containsKey(StorageManager.STORAGE_POOL_DISK_WAIT.toString())) {
             String waitTime = details.get(StorageManager.STORAGE_POOL_DISK_WAIT.toString());
             if (StringUtils.isNotEmpty(waitTime)) {
                 waitTimeInSec = Integer.valueOf(waitTime).intValue();
@@ -664,7 +669,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
                     return new Ternary<>(false, null, "Failed to add MDMs");
                 } else {
                     logger.debug(String.format("MDMs %s added to storage pool %s", mdms, uuid));
-                    applyTimeout(details);
+                    applyMdmsChangeWaitTime(details);
                 }
             }
         }
@@ -688,7 +693,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
             return new Pair<>(true, "SDC service not enabled on host, no need to unprepare the SDC client");
         }
 
-        if (details != null && details.containsKey(ScaleIOGatewayClient.STORAGE_POOL_MDMS)) {
+        if (MapUtils.isNotEmpty(details) && details.containsKey(ScaleIOGatewayClient.STORAGE_POOL_MDMS)) {
             String mdms = details.get(ScaleIOGatewayClient.STORAGE_POOL_MDMS);
             String[] mdmAddresses = mdms.split(",");
             if (mdmAddresses.length > 0) {
@@ -704,17 +709,22 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
                         logger.debug(String.format("Configuration key %s provided as %s", configKey, configValue));
                     }
                     Boolean blockUnprepare = Boolean.valueOf(configValue);
-                    if (!ScaleIOUtil.isRemoveMdmCliSupported() && !ScaleIOUtil.getVolumeIds().isEmpty() && Boolean.TRUE.equals(blockUnprepare)) {
+                    if (!ScaleIOUtil.isRemoveMdmCliSupported() // scini restart required when --remove_mdm is not supported
+                            && !ScaleIOUtil.getVolumeIds().isEmpty()
+                            && Boolean.TRUE.equals(blockUnprepare)) {
                         return new Pair<>(false, "Failed to remove MDMs, SDC client requires service to be restarted, but there are Volumes attached to the Host");
                     }
                 }
 
+                // Immediate removal of MDMs after unmapping volume throws Error: "Volume is mappedKernel module rejects removing MDM"
+                // Wait before removing MDMs for any volumes to get unmapped.
+                applyMdmsChangeWaitTime(details);
                 ScaleIOUtil.removeMdms(mdmAddresses);
                 if (ScaleIOUtil.isMdmPresent(mdmAddresses[0])) {
                     return new Pair<>(false, "Failed to remove MDMs, unable to unprepare the SDC client");
                 } else {
                     logger.debug(String.format("MDMs %s removed from storage pool %s", mdms, uuid));
-                    applyTimeout(details);
+                    applyMdmsChangeWaitTime(details);
                 }
             }
         }
@@ -730,36 +740,41 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
     }
 
     /**
-     * Check whether details map has timeout configured and do "apply timeout" pause before returning response
+     * Check whether details map has wait time configured and do "apply wait time" pause before returning response
      * (to have ScaleIO changes applied).
      *
      * @param details see {@link PrepareStorageClientCommand#getDetails()}
      *                and {@link @UnprepareStorageClientCommand#getDetails()}, expected to contain
-     *                {@link ScaleIOSDCManager#MdmsChangeApplyTimeout#key()}
+     *                {@link ScaleIOSDCManager#MdmsChangeApplyWaitTime#key()}
      */
-    private void applyTimeout(Map<String, String> details) {
-        String configKey = ScaleIOSDCManager.MdmsChangeApplyTimeout.key();
-        String configValue = details.get(configKey);
+    private void applyMdmsChangeWaitTime(Map<String, String> details) {
+        String configKey = ScaleIOSDCManager.MdmsChangeApplyWaitTime.key();
+        if (MapUtils.isEmpty(details) || !details.containsKey(configKey)) {
+            logger.debug(String.format("Apply wait time property %s not sent by Management Server, skip", configKey));
+            return;
+        }
 
+        String configValue = details.get(configKey);
         if (StringUtils.isEmpty(configValue)) {
-            logger.debug(String.format("Apply timeout value not defined in property %s, skip", configKey));
+            logger.debug(String.format("Apply wait time value not defined in property %s, skip", configKey));
             return;
         }
         long timeoutMs;
         try {
             timeoutMs = Long.parseLong(configValue);
         } catch (NumberFormatException e) {
-            logger.warn(String.format("Invalid apply timeout value defined in property %s, skip", configKey), e);
+            logger.warn(String.format("Invalid apply wait time value defined in property %s, skip", configKey), e);
             return;
         }
         if (timeoutMs < 1) {
-            logger.warn(String.format("Apply timeout value is too small (%s ms), skipping", timeoutMs));
+            logger.warn(String.format("Apply wait time value is too small (%s ms), skipping", timeoutMs));
             return;
         }
         try {
+            logger.debug(String.format("Waiting for %d ms as defined in property %s", timeoutMs, configKey));
             Thread.sleep(timeoutMs);
         } catch (InterruptedException e) {
-            logger.warn(String.format("Apply timeout %s ms interrupted", timeoutMs), e);
+            logger.warn(String.format("Waiting for %d ms interrupted", timeoutMs), e);
         }
     }
 
@@ -774,7 +789,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
             return sdcDetails;
         }
 
-        int waitTimeInSecs = 5;
+        int numberOfTries = 5;
         int timeBetweenTries = 1000; // Try more frequently (every sec) and return early when SDC Id or Guid found
         do {
             String sdcId = ScaleIOUtil.getSdcId(storageSystemId);
@@ -793,8 +808,8 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
                 Thread.sleep(timeBetweenTries);
             } catch (Exception ignore) {
             }
-            waitTimeInSecs--;
-        } while (waitTimeInSecs > 0);
+            numberOfTries--;
+        } while (numberOfTries > 0);
 
         return sdcDetails;
     }

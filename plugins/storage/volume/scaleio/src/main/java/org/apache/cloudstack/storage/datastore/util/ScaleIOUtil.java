@@ -245,7 +245,7 @@ public class ScaleIOUtil {
     /**
      * Returns MDM entries from {@link ScaleIOUtil#DRV_CFG_FILE}.
      */
-    public static Collection<String> getMdmsFromConfig() {
+    public static Collection<String> getMdmsFromConfigFile() {
         List<String> configFileLines;
         try {
             configFileLines = Files.readAllLines(Path.of(DRV_CFG_FILE));
@@ -284,9 +284,9 @@ public class ScaleIOUtil {
     }
 
     /**
-     * Returns MDM entries from CLI using {@code --query_mdms}.
+     * Returns MDM entries from CLI Cmd using {@code --query_mdms}.
      */
-    public static Collection<String> getMdmsFromCli() {
+    public static Collection<String> getMdmsFromCliCmd() {
         String command = ScaleIOUtil.SDC_HOME_PATH + "/bin/" + ScaleIOUtil.QUERY_MDMS_CMD;
         Pair<String, String> result = Script.executeCommand(command);
         String stdOut = result.first();
