@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.ldap;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Hashtable;
 
@@ -24,6 +25,7 @@ import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.naming.ldap.InitialLdapContext;
 import javax.naming.ldap.LdapContext;
+import java.security.KeyStore;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
@@ -73,8 +75,36 @@ public class LdapContextFactory {
         if (sslStatus) {
             logger.info("LDAP SSL enabled.");
             environment.put(Context.SECURITY_PROTOCOL, "ssl");
-            System.setProperty("javax.net.ssl.trustStore", _ldapConfiguration.getTrustStore(domainId));
-            System.setProperty("javax.net.ssl.trustStorePassword", _ldapConfiguration.getTrustStorePassword(domainId));
+            String trustStore = _ldapConfiguration.getTrustStore(domainId);
+            String trustStorePassword = _ldapConfiguration.getTrustStorePassword(domainId);
+
+            if (!validateTrustStore(trustStore, trustStorePassword)) {
+                throw new RuntimeException("Invalid truststore or truststore password");
+            }
+
+            System.setProperty("javax.net.ssl.trustStore", trustStore);
+            System.setProperty("javax.net.ssl.trustStorePassword", trustStorePassword);
+        }
+    }
+
+    private boolean validateTrustStore(String trustStore, String trustStorePassword) {
+        if (trustStore == null) {
+            return true;
+        }
+
+        if (trustStorePassword == null) {
+            return false;
+        }
+
+        try {
+            KeyStore.getInstance("JKS").load(
+                new FileInputStream(trustStore),
+                trustStorePassword.toCharArray()
+            );
+            return true;
+        } catch (Exception e) {
+            s_logger.warn("Failed to validate truststore: " + e.getMessage());
+            return false;
         }
     }
 
