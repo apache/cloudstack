@@ -159,7 +159,8 @@ public class CloudOrchestrator implements OrchestrationService {
     @Override
     public VirtualMachineEntity createVirtualMachine(String id, String owner, String templateId, String hostName, String displayName, String hypervisor, int cpu,
         int speed, long memory, Long diskSize, List<String> computeTags, List<String> rootDiskTags, Map<String, List<NicProfile>> networkNicMap, DeploymentPlan plan,
-        Long rootDiskSize, Map<String, Map<Integer, String>> extraDhcpOptionMap, Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap, Long dataDiskOfferingId, Long rootDiskOfferingId) throws InsufficientCapacityException {
+        Long rootDiskSize, Map<String, Map<Integer, String>> extraDhcpOptionMap, Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap,
+        Long dataDiskOfferingId, Long rootDiskOfferingId, List<DiskOfferingInfo> dataDiskOfferingsInfo) throws InsufficientCapacityException {
 
         // VirtualMachineEntityImpl vmEntity = new VirtualMachineEntityImpl(id, owner, hostName, displayName, cpu, speed, memory, computeTags, rootDiskTags, networks,
         // vmEntityManager);
@@ -225,6 +226,7 @@ public class CloudOrchestrator implements OrchestrationService {
                 DiskOfferingInfo dataDiskOfferingInfo = new DiskOfferingInfo();
 
                 dataDiskOfferingInfo.setDiskOffering(diskOffering);
+                dataDiskOfferingInfo.setDeviceId(1L);
                 dataDiskOfferingInfo.setSize(size);
 
                 if (diskOffering.isCustomizedIops() != null && diskOffering.isCustomizedIops()) {
@@ -241,6 +243,8 @@ public class CloudOrchestrator implements OrchestrationService {
 
                 dataDiskOfferings.add(dataDiskOfferingInfo);
             }
+        } else if (dataDiskOfferingsInfo != null){
+            dataDiskOfferings.addAll(dataDiskOfferingsInfo);
         }
 
         if (dataDiskTemplateToDiskOfferingMap != null && !dataDiskTemplateToDiskOfferingMap.isEmpty()) {
@@ -264,7 +268,7 @@ public class CloudOrchestrator implements OrchestrationService {
     @Override
     public VirtualMachineEntity createVirtualMachineFromScratch(String id, String owner, String isoId, String hostName, String displayName, String hypervisor, String os,
         int cpu, int speed, long memory, Long diskSize, List<String> computeTags, List<String> rootDiskTags, Map<String, List<NicProfile>> networkNicMap, DeploymentPlan plan,
-        Map<String, Map<Integer, String>> extraDhcpOptionMap, Long diskOfferingId)
+        Map<String, Map<Integer, String>> extraDhcpOptionMap, Long diskOfferingId, List<DiskOfferingInfo> dataDiskOfferingsInfo)
         throws InsufficientCapacityException {
 
         // VirtualMachineEntityImpl vmEntity = new VirtualMachineEntityImpl(id, owner, hostName, displayName, cpu, speed, memory, computeTags, rootDiskTags, networks, vmEntityManager);
@@ -321,7 +325,7 @@ public class CloudOrchestrator implements OrchestrationService {
 
         HypervisorType hypervisorType = HypervisorType.valueOf(hypervisor);
 
-        _itMgr.allocate(vm.getInstanceName(), _templateDao.findById(new Long(isoId)), computeOffering, rootDiskOfferingInfo, new ArrayList<DiskOfferingInfo>(), networkIpMap, plan, hypervisorType, extraDhcpOptionMap, null);
+        _itMgr.allocate(vm.getInstanceName(), _templateDao.findById(new Long(isoId)), computeOffering, rootDiskOfferingInfo, dataDiskOfferingsInfo, networkIpMap, plan, hypervisorType, extraDhcpOptionMap, null);
 
         return vmEntity;
     }

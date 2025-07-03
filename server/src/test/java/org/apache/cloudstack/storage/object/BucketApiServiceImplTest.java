@@ -110,6 +110,7 @@ public class BucketApiServiceImplTest {
 
         ObjectStoreVO objectStoreVO = Mockito.mock(ObjectStoreVO.class);
         Mockito.when(objectStoreVO.getId()).thenReturn(objectStoreId);
+        Mockito.when(objectStoreVO.getTotalSize()).thenReturn(2000000000L);
         Mockito.when(objectStoreDao.findById(poolId)).thenReturn(objectStoreVO);
         ObjectStoreEntity objectStore = Mockito.mock(ObjectStoreEntity.class);
         Mockito.when(dataStoreMgr.getDataStore(objectStoreId, DataStoreRole.Object)).thenReturn(objectStore);

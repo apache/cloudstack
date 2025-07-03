@@ -62,6 +62,18 @@ public class CreateBackupCmd extends BaseAsyncCreateCmd {
             description = "ID of the VM")
     private Long vmId;
 
+    @Parameter(name = ApiConstants.NAME,
+            type = CommandType.STRING,
+            description = "the name of the backup",
+            since = "4.21.0")
+    private String name;
+
+    @Parameter(name = ApiConstants.DESCRIPTION,
+            type = CommandType.STRING,
+            description = "the description for the backup",
+            since = "4.21.0")
+    private String description;
+
     @Parameter(name = ApiConstants.SCHEDULE_ID,
             type = CommandType.LONG,
             entityType = BackupScheduleResponse.class,
@@ -69,12 +81,29 @@ public class CreateBackupCmd extends BaseAsyncCreateCmd {
             since = "4.21.0")
     private Long scheduleId;
 
+    @Parameter(name = ApiConstants.QUIESCE_VM,
+            type = CommandType.BOOLEAN,
+            required = false,
+            description = "Quiesce the instance before checkpointing the disks for backup. Applicable only to NAS backup provider. " +
+                    "The filesystem is frozen before the backup starts and thawed immediately after. " +
+                    "Requires the instance to have the QEMU Guest Agent installed and running.",
+            since = "4.21.0")
+    private Boolean quiesceVM;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
     public Long getVmId() {
         return vmId;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getDescription() {
+        return description;
     }
 
     public Long getScheduleId() {
@@ -85,6 +114,10 @@ public class CreateBackupCmd extends BaseAsyncCreateCmd {
         }
     }
 
+    public Boolean getQuiesceVM() {
+        return quiesceVM;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -92,7 +125,7 @@ public class CreateBackupCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            boolean result = backupManager.createBackup(getVmId(), getScheduleId());
+            boolean result = backupManager.createBackup(this);
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 response.setResponseName(getCommandName());
