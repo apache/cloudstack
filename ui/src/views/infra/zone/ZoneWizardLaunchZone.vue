@@ -487,7 +487,6 @@ export default {
               if (physicalNetwork.isolationMethod === 'NSX' &&
                 physicalNetwork.traffics.findIndex(traffic => traffic.type === 'public' || traffic.type === 'guest') > -1) {
                 this.stepData.isNsxZone = true
-                this.stepData.tungstenPhysicalNetworkId = physicalNetworkReturned.id
               }
             } else {
               this.stepData.physicalNetworkReturned = this.stepData.physicalNetworkItem['createPhysicalNetwork' + index]
@@ -980,7 +979,7 @@ export default {
           return
         }
 
-        if (idx === 0) {
+        if (idx === 0 && this.stepData.isNsxZone) {
           await this.stepConfigurePublicTraffic('message.configuring.nsx.public.traffic', 'nsxPublicTraffic', 1)
         } else {
           if (this.stepData.isTungstenZone) {
@@ -1080,6 +1079,7 @@ export default {
           providerParams.transportzone = this.prefillContent?.transportZone || ''
 
           await this.addNsxController(providerParams)
+          await this.updateNsxServiceProviderStatus()
           this.stepData.stepMove.push('addNsxController')
         }
         this.stepData.stepMove.push('nsx')
@@ -1088,6 +1088,18 @@ export default {
         this.messageError = e
         this.processStatus = STATUS_FAILED
         this.setStepStatus(STATUS_FAILED)
+      }
+    },
+    async updateNsxServiceProviderStatus () {
+      const listParams = {}
+      listParams.name = 'Nsx'
+      const nsxPhysicalNetwork = this.stepData.physicalNetworksReturned.find(net => net.isolationmethods.trim().toUpperCase() === 'NSX')
+      const nsxPhysicalNetworkId = nsxPhysicalNetwork?.id || null
+      listParams.physicalNetworkId = nsxPhysicalNetworkId
+      const nsxProviderId = await this.listNetworkServiceProviders(listParams, 'nsxProvider')
+      console.log(nsxProviderId)
+      if (nsxProviderId !== null) {
+        await this.updateNetworkServiceProvider(nsxProviderId)
       }
     },
     async stepConfigureStorageTraffic () {
