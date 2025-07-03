@@ -287,6 +287,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.crypt.DBEncryptionUtil;
@@ -631,21 +632,30 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     private void initMessageBusListener() {
         messageBus.subscribe(EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, new MessageSubscriber() {
             @Override
-            public void onPublishMessage(String serderAddress, String subject, Object args) {
-                String globalSettingUpdated = (String) args;
-                if (StringUtils.isEmpty(globalSettingUpdated)) {
+            public void onPublishMessage(String senderAddress, String subject, Object args) {
+                Ternary<String, ConfigKey.Scope, Long> settingUpdated = (Ternary<String, ConfigKey.Scope, Long>) args;
+                String settingNameUpdated = settingUpdated.first();
+                if (StringUtils.isEmpty(settingNameUpdated)) {
                     return;
                 }
-                if (globalSettingUpdated.equals(ApiServiceConfiguration.ManagementServerAddresses.key()) ||
-                        globalSettingUpdated.equals(IndirectAgentLBServiceImpl.IndirectAgentLBAlgorithm.key())) {
-                    _indirectAgentLB.propagateMSListToAgents();
-                } else if (globalSettingUpdated.equals(Config.RouterAggregationCommandEachTimeout.toString())
-                        ||  globalSettingUpdated.equals(Config.MigrateWait.toString())) {
+                if (settingNameUpdated.equals(ApiServiceConfiguration.ManagementServerAddresses.key()) ||
+                        settingNameUpdated.equals(IndirectAgentLBServiceImpl.IndirectAgentLBAlgorithm.key())) {
+                    _indirectAgentLB.propagateMSListToAgents(false);
+                } else if (settingNameUpdated.equals(Config.RouterAggregationCommandEachTimeout.toString())
+                        ||  settingNameUpdated.equals(Config.MigrateWait.toString())) {
                     Map<String, String> params = new HashMap<String, String>();
                     params.put(Config.RouterAggregationCommandEachTimeout.toString(), _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
                     params.put(Config.MigrateWait.toString(), _configDao.getValue(Config.MigrateWait.toString()));
                     _agentManager.propagateChangeToAgents(params);
-                } else if (VMLeaseManager.InstanceLeaseEnabled.key().equals(globalSettingUpdated)) {
+                } else if (settingNameUpdated.equals(IndirectAgentLBServiceImpl.IndirectAgentLBCheckInterval.key())) {
+                    ConfigKey.Scope scope = settingUpdated.second();
+                    if (scope == ConfigKey.Scope.Global) {
+                        _indirectAgentLB.propagateMSListToAgents(false);
+                    } else if (scope == ConfigKey.Scope.Cluster) {
+                        Long clusterId = settingUpdated.third();
+                        _indirectAgentLB.propagateMSListToAgentsInCluster(clusterId);
+                    }
+                } else if (VMLeaseManager.InstanceLeaseEnabled.key().equals(settingNameUpdated)) {
                     vmLeaseManager.onLeaseFeatureToggle();
                 }
             }
@@ -845,6 +855,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             CallContext.current().setEventDetails(String.format(" Name: %s, New Value: %s, Scope: %s", name, value, scope.name()));
 
             _configDepot.invalidateConfigCache(name, scope, resourceId);
+            messageBus.publish(_name, EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, PublishScope.GLOBAL, new Ternary<>(name, scope, resourceId));
             return valueEncrypted ? DBEncryptionUtil.decrypt(value) : value;
         }
 
@@ -939,7 +950,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         txn.commit();
-        messageBus.publish(_name, EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, PublishScope.GLOBAL, name);
+        messageBus.publish(_name, EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, PublishScope.GLOBAL, new Ternary<>(name, ConfigKey.Scope.Global, resourceId));
         return _configDao.getValue(name);
     }
 
