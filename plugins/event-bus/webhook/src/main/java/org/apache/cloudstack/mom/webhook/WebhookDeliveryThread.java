@@ -96,7 +96,7 @@ public class WebhookDeliveryThread implements Runnable {
     }
 
     protected void setHttpClient() throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
-        if (webhook.isSslVerification()) {
+        if (!webhook.isSslVerification()) {
             httpClient = HttpClients.createDefault();
             return;
         }
@@ -160,11 +160,11 @@ public class WebhookDeliveryThread implements Runnable {
 
     @Override
     public void run() {
-        LOGGER.debug("Delivering event: {} for {}", event.getEventType(), webhook);
         if (event == null) {
             LOGGER.warn("Invalid event received for delivering to {}", webhook);
             return;
         }
+        LOGGER.debug("Delivering event: {} for {}", event.getEventType(), webhook);
         payload = event.getDescription();
         LOGGER.trace("Payload: {}", payload);
         int attempt = 0;

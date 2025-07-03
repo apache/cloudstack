@@ -17,6 +17,7 @@
 """ BVT tests for webhooks delivery with a basic server
 """
 # Import Local Modules
+from marvin.cloudstackAPI import issueCertificate
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import (Account,
                              Domain,
@@ -34,6 +35,8 @@ import time
 import json
 import socket
 import _thread
+import tempfile
+import ssl
 
 
 _multiprocess_shared_ = True
@@ -55,15 +58,23 @@ class WebhookReceiver(BaseHTTPRequestHandler):
         event_id = self.headers.get('X-CS-Event-ID')
         print("POST request,\nPath: %s\nHeaders:\n%s\n\nBody:\n%s\n" %
                 (str(self.path), str(self.headers), post_data))
-        self._set_response()
         global deliveries_received
         if deliveries_received is None:
             deliveries_received = []
         deliveries_received.append({'event': event_id, 'payload': post_data})
+
         if event_id != None:
-            self.wfile.write("Event with ID: {} successfully processed!".format(str(event_id)).encode('utf-8'))
+            data="Event with ID: {} successfully processed!".format(str(event_id)).encode('utf-8')
         else:
-            self.wfile.write("POST request for {}".format(self.path).encode('utf-8'))
+            data="POST request for {}".format(self.path).encode('utf-8')
+
+        self.send_response(200)
+        self.send_header('Content-type', 'text/html')
+        self.send_header('Content-Length', len(data))
+        self.end_headers()
+
+        self.wfile.write(data)
+        self.wfile.flush()
 
 class TestWebhookDelivery(cloudstackTestCase):
 
@@ -97,12 +108,37 @@ class TestWebhookDelivery(cloudstackTestCase):
         cls.webhook_receiver_url = "http://" + cls.server_ip + ":" + str(cls.server_port)
         cls.logger.debug("Running Webhook receiver @ %s" % cls.webhook_receiver_url)
         def startMgmtServer(tname, server):
-            cls.logger.debug("Starting WebhookReceiver")
+            cls.logger.debug("Starting WebhookReceiver %s" % tname)
             try:
                 server.serve_forever()
             except Exception: pass
         cls.server = HTTPServer(('0.0.0.0', cls.server_port), WebhookReceiver)
         _thread.start_new_thread(startMgmtServer, ("webhook-receiver", cls.server,))
+
+        # Setup HTTPS server
+        s = socket.socket()
+        s.bind(('', 0))
+        cls.server_port = s.getsockname()[1]
+        s.close()
+        cls.webhook_receiver_https_url = "https://" + cls.server_ip + ":" + str(cls.server_port)
+        cls.logger.debug("Running Webhook HTTPS receiver @ %s" % cls.webhook_receiver_https_url)
+
+        cls.logger.debug("Getting certificate from management server")
+        issueCertificateCmd = issueCertificate.issueCertificateCmd()
+        issueCertificateCmd.domain = cls.server_ip
+        issueCertificateResponse = cls.apiclient.issueCertificate(issueCertificateCmd)
+        if issueCertificateResponse is None:
+            cls.https_server = None
+        else:
+            with tempfile.NamedTemporaryFile(delete=False, mode="w") as cert_file, \
+                    tempfile.NamedTemporaryFile(delete=False, mode="w") as key_file:
+                cert_file.write(issueCertificateResponse.certificate)
+                key_file.write(issueCertificateResponse.privatekey)
+            ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            ssl_context.load_cert_chain(certfile=cert_file.name, keyfile=key_file.name)
+            cls.https_server = HTTPServer(('0.0.0.0', cls.server_port), WebhookReceiver)
+            cls.https_server.socket = ssl_context.wrap_socket(cls.https_server.socket, server_side=True)
+            _thread.start_new_thread(startMgmtServer, ("webhook-receiver-https", cls.https_server,))
 
         cls._cleanup = []
 
@@ -122,6 +158,8 @@ class TestWebhookDelivery(cloudstackTestCase):
         self.cleanup.append(self.domain1)
 
     def tearDown(self):
+        global deliveries_received
+        deliveries_received = []
         super(TestWebhookDelivery, self).tearDown()
 
     def popItemFromCleanup(self, item_id):
@@ -165,6 +203,61 @@ class TestWebhookDelivery(cloudstackTestCase):
         global deliveries_received
         self.createDomainAccount()
         self.createWebhook(self.userapiclient)
+        self.keypair = SSHKeyPair.register(
+            self.userapiclient,
+            name="Test-" + random_gen(),
+            publickey="ssh-rsa: e6:9a:1e:b5:98:75:88:5d:56:bc:92:7b:43:48:05:b2"
+        )
+        self.logger.debug("Registered sshkeypair: %s" % str(self.keypair.__dict__))
+        time.sleep(2)
+        list_deliveries = self.webhook.list_deliveries(
+            self.userapiclient,
+            page=1,
+            pagesize=20
+        )
+        self.assertNotEqual(
+            list_deliveries,
+            None,
+            "Check webhook deliveries list"
+        )
+        self.assertTrue(
+            len(list_deliveries) > 0,
+            "Check webhook deliveries list length"
+        )
+        for delivery in list_deliveries:
+            self.assertEqual(
+                delivery.success,
+                True,
+                "Check webhook delivery success"
+            )
+            self.assertEqual(
+                delivery.response,
+                ("Event with ID: %s successfully processed!" % delivery.eventid),
+                "Check webhook delivery response"
+            )
+            delivery_matched = False
+            for received in deliveries_received:
+                if received['event'] == delivery.eventid:
+                    self.assertEqual(
+                        delivery.payload,
+                        received['payload'],
+                        "Check webhook delivery payload"
+                    )
+                    delivery_matched = True
+            self.assertTrue(
+                delivery_matched,
+                "Delivery for %s did not match with server" % delivery.id
+            )
+
+    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    def test_02_webhook_deliveries_https(self):
+        if not self.https_server:
+            self.skipTest('Failed to setup HTTPS server. skipping')
+        global deliveries_received
+        self.createDomainAccount()
+        self.createWebhook(self.userapiclient,
+                           payloadurl=self.webhook_receiver_https_url,
+                           sslverification=True)
         self.keypair = SSHKeyPair.register(
             self.userapiclient,
             name="Test-" + random_gen(),
