@@ -172,6 +172,7 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.SwiftUtil;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter;
@@ -671,7 +672,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     public static String getSecondaryDatastoreUUID(String storeUrl) {
-        return UUID.nameUUIDFromBytes(storeUrl.getBytes()).toString();
+        return UuidUtils.nameUUIDFromBytes(storeUrl.getBytes()).toString();
     }
 
     private static String getTemplateRelativeDirInSecStorage(long accountId, long templateId) {
@@ -3029,7 +3030,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         String nfsPath = uriHostIp + ":" + uri.getPath();
 
         // Single means of calculating mount directory regardless of scheme
-        String dir = UUID.nameUUIDFromBytes(nfsPath.getBytes(com.cloud.utils.StringUtils.getPreferredCharset())).toString();
+        String dir = UuidUtils.nameUUIDFromBytes(nfsPath.getBytes(com.cloud.utils.StringUtils.getPreferredCharset())).toString();
         String localRootPath = _parent + "/" + dir;
 
         // remote device syntax varies by scheme.
@@ -3481,7 +3482,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             templateName = uploadEntity.getUuid().trim().replace(" ", "_");
         } else {
             try {
-                templateName = UUID.nameUUIDFromBytes((uploadEntity.getFilename() + System.currentTimeMillis()).getBytes("UTF-8")).toString();
+                templateName = UuidUtils.nameUUIDFromBytes((uploadEntity.getFilename() + System.currentTimeMillis()).getBytes("UTF-8")).toString();
             } catch (UnsupportedEncodingException e) {
                 templateName = uploadEntity.getUuid().trim().replace(" ", "_");
             }

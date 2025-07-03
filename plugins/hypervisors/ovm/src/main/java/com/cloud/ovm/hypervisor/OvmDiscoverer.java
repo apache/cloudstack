@@ -46,6 +46,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -131,7 +132,7 @@ public class OvmDiscoverer extends DiscovererBase implements Discoverer, Resourc
             String hostname = url.getHost();
             InetAddress ia = InetAddress.getByName(hostname);
             String hostIp = ia.getHostAddress();
-            String guid = UUID.nameUUIDFromBytes(hostIp.getBytes()).toString();
+            String guid = UuidUtils.nameUUIDFromBytes(hostIp.getBytes()).toString();
 
             if (checkIfExisted(guid)) {
                 throw new CloudRuntimeException("The host " + hostIp + " has been added before");

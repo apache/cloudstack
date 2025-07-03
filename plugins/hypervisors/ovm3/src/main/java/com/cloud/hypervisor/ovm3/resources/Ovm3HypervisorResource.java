@@ -19,7 +19,6 @@ package com.cloud.hypervisor.ovm3.resources;
 
 import java.nio.charset.Charset;
 import java.util.Map;
-import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -95,6 +94,7 @@ import com.cloud.resource.hypervisor.HypervisorResource;
 import com.cloud.storage.resource.StorageSubsystemCommandHandler;
 import com.cloud.storage.resource.StorageSubsystemCommandHandlerBase;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
@@ -369,7 +369,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             vm.setVmCpus(vmSpec.getCpus());
             /* in mb not in bytes */
             vm.setVmMemory(vmSpec.getMinRam() / 1024 / 1024);
-            vm.setVmUuid(UUID.nameUUIDFromBytes(vmSpec.getName().getBytes(Charset.defaultCharset())).toString());
+            vm.setVmUuid(UuidUtils.nameUUIDFromBytes(vmSpec.getName().getBytes(Charset.defaultCharset())).toString());
             vm.setVmName(vmName);
 
             String domType = guesttypes.getOvm3GuestType(vmSpec.getOs());

@@ -69,6 +69,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachineManager;
@@ -309,7 +310,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStor
         } else if ("PreSetup".equalsIgnoreCase(scheme) && !HypervisorType.VMware.equals(hypervisorType)) {
             uuid = hostPath.replace("/", "");
         } else {
-            uuid = UUID.nameUUIDFromBytes((storageHost + hostPath).getBytes()).toString();
+            uuid = UuidUtils.nameUUIDFromBytes((storageHost + hostPath).getBytes()).toString();
         }
 
         List<StoragePoolVO> spHandles = primaryDataStoreDao.findIfDuplicatePoolsExistByUUID(uuid);

@@ -5820,7 +5820,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public static String generateSecretUUIDFromString(String seed) {
-        return UUID.nameUUIDFromBytes(seed.getBytes()).toString();
+        return UuidUtils.nameUUIDFromBytes(seed.getBytes()).toString();
     }
 
     public void setInterfaceDefQueueSettings(Map<String, String> details, Integer cpus, InterfaceDef interfaceDef) {

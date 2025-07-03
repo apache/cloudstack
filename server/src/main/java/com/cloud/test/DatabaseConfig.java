@@ -57,6 +57,7 @@ import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.dao.DiskOfferingDaoImpl;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
@@ -609,7 +610,7 @@ public class DatabaseConfig {
         String hostAddress = _currentObjectParams.get("hostAddress");
         String hostPath = _currentObjectParams.get("hostPath");
         String storageType = _currentObjectParams.get("storageType");
-        String uuid = UUID.nameUUIDFromBytes(new String(hostAddress + hostPath).getBytes()).toString();
+        String uuid = UuidUtils.nameUUIDFromBytes(new String(hostAddress + hostPath).getBytes()).toString();
 
         String insertSql1 =
             "INSERT INTO `storage_pool` (`id`, `name`, `uuid` , `pool_type` , `port`, `data_center_id` ,`available_bytes` , `capacity_bytes` ,`host_address`, `path`, `created`, `pod_id`,`status` , `cluster_id`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)";

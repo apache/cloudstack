@@ -142,6 +142,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
@@ -1047,7 +1048,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
             path = path.replace("//", "/");
             deviceConfig.put("server", uri.getHost());
             deviceConfig.put("serverpath", path);
-            final String name = UUID.nameUUIDFromBytes((uri.getHost() + path).getBytes()).toString();
+            final String name = UuidUtils.nameUUIDFromBytes((uri.getHost() + path).getBytes()).toString();
             if (!shared) {
                 final Set<SR> srs = SR.getByNameLabel(conn, name);
                 for (final SR sr : srs) {
@@ -5763,7 +5764,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         try {
             URI uri = new URI(secondaryStorageUrl);
             secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
-            localDir = BASE_MOUNT_POINT_ON_REMOTE + UUID.nameUUIDFromBytes(secondaryStorageMountPath.getBytes());
+            localDir = BASE_MOUNT_POINT_ON_REMOTE + UuidUtils.nameUUIDFromBytes(secondaryStorageMountPath.getBytes());
             String mountPoint = mountNfs(conn, secondaryStorageMountPath, localDir, nfsVersion);
             if (StringUtils.isBlank(mountPoint)) {
                 return new CopyToSecondaryStorageAnswer(cmd, false, "Could not mount secondary storage " + secondaryStorageMountPath + " on host " + localDir);
@@ -5793,7 +5794,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
 
     private String mountNfs(Connection conn, String remoteDir, String localDir, String nfsVersion) {
         if (localDir == null) {
-            localDir = BASE_MOUNT_POINT_ON_REMOTE + UUID.nameUUIDFromBytes(remoteDir.getBytes());
+            localDir = BASE_MOUNT_POINT_ON_REMOTE + UuidUtils.nameUUIDFromBytes(remoteDir.getBytes());
         }
         return callHostPlugin(conn, "cloud-plugin-storage", "mountNfsSecondaryStorage", "localDir", localDir, "remoteDir", remoteDir, "nfsVersion", nfsVersion);
     }
@@ -5801,7 +5802,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
     // Unmount secondary storage from host
     private void umountNfs(Connection conn, String remoteDir, String localDir) {
         if (localDir == null) {
-            localDir = BASE_MOUNT_POINT_ON_REMOTE + UUID.nameUUIDFromBytes(remoteDir.getBytes());
+            localDir = BASE_MOUNT_POINT_ON_REMOTE + UuidUtils.nameUUIDFromBytes(remoteDir.getBytes());
         }
         String result = callHostPlugin(conn, "cloud-plugin-storage", "umountNfsSecondaryStorage", "localDir", localDir, "remoteDir", remoteDir);
         if (StringUtils.isBlank(result)) {
