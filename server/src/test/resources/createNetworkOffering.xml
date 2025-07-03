@@ -74,6 +74,8 @@
     <bean id="configurationGroupDaoImpl" class="org.apache.cloudstack.framework.config.dao.ConfigurationGroupDaoImpl" />
     <bean id="configurationSubGroupDaoImpl" class="org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDaoImpl" />
     <bean id="nsxControllerDaoImpl" class="com.cloud.network.dao.NsxProviderDaoImpl" />
+    <bean id="netrisProviderDaoImpl" class="com.cloud.network.dao.NetrisProviderDaoImpl" />
+    <bean id="netrisServiceMock" class="org.apache.cloudstack.service.NetrisServiceMockTest" />
     <bean id="vlanDetailsDao" class="com.cloud.dc.dao.VlanDetailsDaoImpl" />
     <bean id="publicIpQuarantineDaoImpl" class="com.cloud.network.dao.PublicIpQuarantineDaoImpl" />
     <bean id="reservationDao" class="org.apache.cloudstack.reservation.dao.ReservationDaoImpl" />

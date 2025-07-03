@@ -165,18 +165,18 @@ class TestVPNUsers(cloudstackTestCase):
     def create_VPN(self, public_ip):
         """Creates VPN for the network"""
 
-        self.debug("Creating VPN with public IP: %s" % public_ip.ipaddress.id)
+        self.debug("Creating VPN with public IP: %s" % public_ip.id)
         try:
             # Assign VPN to Public IP
             vpn = Vpn.create(self.apiclient,
-                             self.public_ip.ipaddress.id,
+                             public_ip.id,
                              account=self.account.name,
                              domainid=self.account.domainid)
             self.cleanup.append(vpn)
 
             self.debug("Verifying the remote VPN access")
             vpns = Vpn.list(self.apiclient,
-                            publicipid=public_ip.ipaddress.id,
+                            publicipid=public_ip.id,
                             listall=True)
             self.assertEqual(
                 isinstance(vpns, list),
@@ -244,7 +244,23 @@ class TestVPNUsers(cloudstackTestCase):
         self.debug("Enabling the VPN access for IP: %s" %
                    self.public_ip.ipaddress)
 
-        self.create_VPN(self.public_ip)
+        network_id = self.virtual_machine.nic[0].networkid
+        src_nat_list = PublicIPAddress.list(
+            self.apiclient,
+            account=self.account.name,
+            domainid=self.account.domainid,
+            listall=True,
+            issourcenat=True,
+            associatednetworkid=network_id
+        )
+        self.assertEqual(
+            validateList(src_nat_list)[0],
+            PASS,
+            "Failed to list source nat ip address"
+        )
+        ip = src_nat_list[0]
+
+        self.create_VPN(ip)
         self.debug("Creating %s VPN users" % limit)
         for x in range(limit):
             self.create_VPN_Users()
@@ -296,9 +312,24 @@ class TestVPNUsers(cloudstackTestCase):
         # 3. add a port forward rule for UDP port 1701.  Should result in error
         #    saying that VPN is enabled over port 1701
 
+        network_id = self.virtual_machine.nic[0].networkid
+        src_nat_list = PublicIPAddress.list(
+            self.apiclient,
+            account=self.account.name,
+            domainid=self.account.domainid,
+            listall=True,
+            issourcenat=True,
+            associatednetworkid=network_id
+        )
+        self.assertEqual(
+            validateList(src_nat_list)[0],
+            PASS,
+            "Failed to list source nat ip address"
+        )
+        ip = src_nat_list[0]
         self.debug("Enabling the VPN connection for IP: %s" %
-                   self.public_ip.ipaddress)
-        self.create_VPN(self.public_ip)
+                   ip.address)
+        self.create_VPN(ip)
 
         self.debug("Creating a port forwarding rule on port 1701")
         # Create NAT rule
@@ -307,7 +338,7 @@ class TestVPNUsers(cloudstackTestCase):
                 self.apiclient,
                 self.virtual_machine,
                 self.services["natrule"],
-                self.public_ip.ipaddress.id)
+                ip.id)
 
         self.debug("Create NAT rule failed! Test successful!")
         return
@@ -322,9 +353,25 @@ class TestVPNUsers(cloudstackTestCase):
         # 3. We should be able to successfully establish a VPN connection using
         #    the newly added user credential.
 
+        network_id = self.virtual_machine.nic[0].networkid
+        src_nat_list = PublicIPAddress.list(
+            self.apiclient,
+            account=self.account.name,
+            domainid=self.account.domainid,
+            listall=True,
+            issourcenat=True,
+            associatednetworkid=network_id
+        )
+        self.assertEqual(
+            validateList(src_nat_list)[0],
+            PASS,
+            "Failed to list source nat ip address"
+        )
+        ip = src_nat_list[0]
+
         self.debug("Enabling the VPN connection for IP: %s" %
-                   self.public_ip.ipaddress)
-        self.create_VPN(self.public_ip)
+                   ip.address)
+        self.create_VPN(ip)
 
         try:
             self.debug("Adding new VPN user to account: %s" %
@@ -349,9 +396,24 @@ class TestVPNUsers(cloudstackTestCase):
         # 2. Add a VPN user say "abc"  that already an added user to the VPN.
         # 3. Adding this VPN user should fail.
 
+        network_id = self.virtual_machine.nic[0].networkid
+        src_nat_list = PublicIPAddress.list(
+            self.apiclient,
+            account=self.account.name,
+            domainid=self.account.domainid,
+            listall=True,
+            issourcenat=True,
+            associatednetworkid=network_id
+        )
+        self.assertEqual(
+            validateList(src_nat_list)[0],
+            PASS,
+            "Failed to list source nat ip address"
+        )
+        ip = src_nat_list[0]
         self.debug("Enabling the VPN connection for IP: %s" %
-                   self.public_ip.ipaddress)
-        self.create_VPN(self.public_ip)
+                   ip.address)
+        self.create_VPN(ip)
 
         self.debug("Adding new VPN user to account: %s" %
                    self.account.name)
@@ -379,9 +441,24 @@ class TestVPNUsers(cloudstackTestCase):
         # 2. We should be able to use this newly created user credential to
         #   establish VPN connection that will give access all VMs of this user
 
+        network_id = self.virtual_machine.nic[0].networkid
+        src_nat_list = PublicIPAddress.list(
+            self.apiclient,
+            account=self.account.name,
+            domainid=self.account.domainid,
+            listall=True,
+            issourcenat=True,
+            associatednetworkid=network_id
+        )
+        self.assertEqual(
+            validateList(src_nat_list)[0],
+            PASS,
+            "Failed to list source nat ip address"
+        )
+        ip = src_nat_list[0]
         self.debug("Enabling VPN connection to account: %s" %
                    self.account.name)
-        self.create_VPN(self.public_ip)
+        self.create_VPN(ip)
         self.debug("Creating VPN user for the account: %s" %
                    self.account.name)
         self.create_VPN_Users()
@@ -422,9 +499,24 @@ class TestVPNUsers(cloudstackTestCase):
         # 2. We should be able to use this newly created user credential to
         #   establish VPN connection that will give access all VMs of this user
 
+        network_id = self.virtual_machine.nic[0].networkid
+        src_nat_list = PublicIPAddress.list(
+            self.apiclient,
+            account=self.account.name,
+            domainid=self.account.domainid,
+            listall=True,
+            issourcenat=True,
+            associatednetworkid=network_id
+        )
+        self.assertEqual(
+            validateList(src_nat_list)[0],
+            PASS,
+            "Failed to list source nat ip address"
+        )
+        ip = src_nat_list[0]
         self.debug("Enabling VPN connection to account: %s" %
                    self.account.name)
-        self.create_VPN(self.public_ip)
+        self.create_VPN(ip)
         self.debug("Creating VPN user for the account: %s" %
                    self.account.name)
         self.create_VPN_Users()
