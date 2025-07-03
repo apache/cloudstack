@@ -54,14 +54,14 @@ public class LdapContextFactory {
         return createInitialDirContext(bindPrincipal, bindPassword, providerUrl, true, domainId);
     }
 
-    private LdapContext createInitialDirContext(final String principal, final String password, final boolean isSystemContext, Long domainId) throws NamingException, IOException {
+    private LdapContext createInitialDirContext(final String principal, final String password, final boolean isSystemContext, Long domainId) throws NamingException {
         return createInitialDirContext(principal, password, null, isSystemContext, domainId);
     }
 
     private LdapContext createInitialDirContext(final String principal, final String password, final String providerUrl, final boolean isSystemContext, Long domainId)
-        throws NamingException, IOException {
+        throws NamingException {
         Hashtable<String, String> environment = getEnvironment(principal, password, providerUrl, isSystemContext, domainId);
-        logger.debug("initializing ldap with provider url: " + environment.get(Context.PROVIDER_URL));
+        logger.debug("initializing ldap with provider url: {}", environment.get(Context.PROVIDER_URL));
         return new InitialLdapContext(environment, null);
     }
 
@@ -103,7 +103,7 @@ public class LdapContextFactory {
             );
             return true;
         } catch (Exception e) {
-            s_logger.warn("Failed to validate truststore: " + e.getMessage());
+            logger.warn("Failed to validate truststore: {}", e.getMessage());
             return false;
         }
     }
