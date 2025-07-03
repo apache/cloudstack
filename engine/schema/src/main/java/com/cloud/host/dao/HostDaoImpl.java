@@ -37,7 +37,9 @@ import javax.persistence.TableGenerator;
 
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.utils.jsinterpreter.TagAsRuleHelper;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.utils.jsinterpreter.GenericRuleHelper;
 import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.agent.api.VgpuTypesInfo;
@@ -84,7 +86,7 @@ import org.apache.commons.lang3.ObjectUtils;
 
 @DB
 @TableGenerator(name = "host_req_sq", table = "op_host", pkColumnName = "id", valueColumnName = "sequence", allocationSize = 1)
-public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao { //FIXME: , ExternalIdDao {
+public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao, Configurable {
 
     private static final String LIST_HOST_IDS_BY_HOST_TAGS = "SELECT filtered.host_id, COUNT(filtered.tag) AS tag_count "
                                                              + "FROM (SELECT host_id, tag, is_tag_a_rule FROM host_tags GROUP BY host_id,tag,is_tag_a_rule) AS filtered "
@@ -1520,11 +1522,13 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         }
     }
 
-    public List<HostVO> findHostsWithTagRuleThatMatchComputeOferringTags(String computeOfferingTags) {
+    @Override
+    public List<HostVO> findHostsWithTagRuleThatMatchComputeOfferingTags(String computeOfferingTags) {
         List<HostTagVO> hostTagVOList = _hostTagsDao.findHostRuleTags();
         List<HostVO> result = new ArrayList<>();
         for (HostTagVO rule: hostTagVOList) {
-            if (TagAsRuleHelper.interpretTagAsRule(rule.getTag(), computeOfferingTags, HostTagsDao.hostTagRuleExecutionTimeout.value())) {
+            if (GenericRuleHelper.interpretTagAsRule(rule.getTag(), computeOfferingTags, HostTagsDao.hostTagRuleExecutionTimeout.value(),
+                    HostTagsDao.hostTagRuleExecutionTimeout.key())) {
                 result.add(findById(rule.getHostId()));
             }
         }
@@ -1532,9 +1536,25 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         return result;
     }
 
+    @Override
+    public List<HostVO> findHostsWithGuestOsRulesThatDidNotMatchOsOfGuestVm(String templateGuestOSName) {
+        List<DetailVO> hostIdsWithGuestOsRule = _detailsDao.findByName(Host.GUEST_OS_RULE);
+        List<HostVO> hostsWithIncompatibleRules = new ArrayList<>();
+        for (DetailVO guestOsRule : hostIdsWithGuestOsRule) {
+            if (!GenericRuleHelper.interpretGuestOsRule(guestOsRule.getValue(), templateGuestOSName, HostDao.guestOsRuleExecutionTimeout.value(),
+                    HostDao.guestOsRuleExecutionTimeout.key())) {
+                logger.trace("The guest OS rule [{}] of the host with ID [{}] is incompatible with the OS of the VM.", guestOsRule.getHostId(), guestOsRule.getValue());
+                hostsWithIncompatibleRules.add(findById(guestOsRule.getHostId()));
+            }
+        }
+        logger.trace("The hosts with the following IDs [{}] are incompatible with the VM considering their guest OS rule.", hostsWithIncompatibleRules);
+        return hostsWithIncompatibleRules;
+    }
+
+    @Override
     public List<Long> findClustersThatMatchHostTagRule(String computeOfferingTags) {
         Set<Long> result = new HashSet<>();
-        List<HostVO> hosts = findHostsWithTagRuleThatMatchComputeOferringTags(computeOfferingTags);
+        List<HostVO> hosts = findHostsWithTagRuleThatMatchComputeOfferingTags(computeOfferingTags);
         for (HostVO host: hosts) {
             result.add(host.getClusterId());
         }
@@ -1983,5 +2003,15 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         }
 
         return customSearch(sc, null);
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {guestOsRuleExecutionTimeout};
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return HostDaoImpl.class.getSimpleName();
     }
 }
