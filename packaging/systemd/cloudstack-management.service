@@ -34,6 +34,7 @@ User=cloud
 EnvironmentFile=/etc/default/cloudstack-management
 WorkingDirectory=/var/log/cloudstack/management
 PIDFile=/var/run/cloudstack-management.pid
+ExecStartPre=/usr/share/cloudstack-common/scripts/installer/pre-check.sh
 ExecStart=/usr/bin/java $JAVA_DEBUG $JAVA_OPTS -cp $CLASSPATH $BOOTSTRAP_CLASS
 StandardOutput=append:/var/log/cloudstack/management/management-server.out
 StandardError=append:/var/log/cloudstack/management/management-server.err
