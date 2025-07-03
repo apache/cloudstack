@@ -72,7 +72,7 @@
                       v-for="(opt, idx) in field.opts"
                       :key="idx"
                       :value="['account'].includes(field.name) ? opt.name : opt.id"
-                      :label="$t((['storageid'].includes(field.name) || !opt.path) ? opt.name : opt.path)">
+                      :label="$t((field.name.startsWith('domain') && opt.path) ? opt.path : opt.name)">
                       <div>
                         <span v-if="(field.name.startsWith('zone'))">
                           <span v-if="opt.icon">
@@ -89,7 +89,7 @@
                         <span v-if="(field.name.startsWith('managementserver'))">
                           <status :text="opt.state" />
                         </span>
-                        {{ $t((['storageid'].includes(field.name) || !opt.path) ? opt.name : opt.path) }}
+                        {{ $t((field.name.startsWith('domain') && opt.path) ? opt.path : opt.name) }}
                       </div>
                     </a-select-option>
                   </a-select>
@@ -815,8 +815,8 @@ export default {
     },
     fetchExtensions (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listExtensions', { showicon: true, keyword: searchKeyword }).then(json => {
-          const extensions = json.listextensionsresponse.extensions
+        api('listExtensions', { details: 'min', showicon: true, keyword: searchKeyword }).then(json => {
+          const extensions = json.listextensionsresponse.extension
           resolve({
             type: 'extensionid',
             data: extensions
