@@ -381,8 +381,15 @@ export default {
       if (values.password) {
         data.password = values.password
       }
-      if (values.hypervisor === 'External' && values.extensionid) {
-        data.extensionid = values.extensionid
+      if (values.hypervisor === 'External') {
+        if (values.extensionid) {
+          data.extensionid = values.extensionid
+        }
+        if (values.externaldetails) {
+          Object.entries(values.externaldetails).forEach(([k, v]) => {
+            data['externaldetails[0].' + k] = v
+          })
+        }
       }
       postAPI('addCluster', data).then(response => {
         const cluster = response.addclusterresponse.cluster[0] || {}
