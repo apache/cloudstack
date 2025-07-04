@@ -33,25 +33,25 @@ def parse_json(json_data):
         data["username"] = external_host_details["username"]
         data["password"] = external_host_details["password"]
         data["network_switch"] = external_host_details["network_switch"]
-        data["default_vhd_path"] = external_host_details.get("default_vhd_path", "C:\\ProgramData\\Microsoft\\Windows\\Virtual Hard Disks")
-        data["default_vm_path"] = external_host_details.get("default_vm_path", "C:\\ProgramData\\Microsoft\\Windows\\Hyper-V")
+        data["vhd_path"] = external_host_details["vhd_path"]
+        data["vm_path"] = external_host_details["vm_path"]
 
         external_vm_details = json_data["externaldetails"].get("virtualmachine", [])
         if external_vm_details:
-            data["template_type"] = external_vm_details.get("template_type", "template")
+            data["template_type"] = external_vm_details["template_type"]
+            data["generation"] = external_vm_details.get("generation", 1)
             data["template_path"] = external_vm_details.get("template_path", "")
-            data["vhd_size_gb"] = external_vm_details.get("vhd_size_gb", 25)
             data["iso_path"] = external_vm_details.get("iso_path", "")
-            data["generation"] = external_vm_details.get("generation", 2)
+            data["vhd_size_gb"] = external_vm_details.get("vhd_size_gb", "")
 
-        data["cpus"] = json_data["cloudstack.vm.details"].get("cpus", 2)
-        data["memory"] = json_data["cloudstack.vm.details"].get("minRam", 536870912)
+        data["cpus"] = json_data["cloudstack.vm.details"]["cpus"]
+        data["memory"] = json_data["cloudstack.vm.details"]["minRam"]
 
         nics = json_data["cloudstack.vm.details"].get("nics", [])
         data["nics"] = []
         for nic in nics:
-            data["interfaces"].append({
-                "mac": nic["mac_address"],
+            data["nics"].append({
+                "mac": nic["mac"],
                 "vlan": nic["broadcastUri"].replace("vlan://", "")
         })
 
@@ -77,13 +77,13 @@ def succeed(data):
 
 
 def run_powershell_ssh_int(command, url, username, password):
-    #print(f"[INFO] Connecting to {url} as {username}...")
+    print(f"[INFO] Connecting to {url} as {username}...")
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(url, username=username, password=password)
 
     ps_command = f'powershell -NoProfile -Command "{command.strip()}"'
-    #print(f"[INFO] Executing: {ps_command}")
+    print(f"[INFO] Executing: {ps_command}")
     stdin, stdout, stderr = ssh.exec_command(ps_command)
 
     output = stdout.read().decode().strip()
@@ -108,16 +108,13 @@ def create(data):
     memory = data["memory"]
     memory_mb = int(memory) / 1024 / 1024
     template_path = data["template_path"]
-    vhd_path = data["default_vhd_path"] + "\\" + vm_name + ".vhdx"
+    vhd_path = data["vhd_path"] + "\\" + vm_name + ".vhdx"
     vhd_size_gb = data["vhd_size_gb"]
     generation = data["generation"]
     iso_path = data["iso_path"]
-    switch_name = data["switch_name"]
-    vm_path = data["default_vm_path"]
+    network_switch = data["network_switch"]
+    vm_path = data["vm_path"]
     template_type = data.get("template_type", "template")
-
-    if (data["mac_address"] == ""):
-        fail("Mac address not found")
 
     vhd_created = False
     vm_created = False
@@ -129,14 +126,16 @@ def create(data):
         )
         if template_type == "iso":
             if (iso_path == ""):
-                fail("ISO path is required")
+                fail("Missing required field in JSON: iso_path")
+            if (vhd_size_gb == ""):
+                fail("Missing required field in JSON: vhd_size_gb")
             command += (
                 f'-NewVHDPath \\"{vhd_path}\\" -NewVHDSizeBytes {vhd_size_gb}GB; '
                 f'Add-VMDvdDrive -VMName \\"{vm_name}\\" -Path \\"{iso_path}\\"; '
             )
         else:
             if (template_path == ""):
-                fail("Template path is required")
+                fail("Missing required field in JSON: template_path")
             run_powershell_ssh_int(f'Copy-Item \\"{template_path}\\" \\"{vhd_path}\\"', data["url"], data["username"], data["password"])
             vhd_created = True
             command += f'-VHDPath \\"{vhd_path}\\"; '
@@ -144,16 +143,18 @@ def create(data):
         run_powershell_ssh_int(command, data["url"], data["username"], data["password"])
         vm_created = True
 
-        command = (
-            f'Set-VMProcessor -VMName \\"{vm_name}\\" -Count \\"{cpus}\\"; '
-            f'Connect-VMNetworkAdapter -VMName \\"{vm_name}\\" -SwitchName \\"{switch_name}\\"; '
-            f'Set-VMFirmware -VMName "{vm_name}" -EnableSecureBoot Off; '
-        )
+        command = f'Remove-VMNetworkAdapter -VMName \\"{vm_name}\\" -Name \\"Network Adapter\\" -ErrorAction SilentlyContinue; '
+        run_powershell_ssh_int(command, data["url"], data["username"], data["password"])
+
+        command = f'Set-VMProcessor -VMName \\"{vm_name}\\" -Count \\"{cpus}\\"; '
+        if (generation == 2):
+            command += f'Set-VMFirmware -VMName "{vm_name}" -EnableSecureBoot Off; '
+
         run_powershell_ssh_int(command, data["url"], data["username"], data["password"])
 
         for idx, nic in enumerate(data["nics"]):
             adapter_name = f"NIC{idx+1}"
-            run_powershell_ssh_int(f'Add-VMNetworkAdapter -VMName "{vm_name}" -Name "{adapter_name}"', data["url"], data["username"], data["password"])
+            run_powershell_ssh_int(f'Add-VMNetworkAdapter -VMName "{vm_name}" -SwitchName \\"{network_switch}\\" -Name "{adapter_name}"', data["url"], data["username"], data["password"])
             run_powershell_ssh_int(f'Set-VMNetworkAdapter -VMName "{vm_name}" -Name "{adapter_name}" -StaticMacAddress "{nic["mac"]}"', data["url"], data["username"], data["password"])
             run_powershell_ssh_int(f'Set-VMNetworkAdapterVlan -VMName "{vm_name}" -VMNetworkAdapterName "{adapter_name}" -Access -VlanId "{nic["vlan"]}"', data["url"], data["username"], data["password"])
 
@@ -216,7 +217,7 @@ def resume(data):
 def create_snapshot(data):
     snapshot_name = data["snapshot_name"]
     if snapshot_name == "":
-        fail("Missing snapshot_name in parameters")
+        fail("Missing required field in JSON: snapshot_name")
     command = f'Checkpoint-VM -VMName \\"{data["vmname"]}\\" -SnapshotName \\"{snapshot_name}\\"'
     run_powershell_ssh(command, data["url"], data["username"], data["password"])
     succeed({"status": "success", "message": f"Snapshot '{snapshot_name}' created"})
@@ -225,7 +226,7 @@ def create_snapshot(data):
 def restore_snapshot(data):
     snapshot_name = data["snapshot_name"]
     if snapshot_name == "":
-        fail("Missing snapshot_name in parameters")
+        fail("Missing required field in JSON: snapshot_name")
     command = f'Restore-VMSnapshot -VMName \\"{data["vmname"]}\\" -Name \\"{snapshot_name}\\" -Confirm:$false'
     run_powershell_ssh(command, data["url"], data["username"], data["password"])
     succeed({"status": "success", "message": f"Snapshot '{snapshot_name}' restored"})
@@ -234,7 +235,7 @@ def restore_snapshot(data):
 def delete_snapshot(data):
     snapshot_name = data["snapshot_name"]
     if snapshot_name == "":
-        fail("Missing snapshot_name in parameters")
+        fail("Missing required field in JSON: snapshot_name")
     command = f'Remove-VMSnapshot -VMName \\"{data["vmname"]}\\" -Name \\"{snapshot_name}\\" -Confirm:$false'
     run_powershell_ssh(command, data["url"], data["username"], data["password"])
     succeed({"status": "success", "message": f"Snapshot '{snapshot_name}' deleted"})
