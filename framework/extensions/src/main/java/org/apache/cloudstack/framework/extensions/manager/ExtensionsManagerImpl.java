@@ -408,6 +408,10 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     protected void sendExtensionPathNotReadyAlert(Extension extension) {
         String msg = String.format("Path for %s not ready across management servers",
                 extension);
+        if (!Extension.State.Enabled.equals(extension.getState())) {
+            logger.warn(msg);
+            return;
+        }
         alertManager.sendAlert(AlertManager.AlertType.ALERT_TYPE_EXTENSION_PATH_NOT_READY, 0L, 0L, msg, msg);
     }
 

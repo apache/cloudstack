@@ -347,8 +347,18 @@ public class ExtensionsManagerImplTest {
     @Test
     public void sendExtensionPathNotReadyAlertCallsAlertManager() {
         Extension ext = mock(Extension.class);
+        when(ext.getState()).thenReturn(Extension.State.Enabled);
         extensionsManager.sendExtensionPathNotReadyAlert(ext);
         verify(alertManager, atLeastOnce()).sendAlert(eq(AlertManager.AlertType.ALERT_TYPE_EXTENSION_PATH_NOT_READY),
+                anyLong(), anyLong(), anyString(), anyString());
+    }
+
+    @Test
+    public void sendExtensionPathNotReadyAlertDoesNotCallsAlertManager() {
+        Extension ext = mock(Extension.class);
+        when(ext.getState()).thenReturn(Extension.State.Disabled);
+        extensionsManager.sendExtensionPathNotReadyAlert(ext);
+        verify(alertManager, never()).sendAlert(eq(AlertManager.AlertType.ALERT_TYPE_EXTENSION_PATH_NOT_READY),
                 anyLong(), anyLong(), anyString(), anyString());
     }
 
