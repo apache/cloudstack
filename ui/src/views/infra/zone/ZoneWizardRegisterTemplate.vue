@@ -89,7 +89,7 @@ export default {
   data: () => ({
     columns: null,
     loading: false,
-    predefinedTemplates: null,
+    predefinedTemplates: [],
     rowKey: 0,
     selectedRowKeys: [],
     defaultOsTypeId: null,
@@ -262,6 +262,15 @@ export default {
         this.predefinedTemplates = this.arch
           ? templates.filter(template => template.arch === this.arch)
           : templates
+
+        // Replace 'https' with 'http' in all URLs for EdgeZone
+        if (this.zoneSuperType === 'Edge') {
+          this.predefinedTemplates.forEach(template => {
+            if (template.url.startsWith('https://')) {
+              template.url = template.url.replace('https://', 'http://')
+            }
+          })
+        }
       } catch (error) {
         console.error('Error fetching predefined templates:', error)
         this.predefinedTemplates = []
