@@ -47,6 +47,7 @@ import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.acl.QuerySelector;
 import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.acl.RolePermission;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -1431,29 +1432,35 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     requested.getUuid(),
                     requested.getRoleId()));
         }
+        if (caller.getRoleId().equals(requested.getRoleId())) {
+            return;
+        }
         List<APIChecker> apiCheckers = getEnabledApiCheckers();
+        for (APIChecker apiChecker : apiCheckers) {
+            checkApiAccess(apiChecker, caller, requested);
+        }
+    }
+
+    private void checkApiAccess(APIChecker apiChecker, Account caller, Account requested) throws PermissionDeniedException {
+        Pair<Role, List<RolePermission>> roleAndPermissionsForCaller = apiChecker.getRolePermissions(caller.getRoleId());
+        Pair<Role, List<RolePermission>> roleAndPermissionsForRequested = apiChecker.getRolePermissions(requested.getRoleId());
         for (String command : apiNameList) {
             try {
-                checkApiAccess(apiCheckers, requested, command);
-            } catch (PermissionDeniedException pde) {
-                if (logger.isTraceEnabled()) {
-                    logger.trace(String.format(
-                            "Checking for permission to \"%s\" is irrelevant as it is not requested for %s [%s]",
-                            command,
-                            requested.getAccountName(),
-                            requested.getUuid()
-                        )
-                    );
+                if (roleAndPermissionsForRequested == null) {
+                    apiChecker.checkAccess(caller, command);
+                } else {
+                    apiChecker.checkAccess(caller, command, roleAndPermissionsForRequested.first(), roleAndPermissionsForRequested.second());
                 }
+            } catch (PermissionDeniedException pde) {
                 continue;
             }
             // so requested can, now make sure caller can as well
             try {
-                if (logger.isTraceEnabled()) {
-                    logger.trace(String.format("permission to \"%s\" is requested",
-                            command));
+                if (roleAndPermissionsForCaller == null) {
+                    apiChecker.checkAccess(caller, command);
+                } else {
+                    apiChecker.checkAccess(caller, command, roleAndPermissionsForCaller.first(), roleAndPermissionsForCaller.second());
                 }
-                checkApiAccess(apiCheckers, caller, command);
             } catch (PermissionDeniedException pde) {
                 String msg = String.format("User of Account %s and domain %s can not create an account with access to more privileges they have themself.",
                         caller, _domainMgr.getDomain(caller.getDomainId()));
