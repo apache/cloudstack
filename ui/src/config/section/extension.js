@@ -140,7 +140,8 @@ export default {
           value: (record, params) => { return record.id }
         },
         cleanup: false
-      }
+      },
+      show: (record) => { return record.isuserdefined }
     }
   ]
 }
