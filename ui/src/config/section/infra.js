@@ -64,6 +64,16 @@ export default {
       component: () => import('@/views/infra/CpuSockets.vue')
     },
     {
+      name: 'gpudevices',
+      title: 'label.gpu.devices',
+      icon: 'BoxPlotOutlined',
+      hidden: true,
+      permission: ['listGpuDevices'],
+      columns: ['id', 'busaddress', 'gpucardname', 'vgpuprofilename', 'hostname', 'virtualmachinename'],
+      details: ['id', 'busaddress', 'gpucardname', 'vgpuprofilename', 'hostname', 'virtualmachinename'],
+      searchFilters: ['gpucardid', 'vgpuprofileid']
+    },
+    {
       name: 'metric',
       title: 'label.db.usage.metrics',
       icon: 'bar-chart-outlined',

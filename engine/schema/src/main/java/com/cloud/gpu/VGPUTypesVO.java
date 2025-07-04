@@ -40,19 +40,19 @@ public class VGPUTypesVO implements InternalIdentity {
     private String vgpuType;
 
     @Column(name="video_ram")
-    private long videoRam;
+    private Long videoRam;
 
     @Column(name="max_heads")
-    private long maxHeads;
+    private Long maxHeads;
 
     @Column(name="max_resolution_x")
-    private long maxResolutionX;
+    private Long maxResolutionX;
 
     @Column(name="max_resolution_y")
-    private long maxResolutionY;
+    private Long maxResolutionY;
 
     @Column(name="max_vgpu_per_pgpu")
-    private long maxVgpuPerPgpu;
+    private Long maxVgpuPerPgpu;
 
     @Column(name="remaining_capacity")
     private long remainingCapacity;
@@ -63,7 +63,7 @@ public class VGPUTypesVO implements InternalIdentity {
     protected VGPUTypesVO() {
     }
 
-    public VGPUTypesVO(long gpuGroupId, String vgpuType, long videoRam, long maxHeads, long maxResolutionX, long maxResolutionY, long maxVgpuPerPgpu,
+    public VGPUTypesVO(long gpuGroupId, String vgpuType, Long videoRam, Long maxHeads, Long maxResolutionX, Long maxResolutionY, Long maxVgpuPerPgpu,
             long remainingCapacity, long maxCapacity) {
         this.gpuGroupId = gpuGroupId;
         this.vgpuType = vgpuType;
@@ -92,43 +92,43 @@ public class VGPUTypesVO implements InternalIdentity {
         this.vgpuType = vgpuType;
     }
 
-    public long getVideoRam() {
+    public Long getVideoRam() {
         return videoRam;
     }
 
-    public void setVideoRam(long videoRam) {
+    public void setVideoRam(Long videoRam) {
         this.videoRam = videoRam;
     }
 
-    public long getMaxHeads() {
+    public Long getMaxHeads() {
         return maxHeads;
     }
 
-    public void setMaxHeads(long maxHeads) {
+    public void setMaxHeads(Long maxHeads) {
         this.maxHeads = maxHeads;
     }
 
-    public long getMaxResolutionX() {
+    public Long getMaxResolutionX() {
         return maxResolutionX;
     }
 
-    public void setMaxResolutionX(long maxResolutionX) {
+    public void setMaxResolutionX(Long maxResolutionX) {
         this.maxResolutionX = maxResolutionX;
     }
 
-    public long getMaxResolutionY() {
+    public Long getMaxResolutionY() {
         return maxResolutionY;
     }
 
-    public void setMaxResolutionY(long maxResolutionY) {
+    public void setMaxResolutionY(Long maxResolutionY) {
         this.maxResolutionY = maxResolutionY;
     }
 
-    public long getMaxVgpuPerPgpu() {
+    public Long getMaxVgpuPerPgpu() {
         return maxVgpuPerPgpu;
     }
 
-    public void setMaxVgpuPerPgpu(long maxVgpuPerPgpu) {
+    public void setMaxVgpuPerPgpu(Long maxVgpuPerPgpu) {
         this.maxVgpuPerPgpu = maxVgpuPerPgpu;
     }
 

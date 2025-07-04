@@ -22,6 +22,7 @@ DROP TABLE IF EXISTS `simulator`.`mockstoragepool`;
 DROP TABLE IF EXISTS `simulator`.`mockvm`;
 DROP TABLE IF EXISTS `simulator`.`mockvolume`;
 DROP TABLE IF EXISTS `simulator`.`mocksecurityrules`;
+DROP TABLE IF EXISTS `simulator`.`mockgpudevice`;
 
 CREATE TABLE  `simulator`.`mockhost` (
   `id` bigint unsigned NOT NULL auto_increment,
@@ -126,4 +127,31 @@ CREATE TABLE `simulator`.`mocksecurityrules` (
   PRIMARY KEY (`id`),
   INDEX `i_mocksecurityrules__vmid`(`vmid`),
   INDEX `i_mocksecurityrules__hostid`(`hostid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+-- Mock GPU Devices for Simulator
+CREATE TABLE IF NOT EXISTS `simulator`.`mockgpudevice` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `bus_address` varchar(64) NOT NULL,
+  `vendor_id` varchar(32) NOT NULL,
+  `device_id` varchar(32) NOT NULL,
+  `numa_node` int unsigned NOT NULL,
+  `pci_root` varchar(64) NOT NULL,
+  `vendor_name` varchar(128) NOT NULL,
+  `device_name` varchar(128) NOT NULL,
+  `host_id` bigint unsigned DEFAULT NULL,
+  `vm_id` bigint unsigned DEFAULT NULL,
+  `max_vgpu_per_pgpu` bigint unsigned NOT NULL DEFAULT 1,
+  `video_ram` bigint unsigned NOT NULL DEFAULT 0,
+  `max_resolution_x` bigint unsigned NOT NULL DEFAULT 0,
+  `max_resolution_y` bigint unsigned NOT NULL DEFAULT 0,
+  `max_heads` bigint unsigned NOT NULL DEFAULT 0,
+  `state` varchar(32) DEFAULT 'Available',
+  `device_type` varchar(32) DEFAULT 'PCI',
+  `parent_device_id` bigint unsigned DEFAULT NULL,
+  `profile_name` varchar(128) DEFAULT NULL,
+  `passthrough_enabled` tinyint(1) DEFAULT 1,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_mockgpudevice__bus_address` (`bus_address`, `host_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

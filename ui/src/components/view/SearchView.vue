@@ -72,7 +72,7 @@
                       v-for="(opt, idx) in field.opts"
                       :key="idx"
                       :value="['account'].includes(field.name) ? opt.name : opt.id"
-                      :label="$t((['storageid'].includes(field.name) || !opt.path) ? opt.name : opt.path)">
+                      :label="field.name === 'vgpuprofileid' ? `${opt.gpucardname} - ${opt.name}` : $t((['storageid'].includes(field.name) || !opt.path) ? opt.name : opt.path)">
                       <div>
                         <span v-if="(field.name.startsWith('zone'))">
                           <span v-if="opt.icon">
@@ -89,7 +89,12 @@
                         <span v-if="(field.name.startsWith('managementserver'))">
                           <status :text="opt.state" />
                         </span>
-                        {{ $t((['storageid'].includes(field.name) || !opt.path) ? opt.name : opt.path) }}
+                        <span v-if="field.name === 'vgpuprofileid'">
+                          {{ opt.gpucardname }} - {{ opt.name }}
+                        </span>
+                        <span v-else>
+                          {{ $t((['storageid'].includes(field.name) || !opt.path) ? opt.name : opt.path) }}
+                        </span>
                       </div>
                     </a-select-option>
                   </a-select>
@@ -253,6 +258,13 @@ export default {
       if (fetchAccountOptions) {
         this.fetchDynamicFieldData('account')
       }
+
+      const fetchVgpuProfileOptions = fieldname === 'gpucardid' && this.fields.some((field) => field.name === 'vgpuprofileid')
+      if (fetchVgpuProfileOptions) {
+        // Clear the currently selected vGPU profile when GPU card changes
+        this.form.vgpuprofileid = null
+        this.fetchDynamicFieldData('vgpuprofileid')
+      }
     },
     onVisibleForm () {
       this.visibleFilter = !this.visibleFilter
@@ -309,7 +321,7 @@ export default {
           'clusterid', 'podid', 'groupid', 'entitytype', 'accounttype', 'systemvmtype', 'scope', 'provider',
           'type', 'scope', 'managementserverid', 'serviceofferingid',
           'diskofferingid', 'networkid', 'usagetype', 'restartrequired',
-          'displaynetwork', 'guestiptype', 'usersource', 'arch', 'oscategoryid', 'templatetype'].includes(item)
+          'displaynetwork', 'guestiptype', 'usersource', 'arch', 'oscategoryid', 'templatetype', 'gpucardid', 'vgpuprofileid'].includes(item)
         ) {
           type = 'list'
         } else if (item === 'tags') {
@@ -485,6 +497,8 @@ export default {
       let usageTypeIndex = -1
       let volumeIndex = -1
       let osCategoryIndex = -1
+      let gpuCardIndex = -1
+      let vgpuProfileIndex = -1
 
       if (arrayField.includes('type')) {
         if (this.$route.path === '/alert') {
@@ -594,6 +608,18 @@ export default {
         promises.push(await this.fetchOsCategories(searchKeyword))
       }
 
+      if (arrayField.includes('gpucardid')) {
+        gpuCardIndex = this.fields.findIndex(item => item.name === 'gpucardid')
+        this.fields[gpuCardIndex].loading = true
+        promises.push(await this.fetchGpuCards(searchKeyword))
+      }
+
+      if (arrayField.includes('vgpuprofileid')) {
+        vgpuProfileIndex = this.fields.findIndex(item => item.name === 'vgpuprofileid')
+        this.fields[vgpuProfileIndex].loading = true
+        promises.push(await this.fetchVgpuProfiles(searchKeyword))
+      }
+
       Promise.all(promises).then(response => {
         if (typeIndex > -1) {
           const types = response.filter(item => item.type === 'type')
@@ -697,6 +723,20 @@ export default {
             this.fields[osCategoryIndex].opts = this.sortArray(osCategories[0].data)
           }
         }
+
+        if (gpuCardIndex > -1) {
+          const gpuCards = response.filter(item => item.type === 'gpucardid')
+          if (gpuCards && gpuCards.length > 0) {
+            this.fields[gpuCardIndex].opts = this.sortArray(gpuCards[0].data)
+          }
+        }
+
+        if (vgpuProfileIndex > -1) {
+          const vgpuProfiles = response.filter(item => item.type === 'vgpuprofileid')
+          if (vgpuProfiles && vgpuProfiles.length > 0) {
+            this.fields[vgpuProfileIndex].opts = this.sortArray(vgpuProfiles[0].data)
+          }
+        }
       }).finally(() => {
         if (typeIndex > -1) {
           this.fields[typeIndex].loading = false
@@ -745,6 +785,12 @@ export default {
         }
         if (osCategoryIndex > -1) {
           this.fields[osCategoryIndex].loading = false
+        }
+        if (gpuCardIndex > -1) {
+          this.fields[gpuCardIndex].loading = false
+        }
+        if (vgpuProfileIndex > -1) {
+          this.fields[vgpuProfileIndex].loading = false
         }
         if (Array.isArray(arrayField)) {
           this.fillFormFieldValues()
@@ -1373,6 +1419,39 @@ export default {
         }
       ]
     },
+    fetchGpuCards (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        api('listGpuCards', { keyword: searchKeyword }).then(json => {
+          const gpuCards = json.listgpucardsresponse.gpucard
+          resolve({
+            type: 'gpucardid',
+            data: gpuCards
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
+    fetchVgpuProfiles (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        const params = { keyword: searchKeyword }
+
+        // If a GPU card is selected, filter vGPU profiles by that GPU card
+        if (this.form.gpucardid) {
+          params.gpucardid = this.form.gpucardid
+        }
+
+        api('listVgpuProfiles', params).then(json => {
+          const vgpuProfiles = json.listvgpuprofilesresponse.vgpuprofile
+          resolve({
+            type: 'vgpuprofileid',
+            data: vgpuProfiles
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
     onSearch (value) {
       this.paramsFilter = {}
       this.searchQuery = value
@@ -1392,6 +1471,13 @@ export default {
       })
       if (refreshAccountOptions) {
         await this.fetchDynamicFieldData('account')
+      }
+
+      const refreshVgpuProfileOptions = ['gpucardid', 'vgpuprofileid'].every((field) => {
+        return this.fields.some((searchViewField) => searchViewField.name === field)
+      })
+      if (refreshVgpuProfileOptions) {
+        await this.fetchDynamicFieldData('vgpuprofileid')
       }
 
       this.$emit('search', this.paramsFilter)

@@ -390,4 +390,6 @@
         <property name="asyncJobDispatcher" ref="ApiAsyncJobDispatcher" />
     </bean>
 
+    <bean id="GpuServiceImpl" class="org.apache.cloudstack.gpu.GpuServiceImpl" />
+
 </beans>

@@ -21,8 +21,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
+import com.cloud.gpu.VgpuProfileVO;
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
@@ -196,27 +199,51 @@ public interface ResourceManager extends ResourceService, Configurable {
 
     /**
      * Check if host has GPU devices available
-     * @param hostId the host to be checked
-     * @param groupName: gpuCard name
-     * @param vgpuType the VGPU type
+     *
+     * @param host      the host to be checked
+     * @param groupName gpuCard name
+     * @param vgpuType  the VGPU type
      * @return true when the host has the capacity with given VGPU type
      */
     boolean isGPUDeviceAvailable(Host host, String groupName, String vgpuType);
 
     /**
+     * Check if host has GPU devices available
+     *
+     * @param host        the host to be checked
+     * @param vmId        VM ID
+     * @param vgpuProfile the VGPU profile
+     * @param gpuCount    the number of GPUs requested
+     * @return true when the host has the capacity with given VGPU type
+     */
+    boolean isGPUDeviceAvailable(Host host, Long vmId, VgpuProfileVO vgpuProfile, int gpuCount);
+
+    /**
      * Get available GPU device
-     * @param hostId the host to be checked
-     * @param groupName: gpuCard name
-     * @param vgpuType the VGPU type
+     *
+     * @param vm          the vm for which GPU device is requested
+     * @param vgpuProfile the VGPU profile
+     * @param gpuCount
+     * @return GPUDeviceTO[]
+     */
+    GPUDeviceTO getGPUDevice(VirtualMachine vm, VgpuProfileVO vgpuProfile, int gpuCount);
+
+    /**
+     * Get available GPU device
+     *
+     * @param hostId    the host to be checked
+     * @param groupName gpuCard name
+     * @param vgpuType  the VGPU type
      * @return GPUDeviceTO[]
      */
     GPUDeviceTO getGPUDevice(long hostId, String groupName, String vgpuType);
 
     /**
      * Return listof available GPU devices
-     * @param hostId, the host to be checked
-     * @param groupName: gpuCard name
-     * @param vgpuType the VGPU type
+     *
+     * @param hostId    the host to be checked
+     * @param groupName gpuCard name
+     * @param vgpuType  the VGPU type
      * @return List of HostGpuGroupsVO.
      */
     List<HostGpuGroupsVO> listAvailableGPUDevice(long hostId, String groupName, String vgpuType);
@@ -227,6 +254,16 @@ public interface ResourceManager extends ResourceService, Configurable {
      * @param groupDetails, capacity of GPU group.
      */
     void updateGPUDetails(long hostId, HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails);
+
+    /**
+     * Update GPU device details (post VM deployment)
+     *
+     * @param vm          the VirtualMachine object
+     * @param gpuDeviceTO GPU device details
+     */
+    void updateGPUDetailsForVmStop(VirtualMachine vm, GPUDeviceTO gpuDeviceTO);
+
+    void updateGPUDetailsForVmStart(long hostId, long vmId, GPUDeviceTO gpuDevice);
 
     /**
      * Get GPU details for a host

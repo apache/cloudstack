@@ -16,7 +16,9 @@
 // under the License.
 package com.cloud.agent.api.to;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import com.cloud.agent.api.VgpuTypesInfo;
 
@@ -24,9 +26,23 @@ public class GPUDeviceTO {
 
     private String gpuGroup;
     private String vgpuType;
+    private int gpuCount;
     private HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = new HashMap<String, HashMap<String, VgpuTypesInfo>>();
+    private List<VgpuTypesInfo> gpuDevices = new ArrayList<>();
 
-    public GPUDeviceTO( String gpuGroup, String vgpuType, HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails) {
+    public GPUDeviceTO(String gpuGroup, String vgpuType, int gpuCount,
+                       HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails,
+                       List<VgpuTypesInfo> gpuDevices) {
+        this.gpuGroup = gpuGroup;
+        this.vgpuType = vgpuType;
+        this.groupDetails = groupDetails;
+        this.gpuCount = gpuCount;
+        this.gpuDevices = gpuDevices;
+
+    }
+
+    public GPUDeviceTO(String gpuGroup, String vgpuType,
+                       HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails) {
         this.gpuGroup = gpuGroup;
         this.vgpuType = vgpuType;
         this.groupDetails = groupDetails;
@@ -48,6 +64,14 @@ public class GPUDeviceTO {
         this.vgpuType = vgpuType;
     }
 
+    public int getGpuCount() {
+        return gpuCount;
+    }
+
+    public void setGpuCount(int gpuCount) {
+        this.gpuCount = gpuCount;
+    }
+
     public HashMap<String, HashMap<String, VgpuTypesInfo>> getGroupDetails() {
         return groupDetails;
     }
@@ -56,4 +80,11 @@ public class GPUDeviceTO {
         this.groupDetails = groupDetails;
     }
 
+    public List<VgpuTypesInfo> getGpuDevices() {
+        return gpuDevices;
+    }
+
+    public void setGpuDevices(List<VgpuTypesInfo> gpuDevices) {
+        this.gpuDevices = gpuDevices;
+    }
 }
