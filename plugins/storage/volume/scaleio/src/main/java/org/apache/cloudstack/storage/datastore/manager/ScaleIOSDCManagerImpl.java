@@ -381,6 +381,9 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
 
     private ScaleIOGatewayClient getScaleIOClient(final Long storagePoolId) throws Exception {
         StoragePoolVO storagePool = storagePoolDao.findById(storagePoolId);
+        if (storagePool == null) {
+            throw new CloudRuntimeException("Unable to find the storage pool with id " + storagePoolId);
+        }
         return ScaleIOGatewayClientConnectionPool.getInstance().getClient(storagePool, storagePoolDetailsDao);
     }
 

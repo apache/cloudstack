@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.storage.datastore.util;
 
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -60,6 +62,14 @@ public class ScaleIOUtil {
     private static final String SDC_SERVICE_ENABLE_CMD = "systemctl enable scini";
 
     public static final String CONNECTED_SDC_COUNT_STAT = "ConnectedSDCCount";
+
+    /**
+     * Time (in seconds) to wait after SDC service 'scini' start/restart/stop.<br>
+     * Data type: Integer.<br>
+     * Default value: <code>3</code>
+     */
+    public static final AgentProperties.Property<Integer> SDC_SERVICE_ACTION_WAIT = new AgentProperties.Property<>("powerflex.sdc.service.wait", 3);
+
     /**
      * Cmd for querying volumes in SDC
      * Sample output for cmd: drv_cfg --query_vols:
@@ -216,16 +226,41 @@ public class ScaleIOUtil {
 
     public static boolean startSDCService() {
         int exitValue = Script.runSimpleBashScriptForExitValue(SDC_SERVICE_START_CMD);
-        return exitValue == 0;
+        if (exitValue != 0) {
+            return false;
+        }
+        waitForSdcServiceActionToComplete();
+        return true;
     }
 
     public static boolean stopSDCService() {
         int exitValue = Script.runSimpleBashScriptForExitValue(SDC_SERVICE_STOP_CMD);
-        return exitValue == 0;
+        if (exitValue != 0) {
+            return false;
+        }
+        waitForSdcServiceActionToComplete();
+        return true;
     }
 
     public static boolean restartSDCService() {
         int exitValue = Script.runSimpleBashScriptForExitValue(SDC_SERVICE_RESTART_CMD);
-        return exitValue == 0;
+        if (exitValue != 0) {
+            return false;
+        }
+        waitForSdcServiceActionToComplete();
+        return true;
+    }
+
+    private static void waitForSdcServiceActionToComplete() {
+        // Wait for the SDC service to settle after start/restart/stop and reaches a stable state
+        int waitTimeInSecs = AgentPropertiesFileHandler.getPropertyValue(SDC_SERVICE_ACTION_WAIT);
+        if (waitTimeInSecs < 0) {
+            waitTimeInSecs = SDC_SERVICE_ACTION_WAIT.getDefaultValue();
+        }
+        try {
+            LOGGER.debug(String.format("Waiting for %d secs after SDC service action, to reach a stable state", waitTimeInSecs));
+            Thread.sleep(waitTimeInSecs * 1000L);
+        } catch (InterruptedException ignore) {
+        }
     }
 }
