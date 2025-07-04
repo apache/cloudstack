@@ -152,8 +152,6 @@ public class ProvisioningServiceImpl implements ProvisioningService {
     @Override
     public List<ZoneEntity> listZones() {
         List<ZoneEntity> zones = new ArrayList<ZoneEntity>();
-        //zones.add(new ZoneEntityImpl("zone-uuid-1"));
-        //zones.add(new ZoneEntityImpl("zone-uuid-2"));
         return zones;
     }
 

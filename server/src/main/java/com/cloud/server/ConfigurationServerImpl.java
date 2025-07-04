@@ -328,8 +328,6 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         // setup XenServer default PV driver version
         initiateXenServerPVDriverVersion();
 
-        // We should not update seed data UUID column here since this will be invoked in upgrade case as well.
-        //updateUuids();
         // Set init to true
         _configDao.update("init", "Hidden", "true");
 

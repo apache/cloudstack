@@ -213,7 +213,6 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
 
         SequenceSearch = createSearchBuilder();
         SequenceSearch.and("id", SequenceSearch.entity().getId(), SearchCriteria.Op.EQ);
-        // SequenceSearch.addRetrieve("sequence", SequenceSearch.entity().getSequence());
         SequenceSearch.done();
 
         DirectlyConnectedSearch = createSearchBuilder();

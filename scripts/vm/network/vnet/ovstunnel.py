@@ -49,17 +49,14 @@ def setup_ovs_bridge(bridge, key, cs_host_id):
 
     logging.debug("Bridge has been manually created:%s" % res)
     if res:
-#        result = "FAILURE:%s" % res
         result = 'false'
     else:
         # Verify the bridge actually exists, with the gre_key properly set
         res = lib.do_cmd([lib.VSCTL_PATH, "get", "bridge",
                                           bridge, "other_config:gre_key"])
         if key in str(res):
-#            result = "SUCCESS:%s" % bridge
             result = 'true'
         else:
-#            result = "FAILURE:%s" % res
             result = 'false'
 
         lib.do_cmd([lib.VSCTL_PATH, "set", "bridge", bridge, "other_config:is-ovs-tun-network=True"])
@@ -134,10 +131,8 @@ def destroy_ovs_bridge(bridge):
     res = lib.do_cmd([lib.VSCTL_PATH, "del-br", bridge])
     logging.debug("Bridge has been manually removed:%s" % res)
     if res:
-#        result = "FAILURE:%s" % res
         result = 'false'
     else:
-#        result = "SUCCESS:%s" % bridge
         result = 'true'
 
     logging.debug("Destroy_ovs_bridge completed with result:%s" % result)
@@ -150,7 +145,6 @@ def create_tunnel(bridge, remote_ip, key, src_host, dst_host):
     res = lib.check_switch()
     if res != "SUCCESS":
         logging.debug("Openvswitch running: NO")
-#        return "FAILURE:%s" % res
         return 'false'
 
     # We need to keep the name below 14 characters
@@ -189,7 +183,6 @@ def create_tunnel(bridge, remote_ip, key, src_host, dst_host):
         if len(iface_list) != 1:
             logging.debug("WARNING: Unexpected output while verifying " +
                                       "port %s on bridge %s" % (name, bridge))
-#            return "FAILURE:VERIFY_PORT_FAILED"
             return 'false'
 
         # verify interface
@@ -205,7 +198,6 @@ def create_tunnel(bridge, remote_ip, key, src_host, dst_host):
         if key not in str(key_validation) or remote_ip not in str(ip_validation):
             logging.debug("WARNING: Unexpected output while verifying " +
                           "interface %s on bridge %s" % (name, bridge))
-#            return "FAILURE:VERIFY_INTERFACE_FAILED"
             return 'false'
 
         logging.debug("Tunnel interface validated:%s" % verify_interface_ip)
@@ -268,7 +260,6 @@ def destroy_tunnel(bridge, iface_name):
     ofport = get_field_of_interface(iface_name, "ofport")
     lib.del_flows(bridge, in_port=ofport)
     lib.del_port(bridge, iface_name)
-#    return "SUCCESS"
     return 'true'
 
 def get_field_of_interface(iface_name, field):

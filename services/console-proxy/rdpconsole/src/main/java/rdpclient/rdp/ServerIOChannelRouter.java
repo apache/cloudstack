@@ -88,14 +88,12 @@ public class ServerIOChannelRouter extends BaseElement {
         case PDUTYPE_CONFIRMACTIVEPDU:
             throw new RuntimeException("Unexpected client CONFIRM ACTIVE PDU. Data: " + buf + ".");
         case PDUTYPE_DEACTIVATEALLPDU:
-            // pushDataToPad("deactivate_all", buf);
             /* ignore */buf.unref();
             break;
         case PDUTYPE_DATAPDU:
             handleDataPdu(buf);
             break;
         case PDUTYPE_SERVER_REDIR_PKT:
-            // pushDataToPad("server_redir", buf);
             /* ignore */buf.unref();
             break;
         default:

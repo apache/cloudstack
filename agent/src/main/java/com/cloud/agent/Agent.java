@@ -1321,7 +1321,6 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                         processResponse((Response)request, task.getLink());
                     } else {
                         //put the requests from mgt server into another thread pool, as the request may take a longer time to finish. Don't block the NIO main thread pool
-                        //processRequest(request, task.getLink());
                         requestHandler.submit(new AgentRequestHandler(getType(), getLink(), request));
                     }
                 } catch (final ClassNotFoundException e) {
