@@ -113,7 +113,6 @@ public class ConsoleProxy {
             } catch (URISyntaxException e) {
                 System.out.println("Unable to convert log4j configuration Url to URI");
             }
-            // DOMConfigurator.configure(configUrl);
         } else {
             System.out.println("Configure log4j with default properties");
         }

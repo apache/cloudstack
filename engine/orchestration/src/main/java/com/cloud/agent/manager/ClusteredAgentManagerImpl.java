@@ -962,7 +962,6 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                     synchronized (_agentToTransferIds) {
                         if (!_agentToTransferIds.isEmpty()) {
                             logger.debug("Found {} agents to transfer", _agentToTransferIds.size());
-                            // for (Long hostId : _agentToTransferIds) {
                             for (final Iterator<Long> iterator = _agentToTransferIds.iterator(); iterator.hasNext(); ) {
                                 final Long hostId = iterator.next();
                                 final AgentAttache attache = findAttache(hostId);

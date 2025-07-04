@@ -1627,7 +1627,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                         final String reason = shutdown.getReason();
                         logger.info("Host {} has informed us that it is shutting down with reason {} and detail {}", attache, reason, shutdown.getDetail());
                         if (reason.equals(ShutdownCommand.Update)) {
-                            // disconnectWithoutInvestigation(attache, Event.UpdateNeeded);
                             throw new CloudRuntimeException("Agent update not implemented");
                         } else if (reason.equals(ShutdownCommand.Requested)) {
                             disconnectWithoutInvestigation(attache, Event.ShutdownRequested);

@@ -75,11 +75,6 @@ public class PodZoneConfig {
     }
 
     private String checkPodCidrSubnets(long dcId, HashMap<Long, Vector<Object>> currentPodCidrSubnets) {
-
-//        DataCenterDao _dcDao = null;
-//        final ComponentLocator locator = ComponentLocator.getLocator("management-server");
-
-//        _dcDao = locator.getDao(DataCenterDao.class);
         // For each pod, return an error if any of the following is true:
         // 1. The pod's CIDR subnet conflicts with the guest network subnet
         // 2. The pod's CIDR subnet conflicts with the CIDR subnet of any other pod
@@ -87,7 +82,6 @@ public class PodZoneConfig {
         String zoneName = PodZoneConfig.getZoneName(dcId);
 
         //get the guest network cidr and guest netmask from the zone
-//        DataCenterVO dcVo = _dcDao.findById(dcId);
 
         String guestNetworkCidr = IPRangeConfig.getGuestNetworkCidr(dcId);
 

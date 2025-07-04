@@ -61,7 +61,6 @@ public class VmWorkSerializer {
         // use java binary serialization instead
         //
         return JobSerializerHelper.toObjectSerializedString(work);
-        // return s_gson.toJson(work);
     }
 
     public static <T extends VmWork> T deserialize(Class<?> clazz, String workInJsonText) {
@@ -69,6 +68,5 @@ public class VmWorkSerializer {
         // use java binary serialization instead
         //
         return (T)JobSerializerHelper.fromObjectSerializedString(workInJsonText);
-        // return (T)s_gson.fromJson(workInJsonText, clazz);
     }
 }
