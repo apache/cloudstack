@@ -55,7 +55,7 @@ export default {
     param: 'account'
   }, {
     name: 'userdata',
-    title: 'label.userdata',
+    title: 'label.user.data',
     param: 'account'
   }, {
     name: 'template',

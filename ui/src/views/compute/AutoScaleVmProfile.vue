@@ -76,7 +76,7 @@
       <div class="form" v-if="userdataid">
         <div class="form__item">
           <div class="form__label">
-            <tooltip-label :title="$t('label.userdataid')"/>
+            <tooltip-label :title="$t('label.user.data.id')"/>
           </div>
           {{ userdataid }}
         </div>
@@ -84,7 +84,7 @@
       <div class="form" v-if="userdataname">
         <div class="form__item">
           <div class="form__label">
-            <tooltip-label :title="$t('label.userdataname')"/>
+            <tooltip-label :title="$t('label.user.data.name')"/>
           </div>
           {{ userdataname }}
         </div>
@@ -92,7 +92,7 @@
       <div class="form" v-if="userdatadetails">
         <div class="form__item">
           <div class="form__label">
-            <tooltip-label :title="$t('label.userdatadetails')"/>
+            <tooltip-label :title="$t('label.user.data.details')"/>
           </div>
           {{ userdatadetails }}
         </div>
@@ -100,7 +100,7 @@
       <div class="form" v-if="userdatapolicy">
         <div class="form__item">
           <div class="form__label">
-            <tooltip-label :title="$t('label.userdatapolicy')"/>
+            <tooltip-label :title="$t('label.user.data.policy')"/>
           </div>
           {{ userdatapolicy }}
         </div>
@@ -108,7 +108,7 @@
       <div class="form">
         <div class="form__item">
           <div class="form__label">
-            <tooltip-label :title="$t('label.userdata')" :tooltip="createAutoScaleVmProfileApiParams.userdata.description"/>
+            <tooltip-label :title="$t('label.user.data')" :tooltip="createAutoScaleVmProfileApiParams.userdata.description"/>
           </div>
           <a-textarea v-model:value="userdata" rows="5" :disabled="true">
           </a-textarea>
@@ -124,7 +124,7 @@
         <div class="form__item">
           <a-button ref="submit" :disabled="!('updateAutoScaleVmProfile' in $store.getters.apis) || resource.state !== 'DISABLED'" type="primary" @click="showUpdateUserDataForm = true">
             <template #icon><solution-outlined /></template>
-            {{ $t('label.reset.userdata.on.autoscale.vm.group') }}
+            {{ $t('label.reset.user.data.on.autoscale.vm.group') }}
           </a-button>
         </div>
       </div>
@@ -291,7 +291,7 @@
 
     <a-modal
       :visible="showUpdateUserDataForm"
-      :title="$t('label.reset.userdata.on.autoscale.vm.group')"
+      :title="$t('label.reset.user.data.on.autoscale.vm.group')"
       :closable="true"
       :maskClosable="false"
       :footer="null"
