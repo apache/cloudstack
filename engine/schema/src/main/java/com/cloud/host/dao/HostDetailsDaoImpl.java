@@ -50,6 +50,7 @@ public class HostDetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implement
 
         DetailNameSearch = createSearchBuilder();
         DetailNameSearch.and("name", DetailNameSearch.entity().getName(), SearchCriteria.Op.EQ);
+        DetailNameSearch.and("value", DetailNameSearch.entity().getValue(), SearchCriteria.Op.EQ);
         DetailNameSearch.done();
     }
 
@@ -128,6 +129,14 @@ public class HostDetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implement
     public List<DetailVO> findByName(String name) {
         SearchCriteria<DetailVO> sc = DetailNameSearch.create();
         sc.setParameters("name", name);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<DetailVO> findByNameAndValue(String name, String value) {
+        SearchCriteria<DetailVO> sc = DetailNameSearch.create();
+        sc.setParameters("name", name);
+        sc.setParameters("value", value);
         return listBy(sc);
     }
 }

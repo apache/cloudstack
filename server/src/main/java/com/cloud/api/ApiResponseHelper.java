@@ -1534,6 +1534,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public ClusterResponse createClusterResponse(Cluster cluster, Boolean showCapacities) {
         ClusterResponse clusterResponse = new ClusterResponse();
+        clusterResponse.setInternalId(cluster.getId());
         clusterResponse.setId(cluster.getUuid());
         clusterResponse.setName(cluster.getName());
         HostPodVO pod = ApiDBUtils.findPodById(cluster.getPodId());

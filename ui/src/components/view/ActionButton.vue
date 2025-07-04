@@ -17,7 +17,7 @@
 
 <template>
   <span class="row-action-button">
-    <a-tooltip arrowPointAtCenter placement="bottomRight" v-if="resource && resource.id && dataView">
+    <a-tooltip arrowPointAtCenter placement="bottomRight" v-if="resource && resource.id && dataView && resource.hypervisor !== 'External'">
       <template #title>
         {{ $t('label.view.console') }}
       </template>
@@ -29,7 +29,7 @@
         icon="code"
       />
     </a-tooltip>
-    <a-tooltip arrowPointAtCenter placement="bottomRight" v-if="resource && resource.id && dataView">
+    <a-tooltip arrowPointAtCenter placement="bottomRight" v-if="resource && resource.id && dataView && resource.hypervisor !== 'External'">
       <template #title>
         {{ $t('label.copy.consoleurl') }}
       </template>

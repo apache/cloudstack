@@ -90,7 +90,6 @@ public class HostResponse extends BaseResponseWithAnnotations {
     @SerializedName(ApiConstants.HYPERVISOR)
     @Param(description = "the host hypervisor")
     private String hypervisor;
-
     @SerializedName("cpusockets")
     @Param(description = "the number of CPU sockets on the host")
     private Integer cpuSockets;
@@ -197,6 +196,8 @@ public class HostResponse extends BaseResponseWithAnnotations {
     @SerializedName(ApiConstants.MANAGEMENT_SERVER_NAME)
     @Param(description = "the management server name of the host", since = "4.21.0")
     private String managementServerName;
+
+    private transient long clusterInternalId;
 
     @SerializedName("clusterid")
     @Param(description = "the cluster ID of the host")
@@ -317,6 +318,14 @@ public class HostResponse extends BaseResponseWithAnnotations {
     @SerializedName(ApiConstants.ZONE_STORAGE_ACCESS_GROUPS)
     @Param(description = "comma-separated list of storage access groups on the zone", since = "4.21.0")
     private String zoneStorageAccessGroups;
+
+    @SerializedName(ApiConstants.EXTENSION_ID)
+    @Param(description="The ID of extension for this cluster", since = "4.21.0")
+    private String extensionId;
+
+    @SerializedName(ApiConstants.EXTENSION_NAME)
+    @Param(description="The name of extension for this cluster", since = "4.21.0")
+    private String extensionName;
 
     @Override
     public String getObjectId() {
@@ -469,6 +478,14 @@ public class HostResponse extends BaseResponseWithAnnotations {
 
     public void setManagementServerName(String managementServerName) {
         this.managementServerName = managementServerName;
+    }
+
+    public long getClusterInternalId() {
+        return clusterInternalId;
+    }
+
+    public void setClusterInternalId(long clusterInternalId) {
+        this.clusterInternalId = clusterInternalId;
     }
 
     public void setClusterId(String clusterId) {
@@ -941,5 +958,21 @@ public class HostResponse extends BaseResponseWithAnnotations {
 
     public Boolean getInstanceConversionSupported() {
         return instanceConversionSupported;
+    }
+
+    public void setExtensionId(String extensionId) {
+        this.extensionId = extensionId;
+    }
+
+    public String getExtensionId() {
+        return extensionId;
+    }
+
+    public void setExtensionName(String extensionName) {
+        this.extensionName = extensionName;
+    }
+
+    public String getExtensionName() {
+        return extensionName;
     }
 }

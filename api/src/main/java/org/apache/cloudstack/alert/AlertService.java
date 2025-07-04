@@ -73,6 +73,7 @@ public interface AlertService {
         public static final AlertType ALERT_TYPE_VM_SNAPSHOT = new AlertType((short)32, "ALERT.VM.SNAPSHOT", true);
         public static final AlertType ALERT_TYPE_VR_PUBLIC_IFACE_MTU = new AlertType((short)32, "ALERT.VR.PUBLIC.IFACE.MTU", true);
         public static final AlertType ALERT_TYPE_VR_PRIVATE_IFACE_MTU = new AlertType((short)32, "ALERT.VR.PRIVATE.IFACE.MTU", true);
+        public static final AlertType ALERT_TYPE_EXTENSION_PATH_NOT_READY = new AlertType((short)33, "ALERT.TYPE.EXTENSION.PATH.NOT.READY", true);
 
         public short getType() {
             return type;

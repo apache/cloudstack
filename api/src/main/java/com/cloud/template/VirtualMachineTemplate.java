@@ -153,4 +153,6 @@ public interface VirtualMachineTemplate extends ControlledEntity, Identity, Inte
 
     CPU.CPUArch getArch();
 
+    Long getExtensionId();
+
 }
