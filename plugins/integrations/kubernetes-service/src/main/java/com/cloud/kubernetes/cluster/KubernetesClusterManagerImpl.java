@@ -119,6 +119,12 @@ import org.apache.cloudstack.api.command.user.network.DeleteNetworkACLCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
+import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.DeleteVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
+import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.api.response.KubernetesClusterConfigResponse;
 import org.apache.cloudstack.api.response.KubernetesClusterResponse;
 import org.apache.cloudstack.api.response.KubernetesUserVmResponse;
@@ -253,6 +259,12 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     private static final List<Class<?>> PROJECT_KUBERNETES_ACCOUNT_ROLE_ALLOWED_APIS = Arrays.asList(
             QueryAsyncJobResultCmd.class,
             ListVMsCmd.class,
+            ListVolumesCmd.class,
+            CreateVolumeCmd.class,
+            DeleteVolumeCmd.class,
+            AttachVolumeCmd.class,
+            DetachVolumeCmd.class,
+            ResizeVolumeCmd.class,
             ListNetworksCmd.class,
             ListPublicIpAddressesCmd.class,
             AssociateIPAddrCmd.class,
