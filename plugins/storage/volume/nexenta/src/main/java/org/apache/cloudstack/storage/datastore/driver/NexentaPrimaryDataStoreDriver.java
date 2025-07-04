@@ -187,9 +187,6 @@ public class NexentaPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             NexentaStorAppliance appliance = getNexentaStorAppliance(storagePoolId);
             StoragePoolVO storagePool = _storagePoolDao.findById(storagePoolId);
 
-
-
-//            _storagePoolDao.update(stoagePoolId);
         } else {
             errorMessage = String.format(
                     "Invalid DataObjectType(%s) passed to deleteAsync",

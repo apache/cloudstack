@@ -2222,8 +2222,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         Map<String, TemplateProp> tmpltInfos = new HashMap<String, TemplateProp>();
         for (S3ObjectSummary objectSummary : objectSummaries) {
             String key = objectSummary.getKey();
-            // String installPath = StringUtils.substringBeforeLast(key,
-            // S3Utils.SEPARATOR);
             String uniqueName = determineS3TemplateNameFromKey(key);
             // TODO: isPublic value, where to get?
             TemplateProp tInfo = new TemplateProp(uniqueName, key, objectSummary.getSize(), objectSummary.getSize(), true, false);
@@ -2243,8 +2241,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         Map<Long, TemplateProp> tmpltInfos = new HashMap<Long, TemplateProp>();
         for (S3ObjectSummary objectSummary : objectSummaries) {
             String key = objectSummary.getKey();
-            // String installPath = StringUtils.substringBeforeLast(key,
-            // S3Utils.SEPARATOR);
             Long id = determineS3VolumeIdFromKey(key);
             // TODO: how to get volume template name
             TemplateProp tInfo = new TemplateProp(id.toString(), key, objectSummary.getSize(), objectSummary.getSize(), true, false);

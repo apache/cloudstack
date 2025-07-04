@@ -239,8 +239,7 @@ public class ManagementServerMock {
         try {
             _vmMgr.addVmToNetwork(vm, network, profile);
         } catch (Exception ex) {
-            // TODO Auto-generated catch block
-            //ex.printStackTrace();
+            // ignored
         }
         return vm;
     }
