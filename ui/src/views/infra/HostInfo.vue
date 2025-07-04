@@ -56,6 +56,22 @@
           </div>
         </div>
       </a-list-item>
+      <a-list-item v-if="host.details && host.details['host.virtv2v.version']">
+        <div>
+          <strong>{{ $t('label.host.virtv2v.version') }}</strong>
+          <div>
+            {{ host.details['host.virtv2v.version'] }}
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-if="host.details && host.details['host.ovftool.version']">
+        <div>
+          <strong>{{ $t('label.host.ovftool.version') }}</strong>
+          <div>
+            {{ host.details['host.ovftool.version'] }}
+          </div>
+        </div>
+      </a-list-item>
       <a-list-item v-if="host.hosttags">
         <div>
           <strong>{{ $t('label.hosttags') }}</strong>

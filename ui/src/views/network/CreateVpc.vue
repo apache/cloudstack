@@ -142,7 +142,15 @@
               <div style="color: red" v-if="errorPublicMtu" v-html="errorPublicMtu"></div>
           </a-form-item>
         </div>
-        <a-row :gutter="12" v-if="selectedVpcOfferingSupportsDns">
+        <div v-if="isNsxNetwork">
+          <a-form-item name="userouteripresolver" ref="userouteripresolver">
+            <template #label>
+              <tooltip-label :title="$t('label.use.router.ip.resolver')" :tooltip="apiParams.userouteripresolver.description"/>
+            </template>
+            <a-switch v-model:checked="useRouterIpResolver" />
+          </a-form-item>
+        </div>
+        <a-row :gutter="12" v-if="selectedVpcOfferingSupportsDns && !useRouterIpResolver">
           <a-col :md="12" :lg="12">
             <a-form-item v-if="'dns1' in apiParams" name="dns1" ref="dns1">
               <template #label>
@@ -240,7 +248,8 @@ export default {
       isNsxNetwork: false,
       asNumberLoading: false,
       asNumbersZone: [],
-      selectedAsNumber: 0
+      selectedAsNumber: 0,
+      useRouterIpResolver: false
     }
   },
   beforeCreate () {
@@ -458,6 +467,9 @@ export default {
         }
         if ('asnumber' in values && this.isASNumberRequired()) {
           params.asnumber = values.asnumber
+        }
+        if (this.useRouterIpResolver) {
+          params.userouteripresolver = true
         }
         this.loading = true
         const title = this.$t('label.add.vpc')

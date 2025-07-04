@@ -105,6 +105,11 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
             since = "4.19.0")
     private Boolean isVnf;
 
+    @Parameter(name = ApiConstants.FOR_CKS, type = CommandType.BOOLEAN,
+            description = "list templates that can be used to deploy CKS clusters",
+            since = "4.21.0")
+    private Boolean forCks;
+
     @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
             description = "the CPU arch of the template. Valid options are: x86_64, aarch64",
             since = "4.20")
@@ -201,6 +206,8 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
     public Boolean getVnf() {
         return isVnf;
     }
+
+    public Boolean getForCks() { return forCks; }
 
     public CPU.CPUArch getArch() {
         if (StringUtils.isBlank(arch)) {

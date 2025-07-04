@@ -19,17 +19,23 @@ package com.cloud.kubernetes.cluster.actionworkers;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.storage.VMTemplateVO;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.dc.DataCenter;
@@ -60,12 +66,17 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.logging.log4j.Level;
 
+import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.CONTROL;
+import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.DEFAULT;
+import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.ETCD;
+import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.WORKER;
+
 public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModifierActionWorker {
 
     @Inject
     protected VMInstanceDao vmInstanceDao;
 
-    private ServiceOffering serviceOffering;
+    private Map<String, ServiceOffering> serviceOfferingNodeTypeMap;
     private Long clusterSize;
     private List<Long> nodeIds;
     private KubernetesCluster.State originalState;
@@ -75,8 +86,12 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
     private Boolean isAutoscalingEnabled;
     private long scaleTimeoutTime;
 
+    protected KubernetesClusterScaleWorker(final KubernetesCluster kubernetesCluster, final KubernetesClusterManagerImpl clusterManager) {
+        super(kubernetesCluster, clusterManager);
+    }
+
     public KubernetesClusterScaleWorker(final KubernetesCluster kubernetesCluster,
-                                        final ServiceOffering serviceOffering,
+                                        final Map<String, ServiceOffering> serviceOfferingNodeTypeMap,
                                         final Long clusterSize,
                                         final List<Long> nodeIds,
                                         final Boolean isAutoscalingEnabled,
@@ -84,7 +99,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
                                         final Long maxSize,
                                         final KubernetesClusterManagerImpl clusterManager) {
         super(kubernetesCluster, clusterManager);
-        this.serviceOffering = serviceOffering;
+        this.serviceOfferingNodeTypeMap = serviceOfferingNodeTypeMap;
         this.nodeIds = nodeIds;
         this.isAutoscalingEnabled = isAutoscalingEnabled;
         this.minSize = minSize;
@@ -123,7 +138,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         }
 
         // Remove existing SSH firewall rules
-        FirewallRule firewallRule = removeSshFirewallRule(publicIp);
+        FirewallRule firewallRule = removeSshFirewallRule(publicIp, network.getId());
         if (firewallRule == null) {
             throw new ManagementServerException("Firewall rule for node SSH access can't be provisioned");
         }
@@ -148,7 +163,8 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         }
         // Add port forwarding rule for SSH access on each node VM
         try {
-            provisionSshPortForwardingRules(publicIp, network, owner, clusterVMIds);
+           Map<Long, Integer> vmIdPortMap = getVmPortMap();
+            provisionSshPortForwardingRules(publicIp, network, owner, clusterVMIds, vmIdPortMap);
         } catch (ResourceUnavailableException | NetworkRuleConflictException e) {
             throw new ManagementServerException(String.format("Failed to activate SSH port forwarding rules for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
         }
@@ -176,20 +192,76 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         scaleKubernetesClusterIsolatedNetworkRules(clusterVMIds);
     }
 
-    private KubernetesClusterVO updateKubernetesClusterEntry(final Long newSize, final ServiceOffering newServiceOffering) throws CloudRuntimeException {
+    private KubernetesClusterVO updateKubernetesClusterEntryForNodeType(final Long newWorkerSize, final KubernetesClusterNodeType nodeType,
+                                                                        final ServiceOffering newServiceOffering,
+                                                                        final boolean updateNodeOffering, boolean updateClusterOffering) throws CloudRuntimeException {
         final ServiceOffering serviceOffering = newServiceOffering == null ?
                 serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId()) : newServiceOffering;
         final Long serviceOfferingId = newServiceOffering == null ? null : serviceOffering.getId();
-        final long size = newSize == null ? kubernetesCluster.getTotalNodeCount() : (newSize + kubernetesCluster.getControlNodeCount());
-        final long cores = serviceOffering.getCpu() * size;
-        final long memory = serviceOffering.getRamSize() * size;
-        KubernetesClusterVO kubernetesClusterVO = updateKubernetesClusterEntry(cores, memory, newSize, serviceOfferingId,
-            kubernetesCluster.getAutoscalingEnabled(), kubernetesCluster.getMinSize(), kubernetesCluster.getMaxSize());
+
+        Pair<Long, Long> clusterCountAndCapacity = calculateNewClusterCountAndCapacity(newWorkerSize, nodeType, serviceOffering);
+        long cores = clusterCountAndCapacity.first();
+        long memory = clusterCountAndCapacity.second();
+
+        KubernetesClusterVO kubernetesClusterVO = updateKubernetesClusterEntry(cores, memory, newWorkerSize, serviceOfferingId,
+            kubernetesCluster.getAutoscalingEnabled(), kubernetesCluster.getMinSize(), kubernetesCluster.getMaxSize(), nodeType, updateNodeOffering, updateClusterOffering);
         if (kubernetesClusterVO == null) {
             logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster %s failed, unable to update Kubernetes cluster",
                     kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
         }
         return kubernetesClusterVO;
+    }
+
+    protected Pair<Long, Long> calculateNewClusterCountAndCapacity(Long newWorkerSize, KubernetesClusterNodeType nodeType, ServiceOffering serviceOffering) {
+        long cores;
+        long memory;
+        long totalClusterSize = newWorkerSize == null ? kubernetesCluster.getTotalNodeCount() : (newWorkerSize + kubernetesCluster.getControlNodeCount() + kubernetesCluster.getEtcdNodeCount());
+
+        if (nodeType == DEFAULT) {
+            cores = serviceOffering.getCpu() * totalClusterSize;
+            memory = serviceOffering.getRamSize() * totalClusterSize;
+        } else {
+            long nodeCount = getNodeCountForType(nodeType, kubernetesCluster);
+            Long existingOfferingId = getExistingOfferingIdForNodeType(nodeType, kubernetesCluster);
+            if (existingOfferingId == null) {
+                existingOfferingId = serviceOffering.getId();
+            }
+            ServiceOfferingVO previousOffering = serviceOfferingDao.findById(existingOfferingId);
+            Pair<Long, Long> previousNodesCapacity = calculateNodesCapacity(previousOffering, nodeCount);
+            if (WORKER == nodeType) {
+                nodeCount = newWorkerSize == null ? kubernetesCluster.getNodeCount() : newWorkerSize;
+            }
+            Pair<Long, Long> newNodesCapacity = calculateNodesCapacity(serviceOffering, nodeCount);
+            Pair<Long, Long> newClusterCapacity = calculateClusterNewCapacity(kubernetesCluster, previousNodesCapacity, newNodesCapacity);
+            cores = newClusterCapacity.first();
+            memory = newClusterCapacity.second();
+        }
+        return new Pair<>(cores, memory);
+    }
+
+    private long getNodeCountForType(KubernetesClusterNodeType nodeType, KubernetesCluster kubernetesCluster) {
+        if (WORKER == nodeType) {
+            return kubernetesCluster.getNodeCount();
+        } else if (CONTROL == nodeType) {
+            return kubernetesCluster.getControlNodeCount();
+        } else if (ETCD == nodeType) {
+            return kubernetesCluster.getEtcdNodeCount();
+        }
+        return kubernetesCluster.getTotalNodeCount();
+    }
+
+    protected Pair<Long, Long> calculateClusterNewCapacity(KubernetesCluster kubernetesCluster,
+                                                           Pair<Long, Long> previousNodeTypeCapacity,
+                                                           Pair<Long, Long> newNodeTypeCapacity) {
+        long previousCores = kubernetesCluster.getCores();
+        long previousMemory = kubernetesCluster.getMemory();
+        long newCores = previousCores - previousNodeTypeCapacity.first() + newNodeTypeCapacity.first();
+        long newMemory = previousMemory - previousNodeTypeCapacity.second() + newNodeTypeCapacity.second();
+        return new Pair<>(newCores, newMemory);
+    }
+
+    protected Pair<Long, Long> calculateNodesCapacity(ServiceOffering offering, long nodeCount) {
+        return new Pair<>(offering.getCpu() * nodeCount, offering.getRamSize() * nodeCount);
     }
 
     private boolean removeKubernetesClusterNode(final String ipAddress, final int port, final UserVm userVm, final int retries, final int waitDuration) {
@@ -266,11 +338,12 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         }
         if (newVmRequiredCount > 0) {
             final DataCenter zone = dataCenterDao.findById(kubernetesCluster.getZoneId());
+            VMTemplateVO clusterTemplate = templateDao.findById(kubernetesCluster.getTemplateId());
             try {
                 if (originalState.equals(KubernetesCluster.State.Running)) {
-                    plan(newVmRequiredCount, zone, clusterServiceOffering);
+                    plan(newVmRequiredCount, zone, clusterServiceOffering, kubernetesCluster.getDomainId(), kubernetesCluster.getAccountId(), clusterTemplate.getHypervisorType());
                 } else {
-                    plan(kubernetesCluster.getTotalNodeCount() + newVmRequiredCount, zone, clusterServiceOffering);
+                    plan(kubernetesCluster.getTotalNodeCount() + newVmRequiredCount, zone, clusterServiceOffering, kubernetesCluster.getDomainId(), kubernetesCluster.getAccountId(), clusterTemplate.getHypervisorType());
                 }
             } catch (InsufficientCapacityException e) {
                 logTransitStateToFailedIfNeededAndThrow(Level.WARN, String.format("Scaling failed for Kubernetes cluster : %s in zone : %s, insufficient capacity", kubernetesCluster.getName(), zone.getName()));
@@ -282,17 +355,18 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         }
     }
 
-    private void scaleKubernetesClusterOffering() throws CloudRuntimeException {
+    private void scaleKubernetesClusterOffering(KubernetesClusterNodeType nodeType, ServiceOffering serviceOffering,
+                                                boolean updateNodeOffering, boolean updateClusterOffering) throws CloudRuntimeException {
         validateKubernetesClusterScaleOfferingParameters();
         if (!kubernetesCluster.getState().equals(KubernetesCluster.State.Scaling)) {
             stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.ScaleUpRequested);
         }
         if (KubernetesCluster.State.Created.equals(originalState)) {
-            kubernetesCluster = updateKubernetesClusterEntry(null, serviceOffering);
+            kubernetesCluster = updateKubernetesClusterEntryForNodeType(null, nodeType, serviceOffering, updateNodeOffering, updateClusterOffering);
             return;
         }
-        final long size = kubernetesCluster.getTotalNodeCount();
-        List<KubernetesClusterVmMapVO> vmList = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
+        final long size = getNodeCountForType(nodeType, kubernetesCluster);
+        List<KubernetesClusterVmMapVO> vmList = kubernetesClusterVmMapDao.listByClusterIdAndVmType(kubernetesCluster.getId(), nodeType);
         final long tobeScaledVMCount =  Math.min(vmList.size(), size);
         for (long i = 0; i < tobeScaledVMCount; i++) {
             KubernetesClusterVmMapVO vmMapVO = vmList.get((int) i);
@@ -310,7 +384,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
                 logTransitStateAndThrow(Level.WARN, String.format("Scaling Kubernetes cluster : %s failed, scaling action timed out", kubernetesCluster.getName()),kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
             }
         }
-        kubernetesCluster = updateKubernetesClusterEntry(null, serviceOffering);
+        kubernetesCluster = updateKubernetesClusterEntryForNodeType(null, nodeType, serviceOffering, updateNodeOffering, updateClusterOffering);
     }
 
     private void removeNodesFromCluster(List<KubernetesClusterVmMapVO> vmMaps) throws CloudRuntimeException {
@@ -346,7 +420,10 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
 
         // Scale network rules to update firewall rule
         try {
-            List<Long> clusterVMIds = getKubernetesClusterVMMaps().stream().map(KubernetesClusterVmMapVO::getVmId).collect(Collectors.toList());
+            List<Long> clusterVMIds = getKubernetesClusterVMMaps()
+                    .stream()
+                    .filter(x -> !x.isEtcdNode())
+                    .map(KubernetesClusterVmMapVO::getVmId).collect(Collectors.toList());
             scaleKubernetesClusterNetworkRules(clusterVMIds);
         } catch (ManagementServerException e) {
             logTransitStateAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes " +
@@ -361,10 +438,13 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         }
         List<KubernetesClusterVmMapVO> vmList;
         if (this.nodeIds != null) {
-            vmList = getKubernetesClusterVMMapsForNodes(this.nodeIds);
+            vmList = getKubernetesClusterVMMapsForNodes(this.nodeIds).stream().filter(vm -> !vm.isExternalNode()).collect(Collectors.toList());
         } else {
             vmList  = getKubernetesClusterVMMaps();
-            vmList = vmList.subList((int) (kubernetesCluster.getControlNodeCount() + clusterSize), vmList.size());
+            vmList  = vmList.stream()
+                        .filter(vm -> !vm.isExternalNode() && !vm.isControlNode() && !vm.isEtcdNode())
+                        .collect(Collectors.toList());
+            vmList = vmList.subList((int) (kubernetesCluster.getControlNodeCount() + clusterSize - 1), vmList.size());
         }
         Collections.reverse(vmList);
         removeNodesFromCluster(vmList);
@@ -375,16 +455,20 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
             stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.ScaleUpRequested);
         }
         List<UserVm> clusterVMs = new ArrayList<>();
-        LaunchPermissionVO launchPermission =  new LaunchPermissionVO(clusterTemplate.getId(), owner.getId());
-        launchPermissionDao.persist(launchPermission);
+        if (isDefaultTemplateUsed()) {
+            LaunchPermissionVO launchPermission = new LaunchPermissionVO(clusterTemplate.getId(), owner.getId());
+            launchPermissionDao.persist(launchPermission);
+        }
         try {
-            clusterVMs = provisionKubernetesClusterNodeVms((int)(newVmCount + kubernetesCluster.getNodeCount()), (int)kubernetesCluster.getNodeCount(), publicIpAddress);
+            clusterVMs = provisionKubernetesClusterNodeVms((int)(newVmCount + kubernetesCluster.getNodeCount()), (int)kubernetesCluster.getNodeCount(), publicIpAddress, kubernetesCluster.getDomainId(), kubernetesCluster.getAccountId());
             updateLoginUserDetails(clusterVMs.stream().map(InternalIdentity::getId).collect(Collectors.toList()));
         } catch (CloudRuntimeException | ManagementServerException | ResourceUnavailableException | InsufficientCapacityException e) {
             logTransitStateToFailedIfNeededAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes cluster : %s, unable to provision node VM in the cluster", kubernetesCluster.getName()), e);
         }
         try {
-            List<Long> clusterVMIds = getKubernetesClusterVMMaps().stream().map(KubernetesClusterVmMapVO::getVmId).collect(Collectors.toList());
+            List<Long> externalNodeIds = getKubernetesClusterVMMaps().stream().filter(KubernetesClusterVmMapVO::isExternalNode).map(KubernetesClusterVmMapVO::getVmId).collect(Collectors.toList());
+            List<Long> clusterVMIds = getKubernetesClusterVMMaps().stream().filter(vm -> !vm.isExternalNode() && !vm.isEtcdNode()).map(KubernetesClusterVmMapVO::getVmId).collect(Collectors.toList());
+            clusterVMIds.addAll(externalNodeIds);
             scaleKubernetesClusterNetworkRules(clusterVMIds);
         } catch (ManagementServerException e) {
             logTransitStateToFailedIfNeededAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes cluster : %s, unable to update network rules", kubernetesCluster.getName()), e);
@@ -401,7 +485,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         }
     }
 
-    private void scaleKubernetesClusterSize() throws CloudRuntimeException {
+    private void scaleKubernetesClusterSize(KubernetesClusterNodeType nodeType) throws CloudRuntimeException {
         validateKubernetesClusterScaleSizeParameters();
         final long originalClusterSize = kubernetesCluster.getNodeCount();
         final long newVmRequiredCount = clusterSize - originalClusterSize;
@@ -409,7 +493,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
             if (!kubernetesCluster.getState().equals(KubernetesCluster.State.Scaling)) {
                 stateTransitTo(kubernetesCluster.getId(), newVmRequiredCount > 0 ? KubernetesCluster.Event.ScaleUpRequested : KubernetesCluster.Event.ScaleDownRequested);
             }
-            kubernetesCluster = updateKubernetesClusterEntry(null, serviceOffering);
+            kubernetesCluster = updateKubernetesClusterEntryForNodeType(null, nodeType, serviceOfferingNodeTypeMap.get(nodeType.name()), false, false);
             return;
         }
         Pair<String, Integer> publicIpSshPort = getKubernetesClusterServerIpSshPort(null);
@@ -423,7 +507,9 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         } else { // upscale, same node count handled above
             scaleUpKubernetesClusterSize(newVmRequiredCount);
         }
-        kubernetesCluster = updateKubernetesClusterEntry(clusterSize, null);
+        boolean updateNodeOffering = serviceOfferingNodeTypeMap.containsKey(nodeType.name());
+        ServiceOffering nodeOffering = serviceOfferingNodeTypeMap.getOrDefault(nodeType.name(), null);
+        kubernetesCluster = updateKubernetesClusterEntryForNodeType(clusterSize, nodeType, nodeOffering, updateNodeOffering, false);
     }
 
     private boolean isAutoscalingChanged() {
@@ -446,37 +532,99 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         }
         scaleTimeoutTime = System.currentTimeMillis() + KubernetesClusterService.KubernetesClusterScaleTimeout.value() * 1000;
         final long originalClusterSize = kubernetesCluster.getNodeCount();
-        final ServiceOffering existingServiceOffering = serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId());
-        if (existingServiceOffering == null) {
-            logAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster %s failed, service offering for the Kubernetes cluster not found!", kubernetesCluster));
+        boolean scaleClusterDefaultOffering = serviceOfferingNodeTypeMap.containsKey(DEFAULT.name());
+        if (scaleClusterDefaultOffering) {
+            final ServiceOffering existingServiceOffering = serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId());
+            final ServiceOffering existingControlOffering = serviceOfferingDao.findById(kubernetesCluster.getControlNodeServiceOfferingId());
+            final ServiceOffering existingWorkerOffering = serviceOfferingDao.findById(kubernetesCluster.getWorkerNodeServiceOfferingId());
+            if (existingServiceOffering == null && ObjectUtils.anyNull(existingControlOffering, existingWorkerOffering)) {
+                logAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster : %s failed, service offering for the Kubernetes cluster not found!", kubernetesCluster.getName()));
+            }
         }
-        final boolean autoscalingChanged = isAutoscalingChanged();
-        final boolean serviceOfferingScalingNeeded = serviceOffering != null && serviceOffering.getId() != existingServiceOffering.getId();
 
-        if (autoscalingChanged) {
-            boolean autoScaled = autoscaleCluster(this.isAutoscalingEnabled, minSize, maxSize);
-            if (autoScaled && serviceOfferingScalingNeeded) {
-                scaleKubernetesClusterOffering();
+        final boolean autoscalingChanged = isAutoscalingChanged();
+        ServiceOffering defaultServiceOffering = serviceOfferingNodeTypeMap.getOrDefault(DEFAULT.name(), null);
+
+        for (KubernetesClusterNodeType nodeType : Arrays.asList(CONTROL, ETCD, WORKER)) {
+            boolean isWorkerNodeOrAllNodes = WORKER == nodeType;
+            final long newVMRequired = (!isWorkerNodeOrAllNodes || clusterSize == null) ? 0 : clusterSize - originalClusterSize;
+            if (!scaleClusterDefaultOffering && !serviceOfferingNodeTypeMap.containsKey(nodeType.name()) && newVMRequired == 0) {
+                continue;
             }
-            stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
-            return autoScaled;
-        }
-        final boolean clusterSizeScalingNeeded = clusterSize != null && clusterSize != originalClusterSize;
-        final long newVMRequired = clusterSize == null ? 0 : clusterSize - originalClusterSize;
-        if (serviceOfferingScalingNeeded && clusterSizeScalingNeeded) {
-            if (newVMRequired > 0) {
-                scaleKubernetesClusterOffering();
-                scaleKubernetesClusterSize();
-            } else {
-                scaleKubernetesClusterSize();
-                scaleKubernetesClusterOffering();
+
+            Long existingNodeTypeOfferingId = getKubernetesClusterNodeTypeOfferingId(kubernetesCluster, nodeType);
+            boolean clusterHasExistingOfferingForNodeType = existingNodeTypeOfferingId != null;
+            boolean serviceOfferingScalingNeeded = isServiceOfferingScalingNeededForNodeType(nodeType, serviceOfferingNodeTypeMap, kubernetesCluster);
+            ServiceOffering serviceOffering = serviceOfferingNodeTypeMap.getOrDefault(nodeType.name(), defaultServiceOffering);
+            boolean updateNodeOffering = serviceOfferingNodeTypeMap.containsKey(nodeType.name()) ||
+                    scaleClusterDefaultOffering && clusterHasExistingOfferingForNodeType;
+            boolean updateClusterOffering = isWorkerNodeOrAllNodes && scaleClusterDefaultOffering;
+            if (isWorkerNodeOrAllNodes && autoscalingChanged) {
+                boolean autoScaled = autoscaleCluster(this.isAutoscalingEnabled, minSize, maxSize);
+                if (autoScaled && serviceOfferingScalingNeeded) {
+                    scaleKubernetesClusterOffering(nodeType, serviceOffering, updateNodeOffering, updateClusterOffering);
+                }
+                stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
+                return autoScaled;
             }
-        } else if (serviceOfferingScalingNeeded) {
-            scaleKubernetesClusterOffering();
-        } else if (clusterSizeScalingNeeded) {
-            scaleKubernetesClusterSize();
+            final boolean clusterSizeScalingNeeded = isWorkerNodeOrAllNodes && clusterSize != null && clusterSize != originalClusterSize;
+            if (serviceOfferingScalingNeeded && clusterSizeScalingNeeded) {
+                if (newVMRequired > 0) {
+                    scaleKubernetesClusterOffering(nodeType, serviceOffering, updateNodeOffering, updateClusterOffering);
+                    scaleKubernetesClusterSize(nodeType);
+                } else {
+                    scaleKubernetesClusterSize(nodeType);
+                    scaleKubernetesClusterOffering(nodeType, serviceOffering, updateNodeOffering, updateClusterOffering);
+                }
+            } else if (serviceOfferingScalingNeeded) {
+                scaleKubernetesClusterOffering(nodeType, serviceOffering, updateNodeOffering, updateClusterOffering);
+            } else if (clusterSizeScalingNeeded) {
+                scaleKubernetesClusterSize(nodeType);
+            }
         }
+
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
         return true;
+    }
+
+    private Long getKubernetesClusterNodeTypeOfferingId(KubernetesCluster kubernetesCluster, KubernetesClusterNodeType nodeType) {
+        if (nodeType == WORKER) {
+            return kubernetesCluster.getWorkerNodeServiceOfferingId();
+        } else if (nodeType == ETCD) {
+            return kubernetesCluster.getEtcdNodeServiceOfferingId();
+        } else if (nodeType == CONTROL) {
+            return kubernetesCluster.getControlNodeServiceOfferingId();
+        }
+        return null;
+    }
+
+    protected boolean isServiceOfferingScalingNeededForNodeType(KubernetesClusterNodeType nodeType,
+                                                                Map<String, ServiceOffering> map, KubernetesCluster kubernetesCluster) {
+        // DEFAULT node type means only the global service offering has been set for the Kubernetes cluster
+        Long existingOfferingId = map.containsKey(DEFAULT.name()) ?
+                kubernetesCluster.getServiceOfferingId() :
+                getExistingOfferingIdForNodeType(nodeType, kubernetesCluster);
+        if (existingOfferingId == null) {
+            logAndThrow(Level.ERROR, String.format("The Kubernetes cluster %s does not have a global service offering set", kubernetesCluster.getName()));
+        }
+        ServiceOffering existingOffering = serviceOfferingDao.findById(existingOfferingId);
+        if (existingOffering == null) {
+            logAndThrow(Level.ERROR, String.format("Cannot find the global service offering with ID %s set on the Kubernetes cluster %s", existingOfferingId, kubernetesCluster.getName()));
+        }
+        ServiceOffering newOffering = map.containsKey(DEFAULT.name()) ? map.get(DEFAULT.name()) : map.get(nodeType.name());
+        return newOffering != null && newOffering.getId() != existingOffering.getId();
+    }
+
+    protected Long getExistingOfferingIdForNodeType(KubernetesClusterNodeType nodeType, KubernetesCluster kubernetesCluster) {
+        List<KubernetesClusterVmMapVO> clusterVms = kubernetesClusterVmMapDao.listByClusterIdAndVmType(kubernetesCluster.getId(), nodeType);
+        if (CollectionUtils.isEmpty(clusterVms)) {
+            return null;
+        }
+        KubernetesClusterVmMapVO clusterVm = clusterVms.get(0);
+        UserVmVO clusterUserVm = userVmDao.findById(clusterVm.getVmId());
+        if (clusterUserVm == null) {
+            return null;
+        }
+        return clusterUserVm.getServiceOfferingId();
     }
 }

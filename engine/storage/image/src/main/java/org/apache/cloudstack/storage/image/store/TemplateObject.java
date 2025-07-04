@@ -433,6 +433,11 @@ public class TemplateObject implements TemplateInfo {
         return this.imageVO.isDeployAsIs();
     }
 
+    @Override
+    public boolean isForCks() {
+        return imageVO.isForCks();
+    }
+
     public void setInstallPath(String installPath) {
         this.installPath = installPath;
     }

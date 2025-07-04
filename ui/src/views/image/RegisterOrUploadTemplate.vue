@@ -452,6 +452,11 @@
                       {{ $t('label.ispublic') }}
                     </a-checkbox>
                   </a-col>
+                  <a-col :span="12">
+                    <a-checkbox value="forCks" v-if="currentForm === 'Create'">
+                      {{ $t('label.forcks') }}
+                    </a-checkbox>
+                  </a-col>
                 </a-row>
               </a-checkbox-group>
             </a-form-item>

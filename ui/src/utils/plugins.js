@@ -422,6 +422,9 @@ export const resourceTypePlugin = {
       var routePath = this.$getRouteFromResourceType(resourceType)
       if (!routePath) return ''
       var route = this.$router.resolve('/' + routePath)
+      if (routePath === 'kubernetes') {
+        return route?.meta?.icon[0]
+      }
       return route?.meta?.icon || ''
     }
   }

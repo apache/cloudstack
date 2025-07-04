@@ -923,6 +923,10 @@ export default {
       }
 
       this.loading = true
+      if (this.$route.path.startsWith('/cniconfiguration')) {
+        params.forcks = true
+        console.log('here')
+      }
       if (this.$route.params && this.$route.params.id) {
         params.id = this.$route.params.id
         if (['listNetworks'].includes(this.apiName) && 'displaynetwork' in this.$route.query) {
@@ -1189,7 +1193,7 @@ export default {
       this.getFirstIndexFocus()
 
       this.showAction = true
-      const listIconForFillValues = ['copy-outlined', 'CopyOutlined', 'edit-outlined', 'EditOutlined', 'share-alt-outlined', 'ShareAltOutlined']
+      const listIconForFillValues = ['copy-outlined', 'CopyOutlined', 'edit-outlined', 'EditOutlined', 'share-alt-outlined', 'ShareAltOutlined', 'minus-square-outlined']
       for (const param of this.currentAction.paramFields) {
         if (param.type === 'list' && ['tags', 'hosttags', 'storagetags', 'storageaccessgroups', 'files'].includes(param.name)) {
           param.type = 'string'
@@ -1418,6 +1422,8 @@ export default {
         fieldValue = this.resource[fieldName] ? this.resource[fieldName] : null
         if (fieldValue) {
           this.form[field.name] = fieldValue
+        } else if (field.type === 'boolean' && field.name === 'rebalance' && this.currentAction.api === 'cancelMaintenance') {
+          this.form[field.name] = true
         }
       })
     },
@@ -1572,6 +1578,10 @@ export default {
           if (values.storagetags === this.resource.storagetags) {
             delete values.tags
           }
+        }
+
+        if (['cancelMaintenance'].includes(action.api) && (params.rebalance === undefined || params.rebalance === null || params.rebalance === '')) {
+          params.rebalance = true
         }
 
         for (const key in values) {

@@ -60,7 +60,7 @@ export default {
       details: () => {
         var fields = ['name', 'id', 'displaytext', 'checksum', 'hypervisor', 'arch', 'format', 'ostypename', 'size', 'physicalsize', 'isready', 'passwordenabled',
           'crossZones', 'templatetype', 'directdownload', 'deployasis', 'ispublic', 'isfeatured', 'isextractable', 'isdynamicallyscalable', 'crosszones', 'type',
-          'account', 'domain', 'created', 'userdatadetails', 'userdatapolicy']
+          'account', 'domain', 'created', 'userdatadetails', 'userdatapolicy', 'forcks']
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
           fields.push('templatetag', 'templatetype', 'url')
         }
