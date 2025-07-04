@@ -79,6 +79,7 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.utils.FileUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.script.Script;
@@ -589,5 +590,36 @@ public class ExternalPathPayloadProvisionerTest {
 
         assertFalse(result.first());
         assertEquals("File is not executable", result.second());
+    }
+
+    @Test
+    public void deleteExtensionPayloadFile_DeletesFile_WhenActionIsTrivial() {
+        String extensionName = "test-extension";
+        String action = "status"; // in TRIVIAL_ACTIONS
+        String payloadFileName = "/tmp/test-payload.json";
+
+        try (MockedStatic<FileUtil> fileUtilMock = Mockito.mockStatic(FileUtil.class)) {
+            provisioner.deleteExtensionPayloadFile(extensionName, action, payloadFileName);
+
+            fileUtilMock.verify(() -> FileUtil.deletePath(payloadFileName));
+            Mockito.verify(logger).trace(
+                    "Deleting payload file: {} for extension: {}, action: {}, file: {}",
+                    payloadFileName, extensionName, action
+            );
+        }
+    }
+
+    @Test
+    public void deleteExtensionPayloadFile_DoesNothing_WhenActionIsNotTrivial() {
+        String extensionName = "test-extension";
+        String action = "start";
+        String payloadFileName = "/tmp/test-payload.json";
+
+        try (MockedStatic<FileUtil> fileUtilMock = Mockito.mockStatic(FileUtil.class)) {
+            provisioner.deleteExtensionPayloadFile(extensionName, action, payloadFileName);
+
+            fileUtilMock.verifyNoInteractions();
+            Mockito.verify(logger, Mockito.never()).trace(anyString(), any(), any(), any(), any());
+        }
     }
 }

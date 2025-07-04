@@ -29,6 +29,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -124,6 +125,9 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
     private String extensionsDataDirectory;
     private ExecutorService payloadCleanupExecutor;
     private ScheduledExecutorService payloadCleanupScheduler;
+    private static final List<String> TRIVIAL_ACTIONS = Arrays.asList(
+            "status"
+    );
 
     @Override
     public String getName() {
@@ -728,12 +732,22 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
                 logger.warn("{}: External API execution failed with exit code {}", errorLogPrefix, exitCode);
                 return new Pair<>(false, "Exit code: " + exitCode + ", Output: " + output.toString().trim());
             }
+            deleteExtensionPayloadFile(extensionName, action, dataFile);
             return new Pair<>(true, output.toString().trim());
 
         } catch (IOException | InterruptedException e) {
             logger.error("{}: External operation failed", errorLogPrefix, e);
             throw new CloudRuntimeException(String.format("%s: External operation failed", errorLogPrefix), e);
         }
+    }
+
+    protected void deleteExtensionPayloadFile(String extensionName, String action, String payloadFileName) {
+        if (!TRIVIAL_ACTIONS.contains(action)) {
+            return;
+        }
+        logger.trace("Deleting payload file: {} for extension: {}, action: {}, file: {}",
+                payloadFileName, extensionName, action);
+        FileUtil.deletePath(payloadFileName);
     }
 
     protected void scheduleExtensionPayloadDirectoryCleanup(String extensionName) {
