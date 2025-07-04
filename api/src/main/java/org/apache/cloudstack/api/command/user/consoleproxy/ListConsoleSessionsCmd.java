@@ -68,11 +68,11 @@ public class ListConsoleSessionsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, authorized = {RoleType.Admin}, description = "Lists console sessions from the specified host.")
     private Long hostId;
 
-    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "Lists console sessions acquired from this date onwards. " +
+    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "Lists console sessions generated from this date onwards. " +
             ApiConstants.PARAMETER_DESCRIPTION_START_DATE_POSSIBLE_FORMATS)
     private Date startDate;
 
-    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "Lists console sessions acquired up until this date. " +
+    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "Lists console sessions generated up until this date. " +
             ApiConstants.PARAMETER_DESCRIPTION_END_DATE_POSSIBLE_FORMATS)
     private Date endDate;
 
