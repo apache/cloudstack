@@ -158,7 +158,7 @@ public class ConsoleAccessManagerImplTest {
         Mockito.verify(consoleSessionDaoMock).listConsoleSessions(
                 Mockito.any(), Mockito.eq(List.of(callerDomainId)), Mockito.eq(callerAccountId),
                 Mockito.eq(callerUserId), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
-                Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any(), Mockito.any()
+                Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.any(), Mockito.any()
         );
     }
 
@@ -185,7 +185,7 @@ public class ConsoleAccessManagerImplTest {
         Mockito.verify(consoleSessionDaoMock).listConsoleSessions(
                 Mockito.any(), Mockito.eq(List.of(callerDomainId)), Mockito.eq(callerAccountId),
                 Mockito.eq(callerUserId), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
-                Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any(), Mockito.any()
+                Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.any(), Mockito.any()
         );
     }
 
@@ -213,7 +213,7 @@ public class ConsoleAccessManagerImplTest {
         Mockito.verify(consoleSessionDaoMock).listConsoleSessions(
                 Mockito.any(), Mockito.eq(List.of(callerDomainId)), Mockito.eq(callerAccountId),
                 Mockito.eq(callerUserId), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
-                Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any(), Mockito.any()
+                Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.any(), Mockito.any()
         );
     }
 
@@ -242,7 +242,7 @@ public class ConsoleAccessManagerImplTest {
         Mockito.verify(consoleSessionDaoMock).listConsoleSessions(
                 Mockito.any(), Mockito.eq(domainIdsCallerHasAccessTo), Mockito.eq(callerAccountId),
                 Mockito.eq(callerUserId), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
-                Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any(), Mockito.any()
+                Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.any(), Mockito.any()
         );
     }
 

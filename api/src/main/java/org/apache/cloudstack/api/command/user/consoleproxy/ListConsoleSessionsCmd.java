@@ -89,6 +89,11 @@ public class ListConsoleSessionsCmd extends BaseListCmd {
             description = "Lists only active console sessions, defaults to true. Active sessions are the ones that have been acquired and have not been removed.")
     private boolean activeOnly = true;
 
+    @Parameter(name = ApiConstants.ACQUIRED, type = CommandType.BOOLEAN,
+        description = "Lists acquired console sessions, defaults to false. Acquired console sessions are the ones that have been accessed. " +
+                "The 'activeonly' parameter has precedence over the 'acquired' parameter, i.e., when the 'activeonly' parameter is 'true', the 'acquired' parameter value will be ignored.")
+    private boolean acquired = false;
+
     @Parameter(name = ApiConstants.IS_RECURSIVE, type = CommandType.BOOLEAN,
             description = "Lists console sessions recursively per domain. If an account ID is informed, only the account's console sessions will be listed. Defaults to false.")
     private boolean recursive = false;
@@ -135,6 +140,10 @@ public class ListConsoleSessionsCmd extends BaseListCmd {
 
     public boolean isActiveOnly() {
         return activeOnly;
+    }
+
+    public boolean getAcquired() {
+        return acquired;
     }
 
     public boolean isRecursive() {
