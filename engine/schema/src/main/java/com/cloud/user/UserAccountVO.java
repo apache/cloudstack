@@ -226,10 +226,6 @@ public class UserAccountVO implements UserAccount, InternalIdentity {
         return created;
     }
 
-//    public void setCreated(Date created) {
-//        this.created = created;
-//    }
-
     @Override
     public Date getRemoved() {
         return removed;

@@ -330,9 +330,7 @@ public class VncMessageHandler extends BaseElement {
      */
     public static void main(String[] args) {
 
-        // System.setProperty("streamer.Link.debug", "true");
         System.setProperty("streamer.Element.debug", "true");
-        // System.setProperty("streamer.Pipeline.debug", "true");
 
         Element source = new MockSource("source") {
             {

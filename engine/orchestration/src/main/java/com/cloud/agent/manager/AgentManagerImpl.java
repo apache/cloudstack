@@ -1727,7 +1727,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                         }
                     } catch (final UnsupportedVersionException e) {
                         logger.warn(e.getMessage());
-                        // upgradeAgent(task.getLink(), data, e.getReason());
                     } catch (final ClassNotFoundException e) {
                         final String message = String.format("Exception occurred when executing tasks! Error '%s'", e.getMessage());
                         logger.error(message);

@@ -778,60 +778,6 @@ public class TungstenElementTest {
         verify(tungstenService, times(1)).deleteManagementNetwork(anyLong());
     }
 
-    //@Test
-    //public void processConnectWithoutSecurityGroupTest() throws ConnectionException {
-    //    Host host = mock(Host.class);
-    //    StartupCommand startupCommand = mock(StartupCommand.class);
-    //    TungstenProviderVO tungstenProvider = mock(TungstenProviderVO.class);
-    //    DataCenterVO dataCenterVO = mock(DataCenterVO.class);
-    //    VlanVO vlanVO1 = mock(VlanVO.class);
-    //    VlanVO vlanVO2 = mock(VlanVO.class);
-    //    List<VlanVO> vlanList = Arrays.asList(vlanVO1, vlanVO2);
-    //    Network publicNetwork = mock(Network.class);
-    //    NetworkDetailVO networkDetail = mock(NetworkDetailVO.class);
-//
-    //    when(host.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
-    //    when(tungstenProviderDao.findByZoneId(anyLong())).thenReturn(tungstenProvider);
-    //    when(host.getPublicIpAddress()).thenReturn("192.168.100.100");
-    //    when(tungstenProvider.getGateway()).thenReturn("192.168.100.100");
-    //    when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
-    //    when(vlanDao.listByZone(anyLong())).thenReturn(vlanList);
-    //    when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), eq(Networks.TrafficType.Public))).thenReturn(publicNetwork);
-    //    when(networkDetailsDao.findDetail(anyLong(), anyString())).thenReturn(networkDetail);
-    //    when(vlanVO1.getVlanGateway()).thenReturn("192.168.100.1");
-    //    when(vlanVO1.getVlanNetmask()).thenReturn("255.255.255.0");
-    //    when(vlanVO2.getVlanGateway()).thenReturn("192.168.101.1");
-    //    when(vlanVO2.getVlanNetmask()).thenReturn("255.255.255.0");
-    //    when(dataCenterVO.isSecurityGroupEnabled()).thenReturn(false);
-//
-    //    tungstenElement.processConnect(host, startupCommand, true);
-    //    verify(agentManager, times(1)).easySend(anyLong(), any(SetupTungstenVRouterCommand.class));
-    //}
-
-    //@Test
-    //public void processConnectWithSecurityGroupTest() throws ConnectionException {
-    //    Host host = mock(Host.class);
-    //    StartupCommand startupCommand = mock(StartupCommand.class);
-    //    TungstenProviderVO tungstenProvider = mock(TungstenProviderVO.class);
-    //    DataCenterVO dataCenterVO = mock(DataCenterVO.class);
-    //    NetworkVO network = mock(NetworkVO.class);
-    //    NetworkDetailVO networkDetail = mock(NetworkDetailVO.class);
-    //    Network publicNetwork = mock(Network.class);
-//
-    //    when(host.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
-    //    when(tungstenProviderDao.findByZoneId(anyLong())).thenReturn(tungstenProvider);
-    //    when(host.getPublicIpAddress()).thenReturn("192.168.100.100");
-    //    when(tungstenProvider.getGateway()).thenReturn("192.168.100.100");
-    //    when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
-    //    when(networkDao.listByZoneSecurityGroup(anyLong())).thenReturn(Arrays.asList(network));
-    //    when(networkDetailsDao.findDetail(anyLong(), anyString())).thenReturn(networkDetail);
-    //    when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), eq(Networks.TrafficType.Public))).thenReturn(publicNetwork);
-    //    when(dataCenterVO.isSecurityGroupEnabled()).thenReturn(true);
-//
-    //    tungstenElement.processConnect(host, startupCommand, true);
-    //    verify(agentManager, times(1)).easySend(anyLong(), any(SetupTungstenVRouterCommand.class));
-    //}
-
     @Test
     public void processHostAboutToBeRemovedWithSecurityGroupTest() {
         HostVO hostVO = mock(HostVO.class);

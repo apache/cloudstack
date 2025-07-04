@@ -105,9 +105,7 @@ public class ClientSynchronizePDU extends OneTimeSwitch {
      * @see http://msdn.microsoft.com/en-us/library/cc240841.aspx
      */
     public static void main(String args[]) {
-        // System.setProperty("streamer.Link.debug", "true");
         System.setProperty("streamer.Element.debug", "true");
-        // System.setProperty("streamer.Pipeline.debug", "true");
 
         /* @formatter:off */
         byte[] packet = new byte[] {

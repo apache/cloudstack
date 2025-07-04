@@ -235,7 +235,6 @@ public class VMSnapshotStrategyKVMTest extends TestCase{
         when(vol.getDataStore()).thenReturn(dataStore);
         when(snapshotVO.getId()).thenReturn(1L);
         when(_snapshotService.revertSnapshot(snapshotVO.getId())).thenReturn(snap);
-    //    testFindSnapshotByName(name);
         vmStrategy.revertDiskSnapshot(vmSnapshot);
     }
 
