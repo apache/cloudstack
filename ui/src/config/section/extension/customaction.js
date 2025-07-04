@@ -27,7 +27,7 @@ export default {
   resourceType: 'ExtensionCustomAction',
   hidden: true,
   columns: ['name', 'extensionname', 'enabled', 'created'],
-  details: ['name', 'id', 'description', 'extensionname', 'allowedroletypes', 'resourcetype', 'parameters', 'timeout', 'details', 'created'],
+  details: ['name', 'id', 'description', 'extensionname', 'allowedroletypes', 'resourcetype', 'parameters', 'timeout', 'successmessage', 'errormessage', 'details', 'created'],
   tabs: [{
     name: 'details',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
