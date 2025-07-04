@@ -102,10 +102,10 @@ public class ConsoleSessionDaoImpl extends GenericDaoBase<ConsoleSessionVO, Long
     public Pair<List<ConsoleSessionVO>, Integer> listConsoleSessions(Long id, List<Long> domainIds, Long accountId, Long userId, Long hostId,
                                                                      Date startDate, Date endDate, Long instanceId,
                                                                      String consoleEndpointCreatorAddress, String clientAddress,
-                                                                     boolean activeOnly, Long pageSizeVal, Long startIndex) {
+                                                                     boolean activeOnly, boolean acquired, Long pageSizeVal, Long startIndex) {
         Filter filter = new Filter(ConsoleSessionVO.class, CREATED, false, startIndex, pageSizeVal);
         SearchCriteria<ConsoleSessionVO> searchCriteria = createListConsoleSessionsSearchCriteria(id, domainIds, accountId, userId, hostId,
-                startDate, endDate, instanceId, consoleEndpointCreatorAddress, clientAddress, activeOnly);
+                startDate, endDate, instanceId, consoleEndpointCreatorAddress, clientAddress, activeOnly, acquired);
 
         return searchAndCount(searchCriteria, filter, true);
     }
@@ -113,8 +113,8 @@ public class ConsoleSessionDaoImpl extends GenericDaoBase<ConsoleSessionVO, Long
     private SearchCriteria<ConsoleSessionVO> createListConsoleSessionsSearchCriteria(Long id, List<Long> domainIds, Long accountId, Long userId, Long hostId,
                                                                                      Date startDate, Date endDate, Long instanceId,
                                                                                      String consoleEndpointCreatorAddress, String clientAddress,
-                                                                                     boolean activeOnly) {
-        SearchCriteria<ConsoleSessionVO> searchCriteria = createListConsoleSessionsSearchBuilder(activeOnly).create();
+                                                                                     boolean activeOnly, boolean acquired) {
+        SearchCriteria<ConsoleSessionVO> searchCriteria = createListConsoleSessionsSearchBuilder(activeOnly, acquired).create();
 
         searchCriteria.setParametersIfNotNull(ID, id);
         searchCriteria.setParametersIfNotNull(DOMAIN_IDS, domainIds.toArray());
@@ -130,7 +130,7 @@ public class ConsoleSessionDaoImpl extends GenericDaoBase<ConsoleSessionVO, Long
         return searchCriteria;
     }
 
-    private SearchBuilder<ConsoleSessionVO> createListConsoleSessionsSearchBuilder(boolean activeOnly) {
+    private SearchBuilder<ConsoleSessionVO> createListConsoleSessionsSearchBuilder(boolean activeOnly, boolean acquired) {
         SearchBuilder<ConsoleSessionVO> searchBuilder = createSearchBuilder();
 
         searchBuilder.and(ID, searchBuilder.entity().getId(), SearchCriteria.Op.EQ);
@@ -147,6 +147,8 @@ public class ConsoleSessionDaoImpl extends GenericDaoBase<ConsoleSessionVO, Long
         if (activeOnly) {
             searchBuilder.and(ACQUIRED, searchBuilder.entity().getAcquired(), SearchCriteria.Op.NNULL);
             searchBuilder.and(REMOVED, searchBuilder.entity().getRemoved(), SearchCriteria.Op.NULL);
+        } else if (acquired) {
+            searchBuilder.and(ACQUIRED, searchBuilder.entity().getAcquired(), SearchCriteria.Op.NNULL);
         }
 
         searchBuilder.done();

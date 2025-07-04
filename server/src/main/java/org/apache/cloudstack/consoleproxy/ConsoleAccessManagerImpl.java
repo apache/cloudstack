@@ -233,7 +233,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         return consoleSessionDao.listConsoleSessions(cmd.getId(), domainIds, accountId, userId,
                 cmd.getHostId(), cmd.getStartDate(), cmd.getEndDate(), cmd.getInstanceId(),
                 cmd.getConsoleEndpointCreatorAddress(), cmd.getClientAddress(), cmd.isActiveOnly(),
-                cmd.getPageSizeVal(), cmd.getStartIndex());
+                cmd.getAcquired(), cmd.getPageSizeVal(), cmd.getStartIndex());
     }
 
     /**
