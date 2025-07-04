@@ -125,10 +125,13 @@ export default {
       message: 'message.update.resource.count.domain',
       listView: true,
       dataView: true,
-      args: ['domainid'],
+      args: ['domainid', 'account'],
       mapping: {
         domainid: {
           value: (record) => { return record.id }
+        },
+        account: {
+          value: (record) => { return store.getters.userInfo.account }
         }
       }
     },
