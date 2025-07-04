@@ -41,5 +41,5 @@ public interface ConsoleSessionDao extends GenericDao<ConsoleSessionVO, Long> {
     Pair<List<ConsoleSessionVO>, Integer> listConsoleSessions(Long id, List<Long> domainIds, Long accountId, Long userId, Long hostId,
                                                               Date startDate, Date endDate, Long instanceId,
                                                               String consoleEndpointCreatorAddress, String clientAddress,
-                                                              boolean activeOnly, Long pageSizeVal, Long startIndex);
+                                                              boolean activeOnly, boolean acquired, Long pageSizeVal, Long startIndex);
 }
