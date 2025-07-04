@@ -29,6 +29,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.network.router.deployment.RouterDeploymentDefinition;
 import org.junit.Before;
@@ -56,7 +58,6 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
-
 
 @RunWith(MockitoJUnitRunner.class)
 public class NetworkHelperImplTest {
@@ -90,6 +91,10 @@ public class NetworkHelperImplTest {
     private ServiceOfferingVO routerOffering;
     @Mock
     private VMTemplateVO template;
+    @Mock
+    private VMTemplateDao templateDao;
+    @Mock
+    private UserVmDetailsDao userVmDetailsDao;
 
     @Before
     public void setUp() {
