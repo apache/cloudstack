@@ -21,8 +21,8 @@ import java.util.Map;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
-import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
 
+import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.exception.PermissionDeniedException;
@@ -33,6 +33,7 @@ import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.PluggableService;
 
@@ -194,5 +195,15 @@ public class ProjectRoleBasedApiAccessChecker  extends AdapterBase implements AP
     @Inject
     public void setServices(List<PluggableService> services) {
         this.services = services;
+    }
+
+    @Override
+    public Pair<Role, List<RolePermission>> getRolePermissions(long roleId) {
+        return null;
+    }
+
+    @Override
+    public boolean checkAccess(Account account, String commandName, Role accountRole, List<RolePermission> allPermissions) {
+        return false;
     }
 }
