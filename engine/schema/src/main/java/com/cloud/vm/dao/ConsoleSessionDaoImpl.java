@@ -139,8 +139,8 @@ public class ConsoleSessionDaoImpl extends GenericDaoBase<ConsoleSessionVO, Long
         searchBuilder.and(USER_ID, searchBuilder.entity().getUserId(), SearchCriteria.Op.EQ);
         searchBuilder.and(HOST_ID, searchBuilder.entity().getHostId(), SearchCriteria.Op.EQ);
         searchBuilder.and(INSTANCE_ID, searchBuilder.entity().getInstanceId(), SearchCriteria.Op.EQ);
-        searchBuilder.and(START_DATE, searchBuilder.entity().getAcquired(), SearchCriteria.Op.GTEQ);
-        searchBuilder.and(END_DATE, searchBuilder.entity().getAcquired(), SearchCriteria.Op.LTEQ);
+        searchBuilder.and(START_DATE, searchBuilder.entity().getCreated(), SearchCriteria.Op.GTEQ);
+        searchBuilder.and(END_DATE, searchBuilder.entity().getCreated(), SearchCriteria.Op.LTEQ);
         searchBuilder.and(CREATOR_ADDRESS, searchBuilder.entity().getConsoleEndpointCreatorAddress(), SearchCriteria.Op.EQ);
         searchBuilder.and(CLIENT_ADDRESS, searchBuilder.entity().getClientAddress(), SearchCriteria.Op.EQ);
 
