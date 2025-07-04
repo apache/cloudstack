@@ -96,15 +96,6 @@ public class RdpClient extends PipelineImpl {
         assembleRDPPipeline(serverHostName, domain, userName, password, pcb, screen, canvas, sslState);
     }
 
-    // /* DEBUG */
-//  @Override
-//  protected HashMap<String, streamer.Element> initElementMap(String id) {
-//    HashMap<String, streamer.Element> map = new HashMap<String, streamer.Element>();
-//    map.put("IN", new ServerPacketSniffer("server <"));
-//    map.put("OUT", new ClientPacketSniffer("> client"));
-//    return map;
-//  }
-
     /**
      * Assemble connection sequence and main pipeline.
      *
