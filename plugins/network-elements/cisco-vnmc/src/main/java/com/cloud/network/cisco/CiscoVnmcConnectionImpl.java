@@ -136,7 +136,6 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
                 String xml = "";
                 String line;
                 while ((line = br.readLine()) != null) {
-                    //xml += line.replaceAll("\n"," ");
                     xml += line;
                 }
 

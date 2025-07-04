@@ -36,7 +36,6 @@ public class ClusterVSMMapDaoImpl extends GenericDaoBase<ClusterVSMMapVO, Long> 
     final SearchBuilder<ClusterVSMMapVO> VsmSearch;
 
     public ClusterVSMMapDaoImpl() {
-        //super();
 
         ClusterSearch = createSearchBuilder();
         ClusterSearch.and("clusterId", ClusterSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
