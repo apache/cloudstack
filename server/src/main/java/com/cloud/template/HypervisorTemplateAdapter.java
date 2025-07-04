@@ -61,7 +61,6 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
-import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
@@ -308,7 +307,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 
 
         for (long zoneId : zonesIds) {
-            DataStore imageStore = verifyHeuristicRulesForZone(template, zoneId);
+            DataStore imageStore = templateMgr.verifyHeuristicRulesForZone(template, zoneId);
 
             if (imageStore == null) {
                 List<DataStore> imageStores = getImageStoresThrowsExceptionIfNotFound(zoneId, profile);
@@ -325,16 +324,6 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             throw new CloudRuntimeException(String.format("Unable to find image store to download the template [%s].", profile.getTemplate()));
         }
         return imageStores;
-    }
-
-    protected DataStore verifyHeuristicRulesForZone(VMTemplateVO template, Long zoneId) {
-        HeuristicType heuristicType;
-        if (ImageFormat.ISO.equals(template.getFormat())) {
-            heuristicType = HeuristicType.ISO;
-        } else {
-            heuristicType = HeuristicType.TEMPLATE;
-        }
-        return heuristicRuleHelper.getImageStoreIfThereIsHeuristicRule(zoneId, heuristicType, template);
     }
 
     protected void standardImageStoreAllocation(List<DataStore> imageStores, VMTemplateVO template) {
@@ -432,7 +421,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                 }
 
                 Long zoneId = zoneIdList.get(0);
-                DataStore imageStore = verifyHeuristicRulesForZone(template, zoneId);
+                DataStore imageStore = templateMgr.verifyHeuristicRulesForZone(template, zoneId);
                 List<TemplateOrVolumePostUploadCommand> payloads = new LinkedList<>();
 
                 if (imageStore == null) {
