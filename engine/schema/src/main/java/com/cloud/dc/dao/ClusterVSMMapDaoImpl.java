@@ -81,8 +81,6 @@ public class ClusterVSMMapDaoImpl extends GenericDaoBase<ClusterVSMMapVO, Long> 
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         ClusterVSMMapVO cluster = createForUpdate();
-        //cluster.setClusterId(null);
-        //cluster.setVsmId(null);
 
         update(id, cluster);
 
