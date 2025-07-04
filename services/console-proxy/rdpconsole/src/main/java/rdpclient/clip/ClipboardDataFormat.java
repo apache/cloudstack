@@ -40,11 +40,6 @@ public class ClipboardDataFormat {
 
         // Names
         HTML_FORMAT,
-
-        // RTF_AS_TEXT,
-        // RICH_TEXT_FORMAT_WITHOUT_OBJECTS,
-        // RICH_TEXT_FORMAT,
-
     };
 
     public final int id;
@@ -114,15 +109,6 @@ public class ClipboardDataFormat {
 
         if (HTML_FORMAT.equals(name))
             return buf.readVariableString(RdpConstants.CHARSET_8); // TODO: verify
-
-        // if (RTF_AS_TEXT.equals(name))
-        // return buf.readVariableString(RdpConstants.CHARSET_8); // TODO: verify
-        //
-        // if (RICH_TEXT_FORMAT_WITHOUT_OBJECTS.equals(name))
-        // return buf.readVariableString(RdpConstants.CHARSET_8); // TODO: verify
-        //
-        // if (RICH_TEXT_FORMAT.equals(name))
-        // return buf.readVariableString(RdpConstants.CHARSET_8); // TODO: verify
 
         return null;
     }
