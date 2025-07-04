@@ -488,4 +488,8 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     public UserAccount clearUserTwoFactorAuthenticationInSetupStateOnLogin(UserAccount user) {
         return null;
     }
+
+    @Override
+    public void verifyCallerPrivilegeForUserOrAccountOperations(Account userAccount) {
+    }
 }

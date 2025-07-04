@@ -3485,7 +3485,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
                 SearchCriteria<DiskOfferingVO> sc = diskOfferingSearch.create();
                 sc.setParameters("computeOnly", false);
-                sc.setParameters("activeState", DiskOffering.State.Active);
+                if (state != null) {
+                    sc.setParameters("state", state);
+                }
 
                 sc.setJoinParameters("domainDetailsSearch", "domainId", domainId);
 
@@ -4570,7 +4572,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             if (!permittedAccounts.isEmpty()) {
                 domain = _domainDao.findById(permittedAccounts.get(0).getDomainId());
             } else {
-                domain = _domainDao.findById(Domain.ROOT_DOMAIN);
+                domain = _domainDao.findById(caller.getDomainId());
             }
 
             setIdsListToSearchCriteria(sc, ids);

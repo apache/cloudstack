@@ -47,11 +47,13 @@ import javax.naming.ConfigurationException;
 
 
 import com.cloud.hypervisor.HypervisorGuru;
+import com.cloud.user.AccountManagerImpl;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.host.HostTagVO;
 import com.cloud.storage.StoragePoolTagVO;
 import com.cloud.storage.VolumeApiServiceImpl;
 import com.googlecode.ipv6.IPv6Address;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -470,6 +472,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     private long _defaultPageSize = Long.parseLong(Config.DefaultPageSize.getDefaultValue());
     private static final String DOMAIN_NAME_PATTERN = "^((?!-)[A-Za-z0-9-]{1,63}(?<!-)\\.)+[A-Za-z]{1,63}$";
     private Set<String> configValuesForValidation = new HashSet<String>();
+    private Set<String> configKeysAllowedOnlyForDefaultAdmin = new HashSet<String>();
     private Set<String> weightBasedParametersForValidation = new HashSet<String>();
     private Set<String> overprovisioningFactorsForValidation = new HashSet<String>();
 
@@ -533,6 +536,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         populateConfigValuesForValidationSet();
         weightBasedParametersForValidation();
         overProvisioningFactorsForValidation();
+        populateConfigKeysAllowedOnlyForDefaultAdmin();
         initMessageBusListener();
         return true;
     }
@@ -594,6 +598,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         overprovisioningFactorsForValidation.add(CapacityManager.MemOverprovisioningFactor.key());
         overprovisioningFactorsForValidation.add(CapacityManager.CpuOverprovisioningFactor.key());
         overprovisioningFactorsForValidation.add(CapacityManager.StorageOverprovisioningFactor.key());
+    }
+
+    protected void populateConfigKeysAllowedOnlyForDefaultAdmin() {
+        configKeysAllowedOnlyForDefaultAdmin.add(AccountManagerImpl.listOfRoleTypesAllowedForOperationsOfSameRoleType.key());
+        configKeysAllowedOnlyForDefaultAdmin.add(AccountManagerImpl.allowOperationsOnUsersInSameAccount.key());
     }
 
     private void initMessageBusListener() {
@@ -1183,6 +1192,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             s_logger.error("Missing configuration variable " + name + " in configuration table");
             return "Invalid configuration variable.";
         }
+        validateConfigurationAllowedOnlyForDefaultAdmin(name, value);
 
         final String configScope = cfg.getScope();
         if (scope != null) {
@@ -1345,6 +1355,33 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             return validateIfIntValueIsInRange(name, value, range[0]);
         }
         return String.format("Invalid value for configuration [%s].", name);
+    }
+
+    protected void validateConfigurationAllowedOnlyForDefaultAdmin(String configName, String value) {
+        if (configKeysAllowedOnlyForDefaultAdmin.contains(configName)) {
+            final Long userId = CallContext.current().getCallingUserId();
+            if (userId != User.UID_ADMIN) {
+                throw new CloudRuntimeException("Only default admin is allowed to change this setting");
+            }
+
+            if (AccountManagerImpl.listOfRoleTypesAllowedForOperationsOfSameRoleType.key().equals(configName)) {
+                if (value != null && !value.isBlank()) {
+                    List<String> validRoleTypes = Arrays.stream(RoleType.values())
+                            .map(Enum::name)
+                            .collect(Collectors.toList());
+
+                    boolean allValid = Arrays.stream(value.split(","))
+                            .map(String::trim)
+                            .allMatch(validRoleTypes::contains);
+
+                    if (!allValid) {
+                        throw new CloudRuntimeException("Invalid role types provided in value");
+                    }
+                } else {
+                    throw new CloudRuntimeException("Value for role types must not be empty");
+                }
+            }
+        }
     }
 
     /**
@@ -4407,14 +4444,24 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         String endIP = cmd.getEndIp();
         final String newVlanGateway = cmd.getGateway();
         final String newVlanNetmask = cmd.getNetmask();
+        Long networkId = cmd.getNetworkID();
+        Long physicalNetworkId = cmd.getPhysicalNetworkId();
+
+        // Verify that network exists
+        Network network = getNetwork(networkId);
+        if (network != null) {
+            zoneId = network.getDataCenterId();
+            physicalNetworkId = network.getPhysicalNetworkId();
+        }
+
         String vlanId = cmd.getVlan();
+        vlanId = verifyAndUpdateVlanId(vlanId, network);
+
         // TODO decide if we should be forgiving or demand a valid and complete URI
         if (!(vlanId == null || "".equals(vlanId) || vlanId.startsWith(BroadcastDomainType.Vlan.scheme()))) {
             vlanId = BroadcastDomainType.Vlan.toUri(vlanId).toString();
         }
         final Boolean forVirtualNetwork = cmd.isForVirtualNetwork();
-        Long networkId = cmd.getNetworkID();
-        Long physicalNetworkId = cmd.getPhysicalNetworkId();
         final String accountName = cmd.getAccountName();
         final Long projectId = cmd.getProjectId();
         final Long domainId = cmd.getDomainId();
@@ -4484,18 +4531,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             domain = _domainDao.findById(domainId);
             if (domain == null) {
                 throw new InvalidParameterValueException("Please specify a valid domain id");
-            }
-        }
-
-        // Verify that network exists
-        Network network = null;
-        if (networkId != null) {
-            network = _networkDao.findById(networkId);
-            if (network == null) {
-                throw new InvalidParameterValueException("Unable to find network by id " + networkId);
-            } else {
-                zoneId = network.getDataCenterId();
-                physicalNetworkId = network.getPhysicalNetworkId();
             }
         }
 
@@ -4639,6 +4674,32 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 ip6Cidr, domain, vlanOwner, network, sameSubnet);
     }
 
+    private Network getNetwork(Long networkId) {
+        if (networkId == null) {
+            return null;
+        }
+
+        Network network = _networkDao.findById(networkId);
+        if (network == null) {
+            throw new InvalidParameterValueException("Unable to find network by id " + networkId);
+        }
+
+        return network;
+    }
+
+    private String verifyAndUpdateVlanId(String vlanId, Network network) {
+        if (!StringUtils.isBlank(vlanId)) {
+            return vlanId;
+        }
+
+        if (network == null || network.getTrafficType() != TrafficType.Guest) {
+            return Vlan.UNTAGGED;
+        }
+
+        boolean connectivityWithoutVlan = isConnectivityWithoutVlan(network);
+        return getNetworkVlanId(network, connectivityWithoutVlan);
+    }
+
     private Vlan commitVlan(final Long zoneId, final Long podId, final String startIP, final String endIP, final String newVlanGatewayFinal, final String newVlanNetmaskFinal,
             final String vlanId, final Boolean forVirtualNetwork, final Boolean forSystemVms, final Long networkId, final Long physicalNetworkId, final String startIPv6, final String endIPv6,
             final String ip6Gateway, final String ip6Cidr, final Domain domain, final Account vlanOwner, final Network network, final Pair<Boolean, Pair<String, String>> sameSubnet) {
@@ -4709,7 +4770,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final String cidrnew = NetUtils.getCidrFromGatewayAndNetmask(newVlanGateway, newVlanNetmask);
         final String existing_cidr = NetUtils.getCidrFromGatewayAndNetmask(vlanGateway, vlanNetmask);
 
-        return NetUtils.isNetowrkASubsetOrSupersetOfNetworkB(cidrnew, existing_cidr);
+        return NetUtils.isNetworkASubsetOrSupersetOfNetworkB(cidrnew, existing_cidr);
     }
 
     public Pair<Boolean, Pair<String, String>> validateIpRange(final String startIP, final String endIP, final String newVlanGateway, final String newVlanNetmask, final List<VlanVO> vlans, final boolean ipv4,
@@ -4847,28 +4908,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // same as network's vlan
         // 2) if vlan is missing, default it to the guest network's vlan
         if (network.getTrafficType() == TrafficType.Guest) {
-            String networkVlanId = null;
-            boolean connectivityWithoutVlan = false;
-            if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Connectivity)) {
-                Map<Capability, String> connectivityCapabilities = _networkModel.getNetworkServiceCapabilities(network.getId(), Service.Connectivity);
-                connectivityWithoutVlan = MapUtils.isNotEmpty(connectivityCapabilities) && connectivityCapabilities.containsKey(Capability.NoVlan);
-            }
-
-            final URI uri = network.getBroadcastUri();
-            if (connectivityWithoutVlan) {
-                networkVlanId = network.getBroadcastDomainType().toUri(network.getUuid()).toString();
-            } else if (uri != null) {
-                // Do not search for the VLAN tag when the network doesn't support VLAN
-               if (uri.toString().startsWith("vlan")) {
-                    final String[] vlan = uri.toString().split("vlan:\\/\\/");
-                    networkVlanId = vlan[1];
-                    // For pvlan
-                    if (network.getBroadcastDomainType() != BroadcastDomainType.Vlan) {
-                        networkVlanId = networkVlanId.split("-")[0];
-                    }
-               }
-            }
-
+            boolean connectivityWithoutVlan = isConnectivityWithoutVlan(network);
+            String networkVlanId = getNetworkVlanId(network, connectivityWithoutVlan);
             if (vlanId != null && !connectivityWithoutVlan) {
                 // if vlan is specified, throw an error if it's not equal to
                 // network's vlanId
@@ -4998,6 +5039,36 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 ipv4, zone, vlanType, ipv6Range, ipRange, forSystemVms);
 
         return vlan;
+    }
+
+    private boolean isConnectivityWithoutVlan(Network network) {
+        boolean connectivityWithoutVlan = false;
+        if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Connectivity)) {
+            Map<Capability, String> connectivityCapabilities = _networkModel.getNetworkServiceCapabilities(network.getId(), Service.Connectivity);
+            connectivityWithoutVlan = MapUtils.isNotEmpty(connectivityCapabilities) && connectivityCapabilities.containsKey(Capability.NoVlan);
+        }
+        return connectivityWithoutVlan;
+    }
+
+    private String getNetworkVlanId(Network network, boolean connectivityWithoutVlan) {
+        String networkVlanId = null;
+        if (connectivityWithoutVlan) {
+            return network.getBroadcastDomainType().toUri(network.getUuid()).toString();
+        }
+
+        final URI uri = network.getBroadcastUri();
+        if (uri != null) {
+            // Do not search for the VLAN tag when the network doesn't support VLAN
+            if (uri.toString().startsWith("vlan")) {
+                final String[] vlan = uri.toString().split("vlan:\\/\\/");
+                networkVlanId = vlan[1];
+                // For pvlan
+                if (network.getBroadcastDomainType() != BroadcastDomainType.Vlan) {
+                    networkVlanId = networkVlanId.split("-")[0];
+                }
+            }
+        }
+        return networkVlanId;
     }
 
     private void checkZoneVlanIpOverlap(DataCenterVO zone, Network network, String newCidr, String vlanId, String vlanGateway, String vlanNetmask, String startIP, String endIP) {

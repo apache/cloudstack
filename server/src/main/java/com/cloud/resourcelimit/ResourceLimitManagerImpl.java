@@ -784,6 +784,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             } else {
                 _accountMgr.checkAccess(caller, null, true, account);
             }
+            _accountMgr.verifyCallerPrivilegeForUserOrAccountOperations(account);
 
             ownerType = ResourceOwnerType.Account;
             ownerId = accountId;
@@ -853,6 +854,11 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             throw new InvalidParameterValueException("Please specify a valid domain ID.");
         }
         _accountMgr.checkAccess(callerAccount, domain);
+        Account account = _entityMgr.findById(Account.class, accountId);
+        if (account == null) {
+            throw new InvalidParameterValueException("Unable to find account " + accountId);
+        }
+        _accountMgr.verifyCallerPrivilegeForUserOrAccountOperations(account);
 
         if (resourceType != null) {
             resourceTypes.add(resourceType);

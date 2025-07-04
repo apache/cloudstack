@@ -16,15 +16,16 @@
 // under the License.
 package com.cloud.usage.dao;
 
-import com.cloud.network.vpc.Vpc;
 import com.cloud.usage.UsageVpcVO;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -38,6 +39,15 @@ public class UsageVpcDaoImpl extends GenericDaoBase<UsageVpcVO, Long> implements
     protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT id, vpc_id, zone_id, account_id, domain_id, state, created, removed FROM usage_vpc WHERE " +
             " account_id = ? AND ((removed IS NULL AND created <= ?) OR (created BETWEEN ? AND ?) OR (removed BETWEEN ? AND ?) " +
             " OR ((created <= ?) AND (removed >= ?)))";
+
+    private SearchBuilder<UsageVpcVO> usageVpcSearch;
+
+    @PostConstruct
+    public void init() {
+        usageVpcSearch = createSearchBuilder();
+        usageVpcSearch.and("vpcId", usageVpcSearch.entity().getVpcId(), SearchCriteria.Op.EQ);
+        usageVpcSearch.done();
+    }
 
     @Override
     public void update(UsageVpcVO usage) {
@@ -66,11 +76,10 @@ public class UsageVpcDaoImpl extends GenericDaoBase<UsageVpcVO, Long> implements
             SearchCriteria<UsageVpcVO> sc = this.createSearchCriteria();
             sc.addAnd("vpcId", SearchCriteria.Op.EQ, vpcId);
             sc.addAnd("removed", SearchCriteria.Op.NULL);
-            UsageVpcVO vo = findOneBy(sc);
-            if (vo != null) {
-                vo.setRemoved(removed);
-                vo.setState(Vpc.State.Inactive.name());
-                update(vo.getId(), vo);
+            List<UsageVpcVO> usageVpcVOs = listBy(sc);
+            for (UsageVpcVO entry : usageVpcVOs) {
+                entry.setRemoved(removed);
+                update(entry.getId(), entry);
             }
         } catch (final Exception e) {
             txn.rollback();
@@ -127,5 +136,12 @@ public class UsageVpcDaoImpl extends GenericDaoBase<UsageVpcVO, Long> implements
         }
 
         return usageRecords;
+    }
+
+    @Override
+    public List<UsageVpcVO> listAll(long vpcId) {
+        SearchCriteria<UsageVpcVO> sc = usageVpcSearch.create();
+        sc.setParameters("vpcId", vpcId);
+        return listBy(sc);
     }
 }

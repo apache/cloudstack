@@ -57,7 +57,6 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         RemoteInstanceTO sourceInstance = cmd.getSourceInstance();
         Hypervisor.HypervisorType sourceHypervisorType = sourceInstance.getHypervisorType();
         String sourceInstanceName = sourceInstance.getInstanceName();
-        String sourceInstancePath = sourceInstance.getInstancePath();
         Hypervisor.HypervisorType destinationHypervisorType = cmd.getDestinationHypervisorType();
         DataStoreTO conversionTemporaryLocation = cmd.getConversionTemporaryLocation();
         long timeout = (long) cmd.getWait() * 1000;

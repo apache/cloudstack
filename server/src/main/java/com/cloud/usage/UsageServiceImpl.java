@@ -27,6 +27,8 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.domain.Domain;
+import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import org.apache.cloudstack.api.command.admin.usage.GenerateUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.RemoveRawUsageRecordsCmd;
@@ -122,6 +124,8 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
     private IPAddressDao _ipDao;
     @Inject
     private HostDao _hostDao;
+    @Inject
+    private NetworkOfferingDao _networkOfferingDao;
 
     public UsageServiceImpl() {
     }
@@ -253,6 +257,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
             }
 
             Long usageDbId = null;
+            boolean offeringExistsForNetworkOfferingType = false;
 
             switch (usageType.intValue()) {
                 case UsageTypes.NETWORK_BYTES_RECEIVED:
@@ -326,13 +331,19 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
                         usageDbId = ip.getId();
                     }
                     break;
+                case UsageTypes.NETWORK_OFFERING:
+                    NetworkOfferingVO networkOffering = _networkOfferingDao.findByUuidIncludingRemoved(usageId);
+                    if (networkOffering != null) {
+                        offeringExistsForNetworkOfferingType = true;
+                        sc.addAnd("offeringId", SearchCriteria.Op.EQ, networkOffering.getId());
+                    }
                 default:
                     break;
             }
 
             if (usageDbId != null) {
                 sc.addAnd("usageId", SearchCriteria.Op.EQ, usageDbId);
-            } else {
+            } else if (!offeringExistsForNetworkOfferingType) {
                 // return an empty list if usageId was not found
                 return new Pair<List<? extends Usage>, Integer>(new ArrayList<Usage>(), new Integer(0));
             }

@@ -1542,7 +1542,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             //For volumes which are 'attached' successfully, set the 'deleted' column in the usage_storage table,
             //so that the secondary storage should stop accounting and only primary will be accounted.
             SearchCriteria<UsageStorageVO> sc = _usageStorageDao.createSearchCriteria();
-            sc.addAnd("id", SearchCriteria.Op.EQ, volId);
+            sc.addAnd("entityId", SearchCriteria.Op.EQ, volId);
             sc.addAnd("storageType", SearchCriteria.Op.EQ, StorageTypes.VOLUME);
             List<UsageStorageVO> volumesVOs = _usageStorageDao.search(sc, null);
             if (volumesVOs != null) {
@@ -1597,7 +1597,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             //For Upload event add an entry to the usage_storage table.
             SearchCriteria<UsageStorageVO> sc = _usageStorageDao.createSearchCriteria();
             sc.addAnd("accountId", SearchCriteria.Op.EQ, event.getAccountId());
-            sc.addAnd("id", SearchCriteria.Op.EQ, volId);
+            sc.addAnd("entityId", SearchCriteria.Op.EQ, volId);
+            sc.addAnd("storageType", SearchCriteria.Op.EQ, StorageTypes.VOLUME);
             sc.addAnd("deleted", SearchCriteria.Op.NULL);
             List<UsageStorageVO> volumesVOs = _usageStorageDao.search(sc, null);
 
@@ -1774,7 +1775,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         } else if (EventTypes.EVENT_LOAD_BALANCER_DELETE.equals(event.getType())) {
             SearchCriteria<UsageLoadBalancerPolicyVO> sc = _usageLoadBalancerPolicyDao.createSearchCriteria();
             sc.addAnd("accountId", SearchCriteria.Op.EQ, event.getAccountId());
-            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+            sc.addAnd("lbId", SearchCriteria.Op.EQ, id);
             sc.addAnd("deleted", SearchCriteria.Op.NULL);
             List<UsageLoadBalancerPolicyVO> lbVOs = _usageLoadBalancerPolicyDao.search(sc, null);
             if (lbVOs.size() > 1) {
@@ -1808,7 +1809,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         } else if (EventTypes.EVENT_NET_RULE_DELETE.equals(event.getType())) {
             SearchCriteria<UsagePortForwardingRuleVO> sc = _usagePortForwardingRuleDao.createSearchCriteria();
             sc.addAnd("accountId", SearchCriteria.Op.EQ, event.getAccountId());
-            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+            sc.addAnd("pfId", SearchCriteria.Op.EQ, id);
             sc.addAnd("deleted", SearchCriteria.Op.NULL);
             List<UsagePortForwardingRuleVO> pfVOs = _usagePortForwardingRuleDao.search(sc, null);
             if (pfVOs.size() > 1) {
@@ -2106,7 +2107,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         } else if (EventTypes.EVENT_VM_SNAPSHOT_OFF_PRIMARY.equals(event.getType())) {
             QueryBuilder<UsageSnapshotOnPrimaryVO> sc = QueryBuilder.create(UsageSnapshotOnPrimaryVO.class);
             sc.and(sc.entity().getAccountId(), SearchCriteria.Op.EQ, event.getAccountId());
-            sc.and(sc.entity().getId(), SearchCriteria.Op.EQ, vmId);
+            sc.and(sc.entity().getVmId(), SearchCriteria.Op.EQ, vmId);
             sc.and(sc.entity().getName(), SearchCriteria.Op.EQ, name);
             sc.and(sc.entity().getDeleted(), SearchCriteria.Op.NULL);
             List<UsageSnapshotOnPrimaryVO> vmsnaps = sc.list();
@@ -2144,31 +2145,88 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     }
 
     private void handleNetworkEvent(UsageEventVO event) {
-        Account account = _accountDao.findByIdIncludingRemoved(event.getAccountId());
-        long domainId = account.getDomainId();
-        if (EventTypes.EVENT_NETWORK_DELETE.equals(event.getType())) {
-            usageNetworksDao.remove(event.getResourceId(), event.getCreateDate());
-        } else if (EventTypes.EVENT_NETWORK_CREATE.equals(event.getType())) {
-            UsageNetworksVO usageNetworksVO = new UsageNetworksVO(event.getResourceId(), event.getOfferingId(), event.getZoneId(), event.getAccountId(), domainId, Network.State.Allocated.name(), event.getCreateDate(), null);
-            usageNetworksDao.persist(usageNetworksVO);
-        } else if (EventTypes.EVENT_NETWORK_UPDATE.equals(event.getType())) {
-            usageNetworksDao.update(event.getResourceId(), event.getOfferingId(), event.getResourceType());
+        String eventType = event.getType();
+        if (EventTypes.EVENT_NETWORK_DELETE.equals(eventType)) {
+            removeNetworkHelperEntry(event);
+        } else if (EventTypes.EVENT_NETWORK_CREATE.equals(eventType)) {
+            createNetworkHelperEntry(event);
+        } else if (EventTypes.EVENT_NETWORK_UPDATE.equals(eventType)) {
+            updateNetworkHelperEntry(event);
         } else {
-            s_logger.error(String.format("Unknown event type [%s] in Networks event parser. Skipping it.", event.getType()));
+            s_logger.error(String.format("Unknown event type [%s] in Networks event parser. Skipping it.", eventType));
         }
     }
 
-    private void handleVpcEvent(UsageEventVO event) {
+    private void removeNetworkHelperEntry(UsageEventVO event) {
+        long networkId = event.getResourceId();
+        s_logger.debug(String.format("Removing helper entries of network [%s].", networkId));
+        usageNetworksDao.remove(networkId, event.getCreateDate());
+    }
+
+    private void createNetworkHelperEntry(UsageEventVO event) {
+        long networkId = event.getResourceId();
         Account account = _accountDao.findByIdIncludingRemoved(event.getAccountId());
         long domainId = account.getDomainId();
-        if (EventTypes.EVENT_VPC_DELETE.equals(event.getType())) {
-            usageVpcDao.remove(event.getResourceId(), event.getCreateDate());
-        } else if (EventTypes.EVENT_VPC_CREATE.equals(event.getType())) {
-            UsageVpcVO usageVPCVO = new UsageVpcVO(event.getResourceId(), event.getZoneId(), event.getAccountId(), domainId, Vpc.State.Enabled.name(), event.getCreateDate(), null);
-            usageVpcDao.persist(usageVPCVO);
-        } else {
-            s_logger.error(String.format("Unknown event type [%s] in VPC event parser. Skipping it.", event.getType()));
+
+        List<UsageNetworksVO> entries = usageNetworksDao.listAll(networkId);
+        if (!entries.isEmpty()) {
+            s_logger.warn(String.format("Received a NETWORK.CREATE event for a network [%s] that already has helper entries; " +
+                    "therefore, we will not create a new one.", networkId));
+            return;
         }
+
+        s_logger.debug(String.format("Creating a helper entry for network [%s].", networkId));
+        UsageNetworksVO usageNetworksVO = new UsageNetworksVO(networkId, event.getOfferingId(), event.getZoneId(),
+                event.getAccountId(), domainId, Network.State.Allocated.name(), event.getCreateDate(), null);
+        usageNetworksDao.persist(usageNetworksVO);
+    }
+
+    private void updateNetworkHelperEntry(UsageEventVO event) {
+        long networkId = event.getResourceId();
+        Account account = _accountDao.findByIdIncludingRemoved(event.getAccountId());
+        long domainId = account.getDomainId();
+
+        s_logger.debug(String.format("Marking previous helper entries of network [%s] as removed.", networkId));
+        usageNetworksDao.remove(networkId, event.getCreateDate());
+
+        s_logger.debug(String.format("Creating an updated helper entry for network [%s].", networkId));
+        UsageNetworksVO usageNetworksVO = new UsageNetworksVO(networkId, event.getOfferingId(), event.getZoneId(),
+                event.getAccountId(), domainId, event.getResourceType(), event.getCreateDate(), null);
+        usageNetworksDao.persist(usageNetworksVO);
+    }
+
+    private void handleVpcEvent(UsageEventVO event) {
+        String eventType = event.getType();
+        if (EventTypes.EVENT_VPC_DELETE.equals(eventType)) {
+            removeVpcHelperEntry(event);
+        } else if (EventTypes.EVENT_VPC_CREATE.equals(eventType)) {
+            createVpcHelperEntry(event);
+        } else {
+            s_logger.error(String.format("Unknown event type [%s] in VPC event parser. Skipping it.", eventType));
+        }
+    }
+
+    private void removeVpcHelperEntry(UsageEventVO event) {
+        long vpcId = event.getResourceId();
+        s_logger.debug(String.format("Removing helper entries of VPC [%s].", vpcId));
+        usageVpcDao.remove(vpcId, event.getCreateDate());
+    }
+
+    private void createVpcHelperEntry(UsageEventVO event) {
+        long vpcId = event.getResourceId();
+        Account account = _accountDao.findByIdIncludingRemoved(event.getAccountId());
+        long domainId = account.getDomainId();
+
+        List<UsageVpcVO> entries = usageVpcDao.listAll(vpcId);
+        if (!entries.isEmpty()) {
+            s_logger.warn(String.format("Active helper entries already exist for VPC [%s]; therefore, we will not create a new one.",
+                    vpcId));
+            return;
+        }
+
+        s_logger.debug(String.format("Creating a helper entry for VPC [%s].", vpcId));
+        UsageVpcVO usageVPCVO = new UsageVpcVO(vpcId, event.getZoneId(), event.getAccountId(), domainId, Vpc.State.Enabled.name(), event.getCreateDate(), null);
+        usageVpcDao.persist(usageVPCVO);
     }
 
     private class Heartbeat extends ManagedContextRunnable {

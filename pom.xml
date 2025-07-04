@@ -29,7 +29,7 @@
 
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.19.3.0-SNAPSHOT</version>
+    <version>4.19.4.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Apache CloudStack</name>
     <description>Apache CloudStack is an IaaS ("Infrastructure as a Service") cloud orchestration platform.</description>
@@ -169,7 +169,7 @@
         <cs.nitro.version>10.1</cs.nitro.version>
         <cs.opensaml.version>2.6.6</cs.opensaml.version>
         <cs.rados-java.version>0.6.0</cs.rados-java.version>
-        <cs.java-linstor.version>0.6.0</cs.java-linstor.version>
+        <cs.java-linstor.version>0.6.1</cs.java-linstor.version>
         <cs.reflections.version>0.10.2</cs.reflections.version>
         <cs.servicemix.version>3.4.4_1</cs.servicemix.version>
         <cs.servlet.version>4.0.1</cs.servlet.version>
