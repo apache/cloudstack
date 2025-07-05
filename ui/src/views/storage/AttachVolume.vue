@@ -76,7 +76,7 @@
 </template>
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 
 export default {
   name: 'AttachVolume',
@@ -127,7 +127,7 @@ export default {
       var vmStates = ['Running', 'Stopped']
       vmStates.forEach((state) => {
         params.state = state
-        api('listVirtualMachines', params).then(response => {
+        getAPI('listVirtualMachines', params).then(response => {
           this.virtualmachines = this.virtualmachines.concat(response.listvirtualmachinesresponse.virtualmachine || [])
         }).catch(error => {
           this.$notifyError(error)
@@ -146,7 +146,7 @@ export default {
         const values = toRaw(this.form)
 
         this.loading = true
-        api('attachVolume', {
+        postAPI('attachVolume', {
           id: this.resource.id,
           virtualmachineid: values.virtualmachineid,
           deviceid: values.deviceid
