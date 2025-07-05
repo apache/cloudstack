@@ -311,6 +311,7 @@ public class PrimeraAdapter implements ProviderAdapter {
 
         parms.setDestVolume(targetVolumeInfo.getExternalName());
         parms.setOnline(false);
+        parms.setPriority(1);
         request.setParameters(parms);
 
         PrimeraTaskReference taskref = POST("/volumes/" + sourceVolumeInfo.getExternalName(), request, new TypeReference<PrimeraTaskReference>() {});
