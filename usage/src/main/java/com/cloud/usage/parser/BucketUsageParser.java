@@ -19,47 +19,32 @@ package com.cloud.usage.parser;
 import com.cloud.usage.BucketStatisticsVO;
 import com.cloud.usage.UsageVO;
 import com.cloud.usage.dao.BucketStatisticsDao;
-import com.cloud.usage.dao.UsageDao;
 import com.cloud.user.AccountVO;
 import org.apache.cloudstack.usage.UsageTypes;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 @Component
-public class BucketUsageParser {
-    public static final Logger LOGGER = LogManager.getLogger(BucketUsageParser.class);
-
-    private static UsageDao s_usageDao;
-    private static BucketStatisticsDao s_bucketStatisticsDao;
-
+public class BucketUsageParser extends UsageParser {
     @Inject
-    private UsageDao _usageDao;
-    @Inject
-    private BucketStatisticsDao _bucketStatisticsDao;
+    private BucketStatisticsDao bucketStatisticsDao;
 
-    @PostConstruct
-    void init() {
-        s_usageDao = _usageDao;
-        s_bucketStatisticsDao = _bucketStatisticsDao;
+    @Override
+    public String getParserName() {
+        return "Bucket";
     }
 
-    public static boolean parse(AccountVO account, Date startDate, Date endDate) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Parsing all Bucket usage events for account {}", account);
-        }
-
+    @Override
+    protected boolean parse(AccountVO account, Date startDate, Date endDate) {
         if ((endDate == null) || endDate.after(new Date())) {
             endDate = new Date();
         }
 
-        List<BucketStatisticsVO> BucketStatisticsVOs = s_bucketStatisticsDao.listBy(account.getId());
+        List<BucketStatisticsVO> BucketStatisticsVOs = bucketStatisticsDao.listBy(account.getId());
 
         List<UsageVO> usageRecords = new ArrayList<>();
         for (BucketStatisticsVO bucketStatistics : BucketStatisticsVOs) {
@@ -72,7 +57,7 @@ public class BucketUsageParser {
             }
         }
 
-        s_usageDao.saveUsageRecords(usageRecords);
+        usageDao.saveUsageRecords(usageRecords);
 
         return true;
     }
