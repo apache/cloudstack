@@ -1,6 +1,6 @@
 /*
  * noVNC: HTML5 VNC client
- * Copyright (C) 2019 The noVNC Authors
+ * Copyright (C) 2019 The noVNC authors
  * Licensed under MPL 2.0 (see LICENSE.txt)
  *
  * See README.md for usage and integration instructions.
@@ -15,7 +15,7 @@ export default class Display {
         this._drawCtx = null;
 
         this._renderQ = [];  // queue drawing actions for in-oder rendering
-        this._flushing = false;
+        this._flushPromise = null;
 
         // the full frame buffer (logical canvas) size
         this._fbWidth = 0;
@@ -61,10 +61,6 @@ export default class Display {
 
         this._scale = 1.0;
         this._clipViewport = false;
-
-        // ===== EVENT HANDLERS =====
-
-        this.onflush = () => {}; // A flush request has finished
     }
 
     // ===== PROPERTIES =====
@@ -306,9 +302,14 @@ export default class Display {
 
     flush() {
         if (this._renderQ.length === 0) {
-            this.onflush();
+            return Promise.resolve();
         } else {
-            this._flushing = true;
+            if (this._flushPromise === null) {
+                this._flushPromise = new Promise((resolve) => {
+                    this._flushResolve = resolve;
+                });
+            }
+            return this._flushPromise;
         }
     }
 
@@ -379,6 +380,17 @@ export default class Display {
         });
     }
 
+    videoFrame(x, y, width, height, frame) {
+        this._renderQPush({
+            'type': 'frame',
+            'frame': frame,
+            'x': x,
+            'y': y,
+            'width': width,
+            'height': height
+        });
+    }
+
     blitImage(x, y, width, height, arr, offset, fromQueue) {
         if (this._renderQ.length !== 0 && !fromQueue) {
             // NB(directxman12): it's technically more performant here to use preallocated arrays,
@@ -405,9 +417,16 @@ export default class Display {
         }
     }
 
-    drawImage(img, x, y) {
-        this._drawCtx.drawImage(img, x, y);
-        this._damage(x, y, img.width, img.height);
+    drawImage(img, ...args) {
+        this._drawCtx.drawImage(img, ...args);
+
+        if (args.length <= 4) {
+            const [x, y] = args;
+            this._damage(x, y, img.width, img.height);
+        } else {
+            const [,, sw, sh, dx, dy] = args;
+            this._damage(dx, dy, sw, sh);
+        }
     }
 
     autoscale(containerWidth, containerHeight) {
@@ -510,6 +529,35 @@ export default class Display {
                         ready = false;
                     }
                     break;
+                case 'frame':
+                    if (a.frame.ready) {
+                        // The encoded frame may be larger than the rect due to
+                        // limitations of the encoder, so we need to crop the
+                        // frame.
+                        let frame = a.frame.frame;
+                        if (frame.codedWidth < a.width || frame.codedHeight < a.height) {
+                            Log.Warn("Decoded video frame does not cover its full rectangle area. Expecting at least " +
+                                      a.width + "x" + a.height + " but got " +
+                                      frame.codedWidth + "x" + frame.codedHeight);
+                        }
+                        const sx = 0;
+                        const sy = 0;
+                        const sw = a.width;
+                        const sh = a.height;
+                        const dx = a.x;
+                        const dy = a.y;
+                        const dw = sw;
+                        const dh = sh;
+                        this.drawImage(frame, sx, sy, sw, sh, dx, dy, dw, dh);
+                        frame.close();
+                    } else {
+                        let display = this;
+                        a.frame.promise.then(() => {
+                            display._scanRenderQ();
+                        });
+                        ready = false;
+                    }
+                    break;
             }
 
             if (ready) {
@@ -517,9 +565,11 @@ export default class Display {
             }
         }
 
-        if (this._renderQ.length === 0 && this._flushing) {
-            this._flushing = false;
-            this.onflush();
+        if (this._renderQ.length === 0 &&
+            this._flushPromise !== null) {
+            this._flushResolve();
+            this._flushPromise = null;
+            this._flushResolve = null;
         }
     }
 }

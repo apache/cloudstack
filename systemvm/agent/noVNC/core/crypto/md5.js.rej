@@ -1,0 +1,7 @@
+--- core/util/md5.js
++++ core/crypto/md5.js
+@@ -79,4 +82,4 @@ function add(d, g) {
+ 
+ function rol(d, g) {
+     return d << g | d >>> 32 - g;
+-}+}
