@@ -107,7 +107,6 @@ public class ConfigDepotImplTest {
         String result = configDepotImpl.getConfigStringValue(key, ConfigKey.Scope.Global, null);
         Assert.assertEquals(value, result);
         Mockito.verify(_configDao, Mockito.times(configDBRetrieval)).findById(key);
-
     }
 
     @Test

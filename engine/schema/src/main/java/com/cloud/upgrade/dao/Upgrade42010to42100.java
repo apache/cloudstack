@@ -16,10 +16,6 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
-import com.cloud.upgrade.SystemVmTemplateRegistration;
-import com.cloud.utils.db.TransactionLegacy;
-import com.cloud.utils.exception.CloudRuntimeException;
-
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -31,6 +27,10 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
+
+import com.cloud.upgrade.SystemVmTemplateRegistration;
+import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class Upgrade42010to42100 extends DbUpgradeAbstractImpl implements DbUpgrade, DbUpgradeSystemVmTemplate {
     private SystemVmTemplateRegistration systemVmTemplateRegistration;
@@ -211,5 +211,10 @@ public class Upgrade42010to42100 extends DbUpgradeAbstractImpl implements DbUpgr
             logger.error("Failed to migrate existing configuration scope values to bitmask", e);
             throw new CloudRuntimeException(String.format("Failed to migrate existing configuration scope values to bitmask due to: %s", e.getMessage()));
         }
+    }
+
+    @Override
+    public boolean refreshPoolConnectionsAfterUpgrade() {
+        return true;
     }
 }
