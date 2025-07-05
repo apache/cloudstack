@@ -33,6 +33,34 @@ public interface ScaleIOSDCManager {
             ConfigKey.Scope.Zone);
 
     /**
+     * Timeout for Host to wait after MDM changes made on Host until changes will be applied.
+     * Needed to avoid cases when Storage Pool is not connected yet, but Agent already starts to use Storage Pool.
+     */
+    ConfigKey<Integer> MdmsChangeApplyWaitTime = new ConfigKey<>("Storage",
+            Integer.class,
+            "powerflex.mdm.change.apply.wait",
+            "1000",
+            "Time (in ms) to wait after MDM addition, and before & after MDM removal changes made on the Host, default value: 1000 ms",
+            Boolean.TRUE,
+            ConfigKey.Scope.Zone);
+
+    ConfigKey<Boolean> ValidateMdmsOnConnect = new ConfigKey<>("Storage",
+            Boolean.class,
+            "powerflex.mdm.validate.on.connect",
+            Boolean.FALSE.toString(),
+            "Flag to validate PowerFlex MDMs on the host, present in Configuration File and in CLI during storage pool registration in agent, default value: false",
+            Boolean.TRUE,
+            ConfigKey.Scope.Zone);
+
+    ConfigKey<Boolean> BlockSdcUnprepareIfRestartNeededAndVolumesAreAttached = new ConfigKey<>("Storage",
+            Boolean.class,
+            "powerflex.block.sdc.unprepare",
+            Boolean.FALSE.toString(),
+            "Block storage client un-preparation if SDC service restart needed after PowerFlex MDM removal (i.e. no support for --remove_mdm in drv_cfg cmd) when there are Volumes mapped to the Host",
+            Boolean.TRUE,
+            ConfigKey.Scope.Zone);
+
+    /**
      * Checks SDC connections limit.
      * @param storagePoolId the storage pool id
      * @return true if SDC connections are within limit

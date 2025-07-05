@@ -833,7 +833,7 @@ public class AgentProperties{
         private T defaultValue;
         private Class<T> typeClass;
 
-        Property(String name, T value) {
+        public Property(String name, T value) {
             init(name, value);
         }
 
