@@ -106,7 +106,7 @@
                                     templateList.add("systemvmtemplate-${csVersion}.${patch}-x86_64-xen")
                                     templateList.add("systemvmtemplate-${csVersion}.${patch}-x86_64-ovm")
                                     templateList.add("systemvmtemplate-${csVersion}.${patch}-x86_64-hyperv")
-                                    File file = new File("./engine/schema/dist/systemvm-templates/md5sum.txt")
+                                    File file = new File("./engine/schema/dist/systemvm-templates/sha512sum.txt")
                                     def lines = file.readLines()
                                     for (template in templateList) {
                                         def data = lines.findAll { it.contains(template) }
@@ -135,7 +135,7 @@
                             <goal>wget</goal>
                         </goals>
                         <configuration>
-                            <url>${project.systemvm.template.location}/${cs.version}/md5sum.txt</url>
+                            <url>${project.systemvm.template.location}/${cs.version}/sha512sum.txt</url>
                             <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
                             <skipCache>true</skipCache>
                             <overwrite>true</overwrite>
@@ -205,7 +205,7 @@
                                     <checkSignature>true</checkSignature>
                                     <url>${project.systemvm.template.location}/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-x86_64-kvm.qcow2.bz2</url>
                                     <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
-                                    <md5>${kvm.checksum}</md5>
+                                    <sha512>${kvm.checksum}</sha512>
                                 </configuration>
                             </execution>
                         </executions>
@@ -241,7 +241,7 @@
                                     <checkSignature>true</checkSignature>
                                     <url>${project.systemvm.template.location}/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-x86_64-vmware.ova</url>
                                     <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
-                                    <md5>${vmware.checksum}</md5>
+                                    <sha512>${vmware.checksum}</sha512>
                                 </configuration>
                             </execution>
                         </executions>
@@ -277,7 +277,7 @@
                                     <checkSignature>true</checkSignature>
                                     <url>${project.systemvm.template.location}/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-x86_64-xen.vhd.bz2</url>
                                     <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
-                                    <md5>${xen.checksum}</md5>
+                                    <sha512>${xen.checksum}</sha512>
                                 </configuration>
                             </execution>
                         </executions>
@@ -313,7 +313,7 @@
                                     <checkSignature>true</checkSignature>
                                     <url>${project.systemvm.template.location}/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-x86_64-ovm.raw.bz2</url>
                                     <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
-                                    <md5>${ovm.checksum}</md5>
+                                    <sha512>${ovm.checksum}</sha512>
                                 </configuration>
                             </execution>
                         </executions>
@@ -349,7 +349,7 @@
                                     <checkSignature>true</checkSignature>
                                     <url>${project.systemvm.template.location}/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-x86_64-hyperv.vhd.zip</url>
                                     <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
-                                    <md5>${hyperv.checksum}</md5>
+                                    <sha512>${hyperv.checksum}</sha512>
                                 </configuration>
                             </execution>
                         </executions>

@@ -28,7 +28,6 @@ public class ChecksumUtil {
         if (cloudScriptsPath == null) {
             throw new CloudRuntimeException(String.format("Unable to find cloudScripts path, cannot update SystemVM %s", name));
         }
-        String md5sum = DigestHelper.calculateChecksum(new File(cloudScriptsPath));
-        return md5sum;
+        return DigestHelper.calculateChecksum(new File(cloudScriptsPath));
     }
 }
