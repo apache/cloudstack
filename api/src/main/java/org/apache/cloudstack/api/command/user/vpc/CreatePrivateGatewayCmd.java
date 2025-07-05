@@ -61,6 +61,9 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd implements UserC
     @Parameter(name = ApiConstants.GATEWAY, type = CommandType.STRING, required = true, description = "the gateway of the Private gateway")
     private String gateway;
 
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, required = false, description = "the description of the Private Gateway")
+    private String description;
+
     @Parameter(name = ApiConstants.NETMASK, type = CommandType.STRING, required = true, description = "the netmask of the Private gateway")
     private String netmask;
 
@@ -100,6 +103,10 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd implements UserC
 
     public String getGateway() {
         return gateway;
+    }
+
+    public String getDescription() {
+        return description;
     }
 
     public String getNetmask() {
