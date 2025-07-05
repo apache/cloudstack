@@ -42,6 +42,12 @@ public class VMSnapshotDaoImpl extends GenericDaoBase<VMSnapshotVO, Long> implem
     private final SearchBuilder<VMSnapshotVO> SnapshotStatusSearch;
     private final SearchBuilder<VMSnapshotVO> AllFieldsSearch;
 
+    private SearchBuilder<VMSnapshotVO> parentIdEqAndStateIn;
+
+    private static final String PARENT = "parent";
+
+    private static final String STATE = "state";
+
     protected VMSnapshotDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), Op.EQ);
@@ -71,12 +77,25 @@ public class VMSnapshotDaoImpl extends GenericDaoBase<VMSnapshotVO, Long> implem
         SnapshotStatusSearch.and("vm_id", SnapshotStatusSearch.entity().getVmId(), SearchCriteria.Op.EQ);
         SnapshotStatusSearch.and("state", SnapshotStatusSearch.entity().getState(), SearchCriteria.Op.IN);
         SnapshotStatusSearch.done();
+
+        parentIdEqAndStateIn = createSearchBuilder();
+        parentIdEqAndStateIn.and(PARENT, parentIdEqAndStateIn.entity().getParent(), Op.EQ);
+        parentIdEqAndStateIn.and(STATE, parentIdEqAndStateIn.entity().getState(), Op.IN);
+        parentIdEqAndStateIn.done();
     }
 
     @Override
     public List<VMSnapshotVO> findByVm(Long vmId) {
         SearchCriteria<VMSnapshotVO> sc = SnapshotSearch.create();
         sc.setParameters("vm_id", vmId);
+        return listBy(sc, null);
+    }
+
+    @Override
+    public List<VMSnapshotVO> findByVmAndByType(Long vmId, VMSnapshot.Type type) {
+        SearchCriteria<VMSnapshotVO> sc = AllFieldsSearch.create();
+        sc.setParameters("vm_id", vmId);
+        sc.setParameters("vm_snapshot_type", type);
         return listBy(sc, null);
     }
 
@@ -108,6 +127,14 @@ public class VMSnapshotDaoImpl extends GenericDaoBase<VMSnapshotVO, Long> implem
         SearchCriteria<VMSnapshotVO> sc = AllFieldsSearch.create();
         sc.setParameters("parent", vmSnapshotId);
         sc.setParameters("state", State.Ready);
+        return listBy(sc, null);
+    }
+
+    @Override
+    public List<VMSnapshotVO> listByParentAndStateIn(Long vmSnapshotId, State... states) {
+        SearchCriteria<VMSnapshotVO> sc = parentIdEqAndStateIn.create();
+        sc.setParameters(PARENT, vmSnapshotId);
+        sc.setParameters(STATE, (Object[])states);
         return listBy(sc, null);
     }
 
