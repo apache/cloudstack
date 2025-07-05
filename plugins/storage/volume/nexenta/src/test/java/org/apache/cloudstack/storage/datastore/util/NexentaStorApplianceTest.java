@@ -60,7 +60,6 @@ public class NexentaStorApplianceTest {
     public void init() {
         final String url = "nmsUrl=https://admin:nexenta@10.1.3.182:8457;volume=cloudstack;storageType=iscsi";
         NexentaUtil.NexentaPluginParameters parameters = NexentaUtil.parseNexentaPluginUrl(url);
-        //client = new NexentaNmsClient(parameters.getNmsUrl());
         client = mock(NexentaNmsClient.class);
         appliance = new NexentaStorAppliance(client, parameters);
     }

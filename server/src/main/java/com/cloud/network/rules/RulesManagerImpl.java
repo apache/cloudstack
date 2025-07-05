@@ -558,9 +558,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
                 _accountMgr.checkAccess(vmOwner, SecurityChecker.AccessType.UseEntry, false, network);
 
                 //is static nat is for vm secondary ip
-                //dstIp = guestNic.getIp4Address();
                 if (vmGuestIp != null) {
-                    //dstIp = guestNic.getIp4Address();
 
                     if (!dstIp.equals(vmGuestIp)) {
                         //check whether the secondary ip set to the vm or not

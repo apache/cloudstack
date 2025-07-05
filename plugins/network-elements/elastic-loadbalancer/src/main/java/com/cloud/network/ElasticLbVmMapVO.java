@@ -79,10 +79,6 @@ public class ElasticLbVmMapVO implements InternalIdentity {
         return elbVmId;
     }
 
-//    public String getLbName() {
-//        return lbName;
-//    }
-
     public long getIpAddressId() {
         return ipAddressId;
     }

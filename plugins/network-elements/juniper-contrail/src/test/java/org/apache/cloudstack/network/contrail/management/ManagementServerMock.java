@@ -86,6 +86,7 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.UserVmDao;
 
 public class ManagementServerMock {
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     private AccountManager _accountMgr;

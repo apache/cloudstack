@@ -57,7 +57,6 @@ public class ClientMCSChannelJoinRequestServerMCSChannelConfirmPDUs extends OneT
         // Parse channel confirm response
         int typeAndFlags = buf.readUnsignedByte();
         int type = typeAndFlags >> 2;
-        // int flags = typeAndFlags & 0x3;
 
         if (type != MCS_CHANNEL_CONFIRM_PDU)
             throw new RuntimeException("[" + this + "] ERROR: Incorrect type of MCS AttachUserConfirm PDU. Expected value: 15, actual value: " + type + ", data: " + buf + ".");
@@ -74,11 +73,9 @@ public class ClientMCSChannelJoinRequestServerMCSChannelConfirmPDUs extends OneT
         // Channel Join Request PDU the connection SHOULD be dropped.
 
         // Initiator: 1007 (6+1001)
-        // int initiator=buf.readUnsignedShort();
         buf.skipBytes(2);
 
         // Requested channel
-        // int requestedChannel=buf.readUnsignedShort();
         buf.skipBytes(2);
 
         // Actual channel

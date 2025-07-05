@@ -176,11 +176,6 @@ public class VpcTestConfiguration {
         return Mockito.mock(RemoteAccessVpnService.class);
     }
 
-//    @Bean
-//    public VpcDao vpcDao() {
-//        return Mockito.mock(VpcDao.class);
-//    }
-
     @Bean
     public NetworkDao networkDao() {
         return Mockito.mock(NetworkDao.class);

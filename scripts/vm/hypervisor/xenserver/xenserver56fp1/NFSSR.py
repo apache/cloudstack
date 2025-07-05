@@ -107,7 +107,6 @@ class NFSSR(FileSR.FileSR):
 
     def attach(self, sr_uuid):
         self.validate_remotepath(False)
-        #self.remotepath = os.path.join(self.dconf['serverpath'], sr_uuid)
         self.remotepath = self.dconf['serverpath']
         util._testHost(self.dconf['server'], NFSPORT, 'NFSTarget')
         self.mount_remotepath(sr_uuid)

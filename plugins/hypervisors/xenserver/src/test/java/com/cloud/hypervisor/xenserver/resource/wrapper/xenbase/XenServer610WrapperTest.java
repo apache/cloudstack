@@ -462,17 +462,6 @@ public class XenServer610WrapperTest {
 
         verify(xenServer610Resource, times(1)).getConnection();
 
-        //        try {
-        //            verify(xenServer610Resource, times(1)).waitForTask(conn, task, 1000, timeout);
-        //            verify(xenServer610Resource, times(1)).checkForSuccess(conn, task);
-        //        } catch (final XenAPIException e) {
-        //            fail(e.getMessage());
-        //        } catch (final XmlRpcException e) {
-        //            fail(e.getMessage());
-        //        } catch (final TimeoutException e) {
-        //            fail(e.getMessage());
-        //        }
-
         assertFalse(answer.getResult());
     }
 

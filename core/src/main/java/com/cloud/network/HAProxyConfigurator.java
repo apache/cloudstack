@@ -597,9 +597,6 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             }
         }
         result.addAll(gSection);
-        // TODO decide under what circumstances these options are needed
-        //        result.add("\tnokqueue");
-        //        result.add("\tnopoll");
 
         result.add(blankLine);
         final List<String> dSection = Arrays.asList(defaultsSection);
