@@ -1723,8 +1723,13 @@ export default {
         await this.$message.success('Success')
         this.loading = false
         this.steps = []
-        this.$emit('closeAction')
-        this.$emit('refresh-data')
+        if (this.prefillContent.hypervisor === 'KVM') {
+          this.$emit('fieldsChanged', { zoneReturned: { id: this.stepData.zoneReturned.id } })
+          this.$emit('nextPressed')
+        } else {
+          this.$emit('closeAction')
+          this.$emit('refresh-data')
+        }
       } catch (e) {
         this.loading = false
         await this.$notification.error({
