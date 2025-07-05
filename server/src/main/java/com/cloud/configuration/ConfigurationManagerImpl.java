@@ -1004,10 +1004,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new CloudRuntimeException("Only Root Admin is allowed to edit this configuration.");
         }
 
-        if (value == null) {
-            return _configDao.findByName(name);
-        }
-
         ConfigKey.Scope scope = null;
         Long id = null;
         int paramCountCheck = 0;
