@@ -327,8 +327,8 @@ class TestLbOnIpWithPf(cloudstackTestCase):
         # 1. Deploy the first VM using a network from the above created
         #    Network offering.
         # 2. Deploy another VM.
-        # 3. Create LB rule on Ip with PF rule. User should NOT be
-        #    allowed to create an LB rule on Ip with PF
+        # 3. Create LB rule on IP with PF rule. User should NOT be
+        #    allowed to create an LB rule on IP with PF
 
         # Creating network using the network offering created
         self.debug("Creating network with network offering: %s" %
@@ -537,7 +537,7 @@ class TestPfOnIpWithLb(cloudstackTestCase):
         #    Network offering.
         # 2. Deploy another VM.
         # 3. Create PF rule on Ip with LB rule. User should NOT be
-        #    allowed to create an LB rule on Ip with LB
+        #    allowed to create an LB rule on IP with LB
 
         # Creating network using the network offering created
         self.debug("Creating network with network offering: %s" %
@@ -745,7 +745,7 @@ class TestLbOnNonSourceNat(cloudstackTestCase):
         # 1. Deploy the first VM using a network from the above created
         #    Network offering.
         # 2. Deploy another VM.
-        # 3. Acquire Ip address and create LB rule on it. LB rule should be
+        # 3. Acquire IP address and create LB rule on it. LB rule should be
         #    created successfully
 
         # Creating network using the network offering created
@@ -957,12 +957,12 @@ class TestAddMultipleVmsLb(cloudstackTestCase):
         # 1. Deploy the first VM using a network from the above created
         #    Network offering.
         # 2. Deploy another VM.
-        # 3. Acquire Ip address and create LB rule on it. Add multiple VMs to
+        # 3. Acquire IP address and create LB rule on it. Add multiple VMs to
         #    this rule. LB rule should be
-        # In Netscaler: For every Vm added to the LB rule:
+        # In Netscaler: For every VM added to the LB rule:
         # 1. A server and service instance is created using guest VMs IP and
         #    port number on the Netscaler LB device,
-        # 2. This service is bound to lb virtual server corresponding to lb
+        # 2. This service is bound to the LB virtual server corresponding to LB
         #    rule.
 
         # Creating network using the network offering created
@@ -1233,7 +1233,7 @@ class TestMultipleLbRules(cloudstackTestCase):
         # 1. Deploy the first VM using a network from the above created
         #    Network offering.
         # 2. Deploy few more VMs.
-        # 3. Acquire an Ipaddress and create an LB rule for multiple Vms.
+        # 3. Acquire an IP address and create an LB rule for multiple VMs.
         #    Repeat step2 for few times Requests to all these LB rules should
         #    be serviced correctly.
 
@@ -1545,8 +1545,8 @@ class TestMultipleLbRulesSameIp(cloudstackTestCase):
         # 1. Deploy the first VM using a network from the above created
         #    Network offering.
         # 2. Deploy few more VMs.
-        # 3. Acquire an Ipaddress and create an LB rule for multiple Vms.
-        #    Create another Lb rule on the same Ipaddress pointing to
+        # 3. Acquire an IP address and create an LB rule for multiple VMs.
+        #    Create another LB rule on the same IP address pointing to
         #    different public port. Requests to all these LB rules should be
         #    serviced correctly.
 
@@ -1892,9 +1892,9 @@ class TestLoadBalancingRule(cloudstackTestCase):
         """
 
         # Validate the following
-        # 1. Create an Lb rule for couple of Vms .
+        # 1. Create an LB rule for a couple of VMs.
         # 2. Edit the name of the existing LB rule. When all the existing
-        #    Lbrules are listed , we should see the edited name.
+        #    LB rules are listed, we should see the edited name.
 
         self.debug("Assigning VMs to LB rule: %s" % self.lb_rule.name)
         self.lb_rule.assign(self.apiclient, [self.virtual_machine])
@@ -1903,7 +1903,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
         new_name = random_gen()
         self.lb_rule.update(self.apiclient, name=new_name)
 
-        self.debug("Verifing the name change in list Lb rules call")
+        self.debug("Verifying the name change in list LB rules call")
         lb_rules = LoadBalancerRule.list(self.apiclient, id=self.lb_rule.id)
 
         self.assertEqual(
@@ -1925,9 +1925,9 @@ class TestLoadBalancingRule(cloudstackTestCase):
         """
 
         # Validate the following
-        # 1. Create an Lb rule for couple of Vms .
+        # 1. Create an LB rule for a couple of VMs.
         # 2. Edit the public/private of the existing LB rule. When all the
-        #    existing Lbrules are listed, this should not be allowed.
+        #    existing LB rules are listed, this should not be allowed.
 
         self.debug(
             "Editing public port of the LB rule: %s" %
@@ -2259,15 +2259,15 @@ class TestVmWithLb(cloudstackTestCase):
 
     @attr(tags=["advancedns"])
     def test_01_delete_public_ip(self):
-        """Test delete one public Ip with LB rules"""
+        """Test delete one public IP with LB rules"""
 
         # Validate the following
-        # 1. Associate 2 public Ips and create load balancing rules in it
-        # 2. Delete one of the public Ip
-        # 3. All the LB rules should be removed from that public Ip
+        # 1. Associate 2 public IPs and create load balancing rules in it
+        # 2. Delete one of the public IP
+        # 3. All the LB rules should be removed from that public IP
         # 4. In netscaler, make sure that all LB rules associated with that
-        #    public Ip should get removed.
-        # 5. All servers and testdata service to that public Ip get deleted
+        #    public IP should get removed.
+        # 5. All servers and testdata service to that public IP get deleted
 
         self.debug("Deleting public IP: %s from network: %s" % (
             self.public_ip_2.ipaddress.ipaddress,
@@ -2275,7 +2275,7 @@ class TestVmWithLb(cloudstackTestCase):
         ))
         self.public_ip_2.delete(self.apiclient)
         self.debug(
-            "Public Ip: %s is deleted!" %
+            "Public IP: %s is deleted!" %
             self.public_ip_2.ipaddress.ipaddress)
         lb_rules = LoadBalancerRule.list(
             self.apiclient,
@@ -2285,7 +2285,7 @@ class TestVmWithLb(cloudstackTestCase):
         self.assertEqual(
             lb_rules,
             None,
-            "LB rules associated with the public Ip should get deleted"
+            "LB rules associated with the public IP should get deleted"
         )
         self.debug("SSH into Netscaler to verify other resources are deleted")
         try:
@@ -2333,7 +2333,7 @@ class TestVmWithLb(cloudstackTestCase):
         # 1. Create 2 instances and add these two for load balancing
         # 2. Stop one of the user VM
         # 3. Test whether the request are not sent to stopped user VM
-        # 4. In netscaler, LB rules for this VM  still remain configured.But
+        # 4. In netscaler, LB rules for this VM still remain configured. But
         #    it will be marked as being down
 
         try:
@@ -2405,7 +2405,7 @@ class TestVmWithLb(cloudstackTestCase):
         # 1. Create 2 instances and add these two for load balancing
         # 2. Stop one of the user VM
         # 3. Test whether the request are not sent to stopped user VM
-        # 4. In netscaler, LB rules for this VM  still remain configured.But
+        # 4. In netscaler, LB rules for this VM still remain configured. But
         #    it will be marked as being down
 
         self.debug("Starting VM instance: %s" % self.vm_2.name)
@@ -2475,7 +2475,7 @@ class TestVmWithLb(cloudstackTestCase):
 
         # Validate the following
         # 1. Create 2 instances and add these two for load balancing
-        # 2. migrate one Vm to another host.
+        # 2. migrate one VM to another host.
         # 3. Test whether the request are sent to stopped user VM after migrate
         # 4. In netscaler, the LB rules are still configured.
         self.hypervisor = self.testClient.getHypervisorInfo()
@@ -2496,7 +2496,7 @@ class TestVmWithLb(cloudstackTestCase):
         self.assertGreaterEqual(
             len(hosts),
             2,
-            "Atleast 2 hosts should be present in a zone for VM migration"
+            "At least 2 hosts should be present in a zone for VM migration"
         )
 
         # Remove the host of current VM from the hosts list
@@ -2592,7 +2592,7 @@ class TestVmWithLb(cloudstackTestCase):
         # 1. Create 2 instances and add these two for load balancing
         # 2. Reboot one of the user VM
         # 3. Test whether the request are sent to both VMs after reboot
-        # 4. In netscaler, LB rules for this VM  still remain configured.
+        # 4. In netscaler, LB rules for this VM still remain configured.
 
         self.debug("Rebooting VM instance: %s" % self.vm_2.name)
         self.vm_2.reboot(self.apiclient)
@@ -2678,11 +2678,11 @@ class TestVmWithLb(cloudstackTestCase):
         # Validate the following
         # 1. Create 2 instances and add these two for load balancing
         # 2. Destroy one of the user VM
-        # 3. Until the time the Vm is in "Destroyed" state, the servies
-        #    relating to this Vm will be marked as "Down".
-        # 4. Once the Vm gets expunged, then the servers and testdata
+        # 3. Until the time the VM is in "Destroyed" state, the services
+        #    relating to this VM will be marked as "Down".
+        # 4. Once the VM gets expunged, then the servers and testdata
         #    associated with this VM should get deleted and the LB rules
-        #    should not be pointing to this Vm anymore.
+        #    should not be pointing to this VM anymore.
 
         self.debug("Destroying VM instance: %s" % self.vm_2.name)
         self.vm_2.delete(self.apiclient)
@@ -2758,12 +2758,12 @@ class TestVmWithLb(cloudstackTestCase):
         """Test delete all public Ip with LB rules"""
 
         # Validate the following
-        # 1. Associate 2 public Ips and create load balancing rules in it
+        # 1. Associate 2 public IPs and create load balancing rules in it
         # 2. Delete all of the public Ip
-        # 3. All the LB rules should be removed from that public Ip
+        # 3. All the LB rules should be removed from that public IP
         # 4. In netscaler, make sure that all LB rules associated with that
-        #    public Ip should get removed.
-        # 5. All servers and testdata service to that public Ip get deleted
+        #    public IP should get removed.
+        # 5. All servers and testdata service to that public IP get deleted
 
         self.debug("Deleting public IP: %s from network: %s" % (
             self.public_ip_1.ipaddress.ipaddress,
