@@ -148,6 +148,52 @@
             :placeholder="$t('label.objectstore.search')"
             :loading="loading"
             @search="listObjects()"
+            listObjects () {
+               // Wait if a previous request is still in progress
+               while (this.fetching) {
+                 setTimeout(() => {
+                   console.log('Waiting for previous request to complete...');
+                 }, 500);
+               }
+               this.fetching = true;
+               this.records = [];
+
+               const stream = this.client.extensions.listObjectsV2WithMetadata(this.resource.name, this.browserPath + this.searchPrefix, false, this.pageStartAfterMap[this.page]);
+
+               stream.on('data', obj => {
+                 this.records.push(obj);
+                 if (this.records.length >= 1000) {
+                   stream.destroy();  // Stop when reaching 1000 records
+                 }
+               });
+
+               stream.on('end', () => {
+                 let total = 0;
+                 if (this.records.length > 0) {
+                   if (this.records.length >= 1000) {
+                     total = (this.page + 1) * 1000;
+                     if (total > this.total) {
+                       this.total = total;
+                     }
+                   } else {
+                     total = (this.page - 1) * 1000 + this.records.length;
+                   }
+                   this.pageStartAfterMap[this.page + 1] = this.records[this.records.length - 1].name;
+                 }
+                 if (total > this.total) {
+                   this.total = total;
+                 }
+                 this.loading = false;
+                 this.fetching = false;  // Allow next request to start
+               });
+
+               stream.on('error', (err) => {
+                 console.error(err);
+                 this.loading = false;
+                 this.fetching = false;
+               });
+            }
+
             :enter-button="$t('label.search')"/>
         </a-col>
         <a-col flex="auto">
