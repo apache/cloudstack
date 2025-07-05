@@ -65,6 +65,7 @@ import com.cloud.utils.ActionDelegate;
 import com.cloud.utils.LogUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.cisco.n1kv.vsm.NetconfHelper;
 import com.cloud.utils.cisco.n1kv.vsm.PolicyMap;
 import com.cloud.utils.cisco.n1kv.vsm.PortProfile;
@@ -249,7 +250,7 @@ public class HypervisorHostHelper {
     }
 
     public static String getSecondaryDatastoreUUID(String storeUrl) {
-        return UUID.nameUUIDFromBytes(storeUrl.getBytes()).toString();
+        return UuidUtils.nameUUIDFromBytes(storeUrl.getBytes()).toString();
     }
 
     public static DatastoreMO getHyperHostDatastoreMO(VmwareHypervisorHost hyperHost, String datastoreName) throws Exception {

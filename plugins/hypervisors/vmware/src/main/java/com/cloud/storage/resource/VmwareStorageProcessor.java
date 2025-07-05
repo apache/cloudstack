@@ -101,6 +101,7 @@ import com.cloud.template.TemplateManager;
 import com.cloud.utils.LogUtils;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.VirtualMachine.PowerState;
@@ -2286,7 +2287,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
     private String getSecondaryDatastoreUUID(String storeUrl) {
         String uuid = null;
         try{
-            uuid=UUID.nameUUIDFromBytes(storeUrl.getBytes("UTF-8")).toString();
+            uuid=UuidUtils.nameUUIDFromBytes(storeUrl.getBytes("UTF-8")).toString();
         }catch(UnsupportedEncodingException e){
             logger.warn("Failed to create UUID from string " + storeUrl + ". Bad storeUrl or UTF-8 encoding error." );
         }
@@ -3740,10 +3741,10 @@ public class VmwareStorageProcessor implements StorageProcessor {
     private String deriveTemplateUuidOnHost(VmwareHypervisorHost hyperHost, String storeIdentifier, String templateName) {
         String templateUuid;
         try {
-            templateUuid = UUID.nameUUIDFromBytes((templateName + "@" + storeIdentifier + "-" + hyperHost.getMor().getValue()).getBytes("UTF-8")).toString();
+            templateUuid = UuidUtils.nameUUIDFromBytes((templateName + "@" + storeIdentifier + "-" + hyperHost.getMor().getValue()).getBytes("UTF-8")).toString();
         } catch(UnsupportedEncodingException e){
             logger.warn("unexpected encoding error, using default Charset: " + e.getLocalizedMessage());
-            templateUuid = UUID.nameUUIDFromBytes((templateName + "@" + storeIdentifier + "-" + hyperHost.getMor().getValue()).getBytes(Charset.defaultCharset()))
+            templateUuid = UuidUtils.nameUUIDFromBytes((templateName + "@" + storeIdentifier + "-" + hyperHost.getMor().getValue()).getBytes(Charset.defaultCharset()))
                     .toString();
         }
         templateUuid = templateUuid.replaceAll("-", "");

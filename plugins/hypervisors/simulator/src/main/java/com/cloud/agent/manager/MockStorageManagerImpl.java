@@ -103,6 +103,7 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.template.TemplateProp;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -886,7 +887,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
                 String nfsHost = uri.getHost();
                 String nfsPath = uri.getPath();
                 String path = nfsHost + ":" + nfsPath;
-                String dir = "/mnt/" + UUID.nameUUIDFromBytes(path.getBytes()).toString() + File.separator;
+                String dir = "/mnt/" + UuidUtils.nameUUIDFromBytes(path.getBytes()).toString() + File.separator;
 
                 storage.setUrl(url);
                 storage.setCapacity(DEFAULT_HOST_STORAGE_SIZE);

@@ -58,6 +58,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -186,7 +187,7 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
 
             InetAddress ia = InetAddress.getByName(hostname);
             String hostIp = ia.getHostAddress();
-            String guid = UUID.nameUUIDFromBytes(hostIp.getBytes("UTF8"))
+            String guid = UuidUtils.nameUUIDFromBytes(hostIp.getBytes("UTF8"))
                     .toString();
 
             if (checkIfExisted(guid)) {
