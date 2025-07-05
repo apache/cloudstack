@@ -64,6 +64,7 @@ override_dh_auto_install:
 	# cloudstack-management
 	mkdir $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/server
 	mkdir $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management
+	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/extensions
 	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/security/limits.d/
 	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/sudoers.d/
 	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-management
@@ -76,20 +77,17 @@ override_dh_auto_install:
 	mkdir $(DESTDIR)/var/log/$(PACKAGE)/ipallocator
 	mkdir $(DESTDIR)/var/lib/$(PACKAGE)/management
 	mkdir $(DESTDIR)/var/lib/$(PACKAGE)/mnt
-	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/extensions/HyperV
-	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/extensions/Proxmox
 
 	cp -r client/target/utilities/scripts/db/* $(DESTDIR)/usr/share/$(PACKAGE)-management/setup/
 	cp -r client/target/classes/META-INF/webapp $(DESTDIR)/usr/share/$(PACKAGE)-management/webapp
 	cp server/target/conf/* $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/server/
 	cp client/target/conf/* $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management/
+	cp -r extensions/* $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/extensions/
 	cp client/target/cloud-client-ui-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-management/lib/cloudstack-$(VERSION).jar
 	cp client/target/lib/*jar $(DESTDIR)/usr/share/$(PACKAGE)-management/lib/
 	cp -r engine/schema/dist/systemvm-templates/* $(DESTDIR)/usr/share/$(PACKAGE)-management/templates/systemvm/
 	cp -r plugins/integrations/kubernetes-service/src/main/resources/conf/* $(DESTDIR)/usr/share/$(PACKAGE)-management/cks/conf/
 	rm -rf $(DESTDIR)/usr/share/$(PACKAGE)-management/templates/systemvm/md5sum.txt
-	cp extensions/HyperV/hyperv.py $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/extensions/HyperV/
-  	cp extensions/Proxmox/proxmox.sh $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/extensions/Proxmox/
 
 	# Bundle cmk in cloudstack-management
 	wget https://github.com/apache/cloudstack-cloudmonkey/releases/download/$(CMK_REL)/cmk.linux.x86-64 -O $(DESTDIR)/usr/bin/cmk
