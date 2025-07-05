@@ -20,6 +20,8 @@ package org.apache.cloudstack.framework.codestyle;
 
 import java.util.concurrent.ExecutionException;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -36,6 +38,7 @@ import org.apache.cloudstack.framework.async.AsyncRpcContext;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = "classpath:/SampleManagementServerAppContext.xml")
 public class AsyncSampleEventDrivenStyleCaller {
+    protected Logger logger = LogManager.getLogger(getClass());
     private AsyncSampleCallee _ds;
     AsyncCallbackDriver _callbackDriver;
 
@@ -53,12 +56,8 @@ public class AsyncSampleEventDrivenStyleCaller {
         try {
             String result = future.get();
             Assert.assertEquals(result, vol);
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+        } catch (InterruptedException | ExecutionException e) {
+            logger.error(e);
         }
     }
 
@@ -87,10 +86,8 @@ public class AsyncSampleEventDrivenStyleCaller {
                 if (!this.finished) {
                     try {
                         this.wait();
-
                     } catch (InterruptedException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
+                        logger.error(e);
                     }
                 }
                 return this.result;

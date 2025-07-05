@@ -86,6 +86,7 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.UserVmDao;
 
 public class ManagementServerMock {
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     private AccountManager _accountMgr;
@@ -239,8 +240,7 @@ public class ManagementServerMock {
         try {
             _vmMgr.addVmToNetwork(vm, network, profile);
         } catch (Exception ex) {
-            // TODO Auto-generated catch block
-            //ex.printStackTrace();
+            logger.warning("Exception occurred while adding VM to network: " + ex.getMessage());
         }
         return vm;
     }
