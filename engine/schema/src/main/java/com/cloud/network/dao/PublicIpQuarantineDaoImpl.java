@@ -26,6 +26,8 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
+import java.util.Date;
+import java.util.List;
 
 @Component
 public class PublicIpQuarantineDaoImpl extends GenericDaoBase<PublicIpQuarantineVO, Long> implements PublicIpQuarantineDao {
@@ -33,8 +35,10 @@ public class PublicIpQuarantineDaoImpl extends GenericDaoBase<PublicIpQuarantine
 
     private SearchBuilder<IPAddressVO> ipAddressSearchBuilder;
 
+    private SearchBuilder<PublicIpQuarantineVO> quarantinedIpAddressesSearch;
+
     @Inject
-    IPAddressDao ipAddressDao;
+    private IPAddressDao ipAddressDao;
 
     @PostConstruct
     public void init() {
@@ -47,8 +51,18 @@ public class PublicIpQuarantineDaoImpl extends GenericDaoBase<PublicIpQuarantine
         publicIpAddressByIdSearch.join("quarantineJoin", ipAddressSearchBuilder, ipAddressSearchBuilder.entity().getId(),
                 publicIpAddressByIdSearch.entity().getPublicIpAddressId(), JoinBuilder.JoinType.INNER);
 
+        quarantinedIpAddressesSearch = createSearchBuilder();
+        quarantinedIpAddressesSearch.and("previousOwnerId", quarantinedIpAddressesSearch.entity().getPreviousOwnerId(), SearchCriteria.Op.NEQ);
+        quarantinedIpAddressesSearch.and();
+        quarantinedIpAddressesSearch.op("removedIsNull", quarantinedIpAddressesSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
+        quarantinedIpAddressesSearch.and("endDate", quarantinedIpAddressesSearch.entity().getEndDate(), SearchCriteria.Op.GT);
+        quarantinedIpAddressesSearch.or("removedIsNotNull", quarantinedIpAddressesSearch.entity().getRemoved(), SearchCriteria.Op.NNULL);
+        quarantinedIpAddressesSearch.and("removedDateGt", quarantinedIpAddressesSearch.entity().getRemoved(), SearchCriteria.Op.GT);
+        quarantinedIpAddressesSearch.cp();
+
         ipAddressSearchBuilder.done();
         publicIpAddressByIdSearch.done();
+        quarantinedIpAddressesSearch.done();
     }
 
     @Override
@@ -67,5 +81,16 @@ public class PublicIpQuarantineDaoImpl extends GenericDaoBase<PublicIpQuarantine
         final Filter filter = new Filter(PublicIpQuarantineVO.class, "created", false);
 
         return findOneBy(sc, filter);
+    }
+
+    @Override
+    public List<PublicIpQuarantineVO> listQuarantinedIpAddressesToUser(Long userId, Date date) {
+        SearchCriteria<PublicIpQuarantineVO> sc = quarantinedIpAddressesSearch.create();
+
+        sc.setParameters("previousOwnerId", userId);
+        sc.setParameters("endDate", date);
+        sc.setParameters("removedDateGt", date);
+
+        return searchIncludingRemoved(sc, null, false, false);
     }
 }
