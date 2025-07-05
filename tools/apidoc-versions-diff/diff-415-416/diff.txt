@@ -1,0 +1,1104 @@
+Added commands:
+
+    listResourceIcon (Lists the resource icon for the specified resource(s))
+
+    updatePodManagementNetworkIpRange (Updates a management network IP range. Only allowed when no IPs are allocated.)
+
+    deleteResourceIcon (deletes the resource icon from the specified resource(s))
+
+    updateBackupOffering (Updates a backup offering.)
+
+    updateStorageCapabilities (Syncs capabilities of storage pools)
+
+    uploadResourceIcon (Uploads an icon for the specified resource(s))
+
+    updateVlanIpRange (Updates a VLAN IP range.)
+
+    declareHostAsDegraded (Declare host as 'Degraded'. Host must be on 'Disconnected' or 'Alert' state. The ADMIN must be sure that there are no VMs running on the respective host otherwise this command might corrupted VMs that were running on the 'Degraded' host.)
+
+    updateAnnotationVisibility (update an annotation visibility.)
+
+    cancelHostAsDegraded (Cancel host status from 'Degraded'. Host will transit back to status 'Enabled'.)
+
+    syncStoragePool (Sync storage pool with management server (currently supported for Datastore Cluster in VMware and syncs the datastores in it))
+
+Removed commands:
+
+	configureSimulator (configure simulator)
+
+	querySimulatorMock (query simulator mock)
+
+	cleanupSimulatorMock (cleanup simulator mock)
+
+	configureSimulatorHAProviderState (configures simulator HA provider state for a host for probing and testing)
+
+	listSimulatorHAStateTransitions (list recent simulator HA state transitions for a host for probing and testing)
+
+Changes in command type (sync versus async)
+
+
+Changes in commands arguments:
+
+	createVPCOffering
+
+		Request:
+
+			New parameters: enable (optional) 
+
+	ldapCreateAccount
+
+		Response:
+
+			New parameters: created, icon 
+
+	createPod
+
+		Response:
+
+			New parameters: ipranges(*) 
+
+	copyIso
+
+		Response:
+
+			New parameters: icon 
+
+	listVirtualMachinesMetrics
+
+		Request:
+
+			New parameters: showicon (optional) 
+
+	rebootSystemVm
+
+		Request:
+
+			New parameters: forced (optional) 
+
+		Response:
+
+			New parameters: isdynamicallyscalable 
+
+	listNetworks
+
+		Request:
+
+			New parameters: showicon (optional) 
+
+		Response:
+
+			New parameters: created, icon, receivedbytes, sentbytes 
+
+	registerSSHKeyPair
+
+		Response:
+
+			New parameters: id 
+
+	restoreVirtualMachine
+
+		Response:
+
+			New parameters: icon, lastupdated, pooltype, readonlydetails, receivedbytes, sentbytes 
+
+			Removed parameters: readonlyuidetails 
+
+	uploadVolume
+
+		Response:
+
+			New parameters: supportsstoragesnapshot 
+
+	destroySystemVm
+
+		Response:
+
+			New parameters: isdynamicallyscalable 
+
+	listAnnotations
+
+		Request:
+
+			New parameters: annotationfilter (optional), userid (optional) 
+
+		Response:
+
+			New parameters: adminsonly, entityname, username 
+
+	scaleSystemVm
+
+		Response:
+
+			New parameters: isdynamicallyscalable 
+
+	updateVpnCustomerGateway
+
+		Request:
+
+			New parameters: ikeversion (optional), splitconnections (optional) 
+
+		Response:
+
+			New parameters: ikeversion, splitconnections 
+
+	lockAccount
+
+		Response:
+
+			New parameters: created, icon 
+
+	listProjectRolePermissions
+
+		Response:
+
+			New parameters: id, projectid, projectroleid, projectrolename 
+
+			Removed parameters: displaytext, success 
+
+	changeServiceForVirtualMachine
+
+		Response:
+
+			New parameters: icon, lastupdated, pooltype, readonlydetails, receivedbytes, sentbytes 
+
+			Removed parameters: readonlyuidetails 
+
+	listTemplates
+
+		Request:
+
+			New parameters: showicon (optional) 
+
+		Response:
+
+			New parameters: icon 
+
+	rebootVirtualMachine
+
+		Request:
+
+			New parameters: forced (optional) 
+
+		Response:
+
+			New parameters: icon, lastupdated, pooltype, readonlydetails, receivedbytes, sentbytes 
+
+			Removed parameters: readonlyuidetails 
+
+	stopSystemVm
+
+		Response:
+
+			New parameters: isdynamicallyscalable 
+
+	updateVPC
+
+		Response:
+
+			New parameters: icon, network 
+
+			Removed parameters: network(*) 
+
+	createNetworkOffering
+
+		Request:
+
+			New parameters: enable (optional) 
+
+			Changed parameters: supportedservices (old version - required, new version - optional) 
+
+	updateVmNicIp
+
+		Response:
+
+			New parameters: icon, lastupdated, pooltype, readonlydetails, receivedbytes, sentbytes 
+
+			Removed parameters: readonlyuidetails 
+
+	listPods
+
+		Response:
+
+			New parameters: ipranges(*) 
+
+	resetVpnConnection
+
+		Response:
+
+			New parameters: ikeversion, splitconnections 
+
+	listKubernetesClusters
+
+		Response:
+
+			New parameters: autoscalingenabled, controlnodes, maxsize, minsize 
+
+	scaleKubernetesCluster
+
+		Request:
+
+			New parameters: autoscalingenabled (optional), maxsize (optional), minsize (optional), nodeids (optional) 
+
+		Response:
+
+			New parameters: autoscalingenabled, controlnodes, maxsize, minsize 
+
+	listCapabilities
+
+		Response:
+
+			New parameters: defaultuipagesize 
+
+	destroyVolume
+
+		Response:
+
+			New parameters: supportsstoragesnapshot 
+
+	updateDomain
+
+		Response:
+
+			New parameters: created, domaindetails, icon 
+
+	listSystemVms
+
+		Response:
+
+			New parameters: isdynamicallyscalable 
+
+	createProject
+
+		Response:
+
+			New parameters: created, icon 
+
+			Removed parameters: account 
+
+	detachVolume
+
+		Response:
+
+			New parameters: supportsstoragesnapshot 
+
+	markDefaultZoneForAccount
+
+		Response:
+
+			New parameters: created, icon 
+
+	changeServiceForSystemVm
+
+		Response:
+
+			New parameters: isdynamicallyscalable 
+
+	rebootRouter
+
+		Request:
+
+			New parameters: forced (optional) 
+
+	addNicToVirtualMachine
+
+		Response:
+
+			New parameters: icon, lastupdated, pooltype, readonlydetails, receivedbytes, sentbytes 
+
+			Removed parameters: readonlyuidetails 
+
+	updateIso
+
+		Response:
+
+			New parameters: icon 
+
+	updateDefaultNicForVirtualMachine
+
+		Response:
+
+			New parameters: icon, lastupdated, pooltype, readonlydetails, receivedbytes, sentbytes 
+
+			Removed parameters: readonlyuidetails 
+
+	prepareTemplate
+
+		Response:
+
+			New parameters: icon 
+
+	createDomain
+
+		Response:
+
+			New parameters: created, domaindetails, icon 
+
+	restartNetwork
+
+		Response:
+
+			New parameters: displaytext, success 
+
+			Removed parameters: id, account, allocated, associatednetworkid, associatednetworkname, domain, domainid, fordisplay, forvirtualnetwork, ipaddress, isportable, issourcenat, isstaticnat, issystem, networkid, networkname, physicalnetworkid, project, projectid, purpose, state, virtualmachinedisplayname, virtualmachineid, virtualmachinename, vlanid, vlanname, vmipaddress, vpcid, vpcname, zoneid, zonename, tags(*), jobid, jobstatus 
+
+	createServiceOffering
+
+		Request:
+
+			New parameters: dynamicscalingenabled (optional) 
+
+		Response:
+
+			New parameters: dynamicscalingenabled, storagetags 
+
+			Removed parameters: tags 
+
+	copyTemplate
+
+		Response:
+
+			New parameters: icon 
+
+	listNiciraNvpDeviceNetworks
+
+		Response:
+
+			New parameters: created, icon, receivedbytes, sentbytes 
+
+	assignVirtualMachine
+
+		Response:
+
+			New parameters: icon, lastupdated, pooltype, readonlydetails, receivedbytes, sentbytes 
+
+			Removed parameters: readonlyuidetails 
+
+	resizeVolume
+
+		Response:
+
+			New parameters: supportsstoragesnapshot 
+
+	updateTemplate
+
+		Response:
+
+			New parameters: icon 
+
+	updateVpnConnection
+
+		Response:
+
+			New parameters: ikeversion, splitconnections 
+
+	listPaloAltoFirewallNetworks
+
+		Response:
+
+			New parameters: created, icon, receivedbytes, sentbytes 
+
+	updateVolume
+
+		Request:
+
+			New parameters: name (optional) 
+
+		Response:
+
+			New parameters: supportsstoragesnapshot 
+
+	updateAccount
+
+		Response:
+
+			New parameters: created, icon 
+
+	updateVirtualMachine
+
+		Response:
+
+			New parameters: icon, lastupdated, pooltype, readonlydetails, receivedbytes, sentbytes 
+
+			Removed parameters: readonlyuidetails 
+
+	listDomains
+
+		Request:
+
+			New parameters: showicon (optional) 
+
+		Response:
+
+			New parameters: created, domaindetails, icon 
+
+	disableAccount
+
+		Response:
+
+			New parameters: created, icon 
+
+	updateNetwork
+
+		Response:
+
+			New parameters: created, icon, receivedbytes, sentbytes 
+
+	migrateVirtualMachine
+
+		Request:
+
+			New parameters: autoselect (optional) 
+
+		Response:
+
+			New parameters: icon, lastupdated, pooltype, readonlydetails, receivedbytes, sentbytes 
+
+			Removed parameters: readonlyuidetails 
+
+	createTemplate
+
+		Response:
+
+			New parameters: icon 
+
+	resetPasswordForVirtualMachine
+
+		Response:
+
+			New parameters: icon, lastupdated, pooltype, readonlydetails, receivedbytes, sentbytes 
+
+			Removed parameters: readonlyuidetails 
+
+	listVpnCustomerGateways
+
+		Response:
+
+			New parameters: ikeversion, splitconnections 
+
+	resetSSHKeyForVirtualMachine
+
+		Response:
+
+			New parameters: icon, lastupdated, pooltype, readonlydetails, receivedbytes, sentbytes 
+
+			Removed parameters: readonlyuidetails 
+
+	addKubernetesSupportedVersion
+
+		Response:
+
+			New parameters: supportsautoscaling 
+
+	createVPC
+
+		Response:
+
+			New parameters: icon, network 
+
+			Removed parameters: network(*) 
+
+	listSrxFirewallNetworks
+
+		Response:
+
+			New parameters: created, icon, receivedbytes, sentbytes 
+
+	updateKubernetesSupportedVersion
+
+		Response:
+
+			New parameters: supportsautoscaling 
+
+	detachIso
+
+		Request:
+
+			New parameters: forced (optional) 
+
+		Response:
+
+			New parameters: icon, lastupdated, pooltype, readonlydetails, receivedbytes, sentbytes 
+
+			Removed parameters: readonlyuidetails 
+
+	listVirtualMachines
+
+		Request:
+
+			New parameters: clusterid (optional), showicon (optional) 
+
+		Response:
+
+			New parameters: icon, lastupdated, pooltype, readonlydetails, receivedbytes, sentbytes 
+
+			Removed parameters: readonlyuidetails 
+
+	upgradeKubernetesCluster
+
+		Response:
+
+			New parameters: autoscalingenabled, controlnodes, maxsize, minsize 
+
+	listProjects
+
+		Request:
+
+			New parameters: showicon (optional) 
+
+		Response:
+
+			New parameters: created, icon 
+
+			Removed parameters: account 
+
+	createAccount
+
+		Response:
+
+			New parameters: created, icon 
+
+	revertToVMSnapshot
+
+		Response:
+
+			New parameters: icon, lastupdated, pooltype, readonlydetails, receivedbytes, sentbytes 
+
+			Removed parameters: readonlyuidetails 
+
+	addAnnotation
+
+		Request:
+
+			New parameters: adminsonly (optional) 
+
+		Response:
+
+			New parameters: adminsonly, entityname, username 
+
+	registerIso
+
+		Response:
+
+			New parameters: icon 
+
+	deployVirtualMachine
+
+		Request:
+
+			New parameters: dynamicscalingenabled (optional) 
+
+		Response:
+
+			New parameters: icon, lastupdated, pooltype, readonlydetails, receivedbytes, sentbytes 
+
+			Removed parameters: readonlyuidetails 
+
+	updateZone
+
+		Response:
+
+			New parameters: icon 
+
+	listProjectAccounts
+
+		Response:
+
+			New parameters: created, icon 
+
+			Removed parameters: account 
+
+	createDiskOffering
+
+		Request:
+
+			New parameters: details (optional) 
+
+	listVolumes
+
+		Response:
+
+			New parameters: supportsstoragesnapshot 
+
+	lockUser
+
+		Response:
+
+			New parameters: icon 
+
+	createNetwork
+
+		Request:
+
+			New parameters: routerip (optional), routeripv6 (optional) 
+
+		Response:
+
+			New parameters: created, icon, receivedbytes, sentbytes 
+
+	listVPCs
+
+		Request:
+
+			New parameters: showicon (optional) 
+
+		Response:
+
+			New parameters: icon, network 
+
+			Removed parameters: network(*) 
+
+	migrateVirtualMachineWithVolume
+
+		Request:
+
+			Changed parameters: hostid (old version - required, new version - optional) 
+
+		Response:
+
+			New parameters: icon, lastupdated, pooltype, readonlydetails, receivedbytes, sentbytes 
+
+			Removed parameters: readonlyuidetails 
+
+	updateUser
+
+		Response:
+
+			New parameters: icon 
+
+	restartVPC
+
+		Response:
+
+			New parameters: success 
+
+			Removed parameters: id, account, cidr, created, distributedvpcrouter, domain, domainid, fordisplay, name, networkdomain, project, projectid, redundantvpcrouter, regionlevelvpc, restartrequired, state, vpcofferingid, vpcofferingname, zoneid, zonename, network(*), service(*), tags(*) 
+
+	attachVolume
+
+		Response:
+
+			New parameters: supportsstoragesnapshot 
+
+	addHost
+
+		Request:
+
+			Changed parameters: password (old version - required, new version - optional), username (old version - required, new version - optional) 
+
+	updateProject
+
+		Response:
+
+			New parameters: created, icon 
+
+			Removed parameters: account 
+
+	listUsers
+
+		Request:
+
+			New parameters: showicon (optional) 
+
+		Response:
+
+			New parameters: icon 
+
+	listVpnConnections
+
+		Response:
+
+			New parameters: ikeversion, splitconnections 
+
+	disableUser
+
+		Response:
+
+			New parameters: icon 
+
+	listIsos
+
+		Request:
+
+			New parameters: showicon (optional) 
+
+		Response:
+
+			New parameters: icon 
+
+	listZones
+
+		Request:
+
+			New parameters: showicon (optional) 
+
+		Response:
+
+			New parameters: icon 
+
+	listNetscalerLoadBalancerNetworks
+
+		Response:
+
+			New parameters: created, icon, receivedbytes, sentbytes 
+
+	startSystemVm
+
+		Response:
+
+			New parameters: isdynamicallyscalable 
+
+	createKubernetesCluster
+
+		Request:
+
+			New parameters: controlnodes (optional) 
+
+		Response:
+
+			New parameters: autoscalingenabled, controlnodes, maxsize, minsize 
+
+	migrateVolume
+
+		Response:
+
+			New parameters: supportsstoragesnapshot 
+
+	updateVMAffinityGroup
+
+		Response:
+
+			New parameters: icon, lastupdated, pooltype, readonlydetails, receivedbytes, sentbytes 
+
+			Removed parameters: readonlyuidetails 
+
+	resetApiLimit
+
+		Response:
+
+			New parameters: displaytext, success 
+
+			Removed parameters: account, accountid, apiAllowed, apiIssued, expireAfter 
+
+	migrateVPC
+
+		Response:
+
+			New parameters: icon, network 
+
+			Removed parameters: network(*) 
+
+	getUploadParamsForTemplate
+
+		Request:
+
+			New parameters: deployasis (optional) 
+
+	recoverVirtualMachine
+
+		Response:
+
+			New parameters: icon, lastupdated, pooltype, readonlydetails, receivedbytes, sentbytes 
+
+			Removed parameters: readonlyuidetails 
+
+	migrateSystemVm
+
+		Request:
+
+			New parameters: autoselect (optional), storageid (optional) 
+
+			Changed parameters: hostid (old version - required, new version - optional) 
+
+		Response:
+
+			New parameters: isdynamicallyscalable 
+
+	listRouters
+
+		Request:
+
+			New parameters: healthchecksfailed (optional) 
+
+	createVpnConnection
+
+		Response:
+
+			New parameters: ikeversion, splitconnections 
+
+	listBrocadeVcsDeviceNetworks
+
+		Response:
+
+			New parameters: created, icon, receivedbytes, sentbytes 
+
+	listKubernetesSupportedVersions
+
+		Response:
+
+			New parameters: supportsautoscaling 
+
+	listUsageRecords
+
+		Request:
+
+			New parameters: isrecursive (optional) 
+
+		Response:
+
+			New parameters: oscategoryid, oscategoryname, osdisplayname 
+
+	recoverVolume
+
+		Response:
+
+			New parameters: supportsstoragesnapshot 
+
+	enableUser
+
+		Response:
+
+			New parameters: icon 
+
+	listZonesMetrics
+
+		Request:
+
+			New parameters: showicon (optional) 
+
+	suspendProject
+
+		Response:
+
+			New parameters: created, icon 
+
+			Removed parameters: account 
+
+	migrateNetwork
+
+		Response:
+
+			New parameters: created, icon, receivedbytes, sentbytes 
+
+	listUnmanagedInstances
+
+		Response:
+
+			New parameters: hostname 
+
+	registerTemplate
+
+		Request:
+
+			New parameters: deployasis (optional) 
+
+		Response:
+
+			New parameters: icon 
+
+	createZone
+
+		Response:
+
+			New parameters: icon 
+
+	listDomainChildren
+
+		Request:
+
+			New parameters: showicon (optional) 
+
+		Response:
+
+			New parameters: created, domaindetails, icon 
+
+	importUnmanagedInstance
+
+		Response:
+
+			New parameters: icon, lastupdated, pooltype, readonlydetails, receivedbytes, sentbytes 
+
+			Removed parameters: readonlyuidetails 
+
+	listF5LoadBalancerNetworks
+
+		Response:
+
+			New parameters: created, icon, receivedbytes, sentbytes 
+
+	createVolume
+
+		Response:
+
+			New parameters: supportsstoragesnapshot 
+
+	listVMSnapshot
+
+		Response:
+
+			New parameters: virtualmachinename, zonename 
+
+	updatePod
+
+		Response:
+
+			New parameters: ipranges(*) 
+
+	attachIso
+
+		Request:
+
+			New parameters: forced (optional) 
+
+		Response:
+
+			New parameters: icon, lastupdated, pooltype, readonlydetails, receivedbytes, sentbytes 
+
+			Removed parameters: readonlyuidetails 
+
+	createUser
+
+		Response:
+
+			New parameters: icon 
+
+	createVMSnapshot
+
+		Response:
+
+			New parameters: virtualmachinename, zonename 
+
+	listSSHKeyPairs
+
+		Response:
+
+			New parameters: id 
+
+	listAccounts
+
+		Request:
+
+			New parameters: showicon (optional) 
+
+		Response:
+
+			New parameters: created, icon 
+
+	removeNicFromVirtualMachine
+
+		Response:
+
+			New parameters: icon, lastupdated, pooltype, readonlydetails, receivedbytes, sentbytes 
+
+			Removed parameters: readonlyuidetails 
+
+	activateProject
+
+		Response:
+
+			New parameters: created, icon 
+
+			Removed parameters: account 
+
+	enableAccount
+
+		Response:
+
+			New parameters: created, icon 
+
+	startKubernetesCluster
+
+		Response:
+
+			New parameters: autoscalingenabled, controlnodes, maxsize, minsize 
+
+	deleteProject
+
+		Request:
+
+			New parameters: cleanup (optional) 
+
+	getUser
+
+		Response:
+
+			New parameters: icon 
+
+	createVpnCustomerGateway
+
+		Request:
+
+			New parameters: ikeversion (optional), splitconnections (optional) 
+
+		Response:
+
+			New parameters: ikeversion, splitconnections 
+
+	createManagementNetworkIpRange
+
+		Response:
+
+			New parameters: ipranges(*) 
+
+	removeAnnotation
+
+		Response:
+
+			New parameters: adminsonly, entityname, username 
+
+	addBaremetalHost
+
+		Request:
+
+			Changed parameters: password (old version - required, new version - optional), username (old version - required, new version - optional) 
+
+	destroyVirtualMachine
+
+		Response:
+
+			New parameters: icon, lastupdated, pooltype, readonlydetails, receivedbytes, sentbytes 
+
+			Removed parameters: readonlyuidetails 
+
+	listServiceOfferings
+
+		Response:
+
+			New parameters: dynamicscalingenabled, storagetags 
+
+			Removed parameters: tags 
+
+	assignVirtualMachineToBackupOffering
+
+		Response:
+
+			New parameters: displaytext, success 
+
+			Removed parameters: id, account, accountid, backupofferingid, backupofferingname, created, domain, domainid, externalid, size, status, type, virtualmachineid, virtualmachinename, virtualsize, volumes, zone, zoneid 
+
+	startVirtualMachine
+
+		Response:
+
+			New parameters: icon, lastupdated, pooltype, readonlydetails, receivedbytes, sentbytes 
+
+			Removed parameters: readonlyuidetails 
+
+	stopVirtualMachine
+
+		Response:
+
+			New parameters: icon, lastupdated, pooltype, readonlydetails, receivedbytes, sentbytes 
+
+			Removed parameters: readonlyuidetails 
+
+	updateServiceOffering
+
+		Request:
+
+			New parameters: hosttags (optional), storagetags (optional) 
+
+		Response:
+
+			New parameters: dynamicscalingenabled, storagetags 
+
+			Removed parameters: tags 
