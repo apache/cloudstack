@@ -59,6 +59,7 @@ vueApp.use(cpuArchitectureUtilPlugin)
 vueApp.use(imagesUtilPlugin)
 vueApp.use(extensions)
 vueApp.use(directives)
+vueApp.use(require('vue3-shortkey'), { prevent: ['input', 'textarea'] })
 
 fetch('config.json?ts=' + Date.now()).then(response => response.json()).then(config => {
   vueProps.$config = config
