@@ -139,7 +139,7 @@
 </template>
 <script>
 
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { ref, reactive, toRaw } from 'vue'
 import store from '@/store'
 import VueQrious from 'vue-qrious'
@@ -192,7 +192,7 @@ export default {
     },
     handleSelectChange (val) {
       if (this.twoFAenabled) {
-        api('setupUserTwoFactorAuthentication', { enable: 'false' }).then(response => {
+        postAPI('setupUserTwoFactorAuthentication', { enable: 'false' }).then(response => {
           this.pin = ''
           this.username = ''
           this.totpUrl = ''
@@ -220,7 +220,7 @@ export default {
         } else {
           provider = this.selectedProvider
         }
-        api('setupUserTwoFactorAuthentication', { provider: provider }).then(response => {
+        postAPI('setupUserTwoFactorAuthentication', { provider: provider }).then(response => {
           this.pin = response.setupusertwofactorauthenticationresponse.setup2fa.secretcode
           if (this.selectedProvider === 'totp' || this.selectedProvider === 'othertotp') {
             this.username = response.setupusertwofactorauthenticationresponse.setup2fa.username
@@ -247,7 +247,7 @@ export default {
       })
     },
     disable2FAProvider () {
-      api('setupUserTwoFactorAuthentication', { enable: false }).then(response => {
+      postAPI('setupUserTwoFactorAuthentication', { enable: false }).then(response => {
         this.showPin = false
         this.twoFAenabled = false
         this.twoFAverified = false
@@ -259,7 +259,7 @@ export default {
       })
     },
     list2FAProviders () {
-      api('listUserTwoFactorAuthenticatorProviders', {}).then(response => {
+      getAPI('listUserTwoFactorAuthenticatorProviders', {}).then(response => {
         var providerlist = response.listusertwofactorauthenticatorprovidersresponse.providers || []
         var providernames = []
         for (const provider of providerlist) {
@@ -277,7 +277,7 @@ export default {
         if (values.code !== null) {
           this.verifybuttonstate = true
         }
-        api('validateUserTwoFactorAuthenticationCode', { codefor2fa: values.code }).then(response => {
+        postAPI('validateUserTwoFactorAuthenticationCode', { codefor2fa: values.code }).then(response => {
           this.$message.success({
             content: `${this.$t('label.action.enable.two.factor.authentication')}`,
             duration: 2

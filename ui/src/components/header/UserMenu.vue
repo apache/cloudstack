@@ -71,7 +71,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import CreateMenu from './CreateMenu'
 import ExternalLink from './ExternalLink'
 import HeaderNotice from './HeaderNotice'
@@ -145,7 +145,7 @@ export default {
           this.image = this.$store.getters.avatar
           resolve(this.image)
         }
-        api('listUsers', {
+        getAPI('listUsers', {
           id: id,
           showicon: true
         }).then(json => {

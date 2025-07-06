@@ -75,7 +75,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 
 export default {
   name: 'ImageStoreSelector',
@@ -141,7 +141,7 @@ export default {
         page: this.page,
         pagesize: this.pageSize
       }
-      api('listImageStores', params).then(response => {
+      getAPI('listImageStores', params).then(response => {
         this.imageStores = response.listimagestoresresponse.imagestore || []
         this.totalCount = response.listimagestoresresponse.count
       }).catch(error => {
