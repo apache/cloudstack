@@ -249,7 +249,7 @@
   </div>
 </template>
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import moment from 'moment'
 import 'chartjs-adapter-moment'
 import DateTimeFilter from './DateTimeFilter'
@@ -455,7 +455,7 @@ export default {
       if (this.endDate) {
         params.endDate = moment(this.endDate).format()
       }
-      api(this.resourceStatsApi, params).then(response => {
+      getAPI(this.resourceStatsApi, params).then(response => {
         this.handleStatsResponse(response)
       }).catch(error => {
         this.$notifyError(error)

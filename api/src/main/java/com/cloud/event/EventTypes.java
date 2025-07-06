@@ -289,6 +289,8 @@ public class EventTypes {
 
     //registering userdata events
     public static final String EVENT_REGISTER_USER_DATA = "REGISTER.USER.DATA";
+    public static final String EVENT_REGISTER_CNI_CONFIG = "REGISTER.CNI.CONFIG";
+    public static final String EVENT_DELETE_CNI_CONFIG = "DELETE.CNI.CONFIG";
 
     //register for user API and secret keys
     public static final String EVENT_REGISTER_FOR_SECRET_API_KEY = "REGISTER.USER.KEY";
@@ -688,6 +690,9 @@ public class EventTypes {
     public static final String EVENT_EXTERNAL_OPENDAYLIGHT_CONFIGURE_CONTROLLER = "PHYSICAL.ODLCONTROLLER.CONFIGURE";
 
     //Guest OS related events
+    public static final String EVENT_GUEST_OS_CATEGORY_ADD = "GUEST.OS.CATEGORY.ADD";
+    public static final String EVENT_GUEST_OS_CATEGORY_DELETE = "GUEST.OS.CATEGORY.DELETE";
+    public static final String EVENT_GUEST_OS_CATEGORY_UPDATE = "GUEST.OS.CATEGORY.UPDATE";
     public static final String EVENT_GUEST_OS_ADD = "GUEST.OS.ADD";
     public static final String EVENT_GUEST_OS_REMOVE = "GUEST.OS.REMOVE";
     public static final String EVENT_GUEST_OS_UPDATE = "GUEST.OS.UPDATE";
@@ -795,6 +800,9 @@ public class EventTypes {
 
     // Resource Limit
     public static final String EVENT_RESOURCE_LIMIT_UPDATE = "RESOURCE.LIMIT.UPDATE";
+
+    // Management Server
+    public static final String EVENT_MANAGEMENT_SERVER_REMOVE = "MANAGEMENT.SERVER.REMOVE";
 
     public static final String VM_LEASE_EXPIRED = "VM.LEASE.EXPIRED";
     public static final String VM_LEASE_DISABLED = "VM.LEASE.DISABLED";
@@ -1295,6 +1303,9 @@ public class EventTypes {
         entityEventDetails.put(EVENT_SHAREDFS_DESTROY, SharedFS.class);
         entityEventDetails.put(EVENT_SHAREDFS_EXPUNGE, SharedFS.class);
         entityEventDetails.put(EVENT_SHAREDFS_RECOVER, SharedFS.class);
+
+        // Management Server
+        entityEventDetails.put(EVENT_MANAGEMENT_SERVER_REMOVE, "ManagementServer");
 
         // VM Lease
         entityEventDetails.put(VM_LEASE_EXPIRED, VirtualMachine.class);

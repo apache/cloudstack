@@ -40,7 +40,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import FormSchedule from '@/views/storage/FormSchedule'
 import ScheduledSnapshots from '@/views/storage/ScheduledSnapshots'
 
@@ -71,7 +71,7 @@ export default {
       this.dataSource = []
       this.loading = true
       params.volumeid = this.resource.id
-      api('listSnapshotPolicies', params).then(json => {
+      getAPI('listSnapshotPolicies', params).then(json => {
         this.loading = false
         const listSnapshotPolicies = json.listsnapshotpoliciesresponse.snapshotpolicy
         if (listSnapshotPolicies && listSnapshotPolicies.length > 0) {

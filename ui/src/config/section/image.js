@@ -60,14 +60,14 @@ export default {
       details: () => {
         var fields = ['name', 'id', 'displaytext', 'checksum', 'hypervisor', 'arch', 'format', 'ostypename', 'size', 'physicalsize', 'isready', 'passwordenabled',
           'crossZones', 'templatetype', 'directdownload', 'deployasis', 'ispublic', 'isfeatured', 'isextractable', 'isdynamicallyscalable', 'crosszones', 'type',
-          'account', 'domain', 'created', 'userdatadetails', 'userdatapolicy']
+          'account', 'domain', 'created', 'userdatadetails', 'userdatapolicy', 'forcks']
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
           fields.push('templatetag', 'templatetype', 'url')
         }
         return fields
       },
       searchFilters: () => {
-        var filters = ['name', 'zoneid', 'tags', 'arch']
+        var filters = ['name', 'zoneid', 'tags', 'arch', 'oscategoryid', 'templatetype']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           filters.push('storageid')
           filters.push('imagestoreid')
@@ -235,7 +235,7 @@ export default {
       },
       details: ['name', 'id', 'displaytext', 'checksum', 'ostypename', 'size', 'arch', 'bootable', 'isready', 'passwordenabled', 'directdownload', 'isextractable', 'ispublic', 'isfeatured', 'isdynamicallyscalable', 'crosszones', 'account', 'domain', 'created', 'userdatadetails', 'userdatapolicy', 'url'],
       searchFilters: () => {
-        var filters = ['name', 'zoneid', 'tags', 'arch']
+        var filters = ['name', 'zoneid', 'tags', 'arch', 'oscategoryid']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           filters.push('storageid')
           filters.push('imagestoreid')

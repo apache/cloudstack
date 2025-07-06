@@ -2435,6 +2435,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     throw new InvalidParameterValueException("Going from existing size of " + currentSize + " to size of " + newSize + " would shrink the volume."
                             + "Need to sign off by supplying the shrinkok parameter with value of true.");
                 }
+                if (ApiDBUtils.getHypervisorTypeFromFormat(volume.getDataCenterId(), volume.getFormat()) == HypervisorType.XenServer) {
+                    throw new InvalidParameterValueException("Shrink volume is not supported for the XenServer hypervisor.");
+                }
             }
         }
         /* Check resource limit for this account */
