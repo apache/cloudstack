@@ -815,7 +815,7 @@ export default {
     },
     fetchExtensions (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listExtensions', { details: 'min', showicon: true, keyword: searchKeyword }).then(json => {
+        getAPI('listExtensions', { details: 'min', showicon: true, keyword: searchKeyword }).then(json => {
           const extensions = json.listextensionsresponse.extension
           resolve({
             type: 'extensionid',

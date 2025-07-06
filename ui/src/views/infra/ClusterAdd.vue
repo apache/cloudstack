@@ -300,7 +300,7 @@ export default {
     },
     fetchExtensionsList () {
       this.loading = true
-      api('listExtensions', {
+      getAPI('listExtensions', {
       }).then(response => {
         this.extensionsList = response.listextensionsresponse.extension || []
       }).catch(error => {
