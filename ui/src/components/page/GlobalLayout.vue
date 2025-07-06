@@ -128,7 +128,7 @@ import { triggerWindowResizeEvent } from '@/utils/util'
 import { mapState, mapActions } from 'vuex'
 import { mixin, mixinDevice } from '@/utils/mixin.js'
 import { isAdmin } from '@/role'
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import Drawer from '@/components/widgets/Drawer'
 import Setting from '@/components/view/Setting.vue'
 
@@ -260,7 +260,7 @@ export default {
       this.$store.commit('SET_COUNT_NOTIFY', 0)
     },
     checkShutdown () {
-      api('readyForShutdown', { managementserverid: this.$store.getters.msId }).then(json => {
+      getAPI('readyForShutdown', { managementserverid: this.$store.getters.msId }).then(json => {
         this.$store.dispatch('SetShutdownTriggered', json.readyforshutdownresponse.readyforshutdown.shutdowntriggered || false)
         this.$store.dispatch('SetMaintenanceInitiated', json.readyforshutdownresponse.readyforshutdown.maintenanceinitiated || false)
       })

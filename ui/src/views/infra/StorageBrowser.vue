@@ -163,7 +163,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import InfoCard from '@/components/view/InfoCard'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import MigrateImageStoreResource from '@/views/storage/MigrateImageStoreResource'
@@ -243,7 +243,7 @@ export default {
     },
     fetchImageStoreObjects () {
       this.loading = true
-      api('listImageStoreObjects', {
+      getAPI('listImageStoreObjects', {
         path: this.browserPath,
         id: this.resource.id,
         page: this.page,
@@ -257,7 +257,7 @@ export default {
     },
     fetchPrimaryStoreObjects () {
       this.loading = true
-      api('listStoragePoolObjects', {
+      getAPI('listStoragePoolObjects', {
         path: this.browserPath,
         id: this.resource.id,
         page: this.page,
@@ -324,7 +324,7 @@ export default {
         id: this.resource.id,
         path: `${this.browserPath}${record.name}`
       }
-      api('downloadImageStoreObject', params).then(response => {
+      postAPI('downloadImageStoreObject', params).then(response => {
         const jobId = response.downloadimagestoreobjectresponse.jobid
         this.$pollJob({
           jobId: jobId,

@@ -309,7 +309,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import draggable from 'vuedraggable'
 import { mixinForm } from '@/utils/mixin'
 import TooltipButton from '@/components/widgets/TooltipButton'
@@ -413,12 +413,12 @@ export default {
       return result
     },
     fetchNetworkProtocols () {
-      api('listNetworkProtocols', {
+      getAPI('listNetworkProtocols', {
         option: 'protocolnumber'
       }).then(json => {
         this.protocolNumbers = json.listnetworkprotocolsresponse?.networkprotocol || []
       })
-      api('listNetworkProtocols', {
+      getAPI('listNetworkProtocols', {
         option: 'icmptype'
       }).then(json => {
         this.icmpTypes.push({ index: -1, description: this.$t('label.all') })
@@ -447,7 +447,7 @@ export default {
         aclid: this.resource.id,
         keyword: this.searchQuery
       }
-      api('listNetworkACLs', params).then(json => {
+      getAPI('listNetworkACLs', params).then(json => {
         this.acls = json.listnetworkaclsresponse.networkacl || []
         if (this.acls.length > 0) {
           this.acls.sort((a, b) => a.number - b.number)
@@ -459,7 +459,7 @@ export default {
       })
     },
     fetchTags (acl) {
-      api('listTags', {
+      getAPI('listTags', {
         resourceId: acl.id,
         resourceType: 'NetworkACL',
         listAll: true
@@ -481,7 +481,7 @@ export default {
     },
     handleDeleteTag (tag) {
       this.tagsLoading = true
-      api('deleteTags', {
+      postAPI('deleteTags', {
         'tags[0].key': tag.key,
         'tags[0].value': tag.value,
         resourceIds: this.selectedAcl.id,
@@ -520,7 +520,7 @@ export default {
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
 
-        api('createTags', {
+        postAPI('createTags', {
           'tags[0].key': values.key,
           'tags[0].value': values.value,
           resourceIds: this.selectedAcl.id,
@@ -620,7 +620,7 @@ export default {
         data.id = this.selectedAcl.id
         data.partialupgrade = false
 
-        api('updateNetworkACLItem', {}, 'POST', data).then(response => {
+        postAPI('updateNetworkACLItem', data).then(response => {
           this.$pollJob({
             jobId: response.createnetworkaclresponse.jobid,
             title: this.$t('label.edit.acl.rule'),
@@ -652,7 +652,7 @@ export default {
     },
     handleDeleteRule (id) {
       this.fetchLoading = true
-      api('deleteNetworkACL', { id }).then(response => {
+      postAPI('deleteNetworkACL', { id }).then(response => {
         this.$pollJob({
           jobId: response.deletenetworkaclresponse.jobid,
           title: this.$t('message.delete.acl.rule'),
@@ -709,7 +709,7 @@ export default {
         const data = this.getDataFromForm(values)
         data.aclid = this.resource.id
 
-        api('createNetworkACL', {}, 'POST', data).then(() => {
+        postAPI('createNetworkACL', data).then(() => {
           this.$notification.success({
             message: this.$t('label.success'),
             description: this.$t('message.success.add.rule')
@@ -740,7 +740,7 @@ export default {
     },
     moveRule (id, previousaclruleid, nextaclruleid) {
       this.fetchLoading = true
-      api('moveNetworkAclItem', {
+      postAPI('moveNetworkAclItem', {
         id,
         previousaclruleid,
         nextaclruleid

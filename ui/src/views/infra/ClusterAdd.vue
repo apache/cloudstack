@@ -193,7 +193,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import DedicateDomain from '../../components/view/DedicateDomain'
@@ -264,7 +264,7 @@ export default {
     },
     fetchZones () {
       this.loading = true
-      api('listZones', { showicon: true }).then(response => {
+      getAPI('listZones', { showicon: true }).then(response => {
         this.zonesList = response.listzonesresponse.zone || []
         this.fetchPods()
       }).catch(error => {
@@ -276,7 +276,7 @@ export default {
     },
     fetchHypervisors () {
       this.loading = true
-      api('listHypervisors').then(response => {
+      getAPI('listHypervisors').then(response => {
         this.hypervisorsList = response.listhypervisorsresponse.hypervisor || []
       }).catch(error => {
         this.$notifyError(error)
@@ -287,7 +287,7 @@ export default {
     },
     fetchPods () {
       this.loading = true
-      api('listPods', {
+      getAPI('listPods', {
         zoneid: this.zoneId
       }).then(response => {
         this.podsList = response.listpodsresponse.pod || []
@@ -313,9 +313,8 @@ export default {
     fetchVMwareCred () {
       this.loading = true
       this.clustertype = 'ExternalManaged'
-
-      api('listVmwareDcs', {
-        zoneid: this.form.zoneid
+      getAPI('listVmwareDcs', {
+        zoneid: this.form.zoneId
       }).then(response => {
         var vmwaredcs = response.listvmwaredcsresponse.VMwareDC
         if (vmwaredcs !== null) {
@@ -385,7 +384,7 @@ export default {
       if (values.hypervisor === 'External' && values.extensionid) {
         data.extensionid = values.extensionid
       }
-      api('addCluster', {}, 'POST', data).then(response => {
+      postAPI('addCluster', data).then(response => {
         const cluster = response.addclusterresponse.cluster[0] || {}
         if (cluster.id && this.showDedicated) {
           this.dedicateCluster(cluster.id)
@@ -405,7 +404,7 @@ export default {
     },
     dedicateCluster (clusterId) {
       this.loading = true
-      api('dedicateCluster', {
+      postAPI('dedicateCluster', {
         clusterId,
         domainId: this.dedicatedDomainId,
         account: this.dedicatedAccount
