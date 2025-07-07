@@ -270,8 +270,9 @@ public class BaseMO {
             ClusterMO clusterMO = new ClusterMO(_context, hostMO.getHyperHostCluster());
             return clusterMO.getName();
         } catch (Exception e) {
-            String msg = String.format("Standalone host %s found, setting empty cluster field", hostName);
-            s_logger.debug(msg);
+            String msg = String.format("Cannot find a cluster for host %s, assuming standalone host, " +
+                    "setting its cluster name as empty", hostName);
+            s_logger.info(msg);
             return null;
         }
     }
