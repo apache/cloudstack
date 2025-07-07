@@ -3141,6 +3141,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         if (newHost) {
             host = _hostDao.persist(host);
+            // Check for GPU devices again because we couldn't persist the GPU devices earlier due to missing host ID
+            if (startup instanceof StartupRoutingCommand &&
+                CollectionUtils.isNotEmpty(((StartupRoutingCommand) startup).getGpuDevices())) {
+                // Add GPU devices to the host
+                StartupRoutingCommand ssCmd = ((StartupRoutingCommand) startup);
+                gpuService.addGpuDevicesToHost(host, ssCmd.getGpuDevices());
+            }
         } else {
             _hostDao.update(host.getId(), host);
         }
