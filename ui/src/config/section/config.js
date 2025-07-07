@@ -385,15 +385,14 @@ export default {
           args: ['name', 'devicename', 'vendorname']
         },
         {
-          api: 'removeGpuCard',
+          api: 'deleteGpuCard',
           icon: 'delete-outlined',
           label: 'label.action.delete.gpu.card',
           message: 'message.action.delete.gpu.card',
-          listView: true,
           dataView: true,
           popup: true,
           groupAction: true,
-          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+          groupMap: (selection) => { return selection.map(x => { return { id: x.id } }) }
         }
       ]
     },
@@ -424,13 +423,14 @@ export default {
           args: ['name', 'description', 'videoram', 'maxheads', 'maxresolutionx', 'maxresolutiony', 'maxvgpuperphysicalgpu']
         },
         {
-          api: 'removeVgpuProfile',
+          api: 'deleteVgpuProfile',
           icon: 'delete-outlined',
           label: 'label.action.delete.vgpu.profile',
           message: 'message.action.delete.vgpu.profile',
           dataView: true,
           popup: true,
-          groupAction: true
+          groupAction: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x.id } }) }
         }
       ]
     }

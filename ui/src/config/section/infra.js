@@ -71,7 +71,18 @@ export default {
       permission: ['listGpuDevices'],
       columns: ['id', 'busaddress', 'gpucardname', 'vgpuprofilename', 'hostname', 'virtualmachinename'],
       details: ['id', 'busaddress', 'gpucardname', 'vgpuprofilename', 'hostname', 'virtualmachinename'],
-      searchFilters: ['gpucardid', 'vgpuprofileid']
+      searchFilters: ['gpucardid', 'vgpuprofileid'],
+      actions: [
+        {
+          api: 'deleteGpuDevice',
+          icon: 'delete-outlined',
+          label: 'label.delete.gpu.device',
+          dataView: true,
+          popup: true,
+          groupAction: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x.id } }) }
+        }
+      ]
     },
     {
       name: 'metric',
