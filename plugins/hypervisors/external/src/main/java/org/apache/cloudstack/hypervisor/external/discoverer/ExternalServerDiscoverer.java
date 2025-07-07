@@ -177,6 +177,10 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
             throw new DiscoveryException(String.format("Cluster: %s is registered with an inexistent extension",
                     cluster.getName()));
         }
+        if (cluster.getGuid() == null) {
+            cluster.setGuid(UUID.randomUUID().toString());
+            _clusterDao.update(clusterId, cluster);
+        }
         Map<String, Object> params = new HashMap<>();
         params.put("username", username);
         params.put("password", password);
