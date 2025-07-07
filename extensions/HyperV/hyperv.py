@@ -66,7 +66,7 @@ class HyperVManager:
             data["cpus"] = json_data["cloudstack.vm.details"]["cpus"]
             data["memory"] = json_data["cloudstack.vm.details"]["minRam"]
             data["vmname"] = json_data["cloudstack.vm.details"]["name"]
-            
+
             nics = json_data["cloudstack.vm.details"].get("nics", [])
             data["nics"] = []
             for nic in nics:
