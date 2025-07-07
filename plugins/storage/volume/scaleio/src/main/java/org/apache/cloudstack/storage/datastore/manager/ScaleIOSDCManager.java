@@ -39,8 +39,8 @@ public interface ScaleIOSDCManager {
     ConfigKey<Integer> MdmsChangeApplyWaitTime = new ConfigKey<>("Storage",
             Integer.class,
             "powerflex.mdm.change.apply.wait",
-            "1000",
-            "Time (in ms) to wait after MDM addition, and before & after MDM removal changes made on the Host, default value: 1000 ms",
+            "3000",
+            "Time (in ms) to wait after MDM addition, and before & after MDM removal changes made on the Host, default value: 3000 ms",
             Boolean.TRUE,
             ConfigKey.Scope.Zone);
 
