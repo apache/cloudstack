@@ -419,6 +419,7 @@ export const resourceTypePlugin = {
         case 'AutoScaleVmGroup':
         case 'QuotaTariff':
         case 'GuestOsCategory':
+        case 'Extension':
           return resourceType.toLowerCase()
       }
       return ''

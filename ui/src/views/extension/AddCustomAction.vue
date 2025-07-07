@@ -34,7 +34,7 @@
             api="listExtensions"
             :apiParams="extensionsApiParams"
             resourceType="extension"
-            defaultIcon="node-expand-outlined" />
+            defaultIcon="appstore-add-outlined" />
       </a-form-item>
       <a-form-item name="name" ref="name">
         <template #label>

@@ -708,7 +708,7 @@
             <div class="resource-detail-item" v-if="resource.extensionid">
               <div class="resource-detail-item__label">{{ $t('label.extensionid') }}</div>
               <div class="resource-detail-item__details">
-                <node-expand-outlined />
+                <appstore-add-outlined />
                 <router-link v-if="$router.resolve('/extension/' + resource.extensionid).matched[0].redirect !== '/exception/404'" :to="{ path: '/extension/' + resource.extensionid }">{{ resource.extensionname || resource.extensionid }}</router-link>
                 <span v-else>{{ resource.extensionname || resource.extensionid }}</span>
               </div>

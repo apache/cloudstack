@@ -19,6 +19,7 @@ import {
   AimOutlined,
   ApartmentOutlined,
   ApiOutlined,
+  AppstoreAddOutlined,
   AppstoreOutlined,
   ArrowDownOutlined,
   ArrowRightOutlined,
@@ -126,7 +127,6 @@ import {
   MobileOutlined,
   MoreOutlined,
   NodeIndexOutlined,
-  NodeExpandOutlined,
   NotificationOutlined,
   NumberOutlined,
   LaptopOutlined,
@@ -193,6 +193,7 @@ export default {
     app.component('AimOutlined', AimOutlined)
     app.component('ApartmentOutlined', ApartmentOutlined)
     app.component('ApiOutlined', ApiOutlined)
+    app.component('AppstoreAddOutlined', AppstoreAddOutlined)
     app.component('AppstoreOutlined', AppstoreOutlined)
     app.component('ArrowDownOutlined', ArrowDownOutlined)
     app.component('ArrowRightOutlined', ArrowRightOutlined)
@@ -300,7 +301,6 @@ export default {
     app.component('MobileOutlined', MobileOutlined)
     app.component('MoreOutlined', MoreOutlined)
     app.component('NodeIndexOutlined', NodeIndexOutlined)
-    app.component('NodeExpandOutlined', NodeExpandOutlined)
     app.component('NotificationOutlined', NotificationOutlined)
     app.component('NumberOutlined', NumberOutlined)
     app.component('LaptopOutlined', LaptopOutlined)

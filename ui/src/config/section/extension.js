@@ -21,7 +21,7 @@ import store from '@/store'
 export default {
   name: 'extension',
   title: 'label.extensions',
-  icon: 'node-expand-outlined',
+  icon: 'appstore-add-outlined',
   docHelp: 'adminguide/extensions.html',
   permission: ['listExtensions'],
   params: (dataView) => {
