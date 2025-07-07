@@ -104,14 +104,14 @@ fetch('config.json?ts=' + Date.now())
     const userid = Cookies.get('userid')
     let accountid = null
     let domainid = null
-  
+
     if (userid !== undefined && Cookies.get('sessionkey')) {
       await api('listUsers', { userid: userid }).then(response => {
         accountid = response.listusersresponse.user[0].accountid
         domainid = response.listusersresponse.user[0].domainid
       })
     }
-  
+
     await applyCustomGuiTheme(accountid, domainid)
 
     loadLanguageAsync().then(() => {
