@@ -128,7 +128,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
@@ -209,11 +209,11 @@ export default {
           return { name: k, value: resource.details[k], edit: false }
         })
       }
-      api('listDetailOptions', { resourcetype: this.resourceType, resourceid: resource.id }).then(json => {
+      getAPI('listDetailOptions', { resourcetype: this.resourceType, resourceid: resource.id }).then(json => {
         this.detailOptions = json.listdetailoptionsresponse.detailoptions.details
       })
       this.disableSettings = (this.$route.meta.name === 'vm' && resource.state !== 'Stopped')
-      api('listTemplates', { templatefilter: 'all', id: resource.templateid }).then(json => {
+      getAPI('listTemplates', { templatefilter: 'all', id: resource.templateid }).then(json => {
         this.deployasistemplate = json.listtemplatesresponse.template[0].deployasis
       })
     },
@@ -291,7 +291,7 @@ export default {
       var params = { id: this.resource.id }
       params = Object.assign(params, this.getDetailsParam(this.details))
       this.loading = true
-      api(apiName, params).then(json => {
+      postAPI(apiName, params).then(json => {
         var details = {}
         if (this.resourceType === 'UserVm' && json.updatevirtualmachineresponse.virtualmachine.details) {
           details = json.updatevirtualmachineresponse.virtualmachine.details

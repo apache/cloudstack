@@ -49,9 +49,12 @@ public final class CitrixResizeVolumeCommandWrapper extends CommandWrapper<Resiz
 
         try {
 
-            if (command.getCurrentSize() >= newSize) {
-                logger.info("No need to resize volume: " + volId +", current size " + toHumanReadableSize(command.getCurrentSize()) + " is same as  new size " + toHumanReadableSize(newSize));
+            if (command.getCurrentSize() == newSize) {
+                logger.info("No need to resize volume [{}], current size [{}] is same as new size [{}].", volId, toHumanReadableSize(command.getCurrentSize()), toHumanReadableSize(newSize));
                 return new ResizeVolumeAnswer(command, true, "success", newSize);
+            } else if (command.getCurrentSize() > newSize) {
+                logger.error("XenServer does not support volume shrink. Volume [{}] current size [{}] is smaller than new size [{}]", volId, toHumanReadableSize(command.getCurrentSize()), toHumanReadableSize(newSize));
+                return new ResizeVolumeAnswer(command, false, "operation not supported");
             }
             if (command.isManaged()) {
                 resizeSr(conn, command);

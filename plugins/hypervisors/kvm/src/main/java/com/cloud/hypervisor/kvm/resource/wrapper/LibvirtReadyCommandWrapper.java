@@ -47,6 +47,14 @@ public final class LibvirtReadyCommandWrapper extends CommandWrapper<ReadyComman
             hostDetails.put(Host.HOST_UEFI_ENABLE, Boolean.TRUE.toString());
         }
 
+        if (libvirtComputingResource.hostSupportsInstanceConversion()) {
+            hostDetails.put(Host.HOST_VIRTV2V_VERSION, libvirtComputingResource.getHostVirtV2vVersion());
+        }
+
+        if (libvirtComputingResource.hostSupportsOvfExport()) {
+            hostDetails.put(Host.HOST_OVFTOOL_VERSION, libvirtComputingResource.getHostOvfToolVersion());
+        }
+
         return new ReadyAnswer(command, hostDetails);
     }
 

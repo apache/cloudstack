@@ -97,7 +97,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
@@ -147,7 +147,7 @@ export default {
     fetchData () {
       this.typeLoading = true
 
-      api('listTrafficTypes', { physicalnetworkid: this.resource.id })
+      getAPI('listTrafficTypes', { physicalnetworkid: this.resource.id })
         .then(json => {
           this.trafficTypes = json.listtraffictypesresponse.traffictype || []
           this.form.id = this.trafficTypes[0].id || undefined
@@ -181,7 +181,7 @@ export default {
         }
         const title = this.$t('label.update.traffic.label')
         const description = this.traffictype
-        api('updateTrafficType', params).then(response => {
+        postAPI('updateTrafficType', params).then(response => {
           this.$pollJob({
             jobId: response.updatetraffictyperesponse.jobid,
             title,

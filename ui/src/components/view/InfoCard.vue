@@ -900,7 +900,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { createPathBasedOnVmType } from '@/utils/plugins'
 import { validateLinks } from '@/utils/links'
 import Console from '@/components/widgets/Console'
@@ -1071,7 +1071,7 @@ export default {
     fetchOsCategoryAndIcon () {
       const osId = this.resource.guestosid || this.resource.ostypeid
       if (osId && 'listOsTypes' in this.$store.getters.apis) {
-        api('listOsTypes', { id: osId }).then(json => {
+        getAPI('listOsTypes', { id: osId }).then(json => {
           this.osCategoryId = json?.listostypesresponse?.ostype?.[0]?.oscategoryid || null
           if (this.osCategoryId) {
             this.fetchResourceIcon(this.osCategoryId, 'guestoscategory')
@@ -1120,7 +1120,7 @@ export default {
     },
     fetchAccount () {
       return new Promise((resolve, reject) => {
-        api('listAccounts', {
+        getAPI('listAccounts', {
           name: this.resource.account,
           domainid: this.resource.domainid,
           showicon: true
@@ -1135,7 +1135,7 @@ export default {
     fetchResourceIcon (resourceid, type) {
       if (resourceid) {
         return new Promise((resolve, reject) => {
-          api('listResourceIcon', {
+          getAPI('listResourceIcon', {
             resourceids: resourceid,
             resourcetype: type
           }).then(json => {
@@ -1173,7 +1173,7 @@ export default {
       if (!('getUserKeys' in this.$store.getters.apis)) {
         return
       }
-      api('getUserKeys', { id: this.resource.id }).then(json => {
+      getAPI('getUserKeys', { id: this.resource.id }).then(json => {
         this.showKeys = true
         this.newResource.secretkey = json.getuserkeysresponse.userkeys.secretkey
         if (!this.isAdmin()) {
@@ -1196,7 +1196,7 @@ export default {
       if (this.$route.meta.name === 'project') {
         params.projectid = this.resource.id
       }
-      api('listTags', params).then(json => {
+      getAPI('listTags', params).then(json => {
         if (json.listtagsresponse && json.listtagsresponse.tag) {
           this.tags = json.listtagsresponse.tag
         }
@@ -1231,7 +1231,7 @@ export default {
       args.resourcetype = this.resourceType
       args['tags[0].key'] = this.inputKey
       args['tags[0].value'] = this.inputValue
-      api('createTags', args).then(json => {
+      postAPI('createTags', args).then(json => {
       }).finally(e => {
         this.getTags()
       })
@@ -1247,7 +1247,7 @@ export default {
       args.resourcetype = this.resourceType
       args['tags[0].key'] = tag.key
       args['tags[0].value'] = tag.value
-      api('deleteTags', args).then(json => {
+      postAPI('deleteTags', args).then(json => {
       }).finally(e => {
         this.getTags()
       })

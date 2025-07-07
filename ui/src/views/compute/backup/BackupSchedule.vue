@@ -78,7 +78,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import { timeZoneName } from '@/utils/timezone'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
@@ -169,7 +169,7 @@ export default {
       const params = {}
       params.virtualmachineid = record.virtualmachineid
       this.actionLoading = true
-      api('deleteBackupSchedule', params).then(json => {
+      postAPI('deleteBackupSchedule', params).then(json => {
         if (json.deletebackupscheduleresponse.success) {
           this.$notification.success({
             message: this.$t('label.scheduled.backups'),

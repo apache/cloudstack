@@ -457,7 +457,7 @@
 <script>
 import { ref, reactive, toRaw, h } from 'vue'
 import { Button } from 'ant-design-vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import { genericCompare } from '@/utils/sort.js'
 import { sourceToken } from '@/utils/request'
@@ -731,7 +731,7 @@ export default {
       if (!projectId || !projectId.length || projectId.length !== 36) {
         return
       }
-      api('listProjects', { id: projectId, listall: true, details: 'min' }).then(json => {
+      getAPI('listProjects', { id: projectId, listall: true, details: 'min' }).then(json => {
         if (!json || !json.listprojectsresponse || !json.listprojectsresponse.project) return
         const projects = json.listprojectsresponse.project
         const project = json.listprojectsresponse.project[0]
@@ -988,7 +988,7 @@ export default {
         delete params.listall
       }
 
-      api(this.apiName, params).then(json => {
+      postAPI(this.apiName, params).then(json => {
         var responseName
         var objectName
         for (const key in json) {
@@ -1019,7 +1019,7 @@ export default {
         this.itemCount = apiItemCount
 
         if (this.dataView && this.$route.path.includes('/zone/') && 'listVmwareDcs' in this.$store.getters.apis) {
-          api('listVmwareDcs', { zoneid: this.items[0].id }).then(response => {
+          getAPI('listVmwareDcs', { zoneid: this.items[0].id }).then(response => {
             this.items[0].vmwaredc = response.listvmwaredcsresponse.VMwareDC
           })
         }
@@ -1193,7 +1193,7 @@ export default {
       this.getFirstIndexFocus()
 
       this.showAction = true
-      const listIconForFillValues = ['copy-outlined', 'CopyOutlined', 'edit-outlined', 'EditOutlined', 'share-alt-outlined', 'ShareAltOutlined']
+      const listIconForFillValues = ['copy-outlined', 'CopyOutlined', 'edit-outlined', 'EditOutlined', 'share-alt-outlined', 'ShareAltOutlined', 'minus-square-outlined']
       for (const param of this.currentAction.paramFields) {
         if (param.type === 'list' && ['tags', 'hosttags', 'storagetags', 'storageaccessgroups', 'files'].includes(param.name)) {
           param.type = 'string'
@@ -1318,7 +1318,7 @@ export default {
       if (showIcon) {
         params.showicon = true
       }
-      api(possibleApi, params).then(json => {
+      postAPI(possibleApi, params).then(json => {
         param.loading = false
         for (const obj in json) {
           if (obj.includes('response')) {
@@ -1422,6 +1422,8 @@ export default {
         fieldValue = this.resource[fieldName] ? this.resource[fieldName] : null
         if (fieldValue) {
           this.form[field.name] = fieldValue
+        } else if (field.type === 'boolean' && field.name === 'rebalance' && this.currentAction.api === 'cancelMaintenance') {
+          this.form[field.name] = true
         }
       })
     },
@@ -1486,7 +1488,7 @@ export default {
     callGroupApi (params, resourceName) {
       return new Promise((resolve, reject) => {
         const action = this.currentAction
-        api(action.api, params).then(json => {
+        postAPI(action.api, params).then(json => {
           resolve(this.handleResponse(json, resourceName, this.getDataIdentifier(params), action, false))
           this.closeAction()
         }).catch(error => {
@@ -1578,6 +1580,10 @@ export default {
           }
         }
 
+        if (['cancelMaintenance'].includes(action.api) && (params.rebalance === undefined || params.rebalance === null || params.rebalance === '')) {
+          params.rebalance = true
+        }
+
         for (const key in values) {
           const input = values[key]
           for (const param of action.params) {
@@ -1647,13 +1653,8 @@ export default {
 
         var hasJobId = false
         this.actionLoading = true
-        let args = null
-        if (action.post) {
-          args = [action.api, {}, 'POST', params]
-        } else {
-          args = [action.api, params]
-        }
-        api(...args).then(json => {
+        const args = [action.api, params]
+        postAPI(...args).then(json => {
           var response = this.handleResponse(json, resourceName, this.getDataIdentifier(params), action)
           if (!response) {
             this.fetchData()

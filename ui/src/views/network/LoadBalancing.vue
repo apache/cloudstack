@@ -716,7 +716,7 @@
 
 <script>
 import { ref, reactive, toRaw, nextTick } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
@@ -983,7 +983,7 @@ export default {
     fetchListTiers () {
       this.tiers.loading = true
 
-      api('listNetworks', {
+      getAPI('listNetworks', {
         supportedservices: 'Lb',
         isrecursive: true,
         vpcid: this.resource.vpcid
@@ -1005,7 +1005,7 @@ export default {
       this.lbRules = []
       this.stickinessPolicies = []
 
-      api('listLoadBalancerRules', {
+      getAPI('listLoadBalancerRules', {
         listAll: true,
         publicipid: this.resource.id,
         page: this.page,
@@ -1032,7 +1032,7 @@ export default {
     fetchLBRuleInstances () {
       for (const rule of this.lbRules) {
         this.loading = true
-        api('listLoadBalancerRuleInstances', {
+        getAPI('listLoadBalancerRuleInstances', {
           listAll: true,
           lbvmips: true,
           id: rule.id
@@ -1048,7 +1048,7 @@ export default {
     fetchLBStickinessPolicies () {
       this.loading = true
       this.lbRules.forEach(rule => {
-        api('listLBStickinessPolicies', {
+        getAPI('listLBStickinessPolicies', {
           listAll: true,
           lbruleid: rule.id
         }).then(response => {
@@ -1063,7 +1063,7 @@ export default {
     fetchAutoScaleVMgroups () {
       this.loading = true
       this.lbRules.forEach(rule => {
-        api('listAutoScaleVmGroups', {
+        getAPI('listAutoScaleVmGroups', {
           listAll: true,
           lbruleid: rule.id
         }).then(response => {
@@ -1109,7 +1109,7 @@ export default {
       this.tagsModalVisible = true
       this.tags = []
       this.selectedRule = id
-      api('listTags', {
+      getAPI('listTags', {
         resourceId: id,
         resourceType: 'LoadBalancer',
         listAll: true
@@ -1130,7 +1130,7 @@ export default {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
 
-        api('createTags', {
+        postAPI('createTags', {
           'tags[0].key': values.key,
           'tags[0].value': values.value,
           resourceIds: this.selectedRule,
@@ -1167,7 +1167,7 @@ export default {
     },
     handleDeleteTag (tag) {
       this.tagsModalLoading = true
-      api('deleteTags', {
+      postAPI('deleteTags', {
         'tags[0].key': tag.key,
         'tags[0].value': tag.value,
         resourceIds: tag.resourceid,
@@ -1226,7 +1226,7 @@ export default {
       }
     },
     handleAddStickinessPolicy (data, values) {
-      api('createLBStickinessPolicy', {
+      postAPI('createLBStickinessPolicy', {
         ...data,
         lbruleid: this.selectedRule,
         name: values.name,
@@ -1263,7 +1263,7 @@ export default {
     },
     handleDeleteStickinessPolicy () {
       this.stickinessModalLoading = true
-      api('deleteLBStickinessPolicy', { id: this.selectedStickinessPolicy.id }).then(response => {
+      postAPI('deleteLBStickinessPolicy', { id: this.selectedStickinessPolicy.id }).then(response => {
         this.$pollJob({
           jobId: response.deleteLBstickinessrruleresponse.jobid,
           successMessage: this.$t('message.success.remove.sticky.policy'),
@@ -1347,7 +1347,7 @@ export default {
     },
     handleDeleteInstanceFromRule (instance, rule, ip) {
       this.loading = true
-      api('removeFromLoadBalancerRule', {
+      postAPI('removeFromLoadBalancerRule', {
         id: rule.id,
         'vmidipmap[0].vmid': instance.loadbalancerruleinstance.id,
         'vmidipmap[0].vmip': ip
@@ -1384,7 +1384,7 @@ export default {
       if (this.editRuleModalLoading) return
       this.loading = true
       this.editRuleModalLoading = true
-      api('updateLoadBalancerRule', {
+      postAPI('updateLoadBalancerRule', {
         ...this.editRuleDetails,
         id: this.selectedRule.id
       }).then(response => {
@@ -1465,7 +1465,7 @@ export default {
     },
     handleDeleteRule (rule) {
       this.loading = true
-      api('deleteLoadBalancerRule', {
+      postAPI('deleteLoadBalancerRule', {
         id: rule.id
       }).then(response => {
         const jobId = response.deleteloadbalancerruleresponse.jobid
@@ -1551,7 +1551,7 @@ export default {
       this.newRule.virtualmachineid[index] = e.target.value
       this.addVmModalNicLoading = true
 
-      api('listNics', {
+      getAPI('listNics', {
         virtualmachineid: e.target.value,
         networkid: ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.selectedTier : this.resource.associatednetworkid
       }).then(response => {
@@ -1578,7 +1578,7 @@ export default {
         this.addVmModalLoading = false
         return
       }
-      api('listVirtualMachines', {
+      getAPI('listVirtualMachines', {
         listAll: true,
         keyword: this.searchQuery,
         page: this.vmPage,
@@ -1615,7 +1615,7 @@ export default {
         this.addNetworkModalLoading = false
         return
       }
-      api('listNetworks', {
+      getAPI('listNetworks', {
         listAll: true,
         keyword: this.searchQuery,
         page: this.networkPage,
@@ -1677,7 +1677,7 @@ export default {
       }
 
       this.loading = true
-      api('assignToLoadBalancerRule', {
+      postAPI('assignToLoadBalancerRule', {
         id: data,
         ...vmIDIpMap
       }).then(response => {
@@ -1720,7 +1720,7 @@ export default {
 
       const networkId = this.selectedTierForAutoScaling != null ? this.selectedTierForAutoScaling
         : ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.selectedTier : this.resource.associatednetworkid
-      api('createLoadBalancerRule', {
+      postAPI('createLoadBalancerRule', {
         openfirewall: false,
         networkid: networkId,
         publicipid: this.resource.id,
@@ -1793,7 +1793,7 @@ export default {
       this.tungstenHealthMonitors = []
       this.loading = true
       this.lbRules.forEach(rule => {
-        api('listTungstenFabricLBHealthMonitor', {
+        getAPI('listTungstenFabricLBHealthMonitor', {
           listAll: true,
           lbruleid: rule.id
         }).then(response => {
@@ -1860,7 +1860,7 @@ export default {
         }
 
         this.healthMonitorLoading = true
-        api('updateTungstenFabricLBHealthMonitor', this.healthMonitorParams).then(json => {
+        postAPI('updateTungstenFabricLBHealthMonitor', this.healthMonitorParams).then(json => {
           const jobId = json?.updatetungstenfabriclbhealthmonitorresponse?.jobid
           this.$pollJob({
             jobId: jobId,

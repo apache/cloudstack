@@ -174,7 +174,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
 
@@ -252,7 +252,7 @@ export default {
     },
     fetchData () {
       this.formLoading = true
-      api('listDedicatedGuestVlanRanges', {
+      getAPI('listDedicatedGuestVlanRanges', {
         physicalnetworkid: this.resource.id,
         page: this.page,
         pageSize: this.pageSize
@@ -271,7 +271,7 @@ export default {
       })
     },
     fetchDomains () {
-      api('listDomains', {
+      getAPI('listDomains', {
         details: 'min',
         showicon: true,
         listAll: true
@@ -291,7 +291,7 @@ export default {
     },
     fetchAccounts (e) {
       this.formLoading = true
-      api('listAccounts', {
+      getAPI('listAccounts', {
         domainid: e,
         details: 'min',
         showicon: true,
@@ -312,7 +312,7 @@ export default {
     },
     fetchProjects (e) {
       this.formLoading = true
-      api('listProjects', {
+      getAPI('listProjects', {
         domainid: e,
         showicon: true,
         details: 'min'
@@ -332,7 +332,7 @@ export default {
     },
     handleDelete (item) {
       this.parentStartLoading()
-      api('releaseDedicatedGuestVlanRange', {
+      postAPI('releaseDedicatedGuestVlanRange', {
         id: item.id
       }).then(response => {
         this.$pollJob({
@@ -370,7 +370,7 @@ export default {
         this.parentStartLoading()
         const fieldValues = toRaw(this.form)
 
-        api('dedicateGuestVlanRange', {
+        postAPI('dedicateGuestVlanRange', {
           physicalnetworkid: this.resource.id,
           vlanrange: fieldValues.range,
           domainid: fieldValues.domain,
