@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.template;
 
-import com.cloud.cpu.CPU;
-import com.cloud.hypervisor.Hypervisor;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -25,10 +23,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.hypervisor.HypervisorGuru;
-import com.cloud.vm.VmDetailConstants;
-
-import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -48,8 +42,12 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.StringUtils;
 
+import com.cloud.cpu.CPU;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.vm.VmDetailConstants;
 
 @APICommand(name = "registerTemplate", description = "Registers an existing template into the CloudStack cloud. ", responseObject = TemplateResponse.class, responseView = ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)

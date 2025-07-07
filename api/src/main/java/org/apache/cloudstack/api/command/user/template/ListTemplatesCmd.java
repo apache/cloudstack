@@ -21,7 +21,6 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 
-import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
