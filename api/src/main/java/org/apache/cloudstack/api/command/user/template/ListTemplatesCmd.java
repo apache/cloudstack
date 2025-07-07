@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -116,13 +117,13 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
             since = "4.20")
     private String arch;
 
-    @Parameter(name = ApiConstants.OS_CATEGORY_ID, type = CommandType.UUID, entityType= GuestOSCategoryResponse.class,
+    @Parameter(name = ApiConstants.OS_CATEGORY_ID, type = CommandType.UUID, entityType = GuestOSCategoryResponse.class,
             description = "the ID of the OS category for the template",
             since = "4.21.0")
     private Long osCategoryId;
 
-    @Parameter(name = ApiConstants.EXTENSION_ID, type = CommandType.UUID, entityType= ExtensionResponse.class,
-            description = "the ID of the extension for the template",
+    @Parameter(name = ApiConstants.EXTENSION_ID, type = CommandType.UUID, entityType = ExtensionResponse.class,
+            description = "ID of the extension for the template",
             since = "4.21.0")
     private Long extensionId;
 
