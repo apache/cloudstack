@@ -321,8 +321,8 @@ public class ScaleIOUtil {
         String command = SDC_HOME_PATH + "/bin/" + USAGE_CMD;
 
         Pair<String, String> result = Script.executeCommand(command);
-        String stdErr = result.first();
-        String stdOut = result.second();
+        String stdOut = result.first();
+        String stdErr = result.second();
 
         /*
          * Check whether stderr or stdout contains mdm removal "--remove_mdm" parameter.
