@@ -34,6 +34,7 @@ parse_json() {
         "host_secret":      (.externaldetails.host.secret // ""),
         "node":             (.externaldetails.host.node // ""),
         "network_bridge":   (.externaldetails.host.network_bridge // ""),
+        "validate_ssl":     (.externaldetails.host.validate_ssl // "true"),
         "vm_name":          (.externaldetails.virtualmachine.vm_name // ""),
         "template_id":      (.externaldetails.virtualmachine.template_id // ""),
         "template_type":    (.externaldetails.virtualmachine.template_type // ""),
@@ -96,11 +97,23 @@ call_proxmox_api() {
     local path=$2
     local data=$3
 
-    #echo "curl -sk --fail -X $method -H \"Authorization: PVEAPIToken=${user}!${token}=${secret}\" ${data:+-d \"$data\"} https://${url}:8006/api2/json${path}" >&2
-    response=$(curl -sk --fail -X "$method" \
-        -H "Authorization: PVEAPIToken=${user}!${token}=${secret}" \
-        ${data:+-d "$data"} \
-        "https://${url}:8006/api2/json${path}")
+    curl_opts=(
+      -s
+      --fail
+      -X "$method"
+      -H "Authorization: PVEAPIToken=${user}!${token}=${secret}"
+    )
+
+    if [[ "$validate_ssl" == "false" ]]; then
+      curl_opts+=(-k)
+    fi
+
+    if [[ -n "$data" ]]; then
+      curl_opts+=(-d "$data")
+    fi
+
+    #echo curl "${curl_opts[@]}" "https://${url}:8006/api2/json${path}" >&2
+    response=$(curl "${curl_opts[@]}" "https://${url}:8006/api2/json${path}")
     echo "$response"
 }
 
@@ -166,8 +179,6 @@ execute_and_wait() {
 }
 
 prepare() {
-    parse_json "$1" || exit 1
-
     response=$(call_proxmox_api GET "/cluster/nextid")
     vmid=$(echo "$response" | jq -r '.data // ""')
 
@@ -175,16 +186,14 @@ prepare() {
 }
 
 create() {
-    parse_json "$1" || exit 1
-
     if [[ -z "$vm_name" ]]; then
         vm_name="$vm_internal_name"
     fi
     validate_name "VM" "$vm_name"
-    check_required_fields vmid network_bridge
+    check_required_fields vmid network_bridge vmcpus vmmemory
 
     if [[ "${template_type^^}" == "ISO" ]]; then
-        check_required_fields iso_path vmcpus vmmemory
+        check_required_fields iso_path
         local data="vmid=$vmid"
         data+="&name=$vm_name"
         data+="&ide2=$(urlencode "$iso_path,media=cdrom")"
@@ -196,12 +205,20 @@ create() {
         data+="&numa=0"
         data+="&cpu=x86-64-v2-AES"
         data+="&memory=$((vmmemory / 1024 / 1024))"
+
         execute_and_wait POST "/nodes/${node}/qemu/" "$data"
+        cleanup_vm=1
+
     else
         check_required_fields template_id
         local data="newid=$vmid"
         data+="&name=$vm_name"
         execute_and_wait POST "/nodes/${node}/qemu/${template_id}/clone" "$data"
+        cleanup_vm=1
+
+        data="cores=$vmcpus"
+        data+="&memory=$((vmmemory / 1024 / 1024))"
+        execute_and_wait POST "/nodes/${node}/qemu/${vmid}/config" "$data"
     fi
 
     IFS=',' read -ra vlan_array <<< "$vlans"
@@ -213,36 +230,31 @@ create() {
 
     execute_and_wait POST "/nodes/${node}/qemu/${vmid}/status/start"
 
+    cleanup_vm=0
     echo '{"status": "success", "message": "Instance created"}'
 }
 
 start() {
-    parse_json "$1" || exit 1
     execute_and_wait POST "/nodes/${node}/qemu/${vmid}/status/start"
     echo '{"status": "success", "message": "Instance started"}'
 }
 
 delete() {
-    parse_json "$1" || exit 1
     execute_and_wait DELETE "/nodes/${node}/qemu/${vmid}"
     echo '{"status": "success", "message": "Instance deleted"}'
 }
 
 stop() {
-    parse_json "$1" || exit 1
     execute_and_wait POST "/nodes/${node}/qemu/${vmid}/status/stop"
     echo '{"status": "success", "message": "Instance stopped"}'
 }
 
 reboot() {
-    parse_json "$1" || exit 1
     execute_and_wait POST "/nodes/${node}/qemu/${vmid}/status/reboot"
     echo '{"status": "success", "message": "Instance rebooted"}'
 }
 
 status() {
-    parse_json "$1" || exit 1
-
     local status_response vm_status powerstate
     status_response=$(call_proxmox_api GET "/nodes/${node}/qemu/${vmid}/status/current")
     vm_status=$(echo "$status_response" | jq -r '.data.status')
@@ -255,13 +267,34 @@ status() {
     echo "{\"status\": \"success\", \"power_state\": \"$powerstate\"}"
 }
 
-create_snapshot() {
-    parse_json "$1" || exit 1
+list_snapshots() {
+    snapshot_response=$(call_proxmox_api GET "/nodes/${node}/qemu/${vmid}/snapshot")
+    echo "$snapshot_response" | jq '
+      def to_date:
+        if . == "-" then "-"
+        elif . == null then "-"
+        else (. | tonumber | strftime("%Y-%m-%d %H:%M:%S"))
+        end;
 
+      {
+        status: "success",
+        print_message: "true",
+        message: [.data[] | {
+          name: .name,
+          snaptime: ((.snaptime // "-") | to_date),
+          description: .description,
+          parent: (.parent // "-"),
+          vmstate: (.vmstate // "-")
+        }]
+      }
+    '
+}
+
+create_snapshot() {
     check_required_fields snap_name
     validate_name "Snapshot" "$snap_name"
 
-    local data, vmstate
+    local data vmstate
     data="snapname=$snap_name"
     if [[ -n "$snap_description" ]]; then
         data+="&description=$snap_description"
@@ -278,8 +311,6 @@ create_snapshot() {
 }
 
 restore_snapshot() {
-    parse_json "$1" || exit 1
-
     check_required_fields snap_name
     validate_name "Snapshot" "$snap_name"
 
@@ -291,8 +322,6 @@ restore_snapshot() {
 }
 
 delete_snapshot() {
-    parse_json "$1" || exit 1
-
     check_required_fields snap_name
     validate_name "Snapshot" "$snap_name"
 
@@ -312,36 +341,50 @@ fi
 # Read file content as parameters (assumes space-separated arguments)
 parameters=$(<"$parameters_file")
 
+parse_json "$parameters" || exit 1
+
+cleanup_vm=0
+cleanup() {
+  if (( cleanup_vm == 1 )); then
+    execute_and_wait DELETE "/nodes/${node}/qemu/${vmid}"
+  fi
+}
+
+trap cleanup EXIT
+
 case $action in
     prepare)
-        prepare "$parameters"
+        prepare
         ;;
     create)
-        create "$parameters"
+        create
         ;;
     delete)
-        delete "$parameters"
+        delete
         ;;
     start)
-        start "$parameters"
+        start
         ;;
     stop)
-        stop "$parameters"
+        stop
         ;;
     reboot)
-        reboot "$parameters"
+        reboot
         ;;
     status)
-        status "$parameters"
+        status
+        ;;
+    ListSnapshots)
+        list_snapshots
         ;;
     CreateSnapshot)
-        create_snapshot "$parameters"
+        create_snapshot
         ;;
     RestoreSnapshot)
-        restore_snapshot "$parameters"
+        restore_snapshot
         ;;
     DeleteSnapshot)
-        delete_snapshot "$parameters"
+        delete_snapshot
         ;;
     *)
         echo '{"error":"Invalid action"}'

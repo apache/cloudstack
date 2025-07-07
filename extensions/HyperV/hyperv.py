@@ -52,7 +52,7 @@ class HyperVManager:
                 "network_switch": external_host_details["network_switch"],
                 "vhd_path": external_host_details["vhd_path"],
                 "vm_path": external_host_details["vm_path"],
-                "cert_validation": "validate" if external_host_details.get("validate_tls_certificate", "false").lower() == "true" else "ignore"
+                "cert_validation": "validate" if external_host_details.get("validate_ssl", "true").lower() == "true" else "ignore"
             }
 
             external_vm_details = json_data["externaldetails"].get("virtualmachine", [])

@@ -271,6 +271,7 @@ export default {
                   h('table', {
                     style: {
                       marginTop: '1em',
+                      width: '100%',
                       maxWidth: '100%',
                       borderCollapse: 'collapse',
                       backgroundColor: '#f6f6f6'
