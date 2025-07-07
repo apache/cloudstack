@@ -243,7 +243,7 @@ public class ManagementServerMock {
         try {
             _vmMgr.addVmToNetwork(vm, network, profile);
         } catch (Exception ex) {
-            logger.warning("Exception occurred while adding VM to network: " + ex.getMessage());
+            logger.warn("Exception occurred while adding VM to network: " + ex.getMessage());
         }
         return vm;
     }
