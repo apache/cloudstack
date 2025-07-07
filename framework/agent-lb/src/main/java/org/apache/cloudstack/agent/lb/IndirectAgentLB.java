@@ -70,9 +70,11 @@ public interface IndirectAgentLB {
      */
     Long getLBPreferredHostCheckInterval(Long clusterId);
 
-    void propagateMSListToAgents();
+    void propagateMSListToAgents(boolean triggerHostLB);
 
-    boolean haveAgentBasedHosts(long msId);
+    void propagateMSListToAgentsInCluster(Long clusterId);
 
-    boolean migrateAgents(String fromMsUuid, long fromMsId, String lbAlgorithm, long timeoutDurationInMs);
+    boolean haveAgentBasedHosts(long msId, boolean excludeHostsInMaintenance);
+
+    boolean migrateAgents(String fromMsUuid, long fromMsId, String lbAlgorithm, long timeoutDurationInMs, boolean excludeHostsInMaintenance);
 }

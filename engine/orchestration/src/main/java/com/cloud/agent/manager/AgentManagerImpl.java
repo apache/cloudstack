@@ -62,6 +62,7 @@ import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.ThreadContext;
 
@@ -272,8 +273,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         final int agentTaskThreads = DirectAgentLoadSize.value();
 
         _executor = new ThreadPoolExecutor(agentTaskThreads, agentTaskThreads, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), new NamedThreadFactory("AgentTaskPool"));
-
-        initConnectExecutor();
 
         maxConcurrentNewAgentConnections = RemoteAgentMaxConcurrentNewConnections.value();
 
@@ -803,11 +802,25 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             Map<String, String> detailsMap = readyAnswer.getDetailsMap();
             if (detailsMap != null) {
                 String uefiEnabled = detailsMap.get(Host.HOST_UEFI_ENABLE);
+                String virtv2vVersion = detailsMap.get(Host.HOST_VIRTV2V_VERSION);
+                String ovftoolVersion = detailsMap.get(Host.HOST_OVFTOOL_VERSION);
                 logger.debug("Got HOST_UEFI_ENABLE [{}] for host [{}]:", uefiEnabled, host);
-                if (uefiEnabled != null) {
+                if (ObjectUtils.anyNotNull(uefiEnabled, virtv2vVersion, ovftoolVersion)) {
                     _hostDao.loadDetails(host);
+                    boolean updateNeeded = false;
                     if (!uefiEnabled.equals(host.getDetails().get(Host.HOST_UEFI_ENABLE))) {
                         host.getDetails().put(Host.HOST_UEFI_ENABLE, uefiEnabled);
+                        updateNeeded = true;
+                    }
+                    if (StringUtils.isNotBlank(virtv2vVersion) && !virtv2vVersion.equals(host.getDetails().get(Host.HOST_VIRTV2V_VERSION))) {
+                        host.getDetails().put(Host.HOST_VIRTV2V_VERSION, virtv2vVersion);
+                        updateNeeded = true;
+                    }
+                    if (StringUtils.isNotBlank(ovftoolVersion) && !ovftoolVersion.equals(host.getDetails().get(Host.HOST_OVFTOOL_VERSION))) {
+                        host.getDetails().put(Host.HOST_OVFTOOL_VERSION, ovftoolVersion);
+                        updateNeeded = true;
+                    }
+                    if (updateNeeded) {
                         _hostDao.saveDetails(host);
                     }
                 }
@@ -828,6 +841,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             return true;
         }
 
+        initConnectExecutor();
         startDirectlyConnectedHosts(false);
 
         if (_connection != null) {
@@ -2193,7 +2207,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     }
 
     @Override
-    public boolean transferDirectAgentsFromMS(String fromMsUuid, long fromMsId, long timeoutDurationInMs) {
+    public boolean transferDirectAgentsFromMS(String fromMsUuid, long fromMsId, long timeoutDurationInMs, boolean excludeHostsInMaintenance) {
         return true;
     }
 
