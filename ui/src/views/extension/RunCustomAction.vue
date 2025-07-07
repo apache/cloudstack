@@ -255,31 +255,58 @@ export default {
               const actionResponse = result.jobresult?.customactionresult || {}
               const success = actionResponse.success || false
               const message = actionResponse?.result?.message || (success ? 'Success' : 'Failed')
-              let details = actionResponse?.result?.details
+              const details = actionResponse?.result?.details
+              let printExtensionMessage = 'false'
+              let extensionMessage = null
               try {
-                details = JSON.stringify(JSON.parse(details), null, 2)
+                const parsedDetails = JSON.parse(details)
+                printExtensionMessage = parsedDetails?.print_message
+                extensionMessage = parsedDetails?.message
               } catch (_) {}
               const modalType = success ? this.$success : this.$error
+              const contentElements = [h('p', `${message}`)]
+
+              if (Array.isArray(extensionMessage) && extensionMessage.length > 0 && printExtensionMessage === 'true') {
+                contentElements.push(
+                  h('table', {
+                    style: {
+                      marginTop: '1em',
+                      maxWidth: '100%',
+                      borderCollapse: 'collapse',
+                      backgroundColor: '#f6f6f6'
+                    }
+                  }, [
+                    h('thead', [
+                      h('tr', Object.keys(extensionMessage[0]).map(key =>
+                        h('th', {
+                          style: {
+                            padding: '8px',
+                            border: '1px solid #ddd',
+                            textAlign: 'left',
+                            fontWeight: 'bold',
+                            backgroundColor: '#fafafa'
+                          }
+                        }, key)
+                      ))
+                    ]),
+                    h('tbody', extensionMessage.map(row =>
+                      h('tr', Object.values(row).map(value =>
+                        h('td', {
+                          style: {
+                            padding: '8px',
+                            border: '1px solid #ddd',
+                            fontFamily: 'monospace'
+                          }
+                        }, String(value))
+                      ))
+                    ))
+                  ])
+                )
+              }
+
               modalType({
                 title: this.currentAction.name || this.$t('label.run.custom.action'),
-                content: h('div', [
-                  h('p', `${message}`),
-                  details
-                    ? h('div', {
-                      style: {
-                        marginTop: '1em',
-                        maxHeight: '50vh',
-                        overflowY: 'auto',
-                        backgroundColor: '#f6f6f6',
-                        padding: '12px',
-                        borderRadius: '4px',
-                        fontFamily: 'monospace',
-                        whiteSpace: 'pre-wrap',
-                        wordBreak: 'break-word'
-                      }
-                    }, details)
-                    : null
-                ]),
+                content: h('div', contentElements),
                 width: '700px',
                 okText: this.$t('label.ok')
               })
