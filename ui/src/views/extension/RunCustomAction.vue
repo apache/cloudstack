@@ -266,42 +266,74 @@ export default {
               const modalType = success ? this.$success : this.$error
               const contentElements = [h('p', `${message}`)]
 
+              if (!Array.isArray(extensionMessage) && typeof extensionMessage === 'object' && Object.keys(extensionMessage).length > 0) {
+                extensionMessage = [extensionMessage]
+              }
               if (Array.isArray(extensionMessage) && extensionMessage.length > 0 && printExtensionMessage === 'true') {
                 contentElements.push(
-                  h('table', {
+                  h('div', {
                     style: {
                       marginTop: '1em',
-                      width: '100%',
+                      maxHeight: '50vh',
                       maxWidth: '100%',
-                      borderCollapse: 'collapse',
-                      backgroundColor: '#f6f6f6'
+                      overflow: 'auto',
+                      backgroundColor: '#f6f6f6',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px',
+                      display: 'block'
                     }
                   }, [
-                    h('thead', [
-                      h('tr', Object.keys(extensionMessage[0]).map(key =>
-                        h('th', {
-                          style: {
-                            padding: '8px',
-                            border: '1px solid #ddd',
-                            textAlign: 'left',
-                            fontWeight: 'bold',
-                            backgroundColor: '#fafafa'
-                          }
-                        }, key)
+                    h('table', {
+                      style: {
+                        width: '100%',
+                        minWidth: 'max-content',
+                        borderCollapse: 'collapse',
+                        whiteSpace: 'pre-wrap'
+                      }
+                    }, [
+                      h('thead', [
+                        h('tr', Object.keys(extensionMessage[0]).map(key =>
+                          h('th', {
+                            style: {
+                              padding: '8px',
+                              border: '1px solid #ddd',
+                              textAlign: 'left',
+                              fontWeight: 'bold',
+                              backgroundColor: '#fafafa'
+                            }
+                          }, key)
+                        ))
+                      ]),
+                      h('tbody', extensionMessage.map(row =>
+                        h('tr', Object.values(row).map(value =>
+                          h('td', {
+                            style: {
+                              padding: '8px',
+                              border: '1px solid #ddd',
+                              fontFamily: 'monospace'
+                            }
+                          }, String(value))
+                        ))
                       ))
-                    ]),
-                    h('tbody', extensionMessage.map(row =>
-                      h('tr', Object.values(row).map(value =>
-                        h('td', {
-                          style: {
-                            padding: '8px',
-                            border: '1px solid #ddd',
-                            fontFamily: 'monospace'
-                          }
-                        }, String(value))
-                      ))
-                    ))
+                    ])
                   ])
+                )
+              } else if (printExtensionMessage === 'true') {
+                contentElements.push(
+                  h('div', {
+                    style: {
+                      marginTop: '1em',
+                      maxHeight: '50vh',
+                      padding: '10px',
+                      overflowY: 'auto',
+                      backgroundColor: '#f6f6f6',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px',
+                      fontFamily: 'monospace',
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word'
+                    }
+                  }, String(extensionMessage))
                 )
               }
 
