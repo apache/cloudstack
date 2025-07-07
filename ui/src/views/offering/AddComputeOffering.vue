@@ -845,7 +845,7 @@ export default {
     },
     fetchGPUCards () {
       this.gpuCardLoading = true
-      api('listGpuCards', {
+      getAPI('listGpuCards', {
       }).then(json => {
         this.gpuCards = json.listgpucardsresponse.gpucard || []
         // Add a "None" option at the beginning
@@ -1001,7 +1001,7 @@ export default {
     fetchVgpuProfiles (gpuCardId) {
       this.vgpuProfileLoading = true
       this.vgpuProfiles = []
-      api('listVgpuProfiles', {
+      getAPI('listVgpuProfiles', {
         gpucardid: gpuCardId
       }).then(json => {
         this.vgpuProfiles = json.listvgpuprofilesresponse.vgpuprofile || []

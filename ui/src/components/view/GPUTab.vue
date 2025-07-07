@@ -140,7 +140,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import GPUSummaryTab from '@/components/view/GPUSummaryTab'
 import GPUDevicesTab from '@/components/view/GPUDevicesTab'
 
@@ -193,7 +193,7 @@ export default {
         return
       }
 
-      api('discoverGpuDevices', {
+      getAPI('discoverGpuDevices', {
         id: this.resource.id
       }).then(() => {
         this.$notification.success({
@@ -293,7 +293,7 @@ export default {
     },
     fetchGpuCards () {
       this.loadingGpuCards = true
-      api('listGpuCards').then(json => {
+      getAPI('listGpuCards').then(json => {
         this.gpuCards = json?.listgpucardsresponse?.gpucard || []
         this.generateFormFields() // Refresh form fields with new data
       }).catch(error => {
@@ -308,7 +308,7 @@ export default {
       if (gpucardid) {
         params.gpucardid = gpucardid
       }
-      api('listVgpuProfiles', params).then(json => {
+      getAPI('listVgpuProfiles', params).then(json => {
         this.vgpuProfiles = json?.listvgpuprofilesresponse?.vgpuprofile || []
         this.generateFormFields() // Refresh form fields with new data
       }).catch(error => {
@@ -322,7 +322,7 @@ export default {
         return
       }
       this.loadingParentDevices = true
-      api('listGpuDevices', { hostid: this.resource.id }).then(json => {
+      getAPI('listGpuDevices', { hostid: this.resource.id }).then(json => {
         const devices = json?.listgpudevicesresponse?.gpudevice || []
         // Only include devices that can be parent devices (not virtual GPU devices)
         this.parentGpuDevices = devices.filter(device => !device.parentgpudeviceid)
@@ -369,14 +369,11 @@ export default {
       if (this.gpuDeviceForm.numanode) {
         params.numanode = this.gpuDeviceForm.numanode
       }
-      if (this.gpuDeviceForm.pciroot) {
-        params.pciroot = this.gpuDeviceForm.pciroot
-      }
       if (this.gpuDeviceForm.parentgpudeviceid) {
         params.parentgpudeviceid = this.gpuDeviceForm.parentgpudeviceid
       }
 
-      api('createGpuDevice', params).then(() => {
+      postAPI('createGpuDevice', params).then(() => {
         this.$notification.success({
           message: this.$t('label.success'),
           description: this.$t('message.success.add.gpu.device')

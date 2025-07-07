@@ -1421,7 +1421,7 @@ export default {
     },
     fetchGpuCards (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listGpuCards', { keyword: searchKeyword }).then(json => {
+        getAPI('listGpuCards', { keyword: searchKeyword }).then(json => {
           const gpuCards = json.listgpucardsresponse.gpucard
           resolve({
             type: 'gpucardid',
@@ -1441,7 +1441,7 @@ export default {
           params.gpucardid = this.form.gpucardid
         }
 
-        api('listVgpuProfiles', params).then(json => {
+        getAPI('listVgpuProfiles', params).then(json => {
           const vgpuProfiles = json.listvgpuprofilesresponse.vgpuprofile
           resolve({
             type: 'vgpuprofileid',

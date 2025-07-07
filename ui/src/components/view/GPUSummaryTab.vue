@@ -62,7 +62,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 
 export default {
   name: 'GPUSummaryTab',
@@ -114,7 +114,7 @@ export default {
         params.virtualmachineid = this.resource.id
       }
 
-      api('listGpuDevices', params).then(json => {
+      getAPI('listGpuDevices', params).then(json => {
         const devices = json?.listgpudevicesresponse?.gpudevice || []
         this.summaryData = this.buildSummaryData(devices)
       }).catch(error => {

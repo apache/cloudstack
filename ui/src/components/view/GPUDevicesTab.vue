@@ -340,7 +340,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { genericCompare } from '@/utils/sort.js'
 import Status from '@/components/widgets/Status'
 import { EditOutlined, DeleteOutlined, PlayCircleOutlined, PauseCircleOutlined } from '@ant-design/icons-vue'
@@ -439,7 +439,7 @@ export default {
       } else if (this.resourceType === 'VirtualMachine') {
         params.virtualmachineid = this.resource.id
       }
-      api('listGpuDevices', params).then(json => {
+      getAPI('listGpuDevices', params).then(json => {
         const devices = json?.listgpudevicesresponse?.gpudevice || []
         this.items = this.buildGpuTree(devices)
       }).catch(error => {
@@ -597,7 +597,7 @@ export default {
     bulkManageGpuDevices () {
       if (!this.validateBulkOperation()) return
 
-      api('manageGpuDevice', {
+      getAPI('manageGpuDevice', {
         ids: this.selectedGpuDeviceIds.join(',')
       }).then(() => {
         this.handleBulkOperationSuccess('message.success.manage.gpu.devices', this.selectedGpuDeviceIds.length)
@@ -608,7 +608,7 @@ export default {
     bulkUnmanageGpuDevices () {
       if (!this.validateBulkOperation()) return
 
-      api('unmanageGpuDevice', {
+      getAPI('unmanageGpuDevice', {
         ids: this.selectedGpuDeviceIds.join(',')
       }).then(() => {
         this.handleBulkOperationSuccess('message.success.unmanage.gpu.devices', this.selectedGpuDeviceIds.length)
@@ -617,7 +617,7 @@ export default {
       })
     },
     manageGpuDevice (record) {
-      api('manageGpuDevice', {
+      getAPI('manageGpuDevice', {
         ids: record.id
       }).then(() => {
         this.$notification.success({
@@ -630,7 +630,7 @@ export default {
       })
     },
     unmanageGpuDevice (record) {
-      api('unmanageGpuDevice', {
+      getAPI('unmanageGpuDevice', {
         ids: record.id
       }).then(() => {
         this.$notification.success({
@@ -737,7 +737,7 @@ export default {
     },
     fetchGpuCards () {
       this.loadingGpuCards = true
-      api('listGpuCards').then(json => {
+      getAPI('listGpuCards').then(json => {
         this.gpuCards = json?.listgpucardsresponse?.gpucard || []
         this.generateUpdateFormFields() // Refresh form fields with new data
       }).catch(error => {
@@ -752,7 +752,7 @@ export default {
       if (gpucardid) {
         params.gpucardid = gpucardid
       }
-      api('listVgpuProfiles', params).then(json => {
+      getAPI('listVgpuProfiles', params).then(json => {
         this.vgpuProfiles = json?.listvgpuprofilesresponse?.vgpuprofile || []
         this.generateUpdateFormFields() // Refresh form fields with new data
       }).catch(error => {
@@ -766,7 +766,7 @@ export default {
         return
       }
       this.loadingParentDevices = true
-      api('listGpuDevices', { hostid: this.resource.id }).then(json => {
+      getAPI('listGpuDevices', { hostid: this.resource.id }).then(json => {
         const devices = json?.listgpudevicesresponse?.gpudevice || []
         // Only include devices that can be parent devices (not virtual GPU devices)
         this.parentGpuDevices = devices.filter(device => !device.parentgpudeviceid)
@@ -785,7 +785,6 @@ export default {
         vgpuprofileid: record.vgpuprofileid,
         type: record.type,
         numanode: record.numanode,
-        pciroot: record.pciroot,
         parentgpudeviceid: record.parentgpudeviceid
       }
       this.fetchGpuCards()
@@ -817,14 +816,11 @@ export default {
       if (this.gpuDeviceForm.numanode) {
         params.numanode = this.gpuDeviceForm.numanode
       }
-      if (this.gpuDeviceForm.pciroot) {
-        params.pciroot = this.gpuDeviceForm.pciroot
-      }
       if (this.gpuDeviceForm.parentgpudeviceid) {
         params.parentgpudeviceid = this.gpuDeviceForm.parentgpudeviceid
       }
 
-      api('updateGpuDevice', params).then(() => {
+      postAPI('updateGpuDevice', params).then(() => {
         this.$notification.success({
           message: this.$t('label.success'),
           description: this.$t('message.success.update.gpu.device')
@@ -843,7 +839,7 @@ export default {
       this.deleteGpuDevices(this.selectedGpuDeviceIds, 'message.success.delete.gpu.devices')
     },
     deleteGpuDevices (deviceIds, successMessageKey) {
-      api('deleteGpuDevice', {
+      postAPI('deleteGpuDevice', {
         ids: deviceIds.join(',')
       }).then(() => {
         this.$notification.success({

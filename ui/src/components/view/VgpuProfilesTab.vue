@@ -108,7 +108,7 @@
 
 <script>
 import { reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { genericCompare } from '@/utils/sort.js'
 import ListView from '@/components/view/ListView'
 
@@ -186,7 +186,7 @@ export default {
           params.description = formRaw.description
         }
 
-        api('createVgpuProfile', params).then(response => {
+        postAPI('createVgpuProfile', params).then(response => {
           this.$message.success(this.$t('message.success.create.vgpu.profile'))
           this.closeModal()
           this.fetchData()
@@ -227,7 +227,7 @@ export default {
       }
     },
     fetchVgpuProfiles () {
-      api('listVgpuProfiles', {
+      getAPI('listVgpuProfiles', {
         gpucardid: this.resource.id
       }).then(res => {
         this.items = res?.listvgpuprofilesresponse?.vgpuprofile || []

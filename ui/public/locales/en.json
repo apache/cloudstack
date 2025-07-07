@@ -1765,7 +1765,6 @@
 "label.payload": "Payload",
 "label.payloadurl": "Payload URL",
 "label.pcidevice": "GPU",
-"label.pciroot": "PCI root",
 "label.peername": "Management Server",
 "label.peermsid": "Management Server Node ID",
 "label.peerrunid": "Process Timestamp",
