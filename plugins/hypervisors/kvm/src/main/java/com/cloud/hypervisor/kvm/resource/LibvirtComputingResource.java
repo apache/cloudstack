@@ -3386,7 +3386,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return false;
         }
         return versionString.get(hostKey).equalsIgnoreCase("ubuntu")
-                || versionString.get(hostKey).startsWith("Debian");
+                || versionString.get(hostKey).toLowerCase().startsWith("debian");
     }
 
     private KVMPhysicalDisk getPhysicalDiskFromNfsStore(String dataStoreUrl, DataTO data) {
