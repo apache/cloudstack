@@ -173,7 +173,7 @@ export default {
       this.formRef = ref()
       this.form = reactive({
         enabled: true,
-        timeout: 3
+        timeout: 5
       })
       this.rules = reactive({
         extensionid: [{ required: true, message: `${this.$t('message.error.select')}` }],

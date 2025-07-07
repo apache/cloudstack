@@ -89,7 +89,7 @@ public class AddCustomActionCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.TIMEOUT,
             type = CommandType.INTEGER,
-            description = "Specifies the timeout in seconds to wait for the action to complete before failing. Default value is 3 seconds")
+            description = "Specifies the timeout in seconds to wait for the action to complete before failing. Default value is 5 seconds")
     private Integer timeout;
 
     @Parameter(name = ApiConstants.ENABLED,

@@ -268,7 +268,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`extension_custom_action` (
   `success_message` varchar(4096),
   `error_message` varchar(4096),
   `enabled` boolean DEFAULT true,
-  `timeout` int unsigned NOT NULL DEFAULT '3' COMMENT 'The timeout in seconds to wait for the action to complete before failing',
+  `timeout` int unsigned NOT NULL DEFAULT '5' COMMENT 'The timeout in seconds to wait for the action to complete before failing',
   `created` datetime NOT NULL,
   `removed` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
