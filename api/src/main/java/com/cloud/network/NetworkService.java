@@ -40,6 +40,7 @@ import org.apache.cloudstack.api.response.AcquirePodIpCmdResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 
+import com.cloud.agent.api.to.NicTO;
 import com.cloud.dc.DataCenter;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -271,5 +272,5 @@ public interface NetworkService {
 
     boolean handleCksIsoOnNetworkVirtualRouter(Long virtualRouterId, boolean mount) throws ResourceUnavailableException;
 
-    String getNsxSegmentId(long domainId, long accountId, long zoneId, Long vpcId, long networkId);
+    String getNicVlanValueForExternalVm(NicTO nic);
 }

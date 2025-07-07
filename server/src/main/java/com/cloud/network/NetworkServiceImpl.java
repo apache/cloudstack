@@ -40,7 +40,6 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.dc.dao.ASNumberDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.alert.AlertService;
@@ -90,6 +89,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.IpAddressTO;
+import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
@@ -108,6 +108,7 @@ import com.cloud.dc.DomainVlanMapVO;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanDetailsVO;
 import com.cloud.dc.VlanVO;
+import com.cloud.dc.dao.ASNumberDao;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterVnetDao;
@@ -177,6 +178,7 @@ import com.cloud.network.element.VirtualRouterProviderVO;
 import com.cloud.network.element.VpcVirtualRouterElement;
 import com.cloud.network.guru.GuestNetworkGuru;
 import com.cloud.network.guru.NetworkGuru;
+import com.cloud.network.nsx.NsxService;
 import com.cloud.network.router.CommandSetupHelper;
 import com.cloud.network.router.NetworkHelper;
 import com.cloud.network.router.VirtualRouter;
@@ -263,8 +265,6 @@ import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.googlecode.ipv6.IPv6Address;
-
-import static java.util.Objects.isNull;
 
 /**
  * NetworkServiceImpl implements NetworkService.
@@ -426,6 +426,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     private BGPService bgpService;
     @Inject
     private ASNumberDao asNumberDao;
+    @Inject
+    NsxService nsxService;
 
     List<InternalLoadBalancerElementService> internalLoadBalancerElementServices = new ArrayList<>();
     Map<String, InternalLoadBalancerElementService> internalLoadBalancerElementServiceMap = new HashMap<>();
@@ -6341,11 +6343,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     }
 
     @Override
-    public String getNsxSegmentId(long domainId, long accountId, long zoneId, Long vpcId, long networkId) {
-        String segmentName = String.format("D%s-A%s-Z%s",  domainId, accountId, zoneId);
-        if (isNull(vpcId)) {
-            return String.format("%s-S%s", segmentName, networkId);
+    public String getNicVlanValueForExternalVm(NicTO nic) {
+        Networks.BroadcastDomainType broadcastDomainType = Networks.BroadcastDomainType.getSchemeValue(nic.getBroadcastUri());
+        if (Networks.BroadcastDomainType.NSX.equals(broadcastDomainType)) {
+            NetworkVO networkVO = _networksDao.findById(nic.getNetworkId());
+            return nsxService.getSegmentId(networkVO.getDomainId(), networkVO.getDataCenterId(), networkVO.getAccountId(), networkVO.getVpcId(), networkVO.getId());
         }
-        return String.format("%s-V%s-S%s",segmentName, vpcId, networkId);
+        return Networks.BroadcastDomainType.getValue(nic.getBroadcastUri());
     }
 }

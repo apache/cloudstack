@@ -34,7 +34,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -1424,16 +1423,12 @@ public class VirtualMachineManagerImplTest {
         VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
         StartCommand command = mock(StartCommand.class);
         NicTO nic = mock(NicTO.class);
-        NetworkVO networkVO = mock(NetworkVO.class);
 
         when(host.getHypervisorType()).thenReturn(HypervisorType.External);
         when(vmTO.getExternalDetails()).thenReturn(new HashMap<>());
         when(vmTO.getNics()).thenReturn(new NicTO[]{nic});
         when(nic.isDefaultNic()).thenReturn(true);
-        when(nic.getBroadcastUri()).thenReturn(URI.create("nsx://segment"));
-        when(nic.getNetworkId()).thenReturn(1L);
-        when(networkDao.findById(1L)).thenReturn(networkVO);
-        when(networkService.getNsxSegmentId(anyLong(), anyLong(), anyLong(), anyLong(), anyLong())).thenReturn("segmentName");
+        when(networkService.getNicVlanValueForExternalVm(nic)).thenReturn("segmentName");
         when(extensionsManager.getExternalAccessDetails(eq(host), any())).thenReturn(new HashMap<>());
 
         virtualMachineManagerImpl.updateStartCommandWithExternalDetails(host, vmTO, command);

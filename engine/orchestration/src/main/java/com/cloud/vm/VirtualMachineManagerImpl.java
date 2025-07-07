@@ -1668,14 +1668,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (!nic.isDefaultNic()) {
                 continue;
             }
-            Networks.BroadcastDomainType broadcastDomainType = Networks.BroadcastDomainType.getSchemeValue(nic.getBroadcastUri());
-            NetworkVO networkVO = _networkDao.findById(nic.getNetworkId());
-            if (Networks.BroadcastDomainType.NSX.equals(broadcastDomainType)) {
-                String segmentName = networkService.getNsxSegmentId(networkVO.getDomainId(), networkVO.getAccountId(), networkVO.getDataCenterId(), networkVO.getVpcId(), networkVO.getId());
-                vmExternalDetails.put(VmDetailConstants.CLOUDSTACK_VLAN, segmentName);
-            } else {
-                vmExternalDetails.put(VmDetailConstants.CLOUDSTACK_VLAN, Networks.BroadcastDomainType.getValue(nic.getBroadcastUri()));
-            }
+            vmExternalDetails.put(VmDetailConstants.CLOUDSTACK_VLAN, networkService.getNicVlanValueForExternalVm(nic));
         }
         Map<String, Map<String, String>> externalDetails = extensionsManager.getExternalAccessDetails(host, vmExternalDetails);
         command.setExternalDetails(externalDetails);
