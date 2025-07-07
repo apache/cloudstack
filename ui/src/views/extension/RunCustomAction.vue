@@ -100,7 +100,7 @@
 
 <script>
 import { ref, reactive, toRaw, h } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import DetailsInput from '@/components/widgets/DetailsInput'
 
@@ -166,7 +166,7 @@ export default {
         resourceid: this.resource.id,
         enabled: true
       }
-      api('listCustomActions', params).then(json => {
+      getAPI('listCustomActions', params).then(json => {
         this.customActions = json?.listcustomactionsresponse?.extensioncustomaction || []
       }).finally(() => {
         this.loading = false
@@ -244,7 +244,7 @@ export default {
         const httpMethod = this.currentParameters.find(p => p.validationformat === 'PASSWORD') ? 'POST' : 'GET'
         const args = httpMethod === 'POST' ? {} : params
         const data = httpMethod === 'POST' ? params : {}
-        api('runCustomAction', args, httpMethod, data).then(response => {
+        postAPI('runCustomAction', args, httpMethod, data).then(response => {
           this.$pollJob({
             jobId: response.runcustomactionresponse.jobid,
             title: this.currentAction.name || this.$t('label.run.custom.action'),

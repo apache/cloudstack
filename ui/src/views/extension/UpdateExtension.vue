@@ -56,7 +56,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import DetailsInput from '@/components/widgets/DetailsInput'
 
@@ -95,7 +95,7 @@ export default {
     },
     fetchData () {
       this.loading = true
-      api('listExtensions', { id: this.resource.id }).then(json => {
+      getAPI('listExtensions', { id: this.resource.id }).then(json => {
         this.form.details = json?.listextensionsresponse?.extension?.[0]?.details
       }).finally(() => {
         this.loading = false
@@ -121,7 +121,7 @@ export default {
             params['details[0].' + key] = value
           })
         }
-        api('updateExtension', params).then(response => {
+        postAPI('updateExtension', params).then(response => {
           this.$emit('refresh-data')
           this.$notification.success({
             message: this.$t('label.update.extension'),

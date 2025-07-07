@@ -128,7 +128,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import InfiniteScrollSelect from '@/components/widgets/InfiniteScrollSelect'
 import ParametersInput from '@/views/extension/ParametersInput'
@@ -209,7 +209,7 @@ export default {
             params['details[0].' + key] = value
           })
         }
-        api('addCustomAction', params).then(response => {
+        postAPI('addCustomAction', params).then(response => {
           this.$emit('refresh-data')
           this.$notification.success({
             message: this.$t('label.create.extension'),

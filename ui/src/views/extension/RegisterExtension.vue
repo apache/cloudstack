@@ -76,7 +76,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import DetailsInput from '@/components/widgets/DetailsInput'
 
@@ -140,7 +140,7 @@ export default {
       if (['cluster'].includes(type)) {
         params.hypervisor = 'External'
       }
-      api(resourceApi, params).then(json => {
+      getAPI(resourceApi, params).then(json => {
         this.resources.opts = json?.[resourceApi.toLowerCase() + 'response']?.[type] || []
       }).finally(() => {
         this.resources.loading = false
@@ -163,7 +163,7 @@ export default {
             params['details[0].' + key] = value
           })
         }
-        api('registerExtension', params).then(response => {
+        postAPI('registerExtension', params).then(response => {
           this.$emit('refresh-data')
           this.$notification.success({
             message: this.$t('label.register.extension'),

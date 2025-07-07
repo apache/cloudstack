@@ -105,7 +105,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import DetailsInput from '@/components/widgets/DetailsInput'
 
@@ -201,7 +201,7 @@ export default {
             params['details[0].' + key] = value
           })
         }
-        api('createExtension', params).then(response => {
+        postAPI('createExtension', params).then(response => {
           this.$emit('refresh-data')
           this.$notification.success({
             message: this.$t('label.create.extension'),

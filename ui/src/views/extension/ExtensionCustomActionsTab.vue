@@ -119,7 +119,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import ObjectListTable from '@/components/view/ObjectListTable.vue'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import AddCustomAction from '@/views/extension/AddCustomAction.vue'
@@ -210,7 +210,7 @@ export default {
         listall: true
       }
       this.tabLoading = true
-      api('listCustomActions', params).then(json => {
+      getAPI('listCustomActions', params).then(json => {
         this.extensionCustomActions = []
         this.totalCount = json?.listcustomactionsresponse?.count || 0
         this.extensionCustomActions = json?.listcustomactionsresponse?.extensioncustomaction || []
@@ -237,7 +237,7 @@ export default {
         enabled: !record.enabled
       }
       this.updateLoading = true
-      api('updateCustomAction', params).then(json => {
+      postAPI('updateCustomAction', params).then(json => {
         this.fetchCustomActions()
         this.$notification.success({
           message: record.enabled ? this.$t('label.disable.custom.action') : this.$t('label.enable.custom.action'),
@@ -254,7 +254,7 @@ export default {
         id: record.id
       }
       this.deleteLoading = true
-      api('deleteCustomAction', params).then(json => {
+      postAPI('deleteCustomAction', params).then(json => {
         this.fetchCustomActions()
         this.$notification.success({
           message: this.$t('label.delete.custom.action'),

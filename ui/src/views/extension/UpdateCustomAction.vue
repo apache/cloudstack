@@ -102,7 +102,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import ParametersInput from '@/views/extension/ParametersInput'
 import DetailsInput from '@/components/widgets/DetailsInput'
@@ -194,7 +194,7 @@ export default {
         } else {
           params.cleanupdetails = true
         }
-        api('updateCustomAction', params).then(response => {
+        postAPI('updateCustomAction', params).then(response => {
           this.$emit('refresh-data')
           this.$notification.success({
             message: this.$t('label.update.custom.action'),

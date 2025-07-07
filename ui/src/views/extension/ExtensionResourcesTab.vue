@@ -63,7 +63,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import eventBus from '@/config/eventBus'
 import ObjectListTable from '@/components/view/ObjectListTable.vue'
 import TooltipButton from '@/components/widgets/TooltipButton'
@@ -118,7 +118,7 @@ export default {
         resourceid: record.id,
         resourcetype: record.type
       }
-      api('unregisterExtension', params).then(json => {
+      postAPI('unregisterExtension', params).then(json => {
         eventBus.emit('async-job-complete', null)
         this.$notification.success({
           message: this.$t('label.unregister.extension'),
