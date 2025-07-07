@@ -175,10 +175,10 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
         }
 
         VMSnapshotVO vmSnapshotBeingReverted = (VMSnapshotVO) vmSnapshot;
+        Long hostId = vmSnapshotHelper.pickRunningHost(vmSnapshotBeingReverted.getVmId());
 
         transitStateWithoutThrow(vmSnapshotBeingReverted, VMSnapshot.Event.RevertRequested);
 
-        Long hostId = vmSnapshotHelper.pickRunningHost(vmSnapshotBeingReverted.getVmId());
         List<SnapshotDataStoreVO> volumeSnapshots = getVolumeSnapshotsAssociatedWithVmSnapshot(vmSnapshotBeingReverted);
         List<SnapshotObjectTO> volumeSnapshotTos = volumeSnapshots.stream()
                 .map(snapshot -> (SnapshotObjectTO) snapshotDataFactory.getSnapshot(snapshot.getSnapshotId(), snapshot.getDataStoreId(), DataStoreRole.Primary).getTO())

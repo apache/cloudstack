@@ -480,12 +480,12 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
     public StrategyPriority canHandle(Long vmId, Long rootPoolId, boolean snapshotMemory) {
         UserVmVO vm = userVmDao.findById(vmId);
         if (State.Running.equals(vm.getState()) && !snapshotMemory) {
-            logger.debug("Default VM snapshot cannot handle VM snapshot for [{}] as it is running and its memory will not be affected.", vm);
+            logger.debug("Default VM snapshot strategy cannot handle VM snapshot for [{}] as it is running and its memory will not be affected.", vm);
             return StrategyPriority.CANT_HANDLE;
         }
 
         if (vmHasKvmDiskOnlySnapshot(vm)) {
-            logger.debug("Default VM snapshot cannot handle VM snapshot for [{}] as it has a disk-only VM snapshot using kvmFileBasedStorageSnapshot strategy." +
+            logger.debug("Default VM snapshot strategy cannot handle VM snapshot for [{}] as it has a disk-only VM snapshot using kvmFileBasedStorageSnapshot strategy." +
                     "These two strategies are not compatible, as reverting a disk-only VM snapshot will erase newer disk-and-memory VM snapshots.", vm);
             return StrategyPriority.CANT_HANDLE;
         }
@@ -493,7 +493,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
         List<VolumeVO> volumes = volumeDao.findByInstance(vmId);
         for (VolumeVO volume : volumes) {
             if (volume.getFormat() != ImageFormat.QCOW2) {
-                logger.debug("Default VM snapshot cannot handle VM snapshot for [{}] as it has a volume [{}] that is not in the QCOW2 format.", vm, volume);
+                logger.debug("Default VM snapshot strategy cannot handle VM snapshot for [{}] as it has a volume [{}] that is not in the QCOW2 format.", vm, volume);
                 return StrategyPriority.CANT_HANDLE;
             }
         }
