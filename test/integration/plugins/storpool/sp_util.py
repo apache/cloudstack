@@ -925,4 +925,3 @@ class StorPoolHelper():
             cls.debug("Cannot perform the tests because there aren't the required count of StorPool storage pools %s" % sp_pools)
             return
         return sp_pools
-
