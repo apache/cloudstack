@@ -163,7 +163,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { postAPI } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { timeZone } from '@/utils/timezone'
 import { mixinForm } from '@/utils/mixin'
 import debounce from 'lodash/debounce'
@@ -226,7 +226,7 @@ export default {
       })
     },
     fetchBackupOffering () {
-      api('listBackupOfferings', { id: this.resource.backupofferingid }).then(json => {
+      getAPI('listBackupOfferings', { id: this.resource.backupofferingid }).then(json => {
         if (json.listbackupofferingsresponse && json.listbackupofferingsresponse.backupoffering) {
           const backupoffering = json.listbackupofferingsresponse.backupoffering[0]
           this.backupProvider = backupoffering.provider

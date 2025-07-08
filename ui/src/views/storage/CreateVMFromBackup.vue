@@ -59,7 +59,7 @@
 <script>
 
 import { h } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { Button } from 'ant-design-vue'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import eventBus from '@/config/eventBus'
@@ -100,7 +100,7 @@ export default {
   methods: {
     fetchBackupVmDetails () {
       this.serviceOfferings = []
-      return api('listBackups', {
+      return getAPI('listBackups', {
         id: this.resource.id,
         listvmdetails: true
       }).then(response => {
@@ -110,7 +110,7 @@ export default {
     },
     fetchServiceOffering () {
       this.serviceOfferings = []
-      api('listServiceOfferings', {
+      getAPI('listServiceOfferings', {
         zoneid: this.resource.zoneid,
         id: this.vmdetails.serviceofferingid,
         listall: true
@@ -186,7 +186,7 @@ export default {
       const description = ''
       const password = this.$t('label.password')
 
-      api('createVMFromBackup', args, 'GET', null).then(response => {
+      postAPI('createVMFromBackup', args, 'GET', null).then(response => {
         const jobId = response.deployvirtualmachineresponse.jobid
         if (jobId) {
           this.$pollJob({

@@ -1375,7 +1375,7 @@ export default {
     },
     fetchBackupOfferings (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listBackupOfferings').then(json => {
+        getAPI('listBackupOfferings').then(json => {
           const backupOfferings = json.listbackupofferingsresponse.backupoffering
           resolve({
             type: 'backupofferingid',
