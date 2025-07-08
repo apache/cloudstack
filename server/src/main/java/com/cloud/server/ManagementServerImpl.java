@@ -1549,13 +1549,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw new InvalidParameterValueException("Unsupported operation, VM uses Local storage, cannot migrate");
         }
 
-        ServiceOffering serviceOffering = vmProfile.getServiceOffering();
-        if (serviceOffering.getVgpuProfileId() != null) {
-            VgpuProfileVO vgpuProfile = vgpuProfileDao.findById(serviceOffering.getVgpuProfileId());
-            if (vgpuProfile == null || "passthrough".equals(vgpuProfile.getName())) {
-                throw new InvalidParameterValueException("Unsupported operation, VM uses host passthrough, cannot migrate");
-            }
-        }
+        validateVgpuProfileForVmMigration(vmProfile);
 
         final Type hostType = srcHost.getType();
         Pair<List<HostVO>, Integer> allHostsPair = null;
@@ -1681,6 +1675,17 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         return new Ternary<>(otherHosts, suitableHosts, requiresStorageMotion);
+    }
+
+    private void validateVgpuProfileForVmMigration(final VirtualMachineProfile vmProfile) {
+        // Validate if the VM is using a vGPU profile that supports migration.
+        ServiceOffering serviceOffering = vmProfile.getServiceOffering();
+        if (serviceOffering.getVgpuProfileId() != null) {
+            VgpuProfileVO vgpuProfile = vgpuProfileDao.findById(serviceOffering.getVgpuProfileId());
+            if (vgpuProfile == null || "passthrough".equals(vgpuProfile.getName())) {
+                throw new InvalidParameterValueException("Unsupported operation, VM uses host passthrough, cannot migrate");
+            }
+        }
     }
 
     /**
