@@ -92,6 +92,10 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
+
 import org.jetbrains.annotations.Nullable;
 
 public class AlertManagerImpl extends ManagerBase implements AlertManager, Configurable {
@@ -309,8 +313,13 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 Math.min(CapacityManager.CapacityCalculateWorkers.value(), hostIds.size())));
         for (Long hostId : hostIds) {
             futures.put(hostId, executorService.submit(() -> {
-                final HostVO host = hostDao.findById(hostId);
-                _capacityMgr.updateCapacityForHost(host);
+                Transaction.execute(new TransactionCallbackNoReturn() {
+                    @Override
+                    public void doInTransactionWithoutResult(TransactionStatus status) {
+                        final HostVO host = hostDao.findById(hostId);
+                        _capacityMgr.updateCapacityForHost(host);
+                    }
+                });
                 return null;
             }));
         }
@@ -335,13 +344,18 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 Math.min(CapacityManager.CapacityCalculateWorkers.value(), storagePoolIds.size())));
         for (Long poolId: storagePoolIds) {
             futures.put(poolId, executorService.submit(() -> {
-                final StoragePoolVO pool = _storagePoolDao.findById(poolId);
-                long disk = _capacityMgr.getAllocatedPoolCapacity(pool, null);
-                if (pool.isShared()) {
-                    _storageMgr.createCapacityEntry(pool, Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED, disk);
-                } else {
-                    _storageMgr.createCapacityEntry(pool, Capacity.CAPACITY_TYPE_LOCAL_STORAGE, disk);
-                }
+                Transaction.execute(new TransactionCallbackNoReturn() {
+                    @Override
+                    public void doInTransactionWithoutResult(TransactionStatus status) {
+                        final StoragePoolVO pool = _storagePoolDao.findById(poolId);
+                        long disk = _capacityMgr.getAllocatedPoolCapacity(pool, null);
+                        if (pool.isShared()) {
+                            _storageMgr.createCapacityEntry(pool, Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED, disk);
+                        } else {
+                            _storageMgr.createCapacityEntry(pool, Capacity.CAPACITY_TYPE_LOCAL_STORAGE, disk);
+                        }
+                    }
+                });
                 return null;
             }));
         }

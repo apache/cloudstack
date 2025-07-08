@@ -265,6 +265,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -1834,22 +1835,27 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 if (exceptionOccurred.get()) {
                     return null;
                 }
-                HostVO host = _hostDao.findById(hostId);
-                try {
-                    connectHostToSharedPool(host, primaryStore.getId());
-                    poolHostIds.add(hostId);
-                } catch (Exception e) {
-                    if (handleExceptionsPartially && e.getCause() instanceof StorageConflictException) {
-                        exceptionOccurred.set(true);
-                        throw e;
+                Transaction.execute(new TransactionCallbackWithExceptionNoReturn<Exception>() {
+                    @Override
+                    public void doInTransactionWithoutResult(TransactionStatus status) throws Exception {
+                        HostVO host = _hostDao.findById(hostId);
+                        try {
+                            connectHostToSharedPool(host, primaryStore.getId());
+                            poolHostIds.add(hostId);
+                        } catch (Exception e) {
+                            if (handleExceptionsPartially && e.getCause() instanceof StorageConflictException) {
+                                exceptionOccurred.set(true);
+                                throw e;
+                            }
+                            logger.warn("Unable to establish a connection between {} and {}", host, primaryStore, e);
+                            String reason = getStoragePoolMountFailureReason(e.getMessage());
+                            if (handleExceptionsPartially && reason != null) {
+                                exceptionOccurred.set(true);
+                                throw new CloudRuntimeException(reason);
+                            }
+                        }
                     }
-                    logger.warn("Unable to establish a connection between {} and {}", host, primaryStore, e);
-                    String reason = getStoragePoolMountFailureReason(e.getMessage());
-                    if (handleExceptionsPartially && reason != null) {
-                        exceptionOccurred.set(true);
-                        throw new CloudRuntimeException(reason);
-                    }
-                }
+                });
                 return null;
             }));
         }
