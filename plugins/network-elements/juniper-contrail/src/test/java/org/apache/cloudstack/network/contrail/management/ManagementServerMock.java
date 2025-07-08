@@ -224,11 +224,9 @@ public class ManagementServerMock {
         try {
             Mockito.when(_agentMgr.send(ArgumentMatchers.anyLong(), ArgumentMatchers.any(Commands.class))).thenAnswer(callback);
         } catch (AgentUnavailableException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            logger.warn("no agent running", e);
         } catch (OperationTimedoutException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            logger.ward("agent not responding (in time)", e);
         }
         long id = _userVmDao.getNextInSequence(Long.class, "id");
         UserVmVO vm =
