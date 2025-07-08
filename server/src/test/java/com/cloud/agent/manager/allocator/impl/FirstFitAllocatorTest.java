@@ -125,6 +125,10 @@ public class FirstFitAllocatorTest {
         when(capacityMgr.checkIfHostHasCpuCapabilityAndCapacity(eq(host2), eq(offering), eq(true)))
                 .thenReturn(new Pair<>(true, false));
 
+
+        when(resourceMgr.isGPUDeviceAvailable(offering, host1, vmProfile.getId())).thenReturn(true);
+        when(resourceMgr.isGPUDeviceAvailable(offering, host2, vmProfile.getId())).thenReturn(true);
+
         List<Host> result = allocator.allocateTo(vmProfile, plan, offering, null, avoid, inputHosts, 2, true, account);
 
         // Only host1 should be returned
@@ -160,7 +164,7 @@ public class FirstFitAllocatorTest {
         when(pciDetail.getValue()).thenReturn("NVIDIA");
         when(vgpuDetail.getValue()).thenReturn("GRID");
 
-        when(resourceMgr.isGPUDeviceAvailable(eq(host1), eq("NVIDIA"), eq("GRID"))).thenReturn(false);
+        when(resourceMgr.isGPUDeviceAvailable(offering, host1, vmProfile.getId())).thenReturn(false);
 
         List<Host> result = allocator.allocateTo(vmProfile, plan, offering, null, avoid, inputHosts, 1, true, account);
 

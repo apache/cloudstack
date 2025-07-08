@@ -3429,19 +3429,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         VMLeaseManager.ExpiryAction leaseExpiryAction = validateAndGetLeaseExpiryAction(leaseDuration, cmd.getLeaseExpiryAction());
 
         final Long vgpuProfileId = cmd.getVgpuProfileId();
-        Integer gpuCount = cmd.getGpuCount();
-        if (vgpuProfileId != null) {
-            VgpuProfileVO vgpuProfile = vgpuProfileDao.findById(vgpuProfileId);
-            if (vgpuProfile == null) {
-                throw new InvalidParameterValueException("Please specify a valid vgpu profile.");
-            }
-            if (gpuCount != null && gpuCount < 1) {
-                throw new InvalidParameterValueException("GPU count must be greater than 0.");
-            }
-            if (gpuCount == null) {
-                gpuCount = 1;
-            }
-        }
+        Integer gpuCount = validateVgpuProfileAndGetGpuCount(vgpuProfileId, cmd.getGpuCount());
 
         return createServiceOffering(userId, cmd.isSystem(), vmType, cmd.getServiceOfferingName(), cpuNumber, memory, cpuSpeed, cmd.getDisplayText(),
                 cmd.getProvisioningType(), localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainIds(), cmd.getZoneIds(), cmd.getHostTag(),
@@ -3452,6 +3440,23 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 cmd.getIopsWriteRate(), cmd.getIopsWriteRateMax(), cmd.getIopsWriteRateMaxLength(),
                 cmd.getHypervisorSnapshotReserve(), cmd.getCacheMode(), storagePolicyId, cmd.getDynamicScalingEnabled(), diskOfferingId,
                 cmd.getDiskOfferingStrictness(), cmd.isCustomized(), cmd.getEncryptRoot(), vgpuProfileId, gpuCount, cmd.getGpuDisplay(), cmd.isPurgeResources(), leaseDuration, leaseExpiryAction);
+    }
+
+    private Integer validateVgpuProfileAndGetGpuCount(final Long vgpuProfileId, Integer gpuCount) {
+        Integer finalGpuCount = gpuCount;
+        if (vgpuProfileId != null) {
+            VgpuProfileVO vgpuProfile = vgpuProfileDao.findById(vgpuProfileId);
+            if (vgpuProfile == null) {
+                throw new InvalidParameterValueException("Please specify a valid vgpu profile.");
+            }
+            if (gpuCount != null && gpuCount < 1) {
+                throw new InvalidParameterValueException("GPU count must be greater than 0.");
+            }
+            if (gpuCount == null) {
+                finalGpuCount = 1;
+            }
+        }
+        return finalGpuCount;
     }
 
     protected ServiceOfferingVO createServiceOffering(final long userId, final boolean isSystem, final VirtualMachine.Type vmType,

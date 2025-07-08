@@ -39,6 +39,9 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.gpu.dao.VgpuProfileDao;
+import com.cloud.offering.ServiceOffering;
+import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.StoragePoolAndAccessGroupMapVO;
 import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
@@ -261,6 +264,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     protected HostGpuGroupsDao _hostGpuGroupsDao;
     @Inject
     protected VGPUTypesDao _vgpuTypesDao;
+    @Inject
+    protected VgpuProfileDao vgpuProfileDao;
     @Inject
     private GpuCardDao gpuCardDao;
     @Inject
@@ -3140,14 +3145,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         if (newHost) {
-            host = _hostDao.persist(host);
-            // Check for GPU devices again because we couldn't persist the GPU devices earlier due to missing host ID
-            if (startup instanceof StartupRoutingCommand &&
-                CollectionUtils.isNotEmpty(((StartupRoutingCommand) startup).getGpuDevices())) {
-                // Add GPU devices to the host
-                StartupRoutingCommand ssCmd = ((StartupRoutingCommand) startup);
-                gpuService.addGpuDevicesToHost(host, ssCmd.getGpuDevices());
-            }
+            host = persistNewHost(host, startup);
         } else {
             _hostDao.update(host.getId(), host);
         }
@@ -3174,6 +3172,18 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         return host;
+    }
+
+    private HostVO persistNewHost(HostVO host, StartupCommand startup) {
+        HostVO hostVo = _hostDao.persist(host);
+        // Check for GPU devices again because we couldn't persist the GPU devices earlier due to missing host ID
+        if (startup instanceof StartupRoutingCommand &&
+            CollectionUtils.isNotEmpty(((StartupRoutingCommand) startup).getGpuDevices())) {
+            // Add GPU devices to the host
+            StartupRoutingCommand ssCmd = ((StartupRoutingCommand) startup);
+            gpuService.addGpuDevicesToHost(hostVo, ssCmd.getGpuDevices());
+        }
+        return hostVo;
     }
 
     private void updateSupportsClonedVolumes(HostVO host, boolean supportsClonedVolumes) {
@@ -3562,18 +3572,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         host.setSpeed(ssCmd.getSpeed());
         host.setHypervisorType(hyType);
         host.setHypervisorVersion(ssCmd.getHypervisorVersion());
-        // The below method needs the host to be persisted in the DB to save the GPU devices for the host
-        if (host.getId() > 0) {
-            gpuService.addGpuDevicesToHost(host, ssCmd.getGpuDevices());
-        }
-        if (CollectionUtils.isNotEmpty(ssCmd.getGpuDevices())) {
-            host.setGpuGroups(gpuService.getGpuGroupDetailsFromGpuDevicesOnHost(host));
-        } else {
-            host.setGpuGroups(ssCmd.getGpuGroupDetails());
-        }
+        host.setGpuGroups(getGroupDetails(host, ssCmd.getGpuDevices(), ssCmd.getGpuGroupDetails()));
         return host;
     }
-
 
     @Override
     public void deleteRoutingHost(final HostVO host, final boolean isForced, final boolean forceDestroyStorage) throws UnableDeleteHostException {
@@ -4218,7 +4219,14 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         return sc.list();
     }
 
-    @Override
+    /**
+     * Check if host has GPU devices available
+     *
+     * @param host      the host to be checked
+     * @param groupName gpuCard name
+     * @param vgpuType  the VGPU type
+     * @return true when the host has the capacity with given VGPU type
+     */
     public boolean isGPUDeviceAvailable(final Host host, final String groupName, final String vgpuType) {
         if(!listAvailableGPUDevice(host.getId(), groupName, vgpuType).isEmpty()) {
             return true;
@@ -4231,6 +4239,40 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
+    public boolean isGPUDeviceAvailable(ServiceOffering offering, Host host, Long vmId) {
+            // Check if GPU device is required by offering and host has the availability
+            ServiceOfferingDetailsVO offeringDetails = null;
+            if (offering.getVgpuProfileId() != null) {
+                VgpuProfileVO vgpuProfile = vgpuProfileDao.findById(offering.getVgpuProfileId());
+                if (vgpuProfile == null) {
+                    logger.debug("Host {} does not have GPU devices available.", host);
+                    return false;
+                }
+                int gpuCount = offering.getGpuCount() != null ? offering.getGpuCount() : 1;
+
+                if(!isGPUDeviceAvailable(host, vmId, vgpuProfile, gpuCount)) {
+                    logger.debug("Host {} does not have required GPU devices available.", host);
+                    return false;
+                }
+            } else if ((offeringDetails   = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString())) != null) {
+                ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.pciDevice.toString());
+                if(!isGPUDeviceAvailable(host, groupName.getValue(), offeringDetails.getValue())){
+                    logger.debug("Host {} does not have required GPU devices available.", host);
+                    return false;
+                }
+            }
+            return true;
+    }
+
+    /**
+     * Check if host has GPU devices available
+     *
+     * @param host        the host to be checked
+     * @param vmId        VM ID
+     * @param vgpuProfile the VGPU profile
+     * @param gpuCount    the number of GPUs requested
+     * @return true when the host has the capacity with given VGPU type
+     */
     public boolean isGPUDeviceAvailable(Host host, Long vmId, VgpuProfileVO vgpuProfile, int gpuCount) {
         if (host.getHypervisorType().equals(HypervisorType.XenServer)) {
             GpuCardVO gpuCard = gpuCardDao.findById(vgpuProfile.getCardId());
@@ -4314,22 +4356,25 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             final String msg = String.format("Unable to obtain GPU stats for %s", host);
             logger.warn(msg);
             return null;
-        } else {
-            // now construct the result object
-            if (answer instanceof GetGPUStatsAnswer) {
-                GetGPUStatsAnswer gpuStatsAnswer = (GetGPUStatsAnswer) answer;
-                HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails;
-                gpuService.addGpuDevicesToHost(host, gpuStatsAnswer.getGpuDevices());
-                if (CollectionUtils.isNotEmpty(gpuStatsAnswer.getGpuDevices())) {
-                    groupDetails = gpuService.getGpuGroupDetailsFromGpuDevicesOnHost(host);
-                } else {
-                    groupDetails = gpuStatsAnswer.getGroupDetails();
-                }
-
-                return groupDetails;
-            }
+        } else if (answer instanceof GetGPUStatsAnswer) {
+            GetGPUStatsAnswer gpuStatsAnswer = (GetGPUStatsAnswer) answer;
+            return getGroupDetails(host, gpuStatsAnswer.getGpuDevices(), gpuStatsAnswer.getGroupDetails());
         }
         return null;
+    }
+
+    private HashMap<String, HashMap<String, VgpuTypesInfo>> getGroupDetails(HostVO host, List<VgpuTypesInfo> gpuDevices, HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails) {
+        HashMap<String, HashMap<String, VgpuTypesInfo>> finalGroupDetails;
+        if (host.getId() > 0) {
+            // The below method needs the host to be persisted in the DB to save the GPU devices for the host
+            gpuService.addGpuDevicesToHost(host, gpuDevices);
+        }
+        if (CollectionUtils.isNotEmpty(gpuDevices)) {
+            finalGroupDetails = gpuService.getGpuGroupDetailsFromGpuDevicesOnHost(host);
+        } else {
+            finalGroupDetails = groupDetails;
+        }
+        return finalGroupDetails;
     }
 
     @Override

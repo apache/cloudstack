@@ -2787,23 +2787,39 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         long currentCpu = currentServiceOffering.getCpu();
         long currentMemory = currentServiceOffering.getRamSize();
         VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vmInstance.getTemplateId());
+        Long currentGpu = currentServiceOffering.getGpuCount() != null ? Long.valueOf(currentServiceOffering.getGpuCount()) : 0L;
+        Long newGpu = svcOffering.getGpuCount() != null ? Long.valueOf(svcOffering.getGpuCount()) : 0L;
         try {
-            if (newCpu > currentCpu) {
-                _resourceLimitMgr.checkVmCpuResourceLimit(owner, vmInstance.isDisplay(), svcOffering, template, newCpu - currentCpu);
-            }
-            if (newMemory > currentMemory) {
-                _resourceLimitMgr.checkVmMemoryResourceLimit(owner, vmInstance.isDisplay(), svcOffering, template, newMemory - currentMemory);
-            }
-            Long currentGpu = currentServiceOffering.getGpuCount() != null ? Long.valueOf(currentServiceOffering.getGpuCount()) : 0L;
-            Long newGpu = svcOffering.getGpuCount() != null ? Long.valueOf(svcOffering.getGpuCount()) : 0L;
-            if (newGpu > currentGpu) {
-                _resourceLimitMgr.checkVmGpuResourceLimit(owner, vmInstance.isDisplay(), svcOffering, template, newGpu - currentGpu);
-            }
+            checkVmLimits(owner, vmInstance, svcOffering, template, newCpu, currentCpu, newMemory, currentMemory, newGpu, currentGpu);
         } catch (ResourceAllocationException e) {
             logger.error(String.format("Failed to updated VM due to: %s", e.getLocalizedMessage()));
             throw new InvalidParameterValueException(e.getLocalizedMessage());
         }
+        adjustVmLimits(owner, vmInstance, svcOffering, template, newCpu, currentCpu, newMemory, currentMemory, newGpu, currentGpu);
+    }
 
+    private void checkVmLimits(Account owner, UserVmVO vmInstance, ServiceOfferingVO svcOffering,
+            VMTemplateVO template, Long newCpu, Long currentCpu, Long newMemory, Long currentMemory,
+            Long newGpu, Long currentGpu
+    ) throws ResourceAllocationException {
+        if (newCpu > currentCpu) {
+            _resourceLimitMgr.checkVmCpuResourceLimit(owner, vmInstance.isDisplay(), svcOffering,
+                    template, newCpu - currentCpu);
+        }
+        if (newMemory > currentMemory) {
+            _resourceLimitMgr.checkVmMemoryResourceLimit(owner, vmInstance.isDisplay(), svcOffering,
+                    template, newMemory - currentMemory);
+        }
+        if (newGpu > currentGpu) {
+            _resourceLimitMgr.checkVmGpuResourceLimit(owner, vmInstance.isDisplay(), svcOffering,
+                    template, newGpu - currentGpu);
+        }
+    }
+
+    private void adjustVmLimits(Account owner, UserVmVO vmInstance, ServiceOfferingVO svcOffering,
+            VMTemplateVO template, Long newCpu, Long currentCpu, Long newMemory, Long currentMemory,
+            Long newGpu, Long currentGpu
+    ) {
         if (newCpu > currentCpu) {
             _resourceLimitMgr.incrementVmCpuResourceCount(owner.getAccountId(), vmInstance.isDisplay(), svcOffering, template, newCpu - currentCpu);
         } else if (newCpu > 0 && currentCpu > newCpu){
@@ -2814,8 +2830,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         } else if (newMemory > 0 && currentMemory > newMemory){
             _resourceLimitMgr.decrementVmMemoryResourceCount(owner.getAccountId(), vmInstance.isDisplay(), svcOffering, template, currentMemory - newMemory);
         }
-        Long currentGpu = currentServiceOffering.getGpuCount() != null ? Long.valueOf(currentServiceOffering.getGpuCount()) : 0L;
-        Long newGpu = svcOffering.getGpuCount() != null ? Long.valueOf(svcOffering.getGpuCount()) : 0L;
         if (newGpu > currentGpu) {
             _resourceLimitMgr.incrementVmGpuResourceCount(owner.getAccountId(), vmInstance.isDisplay(), svcOffering, template, newGpu - currentGpu);
         } else if (newGpu > 0 && currentGpu > newGpu){

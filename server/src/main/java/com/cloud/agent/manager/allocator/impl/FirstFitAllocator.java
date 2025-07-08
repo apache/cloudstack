@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.gpu.VgpuProfileVO;
 import com.cloud.gpu.dao.VgpuProfileDao;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -347,28 +346,15 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             }
 
             // Check if GPU device is required by offering and host has the availability
-            if (offering.getVgpuProfileId() != null) {
-                VgpuProfileVO vgpuProfile = vgpuProfileDao.findById(offering.getVgpuProfileId());
-                if (vgpuProfile == null) {
-                    logger.debug("Adding host [{}] to avoid set, because this host does not have GPU devices available.", host);
-                    avoid.addHost(host.getId());
-                    continue;
-                }
-                int gpuCount = offering.getGpuCount() != null ? offering.getGpuCount() : 1;
-
-                if(!_resourceMgr.isGPUDeviceAvailable(host, vmProfile.getId(), vgpuProfile, gpuCount)) {
-                    logger.debug("Adding host [{}] to avoid set, because this host does not have required GPU devices available.", host);
-                    avoid.addHost(host.getId());
-                    continue;
-                }
-            } else if ((offeringDetails   = _serviceOfferingDetailsDao.findDetail(serviceOfferingId, GPU.Keys.vgpuType.toString())) != null) {
-                ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(serviceOfferingId, GPU.Keys.pciDevice.toString());
-                if(!_resourceMgr.isGPUDeviceAvailable(host, groupName.getValue(), offeringDetails.getValue())){
-                    logger.debug("Adding host [{}] to avoid set, because this host does not have required GPU devices available.", host);
-                    avoid.addHost(host.getId());
-                    continue;
-                }
+            if (_resourceMgr.isGPUDeviceAvailable(offering, host, vmProfile.getId())) {
+                logger.debug("Host [{}] has required GPU devices available.", host);
+            } else {
+                // If GPU is not available, skip this host
+                logger.debug("Adding host [{}] to avoid set, because this host does not have required GPU devices available.", host);
+                avoid.addHost(host.getId());
+                continue;
             }
+
             Pair<Boolean, Boolean> cpuCapabilityAndCapacity = _capacityMgr.checkIfHostHasCpuCapabilityAndCapacity(host, offering, considerReservedCapacity);
             if (cpuCapabilityAndCapacity.first() && cpuCapabilityAndCapacity.second()) {
                 if (logger.isDebugEnabled()) {

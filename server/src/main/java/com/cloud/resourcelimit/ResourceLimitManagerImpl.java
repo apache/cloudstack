@@ -1896,23 +1896,9 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
         if (!newCpu.equals(currentCpu) || !newMemory.equals(currentMemory) || !newGpu.equals(currentGpu)) {
             for (String tag : sameTags) {
-                if (newCpu - currentCpu > 0) {
-                    incrementResourceCountWithTag(accountId, ResourceType.cpu, tag, newCpu - currentCpu);
-                } else if (newCpu - currentCpu < 0) {
-                    decrementResourceCountWithTag(accountId, ResourceType.cpu, tag, currentCpu - newCpu);
-                }
-
-                if (newMemory - currentMemory > 0) {
-                    incrementResourceCountWithTag(accountId, ResourceType.memory, tag, newMemory - currentMemory);
-                } else if (newMemory - currentMemory < 0) {
-                    decrementResourceCountWithTag(accountId, ResourceType.memory, tag, currentMemory - newMemory);
-                }
-
-                if (newGpu - currentGpu > 0) {
-                    incrementResourceCountWithTag(accountId, ResourceType.gpu, tag, newGpu - currentGpu);
-                } else if (newGpu - currentGpu < 0) {
-                    decrementResourceCountWithTag(accountId, ResourceType.gpu, tag, currentGpu - newGpu);
-                }
+                adjustResourceCount(newCpu, currentCpu, ResourceType.cpu, accountId, tag);
+                adjustResourceCount(newMemory, currentMemory, ResourceType.memory, accountId, tag);
+                adjustResourceCount(newGpu, currentGpu, ResourceType.gpu, accountId, tag);
             }
         }
 
@@ -1928,6 +1914,14 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             incrementResourceCountWithTag(accountId, ResourceType.cpu, tag, newCpu);
             incrementResourceCountWithTag(accountId, ResourceType.memory, tag, newMemory);
             incrementResourceCountWithTag(accountId, ResourceType.gpu, tag, newGpu);
+        }
+    }
+
+    private void adjustResourceCount(Long newValue, Long currentValue, Resource.ResourceType type, long accountId, String tag) {
+        if (newValue - currentValue > 0) {
+            incrementResourceCountWithTag(accountId, type, tag, newValue - currentValue);
+        } else if (newValue - currentValue < 0) {
+            decrementResourceCountWithTag(accountId, type, tag, currentValue - newValue);
         }
     }
 
