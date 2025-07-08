@@ -231,7 +231,7 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
         }
 
         long delta = volumeVO.getSize() - snapshotRef.getSize();
-        if (delta < 0){
+        if (delta < 0) {
             resourceLimitManager.incrementResourceCount(volumeVO.getAccountId(), Resource.ResourceType.primary_storage, -delta);
         } else {
             resourceLimitManager.decrementResourceCount(volumeVO.getAccountId(), Resource.ResourceType.primary_storage, delta);
