@@ -106,7 +106,7 @@
 </template>
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -209,7 +209,7 @@ export default {
     },
     addObjectStore (params) {
       return new Promise((resolve, reject) => {
-        api('addObjectStoragePool', params).then(json => {
+        getAPI('addObjectStoragePool', params).then(json => {
           resolve()
         }).catch(error => {
           reject(error)

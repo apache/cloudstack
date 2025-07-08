@@ -76,7 +76,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
@@ -160,7 +160,7 @@ export default {
     fetchNetworkIcon (id, networkid) {
       return new Promise((resolve, reject) => {
         this.networkicon[id] = null
-        api('listNetworks', {
+        getAPI('listNetworks', {
           id: networkid,
           showicon: true
         }).then(json => {

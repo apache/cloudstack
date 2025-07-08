@@ -28,7 +28,7 @@
 
 <script>
 import { SERVER_MANAGER } from '@/store/mutation-types'
-import { api } from '@/api'
+import { postAPI } from '@/api'
 
 export default {
   name: 'Console',
@@ -52,7 +52,7 @@ export default {
     consoleUrl () {
       const params = {}
       params.virtualmachineid = this.resource.id
-      api('createConsoleEndpoint', params).then(json => {
+      postAPI('createConsoleEndpoint', params).then(json => {
         this.url = (json && json.createconsoleendpointresponse) ? json.createconsoleendpointresponse.consoleendpoint.url : '#/exception/404'
         if (json.createconsoleendpointresponse.consoleendpoint.success) {
           if (this.copyUrlToClipboard) {

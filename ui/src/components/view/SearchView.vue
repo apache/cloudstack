@@ -161,7 +161,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import { isAdmin } from '@/role'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
@@ -805,7 +805,7 @@ export default {
     },
     fetchZones (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listZones', { showicon: true, keyword: searchKeyword }).then(json => {
+        getAPI('listZones', { showicon: true, keyword: searchKeyword }).then(json => {
           const zones = json.listzonesresponse.zone
           resolve({
             type: 'zoneid',
@@ -818,7 +818,7 @@ export default {
     },
     fetchDomains (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listDomains', { listAll: true, details: 'min', showicon: true, keyword: searchKeyword }).then(json => {
+        getAPI('listDomains', { listAll: true, details: 'min', showicon: true, keyword: searchKeyword }).then(json => {
           const domain = json.listdomainsresponse.domain
           resolve({
             type: 'domainid',
@@ -835,7 +835,7 @@ export default {
         if (this.form.domainid) {
           params.domainid = this.form.domainid
         }
-        api('listAccounts', params).then(json => {
+        getAPI('listAccounts', params).then(json => {
           let account = json?.listaccountsresponse?.account || []
           if (this.form.domainid) {
             account = account.filter(a => a.domainid === this.form.domainid)
@@ -851,7 +851,7 @@ export default {
     },
     fetchHypervisors () {
       return new Promise((resolve, reject) => {
-        api('listHypervisors').then(json => {
+        getAPI('listHypervisors').then(json => {
           const hypervisor = json.listhypervisorsresponse.hypervisor.map(a => { return { id: a.name, name: a.name } })
           resolve({
             type: 'hypervisor',
@@ -864,7 +864,7 @@ export default {
     },
     fetchImageStores (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listImageStores', { listAll: true, showicon: true, keyword: searchKeyword }).then(json => {
+        getAPI('listImageStores', { listAll: true, showicon: true, keyword: searchKeyword }).then(json => {
           const imageStore = json.listimagestoresresponse.imagestore
           resolve({
             type: 'imagestoreid',
@@ -877,7 +877,7 @@ export default {
     },
     fetchStoragePools (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listStoragePools', { listAll: true, showicon: true, keyword: searchKeyword }).then(json => {
+        getAPI('listStoragePools', { listAll: true, showicon: true, keyword: searchKeyword }).then(json => {
           const storagePool = json.liststoragepoolsresponse.storagepool
           resolve({
             type: 'storageid',
@@ -890,7 +890,7 @@ export default {
     },
     fetchPods (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listPods', { keyword: searchKeyword }).then(json => {
+        getAPI('listPods', { keyword: searchKeyword }).then(json => {
           const pods = json.listpodsresponse.pod
           resolve({
             type: 'podid',
@@ -903,7 +903,7 @@ export default {
     },
     fetchClusters (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listClusters', { keyword: searchKeyword }).then(json => {
+        getAPI('listClusters', { keyword: searchKeyword }).then(json => {
           const clusters = json.listclustersresponse.cluster
           resolve({
             type: 'clusterid',
@@ -916,7 +916,7 @@ export default {
     },
     fetchInstanceGroups (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listInstanceGroups', { listAll: true, keyword: searchKeyword }).then(json => {
+        getAPI('listInstanceGroups', { listAll: true, keyword: searchKeyword }).then(json => {
           const instancegroups = json.listinstancegroupsresponse.instancegroup
           resolve({
             type: 'groupid',
@@ -929,7 +929,7 @@ export default {
     },
     fetchServiceOfferings (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listServiceOfferings', { listAll: true, keyword: searchKeyword }).then(json => {
+        getAPI('listServiceOfferings', { listAll: true, keyword: searchKeyword }).then(json => {
           const serviceOfferings = json.listserviceofferingsresponse.serviceoffering
           resolve({
             type: 'serviceofferingid',
@@ -942,7 +942,7 @@ export default {
     },
     fetchDiskOfferings (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listDiskOfferings', { listAll: true, keyword: searchKeyword }).then(json => {
+        getAPI('listDiskOfferings', { listAll: true, keyword: searchKeyword }).then(json => {
           const diskOfferings = json.listdiskofferingsresponse.diskoffering
           resolve({
             type: 'diskofferingid',
@@ -955,7 +955,7 @@ export default {
     },
     fetchNetworks (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listNetworks', { listAll: true, keyword: searchKeyword }).then(json => {
+        getAPI('listNetworks', { listAll: true, keyword: searchKeyword }).then(json => {
           const networks = json.listnetworksresponse.network
           resolve({
             type: 'networkid',
@@ -976,7 +976,7 @@ export default {
         })
       } else {
         return new Promise((resolve, reject) => {
-          api('listAlertTypes').then(json => {
+          getAPI('listAlertTypes').then(json => {
             const alerttypes = json.listalerttypesresponse.alerttype.map(a => { return { id: a.alerttypeid, name: a.name } })
             this.alertTypes = alerttypes
             resolve({
@@ -999,7 +999,7 @@ export default {
         })
       } else {
         return new Promise((resolve, reject) => {
-          api('listAffinityGroupTypes').then(json => {
+          getAPI('listAffinityGroupTypes').then(json => {
             const alerttypes = json.listaffinitygrouptypesresponse.affinityGroupType.map(a => {
               let name = a.type
               if (a.type === 'host anti-affinity') {
@@ -1026,7 +1026,7 @@ export default {
     },
     fetchVolumes (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listvolumes', { listAll: true, isencrypted: searchKeyword }).then(json => {
+        getAPI('listvolumes', { listAll: true, isencrypted: searchKeyword }).then(json => {
           const volumes = json.listvolumesresponse.volume
           resolve({
             type: 'isencrypted',
@@ -1039,7 +1039,7 @@ export default {
     },
     fetchManagementServers (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listManagementServers', { listAll: true, keyword: searchKeyword }).then(json => {
+        getAPI('listManagementServers', { listAll: true, keyword: searchKeyword }).then(json => {
           const managementservers = json.listmanagementserversresponse.managementserver
           resolve({
             type: 'managementserverid',
@@ -1052,7 +1052,7 @@ export default {
     },
     fetchOsCategories (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listOsCategories', { showicon: true, keyword: searchKeyword }).then(json => {
+        getAPI('listOsCategories', { showicon: true, keyword: searchKeyword }).then(json => {
           const osCategories = json.listoscategoriesresponse.oscategory
           resolve({
             type: 'oscategoryid',
@@ -1354,7 +1354,7 @@ export default {
     },
     fetchUsageTypes () {
       return new Promise((resolve, reject) => {
-        api('listUsageTypes')
+        getAPI('listUsageTypes')
           .then(json => {
             const usageTypes = json.listusagetypesresponse.usagetype.map(entry => {
               return {
