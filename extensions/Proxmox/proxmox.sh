@@ -34,7 +34,7 @@ parse_json() {
         "host_secret":      (.externaldetails.host.secret // ""),
         "node":             (.externaldetails.host.node // ""),
         "network_bridge":   (.externaldetails.host.network_bridge // ""),
-        "validate_ssl":     (.externaldetails.host.validate_ssl // "true"),
+        "verify_tls_certificate": (.externaldetails.host.verify_tls_certificate // "true"),
         "vm_name":          (.externaldetails.virtualmachine.vm_name // ""),
         "template_id":      (.externaldetails.virtualmachine.template_id // ""),
         "template_type":    (.externaldetails.virtualmachine.template_type // ""),
@@ -104,7 +104,7 @@ call_proxmox_api() {
       -H "Authorization: PVEAPIToken=${user}!${token}=${secret}"
     )
 
-    if [[ "$validate_ssl" == "false" ]]; then
+    if [[ "$verify_tls_certificate" == "false" ]]; then
       curl_opts+=(-k)
     fi
 
