@@ -221,13 +221,7 @@ public class ManagementServerMock {
                 return null;
             }
         };
-        try {
-            Mockito.when(_agentMgr.send(ArgumentMatchers.anyLong(), ArgumentMatchers.any(Commands.class))).thenAnswer(callback);
-        } catch (AgentUnavailableException e) {
-            logger.warn("no agent running", e);
-        } catch (OperationTimedoutException e) {
-            logger.warn("agent not responding (in time)", e);
-        }
+        sendCommands(callback);
         long id = _userVmDao.getNextInSequence(Long.class, "id");
         UserVmVO vm =
             new UserVmVO(id, name, name, tmpl.getId(), HypervisorType.XenServer, tmpl.getGuestOSId(), false, false, _zone.getDomainId(), Account.ACCOUNT_ID_SYSTEM,
@@ -244,6 +238,16 @@ public class ManagementServerMock {
             logger.warn("Exception occurred while adding VM to network: " + ex.getMessage());
         }
         return vm;
+    }
+
+    private void sendCommands(Answer<?> callback) {
+        try {
+            Mockito.when(_agentMgr.send(ArgumentMatchers.anyLong(), ArgumentMatchers.any(Commands.class))).thenAnswer(callback);
+        } catch (AgentUnavailableException e) {
+            logger.warn("no agent running", e);
+        } catch (OperationTimedoutException e) {
+            logger.warn("agent not responding (in time)", e);
+        }
     }
 
     private void deleteHost() {
@@ -266,15 +270,7 @@ public class ManagementServerMock {
                 return null;
             }
         };
-
-        try {
-            Mockito.when(_agentMgr.send(ArgumentMatchers.anyLong(), ArgumentMatchers.any(Commands.class))).thenAnswer(callback);
-        } catch (AgentUnavailableException e) {
-            e.printStackTrace();
-        } catch (OperationTimedoutException e) {
-            e.printStackTrace();
-        }
-
+        sendCommands(callback);
         _userVmDao.remove(vm.getId());
     }
 
