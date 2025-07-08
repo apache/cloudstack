@@ -270,7 +270,7 @@
             :loading="vgpuProfileLoading"
             :placeholder="$t('label.vgpu.profile')">
             <a-select-option v-for="(vgpu, vgpuIndex) in vgpuProfiles" :key="vgpuIndex" :value="vgpu.id" :label="vgpu.vgpuprofile || ''">
-              {{ vgpu.name }}
+              {{ vgpu.name }} {{ getVgpuProfileDetails(vgpu) }}
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -887,6 +887,23 @@ export default {
     },
     isDomainAdmin () {
       return ['DomainAdmin'].includes(this.$store.getters.userInfo.roletype)
+    },
+    getVgpuProfileDetails (vgpuProfile) {
+      let output = '('
+      if (vgpuProfile?.videoram) {
+        output += `${vgpuProfile.videoram} MB`
+      }
+      if (vgpuProfile?.maxresolutionx && vgpuProfile?.maxresolutiony) {
+        if (output !== '(') {
+          output += ', '
+        }
+        output += `${vgpuProfile.maxresolutionx}x${vgpuProfile.maxresolutiony}`
+      }
+      output += ')'
+      if (output === '()') {
+        return ''
+      }
+      return output
     },
     checkIfDomainAdminIsAllowedToInformTag () {
       const params = { id: store.getters.userInfo.accountid }

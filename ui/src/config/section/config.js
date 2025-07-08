@@ -346,7 +346,6 @@ export default {
     {
       name: 'gpucard',
       title: 'label.gpu.card',
-      docHelp: 'adminguide/guest_os.html#guest-os',
       icon: 'laptop-outlined',
       permission: ['listGpuCards'],
       columns: ['name', 'deviceid', 'devicename', 'vendorid', 'vendorname'],
@@ -399,7 +398,6 @@ export default {
     {
       name: 'vgpuprofile',
       title: 'label.vgpu.profile',
-      docHelp: 'adminguide/guest_os.html#guest-os',
       icon: 'laptop-outlined',
       permission: ['listVgpuProfiles'],
       hidden: true,

@@ -29,7 +29,7 @@ export default {
       docHelp: 'adminguide/service_offerings.html#compute-and-disk-service-offerings',
       icon: 'cloud-outlined',
       permission: ['listServiceOfferings'],
-      searchFilters: ['name', 'zoneid', 'domainid', 'cpunumber', 'cpuspeed', 'memory'],
+      searchFilters: ['name', 'gpuenabled', 'zoneid', 'domainid', 'cpunumber', 'cpuspeed', 'memory'],
       params: () => {
         var params = {}
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {

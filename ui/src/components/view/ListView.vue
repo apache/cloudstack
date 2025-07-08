@@ -220,7 +220,7 @@
           {{ record.maxresolutionx }}x{{ record.maxresolutiony }}
         </span>
         <span v-else>
-          {{  text }}
+          {{ text }}
         </span>
       </template>
       <template v-if="column.key === 'templateid'">
@@ -972,6 +972,9 @@
           type="primary"
           @onClick="removeVMSchedule(record)"
         />
+      </template>
+      <template v-if="column.key === 'vgpuActions'">
+        <slot name="actionButtons" :record="record" :actions="actions"></slot>
       </template>
     </template>
     <template #footer>

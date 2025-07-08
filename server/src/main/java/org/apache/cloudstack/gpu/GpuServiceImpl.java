@@ -83,8 +83,10 @@ import javax.naming.ConfigurationException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
@@ -792,6 +794,10 @@ public class GpuServiceImpl extends ManagerBase implements GpuService, Pluggable
         HashMap<String, HashMap<String, VgpuTypesInfo>> gpuGroupDetails = new HashMap<>();
         List<GpuDeviceVO> gpuDevices = gpuDeviceDao.listByHostId(host.getId());
         for (final GpuDeviceVO device : gpuDevices) {
+            if (GpuDevice.ManagedState.Unmanaged.equals(device.getManagedState())) {
+                // Skip unmanaged devices
+                continue;
+            }
 
             // Calculate GPU capacity and update gpuGroupDetails
             GpuCardVO card = gpuCardDao.findById(device.getCardId());
@@ -1052,6 +1058,7 @@ public class GpuServiceImpl extends ManagerBase implements GpuService, Pluggable
             throw new InvalidParameterValueException("GPU device IDs cannot be empty");
         }
         List<GpuDeviceVO> gpuDevices = new ArrayList<>();
+        Set<Long> hostIds = new HashSet<>();
         for (Long gpuDeviceId : gpuDeviceIds) {
             GpuDeviceVO gpuDevice = gpuDeviceDao.findById(gpuDeviceId);
             if (gpuDevice == null) {
@@ -1069,12 +1076,20 @@ public class GpuServiceImpl extends ManagerBase implements GpuService, Pluggable
                                 gpuDevice, gpuDevice.getVmId()));
             }
             gpuDevices.add(gpuDevice);
+            hostIds.add(gpuDevice.getHostId());
         }
 
         for (GpuDeviceVO gpuDevice : gpuDevices) {
             gpuDevice.setManagedState(managedState);
             gpuDeviceDao.update(gpuDevice.getId(), gpuDevice);
         }
+
+        for (Long hostId : hostIds) {
+            HostVO host = hostDao.findById(hostId);
+            host.setGpuGroups(getGpuGroupDetailsFromGpuDevicesOnHost(host));
+            hostDao.update(hostId, host);
+        }
+
         return true;
     }
 

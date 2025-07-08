@@ -320,7 +320,7 @@ export default {
         if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'account', 'hypervisor', 'level',
           'clusterid', 'podid', 'groupid', 'entitytype', 'accounttype', 'systemvmtype', 'scope', 'provider',
           'type', 'scope', 'managementserverid', 'serviceofferingid',
-          'diskofferingid', 'networkid', 'usagetype', 'restartrequired',
+          'diskofferingid', 'networkid', 'usagetype', 'restartrequired', 'gpuenabled',
           'displaynetwork', 'guestiptype', 'usersource', 'arch', 'oscategoryid', 'templatetype', 'gpucardid', 'vgpuprofileid'].includes(item)
         ) {
           type = 'list'
@@ -427,6 +427,16 @@ export default {
           { id: 'false', name: 'label.no' }
         ]
         this.fields[restartRequiredIndex].loading = false
+      }
+
+      if (arrayField.includes('gpuenabled')) {
+        const gpuEnabledIndex = this.fields.findIndex(item => item.name === 'gpuenabled')
+        this.fields[gpuEnabledIndex].loading = true
+        this.fields[gpuEnabledIndex].opts = [
+          { id: 'true', name: 'label.yes' },
+          { id: 'false', name: 'label.no' }
+        ]
+        this.fields[gpuEnabledIndex].loading = false
       }
 
       if (arrayField.includes('resourcetype')) {
