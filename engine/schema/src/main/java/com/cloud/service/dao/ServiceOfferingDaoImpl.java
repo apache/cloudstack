@@ -312,4 +312,13 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
         sc.setParameters("tagEndLike",   "%," + tag);
         return customSearch(sc, null);
     }
+
+    @Override
+    public void addCheckForGpuEnabled(SearchBuilder<ServiceOfferingVO> serviceOfferingSearch, Boolean gpuEnabled) {
+        if (gpuEnabled) {
+            serviceOfferingSearch.and("gpuEnabled", serviceOfferingSearch.entity().getVgpuProfileId(), SearchCriteria.Op.NNULL);
+        } else {
+            serviceOfferingSearch.and("gpuDisabled", serviceOfferingSearch.entity().getVgpuProfileId(), SearchCriteria.Op.NULL);
+        }
+    }
 }

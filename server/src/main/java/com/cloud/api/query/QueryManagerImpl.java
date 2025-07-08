@@ -1527,14 +1527,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (cmd.getGpuEnabled() != null) {
-            SearchBuilder<ServiceOfferingVO> serviceOfferingSearch;
-            if (cmd.getGpuEnabled()) {
-                serviceOfferingSearch = _srvOfferingDao.createSearchBuilder();
-                serviceOfferingSearch.and("vgpuProfileId", serviceOfferingSearch.entity().getVgpuProfileId(), Op.NNULL);
-            } else {
-                serviceOfferingSearch = _srvOfferingDao.createSearchBuilder();
-                serviceOfferingSearch.and("vgpuProfileId", serviceOfferingSearch.entity().getVgpuProfileId(), Op.NULL);
-            }
+            SearchBuilder<ServiceOfferingVO> serviceOfferingSearch = _srvOfferingDao.createSearchBuilder();
+            _srvOfferingDao.addCheckForGpuEnabled(serviceOfferingSearch, cmd.getGpuEnabled());
+
             userVmSearchBuilder.join("serviceOffering", serviceOfferingSearch, serviceOfferingSearch.entity().getId(), userVmSearchBuilder.entity().getServiceOfferingId(), JoinBuilder.JoinType.INNER);
         }
 
@@ -4068,11 +4063,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (gpuEnabled != null) {
-            if (gpuEnabled) {
-                serviceOfferingSearch.and("gpuEnabledTrue", serviceOfferingSearch.entity().getVgpuProfileId(), Op.NNULL);
-            } else {
-                serviceOfferingSearch.and("gpuEnabledTrue", serviceOfferingSearch.entity().getVgpuProfileId(), Op.NULL);
-            }
+            _srvOfferingDao.addCheckForGpuEnabled(serviceOfferingSearch, gpuEnabled);
         }
 
         if (vmId != null) {

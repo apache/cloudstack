@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 
+import com.cloud.offering.ServiceOffering;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import com.cloud.gpu.VgpuProfileVO;
@@ -197,26 +198,7 @@ public interface ResourceManager extends ResourceService, Configurable {
      */
     boolean isHostGpuEnabled(long hostId);
 
-    /**
-     * Check if host has GPU devices available
-     *
-     * @param host      the host to be checked
-     * @param groupName gpuCard name
-     * @param vgpuType  the VGPU type
-     * @return true when the host has the capacity with given VGPU type
-     */
-    boolean isGPUDeviceAvailable(Host host, String groupName, String vgpuType);
-
-    /**
-     * Check if host has GPU devices available
-     *
-     * @param host        the host to be checked
-     * @param vmId        VM ID
-     * @param vgpuProfile the VGPU profile
-     * @param gpuCount    the number of GPUs requested
-     * @return true when the host has the capacity with given VGPU type
-     */
-    boolean isGPUDeviceAvailable(Host host, Long vmId, VgpuProfileVO vgpuProfile, int gpuCount);
+    boolean isGPUDeviceAvailable(ServiceOffering offering, Host host, Long vmId);
 
     /**
      * Get available GPU device

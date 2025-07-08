@@ -37,6 +37,7 @@ import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceState.Event;
 import com.cloud.utils.component.ManagerBase;
@@ -652,13 +653,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
     }
 
     @Override
-    public boolean isGPUDeviceAvailable(final Host host, final String groupName, final String vgpuType) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public boolean isGPUDeviceAvailable(Host host, Long vmId, VgpuProfileVO vgpuProfile, int gpuCount) {
+    public boolean isGPUDeviceAvailable(ServiceOffering offering, Host host, Long vmId) {
         // TODO Auto-generated method stub
         return false;
     }
