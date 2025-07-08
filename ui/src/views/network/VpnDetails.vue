@@ -190,7 +190,7 @@ export default {
       })
       if (this.resource.vpcid) {
         this.vpnGatewayEnabled = true
-        api('listVpnGateways', {
+        getAPI('listVpnGateways', {
           vpcid: this.resource.vpcid,
           listAll: true
         }).then(response => {
@@ -302,7 +302,7 @@ export default {
         vpcid: this.resource.vpcid,
         ipaddressid: this.resource.id
       }
-      api('createVpnGateway', params).then(response => {
+      postAPI('createVpnGateway', params).then(response => {
         this.$pollJob({
           jobId: response.createvpngatewayresponse.jobid,
           successMessage: this.$t('message.success.add.vpn.gateway'),
@@ -339,7 +339,7 @@ export default {
       this.isSubmitted = true
       this.parentToggleLoading()
       this.deleteVpnGateway = false
-      api('deleteVpnGateway', {
+      postAPI('deleteVpnGateway', {
         id: this.vpnGateway.id
       }).then(response => {
         this.$pollJob({

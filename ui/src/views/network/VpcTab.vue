@@ -679,7 +679,7 @@ export default {
     },
     fetchPublicIpAddress () {
       this.modals.vpnGatewayLoading = true
-      api('listPublicIpAddresses', {
+      getAPI('listPublicIpAddresses', {
         vpcid: this.resource.id,
         listAll: true
       }).then(json => {

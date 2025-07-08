@@ -2303,7 +2303,7 @@ export default {
     },
     addNetrisProvider (args) {
       return new Promise((resolve, reject) => {
-        api('addNetrisProvider', {}, 'POST', args).then(json => {
+        postAPI('addNetrisProvider', args).then(json => {
           resolve()
         }).catch(error => {
           const message = error.response.headers['x-description']

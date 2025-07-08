@@ -1075,7 +1075,7 @@ export default {
     },
     fetchZone () {
       this.zoneloading = true
-      api('listZones', {
+      getAPI('listZones', {
         id: this.resource.zoneid
       }).then(response => {
         this.lbProvider = response?.listzonesresponse?.zone?.[0]?.provider || null

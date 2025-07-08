@@ -336,7 +336,7 @@ export default {
     },
     fetchZones () {
       return new Promise((resolve, reject) => {
-        api('listZones', {
+        getAPI('listZones', {
           id: this.resource.zoneid
         }).then(json => {
           this.zoneExtNetProvider = json?.listzonesresponse?.zone?.[0]?.provider || null
