@@ -196,13 +196,7 @@ public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implem
         response.setMemoryAvailable(memoryAvail);
 
         //get resource limits for gpus
-        long gpuLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getGpuLimit(), ResourceType.gpu, domain.getId());
-        String gpuLimitDisplay = (fullView || gpuLimit == -1) ? Resource.UNLIMITED : String.valueOf(gpuLimit);
-        long gpuTotal = (domain.getGpuTotal() == null) ? 0 : domain.getGpuTotal();
-        String gpuAvail = (fullView || gpuLimit == -1) ? Resource.UNLIMITED : String.valueOf(gpuLimit - gpuTotal);
-        response.setGpuLimit(gpuLimitDisplay);
-        response.setGpuTotal(gpuTotal);
-        response.setGpuAvailable(gpuAvail);
+        setGpuResourceLimits(domain, fullView, response);
 
       //get resource limits for primary storage space and convert it from Bytes to GiB
         long primaryStorageLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getPrimaryStorageLimit(), ResourceType.primary_storage, domain.getId());
@@ -257,6 +251,16 @@ public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implem
         response.setObjectStorageLimit(objectStorageLimitDisplay);
         response.setObjectStorageTotal(objectStorageTotal);
         response.setObjectStorageAvailable(objectStorageAvail);
+    }
+
+    private void setGpuResourceLimits(DomainJoinVO domain, boolean fullView, ResourceLimitAndCountResponse response) {
+        long gpuLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getGpuLimit(), ResourceType.gpu, domain.getId());
+        String gpuLimitDisplay = (fullView || gpuLimit == -1) ? Resource.UNLIMITED : String.valueOf(gpuLimit);
+        long gpuTotal = (domain.getGpuTotal() == null) ? 0 : domain.getGpuTotal();
+        String gpuAvail = (fullView || gpuLimit == -1) ? Resource.UNLIMITED : String.valueOf(gpuLimit - gpuTotal);
+        response.setGpuLimit(gpuLimitDisplay);
+        response.setGpuTotal(gpuTotal);
+        response.setGpuAvailable(gpuAvail);
     }
 
     @Override
