@@ -132,6 +132,7 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @SerializedName(ApiConstants.HYPERVISOR)
     @Param(description = "the hypervisor on which the template runs")
     private String hypervisor;
+
     @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "the name of the domain to which the template belongs")
     private String domainName;
