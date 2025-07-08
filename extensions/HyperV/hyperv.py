@@ -16,10 +16,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import paramiko
 import json
 import sys
-import random
 import winrm
 
 
