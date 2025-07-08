@@ -3774,7 +3774,10 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                     }
                 }
             }
-            return vmMo.getAnyExistingAvailableDiskController();
+            DiskControllerMappingVO existingAvailableDiskController = vmMo.getAnyExistingAvailableDiskController();
+            logger.debug("Falling back to existing disk controller [{}] for virtual machine [{}] as no matching controller was found based on the current bus name [{}].",
+                    existingAvailableDiskController, vmMo, currentBusName);
+            return existingAvailableDiskController;
         }
 
         return VmwareHelper.getControllerBasedOnDiskType(controllerInfo, vol);
