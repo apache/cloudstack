@@ -178,7 +178,6 @@ import com.cloud.network.element.VirtualRouterProviderVO;
 import com.cloud.network.element.VpcVirtualRouterElement;
 import com.cloud.network.guru.GuestNetworkGuru;
 import com.cloud.network.guru.NetworkGuru;
-import com.cloud.network.nsx.NsxService;
 import com.cloud.network.router.CommandSetupHelper;
 import com.cloud.network.router.NetworkHelper;
 import com.cloud.network.router.VirtualRouter;
@@ -426,8 +425,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     private BGPService bgpService;
     @Inject
     private ASNumberDao asNumberDao;
-    @Inject
-    NsxService nsxService;
 
     List<InternalLoadBalancerElementService> internalLoadBalancerElementServices = new ArrayList<>();
     Map<String, InternalLoadBalancerElementService> internalLoadBalancerElementServiceMap = new HashMap<>();
@@ -6347,7 +6344,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         Networks.BroadcastDomainType broadcastDomainType = Networks.BroadcastDomainType.getSchemeValue(nic.getBroadcastUri());
         if (Networks.BroadcastDomainType.NSX.equals(broadcastDomainType)) {
             NetworkVO networkVO = _networksDao.findById(nic.getNetworkId());
-            return nsxService.getSegmentId(networkVO.getDomainId(), networkVO.getDataCenterId(), networkVO.getAccountId(), networkVO.getVpcId(), networkVO.getId());
+            String segmentName = String.format("D%s-A%s-Z%s",  networkVO.getDomainId(), networkVO.getAccountId(), networkVO.getDataCenterId());
+            if (Objects.isNull(networkVO.getVpcId())) {
+                return String.format("%s-S%s", segmentName, networkVO.getId());
+            }
+            return String.format("%s-V%s-S%s",segmentName, networkVO.getVpcId(), networkVO.getId());
         }
         return Networks.BroadcastDomainType.getValue(nic.getBroadcastUri());
     }

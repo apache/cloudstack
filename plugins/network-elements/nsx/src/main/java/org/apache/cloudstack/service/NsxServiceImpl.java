@@ -200,9 +200,4 @@ public class NsxServiceImpl implements NsxService, Configurable {
             NSX_API_FAILURE_RETRIES, NSX_API_FAILURE_INTERVAL
         };
     }
-
-    @Override
-    public String getSegmentId(long domainId, long accountId, long zoneId, Long vpcId, long networkId) {
-        return NsxControllerUtils.getNsxSegmentId(domainId, accountId, zoneId, vpcId, networkId);
-    }
 }
