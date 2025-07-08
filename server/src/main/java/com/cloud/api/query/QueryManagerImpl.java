@@ -5347,7 +5347,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (HypervisorType.VMware.equals(hypervisorType)) {
             options.put(VmDetailConstants.NIC_ADAPTER, Arrays.asList("E1000", "PCNet32", "Vmxnet2", "Vmxnet3"));
-            List<String> availableDiskControllers = diskControllerMappingDao.listForHypervisor(HypervisorType.VMware).stream().map(DiskControllerMappingVO::getName).collect(Collectors.toList());
+            List<String> availableDiskControllers = diskControllerMappingDao.listForHypervisor(HypervisorType.VMware).stream()
+                .map(DiskControllerMappingVO::getName)
+                .sorted()
+                .collect(Collectors.toList());
             options.put(VmDetailConstants.ROOT_DISK_CONTROLLER, availableDiskControllers);
             options.put(VmDetailConstants.DATA_DISK_CONTROLLER, availableDiskControllers);
             options.put(VmDetailConstants.NESTED_VIRTUALIZATION_FLAG, Arrays.asList("true", "false"));
