@@ -23,7 +23,7 @@
 <script>
 import store from '@/store'
 import { mapActions } from 'vuex'
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import { OAUTH_DOMAIN, OAUTH_PROVIDER } from '@/store/mutation-types'
 
 export default {
@@ -47,7 +47,7 @@ export default {
       const code = params.get('code')
       const provider = this.$localStorage.get(OAUTH_PROVIDER)
       this.state.loginBtn = true
-      api('verifyOAuthCodeAndGetUser', { provider: provider, secretcode: code }).then(response => {
+      getAPI('verifyOAuthCodeAndGetUser', { provider: provider, secretcode: code }).then(response => {
         const email = response.verifyoauthcodeandgetuserresponse.oauthemail.email
         const loginParams = {}
         loginParams.email = email

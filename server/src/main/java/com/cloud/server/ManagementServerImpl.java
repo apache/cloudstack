@@ -44,6 +44,8 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.api.query.dao.ManagementServerJoinDao;
+import com.cloud.api.query.vo.ManagementServerJoinVO;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
@@ -89,12 +91,15 @@ import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.domain.MoveDomainCmd;
 import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
+import org.apache.cloudstack.api.command.admin.guest.AddGuestOsCategoryCmd;
 import org.apache.cloudstack.api.command.admin.guest.AddGuestOsCmd;
 import org.apache.cloudstack.api.command.admin.guest.AddGuestOsMappingCmd;
+import org.apache.cloudstack.api.command.admin.guest.DeleteGuestOsCategoryCmd;
 import org.apache.cloudstack.api.command.admin.guest.GetHypervisorGuestOsNamesCmd;
 import org.apache.cloudstack.api.command.admin.guest.ListGuestOsMappingCmd;
 import org.apache.cloudstack.api.command.admin.guest.RemoveGuestOsCmd;
 import org.apache.cloudstack.api.command.admin.guest.RemoveGuestOsMappingCmd;
+import org.apache.cloudstack.api.command.admin.guest.UpdateGuestOsCategoryCmd;
 import org.apache.cloudstack.api.command.admin.guest.UpdateGuestOsCmd;
 import org.apache.cloudstack.api.command.admin.guest.UpdateGuestOsMappingCmd;
 import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
@@ -125,6 +130,7 @@ import org.apache.cloudstack.api.command.admin.iso.ListIsosCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.iso.RegisterIsoCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.loadbalancer.ListLoadBalancerRuleInstancesCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.management.ListMgmtsCmd;
+import org.apache.cloudstack.api.command.admin.management.RemoveManagementServerCmd;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkDeviceCmd;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkServiceProviderCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
@@ -521,9 +527,13 @@ import org.apache.cloudstack.api.command.user.template.ListTemplatesCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplatePermissionsCmd;
+import org.apache.cloudstack.api.command.user.userdata.BaseRegisterUserDataCmd;
+import org.apache.cloudstack.api.command.user.userdata.DeleteCniConfigurationCmd;
 import org.apache.cloudstack.api.command.user.userdata.DeleteUserDataCmd;
 import org.apache.cloudstack.api.command.user.userdata.LinkUserDataToTemplateCmd;
+import org.apache.cloudstack.api.command.user.userdata.ListCniConfigurationCmd;
 import org.apache.cloudstack.api.command.user.userdata.ListUserDataCmd;
+import org.apache.cloudstack.api.command.user.userdata.RegisterCniConfigurationCmd;
 import org.apache.cloudstack.api.command.user.userdata.RegisterUserDataCmd;
 import org.apache.cloudstack.api.command.user.vm.AddIpToVmNicCmd;
 import org.apache.cloudstack.api.command.user.vm.AddNicToVMCmd;
@@ -627,6 +637,7 @@ import org.apache.cloudstack.framework.config.impl.ConfigurationSubGroupVO;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.resourcedetail.dao.GuestOsDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
@@ -643,6 +654,8 @@ import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.vm.lease.VMLeaseManager;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.agent.AgentManager;
@@ -1015,6 +1028,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     UserDataManager userDataManager;
     @Inject
     StoragePoolTagsDao storagePoolTagsDao;
+    @Inject
+    protected ManagementServerJoinDao managementServerJoinDao;
 
     @Inject
     private PublicIpQuarantineDao publicIpQuarantineDao;
@@ -2752,27 +2767,112 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public Pair<List<? extends GuestOsCategory>, Integer> listGuestOSCategoriesByCriteria(final ListGuestOsCategoriesCmd cmd) {
-        final Filter searchFilter = new Filter(GuestOSCategoryVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        final Filter searchFilter = new Filter(GuestOSCategoryVO.class, "sortKey", true,
+                cmd.getStartIndex(), cmd.getPageSizeVal());
+        searchFilter.addOrderBy(GuestOSCategoryVO.class, "id", true);
         final Long id = cmd.getId();
         final String name = cmd.getName();
         final String keyword = cmd.getKeyword();
+        final Boolean featured = cmd.isFeatured();
+        final Boolean isIso = cmd.isIso();
+        final Boolean isVnf = cmd.isVnf();
+        final Long zoneId = cmd.getZoneId();
+        final CPU.CPUArch arch = cmd.getArch();
 
-        final SearchCriteria<GuestOSCategoryVO> sc = _guestOSCategoryDao.createSearchCriteria();
-
+        final SearchBuilder<GuestOSCategoryVO> sb = _guestOSCategoryDao.createSearchBuilder();
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("keyword", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("featured", sb.entity().isFeatured(), SearchCriteria.Op.EQ);
+        if (ObjectUtils.anyNotNull(zoneId, arch, isIso, isVnf)) {
+            final SearchBuilder<GuestOSVO> guestOsSearch = _guestOSDao.createSearchBuilder();
+            guestOsSearch.and("ids", guestOsSearch.entity().getId(), SearchCriteria.Op.IN);
+            sb.join("guestOsSearch", guestOsSearch, guestOsSearch.entity().getCategoryId(), sb.entity().getId(),
+                    JoinType.INNER);
+            guestOsSearch.done();
+            sb.groupBy(sb.entity().getId());
+        }
+        sb.done();
+        SearchCriteria<GuestOSCategoryVO> sc = sb.create();
         if (id != null) {
-            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+            sc.setParameters("id", id);
         }
-
         if (name != null) {
-            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
+            sc.setParameters("name", "%" + name + "%");
         }
-
         if (keyword != null) {
-            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.setParameters("name", "%" + keyword + "%");
         }
-
+        if (featured != null) {
+            sc.setParameters("featured", featured);
+        }
+        if (ObjectUtils.anyNotNull(zoneId, arch, isIso, isVnf)) {
+            List<Long> guestOsIds = templateDao.listTemplateIsoByArchVnfAndZone(zoneId, arch, isIso, isVnf);
+            if (CollectionUtils.isEmpty(guestOsIds)) {
+                return new Pair<>(Collections.emptyList(), 0);
+            }
+            sc.setJoinParameters("guestOsSearch", "ids", guestOsIds.toArray());
+        }
         final Pair<List<GuestOSCategoryVO>, Integer> result = _guestOSCategoryDao.searchAndCount(sc, searchFilter);
         return new Pair<>(result.first(), result.second());
+    }
+
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_GUEST_OS_CATEGORY_ADD, eventDescription = "adding OS category")
+    public GuestOsCategory addGuestOsCategory(AddGuestOsCategoryCmd cmd) {
+        final String name = cmd.getName();
+        final boolean featured = cmd.isFeatured();
+        final GuestOSCategoryVO guestOSCategory = new GuestOSCategoryVO(name, featured);
+        GuestOsCategory guestOsCategory = _guestOSCategoryDao.persist(guestOSCategory);
+        CallContext.current().setEventResourceId(guestOsCategory.getId());
+        CallContext.current().setEventResourceType(ApiCommandResourceType.GuestOsCategory);
+        return guestOSCategory;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_GUEST_OS_CATEGORY_UPDATE, eventDescription = "updating OS category")
+    public GuestOsCategory updateGuestOsCategory(UpdateGuestOsCategoryCmd cmd) {
+        final long id = cmd.getId();
+        final String name = cmd.getName();
+        final Boolean featured = cmd.isFeatured();
+        Integer sortKey = cmd.getSortKey();
+        final GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(id);
+        if (guestOSCategory == null) {
+            throw new InvalidParameterValueException("Invalid OS category ID specified");
+        }
+        if (ObjectUtils.allNull(name, featured, sortKey)) {
+            return guestOSCategory;
+        }
+        if (StringUtils.isNotBlank(name)) {
+            guestOSCategory.setName(name);
+        }
+        if (featured != null) {
+            guestOSCategory.setFeatured(featured);
+        }
+        if (sortKey != null) {
+            guestOSCategory.setSortKey(sortKey);
+        }
+        if (!_guestOSCategoryDao.update(id, guestOSCategory)) {
+            return null;
+        }
+        return guestOSCategory;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_GUEST_OS_CATEGORY_DELETE, eventDescription = "deleting OS category")
+    public boolean deleteGuestOsCategory(DeleteGuestOsCategoryCmd cmd) {
+        final long id = cmd.getId();
+        final GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(id);
+        if (guestOSCategory == null) {
+            throw new InvalidParameterValueException("Invalid OS category ID specified");
+        }
+        List<Long> guestOses = _guestOSDao.listIdsByCategoryId(id);
+        if (!guestOses.isEmpty()) {
+            throw new InvalidParameterValueException(String.format(
+                    "Unable to delete the OS category. %d guest OS exist for it.", guestOses.size()));
+        }
+        return _guestOSCategoryDao.remove(id);
     }
 
     @Override
@@ -2992,6 +3092,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public GuestOS updateGuestOs(final UpdateGuestOsCmd cmd) {
         final Long id = cmd.getId();
         final String displayName = cmd.getOsDisplayName();
+        final Long osCategoryId = cmd.getOsCategoryId();
+        final Boolean display = cmd.getForDisplay();
+        final Map<String, String> details = cmd.getDetails();
+        boolean updateNeeded = false;
 
         //check if guest OS exists
         final GuestOS guestOsHandle = ApiDBUtils.findGuestOSById(id);
@@ -2999,26 +3103,45 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw new InvalidParameterValueException("Guest OS not found. Please specify a valid ID for the Guest OS");
         }
 
-        if (!guestOsHandle.getIsUserDefined()) {
+        //Check if update is needed
+        if (StringUtils.isNotBlank(displayName) && !displayName.equals(guestOsHandle.getDisplayName())) {
+            //Check if another Guest OS by same name exists
+            final GuestOS duplicate = ApiDBUtils.findGuestOSByDisplayName(displayName);
+            if (duplicate != null) {
+                throw new InvalidParameterValueException("The specified Guest OS name : " + displayName + " already exists. Please specify a unique guest OS name");
+            }
+            updateNeeded = true;
+        }
+
+        if (osCategoryId != null) {
+            if (_guestOSCategoryDao.findById(osCategoryId) == null) {
+                throw new InvalidParameterValueException("Invalid OS category ID specified");
+            }
+            updateNeeded = true;
+        }
+
+        if (!guestOsHandle.getIsUserDefined() && (StringUtils.isNotBlank(displayName) || MapUtils.isNotEmpty(details)
+                || display != null)) {
             throw new InvalidParameterValueException("Unable to modify system defined guest OS");
         }
 
-        persistGuestOsDetails(cmd.getDetails(), id);
+        if (MapUtils.isNotEmpty(details)) {
+            persistGuestOsDetails(details, id);
+        }
 
-        //Check if update is needed
-        if (displayName.equals(guestOsHandle.getDisplayName())) {
+        if (!updateNeeded) {
             return guestOsHandle;
         }
 
-        //Check if another Guest OS by same name exists
-        final GuestOS duplicate = ApiDBUtils.findGuestOSByDisplayName(displayName);
-        if (duplicate != null) {
-            throw new InvalidParameterValueException("The specified Guest OS name : " + displayName + " already exists. Please specify a unique guest OS name");
-        }
         final GuestOSVO guestOs = _guestOSDao.createForUpdate(id);
-        guestOs.setDisplayName(displayName);
+        if (StringUtils.isNotBlank(displayName)) {
+            guestOs.setDisplayName(displayName);
+        }
         if (cmd.getForDisplay() != null) {
             guestOs.setDisplay(cmd.getForDisplay());
+        }
+        if (osCategoryId != null) {
+            guestOs.setCategoryId(osCategoryId);
         }
         if (_guestOSDao.update(id, guestOs)) {
             return _guestOSDao.findById(id);
@@ -3722,6 +3845,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListPortForwardingRulesCmd.class);
         cmdList.add(UpdatePortForwardingRuleCmd.class);
         cmdList.add(ListGuestOsCategoriesCmd.class);
+        cmdList.add(AddGuestOsCategoryCmd.class);
+        cmdList.add(UpdateGuestOsCategoryCmd.class);
+        cmdList.add(DeleteGuestOsCategoryCmd.class);
         cmdList.add(ListGuestOsCmd.class);
         cmdList.add(ListGuestOsMappingCmd.class);
         cmdList.add(AddGuestOsCmd.class);
@@ -4041,6 +4167,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListTemplateDirectDownloadCertificatesCmd.class);
         cmdList.add(ProvisionTemplateDirectDownloadCertificateCmd.class);
         cmdList.add(ListMgmtsCmd.class);
+        cmdList.add(RemoveManagementServerCmd.class);
         cmdList.add(GetUploadParamsForIsoCmd.class);
         cmdList.add(GetRouterHealthCheckResultsCmd.class);
         cmdList.add(StartRollingMaintenanceCmd.class);
@@ -4076,6 +4203,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(DeleteUserDataCmd.class);
         cmdList.add(ListUserDataCmd.class);
         cmdList.add(LinkUserDataToTemplateCmd.class);
+        cmdList.add(RegisterCniConfigurationCmd.class);
+        cmdList.add(ListCniConfigurationCmd.class);
+        cmdList.add(DeleteCniConfigurationCmd.class);
 
         //object store APIs
         cmdList.add(AddObjectStoragePoolCmd.class);
@@ -4888,7 +5018,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
-    public Pair<List<? extends UserData>, Integer> listUserDatas(final ListUserDataCmd cmd) {
+    @ActionEvent(eventType = EventTypes.EVENT_DELETE_CNI_CONFIG, eventDescription = "CNI Configuration deletion")
+    public boolean deleteCniConfiguration(DeleteCniConfigurationCmd cmd) {
+        return deleteUserData(cmd);
+    }
+
+    @Override
+    public Pair<List<? extends UserData>, Integer> listUserDatas(final ListUserDataCmd cmd, final boolean forCks) {
         final Long id = cmd.getId();
         final String name = cmd.getName();
         final String keyword = cmd.getKeyword();
@@ -4908,6 +5044,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("keyword", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
+        sb.and("forCks", sb.entity().isForCks(), SearchCriteria.Op.EQ);
         final SearchCriteria<UserDataVO> sc = sb.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
@@ -4923,8 +5061,25 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             sc.setParameters("keyword",  "%" + keyword + "%");
         }
 
+        sc.setParameters("forCks", forCks);
+
         final Pair<List<UserDataVO>, Integer> result = userDataDao.searchAndCount(sc, searchFilter);
         return new Pair<>(result.first(), result.second());
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_REGISTER_CNI_CONFIG, eventDescription = "registering CNI configuration", async = true)
+    public UserData registerCniConfiguration(RegisterCniConfigurationCmd cmd) {
+        final Account owner = getOwner(cmd);
+        checkForUserDataByName(cmd, owner);
+        final String name = cmd.getName();
+
+        String userdata = cmd.getCniConfig();
+        final String params = cmd.getParams();
+
+        userdata = userDataManager.validateUserData(userdata, cmd.getHttpMethod());
+
+        return createAndSaveUserData(name, userdata, params, owner, true);
     }
 
     @Override
@@ -4932,15 +5087,15 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public UserData registerUserData(final RegisterUserDataCmd cmd) {
         final Account owner = getOwner(cmd);
         checkForUserDataByName(cmd, owner);
-        checkForUserData(cmd, owner);
-
         final String name = cmd.getName();
+
         String userdata = cmd.getUserData();
+        checkForUserData(cmd, owner);
         final String params = cmd.getParams();
 
         userdata = userDataManager.validateUserData(userdata, cmd.getHttpMethod());
 
-        return createAndSaveUserData(name, userdata, params, owner);
+        return createAndSaveUserData(name, userdata, params, owner, false);
     }
 
     /**
@@ -4960,7 +5115,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
      * @param owner
      * @throws InvalidParameterValueException
      */
-    private void checkForUserDataByName(final RegisterUserDataCmd cmd, final Account owner) throws InvalidParameterValueException {
+    private void checkForUserDataByName(final BaseRegisterUserDataCmd cmd, final Account owner) throws InvalidParameterValueException {
         final UserDataVO userData = userDataDao.findByName(owner.getAccountId(), owner.getDomainId(), cmd.getName());
         if (userData != null) {
             throw new InvalidParameterValueException(String.format("A userdata with name %s already exists for this account.", cmd.getName()));
@@ -5029,7 +5184,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
      * @param cmd
      * @return Account
      */
-    protected Account getOwner(final RegisterUserDataCmd cmd) {
+    protected Account getOwner(final BaseRegisterUserDataCmd cmd) {
         final Account caller = getCaller();
         return  _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
     }
@@ -5042,7 +5197,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return caller;
     }
 
-    private SSHKeyPair createAndSaveSSHKeyPair(final String name, final String fingerprint, final String publicKey, final String privateKey, final Account owner) {
+    private SSHKeyPair  createAndSaveSSHKeyPair(final String name, final String fingerprint, final String publicKey, final String privateKey, final Account owner) {
         final SSHKeyPairVO newPair = new SSHKeyPairVO();
 
         newPair.setAccountId(owner.getAccountId());
@@ -5057,7 +5212,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return newPair;
     }
 
-    private UserData createAndSaveUserData(final String name, final String userdata, final String params, final Account owner) {
+    private UserData createAndSaveUserData(final String name, final String userdata, final String params, final Account owner, final boolean isForCks) {
         final UserDataVO userDataVO = new UserDataVO();
 
         userDataVO.setAccountId(owner.getAccountId());
@@ -5065,6 +5220,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         userDataVO.setName(name);
         userDataVO.setUserData(userdata);
         userDataVO.setParams(params);
+        userDataVO.setForCks(isForCks);
 
         userDataDao.persist(userDataVO);
 
@@ -5550,6 +5706,26 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     public void setLockControllerListener(final LockControllerListener lockControllerListener) {
         _lockControllerListener = lockControllerListener;
+    }
+
+    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_MANAGEMENT_SERVER_REMOVE, eventDescription = "removing Management Server")
+    public boolean removeManagementServer(RemoveManagementServerCmd cmd) {
+        final Long id = cmd.getId();
+        ManagementServerJoinVO managementServer = managementServerJoinDao.findById(id);
+
+        if (managementServer == null) {
+            throw new InvalidParameterValueException(String.format("Unable to find a Management Server with ID equal to [%s].", managementServer.getUuid()));
+        }
+
+        if (!ManagementServerHost.State.Down.equals(managementServer.getState())) {
+            throw new InvalidParameterValueException(String.format("Unable to remove Management Server with ID [%s]. It can only be removed when it is in the [%s] state, however currently it is in the [%s] state.", managementServer.getUuid(), ManagementServerHost.State.Down.name(), managementServer.getState().name()));
+        }
+
+        managementServer.setRemoved(new Date());
+        return managementServerJoinDao.update(id, managementServer);
+
     }
 
 }

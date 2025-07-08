@@ -71,7 +71,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import CreateMenu from './CreateMenu'
 import ExternalLink from './ExternalLink'
 import HeaderNotice from './HeaderNotice'
@@ -139,13 +139,18 @@ export default {
     },
     fetchResourceIcon (id) {
       return new Promise((resolve, reject) => {
-        api('listUsers', {
+        if (this.$store.getters.avatar) {
+          this.image = this.$store.getters.avatar
+          resolve(this.image)
+        }
+        getAPI('listUsers', {
           id: id,
           showicon: true
         }).then(json => {
           const response = json.listusersresponse.user || []
           if (response?.[0]) {
             this.image = response[0]?.icon?.base64image || ''
+            this.$store.commit('SET_AVATAR', this.image)
             resolve(this.image)
           }
         }).catch(error => {

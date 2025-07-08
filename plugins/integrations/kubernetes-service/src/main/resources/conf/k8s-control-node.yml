@@ -1,3 +1,4 @@
+## template: jinja
 #cloud-config
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -60,8 +61,8 @@ write_files:
       sysctl net.ipv4.conf.default.arp_ignore=0
       sysctl net.ipv4.conf.all.arp_announce=0
       sysctl net.ipv4.conf.all.arp_ignore=0
-      sysctl net.ipv4.conf.eth0.arp_announce=0
-      sysctl net.ipv4.conf.eth0.arp_ignore=0
+      sysctl net.ipv4.conf.eth0.arp_announce=0 || sysctl net.ipv4.conf.ens35.arp_announce=0 || true
+      sysctl net.ipv4.conf.eth0.arp_ignore=0 || sysctl net.ipv4.conf.ens35.arp_ignore=0 || true
       sed -i "s/net.ipv4.conf.default.arp_announce =.*$/net.ipv4.conf.default.arp_announce = 0/" /etc/sysctl.conf
       sed -i "s/net.ipv4.conf.default.arp_ignore =.*$/net.ipv4.conf.default.arp_ignore = 0/" /etc/sysctl.conf
       sed -i "s/net.ipv4.conf.all.arp_announce =.*$/net.ipv4.conf.all.arp_announce = 0/" /etc/sysctl.conf
@@ -73,8 +74,14 @@ write_files:
       ATTEMPT_ONLINE_INSTALL=false
       setup_complete=false
 
-      OFFLINE_INSTALL_ATTEMPT_SLEEP=15
-      MAX_OFFLINE_INSTALL_ATTEMPTS=100
+      OFFLINE_INSTALL_ATTEMPT_SLEEP={{ k8s.install.wait.time }}
+      MAX_OFFLINE_INSTALL_ATTEMPTS={{ k8s.install.reattempts.count }}
+      if [[ -z $OFFLINE_INSTALL_ATTEMPT_SLEEP || $OFFLINE_INSTALL_ATTEMPT_SLEEP -eq 0 ]]; then
+        OFFLINE_INSTALL_ATTEMPT_SLEEP=15
+      fi
+      if [[ -z $MAX_OFFLINE_INSTALL_ATTEMPTS || $MAX_OFFLINE_INSTALL_ATTEMPTS -eq 0 ]]; then
+        MAX_OFFLINE_INSTALL_ATTEMPTS=100
+      fi
       offline_attempts=1
       MAX_SETUP_CRUCIAL_CMD_ATTEMPTS=3
       EJECT_ISO_FROM_OS={{ k8s.eject.iso }}
@@ -230,6 +237,34 @@ write_files:
         done
       fi
 
+  - path: /etc/kubernetes/kubeadm-config.yaml
+    permissions: '0644'
+    owner: root:root
+    content: |
+      apiVersion: kubeadm.k8s.io/v1beta3
+      kind: ClusterConfiguration
+      apiServer:
+        certSANs:
+        {{ k8s_control.server_ips }}
+      controlPlaneEndpoint: {{ k8s_control.server_ip }}:{{ k8s.api_server_port }}
+      etcd:
+        external:
+          endpoints:
+          {{ etcd.etcd_endpoint_list }}
+      ---
+      apiVersion: kubeadm.k8s.io/v1beta3
+      kind: InitConfiguration
+      bootstrapTokens:
+        - token: "{{ k8s_control_node.cluster.token }}"
+          ttl: "0"
+      nodeRegistration:
+        criSocket: /run/containerd/containerd.sock
+      localAPIEndpoint:
+        advertiseAddress: {{ k8s_control.server_ip }}
+        bindPort: {{ k8s.api_server_port }}
+      certificateKey: {{ k8s_control.certificate_key }}
+
+
   - path: /opt/bin/deploy-kube-system
     permissions: '0700'
     owner: root:root
@@ -245,6 +280,8 @@ write_files:
         export PATH=$PATH:/opt/bin
       fi
 
+      EXTERNAL_ETCD_NODES={{ etcd.unstacked_etcd }}
+      EXTERNAL_CNI_PLUGIN={{ k8s.external.cni.plugin }}
       MAX_SETUP_CRUCIAL_CMD_ATTEMPTS=3
       crucial_cmd_attempts=1
       while true; do
@@ -254,7 +291,11 @@ write_files:
         fi
         retval=0
         set +e
-        kubeadm init --token {{ k8s_control_node.cluster.token }} --token-ttl 0 {{ k8s_control_node.cluster.initargs }} --cri-socket /run/containerd/containerd.sock
+        if [[ ${EXTERNAL_ETCD_NODES} == true ]]; then
+          kubeadm init --config /etc/kubernetes/kubeadm-config.yaml --upload-certs
+        else
+          kubeadm init --token {{ k8s_control_node.cluster.token }} --token-ttl 0 {{ k8s_control_node.cluster.initargs }} --cri-socket /run/containerd/containerd.sock
+        fi
         retval=$?
         set -e
         if [ $retval -eq 0 ]; then
@@ -282,7 +323,9 @@ write_files:
       if [ -d "$K8S_CONFIG_SCRIPTS_COPY_DIR" ]; then
         ### Network, dashboard configs available offline ###
         echo "Offline configs are available!"
-        /opt/bin/kubectl apply -f ${K8S_CONFIG_SCRIPTS_COPY_DIR}/network.yaml
+        if [[ ${EXTERNAL_CNI_PLUGIN} == false ]]; then
+          /opt/bin/kubectl apply -f ${K8S_CONFIG_SCRIPTS_COPY_DIR}/network.yaml
+        fi
         /opt/bin/kubectl apply -f ${K8S_CONFIG_SCRIPTS_COPY_DIR}/dashboard.yaml
         rm -rf "${K8S_CONFIG_SCRIPTS_COPY_DIR}"
       else
@@ -297,6 +340,7 @@ write_files:
       sudo touch /home/cloud/success
       echo "true" > /home/cloud/success
 
+  {% if registry is defined %}
   - path: /opt/bin/setup-containerd
     permissions: '0755'
     owner: root:root
@@ -314,6 +358,7 @@ write_files:
       echo "Restarting containerd service"
       systemctl daemon-reload
       systemctl restart containerd
+  {% endif %}
 
   - path: /etc/systemd/system/deploy-kube-system.service
     permissions: '0755'

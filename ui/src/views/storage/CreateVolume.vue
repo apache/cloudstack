@@ -168,7 +168,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -293,7 +293,7 @@ export default {
       } else if (id !== null) {
         params.id = id
       }
-      api('listZones', params).then(json => {
+      getAPI('listZones', params).then(json => {
         this.zones = json.listzonesresponse.zone || []
         this.form.zoneid = this.zones[0].id || ''
         this.fetchDiskOfferings(this.form.zoneid)
@@ -311,7 +311,7 @@ export default {
         showunique: false,
         id: this.resource.id
       }
-      api('listSnapshots', params).then(json => {
+      getAPI('listSnapshots', params).then(json => {
         const snapshots = json.listsnapshotsresponse.snapshot || []
         for (const snapshot of snapshots) {
           if (!this.snapshotZoneIds.includes(snapshot.zoneid)) {
@@ -339,7 +339,7 @@ export default {
       } else {
         params.account = this.owner.account
       }
-      api('listDiskOfferings', params).then(json => {
+      getAPI('listDiskOfferings', params).then(json => {
         this.offerings = json.listdiskofferingsresponse.diskoffering || []
         if (this.createVolumeFromVM) {
           this.offerings = this.offerings.filter(x => x.suitableforvirtualmachine)
@@ -369,7 +369,7 @@ export default {
       var vmStates = ['Running', 'Stopped']
       vmStates.forEach((state) => {
         params.state = state
-        api('listVirtualMachines', params).then(response => {
+        getAPI('listVirtualMachines', params).then(response => {
           this.virtualmachines = this.virtualmachines.concat(response.listvirtualmachinesresponse.virtualmachine || [])
         }).catch(error => {
           this.$notifyError(error)
@@ -406,7 +406,7 @@ export default {
           values.account = this.owner.account
         }
         this.loading = true
-        api('createVolume', values).then(response => {
+        postAPI('createVolume', values).then(response => {
           this.$pollJob({
             jobId: response.createvolumeresponse.jobid,
             title: this.$t('message.success.create.volume'),
@@ -423,7 +423,7 @@ export default {
                   params.virtualmachineid = this.vmidtoattach
                   params.deviceid = values.deviceid
                 }
-                api('attachVolume', params).then(response => {
+                postAPI('attachVolume', params).then(response => {
                   this.$pollJob({
                     jobId: response.attachvolumeresponse.jobid,
                     title: this.$t('message.success.attach.volume'),

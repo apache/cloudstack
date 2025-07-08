@@ -27,19 +27,19 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-import com.cloud.cpu.CPU;
-import com.cloud.user.Account;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.util.CPUArchConverter;
+import org.apache.cloudstack.util.HypervisorTypeConverter;
 
+import com.cloud.cpu.CPU;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.template.VirtualMachineTemplate.State;
+import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.util.CPUArchConverter;
-import org.apache.cloudstack.util.HypervisorTypeConverter;
 
 @Entity
 @Table(name = "template_view")
@@ -111,6 +111,9 @@ public class TemplateJoinVO extends BaseViewWithTagInformationVO implements Cont
 
     @Column(name = "guest_os_name")
     private String guestOSName;
+
+    @Column(name = "guest_os_category_id")
+    private Long guestOSCategoryId;
 
     @Column(name = "bootable")
     private boolean bootable = true;
@@ -243,6 +246,9 @@ public class TemplateJoinVO extends BaseViewWithTagInformationVO implements Cont
 
     @Column(name = "deploy_as_is")
     private boolean deployAsIs;
+
+    @Column(name = "for_cks")
+    private boolean forCks;
 
     @Column(name = "user_data_id")
     private Long userDataId;
@@ -405,6 +411,10 @@ public class TemplateJoinVO extends BaseViewWithTagInformationVO implements Cont
         return guestOSName;
     }
 
+    public Long getGuestOSCategoryId() {
+        return guestOSCategoryId;
+    }
+
     public boolean isBootable() {
         return bootable;
     }
@@ -520,6 +530,10 @@ public class TemplateJoinVO extends BaseViewWithTagInformationVO implements Cont
 
     public boolean isDeployAsIs() {
         return deployAsIs;
+    }
+
+    public boolean isForCks() {
+        return forCks;
     }
 
     public Object getParentTemplateId() {

@@ -68,7 +68,7 @@
 import DetailsTab from '@/components/view/DetailsTab'
 import InfoCard from '@/components/view/InfoCard'
 import ResourceLayout from '@/layouts/ResourceLayout'
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 
 export default {
@@ -137,7 +137,7 @@ export default {
   methods: {
     fetchData () {
       if (this.resource.associatednetworkid) {
-        api('listNetworks', { id: this.resource.associatednetworkid, listall: true }).then(response => {
+        getAPI('listNetworks', { id: this.resource.associatednetworkid, listall: true }).then(response => {
           if (response && response.listnetworksresponse && response.listnetworksresponse.network) {
             this.networkService = response.listnetworksresponse.network[0]
           } else {

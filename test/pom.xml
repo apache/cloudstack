@@ -44,16 +44,6 @@
             <groupId>org.jenkins-ci</groupId>
             <artifactId>trilead-ssh2</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.openqa.selenium.server</groupId>
-            <artifactId>selenium-server</artifactId>
-            <version>${cs.selenium.server.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.seleniumhq.selenium.client-drivers</groupId>
-            <artifactId>selenium-java-client-driver</artifactId>
-            <version>${cs.selenium-java-client-driver.version}</version>
-        </dependency>
     </dependencies>
     <build>
         <defaultGoal>compile</defaultGoal>

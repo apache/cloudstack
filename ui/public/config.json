@@ -97,5 +97,18 @@
   "basicZoneEnabled": true,
   "multipleServer": false,
   "allowSettingTheme": true,
-  "docHelpMappings": {}
+  "imageSelectionInterface": "modern",
+  "showUserCategoryForModernImageSelection": true,
+  "showAllCategoryForModernImageSelection": false,
+  "docHelpMappings": {},
+  "announcementBanner": {
+    "enabled": false,
+    "showIcon": false,
+    "closable": true,
+    "persistDismissal": true,
+    "type": "info",
+    "message": "🤔 <strong>Sample Announcement</strong>: New Feature Available: Check out our latest dashboard improvements! <a href='/features'>Learn more</a>",
+    "startDate": "2025-06-01T00:00:00Z",
+    "endDate": "2025-07-16T00:00:00Z"
+  }
 }

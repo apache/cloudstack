@@ -94,6 +94,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VMInstanceVO;
@@ -121,6 +122,7 @@ import javax.naming.ConfigurationException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -861,17 +863,17 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
      * Replace 0.0.0.0/0 to ANY on each occurrence
      */
     protected List<String> transformCidrListValues(List<String> sourceCidrList) {
-        List<String> list = new ArrayList<>();
+        Set<String> set = new HashSet<>();
         if (org.apache.commons.collections.CollectionUtils.isNotEmpty(sourceCidrList)) {
             for (String cidr : sourceCidrList) {
-                if (cidr.equals("0.0.0.0/0")) {
-                    list.add("ANY");
+                if (cidr.equals(NetUtils.ALL_IP4_CIDRS) || cidr.equals(NetUtils.ALL_IP6_CIDRS)) {
+                    set.add("ANY");
                 } else {
-                    list.add(cidr);
+                    set.add(cidr);
                 }
             }
         }
-        return list;
+        return set.stream().sorted().collect(Collectors.toList());
     }
 
     @Override
