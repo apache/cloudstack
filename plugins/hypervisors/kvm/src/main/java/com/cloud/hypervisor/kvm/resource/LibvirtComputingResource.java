@@ -373,7 +373,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public static final String CHECKPOINT_DELETE_COMMAND = "virsh checkpoint-delete --domain %s --checkpointname %s  --metadata";
 
-    protected int snapshotMergeTimeout;
+    protected int qcow2DeltaMergeTimeout;
 
     private String modifyVlanPath;
     private String versionStringPath;
@@ -1192,8 +1192,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmdsTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.CMDS_TIMEOUT) * 1000;
 
         noMemBalloon = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_MEMBALLOON_DISABLE);
-        snapshotMergeTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.SNAPSHOT_MERGE_TIMEOUT);
-        snapshotMergeTimeout = snapshotMergeTimeout > 0 ? snapshotMergeTimeout : AgentProperties.SNAPSHOT_MERGE_TIMEOUT.getDefaultValue();
+        qcow2DeltaMergeTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.QCOW2_DELTA_MERGE_TIMEOUT);
+        qcow2DeltaMergeTimeout = qcow2DeltaMergeTimeout > 0 ? qcow2DeltaMergeTimeout : AgentProperties.QCOW2_DELTA_MERGE_TIMEOUT.getDefaultValue();
 
         manualCpuSpeed = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST_CPU_MANUAL_SPEED_MHZ);
 
@@ -5913,7 +5913,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 " The job will be left running to avoid data corruption, but ACS will return an error and volume [%s] will need to be normalized manually. If the commit" +
                 " involved the active image, the pivot will need to be manually done.", topFilePath, baseFilePath, snapshotName, vmName, volume);
         try {
-            if (!semaphore.tryAcquire(snapshotMergeTimeout, TimeUnit.SECONDS)) {
+            if (!semaphore.tryAcquire(qcow2DeltaMergeTimeout, TimeUnit.SECONDS)) {
                 throw new CloudRuntimeException("Timed out while waiting for " + errorMessage);
             }
         } catch (InterruptedException e) {
@@ -5999,7 +5999,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     protected void checkBlockCommitProgress(Domain vm, String diskLabel, String vmName, String snapshotName, String topFilePath, String baseFilePath) {
-        int timeout = snapshotMergeTimeout;
+        int timeout = qcow2DeltaMergeTimeout;
         DomainBlockJobInfo result;
         long lastCommittedBytes = 0;
         long endBytes = 0;
@@ -6034,8 +6034,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             lastCommittedBytes = currentCommittedBytes;
             endBytes = result.end;
         }
-        logger.warn("Block commit {} has timed out after waiting at least {} seconds. The progress of the operation was [{}] of [{}].", partialLog,
-                snapshotMergeTimeout, lastCommittedBytes, endBytes);
+        logger.warn("Block commit {} has timed out after waiting at least {} seconds. The progress of the operation was [{}] of [{}].", partialLog, qcow2DeltaMergeTimeout, lastCommittedBytes, endBytes);
     }
 
     /**

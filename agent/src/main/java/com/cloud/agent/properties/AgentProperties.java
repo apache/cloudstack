@@ -161,7 +161,7 @@ public class AgentProperties{
      * Data type: Integer.<br>
      * Default value: <code>259200</code>
      */
-    public static final Property<Integer> SNAPSHOT_MERGE_TIMEOUT = new Property<>("snapshot.merge.timeout", 60 * 60 * 72);
+    public static final Property<Integer> QCOW2_DELTA_MERGE_TIMEOUT = new Property<>("qcow2.delta.merge.timeout", 60 * 60 * 72);
 
     /**
      * This parameter sets the VM migration speed (in mbps). The default value is -1,<br>

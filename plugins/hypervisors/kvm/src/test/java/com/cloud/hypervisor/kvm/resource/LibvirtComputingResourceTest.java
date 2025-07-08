@@ -6644,7 +6644,7 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void mergeSnapshotIntoBaseFileTestActiveAndDeleteFlags() throws Exception {
-        libvirtComputingResourceSpy.snapshotMergeTimeout = 10;
+        libvirtComputingResourceSpy.qcow2DeltaMergeTimeout = 10;
 
         try (MockedStatic<LibvirtUtilitiesHelper> libvirtUtilitiesHelperMockedStatic = Mockito.mockStatic(LibvirtUtilitiesHelper.class);
                 MockedStatic<ThreadContext> threadContextMockedStatic = Mockito.mockStatic(ThreadContext.class)) {
@@ -6698,7 +6698,7 @@ public class LibvirtComputingResourceTest {
     public void mergeSnapshotIntoBaseFileTestDeleteFlag() throws Exception {
         try (MockedStatic<LibvirtUtilitiesHelper> libvirtUtilitiesHelperMockedStatic = Mockito.mockStatic(LibvirtUtilitiesHelper.class);
                 MockedStatic<ThreadContext> threadContextMockedStatic = Mockito.mockStatic(ThreadContext.class)) {
-            libvirtComputingResourceSpy.snapshotMergeTimeout = 10;
+            libvirtComputingResourceSpy.qcow2DeltaMergeTimeout = 10;
             libvirtUtilitiesHelperMockedStatic.when(() -> LibvirtUtilitiesHelper.isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit(Mockito.any())).thenReturn(true);
             Mockito.doReturn(new Semaphore(1)).when(libvirtComputingResourceSpy).getSemaphoreToWaitForMerge();
             threadContextMockedStatic.when(() -> ThreadContext.get(Mockito.anyString())).thenReturn("logid");
@@ -6722,7 +6722,7 @@ public class LibvirtComputingResourceTest {
     public void mergeSnapshotIntoBaseFileTestNoFlags() throws Exception {
         try (MockedStatic<LibvirtUtilitiesHelper> libvirtUtilitiesHelperMockedStatic = Mockito.mockStatic(LibvirtUtilitiesHelper.class);
                 MockedStatic<ThreadContext> threadContextMockedStatic = Mockito.mockStatic(ThreadContext.class)) {
-            libvirtComputingResourceSpy.snapshotMergeTimeout = 10;
+            libvirtComputingResourceSpy.qcow2DeltaMergeTimeout = 10;
             libvirtUtilitiesHelperMockedStatic.when(() -> LibvirtUtilitiesHelper.isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit(Mockito.any())).thenReturn(false);
             Mockito.doReturn(new Semaphore(1)).when(libvirtComputingResourceSpy).getSemaphoreToWaitForMerge();
             threadContextMockedStatic.when(() -> ThreadContext.get(Mockito.anyString())).thenReturn("logid");
@@ -6746,7 +6746,7 @@ public class LibvirtComputingResourceTest {
     public void mergeSnapshotIntoBaseFileTestMergeFailsThrowException() throws Exception {
         try (MockedStatic<LibvirtUtilitiesHelper> libvirtUtilitiesHelperMockedStatic = Mockito.mockStatic(LibvirtUtilitiesHelper.class);
                 MockedStatic<ThreadContext> threadContextMockedStatic = Mockito.mockStatic(ThreadContext.class)) {
-            libvirtComputingResourceSpy.snapshotMergeTimeout = 10;
+            libvirtComputingResourceSpy.qcow2DeltaMergeTimeout = 10;
             libvirtUtilitiesHelperMockedStatic.when(() -> LibvirtUtilitiesHelper.isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit(Mockito.any())).thenReturn(false);
             Mockito.doReturn(new Semaphore(1)).when(libvirtComputingResourceSpy).getSemaphoreToWaitForMerge();
             threadContextMockedStatic.when(() -> ThreadContext.get(Mockito.anyString())).thenReturn("logid");

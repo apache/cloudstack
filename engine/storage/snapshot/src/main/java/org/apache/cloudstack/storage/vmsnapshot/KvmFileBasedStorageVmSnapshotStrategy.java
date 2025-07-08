@@ -230,7 +230,12 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
             return;
         }
 
-        resourceLimitManager.decrementResourceCount(volumeVO.getAccountId(), Resource.ResourceType.primary_storage, volumeVO.getSize() - snapshotRef.getSize());
+        long delta = volumeVO.getSize() - snapshotRef.getSize();
+        if (delta < 0){
+            resourceLimitManager.incrementResourceCount(volumeVO.getAccountId(), Resource.ResourceType.primary_storage, -delta);
+        } else {
+            resourceLimitManager.decrementResourceCount(volumeVO.getAccountId(), Resource.ResourceType.primary_storage, delta);
+        }
         volumeVO.setSize(snapshotRef.getSize());
         volumeObjectTO.setSize(snapshotRef.getSize());
         volumeDao.update(volumeVO.getId(), volumeVO);
