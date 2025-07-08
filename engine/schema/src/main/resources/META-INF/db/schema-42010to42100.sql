@@ -337,16 +337,9 @@ BEGIN
 ;END;
 
 CALL `cloud`.`INSERT_EXTENSION_IF_NOT_EXISTS`('Proxmox', 'Sample extension for Proxmox written in bash', 'Proxmox/proxmox.sh');
-CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('Proxmox', 'url', '', 1);
-CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('Proxmox', 'user', '', 1);
-CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('Proxmox', 'token', '', 1);
-CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('Proxmox', 'secret', '', 1);
 CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('Proxmox', 'orchestratorrequirespreparevm', 'true', 0);
 
 CALL `cloud`.`INSERT_EXTENSION_IF_NOT_EXISTS`('HyperV', 'Sample extension for HyperV written in python', 'HyperV/hyperv.py');
-CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('HyperV', 'url', '', 1);
-CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('HyperV', 'username', '', 1);
-CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('HyperV', 'password', '', 1);
 
 DROP PROCEDURE IF EXISTS `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_IF_NOT_EXISTS`;
 CREATE PROCEDURE `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_IF_NOT_EXISTS`(
