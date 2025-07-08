@@ -207,8 +207,7 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
         Map<String, String> details = new HashMap<>();
         details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
         details.put(ScaleIOGatewayClient.STORAGE_POOL_MDMS, mdms);
-        details.put(MdmsChangeApplyWaitTime.key(), String.valueOf(MdmsChangeApplyWaitTime.valueIn(host.getDataCenterId())));
-
+        populateSdcSettings(details, host.getDataCenterId());
         PrepareStorageClientCommand cmd = new PrepareStorageClientCommand(((PrimaryDataStore) dataStore).getPoolType(), dataStore.getUuid(), details);
         int timeoutSeconds = 60;
         cmd.setWait(timeoutSeconds);
@@ -325,7 +324,7 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
         logger.debug(String.format("Unpreparing SDC on the host %s (%s)", host.getId(), host.getName()));
         Map<String,String> details = new HashMap<>();
         details.put(ScaleIOGatewayClient.STORAGE_POOL_MDMS, mdms);
-        details.put(MdmsChangeApplyWaitTime.key(), String.valueOf(MdmsChangeApplyWaitTime.valueIn(host.getDataCenterId())));
+        populateSdcSettings(details, host.getDataCenterId());
         UnprepareStorageClientCommand cmd = new UnprepareStorageClientCommand(((PrimaryDataStore) dataStore).getPoolType(), dataStore.getUuid(), details);
         int timeoutSeconds = 60;
         cmd.setWait(timeoutSeconds);
@@ -483,6 +482,17 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
             throw new CloudRuntimeException("Unable to find the storage pool with id " + storagePoolId);
         }
         return ScaleIOGatewayClientConnectionPool.getInstance().getClient(storagePool, storagePoolDetailsDao);
+    }
+
+    @Override
+    public void populateSdcSettings(Map<String, String> details, long dataCenterId) {
+        if (details == null) {
+            details = new HashMap<>();
+        }
+
+        details.put(ScaleIOSDCManager.MdmsChangeApplyWaitTime.key(), String.valueOf(ScaleIOSDCManager.MdmsChangeApplyWaitTime.valueIn(dataCenterId)));
+        details.put(ScaleIOSDCManager.ValidateMdmsOnConnect.key(), String.valueOf(ScaleIOSDCManager.ValidateMdmsOnConnect.valueIn(dataCenterId)));
+        details.put(ScaleIOSDCManager.BlockSdcUnprepareIfRestartNeededAndVolumesAreAttached.key(), String.valueOf(ScaleIOSDCManager.BlockSdcUnprepareIfRestartNeededAndVolumesAreAttached.valueIn(dataCenterId)));
     }
 
     @Override

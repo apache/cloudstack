@@ -22,6 +22,8 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.host.Host;
 
+import java.util.Map;
+
 public interface ScaleIOSDCManager {
     ConfigKey<Boolean> ConnectOnDemand = new ConfigKey<>("Storage",
             Boolean.class,
@@ -121,4 +123,11 @@ public interface ScaleIOSDCManager {
      * @return Comma-separated list of MDM IPs of the pool
      */
     String getMdms(long poolId);
+
+    /**
+     * Adds the SDC settings to the details map.
+     * @param details the details map to add the settings
+     * @param dataCenterId the datacenter id for the settings
+     */
+    void populateSdcSettings(Map<String, String> details, long dataCenterId);
 }

@@ -306,7 +306,8 @@ public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCy
         Map<String, String> details = new HashMap<>();
         StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(store.getId());
         if (storagePoolVO != null) {
-            populateScaleIOConfiguration(details, storagePoolVO.getDataCenterId());
+            sdcManager = ComponentContext.inject(sdcManager);
+            sdcManager.populateSdcSettings(details, storagePoolVO.getDataCenterId());
             StoragePoolDetailVO systemIdDetail = storagePoolDetailsDao.findDetail(store.getId(), ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
             if (systemIdDetail != null) {
                 details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemIdDetail.getValue());
@@ -328,11 +329,11 @@ public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCy
         Map<String, String> details = new HashMap<>();
         StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(store.getId());
         if (storagePoolVO != null) {
-            populateScaleIOConfiguration(details, storagePoolVO.getDataCenterId());
+            sdcManager = ComponentContext.inject(sdcManager);
+            sdcManager.populateSdcSettings(details, storagePoolVO.getDataCenterId());
             StoragePoolDetailVO systemIdDetail = storagePoolDetailsDao.findDetail(store.getId(), ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
             if (systemIdDetail != null) {
                 details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemIdDetail.getValue());
-                sdcManager = ComponentContext.inject(sdcManager);
                 if (sdcManager.areSDCConnectionsWithinLimit(store.getId())) {
                     details.put(ScaleIOSDCManager.ConnectOnDemand.key(), String.valueOf(ScaleIOSDCManager.ConnectOnDemand.valueIn(storagePoolVO.getDataCenterId())));
                     StoragePoolDetailVO mdmsDetail = storagePoolDetailsDao.findDetail(store.getId(), ScaleIOGatewayClient.STORAGE_POOL_MDMS);
@@ -410,15 +411,5 @@ public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCy
 
     private static boolean isSupportedHypervisorType(Hypervisor.HypervisorType hypervisorType) {
         return Hypervisor.HypervisorType.KVM.equals(hypervisorType);
-    }
-
-    private void populateScaleIOConfiguration(Map<String, String> details, long dataCenterId) {
-        if (details == null) {
-            details = new HashMap<>();
-        }
-
-        details.put(ScaleIOSDCManager.MdmsChangeApplyWaitTime.key(), String.valueOf(ScaleIOSDCManager.MdmsChangeApplyWaitTime.valueIn(dataCenterId)));
-        details.put(ScaleIOSDCManager.ValidateMdmsOnConnect.key(), String.valueOf(ScaleIOSDCManager.ValidateMdmsOnConnect.valueIn(dataCenterId)));
-        details.put(ScaleIOSDCManager.BlockSdcUnprepareIfRestartNeededAndVolumesAreAttached.key(), String.valueOf(ScaleIOSDCManager.BlockSdcUnprepareIfRestartNeededAndVolumesAreAttached.valueIn(dataCenterId)));
     }
 }

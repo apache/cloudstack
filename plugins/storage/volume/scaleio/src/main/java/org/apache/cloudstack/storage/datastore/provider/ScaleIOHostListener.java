@@ -109,8 +109,8 @@ public class ScaleIOHostListener implements HypervisorHostListener {
         }
         Map<String, String> details = new HashMap<>();
         details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
-        populateScaleIOConfiguration(details, host.getDataCenterId());
         _sdcManager = ComponentContext.inject(_sdcManager);
+        _sdcManager.populateSdcSettings(details, host.getDataCenterId());
         if (_sdcManager.areSDCConnectionsWithinLimit(poolId)) {
             details.put(ScaleIOSDCManager.ConnectOnDemand.key(), String.valueOf(ScaleIOSDCManager.ConnectOnDemand.valueIn(host.getDataCenterId())));
             String mdms = _sdcManager.getMdms(poolId);
@@ -202,8 +202,8 @@ public class ScaleIOHostListener implements HypervisorHostListener {
         }
         Map<String, String> details = new HashMap<>();
         details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
-        populateScaleIOConfiguration(details, host.getDataCenterId());
         _sdcManager = ComponentContext.inject(_sdcManager);
+        _sdcManager.populateSdcSettings(details, host.getDataCenterId());
         if (_sdcManager.canUnprepareSDC(host, dataStore)) {
             details.put(ScaleIOSDCManager.ConnectOnDemand.key(), String.valueOf(ScaleIOSDCManager.ConnectOnDemand.valueIn(host.getDataCenterId())));
             String mdms = _sdcManager.getMdms(poolId);
@@ -246,15 +246,5 @@ public class ScaleIOHostListener implements HypervisorHostListener {
             poolDetails = String.format("%s (id: %d, uuid: %s)", storagePool.getName(), storagePool.getId(), storagePool.getUuid());
         }
         return poolDetails;
-    }
-
-    private void populateScaleIOConfiguration(Map<String, String> details, long dataCenterId) {
-        if (details == null) {
-            details = new HashMap<>();
-        }
-
-        details.put(ScaleIOSDCManager.MdmsChangeApplyWaitTime.key(), String.valueOf(ScaleIOSDCManager.MdmsChangeApplyWaitTime.valueIn(dataCenterId)));
-        details.put(ScaleIOSDCManager.ValidateMdmsOnConnect.key(), String.valueOf(ScaleIOSDCManager.ValidateMdmsOnConnect.valueIn(dataCenterId)));
-        details.put(ScaleIOSDCManager.BlockSdcUnprepareIfRestartNeededAndVolumesAreAttached.key(), String.valueOf(ScaleIOSDCManager.BlockSdcUnprepareIfRestartNeededAndVolumesAreAttached.valueIn(dataCenterId)));
     }
 }
