@@ -231,7 +231,8 @@ export default {
         }
         this.totalCount = response.findhostsformigrationresponse.count
       }).catch(error => {
-        this.$message.error(`${this.$t('message.load.host.failed')}: ${error}`)
+        this.$notifyError(error)
+        this.closeModal()
       }).finally(() => {
         this.loading = false
       })

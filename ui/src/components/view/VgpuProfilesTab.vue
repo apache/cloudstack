@@ -32,11 +32,47 @@
       ref="listview"
       @update-selected-columns="updateSelectedColumns"
       @refresh="this.fetchData"
-    />
+    >
+      <template #actionButtons="{ record }">
+        <a-space>
+          <!-- Edit Action -->
+          <a-tooltip :title="$t('label.edit')">
+            <a-button
+              type="primary"
+              size="small"
+              shape="circle"
+              @click="editVgpuProfile(record)"
+            >
+              <template #icon><edit-outlined /></template>
+            </a-button>
+          </a-tooltip>
 
+          <!-- Delete Action -->
+          <a-popconfirm
+            :title="$t('message.confirm.delete.vgpu.profile')"
+            @confirm="deleteVgpuProfile(record)"
+            okText="Yes"
+            cancelText="No"
+          >
+            <a-tooltip :title="$t('label.delete')">
+              <a-button
+                type="primary"
+                danger
+                size="small"
+                shape="circle"
+              >
+                <template #icon><delete-outlined /></template>
+              </a-button>
+            </a-tooltip>
+          </a-popconfirm>
+        </a-space>
+      </template>
+    </list-view>
+
+    <!-- Create/Update VGPU Profile Modal -->
     <a-modal
-      :visible="showCreateModal"
-      :title="$t('label.add.vgpu.profile')"
+      :visible="showModal"
+      :title="isEditing ? $t('label.update.vgpu.profile') : $t('label.add.vgpu.profile')"
       :closable="true"
       :maskClosable="false"
       :footer="null"
@@ -56,36 +92,27 @@
           @finish="handleSubmit"
         >
           <a-form-item
-            name="name"
-            ref="name"
-            :label="$t('label.name')"
+            v-for="field in formFields"
+            :key="field.key"
+            :name="field.key"
+            :ref="field.key"
+            :label="field.label"
           >
+            <!-- Input field -->
             <a-input
-              v-model:value="form.name"
-              :placeholder="$t('label.name')"
-              v-focus="true"
+              v-if="field.type === 'input'"
+              v-model:value="form[field.key]"
+              :placeholder="field.placeholder"
+              :v-focus="field.key === 'name'"
             />
-          </a-form-item>
-          <a-form-item
-            name="description"
-            ref="description"
-            :label="$t('label.description')"
-          >
-            <a-input
-              v-model:value="form.description"
-              :placeholder="$t('label.description')"
-            />
-          </a-form-item>
-          <a-form-item
-            name="maxvgpuperphysicalgpu"
-            ref="maxvgpuperphysicalgpu"
-            :label="$t('label.maxvgpuperphysicalgpu')"
-          >
+
+            <!-- Number input field -->
             <a-input-number
+              v-else-if="field.type === 'number'"
               style="width: 100%"
-              v-model:value="form.maxvgpuperphysicalgpu"
-              :min="1"
-              :placeholder="$t('label.maxvgpuperphysicalgpu')"
+              v-model:value="form[field.key]"
+              :min="field.min"
+              :placeholder="field.placeholder"
             />
           </a-form-item>
 
@@ -111,11 +138,14 @@ import { reactive, toRaw } from 'vue'
 import { getAPI, postAPI } from '@/api'
 import { genericCompare } from '@/utils/sort.js'
 import ListView from '@/components/view/ListView'
+import { EditOutlined, DeleteOutlined } from '@ant-design/icons-vue'
 
 export default {
   name: 'VgpuProfilesTab',
   components: {
-    ListView
+    ListView,
+    EditOutlined,
+    DeleteOutlined
   },
   props: {
     resource: {
@@ -135,37 +165,117 @@ export default {
       columns: [],
       cols: [],
       items: [],
-      showCreateModal: false,
+      showModal: false,
+      isEditing: false,
+      selectedVgpuProfile: null,
       actionLoading: false,
       form: {},
-      rules: {}
+      rules: {},
+      formFields: [],
+      createApiParams: {},
+      updateApiParams: {}
+    }
+  },
+  computed: {
+    isAdmin () {
+      return this.$store.getters.userInfo.roletype === 'Admin'
     }
   },
   created () {
+    this.fetchApiParams()
     this.selectedColumnKeys = this.columnKeys
     this.updateColumns()
     this.fetchData()
-    this.initForm()
   },
   methods: {
-    initForm () {
-      this.form = reactive({
+    fetchApiParams () {
+      this.createApiParams = this.$getApiParams('createVgpuProfile') || {}
+      this.updateApiParams = this.$getApiParams('updateVgpuProfile') || {}
+    },
+    generateFormFields (isEdit = false) {
+      const apiParams = isEdit ? this.updateApiParams : this.createApiParams
+      const fields = []
+      const fieldOrder = ['name', 'description', 'videoram', 'maxheads', 'maxresolutionx', 'maxresolutiony', 'maxvgpuperphysicalgpu']
+
+      fieldOrder.forEach(paramName => {
+        if (paramName === 'gpucardid' && !isEdit) return // Skip gpucardid for create as it's auto-populated
+
+        const param = apiParams[paramName]
+        if (!param && !isEdit) return // For create, only include params that exist in API
+
+        const field = {
+          key: paramName,
+          label: this.$t(`label.${paramName}`),
+          required: param?.required || (paramName === 'name' || paramName === 'maxvgpuperphysicalgpu'),
+          placeholder: param?.description || this.$t(`label.${paramName}`),
+          type: this.getFieldType(paramName, param)
+        }
+
+        fields.push(field)
+      })
+
+      this.formFields = fields
+    },
+    getFieldType (paramName, param) {
+      const numberFields = ['maxvgpuperphysicalgpu']
+      const selectFields = []
+
+      if (numberFields.includes(paramName)) {
+        return 'number'
+      } else if (selectFields.includes(paramName)) {
+        return 'select'
+      } else {
+        return 'input'
+      }
+    },
+    initForm (isEdit = false, record = null) {
+      const formData = {
         name: '',
         description: '',
         maxvgpuperphysicalgpu: 1
-      })
-      this.rules = reactive({
+      }
+
+      if (isEdit && record) {
+        formData.name = record.name || ''
+        formData.description = record.description || ''
+        formData.maxvgpuperphysicalgpu = record.maxvgpuperphysicalgpu || 1
+        formData.videoram = record.videoram || 0
+        formData.maxheads = record.maxheads || 0
+        formData.maxresolutionx = record.maxresolutionx || 0
+        formData.maxresolutiony = record.maxresolutiony || 0
+      }
+
+      this.form = reactive(formData)
+
+      const validationRules = {
         name: [{ required: true, message: this.$t('message.error.required.input') }],
         maxvgpuperphysicalgpu: [{ required: true, message: this.$t('message.error.required.input') }]
-      })
+      }
+
+      this.rules = reactive(validationRules)
     },
     createVgpuProfile () {
-      this.showCreateModal = true
-      this.initForm()
+      this.isEditing = false
+      this.selectedVgpuProfile = null
+      this.generateFormFields(false)
+      this.initForm(false)
+      this.showModal = true
+    },
+    editVgpuProfile (record) {
+      this.isEditing = true
+      this.selectedVgpuProfile = record
+      this.generateFormFields(true)
+      this.initForm(true, record)
+      this.showModal = true
     },
     closeModal () {
-      this.showCreateModal = false
+      this.showModal = false
+      this.isEditing = false
+      this.selectedVgpuProfile = null
       this.actionLoading = false
+    },
+    filterOption (input, option) {
+      return option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
     },
     handleSubmit (e) {
       if (e) {
@@ -176,28 +286,74 @@ export default {
       this.$refs.vgpuForm.validate().then(() => {
         this.actionLoading = true
         const formRaw = toRaw(this.form)
-        const params = {
-          name: formRaw.name,
-          gpucardid: this.resource.id,
-          maxvgpuperphysicalgpu: formRaw.maxvgpuperphysicalgpu
-        }
 
-        if (formRaw.description) {
-          params.description = formRaw.description
+        if (this.isEditing) {
+          this.updateVgpuProfile(formRaw)
+        } else {
+          this.createVgpuProfileSubmit(formRaw)
         }
-
-        postAPI('createVgpuProfile', params).then(response => {
-          this.$message.success(this.$t('message.success.create.vgpu.profile'))
-          this.closeModal()
-          this.fetchData()
-        }).catch(error => {
-          console.error('Error creating vGPU profile:', error)
-          this.$notifyError(error)
-        }).finally(() => {
-          this.actionLoading = false
-        })
       }).catch((error) => {
         this.$message.error(error)
+      })
+    },
+    createVgpuProfileSubmit (formRaw) {
+      const params = {
+        name: formRaw.name,
+        gpucardid: this.resource.id,
+        maxvgpuperphysicalgpu: formRaw.maxvgpuperphysicalgpu
+      }
+
+      if (formRaw.description) {
+        params.description = formRaw.description
+      }
+
+      postAPI('createVgpuProfile', params).then(response => {
+        this.$message.success(this.$t('message.success.create.vgpu.profile'))
+        this.closeModal()
+        this.fetchData()
+      }).catch(error => {
+        console.error('Error creating vGPU profile:', error)
+        this.$notifyError(error)
+      }).finally(() => {
+        this.actionLoading = false
+      })
+    },
+    updateVgpuProfile (formRaw) {
+      const params = {
+        id: this.selectedVgpuProfile.id
+      }
+
+      // Add only fields that have values
+      if (formRaw.name) {
+        params.name = formRaw.name
+      }
+      if (formRaw.description) {
+        params.description = formRaw.description
+      }
+      if (formRaw.maxvgpuperphysicalgpu) {
+        params.maxvgpuperphysicalgpu = formRaw.maxvgpuperphysicalgpu
+      }
+
+      postAPI('updateVgpuProfile', params).then(() => {
+        this.$message.success(this.$t('message.success.update.vgpu.profile'))
+        this.closeModal()
+        this.fetchData()
+      }).catch(error => {
+        console.error('Error updating vGPU profile:', error)
+        this.$notifyError(error)
+      }).finally(() => {
+        this.actionLoading = false
+      })
+    },
+    deleteVgpuProfile (record) {
+      postAPI('deleteVgpuProfile', {
+        id: record.id
+      }).then(() => {
+        this.$message.success(this.$t('message.success.delete.vgpu.profile'))
+        this.fetchData()
+      }).catch(error => {
+        console.error('Error deleting vGPU profile:', error)
+        this.$notifyError(error)
       })
     },
     fetchData () {
@@ -222,6 +378,17 @@ export default {
           sorter: (a, b) => { return genericCompare(a[columnKey] || '', b[columnKey] || '') }
         })
       }
+
+      // Add actions column for admin users
+      if (this.isAdmin) {
+        this.columns.push({
+          key: 'vgpuActions',
+          title: this.$t('label.actions'),
+          width: 120,
+          fixed: 'right'
+        })
+      }
+
       if (this.columns.length > 0) {
         this.columns[this.columns.length - 1].customFilterDropdown = true
       }

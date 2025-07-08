@@ -69,7 +69,7 @@ export default {
       icon: 'BoxPlotOutlined',
       hidden: true,
       permission: ['listGpuDevices'],
-      columns: ['id', 'busaddress', 'gpucardname', 'vgpuprofilename', 'hostname', 'virtualmachinename'],
+      columns: ['busaddress', 'gpucardname', 'vgpuprofilename', 'hostname', 'virtualmachinename'],
       details: ['id', 'busaddress', 'gpucardname', 'vgpuprofilename', 'hostname', 'virtualmachinename'],
       searchFilters: ['gpucardid', 'vgpuprofileid'],
       actions: [
