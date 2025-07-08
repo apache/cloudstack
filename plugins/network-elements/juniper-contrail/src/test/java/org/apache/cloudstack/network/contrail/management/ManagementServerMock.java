@@ -226,7 +226,7 @@ public class ManagementServerMock {
         } catch (AgentUnavailableException e) {
             logger.warn("no agent running", e);
         } catch (OperationTimedoutException e) {
-            logger.ward("agent not responding (in time)", e);
+            logger.warn("agent not responding (in time)", e);
         }
         long id = _userVmDao.getNextInSequence(Long.class, "id");
         UserVmVO vm =
