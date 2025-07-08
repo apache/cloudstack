@@ -260,7 +260,7 @@ export default {
               let extensionMessage = null
               try {
                 const parsedDetails = JSON.parse(details)
-                printExtensionMessage = parsedDetails?.print_message
+                printExtensionMessage = parsedDetails?.printmessage
                 extensionMessage = parsedDetails?.message
               } catch (_) {}
               const modalType = success ? this.$success : this.$error

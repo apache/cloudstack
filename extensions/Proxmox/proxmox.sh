@@ -278,7 +278,7 @@ list_snapshots() {
 
       {
         status: "success",
-        print_message: "true",
+        printmessage: "true",
         message: [.data[] | {
           name: .name,
           snaptime: ((.snaptime // "-") | to_date),

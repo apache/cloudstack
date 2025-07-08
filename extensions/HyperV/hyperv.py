@@ -225,7 +225,7 @@ class HyperVManager:
             '| ConvertTo-Json'
         )
         snapshots = json.loads(self.run_ps(command))
-        succeed({"status": "success", "print_message": "true", "message": snapshots})
+        succeed({"status": "success", "printmessage": "true", "message": snapshots})
 
     def restore_snapshot(self):
         snapshot_name = self.data["snapshot_name"]
