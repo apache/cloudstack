@@ -43,7 +43,7 @@
 
 <script>
 import { shallowRef, defineAsyncComponent } from 'vue'
-import { api } from '@api'
+import { getAPI } from '@api'
 import { mixinDevice } from '@/utils/mixin.js'
 import eventBus from '@/config/eventBus'
 import AutogenView from '@/views/AutogenView.vue'
@@ -198,7 +198,7 @@ export default {
         return null
       }
       return new Promise((resolve, reject) => {
-        api('listNetworks', {
+        getAPI('listNetworks', {
           listAll: true,
           projectid: this.resource.projectid,
           id: this.resource.associatednetworkid
@@ -212,7 +212,7 @@ export default {
     },
     fetchPortFWRule () {
       return new Promise((resolve, reject) => {
-        api('listPortForwardingRules', {
+        getAPI('listPortForwardingRules', {
           listAll: true,
           ipaddressid: this.resource.id,
           page: 1,
@@ -227,7 +227,7 @@ export default {
     },
     fetchLoadBalancerRule () {
       return new Promise((resolve, reject) => {
-        api('listLoadBalancerRules', {
+        getAPI('listLoadBalancerRules', {
           listAll: true,
           publicipid: this.resource.id,
           page: 1,

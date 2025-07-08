@@ -359,7 +359,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { postAPI, getAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import Status from '@/components/widgets/Status'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -492,7 +492,7 @@ export default {
       this.asNumberLoading = true
       params.zoneid = this.resource.zoneid
       params.isallocated = false
-      api('listASNumbers', params).then(json => {
+      getAPI('listASNumbers', params).then(json => {
         this.asNumbersZone = json.listasnumbersresponse.asnumber
         this.asNumberLoading = false
       })
@@ -531,7 +531,7 @@ export default {
       this.publicLBNetworkExists()
     },
     fetchMtuForZone () {
-      api('listZones', {
+      getAPI('listZones', {
         id: this.resource.zoneid
       }).then(json => {
         this.setMTU = json?.listzonesresponse?.zone?.[0]?.allowuserspecifyvrmtu || false
@@ -543,7 +543,7 @@ export default {
     fetchNetworkAclList () {
       this.fetchLoading = true
       this.modalLoading = true
-      api('listNetworkACLLists', { vpcid: this.resource.id }).then(json => {
+      getAPI('listNetworkACLLists', { vpcid: this.resource.id }).then(json => {
         this.networkAclList = json.listnetworkacllistsresponse.networkacllist || []
         this.handleNetworkAclChange(null)
       }).catch(error => {
@@ -555,7 +555,7 @@ export default {
     },
     getNetworkOffering (networkId) {
       return new Promise((resolve, reject) => {
-        api('listNetworkOfferings', {
+        getAPI('listNetworkOfferings', {
           id: networkId
         }).then(json => {
           var networkOffering = json.listnetworkofferingsresponse.networkoffering[0]
@@ -566,7 +566,7 @@ export default {
       })
     },
     updateDisplayCollapsible (offeringId, network) {
-      api('listNetworkOfferings', {
+      getAPI('listNetworkOfferings', {
         id: offeringId
       }).then(json => {
         var networkOffering = json.listnetworkofferingsresponse.networkoffering[0]
@@ -577,7 +577,7 @@ export default {
     },
     getVpcNetworkOffering () {
       return new Promise((resolve, reject) => {
-        api('listVPCOfferings', {
+        getAPI('listVPCOfferings', {
           id: this.resource.vpcofferingid
         }).then(json => {
           const vpcOffering = json?.listvpcofferingsresponse?.vpcoffering[0]
@@ -590,7 +590,7 @@ export default {
       })
     },
     publicLBNetworkExists () {
-      api('listNetworks', {
+      getAPI('listNetworks', {
         vpcid: this.resource.id,
         supportedservices: 'LB'
       }).then(async json => {
@@ -620,7 +620,7 @@ export default {
       if ((!this.isNsxEnabled || !['netris', 'nsx'].includes(this.zoneExtNetProvider.toLowerCase())) && !this.isOfferingRoutedMode) {
         params.supportedServices = 'SourceNat'
       }
-      api('listNetworkOfferings', params).then(json => {
+      getAPI('listNetworkOfferings', params).then(json => {
         this.networkOfferings = json.listnetworkofferingsresponse.networkoffering || []
         var filteredOfferings = []
         const vpcLbServiceIndex = this.resource.service.map(svc => { return svc.name }).indexOf('Lb')
@@ -657,7 +657,7 @@ export default {
     },
     fetchLoadBalancers (id) {
       this.fetchLoading = true
-      api('listLoadBalancers', {
+      getAPI('listLoadBalancers', {
         networkid: id,
         page: this.page,
         pagesize: this.pageSize,
@@ -671,7 +671,7 @@ export default {
     },
     fetchVMs (id) {
       this.fetchLoading = true
-      api('listVirtualMachines', {
+      getAPI('listVirtualMachines', {
         listAll: true,
         vpcid: this.resource.id,
         networkid: id,
@@ -766,7 +766,7 @@ export default {
           params.asnumber = values.asnumber
         }
 
-        api('createNetwork', params).then(() => {
+        postAPI('createNetwork', params).then(() => {
           this.$notification.success({
             message: this.$t('message.success.add.vpc.network')
           })
@@ -792,7 +792,7 @@ export default {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
 
-        api('createLoadBalancer', {
+        postAPI('createLoadBalancer', {
           name: values.name,
           sourceipaddress: values.sourceIP,
           sourceport: values.sourcePort,

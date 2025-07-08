@@ -140,7 +140,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 
 export default {
   props: {
@@ -178,7 +178,7 @@ export default {
   },
   methods: {
     fetchData () {
-      api('listRemoteAccessVpns', {
+      getAPI('listRemoteAccessVpns', {
         publicipid: this.resource.id,
         listAll: true
       }).then(response => {
@@ -211,7 +211,7 @@ export default {
       this.isSubmitted = true
       this.parentToggleLoading()
       this.enableVpn = false
-      api('createRemoteAccessVpn', {
+      postAPI('createRemoteAccessVpn', {
         publicipid: this.resource.id,
         domainid: this.resource.domainid,
         account: this.resource.account
@@ -258,7 +258,7 @@ export default {
       this.isSubmitted = true
       this.parentToggleLoading()
       this.disableVpn = false
-      api('deleteRemoteAccessVpn', {
+      postAPI('deleteRemoteAccessVpn', {
         publicipid: this.resource.id,
         domainid: this.resource.domainid
       }).then(response => {

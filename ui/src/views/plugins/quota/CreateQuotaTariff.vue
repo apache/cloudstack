@@ -122,7 +122,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import { ref, reactive, toRaw } from 'vue'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import { getQuotaTypes } from '@/utils/quota'
@@ -190,7 +190,7 @@ export default {
         }
 
         this.loading = true
-        api('quotaTariffCreate', values).then(response => {
+        postAPI('quotaTariffCreate', values).then(response => {
           this.$message.success(this.$t('message.quota.tariff.create.success', { quotaTariff: values.name }))
           this.parentFetchData()
           this.closeModal()
@@ -211,7 +211,7 @@ export default {
       const values = this.handleRemoveFields(formRaw)
 
       this.loading = true
-      api('quotaValidateActivationRule', {}, 'POST', {
+      postAPI('quotaValidateActivationRule', {
         activationRule: values.activationRule || ' ',
         usageType: values?.usageType?.split('-')[0]
       }).then(response => {

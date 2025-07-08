@@ -103,7 +103,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import TooltipLabel from '@/components/widgets/TooltipLabel.vue'
 
@@ -186,7 +186,7 @@ export default {
       } else {
         params.gatewayid = this.resource.id
       }
-      api('listStaticRoutes', params).then(json => {
+      getAPI('listStaticRoutes', params).then(json => {
         this.routes = json.liststaticroutesresponse.staticroute
       }).catch(error => {
         this.$notifyError(error)
@@ -210,7 +210,7 @@ export default {
       } else {
         params.gatewayid = this.resource.id
       }
-      api('createStaticRoute', params).then(response => {
+      postAPI('createStaticRoute', params).then(response => {
         this.$pollJob({
           jobId: response.createstaticrouteresponse.jobid,
           title: this.$t('message.success.add.static.route'),
@@ -240,7 +240,7 @@ export default {
     },
     handleDelete (route) {
       this.componentLoading = true
-      api('deleteStaticRoute', {
+      postAPI('deleteStaticRoute', {
         id: route.id
       }).then(response => {
         this.$pollJob({
@@ -270,7 +270,7 @@ export default {
       })
     },
     fetchTags (route) {
-      api('listTags', {
+      getAPI('listTags', {
         resourceId: route.id,
         resourceType: 'StaticRoute',
         listAll: true
@@ -282,7 +282,7 @@ export default {
     },
     handleDeleteTag (tag) {
       this.tagsLoading = true
-      api('deleteTags', {
+      postAPI('deleteTags', {
         'tags[0].key': tag.key,
         'tags[0].value': tag.value,
         resourceIds: this.selectedRule.id,
@@ -319,7 +319,7 @@ export default {
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
 
-        api('createTags', {
+        postAPI('createTags', {
           'tags[0].key': values.key,
           'tags[0].value': values.value,
           resourceIds: this.selectedRule.id,

@@ -259,7 +259,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { isAdmin } from '@/role'
 import { mixinForm } from '@/utils/mixin'
 import CheckBoxSelectPair from '@/components/CheckBoxSelectPair'
@@ -378,7 +378,7 @@ export default {
     fetchIpv6NetworkOfferingConfiguration () {
       this.ipv6NetworkOfferingEnabled = false
       var params = { name: 'ipv6.offering.enabled' }
-      api('listConfigurations', params).then(json => {
+      getAPI('listConfigurations', params).then(json => {
         var value = json?.listconfigurationsresponse?.configuration?.[0].value || null
         this.ipv6NetworkOfferingEnabled = value === 'true'
       })
@@ -386,7 +386,7 @@ export default {
     fetchRoutedNetworkConfiguration () {
       this.routedNetworkEnabled = false
       var params = { name: 'routed.network.vpc.enabled' }
-      api('listConfigurations', params).then(json => {
+      getAPI('listConfigurations', params).then(json => {
         var value = json?.listconfigurationsresponse?.configuration?.[0].value || null
         this.routedNetworkEnabled = value === 'true'
         if (!this.routedNetworkEnabled) {
@@ -400,7 +400,7 @@ export default {
       params.showicon = true
       params.details = 'min'
       this.domainLoading = true
-      api('listDomains', params).then(json => {
+      getAPI('listDomains', params).then(json => {
         const listDomains = json.listdomainsresponse.domain
         this.domains = this.domains.concat(listDomains)
       }).finally(() => {
@@ -411,7 +411,7 @@ export default {
       const params = {}
       params.showicon = true
       this.zoneLoading = true
-      api('listZones', params).then(json => {
+      getAPI('listZones', params).then(json => {
         const listZones = json.listzonesresponse.zone
         this.zones = this.zones.concat(listZones)
       }).finally(() => {
@@ -660,7 +660,7 @@ export default {
       params.issystem = true
       params.systemvmtype = 'domainrouter'
       this.serviceOfferingLoading = true
-      api('listServiceOfferings', params).then(json => {
+      getAPI('listServiceOfferings', params).then(json => {
         const listServiceOfferings = json.listserviceofferingsresponse.serviceoffering
         this.serviceOfferings = this.serviceOfferings.concat(listServiceOfferings)
       }).finally(() => {
@@ -764,7 +764,7 @@ export default {
         if (values.enable) {
           params.enable = values.enable
         }
-        api('createVPCOffering', params).then(json => {
+        postAPI('createVPCOffering', params).then(json => {
           this.$message.success(`${this.$t('message.create.vpc.offering')}: ` + values.name)
           this.$emit('refresh-data')
           this.closeAction()

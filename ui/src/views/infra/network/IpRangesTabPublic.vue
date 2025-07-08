@@ -365,7 +365,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -498,7 +498,7 @@ export default {
     },
     fetchData () {
       this.componentLoading = true
-      api('listVlanIpRanges', {
+      getAPI('listVlanIpRanges', {
         networkid: this.network.id,
         zoneid: this.resource.zoneid,
         page: this.page,
@@ -515,7 +515,7 @@ export default {
     },
     fetchDomains () {
       this.domainsLoading = true
-      api('listDomains', {
+      getAPI('listDomains', {
         details: 'min',
         listAll: true
       }).then(response => {
@@ -532,7 +532,7 @@ export default {
     },
     fetchPods () {
       this.podsLoading = true
-      api('listPods', {
+      getAPI('listPods', {
         zoneid: this.resource.zoneid,
         page: this.page,
         pagesize: this.pageSize
@@ -565,7 +565,7 @@ export default {
         params.account = this.addAccount.account
       }
 
-      api('dedicatePublicIpRange', params).catch(error => {
+      postAPI('dedicatePublicIpRange', params).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
         this.addAccountModal = false
@@ -575,7 +575,7 @@ export default {
     },
     handleRemoveAccount (id) {
       this.componentLoading = true
-      api('releasePublicIpRange', { id }).catch(error => {
+      postAPI('releasePublicIpRange', { id }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
         this.fetchData()
@@ -616,7 +616,7 @@ export default {
     },
     handleDeleteIpRange (id) {
       this.componentLoading = true
-      api('deleteVlanIpRange', { id }).then(() => {
+      postAPI('deleteVlanIpRange', { id }).then(() => {
         this.$notification.success({
           message: 'Removed IP Range'
         })
@@ -654,7 +654,7 @@ export default {
           params.networkid = this.network.id
         }
         params.provider = values.provider
-        api('createVlanIpRange', params).then(() => {
+        postAPI('createVlanIpRange', params).then(() => {
           this.$notification.success({
             message: this.$t('message.success.add.iprange')
           })
@@ -690,7 +690,7 @@ export default {
         for (const key of ipRangeKeys) {
           params[key] = values[key]
         }
-        api('updateVlanIpRange', params).then(() => {
+        postAPI('updateVlanIpRange', params).then(() => {
           this.$notification.success({
             message: this.$t('message.success.update.iprange')
           })
