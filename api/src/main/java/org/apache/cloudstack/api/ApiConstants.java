@@ -276,7 +276,7 @@ public class ApiConstants {
     public static final String HYPERVISOR = "hypervisor";
     public static final String INLINE = "inline";
     public static final String INSTANCE = "instance";
-    public static final String INSTANCE_ID = "instance_id";
+    public static final String INSTANCE_ID = "instanceid";
     public static final String ICMP_CODE = "icmpcode";
     public static final String ICMP_TYPE = "icmptype";
     public static final String ID = "id";
