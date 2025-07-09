@@ -100,8 +100,6 @@ public class Upgrade42000to42010 extends DbUpgradeAbstractImpl implements DbUpgr
 
         DbUpgradeUtils.addIndexIfNeeded(conn, "network_offering_details", "name");
 
-        DbUpgradeUtils.addIndexIfNeeded(conn, "network_offering_details", "resource_id", "resource_type");
-
         DbUpgradeUtils.addIndexIfNeeded(conn, "service_offering", "cpu");
         DbUpgradeUtils.addIndexIfNeeded(conn, "service_offering", "speed");
         DbUpgradeUtils.addIndexIfNeeded(conn, "service_offering", "ram_size");
