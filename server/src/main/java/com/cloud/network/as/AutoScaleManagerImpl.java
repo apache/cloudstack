@@ -294,6 +294,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             PARAM_OVERRIDE_DISK_OFFERING_ID, PARAM_SSH_KEYPAIRS, PARAM_AFFINITY_GROUP_IDS, PARAM_NETWORK_IDS);
 
     protected static final String VM_HOSTNAME_PREFIX = "autoScaleVm-";
+
     protected static final int VM_HOSTNAME_RANDOM_SUFFIX_LENGTH = 6;
 
     private static final Long DEFAULT_HOST_ID = -1L;
@@ -1947,6 +1948,19 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
     @Override
     public String getNextVmHostName(AutoScaleVmGroupVO asGroup) {
+        if (UseAutoscaleVmHostnamePrefixEnabled.value() == true) {
+            return getNextVmHostNameWithPrefix(asGroup);
+        } else {
+            return getNextVmHostNameWithoutPrefix(asGroup);
+        }
+    }
+
+    private String getNextVmHostNameWithoutPrefix(AutoScaleVmGroupVO asGroup) {
+        int subStringLength = Math.min(asGroup.getName().length(), 63 - Long.toString(asGroup.getNextVmSeq()).length());
+        return asGroup.getName().substring(0, subStringLength) + Long.toString(asGroup.getNextVmSeq());
+    }
+
+    private String getNextVmHostNameWithPrefix(AutoScaleVmGroupVO asGroup) {
         String vmHostNameSuffix = "-" + asGroup.getNextVmSeq() + "-" +
                 RandomStringUtils.random(VM_HOSTNAME_RANDOM_SUFFIX_LENGTH, 0, 0, true, false, (char[])null, new SecureRandom()).toLowerCase();
         // Truncate vm group name because max length of vm name is 63
