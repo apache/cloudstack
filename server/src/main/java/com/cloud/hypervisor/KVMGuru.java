@@ -155,7 +155,6 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     }
 
     @Override
-
     public VirtualMachineTO implement(VirtualMachineProfile vm) {
         VirtualMachineTO to = toVirtualMachineTO(vm);
         setVmQuotaPercentage(to, vm);
@@ -170,6 +169,9 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         configureVmOsDescription(virtualMachine, to, host);
 
         configureVmMemoryAndCpuCores(to, host, virtualMachine, vm);
+
+        to.setMetadata(makeVirtualMachineMetadata(vm));
+
         return to;
     }
 
