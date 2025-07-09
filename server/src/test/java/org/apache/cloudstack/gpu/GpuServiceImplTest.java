@@ -68,6 +68,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import javax.naming.ConfigurationException;
@@ -86,6 +87,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -176,6 +178,7 @@ public class GpuServiceImplTest {
     private ResourceManager resourceManager;
 
     @InjectMocks
+    @Spy
     private GpuServiceImpl gpuService;
 
     @Mock
@@ -650,9 +653,13 @@ public class GpuServiceImplTest {
         when(device.getId()).thenReturn(GPU_DEVICE_ID_LONG);
         when(device.getManagedState()).thenReturn(GpuDevice.ManagedState.Managed);
         when(device.getVmId()).thenReturn(null);
+        when(device.getHostId()).thenReturn(HOST_ID);
 
         when(gpuDeviceDao.findById(GPU_DEVICE_ID_LONG)).thenReturn(device);
         when(gpuDeviceDao.update(eq(GPU_DEVICE_ID_LONG), any(GpuDeviceVO.class))).thenReturn(true);
+
+        when(hostDao.findById(HOST_ID)).thenReturn(mockHost);
+        doReturn(null).when(gpuService).getGpuGroupDetailsFromGpuDevicesOnHost(any());
 
         boolean result = gpuService.disableGpuDevice(cmd);
 
@@ -669,9 +676,13 @@ public class GpuServiceImplTest {
         when(device.getId()).thenReturn(GPU_DEVICE_ID_LONG);
         when(device.getManagedState()).thenReturn(GpuDevice.ManagedState.Unmanaged);
         when(device.getVmId()).thenReturn(null);
+        when(device.getHostId()).thenReturn(HOST_ID);
 
         when(gpuDeviceDao.findById(GPU_DEVICE_ID_LONG)).thenReturn(device);
         when(gpuDeviceDao.update(eq(GPU_DEVICE_ID_LONG), any(GpuDeviceVO.class))).thenReturn(true);
+
+        when(hostDao.findById(HOST_ID)).thenReturn(mockHost);
+        doReturn(null).when(gpuService).getGpuGroupDetailsFromGpuDevicesOnHost(any());
 
         boolean result = gpuService.enableGpuDevice(cmd);
 
