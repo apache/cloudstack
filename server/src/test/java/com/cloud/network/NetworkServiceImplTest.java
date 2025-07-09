@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -29,6 +30,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -60,9 +62,11 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.agent.api.to.IpAddressTO;
+import com.cloud.agent.api.to.NicTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.bgp.BGPService;
 import com.cloud.configuration.ConfigurationManager;
@@ -84,6 +88,7 @@ import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.dao.PublicIpQuarantineDao;
+import com.cloud.network.nsx.NsxService;
 import com.cloud.network.router.CommandSetupHelper;
 import com.cloud.network.router.NetworkHelper;
 import com.cloud.network.vo.PublicIpQuarantineVO;
@@ -107,6 +112,7 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
@@ -1215,6 +1221,51 @@ public class NetworkServiceImplTest {
             service.checkAndSetRouterSourceNatIp(account, createNetworkCmd, networkVO);
         } catch (InsufficientAddressCapacityException | ResourceAllocationException e) {
             Assert.fail(e.getMessage());
+        }
+    }
+
+    @Test
+    public void testGetNicVlanValueForExternalVm_NonNsx() {
+        NicTO nic = mock(NicTO.class);
+        String broadcastUri = "vlan://123";
+        when(nic.getBroadcastUri()).thenReturn(URI.create(broadcastUri));
+        String result = service.getNicVlanValueForExternalVm(nic);
+        assertEquals("123", result);
+    }
+
+    @Test
+    public void testGetNicVlanValueForExternalVm_Nsx() {
+        NicTO nic = mock(NicTO.class);
+        NetworkVO networkVO = mock(NetworkVO.class);
+        NsxService nsxService = mock(NsxService.class);
+        String broadcastUri = "nsx://segment";
+        when(nic.getBroadcastUri()).thenReturn(URI.create(broadcastUri));
+        when(nic.getNetworkId()).thenReturn(42L);
+        when(networkDao.findById(42L)).thenReturn(networkVO);
+        when(networkVO.getDomainId()).thenReturn(1L);
+        when(networkVO.getDataCenterId()).thenReturn(2L);
+        when(networkVO.getAccountId()).thenReturn(3L);
+        when(networkVO.getVpcId()).thenReturn(4L);
+        when(networkVO.getId()).thenReturn(5L);
+        when(nsxService.getSegmentId(1L, 2L, 3L, 4L, 5L)).thenReturn("segment-123");
+        try (MockedStatic<ComponentContext> ignored = Mockito.mockStatic(ComponentContext.class)) {
+            when(ComponentContext.getDelegateComponentOfType(NsxService.class)).thenReturn(nsxService);
+            String result = service.getNicVlanValueForExternalVm(nic);
+            assertEquals("segment-123", result);
+        }
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testGetNicVlanValueForExternalVm_Nsx_NoBean() {
+        NicTO nic = mock(NicTO.class);
+        NetworkVO networkVO = mock(NetworkVO.class);
+        String broadcastUri = "nsx://segment";
+        when(nic.getBroadcastUri()).thenReturn(URI.create(broadcastUri));
+        when(nic.getNetworkId()).thenReturn(42L);
+        when(networkDao.findById(42L)).thenReturn(networkVO);
+        try (MockedStatic<ComponentContext> ignored = Mockito.mockStatic(ComponentContext.class)) {
+            when(ComponentContext.getDelegateComponentOfType(NsxService.class)).thenThrow(NoSuchBeanDefinitionException.class);
+            service.getNicVlanValueForExternalVm(nic);
         }
     }
 }
