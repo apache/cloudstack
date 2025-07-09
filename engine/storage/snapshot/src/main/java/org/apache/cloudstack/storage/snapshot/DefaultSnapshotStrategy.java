@@ -23,6 +23,8 @@ import java.util.Objects;
 
 import javax.inject.Inject;
 
+import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
@@ -99,6 +101,9 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
     VolumeDetailsDao _volumeDetailsDaoImpl;
     @Inject
     SnapshotZoneDao snapshotZoneDao;
+
+    @Inject
+    private VMSnapshotDao vmSnapshotDao;
 
     private final List<Snapshot.State> snapshotStatesAbleToDeleteSnapshot = Arrays.asList(Snapshot.State.Destroying, Snapshot.State.Destroyed, Snapshot.State.Error);
 
@@ -571,6 +576,9 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
 
     @Override
     public StrategyPriority canHandle(Snapshot snapshot, Long zoneId, SnapshotOperation op) {
+        if (SnapshotOperation.TAKE.equals(op)) {
+            return canHandleTake(snapshot);
+        }
         if (SnapshotOperation.REVERT.equals(op)) {
             long volumeId = snapshot.getVolumeId();
             VolumeVO volumeVO = volumeDao.findById(volumeId);
@@ -597,4 +605,16 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
                         dataStoreMgr.getStoreZoneId(s.getDataStoreId(), s.getRole()), volumeVO.getDataCenterId()));
     }
 
+    private StrategyPriority canHandleTake(Snapshot snapshot) {
+        VolumeVO volumeVO = volumeDao.findById(snapshot.getVolumeId());
+        if (volumeVO.getInstanceId() == null) {
+            return StrategyPriority.DEFAULT;
+        }
+        if (CollectionUtils.isNotEmpty(vmSnapshotDao.findByVmAndByType(volumeVO.getInstanceId(), VMSnapshot.Type.DiskAndMemory))) {
+            logger.debug("DefaultSnapshotStrategy cannot handle snapshot [{}] for volume [{}] as the volume is attached to a VM with disk-and-memory VM snapshots." +
+                    "Restoring the volume snapshot will corrupt any newer disk-and-memory VM snapshots.", snapshot);
+            return StrategyPriority.CANT_HANDLE;
+        }
+        return StrategyPriority.DEFAULT;
+    }
 }
