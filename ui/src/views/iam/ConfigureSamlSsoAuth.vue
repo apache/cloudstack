@@ -52,7 +52,7 @@
 </template>
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 
 export default {
   name: 'ConfigureSamlSsoAuth',
@@ -81,14 +81,14 @@ export default {
     fetchData () {
       this.IsUserSamlAuthorized()
       this.loading = true
-      api('listIdps').then(response => {
+      getAPI('listIdps').then(response => {
         this.idps = response.listidpsresponse.idp || []
       }).finally(() => {
         this.loading = false
       })
     },
     IsUserSamlAuthorized () {
-      api('listSamlAuthorization', {
+      getAPI('listSamlAuthorization', {
         userid: this.resource.id
       }).then(response => {
         this.form.samlEnable = response.listsamlauthorizationsresponse.samlauthorization[0].status || false
@@ -103,7 +103,7 @@ export default {
       if (this.loading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
-        api('authorizeSamlSso', {
+        postAPI('authorizeSamlSso', {
           enable: values.samlEnable,
           userid: this.resource.id,
           entityid: values.samlEntity

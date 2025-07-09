@@ -97,7 +97,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import Status from '@/components/widgets/Status'
 
 export default {
@@ -138,7 +138,7 @@ export default {
     },
     fetchLoadBalancers () {
       this.fetchLoading = true
-      api('listLoadBalancers', {
+      getAPI('listLoadBalancers', {
         id: this.resource.id
       }).then(response => {
         const lb = response.listloadbalancersresponse.loadbalancer
@@ -155,7 +155,7 @@ export default {
     },
     fetchVirtualMachines () {
       this.fetchLoading = true
-      api('listVirtualMachines', {
+      getAPI('listVirtualMachines', {
         listAll: true,
         networkid: this.resource.networkid,
         page: this.page,
@@ -182,7 +182,7 @@ export default {
       }
       this.iLb.virtualmachineid[index] = e.target.value
       this.addVmModalNicLoading = true
-      api('listNics', {
+      getAPI('listNics', {
         virtualmachineid: e.target.value,
         networkid: this.resource.networkid
       }).then(response => {
@@ -218,7 +218,7 @@ export default {
       }
       this.params.id = this.resource.id
       this.fetchLoading = true
-      api('assignToLoadBalancerRule', this.params).then(response => {
+      postAPI('assignToLoadBalancerRule', this.params).then(response => {
         this.$pollJob({
           jobId: response.assigntoloadbalancerruleresponse.jobid,
           successMessage: `${this.$t('message.success.assigned.vms')} ${this.$t('label.to')} ${this.resource.name}`,

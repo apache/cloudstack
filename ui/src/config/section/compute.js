@@ -44,6 +44,9 @@ export default {
         if (!(store.getters.project && store.getters.project.id)) {
           filters.unshift('self')
         }
+        if (store.getters.features.instanceleaseenabled) {
+          filters.push('leased')
+        }
         return filters
       },
       columns: () => {
@@ -83,7 +86,7 @@ export default {
         var fields = ['name', 'displayname', 'id', 'state', 'ipaddress', 'ip6address', 'templatename', 'ostypename',
           'serviceofferingname', 'isdynamicallyscalable', 'haenable', 'hypervisor', 'arch', 'boottype', 'bootmode', 'account',
           'domain', 'zonename', 'userdataid', 'userdataname', 'userdataparams', 'userdatadetails', 'userdatapolicy',
-          'hostcontrolstate', 'deleteprotection']
+          'hostcontrolstate', 'deleteprotection', 'leaseexpirydate', 'leaseexpiryaction']
         const listZoneHaveSGEnabled = store.getters.zones.filter(zone => zone.securitygroupsenabled === true)
         if (!listZoneHaveSGEnabled || listZoneHaveSGEnabled.length === 0) {
           return fields
@@ -565,7 +568,7 @@ export default {
         const filters = ['cloud.managed', 'external.managed']
         return filters
       },
-      details: ['name', 'description', 'zonename', 'kubernetesversionname', 'autoscalingenabled', 'minsize', 'maxsize', 'size', 'controlnodes', 'cpunumber', 'memory', 'keypair', 'associatednetworkname', 'account', 'domain', 'zonename', 'clustertype', 'created'],
+      details: ['name', 'description', 'zonename', 'kubernetesversionname', 'autoscalingenabled', 'minsize', 'maxsize', 'size', 'controlnodes', 'etcdnodes', 'cpunumber', 'memory', 'keypair', 'cniconfigname', 'associatednetworkname', 'account', 'domain', 'zonename', 'clustertype', 'created'],
       tabs: [
         {
           name: 'k8s',
@@ -629,6 +632,26 @@ export default {
           show: (record) => { return ['Created', 'Running'].includes(record.state) && record.clustertype === 'CloudManaged' },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/UpgradeKubernetesCluster.vue')))
+        },
+        {
+          api: 'addNodesToKubernetesCluster',
+          icon: 'plus-outlined',
+          label: 'label.kubernetes.cluster.add.nodes.to.cluster',
+          message: 'message.kubernetes.cluster.add.nodes',
+          dataView: true,
+          show: (record) => { return ['Running', 'Alert'].includes(record.state) && record.clustertype === 'CloudManaged' },
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/KubernetesAddNodes.vue')))
+        },
+        {
+          api: 'removeNodesFromKubernetesCluster',
+          icon: 'minus-outlined',
+          label: 'label.kubernetes.cluster.remove.nodes.from.cluster',
+          message: 'message.kubernetes.cluster.remove.nodes',
+          dataView: true,
+          show: (record) => { return ['Running', 'Alert'].includes(record.state) && record.clustertype === 'CloudManaged' && (record.virtualmachines.filter(vm => vm.isexternalnode) || []).length > 0 },
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/KubernetesRemoveNodes.vue')))
         },
         {
           api: 'deleteKubernetesCluster',
@@ -959,10 +982,13 @@ export default {
           label: 'label.remove.user.data',
           message: 'message.please.confirm.remove.user.data',
           dataView: true,
-          args: ['id', 'account', 'domainid'],
+          args: ['id', 'account', 'domainid', 'projectid'],
           mapping: {
             id: {
               value: (record, params) => { return record.id }
+            },
+            projectid: {
+              value: (record, params) => { return record.projectid }
             },
             account: {
               value: (record, params) => { return record.account }
@@ -977,7 +1003,93 @@ export default {
             return selection.map(x => {
               const data = record.filter(y => { return y.id === x })
               return {
-                id: x, account: data[0].account, domainid: data[0].domainid
+                id: x,
+                account: data[0].account,
+                domainid: data[0].domainid,
+                projectid: data[0].projectid
+              }
+            })
+          }
+        }
+      ]
+    },
+    {
+      name: 'cniconfiguration',
+      title: 'label.cniconfiguration',
+      icon: 'solution-outlined',
+      docHelp: 'adminguide/virtual_machines.html#user-data-and-meta-data',
+      permission: ['listCniConfiguration'],
+      columns: () => {
+        var fields = ['name', 'id']
+        if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          fields.push('account')
+          if (store.getters.listAllProjects) {
+            fields.push('project')
+          }
+          fields.push('domain')
+        } else if (store.getters.listAllProjects) {
+          fields.push('project')
+        }
+        return fields
+      },
+      resourceType: 'UserData',
+      details: ['id', 'name', 'userdata', 'account', 'domain', 'params'],
+      related: [{
+        name: 'vm',
+        title: 'label.instances',
+        param: 'userdata'
+      }],
+      tabs: [
+        {
+          name: 'details',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'comments',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
+        }
+      ],
+      actions: [
+        {
+          api: 'registerCniConfiguration',
+          icon: 'plus-outlined',
+          label: 'label.register.cni.config',
+          docHelp: 'adminguide/virtual_machines.html#creating-the-ssh-keypair',
+          listView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/RegisterUserData.vue')))
+        },
+        {
+          api: 'deleteCniConfiguration',
+          icon: 'delete-outlined',
+          label: 'label.remove.cni.configuration',
+          message: 'message.please.confirm.remove.cni.configuration',
+          dataView: true,
+          args: ['id', 'account', 'domainid', 'projectid'],
+          mapping: {
+            id: {
+              value: (record, params) => { return record.id }
+            },
+            projectid: {
+              value: (record, params) => { return record.projectid }
+            },
+            account: {
+              value: (record, params) => { return record.account }
+            },
+            domainid: {
+              value: (record, params) => { return record.domainid }
+            }
+          },
+          groupAction: true,
+          popup: true,
+          groupMap: (selection, values, record) => {
+            return selection.map(x => {
+              const data = record.filter(y => { return y.id === x })
+              return {
+                id: x,
+                account: data[0].account,
+                domainid: data[0].domainid,
+                projectid: data[0].projectid
               }
             })
           }

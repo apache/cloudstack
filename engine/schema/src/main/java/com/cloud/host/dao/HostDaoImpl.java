@@ -72,6 +72,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.JoinBuilder.JoinType;
+import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
@@ -107,7 +108,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected SearchBuilder<HostVO> IdStatusSearch;
     protected SearchBuilder<HostVO> TypeDcSearch;
     protected SearchBuilder<HostVO> TypeDcStatusSearch;
-    protected SearchBuilder<HostVO> TypeClusterStatusSearch;
+    protected SearchBuilder<HostVO> TypeStatusStateSearch;
     protected SearchBuilder<HostVO> MsStatusSearch;
     protected SearchBuilder<HostVO> DcPrivateIpAddressSearch;
     protected SearchBuilder<HostVO> DcStorageIpAddressSearch;
@@ -266,12 +267,14 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         TypeDcStatusSearch.and("resourceState", TypeDcStatusSearch.entity().getResourceState(), SearchCriteria.Op.EQ);
         TypeDcStatusSearch.done();
 
-        TypeClusterStatusSearch = createSearchBuilder();
-        TypeClusterStatusSearch.and("type", TypeClusterStatusSearch.entity().getType(), SearchCriteria.Op.EQ);
-        TypeClusterStatusSearch.and("cluster", TypeClusterStatusSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
-        TypeClusterStatusSearch.and("status", TypeClusterStatusSearch.entity().getStatus(), SearchCriteria.Op.EQ);
-        TypeClusterStatusSearch.and("resourceState", TypeClusterStatusSearch.entity().getResourceState(), SearchCriteria.Op.EQ);
-        TypeClusterStatusSearch.done();
+        TypeStatusStateSearch = createSearchBuilder();
+        TypeStatusStateSearch.and("type", TypeStatusStateSearch.entity().getType(), SearchCriteria.Op.EQ);
+        TypeStatusStateSearch.and("cluster", TypeStatusStateSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
+        TypeStatusStateSearch.and("pod", TypeStatusStateSearch.entity().getPodId(), SearchCriteria.Op.EQ);
+        TypeStatusStateSearch.and("zone", TypeStatusStateSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        TypeStatusStateSearch.and("status", TypeStatusStateSearch.entity().getStatus(), SearchCriteria.Op.EQ);
+        TypeStatusStateSearch.and("resourceState", TypeStatusStateSearch.entity().getResourceState(), SearchCriteria.Op.EQ);
+        TypeStatusStateSearch.done();
 
         IdsSearch = createSearchBuilder();
         IdsSearch.and("id", IdsSearch.entity().getId(), SearchCriteria.Op.IN);
@@ -328,10 +331,12 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
         PodSearch = createSearchBuilder();
         PodSearch.and("podId", PodSearch.entity().getPodId(), SearchCriteria.Op.EQ);
+        PodSearch.and("type", PodSearch.entity().getType(), Op.EQ);
         PodSearch.done();
 
         ClusterSearch = createSearchBuilder();
         ClusterSearch.and("clusterId", ClusterSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
+        ClusterSearch.and("type", ClusterSearch.entity().getType(), Op.EQ);
         ClusterSearch.done();
 
         TypeSearch = createSearchBuilder();
@@ -1238,8 +1243,16 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     @Override
     public List<HostVO> findByPodId(Long podId) {
+        return findByPodId(podId, null);
+    }
+
+    @Override
+    public List<HostVO> findByPodId(Long podId, Type type) {
         SearchCriteria<HostVO> sc = PodSearch.create();
         sc.setParameters("podId", podId);
+        if (type != null) {
+            sc.setParameters("type", Type.Routing);
+        }
         return listBy(sc);
     }
 
@@ -1250,8 +1263,16 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     @Override
     public List<HostVO> findByClusterId(Long clusterId) {
+        return findByClusterId(clusterId, null);
+    }
+
+    @Override
+    public List<HostVO> findByClusterId(Long clusterId, Type type) {
         SearchCriteria<HostVO> sc = ClusterSearch.create();
         sc.setParameters("clusterId", clusterId);
+        if (type != null) {
+            sc.setParameters("type", Type.Routing);
+        }
         return listBy(sc);
     }
 
@@ -1355,7 +1376,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     @Override
     public List<HostVO> findHypervisorHostInCluster(long clusterId) {
-        SearchCriteria<HostVO> sc = TypeClusterStatusSearch.create();
+        SearchCriteria<HostVO> sc = TypeStatusStateSearch.create();
         sc.setParameters("type", Host.Type.Routing);
         sc.setParameters("cluster", clusterId);
         sc.setParameters("status", Status.Up);
@@ -1365,8 +1386,30 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
+    public List<HostVO> findHypervisorHostInZone(long zoneId) {
+        SearchCriteria<HostVO> sc = TypeStatusStateSearch.create();
+        sc.setParameters("type", Host.Type.Routing);
+        sc.setParameters("zone", zoneId);
+        sc.setParameters("status", Status.Up);
+        sc.setParameters("resourceState", ResourceState.Enabled);
+
+        return listBy(sc);
+    }
+
+    @Override
+    public List<HostVO> findHypervisorHostInPod(long podId) {
+        SearchCriteria<HostVO> sc = TypeStatusStateSearch.create();
+        sc.setParameters("type", Host.Type.Routing);
+        sc.setParameters("pod", podId);
+        sc.setParameters("status", Status.Up);
+        sc.setParameters("resourceState", ResourceState.Enabled);
+
+        return listBy(sc);
+    }
+
+    @Override
     public HostVO findAnyStateHypervisorHostInCluster(long clusterId) {
-        SearchCriteria<HostVO> sc = TypeClusterStatusSearch.create();
+        SearchCriteria<HostVO> sc = TypeStatusStateSearch.create();
         sc.setParameters("type", Host.Type.Routing);
         sc.setParameters("cluster", clusterId);
         List<HostVO> list = listBy(sc, new Filter(1));
@@ -1375,7 +1418,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     @Override
     public HostVO findOldestExistentHypervisorHostInCluster(long clusterId) {
-        SearchCriteria<HostVO> sc = TypeClusterStatusSearch.create();
+        SearchCriteria<HostVO> sc = TypeStatusStateSearch.create();
         sc.setParameters("type", Host.Type.Routing);
         sc.setParameters("cluster", clusterId);
         sc.setParameters("status", Status.Up);
@@ -1559,6 +1602,17 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
+    public List<HostVO> listHostsByMsDcResourceState(long msId, long dcId, List<ResourceState> excludedResourceStates) {
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getManagementServerId(), Op.EQ, msId);
+        sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
+        if (CollectionUtils.isNotEmpty(excludedResourceStates)) {
+            sc.and(sc.entity().getResourceState(), Op.NIN, excludedResourceStates.toArray());
+        }
+        return listBy(sc.create());
+    }
+
+    @Override
     public List<HostVO> listHostsByMs(long msId) {
         SearchCriteria<HostVO> sc = ResponsibleMsSearch.create();
         sc.setParameters("managementServerId", msId);
@@ -1566,10 +1620,32 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
-    public int countByMs(long msId) {
-        SearchCriteria<HostVO> sc = ResponsibleMsSearch.create();
-        sc.setParameters("managementServerId", msId);
-        return getCount(sc);
+    public List<HostVO> listHostsByMsResourceState(long msId, List<ResourceState> excludedResourceStates) {
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getManagementServerId(), Op.EQ, msId);
+        if (CollectionUtils.isNotEmpty(excludedResourceStates)) {
+            sc.and(sc.entity().getResourceState(), Op.NIN, excludedResourceStates.toArray());
+        }
+        return listBy(sc.create());
+    }
+
+    @Override
+    public int countHostsByMsResourceStateTypeAndHypervisorType(long msId,
+                                                                List<ResourceState> excludedResourceStates,
+                                                                List<Type> hostTypes,
+                                                                List<HypervisorType> hypervisorTypes) {
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getManagementServerId(), Op.EQ, msId);
+        if (CollectionUtils.isNotEmpty(excludedResourceStates)) {
+            sc.and(sc.entity().getResourceState(), Op.NIN, excludedResourceStates.toArray());
+        }
+        if (CollectionUtils.isNotEmpty(hostTypes)) {
+            sc.and(sc.entity().getType(), Op.IN, hostTypes.toArray());
+        }
+        if (CollectionUtils.isNotEmpty(hypervisorTypes)) {
+            sc.and(sc.entity().getHypervisorType(), Op.IN, hypervisorTypes.toArray());
+        }
+        return getCount(sc.create());
     }
 
     @Override
@@ -1876,4 +1952,36 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         return host.getClusterId();
     }
 
+
+    @Override
+    public List<String> listDistinctStorageAccessGroups(String name, String keyword) {
+        GenericSearchBuilder<HostVO, String> searchBuilder = createSearchBuilder(String.class);
+
+        searchBuilder.select(null, SearchCriteria.Func.DISTINCT, searchBuilder.entity().getStorageAccessGroups());
+        if (name != null) {
+            searchBuilder.and().op("storageAccessGroupExact", searchBuilder.entity().getStorageAccessGroups(), Op.EQ);
+            searchBuilder.or("storageAccessGroupPrefix", searchBuilder.entity().getStorageAccessGroups(), Op.LIKE);
+            searchBuilder.or("storageAccessGroupSuffix", searchBuilder.entity().getStorageAccessGroups(), Op.LIKE);
+            searchBuilder.or("storageAccessGroupMiddle", searchBuilder.entity().getStorageAccessGroups(), Op.LIKE);
+            searchBuilder.cp();
+        }
+        if (keyword != null) {
+            searchBuilder.and("keyword", searchBuilder.entity().getStorageAccessGroups(), Op.LIKE);
+        }
+        searchBuilder.done();
+
+        SearchCriteria<String> sc = searchBuilder.create();
+        if (name != null) {
+            sc.setParameters("storageAccessGroupExact", name);
+            sc.setParameters("storageAccessGroupPrefix", name + ",%");
+            sc.setParameters("storageAccessGroupSuffix", "%," + name);
+            sc.setParameters("storageAccessGroupMiddle", "%," + name + ",%");
+        }
+
+        if (keyword != null) {
+            sc.setParameters("keyword", "%" + keyword + "%");
+        }
+
+        return customSearch(sc, null);
+    }
 }

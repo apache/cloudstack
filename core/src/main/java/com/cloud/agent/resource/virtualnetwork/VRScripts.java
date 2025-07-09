@@ -82,5 +82,8 @@ public class VRScripts {
     public static final String VR_UPDATE_INTERFACE_CONFIG = "update_interface_config.sh";
 
     public static final String ROUTER_FILESYSTEM_WRITABLE_CHECK = "filesystem_writable_check.py";
+
+    // CKS ISO mount
+    public static final String CKS_ISO_MOUNT_SERVE = "cks_iso.sh";
     public static final String MANAGE_SERVICE = "manage_service.sh";
 }

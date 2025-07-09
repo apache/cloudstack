@@ -89,6 +89,9 @@ public interface VmDetailConstants {
     String DEPLOY_AS_IS_CONFIGURATION = "configurationId";
     String KEY_PAIR_NAMES = "keypairnames";
     String CKS_CONTROL_NODE_LOGIN_USER = "controlNodeLoginUser";
+    String CKS_NODE_TYPE = "node";
+    String OFFERING = "offering";
+    String TEMPLATE = "template";
 
     // VMware to KVM VM migrations specific
     String VMWARE_TO_KVM_PREFIX = "vmware-to-kvm";
@@ -110,4 +113,8 @@ public interface VmDetailConstants {
     // CPU mode and model, ADMIN only
     String GUEST_CPU_MODE = "guest.cpu.mode";
     String GUEST_CPU_MODEL = "guest.cpu.model";
+
+    String INSTANCE_LEASE_EXPIRY_DATE = "leaseexpirydate";
+    String INSTANCE_LEASE_EXPIRY_ACTION = "leaseexpiryaction";
+    String INSTANCE_LEASE_EXECUTION = "leaseactionexecution";
 }

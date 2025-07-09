@@ -55,6 +55,8 @@ import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.Ipv6GuestPrefixSubnetNetworkMapDao;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.offering.DiskOffering;
@@ -195,6 +197,8 @@ public class ConfigurationManagerTest {
     ClusterDao _clusterDao;
     @Mock
     HostPodDao _podDao;
+    @Mock
+    NetworkDao _networkDao;
     @Mock
     PhysicalNetworkDao _physicalNetworkDao;
     @Mock
@@ -1331,6 +1335,8 @@ public class ConfigurationManagerTest {
     public void testWrongIpv6CreateVlanAndPublicIpRange() {
         CreateVlanIpRangeCmd cmd = Mockito.mock(CreateVlanIpRangeCmd.class);
         Mockito.when(cmd.getIp6Cidr()).thenReturn("fd17:5:8a43:e2a4:c000::/66");
+        NetworkVO network = Mockito.mock(NetworkVO.class);
+        Mockito.when(_networkDao.findById(Mockito.anyLong())).thenReturn(network);
         try {
             configurationMgr.createVlanAndPublicIpRange(cmd);
         } catch (InsufficientCapacityException | ResourceUnavailableException | ResourceAllocationException e) {
@@ -1427,7 +1433,7 @@ public class ConfigurationManagerTest {
             return pod;
         });
         Mockito.doNothing().when(messageBus).publish(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
-        configurationMgr.createPod(zoneId, "TestPod", null, null, null, null, null);
+        configurationMgr.createPod(zoneId, "TestPod", null, null, null, null, null, null);
     }
 
     @Test

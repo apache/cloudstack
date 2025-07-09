@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
@@ -236,4 +238,12 @@ public interface ResourceManager extends ResourceService, Configurable {
     HostVO findOneRandomRunningHostByHypervisor(HypervisorType type, Long dcId);
 
     boolean cancelMaintenance(final long hostId);
+
+    void updateStoragePoolConnectionsOnHosts(Long poolId, List<String> storageAccessGroups);
+
+    List<HostVO> getEligibleUpHostsInClusterForStorageConnection(PrimaryDataStoreInfo primaryStore);
+
+    List<HostVO> getEligibleUpAndEnabledHostsInClusterForStorageConnection(PrimaryDataStoreInfo primaryStore);
+
+    List<HostVO> getEligibleUpAndEnabledHostsInZoneForStorageConnection(DataStore dataStore, long zoneId, HypervisorType hypervisorType);
 }
