@@ -107,7 +107,7 @@ public class ModuleBasedContextFactoryTest {
         ModuleDefinitionSet set = factory.loadModules(defs, "base");
         testConfigResourcesArray(new String[] {
                 "child1-context.xml", "child1-context-inheritable.xml",
-                "base-context-inheritable.xml", "chil1-context-override.xml"
+                "base-context-inheritable.xml", "child1-context-override.xml"
         }, set.getConfigResources("child1"));
     }
 
@@ -120,10 +120,10 @@ public class ModuleBasedContextFactoryTest {
     }
 
     @Test
-    public void testChild11ConfigResources() throws IOException {
+    public void testChild1_1ConfigResources() throws IOException {
         ModuleDefinitionSet set = factory.loadModules(defs, "base");
         testConfigResourcesArray(new String[] {
-                "chil1-1-context.xml", "child1-context-inheritable.xml", "base-context-inheritable.xml"
+                "child1-1-context.xml", "child1-context-inheritable.xml", "base-context-inheritable.xml"
         }, set.getConfigResources("child1-1"));
     }
 
