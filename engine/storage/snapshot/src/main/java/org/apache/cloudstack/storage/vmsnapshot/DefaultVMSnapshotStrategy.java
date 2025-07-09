@@ -515,7 +515,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
         }
 
         BackupOfferingVO backupOffering = backupOfferingDao.findById(vm.getBackupOfferingId());
-        if (backupOffering != null && backupOffering.getProvider().equals("nas")) {
+        if (backupOffering != null && "nas".equals(backupOffering.getProvider())) {
             logger.debug("{} as the VM has a backup offering for a provider that is not supported.", cantHandleLog);
             return StrategyPriority.CANT_HANDLE;
         }
@@ -531,7 +531,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
         for (VMSnapshotVO vmSnapshotVO : vmSnapshotDao.findByVmAndByType(vm.getId(), VMSnapshot.Type.Disk)) {
             List<VMSnapshotDetailsVO> vmSnapshotDetails = vmSnapshotDetailsDao.listDetails(vmSnapshotVO.getId());
             if (vmSnapshotDetails.stream().
-                    anyMatch(vmSnapshotDetailsVO -> vmSnapshotDetailsVO.getName().equals(STORAGE_SNAPSHOT))) {
+                    anyMatch(vmSnapshotDetailsVO -> STORAGE_SNAPSHOT.equals(vmSnapshotDetailsVO.getName()))) {
                 return true;
             }
         }
