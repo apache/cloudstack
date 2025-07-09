@@ -601,7 +601,7 @@ public class FirstFitPlannerTest {
         when(memCapacity2.getTotalCapacity()).thenReturn(8589934592L);
         when(memCapacity2.getReservedCapacity()).thenReturn(0L);
         when(memCapacity2.getUsedCapacity()).thenReturn(1073741824L);
-        when(memCapacity1.getCapacityType()).thenReturn(CapacityVO.CAPACITY_TYPE_MEMORY);
+        when(memCapacity2.getCapacityType()).thenReturn(CapacityVO.CAPACITY_TYPE_MEMORY);
         return Arrays.asList(cpuCapacity1, memCapacity1, cpuCapacity2, memCapacity2);
     }
 
@@ -616,7 +616,7 @@ public class FirstFitPlannerTest {
 
         CapacityVO cpuCapacity2 = mock(CapacityVO.class);
         when(cpuCapacity2.getPodId()).thenReturn(2L);
-        when(cpuCapacity1.getClusterId()).thenReturn(1L);
+        when(cpuCapacity2.getClusterId()).thenReturn(1L);
         when(cpuCapacity2.getTotalCapacity()).thenReturn(32000L);
         when(cpuCapacity2.getReservedCapacity()).thenReturn(0L);
         when(cpuCapacity2.getUsedCapacity()).thenReturn(500L);
@@ -624,7 +624,7 @@ public class FirstFitPlannerTest {
 
         CapacityVO memCapacity1 = mock(CapacityVO.class);
         when(memCapacity1.getPodId()).thenReturn(1L);
-        when(cpuCapacity1.getClusterId()).thenReturn(1L);
+        when(memCapacity1.getClusterId()).thenReturn(1L);
         when(memCapacity1.getTotalCapacity()).thenReturn(8589934592L);
         when(memCapacity1.getReservedCapacity()).thenReturn(0L);
         when(memCapacity1.getUsedCapacity()).thenReturn(536870912L);
@@ -632,11 +632,11 @@ public class FirstFitPlannerTest {
 
         CapacityVO memCapacity2 = mock(CapacityVO.class);
         when(memCapacity2.getPodId()).thenReturn(2L);
-        when(cpuCapacity1.getClusterId()).thenReturn(1L);
+        when(memCapacity2.getClusterId()).thenReturn(1L);
         when(memCapacity2.getTotalCapacity()).thenReturn(8589934592L);
         when(memCapacity2.getReservedCapacity()).thenReturn(0L);
         when(memCapacity2.getUsedCapacity()).thenReturn(1073741824L);
-        when(memCapacity1.getCapacityType()).thenReturn(CapacityVO.CAPACITY_TYPE_MEMORY);
+        when(memCapacity2.getCapacityType()).thenReturn(CapacityVO.CAPACITY_TYPE_MEMORY);
         return Arrays.asList(cpuCapacity1, memCapacity1, cpuCapacity2, memCapacity2);
     }
 }
