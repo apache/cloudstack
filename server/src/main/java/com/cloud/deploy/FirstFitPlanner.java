@@ -518,6 +518,8 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
         double cpuToMemoryWeight = ConfigurationManager.HostCapacityTypeCpuMemoryWeight.value();
         short capacityType = getHostCapacityTypeToOrderCluster(
                 configDao.getValue(Config.HostCapacityTypeToOrderClusters.key()), cpuToMemoryWeight);
+
+        logger.debug("CapacityType: {} is used for Pod ordering", getCapacityTypeName(capacityType));
         if (capacityType >= 0) { // for capacityType other than COMBINED
             return capacityDao.orderPodsByAggregateCapacity(zoneId, capacityType);
         }
@@ -551,6 +553,8 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
         double cpuToMemoryWeight = ConfigurationManager.HostCapacityTypeCpuMemoryWeight.value();
         short capacityType = getHostCapacityTypeToOrderCluster(
                 configDao.getValue(Config.HostCapacityTypeToOrderClusters.key()), cpuToMemoryWeight);
+
+        logger.debug("CapacityType: {} is used for Cluster ordering", getCapacityTypeName(capacityType));
         if (capacityType >= 0) { // for capacityType other than COMBINED
             return capacityDao.orderClustersByAggregateCapacity(id, vmId, capacityType, isZone);
         }
@@ -562,6 +566,15 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
 
         Map<Long, Double> clusterByCombinedCapacities = getClusterByCombinedCapacities(capacities, cpuToMemoryWeight);
         return new Pair<>(new ArrayList<>(clusterByCombinedCapacities.keySet()), clusterByCombinedCapacities);
+    }
+
+    public static String getCapacityTypeName(short capacityType) {
+        switch (capacityType) {
+            case 0: return ApiConstants.RAM;
+            case 1: return ApiConstants.CPU;
+            case -1: return ApiConstants.COMBINED_CAPACITY_ORDERING;
+            default: return "UNKNOWN";
+        }
     }
 
     public Map<Long, Double> getClusterByCombinedCapacities(List<CapacityVO> capacities, double cpuToMemoryWeight) {

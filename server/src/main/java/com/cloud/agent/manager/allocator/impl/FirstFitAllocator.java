@@ -410,6 +410,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
         // Get capacity by which we should reorder
         short capacityType = FirstFitPlanner.getHostCapacityTypeToOrderCluster(
                 _configDao.getValue(Config.HostCapacityTypeToOrderClusters.key()), cpuToMemoryWeight);
+        logger.debug("CapacityType: {} is used for Host ordering", FirstFitPlanner.getCapacityTypeName(capacityType));
         if (capacityType >= 0) { // for CPU or RAM
             return _capacityDao.orderHostsByFreeCapacity(zoneId, clusterId, capacityType);
         }
