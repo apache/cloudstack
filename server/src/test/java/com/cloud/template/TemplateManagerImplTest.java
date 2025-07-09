@@ -750,6 +750,26 @@ public class TemplateManagerImplTest {
         Assert.assertNull(type);
     }
 
+    @Test
+    public void verifyHeuristicRulesForZoneTestTemplateIsISOFormatShouldCheckForISOHeuristicType() {
+        VMTemplateVO vmTemplateVOMock = Mockito.mock(VMTemplateVO.class);
+
+        Mockito.when(vmTemplateVOMock.getFormat()).thenReturn(Storage.ImageFormat.ISO);
+        templateManager.verifyHeuristicRulesForZone(vmTemplateVOMock, 1L);
+
+        Mockito.verify(heuristicRuleHelperMock, Mockito.times(1)).getImageStoreIfThereIsHeuristicRule(1L, HeuristicType.ISO, vmTemplateVOMock);
+    }
+
+    @Test
+    public void verifyHeuristicRulesForZoneTestTemplateNotISOFormatShouldCheckForTemplateHeuristicType() {
+        VMTemplateVO vmTemplateVOMock = Mockito.mock(VMTemplateVO.class);
+
+        Mockito.when(vmTemplateVOMock.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+        templateManager.verifyHeuristicRulesForZone(vmTemplateVOMock, 1L);
+
+        Mockito.verify(heuristicRuleHelperMock, Mockito.times(1)).getImageStoreIfThereIsHeuristicRule(1L, HeuristicType.TEMPLATE, vmTemplateVOMock);
+    }
+
     @Configuration
     @ComponentScan(basePackageClasses = {TemplateManagerImpl.class},
             includeFilters = {@ComponentScan.Filter(value = TestConfiguration.Library.class, type = FilterType.CUSTOM)},
