@@ -65,6 +65,7 @@ public class Upgrade42010to42100 extends DbUpgradeAbstractImpl implements DbUpgr
     public void performDataMigration(Connection conn) {
         updateKubernetesClusterNodeVersions(conn);
         migrateConfigurationScopeToBitmask(conn);
+        addIndexes(conn);
     }
 
     @Override
@@ -211,5 +212,9 @@ public class Upgrade42010to42100 extends DbUpgradeAbstractImpl implements DbUpgr
             logger.error("Failed to migrate existing configuration scope values to bitmask", e);
             throw new CloudRuntimeException(String.format("Failed to migrate existing configuration scope values to bitmask due to: %s", e.getMessage()));
         }
+    }
+
+    private void addIndexes(Connection conn) {
+        DbUpgradeUtils.addIndexIfNeeded(conn, "resource_tags", "resource_id", "resource_type");
     }
 }
