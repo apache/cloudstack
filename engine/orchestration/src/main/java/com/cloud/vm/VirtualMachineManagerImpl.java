@@ -1889,7 +1889,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         final UserVmVO userVm = _userVmDao.findById(vm.getId());
                         _userVmDao.loadDetails(userVm);
                         userVm.setDetail(VmDetailConstants.PLATFORM, platform);
-                        _userVmDao.saveDetails(userVm);
+                        userVmDetailsDao.saveDetails(userVm);
                     }
                 }
 
@@ -2214,7 +2214,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                             final UserVmVO userVm = _userVmDao.findById(vm.getId());
                             _userVmDao.loadDetails(userVm);
                             userVm.setDetail(VmDetailConstants.PLATFORM, platform);
-                            _userVmDao.saveDetails(userVm);
+                            userVmDetailsDao.saveDetails(userVm);
                         }
                     }
                 }
@@ -3782,7 +3782,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (!userVm.details.containsKey(VmDetailConstants.HYPERVISOR_TOOLS_VERSION) || !userVm.details.get(VmDetailConstants.HYPERVISOR_TOOLS_VERSION).equals(pvdriver)) {
             userVm.setDetail(VmDetailConstants.HYPERVISOR_TOOLS_VERSION, pvdriver);
         }
-        _userVmDao.saveDetails(userVm);
+        userVmDetailsDao.saveDetails(userVm);
     }
 
     @Override
