@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.hypervisor.external.resource;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
@@ -124,7 +125,7 @@ public class ExternalResource implements ServerResource {
     @Override
     public PingCommand getCurrentStatus(long id) {
         if (isExtensionDisconnected()) {
-            return null;
+            return new PingRoutingCommand(Host.Type.Routing, id, new HashMap<>());
         }
         final Map<String, HostVmStateReportEntry> vmStates = externalProvisioner.getHostVmStateReport(id, extensionName,
                 extensionRelativePath);
@@ -200,9 +201,6 @@ public class ExternalResource implements ServerResource {
     }
 
     private Answer execute(ReadyCommand cmd) {
-        if (isExtensionDisconnected()) {
-            return new ReadyAnswer(cmd, logAndGetExtensionNotConnectedOrDisabledError());
-        }
         return new ReadyAnswer(cmd);
     }
 
@@ -214,9 +212,6 @@ public class ExternalResource implements ServerResource {
     }
 
     private Answer execute(CheckNetworkCommand cmd) {
-        if (isExtensionDisconnected()) {
-            return new CheckNetworkAnswer(cmd, false, logAndGetExtensionNotConnectedOrDisabledError());
-        }
         return new CheckNetworkAnswer(cmd, true, "Network Setup check by names is done");
     }
 
@@ -235,9 +230,6 @@ public class ExternalResource implements ServerResource {
     }
 
     private MaintainAnswer execute(MaintainCommand cmd) {
-        if (isExtensionDisconnected()) {
-            return new MaintainAnswer(cmd, false, logAndGetExtensionNotConnectedOrDisabledError());
-        }
         return new MaintainAnswer(cmd, false);
     }
 

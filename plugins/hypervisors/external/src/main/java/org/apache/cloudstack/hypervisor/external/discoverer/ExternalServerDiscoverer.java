@@ -274,12 +274,15 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
         if (ssCmd.getHypervisorType() != Hypervisor.HypervisorType.External) {
             return null;
         }
-        final ClusterVO cluster = _clusterDao.findById(host.getClusterId());
-        ExtensionResourceMapVO extensionResourceMapVO = extensionResourceMapDao.findByResourceIdAndType(cluster.getId(),
-                        ExtensionResourceMap.ResourceType.Cluster);
-        ExtensionVO extension = extensionDao.findById(extensionResourceMapVO.getExtensionId());
-        logger.debug("Creating host for {}", extension);
-        extensionsManager.prepareExtensionPathAcrossServers(extension);
+        ExtensionResourceMapVO extensionResourceMapVO = extensionResourceMapDao.findByResourceIdAndType(
+                host.getClusterId(), ExtensionResourceMap.ResourceType.Cluster);
+        if (extensionResourceMapVO != null) {
+            ExtensionVO extension = extensionDao.findById(extensionResourceMapVO.getExtensionId());
+            logger.debug("Creating {} for {}", host, extension);
+            extensionsManager.prepareExtensionPathAcrossServers(extension);
+        } else {
+            logger.debug("Creating {}. No extension registered for cluster ID: {}", host, host.getClusterId());
+        }
         return _resourceMgr.fillRoutingHostVO(host, ssCmd, Hypervisor.HypervisorType.External, details, hostTags);
     }
 
