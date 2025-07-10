@@ -828,6 +828,14 @@ public class AgentProperties{
      * */
     public static final Property<Integer> REVERT_SNAPSHOT_TIMEOUT = new Property<>("revert.snapshot.timeout", 10800);
 
+    /**
+     *  If set to true, creates VMs as full clones of their templates on KVM hypervisor. Creates as linked clones otherwise. <br>
+     * Data type: Boolean. <br>
+     * Default value: <code>false</code>
+     */
+    public static final Property<Boolean> CREATE_FULL_CLONE = new Property<>("create.full.clone", false);
+
+
     public static class Property <T>{
         private String name;
         private T defaultValue;
