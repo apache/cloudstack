@@ -31,7 +31,7 @@ public abstract class UsageParser {
     UsageDao usageDao;
 
     private void beforeParse(AccountVO account) {
-        logger.debug("Parsing all {} usage events for account: [{}]", getParserName(), account.getUuid());
+        logger.debug("Parsing all {} usage events for account: [{}]", getParserName(), account);
     }
 
     public abstract String getParserName();
