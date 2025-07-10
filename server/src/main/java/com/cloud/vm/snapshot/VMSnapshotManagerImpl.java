@@ -200,6 +200,11 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
 
     @Override
     public boolean start() {
+        //Remove VM Snapshots in allocated state
+        List<VMSnapshotVO> allocatedVMSnapshots = _vmSnapshotDao.listAllByStatus(VMSnapshot.State.Allocated);
+        for (VMSnapshotVO vmSnapshot : allocatedVMSnapshots) {
+            _vmSnapshotDao.remove(vmSnapshot.getId());
+        }
         return true;
     }
 
