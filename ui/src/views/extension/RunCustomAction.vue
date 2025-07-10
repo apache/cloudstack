@@ -241,10 +241,7 @@ export default {
             params['parameters[0].' + key] = value
           }
         }
-        const httpMethod = this.currentParameters.find(p => p.validationformat === 'PASSWORD') ? 'POST' : 'GET'
-        const args = httpMethod === 'POST' ? {} : params
-        const data = httpMethod === 'POST' ? params : {}
-        postAPI('runCustomAction', args, httpMethod, data).then(response => {
+        postAPI('runCustomAction', params).then(response => {
           this.$pollJob({
             jobId: response.runcustomactionresponse.jobid,
             title: this.currentAction.name || this.$t('label.run.custom.action'),
@@ -256,20 +253,19 @@ export default {
               const success = actionResponse.success || false
               const message = actionResponse?.result?.message || (success ? 'Success' : 'Failed')
               const details = actionResponse?.result?.details
-              let printExtensionMessage = 'false'
+              let printExtensionMessage = false
               let extensionMessage = null
               try {
                 const parsedDetails = JSON.parse(details)
-                printExtensionMessage = parsedDetails?.printmessage
+                printExtensionMessage = String(parsedDetails?.printmessage).toLowerCase() === 'true'
                 extensionMessage = parsedDetails?.message
               } catch (_) {}
               const modalType = success ? this.$success : this.$error
               const contentElements = [h('p', `${message}`)]
-
-              if (!Array.isArray(extensionMessage) && typeof extensionMessage === 'object' && Object.keys(extensionMessage).length > 0) {
+              if (extensionMessage && !Array.isArray(extensionMessage) && typeof extensionMessage === 'object' && Object.keys(extensionMessage).length > 0) {
                 extensionMessage = [extensionMessage]
               }
-              if (Array.isArray(extensionMessage) && extensionMessage.length > 0 && printExtensionMessage === 'true') {
+              if (Array.isArray(extensionMessage) && extensionMessage.length > 0 && printExtensionMessage) {
                 contentElements.push(
                   h('div', {
                     style: {
