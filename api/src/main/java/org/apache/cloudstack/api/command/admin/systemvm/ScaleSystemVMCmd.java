@@ -76,7 +76,7 @@ public class ScaleSystemVMCmd extends BaseAsyncCmd {
     }
 
     public Map<String, String> getDetails() {
-        return details;
+        return convertDetailsToMap(details);
     }
 
     /////////////////////////////////////////////////////
