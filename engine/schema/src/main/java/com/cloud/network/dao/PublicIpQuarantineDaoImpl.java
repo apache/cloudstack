@@ -38,7 +38,7 @@ public class PublicIpQuarantineDaoImpl extends GenericDaoBase<PublicIpQuarantine
     private SearchBuilder<PublicIpQuarantineVO> quarantinedIpAddressesSearch;
 
     @Inject
-    private IPAddressDao ipAddressDao;
+    IPAddressDao ipAddressDao;
 
     @PostConstruct
     public void init() {
