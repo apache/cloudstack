@@ -48,7 +48,7 @@ export default {
     name: 'template',
     title: 'label.templates',
     param: 'domainid'
-  },,
+  },
   {
     name: 'iso',
     title: 'label.isos',
