@@ -77,19 +77,24 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
     @Param(description = "the name of the cluster for the storage pool")
     private String clusterName;
 
+    @SerializedName(ApiConstants.CAPACITY_BYTES)
+    @Param(description = "bytes CloudStack can provision from this storage pool", since = "4.19.3")
+    private Long capacityBytes;
+
+    @Deprecated(since = "4.19.3")
     @SerializedName("disksizetotal")
     @Param(description = "the total disk size of the storage pool")
     private Long diskSizeTotal;
 
     @SerializedName("disksizeallocated")
-    @Param(description = "the host's currently allocated disk size")
+    @Param(description = "the pool's currently allocated disk size")
     private Long diskSizeAllocated;
 
     @SerializedName("disksizeused")
-    @Param(description = "the host's currently used disk size")
+    @Param(description = "the pool's currently used disk size")
     private Long diskSizeUsed;
 
-    @SerializedName("capacityiops")
+    @SerializedName(ApiConstants.CAPACITY_IOPS)
     @Param(description = "IOPS CloudStack can provision from this storage pool")
     private Long capacityIops;
 
@@ -144,6 +149,10 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
     @SerializedName(ApiConstants.MANAGED)
     @Param(description = "whether this pool is managed or not")
     private Boolean managed;
+
+    @SerializedName(ApiConstants.DETAILS)
+    @Param(description = "additional key/value details of the storage pool", since = "4.19.3")
+    private Map<String, String> details;
 
     public Map<String, String> getCaps() {
         return caps;
@@ -276,6 +285,14 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
         this.clusterName = clusterName;
     }
 
+    public Long getCapacityBytes() {
+        return capacityBytes;
+    }
+
+    public void setCapacityBytes(Long capacityBytes) {
+        this.capacityBytes = capacityBytes;
+    }
+
     public Long getDiskSizeTotal() {
         return diskSizeTotal;
     }
@@ -394,5 +411,13 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
 
     public void setManaged(Boolean managed) {
         this.managed = managed;
+    }
+
+    public Map<String, String> getDetails() {
+        return details;
+    }
+
+    public void setDetails(Map<String, String> details) {
+        this.details = details;
     }
 }
