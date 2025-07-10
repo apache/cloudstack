@@ -53,11 +53,11 @@ public class QuotaSummaryResponse extends BaseResponse {
     private State state;
 
     @SerializedName("domainremoved")
-    @Param(description = "If the domain is removed or not")
+    @Param(description = "If the domain is removed or not", since = "4.21.0")
     private boolean domainRemoved;
 
     @SerializedName("accountremoved")
-    @Param(description = "If the account is removed or not")
+    @Param(description = "If the account is removed or not", since = "4.21.0")
     private boolean accountRemoved;
 
     @SerializedName("quota")
@@ -81,15 +81,15 @@ public class QuotaSummaryResponse extends BaseResponse {
     private boolean quotaEnabled;
 
     @SerializedName("projectname")
-    @Param(description = "Name of the project")
+    @Param(description = "Name of the project", since = "4.21.0")
     private String projectName;
 
     @SerializedName("projectid")
-    @Param(description = "Project's id")
+    @Param(description = "Project's id", since = "4.21.0")
     private String projectId;
 
     @SerializedName("projectremoved")
-    @Param(description = "Whether the project is removed or not")
+    @Param(description = "Whether the project is removed or not", since = "4.21.0")
     private Boolean projectRemoved;
 
     public String getAccountId() {

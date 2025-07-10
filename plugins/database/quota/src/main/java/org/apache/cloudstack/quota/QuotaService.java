@@ -40,4 +40,6 @@ public interface QuotaService extends PluggableService {
 
     boolean saveQuotaAccount(AccountVO account, BigDecimal aggrUsage, Date endDate);
 
+    Long finalizeAccountId(Long accountId, String accountName, Long domainId, Long projectId);
+
 }

@@ -16,17 +16,20 @@
 //under the License.
 package org.apache.cloudstack.api.command;
 
-import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
+
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
-import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.QuotaResponseBuilder;
 import org.apache.cloudstack.api.response.QuotaSummaryResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.quota.QuotaAccountStateFilter;
 import org.apache.cloudstack.quota.QuotaService;
 import org.apache.commons.lang3.ObjectUtils;
@@ -41,6 +44,16 @@ import javax.inject.Inject;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class QuotaSummaryCmd extends BaseListCmd {
 
+    @Inject
+    QuotaResponseBuilder quotaResponseBuilder;
+
+    @Inject
+    QuotaService quotaService;
+
+    @ACL
+    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "ID of the account for which balance will be listed. Can not be specified with projectId.")
+    private Long accountId;
+
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required = false, description = "Optional, Account Id for which statement needs to be generated")
     private String accountName;
 
@@ -52,15 +65,13 @@ public class QuotaSummaryCmd extends BaseListCmd {
     private Boolean listAll;
 
     @Parameter(name = ApiConstants.ACCOUNT_STATE_TO_SHOW, type = CommandType.STRING, description =  "Possible values are [ALL, ACTIVE, REMOVED]. ALL will list summaries for " +
-            "active and removed accounts; ACTIVE will list summaries only for active accounts; REMOVED will list summaries only for removed accounts. The default value is ACTIVE.”, 
-            since = “4.21.0)
+            "active and removed accounts; ACTIVE will list summaries only for active accounts; REMOVED will list summaries only for removed accounts. The default value is ACTIVE.",
+            since = "4.21.0")
     private String accountStateToShow;
 
-    @Inject
-    QuotaResponseBuilder quotaResponseBuilder;
-
-    @Inject
-    QuotaService quotaService;
+    @ACL
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Project Id for which balance will be listed. Can not be specified with accountId.")
+    private Long projectId;
 
     @Override
     public void execute() {
@@ -70,6 +81,14 @@ public class QuotaSummaryCmd extends BaseListCmd {
         response.setResponses(responses.first(), responses.second());
         response.setResponseName(getCommandName());
         setResponseObject(response);
+    }
+
+    public Long getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(Long accountId) {
+        this.accountId = accountId;
     }
 
     public String getAccountName() {
@@ -96,6 +115,10 @@ public class QuotaSummaryCmd extends BaseListCmd {
         this.listAll = listAll;
     }
 
+    public Long getProjectId() {
+        return projectId;
+    }
+
     public QuotaAccountStateFilter getAccountStateToShow() {
         if (StringUtils.isNotBlank(accountStateToShow)) {
             QuotaAccountStateFilter state = QuotaAccountStateFilter.getValue(accountStateToShow);
@@ -109,7 +132,9 @@ public class QuotaSummaryCmd extends BaseListCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return Account.ACCOUNT_ID_SYSTEM;
+        if (ObjectUtils.allNull(accountId, accountName, projectId)) {
+            return -1;
+        }
+        return quotaService.finalizeAccountId(accountId, accountName, domainId, projectId);
     }
-
 }

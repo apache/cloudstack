@@ -26,6 +26,12 @@ import java.util.TimeZone;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.projects.Project;
+import com.cloud.projects.ProjectManager;
+import com.cloud.user.AccountService;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.QuotaBalanceCmd;
 import org.apache.cloudstack.api.command.QuotaConfigureEmailCmd;
 import org.apache.cloudstack.api.command.QuotaCreditsCmd;
@@ -74,6 +80,8 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
     @Inject
     private AccountDao _accountDao;
     @Inject
+    private AccountService accountService;
+    @Inject
     private QuotaAccountDao _quotaAcc;
     @Inject
     private QuotaUsageDao _quotaUsageDao;
@@ -85,6 +93,8 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
     private QuotaBalanceDao _quotaBalanceDao;
     @Inject
     private QuotaResponseBuilder _respBldr;
+    @Inject
+    private ProjectManager projectMgr;
 
     private TimeZone _usageTimezone;
 
@@ -274,6 +284,48 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
             return _quotaAcc.updateQuotaAccount(account.getAccountId(), quota_account);
         }
     }
+
+    /**
+     * Returns the Id of the account that will be used when provided with either accountId, projectId or accountName and domainId.
+     */
+    @Override
+    public Long finalizeAccountId(Long accountId, String accountName, Long domainId, Long projectId) {
+        if (projectId != null) {
+            if (accountId != null || accountName != null) {
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Project and account can not be specified together.");
+            }
+            final Project project = projectMgr.getProject(projectId);
+            if (project == null) {
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Unable to find project with id: [%s].", projectId));
+            }
+            if (project.getState() != Project.State.Active) {
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Project with projectId [%s] is not active.", projectId));
+            }
+            return project.getProjectAccountId();
+        }
+
+        if (accountId != null) {
+            if (accountService.getActiveAccountById(accountId) != null) {
+                return accountId;
+            }
+            throw new InvalidParameterValueException(String.format("Unable to find account with accountId: [%s].", accountId));
+        }
+
+        if (accountName == null && domainId == null) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Either %s or %s is required.", ApiConstants.ACCOUNT_ID, ApiConstants.PROJECT_ID));
+        }
+        try {
+            Account activeAccount = accountService.getActiveAccountByName(accountName, domainId);
+            if (activeAccount != null) {
+                return activeAccount.getId();
+            }
+        } catch (InvalidParameterValueException exception) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Both %s and %s are needed if using either. Consider using %s instead.",
+                    ApiConstants.ACCOUNT, ApiConstants.DOMAIN_ID, ApiConstants.ACCOUNT_ID));
+        }
+        throw new InvalidParameterValueException(String.format("Unable to find account by name: [%s] on domain: [%s]", accountName, domainId));
+    }
+
 
     @Override
     public void setMinBalance(Long accountId, Double balance) {
