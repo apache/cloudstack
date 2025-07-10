@@ -40,7 +40,7 @@ public class VmMetricsStatsResponse extends BaseResponse {
     private String displayName;
 
     @SerializedName("stats")
-    @Param(description = "the list of VM stats")
+    @Param(description = "the list of VM stats", responseObject = StatsResponse.class)
     private List<StatsResponse> stats;
 
     public void setId(String id) {
