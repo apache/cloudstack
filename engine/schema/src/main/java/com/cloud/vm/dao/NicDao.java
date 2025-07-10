@@ -34,6 +34,8 @@ public interface NicDao extends GenericDao<NicVO, Long> {
 
     List<NicVO> listByNetworkId(long networkId);
 
+    List<NicVO> listNonDeallocatedByNetworkId(long networkId);
+
     NicVO findByNtwkIdAndInstanceId(long networkId, long instanceId);
 
     NicVO findByInstanceIdAndNetworkIdIncludingRemoved(long networkId, long instanceId);
