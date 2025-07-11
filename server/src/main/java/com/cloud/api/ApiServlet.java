@@ -37,6 +37,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ApiServerService;
@@ -46,6 +47,7 @@ import org.apache.cloudstack.api.auth.APIAuthenticationManager;
 import org.apache.cloudstack.api.auth.APIAuthenticationType;
 import org.apache.cloudstack.api.auth.APIAuthenticator;
 import org.apache.cloudstack.api.command.user.consoleproxy.CreateConsoleEndpointCmd;
+import org.apache.cloudstack.api.command.user.gui.theme.ListGuiThemesCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.managed.context.ManagedContext;
 import org.apache.cloudstack.utils.consoleproxy.ConsoleAccessUtils;
@@ -397,6 +399,8 @@ public class ApiServlet extends HttpServlet {
                 CallContext.register(accountMgr.getSystemUser(), accountMgr.getSystemAccount());
             }
             setProjectContext(params);
+            setGuiThemeParameterIfApiCallIsUnauthenticated(userId, command, req, params);
+
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace(String.format("verifying request for user %s from %s with %d parameters",
                         userId, remoteAddress.getHostAddress(), params.size()));
@@ -456,6 +460,19 @@ public class ApiServlet extends HttpServlet {
                 return "SameSite=Lax";
         }
     }
+
+    private void setGuiThemeParameterIfApiCallIsUnauthenticated(Long userId, String command, HttpServletRequest req, Map<String, Object[]> params) {
+        String listGuiThemesApiName = ListGuiThemesCmd.class.getAnnotation(APICommand.class).name();
+
+        if (userId != null || !listGuiThemesApiName.equalsIgnoreCase(command)) {
+            return;
+        }
+
+        String serverName = req.getServerName();
+        LOGGER.info("Unauthenticated call to {} API, thus, the `commonName` parameter will be inferred as {}.", listGuiThemesApiName, serverName);
+        params.put(ApiConstants.COMMON_NAME, new String[]{serverName});
+    }
+
 
     private boolean checkIfAuthenticatorIsOf2FA(String command) {
         boolean verify2FA = false;
