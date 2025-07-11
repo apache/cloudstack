@@ -112,7 +112,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     protected Logger logger = LogManager.getLogger(ConsoleAccessManagerImpl.class);
 
     private static final List<VirtualMachine.State> unsupportedConsoleVMState = Arrays.asList(
-            VirtualMachine.State.Stopped, VirtualMachine.State.Error, VirtualMachine.State.Destroyed
+            VirtualMachine.State.Stopped, VirtualMachine.State.Restoring, VirtualMachine.State.Error, VirtualMachine.State.Destroyed
     );
 
     @Override

@@ -145,8 +145,18 @@ public class BackupRepositoryVO implements BackupRepository {
     }
 
     @Override
+    public void setUsedBytes(Long usedBytes) {
+        this.usedBytes = usedBytes;
+    }
+
+    @Override
     public Long getCapacityBytes() {
         return capacityBytes;
+    }
+
+    @Override
+    public void setCapacityBytes(Long capacityBytes) {
+        this.capacityBytes = capacityBytes;
     }
 
     public Date getCreated() {

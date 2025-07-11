@@ -870,7 +870,9 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         try {
             List<Backup.VolumeInfo> list = new ArrayList<>();
             for (VolumeVO vol : vmVolumes) {
-                list.add(new Backup.VolumeInfo(vol.getUuid(), vol.getPath(), vol.getVolumeType(), vol.getSize()));
+                DiskOfferingVO diskOffering = diskOfferingDao.findById(vol.getDiskOfferingId());
+                list.add(new Backup.VolumeInfo(vol.getUuid(), vol.getPath(), vol.getVolumeType(), vol.getSize(),
+                vol.getDeviceId(), diskOffering.getUuid(), vol.getMinIops(), vol.getMaxIops()));
             }
             return GSON.toJson(list.toArray(), Backup.VolumeInfo[].class);
         } catch (Exception e) {
