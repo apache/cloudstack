@@ -257,7 +257,7 @@ public class HeuristicRuleHelper {
      * @return the {@link DataStore} returned by the script.
      */
     public DataStore interpretHeuristicRule(String rule, HeuristicType heuristicType, Object obj, long zoneId) {
-        try (JsInterpreter jsInterpreter = new JsInterpreter(HEURISTICS_SCRIPT_TIMEOUT)) {
+        try (JsInterpreter jsInterpreter = new JsInterpreter(HEURISTICS_SCRIPT_TIMEOUT, StorageManager.HEURISTICS_SCRIPT_TIMEOUT.key())) {
             buildPresetVariables(jsInterpreter, heuristicType, zoneId, obj);
             Object scriptReturn = jsInterpreter.executeScript(rule);
 

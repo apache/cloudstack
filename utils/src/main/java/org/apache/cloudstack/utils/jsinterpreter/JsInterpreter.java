@@ -59,9 +59,9 @@ public class JsInterpreter implements Closeable {
     protected JsInterpreter() {
     }
 
-    public JsInterpreter(long timeout) {
+    public JsInterpreter(long timeout, String configName) {
         this.timeout = timeout;
-        this.timeoutDefaultMessage = String.format("Timeout (in milliseconds) defined in the global setting [quota.activationrule.timeout]: [%s].", this.timeout);
+        this.timeoutDefaultMessage = String.format("Timeout (in milliseconds) defined in the global setting [%s]: [%s].", configName, this.timeout);
 
         executor = Executors.newSingleThreadExecutor();
         NashornScriptEngineFactory factory = new NashornScriptEngineFactory();

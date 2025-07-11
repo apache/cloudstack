@@ -59,6 +59,8 @@ public interface Host extends StateObject<Status>, Identity, Partition, HAResour
     String HOST_INSTANCE_CONVERSION = "host.instance.conversion";
     String HOST_OVFTOOL_VERSION = "host.ovftool.version";
     String HOST_VIRTV2V_VERSION = "host.virtv2v.version";
+    String GUEST_OS_CATEGORY_ID = "guest.os.category.id";
+    String GUEST_OS_RULE = "guest.os.rule";
 
     /**
      * @return name of the machine.
