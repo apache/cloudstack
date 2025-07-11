@@ -327,6 +327,10 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             throw new InvalidParameterValueException("Creating VM snapshot failed due to VM:" + vmId + " is a system VM or does not exist");
         }
 
+        if (HypervisorType.External.equals(userVmVo.getHypervisorType())) {
+            throw new InvalidParameterValueException("VM snapshot operation is not allowed for hypervisor type External");
+        }
+
         // VM snapshot with memory is not supported for VGPU Vms
         if (snapshotMemory && _serviceOfferingDetailsDao.findDetail(userVmVo.getServiceOfferingId(), GPU.Keys.vgpuType.toString()) != null) {
             throw new InvalidParameterValueException("VM snapshot with MEMORY is not supported for vGPU enabled VMs.");

@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.engine.orchestration;
 
+import static com.cloud.configuration.ConfigurationManager.MESSAGE_DELETE_VLAN_IP_RANGE_EVENT;
+
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,12 +40,6 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.dc.ASNumberVO;
-import com.cloud.bgp.BGPService;
-import com.cloud.dc.VlanDetailsVO;
-import com.cloud.dc.dao.ASNumberDao;
-import com.cloud.dc.dao.VlanDetailsDao;
-import com.cloud.network.dao.NsxProviderDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -65,6 +61,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -86,8 +83,10 @@ import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
+import com.cloud.bgp.BGPService;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
+import com.cloud.dc.ASNumberVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -95,12 +94,15 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DataCenterVnetVO;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
+import com.cloud.dc.VlanDetailsVO;
 import com.cloud.dc.VlanVO;
+import com.cloud.dc.dao.ASNumberDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterVnetDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
@@ -161,6 +163,7 @@ import com.cloud.network.dao.NetworkDomainVO;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkServiceMapVO;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
@@ -248,8 +251,8 @@ import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachine.Type;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
@@ -261,9 +264,6 @@ import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.googlecode.ipv6.IPv6Address;
-import org.jetbrains.annotations.NotNull;
-
-import static com.cloud.configuration.ConfigurationManager.MESSAGE_DELETE_VLAN_IP_RANGE_EVENT;
 
 /**
  * NetworkManagerImpl implements NetworkManager.

@@ -57,6 +57,7 @@ public class TemplateProfile {
     Boolean deployAsIs;
     Boolean forCks;
     Long size;
+    Long extensionId;
 
     public TemplateProfile(Long templateId, Long userId, String name, String displayText, CPU.CPUArch arch, Integer bits, Boolean passwordEnabled, Boolean requiresHvm, String url,
                            Boolean isPublic, Boolean featured, Boolean isExtractable, ImageFormat format, Long guestOsId, List<Long> zoneIdList, HypervisorType hypervisorType,
@@ -100,7 +101,7 @@ public class TemplateProfile {
                            Boolean isPublic, Boolean featured, Boolean isExtractable, ImageFormat format, Long guestOsId, List<Long> zoneId,
 
                            HypervisorType hypervisorType, String accountName, Long domainId, Long accountId, String chksum, Boolean bootable, String templateTag, Map details,
-                           Boolean sshKeyEnabled, Long imageStoreId, Boolean isDynamicallyScalable, TemplateType templateType, Boolean directDownload, Boolean deployAsIs) {
+                           Boolean sshKeyEnabled, Long imageStoreId, Boolean isDynamicallyScalable, TemplateType templateType, Boolean directDownload, Boolean deployAsIs, Long extensionId) {
         this(templateId,
             userId,
             name,
@@ -129,6 +130,7 @@ public class TemplateProfile {
         this.templateType = templateType;
         this.directDownload = directDownload;
         this.deployAsIs = deployAsIs;
+        this.extensionId = extensionId;
     }
 
     public Long getTemplateId() {
@@ -353,5 +355,12 @@ public class TemplateProfile {
 
     public CPU.CPUArch getArch() {
         return arch;
+    }
+    public Long getExtensionId() {
+        return extensionId;
+    }
+
+    public void setExtensionId(Long extensionId) {
+        this.extensionId = extensionId;
     }
 }
