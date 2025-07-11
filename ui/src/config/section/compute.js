@@ -528,7 +528,12 @@ export default {
           api: 'deleteVMSnapshot',
           icon: 'delete-outlined',
           label: 'label.action.vmsnapshot.delete',
-          message: 'message.action.vmsnapshot.delete',
+          message: (record) => {
+            if (record.type === 'Disk') {
+              return 'message.action.vmsnapshot.disk-only.delete'
+            }
+            return 'message.action.vmsnapshot.delete'
+          },
           dataView: true,
           show: (record) => { return ['Ready', 'Expunging', 'Error'].includes(record.state) },
           args: ['vmsnapshotid'],
