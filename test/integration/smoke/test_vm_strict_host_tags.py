@@ -97,6 +97,9 @@ class TestVMDeploymentPlannerStrictTags(cloudstackTestCase):
 
     @classmethod
     def updateConfiguration(self, name, value):
+        if len(value) == 0:
+            value = ' '
+
         cmd = updateConfiguration.updateConfigurationCmd()
         cmd.name = name
         cmd.value = value
@@ -265,6 +268,9 @@ class TestScaleVMStrictTags(cloudstackTestCase):
 
     @classmethod
     def updateConfiguration(self, name, value):
+        if len(value) == 0:
+            value = ' '
+
         cmd = updateConfiguration.updateConfigurationCmd()
         cmd.name = name
         cmd.value = value
@@ -385,6 +391,9 @@ class TestRestoreVMStrictTags(cloudstackTestCase):
 
     @classmethod
     def updateConfiguration(self, name, value):
+        if len(value) == 0:
+            value = ' '
+
         cmd = updateConfiguration.updateConfigurationCmd()
         cmd.name = name
         cmd.value = value
@@ -509,6 +518,9 @@ class TestMigrateVMStrictTags(cloudstackTestCase):
 
     @classmethod
     def updateConfiguration(self, name, value):
+        if len(value) == 0:
+            value = ' '
+
         cmd = updateConfiguration.updateConfigurationCmd()
         cmd.name = name
         cmd.value = value
