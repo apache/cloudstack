@@ -35,6 +35,7 @@ public class Site2SiteVpnGatewayDaoImpl extends GenericDaoBase<Site2SiteVpnGatew
     protected Site2SiteVpnGatewayDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("vpcId", AllFieldsSearch.entity().getVpcId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("ipAddressId", AllFieldsSearch.entity().getAddrId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
     }
 
@@ -42,6 +43,13 @@ public class Site2SiteVpnGatewayDaoImpl extends GenericDaoBase<Site2SiteVpnGatew
     public Site2SiteVpnGatewayVO findByVpcId(long vpcId) {
         SearchCriteria<Site2SiteVpnGatewayVO> sc = AllFieldsSearch.create();
         sc.setParameters("vpcId", vpcId);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public Site2SiteVpnGatewayVO findByPublicIpAddress(long ipAddressId) {
+        SearchCriteria<Site2SiteVpnGatewayVO> sc = AllFieldsSearch.create();
+        sc.setParameters("ipAddressId", ipAddressId);
         return findOneBy(sc);
     }
 }

@@ -369,15 +369,16 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     }
 
     @Override
-    public boolean reorderAclRules(VpcVO vpc, List<? extends Network> networks, List<? extends NetworkACLItem> networkACLItems) {
-        List<NetworkACLServiceProvider> nsxElements = new ArrayList<>();
-        nsxElements.add((NetworkACLServiceProvider) _ntwkModel.getElementImplementingProvider(Network.Provider.Nsx.getName()));
+    public boolean reorderAclRules(VpcVO vpc, List<? extends Network> networks,
+                                   List<? extends NetworkACLItem> networkACLItems, Network.Provider networkProvider) {
+        List<NetworkACLServiceProvider> providers = new ArrayList<>();
+        providers.add((NetworkACLServiceProvider) _ntwkModel.getElementImplementingProvider(networkProvider.getName()));
         try {
-            for (final NetworkACLServiceProvider provider : nsxElements) {
+            for (final NetworkACLServiceProvider provider : providers) {
                 return provider.reorderAclRules(vpc, networks, networkACLItems);
             }
         } catch (final Exception ex) {
-            logger.debug("Failed to reorder ACLs on NSX due to: " + ex.getLocalizedMessage());
+            logger.debug(String.format("Failed to reorder ACLs on %s due to: %s", networkProvider.getName(), ex.getLocalizedMessage()));
         }
         return false;
     }

@@ -76,6 +76,8 @@ import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManagerImpl;
 import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.GuestOsCategory;
@@ -145,6 +147,12 @@ public class ManagementServerImplTest {
     UserDataManager userDataManager;
 
     @Mock
+    VpcDao vpcDao;
+
+    @Mock
+    NetworkDao networkDao;
+
+    @Mock
     UserVmDetailsDao userVmDetailsDao;
 
     @Mock
@@ -175,6 +183,19 @@ public class ManagementServerImplTest {
     public void setup() throws IllegalAccessException, NoSuchFieldException {
         closeable = MockitoAnnotations.openMocks(this);
         CallContext.register(Mockito.mock(User.class), Mockito.mock(Account.class));
+        spy._accountMgr = _accountMgr;
+        spy.userDataDao = _userDataDao;
+        spy.templateDao = templateDao;
+        spy._userVmDao = _userVmDao;
+        spy.annotationDao = annotationDao;
+        spy._UserVmDetailsDao = userVmDetailsDao;
+        spy._detailsDao = hostDetailsDao;
+        spy.userDataManager = userDataManager;
+        spy._vpcDao = vpcDao;
+        spy.networkDao = networkDao;
+        spy._configDao = configDao;
+        spy._configDepot = configDepot;
+        spy._domainDao = domainDao;
     }
 
     @After

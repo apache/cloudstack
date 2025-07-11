@@ -29,6 +29,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.IpAddress;
 import org.springframework.stereotype.Component;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 import org.apache.commons.net.util.SubnetUtils;
@@ -315,6 +316,11 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
         DeleteBcfAttachmentCommand cmd = new DeleteBcfAttachmentCommand(tenantId, networkId, nicId);
 
         _bcfUtils.sendBcfCommandWithNetworkSyncCheck(cmd, network);
+        return true;
+    }
+
+    @Override
+    public boolean releaseIp(IpAddress ipAddress) {
         return true;
     }
 

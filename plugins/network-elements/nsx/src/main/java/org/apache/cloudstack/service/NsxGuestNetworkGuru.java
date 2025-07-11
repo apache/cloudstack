@@ -23,7 +23,6 @@ import com.cloud.dc.DataCenter;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.domain.DomainVO;
-import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -40,9 +39,7 @@ import com.cloud.network.guru.GuestNetworkGuru;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
-import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.Account;
-import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
@@ -68,13 +65,7 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
     protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
-    NetworkOfferingServiceMapDao networkOfferingServiceMapDao;
-    @Inject
     NsxControllerUtils nsxControllerUtils;
-    @Inject
-    AccountDao accountDao;
-    @Inject
-    DomainDao domainDao;
     @Inject
     NetworkModel networkModel;
 

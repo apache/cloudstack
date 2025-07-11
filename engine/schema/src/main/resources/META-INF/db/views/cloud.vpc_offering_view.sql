@@ -28,7 +28,6 @@ select
     `vpc_offerings`.`display_text` AS `display_text`,
     `vpc_offerings`.`state` AS `state`,
     `vpc_offerings`.`default` AS `default`,
-    `vpc_offerings`.`for_nsx` AS `for_nsx`,
     `vpc_offerings`.`network_mode` AS `network_mode`,
     `vpc_offerings`.`created` AS `created`,
     `vpc_offerings`.`removed` AS `removed`,

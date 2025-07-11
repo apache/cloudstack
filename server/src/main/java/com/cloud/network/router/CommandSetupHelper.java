@@ -869,7 +869,11 @@ public class CommandSetupHelper {
                 String vlanTag = ipAddr.getVlanTag();
                 String key = null;
                 if (Objects.isNull(vlanTag)) {
-                    key = "nsx-" + ipAddr.getAddress().addr();
+                    if (Hypervisor.HypervisorType.VMware == router.getHypervisorType()) {
+                        key = "nsx-" + ipAddr.getAddress().addr();
+                    } else if (Hypervisor.HypervisorType.KVM == router.getHypervisorType()) {
+                        key = "netris-" + ipAddr.getAddress().addr();
+                    }
                 } else {
                     key = BroadcastDomainType.getValue(BroadcastDomainType.fromString(ipAddr.getVlanTag()));
                 }
@@ -1218,7 +1222,10 @@ public class CommandSetupHelper {
         final SetupGuestNetworkCommand setupCmd = new SetupGuestNetworkCommand(dhcpRange, networkDomain, router.getIsRedundantRouter(), defaultDns1, defaultDns2, add, _itMgr.toNicTO(nicProfile,
                 router.getHypervisorType()));
 
-        setupCmd.setVrGuestGateway(networkOfferingVO.isForNsx());
+        boolean isVrGuestGateway = _networkModel.isAnyServiceSupportedInNetwork(network.getId(), Provider.VPCVirtualRouter, Service.SourceNat, Service.Gateway);
+        setupCmd.setVrGuestGateway(isVrGuestGateway);
+        setupCmd.setNetworkId(network.getId());
+
         NicVO publicNic = _nicDao.findDefaultNicForVM(router.getId());
         if (publicNic != null) {
             updateSetupGuestNetworkCommandIpv6(setupCmd, network, publicNic, defaultIp6Dns1, defaultIp6Dns2);

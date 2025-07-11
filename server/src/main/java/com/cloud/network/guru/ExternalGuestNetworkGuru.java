@@ -269,8 +269,9 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             profile.setIPv4Netmask(null);
         }
 
-        if (config.getVpcId() == null && vm.getType() == VirtualMachine.Type.DomainRouter) {
-            boolean isPublicNetwork = _networkModel.isProviderSupportServiceInNetwork(config.getId(), Service.SourceNat, Provider.VirtualRouter);
+        if (vm.getType() == VirtualMachine.Type.DomainRouter) {
+            boolean isPublicNetwork = _networkModel.isProviderSupportServiceInNetwork(config.getId(), Service.SourceNat, Provider.VirtualRouter)
+                    || _networkModel.isProviderSupportServiceInNetwork(config.getId(), Service.SourceNat, Provider.VPCVirtualRouter);
             if (!isPublicNetwork) {
                 Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(config, null);
                 if (placeholderNic == null) {

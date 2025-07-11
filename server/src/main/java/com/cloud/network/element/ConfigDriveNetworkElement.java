@@ -26,6 +26,7 @@ import java.util.Set;
 import javax.inject.Inject;
 
 import com.cloud.host.Host;
+import com.cloud.network.IpAddress;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -178,6 +179,11 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
             logger.error("Failed to delete config drive due to: ", e);
             return false;
         }
+    }
+
+    @Override
+    public boolean releaseIp(IpAddress ipAddress) {
+        return true;
     }
 
     @Override

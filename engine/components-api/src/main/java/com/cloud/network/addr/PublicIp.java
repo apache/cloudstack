@@ -275,5 +275,9 @@ public class PublicIp implements PublicIpAddress {
         return false;
     }
 
+    @Override
+    public boolean isForRouter() {
+        return _addr.isForRouter();
+    }
 
 }

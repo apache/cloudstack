@@ -25,7 +25,10 @@ import javax.inject.Inject;
 import com.cloud.cpu.CPU;
 import com.cloud.dc.ASNumberRangeVO;
 import com.cloud.dc.dao.ASNumberRangeDao;
+import com.cloud.network.Network;
+import com.cloud.network.dao.NetrisProviderDao;
 import com.cloud.network.dao.NsxProviderDao;
+import com.cloud.network.element.NetrisProviderVO;
 import com.cloud.network.element.NsxProviderVO;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -62,6 +65,8 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
     private AnnotationDao annotationDao;
     @Inject
     private NsxProviderDao nsxProviderDao;
+    @Inject
+    private NetrisProviderDao netrisProviderDao;
     @Inject
     private ASNumberRangeDao asNumberRangeDao;
 
@@ -140,10 +145,7 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
             }
         }
 
-        NsxProviderVO nsxProviderVO = nsxProviderDao.findByZoneId(dataCenter.getId());
-        if (Objects.nonNull(nsxProviderVO)) {
-            zoneResponse.setNsxEnabled(true);
-        }
+        setExternalNetworkProviderUsedByZone(zoneResponse, dataCenter.getId());
 
         List<CPU.CPUArch> clusterArchs = ApiDBUtils.listZoneClustersArchs(dataCenter.getId());
         zoneResponse.setMultiArch(CollectionUtils.isNotEmpty(clusterArchs) && clusterArchs.size() > 1);
@@ -163,6 +165,19 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
 
         zoneResponse.setObjectName("zone");
         return zoneResponse;
+    }
+
+    private void setExternalNetworkProviderUsedByZone(ZoneResponse zoneResponse, Long zoneId) {
+        NsxProviderVO nsxProviderVO = nsxProviderDao.findByZoneId(zoneId);
+        if (Objects.nonNull(nsxProviderVO)) {
+            zoneResponse.setNsxEnabled(true);
+            zoneResponse.setProvider(Network.Provider.Nsx.getName());
+        }
+
+        NetrisProviderVO netrisProviderVO = netrisProviderDao.findByZoneId(zoneId);
+        if (Objects.nonNull(netrisProviderVO)) {
+            zoneResponse.setProvider(Network.Provider.Netris.getName());
+        }
     }
 
     @Override
