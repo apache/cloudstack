@@ -198,9 +198,6 @@ public class QuotaResponseBuilderImplTest extends TestCase {
     @Mock
     JsInterpreterHelper jsInterpreterHelperMock = Mockito.mock(JsInterpreterHelper.class);
 
-    @Mock
-    QuotaSummaryCmd quotaSummaryCmdMock = Mockito.mock(QuotaSummaryCmd.class);
-
     private QuotaTariffVO makeTariffTestData() {
         QuotaTariffVO tariffVO = new QuotaTariffVO();
         tariffVO.setUsageType(QuotaTypes.IP_ADDRESS);
@@ -769,15 +766,16 @@ public class QuotaResponseBuilderImplTest extends TestCase {
     public void getQuotaSummaryResponseWithListAllTestAccountNameAndDomainIdAreNotNullPassDomainId() {
         Long expectedDomainId = 9837l;
 
-        Mockito.lenient().doReturn("test").when(quotaSummaryCmdMock).getAccountName();
-        Mockito.doReturn(expectedDomainId).when(quotaSummaryCmdMock).getDomainId();
+        QuotaSummaryCmd cmd = Mockito.mock(QuotaSummaryCmd.class);
+        Mockito.lenient().doReturn("test").when(cmd).getAccountName();
+        Mockito.doReturn(expectedDomainId).when(cmd).getDomainId();
 
         Mockito.doReturn(domainVoMock).when(domainDaoMock).findByIdIncludingRemoved(Mockito.anyLong());
 
         Mockito.doReturn(null).when(quotaResponseBuilderSpy).getDomainPathByDomainIdForDomainAdmin(Mockito.any());
         Mockito.doReturn(quotaSummaryResponseMock1).when(quotaResponseBuilderSpy).getQuotaSummaryResponse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
 
-        Pair<List<QuotaSummaryResponse>, Integer> result = quotaResponseBuilderSpy.getQuotaSummaryResponseWithListAll(quotaSummaryCmdMock, accountMock);
+        Pair<List<QuotaSummaryResponse>, Integer> result = quotaResponseBuilderSpy.getQuotaSummaryResponseWithListAll(cmd, accountMock);
 
         Assert.assertEquals(quotaSummaryResponseMock1, result);
         Mockito.verify(quotaResponseBuilderSpy).getQuotaSummaryResponse(Mockito.any(), Mockito.any(), Mockito.eq(expectedDomainId), Mockito.any(), Mockito.any());
