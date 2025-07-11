@@ -118,6 +118,10 @@ bootstrap() {
       /opt/cloud/bin/setup/default.sh
   fi
 
+  if [ -f /var/cache/cloud/cloud-scripts.tgz ];then
+    sha512sum /var/cache/cloud/cloud-scripts.tgz | awk '{print $1}' > /var/cache/cloud/cloud-scripts-signature
+  fi
+
   log_it "Finished setting up systemvm"
   exit 0
 }
