@@ -1523,12 +1523,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             vm.addDisk(disk);
         }
 
-        //if (vm.getType() == VirtualMachine.Type.User && vm.getTemplate().getFormat() == ImageFormat.ISO) {
         if (vm.getType() == VirtualMachine.Type.User) {
             _tmpltMgr.prepareIsoForVmProfile(vm, dest);
-            //DataTO dataTO = tmplFactory.getTemplate(vm.getTemplate().getId(), DataStoreRole.Image, vm.getVirtualMachine().getDataCenterId()).getTO();
-            //DiskTO iso = new DiskTO(dataTO, 3L, null, Volume.Type.ISO);
-            //vm.addDisk(iso);
         }
     }
 
