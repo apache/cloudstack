@@ -359,7 +359,7 @@ public class ImplicitPlannerTest {
         clustersWithEnoughCapacity.add(3L);
         when(
             capacityDao.listClustersInZoneOrPodByHostCapacities(dataCenterId, 12L, noOfCpusInOffering * cpuSpeedInOffering, ramInOffering * 1024L * 1024L,
-                Capacity.CAPACITY_TYPE_CPU, true)).thenReturn(clustersWithEnoughCapacity);
+                    true)).thenReturn(clustersWithEnoughCapacity);
 
         Map<Long, Double> clusterCapacityMap = new HashMap<Long, Double>();
         clusterCapacityMap.put(1L, 2048D);

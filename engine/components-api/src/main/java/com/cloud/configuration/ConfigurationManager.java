@@ -65,6 +65,12 @@ public interface ConfigurationManager {
             "allow.non.rfc1918.compliant.ips", "Advanced", "false",
             "Allows non-compliant RFC 1918 IPs for Shared, Isolated networks and VPCs", true, null);
 
+    ConfigKey<Float> HostCapacityTypeCpuMemoryWeight = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Float.class,
+            "host.capacityType.to.order.clusters.cputomemoryweight",
+            "0.5",
+            "Weight for CPU (as a value between 0 and 1) applied to compute capacity for Pods, Clusters and Hosts for COMBINED capacityType for ordering. Weight for RAM will be (1 - weight of CPU)",
+            true, ConfigKey.Scope.Global);
+
     /**
      * @param offering
      * @return
