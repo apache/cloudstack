@@ -134,7 +134,7 @@ public class InternalLoadBalancerVMManagerImplTest {
         when(internalLbVmDao.findById(anyLong())).thenReturn(mock(DomainRouterVO.class));
         DomainRouterVO result = service.deployInternalLbVmWithTemplates(null, id, plan, internalLbProviderId, account, userId, vpcId, serviceOffering, networks, templates);
         assertNotNull(result);
-        verify(virtualMachineManager).allocate(anyString(), eq(template1), eq(serviceOffering), eq(networks), eq(plan), isNull());
+        verify(virtualMachineManager).allocate(anyString(), eq(template1), eq(serviceOffering), eq(networks), eq(plan), isNull(), isNull(), isNull());
     }
 
     @Test
@@ -149,11 +149,11 @@ public class InternalLoadBalancerVMManagerImplTest {
         when(internalLbVmDao.persist(any(DomainRouterVO.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(internalLbVmDao.findById(anyLong())).thenReturn(mock(DomainRouterVO.class));
         doThrow(new InsufficientServerCapacityException("Not enough capacity", id))
-                .when(virtualMachineManager).allocate(anyString(), eq(template1), eq(serviceOffering), eq(networks), eq(plan), isNull());
+                .when(virtualMachineManager).allocate(anyString(), eq(template1), eq(serviceOffering), eq(networks), eq(plan), isNull(), isNull(), isNull());
         DomainRouterVO result = service.deployInternalLbVmWithTemplates(null, id, plan, internalLbProviderId, account, userId, vpcId, serviceOffering, networks, templates);
         assertNotNull(result);
-        verify(virtualMachineManager).allocate(anyString(), eq(template1), eq(serviceOffering), eq(networks), eq(plan), isNull());
-        verify(virtualMachineManager).allocate(anyString(), eq(template2), eq(serviceOffering), eq(networks), eq(plan), isNull());
+        verify(virtualMachineManager).allocate(anyString(), eq(template1), eq(serviceOffering), eq(networks), eq(plan), isNull(), isNull(), isNull());
+        verify(virtualMachineManager).allocate(anyString(), eq(template2), eq(serviceOffering), eq(networks), eq(plan), isNull(), isNull(), isNull());
     }
 
     @Test(expected = InsufficientCapacityException.class)
@@ -166,7 +166,7 @@ public class InternalLoadBalancerVMManagerImplTest {
         LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<>();
         when(internalLbVmDao.persist(any(DomainRouterVO.class))).thenAnswer(invocation -> invocation.getArgument(0));
         doThrow(new InsufficientServerCapacityException("Insufficient capacity", id))
-                .when(virtualMachineManager).allocate(anyString(), any(VMTemplateVO.class), eq(serviceOffering), eq(networks), eq(plan), isNull());
+                .when(virtualMachineManager).allocate(anyString(), any(VMTemplateVO.class), eq(serviceOffering), eq(networks), eq(plan), isNull(), isNull(), isNull());
         service.deployInternalLbVmWithTemplates(null, id, plan, internalLbProviderId, account, userId, vpcId, serviceOffering, networks, templates);
     }
 }

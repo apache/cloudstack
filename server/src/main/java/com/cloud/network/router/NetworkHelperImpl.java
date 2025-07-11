@@ -889,7 +889,7 @@ public class NetworkHelperImpl implements NetworkHelper {
 
         final LinkedHashMap<Network, List<? extends NicProfile>> networks = configureDefaultNics(routerDeploymentDefinition);
 
-        _itMgr.allocate(router.getInstanceName(), template, routerOffering, networks, routerDeploymentDefinition.getPlan(), hType);
+        _itMgr.allocate(router.getInstanceName(), template, routerOffering, networks, routerDeploymentDefinition.getPlan(), hType, null, null);
     }
 
     public static void setSystemAccount(final Account systemAccount) {

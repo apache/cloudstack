@@ -17,29 +17,41 @@
 
 package org.apache.cloudstack.storage.sharedfs.lifecycle;
 
-import static org.apache.cloudstack.storage.sharedfs.SharedFS.SharedFSPath;
-import static org.apache.cloudstack.storage.sharedfs.SharedFS.SharedFSVmNamePrefix;
-import static org.apache.cloudstack.storage.sharedfs.provider.StorageVmSharedFSProvider.SHAREDFSVM_MIN_CPU_COUNT;
-import static org.apache.cloudstack.storage.sharedfs.provider.StorageVmSharedFSProvider.SHAREDFSVM_MIN_RAM_SIZE;
-
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.network.Network;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.resource.ResourceManager;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.LaunchPermissionVO;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.LaunchPermissionDao;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.FileUtil;
 import com.cloud.utils.Pair;
-
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.UserVmManager;
+import com.cloud.vm.UserVmService;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.UserVmDao;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -47,17 +59,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
 import javax.inject.Inject;
-
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.UserVmManager;
-import com.cloud.vm.UserVmService;
-import com.cloud.vm.UserVmVO;
-import com.cloud.vm.dao.NicDao;
-import com.cloud.vm.dao.UserVmDao;
-
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -67,17 +69,11 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.cloud.dc.DataCenter;
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.network.Network;
-import com.cloud.resource.ResourceManager;
-import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.VirtualMachineManager;
+
+import static org.apache.cloudstack.storage.sharedfs.SharedFS.SharedFSPath;
+import static org.apache.cloudstack.storage.sharedfs.SharedFS.SharedFSVmNamePrefix;
+import static org.apache.cloudstack.storage.sharedfs.provider.StorageVmSharedFSProvider.SHAREDFSVM_MIN_CPU_COUNT;
+import static org.apache.cloudstack.storage.sharedfs.provider.StorageVmSharedFSProvider.SHAREDFSVM_MIN_RAM_SIZE;
 
 public class StorageVmSharedFSLifeCycle implements SharedFSLifeCycle {
     protected Logger logger = LogManager.getLogger(getClass());
@@ -197,7 +193,7 @@ public class StorageVmSharedFSLifeCycle implements SharedFSLifeCycle {
                         diskOfferingId, size, null, Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData,
                         null, null, keypairs, null, addrs, null, null, null,
                         customParameterMap, null, null, null, null,
-                        true, UserVmManager.SHAREDFSVM, null);
+                        true, UserVmManager.SHAREDFSVM, null, null, null);
                 vmContext.setEventResourceId(vm.getId());
                 userVmService.startVirtualMachine(vm, null);
             } catch (InsufficientCapacityException ex) {

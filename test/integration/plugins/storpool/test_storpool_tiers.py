@@ -26,7 +26,9 @@ from marvin.lib.base import (DiskOffering,
                              StoragePool,
                              VirtualMachine,
                              SecurityGroup,
-                             ResourceDetails
+                             ResourceDetails,
+                             Snapshot,
+                             Volume,
                              )
 from marvin.lib.common import (get_domain,
                                get_template,
@@ -167,6 +169,29 @@ class TestStorPoolTiers(cloudstackTestCase):
         cls.random_data_0 = random_gen(size=100)
         cls.test_dir = "/tmp"
         cls.random_data = "random.data"
+        cls.virtual_machine = VirtualMachine.create(
+            cls.apiclient,
+            {"name": "StorPool-%s" % uuid.uuid4()},
+            zoneid=cls.zone.id,
+            templateid=cls.template.id,
+            accountid=cls.account.name,
+            domainid=cls.account.domainid,
+            serviceofferingid=cls.service_offering.id,
+            overridediskofferingid=cls.disk_offerings_tier1_tags.id,
+            hypervisor=cls.hypervisor,
+            rootdisksize=10
+        )
+
+        volume = list_volumes(
+            cls.apiclient,
+            virtualmachineid=cls.virtual_machine.id,
+            type='ROOT',
+            listall=True
+        )[0]
+        cls.snapshot = Snapshot.create(
+            cls.apiclient,
+            volume.id,
+        )
         return
 
     @classmethod
@@ -200,6 +225,7 @@ class TestStorPoolTiers(cloudstackTestCase):
     def test_01_check_tags_on_deployed_vm_and_datadisk(self):
         virtual_machine_tier1_tag = self.deploy_vm_and_check_tier_tag()
         virtual_machine_tier1_tag.stop(self.apiclient, forced=True)
+        virtual_machine_tier1_tag.delete(self.apiclient, expunge=True)
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_02_change_offering_on_attached_root_disk(self):
@@ -213,6 +239,7 @@ class TestStorPoolTiers(cloudstackTestCase):
         self.vc_policy_tags(volumes=root_volume, vm=virtual_machine_tier1_tag, qos_or_template=self.qos,
                             disk_offering_id=self.disk_offerings_tier2_tags.id, attached=True)
         virtual_machine_tier1_tag.stop(self.apiclient, forced=True)
+        virtual_machine_tier1_tag.delete(self.apiclient, expunge=True)
 
     def test_03_change_offering_on_attached_data_disk(self):
         virtual_machine_tier1_tag = self.deploy_vm_and_check_tier_tag()
@@ -225,6 +252,7 @@ class TestStorPoolTiers(cloudstackTestCase):
         self.vc_policy_tags(volumes=root_volume, vm=virtual_machine_tier1_tag, qos_or_template=self.qos,
                             disk_offering_id=self.disk_offerings_tier2_tags.id, attached=True)
         virtual_machine_tier1_tag.stop(self.apiclient, forced=True)
+        virtual_machine_tier1_tag.delete(self.apiclient, expunge=True)
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_04_check_templates_on_deployed_vm_and_datadisk(self):
@@ -246,6 +274,7 @@ class TestStorPoolTiers(cloudstackTestCase):
         for v in volumes:
             self.check_storpool_template(v, self.disk_offerings_tier1_template.id, self.spTemplate)
         virtual_machine_template_tier1.stop(self.apiclient, forced=True)
+        virtual_machine_template_tier1.delete(self.apiclient, expunge=True)
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_05_check_templates_on_deployed_vm_and_datadisk_tier2(self):
@@ -267,6 +296,7 @@ class TestStorPoolTiers(cloudstackTestCase):
         for v in volumes:
             self.check_storpool_template(v, self.disk_offerings_tier2_template.id, self.spTemplate)
         virtual_machine_template_tier2.stop(self.apiclient, forced=True)
+        virtual_machine_template_tier2.delete(self.apiclient, expunge=True)
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_06_change_offerings_with_tags_detached_volume(self):
@@ -300,6 +330,7 @@ class TestStorPoolTiers(cloudstackTestCase):
         self.changeOfferingForVolume(volumes[0].id, self.disk_offerings_tier1_tags.id, volumes[0].size)
         self.vc_policy_tags(volumes=volumes, vm=virtual_machine_tier2_tag, qos_or_template=self.qos,
                             disk_offering_id=self.disk_offerings_tier1_tags.id, attached=True)
+        virtual_machine_tier2_tag.delete(self.apiclient, expunge=True)
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_07_change_offerings_with_template_detached_volume(self):
@@ -332,6 +363,7 @@ class TestStorPoolTiers(cloudstackTestCase):
         self.changeOfferingForVolume(volumes[0].id, self.disk_offerings_tier1_template.id, volumes[0].size)
         self.check_storpool_template(volume=volumes[0], disk_offering_id=self.disk_offerings_tier1_template.id,
                                      qos_or_template=self.spTemplate)
+        virtual_machine_tier2_template.delete(self.apiclient, expunge=True)
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_08_deploy_vm_with_tags_and_template_in_offerings(self):
@@ -370,6 +402,7 @@ class TestStorPoolTiers(cloudstackTestCase):
         self.changeOfferingForVolume(volumes[0].id, self.disk_offerings_tier1_tags.id, volumes[0].size)
         self.vc_policy_tags(volumes=volumes, vm=virtual_machine_tier2_template, qos_or_template=self.qos,
                             disk_offering_id=self.disk_offerings_tier1_tags.id, attached=True)
+        virtual_machine_tier2_template.delete(self.apiclient, expunge=True)
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_09_resize_root_volume(self):
@@ -386,6 +419,7 @@ class TestStorPoolTiers(cloudstackTestCase):
         self.vc_policy_tags(volumes=root_volume, vm=virtual_machine_tier1_tag, qos_or_template=self.qos,
                             disk_offering_id=self.disk_offerings_tier2_tags.id, attached=True)
         virtual_machine_tier1_tag.stop(self.apiclient, forced=True)
+        virtual_machine_tier1_tag.delete(self.apiclient, expunge=True)
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_10_shrink_root_volume(self):
@@ -403,6 +437,7 @@ class TestStorPoolTiers(cloudstackTestCase):
                                    listall=True)
         self.vc_policy_tags(volumes=root_volume, vm=virtual_machine_tier1_tag, qos_or_template=self.qos,
                             disk_offering_id=self.disk_offerings_tier2_tags.id, attached=True)
+        virtual_machine_tier1_tag.delete(self.apiclient, expunge=True)
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_11_resize_data_volume(self):
@@ -419,6 +454,7 @@ class TestStorPoolTiers(cloudstackTestCase):
         self.vc_policy_tags(volumes=root_volume, vm=virtual_machine_tier1_tag, qos_or_template=self.qos,
                             disk_offering_id=self.disk_offerings_tier2_tags.id, attached=True)
         virtual_machine_tier1_tag.stop(self.apiclient, forced=True)
+        virtual_machine_tier1_tag.delete(self.apiclient, expunge=True)
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_12_shrink_data_volume(self):
@@ -436,6 +472,25 @@ class TestStorPoolTiers(cloudstackTestCase):
         self.vc_policy_tags(volumes=root_volume, vm=virtual_machine_tier1_tag, qos_or_template=self.qos,
                             disk_offering_id=self.disk_offerings_tier2_tags.id, attached=True)
         virtual_machine_tier1_tag.stop(self.apiclient, forced=True)
+        virtual_machine_tier1_tag.delete(self.apiclient, expunge=True)
+
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    def test_13_deploy_vm_from_volume_check_tags(self):
+        vm = self.deploy_vm_from_snapshot_or_template(snapshotid=self.snapshot.id, is_snapshot=False)
+        root_volume = list_volumes(self.apiclient, virtualmachineid=vm.id, type="ROOT",
+                               listall=True)
+        self.vc_policy_tags(volumes=root_volume, vm=vm, qos_or_template=self.qos,
+                            disk_offering_id=self.disk_offerings_tier1_tags.id, attached=True)
+        vm.delete(self.apiclient, expunge=True)
+
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    def test_14_deploy_vm_from_snapshot_check_tags(self):
+        vm = self.deploy_vm_from_snapshot_or_template(snapshotid=self.snapshot.id, is_snapshot=True)
+        root_volume = list_volumes(self.apiclient, virtualmachineid=vm.id, type="ROOT",
+                                   listall=True)
+        self.vc_policy_tags(volumes=root_volume, vm=vm, qos_or_template=self.qos,
+                            disk_offering_id=self.disk_offerings_tier1_tags.id, attached=True)
+        vm.delete(self.apiclient, expunge=True)
 
     def deploy_vm_and_check_tier_tag(self):
         virtual_machine_tier1_tag = VirtualMachine.create(
@@ -542,3 +597,45 @@ class TestStorPoolTiers(cloudstackTestCase):
         change_offering_for_volume_cmd.shrinkok = shrinkok
 
         return self.apiclient.changeOfferingForVolume(change_offering_for_volume_cmd)
+
+    def deploy_vm_from_snapshot_or_template(self, snapshotid, is_snapshot=False):
+        if is_snapshot:
+            virtual_machine = VirtualMachine.create(self.apiclient,
+                                                    {"name": "StorPool-%s" % uuid.uuid4()},
+                                                    zoneid=self.zone.id,
+                                                    accountid=self.account.name,
+                                                    domainid=self.account.domainid,
+                                                    serviceofferingid=self.service_offering.id,
+                                                    snapshotid=snapshotid,
+                                                    )
+            try:
+                ssh_client = virtual_machine.get_ssh_client()
+            except Exception as e:
+                self.fail("SSH failed for virtual machine: %s - %s" %
+                          (virtual_machine.ipaddress, e))
+
+            return virtual_machine
+        volume = Volume.create_from_snapshot(
+            self.apiclient,
+            snapshot_id=snapshotid,
+            services=self.services,
+            account=self.account.name,
+            domainid=self.account.domainid,
+            disk_offering=self.disk_offerings_tier1_tags.id,
+            zoneid=self.zone.id,
+            size=10
+        )
+        virtual_machine = VirtualMachine.create(self.apiclient,
+                                                {"name": "StorPool-%s" % uuid.uuid4()},
+                                                zoneid=self.zone.id,
+                                                accountid=self.account.name,
+                                                domainid=self.account.domainid,
+                                                serviceofferingid=self.service_offering.id,
+                                                volumeid=volume.id,
+                                                )
+        try:
+            ssh_client = virtual_machine.get_ssh_client()
+        except Exception as e:
+            self.fail("SSH failed for virtual machine: %s - %s" %
+                      (virtual_machine.ipaddress, e))
+        return virtual_machine

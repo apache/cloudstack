@@ -18,6 +18,8 @@
  */
 package org.apache.cloudstack.engine.service.api;
 
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.Volume;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
@@ -62,12 +64,12 @@ public interface OrchestrationService {
     @POST
     @Path("/createvm")
     VirtualMachineEntity createVirtualMachine(@QueryParam("id") String id, @QueryParam("owner") String owner, @QueryParam("template-id") String templateId,
-        @QueryParam("host-name") String hostName, @QueryParam("display-name") String displayName, @QueryParam("hypervisor") String hypervisor,
-        @QueryParam("cpu") int cpu, @QueryParam("speed") int speed, @QueryParam("ram") long memory, @QueryParam("disk-size") Long diskSize,
-        @QueryParam("compute-tags") List<String> computeTags, @QueryParam("root-disk-tags") List<String> rootDiskTags,
-        @QueryParam("network-nic-map") Map<String, List<NicProfile>> networkNicMap, @QueryParam("deploymentplan") DeploymentPlan plan,
-        @QueryParam("root-disk-size") Long rootDiskSize, @QueryParam("extra-dhcp-option-map") Map<String, Map<Integer, String>> extraDhcpOptionMap,
-        @QueryParam("datadisktemplate-diskoffering-map") Map<Long, DiskOffering> datadiskTemplateToDiskOfferingMap, @QueryParam("disk-offering-id") Long diskOfferingId, @QueryParam("root-disk-offering-id") Long rootDiskOfferingId) throws InsufficientCapacityException;
+                                              @QueryParam("host-name") String hostName, @QueryParam("display-name") String displayName, @QueryParam("hypervisor") String hypervisor,
+                                              @QueryParam("cpu") int cpu, @QueryParam("speed") int speed, @QueryParam("ram") long memory, @QueryParam("disk-size") Long diskSize,
+                                              @QueryParam("compute-tags") List<String> computeTags, @QueryParam("root-disk-tags") List<String> rootDiskTags,
+                                              @QueryParam("network-nic-map") Map<String, List<NicProfile>> networkNicMap, @QueryParam("deploymentplan") DeploymentPlan plan,
+                                              @QueryParam("root-disk-size") Long rootDiskSize, @QueryParam("extra-dhcp-option-map") Map<String, Map<Integer, String>> extraDhcpOptionMap,
+                                              @QueryParam("datadisktemplate-diskoffering-map") Map<Long, DiskOffering> datadiskTemplateToDiskOfferingMap, @QueryParam("disk-offering-id") Long diskOfferingId, @QueryParam("root-disk-offering-id") Long rootDiskOfferingId, Volume volume, Snapshot snapshot) throws InsufficientCapacityException;
 
     @POST
     VirtualMachineEntity createVirtualMachineFromScratch(@QueryParam("id") String id, @QueryParam("owner") String owner, @QueryParam("iso-id") String isoId,
@@ -75,7 +77,7 @@ public interface OrchestrationService {
         @QueryParam("os") String os, @QueryParam("cpu") int cpu, @QueryParam("speed") int speed, @QueryParam("ram") long memory, @QueryParam("disk-size") Long diskSize,
         @QueryParam("compute-tags") List<String> computeTags, @QueryParam("root-disk-tags") List<String> rootDiskTags,
         @QueryParam("network-nic-map") Map<String, List<NicProfile>> networkNicMap, @QueryParam("deploymentplan") DeploymentPlan plan,
-        @QueryParam("extra-dhcp-option-map") Map<String,  Map<Integer, String>> extraDhcpOptionMap, @QueryParam("disk-offering-id") Long diskOfferingId) throws InsufficientCapacityException;
+        @QueryParam("extra-dhcp-option-map") Map<String,  Map<Integer, String>> extraDhcpOptionMap, @QueryParam("disk-offering-id") Long diskOfferingId, Volume volume, Snapshot snapshot) throws InsufficientCapacityException;
 
     @POST
     NetworkEntity createNetwork(String id, String name, String domainName, String cidr, String gateway);
