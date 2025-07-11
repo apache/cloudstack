@@ -200,7 +200,7 @@
         </a-row>
         <a-divider style="margin: 1px 0px; border-width: 0px;"/>
         <div
-          v-for="usageType in ['vm', 'cpu', 'memory', 'project']"
+          v-for="usageType in ['vm', 'cpu', 'memory', 'gpu', 'project']"
           :key="usageType">
           <div v-if="usageType + 'total' in entity">
             <div>
@@ -606,6 +606,8 @@ export default {
           return 'label.cpunumber'
         case 'memory':
           return 'label.memory'
+        case 'gpu':
+          return 'label.gpu'
         case 'primarystorage':
           return 'label.primary.storage'
         case 'secondarystorage':

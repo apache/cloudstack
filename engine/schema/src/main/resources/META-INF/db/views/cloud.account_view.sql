@@ -64,6 +64,8 @@ select
     `cpucount`.`count` AS `cpuTotal`,
     `memorylimit`.`max` AS `memoryLimit`,
     `memorycount`.`count` AS `memoryTotal`,
+    `gpulimit`.`max` AS `gpuLimit`,
+    `gpucount`.`count` AS `gpuTotal`,
     `primary_storage_limit`.`max` AS `primaryStorageLimit`,
     `primary_storage_count`.`count` AS `primaryStorageTotal`,
     `secondary_storage_limit`.`max` AS `secondaryStorageLimit`,
@@ -155,6 +157,12 @@ from
         left join
     `cloud`.`resource_count` memorycount ON account.id = memorycount.account_id
         and memorycount.type = 'memory' and memorycount.tag IS NULL
+        left join
+    `cloud`.`resource_limit` gpulimit ON account.id = gpulimit.account_id
+        and gpulimit.type = 'gpu' and gpulimit.tag IS NULL
+        left join
+    `cloud`.`resource_count` gpucount ON account.id = gpucount.account_id
+        and gpucount.type = 'gpu' and gpucount.tag IS NULL
         left join
     `cloud`.`resource_limit` primary_storage_limit ON account.id = primary_storage_limit.account_id
         and primary_storage_limit.type = 'primary_storage' and primary_storage_limit.tag IS NULL

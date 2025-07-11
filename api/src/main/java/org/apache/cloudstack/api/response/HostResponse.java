@@ -166,6 +166,14 @@ public class HostResponse extends BaseResponseWithAnnotations {
     @Param(description = "the amount of the host's memory currently used")
     private Long memoryUsed;
 
+    @SerializedName("gputotal")
+    @Param(description = "Total GPUs on the Host", responseObject = Double.class, since = "4.21")
+    private Double gpuTotal;
+
+    @SerializedName("gpuused")
+    @Param(description = "Used GPUs on the Host", responseObject = Double.class, since = "4.21")
+    private Double gpuUsed;
+
     @SerializedName(ApiConstants.GPUGROUP)
     @Param(description = "GPU cards present in the host", responseObject = GpuResponse.class, since = "4.4")
     private List<GpuResponse> gpuGroup;
@@ -437,6 +445,14 @@ public class HostResponse extends BaseResponseWithAnnotations {
 
     public void setMemoryUsed(Long memoryUsed) {
         this.memoryUsed = memoryUsed;
+    }
+
+    public void setGpuTotal(Double gpuTotal) {
+        this.gpuTotal = gpuTotal;
+    }
+
+    public void setGpuUsed(Double gpuUsed) {
+        this.gpuUsed = gpuUsed;
     }
 
     public void setGpuGroup(List<GpuResponse> gpuGroup) {
@@ -901,6 +917,14 @@ public class HostResponse extends BaseResponseWithAnnotations {
 
     public Long getMemoryAllocatedBytes() {
         return memoryAllocatedBytes;
+    }
+
+    public Double getGpuTotal() {
+        return gpuTotal;
+    }
+
+    public Double getGpuUsed() {
+        return gpuUsed;
     }
 
     public Boolean getTagARule() {
