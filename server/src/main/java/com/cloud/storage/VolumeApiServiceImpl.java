@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.exception.AgentUnavailableException;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.InternalIdentity;
@@ -3173,6 +3174,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             try {
                 answer = _agentMgr.send(hostId, cmd);
+            } catch (AgentUnavailableException e) {
+                  throw new CloudRuntimeException(String.format("%s. Please contact your system administrator.", errorMsg));
             } catch (Exception e) {
                 throw new CloudRuntimeException(errorMsg + " due to: " + e.getMessage());
             }
@@ -4677,6 +4680,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                 try {
                     answer = (AttachAnswer)_agentMgr.send(hostId, cmd);
+                } catch (AgentUnavailableException e) {
+                    if (host != null) {
+                        volService.revokeAccess(volFactory.getVolume(volumeToAttach.getId()), host, dataStore);
+                    }
+                    throw new CloudRuntimeException(String.format("%s. Please contact your system administrator.", errorMsg));
                 } catch (Exception e) {
                     if (host != null) {
                         volService.revokeAccess(volFactory.getVolume(volumeToAttach.getId()), host, dataStore);
