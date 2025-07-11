@@ -34,10 +34,9 @@ import java.util.concurrent.TimeUnit;
 
 import com.cloud.network.Network;
 import com.cloud.usage.dao.UsageNetworksDao;
-import com.cloud.usage.parser.NetworksUsageParser;
+import com.cloud.usage.parser.UsageParser;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.usage.dao.UsageVpcDao;
-import com.cloud.usage.parser.VpcUsageParser;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
@@ -75,21 +74,6 @@ import com.cloud.usage.dao.UsageVMSnapshotOnPrimaryDao;
 import com.cloud.usage.dao.UsageVPNUserDao;
 import com.cloud.usage.dao.UsageVmDiskDao;
 import com.cloud.usage.dao.UsageVolumeDao;
-import com.cloud.usage.parser.BackupUsageParser;
-import com.cloud.usage.parser.BucketUsageParser;
-import com.cloud.usage.parser.IPAddressUsageParser;
-import com.cloud.usage.parser.LoadBalancerUsageParser;
-import com.cloud.usage.parser.NetworkOfferingUsageParser;
-import com.cloud.usage.parser.NetworkUsageParser;
-import com.cloud.usage.parser.PortForwardingUsageParser;
-import com.cloud.usage.parser.SecurityGroupUsageParser;
-import com.cloud.usage.parser.StorageUsageParser;
-import com.cloud.usage.parser.VMInstanceUsageParser;
-import com.cloud.usage.parser.VMSnapshotOnPrimaryParser;
-import com.cloud.usage.parser.VMSnapshotUsageParser;
-import com.cloud.usage.parser.VPNUserUsageParser;
-import com.cloud.usage.parser.VmDiskUsageParser;
-import com.cloud.usage.parser.VolumeUsageParser;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserStatisticsVO;
@@ -180,6 +164,9 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     @Inject
     private UsageVpcDao usageVpcDao;
 
+    @Inject
+    private List<UsageParser> usageParsers;
+
     private String _version = null;
     private final Calendar _jobExecTime = Calendar.getInstance();
     private int _aggregationDuration = 0;
@@ -198,6 +185,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     private Future _heartbeat = null;
     private Future _sanity = null;
     private boolean  usageSnapshotSelection = false;
+
     private static TimeZone usageAggregationTimeZone = TimeZone.getTimeZone("GMT");
 
     public UsageManagerImpl() {
@@ -954,114 +942,12 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     private boolean parseHelperTables(AccountVO account, Date currentStartDate, Date currentEndDate) {
         boolean parsed = false;
 
-        parsed = VMInstanceUsageParser.parse(account, currentStartDate, currentEndDate);
-        if (logger.isDebugEnabled()) {
-            if (!parsed) {
-                logger.debug("vm usage instances successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
-            }
+        for (UsageParser parser : usageParsers) {
+            parsed = parser.doParsing(account, currentStartDate, currentEndDate);
+
+            logger.debug("{} usage was {} parsed for [{}].", parser.getParserName(), parsed ? "successfully" : "not successfully", account);
         }
 
-        parsed = NetworkUsageParser.parse(account, currentStartDate, currentEndDate);
-        if (logger.isDebugEnabled()) {
-            if (!parsed) {
-                logger.debug("network usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
-            }
-        }
-
-        parsed = VmDiskUsageParser.parse(account, currentStartDate, currentEndDate);
-        if (logger.isDebugEnabled()) {
-            if (!parsed) {
-                logger.debug("vm disk usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
-            }
-        }
-
-        parsed = VolumeUsageParser.parse(account, currentStartDate, currentEndDate);
-        if (logger.isDebugEnabled()) {
-            if (!parsed) {
-                logger.debug("volume usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
-            }
-        }
-
-        parsed = StorageUsageParser.parse(account, currentStartDate, currentEndDate);
-        if (logger.isDebugEnabled()) {
-            if (!parsed) {
-                logger.debug("storage usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
-            }
-        }
-
-        parsed = SecurityGroupUsageParser.parse(account, currentStartDate, currentEndDate);
-        if (logger.isDebugEnabled()) {
-            if (!parsed) {
-                logger.debug("Security Group usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
-            }
-        }
-
-        parsed = LoadBalancerUsageParser.parse(account, currentStartDate, currentEndDate);
-        if (logger.isDebugEnabled()) {
-            if (!parsed) {
-                logger.debug("load balancer usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
-            }
-        }
-
-        parsed = PortForwardingUsageParser.parse(account, currentStartDate, currentEndDate);
-        if (logger.isDebugEnabled()) {
-            if (!parsed) {
-                logger.debug("port forwarding usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
-            }
-        }
-
-        parsed = NetworkOfferingUsageParser.parse(account, currentStartDate, currentEndDate);
-        if (logger.isDebugEnabled()) {
-            if (!parsed) {
-                logger.debug("network offering usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
-            }
-        }
-
-        parsed = IPAddressUsageParser.parse(account, currentStartDate, currentEndDate);
-        if (logger.isDebugEnabled()) {
-            if (!parsed) {
-                logger.debug("IPAddress usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
-            }
-        }
-        parsed = VPNUserUsageParser.parse(account, currentStartDate, currentEndDate);
-        if (logger.isDebugEnabled()) {
-            if (!parsed) {
-                logger.debug("VPN user usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
-            }
-        }
-        parsed = VMSnapshotUsageParser.parse(account, currentStartDate, currentEndDate);
-        if (logger.isDebugEnabled()) {
-            if (!parsed) {
-                logger.debug("VM Snapshot usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
-            }
-        }
-        parsed = VMSnapshotOnPrimaryParser.parse(account, currentStartDate, currentEndDate);
-        if (logger.isDebugEnabled()) {
-            if (!parsed) {
-                logger.debug("VM Snapshot on primary usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
-            }
-        }
-        parsed = BackupUsageParser.parse(account, currentStartDate, currentEndDate);
-        if (logger.isDebugEnabled()) {
-            if (!parsed) {
-                logger.debug("VM Backup usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
-            }
-        }
-        parsed = BucketUsageParser.parse(account, currentStartDate, currentEndDate);
-        if (logger.isDebugEnabled()) {
-            if (!parsed) {
-                logger.debug("Bucket usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
-            }
-        }
-        parsed = NetworksUsageParser.parse(account, currentStartDate, currentEndDate);
-        if (!parsed) {
-            logger.debug("Networks usage not parsed for account [{}}].", account);
-        }
-
-        parsed = VpcUsageParser.parse(account, currentStartDate, currentEndDate);
-        if (!parsed) {
-            logger.debug(String.format("VPC usage failed to parse for account [%s].", account));
-        }
         return parsed;
     }
 
