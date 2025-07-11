@@ -622,7 +622,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
             try {
                 templateProps.load(new FileInputStream(propFile.toFile()));
                 String desc = templateProps.getProperty("description");
-                if (desc.startsWith("SystemVM Template")) {
+                if (desc != null && desc.startsWith("SystemVM Template")) {
                     return true;
                 }
             } catch (IOException e) {
