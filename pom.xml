@@ -95,7 +95,7 @@
         <cs.commons-fileupload.version>1.4</cs.commons-fileupload.version>
         <cs.commons-httpclient.version>3.1</cs.commons-httpclient.version>
         <cs.commons-io.version>2.8.0</cs.commons-io.version>
-        <cs.commons-lang3.version>3.11</cs.commons-lang3.version>
+        <cs.commons-lang3.version>3.18.0</cs.commons-lang3.version>
         <cs.commons-logging.version>1.2</cs.commons-logging.version>
         <cs.commons-net.version>3.7.2</cs.commons-net.version>
         <cs.commons-validator.version>1.6</cs.commons-validator.version>
