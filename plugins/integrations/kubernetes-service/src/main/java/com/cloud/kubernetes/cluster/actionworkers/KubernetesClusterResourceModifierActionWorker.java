@@ -424,13 +424,13 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                     hostName, hostName, null, null, null, Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST,base64UserData, null, null, keypairs,
                     null, addrs, null, null, Objects.nonNull(affinityGroupId) ?
                             Collections.singletonList(affinityGroupId) : null, customParameterMap, null, null, null,
-                    null, true, null, UserVmManager.CKS_NODE);
+                    null, true, null, UserVmManager.CKS_NODE, null, null);
         } else {
             nodeVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, workerNodeTemplate, networkIds, owner,
                     hostName, hostName, null, null, null,
                     Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, null, null, keypairs,
                     null, addrs, null, null, Objects.nonNull(affinityGroupId) ?
-                            Collections.singletonList(affinityGroupId) : null, customParameterMap, null, null, null, null, true, UserVmManager.CKS_NODE, null);
+                            Collections.singletonList(affinityGroupId) : null, customParameterMap, null, null, null, null, true, UserVmManager.CKS_NODE, null, null, null);
         }
         if (logger.isInfoEnabled()) {
             logger.info("Created node VM : {}, {} in the Kubernetes cluster : {}", hostName, nodeVm, kubernetesCluster.getName());
