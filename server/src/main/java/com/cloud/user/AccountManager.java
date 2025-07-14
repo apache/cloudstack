@@ -206,4 +206,5 @@ public interface AccountManager extends AccountService, Configurable {
 
     UserAccount clearUserTwoFactorAuthenticationInSetupStateOnLogin(UserAccount user);
 
+    void verifyCallerPrivilegeForUserOrAccountOperations(Account userAccount);
 }

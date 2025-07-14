@@ -58,11 +58,12 @@ function createMetadataFile() {
   for template in "${templates[@]}"
   do
     section="${template%%:*}"
-    hvName=$(getGenericName $section)
+    sectionHv="${section%%-*}"
+    hvName=$(getGenericName $sectionHv)
 
     downloadurl="${template#*:}"
     arch=$(echo ${downloadurl#*"/systemvmtemplate-$VERSION-"} | cut -d'-' -f 1)
-    templatename="systemvm-${section%.*}-${VERSION}-${arch}"
+    templatename="systemvm-${sectionHv%.*}-${VERSION}-${arch}"
     checksum=$(getChecksum "$fileData" "$VERSION-${arch}-$hvName")
     filename=$(echo ${downloadurl##*'/'})
     echo -e "["$section"]\ntemplatename = $templatename\nchecksum = $checksum\ndownloadurl = $downloadurl\nfilename = $filename\narch = $arch\n" >> $METADATAFILE
@@ -71,7 +72,8 @@ function createMetadataFile() {
 
 declare -a templates
 getTemplateVersion $1
-templates=( "kvm:https://download.cloudstack.org/systemvm/${CS_VERSION}/systemvmtemplate-$VERSION-x86_64-kvm.qcow2.bz2"
+templates=( "kvm-x86_64:https://download.cloudstack.org/systemvm/${CS_VERSION}/systemvmtemplate-$VERSION-x86_64-kvm.qcow2.bz2"
+            "kvm-aarch64:https://download.cloudstack.org/systemvm/${CS_VERSION}/systemvmtemplate-$VERSION-aarch64-kvm.qcow2.bz2"
             "vmware:https://download.cloudstack.org/systemvm/${CS_VERSION}/systemvmtemplate-$VERSION-x86_64-vmware.ova"
             "xenserver:https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$VERSION-x86_64-xen.vhd.bz2"
             "hyperv:https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$VERSION-x86_64-hyperv.vhd.zip"

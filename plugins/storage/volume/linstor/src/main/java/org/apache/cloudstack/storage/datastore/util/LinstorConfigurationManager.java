@@ -24,7 +24,14 @@ public class LinstorConfigurationManager implements Configurable
     public static final ConfigKey<Boolean> BackupSnapshots = new ConfigKey<>(Boolean.class, "lin.backup.snapshots", "Advanced", "true",
         "Backup Linstor primary storage snapshots to secondary storage (deleting ps snapshot)", true, ConfigKey.Scope.Global, null);
 
-    public static final ConfigKey<?>[] CONFIG_KEYS = new ConfigKey<?>[] { BackupSnapshots };
+    public static final ConfigKey<Integer> VolumeStatsCacheTime = new ConfigKey<>("Advanced", Integer.class,
+            "lin.volumes.stats.cachetime", "300",
+            "Cache time of volume stats for Linstor volumes. 0 to disable volume stats",
+            false);
+
+    public static final ConfigKey<?>[] CONFIG_KEYS = new ConfigKey<?>[] {
+            BackupSnapshots, VolumeStatsCacheTime
+    };
 
     @Override
     public String getConfigComponentName()

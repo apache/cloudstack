@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 
 import com.cloud.utils.Pair;
@@ -59,7 +60,7 @@ public class SearchCriteria<K> {
     }
 
     public enum Func {
-        NATIVE("@", 1), MAX("MAX(@)", 1), MIN("MIN(@)", 1), FIRST("FIRST(@)", 1), LAST("LAST(@)", 1), SUM("SUM(@)", 1), COUNT("COUNT(@)", 1), DISTINCT("DISTINCT(@)", 1);
+        NATIVE("@", 1), MAX("MAX(@)", 1), MIN("MIN(@)", 1), FIRST("FIRST(@)", 1), LAST("LAST(@)", 1), SUM("SUM(@)", 1), COUNT("COUNT(@)", 1), DISTINCT("DISTINCT(@)", 1), DISTINCT_PAIR("DISTINCT @, @", 2);
 
         private String func;
         private int count;
@@ -135,10 +136,12 @@ public class SearchCriteria<K> {
 
         for (Select select : _selects) {
             String func = select.func.toString() + ",";
-            if (select.attr == null) {
+            if (CollectionUtils.isEmpty(select.attributes)) {
                 func = func.replace("@", "*");
             } else {
-                func = func.replace("@", select.attr.table + "." + select.attr.columnName);
+                for (Attribute attribute : select.attributes) {
+                    func = func.replaceFirst("@", attribute.table + "." + attribute.columnName);
+                }
             }
             str.insert(insertAt, func);
             insertAt += func.length();

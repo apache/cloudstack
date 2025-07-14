@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.configuration;
 
+import com.cloud.alert.AlertManager;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.VlanVO;
@@ -45,15 +46,19 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManagerImpl;
 import com.cloud.user.User;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.UpdateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -62,6 +67,7 @@ import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.resourcedetail.DiskOfferingDetailVO;
 import org.apache.cloudstack.vm.UnmanagedVMsManager;
+import org.apache.cloudstack.config.Configuration;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -182,6 +188,7 @@ public class ConfigurationManagerImplTest {
         configurationManagerImplSpy.populateConfigValuesForValidationSet();
         configurationManagerImplSpy.weightBasedParametersForValidation();
         configurationManagerImplSpy.overProvisioningFactorsForValidation();
+        configurationManagerImplSpy.populateConfigKeysAllowedOnlyForDefaultAdmin();
         ReflectionTestUtils.setField(configurationManagerImplSpy, "templateZoneDao", vmTemplateZoneDao);
         ReflectionTestUtils.setField(configurationManagerImplSpy, "annotationDao", annotationDao);
 
@@ -850,5 +857,156 @@ public class ConfigurationManagerImplTest {
     public void shouldValidateConfigRangeTestValueIsNotNullAndConfigHasRangeReturnTrue() {
         boolean result = configurationManagerImplSpy.shouldValidateConfigRange(Config.ConsoleProxySessionMax.name(), "test", Config.ConsoleProxyUrlDomain);
         Assert.assertTrue(result);
+    }
+
+    @Test
+    public void testValidateConfigurationAllowedOnlyForDefaultAdmin_withAdminUser_shouldNotThrowException() {
+        CallContext callContext = mock(CallContext.class);
+        when(callContext.getCallingUserId()).thenReturn(User.UID_ADMIN);
+        try (MockedStatic<CallContext> ignored = Mockito.mockStatic(CallContext.class)) {
+            when(CallContext.current()).thenReturn(callContext);
+            configurationManagerImplSpy.validateConfigurationAllowedOnlyForDefaultAdmin(AccountManagerImpl.listOfRoleTypesAllowedForOperationsOfSameRoleType.key(), "Admin");
+        }
+    }
+
+    @Test
+    public void testValidateConfigurationAllowedOnlyForDefaultAdmin_withNonAdminUser_shouldThrowException() {
+        CallContext callContext = mock(CallContext.class);
+        when(callContext.getCallingUserId()).thenReturn(123L);
+        try (MockedStatic<CallContext> ignored = Mockito.mockStatic(CallContext.class)) {
+            when(CallContext.current()).thenReturn(callContext);
+            Assert.assertThrows(CloudRuntimeException.class, () ->
+                    configurationManagerImplSpy.validateConfigurationAllowedOnlyForDefaultAdmin(AccountManagerImpl.allowOperationsOnUsersInSameAccount.key(), "Admin")
+            );
+        }
+    }
+
+    @Test
+    public void testValidateConfigurationAllowedOnlyForDefaultAdmin_withNonRestrictedKey_shouldNotThrowException() {
+        CallContext callContext = mock(CallContext.class);
+        try (MockedStatic<CallContext> ignored = Mockito.mockStatic(CallContext.class)) {
+            when(CallContext.current()).thenReturn(callContext);
+            configurationManagerImplSpy.validateConfigurationAllowedOnlyForDefaultAdmin("some.other.config.key", "Admin");
+        }
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testValidateConfigurationAllowedOnlyForDefaultAdmin_withValidConfigNameAndInvalidValue_shouldThrowException() {
+        CallContext callContext = mock(CallContext.class);
+        try (MockedStatic<CallContext> mockedCallContext = Mockito.mockStatic(CallContext.class)) {
+            mockedCallContext.when(CallContext::current).thenReturn(callContext);
+            when(callContext.getCallingUserId()).thenReturn(User.UID_ADMIN);
+            String invalidValue = "Admin, SuperUser";
+            configurationManagerImplSpy.validateConfigurationAllowedOnlyForDefaultAdmin(AccountManagerImpl.listOfRoleTypesAllowedForOperationsOfSameRoleType.key(), invalidValue);
+        }
+    }
+
+
+    @Test
+    public void getConfigurationTypeWrapperClassTestReturnsConfigType() {
+        Config configuration = Config.AlertEmailAddresses;
+
+        Assert.assertEquals(configuration.getType(), configurationManagerImplSpy.getConfigurationTypeWrapperClass(configuration.key()));
+    }
+
+    @Test
+    public void getConfigurationTypeWrapperClassTestReturnsConfigKeyType() {
+        String configurationName = "configuration.name";
+
+        Mockito.when(configDepot.get(configurationName)).thenReturn(configKeyMock);
+        Mockito.when(configKeyMock.type()).thenReturn(Integer.class);
+
+        Assert.assertEquals(Integer.class, configurationManagerImplSpy.getConfigurationTypeWrapperClass(configurationName));
+    }
+
+    @Test
+    public void getConfigurationTypeWrapperClassTestReturnsNullWhenConfigurationDoesNotExist() {
+        String configurationName = "configuration.name";
+
+        Mockito.when(configDepot.get(configurationName)).thenReturn(null);
+        Assert.assertNull(configurationManagerImplSpy.getConfigurationTypeWrapperClass(configurationName));
+    }
+
+    @Test
+    public void parseConfigurationTypeIntoStringTestReturnsStringWhenTypeIsNull() {
+        Assert.assertEquals(Configuration.ValueType.String.name(), configurationManagerImplSpy.parseConfigurationTypeIntoString(null, null));
+    }
+
+    @Test
+    public void parseConfigurationTypeIntoStringTestReturnsStringWhenTypeIsStringAndConfigurationKindIsNull() {
+        Mockito.when(configurationVOMock.getKind()).thenReturn(null);
+        Assert.assertEquals(Configuration.ValueType.String.name(), configurationManagerImplSpy.parseConfigurationTypeIntoString(String.class, configurationVOMock));
+    }
+
+    @Test
+    public void parseConfigurationTypeIntoStringTestReturnsKindWhenTypeIsStringAndKindIsNotNull() {
+        Mockito.when(configurationVOMock.getKind()).thenReturn(ConfigKey.Kind.CSV.name());
+        Assert.assertEquals(ConfigKey.Kind.CSV.name(), configurationManagerImplSpy.parseConfigurationTypeIntoString(String.class, configurationVOMock));
+    }
+
+    @Test
+    public void parseConfigurationTypeIntoStringTestReturnsKindWhenTypeIsCharacterAndKindIsNotNull() {
+        Mockito.when(configurationVOMock.getKind()).thenReturn(ConfigKey.Kind.CSV.name());
+        Assert.assertEquals(ConfigKey.Kind.CSV.name(), configurationManagerImplSpy.parseConfigurationTypeIntoString(Character.class, configurationVOMock));
+    }
+
+    @Test
+    public void parseConfigurationTypeIntoStringTestReturnsNumberWhenTypeIsInteger() {
+        Assert.assertEquals(Configuration.ValueType.Number.name(), configurationManagerImplSpy.parseConfigurationTypeIntoString(Integer.class, configurationVOMock));
+    }
+
+    @Test
+    public void parseConfigurationTypeIntoStringTestReturnsNumberWhenTypeIsLong() {
+        Assert.assertEquals(Configuration.ValueType.Number.name(), configurationManagerImplSpy.parseConfigurationTypeIntoString(Long.class, configurationVOMock));
+    }
+
+    @Test
+    public void parseConfigurationTypeIntoStringTestReturnsNumberWhenTypeIsShort() {
+        Assert.assertEquals(Configuration.ValueType.Number.name(), configurationManagerImplSpy.parseConfigurationTypeIntoString(Short.class, configurationVOMock));
+    }
+
+    @Test
+    public void parseConfigurationTypeIntoStringTestReturnsDecimalWhenTypeIsFloat() {
+        Assert.assertEquals(Configuration.ValueType.Decimal.name(), configurationManagerImplSpy.parseConfigurationTypeIntoString(Float.class, configurationVOMock));
+    }
+
+    @Test
+    public void parseConfigurationTypeIntoStringTestReturnsDecimalWhenTypeIsDouble() {
+        Assert.assertEquals(Configuration.ValueType.Decimal.name(), configurationManagerImplSpy.parseConfigurationTypeIntoString(Double.class, configurationVOMock));
+    }
+
+    @Test
+    public void parseConfigurationTypeIntoStringTestReturnsBooleanWhenTypeIsBoolean() {
+        Assert.assertEquals(Configuration.ValueType.Boolean.name(), configurationManagerImplSpy.parseConfigurationTypeIntoString(Boolean.class, configurationVOMock));
+    }
+
+    @Test
+    public void parseConfigurationTypeIntoStringTestReturnsStringWhenTypeDoesNotMatchAnyAvailableType() {
+        Assert.assertEquals(Configuration.ValueType.String.name(), configurationManagerImplSpy.parseConfigurationTypeIntoString(Object.class, configurationVOMock));
+    }
+
+    @Test
+    public void getConfigurationTypeTestReturnsStringWhenConfigurationDoesNotExist() {
+        Mockito.when(configDao.findByName(Mockito.anyString())).thenReturn(null);
+        Assert.assertEquals(Configuration.ValueType.String.name(), configurationManagerImplSpy.getConfigurationType(Mockito.anyString()));
+    }
+
+    @Test
+    public void getConfigurationTypeTestReturnsRangeForConfigurationsThatAcceptIntervals() {
+        String configurationName = AlertManager.CPUCapacityThreshold.key();
+
+        Mockito.when(configDao.findByName(configurationName)).thenReturn(configurationVOMock);
+        Assert.assertEquals(Configuration.ValueType.Range.name(), configurationManagerImplSpy.getConfigurationType(configurationName));
+    }
+
+    @Test
+    public void getConfigurationTypeTestReturnsStringRepresentingConfigurationType() {
+        ConfigKey<Boolean> configuration = RoleService.EnableDynamicApiChecker;
+
+        Mockito.when(configDao.findByName(configuration.key())).thenReturn(configurationVOMock);
+        Mockito.doReturn(configuration.type()).when(configurationManagerImplSpy).getConfigurationTypeWrapperClass(configuration.key());
+
+        configurationManagerImplSpy.getConfigurationType(configuration.key());
+        Mockito.verify(configurationManagerImplSpy).parseConfigurationTypeIntoString(configuration.type(), configurationVOMock);
     }
 }

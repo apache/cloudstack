@@ -18,6 +18,7 @@ package com.cloud.hypervisor.kvm.resource;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -2355,6 +2356,82 @@ public class LibvirtVMDef {
             StringBuilder wacthDogBuilder = new StringBuilder();
             wacthDogBuilder.append("<watchdog model='" + model + "' action='" + action + "'/>\n");
             return wacthDogBuilder.toString();
+        }
+    }
+
+    public static class TpmDef {
+        enum TpmModel {
+            TIS("tpm-tis"), // TPM Interface Specification (TIS)
+            CRB("tpm-crb"); // Command-Response Buffer (CRB)
+
+            final String model;
+
+            TpmModel(String model) {
+                this.model = model;
+            }
+
+            @Override
+            public String toString() {
+                return model;
+            }
+        }
+
+        enum TpmVersion {
+            V1_2("1.2"),    // 1.2
+            V2_0("2.0");    // 2.0. Default version. The CRB model is only supported with version 2.0.
+
+            final String version;
+
+            TpmVersion(String version) {
+                this.version = version;
+            }
+
+            @Override
+            public String toString() {
+                return version;
+            }
+        }
+
+        private TpmModel model;
+        private TpmVersion version = TpmVersion.V2_0;
+
+        public TpmDef(TpmModel model, TpmVersion version) {
+            this.model = model;
+            if (version != null) {
+                this.version = version;
+            }
+        }
+
+        public TpmDef(String model, String version) {
+            this.model = Arrays.stream(TpmModel.values())
+                    .filter(tpmModel -> tpmModel.toString().equals(model))
+                    .findFirst()
+                    .orElse(null);
+            if (version != null) {
+                this.version = Arrays.stream(TpmVersion.values())
+                        .filter(tpmVersion -> tpmVersion.toString().equals(version))
+                        .findFirst()
+                        .orElse(this.version);;
+            }
+        }
+
+        public TpmModel getModel() {
+            return model;
+        }
+
+        public TpmVersion getVersion() {
+            return version;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder tpmBuidler = new StringBuilder();
+            if (model != null) {
+                tpmBuidler.append("<tpm model='").append(model).append("'>\n");
+                tpmBuidler.append("<backend type='emulator' version='").append(version).append("'/>\n");
+                tpmBuidler.append("</tpm>\n");
+            }
+            return tpmBuidler.toString();
         }
     }
 

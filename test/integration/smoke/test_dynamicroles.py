@@ -74,7 +74,6 @@ class TestData(object):
                 "listApis": "allow",
                 "listAccounts": "allow",
                 "listClusters": "deny",
-                "*VmwareDc*": "allow",
                 "*VM*": "allow",
                 "*Host*": "deny"
             }

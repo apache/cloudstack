@@ -14,20 +14,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.hypervisor.vmware.util;
+package com.cloud.hypervisor.xenserver.resource;
 
-import com.cloud.exception.CloudException;
-
-public class VmwareClientException extends CloudException {
-    public VmwareClientException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public VmwareClientException(String msg) {
-        super(msg);
-    }
-    // TODO embed vmware classes in this one for use downstream
-    public VmwareClientException(String msg, Exception embedded) {
-        super(msg, embedded);
+public class Xenserver84Resource extends XenServer650Resource {
+    @Override
+    protected String getPatchFilePath() {
+        return "scripts/vm/hypervisor/xenserver/xenserver84/patch";
     }
 }

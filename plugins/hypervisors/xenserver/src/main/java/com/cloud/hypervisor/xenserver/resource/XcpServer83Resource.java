@@ -14,16 +14,12 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.command.admin.zone;
+package com.cloud.hypervisor.xenserver.resource;
 
-public interface ListVmwareDcItems {
-    String getVcenter();
+public class XcpServer83Resource extends XenServer650Resource {
 
-    String getDatacenterName();
-
-    String getUsername();
-
-    String getPassword();
-
-    Long getExistingVcenterId();
+    @Override
+    protected String getPatchFilePath() {
+        return "scripts/vm/hypervisor/xenserver/xcpserver83/patch";
+    }
 }

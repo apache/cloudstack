@@ -76,6 +76,9 @@ public class VxlanGuestNetworkGuru extends GuestNetworkGuru {
             network.setBroadcastUri(BroadcastDomainType.Vxlan.toUri(vxlan));
         }
         network.setBroadcastDomainType(BroadcastDomainType.Vxlan);
+
+        getOrCreateIpv4SubnetForGuestNetwork(offering, network, userSpecified, owner);
+
         return updateNetworkDesignForIPv6IfNeeded(network, userSpecified);
     }
 

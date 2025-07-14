@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.user;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.nullable;
 
 import java.net.InetAddress;
@@ -124,6 +125,9 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
 
     @Mock
     ConfigKey<Boolean> enableUserTwoFactorAuthenticationMock;
+
+    @Mock
+    ConfigKey<Boolean> allowOperationsOnUsersInSameAccountMock;
     @Mock
     RoleService roleService;
 
@@ -131,6 +135,9 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
     public void setUp() throws Exception {
         enableUserTwoFactorAuthenticationMock = Mockito.mock(ConfigKey.class);
         accountManagerImpl.enableUserTwoFactorAuthentication = enableUserTwoFactorAuthenticationMock;
+
+        allowOperationsOnUsersInSameAccountMock = Mockito.mock(ConfigKey.class);
+        accountManagerImpl.allowOperationsOnUsersInSameAccount = allowOperationsOnUsersInSameAccountMock;
     }
 
     @Before
@@ -141,6 +148,8 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.doReturn(accountMockId).when(userVoMock).getAccountId();
 
         Mockito.doReturn(userVoIdMock).when(userVoMock).getId();
+
+        Mockito.lenient().doNothing().when(accountManagerImpl).checkRoleEscalation(accountMock, accountMock);
     }
 
     @Test
@@ -191,6 +200,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.when(_sshKeyPairDao.remove(Mockito.anyLong())).thenReturn(true);
         Mockito.when(userDataDao.removeByAccountId(Mockito.anyLong())).thenReturn(222);
         Mockito.doNothing().when(accountManagerImpl).deleteWebhooksForAccount(Mockito.anyLong());
+        Mockito.doNothing().when(accountManagerImpl).verifyCallerPrivilegeForUserOrAccountOperations((Account) any());
 
         Assert.assertTrue(accountManagerImpl.deleteUserAccount(42l));
         // assert that this was a clean delete
@@ -211,6 +221,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.lenient().when(_domainMgr.getDomain(Mockito.anyLong())).thenReturn(domain);
         Mockito.lenient().when(securityChecker.checkAccess(Mockito.any(Account.class), Mockito.any(Domain.class))).thenReturn(true);
         Mockito.doNothing().when(accountManagerImpl).deleteWebhooksForAccount(Mockito.anyLong());
+        Mockito.doNothing().when(accountManagerImpl).verifyCallerPrivilegeForUserOrAccountOperations((Account) any());
 
         Assert.assertTrue(accountManagerImpl.deleteUserAccount(42l));
         // assert that this was NOT a clean delete
@@ -245,6 +256,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
             Mockito.doReturn(2L).when(accountVoMock).getId();
             Mockito.doReturn(true).when(accountManagerImpl).isDeleteNeeded(Mockito.any(), Mockito.anyLong(), Mockito.any());
             Mockito.doReturn(new ArrayList<Long>()).when(_projectAccountDao).listAdministratedProjectIds(Mockito.anyLong());
+            Mockito.doNothing().when(accountManagerImpl).verifyCallerPrivilegeForUserOrAccountOperations((Account) any());
 
             accountManagerImpl.deleteUserAccount(accountId);
         }
@@ -282,6 +294,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
             Mockito.doReturn(2L).when(userVoMock).getId();
 
             Mockito.doNothing().when(accountManagerImpl).checkAccountAndAccess(Mockito.any(), Mockito.any());
+            Mockito.doNothing().when(accountManagerImpl).verifyCallerPrivilegeForUserOrAccountOperations(userVoMock);
             accountManagerImpl.deleteUser(cmd);
         }
     }
@@ -348,7 +361,6 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
 
         // Queried account - admin account
         AccountVO adminAccountMock = Mockito.mock(AccountVO.class);
-        Mockito.when(adminAccountMock.getAccountId()).thenReturn(2L);
         Mockito.when(_accountDao.findByIdIncludingRemoved(2L)).thenReturn(adminAccountMock);
         Mockito.lenient().when(accountService.isRootAdmin(2L)).thenReturn(true);
         Mockito.lenient().when(securityChecker.checkAccess(Mockito.any(Account.class),
@@ -396,6 +408,12 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
 
     @Test
     public void updateUserTestTimeZoneAndEmailNull() {
+        Mockito.when(userVoMock.getAccountId()).thenReturn(10L);
+        Mockito.doReturn(accountMock).when(accountManagerImpl).getAccount(10L);
+        Mockito.when(accountMock.getAccountId()).thenReturn(10L);
+        Mockito.doReturn(false).when(accountManagerImpl).isRootAdmin(10L);
+        Mockito.lenient().when(accountManagerImpl.getRoleType(Mockito.eq(accountMock))).thenReturn(RoleType.User);
+
         prepareMockAndExecuteUpdateUserTest(0);
     }
 
@@ -403,6 +421,11 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
     public void updateUserTestTimeZoneAndEmailNotNull() {
         Mockito.when(UpdateUserCmdMock.getEmail()).thenReturn("email");
         Mockito.when(UpdateUserCmdMock.getTimezone()).thenReturn("timezone");
+        Mockito.when(userVoMock.getAccountId()).thenReturn(10L);
+        Mockito.doReturn(accountMock).when(accountManagerImpl).getAccount(10L);
+        Mockito.when(accountMock.getAccountId()).thenReturn(10L);
+        Mockito.doReturn(false).when(accountManagerImpl).isRootAdmin(10L);
+        Mockito.lenient().when(accountManagerImpl.getRoleType(Mockito.eq(accountMock))).thenReturn(RoleType.User);
         prepareMockAndExecuteUpdateUserTest(1);
     }
 
@@ -420,14 +443,17 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
 
         Mockito.doReturn(true).when(userDaoMock).update(Mockito.anyLong(), Mockito.eq(userVoMock));
         Mockito.doReturn(Mockito.mock(UserAccountVO.class)).when(userAccountDaoMock).findById(Mockito.anyLong());
+        Mockito.doNothing().when(accountManagerImpl).checkAccess(nullable(User.class), nullable(Account.class));
 
         accountManagerImpl.updateUser(UpdateUserCmdMock);
+
+        Mockito.lenient().doNothing().when(accountManagerImpl).checkRoleEscalation(accountMock, accountMock);
 
         InOrder inOrder = Mockito.inOrder(userVoMock, accountManagerImpl, userDaoMock, userAccountDaoMock);
 
         inOrder.verify(accountManagerImpl).retrieveAndValidateUser(UpdateUserCmdMock);
-        inOrder.verify(accountManagerImpl).validateAndUpdateApiAndSecretKeyIfNeeded(UpdateUserCmdMock, userVoMock);
         inOrder.verify(accountManagerImpl).retrieveAndValidateAccount(userVoMock);
+        inOrder.verify(accountManagerImpl).validateAndUpdateApiAndSecretKeyIfNeeded(UpdateUserCmdMock, userVoMock);
 
         inOrder.verify(accountManagerImpl).validateAndUpdateFirstNameIfNeeded(UpdateUserCmdMock, userVoMock);
         inOrder.verify(accountManagerImpl).validateAndUpdateLastNameIfNeeded(UpdateUserCmdMock, userVoMock);
@@ -1339,8 +1365,8 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         accountManagerImpl.validateRoleChange(account, newRole, caller);
     }
 
-     @Test
-     public void checkIfAccountManagesProjectsTestNotThrowExceptionWhenTheAccountIsNotAProjectAdministrator() {
+    @Test
+    public void checkIfAccountManagesProjectsTestNotThrowExceptionWhenTheAccountIsNotAProjectAdministrator() {
         long accountId = 1L;
         List<Long> managedProjectIds = new ArrayList<>();
 
@@ -1405,5 +1431,146 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Assert.assertFalse(updatedUser.isUser2faEnabled());
         Assert.assertNull(updatedUser.getUser2faProvider());
         Assert.assertNull(updatedUser.getKeyFor2fa());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testAssertUserNotAlreadyInAccount_UserExistsInAccount() {
+        User existingUser = new UserVO();
+        existingUser.setUsername("testuser");
+        existingUser.setAccountId(1L);
+
+        Account newAccount = Mockito.mock(Account.class);
+        Mockito.when(newAccount.getId()).thenReturn(1L);
+
+        AccountVO existingAccount = Mockito.mock(AccountVO.class);
+        Mockito.when(existingAccount.getUuid()).thenReturn("existing-account-uuid");
+        Mockito.when(existingAccount.getAccountName()).thenReturn("existing-account");
+
+        Mockito.when(_accountDao.findById(1L)).thenReturn(existingAccount);
+
+        accountManagerImpl.assertUserNotAlreadyInAccount(existingUser, newAccount);
+    }
+
+    @Test
+    public void testAssertUserNotAlreadyInAccount_UserExistsInDiffAccount() {
+        User existingUser = new UserVO();
+        existingUser.setUsername("testuser");
+        existingUser.setAccountId(2L);
+
+        Account newAccount = Mockito.mock(Account.class);
+        Mockito.when(newAccount.getId()).thenReturn(1L);
+
+        accountManagerImpl.assertUserNotAlreadyInAccount(existingUser, newAccount);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testAssertUserNotAlreadyInDomain_UserExistsInDomain() {
+        User existingUser = new UserVO();
+        existingUser.setUsername("testuser");
+        existingUser.setAccountId(1L);
+
+        Account originalAccount = Mockito.mock(Account.class);
+        Mockito.when(originalAccount.getDomainId()).thenReturn(1L);
+
+        AccountVO existingAccount = Mockito.mock(AccountVO.class);
+        Mockito.when(existingAccount.getDomainId()).thenReturn(1L);
+        Mockito.when(existingAccount.getUuid()).thenReturn("existing-account-uuid");
+        Mockito.when(existingAccount.getAccountName()).thenReturn("existing-account");
+
+        DomainVO existingDomain = Mockito.mock(DomainVO.class);
+        Mockito.when(existingDomain.getUuid()).thenReturn("existing-domain-uuid");
+        Mockito.when(existingDomain.getName()).thenReturn("existing-domain");
+
+        Mockito.when(_accountDao.findById(1L)).thenReturn(existingAccount);
+        Mockito.when(_domainDao.findById(1L)).thenReturn(existingDomain);
+
+        accountManagerImpl.assertUserNotAlreadyInDomain(existingUser, originalAccount);
+    }
+
+    @Test
+    public void testAssertUserNotAlreadyInDomain_UserExistsInDiffDomain() {
+        User existingUser = new UserVO();
+        existingUser.setUsername("testuser");
+        existingUser.setAccountId(1L);
+
+        Account originalAccount = Mockito.mock(Account.class);
+        Mockito.when(originalAccount.getDomainId()).thenReturn(1L);
+
+        AccountVO existingAccount = Mockito.mock(AccountVO.class);
+        Mockito.when(existingAccount.getDomainId()).thenReturn(2L);
+
+        Mockito.when(_accountDao.findById(1L)).thenReturn(existingAccount);
+
+        accountManagerImpl.assertUserNotAlreadyInDomain(existingUser, originalAccount);
+    }
+
+    @Test
+    public void testCheckCallerRoleTypeAllowedToUpdateUserSameAccount() {
+        Mockito.lenient().when(accountManagerImpl.getCurrentCallingAccount()).thenReturn(accountMock);
+        Mockito.lenient().when(accountManagerImpl.getRoleType(Mockito.eq(accountMock))).thenReturn(RoleType.DomainAdmin);
+
+        accountManagerImpl.checkCallerRoleTypeAllowedForUserOrAccountOperations(accountMock, userVoMock);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testCheckCallerRoleTypeAllowedToUpdateUserLowerAccountRoleType() {
+        Account callingAccount = Mockito.mock(Account.class);
+        Mockito.lenient().when(callingAccount.getAccountId()).thenReturn(2L);
+        Mockito.lenient().doReturn(callingAccount).when(accountManagerImpl).getAccount(2L);
+        Mockito.lenient().when(accountManagerImpl.getCurrentCallingAccount()).thenReturn(callingAccount);
+        Mockito.lenient().when(accountManagerImpl.getRoleType(Mockito.eq(callingAccount))).thenReturn(RoleType.DomainAdmin);
+        Mockito.lenient().when(accountManagerImpl.getRoleType(Mockito.eq(accountMock))).thenReturn(RoleType.Admin);
+        accountManagerImpl.checkCallerRoleTypeAllowedForUserOrAccountOperations(accountMock, userVoMock);
+    }
+
+    @Test
+    public void testcheckCallerApiPermissionsForUserOperationsRootAdminSameCaller() {
+        Mockito.lenient().when(accountManagerImpl.getCurrentCallingAccount()).thenReturn(accountMock);
+        Mockito.when(accountMock.getId()).thenReturn(2L);
+        Mockito.doReturn(true).when(accountManagerImpl).isRootAdmin(2L);
+        accountManagerImpl.checkCallerApiPermissionsForUserOrAccountOperations(accountMock);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testcheckCallerApiPermissionsForUserOperationsRootAdminDifferentAccount() {
+        Mockito.lenient().when(accountManagerImpl.getCurrentCallingAccount()).thenReturn(callingAccount);
+        Mockito.lenient().when(callingAccount.getAccountId()).thenReturn(3L);
+        Mockito.lenient().doReturn(callingAccount).when(accountManagerImpl).getAccount(3L);
+        Mockito.lenient().doReturn(false).when(accountManagerImpl).isRootAdmin(3L);
+
+        Mockito.when(accountMock.getAccountId()).thenReturn(2L);
+        Mockito.doReturn(true).when(accountManagerImpl).isRootAdmin(2L);
+
+        accountManagerImpl.checkCallerApiPermissionsForUserOrAccountOperations(accountMock);
+    }
+
+    @Test
+    public void testcheckCallerApiPermissionsForUserOperationsAllowedApis() {
+        Mockito.lenient().when(accountManagerImpl.getCurrentCallingAccount()).thenReturn(callingAccount);
+        Mockito.lenient().when(callingAccount.getAccountId()).thenReturn(3L);
+        Mockito.lenient().doReturn(callingAccount).when(accountManagerImpl).getAccount(3L);
+        Mockito.lenient().doReturn(false).when(accountManagerImpl).isRootAdmin(3L);
+
+        Mockito.when(accountMock.getAccountId()).thenReturn(2L);
+        Mockito.doReturn(false).when(accountManagerImpl).isRootAdmin(2L);
+
+        Mockito.lenient().doNothing().when(accountManagerImpl).checkRoleEscalation(callingAccount, accountMock);
+
+        accountManagerImpl.checkCallerApiPermissionsForUserOrAccountOperations(accountMock);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testcheckCallerApiPermissionsForUserOperationsNotAllowedApis() {
+        Mockito.lenient().when(accountManagerImpl.getCurrentCallingAccount()).thenReturn(callingAccount);
+        Mockito.lenient().when(callingAccount.getAccountId()).thenReturn(3L);
+        Mockito.lenient().doReturn(callingAccount).when(accountManagerImpl).getAccount(3L);
+        Mockito.lenient().doReturn(false).when(accountManagerImpl).isRootAdmin(3L);
+
+        Mockito.when(accountMock.getAccountId()).thenReturn(2L);
+        Mockito.doReturn(false).when(accountManagerImpl).isRootAdmin(2L);
+
+        Mockito.lenient().doThrow(PermissionDeniedException.class).when(accountManagerImpl).checkRoleEscalation(callingAccount, accountMock);
+
+        accountManagerImpl.checkCallerApiPermissionsForUserOrAccountOperations(accountMock);
     }
 }
