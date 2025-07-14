@@ -1073,7 +1073,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
         volumeInfo.setType(Volume.Type.DATADISK);
 
-        logger.debug("Attaching the restored volume {} to VM {}.", () -> ReflectionToStringBuilder.toString(volumeInfo, ToStringStyle.JSON_STYLE), () -> vm);
+        logger.info("Attaching the restored volume {} to VM {}.", () -> ReflectionToStringBuilder.toString(volumeInfo, ToStringStyle.JSON_STYLE), () -> vm);
         StoragePoolVO pool = primaryDataStoreDao.findByUuid(datastoreUuid);
         try {
             return guru.attachRestoredVolumeToVirtualMachine(zoneId, restoredVolumeLocation, volumeInfo, vm, pool.getId(), backup);
