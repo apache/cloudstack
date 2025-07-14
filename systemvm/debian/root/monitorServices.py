@@ -247,7 +247,7 @@ def checkProcessStatus( process ):
         return StatusCodes.RUNNING, True
 
 
-def monitProcess( processes_info ):
+def monitProcess( processes_info, included_services ):
     """
     Monitors the processes which got from the config file
     """
@@ -263,7 +263,10 @@ def monitProcess( processes_info ):
     #time for noting process down time
     csec = repr(time.time()).split('.')[0]
 
-    for process,properties in processes_info.items():
+    for process,properties in list(processes_info.items()):
+        if included_services and len(included_services) > 0 and process not in included_services:
+            printd ("---------------------------\nskipping the service %s\n---------------------------- " %process)
+            continue
         printd ("---------------------------\nchecking the service %s\n---------------------------- " %process)
         serviceName = process + ".service"
         processStatus, wasRestarted = checkProcessStatus(properties)
@@ -325,6 +328,7 @@ def main(checkType = "basic"):
     '''
     printd("monitoring started")
     configDict = getServicesConfig()
+    hc_data = getHealthChecksData()
 
     '''
     Step2: Monitor services and Raise Alerts
@@ -332,13 +336,12 @@ def main(checkType = "basic"):
     monitResult = {}
     failingChecks = []
     if checkType == "basic":
-        monitResult, failingChecks = monitProcess(configDict)
+        included_services = hc_data["included_services"] if "included_services" in hc_data else []
+        monitResult, failingChecks = monitProcess(configDict, included_services)
 
     '''
     Step3: Run health check scripts as needed
     '''
-    hc_data = getHealthChecksData()
-
     if hc_data is not None and "health_checks_enabled" in hc_data and hc_data['health_checks_enabled']:
         hc_exclude = hc_data["excluded_health_checks"] if "excluded_health_checks" in hc_data else []
         for f in os.listdir(Config.HEALTH_CHECKS_DIR):

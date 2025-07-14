@@ -33,4 +33,9 @@ def merge(dbag, data):
     if "health_checks_config" in data:
         dbag["health_checks_config"] = data["health_checks_config"]
 
+    if "included_services" in data:
+        dbag["included_services"] = data["included_services"]
+    else:
+        dbag["included_services"] = ""
+
     return dbag

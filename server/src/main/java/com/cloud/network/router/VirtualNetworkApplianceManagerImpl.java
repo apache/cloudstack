@@ -70,6 +70,7 @@ import org.apache.cloudstack.network.topology.NetworkTopologyContext;
 import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.usage.UsageUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -1595,10 +1596,11 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ENABLED, RouterHealthChecksEnabled.value().toString());
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_BASIC_INTERVAL, RouterHealthChecksBasicInterval.value().toString());
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ADVANCED_INTERVAL, RouterHealthChecksAdvancedInterval.value().toString());
+
+        final List<Long> routerGuestNtwkIds = _routerDao.getRouterNetworks(router.getId());
         String excludedTests = RouterHealthChecksToExclude.valueIn(router.getDataCenterId());
         if (router.getIsRedundantRouter()) {
             // Disable gateway check if VPC has no tiers or no active VM's in it
-            final List<Long> routerGuestNtwkIds = _routerDao.getRouterNetworks(router.getId());
             if (RedundantState.BACKUP.equals(router.getRedundantState()) ||
                     routerGuestNtwkIds == null || routerGuestNtwkIds.isEmpty()) {
                 excludedTests = excludedTests.isEmpty() ? BACKUP_ROUTER_EXCLUDED_TESTS : excludedTests + "," + BACKUP_ROUTER_EXCLUDED_TESTS;
@@ -1606,6 +1608,10 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         }
 
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_EXCLUDED, excludedTests);
+        if (router.getVpcId() != null && CollectionUtils.isEmpty(routerGuestNtwkIds)) {
+            command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_INCLUDED_SERVICES, MonitoringService.Service.Ssh.toString().toLowerCase());
+        }
+
         command.setHealthChecksConfig(routerHealthCheckConfig);
         command.setReconfigureAfterUpdate(reconfigure);
         command.setDeleteFromProcessedCache(deleteFromProcessedCache); // As part of updating
