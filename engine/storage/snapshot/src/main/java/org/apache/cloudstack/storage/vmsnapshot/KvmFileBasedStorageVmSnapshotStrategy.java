@@ -170,7 +170,7 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
     @Override
     public boolean revertVMSnapshot(VMSnapshot vmSnapshot) {
         UserVmVO userVm = userVmDao.findById(vmSnapshot.getVmId());
-        if (!userVm.getState().equals(VirtualMachine.State.Stopped)) {
+        if (!VirtualMachine.State.Stopped.equals(userVm.getState())) {
             throw new CloudRuntimeException("VM must be stopped to revert disk-only VM snapshot.");
         }
 
@@ -373,14 +373,14 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
 
         List<VMSnapshotVO> snapshotGrandChildren = vmSnapshotDao.listByParentAndStateIn(childSnapshot.getId(), VMSnapshot.State.Ready, VMSnapshot.State.Hidden);
 
-        if (userVm.getState().equals(VirtualMachine.State.Running) && !snapshotGrandChildren.isEmpty()) {
+        if (VirtualMachine.State.Running.equals(userVm.getState()) && !snapshotGrandChildren.isEmpty()) {
             logger.debug("Removing VM snapshots that are part of the VM's [{}] current backing chain from the list of snapshots to be rebased.", userVm.getUuid());
             removeCurrentBackingChainSnapshotFromVmSnapshotList(snapshotGrandChildren, userVm);
         }
 
         List<SnapshotMergeTreeTO> snapshotMergeTreeToList = generateSnapshotMergeTrees(vmSnapshotVO, childSnapshot, snapshotGrandChildren);
 
-        if (childSnapshot.getCurrent() && !userVm.getState().equals(VirtualMachine.State.Running)) {
+        if (childSnapshot.getCurrent() && !VirtualMachine.State.Running.equals(userVm.getState())) {
             for (VolumeObjectTO volumeObjectTO : volumeObjectTOS) {
                 snapshotMergeTreeToList.stream().filter(snapshotTree -> Objects.equals(((SnapshotObjectTO) snapshotTree.getParent()).getVolume().getId(), volumeObjectTO.getId()))
                         .findFirst()

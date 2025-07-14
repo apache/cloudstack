@@ -415,7 +415,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     public boolean assignVMToBackupOffering(VirtualMachine vm, BackupOffering backupOffering) {
         for (VMSnapshotVO vmSnapshotVO : vmSnapshotDao.findByVmAndByType(vm.getId(), VMSnapshot.Type.Disk)) {
             List<VMSnapshotDetailsVO> vmSnapshotDetails = vmSnapshotDetailsDao.listDetails(vmSnapshotVO.getId());
-            if (vmSnapshotDetails.stream().anyMatch(vmSnapshotDetailsVO -> vmSnapshotDetailsVO.getName().equals(VolumeApiServiceImpl.KVM_FILE_BASED_STORAGE_SNAPSHOT))) {
+            if (vmSnapshotDetails.stream().anyMatch(vmSnapshotDetailsVO -> VolumeApiServiceImpl.KVM_FILE_BASED_STORAGE_SNAPSHOT.equals(vmSnapshotDetailsVO.getName()))) {
                 logger.warn("VM [{}] has VM snapshots using the KvmFileBasedStorageVmSnapshot Strategy; this provider does not support backups on VMs with these snapshots!");
                 return false;
             }

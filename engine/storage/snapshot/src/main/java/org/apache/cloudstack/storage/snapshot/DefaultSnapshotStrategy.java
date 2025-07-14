@@ -660,7 +660,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
 
         for (VMSnapshotVO vmSnapshotVO : vmSnapshotDao.findByVmAndByType(vm.getId(), VMSnapshot.Type.Disk)) {
             List<VMSnapshotDetailsVO> vmSnapshotDetails = vmSnapshotDetailsDao.listDetails(vmSnapshotVO.getId());
-            if (vmSnapshotDetails.stream().anyMatch(vmSnapshotDetailsVO -> vmSnapshotDetailsVO.getName().equals(VolumeApiServiceImpl.KVM_FILE_BASED_STORAGE_SNAPSHOT))) {
+            if (vmSnapshotDetails.stream().anyMatch(vmSnapshotDetailsVO -> VolumeApiServiceImpl.KVM_FILE_BASED_STORAGE_SNAPSHOT.equals(vmSnapshotDetailsVO.getName()))) {
                 logger.warn("VM [{}] already has KVM File-Based storage VM snapshots. These VM snapshots and volume snapshots are not supported " +
                         "together for KVM. As restoring volume snapshots will erase the VM snapshots and cause data loss.", vm.getUuid());
                 return StrategyPriority.CANT_HANDLE;

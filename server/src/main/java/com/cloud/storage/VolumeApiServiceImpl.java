@@ -1422,7 +1422,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
             List<VMSnapshotDetailsVO> vmSnapshotDetails = vmSnapshotDetailsDao.listDetails(vmSnapshotVO.getId());
             if (vmSnapshotDetails.stream().
-                    noneMatch(vmSnapshotDetailsVO -> vmSnapshotDetailsVO.getName().equals(KVM_FILE_BASED_STORAGE_SNAPSHOT))) {
+                    noneMatch(vmSnapshotDetailsVO -> KVM_FILE_BASED_STORAGE_SNAPSHOT.equals(vmSnapshotDetailsVO.getName()))) {
                 return true;
             }
         }
@@ -4069,7 +4069,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Cannot perform this operation, unsupported on storage pool type " + storagePool.getPoolType());
         }
 
-        if (vmSnapshotDetailsDao.listDetails(vmSnapshotId).stream().anyMatch(vmSnapshotDetailsVO -> vmSnapshotDetailsVO.getName().equals(KVM_FILE_BASED_STORAGE_SNAPSHOT))) {
+        if (vmSnapshotDetailsDao.listDetails(vmSnapshotId).stream().anyMatch(vmSnapshotDetailsVO -> KVM_FILE_BASED_STORAGE_SNAPSHOT.equals(vmSnapshotDetailsVO.getName()))) {
             throw new InvalidParameterValueException("Cannot perform this operation, unsupported VM snapshot type.");
         }
 
