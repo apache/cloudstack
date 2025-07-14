@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,29 +15,26 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
 
+package com.cloud.utils;
 
-package org.apache.cloudstack.maintenance.command;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-public class PrepareForMaintenanceManagementServerHostCommand extends BaseShutdownManagementServerHostCommand {
-    String lbAlgorithm;
-    boolean forced;
+public class ThreadUtil {
 
-    public PrepareForMaintenanceManagementServerHostCommand(long msId) {
-        super(msId);
-    }
+    protected static Logger LOGGER = LogManager.getLogger(AutoCloseableUtil.class);
 
-    public PrepareForMaintenanceManagementServerHostCommand(long msId, String lbAlgorithm, boolean forced) {
-        super(msId);
-        this.lbAlgorithm = lbAlgorithm;
-        this.forced = forced;
-    }
+    public static void wait(Object object, long timeoutInMillis, long id, String uuid, String name) {
+        synchronized (object) {
+            try {
+                object.wait(timeoutInMillis);
+            } catch (InterruptedException e) {
+                LOGGER.warn("PingTask interrupted while waiting to retry ping [id: {}, uuid: {}, name: {}]", id, uuid, name, e);
+                Thread.currentThread().interrupt(); // Restore interrupted status
+            }
+        }
 
-    public String getLbAlgorithm() {
-        return lbAlgorithm;
-    }
-
-    public boolean isForced() {
-        return forced;
     }
 }

@@ -29,13 +29,15 @@ public class SetupMSListCommand extends Command {
     private List<String> avoidMsList;
     private String lbAlgorithm;
     private Long lbCheckInterval;
+    private Boolean triggerHostLb;
 
-    public SetupMSListCommand(final List<String> msList, final List<String> avoidMsList, final String lbAlgorithm, final Long lbCheckInterval) {
+    public SetupMSListCommand(final List<String> msList, final List<String> avoidMsList, final String lbAlgorithm, final Long lbCheckInterval, final Boolean triggerHostLb) {
         super();
         this.msList = msList;
         this.avoidMsList = avoidMsList;
         this.lbAlgorithm = lbAlgorithm;
         this.lbCheckInterval = lbCheckInterval;
+        this.triggerHostLb = triggerHostLb;
     }
 
     public List<String> getMsList() {
@@ -54,9 +56,12 @@ public class SetupMSListCommand extends Command {
         return lbCheckInterval;
     }
 
+    public boolean getTriggerHostLb() {
+        return triggerHostLb;
+    }
+
     @Override
     public boolean executeInSequence() {
         return false;
     }
-
 }
