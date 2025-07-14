@@ -124,7 +124,7 @@ public class ScaleIOHostListener implements HypervisorHostListener {
         }
 
         if (StringUtils.isBlank(sdcId)) {
-            String msg = String.format("Couldn't retrieve PowerFlex storage SDC details from the host: %s, (re)install SDC and restart agent", host);
+            String msg = String.format("Couldn't retrieve PowerFlex storage SDC details from the host: %s, add MDMs if not or try (re)install SDC & restart agent", host);
             logger.warn(msg);
             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "SDC details not found on host: " + host.getUuid(), msg);
             return null;

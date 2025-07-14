@@ -632,7 +632,9 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
 
         int numberOfTries = 5;
         int timeBetweenTries = 1000; // Try more frequently (every sec) and return early when SDC Id or Guid found
+        int attempt = 1;
         do {
+            logger.debug("Get SDC details, attempt #{}", attempt);
             String sdcId = ScaleIOUtil.getSdcId(storageSystemId);
             if (sdcId != null) {
                 sdcDetails.put(ScaleIOGatewayClient.SDC_ID, sdcId);
@@ -650,6 +652,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
             } catch (Exception ignore) {
             }
             numberOfTries--;
+            attempt++;
         } while (numberOfTries > 0);
 
         return sdcDetails;
