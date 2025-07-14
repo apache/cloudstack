@@ -149,6 +149,8 @@ const err = (error) => {
 service.interceptors.request.use(config => {
   source = sourceToken.getSource()
   config.cancelToken = source.token
+
+  // Handle GET requests (params)
   if (config && config.params) {
     config.params.response = 'json'
     const project = vueProps.$localStorage.get(CURRENT_PROJECT)
@@ -163,6 +165,26 @@ service.interceptors.request.use(config => {
       config.params.ignoreproject = null
     }
   }
+
+  // Handle POST requests (data)
+  if (config && config.data && config.data instanceof URLSearchParams) {
+    const project = vueProps.$localStorage.get(CURRENT_PROJECT)
+    const command = config.data.get('command')
+    const hasProjectId = config.data.has('projectid')
+    const ignoreProject = config.data.has('ignoreproject')
+
+    if (!hasProjectId && !ignoreProject && project && project.id) {
+      if (command === 'listTags') {
+        config.data.append('projectid', '-1')
+      } else if (command !== 'assignVirtualMachine') {
+        config.data.append('projectid', project.id)
+      }
+    }
+    if (config.data.has('ignoreproject')) {
+      config.data.delete('ignoreproject')
+    }
+  }
+
   return config
 }, err)
 
