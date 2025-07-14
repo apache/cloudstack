@@ -97,7 +97,7 @@ public class CreateCounterCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Guest OS Id: " + getEntityId());
+        CallContext.current().setEventDetails("Counter ID: " + getEntityId());
         Counter ctr = _autoScaleService.getCounter(getEntityId());
         CounterResponse response = _responseGenerator.createCounterResponse(ctr);
         response.setResponseName(getCommandName());
