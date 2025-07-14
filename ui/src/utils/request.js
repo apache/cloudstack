@@ -151,6 +151,14 @@ service.interceptors.request.use(config => {
   config.cancelToken = source.token
 
   // Handle GET requests (params)
+  handleGetRequestParams(config)
+
+  handlePostRequestParams(config)
+
+  return config
+}, err)
+
+function handleGetRequestParams (config) {
   if (config && config.params) {
     config.params.response = 'json'
     const project = vueProps.$localStorage.get(CURRENT_PROJECT)
@@ -162,11 +170,12 @@ service.interceptors.request.use(config => {
       }
     }
     if (config.params.ignoreproject !== undefined) {
-      config.params.ignoreproject = null
+      delete config.params.ignoreproject
     }
   }
+}
 
-  // Handle POST requests (data)
+function handlePostRequestParams (config) {
   if (config && config.data && config.data instanceof URLSearchParams) {
     const project = vueProps.$localStorage.get(CURRENT_PROJECT)
     const command = config.data.get('command')
@@ -184,9 +193,7 @@ service.interceptors.request.use(config => {
       config.data.delete('ignoreproject')
     }
   }
-
-  return config
-}, err)
+}
 
 // response interceptor
 service.interceptors.response.use((response) => {
