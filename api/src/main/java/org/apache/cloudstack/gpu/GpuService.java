@@ -81,7 +81,15 @@ public interface GpuService extends Manager {
      *
      * @param vmId The ID of the VM to deallocate GPU devices for.
      */
-    void deallocateGpuDevicesForVmOnHost(long vmId);
+    void deallocateAllGpuDevicesForVm(long vmId);
+
+
+    /**
+     * Deallocate GPU devices for a VM on a host.
+     *
+     * @param vmId The ID of the VM to deallocate GPU devices for.
+     */
+    void deallocateGpuDevicesForVmOnHost(long vmId, long hostId);
 
     /**
      * Deallocate existing GPU devices for a VM on a host and allocate new GPU devices to the VM.
@@ -122,7 +130,7 @@ public interface GpuService extends Manager {
      * @param gpuCount    The number of GPU devices to get.
      * @return The GPU devices.
      */
-    GPUDeviceTO getGPUDevice(VirtualMachine vm, VgpuProfile vgpuProfile, int gpuCount);
+    GPUDeviceTO getGPUDevice(VirtualMachine vm, long hostId, VgpuProfile vgpuProfile, int gpuCount);
 
     /**
      * Gets the GPU group details from the GPU devices on a host.

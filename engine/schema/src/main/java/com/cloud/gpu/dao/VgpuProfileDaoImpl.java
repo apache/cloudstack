@@ -58,6 +58,13 @@ public class VgpuProfileDaoImpl extends GenericDaoBase<VgpuProfileVO, Long> impl
     }
 
     @Override
+    public int removeByCardId(long cardId) {
+        SearchCriteria<VgpuProfileVO> sc = allFieldSearch.create();
+        sc.setParameters("cardId", cardId);
+        return remove(sc);
+    }
+
+    @Override
     public Pair<List<VgpuProfileVO>, Integer> searchAndCountVgpuProfiles(Long id, String name, String keyword,
             Long gpuCardId, boolean activeOnly, Long startIndex, Long pageSize) {
         Filter searchFilter = new Filter(VgpuProfileVO.class, "id", true, startIndex, pageSize);

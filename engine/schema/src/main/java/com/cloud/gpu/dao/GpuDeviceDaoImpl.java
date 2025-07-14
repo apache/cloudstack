@@ -60,6 +60,7 @@ public class GpuDeviceDaoImpl extends GenericDaoBase<GpuDeviceVO, Long> implemen
         allFieldSearch = createSearchBuilder();
         allFieldSearch.and(IDS, allFieldSearch.entity().getId(), SearchCriteria.Op.IN);
         allFieldSearch.and(HOST_ID, allFieldSearch.entity().getHostId(), SearchCriteria.Op.EQ);
+        allFieldSearch.and(CARD_ID, allFieldSearch.entity().getCardId(), SearchCriteria.Op.EQ);
         allFieldSearch.and(BUS_ADDRESS, allFieldSearch.entity().getBusAddress(), SearchCriteria.Op.EQ);
         allFieldSearch.and(STATE, allFieldSearch.entity().getState(), SearchCriteria.Op.EQ);
         allFieldSearch.and(VGPU_PROFILE_ID, allFieldSearch.entity().getVgpuProfileId(), SearchCriteria.Op.EQ);

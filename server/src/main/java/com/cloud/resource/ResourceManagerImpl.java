@@ -4285,7 +4285,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
-    public GPUDeviceTO getGPUDevice(VirtualMachine vm, VgpuProfileVO vgpuProfile, int gpuCount) {
+    public GPUDeviceTO getGPUDevice(VirtualMachine vm, long hostId, VgpuProfileVO vgpuProfile, int gpuCount) {
         HostVO host = _hostDao.findById(vm.getHostId());
         if (host.getHypervisorType().equals(HypervisorType.XenServer)) {
             GpuCardVO gpuCard = gpuCardDao.findById(vgpuProfile.getCardId());
@@ -4293,7 +4293,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             String vgpuType = vgpuProfile.getName();
             return getGPUDevice(vm.getHostId(), groupName, vgpuType);
         } else {
-            return gpuService.getGPUDevice(vm, vgpuProfile, gpuCount);
+            return gpuService.getGPUDevice(vm, hostId, vgpuProfile, gpuCount);
         }
     }
 
@@ -4326,7 +4326,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         if (gpuDevice == null || gpuDevice.getGpuDevices() != null) {
             HostVO host = _hostDao.findById(vm.getHostId());
             if (GpuDetachOnStop.valueIn(vm.getDomainId())) {
-                gpuService.deallocateGpuDevicesForVmOnHost(vm.getId());
+                gpuService.deallocateAllGpuDevicesForVm(vm.getId());
             }
             groupDetails = gpuService.getGpuGroupDetailsFromGpuDevicesOnHost(host);
         } else {

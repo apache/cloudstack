@@ -31,6 +31,7 @@ import com.cloud.simulator.MockGpuDevice;
 import com.cloud.simulator.MockGpuDeviceVO;
 import com.cloud.simulator.dao.MockGpuDeviceDao;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
@@ -385,6 +386,33 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             }
             vm.setHostId(destHost.getId());
             _mockVmDao.update(vm.getId(), vm);
+
+            // Unassign existing GPU Devices
+            List<MockGpuDeviceVO> devices = _mockGpuDeviceDao.listByVmId(vm.getId());
+            for (MockGpuDeviceVO mockGpuDevice : devices) {
+                mockGpuDevice.setVmId(null);
+                mockGpuDevice.setState(MockGpuDevice.State.Available);
+                _mockGpuDeviceDao.persist(mockGpuDevice);
+            }
+
+            // Assign GPU Devices to the new host
+            GPUDeviceTO gpuDeviceTO = cmd.getVirtualMachine().getGpuDevice();
+            if (gpuDeviceTO != null) {
+                List<VgpuTypesInfo> gpuDevices = gpuDeviceTO.getGpuDevices();
+                if (CollectionUtils.isNotEmpty(gpuDevices)) {
+                    for (VgpuTypesInfo gpuDevice : gpuDevices) {
+                        MockGpuDeviceVO mockGpuDevice = _mockGpuDeviceDao.listByHostIdAndBusAddress(destHost.getId(), gpuDevice.getBusAddress());
+                        if (mockGpuDevice != null) {
+                            mockGpuDevice.setVmId(vm.getId());
+                            mockGpuDevice.setState(MockGpuDevice.State.Allocated);
+                            _mockGpuDeviceDao.persist(mockGpuDevice);
+                        } else {
+                            return new MigrateAnswer(cmd, false, "No GPU device found on destination host for bus address: " + gpuDevice.getBusAddress(), null);
+                        }
+                    }
+                }
+            }
+
             txn.commit();
             return new MigrateAnswer(cmd, true, null, 0);
         } catch (final Exception ex) {

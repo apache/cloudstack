@@ -659,7 +659,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
     }
 
     @Override
-    public GPUDeviceTO getGPUDevice(VirtualMachine vm, VgpuProfileVO vgpuProfile, int gpuCount) {
+    public GPUDeviceTO getGPUDevice(VirtualMachine vm, long hostId, VgpuProfileVO vgpuProfile, int gpuCount) {
         // TODO Auto-generated method stub
         return null;
     }

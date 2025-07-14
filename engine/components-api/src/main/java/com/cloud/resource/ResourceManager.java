@@ -208,7 +208,7 @@ public interface ResourceManager extends ResourceService, Configurable {
      * @param gpuCount
      * @return GPUDeviceTO[]
      */
-    GPUDeviceTO getGPUDevice(VirtualMachine vm, VgpuProfileVO vgpuProfile, int gpuCount);
+    GPUDeviceTO getGPUDevice(VirtualMachine vm, long hostId, VgpuProfileVO vgpuProfile, int gpuCount);
 
     /**
      * Get available GPU device

@@ -84,10 +84,10 @@
       :defaultExpandAllRows="true"
       :expandedRowKeys="expandedRowKeys"
       @expand="onExpand"
-      :rowSelection="{
+      :rowSelection="resourceType === 'Host' && isAdmin ? {
         selectedRowKeys: selectedGpuDeviceIds,
         onChange: onGpuDeviceSelectionChange
-      }"
+      } : null"
       :customRow="customRowProps"
       size="small"
     >
@@ -622,7 +622,7 @@ export default {
       }).then(() => {
         this.$notification.success({
           message: this.$t('label.success'),
-          description: this.$t('message.success.manage.gpu.device')
+          description: this.$t('message.success.manage.gpu.devices')
         })
         this.refresh()
       }).catch(error => {
@@ -635,7 +635,7 @@ export default {
       }).then(() => {
         this.$notification.success({
           message: this.$t('label.success'),
-          description: this.$t('message.success.unmanage.gpu.device')
+          description: this.$t('message.success.unmanage.gpu.devices')
         })
         this.refresh()
       }).catch(error => {

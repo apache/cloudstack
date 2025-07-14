@@ -583,7 +583,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             return false;
         }
 
-        if (_resourceMgr.isGPUDeviceAvailable(offering, host, vm.getId())) {
+        if (!_resourceMgr.isGPUDeviceAvailable(offering, host, vm.getId())) {
             logger.debug("Cannot deploy VM [{}] in the last host [{}] because this host does not have GPU devices available. Skipping this and trying other available hosts.",
                     vm, host);
             return false;

@@ -391,7 +391,7 @@ export default {
           dataView: true,
           popup: true,
           groupAction: true,
-          groupMap: (selection) => { return selection.map(x => { return { id: x.id } }) }
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         }
       ]
     },
@@ -428,7 +428,7 @@ export default {
           dataView: true,
           popup: true,
           groupAction: true,
-          groupMap: (selection) => { return selection.map(x => { return { id: x.id } }) }
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         }
       ]
     }

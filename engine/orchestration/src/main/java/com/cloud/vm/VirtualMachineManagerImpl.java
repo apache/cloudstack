@@ -2356,7 +2356,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         deleteVMSnapshots(vm, expunge);
 
-        gpuService.deallocateGpuDevicesForVmOnHost(vm.getId());
+        gpuService.deallocateAllGpuDevicesForVm(vm.getId());
 
         Transaction.execute(new TransactionCallbackWithExceptionNoReturn<CloudRuntimeException>() {
             @Override
@@ -2928,6 +2928,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 logger.info("Migration was unsuccessful.  Cleaning up: {}", vm);
                 _networkMgr.rollbackNicForMigration(vmSrc, profile);
                 volumeMgr.release(vm.getId(), dstHostId);
+                // deallocate GPU devices for the VM on the destination host
+                gpuService.deallocateGpuDevicesForVmOnHost(vm.getId(), dstHostId);
 
                 _alertMgr.sendAlert(alertType, fromHost.getDataCenterId(), fromHost.getPodId(),
                         "Unable to migrate vm " + vm.getInstanceName() + " from host " + fromHost.getName() + " in zone " + dest.getDataCenter().getName() + " and pod " +
@@ -2946,6 +2948,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             } else {
                 _networkMgr.commitNicForMigration(vmSrc, profile);
                 volumeMgr.release(vm.getId(), srcHostId);
+                // deallocate GPU devices for the VM on the src host after migration is complete
+                gpuService.deallocateGpuDevicesForVmOnHost(vm.getId(), srcHostId);
                 _networkMgr.setHypervisorHostname(profile, dest, true);
                 recreateCheckpointsKvmOnVmAfterMigration(vm, dstHostId);
 

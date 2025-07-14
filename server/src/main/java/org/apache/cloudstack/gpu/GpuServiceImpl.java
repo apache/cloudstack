@@ -172,8 +172,24 @@ public class GpuServiceImpl extends ManagerBase implements GpuService, Pluggable
         final Long videoRam = cmd.getVideoRam();
 
         // Validate inputs
+        validateCreateGpuCardParams(deviceId, deviceName, name, vendorName, vendorId);
+
+        GpuCardVO gpuCard = new GpuCardVO(deviceId, deviceName, name, vendorName, vendorId);
+        gpuCard = gpuCardDao.persist(gpuCard);
+
+        // Create passthrough vGPU profile with optional display parameters
+        VgpuProfileVO passthroughProfile = new VgpuProfileVO("passthrough", "passthrough", gpuCard.getId(), 1L);
+        passthroughProfile.setVideoRam(videoRam);
+        vgpuProfileDao.persist(passthroughProfile);
+
+        return gpuCard;
+    }
+
+    private void validateCreateGpuCardParams(String deviceId, String deviceName, String name, String vendorName, String vendorId) {
         if (StringUtils.isBlank(deviceId)) {
             throw new InvalidParameterValueException("Device ID cannot be blank");
+        } else if (!deviceId.matches("^[a-zA-Z0-9]+$")) {
+            throw new InvalidParameterValueException("Device ID must be alphanumeric and in hexadecimal format");
         }
         if (StringUtils.isBlank(deviceName)) {
             throw new InvalidParameterValueException("Device name cannot be blank");
@@ -186,6 +202,8 @@ public class GpuServiceImpl extends ManagerBase implements GpuService, Pluggable
         }
         if (StringUtils.isBlank(vendorId)) {
             throw new InvalidParameterValueException("Vendor ID cannot be blank");
+        } else if (!vendorId.matches("^[a-zA-Z0-9]+$")) {
+            throw new InvalidParameterValueException("Vendor ID must be alphanumeric and in hexadecimal format");
         }
 
         // Check if a GPU card with the same vendor ID and device ID already exists
@@ -194,17 +212,8 @@ public class GpuServiceImpl extends ManagerBase implements GpuService, Pluggable
             throw new InvalidParameterValueException(
                     String.format("GPU card with vendor ID %s and device ID %s already exists", vendorId, deviceId));
         }
-
-        GpuCardVO gpuCard = new GpuCardVO(deviceId, deviceName, name, vendorName, vendorId);
-        gpuCard = gpuCardDao.persist(gpuCard);
-
-        // Create passthrough vGPU profile with optional display parameters
-        VgpuProfileVO passthroughProfile = new VgpuProfileVO("passthrough", "passthrough", gpuCard.getId(), 1L);
-        passthroughProfile.setVideoRam(videoRam);
-        vgpuProfileDao.persist(passthroughProfile);
-
-        return gpuCard;
     }
+
 
     @Override
     @DB
@@ -251,6 +260,10 @@ public class GpuServiceImpl extends ManagerBase implements GpuService, Pluggable
             throw new InvalidParameterValueException(
                     "Cannot delete GPU card " + gpuCard + " as it is in use by one or more GPU devices");
         }
+
+        // delete gpu profiles associated with this GPU card
+        int rowsRemoved = vgpuProfileDao.removeByCardId(id);
+        logger.info("Removed {} vGPU profiles associated with GPU card {}", rowsRemoved, gpuCard);
 
         return gpuCardDao.remove(id);
     }
@@ -637,9 +650,18 @@ public class GpuServiceImpl extends ManagerBase implements GpuService, Pluggable
     }
 
     @Override
-    public void deallocateGpuDevicesForVmOnHost(long vmId) {
+    public void deallocateAllGpuDevicesForVm(long vmId) {
         List<GpuDeviceVO> devices = gpuDeviceDao.listByVmId(vmId);
+        deallocateGpuDevices(devices);
+    }
 
+    @Override
+    public void deallocateGpuDevicesForVmOnHost(long vmId, long hostId) {
+        List<GpuDeviceVO> devices = gpuDeviceDao.listByHostAndVm(hostId, vmId);
+        deallocateGpuDevices(devices);
+    }
+
+    private void deallocateGpuDevices(List<GpuDeviceVO> devices) {
         if (CollectionUtils.isNotEmpty(devices)) {
             for (GpuDeviceVO device : devices) {
                 device.setState(GpuDevice.State.Free);
@@ -682,7 +704,7 @@ public class GpuServiceImpl extends ManagerBase implements GpuService, Pluggable
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
                 // Deallocate existing GPU devices for the VM on the host
-                deallocateGpuDevicesForVmOnHost(vmId);
+                deallocateAllGpuDevicesForVm(vmId);
 
                 // Allocate new GPU devices to the VM on the host
                 for (VgpuTypesInfo gpuDevice : gpuDevices) {
@@ -741,13 +763,15 @@ public class GpuServiceImpl extends ManagerBase implements GpuService, Pluggable
 
     @Override
     @DB
-    public GPUDeviceTO getGPUDevice(VirtualMachine vm, VgpuProfile vgpuProfile, int gpuCount) {
+    public GPUDeviceTO getGPUDevice(VirtualMachine vm, long hostId, VgpuProfile vgpuProfile, int gpuCount) {
         return Transaction.execute(new TransactionCallback<GPUDeviceTO>() {
             @Override
             public GPUDeviceTO doInTransaction(TransactionStatus status) {
-                deallocateGpuDevicesForVmOnHost(vm.getId());
+                if (vm.getHostId() == hostId) {
+                    deallocateAllGpuDevicesForVm(vm.getId());
+                }
 
-                List<GpuDeviceVO> availableGpuDevices = gpuDeviceDao.listDevicesForAllocation(vm.getHostId(),
+                List<GpuDeviceVO> availableGpuDevices = gpuDeviceDao.listDevicesForAllocation(hostId,
                         vgpuProfile.getId());
 
                 if (availableGpuDevices.size() < gpuCount) {
@@ -783,7 +807,7 @@ public class GpuServiceImpl extends ManagerBase implements GpuService, Pluggable
                 }
 
                 HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = getGpuGroupDetailsFromGpuDevicesOnHost(
-                        hostDao.findById(vm.getHostId()));
+                        hostDao.findById(hostId));
                 return new GPUDeviceTO(gpuCard.getName(), vgpuProfile.getName(), gpuCount, groupDetails, vgpuInfoList);
             }
         });
@@ -1041,7 +1065,7 @@ public class GpuServiceImpl extends ManagerBase implements GpuService, Pluggable
                 device.setState(GpuDevice.State.Free);
             } else {
                 VMInstanceVO vm = vmInstanceDao.findById(device.getVmId());
-                if (vm != null) {
+                if (vm != null &&  vm.getState().equals(VirtualMachine.State.Stopped)) {
                     device.setState(GpuDevice.State.Allocated);
                 } else {
                     logger.warn("VM with ID {} not found for GPU device {}. Allocated to a removed VM. Setting state to Free.",

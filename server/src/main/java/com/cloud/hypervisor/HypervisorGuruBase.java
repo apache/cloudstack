@@ -331,7 +331,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         // Set GPU details
         ServiceOfferingDetailsVO offeringDetail = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString());
         if (offering.getVgpuProfileId() != null || offeringDetail != null) {
-                to.setGpuDevice(getGpuDevice(offering, offeringDetail, vm));
+                to.setGpuDevice(getGpuDevice(offering, offeringDetail, vm, vmProfile.getHostId()));
         }
 
         // Workaround to make sure the TO has the UUID we need for Niciri integration
@@ -349,12 +349,12 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         return to;
     }
 
-    private GPUDeviceTO getGpuDevice(ServiceOffering offering, ServiceOfferingDetailsVO offeringDetail, VirtualMachine vm) {
+    private GPUDeviceTO getGpuDevice(ServiceOffering offering, ServiceOfferingDetailsVO offeringDetail, VirtualMachine vm, long hostId) {
         if (offering.getVgpuProfileId() != null) {
             VgpuProfileVO vgpuProfile = vgpuProfileDao.findById(offering.getVgpuProfileId());
             if (vgpuProfile != null) {
                 int gpuCount = offering.getGpuCount() != null ? offering.getGpuCount() : 1;
-                return _resourceMgr.getGPUDevice(vm, vgpuProfile, gpuCount);
+                return _resourceMgr.getGPUDevice(vm, hostId, vgpuProfile, gpuCount);
             }
         } else if (offeringDetail != null) {
             ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.pciDevice.toString());

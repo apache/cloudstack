@@ -238,11 +238,11 @@ CREATE TABLE IF NOT EXISTS `cloud`.`gui_themes_details` (
 CREATE TABLE IF NOT EXISTS `cloud`.`gpu_card` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(40) NOT NULL UNIQUE,
-  `device_id` varchar(255) NOT NULL COMMENT 'device id of the GPU card',
+  `device_id` varchar(4) NOT NULL COMMENT 'device id of the GPU card',
   `device_name` varchar(255) NOT NULL COMMENT 'device name of the GPU card',
   `name` varchar(255) NOT NULL COMMENT 'name of the GPU card',
   `vendor_name` varchar(255) NOT NULL COMMENT 'vendor name of the GPU card',
-  `vendor_id` varchar(255) NOT NULL COMMENT 'vendor id of the GPU card',
+  `vendor_id` varchar(4) NOT NULL COMMENT 'vendor id of the GPU card',
   `created` datetime NOT NULL COMMENT 'date created',
   PRIMARY KEY (`id`),
   UNIQUE KEY (`vendor_id`, `device_id`)

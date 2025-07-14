@@ -713,21 +713,21 @@ public class GpuServiceImplTest {
     }
 
     @Test
-    public void testDeallocateGpuDevicesForVmOnHost_Success() {
+    public void testDeallocateAllGpuDevicesForVm_Success() {
         List<GpuDeviceVO> devices = List.of(mockGpuDevice);
         when(gpuDeviceDao.listByVmId(VM_ID)).thenReturn(devices);
         when(gpuDeviceDao.persist(any(GpuDeviceVO.class))).thenReturn(mockGpuDevice);
 
-        gpuService.deallocateGpuDevicesForVmOnHost(VM_ID);
+        gpuService.deallocateAllGpuDevicesForVm(VM_ID);
 
         verify(gpuDeviceDao).persist(any(GpuDeviceVO.class));
     }
 
     @Test
-    public void testDeallocateGpuDevicesForVmOnHost_NoDevices() {
+    public void testDeallocateAllGpuDevicesForVmOnHost_NoDevices() {
         when(gpuDeviceDao.listByVmId(VM_ID)).thenReturn(new ArrayList<>());
 
-        gpuService.deallocateGpuDevicesForVmOnHost(VM_ID);
+        gpuService.deallocateAllGpuDevicesForVm(VM_ID);
 
         verify(gpuDeviceDao, never()).persist(any(GpuDeviceVO.class));
     }
@@ -930,7 +930,7 @@ public class GpuServiceImplTest {
                 return callback.doInTransaction(null);
             });
 
-            GPUDeviceTO result = gpuService.getGPUDevice(vm, vgpuProfile, 1);
+            GPUDeviceTO result = gpuService.getGPUDevice(vm, HOST_ID, vgpuProfile, 1);
 
             assertNotNull(result);
         }
@@ -953,7 +953,7 @@ public class GpuServiceImplTest {
                 return callback.doInTransaction(null);
             });
 
-            gpuService.getGPUDevice(vm, vgpuProfile, 2);
+            gpuService.getGPUDevice(vm, HOST_ID, vgpuProfile, 2);
         }
     }
 
