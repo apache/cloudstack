@@ -31,7 +31,7 @@ import org.apache.cloudstack.gui.theme.GuiThemeService;
 import javax.inject.Inject;
 
 @APICommand(name = "listGuiThemes", description = "Lists GUI themes.", responseObject = GuiThemeResponse.class, entityType = {GuiTheme.class},
-        since = "4.20.0.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin, RoleType.User, RoleType.DomainAdmin,
+        since = "4.21.0.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin, RoleType.User, RoleType.DomainAdmin,
         RoleType.ResourceAdmin})
 public class ListGuiThemesCmd extends BaseListCmd {
 

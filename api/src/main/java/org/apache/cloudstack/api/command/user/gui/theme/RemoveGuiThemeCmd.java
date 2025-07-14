@@ -30,7 +30,7 @@ import org.apache.cloudstack.gui.theme.GuiThemeService;
 import javax.inject.Inject;
 
 @APICommand(name = "removeGuiTheme", description = "Removes an existing GUI theme.", responseObject = GuiThemeResponse.class, entityType = {GuiTheme.class},
-        since = "4.20.0.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
+        since = "4.21.0.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
 public class RemoveGuiThemeCmd extends BaseCmd {
 
     @Inject
