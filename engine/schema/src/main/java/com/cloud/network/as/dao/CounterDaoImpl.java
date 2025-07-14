@@ -50,10 +50,10 @@ public class CounterDaoImpl extends GenericDaoBase<CounterVO, Long> implements C
     }
 
     @Override
-    public CounterVO findByNameProviderSource(String name, String source, String provider) {
+    public CounterVO findByNameProviderValue(String name, String value, String provider) {
         SearchCriteria<CounterVO> sc = CounterNameSearch.create();
         sc.setParameters("name", name);
-        sc.setParameters("source", source);
+        sc.setParameters("value", value);
         sc.setParameters("provider", provider);
         return findOneBy(sc);
     }

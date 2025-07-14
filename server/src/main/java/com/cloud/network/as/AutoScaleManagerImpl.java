@@ -1452,7 +1452,8 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     @DB
     public Counter createCounter(CreateCounterCmd cmd) {
         String source = cmd.getSource().toUpperCase();
-    String name = cmd.getName();
+        String name = cmd.getName();
+        String value = cmd.getValue();
         Counter.Source src;
         // Validate Source
         try {
@@ -1469,12 +1470,12 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
         CounterVO counter = null;
 
-        CounterVO existingCounter = counterDao.findByNameProviderSource(name, source, provider.getName());
+        CounterVO existingCounter = counterDao.findByNameProviderValue(name, value, provider.getName());
         if (existingCounter != null) {
             throw new InvalidParameterValueException("Counter with name " + name + " already exists");
         }
         logger.debug("Adding Counter " + name);
-        counter = counterDao.persist(new CounterVO(src, name, cmd.getValue(), provider));
+        counter = counterDao.persist(new CounterVO(src, name, value, provider));
 
         CallContext.current().setEventDetails(" Id: " + counter.getId() + " Name: " + name);
         return counter;
