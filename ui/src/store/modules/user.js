@@ -23,7 +23,7 @@ import semver from 'semver'
 import { vueProps } from '@/vue-app'
 import router from '@/router'
 import store from '@/store'
-import { oauthlogin, login, logout, api } from '@/api'
+import { oauthlogin, login, logout, getAPI } from '@/api'
 import { i18n } from '@/locales'
 import { axios } from '../../utils/request'
 import { getParsedVersion } from '@/utils/util'
@@ -331,7 +331,7 @@ const user = {
           commit('SET_MS_ID', msId)
 
           // Ensuring we get the user info so that store.getters.user is never empty when the page is freshly loaded
-          api('listUsers', { id: Cookies.get('userid'), listall: true }).then(response => {
+          getAPI('listUsers', { id: Cookies.get('userid'), listall: true }).then(response => {
             const result = response.listusersresponse.user[0]
             commit('SET_INFO', result)
             commit('SET_NAME', result.firstname + ' ' + result.lastname)
@@ -342,13 +342,13 @@ const user = {
           })
         } else if (store.getters.loginFlag) {
           const hide = message.loading(i18n.global.t('message.discovering.feature'), 0)
-          api('listZones').then(json => {
+          getAPI('listZones').then(json => {
             const zones = json.listzonesresponse.zone || []
             commit('SET_ZONES', zones)
           }).catch(error => {
             reject(error)
           })
-          api('listApis').then(response => {
+          getAPI('listApis').then(response => {
             const apis = {}
             const apiList = response.listapisresponse.api
             for (var idx = 0; idx < apiList.length; idx++) {
@@ -375,7 +375,7 @@ const user = {
             reject(error)
           })
 
-          api('listNetworks', { restartrequired: true, forvpc: false }).then(response => {
+          getAPI('listNetworks', { restartrequired: true, forvpc: false }).then(response => {
             if (response.listnetworksresponse.count > 0) {
               store.dispatch('AddHeaderNotice', {
                 key: 'NETWORK_RESTART_REQUIRED',
@@ -389,7 +389,7 @@ const user = {
             }
           }).catch(ignored => {})
 
-          api('listVPCs', { restartrequired: true }).then(response => {
+          getAPI('listVPCs', { restartrequired: true }).then(response => {
             if (response.listvpcsresponse.count > 0) {
               store.dispatch('AddHeaderNotice', {
                 key: 'VPC_RESTART_REQUIRED',
@@ -404,16 +404,17 @@ const user = {
           }).catch(ignored => {})
         }
 
-        api('listUsers', { id: Cookies.get('userid') }).then(response => {
+        getAPI('listUsers', { id: Cookies.get('userid'), showicon: true }).then(response => {
           const result = response.listusersresponse.user[0]
           commit('SET_INFO', result)
           commit('SET_NAME', result.firstname + ' ' + result.lastname)
+          commit('SET_AVATAR', result.icon?.base64image || '')
           store.dispatch('SetCsLatestVersion', result.rolename)
         }).catch(error => {
           reject(error)
         })
 
-        api(
+        getAPI(
           'listNetworkServiceProviders',
           { name: 'SecurityGroupProvider', state: 'Enabled' }
         ).then(response => {
@@ -422,7 +423,7 @@ const user = {
         }).catch(ignored => {
         })
 
-        api('listCapabilities').then(response => {
+        getAPI('listCapabilities').then(response => {
           const result = response.listcapabilitiesresponse.capability
           commit('SET_FEATURES', result)
           if (result && result.defaultuipagesize) {
@@ -438,14 +439,14 @@ const user = {
           reject(error)
         })
 
-        api('listLdapConfigurations').then(response => {
+        getAPI('listLdapConfigurations').then(response => {
           const ldapEnable = (response.ldapconfigurationresponse.count > 0)
           commit('SET_LDAP', ldapEnable)
         }).catch(error => {
           reject(error)
         })
 
-        api('cloudianIsEnabled').then(response => {
+        getAPI('cloudianIsEnabled').then(response => {
           const cloudian = response.cloudianisenabledresponse.cloudianisenabled || {}
           commit('SET_CLOUDIAN', cloudian)
         }).catch(ignored => {
@@ -518,7 +519,7 @@ const user = {
     },
     ProjectView ({ commit }, projectid) {
       return new Promise((resolve, reject) => {
-        api('listApis', { projectid: projectid }).then(response => {
+        getAPI('listApis', { projectid: projectid }).then(response => {
           const apis = {}
           const apiList = response.listapisresponse.api
           for (var idx = 0; idx < apiList.length; idx++) {
@@ -543,7 +544,7 @@ const user = {
     },
     RefreshFeatures ({ commit }) {
       return new Promise((resolve, reject) => {
-        api('listCapabilities').then(response => {
+        getAPI('listCapabilities').then(response => {
           const result = response.listcapabilitiesresponse.capability
           resolve(result)
           commit('SET_FEATURES', result)
@@ -551,7 +552,7 @@ const user = {
           reject(error)
         })
 
-        api('listConfigurations', { name: 'hypervisor.custom.display.name' }).then(json => {
+        getAPI('listConfigurations', { name: 'hypervisor.custom.display.name' }).then(json => {
           if (json.listconfigurationsresponse.configuration !== null) {
             const config = json.listconfigurationsresponse.configuration[0]
             commit('SET_CUSTOM_HYPERVISOR_NAME', config.value)
@@ -563,7 +564,7 @@ const user = {
     },
     UpdateConfiguration ({ commit }) {
       return new Promise((resolve, reject) => {
-        api('listLdapConfigurations').then(response => {
+        getAPI('listLdapConfigurations').then(response => {
           const ldapEnable = (response.ldapconfigurationresponse.count > 0)
           commit('SET_LDAP', ldapEnable)
         }).catch(error => {

@@ -16,13 +16,19 @@
 // under the License.
 package com.cloud.kubernetes.cluster;
 
+import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.CONTROL;
+import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.ETCD;
+import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.WORKER;
+import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.DEFAULT;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 import static com.cloud.vm.UserVmManager.AllowUserExpungeRecoverVm;
 
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -41,29 +47,81 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.bgp.BGPService;
+import com.cloud.dc.DedicatedResourceVO;
+import com.cloud.dc.dao.DedicatedResourceDao;
+import com.cloud.exception.ManagementServerException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.host.Host;
+import com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType;
+import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterRemoveWorker;
+import com.cloud.network.dao.NsxProviderDao;
+import com.cloud.network.element.NsxProviderVO;
+import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterAddWorker;
+import com.cloud.network.rules.PortForwardingRuleVO;
+import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.template.TemplateApiService;
+import com.cloud.user.UserDataVO;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.UserDataDao;
 import com.cloud.uservm.UserVm;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmService;
+import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.acl.RolePermissionEntity;
+import org.apache.cloudstack.acl.RoleService;
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.acl.Rule;
 import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.affinity.AffinityGroupVO;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.kubernetes.cluster.AddNodesToKubernetesClusterCmd;
+import org.apache.cloudstack.api.command.user.address.AssociateIPAddrCmd;
+import org.apache.cloudstack.api.command.user.address.DisassociateIPAddrCmd;
+import org.apache.cloudstack.api.command.user.address.ListPublicIpAddressesCmd;
+import org.apache.cloudstack.api.command.user.firewall.CreateFirewallRuleCmd;
+import org.apache.cloudstack.api.command.user.firewall.DeleteFirewallRuleCmd;
+import org.apache.cloudstack.api.command.user.firewall.ListFirewallRulesCmd;
+import org.apache.cloudstack.api.command.user.firewall.UpdateFirewallRuleCmd;
+import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.AddVirtualMachinesToKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.CreateKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.DeleteKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.GetKubernetesClusterConfigCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.ListKubernetesClustersCmd;
+import org.apache.cloudstack.api.command.user.kubernetes.cluster.RemoveNodesFromKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.RemoveVirtualMachinesFromKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.ScaleKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.StartKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.StopKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.UpgradeKubernetesClusterCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.AssignToLoadBalancerRuleCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerRuleCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.DeleteLoadBalancerRuleCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.ListLoadBalancerRuleInstancesCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.ListLoadBalancerRulesCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.RemoveFromLoadBalancerRuleCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.UpdateLoadBalancerRuleCmd;
+import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
+import org.apache.cloudstack.api.command.user.network.DeleteNetworkACLCmd;
+import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
+import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
+import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.response.KubernetesClusterConfigResponse;
 import org.apache.cloudstack.api.response.KubernetesClusterResponse;
+import org.apache.cloudstack.api.response.KubernetesUserVmResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.RemoveVirtualMachinesFromKubernetesClusterResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
@@ -72,9 +130,11 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.commons.beanutils.BeanUtils;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -101,7 +161,6 @@ import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
-import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
@@ -148,6 +207,8 @@ import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project;
+import com.cloud.projects.ProjectAccount;
+import com.cloud.projects.ProjectManager;
 import com.cloud.resource.ResourceManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -156,6 +217,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
+import com.cloud.user.AccountVO;
 import com.cloud.user.SSHKeyPairVO;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
@@ -164,6 +226,7 @@ import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -187,6 +250,32 @@ import org.apache.logging.log4j.Level;
 public class KubernetesClusterManagerImpl extends ManagerBase implements KubernetesClusterService {
 
     private static final String DEFAULT_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_NAME = "DefaultNetworkOfferingforKubernetesService";
+    private static final List<Class<?>> PROJECT_KUBERNETES_ACCOUNT_ROLE_ALLOWED_APIS = Arrays.asList(
+            QueryAsyncJobResultCmd.class,
+            ListVMsCmd.class,
+            ListNetworksCmd.class,
+            ListPublicIpAddressesCmd.class,
+            AssociateIPAddrCmd.class,
+            DisassociateIPAddrCmd.class,
+            ListLoadBalancerRulesCmd.class,
+            CreateLoadBalancerRuleCmd.class,
+            UpdateLoadBalancerRuleCmd.class,
+            DeleteLoadBalancerRuleCmd.class,
+            AssignToLoadBalancerRuleCmd.class,
+            RemoveFromLoadBalancerRuleCmd.class,
+            ListLoadBalancerRuleInstancesCmd.class,
+            ListFirewallRulesCmd.class,
+            CreateFirewallRuleCmd.class,
+            UpdateFirewallRuleCmd.class,
+            DeleteFirewallRuleCmd.class,
+            ListNetworkACLsCmd.class,
+            CreateNetworkACLCmd.class,
+            DeleteNetworkACLCmd.class,
+            ListKubernetesClustersCmd.class,
+            ScaleKubernetesClusterCmd.class
+    );
+    private static final String PROJECT_KUBERNETES_ACCOUNT_FIRST_NAME = "Kubernetes";
+    private static final String PROJECT_KUBERNETES_ACCOUNT_LAST_NAME = "Service User";
     private static final String DEFAULT_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_DISPLAY_TEXT = "Network Offering used for CloudStack Kubernetes service";
     private static final String DEFAULT_NSX_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_NAME = "DefaultNSXNetworkOfferingforKubernetesService";
     private static final String DEFAULT_NSX_VPC_TIER_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_NAME = "DefaultNSXVPCNetworkOfferingforKubernetesService";
@@ -194,6 +283,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     private static final String DEFAULT_NSX_VPC_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_DISPLAY_TEXT = "Network Offering for NSX CloudStack Kubernetes service on VPC";
 
     protected StateMachine2<KubernetesCluster.State, KubernetesCluster.Event, KubernetesCluster> _stateMachine = KubernetesCluster.State.getStateMachine();
+
+    protected final static List<String> CLUSTER_NODES_TYPES_LIST = Arrays.asList(WORKER.name(), CONTROL.name(), ETCD.name());
 
     ScheduledExecutorService _gcExecutor;
     ScheduledExecutorService _stateScanner;
@@ -217,17 +308,27 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     @Inject
     protected HostDao hostDao;
     @Inject
+    protected AffinityGroupDao affinityGroupDao;
+    @Inject
     protected ServiceOfferingDao serviceOfferingDao;
+    @Inject
+    protected UserDataDao userDataDao;
     @Inject
     protected VMTemplateDao templateDao;
     @Inject
     protected TemplateJoinDao templateJoinDao;
+    @Inject
+    protected DedicatedResourceDao dedicatedResourceDao;
+    @Inject
+    protected AccountDao accountDao;
     @Inject
     protected AccountService accountService;
     @Inject
     protected AccountManager accountManager;
     @Inject
     protected UserDao userDao;
+    @Inject
+    protected UserVmDetailsDao userVmDetailsDao;
     @Inject
     protected VMInstanceDao vmInstanceDao;
     @Inject
@@ -264,11 +365,24 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     public SecurityGroupService securityGroupService;
     @Inject
     public NetworkHelper networkHelper;
-
+    @Inject
+    private NsxProviderDao nsxProviderDao;
+    @Inject
+    private NicDao nicDao;
     @Inject
     private UserVmService userVmService;
     @Inject
+    private TemplateApiService templateService;
+    @Inject
+    private PortForwardingRulesDao pfRuleDao;
+    @Inject
     RoutedIpv4Manager routedIpv4Manager;
+    @Inject
+    private BGPService bgpService;
+    @Inject
+    public ProjectManager projectManager;
+    @Inject
+    RoleService roleService;
 
     private void logMessage(final Level logLevel, final String message, final Exception e) {
         if (logLevel == Level.WARN) {
@@ -371,16 +485,32 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         return null;
     }
 
-    public VMTemplateVO getKubernetesServiceTemplate(DataCenter dataCenter, Hypervisor.HypervisorType hypervisorType) {
+    public VMTemplateVO getKubernetesServiceTemplate(DataCenter dataCenter, Hypervisor.HypervisorType hypervisorType, Map<String, Long> templateNodeTypeMap, KubernetesClusterNodeType nodeType) {
         VMTemplateVO template = templateDao.findSystemVMReadyTemplate(dataCenter.getId(), hypervisorType);
         if (DataCenter.Type.Edge.equals(dataCenter.getType()) && template != null && !template.isDirectDownload()) {
             logger.debug(String.format("Template %s can not be used for edge zone %s", template, dataCenter));
             template = templateDao.findRoutingTemplate(hypervisorType, networkHelper.getHypervisorRouterTemplateConfigMap().get(hypervisorType).valueIn(dataCenter.getId()));
         }
-        if (template == null) {
-            throw new CloudRuntimeException("Not able to find the System or Routing template in ready state for the zone " + dataCenter.getUuid());
+        switch (nodeType) {
+            case CONTROL:
+            case ETCD:
+            case WORKER:
+                VMTemplateVO nodeTemplate = Objects.nonNull(templateNodeTypeMap) ? templateDao.findById(templateNodeTypeMap.getOrDefault(nodeType.name(), 0L)) : template;
+                template = Objects.nonNull(nodeTemplate) ? nodeTemplate : template;
+                if (Objects.isNull(template)) {
+                    throwDefaultCksTemplateNotFound(dataCenter.getUuid());
+                }
+                return template;
+            default:
+                if (Objects.isNull(template)) {
+                    throwDefaultCksTemplateNotFound(dataCenter.getUuid());
+                }
+                return template;
         }
-        return  template;
+    }
+
+    public void throwDefaultCksTemplateNotFound(String datacenterId) {
+        throw new CloudRuntimeException("Not able to find the System or Routing template in ready state for the zone " + datacenterId);
     }
 
     protected void validateIsolatedNetworkIpRules(long ipId, FirewallRule.Purpose purpose, Network network, int clusterTotalNodeCount) {
@@ -455,7 +585,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         validateIsolatedNetwork(network, clusterTotalNodeCount);
     }
 
-    private boolean validateServiceOffering(final ServiceOffering serviceOffering, final KubernetesSupportedVersion version) {
+    protected void validateServiceOffering(final ServiceOffering serviceOffering, final KubernetesSupportedVersion version) throws InvalidParameterValueException {
         if (serviceOffering.isDynamic()) {
             throw new InvalidParameterValueException(String.format("Custom service offerings are not supported for creating clusters, service offering ID: %s", serviceOffering.getUuid()));
         }
@@ -468,7 +598,6 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (serviceOffering.getRamSize() < version.getMinimumRamSize()) {
             throw new InvalidParameterValueException(String.format("Kubernetes cluster cannot be created with service offering ID: %s, associated Kubernetes version ID: %s needs minimum %d MB RAM", serviceOffering.getUuid(), version.getUuid(), version.getMinimumRamSize()));
         }
-        return true;
     }
 
     private void validateDockerRegistryParams(final String dockerRegistryUserName,
@@ -496,16 +625,46 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
     }
 
-    private DeployDestination plan(final long nodesCount, final DataCenter zone, final ServiceOffering offering) throws InsufficientServerCapacityException {
+    public Long getExplicitAffinityGroup(Long domainId) {
+        AffinityGroupVO groupVO = affinityGroupDao.findDomainLevelGroupByType(domainId, "ExplicitDedication");
+        if (Objects.nonNull(groupVO)) {
+            return groupVO.getId();
+        }
+        return null;
+    }
+
+    private DeployDestination plan(final long nodesCount, final DataCenter zone, final ServiceOffering offering,
+                                   final Long domainId, final Long accountId, Hypervisor.HypervisorType hypervisorType) throws InsufficientServerCapacityException {
         final int cpu_requested = offering.getCpu() * offering.getSpeed();
         final long ram_requested = offering.getRamSize() * 1024L * 1024L;
-        List<HostVO> hosts = resourceManager.listAllHostsInOneZoneByType(Type.Routing, zone.getId());
+        boolean useDedicatedHosts = false;
+        Long group = getExplicitAffinityGroup(domainId);
+        List<HostVO> hosts = new ArrayList<>();
+        if (Objects.nonNull(group)) {
+            List<DedicatedResourceVO> dedicatedHosts = new ArrayList<>();
+            if (Objects.nonNull(accountId)) {
+                dedicatedHosts = dedicatedResourceDao.listByAccountId(accountId);
+            } else if (Objects.nonNull(domainId)) {
+                dedicatedHosts = dedicatedResourceDao.listByDomainId(domainId);
+            }
+            for (DedicatedResourceVO dedicatedHost : dedicatedHosts) {
+                hosts.add(hostDao.findById(dedicatedHost.getHostId()));
+                useDedicatedHosts = true;
+            }
+        }
+        if (hosts.isEmpty()) {
+            hosts = resourceManager.listAllHostsInOneZoneByType(Host.Type.Routing, zone.getId());
+        }
+        if (hypervisorType != null) {
+            hosts = hosts.stream().filter(x -> x.getHypervisorType() == hypervisorType).collect(Collectors.toList());
+        }
         final Map<String, Pair<HostVO, Integer>> hosts_with_resevered_capacity = new ConcurrentHashMap<String, Pair<HostVO, Integer>>();
         for (HostVO h : hosts) {
             hosts_with_resevered_capacity.put(h.getUuid(), new Pair<HostVO, Integer>(h, 0));
         }
         boolean suitable_host_found = false;
         Cluster planCluster = null;
+        HostVO suitableHost = null;
         for (int i = 1; i <= nodesCount; i++) {
             suitable_host_found = false;
             for (Map.Entry<String, Pair<HostVO, Integer>> hostEntry : hosts_with_resevered_capacity.entrySet()) {
@@ -529,6 +688,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                     logger.debug("Found host {} to have enough capacity, CPU={} RAM={}", hostVO, cpu_requested * reserved, toHumanReadableSize(ram_requested * reserved));
                     hostEntry.setValue(new Pair<HostVO, Integer>(hostVO, reserved));
                     suitable_host_found = true;
+                    suitableHost = hostVO;
                     planCluster = cluster;
                     break;
                 }
@@ -544,12 +704,43 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             if (logger.isInfoEnabled()) {
                 logger.info("Suitable hosts found in datacenter: {}, creating deployment destination", zone);
             }
+            if (useDedicatedHosts) {
+                planCluster = clusterDao.findById(suitableHost.getClusterId());
+                return new DeployDestination(zone, null, planCluster, suitableHost);
+            }
             return new DeployDestination(zone, null, planCluster, null);
         }
         String msg = String.format("Cannot find enough capacity for Kubernetes cluster(requested cpu=%d memory=%s) with offering: %s",
                 cpu_requested * nodesCount, toHumanReadableSize(ram_requested * nodesCount), offering);
         logger.warn(msg);
         throw new InsufficientServerCapacityException(msg, DataCenter.class, zone.getId());
+    }
+
+    protected void setNodeTypeServiceOfferingResponse(KubernetesClusterResponse response,
+                                                      KubernetesClusterNodeType nodeType,
+                                                      Long offeringId) {
+        if (offeringId == null) {
+            return;
+        }
+        ServiceOfferingVO offering = serviceOfferingDao.findById(offeringId);
+        if (offering != null) {
+            setServiceOfferingResponseForNodeType(response, offering, nodeType);
+        }
+    }
+
+    protected void setServiceOfferingResponseForNodeType(KubernetesClusterResponse response,
+                                                         ServiceOfferingVO offering,
+                                                         KubernetesClusterNodeType nodeType) {
+        if (CONTROL == nodeType) {
+            response.setControlOfferingId(offering.getUuid());
+            response.setControlOfferingName(offering.getName());
+        } else if (WORKER == nodeType) {
+            response.setWorkerOfferingId(offering.getUuid());
+            response.setWorkerOfferingName(offering.getName());
+        } else if (ETCD == nodeType) {
+            response.setEtcdOfferingId(offering.getUuid());
+            response.setEtcdOfferingName(offering.getName());
+        }
     }
 
     @Override
@@ -574,6 +765,20 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (offering != null) {
             response.setServiceOfferingId(offering.getUuid());
             response.setServiceOfferingName(offering.getName());
+        }
+
+        Long cniConfigId = kubernetesCluster.getCniConfigId();
+        if (Objects.nonNull(cniConfigId)) {
+            UserDataVO cniConfig = userDataDao.findById(cniConfigId);
+            response.setCniConfigId(cniConfig.getUuid());
+            response.setCniConfigName(cniConfig.getName());
+        }
+        setNodeTypeServiceOfferingResponse(response, WORKER, kubernetesCluster.getWorkerNodeServiceOfferingId());
+        setNodeTypeServiceOfferingResponse(response, CONTROL, kubernetesCluster.getControlNodeServiceOfferingId());
+        setNodeTypeServiceOfferingResponse(response, ETCD, kubernetesCluster.getEtcdNodeServiceOfferingId());
+
+        if (kubernetesCluster.getEtcdNodeCount() != null) {
+            response.setEtcdNodes(kubernetesCluster.getEtcdNodeCount());
         }
         KubernetesSupportedVersionVO version = kubernetesSupportedVersionDao.findById(kubernetesCluster.getKubernetesVersionId());
         if (version != null) {
@@ -610,7 +815,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             }
         }
 
-        List<UserVmResponse> vmResponses = new ArrayList<UserVmResponse>();
+        List<KubernetesUserVmResponse> vmResponses = new ArrayList<>();
         List<KubernetesClusterVmMapVO> vmList = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
         ResponseView respView = ResponseView.Restricted;
         Account caller = CallContext.current().getCallingAccount();
@@ -624,9 +829,31 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 if (userVM != null) {
                     UserVmResponse vmResponse = ApiDBUtils.newUserVmResponse(respView, responseName, userVM,
                         EnumSet.of(VMDetails.nics), caller);
-                    vmResponses.add(vmResponse);
+                    KubernetesUserVmResponse kubernetesUserVmResponse = new KubernetesUserVmResponse();
+                    try {
+                        BeanUtils.copyProperties(kubernetesUserVmResponse, vmResponse);
+                    } catch (IllegalAccessException | InvocationTargetException e) {
+                        throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to generate zone metrics response");
+                    }
+                    kubernetesUserVmResponse.setExternalNode(vmMapVO.isExternalNode());
+                    kubernetesUserVmResponse.setEtcdNode(vmMapVO.isEtcdNode());
+                    kubernetesUserVmResponse.setNodeVersion(vmMapVO.getNodeVersion());
+                    vmResponses.add(kubernetesUserVmResponse);
                 }
             }
+            List<Long> etcdNodeIds = vmList.stream().filter(KubernetesClusterVmMapVO::isEtcdNode).map(KubernetesClusterVmMapVO::getVmId).collect(Collectors.toList());
+            List<Long> etcdIpIds = new ArrayList<>();
+            Map<String, String> etcdIps = new HashMap<>();
+            int etcdNodeSshPort = KubernetesClusterService.KubernetesEtcdNodeStartPort.value();
+            etcdNodeIds.forEach(id -> {
+               etcdIpIds.addAll(pfRuleDao.listByVm(id).stream().filter(rule -> rule.getSourcePortStart() == etcdNodeSshPort)
+                       .map(PortForwardingRuleVO::getSourceIpAddressId).collect(Collectors.toList()));
+            });
+            etcdIpIds.forEach(id -> {
+                IPAddressVO ipAddress = ipAddressDao.findById(id);
+                etcdIps.put(ipAddress.getUuid(), ipAddress.getAddress().addr());
+            });
+            response.setEtcdIps(etcdIps);
         }
         response.setHasAnnotation(annotationDao.hasAnnotations(kubernetesCluster.getUuid(),
                 AnnotationService.EntityType.KUBERNETES_CLUSTER.name(), accountService.isRootAdmin(caller.getId())));
@@ -636,6 +863,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         response.setMaxSize(kubernetesCluster.getMaxSize());
         response.setClusterType(kubernetesCluster.getClusterType());
         response.setCreated(kubernetesCluster.getCreated());
+
         return response;
     }
 
@@ -724,7 +952,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                         BaseCmd.getCommandNameByClass(ScaleKubernetesClusterCmd.class),
                         BaseCmd.getCommandNameByClass(StartKubernetesClusterCmd.class),
                         BaseCmd.getCommandNameByClass(StopKubernetesClusterCmd.class),
-                        BaseCmd.getCommandNameByClass(UpgradeKubernetesClusterCmd.class)
+                        BaseCmd.getCommandNameByClass(UpgradeKubernetesClusterCmd.class),
+                        BaseCmd.getCommandNameByClass(AddNodesToKubernetesClusterCmd.class),
+                        BaseCmd.getCommandNameByClass(RemoveNodesFromKubernetesClusterCmd.class)
                 ).contains(cmdName);
             case ExternalManaged:
                 return Arrays.asList(
@@ -744,7 +974,6 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         final String name = cmd.getName();
         final Long zoneId = cmd.getZoneId();
         final Long kubernetesVersionId = cmd.getKubernetesVersionId();
-        final Long serviceOfferingId = cmd.getServiceOfferingId();
         final Account owner = accountService.getActiveAccountById(cmd.getEntityOwnerId());
         final Long networkId = cmd.getNetworkId();
         final String sshKeyPair = cmd.getSSHKeyPairName();
@@ -755,6 +984,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         final String dockerRegistryUrl = cmd.getDockerRegistryUrl();
         final Long nodeRootDiskSize = cmd.getNodeRootDiskSize();
         final String externalLoadBalancerIpAddress = cmd.getExternalLoadBalancerIpAddress();
+        final Map<String, Long> serviceOfferingNodeTypeMap = cmd.getServiceOfferingNodeTypeMap();
+        final Long defaultServiceOfferingId = cmd.getServiceOfferingId();
 
         if (name == null || name.isEmpty()) {
             throw new InvalidParameterValueException("Invalid name for the Kubernetes cluster name: " + name);
@@ -812,10 +1043,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new InvalidParameterValueException(String.format("ISO associated with version ID: %s is not in Ready state for datacenter ID: %s",  clusterKubernetesVersion.getUuid(), zone.getUuid()));
         }
 
-        ServiceOffering serviceOffering = serviceOfferingDao.findById(serviceOfferingId);
-        if (serviceOffering == null) {
-            throw new InvalidParameterValueException("No service offering with ID: " + serviceOfferingId);
-        }
+        validateServiceOfferingsForNodeTypes(serviceOfferingNodeTypeMap, defaultServiceOfferingId, cmd.getEtcdNodes(), clusterKubernetesVersion);
 
         validateSshKeyPairForKubernetesCreateParameters(sshKeyPair, owner);
 
@@ -823,15 +1051,15 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new InvalidParameterValueException(String.format("Invalid value for %s", ApiConstants.NODE_ROOT_DISK_SIZE));
         }
 
-        if (!validateServiceOffering(serviceOffering, clusterKubernetesVersion)) {
-            throw new InvalidParameterValueException("Given service offering ID: %s is not suitable for Kubernetes cluster");
-        }
-
         validateDockerRegistryParams(dockerRegistryUserName, dockerRegistryPassword, dockerRegistryUrl);
 
         Network network = validateAndGetNetworkForKubernetesCreateParameters(networkId);
 
         if (StringUtils.isNotEmpty(externalLoadBalancerIpAddress)) {
+            NsxProviderVO nsxProviderVO = nsxProviderDao.findByZoneId(zone.getId());
+            if (Objects.nonNull(nsxProviderVO)) {
+                throw new InvalidParameterValueException("External load balancer IP address is not supported on NSX-enabled zones");
+            }
             if (!NetUtils.isValidIp4(externalLoadBalancerIpAddress) && !NetUtils.isValidIp6(externalLoadBalancerIpAddress)) {
                 throw new InvalidParameterValueException("Invalid external load balancer IP address");
             }
@@ -848,8 +1076,40 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
     }
 
+    protected void validateServiceOfferingsForNodeTypes(Map<String, Long> map,
+                                                        Long defaultServiceOfferingId,
+                                                        Long etcdNodes,
+                                                        KubernetesSupportedVersion clusterKubernetesVersion) {
+        for (String key : CLUSTER_NODES_TYPES_LIST) {
+            validateServiceOfferingForNode(map, defaultServiceOfferingId, key, etcdNodes, clusterKubernetesVersion);
+        }
+    }
+
+    protected void validateServiceOfferingForNode(Map<String, Long> map,
+                                                  Long defaultServiceOfferingId,
+                                                  String key, Long etcdNodes,
+                                                  KubernetesSupportedVersion clusterKubernetesVersion) {
+        if (ETCD.name().equalsIgnoreCase(key) && (etcdNodes == null || etcdNodes == 0)) {
+            return;
+        }
+        Long serviceOfferingId = map.getOrDefault(key, defaultServiceOfferingId);
+        ServiceOffering serviceOffering = serviceOfferingId != null ? serviceOfferingDao.findById(serviceOfferingId) : null;
+        if (serviceOffering == null) {
+            throw new InvalidParameterValueException("When serviceofferingid is not specified, " +
+                    "service offerings for each node type must be specified in the nodeofferings parameter.");
+        }
+        try {
+            validateServiceOffering(serviceOffering, clusterKubernetesVersion);
+        } catch (InvalidParameterValueException e) {
+            String msg = String.format("Given service offering ID: %s for %s nodes is not suitable for the Kubernetes cluster version %s - %s",
+                    serviceOffering, key, clusterKubernetesVersion, e.getMessage());
+            logger.error(msg);
+            throw new InvalidParameterValueException(msg);
+        }
+    }
+
     private Network getKubernetesClusterNetworkIfMissing(final String clusterName, final DataCenter zone,  final Account owner, final int controlNodesCount,
-                         final int nodesCount, final String externalLoadBalancerIpAddress, final Long networkId) throws CloudRuntimeException {
+                         final int nodesCount, final String externalLoadBalancerIpAddress, final Long networkId, final Long asNumber) throws CloudRuntimeException {
         Network network = null;
         if (networkId != null) {
             network = networkDao.findById(networkId);
@@ -882,6 +1142,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 network = networkService.createGuestNetwork(networkOffering.getId(), clusterName + "-network",
                         owner.getAccountName() + "-network", owner, physicalNetwork, zone.getId(),
                         ControlledEntity.ACLType.Account);
+                if (!networkOffering.isForVpc() && NetworkOffering.RoutingMode.Dynamic == networkOffering.getRoutingMode()) {
+                    bgpService.allocateASNumber(zone.getId(), asNumber, network.getId(), null);
+                }
             } catch (ConcurrentOperationException | InsufficientCapacityException | ResourceAllocationException e) {
                 logAndThrow(Level.ERROR, String.format("Unable to create network for the Kubernetes cluster: %s", clusterName));
             } finally {
@@ -954,12 +1217,13 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
     private void validateKubernetesClusterScaleParameters(ScaleKubernetesClusterCmd cmd) {
         final Long kubernetesClusterId = cmd.getId();
-        final Long serviceOfferingId = cmd.getServiceOfferingId();
         final Long clusterSize = cmd.getClusterSize();
         final List<Long> nodeIds = cmd.getNodeIds();
         final Boolean isAutoscalingEnabled = cmd.isAutoscalingEnabled();
         final Long minSize = cmd.getMinSize();
         final Long maxSize = cmd.getMaxSize();
+        final Long defaultServiceOfferingId = cmd.getServiceOfferingId();
+        final Map<String, Long> serviceOfferingNodeTypeMap = cmd.getServiceOfferingNodeTypeMap();
 
         if (kubernetesClusterId == null || kubernetesClusterId < 1L) {
             throw new InvalidParameterValueException("Invalid Kubernetes cluster ID");
@@ -975,7 +1239,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             logAndThrow(Level.WARN, String.format("Unable to find zone for Kubernetes cluster : %s", kubernetesCluster.getName()));
         }
 
-        if (serviceOfferingId == null && clusterSize == null && nodeIds == null && isAutoscalingEnabled == null) {
+        if (defaultServiceOfferingId == null && isAnyNodeOfferingEmpty(serviceOfferingNodeTypeMap)
+                && clusterSize == null && nodeIds == null && isAutoscalingEnabled == null) {
             throw new InvalidParameterValueException(String.format("Kubernetes cluster %s cannot be scaled, either service offering or cluster size or nodeids to be removed or autoscaling must be passed", kubernetesCluster.getName()));
         }
 
@@ -1022,8 +1287,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             }
         }
 
+        Long workerOfferingId = serviceOfferingNodeTypeMap != null ? serviceOfferingNodeTypeMap.getOrDefault(WORKER.name(), null) : null;
         if (nodeIds != null) {
-            if (clusterSize != null || serviceOfferingId != null) {
+            if (clusterSize != null || defaultServiceOfferingId != null || workerOfferingId != null) {
                 throw new InvalidParameterValueException("nodeids can not be passed along with clustersize or service offering");
             }
             List<KubernetesClusterVmMapVO> nodes = kubernetesClusterVmMapDao.listByClusterIdAndVmIdsIn(kubernetesCluster.getId(), nodeIds);
@@ -1043,37 +1309,68 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             }
         }
 
-        ServiceOffering serviceOffering = null;
-        if (serviceOfferingId != null) {
-            serviceOffering = serviceOfferingDao.findById(serviceOfferingId);
-            if (serviceOffering == null) {
-                throw new InvalidParameterValueException("Failed to find service offering ID: " + serviceOfferingId);
-            } else {
-                if (serviceOffering.isDynamic()) {
-                    throw new InvalidParameterValueException(String.format("Custom service offerings are not supported for Kubernetes clusters. Kubernetes cluster : %s, service offering : %s", kubernetesCluster.getName(), serviceOffering.getName()));
-                }
-                if (serviceOffering.getCpu() < MIN_KUBERNETES_CLUSTER_NODE_CPU || serviceOffering.getRamSize() < MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE) {
-                    throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s cannot be scaled with service offering : %s, Kubernetes cluster template(CoreOS) needs minimum %d vCPUs and %d MB RAM",
-                            kubernetesCluster.getName(), serviceOffering.getName(), MIN_KUBERNETES_CLUSTER_NODE_CPU, MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE));
-                }
-                if (serviceOffering.getCpu() < clusterVersion.getMinimumCpu()) {
-                    throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s cannot be scaled with service offering : %s, associated Kubernetes version : %s needs minimum %d vCPUs",
-                            kubernetesCluster.getName(), serviceOffering.getName(), clusterVersion.getName(), clusterVersion.getMinimumCpu()));
-                }
-                if (serviceOffering.getRamSize() < clusterVersion.getMinimumRamSize()) {
-                    throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s cannot be scaled with service offering : %s, associated Kubernetes version : %s needs minimum %d MB RAM",
-                            kubernetesCluster.getName(), serviceOffering.getName(), clusterVersion.getName(), clusterVersion.getMinimumRamSize()));
-                }
-            }
-            final ServiceOffering existingServiceOffering = serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId());
-            if (KubernetesCluster.State.Running.equals(kubernetesCluster.getState()) && (serviceOffering.getRamSize() < existingServiceOffering.getRamSize() ||
-                    serviceOffering.getCpu() * serviceOffering.getSpeed() < existingServiceOffering.getCpu() * existingServiceOffering.getSpeed())) {
-                logAndThrow(Level.WARN, String.format("Kubernetes cluster cannot be scaled down for service offering. Service offering : %s offers lesser resources as compared to service offering : %s of Kubernetes cluster : %s",
-                        serviceOffering.getName(), existingServiceOffering.getName(), kubernetesCluster.getName()));
-            }
-        }
+        validateServiceOfferingsForNodeTypesScale(serviceOfferingNodeTypeMap, defaultServiceOfferingId, kubernetesCluster, clusterVersion);
 
         validateKubernetesClusterScaleSize(kubernetesCluster, clusterSize, maxClusterSize, zone);
+    }
+
+    protected void validateServiceOfferingsForNodeTypesScale(Map<String, Long> map, Long defaultServiceOfferingId, KubernetesClusterVO kubernetesCluster, KubernetesSupportedVersion clusterVersion) {
+        for (String key : CLUSTER_NODES_TYPES_LIST) {
+            Long serviceOfferingId = map.getOrDefault(key, defaultServiceOfferingId);
+            if (serviceOfferingId != null) {
+                ServiceOffering serviceOffering = serviceOfferingDao.findById(serviceOfferingId);
+                if (serviceOffering == null) {
+                    throw new InvalidParameterValueException("Failed to find service offering ID: " + serviceOfferingId);
+                }
+                checkServiceOfferingForNodesScale(serviceOffering, kubernetesCluster, clusterVersion);
+                Long nodeTypeOfferingId = getExistingServiceOfferingIdForNodeType(key, kubernetesCluster);
+                if (nodeTypeOfferingId == null) {
+                    nodeTypeOfferingId = kubernetesCluster.getServiceOfferingId();
+                }
+                final ServiceOffering existingServiceOffering = serviceOfferingDao.findById(nodeTypeOfferingId);
+                if (KubernetesCluster.State.Running.equals(kubernetesCluster.getState()) && (serviceOffering.getRamSize() < existingServiceOffering.getRamSize() ||
+                        serviceOffering.getCpu() * serviceOffering.getSpeed() < existingServiceOffering.getCpu() * existingServiceOffering.getSpeed())) {
+                    logAndThrow(Level.WARN, String.format("Kubernetes cluster cannot be scaled down for service offering. Service offering : %s offers lesser resources as compared to service offering : %s of Kubernetes cluster : %s",
+                            serviceOffering.getName(), existingServiceOffering.getName(), kubernetesCluster.getName()));
+                }
+            }
+        }
+    }
+
+    private Long getExistingServiceOfferingIdForNodeType(String key, KubernetesClusterVO kubernetesCluster) {
+        if (key.equalsIgnoreCase(WORKER.name())) {
+            return kubernetesCluster.getWorkerNodeServiceOfferingId();
+        } else if (key.equalsIgnoreCase(CONTROL.name())) {
+            return kubernetesCluster.getControlNodeServiceOfferingId();
+        } else if (key.equalsIgnoreCase(ETCD.name())) {
+            return kubernetesCluster.getEtcdNodeServiceOfferingId();
+        }
+        return kubernetesCluster.getServiceOfferingId();
+    }
+
+    protected void checkServiceOfferingForNodesScale(ServiceOffering serviceOffering, KubernetesClusterVO kubernetesCluster, KubernetesSupportedVersion clusterVersion) {
+        if (serviceOffering.isDynamic()) {
+            throw new InvalidParameterValueException(String.format("Custom service offerings are not supported for Kubernetes clusters. Kubernetes cluster : %s, service offering : %s", kubernetesCluster.getName(), serviceOffering.getName()));
+        }
+        if (serviceOffering.getCpu() < MIN_KUBERNETES_CLUSTER_NODE_CPU || serviceOffering.getRamSize() < MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE) {
+            throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s cannot be scaled with service offering : %s, Kubernetes cluster template(CoreOS) needs minimum %d vCPUs and %d MB RAM",
+                    kubernetesCluster.getName(), serviceOffering.getName(), MIN_KUBERNETES_CLUSTER_NODE_CPU, MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE));
+        }
+        if (serviceOffering.getCpu() < clusterVersion.getMinimumCpu()) {
+            throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s cannot be scaled with service offering : %s, associated Kubernetes version : %s needs minimum %d vCPUs",
+                    kubernetesCluster.getName(), serviceOffering.getName(), clusterVersion.getName(), clusterVersion.getMinimumCpu()));
+        }
+        if (serviceOffering.getRamSize() < clusterVersion.getMinimumRamSize()) {
+            throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s cannot be scaled with service offering : %s, associated Kubernetes version : %s needs minimum %d MB RAM",
+                    kubernetesCluster.getName(), serviceOffering.getName(), clusterVersion.getName(), clusterVersion.getMinimumRamSize()));
+        }
+    }
+
+    protected boolean isAnyNodeOfferingEmpty(Map<String, Long> map) {
+        if (MapUtils.isEmpty(map)) {
+            return true;
+        }
+        return map.values().stream().anyMatch(Objects::isNull);
     }
 
     private void validateKubernetesClusterUpgradeParameters(UpgradeKubernetesClusterCmd cmd) {
@@ -1167,6 +1464,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         final long controlNodeCount = cmd.getControlNodes();
         final long clusterSize = Objects.requireNonNullElse(cmd.getClusterSize(), 0L);
         final ServiceOffering serviceOffering = serviceOfferingDao.findById(cmd.getServiceOfferingId());
+        Map<String, Long> nodeTypeOfferingMap = cmd.getServiceOfferingNodeTypeMap();
         final Account owner = accountService.getActiveAccountById(cmd.getEntityOwnerId());
         final KubernetesSupportedVersion clusterKubernetesVersion = kubernetesSupportedVersionDao.findById(cmd.getKubernetesVersionId());
 
@@ -1219,54 +1517,139 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         final DataCenter zone = dataCenterDao.findById(cmd.getZoneId());
         final long controlNodeCount = cmd.getControlNodes();
         final long clusterSize = cmd.getClusterSize();
-        final long totalNodeCount = controlNodeCount + clusterSize;
-        final ServiceOffering serviceOffering = serviceOfferingDao.findById(cmd.getServiceOfferingId());
+        final long etcdNodes = cmd.getEtcdNodes();
+        final Map<String, Long> nodeTypeCount = Map.of(WORKER.name(), clusterSize,
+                CONTROL.name(), controlNodeCount, ETCD.name(), etcdNodes);
         final Account owner = accountService.getActiveAccountById(cmd.getEntityOwnerId());
         final KubernetesSupportedVersion clusterKubernetesVersion = kubernetesSupportedVersionDao.findById(cmd.getKubernetesVersionId());
+        final Hypervisor.HypervisorType hypervisor = cmd.getHypervisorType();
+        final Long asNumber = cmd.getAsNumber();
 
-        DeployDestination deployDestination = null;
-        try {
-            deployDestination = plan(totalNodeCount, zone, serviceOffering);
-        } catch (InsufficientCapacityException e) {
-            logAndThrow(Level.ERROR, String.format("Creating Kubernetes cluster failed due to insufficient capacity for %d nodes cluster in zone : %s with service offering : %s", totalNodeCount, zone.getName(), serviceOffering.getName()));
+        Map<String, Long> serviceOfferingNodeTypeMap = cmd.getServiceOfferingNodeTypeMap();
+        Long defaultServiceOfferingId = cmd.getServiceOfferingId();
+        String accountName = cmd.getAccountName();
+        Long domainId = cmd.getDomainId();
+        Long accountId = null;
+        if (Objects.nonNull(accountName) && Objects.nonNull(domainId)) {
+            Account account = accountDao.findActiveAccount(accountName, domainId);
+            if (Objects.nonNull(account)) {
+                accountId = account.getId();
+            }
         }
-        if (deployDestination == null || deployDestination.getCluster() == null) {
-            logAndThrow(Level.ERROR, String.format("Creating Kubernetes cluster failed due to error while finding suitable deployment plan for cluster in zone : %s", zone.getName()));
-        }
+        Hypervisor.HypervisorType hypervisorType = getHypervisorTypeAndValidateNodeDeployments(serviceOfferingNodeTypeMap, defaultServiceOfferingId, nodeTypeCount, zone, domainId, accountId, hypervisor);
 
         SecurityGroup securityGroup = null;
         if (zone.isSecurityGroupEnabled()) {
             securityGroup = getOrCreateSecurityGroupForAccount(owner);
         }
 
-        final Network defaultNetwork = getKubernetesClusterNetworkIfMissing(cmd.getName(), zone, owner, (int)controlNodeCount, (int)clusterSize, cmd.getExternalLoadBalancerIpAddress(), cmd.getNetworkId());
-        final VMTemplateVO finalTemplate = getKubernetesServiceTemplate(zone, deployDestination.getCluster().getHypervisorType());
-        final long cores = serviceOffering.getCpu() * (controlNodeCount + clusterSize);
-        final long memory = serviceOffering.getRamSize() * (controlNodeCount + clusterSize);
-
+        Map<String, Long> templateNodeTypeMap = cmd.getTemplateNodeTypeMap();
+        final VMTemplateVO finalTemplate = getKubernetesServiceTemplate(zone, hypervisorType, templateNodeTypeMap, DEFAULT);
+        final VMTemplateVO controlNodeTemplate = getKubernetesServiceTemplate(zone, hypervisorType, templateNodeTypeMap, CONTROL);
+        final VMTemplateVO workerNodeTemplate = getKubernetesServiceTemplate(zone, hypervisorType, templateNodeTypeMap, WORKER);
+        final VMTemplateVO etcdNodeTemplate = getKubernetesServiceTemplate(zone, hypervisorType, templateNodeTypeMap, ETCD);
+        final Network defaultNetwork = getKubernetesClusterNetworkIfMissing(cmd.getName(), zone, owner, (int)controlNodeCount, (int)clusterSize, cmd.getExternalLoadBalancerIpAddress(), cmd.getNetworkId(), asNumber);
         final SecurityGroup finalSecurityGroup = securityGroup;
         final KubernetesClusterVO cluster = Transaction.execute(new TransactionCallback<KubernetesClusterVO>() {
             @Override
             public KubernetesClusterVO doInTransaction(TransactionStatus status) {
+                Pair<Long, Long> capacityPair = calculateClusterCapacity(serviceOfferingNodeTypeMap, nodeTypeCount, defaultServiceOfferingId);
+                final long cores = capacityPair.first();
+                final long memory = capacityPair.second();
+
                 KubernetesClusterVO newCluster = new KubernetesClusterVO(cmd.getName(), cmd.getDisplayName(), zone.getId(), clusterKubernetesVersion.getId(),
-                        serviceOffering.getId(), finalTemplate.getId(), defaultNetwork.getId(), owner.getDomainId(),
-                        owner.getAccountId(), controlNodeCount, clusterSize, KubernetesCluster.State.Created, cmd.getSSHKeyPairName(), cores, memory,
+                        defaultServiceOfferingId, Objects.nonNull(finalTemplate) ? finalTemplate.getId() : null,
+                        defaultNetwork.getId(), owner.getDomainId(), owner.getAccountId(), controlNodeCount, clusterSize,
+                        KubernetesCluster.State.Created, cmd.getSSHKeyPairName(), cores, memory,
                         cmd.getNodeRootDiskSize(), "", KubernetesCluster.ClusterType.CloudManaged);
+                newCluster.setCniConfigId(cmd.getCniConfigId());
+                String cniConfigDetails = null;
+                if (MapUtils.isNotEmpty(cmd.getCniConfigDetails())) {
+                    cniConfigDetails = cmd.getCniConfigDetails().toString();
+                }
+                newCluster.setCniConfigDetails(cniConfigDetails);
+                if (serviceOfferingNodeTypeMap.containsKey(WORKER.name())) {
+                    newCluster.setWorkerNodeServiceOfferingId(serviceOfferingNodeTypeMap.get(WORKER.name()));
+                }
+                if (serviceOfferingNodeTypeMap.containsKey(CONTROL.name())) {
+                    newCluster.setControlNodeServiceOfferingId(serviceOfferingNodeTypeMap.get(CONTROL.name()));
+                }
+                if (etcdNodes > 0) {
+                    newCluster.setEtcdNodeTemplateId(etcdNodeTemplate.getId());
+                    newCluster.setEtcdNodeCount(etcdNodes);
+                    if (serviceOfferingNodeTypeMap.containsKey(ETCD.name())) {
+                        newCluster.setEtcdNodeServiceOfferingId(serviceOfferingNodeTypeMap.get(ETCD.name()));
+                    }
+                }
+                newCluster.setWorkerNodeTemplateId(workerNodeTemplate.getId());
+                newCluster.setControlNodeTemplateId(controlNodeTemplate.getId());
                 if (zone.isSecurityGroupEnabled()) {
                     newCluster.setSecurityGroupId(finalSecurityGroup.getId());
                 }
                 kubernetesClusterDao.persist(newCluster);
+                addKubernetesClusterDetails(newCluster, defaultNetwork, cmd);
                 return newCluster;
             }
         });
-
-        addKubernetesClusterDetails(cluster, defaultNetwork, cmd);
 
         if (logger.isInfoEnabled()) {
             logger.info("Kubernetes cluster {} has been created", cluster);
         }
         CallContext.current().putContextParameter(KubernetesCluster.class, cluster.getUuid());
         return cluster;
+    }
+
+    protected Pair<Long, Long> calculateClusterCapacity(Map<String, Long> map, Map<String, Long> nodeTypeCount, Long defaultServiceOfferingId) {
+        long cores = 0L;
+        long memory = 0L;
+        for (String key : CLUSTER_NODES_TYPES_LIST) {
+            if (nodeTypeCount.getOrDefault(key, 0L) == 0) {
+                continue;
+            }
+            Long serviceOfferingId = map.getOrDefault(key, defaultServiceOfferingId);
+            ServiceOffering serviceOffering = serviceOfferingDao.findById(serviceOfferingId);
+            Long nodes = nodeTypeCount.get(key);
+            cores = cores + (serviceOffering.getCpu() * nodes);
+            memory = memory + (serviceOffering.getRamSize() * nodes);
+        }
+        return new Pair<>(cores, memory);
+    }
+
+    protected Hypervisor.HypervisorType getHypervisorTypeAndValidateNodeDeployments(Map<String, Long> serviceOfferingNodeTypeMap,
+                                                                                    Long defaultServiceOfferingId,
+                                                                                    Map<String, Long> nodeTypeCount,
+                                                                                    DataCenter zone, Long domainId, Long accountId,
+                                                                                    Hypervisor.HypervisorType hypervisorType) {
+        Hypervisor.HypervisorType deploymentHypervisor = null;
+        for (String nodeType : CLUSTER_NODES_TYPES_LIST) {
+            if (!nodeTypeCount.containsKey(nodeType)) {
+                continue;
+            }
+            Long serviceOfferingId = serviceOfferingNodeTypeMap.getOrDefault(nodeType, defaultServiceOfferingId);
+            ServiceOffering serviceOffering = serviceOfferingDao.findById(serviceOfferingId);
+            Long nodes = nodeTypeCount.getOrDefault(nodeType, defaultServiceOfferingId);
+            try {
+                if (nodeType.equalsIgnoreCase(ETCD.name()) &&
+                        (!serviceOfferingNodeTypeMap.containsKey(ETCD.name()) || nodes == 0)) {
+                    continue;
+                }
+                DeployDestination deployDestination = plan(nodes, zone, serviceOffering, domainId, accountId, hypervisorType);
+                if (deployDestination.getCluster() == null) {
+                    logAndThrow(Level.ERROR, String.format("Creating Kubernetes cluster failed due to error while finding suitable deployment plan for cluster in zone : %s", zone.getName()));
+                }
+                if (deploymentHypervisor == null) {
+                    deploymentHypervisor = deployDestination.getCluster().getHypervisorType();
+                    if (hypervisorType != deploymentHypervisor) {
+                        String msg = String.format("The hypervisor type planned for the CKS cluster deployment %s is different " +
+                                "from the selected hypervisor %s", deployDestination.getCluster().getHypervisorType(), hypervisorType);
+                        logger.warn(msg);
+                    }
+                }
+            } catch (InsufficientCapacityException e) {
+                logAndThrow(Level.ERROR, String.format("Creating Kubernetes cluster failed due to insufficient capacity for %d nodes cluster in zone : %s with service offering : %s", nodes, zone.getName(), serviceOffering.getName()));
+            }
+        }
+        return deploymentHypervisor;
     }
 
     private SecurityGroup getOrCreateSecurityGroupForAccount(Account owner) {
@@ -1295,7 +1678,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     @Override
     @ActionEvent(eventType = KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_CREATE,
             eventDescription = "creating Kubernetes cluster", async = true)
-    public void startKubernetesCluster(CreateKubernetesClusterCmd cmd) throws CloudRuntimeException {
+    public void startKubernetesCluster(CreateKubernetesClusterCmd cmd) throws CloudRuntimeException, ManagementServerException, ResourceUnavailableException, InsufficientCapacityException {
         final Long id = cmd.getEntityId();
         if (KubernetesCluster.ClusterType.valueOf(cmd.getClusterType()) != KubernetesCluster.ClusterType.CloudManaged) {
             return;
@@ -1304,7 +1687,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (kubernetesCluster == null) {
             throw new InvalidParameterValueException("Failed to find Kubernetes cluster with given ID");
         }
-        if (!startKubernetesCluster(kubernetesCluster, true)) {
+        Account account = accountService.getAccount(kubernetesCluster.getAccountId());
+        if (!startKubernetesCluster(kubernetesCluster.getId(), kubernetesCluster.getDomainId(), account.getAccountName(), cmd.getAsNumber(), true)) {
             throw new CloudRuntimeException(String.format("Failed to start created Kubernetes cluster: %s",
                     kubernetesCluster.getName()));
         }
@@ -1313,7 +1697,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     @Override
     @ActionEvent(eventType = KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_START,
             eventDescription = "starting Kubernetes cluster", async = true)
-    public void startKubernetesCluster(StartKubernetesClusterCmd cmd) throws CloudRuntimeException {
+    public void startKubernetesCluster(StartKubernetesClusterCmd cmd) throws CloudRuntimeException, ManagementServerException, ResourceUnavailableException, InsufficientCapacityException {
         final Long id = cmd.getId();
         if (id == null || id < 1L) {
             throw new InvalidParameterValueException("Invalid Kubernetes cluster ID provided");
@@ -1326,7 +1710,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new InvalidParameterValueException(String.format("Start kubernetes cluster is not supported for " +
                     "an externally managed cluster (%s)", kubernetesCluster.getName()));
         }
-        if (!startKubernetesCluster(kubernetesCluster, false)) {
+        Account account = accountService.getAccount(kubernetesCluster.getAccountId());
+        if (!startKubernetesCluster(kubernetesCluster.getId(), kubernetesCluster.getDomainId(), account.getAccountName(), null, false)) {
             throw new CloudRuntimeException(String.format("Failed to start Kubernetes cluster: %s",
                     kubernetesCluster.getName()));
         }
@@ -1338,14 +1723,23 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
      * are provisioned from scratch. Second kind of start, happens on  Stopped Kubernetes cluster, in which all resources
      * are provisioned (like volumes, nics, networks etc). It just that VM's are not in running state. So just
      * start the VM's (which can possibly implicitly start the network also).
-     * @param kubernetesCluster
+     *
+     * @param kubernetesClusterId
+     * @param domainId
+     * @param accountName
      * @param onCreate
      * @return
      * @throws CloudRuntimeException
      */
-    public boolean startKubernetesCluster(KubernetesClusterVO kubernetesCluster, boolean onCreate) throws CloudRuntimeException {
+    @Override
+    public boolean startKubernetesCluster(long kubernetesClusterId, Long domainId, String accountName, Long asNumber, boolean onCreate)
+            throws CloudRuntimeException, ManagementServerException, ResourceUnavailableException, InsufficientCapacityException {
         if (!KubernetesServiceEnabled.value()) {
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
+        }
+        final KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(kubernetesClusterId);
+        if (kubernetesCluster == null) {
+            throw new InvalidParameterValueException("Failed to find Kubernetes cluster with given ID");
         }
         if (kubernetesCluster.getRemoved() != null) {
             throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s is already deleted",
@@ -1367,6 +1761,13 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (zone == null) {
             logAndThrow(Level.WARN, String.format("Unable to find zone for Kubernetes cluster %s", kubernetesCluster));
         }
+        Long accountId = null;
+        if (Objects.nonNull(accountName) && Objects.nonNull(domainId)) {
+            Account account = accountDao.findActiveAccount(accountName, domainId);
+            if (Objects.nonNull(account)) {
+                accountId = account.getId();
+            }
+        }
         KubernetesClusterStartWorker startWorker =
             new KubernetesClusterStartWorker(kubernetesCluster, this);
         startWorker = ComponentContext.inject(startWorker);
@@ -1374,35 +1775,113 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             // Start for Kubernetes cluster in 'Created' state
             String[] keys = getServiceUserKeys(kubernetesCluster);
             startWorker.setKeys(keys);
-            return startWorker.startKubernetesClusterOnCreate();
+            return startWorker.startKubernetesClusterOnCreate(domainId, accountId, asNumber);
         } else {
             // Start for Kubernetes cluster in 'Stopped' state. Resources are already provisioned, just need to be started
-            return startWorker.startStoppedKubernetesCluster();
+            return startWorker.startStoppedKubernetesCluster(domainId, accountId);
         }
     }
 
-    private String[] getServiceUserKeys(KubernetesClusterVO kubernetesCluster) {
-        Account owner = accountService.getActiveAccountById(kubernetesCluster.getAccountId());
-        if (owner == null || owner.getType() == Account.Type.PROJECT) {
-            owner = CallContext.current().getCallingAccount();
+    protected String[] createUserApiKeyAndSecretKey(long userId) {
+        CallContext.register(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM);
+        try {
+            return accountService.createApiKeyAndSecretKey(userId);
+        } finally {
+            CallContext.unregister();
         }
-        String username = owner.getAccountName() + "-" + KUBEADMIN_ACCOUNT_NAME;
+    }
+
+    protected String[] getServiceUserKeys(Account owner) {
+        String username = owner.getAccountName();
+        if (!username.startsWith(KUBEADMIN_ACCOUNT_NAME + "-")) {
+            username += "-" + KUBEADMIN_ACCOUNT_NAME;
+        }
         UserAccount kubeadmin = accountService.getActiveUserAccount(username, owner.getDomainId());
-        String[] keys = null;
+        String[] keys;
         if (kubeadmin == null) {
             User kube = userDao.persist(new UserVO(owner.getAccountId(), username, UUID.randomUUID().toString(), owner.getAccountName(),
-                KUBEADMIN_ACCOUNT_NAME, "kubeadmin", null, UUID.randomUUID().toString(), User.Source.UNKNOWN));
-            keys = accountService.createApiKeyAndSecretKey(kube.getId());
+                    KUBEADMIN_ACCOUNT_NAME, "kubeadmin", null, UUID.randomUUID().toString(), User.Source.UNKNOWN));
+            keys = createUserApiKeyAndSecretKey(kube.getId());
         } else {
             String apiKey = kubeadmin.getApiKey();
             String secretKey = kubeadmin.getSecretKey();
             if (StringUtils.isAnyEmpty(apiKey, secretKey)) {
-                keys = accountService.createApiKeyAndSecretKey(kubeadmin.getId());
+                keys = createUserApiKeyAndSecretKey(kubeadmin.getId());
             } else {
                 keys = new String[]{apiKey, secretKey};
             }
         }
         return keys;
+    }
+
+    protected Role createProjectKubernetesAccountRole() {
+        Role role = roleService.createRole(PROJECT_KUBEADMIN_ACCOUNT_ROLE_NAME, RoleType.User,
+                PROJECT_KUBEADMIN_ACCOUNT_ROLE_NAME, false);
+        for (Class<?> allowedApi : PROJECT_KUBERNETES_ACCOUNT_ROLE_ALLOWED_APIS) {
+            final String apiName = BaseCmd.getCommandNameByClass(allowedApi);
+            roleService.createRolePermission(role, new Rule(apiName), RolePermissionEntity.Permission.ALLOW,
+                    String.format("Allow %s", apiName));
+        }
+        roleService.createRolePermission(role, new Rule("*"), RolePermissionEntity.Permission.DENY,
+                "Deny all");
+        logger.debug(String.format("Created default role for Kubernetes service account in projects: %s", role));
+        return role;
+    }
+
+    public Role getProjectKubernetesAccountRole() {
+        List<Role> roles = roleService.findRolesByName(PROJECT_KUBEADMIN_ACCOUNT_ROLE_NAME);
+        if (CollectionUtils.isNotEmpty(roles)) {
+            Role role = roles.get(0);
+            logger.debug(String.format("Found default role for Kubernetes service account in projects: %s", role));
+            return role;
+        }
+        return createProjectKubernetesAccountRole();
+    }
+
+    protected Account createProjectKubernetesAccount(final Project project, final String accountName) {
+        CallContext.register(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM);
+        try {
+            Role role = getProjectKubernetesAccountRole();
+            UserAccount userAccount = accountService.createUserAccount(accountName,
+                    UuidUtils.first(UUID.randomUUID().toString()), PROJECT_KUBERNETES_ACCOUNT_FIRST_NAME,
+                    PROJECT_KUBERNETES_ACCOUNT_LAST_NAME, null, null, accountName, Account.Type.NORMAL, role.getId(),
+                    project.getDomainId(), null, null, null, null, User.Source.NATIVE);
+            projectManager.assignAccountToProject(project, userAccount.getAccountId(), ProjectAccount.Role.Regular,
+                    userAccount.getId(), null);
+            Account account = accountService.getAccount(userAccount.getAccountId());
+            logger.debug(String.format("Created Kubernetes service account in project %s: %s", project, account));
+            return account;
+        } finally {
+            CallContext.unregister();
+        }
+    }
+
+    protected Account getProjectKubernetesAccount(final Account callerAccount, final boolean create) {
+        Project project = ApiDBUtils.findProjectByProjectAccountId(callerAccount.getId());
+        final String accountName = String.format("%s-%s", KUBEADMIN_ACCOUNT_NAME, UuidUtils.first(project.getUuid()));
+        List<AccountVO> accounts = accountDao.findAccountsByName(accountName);
+        for (AccountVO account : accounts) {
+            if (projectManager.canAccessProjectAccount(account, project.getProjectAccountId())) {
+                logger.debug(String.format("Created Kubernetes service account in project %s: %s", project, account));
+                return account;
+            }
+        }
+        return create ? createProjectKubernetesAccount(project, accountName) : null;
+    }
+
+    protected Account getProjectKubernetesAccount(final Account callerAccount) {
+        return getProjectKubernetesAccount(callerAccount, true);
+    }
+
+    private String[] getServiceUserKeys(KubernetesClusterVO kubernetesCluster) {
+        Account owner = accountService.getActiveAccountById(kubernetesCluster.getAccountId());
+        if (owner == null) {
+            owner = CallContext.current().getCallingAccount();
+        }
+        if (owner.getType() == Account.Type.PROJECT) {
+            owner = getProjectKubernetesAccount(owner);
+        }
+        return getServiceUserKeys(owner);
     }
 
     @Override
@@ -1449,15 +1928,13 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
         }
         Long kubernetesClusterId = cmd.getId();
-        KubernetesClusterVO cluster = kubernetesClusterDao.findById(kubernetesClusterId);
+        final KubernetesClusterVO cluster = kubernetesClusterDao.findById(kubernetesClusterId);
         if (cluster == null) {
             throw new InvalidParameterValueException("Invalid cluster id specified");
         }
         accountManager.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.OperateEntry, false, cluster);
         if (cluster.getClusterType() == KubernetesCluster.ClusterType.CloudManaged) {
-            KubernetesClusterDestroyWorker destroyWorker = new KubernetesClusterDestroyWorker(cluster, this);
-            destroyWorker = ComponentContext.inject(destroyWorker);
-            return destroyWorker.destroy();
+            return destroyKubernetesCluster(cluster);
         } else {
             boolean cleanup = cmd.getCleanup();
             boolean expunge = cmd.getExpunge();
@@ -1484,13 +1961,14 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                     }
                 }
             }
-            return Transaction.execute(new TransactionCallback<Boolean>() {
-                @Override
-                public Boolean doInTransaction(TransactionStatus status) {
-                    kubernetesClusterDetailsDao.removeDetails(kubernetesClusterId);
-                    kubernetesClusterVmMapDao.removeByClusterId(kubernetesClusterId);
-                    return kubernetesClusterDao.remove(kubernetesClusterId);
+            return Transaction.execute((TransactionCallback<Boolean>) status -> {
+                kubernetesClusterDetailsDao.removeDetails(kubernetesClusterId);
+                kubernetesClusterVmMapDao.removeByClusterId(kubernetesClusterId);
+                if (kubernetesClusterDao.remove(kubernetesClusterId)) {
+                    deleteProjectKubernetesAccountIfNeeded(cluster);
+                    return true;
                 }
+                return false;
             });
         }
     }
@@ -1606,26 +2084,45 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
         }
         validateKubernetesClusterScaleParameters(cmd);
-
         KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(cmd.getId());
-        final Long clusterSize = cmd.getClusterSize();
-        if (clusterSize != null) {
-            CallContext.current().setEventDetails(String.format("Kubernetes cluster ID: %s scaling from size: %d to %d",
-                    kubernetesCluster.getUuid(), kubernetesCluster.getNodeCount(), clusterSize));
-        }
+        Map<String, ServiceOffering> nodeToOfferingMap = createNodeTypeToServiceOfferingMap(cmd.getServiceOfferingNodeTypeMap(), cmd.getServiceOfferingId(), kubernetesCluster);
+
         String[] keys = getServiceUserKeys(kubernetesCluster);
         KubernetesClusterScaleWorker scaleWorker =
-            new KubernetesClusterScaleWorker(kubernetesClusterDao.findById(cmd.getId()),
-                    serviceOfferingDao.findById(cmd.getServiceOfferingId()),
-                    clusterSize,
-                    cmd.getNodeIds(),
-                    cmd.isAutoscalingEnabled(),
-                    cmd.getMinSize(),
-                    cmd.getMaxSize(),
-                    this);
+            new KubernetesClusterScaleWorker(kubernetesCluster,
+                nodeToOfferingMap,
+                cmd.getClusterSize(),
+                cmd.getNodeIds(),
+                cmd.isAutoscalingEnabled(),
+                cmd.getMinSize(),
+                cmd.getMaxSize(),
+                this);
         scaleWorker.setKeys(keys);
         scaleWorker = ComponentContext.inject(scaleWorker);
         return scaleWorker.scaleCluster();
+    }
+
+    /**
+     * Creates a map for the requested node type service offering
+     * For the node type DEFAULT: Every node is scaled to the same offering
+     */
+    protected Map<String, ServiceOffering> createNodeTypeToServiceOfferingMap(Map<String, Long> idsMapping,
+                                                                              Long serviceOfferingId, KubernetesClusterVO kubernetesCluster) {
+        Map<String, ServiceOffering> map = new HashMap<>();
+        if (MapUtils.isEmpty(idsMapping)) {
+            ServiceOfferingVO offering = serviceOfferingId != null ?
+                    serviceOfferingDao.findById(serviceOfferingId) :
+                    serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId());
+            map.put(DEFAULT.name(), offering);
+            return map;
+        }
+        for (String key : CLUSTER_NODES_TYPES_LIST) {
+            if (!idsMapping.containsKey(key)) {
+                continue;
+            }
+            map.put(key, serviceOfferingDao.findById(idsMapping.get(key)));
+        }
+        return map;
     }
 
     @Override
@@ -1696,6 +2193,77 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     @Override
+    public boolean addNodesToKubernetesCluster(AddNodesToKubernetesClusterCmd cmd) {
+        if (!KubernetesServiceEnabled.value()) {
+            logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
+        }
+        KubernetesClusterVO kubernetesCluster = validateCluster(cmd.getClusterId());
+        long networkId = kubernetesCluster.getNetworkId();
+        NetworkVO networkVO = networkDao.findById(networkId);
+        List<Long> validNodeIds = validateNodes(cmd.getNodeIds(), networkId, networkVO.getName(), kubernetesCluster, false);
+        if (validNodeIds.isEmpty()) {
+            throw new CloudRuntimeException("No valid nodes found to be added to the Kubernetes cluster");
+        }
+        KubernetesClusterAddWorker addWorker = new KubernetesClusterAddWorker(kubernetesCluster, KubernetesClusterManagerImpl.this);
+        addWorker = ComponentContext.inject(addWorker);
+        return addWorker.addNodesToCluster(validNodeIds, cmd.isMountCksIsoOnVr(), cmd.isManualUpgrade());
+    }
+
+    @Override
+    public boolean removeNodesFromKubernetesCluster(RemoveNodesFromKubernetesClusterCmd cmd) throws Exception {
+        if (!KubernetesServiceEnabled.value()) {
+            logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
+        }
+        KubernetesClusterVO kubernetesCluster = validateCluster(cmd.getClusterId());
+        List<Long> validNodeIds = validateNodes(cmd.getNodeIds(), null, null, kubernetesCluster, true);
+        if (validNodeIds.isEmpty()) {
+            throw new CloudRuntimeException("No valid nodes found to be removed from the Kubernetes cluster");
+        }
+        KubernetesClusterRemoveWorker removeWorker = new KubernetesClusterRemoveWorker(kubernetesCluster, KubernetesClusterManagerImpl.this);
+        removeWorker = ComponentContext.inject(removeWorker);
+        return removeWorker.removeNodesFromCluster(validNodeIds);
+    }
+
+    private KubernetesClusterVO validateCluster(long clusterId) {
+        KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(clusterId);
+        if (kubernetesCluster == null) {
+            throw new InvalidParameterValueException("Invalid Kubernetes cluster ID specified");
+        }
+        return kubernetesCluster;
+    }
+
+    private List<Long> validateNodes(List<Long> nodeIds, Long networkId, String networkName, KubernetesCluster cluster,  boolean removeNodes) {
+        List<Long> validNodeIds = new ArrayList<>(nodeIds);
+        for (Long id : nodeIds) {
+            VMInstanceVO node = vmInstanceDao.findById(id);
+            if (Objects.isNull(node)) {
+                logger.error(String.format("Failed to find node (physical or virtual machine) with ID: %s", id));
+                validNodeIds.remove(id);
+            } else if (!removeNodes) {
+                VMTemplateVO template = templateDao.findById(node.getTemplateId());
+                if (Objects.isNull(template)) {
+                    logger.error((String.format("Failed to find template with ID: %s", id)));
+                    validNodeIds.remove(id);
+                } else if (!template.isForCks()) {
+                    logger.error(String.format("Node: %s is deployed with a template that is not marked to be used for CKS", node.getId()));
+                    validNodeIds.remove(id);
+                }
+                NicVO nicVO = nicDao.findDefaultNicForVM(id);
+                if (networkId != nicVO.getNetworkId()) {
+                    logger.error(String.format("Node: %s does not have its default NIC in the kubernetes cluster network: %s", node.getId(), networkName));
+                    validNodeIds.remove(id);
+                }
+                List<KubernetesClusterVmMapVO> clusterVmMapVO = kubernetesClusterVmMapDao.listByClusterIdAndVmIdsIn(cluster.getId(), Collections.singletonList(id));
+                if (Objects.nonNull(clusterVmMapVO) && !clusterVmMapVO.isEmpty()) {
+                    logger.warn(String.format("Node: %s is already part of the cluster %s", node.getId(), cluster.getName()));
+                    validNodeIds.remove(id);
+                }
+            }
+        }
+        return validNodeIds;
+    }
+
+    @Override
     public List<RemoveVirtualMachinesFromKubernetesClusterResponse> removeVmsFromCluster(RemoveVirtualMachinesFromKubernetesClusterCmd cmd) {
         if (!KubernetesServiceEnabled.value()) {
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
@@ -1753,6 +2321,66 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         return responseList;
     }
 
+    protected void deleteProjectKubernetesAccount(Account projectAccount) {
+        CallContext.register(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM);
+        try {
+            Account serviceAccount = getProjectKubernetesAccount(projectAccount, false);
+            if (serviceAccount != null) {
+                accountManager.deleteAccount(accountDao.findById(serviceAccount.getId()), User.UID_SYSTEM,
+                        accountService.getSystemAccount());
+            }
+        } finally {
+            CallContext.unregister();
+        }
+    }
+
+    protected void deleteProjectKubernetesAccountIfNeeded(final KubernetesCluster kubernetesCluster) {
+        Account owner = accountService.getAccount(kubernetesCluster.getAccountId());
+        if (owner == null) {
+            return;
+        }
+        if (Account.Type.PROJECT.equals(owner.getType()) &&
+                kubernetesClusterDao.countNotForGCByAccount(owner.getAccountId()) == 0) {
+            deleteProjectKubernetesAccount(owner);
+        }
+    }
+
+    protected boolean destroyKubernetesCluster(KubernetesCluster kubernetesCluster, boolean deleteProjectAccount) {
+        KubernetesClusterDestroyWorker destroyWorker = new KubernetesClusterDestroyWorker(kubernetesCluster,
+                KubernetesClusterManagerImpl.this);
+        destroyWorker = ComponentContext.inject(destroyWorker);
+        boolean result = destroyWorker.destroy();
+        if (deleteProjectAccount) {
+            deleteProjectKubernetesAccountIfNeeded(kubernetesCluster);
+        }
+        return result;
+    }
+
+    protected boolean destroyKubernetesCluster(KubernetesCluster kubernetesCluster) {
+        return destroyKubernetesCluster(kubernetesCluster, true);
+    }
+
+    @Override
+    public void cleanupForAccount(Account account) {
+        List<KubernetesClusterVO> clusters = kubernetesClusterDao.listForCleanupByAccount(account.getId());
+        if (CollectionUtils.isEmpty(clusters)) {
+            return;
+        }
+        logger.debug(String.format("Cleaning up %d Kubernetes cluster for %s", clusters.size(), account));
+        for (KubernetesClusterVO cluster : clusters) {
+            try {
+                destroyKubernetesCluster(cluster, false);
+            } catch (CloudRuntimeException e) {
+                logger.warn(String.format("Failed to destroy Kubernetes cluster: %s during cleanup for %s",
+                        cluster.getName(), account), e);
+            }
+        }
+        if (!Account.Type.PROJECT.equals(account.getType())) {
+            return;
+        }
+        deleteProjectKubernetesAccount(account);
+    }
+
     @Override
     public List<Class<?>> getCommands() {
         List<Class<?>> cmdList = new ArrayList<Class<?>>();
@@ -1769,6 +2397,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         cmdList.add(UpgradeKubernetesClusterCmd.class);
         cmdList.add(AddVirtualMachinesToKubernetesClusterCmd.class);
         cmdList.add(RemoveVirtualMachinesFromKubernetesClusterCmd.class);
+        cmdList.add(AddNodesToKubernetesClusterCmd.class);
+        cmdList.add(RemoveNodesFromKubernetesClusterCmd.class);
         return cmdList;
     }
 
@@ -1804,12 +2434,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                         logger.info("Running Kubernetes cluster garbage collector on Kubernetes cluster: {}", kubernetesCluster);
                     }
                     try {
-                        KubernetesClusterDestroyWorker destroyWorker = new KubernetesClusterDestroyWorker(kubernetesCluster, KubernetesClusterManagerImpl.this);
-                        destroyWorker = ComponentContext.inject(destroyWorker);
-                        if (destroyWorker.destroy()) {
-                            if (logger.isInfoEnabled()) {
-                                logger.info("Garbage collection complete for Kubernetes cluster: {}", kubernetesCluster);
-                            }
+                        if (destroyKubernetesCluster(kubernetesCluster)) {
+                            logger.info("Garbage collection complete for Kubernetes cluster: {}", kubernetesCluster);
                         } else {
                             logger.warn("Garbage collection failed for Kubernetes cluster : {}, it will be attempted to garbage collected in next run", kubernetesCluster);
                         }
@@ -1932,9 +2558,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                             logger.info("Running Kubernetes cluster state scanner on Kubernetes cluster: {} for state: {}", kubernetesCluster, KubernetesCluster.State.Destroying.toString());
                         }
                         try {
-                            KubernetesClusterDestroyWorker destroyWorker = new KubernetesClusterDestroyWorker(kubernetesCluster, KubernetesClusterManagerImpl.this);
-                            destroyWorker = ComponentContext.inject(destroyWorker);
-                            destroyWorker.destroy();
+                            destroyKubernetesCluster(kubernetesCluster);
                         } catch (Exception e) {
                             logger.warn("Failed to run Kubernetes cluster Destroying state scanner on Kubernetes cluster : {} status scanner", kubernetesCluster, e);
                         }
@@ -1948,7 +2572,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     // checks if Kubernetes cluster is in desired state
-    boolean isClusterVMsInDesiredState(KubernetesCluster kubernetesCluster, VirtualMachine.State state) {
+    private boolean isClusterVMsInDesiredState(KubernetesCluster kubernetesCluster, VirtualMachine.State state) {
         List<KubernetesClusterVmMapVO> clusterVMs = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
 
         // check cluster is running at desired capacity include control nodes as well
@@ -1985,6 +2609,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
         createNetworkOfferingForKubernetes(DEFAULT_NSX_VPC_TIER_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_NAME,
                 DEFAULT_NSX_VPC_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_DISPLAY_TEXT , true, true);
+
+        getProjectKubernetesAccountRole();
 
         _gcExecutor.scheduleWithFixedDelay(new KubernetesClusterGarbageCollector(), 300, 300, TimeUnit.SECONDS);
         _stateScanner.scheduleWithFixedDelay(new KubernetesClusterStatusScanner(), 300, 30, TimeUnit.SECONDS);
@@ -2067,8 +2693,15 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             KubernetesClusterScaleTimeout,
             KubernetesClusterUpgradeTimeout,
             KubernetesClusterUpgradeRetries,
+            KubernetesClusterAddNodeTimeout,
+            KubernetesClusterRemoveNodeTimeout,
             KubernetesClusterExperimentalFeaturesEnabled,
-            KubernetesMaxClusterSize
+            KubernetesMaxClusterSize,
+            KubernetesControlNodeInstallAttemptWait,
+            KubernetesControlNodeInstallReattempts,
+            KubernetesWorkerNodeInstallAttemptWait,
+            KubernetesWorkerNodeInstallReattempts,
+            KubernetesEtcdNodeStartPort
         };
     }
 }

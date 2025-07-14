@@ -86,7 +86,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import { dayjs, parseDateToDatePicker, parseDayJsObject } from '@/utils/date'
 import { mixinForm } from '@/utils/mixin'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -178,7 +178,7 @@ export default {
 
         this.loading = true
 
-        api('quotaTariffUpdate', {}, 'POST', params).then(json => {
+        postAPI('quotaTariffUpdate', params).then(json => {
           const tariffResponse = json.quotatariffupdateresponse.quotatariff || {}
           if (tariffResponse.id && this.$route.params.id) {
             this.$router.push(`/quotatariff/${tariffResponse.id}`)
@@ -215,7 +215,7 @@ export default {
       const values = this.handleRemoveFields(formRaw)
 
       this.loading = true
-      api('quotaValidateActivationRule', {}, 'POST', {
+      postAPI('quotaValidateActivationRule', {
         activationRule: values.activationRule || ' ',
         usageType: this.resource.usageType
       }).then(response => {

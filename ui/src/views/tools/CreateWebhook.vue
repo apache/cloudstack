@@ -155,7 +155,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import _ from 'lodash'
 import { mixinForm } from '@/utils/mixin'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -238,7 +238,7 @@ export default {
       ]
       this.form.domainid = null
       this.form.account = null
-      api('listDomains', {}).then(json => {
+      getAPI('listDomains', {}).then(json => {
         const listdomains = json.listdomainsresponse.domain
         this.domains = this.domains.concat(listdomains)
       }).finally(() => {
@@ -258,7 +258,7 @@ export default {
       var params = {
         domainid: this.form.domainid
       }
-      api('listAccounts', params).then(json => {
+      getAPI('listAccounts', params).then(json => {
         const listAccounts = json.listaccountsresponse.account || []
         this.accounts = listAccounts
       }).finally(() => {
@@ -306,7 +306,7 @@ export default {
           }
         }
         this.loading = true
-        api('createWebhook', params).then(json => {
+        postAPI('createWebhook', params).then(json => {
           this.$emit('refresh-data')
           this.$notification.success({
             message: this.$t('label.create.webhook'),

@@ -176,6 +176,11 @@ class CsCmdLine(CsDataBag):
             return self.idata()['useextdns']
         return False
 
+    def get_use_router_ip_as_resolver(self):
+        if "userouteripresolver" in self.idata():
+            return self.idata()['userouteripresolver']
+        return False
+
     def get_advert_int(self):
         if 'advert_int' in self.idata():
             return self.idata()['advert_int']

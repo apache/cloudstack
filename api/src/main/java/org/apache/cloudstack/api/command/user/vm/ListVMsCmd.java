@@ -16,10 +16,15 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -54,6 +59,7 @@ import com.cloud.cpu.CPU;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceTag;
+import com.cloud.storage.GuestOS;
 import com.cloud.vm.VirtualMachine;
 
 
@@ -159,6 +165,11 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
             description = "CPU arch of the VM",
             since = "4.20.1")
     private String arch;
+
+    @Parameter(name = ApiConstants.LEASED, type = CommandType.BOOLEAN,
+            description = "Whether to return only leased instances",
+            since = "4.21.0")
+    private Boolean onlyLeasedInstances = false;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -303,6 +314,10 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
         return StringUtils.isBlank(arch) ? null : CPU.CPUArch.fromType(arch);
     }
 
+    public boolean getOnlyLeasedInstances() {
+        return BooleanUtils.toBoolean(onlyLeasedInstances);
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -322,22 +337,75 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
         setResponseObject(response);
     }
 
-    protected void updateVMResponse(List<UserVmResponse> response) {
-        for (UserVmResponse vmResponse : response) {
-            ResourceIcon resourceIcon = resourceIconManager.getByResourceTypeAndUuid(ResourceTag.ResourceObjectType.UserVm, vmResponse.getId());
-            if (resourceIcon == null) {
-                ResourceTag.ResourceObjectType type = ResourceTag.ResourceObjectType.Template;
-                String uuid = vmResponse.getTemplateId();
-                if (vmResponse.getIsoId() != null) {
-                    uuid = vmResponse.getIsoId();
-                    type = ResourceTag.ResourceObjectType.ISO;
-                }
-                resourceIcon = resourceIconManager.getByResourceTypeAndUuid(type, uuid);
-                if (resourceIcon == null) {
-                    continue;
-                }
+    protected Map<String, ResourceIcon> getResourceIconsUsingOsCategory(List<UserVmResponse> responses) {
+        Set<String> guestOsIds = responses.stream().map(UserVmResponse::getGuestOsId).collect(Collectors.toSet());
+        List<GuestOS> guestOSList = _entityMgr.listByUuids(GuestOS.class, guestOsIds);
+        Map<String, GuestOS> guestOSMap = guestOSList.stream()
+                .collect(Collectors.toMap(GuestOS::getUuid, Function.identity()));
+        Set<Long> guestOsCategoryIds = guestOSMap.values().stream()
+                .map(GuestOS::getCategoryId)
+                .collect(Collectors.toSet());
+        Map<Long, ResourceIcon> guestOsCategoryIcons =
+                resourceIconManager.getByResourceTypeAndIds(ResourceTag.ResourceObjectType.GuestOsCategory,
+                        guestOsCategoryIds);
+        Map<String, ResourceIcon> vmIcons = new HashMap<>();
+        for (UserVmResponse response : responses) {
+            GuestOS guestOS = guestOSMap.get(response.getGuestOsId());
+            if (guestOS != null) {
+                vmIcons.put(response.getId(), guestOsCategoryIcons.get(guestOS.getCategoryId()));
             }
-            ResourceIconResponse iconResponse = _responseGenerator.createResourceIconResponse(resourceIcon);
+        }
+        return vmIcons;
+    }
+
+    protected Map<String, ResourceIcon> getResourceIconsForUsingTemplateIso(List<UserVmResponse> responses) {
+        Map<String, String> vmTemplateIsoIdMap = new HashMap<>();
+        Set<String> templateUuids = new HashSet<>();
+        Set<String> isoUuids = new HashSet<>();
+        for (UserVmResponse vmResponse : responses) {
+            if (vmResponse.getTemplateId() != null) {
+                templateUuids.add(vmResponse.getTemplateId());
+                vmTemplateIsoIdMap.put(vmResponse.getId(), vmResponse.getTemplateId());
+            }
+            if (vmResponse.getIsoId() != null) {
+                isoUuids.add(vmResponse.getIsoId());
+                vmTemplateIsoIdMap.put(vmResponse.getId(), vmResponse.getIsoId());
+            }
+        }
+        Map<String, ResourceIcon> templateOrIsoIcons = resourceIconManager.getByResourceTypeAndUuids(ResourceTag.ResourceObjectType.Template, templateUuids);
+        templateOrIsoIcons.putAll(resourceIconManager.getByResourceTypeAndUuids(ResourceTag.ResourceObjectType.ISO, isoUuids));
+        Map<String, ResourceIcon> vmIcons = new HashMap<>();
+        List<UserVmResponse> noTemplateIsoIconResponses = new ArrayList<>();
+        for (UserVmResponse response : responses) {
+            String uuid = vmTemplateIsoIdMap.get(response.getId());
+            if (StringUtils.isNotBlank(uuid) && templateOrIsoIcons.containsKey(uuid)) {
+                vmIcons.put(response.getId(),
+                        templateOrIsoIcons.get(vmTemplateIsoIdMap.get(response.getId())));
+                continue;
+            }
+            noTemplateIsoIconResponses.add(response);
+        }
+        vmIcons.putAll(getResourceIconsUsingOsCategory(noTemplateIsoIconResponses));
+        return vmIcons;
+    }
+
+    protected void updateVMResponse(List<UserVmResponse> responses) {
+        if (CollectionUtils.isEmpty(responses)) {
+            return;
+        }
+        Set<String> vmUuids = responses.stream().map(UserVmResponse::getId).collect(Collectors.toSet());
+        Map<String, ResourceIcon> vmIcons = resourceIconManager.getByResourceTypeAndUuids(ResourceTag.ResourceObjectType.UserVm, vmUuids);
+        List<UserVmResponse> noVmIconResponses = responses
+                .stream()
+                .filter(r -> !vmIcons.containsKey(r.getId()))
+                .collect(Collectors.toList());
+        vmIcons.putAll(getResourceIconsForUsingTemplateIso(noVmIconResponses));
+        for (UserVmResponse vmResponse : responses) {
+            ResourceIcon icon = vmIcons.get(vmResponse.getId());
+            if (icon == null) {
+                continue;
+            }
+            ResourceIconResponse iconResponse = _responseGenerator.createResourceIconResponse(icon);
             vmResponse.setResourceIconResponse(iconResponse);
         }
     }

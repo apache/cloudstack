@@ -175,7 +175,7 @@
           class="auth-btn github-auth"
           style="height: 38px; width: 185px; padding: 0; margin-bottom: 5px;" >
           <img src="/assets/github.svg" style="width: 32px; padding: 5px" />
-          <a-text>Sign in with Github</a-text>
+          <a-typography-text>Sign in with Github</a-typography-text>
         </a-button>
       </div>
       <div class="social-auth" v-if="googleprovider">
@@ -187,7 +187,7 @@
           class="auth-btn google-auth"
           style="height: 38px; width: 185px; padding: 0" >
           <img src="/assets/google.svg" style="width: 32px; padding: 5px" />
-          <a-text>Sign in with Google</a-text>
+          <a-typography-text>Sign in with Google</a-typography-text>
         </a-button>
       </div>
     </div>
@@ -196,7 +196,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import store from '@/store'
 import { mapActions } from 'vuex'
 import { sourceToken } from '@/utils/request'
@@ -286,7 +286,7 @@ export default {
       }
     },
     fetchData () {
-      api('listIdps').then(response => {
+      getAPI('listIdps').then(response => {
         if (response) {
           this.idps = response.listidpsresponse.idp || []
           this.idps.sort(function (a, b) {
@@ -297,7 +297,7 @@ export default {
           this.form.idp = this.idps[0].id || ''
         }
       })
-      api('listOauthProvider', {}).then(response => {
+      getAPI('listOauthProvider', {}).then(response => {
         if (response) {
           const oauthproviders = response.listoauthproviderresponse.oauthprovider || []
           oauthproviders.forEach(item => {
@@ -315,7 +315,7 @@ export default {
           this.socialLogin = this.googleprovider || this.githubprovider
         }
       })
-      api('forgotPassword', {}).then(response => {
+      postAPI('forgotPassword', {}).then(response => {
         this.forgotPasswordEnabled = response.forgotpasswordresponse.enabled
       }).catch((err) => {
         if (err?.response?.data === null) {

@@ -143,7 +143,7 @@
 
 <script>
 import { nextTick } from 'vue'
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import ZoneWizardPhysicalNetworkSetupStep from '@views/infra/zone/ZoneWizardPhysicalNetworkSetupStep'
 import IpAddressRangeForm from '@views/infra/zone/IpAddressRangeForm'
@@ -647,7 +647,7 @@ export default {
     },
     fetchConfiguration () {
       this.skipGuestTrafficStep = false
-      api('listConfigurations', { name: 'sdn.ovs.controller' }).then(json => {
+      getAPI('listConfigurations', { name: 'sdn.ovs.controller' }).then(json => {
         const items = json.listconfigurationsresponse.configuration
         items.forEach(item => {
           if (item.name === 'sdn.ovs.controller') {

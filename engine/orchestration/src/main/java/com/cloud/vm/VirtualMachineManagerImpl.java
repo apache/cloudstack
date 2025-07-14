@@ -49,6 +49,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
+
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -61,7 +62,11 @@ import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.framework.ca.Certificate;
@@ -226,6 +231,7 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Snapshot;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
@@ -286,6 +292,7 @@ import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import com.google.gson.Gson;
+
 
 public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMachineManager, VmWorkJobHandler, Listener, Configurable {
 
@@ -413,6 +420,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     ResourceCleanupService resourceCleanupService;
     @Inject
     VmWorkJobDao vmWorkJobDao;
+    @Inject
+    DataStoreProviderManager dataStoreProviderManager;
 
     private SingleCache<List<Long>> vmIdsInProgressCache;
 
@@ -497,8 +506,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     @DB
     public void allocate(final String vmInstanceName, final VirtualMachineTemplate template, final ServiceOffering serviceOffering,
-            final DiskOfferingInfo rootDiskOfferingInfo, final List<DiskOfferingInfo> dataDiskOfferings,
-            final LinkedHashMap<? extends Network, List<? extends NicProfile>> auxiliaryNetworks, final DeploymentPlan plan, final HypervisorType hyperType, final Map<String, Map<Integer, String>> extraDhcpOptions, final Map<Long, DiskOffering> datadiskTemplateToDiskOfferingMap)
+                         final DiskOfferingInfo rootDiskOfferingInfo, final List<DiskOfferingInfo> dataDiskOfferings,
+                         final LinkedHashMap<? extends Network, List<? extends NicProfile>> auxiliaryNetworks, final DeploymentPlan plan, final HypervisorType hyperType, final Map<String, Map<Integer, String>> extraDhcpOptions, final Map<Long, DiskOffering> datadiskTemplateToDiskOfferingMap, Volume volume, Snapshot snapshot)
                     throws InsufficientCapacityException {
 
         logger.info("allocating virtual machine from template: {} with hostname: {} and {} networks", template, vmInstanceName, auxiliaryNetworks.size());
@@ -536,7 +545,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             logger.debug("Allocating disks for {}",  persistedVm);
 
-            allocateRootVolume(persistedVm, template, rootDiskOfferingInfo, owner, rootDiskSizeFinal);
+            allocateRootVolume(persistedVm, template, rootDiskOfferingInfo, owner, rootDiskSizeFinal, volume, snapshot);
 
             // Create new Volume context and inject event resource type, id and details to generate VOLUME.CREATE event for the ROOT disk.
             CallContext volumeContext = CallContext.register(CallContext.current(), ApiCommandResourceType.Volume);
@@ -577,7 +586,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    private void allocateRootVolume(VMInstanceVO vm, VirtualMachineTemplate template, DiskOfferingInfo rootDiskOfferingInfo, Account owner, Long rootDiskSizeFinal) {
+    private void allocateRootVolume(VMInstanceVO vm, VirtualMachineTemplate template, DiskOfferingInfo rootDiskOfferingInfo, Account owner, Long rootDiskSizeFinal, Volume volume, Snapshot snapshot) {
         // Create new Volume context and inject event resource type, id and details to generate VOLUME.CREATE event for the ROOT disk.
         CallContext volumeContext = CallContext.register(CallContext.current(), ApiCommandResourceType.Volume);
         try {
@@ -589,7 +598,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 logger.debug("%s has format [{}]. Skipping ROOT volume [{}] allocation.", template.toString(), ImageFormat.BAREMETAL, rootVolumeName);
             } else {
                 volumeMgr.allocateTemplatedVolumes(Type.ROOT, rootVolumeName, rootDiskOfferingInfo.getDiskOffering(), rootDiskSizeFinal,
-                        rootDiskOfferingInfo.getMinIops(), rootDiskOfferingInfo.getMaxIops(), template, vm, owner);
+                        rootDiskOfferingInfo.getMinIops(), rootDiskOfferingInfo.getMaxIops(), template, vm, owner, volume, snapshot);
             }
         } finally {
             // Remove volumeContext and pop vmContext back
@@ -599,9 +608,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @Override
     public void allocate(final String vmInstanceName, final VirtualMachineTemplate template, final ServiceOffering serviceOffering,
-            final LinkedHashMap<? extends Network, List<? extends NicProfile>> networks, final DeploymentPlan plan, final HypervisorType hyperType) throws InsufficientCapacityException {
+            final LinkedHashMap<? extends Network, List<? extends NicProfile>> networks, final DeploymentPlan plan, final HypervisorType hyperType, Volume volume, Snapshot snapshot) throws InsufficientCapacityException {
         DiskOffering diskOffering = _diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
-        allocate(vmInstanceName, template, serviceOffering, new DiskOfferingInfo(diskOffering), new ArrayList<>(), networks, plan, hyperType, null, null);
+        allocate(vmInstanceName, template, serviceOffering, new DiskOfferingInfo(diskOffering), new ArrayList<>(), networks, plan, hyperType, null, null, volume, snapshot);
     }
 
     VirtualMachineGuru getVmGuru(final VirtualMachine vm) {
@@ -1236,6 +1245,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                                 logger.debug("{} is READY, changing deployment plan to use this pool's dcId: {}, podId: {}, and clusterId: {}", vol, rootVolDcId,
                                         rootVolPodId, rootVolClusterId);
                                 planChangedByVolume = true;
+                            }
+                        }
+                        DataStoreProvider storeProvider = dataStoreProviderManager.getDataStoreProvider(pool.getStorageProviderName());
+                        if (storeProvider != null) {
+                            DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
+                            if (storeDriver instanceof PrimaryDataStoreDriver) {
+                                ((PrimaryDataStoreDriver)storeDriver).detachVolumeFromAllStorageNodes(vol);
                             }
                         }
                     }

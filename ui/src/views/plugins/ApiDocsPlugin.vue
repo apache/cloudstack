@@ -154,7 +154,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 
 import ResourceLayout from '@/layouts/ResourceLayout'
 import TooltipButton from '@/components/widgets/TooltipButton'
@@ -201,7 +201,7 @@ export default {
     if (!('getUserKeys' in this.$store.getters.apis)) {
       return
     }
-    api('getUserKeys', { id: this.$store.getters.userInfo.id }).then(json => {
+    getAPI('getUserKeys', { id: this.$store.getters.userInfo.id }).then(json => {
       this.userkeys = json.getuserkeysresponse.userkeys
       if (this.userkeys && this.userkeys.secretkey) {
         this.showKeys = true
