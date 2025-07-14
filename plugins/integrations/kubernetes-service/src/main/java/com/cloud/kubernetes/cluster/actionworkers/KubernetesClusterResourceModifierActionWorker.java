@@ -165,6 +165,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
 
     protected String kubernetesClusterNodeNamePrefix;
 
+    private static final int MAX_CLUSTER_PREFIX_LENGTH = 43;
+
     protected KubernetesClusterResourceModifierActionWorker(final KubernetesCluster kubernetesCluster, final KubernetesClusterManagerImpl clusterManager) {
         super(kubernetesCluster, clusterManager);
     }
@@ -787,19 +789,35 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         }
     }
 
+    /**
+     * Generates a valid name prefix for Kubernetes cluster nodes.
+     *
+     * <p>The prefix must comply with Kubernetes naming constraints:
+     * <ul>
+     *   <li>Maximum 63 characters total</li>
+     *   <li>Only lowercase alphanumeric characters and hyphens</li>
+     *   <li>Must start with a letter</li>
+     *   <li>Must end with an alphanumeric character</li>
+     * </ul>
+     *
+     * <p>The generated prefix is limited to 43 characters to accommodate the full node naming pattern:
+     * <pre>{'prefix'}-{'control' | 'node'}-{'11-digit-hash'}</pre>
+     *
+     * @return A valid node name prefix, truncated if necessary
+     * @see <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/names/">Kubernetes "Object Names and IDs" documentation</a>
+     */
     protected String getKubernetesClusterNodeNamePrefix() {
-        String prefix = kubernetesCluster.getName();
-        if (!NetUtils.verifyDomainNameLabel(prefix, true)) {
-            prefix = prefix.replaceAll("[^a-zA-Z0-9-]", "");
-            if (prefix.length() == 0) {
-                prefix = kubernetesCluster.getUuid();
-            }
-            prefix = "k8s-" + prefix;
+        String prefix = kubernetesCluster.getName().toLowerCase();
+
+        if (NetUtils.verifyDomainNameLabel(prefix, true)) {
+            return StringUtils.truncate(prefix, MAX_CLUSTER_PREFIX_LENGTH);
         }
-        if (prefix.length() > 40) {
-            prefix = prefix.substring(0, 40);
+
+        prefix = prefix.replaceAll("[^a-z0-9-]", "");
+        if (prefix.isEmpty()) {
+            prefix = kubernetesCluster.getUuid();
         }
-        return prefix;
+        return StringUtils.truncate("k8s-" + prefix, MAX_CLUSTER_PREFIX_LENGTH);
     }
 
     protected String getEtcdNodeNameForCluster() {

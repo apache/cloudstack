@@ -39,9 +39,7 @@ import java.util.Map;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
 
-import org.apache.cloudstack.utils.security.SSLUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
@@ -55,6 +53,7 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.ssl.SSLContexts;
 import org.apache.http.util.EntityUtils;
 
 import com.cloud.utils.Pair;
@@ -120,10 +119,10 @@ public class HttpsDirectTemplateDownloader extends DirectTemplateDownloaderImpl 
                 String password = "changeit";
                 defaultKeystore.load(is, password.toCharArray());
             }
-            TrustManager[] tm = HttpsMultiTrustManager.getTrustManagersFromKeyStores(customKeystore, defaultKeystore);
-            SSLContext sslContext = SSLUtils.getSSLContext();
-            sslContext.init(null, tm, null);
-            return sslContext;
+            return SSLContexts.custom()
+                    .loadTrustMaterial(customKeystore, null)
+                    .loadTrustMaterial(defaultKeystore, null)
+                    .build();
         } catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException | KeyManagementException e) {
             logger.error(String.format("Failure getting SSL context for HTTPS downloader, using default SSL context: %s", e.getMessage()), e);
             try {
