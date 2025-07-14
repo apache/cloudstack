@@ -1631,7 +1631,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 userVmSearchCriteria.setParameters("hostId", hostId);
             }
 
-            if (storageId != null /* && pool != null */) {
+            if (storageId != null /* than pool != null as well */) {
                 if (pool.getPoolType().equals(Storage.StoragePoolType.DatastoreCluster)) {
                     List<StoragePoolVO> childDatastores = storagePoolDao.listChildStoragePoolsInDatastoreCluster(storageId);
                     userVmSearchCriteria.setJoinParameters("volume", "storagePoolId", childDatastores.stream().map(StoragePoolVO::getId).toArray());
@@ -4227,7 +4227,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Account account = CallContext.current().getCallingAccount();
         Long domainId = cmd.getDomainId();
         Long zoneId = cmd.getId();
-        zoneId = accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), zoneId);
+        if( ! AllowUserViewAllDataCenters.valueInDomain(account.getDomainId())) {
+            zoneId = accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), zoneId);
+        }
         List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
         String keyword = cmd.getKeyword();
         String name = cmd.getName();
@@ -5871,6 +5873,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {AllowUserViewDestroyedVM, UserVMDeniedDetails, UserVMReadOnlyDetails, SortKeyAscending,
-                AllowUserViewAllDomainAccounts, SharePublicTemplatesWithOtherDomains, ReturnVmStatsOnVmList};
+                AllowUserViewAllDomainAccounts, AllowUserViewAllDataCenters, SharePublicTemplatesWithOtherDomains, ReturnVmStatsOnVmList};
     }
 }
