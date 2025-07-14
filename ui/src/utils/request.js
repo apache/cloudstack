@@ -150,7 +150,6 @@ service.interceptors.request.use(config => {
   source = sourceToken.getSource()
   config.cancelToken = source.token
 
-  // Handle GET requests (params)
   handleGetRequestParams(config)
 
   handlePostRequestParams(config)
