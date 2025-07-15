@@ -88,10 +88,13 @@ export function login (arg) {
   })
 }
 
-export function logout () {
-  message.destroy()
-  notification.destroy()
-  return postAPI('logout')
+export async function logout () {
+  const result = await postAPI('logout').finally(() => {
+    sourceToken.cancel()
+    message.destroy()
+    notification.destroy()
+  })
+  return result
 }
 
 export function oauthlogin (arg) {
