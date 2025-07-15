@@ -41,6 +41,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang3.BooleanUtils;
 
 @APICommand(name = "createSnapshotPolicy", description = "Creates a snapshot policy for the account.", responseObject = SnapshotPolicyResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -92,6 +93,9 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
                     "The snapshot will always be made available in the zone in which the volume is present.",
             since = "4.21.0")
     protected List<Long> storagePoolIds;
+
+    @Parameter (name = ApiConstants.USE_STORAGE_REPLICATION, type=CommandType.BOOLEAN, required = false, since = "4.21.0", description = "This parameter enables the option the snapshot to be copied to supported primary storage")
+    protected Boolean useStorageReplication;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -130,6 +134,10 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
 
     public  List<Long> getStoragePoolIds() {
         return storagePoolIds == null ? new ArrayList<>() : storagePoolIds;
+    }
+
+    public Boolean useStorageReplication() {
+        return BooleanUtils.toBoolean(useStorageReplication);
     }
 
     /////////////////////////////////////////////////////

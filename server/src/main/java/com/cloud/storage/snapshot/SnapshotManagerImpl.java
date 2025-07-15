@@ -1137,7 +1137,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         if (!hasZones && !hasPools) {
             return;
         }
-        if (Boolean.FALSE.equals(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value()) && hasZones) {
+        if (Boolean.FALSE.equals(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value()) && hasZones && !hasPools) {
             throw new InvalidParameterValueException("Backing up of snapshot has been disabled. Snapshot can not be taken for multiple zones");
         }
         final DataCenterVO zone = dataCenterDao.findById(volume.getDataCenterId());
@@ -1258,7 +1258,9 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
 
         final List<Long> zoneIds = cmd.getZoneIds();
-        final List<Long> poolIds = cmd.getStoragePoolIds();
+        VolumeInfo volumeInfo = volFactory.getVolume(volumeId);
+        final List<Long> poolIds = snapshotHelper.addStoragePoolsForCopyToPrimary(volumeInfo, zoneIds, cmd.getStoragePoolIds(), cmd.useStorageReplication());
+
         validatePolicyZones(zoneIds, poolIds, volume, caller);
 
         Map<String, String> tags = cmd.getTags();
@@ -1777,7 +1779,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         protected void runInContext() {
             try {
                 logger.debug("Value of attempts is " + (snapshotBackupRetries - attempts));
-                if (Boolean.TRUE.equals(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value()) && CollectionUtils.isEmpty(zoneIds)) {
+                if (Boolean.TRUE.equals(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value()) && CollectionUtils.isEmpty(poolIds)) {
                     SnapshotInfo backupedSnapshot = snapshotStrategy.backupSnapshot(snapshot);
 
                     if (backupedSnapshot != null) {
@@ -2228,7 +2230,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     protected StoragePoolVO getCheckedDestinationStorageForSnapshotCopy(long poolId, boolean isRootAdmin) {
         StoragePoolVO destPool = _storagePoolDao.findById(poolId);
         if (destPool == null) {
-            throw new InvalidParameterValueException("Please specify a valid destination zone.");
+            throw new InvalidParameterValueException("Please specify a valid destination pool.");
         }
         if (!StoragePoolStatus.Up.equals(destPool.getStatus()) && !isRootAdmin) {
             throw new PermissionDeniedException("Cannot perform this operation, the storage pool is not in Up state or the user is not the Root Admin " + destPool.getName());
