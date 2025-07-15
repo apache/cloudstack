@@ -49,6 +49,9 @@ async function fetchGuiTheme (params) {
     if (response.listguithemesresponse.guiThemes) {
       return response.listguithemesresponse.guiThemes[0]
     }
+  }).catch(error => {
+    console.error('Error fetching GUI theme:', error)
+    return null
   })
 }
 
