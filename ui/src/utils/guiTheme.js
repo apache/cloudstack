@@ -16,7 +16,7 @@
 // under the License.
 
 import { vueProps } from '@/vue-app'
-import { api } from '@/api'
+import { getAPI } from '@/api'
 
 export async function applyCustomGuiTheme (accountid, domainid) {
   await fetch('config.json').then(response => response.json()).then(config => {
@@ -45,10 +45,13 @@ export async function applyCustomGuiTheme (accountid, domainid) {
 }
 
 async function fetchGuiTheme (params) {
-  return await api('listGuiThemes', params).then(response => {
+  return await getAPI('listGuiThemes', params).then(response => {
     if (response.listguithemesresponse.guiThemes) {
       return response.listguithemesresponse.guiThemes[0]
     }
+  }).catch(error => {
+    console.error('Error fetching GUI theme:', error)
+    return null
   })
 }
 

@@ -47,7 +47,7 @@ export function postAPI (command, data = {}) {
   params.append('response', 'json')
   if (data) {
     Object.entries(data).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
+      if (value !== undefined && value !== null) {
         params.append(key, value)
       }
     })
