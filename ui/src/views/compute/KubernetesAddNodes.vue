@@ -66,7 +66,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { getAPI } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
@@ -172,7 +172,7 @@ export default {
     },
     addNodesToKubernetesCluster (params) {
       return new Promise((resolve, reject) => {
-        getAPI('addNodesToKubernetesCluster', params).then(json => {
+        postAPI('addNodesToKubernetesCluster', params).then(json => {
           const jobId = json.addnodestokubernetesclusterresponse.jobid
           return resolve(jobId)
         }).catch(error => {
