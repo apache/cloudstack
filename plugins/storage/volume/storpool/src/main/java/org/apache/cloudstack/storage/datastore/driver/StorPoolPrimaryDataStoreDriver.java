@@ -672,6 +672,12 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 SpApiResponse resp = StorPoolUtil.volumeCreate(spVolume, conn);
                 if (resp.getError() == null) {
                     updateStoragePool(dstData.getDataStore().getId(), size);
+
+                    VolumeObjectTO to = (VolumeObjectTO)dstData.getTO();
+                    to.setPath(StorPoolUtil.devPath(StorPoolUtil.getNameFromResponse(resp, false)));
+                    to.setSize(size);
+
+                    answer = new CopyCmdAnswer(to);
                     StorPoolUtil.spLog("Created volume=%s with uuid=%s from snapshot=%s with uuid=%s", StorPoolUtil.getNameFromResponse(resp, false), volumeName, snapshotName, sinfo.getUuid());
                 } else if (resp.getError().getName().equals("objectDoesNotExist")) {
                     //check if snapshot is on secondary storage
