@@ -66,7 +66,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { postAPI } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
@@ -112,7 +112,7 @@ export default {
     callListVms (accountId, domainId) {
       return new Promise((resolve) => {
         this.volumes = []
-        postAPI('listVirtualMachines', {
+        getAPI('listVirtualMachines', {
           accountId: accountId,
           domainId: domainId,
           details: 'min',
