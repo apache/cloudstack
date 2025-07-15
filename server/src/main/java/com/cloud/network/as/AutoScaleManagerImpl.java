@@ -1472,7 +1472,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
         CounterVO existingCounter = counterDao.findByNameProviderValue(name, value, provider.getName());
         if (existingCounter != null) {
-            throw new InvalidParameterValueException("Counter with name " + name + " already exists");
+            throw new InvalidParameterValueException(String.format("Counter with name %s and value %s already exists. ", name,value));
         }
         logger.debug("Adding Counter " + name);
         counter = counterDao.persist(new CounterVO(src, name, value, provider));
