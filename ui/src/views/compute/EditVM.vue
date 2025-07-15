@@ -156,7 +156,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
@@ -243,7 +243,7 @@ export default {
       this.fetchUserData()
     },
     fetchZoneDetails () {
-      api('listZones', {
+      getAPI('listZones', {
         id: this.resource.zoneid
       }).then(response => {
         const zone = response?.listzonesresponse?.zone || []
@@ -252,7 +252,7 @@ export default {
     },
     fetchSecurityGroups () {
       this.securitygroups.loading = true
-      api('listSecurityGroups', {
+      getAPI('listSecurityGroups', {
         zoneid: this.resource.zoneid
       }).then(json => {
         const items = json.listsecuritygroupsresponse.securitygroup || []
@@ -275,7 +275,7 @@ export default {
       params.id = this.resource.serviceofferingid
       params.isrecursive = true
       var apiName = 'listServiceOfferings'
-      api(apiName, params).then(json => {
+      getAPI(apiName, params).then(json => {
         const offerings = json?.listserviceofferingsresponse?.serviceoffering || []
         this.serviceOffering = offerings[0] || {}
       })
@@ -286,7 +286,7 @@ export default {
       params.isrecursive = true
       params.templatefilter = 'all'
       var apiName = 'listTemplates'
-      api(apiName, params).then(json => {
+      getAPI(apiName, params).then(json => {
         const templateResponses = json.listtemplatesresponse.template
         this.template = templateResponses[0]
       })
@@ -296,7 +296,7 @@ export default {
       params.name = 'enable.dynamic.scale.vm'
       params.zoneid = this.resource.zoneid
       var apiName = 'listConfigurations'
-      api(apiName, params).then(json => {
+      getAPI(apiName, params).then(json => {
         const configResponse = json.listconfigurationsresponse.configuration
         this.dynamicScalingVmConfig = configResponse[0]?.value === 'true'
       })
@@ -307,7 +307,7 @@ export default {
     fetchOsTypes () {
       this.osTypes.loading = true
       this.osTypes.opts = []
-      api('listOsTypes').then(json => {
+      getAPI('listOsTypes').then(json => {
         this.osTypes.opts = json.listostypesresponse.ostype || []
       }).catch(error => {
         this.$notifyError(error)
@@ -325,7 +325,7 @@ export default {
       } else {
         params.account = this.$store.getters.userInfo.account
       }
-      api('listInstanceGroups', params).then(json => {
+      getAPI('listInstanceGroups', params).then(json => {
         const groups = json.listinstancegroupsresponse.instancegroup || []
         groups.forEach(x => {
           this.groups.opts.push({ id: x.name, value: x.name })
@@ -352,7 +352,7 @@ export default {
         id: networkId,
         listall: true
       }
-      api(`listNetworks`, listNetworkParams).then(json => {
+      getAPI(`listNetworks`, listNetworkParams).then(json => {
         json.listnetworksresponse.network[0].service.forEach(service => {
           if (service.name === 'UserData') {
             this.userDataEnabled = true
@@ -362,7 +362,7 @@ export default {
               userdata: true,
               listall: true
             }
-            api('listVirtualMachines', listVmParams).then(json => {
+            getAPI('listVirtualMachines', listVmParams).then(json => {
               this.form.userdata = atob(json.listvirtualmachinesresponse.virtualmachine[0].userdata || '')
             })
           }
@@ -403,7 +403,7 @@ export default {
         }
         this.loading = true
 
-        api('updateVirtualMachine', {}, 'POST', params).then(json => {
+        postAPI('updateVirtualMachine', params).then(json => {
           this.$message.success({
             content: `${this.$t('label.action.edit.instance')} - ${values.name}`,
             duration: 2

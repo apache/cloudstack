@@ -127,7 +127,7 @@
 
 <script>
 
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import ResourceLayout from '@/layouts/ResourceLayout'
 import DetailsTab from '@/components/view/DetailsTab'
@@ -238,14 +238,14 @@ export default {
       if (!this.vm || !this.vm.id) {
         return
       }
-      api('listAnnotations', { entityid: this.dataResource.id, entitytype: 'VM', annotationfilter: 'all' }).then(json => {
+      getAPI('listAnnotations', { entityid: this.dataResource.id, entitytype: 'VM', annotationfilter: 'all' }).then(json => {
         if (json.listannotationsresponse && json.listannotationsresponse.annotation) {
           this.annotations = json.listannotationsresponse.annotation
         }
       })
     },
     listDiskOfferings () {
-      api('listDiskOfferings', {
+      getAPI('listDiskOfferings', {
         listAll: 'true',
         zoneid: this.vm.zoneid
       }).then(response => {
@@ -276,7 +276,7 @@ export default {
       this.securitygroupids = securitygroupids || []
     },
     updateSecurityGroups () {
-      api('updateVirtualMachine', { id: this.vm.id, securitygroupids: this.securitygroupids.join(',') }).catch(error => {
+      postAPI('updateVirtualMachine', { id: this.vm.id, securitygroupids: this.securitygroupids.join(',') }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
         this.closeModals()

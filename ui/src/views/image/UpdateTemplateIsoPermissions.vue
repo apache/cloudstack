@@ -126,7 +126,7 @@
   </div>
 </template>
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
@@ -199,7 +199,7 @@ export default {
     },
     fetchAccounts () {
       this.loading = true
-      api('listAccounts', {
+      getAPI('listAccounts', {
         domainid: this.resource.domainid,
         showicon: true
       }).then(response => {
@@ -209,7 +209,7 @@ export default {
       })
     },
     fetchProjects () {
-      api('listProjects', {
+      getAPI('listProjects', {
         details: 'min',
         showicon: true,
         listall: true
@@ -221,7 +221,7 @@ export default {
     },
     fetchTemplatePermissions () {
       this.loading = true
-      api('listTemplatePermissions', {
+      getAPI('listTemplatePermissions', {
         id: this.resource.id
       }).then(response => {
         const permission = response.listtemplatepermissionsresponse.templatepermission
@@ -237,7 +237,7 @@ export default {
     },
     fetchIsoPermissions () {
       this.loading = true
-      api('listIsoPermissions', {
+      getAPI('listIsoPermissions', {
         id: this.resource.id
       }).then(response => {
         const permission = response.listtemplatepermissionsresponse.templatepermission
@@ -281,7 +281,7 @@ export default {
       this.loading = true
       const apiName = this.isImageTypeIso ? 'updateIsoPermissions' : 'updateTemplatePermissions'
       const resourceType = this.isImageTypeIso ? 'ISO' : 'template'
-      api(apiName, {
+      postAPI(apiName, {
         [variableKey]: variableValue,
         id: this.resource.id,
         ispublic: this.resource.isPublic,
