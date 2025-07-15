@@ -537,7 +537,7 @@ export default {
       const params = {}
       params.showicon = true
       this.storagePoolsLoading = true
-      api('listStoragePools', params).then(json => {
+      getAPI('listStoragePools', params).then(json => {
         const listStoragePools = json.liststoragepoolsresponse.storagepool
         if (listStoragePools) {
           this.storagePools = listStoragePools
