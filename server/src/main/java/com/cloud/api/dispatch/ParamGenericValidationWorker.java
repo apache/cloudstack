@@ -69,6 +69,7 @@ public class ParamGenericValidationWorker implements DispatchWorker {
         defaultParamNames.add(ApiConstants.ID);
         defaultParamNames.add(ApiConstants.SIGNATURE_VERSION);
         defaultParamNames.add(ApiConstants.EXPIRES);
+        defaultParamNames.add(ApiConstants.SCHEDULE_ID);
         defaultParamNames.add("_");
     }
 
