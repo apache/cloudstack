@@ -40,13 +40,13 @@ public class UsageVolumeDaoImpl extends GenericDaoBase<UsageVolumeVO, Long> impl
 
     protected static final String REMOVE_BY_USERID_VOLID = "DELETE FROM usage_volume WHERE account_id = ? AND volume_id = ?";
     protected static final String UPDATE_DELETED = "UPDATE usage_volume SET deleted = ? WHERE account_id = ? AND volume_id = ? and deleted IS NULL";
-    protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT volume_id, zone_id, account_id, domain_id, disk_offering_id, template_id, size, created, deleted "
+    protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT volume_id, zone_id, account_id, domain_id, disk_offering_id, template_id, vm_instance_id, size, created, deleted "
         + "FROM usage_volume " + "WHERE account_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR "
         + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
-    protected static final String GET_USAGE_RECORDS_BY_DOMAIN = "SELECT volume_id, zone_id, account_id, domain_id, disk_offering_id, template_id, size, created, deleted "
+    protected static final String GET_USAGE_RECORDS_BY_DOMAIN = "SELECT volume_id, zone_id, account_id, domain_id, disk_offering_id, template_id, vm_instance_id, size, created, deleted "
         + "FROM usage_volume " + "WHERE domain_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR "
         + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
-    protected static final String GET_ALL_USAGE_RECORDS = "SELECT volume_id, zone_id, account_id, domain_id, disk_offering_id, template_id, size, created, deleted "
+    protected static final String GET_ALL_USAGE_RECORDS = "SELECT volume_id, zone_id, account_id, domain_id, disk_offering_id, template_id, vm_instance_id, size, created, deleted "
         + "FROM usage_volume " + "WHERE (deleted IS NULL) OR (created BETWEEN ? AND ?) OR " + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?))";
 
     public UsageVolumeDaoImpl() {
@@ -152,11 +152,12 @@ public class UsageVolumeDaoImpl extends GenericDaoBase<UsageVolumeVO, Long> impl
                 if (tId == 0) {
                     tId = null;
                 }
-                long size = Long.valueOf(rs.getLong(7));
+                Long vmId = rs.getLong(7);
+                long size = Long.valueOf(rs.getLong(8));
                 Date createdDate = null;
                 Date deletedDate = null;
-                String createdTS = rs.getString(8);
-                String deletedTS = rs.getString(9);
+                String createdTS = rs.getString(9);
+                String deletedTS = rs.getString(10);
 
                 if (createdTS != null) {
                     createdDate = DateUtil.parseDateString(s_gmtTimeZone, createdTS);
@@ -165,7 +166,7 @@ public class UsageVolumeDaoImpl extends GenericDaoBase<UsageVolumeVO, Long> impl
                     deletedDate = DateUtil.parseDateString(s_gmtTimeZone, deletedTS);
                 }
 
-                usageRecords.add(new UsageVolumeVO(vId, zoneId, acctId, dId, doId, tId, size, createdDate, deletedDate));
+                usageRecords.add(new UsageVolumeVO(vId, zoneId, acctId, dId, doId, tId, vmId, size, createdDate, deletedDate));
             }
         } catch (Exception e) {
             txn.rollback();

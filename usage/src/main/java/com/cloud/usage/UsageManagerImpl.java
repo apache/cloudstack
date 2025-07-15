@@ -33,6 +33,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import com.cloud.network.Network;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.usage.dao.UsageNetworksDao;
 import com.cloud.usage.parser.NetworksUsageParser;
 import com.cloud.network.vpc.Vpc;
@@ -180,6 +181,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
 
     @Inject
     private UsageVpcDao usageVpcDao;
+    @Inject
+    private VolumeDao volumeDao;
 
     private String _version = null;
     private final Calendar _jobExecTime = Calendar.getInstance();
@@ -1573,7 +1576,9 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 s_logger.debug("create volume with id : " + volId + " for account: " + event.getAccountId());
             }
             Account acct = _accountDao.findByIdIncludingRemoved(event.getAccountId());
-            UsageVolumeVO volumeVO = new UsageVolumeVO(volId, event.getZoneId(), event.getAccountId(), acct.getDomainId(), event.getOfferingId(), event.getTemplateId(), event.getSize(), event.getCreateDate(), null);
+            Long vmId = volumeDao.getInstanceIdByVolumeId(volId);
+            UsageVolumeVO volumeVO = new UsageVolumeVO(volId, event.getZoneId(), event.getAccountId(), acct.getDomainId(),
+                    event.getOfferingId(), event.getTemplateId(), vmId, event.getSize(), event.getCreateDate(), null);
             _usageVolumeDao.persist(volumeVO);
         } else if (EventTypes.EVENT_VOLUME_DELETE.equals(event.getType())) {
             SearchCriteria<UsageVolumeVO> sc = _usageVolumeDao.createSearchCriteria();

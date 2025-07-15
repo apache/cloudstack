@@ -67,6 +67,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     protected final SearchBuilder<VolumeVO> RootDiskStateSearch;
     private final SearchBuilder<VolumeVO> storeAndInstallPathSearch;
     private final SearchBuilder<VolumeVO> volumeIdSearch;
+    private final SearchBuilder<VolumeVO> instanceIdByVolumeIdSearch;
     protected GenericSearchBuilder<VolumeVO, Long> CountByAccount;
     protected GenericSearchBuilder<VolumeVO, SumCount> primaryStorageSearch;
     protected GenericSearchBuilder<VolumeVO, SumCount> primaryStorageSearch2;
@@ -494,6 +495,11 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         poolAndPathSearch.and("poolId", poolAndPathSearch.entity().getPoolId(), Op.EQ);
         poolAndPathSearch.and("path", poolAndPathSearch.entity().getPath(), Op.EQ);
         poolAndPathSearch.done();
+
+        instanceIdByVolumeIdSearch = createSearchBuilder();
+        instanceIdByVolumeIdSearch.selectFields(instanceIdByVolumeIdSearch.entity().getInstanceId());
+        instanceIdByVolumeIdSearch.and("id", instanceIdByVolumeIdSearch.entity().getId(), Op.EQ);
+        instanceIdByVolumeIdSearch.done();
     }
 
     @Override
@@ -846,5 +852,13 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("iScsiName", iScsiName);
         return findOneIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public Long getInstanceIdByVolumeId(long volumeId) {
+        SearchCriteria<VolumeVO> sc = instanceIdByVolumeIdSearch.create();
+        sc.setParameters("id", volumeId);
+        List<VolumeVO> volumes = search(sc, null);
+        return volumes.isEmpty() ? null : volumes.get(0).getInstanceId();
     }
 }
