@@ -583,6 +583,33 @@
                 <span v-else>{{ resource.serviceofferingname || resource.serviceofferingid }}</span>
               </div>
             </div>
+            <div class="resource-detail-item" v-if="resource.controlofferingname && resource.controlofferingid">
+              <div class="resource-detail-item__label">{{ $t('label.service.offering.controlnodes') }}</div>
+              <div class="resource-detail-item__details">
+                <cloud-outlined />
+                <router-link v-if="!isStatic && ($route.meta.name === 'router' || $route.meta.name === 'systemvm')" :to="{ path: '/systemoffering/' + resource.controlofferingid}">{{ resource.controlofferingname || resource.controlofferingid }} </router-link>
+                <router-link v-else-if="$router.resolve('/computeoffering/' + resource.controlofferingid).matched[0].redirect !== '/exception/404'" :to="{ path: '/computeoffering/' + resource.controlofferingid }">{{ resource.controlofferingname || resource.controlofferingid }} </router-link>
+                <span v-else>{{ resource.controlofferingname || resource.controlofferingid }}</span>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.workerofferingname && resource.workerofferingid">
+              <div class="resource-detail-item__label">{{ $t('label.service.offering.workernodes') }}</div>
+              <div class="resource-detail-item__details">
+                <cloud-outlined />
+                <router-link v-if="!isStatic && ($route.meta.name === 'router' || $route.meta.name === 'systemvm')" :to="{ path: '/systemoffering/' + resource.workerofferingid}">{{ resource.workerofferingname || resource.workerofferingid }} </router-link>
+                <router-link v-else-if="$router.resolve('/computeoffering/' + resource.workerofferingid).matched[0].redirect !== '/exception/404'" :to="{ path: '/computeoffering/' + resource.workerofferingid }">{{ resource.workerofferingname || resource.workerofferingid }} </router-link>
+                <span v-else>{{ resource.workerofferingname || resource.workerofferingid }}</span>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.etcdofferingname && resource.etcdofferingid">
+              <div class="resource-detail-item__label">{{ $t('label.service.offering.etcdnodes') }}</div>
+              <div class="resource-detail-item__details">
+                <cloud-outlined />
+                <router-link v-if="!isStatic && ($route.meta.name === 'router' || $route.meta.name === 'systemvm')" :to="{ path: '/systemoffering/' + resource.etcdofferingid}">{{ resource.etcdofferingname || resource.etcdofferingid }} </router-link>
+                <router-link v-else-if="$router.resolve('/computeoffering/' + resource.etcdfferingid).matched[0].redirect !== '/exception/404'" :to="{ path: '/computeoffering/' + resource.etcdofferingid }">{{ resource.etcdofferingname || resource.etcdofferingid }} </router-link>
+                <span v-else>{{ resource.etcdofferingname || resource.etcdofferingid }}</span>
+              </div>
+            </div>
             <div class="resource-detail-item" v-if="resource.rootdiskofferingid && resource.rootdiskofferingdisplaytext || resource.datadiskofferingid && resource.datadiskofferingdisplaytext">
               <div class="resource-detail-item__label">{{ $t('label.diskoffering') }}</div>
               <div class="resource-detail-item__details">
@@ -873,7 +900,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { createPathBasedOnVmType } from '@/utils/plugins'
 import { validateLinks } from '@/utils/links'
 import Console from '@/components/widgets/Console'
@@ -1044,7 +1071,7 @@ export default {
     fetchOsCategoryAndIcon () {
       const osId = this.resource.guestosid || this.resource.ostypeid
       if (osId && 'listOsTypes' in this.$store.getters.apis) {
-        api('listOsTypes', { id: osId }).then(json => {
+        getAPI('listOsTypes', { id: osId }).then(json => {
           this.osCategoryId = json?.listostypesresponse?.ostype?.[0]?.oscategoryid || null
           if (this.osCategoryId) {
             this.fetchResourceIcon(this.osCategoryId, 'guestoscategory')
@@ -1093,7 +1120,7 @@ export default {
     },
     fetchAccount () {
       return new Promise((resolve, reject) => {
-        api('listAccounts', {
+        getAPI('listAccounts', {
           name: this.resource.account,
           domainid: this.resource.domainid,
           showicon: true
@@ -1108,7 +1135,7 @@ export default {
     fetchResourceIcon (resourceid, type) {
       if (resourceid) {
         return new Promise((resolve, reject) => {
-          api('listResourceIcon', {
+          getAPI('listResourceIcon', {
             resourceids: resourceid,
             resourcetype: type
           }).then(json => {
@@ -1146,7 +1173,7 @@ export default {
       if (!('getUserKeys' in this.$store.getters.apis)) {
         return
       }
-      api('getUserKeys', { id: this.resource.id }).then(json => {
+      getAPI('getUserKeys', { id: this.resource.id }).then(json => {
         this.showKeys = true
         this.newResource.secretkey = json.getuserkeysresponse.userkeys.secretkey
         if (!this.isAdmin()) {
@@ -1169,7 +1196,7 @@ export default {
       if (this.$route.meta.name === 'project') {
         params.projectid = this.resource.id
       }
-      api('listTags', params).then(json => {
+      getAPI('listTags', params).then(json => {
         if (json.listtagsresponse && json.listtagsresponse.tag) {
           this.tags = json.listtagsresponse.tag
         }
@@ -1204,7 +1231,7 @@ export default {
       args.resourcetype = this.resourceType
       args['tags[0].key'] = this.inputKey
       args['tags[0].value'] = this.inputValue
-      api('createTags', args).then(json => {
+      postAPI('createTags', args).then(json => {
       }).finally(e => {
         this.getTags()
       })
@@ -1220,7 +1247,7 @@ export default {
       args.resourcetype = this.resourceType
       args['tags[0].key'] = tag.key
       args['tags[0].value'] = tag.value
-      api('deleteTags', args).then(json => {
+      postAPI('deleteTags', args).then(json => {
       }).finally(e => {
         this.getTags()
       })

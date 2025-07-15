@@ -97,6 +97,7 @@ import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.api.response.GuestOsMappingResponse;
 import org.apache.cloudstack.api.response.GuestVlanRangeResponse;
 import org.apache.cloudstack.api.response.GuestVlanResponse;
+import org.apache.cloudstack.api.response.GuiThemeResponse;
 import org.apache.cloudstack.api.response.HostForMigrationResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.HypervisorCapabilitiesResponse;
@@ -206,6 +207,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.gui.theme.GuiThemeJoin;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.network.BgpPeerVO;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
@@ -5468,9 +5470,13 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setZoneName(zone.getName());
         response.setAsNumber(asn.getAsNumber());
         ASNumberRangeVO range = asNumberRangeDao.findById(asn.getAsNumberRangeId());
-        response.setAsNumberRangeId(range.getUuid());
-        String rangeText = String.format("%s-%s", range.getStartASNumber(), range.getEndASNumber());
-        response.setAsNumberRange(rangeText);
+        if (Objects.nonNull(range)) {
+            response.setAsNumberRangeId(range.getUuid());
+            String rangeText = String.format("%s-%s", range.getStartASNumber(), range.getEndASNumber());
+            response.setAsNumberRange(rangeText);
+        } else {
+            logger.info("Range is null for AS number: "+ asn.getAsNumber());
+        }
         response.setAllocated(asn.getAllocatedTime());
         response.setAllocationState(asn.isAllocated() ? "Allocated" : "Free");
         if (asn.getVpcId() != null) {
@@ -5511,8 +5517,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         SharedFSJoinVO sharedFSView = ApiDBUtils.newSharedFSView(sharedFS);
         return ApiDBUtils.newSharedFSResponse(view, sharedFSView);
     }
-
-    protected Map<String, ResourceIcon> getResourceIconsUsingOsCategory(List<TemplateResponse> responses) {
+protected Map<String, ResourceIcon> getResourceIconsUsingOsCategory(List<TemplateResponse> responses) {
         Set<Long> guestOsCategoryIds = responses.stream().map(TemplateResponse::getOsTypeCategoryId).collect(Collectors.toSet());
         Map<Long, ResourceIcon> guestOsCategoryIcons =
                 resourceIconManager.getByResourceTypeAndIds(ResourceTag.ResourceObjectType.GuestOsCategory,
@@ -5545,5 +5550,29 @@ public class ApiResponseHelper implements ResponseGenerator {
             ResourceIconResponse iconResponse = createResourceIconResponse(icon);
             response.setResourceIconResponse(iconResponse);
         }
+    }
+    @Override
+    public GuiThemeResponse createGuiThemeResponse(GuiThemeJoin guiThemeJoin) {
+        GuiThemeResponse guiThemeResponse = new GuiThemeResponse();
+
+        Long callerId = CallContext.current().getCallingAccount().getAccountId();
+        if (callerId != Account.ACCOUNT_ID_SYSTEM && _accountMgr.isRootAdmin(callerId)) {
+            guiThemeResponse.setId(guiThemeJoin.getUuid());
+            guiThemeResponse.setName(guiThemeJoin.getName());
+            guiThemeResponse.setDescription(guiThemeJoin.getDescription());
+            guiThemeResponse.setCommonNames(guiThemeJoin.getCommonNames());
+            guiThemeResponse.setDomainIds(guiThemeJoin.getDomains());
+            guiThemeResponse.setRecursiveDomains(guiThemeJoin.isRecursiveDomains());
+            guiThemeResponse.setAccountIds(guiThemeJoin.getAccounts());
+            guiThemeResponse.setPublic(guiThemeJoin.getIsPublic());
+            guiThemeResponse.setCreated(guiThemeJoin.getCreated());
+            guiThemeResponse.setRemoved(guiThemeJoin.getRemoved());
+        }
+
+        guiThemeResponse.setJsonConfiguration(guiThemeJoin.getJsonConfiguration());
+        guiThemeResponse.setCss(guiThemeJoin.getCss());
+        guiThemeResponse.setResponseName("guithemes");
+
+        return guiThemeResponse;
     }
 }

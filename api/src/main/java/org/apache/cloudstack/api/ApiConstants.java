@@ -90,9 +90,11 @@ public class ApiConstants {
     public static final String CONVERT_INSTANCE_HOST_ID = "convertinstancehostid";
     public static final String CONVERT_INSTANCE_STORAGE_POOL_ID = "convertinstancepoolid";
     public static final String ENABLED_REVOCATION_CHECK = "enabledrevocationcheck";
+    public static final String COMBINED_CAPACITY_ORDERING = "COMBINED";
     public static final String CONTROLLER = "controller";
     public static final String CONTROLLER_UNIT = "controllerunit";
     public static final String COPY_IMAGE_TAGS = "copyimagetags";
+    public static final String CPU_OVERCOMMIT_RATIO = "cpuOvercommitRatio";
     public static final String CSR = "csr";
     public static final String PRIVATE_KEY = "privatekey";
     public static final String DATASTORE_HOST = "datastorehost";
@@ -119,7 +121,12 @@ public class ApiConstants {
     public static final String CN = "cn";
     public static final String COMMAND = "command";
     public static final String CMD_EVENT_TYPE = "cmdeventtype";
+    public static final String CNI_CONFIG = "cniconfig";
+    public static final String CNI_CONFIG_ID = "cniconfigurationid";
+    public static final String CNI_CONFIG_DETAILS = "cniconfigdetails";
+    public static final String CNI_CONFIG_NAME = "cniconfigname";
     public static final String COMPONENT = "component";
+    public static final String CPU = "CPU";
     public static final String CPU_CORE_PER_SOCKET = "cpucorepersocket";
     public static final String CPU_NUMBER = "cpunumber";
     public static final String CPU_SPEED = "cpuspeed";
@@ -140,6 +147,7 @@ public class ApiConstants {
     public static final String ENCRYPT_FORMAT = "encryptformat";
     public static final String ENCRYPT_ROOT = "encryptroot";
     public static final String ENCRYPTION_SUPPORTED = "encryptionsupported";
+    public static final String ETCD_IPS = "etcdips";
     public static final String MIN_IOPS = "miniops";
     public static final String MAX_IOPS = "maxiops";
     public static final String HYPERVISOR_SNAPSHOT_RESERVE = "hypervisorsnapshotreserve";
@@ -333,17 +341,20 @@ public class ApiConstants {
     public static final String LBID = "lbruleid";
     public static final String LB_PROVIDER = "lbprovider";
     public static final String MAC_ADDRESS = "macaddress";
+    public static final String MANUAL_UPGRADE = "manualupgrade";
     public static final String MAX = "max";
     public static final String MAX_SNAPS = "maxsnaps";
     public static final String MAX_BACKUPS = "maxbackups";
     public static final String MAX_CPU_NUMBER = "maxcpunumber";
     public static final String MAX_MEMORY = "maxmemory";
+    public static final String MEMORY_OVERCOMMIT_RATIO = "memoryOvercommitRatio";
     public static final String MIN_CPU_NUMBER = "mincpunumber";
     public static final String MIN_MEMORY = "minmemory";
     public static final String MIGRATION_TYPE = "migrationtype";
     public static final String MIGRATIONS = "migrations";
     public static final String MEMORY = "memory";
     public static final String MODE = "mode";
+    public static final String MOUNT_CKS_ISO_ON_VR = "mountcksisoonvr";
     public static final String MULTI_ARCH = "ismultiarch";
     public static final String NSX_MODE = "nsxmode";
     public static final String NETWORK_MODE = "networkmode";
@@ -360,6 +371,7 @@ public class ApiConstants {
     public static final String NIC_PACKED_VIRTQUEUES_ENABLED = "nicpackedvirtqueuesenabled";
     public static final String NEW_START_IP = "newstartip";
     public static final String NEW_END_IP = "newendip";
+    public static final String KUBERNETES_NODE_VERSION = "kubernetesnodeversion";
     public static final String NUM_RETRIES = "numretries";
     public static final String OFFER_HA = "offerha";
     public static final String OS_DISTRIBUTION = "osdistribution";
@@ -433,6 +445,8 @@ public class ApiConstants {
     public static final String PUBLIC_END_PORT = "publicendport";
     public static final String PUBLIC_ZONE = "publiczone";
     public static final String PURGE_RESOURCES = "purgeresources";
+    public static final String RAM = "RAM";
+    public static final String REBALANCE = "rebalance";
     public static final String RECEIVED_BYTES = "receivedbytes";
     public static final String RECONNECT = "reconnect";
     public static final String RECOVER = "recover";
@@ -547,6 +561,7 @@ public class ApiConstants {
     public static final String USER_SECURITY_GROUP_LIST = "usersecuritygrouplist";
     public static final String USER_SECRET_KEY = "usersecretkey";
     public static final String USE_VIRTUAL_NETWORK = "usevirtualnetwork";
+    public static final String USE_VIRTUAL_ROUTER_IP_RESOLVER = "userouteripresolver";
     public static final String UPDATE_IN_SEQUENCE = "updateinsequence";
     public static final String VALUE = "value";
     public static final String VIRTUAL_MACHINE_ID = "virtualmachineid";
@@ -563,6 +578,12 @@ public class ApiConstants {
 
     public static final String VLAN = "vlan";
     public static final String VLAN_RANGE = "vlanrange";
+    public static final String WORKER_SERVICE_OFFERING_ID = "workerofferingid";
+    public static final String WORKER_SERVICE_OFFERING_NAME = "workerofferingname";
+    public static final String CONTROL_SERVICE_OFFERING_ID = "controlofferingid";
+    public static final String CONTROL_SERVICE_OFFERING_NAME = "controlofferingname";
+    public static final String ETCD_SERVICE_OFFERING_ID = "etcdofferingid";
+    public static final String ETCD_SERVICE_OFFERING_NAME = "etcdofferingname";
     public static final String REMOVE_VLAN = "removevlan";
     public static final String VLAN_ID = "vlanid";
     public static final String ISOLATED_PVLAN = "isolatedpvlan";
@@ -913,6 +934,7 @@ public class ApiConstants {
     public static final String SPLIT_CONNECTIONS = "splitconnections";
     public static final String FOR_VPC = "forvpc";
     public static final String FOR_NSX = "fornsx";
+    public static final String FOR_CKS = "forcks";
     public static final String NSX_SUPPORT_LB = "nsxsupportlb";
     public static final String NSX_SUPPORTS_INTERNAL_LB = "nsxsupportsinternallb";
     public static final String FOR_TUNGSTEN = "fortungsten";
@@ -1121,6 +1143,10 @@ public class ApiConstants {
     public static final String MASTER_NODES = "masternodes";
     public static final String NODE_IDS = "nodeids";
     public static final String CONTROL_NODES = "controlnodes";
+    public static final String ETCD_NODES = "etcdnodes";
+    public static final String EXTERNAL_NODES = "externalnodes";
+    public static final String IS_EXTERNAL_NODE = "isexternalnode";
+    public static final String IS_ETCD_NODE = "isetcdnode";
     public static final String MIN_SEMANTIC_VERSION = "minimumsemanticversion";
     public static final String MIN_KUBERNETES_VERSION_ID = "minimumkubernetesversionid";
     public static final String NODE_ROOT_DISK_SIZE = "noderootdisksize";
@@ -1129,6 +1155,8 @@ public class ApiConstants {
     public static final String AUTOSCALING_ENABLED = "autoscalingenabled";
     public static final String MIN_SIZE = "minsize";
     public static final String MAX_SIZE = "maxsize";
+    public static final String NODE_TYPE_OFFERING_MAP = "nodeofferings";
+    public static final String NODE_TYPE_TEMPLATE_MAP = "nodetemplates";
 
     public static final String BOOT_TYPE = "boottype";
     public static final String BOOT_MODE = "bootmode";
@@ -1232,6 +1260,22 @@ public class ApiConstants {
             "added, it will be interpreted as \"23:59:59\"). If the recommended format is not used, the date will be considered in the server timezone.";
 
     public static final String VMWARE_DC = "vmwaredc";
+
+    public static final String CSS = "css";
+
+    public static final String JSON_CONFIGURATION = "jsonconfiguration";
+
+    public static final String COMMON_NAMES = "commonnames";
+
+    public static final String COMMON_NAME = "commonname";
+
+    public static final String DOMAIN_IDS = "domainids";
+
+    public static final String SHOW_PUBLIC = "showpublic";
+
+    public static final String LIST_ONLY_DEFAULT_THEME = "listonlydefaulttheme";
+
+    public static final String RECURSIVE_DOMAINS = "recursivedomains";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.

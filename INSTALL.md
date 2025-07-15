@@ -18,19 +18,19 @@ Install tools and dependencies used for development:
     # yum -y install git java-17-openjdk java-17-openjdk-devel \
       mysql mysql-server mkisofs git gcc python MySQL-python openssh-clients wget
 
-Set up Maven (3.9.9):
+Set up Maven (3.9.10):
 
-    # wget https://dlcdn.apache.org/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.tar.gz
-    # tar -zxvf apache-maven-3.9.9-bin.tar.gz -C /usr/local
+    # wget https://dlcdn.apache.org/maven/maven-3/3.9.10/binaries/apache-maven-3.9.10-bin.tar.gz
+    # sudo tar -zxvf apache-maven-3.9.10-bin.tar.gz -C /usr/local
     # cd /usr/local
-    # ln -s apache-maven-3.9.9 maven
+    # sudo ln -s apache-maven-3.9.10 maven
     # echo export M2_HOME=/usr/local/maven >> ~/.bashrc # or .zshrc or .profile
     # echo export PATH=/usr/local/maven/bin:${PATH} >> ~/.bashrc # or .zshrc or .profile
     # source ~/.bashrc
 
-Setup up NodeJS (LTS):
+Setup up Node.js 16:
 
-    # curl -sL https://rpm.nodesource.com/setup_12.x | sudo bash -
+    # curl -sL https://rpm.nodesource.com/setup_16.x | sudo -E bash -
     # sudo yum install nodejs
     # sudo npm install -g @vue/cli npm-check-updates
 
@@ -104,13 +104,13 @@ To install dependencies.
 
 To build the project.
 
-    $ npm build
+    $ npm run build
 
 For Development Mode.
 
     $ npm start
 
-Make sure to set CS_URL=http://localhost:8080/client on .env.local file on ui.
+Make sure to set `CS_URL=http://localhost:8080` on the `.env.local` file on UI.
 
 You should be able to run the management server on http://localhost:5050
 

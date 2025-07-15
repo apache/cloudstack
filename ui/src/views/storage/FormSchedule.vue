@@ -223,7 +223,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import { timeZone } from '@/utils/timezone'
@@ -313,7 +313,7 @@ export default {
       const params = {}
       params.showicon = true
       this.zoneLoading = true
-      api('listZones', params).then(json => {
+      getAPI('listZones', params).then(json => {
         const listZones = json.listzonesresponse.zone
         if (listZones) {
           this.zones = listZones
@@ -444,7 +444,7 @@ export default {
           params = Object.assign({}, params, formattedTagData)
         }
         this.actionLoading = true
-        api('createSnapshotPolicy', params).then(json => {
+        postAPI('createSnapshotPolicy', params).then(json => {
           this.$emit('refresh')
           this.$notification.success({
             message: this.$t('label.action.recurring.snapshot'),

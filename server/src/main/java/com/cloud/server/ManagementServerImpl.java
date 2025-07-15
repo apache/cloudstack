@@ -44,6 +44,8 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.api.query.dao.ManagementServerJoinDao;
+import com.cloud.api.query.vo.ManagementServerJoinVO;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
@@ -128,6 +130,7 @@ import org.apache.cloudstack.api.command.admin.iso.ListIsosCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.iso.RegisterIsoCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.loadbalancer.ListLoadBalancerRuleInstancesCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.management.ListMgmtsCmd;
+import org.apache.cloudstack.api.command.admin.management.RemoveManagementServerCmd;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkDeviceCmd;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkServiceProviderCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
@@ -400,6 +403,10 @@ import org.apache.cloudstack.api.command.user.firewall.UpdateFirewallRuleCmd;
 import org.apache.cloudstack.api.command.user.firewall.UpdatePortForwardingRuleCmd;
 import org.apache.cloudstack.api.command.user.guest.ListGuestOsCategoriesCmd;
 import org.apache.cloudstack.api.command.user.guest.ListGuestOsCmd;
+import org.apache.cloudstack.api.command.user.gui.theme.CreateGuiThemeCmd;
+import org.apache.cloudstack.api.command.user.gui.theme.ListGuiThemesCmd;
+import org.apache.cloudstack.api.command.user.gui.theme.RemoveGuiThemeCmd;
+import org.apache.cloudstack.api.command.user.gui.theme.UpdateGuiThemeCmd;
 import org.apache.cloudstack.api.command.user.iso.AttachIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.CopyIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
@@ -524,9 +531,13 @@ import org.apache.cloudstack.api.command.user.template.ListTemplatesCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplatePermissionsCmd;
+import org.apache.cloudstack.api.command.user.userdata.BaseRegisterUserDataCmd;
+import org.apache.cloudstack.api.command.user.userdata.DeleteCniConfigurationCmd;
 import org.apache.cloudstack.api.command.user.userdata.DeleteUserDataCmd;
 import org.apache.cloudstack.api.command.user.userdata.LinkUserDataToTemplateCmd;
+import org.apache.cloudstack.api.command.user.userdata.ListCniConfigurationCmd;
 import org.apache.cloudstack.api.command.user.userdata.ListUserDataCmd;
+import org.apache.cloudstack.api.command.user.userdata.RegisterCniConfigurationCmd;
 import org.apache.cloudstack.api.command.user.userdata.RegisterUserDataCmd;
 import org.apache.cloudstack.api.command.user.vm.AddIpToVmNicCmd;
 import org.apache.cloudstack.api.command.user.vm.AddNicToVMCmd;
@@ -630,6 +641,7 @@ import org.apache.cloudstack.framework.config.impl.ConfigurationSubGroupVO;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.resourcedetail.dao.GuestOsDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
@@ -862,6 +874,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     static final ConfigKey<Integer> sshKeyLength = new ConfigKey<>("Advanced", Integer.class, "ssh.key.length", "2048", "Specifies custom SSH key length (bit)", true, ConfigKey.Scope.Global);
     static final ConfigKey<Boolean> humanReadableSizes = new ConfigKey<>("Advanced", Boolean.class, "display.human.readable.sizes", "true", "Enables outputting human readable byte sizes to logs and usage records.", false, ConfigKey.Scope.Global);
     public static final ConfigKey<String> customCsIdentifier = new ConfigKey<>("Advanced", String.class, "custom.cs.identifier", UUID.randomUUID().toString().split("-")[0].substring(4), "Custom identifier for the cloudstack installation", true, ConfigKey.Scope.Global);
+    public static final ConfigKey<Boolean> exposeCloudStackVersionInApiXmlResponse = new ConfigKey<Boolean>("Advanced", Boolean.class, "expose.cloudstack.version.api.xml.response", "true", "Indicates whether ACS version should appear in the root element of an API XML response.", true, ConfigKey.Scope.Global);
+    public static final ConfigKey<Boolean> exposeCloudStackVersionInApiListCapabilities = new ConfigKey<Boolean>("Advanced", Boolean.class, "expose.cloudstack.version.api.list.capabilities", "true", "Indicates whether ACS version should show in the listCapabilities API.", true, ConfigKey.Scope.Global);
+
     private static final VirtualMachine.Type []systemVmTypes = { VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.ConsoleProxy};
     private static final List<HypervisorType> LIVE_MIGRATION_SUPPORTING_HYPERVISORS = List.of(HypervisorType.Hyperv, HypervisorType.KVM,
             HypervisorType.LXC, HypervisorType.Ovm, HypervisorType.Ovm3, HypervisorType.Simulator, HypervisorType.VMware, HypervisorType.XenServer);
@@ -1020,6 +1035,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     UserDataManager userDataManager;
     @Inject
     StoragePoolTagsDao storagePoolTagsDao;
+    @Inject
+    protected ManagementServerJoinDao managementServerJoinDao;
 
     @Inject
     private PublicIpQuarantineDao publicIpQuarantineDao;
@@ -4157,6 +4174,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListTemplateDirectDownloadCertificatesCmd.class);
         cmdList.add(ProvisionTemplateDirectDownloadCertificateCmd.class);
         cmdList.add(ListMgmtsCmd.class);
+        cmdList.add(RemoveManagementServerCmd.class);
         cmdList.add(GetUploadParamsForIsoCmd.class);
         cmdList.add(GetRouterHealthCheckResultsCmd.class);
         cmdList.add(StartRollingMaintenanceCmd.class);
@@ -4173,6 +4191,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(UpdateSecondaryStorageSelectorCmd.class);
         cmdList.add(RemoveSecondaryStorageSelectorCmd.class);
         cmdList.add(ListAffectedVmsForStorageScopeChangeCmd.class);
+        cmdList.add(ListGuiThemesCmd.class);
+        cmdList.add(UpdateGuiThemeCmd.class);
+        cmdList.add(CreateGuiThemeCmd.class);
+        cmdList.add(RemoveGuiThemeCmd.class);
 
         // Out-of-band management APIs for admins
         cmdList.add(EnableOutOfBandManagementForHostCmd.class);
@@ -4192,6 +4214,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(DeleteUserDataCmd.class);
         cmdList.add(ListUserDataCmd.class);
         cmdList.add(LinkUserDataToTemplateCmd.class);
+        cmdList.add(RegisterCniConfigurationCmd.class);
+        cmdList.add(ListCniConfigurationCmd.class);
+        cmdList.add(DeleteCniConfigurationCmd.class);
 
         //object store APIs
         cmdList.add(AddObjectStoragePoolCmd.class);
@@ -4213,7 +4238,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {vmPasswordLength, sshKeyLength, humanReadableSizes, customCsIdentifier};
+        return new ConfigKey<?>[] {exposeCloudStackVersionInApiXmlResponse, exposeCloudStackVersionInApiListCapabilities, vmPasswordLength, sshKeyLength, humanReadableSizes, customCsIdentifier};
     }
 
     protected class EventPurgeTask extends ManagedContextRunnable {
@@ -4651,10 +4676,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         final Integer fsVmMinCpu = Integer.parseInt(_configDao.getValue("sharedfsvm.min.cpu.count"));
         final Integer fsVmMinRam = Integer.parseInt(_configDao.getValue("sharedfsvm.min.ram.size"));
+        if (exposeCloudStackVersionInApiListCapabilities.value()) {
+            capabilities.put("cloudStackVersion", getVersion());
+        }
 
         capabilities.put("securityGroupsEnabled", securityGroupsEnabled);
         capabilities.put("userPublicTemplateEnabled", userPublicTemplateEnabled);
-        capabilities.put("cloudStackVersion", getVersion());
         capabilities.put("supportELB", supportELB);
         capabilities.put("projectInviteRequired", _projectMgr.projectInviteRequired());
         capabilities.put("allowusercreateprojects", _projectMgr.allowUserToCreateProject());
@@ -5004,7 +5031,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
-    public Pair<List<? extends UserData>, Integer> listUserDatas(final ListUserDataCmd cmd) {
+    @ActionEvent(eventType = EventTypes.EVENT_DELETE_CNI_CONFIG, eventDescription = "CNI Configuration deletion")
+    public boolean deleteCniConfiguration(DeleteCniConfigurationCmd cmd) {
+        return deleteUserData(cmd);
+    }
+
+    @Override
+    public Pair<List<? extends UserData>, Integer> listUserDatas(final ListUserDataCmd cmd, final boolean forCks) {
         final Long id = cmd.getId();
         final String name = cmd.getName();
         final String keyword = cmd.getKeyword();
@@ -5024,6 +5057,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("keyword", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
+        sb.and("forCks", sb.entity().isForCks(), SearchCriteria.Op.EQ);
         final SearchCriteria<UserDataVO> sc = sb.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
@@ -5039,8 +5074,25 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             sc.setParameters("keyword",  "%" + keyword + "%");
         }
 
+        sc.setParameters("forCks", forCks);
+
         final Pair<List<UserDataVO>, Integer> result = userDataDao.searchAndCount(sc, searchFilter);
         return new Pair<>(result.first(), result.second());
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_REGISTER_CNI_CONFIG, eventDescription = "registering CNI configuration", async = true)
+    public UserData registerCniConfiguration(RegisterCniConfigurationCmd cmd) {
+        final Account owner = getOwner(cmd);
+        checkForUserDataByName(cmd, owner);
+        final String name = cmd.getName();
+
+        String userdata = cmd.getCniConfig();
+        final String params = cmd.getParams();
+
+        userdata = userDataManager.validateUserData(userdata, cmd.getHttpMethod());
+
+        return createAndSaveUserData(name, userdata, params, owner, true);
     }
 
     @Override
@@ -5048,15 +5100,15 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public UserData registerUserData(final RegisterUserDataCmd cmd) {
         final Account owner = getOwner(cmd);
         checkForUserDataByName(cmd, owner);
-        checkForUserData(cmd, owner);
-
         final String name = cmd.getName();
+
         String userdata = cmd.getUserData();
+        checkForUserData(cmd, owner);
         final String params = cmd.getParams();
 
         userdata = userDataManager.validateUserData(userdata, cmd.getHttpMethod());
 
-        return createAndSaveUserData(name, userdata, params, owner);
+        return createAndSaveUserData(name, userdata, params, owner, false);
     }
 
     /**
@@ -5076,7 +5128,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
      * @param owner
      * @throws InvalidParameterValueException
      */
-    private void checkForUserDataByName(final RegisterUserDataCmd cmd, final Account owner) throws InvalidParameterValueException {
+    private void checkForUserDataByName(final BaseRegisterUserDataCmd cmd, final Account owner) throws InvalidParameterValueException {
         final UserDataVO userData = userDataDao.findByName(owner.getAccountId(), owner.getDomainId(), cmd.getName());
         if (userData != null) {
             throw new InvalidParameterValueException(String.format("A userdata with name %s already exists for this account.", cmd.getName()));
@@ -5145,7 +5197,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
      * @param cmd
      * @return Account
      */
-    protected Account getOwner(final RegisterUserDataCmd cmd) {
+    protected Account getOwner(final BaseRegisterUserDataCmd cmd) {
         final Account caller = getCaller();
         return  _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
     }
@@ -5158,7 +5210,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return caller;
     }
 
-    private SSHKeyPair createAndSaveSSHKeyPair(final String name, final String fingerprint, final String publicKey, final String privateKey, final Account owner) {
+    private SSHKeyPair  createAndSaveSSHKeyPair(final String name, final String fingerprint, final String publicKey, final String privateKey, final Account owner) {
         final SSHKeyPairVO newPair = new SSHKeyPairVO();
 
         newPair.setAccountId(owner.getAccountId());
@@ -5173,7 +5225,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return newPair;
     }
 
-    private UserData createAndSaveUserData(final String name, final String userdata, final String params, final Account owner) {
+    private UserData createAndSaveUserData(final String name, final String userdata, final String params, final Account owner, final boolean isForCks) {
         final UserDataVO userDataVO = new UserDataVO();
 
         userDataVO.setAccountId(owner.getAccountId());
@@ -5181,6 +5233,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         userDataVO.setName(name);
         userDataVO.setUserData(userdata);
         userDataVO.setParams(params);
+        userDataVO.setForCks(isForCks);
 
         userDataDao.persist(userDataVO);
 
@@ -5666,6 +5719,26 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     public void setLockControllerListener(final LockControllerListener lockControllerListener) {
         _lockControllerListener = lockControllerListener;
+    }
+
+    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_MANAGEMENT_SERVER_REMOVE, eventDescription = "removing Management Server")
+    public boolean removeManagementServer(RemoveManagementServerCmd cmd) {
+        final Long id = cmd.getId();
+        ManagementServerJoinVO managementServer = managementServerJoinDao.findById(id);
+
+        if (managementServer == null) {
+            throw new InvalidParameterValueException(String.format("Unable to find a Management Server with ID equal to [%s].", managementServer.getUuid()));
+        }
+
+        if (!ManagementServerHost.State.Down.equals(managementServer.getState())) {
+            throw new InvalidParameterValueException(String.format("Unable to remove Management Server with ID [%s]. It can only be removed when it is in the [%s] state, however currently it is in the [%s] state.", managementServer.getUuid(), ManagementServerHost.State.Down.name(), managementServer.getState().name()));
+        }
+
+        managementServer.setRemoved(new Date());
+        return managementServerJoinDao.update(id, managementServer);
+
     }
 
 }

@@ -34,9 +34,46 @@ INSERT INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission, sort_or
 SELECT uuid(), role_id, 'quotaCreditsList', permission, sort_order
 FROM `cloud`.`role_permissions` rp
 WHERE rp.rule = 'quotaStatement'
-AND NOT EXISTS(SELECT 1 FROM cloud.role_permissions rp_ WHERE rp.role_id = rp_.role_id AND rp_.rule = 'quotaCreditsList');
+  AND NOT EXISTS(SELECT 1 FROM cloud.role_permissions rp_ WHERE rp.role_id = rp_.role_id AND rp_.rule = 'quotaCreditsList');
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.host', 'last_mgmt_server_id', 'bigint unsigned DEFAULT NULL COMMENT "last management server this host is connected to" AFTER `mgmt_server_id`');
+
+-----------------------------------------------------------
+-- CKS Enhancements:
+-----------------------------------------------------------
+-- Add for_cks column to the vm_template table
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vm_template','for_cks', 'int(1) unsigned DEFAULT "0" COMMENT "if true, the template can be used for CKS cluster deployment"');
+
+-- Add support for different node types service offerings on CKS clusters
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.kubernetes_cluster','control_node_service_offering_id', 'bigint unsigned COMMENT "service offering ID for Control Node(s)"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.kubernetes_cluster','worker_node_service_offering_id', 'bigint unsigned COMMENT "service offering ID for Worker Node(s)"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.kubernetes_cluster','etcd_node_service_offering_id', 'bigint unsigned COMMENT "service offering ID for etcd Nodes"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.kubernetes_cluster','etcd_node_count', 'bigint unsigned COMMENT "number of etcd nodes to be deployed for the Kubernetes cluster"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.kubernetes_cluster','control_node_template_id', 'bigint unsigned COMMENT "template id to be used for Control Node(s)"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.kubernetes_cluster','worker_node_template_id', 'bigint unsigned COMMENT "template id to be used for Worker Node(s)"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.kubernetes_cluster','etcd_node_template_id', 'bigint unsigned COMMENT "template id to be used for etcd Nodes"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.kubernetes_cluster','cni_config_id', 'bigint unsigned COMMENT "user data id representing the associated cni configuration"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.kubernetes_cluster','cni_config_details', 'varchar(4096) DEFAULT NULL COMMENT "user data details representing the values required for the cni configuration associated"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.kubernetes_cluster_vm_map','etcd_node', 'tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT "indicates if the VM is an etcd node"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.kubernetes_cluster_vm_map','external_node', 'tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT "indicates if the node was imported into the Kubernetes cluster"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.kubernetes_cluster_vm_map','manual_upgrade', 'tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT "indicates if the node is marked for manual upgrade and excluded from the Kubernetes cluster upgrade operation"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.kubernetes_cluster_vm_map','kubernetes_node_version', 'varchar(40) COMMENT "version of k8s the cluster node is on"');
+
+ALTER TABLE `cloud`.`kubernetes_cluster` ADD CONSTRAINT `fk_cluster__control_node_service_offering_id` FOREIGN KEY `fk_cluster__control_node_service_offering_id`(`control_node_service_offering_id`) REFERENCES `service_offering`(`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`kubernetes_cluster` ADD CONSTRAINT `fk_cluster__worker_node_service_offering_id` FOREIGN KEY `fk_cluster__worker_node_service_offering_id`(`worker_node_service_offering_id`) REFERENCES `service_offering`(`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`kubernetes_cluster` ADD CONSTRAINT `fk_cluster__etcd_node_service_offering_id` FOREIGN KEY `fk_cluster__etcd_node_service_offering_id`(`etcd_node_service_offering_id`) REFERENCES `service_offering`(`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`kubernetes_cluster` ADD CONSTRAINT `fk_cluster__control_node_template_id` FOREIGN KEY `fk_cluster__control_node_template_id`(`control_node_template_id`) REFERENCES `vm_template`(`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`kubernetes_cluster` ADD CONSTRAINT `fk_cluster__worker_node_template_id` FOREIGN KEY `fk_cluster__worker_node_template_id`(`worker_node_template_id`) REFERENCES `vm_template`(`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`kubernetes_cluster` ADD CONSTRAINT `fk_cluster__etcd_node_template_id` FOREIGN KEY `fk_cluster__etcd_node_template_id`(`etcd_node_template_id`) REFERENCES `vm_template`(`id`) ON DELETE CASCADE;
+
+-- Add for_cks column to the user_data table to represent CNI Configuration stored as userdata
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.user_data','for_cks', 'int(1) unsigned DEFAULT "0" COMMENT "if true, the user data represent CNI configuration meant for CKS use only"');
+
+-- Add use VR IP as resolver option on VPC
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vpc','use_router_ip_resolver', 'tinyint(1) DEFAULT 0 COMMENT "use router ip as resolver instead of dns options"');
+-----------------------------------------------------------
+-- END - CKS Enhancements
+-----------------------------------------------------------
 
 -- Add table for reconcile commands
 CREATE TABLE IF NOT EXISTS `cloud`.`reconcile_commands` (
@@ -166,3 +203,33 @@ SET `sort_key` = CASE
     ELSE `sort_key`
 END;
 -- End: Changes for Guest OS category cleanup
+
+-- Update description for configuration: host.capacityType.to.order.clusters
+UPDATE `cloud`.`configuration` SET
+    `description` = 'The host capacity type (CPU, RAM or COMBINED) is used by deployment planner to order clusters during VM resource allocation'
+WHERE `name` = 'host.capacityType.to.order.clusters'
+  AND `description` = 'The host capacity type (CPU or RAM) is used by deployment planner to order clusters during VM resource allocation';
+
+-- Whitelabel GUI
+CREATE TABLE IF NOT EXISTS `cloud`.`gui_themes` (
+    `id` bigint(20) unsigned NOT NULL auto_increment,
+    `uuid` varchar(255) UNIQUE,
+    `name` varchar(2048) NOT NULL COMMENT 'A name to identify the theme.',
+    `description` varchar(4096) DEFAULT NULL COMMENT 'A description for the theme.',
+    `css` text DEFAULT NULL COMMENT 'The CSS to be retrieved and imported into the GUI when matching the theme access configurations.',
+    `json_configuration` text DEFAULT NULL COMMENT 'The JSON with the configurations to be retrieved and imported into the GUI when matching the theme access configurations.',
+    `recursive_domains` tinyint(1) DEFAULT 0 COMMENT 'Defines whether the subdomains of the informed domains are considered. Default value is false.',
+    `is_public` tinyint(1) default 1 COMMENT 'Defines whether a theme can be retrieved by anyone when only the `internet_domains_names` is informed. If the `domain_uuids` or `account_uuids` is informed, it is considered as `false`.',
+    `created` datetime NOT NULL,
+    `removed` datetime DEFAULT NULL,
+    PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `cloud`.`gui_themes_details` (
+    `id` bigint(20) unsigned NOT NULL auto_increment,
+    `gui_theme_id` bigint(20) unsigned NOT NULL COMMENT 'Foreign key referencing the GUI theme on `gui_themes` table.',
+    `type` varchar(100) NOT NULL COMMENT 'The type of GUI theme details. Valid options are: `account`, `domain` and `commonName`',
+    `value` text NOT NULL COMMENT 'The value of the `type` details. Can be an UUID (account or domain) or internet common name.',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_gui_themes_details__gui_theme_id` FOREIGN KEY (`gui_theme_id`) REFERENCES `gui_themes`(`id`)
+);

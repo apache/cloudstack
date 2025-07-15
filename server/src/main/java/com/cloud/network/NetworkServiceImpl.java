@@ -40,6 +40,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.dao.ASNumberDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.alert.AlertService;
@@ -421,6 +422,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     RoutedIpv4Manager routedIpv4Manager;
     @Inject
     private BGPService bgpService;
+    @Inject
+    private ASNumberDao asNumberDao;
 
     List<InternalLoadBalancerElementService> internalLoadBalancerElementServices = new ArrayList<>();
     Map<String, InternalLoadBalancerElementService> internalLoadBalancerElementServiceMap = new HashMap<>();
@@ -6282,6 +6285,27 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     @Override
     public List<InternalLoadBalancerElementService> getInternalLoadBalancerElements() {
         return new ArrayList<>(this.internalLoadBalancerElementServiceMap.values());
+    }
+
+    @Override
+    public boolean handleCksIsoOnNetworkVirtualRouter(Long virtualRouterId, boolean mount) throws ResourceUnavailableException {
+        DomainRouterVO router = routerDao.findById(virtualRouterId);
+        if (router == null) {
+            String err = String.format("Cannot find VR with ID %s", virtualRouterId);
+            logger.error(err);
+            throw new CloudRuntimeException(err);
+        }
+        Commands commands = new Commands(Command.OnError.Stop);
+        commandSetupHelper.createHandleCksIsoCommand(router, mount, commands);
+        if (!networkHelper.sendCommandsToRouter(router, commands)) {
+            throw new CloudRuntimeException(String.format("Unable to send commands to virtual router: %s", router.getHostId()));
+        }
+        Answer answer = commands.getAnswer("handleCksIso");
+        if (answer == null || !answer.getResult()) {
+            logger.error(String.format("Could not handle the CKS ISO properly: %s", answer.getDetails()));
+            return false;
+        }
+        return true;
     }
 
     /**
