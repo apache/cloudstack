@@ -32,6 +32,7 @@ import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
 import com.cloud.kubernetes.version.KubernetesSupportedVersion;
 import com.cloud.kubernetes.version.KubernetesVersionEventTypes;
+import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -50,6 +51,8 @@ public class KubernetesServiceHelperImpl extends AdapterBase implements Kubernet
     private KubernetesClusterDao kubernetesClusterDao;
     @Inject
     private KubernetesClusterVmMapDao kubernetesClusterVmMapDao;
+    @Inject
+    KubernetesClusterService kubernetesClusterService;
 
     protected void setEventTypeEntityDetails(Class<?> eventTypeDefinedClass, Class<?> entityClass) {
         Field[] declaredFields = eventTypeDefinedClass.getDeclaredFields();
@@ -104,6 +107,11 @@ public class KubernetesServiceHelperImpl extends AdapterBase implements Kubernet
         msg += ". Use Instance delete option from Kubernetes cluster details or scale API for " +
                 "Kubernetes clusters with 'nodeids' to destroy the instance.";
         throw new CloudRuntimeException(msg);
+    }
+
+    @Override
+    public void cleanupForAccount(Account account) {
+        kubernetesClusterService.cleanupForAccount(account);
     }
 
     @Override

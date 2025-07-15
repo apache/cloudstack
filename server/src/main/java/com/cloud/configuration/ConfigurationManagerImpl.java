@@ -50,6 +50,8 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.user.AccountManagerImpl;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -481,6 +483,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     private long _defaultPageSize = Long.parseLong(Config.DefaultPageSize.getDefaultValue());
     private static final String DOMAIN_NAME_PATTERN = "^((?!-)[A-Za-z0-9-]{1,63}(?<!-)\\.)+[A-Za-z]{1,63}$";
     private Set<String> configValuesForValidation = new HashSet<>();
+    private Set<String> configKeysAllowedOnlyForDefaultAdmin = new HashSet<>();
     private Set<String> weightBasedParametersForValidation = new HashSet<>();
     private Set<String> overprovisioningFactorsForValidation = new HashSet<>();
 
@@ -545,6 +548,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         populateConfigValuesForValidationSet();
         weightBasedParametersForValidation();
         overProvisioningFactorsForValidation();
+        populateConfigKeysAllowedOnlyForDefaultAdmin();
         initMessageBusListener();
         return true;
     }
@@ -607,6 +611,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         overprovisioningFactorsForValidation.add(CapacityManager.MemOverprovisioningFactor.key());
         overprovisioningFactorsForValidation.add(CapacityManager.CpuOverprovisioningFactor.key());
         overprovisioningFactorsForValidation.add(CapacityManager.StorageOverprovisioningFactor.key());
+    }
+
+    protected void populateConfigKeysAllowedOnlyForDefaultAdmin() {
+        configKeysAllowedOnlyForDefaultAdmin.add(AccountManagerImpl.listOfRoleTypesAllowedForOperationsOfSameRoleType.key());
+        configKeysAllowedOnlyForDefaultAdmin.add(AccountManagerImpl.allowOperationsOnUsersInSameAccount.key());
     }
 
     private void initMessageBusListener() {
@@ -694,6 +703,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Override
     @DB
     public String updateConfiguration(final long userId, final String name, final String category, String value, final String scope, final Long resourceId) {
+        if (Boolean.class == getConfigurationTypeWrapperClass(name)) {
+            value = value.toLowerCase();
+        }
+
         final String validationMsg = validateConfigurationValue(name, value, scope);
         if (validationMsg != null) {
             logger.error("Invalid value [{}] for configuration [{}] due to [{}].", value, name, validationMsg);
@@ -1221,6 +1234,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             logger.error("Missing configuration variable " + name + " in configuration table");
             return "Invalid configuration variable.";
         }
+        validateConfigurationAllowedOnlyForDefaultAdmin(name, value);
 
         String configScope = cfg.getScope();
         if (scope != null) {
@@ -1231,18 +1245,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 return "Invalid scope id provided for the parameter " + name;
             }
         }
-        Class<?> type;
-        Config configuration = Config.getConfig(name);
-        if (configuration == null) {
-            logger.warn("Did not find configuration " + name + " in Config.java. Perhaps moved to ConfigDepot");
-            ConfigKey<?> configKey = _configDepot.get(name);
-            if(configKey == null) {
-                logger.warn("Did not find configuration " + name + " in ConfigDepot too.");
-                return null;
-            }
-            type = configKey.type();
-        } else {
-            type = configuration.getType();
+        Class<?> type = getConfigurationTypeWrapperClass(name);
+        if (type == null) {
+            return null;
         }
 
         validateSpecificConfigurationValues(name, value, type);
@@ -1252,7 +1257,55 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             return String.format("Value [%s] is not a valid [%s].", value, type);
         }
 
-        return validateValueRange(name, value, type, configuration);
+        return validateValueRange(name, value, type, Config.getConfig(name));
+    }
+
+    /**
+     * Returns the configuration type's wrapper class.
+     * @param name name of the configuration.
+     * @return if the configuration exists, returns its type's wrapper class; if not, returns null.
+     */
+    protected Class<?> getConfigurationTypeWrapperClass(String name) {
+        Config configuration = Config.getConfig(name);
+        if (configuration != null) {
+            return configuration.getType();
+        }
+
+        logger.warn("Did not find configuration [{}] in Config.java. Perhaps moved to ConfigDepot.", name);
+        ConfigKey<?> configKey = _configDepot.get(name);
+        if (configKey == null) {
+            logger.warn("Did not find configuration [{}] in ConfigDepot too.", name);
+            return null;
+        }
+
+        return configKey.type();
+    }
+
+    protected void validateConfigurationAllowedOnlyForDefaultAdmin(String configName, String value) {
+        if (configKeysAllowedOnlyForDefaultAdmin.contains(configName)) {
+            final Long userId = CallContext.current().getCallingUserId();
+            if (userId != User.UID_ADMIN) {
+                throw new CloudRuntimeException("Only default admin is allowed to change this setting");
+            }
+
+            if (AccountManagerImpl.listOfRoleTypesAllowedForOperationsOfSameRoleType.key().equals(configName)) {
+                if (value != null && !value.isBlank()) {
+                    List<String> validRoleTypes = Arrays.stream(RoleType.values())
+                            .map(Enum::name)
+                            .collect(Collectors.toList());
+
+                    boolean allValid = Arrays.stream(value.split(","))
+                            .map(String::trim)
+                            .allMatch(validRoleTypes::contains);
+
+                    if (!allValid) {
+                        throw new CloudRuntimeException("Invalid role types provided in value");
+                    }
+                } else {
+                    throw new CloudRuntimeException("Value for role types must not be empty");
+                }
+            }
+        }
     }
 
     /**
@@ -1262,7 +1315,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
      * <ul>
      *     <li>String: any value, including null;</li>
      *     <li>Character: any value, including null;</li>
-     *     <li>Boolean: strings that equal "true" or "false" (case-sensitive);</li>
+     *     <li>Boolean: strings that equal "true" or "false" (case-insensitive);</li>
      *     <li>Integer, Short, Long: strings that contain a valid int/short/long;</li>
      *     <li>Float, Double: strings that contain a valid float/double, except infinity.</li>
      * </ul>
@@ -8139,11 +8192,17 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         };
     }
 
+
+    /**
+     * Returns a string representing the specified configuration's type.
+     * @param configName name of the configuration.
+     * @return if the configuration exists, returns its type; if not, returns {@link Configuration.ValueType#String}.
+     */
     @Override
     public String getConfigurationType(final String configName) {
         final ConfigurationVO cfg = _configDao.findByName(configName);
         if (cfg == null) {
-            logger.warn("Configuration " + configName + " not found");
+            logger.warn("Configuration [{}] not found", configName);
             return Configuration.ValueType.String.name();
         }
 
@@ -8151,24 +8210,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             return Configuration.ValueType.Range.name();
         }
 
-        Class<?> type = null;
-        final Config c = Config.getConfig(configName);
-        if (c == null) {
-            logger.warn("Configuration " + configName + " no found. Perhaps moved to ConfigDepot");
-            final ConfigKey<?> configKey = _configDepot.get(configName);
-            if (configKey == null) {
-                logger.warn("Couldn't find configuration " + configName + " in ConfigDepot too.");
-                return Configuration.ValueType.String.name();
-            }
-            type = configKey.type();
-        } else {
-            type = c.getType();
-        }
-
-        return getInputType(type, cfg);
+        Class<?> type = getConfigurationTypeWrapperClass(configName);
+        return parseConfigurationTypeIntoString(type, cfg);
     }
 
-    private String getInputType(Class<?> type, ConfigurationVO cfg) {
+    /**
+     * Parses a configuration type's wrapper class into its string representation.
+     */
+    protected String parseConfigurationTypeIntoString(Class<?> type, ConfigurationVO cfg) {
         if (type == null) {
             return Configuration.ValueType.String.name();
         }
