@@ -204,6 +204,12 @@ SET `sort_key` = CASE
 END;
 -- End: Changes for Guest OS category cleanup
 
+-- Update description for configuration: host.capacityType.to.order.clusters
+UPDATE `cloud`.`configuration` SET
+    `description` = 'The host capacity type (CPU, RAM or COMBINED) is used by deployment planner to order clusters during VM resource allocation'
+WHERE `name` = 'host.capacityType.to.order.clusters'
+  AND `description` = 'The host capacity type (CPU or RAM) is used by deployment planner to order clusters during VM resource allocation';
+
 -- Whitelabel GUI
 CREATE TABLE IF NOT EXISTS `cloud`.`gui_themes` (
     `id` bigint(20) unsigned NOT NULL auto_increment,
