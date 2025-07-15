@@ -46,6 +46,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -626,7 +627,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                     for (final  Object key : params.keySet()) {
                         final String keyStr = (String)key;
                         final String[] value = (String[])params.get(key);
-                        logger.trace("   key: {}, value: {}", keyStr, (value == null) ? "'null'" : value[0]);
+                        logger.trace("   key: {}, value: {}", keyStr, (Supplier<String>) () -> ((value == null) ? "'null'" : value[0]));
                     }
                 }
                 throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "Invalid request, no command sent");
@@ -1011,7 +1012,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
             // if api/secret key are passed to the parameters
             if ((signature == null) || (apiKey == null)) {
-                logger.debug("Expired session, missing signature, or missing apiKey -- ignoring request. Signature: {}, apiKey: {}", signature, apiKey);
+                logger.warn("Expired session, missing signature, or missing apiKey -- ignoring request. Signature: {}, apiKey: {}", signature, apiKey);
                 return false; // no signature, bad request
             }
 
