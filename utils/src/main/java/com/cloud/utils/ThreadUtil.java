@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,22 +15,26 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.agent.api;
+//
 
-public class ConvertInstanceAnswer extends Answer {
+package com.cloud.utils;
 
-    private String temporaryConvertUuid;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-    public ConvertInstanceAnswer() {
-        super();
-    }
+public class ThreadUtil {
 
-    public ConvertInstanceAnswer(Command command, String temporaryConvertUuid) {
-        super(command, true, "");
-        this.temporaryConvertUuid = temporaryConvertUuid;
-    }
+    protected static Logger LOGGER = LogManager.getLogger(AutoCloseableUtil.class);
 
-    public String getTemporaryConvertUuid() {
-        return temporaryConvertUuid;
+    public static void wait(Object object, long timeoutInMillis, long id, String uuid, String name) {
+        synchronized (object) {
+            try {
+                object.wait(timeoutInMillis);
+            } catch (InterruptedException e) {
+                LOGGER.warn("PingTask interrupted while waiting to retry ping [id: {}, uuid: {}, name: {}]", id, uuid, name, e);
+                Thread.currentThread().interrupt(); // Restore interrupted status
+            }
+        }
+
     }
 }

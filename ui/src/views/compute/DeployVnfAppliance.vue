@@ -810,7 +810,7 @@
                 :deployButtonMenuOptions="deployMenuOptions"
                 @handle-cancel="() => $router.back()"
                 @handle-deploy="handleSubmit"
-                @handle-deploy-menu="handleSubmitAndStay" />
+                @handle-deploy-menu="(index, e) => handleSubmitAndStay(e)" />
             </div>
           </a-form>
         </a-card>
@@ -825,7 +825,7 @@
                 :deployButtonMenuOptions="deployMenuOptions"
                 @handle-cancel="() => $router.back()"
                 @handle-deploy="handleSubmit"
-                @handle-deploy-menu="handleSubmitAndStay" />
+                @handle-deploy-menu="(index, e) => handleSubmitAndStay(e)" />
             </template>
           </info-card>
         </a-affix>

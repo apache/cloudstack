@@ -49,9 +49,13 @@ public class DeployVMCmd extends BaseDeployVMCmd {
     private Long serviceOfferingId;
 
     @ACL
-    @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class, required = true, description = "the ID of the template for the virtual machine")
+    @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class, description = "the ID of the template for the virtual machine")
     private Long templateId;
+    @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.UUID, entityType = VolumeResponse.class, since = "4.21")
+    private Long volumeId;
 
+    @Parameter(name = ApiConstants.SNAPSHOT_ID, type = CommandType.UUID, entityType = SnapshotResponse.class, since = "4.21")
+    private Long snapshotId;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -64,6 +68,17 @@ public class DeployVMCmd extends BaseDeployVMCmd {
         return templateId;
     }
 
+    public Long getVolumeId() {
+        return volumeId;
+    }
+
+    public Long getSnapshotId() {
+        return snapshotId;
+    }
+
+    public boolean isVolumeOrSnapshotProvided() {
+        return volumeId != null || snapshotId != null;
+    }
     @Override
     public void execute() {
         UserVm result;
@@ -108,6 +123,10 @@ public class DeployVMCmd extends BaseDeployVMCmd {
 
     @Override
     public void create() throws ResourceAllocationException {
+        if (Stream.of(templateId, snapshotId, volumeId).filter(Objects::nonNull).count() != 1) {
+            throw new CloudRuntimeException("Please provide only one of the following parameters - template ID, volume ID or snapshot ID");
+        }
+
         try {
             UserVm vm = _userVmService.createVirtualMachine(this);
 
