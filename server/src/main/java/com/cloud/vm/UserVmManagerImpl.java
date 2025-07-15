@@ -6191,10 +6191,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Can't deploy VNF appliance from a non-VNF template");
         }
 
-        if (cmd.isVolumeOrSnapshotProvided() &&
-                (!(HypervisorType.KVM.equals(template.getHypervisorType()) || HypervisorType.KVM.equals(cmd.getHypervisor())))) {
-            throw new InvalidParameterValueException("Deploying a virtual machine with existing volume/snapshot is supported only from KVM hypervisors");
-        }
         ServiceOfferingJoinVO svcOffering = serviceOfferingJoinDao.findById(serviceOfferingId);
 
         if (template.isDeployAsIs()) {
@@ -6269,6 +6265,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         } else {
             template = _entityMgr.findById(VirtualMachineTemplate.class, templateId);
         }
+        if (cmd.isVolumeOrSnapshotProvided() &&
+                (!(HypervisorType.KVM.equals(template.getHypervisorType()) || HypervisorType.KVM.equals(cmd.getHypervisor())))) {
+            throw new InvalidParameterValueException("Deploying a virtual machine with existing volume/snapshot is supported only from KVM hypervisors");
+        }
         verifyTemplate(cmd, template, serviceOfferingId);
 
         Long diskOfferingId = cmd.getDiskOfferingId();
@@ -6304,12 +6304,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             networkIds = new ArrayList<>(userVmNetworkMap.values());
         }
 
-        return createVirtualMachine(cmd, zone, owner, serviceOffering, template, cmd.getHypervisor(), diskOfferingId, cmd.getSize(), overrideDiskOfferingId, dataDiskOfferingsInfo, networkIds, cmd.getIpToNetworkMap());
+        return createVirtualMachine(cmd, zone, owner, serviceOffering, template, cmd.getHypervisor(), diskOfferingId, cmd.getSize(), overrideDiskOfferingId, dataDiskOfferingsInfo, networkIds, cmd.getIpToNetworkMap(), volume, snapshot);
     }
 
     private UserVm createVirtualMachine(BaseDeployVMCmd cmd, DataCenter zone, Account owner, ServiceOffering serviceOffering, VirtualMachineTemplate template,
                                         HypervisorType hypervisor, Long diskOfferingId, Long size, Long overrideDiskOfferingId, List<DiskOfferingInfo> dataDiskOfferingsInfo,
-                                        List<Long> networkIds, Map<Long, IpAddresses> ipToNetworkMap) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, ResourceAllocationException {
+                                        List<Long> networkIds, Map<Long, IpAddresses> ipToNetworkMap, Volume volume, Snapshot snapshot) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, ResourceAllocationException {
 
         ServiceOfferingJoinVO svcOffering = serviceOfferingJoinDao.findById(serviceOffering.getId());
         boolean isLeaseFeatureEnabled = VMLeaseManager.InstanceLeaseEnabled.value();
@@ -9525,7 +9525,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             ipToNetworkMap = backupManager.getIpToNetworkMapFromBackup(backup, cmd.getPreserveIp(), networkIds);
         }
 
-        return createVirtualMachine(cmd, zone, owner, serviceOffering, template, hypervisorType, diskOfferingId, size, overrideDiskOfferingId, dataDiskOfferingsInfo, networkIds, ipToNetworkMap);
+        return createVirtualMachine(cmd, zone, owner, serviceOffering, template, hypervisorType, diskOfferingId, size, overrideDiskOfferingId, dataDiskOfferingsInfo, networkIds, ipToNetworkMap, null, null);
     }
 
     @Override

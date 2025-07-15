@@ -181,10 +181,6 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
-import org.apache.cloudstack.vm.lease.VMLeaseManager;
-
-import org.mockito.MockedStatic;
-
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -3329,7 +3325,7 @@ public class UserVmManagerImplTest {
 
         Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
-                any(), any(), any(), any(), eq(true), any(), any());
+                any(), any(), any(), any(), eq(true), any(), any(), any(), any());
 
         UserVm result = userVmManagerImpl.allocateVMFromBackup(cmd);
 
@@ -3337,7 +3333,7 @@ public class UserVmManagerImplTest {
         Mockito.verify(backupDao).findById(backupId);
         Mockito.verify(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
-                any(), any(), any(), any(), eq(true), any(), any());
+                any(), any(), any(), any(), eq(true), any(), any(), any(), any());
     }
 
     @Test
@@ -3385,14 +3381,14 @@ public class UserVmManagerImplTest {
 
         Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), eq(false), any(), any(), any(),
-                any(), any(), any(), any(), eq(false), any(), any());
+                any(), any(), any(), any(), eq(false), any(), any(), any(), any());
 
         UserVm result = userVmManagerImpl.allocateVMFromBackup(cmd);
 
         assertNotNull(result);
         Mockito.verify(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), eq(false), any(), any(), any(),
-                any(), any(), any(), any(), eq(false), any(), any());
+                any(), any(), any(), any(), eq(false), any(), any(), any(), any());
     }
 
     @Test
@@ -3499,7 +3495,7 @@ public class UserVmManagerImplTest {
 
         Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
-                any(), any(), any(), any(), eq(true), any(), any());
+                any(), any(), any(), any(), eq(true), any(), any(), any(), any());
 
         UserVm result = userVmManagerImpl.allocateVMFromBackup(cmd);
 
@@ -3507,7 +3503,7 @@ public class UserVmManagerImplTest {
         Mockito.verify(backupDao).findById(backupId);
         Mockito.verify(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
-                any(), any(), any(), any(), eq(true), any(), any());
+                any(), any(), any(), any(), eq(true), any(), any(), any(), any());
     }
 
     @Test
@@ -3560,14 +3556,14 @@ public class UserVmManagerImplTest {
 
         Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), eq(false), any(), any(), any(),
-                any(), any(), any(), any(), eq(false), any(), any());
+                any(), any(), any(), any(), eq(false), any(), any(), any(), any());
 
         UserVm result = userVmManagerImpl.allocateVMFromBackup(cmd);
 
         assertNotNull(result);
         Mockito.verify(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(),  eq(false), any(), any(), any(),
-                any(), any(), any(), any(), eq(false), any(), any());
+                any(), any(), any(), any(), eq(false), any(), any(), any(), any());
     }
 
     @Test
@@ -3862,7 +3858,7 @@ public class UserVmManagerImplTest {
         when(_dcMock.isLocalStorageEnabled()).thenReturn(false);
         when(_dcMock.getNetworkType()).thenReturn(DataCenter.NetworkType.Basic);
         Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createBasicSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
-                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
                 any(), any(), any(), any(), eq(true), any(), any(), any());
 
 
@@ -3900,7 +3896,7 @@ public class UserVmManagerImplTest {
         when(_dcMock.isLocalStorageEnabled()).thenReturn(false);
         when(_dcMock.getNetworkType()).thenReturn(DataCenter.NetworkType.Basic);
         Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createBasicSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
-                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
                 any(), any(), any(), any(), eq(true), any(), any(), any());
 
 
