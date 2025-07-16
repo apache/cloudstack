@@ -19,18 +19,18 @@
 set -e
 
 if [ $# -lt 6 ]; then
-    echo "Invalid input. Valid usage: ./create-kubernetes-binaries-iso.sh OUTPUT_PATH KUBERNETES_VERSION CNI_VERSION CRICTL_VERSION WEAVENET_NETWORK_YAML_CONFIG DASHBOARD_YAML_CONFIG BUILD_NAME [ETCD_VERSION] [ARCH]"
-    echo "eg: ./create-kubernetes-binaries-iso.sh ./ 1.11.4 0.7.1 1.11.1 https://github.com/weaveworks/weave/releases/download/latest_release/weave-daemonset-k8s-1.11.yaml https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.0/src/deploy/recommended/kubernetes-dashboard.yaml setup-v1.11.4"
+    echo "Invalid input. Valid usage: ./create-kubernetes-binaries-iso.sh OUTPUT_PATH KUBERNETES_VERSION CNI_VERSION CRICTL_VERSION WEAVENET_NETWORK_YAML_CONFIG DASHBOARD_YAML_CONFIG BUILD_NAME [ARCH] [ETCD_VERSION]"
+    echo "eg: ./create-kubernetes-binaries-iso.sh ./ 1.11.4 0.7.1 1.11.1 https://github.com/weaveworks/weave/releases/download/latest_release/weave-daemonset-k8s-1.11.yaml https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.0/src/deploy/recommended/kubernetes-dashboard.yaml setup-v1.11.4 amd64"
     exit 1
 fi
 
 ARCH="amd64"
 ARCH_SUFFIX="x86_64"
-if [ -n "${9}" ]; then
-  if [ "${9}" = "x86_64" ] || [ "${9}" = "amd64" ]; then
+if [ -n "${8}" ]; then
+  if [ "${8}" = "x86_64" ] || [ "${8}" = "amd64" ]; then
     ARCH="amd64"
     ARCH_SUFFIX="x86_64"
-  elif [ "${9}" = "aarch64" ] || [ "${9}" = "arm64" ]; then
+  elif [ "${8}" = "aarch64" ] || [ "${8}" = "arm64" ]; then
     ARCH="arm64"
     ARCH_SUFFIX="aarch64"
   else
@@ -164,11 +164,11 @@ echo "Updating imagePullPolicy to IfNotPresent in yaml files..."
 sed -i "s/imagePullPolicy:.*/imagePullPolicy: IfNotPresent/g" ${working_dir}/*.yaml
 
 # Optional parameter ETCD_VERSION
-if [ -n "${8}" ]; then
+if [ -n "${9}" ]; then
   # Install etcd dependencies
   etcd_dir="${working_dir}/etcd"
   mkdir -p "${etcd_dir}"
-  ETCD_VERSION=v${8}
+  ETCD_VERSION=v${9}
   wget -q --show-progress "https://github.com/etcd-io/etcd/releases/download/${ETCD_VERSION}/etcd-${ETCD_VERSION}-linux-amd64.tar.gz" -O ${etcd_dir}/etcd-linux-amd64.tar.gz
 fi
 
