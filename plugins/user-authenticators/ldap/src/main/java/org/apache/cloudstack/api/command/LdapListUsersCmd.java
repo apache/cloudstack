@@ -140,9 +140,10 @@ public class LdapListUsersCmd extends BaseListCmd {
         try {
             final List<LdapUser> users = _ldapManager.getUsers(domainId);
             ldapResponses = createLdapUserResponse(users);
-//            now filter and annotate
+            // now filter and annotate
             ldapResponses = applyUserFilter(ldapResponses);
         } catch (final NoLdapUserMatchingQueryException ex) {
+            logger.debug(ex.getMessage());
             // ok, we'll make do with the empty list ldapResponses = new ArrayList<LdapUserResponse>();
         } finally {
             response.setResponses(ldapResponses);
