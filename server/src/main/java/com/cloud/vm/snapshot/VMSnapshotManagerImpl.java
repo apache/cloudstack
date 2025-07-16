@@ -27,7 +27,6 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.storage.snapshot.SnapshotManager;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
@@ -383,14 +382,8 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             //Other Storage volume plugins could integrate this with their own functionality for group snapshots
             VMSnapshotStrategy snapshotStrategy = storageStrategyFactory.getVmSnapshotStrategy(userVmVo.getId(), rootVolumePool.getId(), snapshotMemory);
             if (snapshotStrategy == null) {
-                String message;
-                if (!SnapshotManager.VmStorageSnapshotKvm.value() && !snapshotMemory) {
-                    message = "Creating a snapshot of a running KVM instance without memory is not supported";
-                } else {
-                    message = "KVM does not support the type of snapshot requested";
-                }
-
-                logger.debug(message);
+                String message = String.format("No strategy was able to handle requested snapshot for VM [%s].", userVmVo.getUuid());
+                logger.error(message);
                 throw new CloudRuntimeException(message);
             }
 
