@@ -41,6 +41,14 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
+import com.cloud.host.HostVO;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.volume.CheckAndRepairVolumeCmd;
@@ -99,12 +107,9 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
-import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
-import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Grouping;
@@ -113,8 +118,6 @@ import com.cloud.projects.ProjectManager;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementService;
 import com.cloud.server.TaggedResourceService;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -267,6 +270,9 @@ public class VolumeApiServiceImplTest {
 
     @Mock
     private ManagementService managementService;
+
+    @Mock
+    private VMSnapshotDetailsDao vmSnapshotDetailsDaoMock;
 
     private long accountMockId = 456l;
     private long volumeMockId = 12313l;
@@ -2201,5 +2207,86 @@ public class VolumeApiServiceImplTest {
         } catch (NoTransitionException e) {
             Assert.fail();
         }
+    }
+
+    @Test
+    public void validateNoVmSnapshotsTestNoInstanceId() {
+        Mockito.doReturn(null).when(volumeVoMock).getInstanceId();
+
+        volumeApiServiceImpl.validateNoVmSnapshots(volumeVoMock);
+
+        Mockito.verify(volumeApiServiceImpl, Mockito.never()).vmHasVmSnapshotsExceptKvmDiskOnlySnapshots(Mockito.anyLong());
+    }
+
+    @Test
+    public void validateNoVmSnapshotsTestVmHasVmSnapshotsExceptKvmDiskOnlySnapshotsIsFalse() {
+        Mockito.doReturn(1L).when(volumeVoMock).getInstanceId();
+        Mockito.doReturn(false).when(volumeApiServiceImpl).vmHasVmSnapshotsExceptKvmDiskOnlySnapshots(1L);
+
+        volumeApiServiceImpl.validateNoVmSnapshots(volumeVoMock);
+    }
+
+    @Test (expected = InvalidParameterValueException.class)
+    public void validateNoVmSnapshotsTestVmHasVmSnapshotsExceptKvmDiskOnlySnapshotsIsTrue() {
+        Mockito.doReturn(1L).when(volumeVoMock).getInstanceId();
+        Mockito.doReturn(true).when(volumeApiServiceImpl).vmHasVmSnapshotsExceptKvmDiskOnlySnapshots(1L);
+
+        volumeApiServiceImpl.validateNoVmSnapshots(volumeVoMock);
+    }
+
+    @Test
+    public void vmHasVmSnapshotsExceptKvmDiskOnlySnapshotsTestMultipleDiskAndMemory () {
+        List<VMSnapshotVO> snapList = generateVmSnapshotVoList(VMSnapshot.Type.DiskAndMemory, VMSnapshot.Type.DiskAndMemory);
+        Mockito.doReturn(snapList).when(_vmSnapshotDao).findByVm(0L);
+
+        Assert.assertTrue(volumeApiServiceImpl.vmHasVmSnapshotsExceptKvmDiskOnlySnapshots(0L));
+    }
+
+    @Test
+    public void vmHasVmSnapshotsExceptKvmDiskOnlySnapshotsTestOnlyOneDiskAndMemory () {
+        List<VMSnapshotVO> snapList = generateVmSnapshotVoList(VMSnapshot.Type.Disk, VMSnapshot.Type.DiskAndMemory);
+        Mockito.doReturn(snapList).when(_vmSnapshotDao).findByVm(0L);
+        VMSnapshotDetailsVO snapDetail = new VMSnapshotDetailsVO(0L, VolumeApiServiceImpl.KVM_FILE_BASED_STORAGE_SNAPSHOT, "0", true);
+        Mockito.doReturn(List.of(snapDetail)).when(vmSnapshotDetailsDaoMock).listDetails(Mockito.anyLong());
+
+        Assert.assertTrue(volumeApiServiceImpl.vmHasVmSnapshotsExceptKvmDiskOnlySnapshots(0L));
+    }
+    @Test
+    public void vmHasVmSnapshotsExceptKvmDiskOnlySnapshotsTestDiskSnapshotsButNotKvmFileBasedSnapshots () {
+        List<VMSnapshotVO> snapList = generateVmSnapshotVoList(VMSnapshot.Type.Disk, VMSnapshot.Type.Disk);
+        Mockito.doReturn(snapList).when(_vmSnapshotDao).findByVm(0L);
+
+        Assert.assertTrue(volumeApiServiceImpl.vmHasVmSnapshotsExceptKvmDiskOnlySnapshots(0L));
+    }
+
+    @Test
+    public void vmHasVmSnapshotsExceptKvmDiskOnlySnapshotsTestOnlyOneKvmFileBasedSnapshot () {
+        List<VMSnapshotVO> snapList = generateVmSnapshotVoList(VMSnapshot.Type.Disk, VMSnapshot.Type.Disk);
+        Mockito.doReturn(snapList).when(_vmSnapshotDao).findByVm(0L);
+        VMSnapshotDetailsVO snapDetail = new VMSnapshotDetailsVO(0L, VolumeApiServiceImpl.KVM_FILE_BASED_STORAGE_SNAPSHOT, "0", true);
+        Mockito.doReturn(List.of(snapDetail)).when(vmSnapshotDetailsDaoMock).listDetails(0);
+
+        Assert.assertTrue(volumeApiServiceImpl.vmHasVmSnapshotsExceptKvmDiskOnlySnapshots(0L));
+    }
+
+    @Test
+    public void vmHasVmSnapshotsExceptKvmDiskOnlySnapshotsTestAllKvmFileBasedSnapshots () {
+        List<VMSnapshotVO> snapList = generateVmSnapshotVoList(VMSnapshot.Type.Disk, VMSnapshot.Type.Disk);
+        Mockito.doReturn(snapList).when(_vmSnapshotDao).findByVm(0L);
+        VMSnapshotDetailsVO snapDetail = new VMSnapshotDetailsVO(0L, VolumeApiServiceImpl.KVM_FILE_BASED_STORAGE_SNAPSHOT, "0", true);
+        Mockito.doReturn(List.of(snapDetail)).when(vmSnapshotDetailsDaoMock).listDetails(0);
+        Mockito.doReturn(List.of(snapDetail)).when(vmSnapshotDetailsDaoMock).listDetails(1);
+
+        Assert.assertFalse(volumeApiServiceImpl.vmHasVmSnapshotsExceptKvmDiskOnlySnapshots(0L));
+    }
+
+    private List<VMSnapshotVO> generateVmSnapshotVoList(VMSnapshot.Type t1, VMSnapshot.Type t2) {
+        VMSnapshotVO mock1 = Mockito.mock(VMSnapshotVO.class);
+        Mockito.doReturn(t1).when(mock1).getType();
+        Mockito.doReturn(0L).when(mock1).getId();
+        VMSnapshotVO mock2 = Mockito.mock(VMSnapshotVO.class);
+        Mockito.doReturn(t2).when(mock2).getType();
+        Mockito.doReturn(1L).when(mock2).getId();
+        return List.of(mock1, mock2);
     }
 }
