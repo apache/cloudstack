@@ -47,6 +47,10 @@ import {
   LATEST_CS_VERSION
 } from '@/store/mutation-types'
 
+import {
+  applyCustomGuiTheme
+} from '@/utils/guiTheme'
+
 const user = {
   state: {
     token: '',
@@ -243,7 +247,6 @@ const user = {
           const latestVersion = vueProps.$localStorage.get(LATEST_CS_VERSION, { version: '', fetchedTs: 0 })
           commit('SET_LATEST_VERSION', latestVersion)
           notification.destroy()
-
           resolve()
         }).catch(error => {
           reject(error)
@@ -406,6 +409,7 @@ const user = {
 
         getAPI('listUsers', { id: Cookies.get('userid'), showicon: true }).then(response => {
           const result = response.listusersresponse.user[0]
+          applyCustomGuiTheme(result.accountid, result.domainid)
           commit('SET_INFO', result)
           commit('SET_NAME', result.firstname + ' ' + result.lastname)
           commit('SET_AVATAR', result.icon?.base64image || '')

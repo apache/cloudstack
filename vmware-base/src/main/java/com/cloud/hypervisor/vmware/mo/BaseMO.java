@@ -253,12 +253,29 @@ public class BaseMO {
                 hostClusterPair = hostClusterNamesMap.get(hostMorValue);
             } else {
                 HostMO hostMO = new HostMO(_context, hostMor);
-                ClusterMO clusterMO = new ClusterMO(_context, hostMO.getHyperHostCluster());
-                hostClusterPair = new Pair<>(hostMO.getHostName(), clusterMO.getName());
+                String hostName = hostMO.getHostName();
+                String clusterName = getClusterNameFromHostIncludingStandaloneHosts(hostMO, hostName);
+                hostClusterPair = new Pair<>(hostName, clusterName);
                 hostClusterNamesMap.put(hostMorValue, hostClusterPair);
             }
             vm.setHostName(hostClusterPair.first());
             vm.setClusterName(hostClusterPair.second());
+        }
+    }
+
+    /**
+     * Return the cluster name of the host on the vCenter
+     * @return null in case the host is standalone (doesn't belong to a cluster), cluster name otherwise
+     */
+    private String getClusterNameFromHostIncludingStandaloneHosts(HostMO hostMO, String hostName) {
+        try {
+            ClusterMO clusterMO = new ClusterMO(_context, hostMO.getHyperHostCluster());
+            return clusterMO.getName();
+        } catch (Exception e) {
+            String msg = String.format("Cannot find a cluster for host %s, assuming standalone host, " +
+                    "setting its cluster name as empty", hostName);
+            logger.info(msg);
+            return null;
         }
     }
 }
