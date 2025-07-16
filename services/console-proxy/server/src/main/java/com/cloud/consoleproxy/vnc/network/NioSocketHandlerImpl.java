@@ -28,8 +28,6 @@ public class NioSocketHandlerImpl implements NioSocketHandler {
     private NioSocketOutputStream outputStream;
     private boolean isTLS = false;
 
-    private static final int DEFAULT_BUF_SIZE = 16384;
-
     protected Logger logger = LogManager.getLogger(getClass());
 
     public NioSocketHandlerImpl(NioSocket socket) {

@@ -176,7 +176,7 @@ public class NioSocketInputStream extends NioSocketStream {
     }
 
     protected int getNextBytes() {
-        int size = 200;
+        int size = NioSocketHandler.DEFAULT_BUF_SIZE;
         while (size > 0) {
             if (checkForSizeWithoutWait(size)) {
                 break;

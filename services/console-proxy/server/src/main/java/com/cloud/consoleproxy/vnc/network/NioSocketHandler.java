@@ -20,6 +20,8 @@ import java.nio.ByteBuffer;
 
 public interface NioSocketHandler {
 
+    int DEFAULT_BUF_SIZE = 64 * 1024; // 64KiB
+
     // Getters
     NioSocketInputStream getInputStream();
     NioSocketOutputStream getOutputStream();

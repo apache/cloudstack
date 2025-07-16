@@ -24,7 +24,7 @@ public class NioSocketTLSOutputStream extends NioSocketOutputStream {
     private final NioSocketSSLEngineManager sslEngineManager;
 
     public NioSocketTLSOutputStream(NioSocketSSLEngineManager sslEngineManager, NioSocket socket) {
-        super(sslEngineManager.getSession().getApplicationBufferSize(), socket);
+        super(NioSocketHandler.DEFAULT_BUF_SIZE, socket);
         this.sslEngineManager = sslEngineManager;
     }
 

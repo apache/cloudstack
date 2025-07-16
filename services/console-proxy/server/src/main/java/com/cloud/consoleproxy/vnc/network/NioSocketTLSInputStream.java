@@ -26,7 +26,7 @@ public class NioSocketTLSInputStream extends NioSocketInputStream {
     private final NioSocketSSLEngineManager sslEngineManager;
 
     public NioSocketTLSInputStream(NioSocketSSLEngineManager sslEngineManager, NioSocket socket) {
-        super(sslEngineManager.getSession().getApplicationBufferSize(), socket);
+        super(NioSocketHandler.DEFAULT_BUF_SIZE, socket);
         this.sslEngineManager = sslEngineManager;
     }
 
