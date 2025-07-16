@@ -135,6 +135,12 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
             instance.setNics(getUnmanagedInstanceNics(parser.getInterfaces()));
             instance.setDisks(getUnmanagedInstanceDisks(parser.getDisks(),libvirtComputingResource, conn, domain.getName()));
             instance.setVncPassword(getFormattedVncPassword(parser.getVncPasswd()));
+            if (parser.getBootType() != null) {
+                instance.setBootType(parser.getBootType().toString());
+            }
+            if (parser.getBootMode() != null) {
+                instance.setBootMode(parser.getBootMode().toString());
+            }
 
             return instance;
         } catch (Exception e) {
