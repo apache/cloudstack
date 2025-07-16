@@ -1038,6 +1038,7 @@
 "label.forbidden": "Forbidden",
 "label.forced": "Force",
 "label.force.ms.to.import.vm.files": "Enable to force OVF Download via Management Server. Disable to use KVM Host ovftool (if installed)",
+"label.force.update.os.type": "Force update OS type",
 "label.force.stop": "Force stop",
 "label.force.reboot": "Force reboot",
 "label.forceencap": "Force UDP encapsulation of ESP packets",
