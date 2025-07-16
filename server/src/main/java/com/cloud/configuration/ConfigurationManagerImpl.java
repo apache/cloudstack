@@ -601,6 +601,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         weightBasedParametersForValidation.add(CapacityManager.SecondaryStorageCapacityThreshold.key());
         weightBasedParametersForValidation.add(ClusterDrsService.ClusterDrsImbalanceThreshold.key());
         weightBasedParametersForValidation.add(ClusterDrsService.ClusterDrsImbalanceSkipThreshold.key());
+        weightBasedParametersForValidation.add(ConfigurationManager.HostCapacityTypeCpuMemoryWeight.key());
     }
 
     protected void overProvisioningFactorsForValidation() {
@@ -8274,7 +8275,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 BYTES_MAX_READ_LENGTH, BYTES_MAX_WRITE_LENGTH, ADD_HOST_ON_SERVICE_RESTART_KVM, SET_HOST_DOWN_TO_MAINTENANCE,
                 VM_SERVICE_OFFERING_MAX_CPU_CORES, VM_SERVICE_OFFERING_MAX_RAM_SIZE, MIGRATE_VM_ACROSS_CLUSTERS,
                 ENABLE_ACCOUNT_SETTINGS_FOR_DOMAIN, ENABLE_DOMAIN_SETTINGS_FOR_CHILD_DOMAIN,
-                ALLOW_DOMAIN_ADMINS_TO_CREATE_TAGGED_OFFERINGS, DELETE_QUERY_BATCH_SIZE, AllowNonRFC1918CompliantIPs
+                ALLOW_DOMAIN_ADMINS_TO_CREATE_TAGGED_OFFERINGS, DELETE_QUERY_BATCH_SIZE, AllowNonRFC1918CompliantIPs, HostCapacityTypeCpuMemoryWeight
         };
     }
 

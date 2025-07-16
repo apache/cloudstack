@@ -403,6 +403,10 @@ import org.apache.cloudstack.api.command.user.firewall.UpdateFirewallRuleCmd;
 import org.apache.cloudstack.api.command.user.firewall.UpdatePortForwardingRuleCmd;
 import org.apache.cloudstack.api.command.user.guest.ListGuestOsCategoriesCmd;
 import org.apache.cloudstack.api.command.user.guest.ListGuestOsCmd;
+import org.apache.cloudstack.api.command.user.gui.theme.CreateGuiThemeCmd;
+import org.apache.cloudstack.api.command.user.gui.theme.ListGuiThemesCmd;
+import org.apache.cloudstack.api.command.user.gui.theme.RemoveGuiThemeCmd;
+import org.apache.cloudstack.api.command.user.gui.theme.UpdateGuiThemeCmd;
 import org.apache.cloudstack.api.command.user.iso.AttachIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.CopyIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
@@ -4187,6 +4191,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(UpdateSecondaryStorageSelectorCmd.class);
         cmdList.add(RemoveSecondaryStorageSelectorCmd.class);
         cmdList.add(ListAffectedVmsForStorageScopeChangeCmd.class);
+        cmdList.add(ListGuiThemesCmd.class);
+        cmdList.add(UpdateGuiThemeCmd.class);
+        cmdList.add(CreateGuiThemeCmd.class);
+        cmdList.add(RemoveGuiThemeCmd.class);
 
         // Out-of-band management APIs for admins
         cmdList.add(EnableOutOfBandManagementForHostCmd.class);

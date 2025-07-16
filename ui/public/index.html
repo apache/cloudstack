@@ -54,12 +54,4 @@
       <div class="loader"></div>
     </div>
   </body>
-  <script type="text/javascript">
-    fetch('./config.json?ts=' + Date.now())
-      .then(response => response.json())
-      .then(data => {
-        document.getElementById("favicon").setAttribute("href", data.loginFavicon);
-        document.getElementById("title").innerHTML = data.loginTitle;
-      }).catch((err) => {});
-  </script>
 </html>
