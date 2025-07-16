@@ -2547,11 +2547,23 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected void enlightenWindowsVm(VirtualMachineTO vmTO, FeaturesDef features) {
         if (vmTO.getOs().contains("Windows PV")) {
             // If OS is Windows PV, then enable the features. Features supported on Windows 2008 and later
+            // https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/10/html/configuring_and_managing_windows_virtual_machines/optimizing-windows-virtual-machines#enabling-hyper-v-enlightenments
             LibvirtVMDef.HyperVEnlightenmentFeatureDef hyv = new LibvirtVMDef.HyperVEnlightenmentFeatureDef();
             hyv.setFeature("relaxed", true);
             hyv.setFeature("vapic", true);
             hyv.setFeature("spinlocks", true);
-            hyv.setRetries(8096);
+            hyv.setRetries(8191);
+            hyv.setFeature("vendor_id", true);
+            hyv.setFeature("vpindex", true);
+            hyv.setFeature("runtime", true);
+            hyv.setFeature("synic", true);
+            hyv.setFeature("frequencies", true);
+            hyv.setFeature("reset", true);
+            hyv.setFeature("tlbflush", true);
+            hyv.setFeature("reenlightenment", true);
+            hyv.setFeature("stimer", true);
+            hyv.setFeature("ipi", true);
+            hyv.setFeature("evmcs", true);
             features.addHyperVFeature(hyv);
             LOGGER.info("Enabling KVM Enlightment Features to VM domain " + vmTO.getUuid());
         }

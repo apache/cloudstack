@@ -334,7 +334,18 @@ public class LibvirtVMDef {
         enum Enlight {
             RELAX("relaxed"),
             VAPIC("vapic"),
-            SPIN("spinlocks");
+            SPIN("spinlocks"),
+            VENDOR_ID("vendor_id"),
+            VPINDEX("vpindex"),
+            RUNTIME("runtime"),
+            SYNIC("synic"),
+            FREQ("frequencies"),
+            RESET("reset"),
+            TLBFLUSH("tlbflush"),
+            REENLIGHTEN("reenlightenment"),
+            STIMER("stimer"),
+            IPI("ipi"),
+            EVMCS("evmcs");
 
             private final String featureName;
             Enlight(String featureName) { this.featureName = featureName; }
@@ -379,10 +390,13 @@ public class LibvirtVMDef {
                 feaBuilder.append("<");
                 feaBuilder.append(e.getKey());
 
-                if(e.getKey().equals("spinlocks"))  feaBuilder.append(" state='" + e.getValue() + "' retries='" + getRetries() + "'");
-                else                                feaBuilder.append(" state='" + e.getValue() + "'");
+                if(e.getKey().equals("spinlocks"))       feaBuilder.append(" state='" + e.getValue() + "' retries='" + getRetries() + "'");
+                else if(e.getKey().equals("vendor_id"))  feaBuilder.append(" state='" + e.getValue() + "' value='KVM Hv'");
+                else if(e.getKey().equals("stimer"))     feaBuilder.append(" state='" + e.getValue() + "'><direct state='" + e.getValue() + "'/>");
+                else                                     feaBuilder.append(" state='" + e.getValue() + "'");
 
-                feaBuilder.append("/>\n");
+                if(e.getKey().equals("stimer")) feaBuilder.append("</stimer>\n");
+                else feaBuilder.append("/>\n");
             }
             feaBuilder.append("</hyperv>\n");
             return feaBuilder.toString();
