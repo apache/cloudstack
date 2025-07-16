@@ -61,7 +61,7 @@
             <a-date-picker
               v-else-if="field.type === 'DATE'"
               show-time
-              format="YYYY-MM-DD HH:mm:ss"
+              v-model:value="form[field.name]"
               :placeholder="field.name"
               v-focus="fieldIndex === 0"
             />
@@ -244,6 +244,10 @@ export default {
         keys = keys.filter(k => k !== 'customactionid')
         for (const key of keys) {
           var value = values[key]
+          const fieldDef = this.currentParameters.find(f => f.name === key)
+          if (fieldDef?.type === 'DATE' && value instanceof Date) {
+            value = value.toISOString()
+          }
           if (value !== undefined && value != null &&
               (typeof value !== 'string' || (typeof value === 'string' && value.trim().length > 0))) {
             params['parameters[0].' + key] = value
