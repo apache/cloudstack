@@ -520,17 +520,17 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new InvalidParameterValueException("Either instance ID or ID of backup schedule needs to be specified.");
         }
 
-        if (Objects.nonNull(vmId)) {
-            checkCallerAccessToBackupScheduleVm(vmId);
-            return deleteAllVmBackupSchedules(vmId);
+        if (Objects.nonNull(id)) {
+            BackupSchedule schedule = backupScheduleDao.findById(id);
+            if (schedule == null) {
+                throw new InvalidParameterValueException("Could not find the requested backup schedule.");
+            }
+            checkCallerAccessToBackupScheduleVm(schedule.getVmId());
+            return backupScheduleDao.remove(schedule.getId());
         }
 
-        BackupSchedule schedule = backupScheduleDao.findById(id);
-        if (schedule == null) {
-            throw new InvalidParameterValueException("Could not find the requested backup schedule.");
-        }
-        checkCallerAccessToBackupScheduleVm(schedule.getVmId());
-        return backupScheduleDao.remove(schedule.getId());
+        checkCallerAccessToBackupScheduleVm(vmId);
+        return deleteAllVmBackupSchedules(vmId);
     }
 
     /**

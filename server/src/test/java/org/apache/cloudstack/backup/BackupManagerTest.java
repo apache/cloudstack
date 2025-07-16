@@ -735,6 +735,7 @@ public class BackupManagerTest {
     public void deleteBackupScheduleTestDeleteVmSchedulesWhenVmIdIsSpecified() {
         long vmId = 1L;
 
+        when(deleteBackupScheduleCmdMock.getId()).thenReturn(null);
         when(deleteBackupScheduleCmdMock.getVmId()).thenReturn(vmId);
         Mockito.doNothing().when(backupManager).checkCallerAccessToBackupScheduleVm(vmId);
         Mockito.doReturn(true).when(backupManager).deleteAllVmBackupSchedules(vmId);
@@ -747,7 +748,6 @@ public class BackupManagerTest {
     public void deleteBackupScheduleTestThrowExceptionWhenSpecificScheduleIsNotFound() {
         long id = 1L;
         when(deleteBackupScheduleCmdMock.getId()).thenReturn(id);
-        when(deleteBackupScheduleCmdMock.getVmId()).thenReturn(null);
         backupManager.deleteBackupSchedule(deleteBackupScheduleCmdMock);
     }
 

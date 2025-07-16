@@ -53,12 +53,12 @@ public class DeleteBackupScheduleCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class,
-            description = "ID of the VM from which all backup schedules will be deleted. It has precedence over the 'id' parameter, " +
-                    "i.e., when the 'virtualmachineid' parameter is specified, the 'id' parameter will be ignored.")
+            description = "ID of the VM from which all backup schedules will be deleted.")
     private Long vmId;
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = BackupScheduleResponse.class,
-            description = "ID of the backup schedule to be deleted.", since = "4.20.1")
+            since = "4.20.1", description = "ID of the backup schedule to be deleted. It has precedence over the 'virtualmachineid' parameter, " +
+            "i.e., when the 'id' parameter is specified, the 'virtualmachineid' parameter will be ignored.")
     private Long id;
 
     /////////////////////////////////////////////////////
