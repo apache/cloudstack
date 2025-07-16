@@ -246,6 +246,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             Long templateSize = performDirectDownloadUrlValidation(cmd.getFormat(),
                     hypervisor, url, cmd.getZoneIds(), followRedirects);
             profile.setSize(templateSize);
+            profile.setForCks(cmd.isForCks());
         }
         profile.setUrl(url);
         // Check that the resource limit for secondary storage won't be exceeded
