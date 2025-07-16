@@ -52,6 +52,8 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
     private ConsoleProxyClientParam clientParam;
     private String sessionUuid;
 
+    private ByteBuffer readBuffer = null;
+
     public ConsoleProxyNoVncClient(Session session) {
         this.session = session;
     }
@@ -109,8 +111,9 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                     connectClientToVNCServer(tunnelUrl, tunnelSession, websocketUrl);
                     authenticateToVNCServer(clientSourceIp);
 
-                    int readBytes;
-                    byte[] b;
+                    // Track consecutive iterations with no data and sleep accordingly. Only used for NIO socket connections.
+                    int consecutiveZeroReads = 0;
+                    int sleepTime = 1;
                     while (connectionAlive) {
                         logger.trace("Connection with client [{}] [IP: {}] is alive.", clientId, clientSourceIp);
                         if (client.isVncOverWebSocketConnection()) {
@@ -118,30 +121,39 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                                 updateFrontEndActivityTime();
                             }
                             connectionAlive = session.isOpen();
+                            sleepTime = 1;
                         } else if (client.isVncOverNioSocket()) {
-                            byte[] bytesArr;
-                            int nextBytes = client.getNextBytes();
-                            bytesArr = new byte[nextBytes];
-                            client.readBytes(bytesArr, nextBytes);
-                            logger.trace("Read [{}] bytes from client [{}].", nextBytes, clientId);
-                            if (nextBytes > 0) {
-                                session.getRemote().sendBytes(ByteBuffer.wrap(bytesArr));
+                            ByteBuffer buffer = getOrCreateReadBuffer();
+                            buffer.clear(); // Reset position and limit for reuse
+                            int bytesRead = client.readAvailableDataIntoBuffer(buffer, buffer.capacity());
+                            if (bytesRead > 0) {
+                                buffer.flip(); // Set limit to position, reset position to 0 for reading
+                                logger.trace("Read [{}] bytes from client [{}].", bytesRead, clientId);
+                                session.getRemote().sendBytes(buffer);
                                 updateFrontEndActivityTime();
+                                consecutiveZeroReads = 0; // Reset counter on successful read
+
+                                sleepTime = 0; // Still no sleep to catch any remaining data quickly
                             } else {
                                 connectionAlive = session.isOpen();
+                                consecutiveZeroReads++;
+                                // Use adaptive sleep time to prevent excessive busy waiting
+                                sleepTime = Math.min(consecutiveZeroReads, 10); // Cap at 10ms max
                             }
                         } else {
-                            b = new byte[100];
-                            readBytes = client.read(b);
+                            byte[] b = new byte[100];
+                            int readBytes = client.read(b);
                             logger.trace("Read [{}] bytes from client [{}].", readBytes, clientId);
                             if (readBytes == -1 || (readBytes > 0 && !sendReadBytesToNoVNC(b, readBytes))) {
                                 connectionAlive = false;
                             }
                         }
-                        try {
-                            Thread.sleep(1);
-                        } catch (InterruptedException e) {
-                            logger.error("Error on sleep for vnc sessions", e);
+                        if (sleepTime > 0 && connectionAlive) {
+                            try {
+                                Thread.sleep(sleepTime);
+                            } catch (InterruptedException e) {
+                                logger.error("Error on sleep for vnc sessions", e);
+                            }
                         }
                     }
                     logger.info("Connection with client [{}] [IP: {}] is dead.", clientId, clientSourceIp);
@@ -316,9 +328,19 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
         this.clientParam = param;
     }
 
+    private ByteBuffer getOrCreateReadBuffer() {
+        if (readBuffer == null) {
+            readBuffer = ByteBuffer.allocate(ConsoleProxy.defaultBufferSize);
+            logger.debug("Allocated  {} KB read buffer for client [{}]", ConsoleProxy.defaultBufferSize / 1024 , clientId);
+        }
+        return readBuffer;
+    }
+
     @Override
     public void closeClient() {
         this.connectionAlive = false;
+        // Clear buffer reference to allow GC when client disconnects
+        this.readBuffer = null;
         ConsoleProxy.removeViewer(this);
     }
 
