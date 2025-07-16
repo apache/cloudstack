@@ -51,8 +51,8 @@ public abstract class BaseUpdateTemplateOrIsoCmd extends BaseCmd {
                description = "the ID of the OS type that best represents the OS of this image.")
     private Long osTypeId;
 
-    @Parameter(name = ApiConstants.FORCE_UPDATE_OS_TYPE, type = CommandType.BOOLEAN, description = "Force OS type update. Warning: Updating OS type will update the guest OS configuration" +
-            "for all the existing VMs deployed with this template/iso, which may affect their behavior.")
+    @Parameter(name = ApiConstants.FORCE_UPDATE_OS_TYPE, type = CommandType.BOOLEAN, since = "4.21", description = "Force OS type update. Warning: Updating OS type will " +
+            "update the guest OS configuration for all the existing VMs deployed with this template/iso, which may affect their behavior.")
     private Boolean forceUpdateOsType;
 
     @Parameter(name = ApiConstants.FORMAT, type = CommandType.STRING, description = "the format for the image")
