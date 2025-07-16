@@ -178,10 +178,18 @@ export default {
           delete this.rules[key]
         }
       })
+      Object.keys(this.form).forEach(key => {
+        if (key !== 'customactionid') {
+          delete this.form[key]
+        }
+      })
       if (this.currentParameters && this.currentParameters.length > 0) {
         this.currentParameters.forEach(field => {
           const required = !!field.required
           const fieldRules = []
+          if (field.type === 'BOOLEAN') {
+            this.form[field.name] = false
+          }
           // Required rule
           if (required) {
             fieldRules.push({
