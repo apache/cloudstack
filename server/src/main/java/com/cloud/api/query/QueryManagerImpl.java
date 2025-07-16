@@ -4229,6 +4229,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long zoneId = cmd.getId();
         if( ! AllowUserViewAllDataCenters.valueInDomain(account.getDomainId())) {
             zoneId = accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), zoneId);
+            logger.debug("not allowing users to view all zones ; selected zone is = {}", zoneId);
         }
         List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
         String keyword = cmd.getKeyword();
@@ -4273,109 +4274,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 sc.addAnd("name", SearchCriteria.Op.SC, ssc);
             }
 
-            /*
-             * List all resources due to Explicit Dedication except the
-             * dedicated resources of other account
-             */
-            if (domainId != null) { //
-                // for domainId != null // right now, we made the decision to
-                // only list zones associated // with this domain, private zone
-                sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-
-                if (accountMgr.isNormalUser(account.getId())) {
-                    // accountId == null (zones dedicated to a domain) or
-                    // accountId = caller
-                    SearchCriteria<DataCenterJoinVO> sdc = _dcJoinDao.createSearchCriteria();
-                    sdc.addOr("accountId", SearchCriteria.Op.EQ, account.getId());
-                    sdc.addOr("accountId", SearchCriteria.Op.NULL);
-
-                    sc.addAnd("accountId", SearchCriteria.Op.SC, sdc);
-                }
-
-            } else if (accountMgr.isNormalUser(account.getId())) {
-                // it was decided to return all zones for the user's domain, and
-                // everything above till root
-                // list all zones belonging to this domain, and all of its
-                // parents
-                // check the parent, if not null, add zones for that parent to
-                // list
-
-                // find all domain Id up to root domain for this account
-                List<Long> domainIds = new ArrayList<>();
-                DomainVO domainRecord = _domainDao.findById(account.getDomainId());
-                if (domainRecord == null) {
-                    logger.error("Could not find the domainId for account: {}", account);
-                    throw new CloudAuthenticationException("Could not find the domainId for account:" + account.getAccountName());
-                }
-                domainIds.add(domainRecord.getId());
-                while (domainRecord.getParent() != null) {
-                    domainRecord = _domainDao.findById(domainRecord.getParent());
-                    domainIds.add(domainRecord.getId());
-                }
-                // domainId == null (public zones) or domainId IN [all domain id
-                // up to root domain]
-                SearchCriteria<DataCenterJoinVO> sdc = _dcJoinDao.createSearchCriteria();
-                sdc.addOr("domainId", SearchCriteria.Op.IN, domainIds.toArray());
-                sdc.addOr("domainId", SearchCriteria.Op.NULL);
-                sc.addAnd("domainId", SearchCriteria.Op.SC, sdc);
-
-                // remove disabled zones
-                sc.addAnd("allocationState", SearchCriteria.Op.NEQ, Grouping.AllocationState.Disabled);
-
-                // accountId == null (zones dedicated to a domain) or
-                // accountId = caller
-                SearchCriteria<DataCenterJoinVO> sdc2 = _dcJoinDao.createSearchCriteria();
-                sdc2.addOr("accountId", SearchCriteria.Op.EQ, account.getId());
-                sdc2.addOr("accountId", SearchCriteria.Op.NULL);
-
-                sc.addAnd("accountId", SearchCriteria.Op.SC, sdc2);
-
-                // remove Dedicated zones not dedicated to this domainId or
-                // subdomainId
-                List<Long> dedicatedZoneIds = removeDedicatedZoneNotSuitabe(domainIds);
-                if (!dedicatedZoneIds.isEmpty()) {
-                    sdc.addAnd("id", SearchCriteria.Op.NIN, dedicatedZoneIds.toArray(new Object[0]));
-                }
-
-            } else if (accountMgr.isDomainAdmin(account.getId()) || account.getType() == Account.Type.RESOURCE_DOMAIN_ADMIN) {
-                // it was decided to return all zones for the domain admin, and
-                // everything above till root, as well as zones till the domain
-                // leaf
-                List<Long> domainIds = new ArrayList<>();
-                DomainVO domainRecord = _domainDao.findById(account.getDomainId());
-                if (domainRecord == null) {
-                    logger.error("Could not find the domainId for account: {}", account);
-                    throw new CloudAuthenticationException("Could not find the domainId for account:" + account.getAccountName());
-                }
-                domainIds.add(domainRecord.getId());
-                // find all domain Ids till leaf
-                List<DomainVO> allChildDomains = _domainDao.findAllChildren(domainRecord.getPath(), domainRecord.getId());
-                for (DomainVO domain : allChildDomains) {
-                    domainIds.add(domain.getId());
-                }
-                // then find all domain Id up to root domain for this account
-                while (domainRecord.getParent() != null) {
-                    domainRecord = _domainDao.findById(domainRecord.getParent());
-                    domainIds.add(domainRecord.getId());
-                }
-
-                // domainId == null (public zones) or domainId IN [all domain id
-                // up to root domain]
-                SearchCriteria<DataCenterJoinVO> sdc = _dcJoinDao.createSearchCriteria();
-                sdc.addOr("domainId", SearchCriteria.Op.IN, domainIds.toArray());
-                sdc.addOr("domainId", SearchCriteria.Op.NULL);
-                sc.addAnd("domainId", SearchCriteria.Op.SC, sdc);
-
-                // remove disabled zones
-                sc.addAnd("allocationState", SearchCriteria.Op.NEQ, Grouping.AllocationState.Disabled);
-
-                // remove Dedicated zones not dedicated to this domainId or
-                // subdomainId
-                List<Long> dedicatedZoneIds = removeDedicatedZoneNotSuitabe(domainIds);
-                if (!dedicatedZoneIds.isEmpty()) {
-                    sdc.addAnd("id", SearchCriteria.Op.NIN, dedicatedZoneIds.toArray(new Object[0]));
-                }
-            }
+            buildSearchCriteriaForOwnedExplicitlyDedicatedResources(domainId, sc, account);
 
             // handle available=FALSE option, only return zones with at least
             // one VM running there
@@ -4399,6 +4298,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
         }
 
+        buildSearchCriteriaForTags(resourceTags, sc);
+
+        return _dcJoinDao.searchAndCount(sc, searchFilter);
+    }
+
+    private static void buildSearchCriteriaForTags(Map<String, String> resourceTags, SearchCriteria<DataCenterJoinVO> sc) {
         if (resourceTags != null && !resourceTags.isEmpty()) {
             int count = 0;
             sc.setJoinParameters("tagSearch", "resourceType", ResourceObjectType.Zone.toString());
@@ -4408,16 +4313,132 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 count++;
             }
         }
-
-        return _dcJoinDao.searchAndCount(sc, searchFilter);
     }
 
-    private List<Long> removeDedicatedZoneNotSuitabe(List<Long> domainIds) {
+    /**
+     * List all resources due to Explicit Dedication except the
+     * dedicated resources of other account
+     */
+    private void buildSearchCriteriaForOwnedExplicitlyDedicatedResources(Long domainId, SearchCriteria<DataCenterJoinVO> sc, Account account) {
+        if (domainId != null) {
+            buildSearchCriteriaForZonesBelongingToDomain(domainId, sc, account);
+        } else if (accountMgr.isNormalUser(account.getId())) {
+            buildSearchCriteriaForUserDomainAndAbove(sc, account);
+        } else if (accountMgr.isDomainAdmin(account.getId()) || accountMgr.isResourceDomainAdmin(account.getId())) {
+            buildSearchCriteriaForDomainAdmins(sc, account);
+        }
+    }
+
+    /**
+     * Return all zones for the domain admin, and everything above till root, as well as zones till the domain leaf
+     */
+    private void buildSearchCriteriaForDomainAdmins(SearchCriteria<DataCenterJoinVO> sc, Account account) {
+        List<Long> domainIds = new ArrayList<>();
+        DomainVO domainRecord = _domainDao.findById(account.getDomainId());
+        if (domainRecord == null) {
+            logger.error("Could not find the domainId for account: {}", account);
+            throw new CloudAuthenticationException("Could not find the domainId for account:" + account.getAccountName());
+        }
+        logger.trace("adding caller's domain {} to the list of domains to search for zones", account.getDomainId());
+        domainIds.add(domainRecord.getId());
+        // find all domain Ids till leaf
+        List<DomainVO> allChildDomains = _domainDao.findAllChildren(domainRecord.getPath(), domainRecord.getId());
+        for (DomainVO domain : allChildDomains) {
+            logger.trace("adding caller domain's child {} to the list of domains to search for zones", domain.getId());
+            domainIds.add(domain.getId());
+        }
+        // then find all domain Id up to root domain for this account
+        while (domainRecord.getParent() != null) {
+            domainRecord = _domainDao.findById(domainRecord.getParent());
+            logger.trace("adding caller domain's ancestor {} to the list of domains to search for zones", domainRecord.getId());
+            domainIds.add(domainRecord.getId());
+        }
+
+        // so search for domainId == null (public zones) or domainId this user has access to
+        SearchCriteria<DataCenterJoinVO> sdc = _dcJoinDao.createSearchCriteria();
+        sdc.addOr("domainId", Op.IN, domainIds.toArray());
+        sdc.addOr("domainId", Op.NULL);
+        sc.addAnd("domainId", Op.SC, sdc);
+
+        // remove disabled zones
+        sc.addAnd("allocationState", Op.NEQ, Grouping.AllocationState.Disabled);
+
+        // remove Dedicated zones not dedicated to this domainId or
+        // subdomainId
+        List<Long> dedicatedZoneIds = removeDedicatedZoneNotSuitable(domainIds);
+        if (!dedicatedZoneIds.isEmpty()) {
+            sdc.addAnd("id", Op.NIN, dedicatedZoneIds.toArray(new Object[0]));
+        }
+    }
+
+    /**
+     * Return all zones for the user's domain, and everything above till root
+     * list all zones belonging to this domain, and all of its parents
+     * check the parent, if not null, add zones for that parent to list
+     */
+    private void buildSearchCriteriaForUserDomainAndAbove(SearchCriteria<DataCenterJoinVO> sc, Account account) {
+
+        // find all domain Id up to root domain for this account
+        List<Long> domainIds = new ArrayList<>();
+        DomainVO domainRecord = _domainDao.findById(account.getDomainId());
+        if (domainRecord == null) {
+            logger.error("Could not find the domainId for account: {}", account);
+            throw new CloudAuthenticationException("Could not find the domainId for account:" + account.getAccountName());
+        }
+        domainIds.add(domainRecord.getId());
+        while (domainRecord.getParent() != null) {
+            domainRecord = _domainDao.findById(domainRecord.getParent());
+            domainIds.add(domainRecord.getId());
+        }
+        // domainId == null (public zones) or domainId IN [all domain id
+        // up to root domain]
+        SearchCriteria<DataCenterJoinVO> sdc = _dcJoinDao.createSearchCriteria();
+        sdc.addOr("domainId", Op.IN, domainIds.toArray());
+        sdc.addOr("domainId", Op.NULL);
+        sc.addAnd("domainId", Op.SC, sdc);
+
+        // remove disabled zones
+        sc.addAnd("allocationState", Op.NEQ, Grouping.AllocationState.Disabled);
+
+        // accountId == null (zones dedicated to a domain) or
+        // accountId = caller
+        SearchCriteria<DataCenterJoinVO> sdc2 = _dcJoinDao.createSearchCriteria();
+        sdc2.addOr("accountId", Op.EQ, account.getId());
+        sdc2.addOr("accountId", Op.NULL);
+
+        sc.addAnd("accountId", Op.SC, sdc2);
+
+        // remove Dedicated zones not dedicated to this domainId or
+        // subdomainId
+        List<Long> dedicatedZoneIds = removeDedicatedZoneNotSuitable(domainIds);
+        if (!dedicatedZoneIds.isEmpty()) {
+            sdc.addAnd("id", Op.NIN, dedicatedZoneIds.toArray(new Object[0]));
+        }
+    }
+
+    private void buildSearchCriteriaForZonesBelongingToDomain(Long domainId, SearchCriteria<DataCenterJoinVO> sc, Account account) {
+        // for domainId != null // right now, we made the decision to
+        // only list zones associated // with this domain, private zone
+        sc.addAnd("domainId", Op.EQ, domainId);
+
+        if (accountMgr.isNormalUser(account.getId())) {
+            // accountId == null (zones dedicated to a domain) or
+            // accountId = caller
+            SearchCriteria<DataCenterJoinVO> sdc = _dcJoinDao.createSearchCriteria();
+            sdc.addOr("accountId", Op.EQ, account.getId());
+            sdc.addOr("accountId", Op.NULL);
+
+            sc.addAnd("accountId", Op.SC, sdc);
+        }
+    }
+
+    private List<Long> removeDedicatedZoneNotSuitable(List<Long> domainIds) {
         // remove dedicated zone of other domain
         List<Long> dedicatedZoneIds = new ArrayList<>();
         List<DedicatedResourceVO> dedicatedResources = _dedicatedDao.listZonesNotInDomainIds(domainIds);
         for (DedicatedResourceVO dr : dedicatedResources) {
             if (dr != null) {
+                logger.trace("adding zone to exclude from callers list zones result: {}.", dr.getDataCenterId());
                 dedicatedZoneIds.add(dr.getDataCenterId());
             }
         }
