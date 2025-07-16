@@ -2240,7 +2240,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 if (vms != null && !vms.isEmpty()) {
                     if (!Boolean.TRUE.equals(cmd.getForceUpdateOsType())) {
                         String message = String.format("Updating OS type will update the guest OS configuration " +
-                            "for all of the %d VM(s) deployed with this Template/ISO, which may affect their behavior. " +
+                            "for all of the %d Instance(s) deployed with this Template/ISO, which may affect their behavior. " +
                             "To proceed, please set the 'forceupdateostype' parameter to true.", vms.size());
                         throw new InvalidParameterValueException(message);
                     }
