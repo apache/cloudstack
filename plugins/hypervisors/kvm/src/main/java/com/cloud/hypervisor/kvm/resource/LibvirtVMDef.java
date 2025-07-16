@@ -390,12 +390,12 @@ public class LibvirtVMDef {
                 feaBuilder.append("<");
                 feaBuilder.append(e.getKey());
 
-                if(e.getKey().equals("spinlocks"))       feaBuilder.append(" state='" + e.getValue() + "' retries='" + getRetries() + "'");
-                else if(e.getKey().equals("vendor_id"))  feaBuilder.append(" state='" + e.getValue() + "' value='KVM Hv'");
-                else if(e.getKey().equals("stimer"))     feaBuilder.append(" state='" + e.getValue() + "'><direct state='" + e.getValue() + "'/>");
-                else                                     feaBuilder.append(" state='" + e.getValue() + "'");
+                if (e.getKey().equals("spinlocks"))       feaBuilder.append(" state='" + e.getValue() + "' retries='" + getRetries() + "'");
+                else if (e.getKey().equals("vendor_id"))  feaBuilder.append(" state='" + e.getValue() + "' value='KVM Hv'");
+                else if (e.getKey().equals("stimer"))     feaBuilder.append(" state='" + e.getValue() + "'><direct state='" + e.getValue() + "'/>");
+                else                                      feaBuilder.append(" state='" + e.getValue() + "'");
 
-                if(e.getKey().equals("stimer")) feaBuilder.append("</stimer>\n");
+                if (e.getKey().equals("stimer")) feaBuilder.append("</stimer>\n");
                 else feaBuilder.append("/>\n");
             }
             feaBuilder.append("</hyperv>\n");
