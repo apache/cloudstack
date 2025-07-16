@@ -42,6 +42,7 @@ import javax.naming.ConfigurationException;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
+import com.cloud.resource.ResourceState;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -431,10 +432,10 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             ch = connectToPeer(peer, ch);
             if (ch == null) {
                 try {
-                    logD(bytes, "Unable to route to peer: " + Request.parse(bytes));
+                    logD(bytes, "Unable to establish connection to route to peer: " + Request.parse(bytes));
                 } catch (ClassNotFoundException | UnsupportedVersionException e) {
                     // Request.parse thrown exception when we try to log it, log as much as we can
-                    logD(bytes, "Unable to route to peer, and Request.parse further caught exception" + e.getMessage());
+                    logD(bytes, "Unable to establish connection to route to peer, and Request.parse further caught exception" + e.getMessage());
                 }
                 return false;
             }
@@ -643,7 +644,6 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 final Link link = task.getLink();
 
                 if (Request.fromServer(data)) {
-
                     final AgentAttache agent = findAttache(hostId);
 
                     if (Request.isControl(data)) {
@@ -691,7 +691,6 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                         cancel(Long.toString(Request.getManagementServerId(data)), hostId, Request.getSequence(data), e.getMessage());
                     }
                 } else {
-
                     final long mgmtId = Request.getManagementServerId(data);
                     if (mgmtId != -1 && mgmtId != _nodeId) {
                         routeToPeer(Long.toString(mgmtId), data);
@@ -1352,7 +1351,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             if (cmd instanceof PrepareForMaintenanceManagementServerHostCommand) {
                 logger.debug("Received PrepareForMaintenanceManagementServerHostCommand - preparing for maintenance");
                 try {
-                    managementServerMaintenanceManager.prepareForMaintenance(((PrepareForMaintenanceManagementServerHostCommand) cmd).getLbAlgorithm());
+                    managementServerMaintenanceManager.prepareForMaintenance(((PrepareForMaintenanceManagementServerHostCommand) cmd).getLbAlgorithm(), ((PrepareForMaintenanceManagementServerHostCommand) cmd).isForced());
                     return "Successfully prepared for maintenance";
                 } catch(CloudRuntimeException e) {
                     return e.getMessage();
@@ -1399,14 +1398,14 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     }
 
     @Override
-    public boolean transferDirectAgentsFromMS(String fromMsUuid, long fromMsId, long timeoutDurationInMs) {
+    public boolean transferDirectAgentsFromMS(String fromMsUuid, long fromMsId, long timeoutDurationInMs, boolean excludeHostsInMaintenance) {
         if (timeoutDurationInMs <= 0) {
             logger.debug("Not transferring direct agents from management server node {} (id: {}) to other nodes, invalid timeout duration", fromMsId, fromMsUuid);
             return false;
         }
 
         long transferStartTimeInMs = System.currentTimeMillis();
-        if (CollectionUtils.isEmpty(getDirectAgentHosts(fromMsId))) {
+        if (CollectionUtils.isEmpty(getDirectAgentHosts(fromMsId, excludeHostsInMaintenance))) {
             logger.info("No direct agent hosts available on management server node {} (id: {}), to transfer", fromMsId, fromMsUuid);
             return true;
         }
@@ -1421,7 +1420,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         int agentTransferFailedCount = 0;
         List<DataCenterVO> dataCenterList = dcDao.listAll();
         for (DataCenterVO dc : dataCenterList) {
-            List<HostVO> directAgentHostsInDc = getDirectAgentHostsInDc(fromMsId, dc.getId());
+            List<HostVO> directAgentHostsInDc = getDirectAgentHostsInDc(fromMsId, dc.getId(), excludeHostsInMaintenance);
             if (CollectionUtils.isEmpty(directAgentHostsInDc)) {
                 continue;
             }
@@ -1455,9 +1454,10 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         return (agentTransferFailedCount == 0);
     }
 
-    private List<HostVO> getDirectAgentHosts(long msId) {
+    private List<HostVO> getDirectAgentHosts(long msId, boolean excludeHostsInMaintenance) {
         List<HostVO> directAgentHosts = new ArrayList<>();
-        List<HostVO> hosts = _hostDao.listHostsByMs(msId);
+        List<ResourceState> statesToExclude = excludeHostsInMaintenance ? ResourceState.s_maintenanceStates : List.of();
+        List<HostVO> hosts = _hostDao.listHostsByMsResourceState(msId, statesToExclude);
         for (HostVO host : hosts) {
             AgentAttache agent = findAttache(host.getId());
             if (agent instanceof DirectAgentAttache) {
@@ -1468,9 +1468,11 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         return directAgentHosts;
     }
 
-    private List<HostVO> getDirectAgentHostsInDc(long msId, long dcId) {
+    private List<HostVO> getDirectAgentHostsInDc(long msId, long dcId, boolean excludeHostsInMaintenance) {
         List<HostVO> directAgentHosts = new ArrayList<>();
-        List<HostVO> hosts = _hostDao.listHostsByMsAndDc(msId, dcId);
+        // To exclude maintenance states use values from ResourceState as source of truth
+        List<ResourceState> statesToExclude = excludeHostsInMaintenance ? ResourceState.s_maintenanceStates : List.of();
+        List<HostVO> hosts = _hostDao.listHostsByMsDcResourceState(msId, dcId, statesToExclude);
         for (HostVO host : hosts) {
             AgentAttache agent = findAttache(host.getId());
             if (agent instanceof DirectAgentAttache) {
@@ -1506,6 +1508,10 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     public void onManagementServerCancelPreparingForMaintenance() {
         logger.debug("Management server cancel preparing for maintenance");
         super.onManagementServerPreparingForMaintenance();
+
+        // needed for the case when Management Server in Preparing For Maintenance but didn't go to Maintenance state
+        // (where this variable will be reset)
+        _agentLbHappened = false;
     }
 
     @Override

@@ -31,7 +31,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ConfigurationTable from '@/views/setting/ConfigurationTable.vue'
 
@@ -125,7 +125,7 @@ export default {
       if (this.filter) {
         params.keyword = this.filter
       }
-      api('listConfigurations', params).then(response => {
+      getAPI('listConfigurations', params).then(response => {
         this.items = response.listconfigurationsresponse.configuration
       }).catch(error => {
         console.error(error)

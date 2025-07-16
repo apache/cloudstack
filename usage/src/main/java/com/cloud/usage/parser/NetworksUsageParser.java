@@ -18,16 +18,12 @@ package com.cloud.usage.parser;
 
 import com.cloud.usage.UsageNetworksVO;
 import com.cloud.usage.UsageVO;
-import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageNetworksDao;
 import com.cloud.user.AccountVO;
-import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import java.text.DecimalFormat;
@@ -35,32 +31,24 @@ import java.util.Date;
 import java.util.List;
 
 @Component
-public class NetworksUsageParser {
-    private static final Logger LOGGER = LogManager.getLogger(NetworksUsageParser.class.getName());
-
+public class NetworksUsageParser extends UsageParser {
     @Inject
     private UsageNetworksDao networksDao;
-    @Inject
-    private UsageDao usageDao;
 
-    private static UsageDao staticUsageDao;
-    private static UsageNetworksDao staticNetworksDao;
-
-    @PostConstruct
-    void init() {
-        staticUsageDao = usageDao;
-        staticNetworksDao = networksDao;
+    @Override
+    public String getParserName() {
+        return "Networks";
     }
 
-    public static boolean parse(AccountVO account, Date startDate, Date endDate) {
-        LOGGER.debug("Parsing all networks usage events for account {}", account);
+    @Override
+    protected boolean parse(AccountVO account, Date startDate, Date endDate) {
         if ((endDate == null) || endDate.after(new Date())) {
             endDate = new Date();
         }
 
-        final List<UsageNetworksVO> usageNetworksVO = staticNetworksDao.getUsageRecords(account.getId(), startDate, endDate);
+        final List<UsageNetworksVO> usageNetworksVO = networksDao.getUsageRecords(account.getId(), startDate, endDate);
         if (CollectionUtils.isEmpty(usageNetworksVO)) {
-            LOGGER.debug(String.format("Cannot find any VPC usage for account [%s] in period between [%s] and [%s].", account, startDate, endDate));
+            logger.debug("Cannot find any Networks usage for account [{}] in period between [{}] and [{}].", account, startDate, endDate);
             return true;
         }
 
@@ -83,8 +71,8 @@ public class NetworksUsageParser {
 
             long networkId = usageNetwork.getNetworkId();
             long networkOfferingId = usageNetwork.getNetworkOfferingId();
-            LOGGER.debug(String.format("Creating network usage record with id [%s], network offering [%s], usage [%s], startDate [%s], and endDate [%s], for account [%s].",
-                    networkId, networkOfferingId, usageDisplay, startDate, endDate, account));
+            logger.debug("Creating network usage record with id [{}], network offering [{}], usage [{}], startDate [{}], and endDate [{}], for account [{}].",
+                    networkId, networkOfferingId, usageDisplay, startDate, endDate, account.getId());
 
             String description = String.format("Network usage for network ID: %d, network offering: %d", usageNetwork.getNetworkId(), usageNetwork.getNetworkOfferingId());
             UsageVO usageRecord =
@@ -92,7 +80,7 @@ public class NetworksUsageParser {
                             UsageTypes.NETWORK, (double) usage, null, null, usageNetwork.getNetworkOfferingId(), null, usageNetwork.getNetworkId(),
                             (long)0, null, startDate, endDate);
             usageRecord.setState(usageNetwork.getState());
-            staticUsageDao.persist(usageRecord);
+            usageDao.persist(usageRecord);
         }
 
         return true;
