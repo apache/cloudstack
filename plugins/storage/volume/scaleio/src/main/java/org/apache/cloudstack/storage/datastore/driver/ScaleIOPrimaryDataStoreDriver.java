@@ -1362,9 +1362,9 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     @Override
     public long getVolumeSizeRequiredOnPool(long volumeSize, Long templateSize, boolean isEncryptionRequired) {
-        long newSizeInGB = volumeSize / (1024 * 1024 * 1024);
+        double newSizeInGB = volumeSize / (1024.0 * 1024 * 1024);
         if (templateSize != null && isEncryptionRequired && needsExpansionForEncryptionHeader(templateSize, volumeSize)) {
-            newSizeInGB = (volumeSize + (1<<30)) / (1024 * 1024 * 1024);
+            newSizeInGB = (volumeSize + (1<<30)) / (1024.0 * 1024 * 1024);
         }
         long newSizeIn8gbBoundary = (long) (Math.ceil(newSizeInGB / 8.0) * 8.0);
         return newSizeIn8gbBoundary * (1024 * 1024 * 1024);
