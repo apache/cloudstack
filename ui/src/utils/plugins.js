@@ -107,6 +107,8 @@ export const pollJobPlugin = {
               key: jobId,
               duration: 2
             })
+          } else {
+            message.destroy(jobId)
           }
           store.dispatch('AddHeaderNotice', {
             key: jobId,
