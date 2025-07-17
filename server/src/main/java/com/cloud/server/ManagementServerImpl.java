@@ -1652,7 +1652,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         if (CollectionUtils.isEmpty(suitableHosts)) {
             logger.warn("No suitable hosts found.");
         } else {
-            logger.debug("Hosts having capacity and are suitable for migration: {} ", suitableHosts);
+            logger.debug("Hosts having capacity and are suitable for migration: {}", suitableHosts);
         }
 
         // Only list hosts of the same architecture as the source Host in a multi-arch zone

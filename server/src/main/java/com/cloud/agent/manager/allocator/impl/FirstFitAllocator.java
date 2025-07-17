@@ -234,12 +234,12 @@ public class FirstFitAllocator extends BaseAllocator {
             }
 
             if (avoid.shouldAvoid(host)) {
-                logger.debug("Host [{}] is in avoid set, skipping this and trying other available hosts", () -> host);
+                logger.debug("Host [{}] is in avoid set, skipping this and trying other available hosts", host);
                 continue;
             }
 
             if (capacityManager.checkIfHostReachMaxGuestLimit(host)) {
-                logger.debug("Adding host [{}] to the avoid set because this host already has the max number of running (user and/or system) VMs.", () ->  host);
+                logger.debug("Adding host [{}] to the avoid set because this host already has the max number of running (user and/or system) VMs.", host);
                 avoid.addHost(host.getId());
                 continue;
             }
