@@ -684,7 +684,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     }
 
     @Override
-    public List<Long> listClustersInZoneOrPodByHostCapacities(long id, long vmId, int requiredCpu, long requiredRam, short capacityTypeForOrdering, boolean isZone) {
+    public List<Long> listClustersInZoneOrPodByHostCapacities(long id, long vmId, int requiredCpu, long requiredRam, boolean isZone) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<Long> result = new ArrayList<Long>();
@@ -1068,7 +1068,65 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     }
 
     @Override
-    public List<Long> listPodsByHostCapacities(long zoneId, int requiredCpu, long requiredRam, short capacityType) {
+    public List<CapacityVO> listHostCapacityByCapacityTypes(Long zoneId, Long clusterId, List<Short> capacityTypes) {
+        SearchBuilder<CapacityVO> sb = createSearchBuilder();
+        sb.and("zoneId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
+        sb.and("capacityTypes", sb.entity().getCapacityType(), SearchCriteria.Op.IN);
+        sb.and("capacityState", sb.entity().getCapacityState(), Op.EQ);
+        sb.done();
+
+        SearchCriteria<CapacityVO> sc = sb.create();
+        sc.setParameters("capacityState", "Enabled");
+        if (zoneId != null) {
+            sc.setParameters("zoneId", zoneId);
+        }
+        if (clusterId != null) {
+            sc.setParameters("clusterId", clusterId);
+        }
+        sc.setParameters("capacityTypes", capacityTypes.toArray());
+        return listBy(sc);
+    }
+
+    @Override
+    public List<CapacityVO> listPodCapacityByCapacityTypes(Long zoneId, List<Short> capacityTypes) {
+        SearchBuilder<CapacityVO> sb = createSearchBuilder();
+        sb.and("zoneId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.and("capacityTypes", sb.entity().getCapacityType(), SearchCriteria.Op.IN);
+        sb.and("capacityState", sb.entity().getCapacityState(), Op.EQ);
+        sb.done();
+        SearchCriteria<CapacityVO> sc = sb.create();
+        sc.setParameters("capacityState", "Enabled");
+        if (zoneId != null) {
+            sc.setParameters("zoneId", zoneId);
+        }
+        sc.setParameters("capacityTypes", capacityTypes.toArray());
+        return listBy(sc);
+    }
+
+    @Override
+    public List<CapacityVO> listClusterCapacityByCapacityTypes(Long zoneId, Long podId, List<Short> capacityTypes) {
+        SearchBuilder<CapacityVO> sb = createSearchBuilder();
+        sb.and("zoneId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
+        sb.and("capacityTypes", sb.entity().getCapacityType(), SearchCriteria.Op.IN);
+        sb.and("capacityState", sb.entity().getCapacityState(), Op.EQ);
+        sb.done();
+
+        SearchCriteria<CapacityVO> sc = sb.create();
+        sc.setParameters("capacityState", "Enabled");
+        if (zoneId != null) {
+            sc.setParameters("zoneId", zoneId);
+        }
+        if (podId != null) {
+            sc.setParameters("podId", podId);
+        }
+        sc.setParameters("capacityTypes", capacityTypes.toArray());
+        return listBy(sc);
+    }
+
+    @Override
+    public List<Long> listPodsByHostCapacities(long zoneId, int requiredCpu, long requiredRam) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<Long> result = new ArrayList<Long>();

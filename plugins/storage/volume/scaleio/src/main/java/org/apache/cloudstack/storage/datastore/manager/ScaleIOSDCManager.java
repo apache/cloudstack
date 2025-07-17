@@ -22,6 +22,8 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.host.Host;
 
+import java.util.Map;
+
 public interface ScaleIOSDCManager {
     ConfigKey<Boolean> ConnectOnDemand = new ConfigKey<>("Storage",
             Boolean.class,
@@ -29,6 +31,34 @@ public interface ScaleIOSDCManager {
             Boolean.FALSE.toString(),
             "When true, connects PowerFlex client on Host when first Volume is mapped to SDC & client connections configured 'storage.pool.connected.clients.limit' are within the limit and disconnects when last Volume is unmapped from SDC; " +
                     "and When false, connects PowerFlex client on Host when host connects to storage pool & client connections configured 'storage.pool.connected.clients.limit' are within the limit and disconnects when host disconnects from storage pool & no volumes mapped to SDC.",
+            Boolean.TRUE,
+            ConfigKey.Scope.Zone);
+
+    /**
+     * Timeout for Host to wait after MDM changes made on Host until changes will be applied.
+     * Needed to avoid cases when Storage Pool is not connected yet, but Agent already starts to use Storage Pool.
+     */
+    ConfigKey<Integer> MdmsChangeApplyWaitTime = new ConfigKey<>("Storage",
+            Integer.class,
+            "powerflex.mdm.change.apply.wait",
+            "3000",
+            "Time (in ms) to wait after MDM addition, and before & after MDM removal changes made on the Host, default value: 3000 ms",
+            Boolean.TRUE,
+            ConfigKey.Scope.Zone);
+
+    ConfigKey<Boolean> ValidateMdmsOnConnect = new ConfigKey<>("Storage",
+            Boolean.class,
+            "powerflex.mdm.validate.on.connect",
+            Boolean.FALSE.toString(),
+            "Flag to validate PowerFlex MDMs on the host, present in Configuration File and in CLI during storage pool registration in agent, default value: false",
+            Boolean.TRUE,
+            ConfigKey.Scope.Zone);
+
+    ConfigKey<Boolean> BlockSdcUnprepareIfRestartNeededAndVolumesAreAttached = new ConfigKey<>("Storage",
+            Boolean.class,
+            "powerflex.block.sdc.unprepare",
+            Boolean.FALSE.toString(),
+            "Block storage client un-preparation if SDC service restart needed after PowerFlex MDM removal (i.e. no support for --remove_mdm in drv_cfg cmd) when there are Volumes mapped to the Host",
             Boolean.TRUE,
             ConfigKey.Scope.Zone);
 
@@ -93,4 +123,11 @@ public interface ScaleIOSDCManager {
      * @return Comma-separated list of MDM IPs of the pool
      */
     String getMdms(long poolId);
+
+    /**
+     * Adds the SDC settings to the details map.
+     * @param details the details map to add the settings
+     * @param dataCenterId the datacenter id for the settings
+     */
+    void populateSdcSettings(Map<String, String> details, long dataCenterId);
 }
