@@ -61,6 +61,11 @@ public interface UserPasswordResetManager {
             true,
             ConfigKey.Scope.Global);
 
+    ConfigKey<String> UserPasswordResetSMTPEnabledSecurityProtocols = new ConfigKey<String>(ConfigKey.CATEGORY_ADVANCED,
+            String.class, "user.password.reset.smtp.enabledSecurityProtocols", "",
+            "White-space separated security protocols; ex: \"TLSv1 TLSv1.1\". Supported protocols: SSLv2Hello, SSLv3, TLSv1, TLSv1.1 and TLSv1.2",
+            true, ConfigKey.Kind.WhitespaceSeparatedListWithOptions, "SSLv2Hello,SSLv3,TLSv1,TLSv1.1,TLSv1.2");
+
     ConfigKey<String> UserPasswordResetSMTPUsername = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED,
             String.class, "user.password.reset.smtp.username", null,
             "Username for SMTP server for sending emails for resetting password for ACS users",

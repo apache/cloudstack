@@ -94,6 +94,7 @@ public class UserPasswordResetManagerImpl extends ManagerBase implements UserPas
                 UserPasswordResetSMTPPort,
                 UserPasswordResetSMTPUseAuth,
                 UserPasswordResetSMTPUseStartTLS,
+                UserPasswordResetSMTPEnabledSecurityProtocols,
                 UserPasswordResetSMTPUsername,
                 UserPasswordResetSMTPPassword,
                 PasswordResetMailTemplate
