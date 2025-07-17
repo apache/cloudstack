@@ -695,7 +695,12 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                     updateTemplateRef(templateId, poolId, templatePath, templateSize);
                     return templateId;
                 } else {
-                    return volumeVO.getTemplateId();
+                    Long templateId = volumeVO.getTemplateId();
+                    if (templateId == null && volumeVO.getInstanceId() != null) {
+                        VMInstanceVO vmInstanceVO = vmDao.findByIdIncludingRemoved(volumeVO.getInstanceId());
+                        return vmInstanceVO.getTemplateId();
+                    }
+                    return templateId;
                 }
             }
         }
