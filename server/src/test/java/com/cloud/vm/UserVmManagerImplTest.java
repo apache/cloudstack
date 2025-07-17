@@ -3322,6 +3322,8 @@ public class UserVmManagerImplTest {
         VMTemplateVO template = mock(VMTemplateVO.class);
         when(template.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
         when(templateDao.findById(templateId)).thenReturn(template);
+        DiskOfferingInfo rootDiskOfferingInfo = new DiskOfferingInfo(diskOffering, 10L, 1000L, 2000L);
+        when(backupManager.getRootDiskOfferingInfoFromBackup(backup)).thenReturn(rootDiskOfferingInfo);
 
         Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
@@ -3466,7 +3468,7 @@ public class UserVmManagerImplTest {
         ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
         DiskOfferingVO rootDiskOffering = mock(DiskOfferingVO.class);
         when(_serviceOfferingDao.findById(serviceOfferingId)).thenReturn(serviceOffering);
-        when(rootDiskOffering.getDiskSize()).thenReturn(100000000L);
+        when(rootDiskOffering.getDiskSize()).thenReturn(10 * 1024 * 1024 * 1024L);
         when(diskOfferingDao.findById(rootDiskOfferingId)).thenReturn(rootDiskOffering);
 
         Map<String, String> diskDetails = new HashMap<>();
@@ -3494,6 +3496,8 @@ public class UserVmManagerImplTest {
         VMTemplateVO iso = mock(VMTemplateVO.class);
         when(iso.getFormat()).thenReturn(Storage.ImageFormat.ISO);
         when(templateDao.findById(isoId)).thenReturn(iso);
+        DiskOfferingInfo rootDiskOfferingInfo = new DiskOfferingInfo(diskOffering, 10L, 1000L, 2000L);
+        when(backupManager.getRootDiskOfferingInfoFromBackup(backup)).thenReturn(rootDiskOfferingInfo);
 
         Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
