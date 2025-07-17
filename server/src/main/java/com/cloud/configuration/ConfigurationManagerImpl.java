@@ -99,6 +99,7 @@ import org.apache.cloudstack.cluster.ClusterDrsService;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.StorageOrchestrationService;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -592,6 +593,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         weightBasedParametersForValidation.add(CapacityManager.SecondaryStorageCapacityThreshold.key());
         weightBasedParametersForValidation.add(ClusterDrsService.ClusterDrsImbalanceThreshold.key());
         weightBasedParametersForValidation.add(ClusterDrsService.ClusterDrsImbalanceSkipThreshold.key());
+        weightBasedParametersForValidation.add(StorageOrchestrationService.ImageStoreImbalanceThreshold.key());
+        weightBasedParametersForValidation.add(AlertManager.Ipv6SubnetCapacityThreshold.key());
     }
 
     private void overProvisioningFactorsForValidation() {
@@ -1203,7 +1206,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 return "Invalid scope id provided for the parameter " + name;
             }
         }
-        Class<?> type = null;
+        Class<?> type;
         final Config configuration = Config.getConfig(name);
         if (configuration == null) {
             s_logger.warn("Did not find configuration " + name + " in Config.java. Perhaps moved to ConfigDepot");
@@ -1216,25 +1219,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         } else {
             type = configuration.getType();
         }
+
         //no need to validate further if a
         //config can have null value.
-        String errMsg = null;
-        try {
-            if (type.equals(Integer.class)) {
-                errMsg = "There was error in trying to parse value: " + value + ". Please enter a valid integer value for parameter " + name;
-                Integer.parseInt(value);
-            } else if (type.equals(Float.class)) {
-                errMsg = "There was error in trying to parse value: " + value + ". Please enter a valid float value for parameter " + name;
-                Float.parseFloat(value);
-            } else if (type.equals(Long.class)) {
-                errMsg = "There was error in trying to parse value: " + value + ". Please enter a valid long value for parameter " + name;
-                Long.parseLong(value);
-            }
-        } catch (final Exception e) {
-            // catching generic exception as some throws NullPointerException and some throws NumberFormatExcpeion
-            s_logger.error(errMsg);
-            return errMsg;
-        }
+        String errMsg = validateConfigValueAndType(name, value, type);
 
         if (value == null) {
             if (type.equals(Boolean.class)) {
@@ -1326,6 +1314,18 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
+        if (type.equals(Double.class)) {
+            try {
+                final Double val = Double.parseDouble(value);
+                if (weightBasedParametersForValidation.contains(name) && (val < 0f || val > 1f)) {
+                    throw new InvalidParameterValueException("Please enter a value between 0 and 1 for the configuration parameter: " + name);
+                }
+            } catch (final NumberFormatException e) {
+                s_logger.error("There was an error trying to parse the double value for configuration parameter: " + name);
+                throw new InvalidParameterValueException("There was an error trying to parse the double value for configuration parameter: " + name);
+            }
+        }
+
         if (type.equals(String.class)) {
             if (name.equalsIgnoreCase(SecStorageAllowedInternalDownloadSites.key()) && StringUtils.isNotEmpty(value)) {
                 final String[] cidrs = value.split(",");
@@ -1382,6 +1382,30 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
             }
         }
+    }
+
+    private String validateConfigValueAndType(String name, String value, Class<?> type) {
+        String errMsg = null;
+        try {
+            if (type.equals(Integer.class)) {
+                errMsg = "There was error in trying to parse value: " + value + ". Please enter a valid integer value for parameter " + name;
+                Integer.parseInt(value);
+            } else if (type.equals(Float.class)) {
+                errMsg = "There was error in trying to parse value: " + value + ". Please enter a valid float value for parameter " + name;
+                Float.parseFloat(value);
+            } else if (type.equals(Long.class)) {
+                errMsg = "There was error in trying to parse value: " + value + ". Please enter a valid long value for parameter " + name;
+                Long.parseLong(value);
+            } else if (type.equals(Double.class)) {
+                errMsg = "There was error in trying to parse value: " + value + ". Please enter a valid double value for parameter " + name;
+                Double.parseDouble(value);
+            }
+        } catch (final Exception e) {
+            // catching generic exception as some throws NullPointerException and some throws NumberFormatExcpeion
+            s_logger.error(errMsg);
+            return errMsg;
+        }
+        return errMsg;
     }
 
     /**
