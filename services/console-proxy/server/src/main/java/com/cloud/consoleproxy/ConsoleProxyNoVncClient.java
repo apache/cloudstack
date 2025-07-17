@@ -153,6 +153,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                             if (readBytes == -1 || (readBytes > 0 && !sendReadBytesToNoVNC(b, readBytes))) {
                                 connectionAlive = false;
                             }
+                            sleepTime = 1;
                         }
                         if (sleepTime > 0 && connectionAlive) {
                             try {
@@ -337,7 +338,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
     private ByteBuffer getOrCreateReadBuffer() {
         if (readBuffer == null) {
             readBuffer = ByteBuffer.allocate(ConsoleProxy.defaultBufferSize);
-            logger.debug("Allocated  {} KB read buffer for client [{}]", ConsoleProxy.defaultBufferSize / 1024 , clientId);
+            logger.debug("Allocated {} KB read buffer for client [{}]", ConsoleProxy.defaultBufferSize / 1024 , clientId);
 
             // Only apply batching logic for TLS connections to work around 16KB record limitation
             // For non-TLS connections, use immediate flush for better responsiveness
