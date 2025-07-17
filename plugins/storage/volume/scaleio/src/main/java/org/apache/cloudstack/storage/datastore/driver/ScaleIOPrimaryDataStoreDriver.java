@@ -1230,13 +1230,13 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             }
 
             org.apache.cloudstack.storage.datastore.api.Volume scaleIOVolume = client.getVolume(scaleIOVolumeId);
-            long newSizeInGB = newSizeInBytes / (1024 * 1024 * 1024);
-            long newSizeIn8gbBoundary = (long) (Math.ceil(newSizeInGB / 8.0) * 8.0);
+            double newSizeInGB = newSizeInBytes / (1024.0 * 1024 * 1024);
+            long newSizeIn8GBBoundary = (long) (Math.ceil(newSizeInGB / 8.0) * 8.0);
 
-            if (scaleIOVolume.getSizeInKb() == newSizeIn8gbBoundary << 20) {
+            if (scaleIOVolume.getSizeInKb() == newSizeIn8GBBoundary << 20) {
                 logger.debug("No resize necessary at API");
             } else {
-                scaleIOVolume = client.resizeVolume(scaleIOVolumeId, (int) newSizeIn8gbBoundary);
+                scaleIOVolume = client.resizeVolume(scaleIOVolumeId, (int) newSizeIn8GBBoundary);
                 if (scaleIOVolume == null) {
                     throw new CloudRuntimeException("Failed to resize volume: " + volumeInfo.getName());
                 }
@@ -1366,8 +1366,8 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         if (templateSize != null && isEncryptionRequired && needsExpansionForEncryptionHeader(templateSize, volumeSize)) {
             newSizeInGB = (volumeSize + (1<<30)) / (1024.0 * 1024 * 1024);
         }
-        long newSizeIn8gbBoundary = (long) (Math.ceil(newSizeInGB / 8.0) * 8.0);
-        return newSizeIn8gbBoundary * (1024 * 1024 * 1024);
+        long newSizeIn8GBBoundary = (long) (Math.ceil(newSizeInGB / 8.0) * 8.0);
+        return newSizeIn8GBBoundary * (1024 * 1024 * 1024);
     }
 
     @Override
