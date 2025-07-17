@@ -60,7 +60,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
 
         if (cmd.getCheckConversionSupport() && !serverResource.hostSupportsInstanceConversion()) {
             String msg = String.format("Cannot convert the instance %s from VMware as the virt-v2v binary is not found. " +
-                    "Please install virt-v2v%s on the host before attempting the instance conversion.", sourceInstanceName, serverResource.isUbuntuHost()? ", nbdkit" : "");
+                    "Please install virt-v2v%s on the host before attempting the instance conversion.", sourceInstanceName, serverResource.isUbuntuOrDebianHost()? ", nbdkit" : "");
             logger.info(msg);
             return new Answer(cmd, false, msg);
         }
