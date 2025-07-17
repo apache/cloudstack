@@ -129,6 +129,12 @@ class DBDeployer(object):
         (value, index) = self.dbDotProperties[key]
         return value
 
+    def areCloudDatabasesCreated(self):
+        cmd = "SELECT CASE WHEN COUNT(DISTINCT SCHEMA_NAME) >= 1 THEN 1 ELSE 0 END AS schema_exists \
+              FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME IN ('cloud', 'cloud_usage');"
+        databases = self.runMysql(cmd, "databases", self.rootuser != None)
+        return databases.replace("schema_exists", "").strip() == "1"
+
     def runMysql(self, text, table, isRoot=False):
         kwargs = {}
         if not isRoot:
@@ -151,7 +157,7 @@ class DBDeployer(object):
             open(self.tmpMysqlFile, 'w').write(text)
             mysqlCmds.append('<')
             mysqlCmds.append(self.tmpMysqlFile)
-            runCmd(mysqlCmds)
+            return runCmd(mysqlCmds)
 
         except Exception as e:
             err = '''Encountering an error when executing mysql script
@@ -232,6 +238,10 @@ for full help
             ("DROP USER 'cloud'@'localhost' ;", "DO NULL;"),
             ("DROP USER 'cloud'@'%' ;", "DO NULL;")
         )
+
+        if self.areCloudDatabasesCreated() and not self.options.forcerecreate:
+            self.errorAndExit("Aborting script as the databases (cloud, cloud_usage) already exist.\n" \
+                              "Please use the --force-recreate parameter if you want to recreate the schemas.")
 
         scriptsToRun = ["create-database","create-schema", "create-database-premium","create-schema-premium"]
         if self.options.schemaonly:
@@ -610,6 +620,9 @@ for example:
                           help="Creates the db schema without having to pass root credentials - " \
                                "Please note: The databases (cloud, cloud_usage) and user (cloud) has to be configured " \
                                "manually prior to running this script when using this flag.")
+        self.parser.add_option("--force-recreate", action="store_true", dest="forcerecreate", default=False,
+                               help="Force recreation of the existing DB schemas. This option is disabled by default." \
+                               "Please note: The databases (cloud, cloud_usage) and its tables data will be lost and recreated.")
 
         self.parser.add_option("-a", "--auto", action="store", type="string", dest="serversetup", default="",
                           help="Path to an XML file describing an automated unattended cloud setup")
