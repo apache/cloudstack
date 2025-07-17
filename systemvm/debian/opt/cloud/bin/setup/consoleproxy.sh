@@ -40,6 +40,10 @@ setup_console_proxy() {
   disable_rpfilter
   enable_fwding 0
   enable_irqbalance 0
+  if [[ -n "$NTP_SERVER_LIST" ]]; then
+    setup_ntp
+    systemctl restart ntp
+  fi
   rm -f /etc/logrotate.d/cloud
 
 }

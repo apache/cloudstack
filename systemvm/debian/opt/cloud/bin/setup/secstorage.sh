@@ -82,6 +82,7 @@ HTTP
   enable_fwding 0
   enable_irqbalance 0
   setup_ntp
+  systemctl restart ntp
 
   rm -f /etc/logrotate.d/cloud
 }

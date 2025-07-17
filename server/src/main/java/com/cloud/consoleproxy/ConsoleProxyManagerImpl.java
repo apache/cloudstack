@@ -1276,6 +1276,10 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             buf.append(" vmpassword=").append(configurationDao.getValue("system.vm.password"));
         }
 
+        if (org.apache.commons.lang3.StringUtils.isNotEmpty(NTPServerConfig.value())) {
+            buf.append(" ntpserverlist=").append(NTPServerConfig.value().replaceAll("\\s+",""));
+        }
+
         for (NicProfile nic : profile.getNics()) {
             int deviceId = nic.getDeviceId();
             if (nic.getIPv4Address() == null) {
