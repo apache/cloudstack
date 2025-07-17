@@ -3374,6 +3374,8 @@ public class UserVmManagerImplTest {
         DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
         when(backup.getDetail(ApiConstants.SERVICE_OFFERING_ID)).thenReturn("service-offering-uuid");
         when(_serviceOfferingDao.findByUuid("service-offering-uuid")).thenReturn(serviceOffering);
+        DiskOfferingInfo rootDiskOfferingInfo = new DiskOfferingInfo(diskOffering, 10L, 1000L, 2000L);
+        when(backupManager.getRootDiskOfferingInfoFromBackup(backup)).thenReturn(rootDiskOfferingInfo);
 
         NetworkVO network1 = mock(NetworkVO.class);
         NetworkVO network2 = mock(NetworkVO.class);

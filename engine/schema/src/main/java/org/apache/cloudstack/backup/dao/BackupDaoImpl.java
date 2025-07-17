@@ -336,8 +336,10 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
             Map<String, String> details = backupDetailsDao.listDetailsKeyPairs(backup.getId(), true);
             details.put(ApiConstants.HYPERVISOR, vm.getHypervisorType().toString());
             VirtualMachineTemplate template = templateDao.findById(vm.getTemplateId());
-            details.put(ApiConstants.TEMPLATE_ID, template.getUuid());
-            details.put(ApiConstants.IS_ISO, String.valueOf(template.getFormat().equals(Storage.ImageFormat.ISO)));
+            if (template != null) {
+                details.put(ApiConstants.TEMPLATE_ID, template.getUuid());
+                details.put(ApiConstants.IS_ISO, String.valueOf(template.getFormat().equals(Storage.ImageFormat.ISO)));
+            }
             if (details != null) {
                 response.setVmDetails(details);
             }

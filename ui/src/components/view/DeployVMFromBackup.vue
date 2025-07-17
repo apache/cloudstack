@@ -370,7 +370,7 @@
               </a-step>
               <a-step
                 :title="$t('label.data.disk')"
-                v-if="!(!template.deployasis && template.childtemplates && template.childtemplates.length > 0)"
+                v-if="!(!template.deployasis && template.childtemplates && template.childtemplates.length > 0) && dataPreFill.datadisksdetails && dataPreFill.datadisksdetails.length > 0"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description>
                   <div v-if="zoneSelected">

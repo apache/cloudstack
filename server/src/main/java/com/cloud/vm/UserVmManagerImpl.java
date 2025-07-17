@@ -6158,10 +6158,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private void verifyServiceOffering(BaseDeployVMCmd cmd, ServiceOffering serviceOffering) {
-        if (serviceOffering == null) {
-            throw new InvalidParameterValueException("Unable to find service offering: " + serviceOffering.getId());
-        }
-
         if (ServiceOffering.State.Inactive.equals(serviceOffering.getState())) {
             throw new InvalidParameterValueException(String.format("Service offering is inactive: [%s].", serviceOffering.getUuid()));
         }
@@ -6181,10 +6177,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private void verifyTemplate(BaseDeployVMCmd cmd, VirtualMachineTemplate template, Long serviceOfferingId) {
-        // Make sure a valid template ID was specified
-        if (template == null) {
-            throw new InvalidParameterValueException("Unable to use template " + template.getId());
-        }
         if (TemplateType.VNF.equals(template.getTemplateType())) {
             vnfTemplateManager.validateVnfApplianceNics(template, cmd.getNetworkIds());
         } else if (cmd instanceof DeployVnfApplianceCmd) {
@@ -6231,6 +6223,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Long overrideDiskOfferingId = cmd.getOverrideDiskOfferingId();
 
         ServiceOffering serviceOffering = _entityMgr.findById(ServiceOffering.class, serviceOfferingId);
+        if (serviceOffering == null) {
+            throw new InvalidParameterValueException("Unable to find service offering: " + serviceOffering.getId());
+        }
         verifyServiceOffering(cmd, serviceOffering);
 
         Account caller = CallContext.current().getCallingAccount();
@@ -6268,6 +6263,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (cmd.isVolumeOrSnapshotProvided() &&
                 (!(HypervisorType.KVM.equals(template.getHypervisorType()) || HypervisorType.KVM.equals(cmd.getHypervisor())))) {
             throw new InvalidParameterValueException("Deploying a virtual machine with existing volume/snapshot is supported only from KVM hypervisors");
+        }
+        // Make sure a valid template ID was specified
+        if (template == null) {
+            throw new InvalidParameterValueException("Unable to use template " + templateId);
         }
         verifyTemplate(cmd, template, serviceOfferingId);
 
@@ -9401,6 +9400,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
     }
 
+    private void checkRootDiskSizeAgainstBackup(Long instanceVolumeSize,DiskOffering rootDiskOffering, Long backupVolumeSize) {
+        Long instanceRootDiskSize = rootDiskOffering.isCustomized() ? instanceVolumeSize : rootDiskOffering.getDiskSize() / GiB_TO_BYTES;
+        if (instanceRootDiskSize < backupVolumeSize) {
+            throw new InvalidParameterValueException(
+                    String.format("Instance volume root disk size %d[GiB] cannot be less than the backed-up volume size %d[GiB].",
+                            instanceVolumeSize, backupVolumeSize));
+        }
+    }
+
     @Override
     public UserVm allocateVMFromBackup(CreateVMFromBackupCmd cmd) throws InsufficientCapacityException, ResourceAllocationException, ResourceUnavailableException {
         //Verify that all objects exist before passing them to the service
@@ -9430,6 +9438,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         ServiceOffering serviceOffering;
         if (serviceOfferingId != null) {
             serviceOffering = serviceOfferingDao.findById(serviceOfferingId);
+            if (serviceOffering == null) {
+                throw new InvalidParameterValueException("Unable to find service offering: " + serviceOffering.getId());
+            }
         } else {
             String serviceOfferingUuid = backup.getDetail(ApiConstants.SERVICE_OFFERING_ID);
             if (serviceOfferingUuid == null) {
@@ -9443,12 +9454,20 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         verifyServiceOffering(cmd, serviceOffering);
 
         Long templateId;
+        VirtualMachineTemplate template;
         if (cmd.getTemplateId() != null) {
             templateId = cmd.getTemplateId();
+            template = _templateDao.findById(templateId);
+            if (template == null) {
+                throw new InvalidParameterValueException("Unable to use template " + templateId);
+            }
         } else {
             templateId = backupVm.getTemplateId();
+            template = _templateDao.findById(templateId);
+            if (template == null) {
+                throw new CloudRuntimeException("Unable to find template associated with the backup. Please specify a valid template while creating instance");
+            }
         }
-        VirtualMachineTemplate template = _templateDao.findById(templateId);
         verifyTemplate(cmd, template, serviceOffering.getId());
 
         Long size = cmd.getSize();
@@ -9470,38 +9489,28 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         Long overrideDiskOfferingId = cmd.getOverrideDiskOfferingId();
 
-        DiskOfferingInfo rootDiskOfferingInfo = backupManager.getRootDiskOfferingInfoFromBackup(backup);
+        DiskOfferingInfo rootDiskOfferingInfoFromBackup = backupManager.getRootDiskOfferingInfoFromBackup(backup);
+
         if (isIso) {
             if (diskOfferingId == null) {
-                if (rootDiskOfferingInfo == null) {
-                    throw new CloudRuntimeException("Unable to find root disk offering with the uuid stored in backup. Please specify a valid root disk offering id while creating instance");
-                }
-                diskOfferingId = rootDiskOfferingInfo.getDiskOffering().getId();
-                updateDetailsWithRootDiskAttributes(cmd.getDetails(), rootDiskOfferingInfo);
-                size = rootDiskOfferingInfo.getSize();
+                diskOfferingId = rootDiskOfferingInfoFromBackup.getDiskOffering().getId();
+                updateDetailsWithRootDiskAttributes(cmd.getDetails(), rootDiskOfferingInfoFromBackup);
+                size = rootDiskOfferingInfoFromBackup.getSize();
             } else {
                 DiskOffering rootDiskOffering = _diskOfferingDao.findById(diskOfferingId);
-                Long rootDiskSize = rootDiskOffering.isCustomized() ? size : rootDiskOffering.getDiskSize() / GiB_TO_BYTES;
-                if (rootDiskOfferingInfo != null && rootDiskSize < rootDiskOfferingInfo.getSize()) {
-                    throw new InvalidParameterValueException(
-                            String.format("Instance volume size %d[GiB] cannot be less than the backed-up volume size %d[GiB].",
-                            rootDiskSize, rootDiskOfferingInfo.getSize()));
-                }
+                checkRootDiskSizeAgainstBackup(size, rootDiskOffering, rootDiskOfferingInfoFromBackup.getSize());
             }
         } else {
             if (overrideDiskOfferingId == null) {
-                if (rootDiskOfferingInfo != null && serviceOffering.getDiskOfferingId() != rootDiskOfferingInfo.getDiskOffering().getId()) {
-                    overrideDiskOfferingId = rootDiskOfferingInfo.getDiskOffering().getId();
-                    updateDetailsWithRootDiskAttributes(cmd.getDetails(), rootDiskOfferingInfo);
-                }
+                overrideDiskOfferingId = serviceOffering.getDiskOfferingId();
+                updateDetailsWithRootDiskAttributes(cmd.getDetails(), rootDiskOfferingInfoFromBackup);
             } else {
                 DiskOffering overrideDiskOffering = _diskOfferingDao.findById(overrideDiskOfferingId);
-                String diskSizeDetail = cmd.getDetails().get(VmDetailConstants.ROOT_DISK_SIZE);
-                Long diskSize = diskSizeDetail != null ? Long.parseLong(diskSizeDetail) : overrideDiskOffering.getDiskSize() / GiB_TO_BYTES;
-                if (rootDiskOfferingInfo != null && diskSize < rootDiskOfferingInfo.getSize()) {
-                    throw new InvalidParameterValueException(
-                            String.format("Instance volume size %d[GiB] cannot be less than the backed-up volume size %d[GiB].",
-                            diskSize, rootDiskOfferingInfo.getSize()));
+                if (overrideDiskOffering.isComputeOnly()) {
+                    updateDetailsWithRootDiskAttributes(cmd.getDetails(), rootDiskOfferingInfoFromBackup);
+                } else {
+                    Long rootDiskSize = Long.parseLong(cmd.getDetails().getOrDefault(VmDetailConstants.ROOT_DISK_SIZE, null));
+                    checkRootDiskSizeAgainstBackup(rootDiskSize, overrideDiskOffering, rootDiskOfferingInfoFromBackup.getSize());
                 }
             }
         }

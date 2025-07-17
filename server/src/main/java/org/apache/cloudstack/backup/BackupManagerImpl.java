@@ -1017,10 +1017,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     @Override
     public void checkDiskOfferingSizeAgainstBackup(List<DiskOfferingInfo> dataDiskOfferingsInfo, Backup backup) {
         List<DiskOfferingInfo> dataDiskOfferingsInfoFromBackup = getDataDiskOfferingListFromBackup(backup);
-        if (dataDiskOfferingsInfoFromBackup == null) {
-            return;
-        }
         int index = 0;
+        if (dataDiskOfferingsInfo.size() != dataDiskOfferingsInfoFromBackup.size()) {
+            throw new InvalidParameterValueException("Unable to restore VM with the current backup " +
+                    "as the backup has different number of disks as the VM");
+        }
         for (DiskOfferingInfo diskOfferingInfo : dataDiskOfferingsInfo) {
             if (index < dataDiskOfferingsInfoFromBackup.size()) {
                 if (diskOfferingInfo.getSize() < dataDiskOfferingsInfoFromBackup.get(index).getSize()) {
@@ -1036,27 +1037,34 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     @Override
     public DiskOfferingInfo getRootDiskOfferingInfoFromBackup(Backup backup) {
         List<Backup.VolumeInfo> volumes = backup.getBackedUpVolumes();
-        if (volumes != null && !volumes.isEmpty()) {
-            for (Backup.VolumeInfo volume : volumes) {
-                if (volume.getType() == Volume.Type.ROOT) {
-                    DiskOfferingVO diskOffering = diskOfferingDao.findByUuid(volume.getDiskOfferingId());
-                    if (diskOffering == null) {
-                        throw new CloudRuntimeException("Unable to find the root disk offering with uuid (" + volume.getDiskOfferingId() + ") stored in backup. Please specify a valid root disk offering id while creating the instance");
-                    }
-                    Long size = volume.getSize() / (1024 * 1024 * 1024);
-                    return new DiskOfferingInfo(diskOffering, size, volume.getMinIops(), volume.getMaxIops());
+        DiskOfferingInfo rootDiskOffering = null;
+        if (volumes == null || volumes.isEmpty()) {
+            throw new CloudRuntimeException("Failed to get backed-up volumes info from backup");
+        }
+        for (Backup.VolumeInfo volume : volumes) {
+            if (volume.getType() == Volume.Type.ROOT) {
+                DiskOfferingVO diskOffering = diskOfferingDao.findByUuid(volume.getDiskOfferingId());
+                if (diskOffering == null) {
+                    throw new CloudRuntimeException(String.format("Unable to find the root disk offering with uuid (%s) " +
+                            "stored in backup. Please specify a valid root disk offering id while creating the instance",
+                            volume.getDiskOfferingId()));
                 }
+                Long size = volume.getSize() / (1024 * 1024 * 1024);
+                rootDiskOffering = new DiskOfferingInfo(diskOffering, size, volume.getMinIops(), volume.getMaxIops());
             }
         }
-        return null;
+        if (rootDiskOffering == null) {
+            throw new CloudRuntimeException("Failed to get the root disk in backed-up volumes info from backup");
+        }
+        return rootDiskOffering;
     }
 
     @Override
     public List<DiskOfferingInfo> getDataDiskOfferingListFromBackup(Backup backup) {
         List<DiskOfferingInfo> diskOfferingInfoList = new ArrayList<>();
         List<Backup.VolumeInfo> volumes = backup.getBackedUpVolumes();
-        if (volumes == null) {
-            return diskOfferingInfoList;
+        if (volumes == null || volumes.isEmpty()) {
+            throw new CloudRuntimeException("Failed to get backed-up Volumes info from backup");
         }
         for (Backup.VolumeInfo volume : volumes) {
             if (volume.getType() == Volume.Type.DATADISK) {
@@ -1158,6 +1166,17 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         List<VolumeVO> vmVolumes = volumeDao.findByInstance(vmId);
         if (vmVolumes.size() != backupVolumes.size()) {
             throw new CloudRuntimeException("Unable to restore VM with the current backup as the backup has different number of disks as the VM");
+        }
+
+        int index = 0;
+        for (VolumeVO vmVolume: vmVolumes) {
+            Backup.VolumeInfo backupVolume = backupVolumes.get(index);
+            if (vmVolume.getSize() < backupVolume.getSize()) {
+                throw new CloudRuntimeException(String.format(
+                    "Instance volume size %d[GiB] for volume (%s) is less than the backed-up volume size %d[GiB] for backed-up volume (%s).",
+                    vmVolume.getSize(), vmVolume.getUuid(), backupVolume.getSize(), backupVolume.getUuid()));
+            }
+            index++;
         }
 
         BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(backup.getBackupOfferingId());
