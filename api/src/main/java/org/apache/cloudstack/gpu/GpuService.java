@@ -139,10 +139,10 @@ public interface GpuService extends Manager {
      * VgpuTypesInfo.
      * The VgpuTypesInfo contains the information about the GPU device.
      *
-     * @param host The host to get GPU group details for.
+     * @param hostId The host ID to get GPU group details for.
      * @return The GPU group details.
      */
-    HashMap<String, HashMap<String, VgpuTypesInfo>> getGpuGroupDetailsFromGpuDevicesOnHost(Host host);
+    HashMap<String, HashMap<String, VgpuTypesInfo>> getGpuGroupDetailsFromGpuDevicesOnHost(long hostId);
 
     /**
      * This method is used to add the GPU devices to the host when the host is discovered or when the GPU devices are

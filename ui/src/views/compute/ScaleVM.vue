@@ -142,6 +142,7 @@ export default {
         keyword: options.keyword,
         page: options.page,
         pageSize: options.pageSize,
+        gpuenabled: options.gpuenabled,
         details: 'min',
         response: 'json'
       }).then(response => {

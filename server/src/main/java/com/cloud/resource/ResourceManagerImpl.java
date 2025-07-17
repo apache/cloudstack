@@ -4328,7 +4328,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             if (GpuDetachOnStop.valueIn(vm.getDomainId())) {
                 gpuService.deallocateAllGpuDevicesForVm(vm.getId());
             }
-            groupDetails = gpuService.getGpuGroupDetailsFromGpuDevicesOnHost(host);
+            groupDetails = gpuService.getGpuGroupDetailsFromGpuDevicesOnHost(host.getId());
         } else {
             groupDetails = gpuDevice.getGroupDetails();
         }
@@ -4339,9 +4339,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     public void updateGPUDetailsForVmStart(long hostId, long vmId, GPUDeviceTO gpuDevice) {
         HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = gpuDevice.getGroupDetails();
         if (gpuDevice.getGpuDevices() != null) {
-            HostVO host = _hostDao.findById(hostId);
             gpuService.allocateGpuDevicesToVmOnHost(vmId, hostId, gpuDevice.getGpuDevices());
-            groupDetails = gpuService.getGpuGroupDetailsFromGpuDevicesOnHost(host);
+            groupDetails = gpuService.getGpuGroupDetailsFromGpuDevicesOnHost(hostId);
         }
         updateGPUDetails(hostId, groupDetails);
     }
@@ -4370,7 +4369,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             gpuService.addGpuDevicesToHost(host, gpuDevices);
         }
         if (CollectionUtils.isNotEmpty(gpuDevices)) {
-            finalGroupDetails = gpuService.getGpuGroupDetailsFromGpuDevicesOnHost(host);
+            finalGroupDetails = gpuService.getGpuGroupDetailsFromGpuDevicesOnHost(host.getId());
         } else {
             finalGroupDetails = groupDetails;
         }

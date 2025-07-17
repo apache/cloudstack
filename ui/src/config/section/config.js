@@ -345,7 +345,7 @@ export default {
     },
     {
       name: 'gpucard',
-      title: 'label.gpu.card',
+      title: 'label.gpu.card.types',
       icon: 'laptop-outlined',
       permission: ['listGpuCards'],
       columns: ['name', 'deviceid', 'devicename', 'vendorid', 'vendorname'],

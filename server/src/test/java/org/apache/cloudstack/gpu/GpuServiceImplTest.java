@@ -38,7 +38,6 @@ import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmManager;
-import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -195,9 +194,6 @@ public class GpuServiceImplTest {
 
     @Mock
     private HostVO mockHost;
-
-    @Mock
-    private UserVmVO mockVm;
 
     @Before
     public void setUp() {
@@ -658,8 +654,7 @@ public class GpuServiceImplTest {
         when(gpuDeviceDao.findById(GPU_DEVICE_ID_LONG)).thenReturn(device);
         when(gpuDeviceDao.update(eq(GPU_DEVICE_ID_LONG), any(GpuDeviceVO.class))).thenReturn(true);
 
-        when(hostDao.findById(HOST_ID)).thenReturn(mockHost);
-        doReturn(null).when(gpuService).getGpuGroupDetailsFromGpuDevicesOnHost(any());
+        doReturn(null).when(gpuService).getGpuGroupDetailsFromGpuDevicesOnHost(anyLong());
 
         boolean result = gpuService.disableGpuDevice(cmd);
 
@@ -681,8 +676,7 @@ public class GpuServiceImplTest {
         when(gpuDeviceDao.findById(GPU_DEVICE_ID_LONG)).thenReturn(device);
         when(gpuDeviceDao.update(eq(GPU_DEVICE_ID_LONG), any(GpuDeviceVO.class))).thenReturn(true);
 
-        when(hostDao.findById(HOST_ID)).thenReturn(mockHost);
-        doReturn(null).when(gpuService).getGpuGroupDetailsFromGpuDevicesOnHost(any());
+        doReturn(null).when(gpuService).getGpuGroupDetailsFromGpuDevicesOnHost(anyLong());
 
         boolean result = gpuService.enableGpuDevice(cmd);
 
@@ -808,8 +802,7 @@ public class GpuServiceImplTest {
         when(gpuCardDao.findById(GPU_CARD_ID)).thenReturn(mockGpuCard);
         when(vgpuProfileDao.findById(VGPU_PROFILE_ID)).thenReturn(mockVgpuProfile);
 
-        HashMap<String, HashMap<String, VgpuTypesInfo>> result = gpuService.getGpuGroupDetailsFromGpuDevicesOnHost(
-                mockHost);
+        HashMap<String, HashMap<String, VgpuTypesInfo>> result = gpuService.getGpuGroupDetailsFromGpuDevicesOnHost(HOST_ID);
 
         assertNotNull(result);
         assertFalse(result.isEmpty());
@@ -919,7 +912,6 @@ public class GpuServiceImplTest {
         when(gpuDeviceDao.listDevicesForAllocation(HOST_ID, VGPU_PROFILE_ID)).thenReturn(availableDevices);
         when(gpuCardDao.findById(GPU_CARD_ID)).thenReturn(mockGpuCard);
         when(gpuDeviceDao.persist(any(GpuDeviceVO.class))).thenReturn(mockGpuDevice);
-        when(hostDao.findById(HOST_ID)).thenReturn(mockHost);
         when(gpuDeviceDao.listByHostId(HOST_ID)).thenReturn(availableDevices);
         when(vgpuProfileDao.findById(VGPU_PROFILE_ID)).thenReturn(mockVgpuProfile);
         when(serviceOfferingDao.findById(SERVICE_OFFERING_ID)).thenReturn(mockServiceOffering);

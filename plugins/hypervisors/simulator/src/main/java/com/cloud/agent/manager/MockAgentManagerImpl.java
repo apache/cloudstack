@@ -245,31 +245,31 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
      */
     private void createPhysicalGpuDevices(long hostId) {
         // 1. Create passthrough-only GPU devices across different NUMA nodes and PCI roots
-        createPassthroughGpu(hostId, "00:01.0", "1234", "5678", "ACS",
-                "Simulated Graphics Card Basic", 0, "pci0000:00", 8192L, 4096L, 2160L, 1L);
-        createPassthroughGpu(hostId, "00:02.0", "1234", "5678", "ACS",
-                "Simulated Graphics Card Basic", 0, "pci0000:00", 8192L, 4096L, 2160L, 1L);
+        createPassthroughGpu(hostId, "00:01.0", "1234", "5678", "Simulator",
+                "Graphics Card Basic", 0, "pci0000:00", 8192L, 4096L, 2160L, 1L);
+        createPassthroughGpu(hostId, "00:02.0", "1234", "5678", "Simulator",
+                "Graphics Card Basic", 0, "pci0000:00", 8192L, 4096L, 2160L, 1L);
         // Additional passthrough GPUs on different PCI roots
-        createPassthroughGpu(hostId, "00:03.0", "1234", "5678", "ACS",
-                "Simulated Graphics Card Basic", 1, "pci0000:17", 8192L, 4096L, 2160L, 1L);
-        createPassthroughGpu(hostId, "00:04.0", "1234", "5678", "ACS",
-                "Simulated Graphics Card Basic", 1, "pci0000:5d", 8192L, 4096L, 2160L, 1L);
+        createPassthroughGpu(hostId, "00:03.0", "1234", "5678", "Simulator",
+                "Graphics Card Basic", 1, "pci0000:17", 8192L, 4096L, 2160L, 1L);
+        createPassthroughGpu(hostId, "00:04.0", "1234", "5678", "Simulator",
+                "Graphics Card Basic", 1, "pci0000:5d", 8192L, 4096L, 2160L, 1L);
 
         // 3. Create GPUs with MDEV support across different NUMA nodes
-        MockGpuDeviceVO mdevParentDevice1 = createMdevCapableGpu(hostId, "00:05.0", "1234", "89ab", "ACS",
-                "Simulated Graphics Card Pro", 0, "pci0000:00");
+        MockGpuDeviceVO mdevParentDevice1 = createMdevCapableGpu(hostId, "00:05.0", "1234", "89ab", "Simulator",
+                "Graphics Card Pro", 0, "pci0000:00");
         createMdevDevices(hostId, mdevParentDevice1);
 
-        MockGpuDeviceVO mdevParentDevice2 = createMdevCapableGpu(hostId, "00:06.0", "1234", "89ab", "ACS",
-                "Simulated Graphics Card Pro", 0, "pci0000:00");
+        MockGpuDeviceVO mdevParentDevice2 = createMdevCapableGpu(hostId, "00:06.0", "1234", "89ab", "Simulator",
+                "Graphics Card Pro", 0, "pci0000:00");
         createMdevDevices(hostId, mdevParentDevice2);
 
-        MockGpuDeviceVO mdevParentDevice3 = createMdevCapableGpu(hostId, "00:07.0", "1234", "89ab", "ACS",
-                "Simulated Graphics Card Pro", 1, "pci0000:17");
+        MockGpuDeviceVO mdevParentDevice3 = createMdevCapableGpu(hostId, "00:07.0", "1234", "89ab", "Simulator",
+                "Graphics Card Pro", 1, "pci0000:17");
         createMdevDevices(hostId, mdevParentDevice3);
 
-        MockGpuDeviceVO mdevParentDevice4 = createMdevCapableGpu(hostId, "00:08.0", "1234", "89ab", "ACS",
-                "Simulated Graphics Card Pro", 1, "pci0000:3a");
+        MockGpuDeviceVO mdevParentDevice4 = createMdevCapableGpu(hostId, "00:08.0", "1234", "89ab", "Simulator",
+                "Graphics Card Pro", 1, "pci0000:3a");
         createMdevDevices(hostId, mdevParentDevice4);
     }
 

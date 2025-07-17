@@ -163,7 +163,7 @@
       </chart-card>
     </a-col>
     <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }" v-if="'listVirtualMachines' in $store.getters.apis">
-      <chart-card :loading="loading" class="dashboard-card">
+      <chart-card :loading="loading" class="dashboard-compute">
         <template #title>
           <div class="center">
             <h3>
@@ -681,6 +681,13 @@ export default {
   .dashboard-card {
     width: 100%;
     min-height: 420px;
+  }
+
+  .dashboard-compute {
+    width: 100%;
+    overflow-x:hidden;
+    overflow-y: scroll;
+    max-height: 420px;
   }
 
   .dashboard-storage {

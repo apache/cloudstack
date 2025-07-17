@@ -250,6 +250,22 @@ public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
     @Param(description = "the name of the vgpu profile to which service offering is linked", since = "4.21")
     private String vgpuProfileName;
 
+    @SerializedName(ApiConstants.VIDEORAM)
+    @Param(description = "the video RAM size in MB")
+    private Long videoRam;
+
+    @SerializedName(ApiConstants.MAXHEADS)
+    @Param(description = "the maximum number of display heads")
+    private Long maxHeads;
+
+    @SerializedName(ApiConstants.MAXRESOLUTIONX)
+    @Param(description = "the maximum X resolution")
+    private Long maxResolutionX;
+
+    @SerializedName(ApiConstants.MAXRESOLUTIONY)
+    @Param(description = "the maximum Y resolution")
+    private Long maxResolutionY;
+
     @SerializedName(ApiConstants.GPU_COUNT)
     @Param(description = "the count of GPUs to attach ", since = "4.21")
     private Integer gpuCount;
@@ -614,6 +630,38 @@ public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
 
     public void setVgpuProfileName(String vgpuProfileName) {
         this.vgpuProfileName = vgpuProfileName;
+    }
+
+    public Long getVideoRam() {
+        return videoRam;
+    }
+
+    public void setVideoRam(Long videoRam) {
+        this.videoRam = videoRam;
+    }
+
+    public Long getMaxHeads() {
+        return maxHeads;
+    }
+
+    public void setMaxHeads(Long maxHeads) {
+        this.maxHeads = maxHeads;
+    }
+
+    public Long getMaxResolutionX() {
+        return maxResolutionX;
+    }
+
+    public void setMaxResolutionX(Long maxResolutionX) {
+        this.maxResolutionX = maxResolutionX;
+    }
+
+    public Long getMaxResolutionY() {
+        return maxResolutionY;
+    }
+
+    public void setMaxResolutionY(Long maxResolutionY) {
+        this.maxResolutionY = maxResolutionY;
     }
 
     public String getVgpuProfileId() {

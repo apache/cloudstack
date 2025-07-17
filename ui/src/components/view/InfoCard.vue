@@ -264,8 +264,12 @@
                   {{ resource.gpucount ? resource.gpucount + ' x ' : '' }}
                   <router-link v-if="resource.gpucardid" :to="{ path: '/gpucard/' + resource.gpucardid }">{{ resource.gpucardname}} </router-link>
                   <span v-else>{{ resource.gpucardname }}</span>
-                  <router-link v-if="resource.vgpuprofileid" :to="{ path: '/vgpuprofile/' + resource.vgpuprofileid }">{{ ' (' + resource.vgpuprofilename + ')' }}</router-link>
-                  <span v-else-if="resource.vgpuprofilename">{{ ' (' + resource.vgpuprofilename + ')' }}</span>
+                  <router-link v-if="resource.vgpuprofilename !== 'passthrough' && resource.vgpuprofileid" :to="{ path: '/vgpuprofile/' + resource.vgpuprofileid }">{{ ' (' + resource.vgpuprofilename + ')' }}</router-link>
+                  <span v-else-if="resource.vgpuprofilename !== 'passthrough' &&resource.vgpuprofilename">{{ ' (' + resource.vgpuprofilename + ')' }}</span>
+                  <span v-if="resource.videoram || (esource.maxresolutionx || resource.maxresolutiony)">
+                    <br/>{{ ' [' + (resource.videoram ? (resource.videoram + 'MB') : '') +  ((resource.videoram && resource.maxresolutionx && resource.maxresolutiony) ? ', ' : '') +
+                    (resource.maxresolutionx && resource.maxresolutiony ? resource.maxresolutionx + 'x' + resource.maxresolutiony : '') + ']' }}
+                  </span>
                 </span>
               </div>
             </div>

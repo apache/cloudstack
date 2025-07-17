@@ -196,7 +196,7 @@
               </a-tooltip>
           </span>
           <span
-            v-if="['host', 'vm', 'computeoffering', 'systemoffering'].includes($route.path.split('/')[1]) && (record?.gputotal > 0 || record?.gpucount > 0)"
+            v-if="['zone', 'host', 'vm', 'computeoffering', 'systemoffering'].includes($route.path.split('/')[1]) && (record?.gputotal > 0 || record?.gpucount > 0)"
             style="margin-right: 5px"
           >
             <a-tag style="margin-left: 5px">{{ $t('label.gpu.enabled') }}</a-tag>

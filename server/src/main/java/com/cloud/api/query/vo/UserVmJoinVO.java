@@ -259,6 +259,18 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "vgpu_profile_name")
     private String vgpuProfileName;
 
+    @Column(name = "vgpu_profile_video_ram")
+    private Long videoRam;
+
+    @Column(name = "vgpu_profile_max_heads")
+    private Long maxHeads;
+
+    @Column(name = "vgpu_profile_max_resolution_x")
+    private Long maxResolutionX;
+
+    @Column(name = "vgpu_profile_max_resolution_y")
+    private Long maxResolutionY;
+
     @Column(name = "gpu_count")
     private Integer gpuCount;
 
@@ -747,6 +759,22 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public String getVgpuProfileName() {
         return vgpuProfileName;
+    }
+
+    public Long getVideoRam() {
+        return videoRam;
+    }
+
+    public Long getMaxHeads() {
+        return maxHeads;
+    }
+
+    public Long getMaxResolutionX() {
+        return maxResolutionX;
+    }
+
+    public Long getMaxResolutionY() {
+        return maxResolutionY;
     }
 
     public Integer getGpuCount() {

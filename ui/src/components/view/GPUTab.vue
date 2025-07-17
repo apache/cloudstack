@@ -88,7 +88,7 @@
           :resource="resource"
           :resourceType="resourceType"
           :loading="loading"
-          @refresh="$emit('refresh')"
+          @refresh="refresh(true)"
         />
       </a-tab-pane>
     </a-tabs>
@@ -384,16 +384,15 @@ export default {
         this.$notifyError(error)
       })
     },
-    refresh () {
-      // Refresh child tabs
-      if (this.$refs.summaryTab && this.$refs.summaryTab.refresh) {
-        this.$refs.summaryTab.refresh()
+    refresh (skipDevicesTab = false) {
+      // Refresh summary tabs
+      const summaryTab = this.$refs.summaryTab || this.$refs.summaryTabSimple
+      if (summaryTab?.refresh) {
+        summaryTab.refresh()
       }
-      if (this.$refs.devicesTab && this.$refs.devicesTab.refresh) {
+      // Refresh devices tab only if not skipped
+      if (!skipDevicesTab && this.$refs.devicesTab?.refresh) {
         this.$refs.devicesTab.refresh()
-      }
-      if (this.$refs.summaryTabSimple && this.$refs.summaryTabSimple.refresh) {
-        this.$refs.summaryTabSimple.refresh()
       }
       // Emit refresh to parent
       this.$emit('refresh')

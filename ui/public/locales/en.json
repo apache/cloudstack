@@ -1077,6 +1077,7 @@
 "label.gpucardid": "GPU Card",
 "label.gpucardname": "GPU Card",
 "label.gpu.card": "GPU Card",
+"label.gpu.card.types": "GPU Card Types",
 "label.gpu.count": "GPU Count",
 "label.gpucount": "GPU Count",
 "label.gpu.device": "GPU Device",

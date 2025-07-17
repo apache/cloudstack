@@ -18,7 +18,7 @@
 <template>
   <div>
     <div style="margin-bottom: 16px; display: flex; justify-content: right; align-items: center;">
-      <div style="display: flex; align-items: center; margin-right: 16px;">
+      <div v-if="showGpuFilter" style="display: flex; align-items: center; margin-right: 16px;">
         <span>{{ $t('label.show.only.gpu.enabled.offerings') }}</span>
         <a-switch style="margin-left: 8px;" v-model:checked="showGpu" @change="handleSearch(this.filter)" />
       </div>
@@ -50,8 +50,7 @@
               }"/> {{ $t('label.gpu') }}</template>
       </template>
       <template #displayText="{ record }">
-        <span>{{ record.name }}
-        </span>
+        <span>{{ record.name }}</span>
         <span
             v-if="record.leaseduration !== undefined"
             :style="{
@@ -65,6 +64,12 @@
                 fontSize: '20px'
               }"/>
           </a-tooltip>
+        </span>
+      </template>
+      <template #gpuColumn="{ record }">
+        <span>{{ record.gpu }}</span>
+        <span v-if="record.gpuDetails" style="display: block;">
+          {{ record.gpuDetails }}
         </span>
       </template>
     </a-table>
@@ -140,6 +145,11 @@ export default {
       type: Boolean,
       required: false,
       default: false
+    },
+    showGpuFilter: {
+      type: Boolean,
+      required: false,
+      default: false
     }
   },
   data () {
@@ -182,7 +192,8 @@ export default {
         baseColumns.push({
           key: 'gpu',
           dataIndex: 'gpu',
-          width: '30%'
+          width: '30%',
+          slots: { customRender: 'gpuColumn' }
         })
       }
 
@@ -255,7 +266,8 @@ export default {
           gpuEnabledOffering: gpuEnabledOffering,
           gpuCount: gpuCount,
           gpuType: gpuType,
-          gpu: gpuValue
+          gpu: gpuValue,
+          gpuDetails: this.getGpuDetails(item)
         }
       })
     },
@@ -347,6 +359,15 @@ export default {
       } else {
         return 'over'
       }
+    },
+    getGpuDetails (item) {
+      let gpuDetails = ''
+      if (item.videoram || (item.maxresolutionx && item.maxresolutiony)) {
+        gpuDetails = '[' + (item.videoram ? (item.videoram + 'MB') : '') +
+        ((item.videoram && item.maxresolutionx && item.maxresolutiony) ? ', ' : '') +
+        (item.maxresolutionx && item.maxresolutiony ? item.maxresolutionx + 'x' + item.maxresolutiony : '') + ']'
+      }
+      return gpuDetails
     }
   }
 }

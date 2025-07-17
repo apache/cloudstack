@@ -157,8 +157,8 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
         List<HostGpuGroupsVO> gpuGroups = ApiDBUtils.getGpuGroups(host.getId());
         if (gpuGroups != null && !gpuGroups.isEmpty()) {
             List<GpuResponse> gpus = new ArrayList<GpuResponse>();
-            double gpuRemaining = 0.0;
-            double gpuTotal = 0.0;
+            long gpuRemaining = 0;
+            long gpuTotal = 0;
             for (HostGpuGroupsVO entry : gpuGroups) {
                 GpuResponse gpuResponse = new GpuResponse();
                 gpuResponse.setGpuGroupName(entry.getGroupName());

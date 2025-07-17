@@ -245,6 +245,18 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
     @Column(name = "vgpu_profile_name")
     private String vgpuProfileName;
 
+    @Column(name = "vgpu_profile_video_ram")
+    private Long videoRam;
+
+    @Column(name = "vgpu_profile_max_heads")
+    private Long maxHeads;
+
+    @Column(name = "vgpu_profile_max_resolution_x")
+    private Long maxResolutionX;
+
+    @Column(name = "vgpu_profile_max_resolution_y")
+    private Long maxResolutionY;
+
     @Column(name = "gpu_count")
     private Integer gpuCount;
 
@@ -520,6 +532,22 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
 
     public String getVgpuProfileName() {
         return vgpuProfileName;
+    }
+
+    public Long getMaxResolutionY() {
+        return maxResolutionY;
+    }
+
+    public Long getMaxResolutionX() {
+        return maxResolutionX;
+    }
+
+    public Long getMaxHeads() {
+        return maxHeads;
+    }
+
+    public Long getVideoRam() {
+        return videoRam;
     }
 
     public Integer getGpuCount() {

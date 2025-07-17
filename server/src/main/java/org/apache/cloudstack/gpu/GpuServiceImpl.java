@@ -806,23 +806,17 @@ public class GpuServiceImpl extends ManagerBase implements GpuService, Pluggable
                     vgpuInfoList.add(vgpuInfo);
                 }
 
-                HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = getGpuGroupDetailsFromGpuDevicesOnHost(
-                        hostDao.findById(hostId));
+                HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = getGpuGroupDetailsFromGpuDevicesOnHost(hostId);
                 return new GPUDeviceTO(gpuCard.getName(), vgpuProfile.getName(), gpuCount, groupDetails, vgpuInfoList);
             }
         });
     }
 
     @Override
-    public HashMap<String, HashMap<String, VgpuTypesInfo>> getGpuGroupDetailsFromGpuDevicesOnHost(final Host host) {
+    public HashMap<String, HashMap<String, VgpuTypesInfo>> getGpuGroupDetailsFromGpuDevicesOnHost(final long hostId) {
         HashMap<String, HashMap<String, VgpuTypesInfo>> gpuGroupDetails = new HashMap<>();
-        List<GpuDeviceVO> gpuDevices = gpuDeviceDao.listByHostId(host.getId());
+        List<GpuDeviceVO> gpuDevices = gpuDeviceDao.listByHostId(hostId);
         for (final GpuDeviceVO device : gpuDevices) {
-            if (GpuDevice.ManagedState.Unmanaged.equals(device.getManagedState())) {
-                // Skip unmanaged devices
-                continue;
-            }
-
             // Calculate GPU capacity and update gpuGroupDetails
             GpuCardVO card = gpuCardDao.findById(device.getCardId());
             if (!gpuGroupDetails.containsKey(card.getDeviceName())) {
@@ -831,32 +825,22 @@ public class GpuServiceImpl extends ManagerBase implements GpuService, Pluggable
             VgpuProfileVO vgpuProfile = vgpuProfileDao.findById(device.getVgpuProfileId());
 
             VgpuTypesInfo gpuDeviceInfo = gpuGroupDetails.get(card.getDeviceName()).get(vgpuProfile.getName());
+            long remainingCapacity = 0L;
+            long maxCapacity = 1L;
+            if (GpuDevice.State.Free.equals(device.getState()) && GpuDevice.ManagedState.Managed.equals(
+                    device.getManagedState())) {
+                remainingCapacity = 1L;
+            }
+            if (device.getType().equals(GpuDevice.DeviceType.VGPUOnly) || GpuDevice.ManagedState.Unmanaged.equals(device.getManagedState())) {
+                maxCapacity = 0L;
+                remainingCapacity = 0L;
+            }
             if (gpuDeviceInfo == null) {
-                long remainingCapacity = 0L;
-                long maxCapacity = 1L;
-                if (GpuDevice.State.Free.equals(device.getState()) && GpuDevice.ManagedState.Managed.equals(
-                        device.getManagedState())) {
-                    remainingCapacity = 1L;
-                }
-                if (device.getType().equals(GpuDevice.DeviceType.VGPUOnly)) {
-                    maxCapacity = 0L;
-                    remainingCapacity = 0L;
-                }
                 gpuDeviceInfo = new VgpuTypesInfo(card.getName(), vgpuProfile.getName(), null, null, null, null,
                         vgpuProfile.getMaxVgpuPerPgpu(), remainingCapacity, maxCapacity);
                 gpuGroupDetails.get(card.getDeviceName()).put(vgpuProfile.getName(), gpuDeviceInfo);
             } else {
                 // Update the existing VgpuTypesInfo with the new device's information
-                long remainingCapacity = 0L;
-                long maxCapacity = 1L;
-                if (GpuDevice.State.Free.equals(device.getState()) && GpuDevice.ManagedState.Managed.equals(
-                        device.getManagedState())) {
-                    remainingCapacity = 1L;
-                }
-                if (device.getType().equals(GpuDevice.DeviceType.VGPUOnly)) {
-                    maxCapacity = 0L;
-                    remainingCapacity = 0L;
-                }
                 gpuDeviceInfo.setRemainingCapacity(gpuDeviceInfo.getRemainingCapacity() + remainingCapacity);
                 gpuDeviceInfo.setMaxVmCapacity(gpuDeviceInfo.getMaxCapacity() + maxCapacity);
             }
@@ -1109,9 +1093,7 @@ public class GpuServiceImpl extends ManagerBase implements GpuService, Pluggable
         }
 
         for (Long hostId : hostIds) {
-            HostVO host = hostDao.findById(hostId);
-            host.setGpuGroups(getGpuGroupDetailsFromGpuDevicesOnHost(host));
-            hostDao.update(hostId, host);
+            resourceManager.updateGPUDetails(hostId, getGpuGroupDetailsFromGpuDevicesOnHost(hostId));
         }
 
         return true;

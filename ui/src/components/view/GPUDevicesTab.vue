@@ -354,6 +354,7 @@ export default {
     PlayCircleOutlined,
     PauseCircleOutlined
   },
+  emits: ['refresh'],
   props: {
     resource: {
       type: Object,
