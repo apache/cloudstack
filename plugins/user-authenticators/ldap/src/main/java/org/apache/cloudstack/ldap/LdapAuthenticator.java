@@ -176,14 +176,19 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
             }
         } catch (NoLdapUserMatchingQueryException e) {
             logger.debug(e.getMessage());
-            if (e.getMessage().contains(LDAP_READ_TIMED_OUT_MESSAGE) && !rc.first()) {
-                rc.second(ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT);
-            } else {
-                disableUserInCloudStack(userAccount);
-            }
+            processLdapUserErrorMessage(userAccount, e.getMessage(), rc);
         }
 
         return rc;
+    }
+
+    private void processLdapUserErrorMessage(UserAccount user, String errorMessage, Pair<Boolean, ActionOnFailedAuthentication> rc) {
+        if (StringUtils.isNotEmpty(errorMessage) && errorMessage.contains(LDAP_READ_TIMED_OUT_MESSAGE) && !rc.first()) {
+            rc.second(ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT);
+        } else {
+            // no user in ldap ==>> disable user in cloudstack
+            disableUserInCloudStack(user);
+        }
     }
 
     private void tracelist(String msg, List<String> listToTrace) {
@@ -235,12 +240,7 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
             processLdapUser(password, domainId, user, rc, ldapUser, accountType);
         } catch (NoLdapUserMatchingQueryException e) {
             logger.debug(e.getMessage());
-            if (e.getMessage().contains(LDAP_READ_TIMED_OUT_MESSAGE) && !rc.first()) {
-                rc.second(ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT);
-            } else {
-                // no user in ldap ==>> disable user in cloudstack
-                disableUserInCloudStack(user);
-            }
+            processLdapUserErrorMessage(user, e.getMessage(), rc);
         }
         return rc;
     }

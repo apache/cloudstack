@@ -144,7 +144,7 @@ public class LdapListUsersCmd extends BaseListCmd {
             ldapResponses = applyUserFilter(ldapResponses);
         } catch (final NoLdapUserMatchingQueryException ex) {
             logger.debug(ex.getMessage());
-            // ok, we'll make do with the empty list ldapResponses = new ArrayList<LdapUserResponse>();
+            // ok, we'll make do with the empty list
         } finally {
             response.setResponses(ldapResponses);
             response.setResponseName(getCommandName());
