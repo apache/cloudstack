@@ -53,6 +53,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
     private String sessionUuid;
 
     private ByteBuffer readBuffer = null;
+    private int flushThreshold = -1;
 
     public ConsoleProxyNoVncClient(Session session) {
         this.session = session;
@@ -124,12 +125,9 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                             sleepTime = 1;
                         } else if (client.isVncOverNioSocket()) {
                             ByteBuffer buffer = getOrCreateReadBuffer();
-                            buffer.clear(); // Reset position and limit for reuse
-                            int bytesRead = client.readAvailableDataIntoBuffer(buffer, buffer.capacity());
+                            int bytesRead = client.readAvailableDataIntoBuffer(buffer, buffer.remaining());
+
                             if (bytesRead > 0) {
-                                buffer.flip(); // Set limit to position, reset position to 0 for reading
-                                logger.trace("Read [{}] bytes from client [{}].", bytesRead, clientId);
-                                session.getRemote().sendBytes(buffer);
                                 updateFrontEndActivityTime();
                                 consecutiveZeroReads = 0; // Reset counter on successful read
 
@@ -139,6 +137,14 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                                 consecutiveZeroReads++;
                                 // Use adaptive sleep time to prevent excessive busy waiting
                                 sleepTime = Math.min(consecutiveZeroReads, 10); // Cap at 10ms max
+                            }
+
+                            final boolean bufferHasData = buffer.position() > 0;
+                            if (bufferHasData && (bytesRead == 0 || buffer.remaining() <= flushThreshold)) {
+                                buffer.flip();
+                                logger.trace("Flushing buffer with [{}] bytes for client [{}]", buffer.remaining(), clientId);
+                                session.getRemote().sendBytes(buffer);
+                                buffer.compact();
                             }
                         } else {
                             byte[] b = new byte[100];
@@ -332,6 +338,16 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
         if (readBuffer == null) {
             readBuffer = ByteBuffer.allocate(ConsoleProxy.defaultBufferSize);
             logger.debug("Allocated  {} KB read buffer for client [{}]", ConsoleProxy.defaultBufferSize / 1024 , clientId);
+
+            // Only apply batching logic for TLS connections to work around 16KB record limitation
+            // For non-TLS connections, use immediate flush for better responsiveness
+            if (client != null && client.isTLSConnectionEstablished()) {
+                flushThreshold = Math.min(ConsoleProxy.defaultBufferSize / 4, 2048);
+                logger.debug("TLS connection detected - using batching with threshold {} for client [{}]", flushThreshold, clientId);
+            } else {
+                flushThreshold = ConsoleProxy.defaultBufferSize + 1; // Always flush immediately
+                logger.debug("Non-TLS connection - using immediate flush for client [{}]", clientId);
+            }
         }
         return readBuffer;
     }

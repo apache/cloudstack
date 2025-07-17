@@ -40,6 +40,7 @@ public class NioSocketTLSOutputStream extends NioSocketOutputStream {
         }
 
         currentPosition = start;
+        sslEngineManager.flush();
     }
 
     protected int writeThroughSSLEngineManager(byte[] data, int startPos, int length) {
