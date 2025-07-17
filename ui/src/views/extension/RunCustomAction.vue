@@ -130,6 +130,9 @@ export default {
     this.fetchCustomActions()
   },
   computed: {
+    datePattern () {
+      return 'YYYY-MM-DDTHH:mm:ssZ'
+    },
     resourceType () {
       const metaResourceType = this.$route.meta.resourceType
       if (metaResourceType && !['UserVm', 'DomainRouter', 'SystemVm'].includes(metaResourceType)) {
@@ -244,12 +247,12 @@ export default {
         keys = keys.filter(k => k !== 'customactionid')
         for (const key of keys) {
           var value = values[key]
-          const fieldDef = this.currentParameters.find(f => f.name === key)
-          if (fieldDef?.type === 'DATE' && value instanceof Date) {
-            value = value.toISOString()
-          }
           if (value !== undefined && value != null &&
               (typeof value !== 'string' || (typeof value === 'string' && value.trim().length > 0))) {
+            const fieldDef = this.currentParameters.find(f => f.name === key)
+            if (fieldDef?.type === 'DATE') {
+              value = value.format(this.datePattern)
+            }
             params['parameters[0].' + key] = value
           }
         }
