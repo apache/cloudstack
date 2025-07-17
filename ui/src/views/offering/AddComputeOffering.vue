@@ -281,6 +281,7 @@
           </template>
           <a-select
             mode="multiple"
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.domainid"
             showSearch
             optionFilterProp="label"
@@ -307,6 +308,7 @@
             mode="multiple"
             v-model:value="form.zoneid"
             showSearch
+            :getPopupContainer="(trigger) => trigger.parentNode"
             optionFilterProp="label"
             :filterOption="(input, option) => {
               return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
