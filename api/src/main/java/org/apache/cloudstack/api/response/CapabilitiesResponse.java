@@ -124,6 +124,10 @@ public class CapabilitiesResponse extends BaseResponse {
     @Param(description = "the retention time for Instances disks stats", since = "4.18.0")
     private Integer instancesDisksStatsRetentionTime;
 
+    @SerializedName(ApiConstants.DYNAMIC_SCALING_ENABLED)
+    @Param(description = "true if dynamically scaling for instances is enabled", since = "4.19.4")
+    private Boolean dynamicScalingEnabled;
+
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
         this.securityGroupsEnabled = securityGroupsEnabled;
     }
@@ -222,5 +226,9 @@ public class CapabilitiesResponse extends BaseResponse {
 
     public void setCustomHypervisorDisplayName(String customHypervisorDisplayName) {
         this.customHypervisorDisplayName = customHypervisorDisplayName;
+    }
+
+    public void setDynamicScalingEnabled(Boolean dynamicScalingEnabled) {
+        this.dynamicScalingEnabled = dynamicScalingEnabled;
     }
 }

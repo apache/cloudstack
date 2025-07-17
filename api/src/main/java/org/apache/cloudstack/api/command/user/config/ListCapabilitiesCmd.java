@@ -71,6 +71,7 @@ public class ListCapabilitiesCmd extends BaseCmd {
         response.setInstancesStatsUserOnly((Boolean) capabilities.get(ApiConstants.INSTANCES_STATS_USER_ONLY));
         response.setInstancesDisksStatsRetentionEnabled((Boolean) capabilities.get(ApiConstants.INSTANCES_DISKS_STATS_RETENTION_ENABLED));
         response.setInstancesDisksStatsRetentionTime((Integer) capabilities.get(ApiConstants.INSTANCES_DISKS_STATS_RETENTION_TIME));
+        response.setDynamicScalingEnabled((Boolean) capabilities.get(ApiConstants.DYNAMIC_SCALING_ENABLED));
         response.setObjectName("capability");
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
