@@ -84,6 +84,7 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         NonReleasedSearch.and("instance", NonReleasedSearch.entity().getInstanceId(), Op.EQ);
         NonReleasedSearch.and("network", NonReleasedSearch.entity().getNetworkId(), Op.EQ);
         NonReleasedSearch.and("state", NonReleasedSearch.entity().getState(), Op.NOTIN);
+        NonReleasedSearch.and("strategy", NonReleasedSearch.entity().getReservationStrategy(), Op.NEQ);
         NonReleasedSearch.done();
 
         deviceIdSearch = createSearchBuilder(Integer.class);
@@ -148,6 +149,15 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
     public List<NicVO> listByNetworkId(long networkId) {
         SearchCriteria<NicVO> sc = AllFieldsSearch.create();
         sc.setParameters("network", networkId);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<NicVO> listNonDeallocatedByNetworkId(long networkId) {
+        SearchCriteria<NicVO> sc = NonReleasedSearch.create();
+        sc.setParameters("network", networkId);
+        sc.setParameters("state", Nic.State.Deallocating);
+        sc.setParameters("strategy", Nic.ReservationStrategy.PlaceHolder.toString());
         return listBy(sc);
     }
 
