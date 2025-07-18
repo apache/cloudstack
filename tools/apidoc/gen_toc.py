@@ -264,7 +264,11 @@ known_categories = {
     'listGuiThemes': 'GUI Theme',
     'createGuiTheme': 'GUI Theme',
     'updateGuiTheme': 'GUI Theme',
-    'removeGuiTheme': 'GUI Theme'
+    'removeGuiTheme': 'GUI Theme',
+    'Extension' : 'Extension',
+    'Extensions' : 'Extension',
+    'CustomAction' : 'Extension',
+    'CustomActions' : 'Extension'
 }
 
 

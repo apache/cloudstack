@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
@@ -140,6 +141,10 @@ public class CapabilitiesResponse extends BaseResponse {
     @Param(description = "true if instance lease feature is enabled", since = "4.21.0")
     private Boolean instanceLeaseEnabled;
 
+    @SerializedName(ApiConstants.EXTENSIONS_PATH)
+    @Param(description = "The path of the extensions directory", since = "4.21.0", authorized = {RoleType.Admin})
+    private String extensionsPath;
+
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
         this.securityGroupsEnabled = securityGroupsEnabled;
     }
@@ -254,5 +259,9 @@ public class CapabilitiesResponse extends BaseResponse {
 
     public void setInstanceLeaseEnabled(Boolean instanceLeaseEnabled) {
         this.instanceLeaseEnabled = instanceLeaseEnabled;
+    }
+
+    public void setExtensionsPath(String extensionsPath) {
+        this.extensionsPath = extensionsPath;
     }
 }

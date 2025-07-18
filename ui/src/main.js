@@ -39,7 +39,8 @@ import {
   localesPlugin,
   dialogUtilPlugin,
   cpuArchitectureUtilPlugin,
-  imagesUtilPlugin
+  imagesUtilPlugin,
+  extensionsUtilPlugin
 } from './utils/plugins'
 import { VueAxios } from './utils/request'
 import directives from './utils/directives'
@@ -61,6 +62,7 @@ vueApp.use(genericUtilPlugin)
 vueApp.use(dialogUtilPlugin)
 vueApp.use(cpuArchitectureUtilPlugin)
 vueApp.use(imagesUtilPlugin)
+vueApp.use(extensionsUtilPlugin)
 vueApp.use(extensions)
 vueApp.use(directives)
 

@@ -359,6 +359,11 @@ public class TemplateObject implements TemplateInfo {
     }
 
     @Override
+    public Long getExtensionId() {
+        return imageVO.getExtensionId();
+    }
+
+    @Override
     public DataTO getTO() {
         DataTO to = null;
         if (dataStore == null) {

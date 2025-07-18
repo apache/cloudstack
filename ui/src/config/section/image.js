@@ -58,7 +58,7 @@ export default {
         return fields
       },
       details: () => {
-        var fields = ['name', 'id', 'displaytext', 'checksum', 'hypervisor', 'arch', 'format', 'ostypename', 'size', 'physicalsize', 'isready', 'passwordenabled',
+        var fields = ['name', 'id', 'displaytext', 'checksum', 'hypervisor', 'arch', 'format', 'externalprovisioner', 'ostypename', 'size', 'physicalsize', 'isready', 'passwordenabled',
           'crossZones', 'templatetype', 'directdownload', 'deployasis', 'ispublic', 'isfeatured', 'isextractable', 'isdynamicallyscalable', 'crosszones', 'type',
           'account', 'domain', 'created', 'userdatadetails', 'userdatapolicy', 'forcks']
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
@@ -67,7 +67,7 @@ export default {
         return fields
       },
       searchFilters: () => {
-        var filters = ['name', 'zoneid', 'tags', 'arch', 'oscategoryid', 'templatetype']
+        var filters = ['name', 'zoneid', 'tags', 'arch', 'oscategoryid', 'templatetype', 'extensionid']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           filters.push('storageid')
           filters.push('imagestoreid')

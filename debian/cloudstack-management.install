@@ -22,6 +22,8 @@
 /etc/cloudstack/management/java.security.ciphers
 /etc/cloudstack/management/log4j-cloud.xml
 /etc/cloudstack/management/config.json
+/etc/cloudstack/extensions/Proxmox/proxmox.sh
+/etc/cloudstack/extensions/HyperV/hyperv.py
 /etc/default/cloudstack-management
 /etc/security/limits.d/cloudstack-limits.conf
 /etc/sudoers.d/cloudstack

@@ -22,7 +22,7 @@
       style="width: 100%; margin-bottom: 10px"
       @click="showAddNicModal"
       :loading="loadingNic"
-      :disabled="!('addNicToVirtualMachine' in $store.getters.apis)">
+      :disabled="!('addNicToVirtualMachine' in $store.getters.apis) || resource.hypervisor === 'External'">
       <template #icon><plus-outlined /></template> {{ $t('label.network.addvm') }}
     </a-button>
     <NicsTable :resource="resource" :loading="loading">

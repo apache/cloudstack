@@ -19,7 +19,6 @@ package com.cloud.network;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.dc.DataCenter;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.command.admin.address.ReleasePodIpCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
@@ -39,13 +38,16 @@ import org.apache.cloudstack.api.command.user.network.UpdateNetworkCmd;
 import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
 import org.apache.cloudstack.api.response.AcquirePodIpCmdResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 
+import com.cloud.agent.api.to.NicTO;
+import com.cloud.dc.DataCenter;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network.IpAddresses;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
@@ -57,7 +59,6 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
-import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 
 /**
  * The NetworkService interface is the "public" api to entities that make requests to the orchestration engine
@@ -270,4 +271,6 @@ public interface NetworkService {
     List<InternalLoadBalancerElementService> getInternalLoadBalancerElements();
 
     boolean handleCksIsoOnNetworkVirtualRouter(Long virtualRouterId, boolean mount) throws ResourceUnavailableException;
+
+    String getNicVlanValueForExternalVm(NicTO nic);
 }

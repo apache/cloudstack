@@ -391,4 +391,9 @@
     </bean>
 
     <bean id="guiThemeServiceImpl" class="org.apache.cloudstack.gui.theme.GuiThemeServiceImpl" />
+
+    <bean id="ExternalOrchestratorDaoImpl" class="org.apache.cloudstack.hypervisor.external.provisioner.dao.ExternalOrchestratorDaoImpl" />
+    <bean id="ExternalOrchestratorDetailDaoImpl" class="org.apache.cloudstack.hypervisor.external.provisioner.dao.ExternalOrchestratorDetailDaoImpl" />
+    <bean id="ExtensionResourceMapDaoImpl" class="org.apache.cloudstack.hypervisor.external.provisioner.dao.ExtensionResourceMapDaoImpl" />
+    <bean id="ExtensionResourceMapDetailsDaoImpl" class="org.apache.cloudstack.hypervisor.external.provisioner.dao.ExtensionResourceMapDetailsDaoImpl" />
 </beans>
