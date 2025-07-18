@@ -4276,7 +4276,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     public boolean isGPUDeviceAvailable(Host host, Long vmId, VgpuProfileVO vgpuProfile, int gpuCount) {
         if (host.getHypervisorType().equals(HypervisorType.XenServer)) {
             GpuCardVO gpuCard = gpuCardDao.findById(vgpuProfile.getCardId());
-            String groupName = gpuCard.getName();
+            String groupName = gpuCard.getGroupName();
             String vgpuType = vgpuProfile.getName();
             return isGPUDeviceAvailable(host, groupName, vgpuType);
         } else {
@@ -4289,7 +4289,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         HostVO host = _hostDao.findById(vm.getHostId());
         if (host.getHypervisorType().equals(HypervisorType.XenServer)) {
             GpuCardVO gpuCard = gpuCardDao.findById(vgpuProfile.getCardId());
-            String groupName = gpuCard.getName();
+            String groupName = gpuCard.getGroupName();
             String vgpuType = vgpuProfile.getName();
             return getGPUDevice(vm.getHostId(), groupName, vgpuType);
         } else {

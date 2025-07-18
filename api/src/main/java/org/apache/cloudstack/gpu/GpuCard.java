@@ -59,4 +59,11 @@ public interface GpuCard extends InternalIdentity, Identity {
      * @return the date when the GPU card was created
      */
     Date getCreated();
+
+
+    /**
+     * @return the group name of the GPU card based on how the XenServer expects it.
+     */
+    String getGroupName();
+
 }

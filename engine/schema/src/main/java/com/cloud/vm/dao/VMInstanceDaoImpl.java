@@ -139,7 +139,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
             "GROUP BY vm.service_offering_id) results GROUP BY pci, type";
 
     private static final String COUNT_VMS_BASED_ON_VGPU_TYPES1 =
-            "SELECT gpu_card.device_name, vgpu_profile.name, COUNT(gpu_device.vm_id) "
+            "SELECT CONCAT(gpu_card.vendor_name,  ' ',  gpu_card.device_name), vgpu_profile.name, COUNT(gpu_device.vm_id) "
             + "FROM `cloud`.`gpu_device` "
             + "INNER JOIN `cloud`.`host` ON gpu_device.host_id = host.id "
             + "INNER JOIN `cloud`.`gpu_card` ON gpu_device.card_id = gpu_card.id "

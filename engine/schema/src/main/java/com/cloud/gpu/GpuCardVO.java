@@ -139,4 +139,9 @@ public class GpuCardVO implements GpuCard {
     public Date getCreated() {
         return created;
     }
+
+    @Override
+    public String getGroupName() {
+        return "Group of " + getVendorName() + " " + getDeviceName() + " GPUs";
+    }
 }

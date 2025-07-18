@@ -819,12 +819,13 @@ public class GpuServiceImpl extends ManagerBase implements GpuService, Pluggable
         for (final GpuDeviceVO device : gpuDevices) {
             // Calculate GPU capacity and update gpuGroupDetails
             GpuCardVO card = gpuCardDao.findById(device.getCardId());
-            if (!gpuGroupDetails.containsKey(card.getDeviceName())) {
-                gpuGroupDetails.put(card.getDeviceName(), new HashMap<>());
+            String groupName = card.getName();
+            if (!gpuGroupDetails.containsKey(groupName)) {
+                gpuGroupDetails.put(groupName, new HashMap<>());
             }
             VgpuProfileVO vgpuProfile = vgpuProfileDao.findById(device.getVgpuProfileId());
 
-            VgpuTypesInfo gpuDeviceInfo = gpuGroupDetails.get(card.getDeviceName()).get(vgpuProfile.getName());
+            VgpuTypesInfo gpuDeviceInfo = gpuGroupDetails.get(groupName).get(vgpuProfile.getName());
             long remainingCapacity = 0L;
             long maxCapacity = 1L;
             if (GpuDevice.State.Free.equals(device.getState()) && GpuDevice.ManagedState.Managed.equals(
@@ -836,9 +837,14 @@ public class GpuServiceImpl extends ManagerBase implements GpuService, Pluggable
                 remainingCapacity = 0L;
             }
             if (gpuDeviceInfo == null) {
-                gpuDeviceInfo = new VgpuTypesInfo(card.getName(), vgpuProfile.getName(), null, null, null, null,
+                gpuDeviceInfo = new VgpuTypesInfo(card.getName(), vgpuProfile.getName(), vgpuProfile.getVideoRam(), vgpuProfile.getMaxHeads(),
+                        vgpuProfile.getMaxResolutionX(), vgpuProfile.getMaxResolutionY(),
                         vgpuProfile.getMaxVgpuPerPgpu(), remainingCapacity, maxCapacity);
-                gpuGroupDetails.get(card.getDeviceName()).put(vgpuProfile.getName(), gpuDeviceInfo);
+                gpuDeviceInfo.setDeviceName(card.getDeviceName());
+                gpuDeviceInfo.setVendorId(card.getVendorId());
+                gpuDeviceInfo.setVendorName(card.getVendorName());
+                gpuDeviceInfo.setDeviceId(card.getDeviceId());
+                gpuGroupDetails.get(groupName).put(vgpuProfile.getName(), gpuDeviceInfo);
             } else {
                 // Update the existing VgpuTypesInfo with the new device's information
                 gpuDeviceInfo.setRemainingCapacity(gpuDeviceInfo.getRemainingCapacity() + remainingCapacity);
