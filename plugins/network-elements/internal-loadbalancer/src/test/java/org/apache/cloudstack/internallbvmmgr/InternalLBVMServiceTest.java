@@ -29,7 +29,6 @@ import javax.inject.Inject;
 
 import com.cloud.event.ActionEventUtils;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.lb.InternalLoadBalancerVMService;
 import org.junit.After;
 import org.junit.Before;
