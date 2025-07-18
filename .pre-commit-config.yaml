@@ -25,6 +25,12 @@ repos:
     hooks:
       - id: identity
       - id: check-hooks-apply
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.27.2
+    hooks:
+      - id: gitleaks
+        name: run gitleaks
+        description: detect hardcoded secrets
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
     hooks:
