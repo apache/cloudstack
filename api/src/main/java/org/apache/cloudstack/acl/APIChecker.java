@@ -19,6 +19,7 @@ package org.apache.cloudstack.acl;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
 import com.cloud.user.User;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapter;
 
 import java.util.List;
@@ -43,4 +44,7 @@ public interface APIChecker extends Adapter {
      */
     List<String> getApisAllowedToUser(Role role, User user, List<String> apiNames) throws PermissionDeniedException;
     boolean isEnabled();
+
+    Pair<Role, List<RolePermission>> getRolePermissions(long roleId);
+    boolean checkAccess(Account account, String commandName, Role accountRole, List<RolePermission> allPermissions);
 }
