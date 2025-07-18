@@ -1264,7 +1264,7 @@ public class BackupManagerTest {
 
         CloudRuntimeException exception = Assert.assertThrows(CloudRuntimeException.class,
                 () -> backupManager.checkAndRemoveBackupOfferingBeforeExpunge(vm));
-        Assert.assertEquals("This VM [uuid: uuid1, name: i-2-1-VM] has a "
+        Assert.assertEquals("This Instance [uuid: uuid1, name: i-2-1-VM] has a "
                         + "Backup Offering [id: 3, external id: backup-external-id] with 1 backups. Please, remove the backup offering "
                         + "before proceeding to VM exclusion!", exception.getMessage());
     }
@@ -1290,7 +1290,7 @@ public class BackupManagerTest {
             backupManager.getIpToNetworkMapFromBackup(backup1, true, networkIds1);
             fail("Expected CloudRuntimeException for missing network information");
         } catch (CloudRuntimeException e) {
-            assertEquals("Backup doesn't contain network information. Please specify atleast one valid network while creating instance", e.getMessage());
+            assertEquals("Backup doesn't contain network information. Please specify at least one valid network while creating instance", e.getMessage());
         }
 
         // Test case 2: IP preservation enabled with IP information
