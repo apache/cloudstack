@@ -53,6 +53,10 @@ public class BackupScheduleResponse extends BaseResponse {
     @Param(description = "maximum number of backups retained")
     private Integer maxBakups;
 
+    @SerializedName(ApiConstants.QUIESCE_VM)
+    @Param(description = "quiesce the instance before checkpointing the disks for backup")
+    private Boolean quiesceVM;
+
     public String getVmName() {
         return vmName;
     }
@@ -95,5 +99,9 @@ public class BackupScheduleResponse extends BaseResponse {
 
     public void setMaxBakups(Integer maxBakups) {
         this.maxBakups = maxBakups;
+    }
+
+    public void setQuiesceVM(Boolean quiesceVM) {
+        this.quiesceVM = quiesceVM;
     }
 }

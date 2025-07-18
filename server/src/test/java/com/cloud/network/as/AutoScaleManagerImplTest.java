@@ -1272,7 +1272,7 @@ public class AutoScaleManagerImplTest {
 
         when(zoneMock.getNetworkType()).thenReturn(DataCenter.NetworkType.Basic);
         when(userVmService.createBasicSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
-                any(), any(), any(), any(), any(), eq(userData), eq(userDataId), eq(userDataDetails.toString()), any(), any(), any(), eq(true), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), eq(userData), eq(userDataId), eq(userDataDetails.toString()), any(), any(), any(), eq(true), any(), any(), any(),
                 any(), any(), any(), any(), eq(true), any(), any(), any())).thenReturn(userVmMock);
 
         UserVm result = autoScaleManagerImplSpy.createNewVM(asVmGroupMock);
@@ -1283,7 +1283,7 @@ public class AutoScaleManagerImplTest {
                 "-" + asVmGroupMock.getNextVmSeq() + "-[a-z]{6}";
         Mockito.verify(userVmService).createBasicSecurityGroupVirtualMachine(any(), any(), any(), any(), any(),
                 matches(vmHostNamePattern), matches(vmHostNamePattern),
-                any(), any(), any(), any(), any(), eq(userData), eq(userDataId), eq(userDataDetails.toString()), any(), any(), any(), eq(true), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), eq(userData), eq(userDataId), eq(userDataDetails.toString()), any(), any(), any(), eq(true), any(), any(), any(),
                 any(), any(), any(), any(), eq(true), any(), any(), any());
         Mockito.verify(asVmGroupMock).setNextVmSeq(nextVmSeq + 1);
     }
@@ -1319,7 +1319,7 @@ public class AutoScaleManagerImplTest {
 
         when(zoneMock.getNetworkType()).thenReturn(DataCenter.NetworkType.Advanced);
         when(userVmService.createAdvancedSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
-                any(), any(), any(), any(), any(), any(), eq(userData), eq(userDataId), eq(userDataDetails.toString()), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), eq(userData), eq(userDataId), eq(userDataDetails.toString()), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), eq(true), any(), any(), any(), any())).thenReturn(userVmMock);
         when(networkModel.checkSecurityGroupSupportForNetwork(account, zoneMock,
                 List.of(networkId), Collections.emptyList())).thenReturn(true);
@@ -1332,7 +1332,7 @@ public class AutoScaleManagerImplTest {
                 "-" + asVmGroupMock.getNextVmSeq() + "-[a-z]{6}";
         Mockito.verify(userVmService).createAdvancedSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(),
                 matches(vmHostNamePattern), matches(vmHostNamePattern),
-                any(), any(), any(), any(), any(), eq(userData), eq(userDataId), eq(userDataDetails.toString()), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), eq(userData), eq(userDataId), eq(userDataDetails.toString()), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), eq(true), any(), any(), any(), any());
         Mockito.verify(asVmGroupMock).setNextVmSeq(nextVmSeq + 2);
     }
@@ -1368,7 +1368,7 @@ public class AutoScaleManagerImplTest {
 
         when(zoneMock.getNetworkType()).thenReturn(DataCenter.NetworkType.Advanced);
         when(userVmService.createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
-                any(), any(), any(), any(), any(), eq(userData), eq(userDataId), eq(userDataDetails.toString()), any(), any(), any(), eq(true), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), eq(userData), eq(userDataId), eq(userDataDetails.toString()), any(), any(), any(), eq(true), any(), any(), any(),
                 any(), any(), any(), any(), eq(true), any(), any(), any(), any())).thenReturn(userVmMock);
         when(networkModel.checkSecurityGroupSupportForNetwork(account, zoneMock,
                 List.of(networkId), Collections.emptyList())).thenReturn(false);
@@ -1381,7 +1381,7 @@ public class AutoScaleManagerImplTest {
                 "-" + asVmGroupMock.getNextVmSeq() + "-[a-z]{6}";
         Mockito.verify(userVmService).createAdvancedVirtualMachine(any(), any(), any(), any(), any(),
                 matches(vmHostNamePattern), matches(vmHostNamePattern),
-                any(), any(), any(), any(), any(), eq(userData), eq(userDataId), eq(userDataDetails.toString()), any(), any(), any(), eq(true), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), eq(userData), eq(userDataId), eq(userDataDetails.toString()), any(), any(), any(), eq(true), any(), any(), any(),
                 any(), any(), any(), any(), eq(true), any(), any(), any(), any());
         Mockito.verify(asVmGroupMock).setNextVmSeq(nextVmSeq + 3);
     }

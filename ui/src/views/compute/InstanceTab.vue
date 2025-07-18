@@ -60,8 +60,8 @@
           apiName="listBackups"
           :resource="resource"
           :params="{virtualmachineid: dataResource.id}"
-          :columns="['created', 'status', 'type', 'size', 'virtualsize']"
-          :routerlinks="(record) => { return { created: '/backup/' + record.id } }"
+          :columns="['name', 'status', 'size', 'virtualsize', 'type', 'created']"
+          :routerlinks="(record) => { return { name: '/backup/' + record.id } }"
           :showSearch="false"/>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.securitygroups')" key="securitygroups" v-if="dataResource.securitygroup && dataResource.securitygroup.length > 0 || $store.getters.showSecurityGroups">

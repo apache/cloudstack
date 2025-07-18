@@ -81,6 +81,15 @@ public class CreateBackupScheduleCmd extends BaseCmd {
             since = "4.21.0")
     private Integer maxBackups;
 
+    @Parameter(name = ApiConstants.QUIESCE_VM,
+            type = CommandType.BOOLEAN,
+            required = false,
+            description = "Quiesce the instance before checkpointing the disks for backup. Applicable only to NAS backup provider. " +
+                    "The filesystem is frozen before the backup starts and thawed immediately after. " +
+                    "Requires the instance to have the QEMU Guest Agent installed and running.",
+            since = "4.21.0")
+    private Boolean quiesceVM;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -103,6 +112,10 @@ public class CreateBackupScheduleCmd extends BaseCmd {
 
     public Integer getMaxBackups() {
         return maxBackups;
+    }
+
+    public Boolean getQuiesceVM() {
+        return quiesceVM;
     }
 
     /////////////////////////////////////////////////////
