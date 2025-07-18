@@ -37,6 +37,8 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.backup.dao.BackupRepositoryDao;
@@ -94,6 +96,9 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     @Inject
     private AgentManager agentManager;
 
+    @Inject
+    private VMSnapshotDao vmSnapshotDao;
+
     protected Host getLastVMHypervisorHost(VirtualMachine vm) {
         Long hostId = vm.getLastHostId();
         if (hostId == null) {
@@ -148,6 +153,12 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         final BackupRepository backupRepository = backupRepositoryDao.findByBackupOfferingId(vm.getBackupOfferingId());
         if (backupRepository == null) {
             throw new CloudRuntimeException("No valid backup repository found for the VM, please check the attached backup offering");
+        }
+
+        if (CollectionUtils.isNotEmpty(vmSnapshotDao.findByVmAndByType(vm.getId(), VMSnapshot.Type.DiskAndMemory))) {
+            logger.debug("NAS backup provider cannot take backups of a VM [{}] with disk-and-memory VM snapshots. Restoring the backup will corrupt any newer disk-and-memory " +
+                    "VM snapshots.", vm);
+            throw new CloudRuntimeException(String.format("Cannot take backup of VM [%s] as it has disk-and-memory VM snapshots.", vm.getUuid()));
         }
 
         final Date creationDate = new Date();
