@@ -71,6 +71,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.amazonaws.util.CollectionUtils;
@@ -515,24 +516,44 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     public boolean deleteBackupSchedule(DeleteBackupScheduleCmd cmd) {
         Long vmId = cmd.getVmId();
         Long id = cmd.getId();
-        if (Objects.isNull(vmId) && Objects.isNull(id)) {
-            throw new InvalidParameterValueException("Either instance ID or ID of backup schedule needs to be specified");
+        if (ObjectUtils.allNull(vmId, id)) {
+            throw new InvalidParameterValueException("Either instance ID or ID of backup schedule needs to be specified.");
         }
-        if (Objects.nonNull(vmId)) {
-            final VMInstanceVO vm = findVmById(vmId);
-            validateForZone(vm.getDataCenterId());
-            accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
-            return deleteAllVMBackupSchedules(vm.getId());
-        } else {
-            final BackupSchedule schedule = backupScheduleDao.findById(id);
+
+        if (Objects.nonNull(id)) {
+            BackupSchedule schedule = backupScheduleDao.findById(id);
             if (schedule == null) {
-                throw new CloudRuntimeException("Could not find the requested backup schedule.");
+                throw new InvalidParameterValueException("Could not find the requested backup schedule.");
             }
+            checkCallerAccessToBackupScheduleVm(schedule.getVmId());
             return backupScheduleDao.remove(schedule.getId());
         }
+
+        checkCallerAccessToBackupScheduleVm(vmId);
+        return deleteAllVmBackupSchedules(vmId);
     }
 
-    private boolean deleteAllVMBackupSchedules(long vmId) {
+    /**
+     * Checks if the backup framework is enabled for the zone in which the VM with specified ID is allocated and
+     * if the caller has access to the VM.
+     *
+     * @param vmId The ID of the virtual machine to check access for
+     * @throws PermissionDeniedException if the caller doesn't have access to the VM
+     * @throws CloudRuntimeException if the backup framework is disabled
+     */
+    protected void checkCallerAccessToBackupScheduleVm(long vmId) {
+        VMInstanceVO vm = findVmById(vmId);
+        validateForZone(vm.getDataCenterId());
+        accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
+    }
+
+    /**
+     * Deletes all backup schedules associated with a specific VM.
+     *
+     * @param vmId The ID of the virtual machine whose backup schedules should be deleted
+     * @return true if all backup schedules were successfully deleted, false if any deletion failed
+     */
+    protected boolean deleteAllVmBackupSchedules(long vmId) {
         List<BackupScheduleVO> vmBackupSchedules = backupScheduleDao.listByVM(vmId);
         boolean success = true;
         for (BackupScheduleVO vmBackupSchedule : vmBackupSchedules) {

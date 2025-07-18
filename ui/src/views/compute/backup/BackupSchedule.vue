@@ -167,7 +167,7 @@ export default {
   methods: {
     handleClickDelete (record) {
       const params = {}
-      params.virtualmachineid = record.virtualmachineid
+      params.id = record.id
       this.actionLoading = true
       postAPI('deleteBackupSchedule', params).then(json => {
         if (json.deletebackupscheduleresponse.success) {
