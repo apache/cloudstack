@@ -732,9 +732,16 @@ public class NetUtilsTest {
     public void testAllIpsOfDefaultNic() {
         final String defaultHostIp = NetUtils.getDefaultHostIp();
         if (defaultHostIp != null) {
-            assertTrue(NetUtils.getAllDefaultNicIps().stream().anyMatch(defaultHostIp::contains));
+            List<String> allIps = NetUtils.getAllDefaultNicIps();
+            System.out.println("defaultHostIp: " + defaultHostIp);
+            System.out.println("allIps: " + allIps);
+
+            // Ensure defaultHostIp is present in one of the NIC IPs, accounting for IPv4 and IPv6 formats
+            boolean ipFound = allIps.stream().anyMatch(ip -> ip.contains(defaultHostIp));
+            assertTrue("Expected IP not found in NIC IPs", ipFound);
         }
     }
+
 
     @Test
     public void testIsIPv6EUI64() {
