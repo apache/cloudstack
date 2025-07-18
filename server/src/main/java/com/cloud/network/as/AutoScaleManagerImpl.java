@@ -1716,6 +1716,11 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             s_logger.warn("number of VM will greater than the maximum in this group if scaling up, so do nothing more");
             return false;
         }
+        int erroredInstanceCount = autoScaleVmGroupVmMapDao.getErroredInstanceCount(asGroup.getId());
+        if (erroredInstanceCount > AutoScaleManager.AutoScaleErroredInstanceThreshold.value()) {
+            s_logger.warn("number of Errored Instances are greater than the threshold in this group for scaling up, so do nothing more");
+            return false;
+        }
         return true;
     }
 
@@ -2202,7 +2207,8 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         return new ConfigKey<?>[] {
                 AutoScaleStatsInterval,
                 AutoScaleStatsCleanupDelay,
-                AutoScaleStatsWorker
+                AutoScaleStatsWorker,
+                AutoScaleErroredInstanceThreshold
         };
     }
 
