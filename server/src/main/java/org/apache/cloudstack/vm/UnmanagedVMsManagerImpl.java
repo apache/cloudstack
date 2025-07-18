@@ -1138,6 +1138,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 allDetails.put(VmDetailConstants.CPU_SPEED, String.valueOf(validatedServiceOffering.getSpeed()));
             }
         }
+        if (!template.isDeployAsIs() && unmanagedInstance.getBootType() != null) {
+            allDetails.put(unmanagedInstance.getBootType(), unmanagedInstance.getBootMode());
+        }
 
         if (!migrateAllowed && host != null && !hostSupportsServiceOfferingAndTemplate(host, validatedServiceOffering, template)) {
             throw new InvalidParameterValueException(String.format("Service offering: %s or template: %s is not compatible with host: %s of unmanaged VM: %s", serviceOffering.getUuid(), template.getUuid(), host.getUuid(), instanceName));

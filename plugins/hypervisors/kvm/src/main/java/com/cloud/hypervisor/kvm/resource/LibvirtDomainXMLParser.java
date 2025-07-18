@@ -48,6 +48,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef.RngBackendModel;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogAction;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogModel;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.GuestDef;
 
 public class LibvirtDomainXMLParser {
     protected Logger logger = LogManager.getLogger(getClass());
@@ -63,6 +64,8 @@ public class LibvirtDomainXMLParser {
     private LibvirtVMDef.CpuTuneDef cpuTuneDef;
     private LibvirtVMDef.CpuModeDef cpuModeDef;
     private String name;
+    private GuestDef.BootType bootType;
+    private GuestDef.BootMode bootMode;
 
     public boolean parseDomainXML(String domXML) {
         DocumentBuilder builder;
@@ -516,6 +519,14 @@ public class LibvirtDomainXMLParser {
         return cpuModeDef;
     }
 
+    public GuestDef.BootType getBootType() {
+        return bootType;
+    }
+
+    public GuestDef.BootMode getBootMode() {
+        return bootMode;
+    }
+
     private void extractCpuTuneDef(final Element rootElement) {
         NodeList cpuTunesList = rootElement.getElementsByTagName("cputune");
         if (cpuTunesList.getLength() > 0) {
@@ -566,6 +577,31 @@ public class LibvirtDomainXMLParser {
             final String threads = getAttrValue("topology", "threads", cpuModeDefElement);
             if (StringUtils.isNotBlank(sockets) && StringUtils.isNotBlank(cores) && StringUtils.isNotBlank(threads)) {
                 cpuModeDef.setTopology(Integer.parseInt(cores), Integer.parseInt(threads), Integer.parseInt(sockets));
+            }
+        }
+    }
+
+    private void extractBootDef(final Element rootElement) {
+        Element osElement = (Element) rootElement.getElementsByTagName("os").item(0);
+        if (osElement != null) {
+            NodeList loaderList = osElement.getElementsByTagName("loader");
+            if (loaderList.getLength() > 0) {
+                Element loader = (Element) loaderList.item(0);
+                String type = loader.getAttribute("type");
+                String secure = loader.getAttribute("secure");
+                if ("pflash".equalsIgnoreCase(type) || loader.getTextContent().toLowerCase().contains("uefi")) {
+                    bootType = GuestDef.BootType.UEFI;
+                } else {
+                    bootType = GuestDef.BootType.BIOS;
+                }
+                if ("yes".equalsIgnoreCase(secure)) {
+                    bootMode = GuestDef.BootMode.SECURE;
+                } else {
+                    bootMode = GuestDef.BootMode.LEGACY;
+                }
+            } else {
+                bootType = GuestDef.BootType.BIOS;
+                bootMode = GuestDef.BootMode.LEGACY;
             }
         }
     }
