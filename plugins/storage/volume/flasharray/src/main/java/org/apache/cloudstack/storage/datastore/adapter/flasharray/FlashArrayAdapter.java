@@ -248,7 +248,7 @@ public class FlashArrayAdapter implements ProviderAdapter {
 
             return volume;
         } catch (Exception e) {
-            // assume any exception is a not found. Flash returns 400's for most errors
+            // assume any exception is a not found. FlashArray returns 400's for most errors
             return null;
         }
     }
@@ -266,7 +266,7 @@ public class FlashArrayAdapter implements ProviderAdapter {
                     "Invalid volume address type [" + addressType + "] requested for volume search");
         }
 
-        // convert WWN to serial to search on. strip out WWN type # + Flash OUI value
+        // convert WWN to serial to search on. strip out WWN type # + FlashArray OUI value
         String serial = address.substring(FlashArrayVolume.PURE_OUI.length() + 1).toUpperCase();
         String query = "serial='" + serial + "'";
 
@@ -288,7 +288,7 @@ public class FlashArrayAdapter implements ProviderAdapter {
 
             return volume;
         } catch (Exception e) {
-            // assume any exception is a not found. Flash returns 400's for most errors
+            // assume any exception is a not found. FlashArray returns 400's for most errors
             return null;
         }
     }
@@ -345,7 +345,7 @@ public class FlashArrayAdapter implements ProviderAdapter {
         String origVolumeName = snapshot.getSource().getName();
 
         // now "create" a new volume with the snapshot volume as its source (basically a
-        // Flash array copy)
+        // FlashArray copy)
         // and overwrite to true (volume already exists, we are recreating it)
         FlashArrayVolume input = new FlashArrayVolume();
         input.setExternalName(origVolumeName);
@@ -400,7 +400,7 @@ public class FlashArrayAdapter implements ProviderAdapter {
         }
 
         // now "create" a new volume with the snapshot volume as its source (basically a
-        // Flash array copy)
+        // FlashArray copy)
         // and overwrite to true (volume already exists, we are recreating it)
         FlashArrayVolume payload = new FlashArrayVolume();
         payload.setExternalName(normalizeName(pod, destDataObject.getExternalName()));
