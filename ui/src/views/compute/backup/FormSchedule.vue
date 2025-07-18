@@ -112,7 +112,7 @@
                   <a-input-number
                     style="width: 100%"
                     v-model:value="form.maxbackups"
-                    :min="1" />
+                    :min="0" />
                 </a-tooltip>
               </a-form-item>
             </a-col>
