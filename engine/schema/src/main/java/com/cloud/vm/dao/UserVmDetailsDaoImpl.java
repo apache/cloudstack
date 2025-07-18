@@ -22,6 +22,11 @@ import org.springframework.stereotype.Component;
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 
 import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceVO;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class UserVmDetailsDaoImpl extends ResourceDetailsDaoBase<UserVmDetailVO> implements UserVmDetailsDao {
@@ -31,4 +36,26 @@ public class UserVmDetailsDaoImpl extends ResourceDetailsDaoBase<UserVmDetailVO>
         super.addDetail(new UserVmDetailVO(resourceId, key, value, display));
     }
 
+    @Override
+    public void saveDetails(VMInstanceVO vm) {
+        saveDetails(vm, new ArrayList<String>());
+    }
+
+    @Override
+    public void saveDetails(VMInstanceVO vm, List<String> hiddenDetails) {
+        Map<String, String> detailsStr = vm.getDetails();
+        if (detailsStr == null) {
+            return;
+        }
+
+        final Map<String, Boolean> visibilityMap = listDetailsVisibility(vm.getId());
+
+        List<UserVmDetailVO> details = new ArrayList<UserVmDetailVO>();
+        for (Map.Entry<String, String> entry : detailsStr.entrySet()) {
+            boolean display = !hiddenDetails.contains(entry.getKey()) && visibilityMap.getOrDefault(entry.getKey(), true);
+            details.add(new UserVmDetailVO(vm.getId(), entry.getKey(), entry.getValue(), display));
+        }
+
+        saveDetails(details);
+    }
 }
