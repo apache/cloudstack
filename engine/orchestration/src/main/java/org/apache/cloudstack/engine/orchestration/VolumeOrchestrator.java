@@ -326,7 +326,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             throw new CloudRuntimeException(String.format("Failed to find a storage pool with enough capacity to move the volume [%s] to.", volumeToString));
         }
 
-        Volume newVol = migrateVolume(volumeInfo, destPool);
+        Volume newVol = migrateVolume(volumeInfo, destPool, diskOffering);
         return volFactory.getVolume(newVol.getId());
     }
 
@@ -1410,13 +1410,14 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
     @Override
     @DB
-    public Volume migrateVolume(Volume volume, StoragePool destPool) throws StorageUnavailableException {
+    public Volume migrateVolume(Volume volume, StoragePool destPool, DiskOffering newDiskOffering) throws StorageUnavailableException {
         String volumeToString = getVolumeIdentificationInfos(volume);
 
         VolumeInfo vol = volFactory.getVolume(volume.getId());
         if (vol == null){
             throw new CloudRuntimeException(String.format("Volume migration failed because volume [%s] is null.", volumeToString));
         }
+        vol.addPayload(newDiskOffering);
         if (destPool == null) {
             throw new CloudRuntimeException("Volume migration failed because the destination storage pool is not available.");
         }
@@ -1545,7 +1546,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
         logger.debug("Offline VM migration was not done up the stack in VirtualMachineManager. Trying to migrate the VM here.");
         for (Map.Entry<Volume, StoragePool> entry : volumeStoragePoolMap.entrySet()) {
-            Volume result = migrateVolume(entry.getKey(), entry.getValue());
+            Volume result = migrateVolume(entry.getKey(), entry.getValue(), null);
             if (result == null) {
                 return false;
             }
@@ -2006,7 +2007,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             } else if (task.type == VolumeTaskType.MIGRATE) {
                 store = (PrimaryDataStore) dataStoreMgr.getDataStore(task.pool.getId(), DataStoreRole.Primary);
                 updateVolumeSize(store, task.volume);
-                vol = migrateVolume(task.volume, store);
+                vol = migrateVolume(task.volume, store, null);
             } else if (task.type == VolumeTaskType.RECREATE) {
                 Pair<VolumeVO, DataStore> result = recreateVolume(task.volume, vm, dest);
                 store = (PrimaryDataStore) dataStoreMgr.getDataStore(result.second().getId(), DataStoreRole.Primary);
