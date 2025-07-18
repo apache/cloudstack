@@ -166,7 +166,7 @@ export default {
         },
         {
           title: this.$t('label.vlan'),
-          dataIndex: 'vlanid'
+          dataIndex: 'vlan'
         },
         {
           title: this.$t('label.startip'),
