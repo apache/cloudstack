@@ -286,7 +286,17 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     @Override
     public Answer executeRequest(Command cmd) {
-        logger.debug(LogUtils.logGsonWithoutException("Executing command %s [%s].", cmd.getClass().getSimpleName(), cmd));
+        if (cmd instanceof DownloadCommand) {
+            DownloadCommand safeCmd = new DownloadCommand((DownloadCommand) cmd);
+            DataStoreTO store = safeCmd.getDataStore();
+            if (store instanceof S3TO) {
+                ((S3TO) store).setAccessKey("***REDACTED***");
+                ((S3TO) store).setSecretKey("***REDACTED***");
+            }
+            logger.debug(LogUtils.logGsonWithoutException("Executing command %s [%s].", safeCmd.getClass().getSimpleName(), safeCmd));
+        } else {
+            logger.debug(LogUtils.logGsonWithoutException("Executing command %s [%s].", cmd.getClass().getSimpleName(), cmd));
+        }        
         if (cmd instanceof DownloadProgressCommand) {
             return _dlMgr.handleDownloadCommand(this, (DownloadProgressCommand)cmd);
         } else if (cmd instanceof DownloadCommand) {
