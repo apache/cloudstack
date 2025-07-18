@@ -246,9 +246,13 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             if (Objects.isNull(storagePool)) {
                 throw new CloudRuntimeException("Unable to find storage pool associated to the volume");
             }
-            String volumePathPrefix = String.format("/mnt/%s", storagePool.getUuid());
+            String volumePathPrefix;
             if (ScopeType.HOST.equals(storagePool.getScope())) {
                 volumePathPrefix = storagePool.getPath();
+            } else if (Storage.StoragePoolType.SharedMountPoint.equals(storagePool.getPoolType())) {
+                volumePathPrefix = storagePool.getPath();
+            } else {
+                volumePathPrefix = String.format("/mnt/%s", storagePool.getUuid());
             }
             volumePaths.add(String.format("%s/%s", volumePathPrefix, volume.getPath()));
         }
