@@ -797,7 +797,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         NetworkVO ret_network = null;
         for (NetworkVO nw : networks) {
             try {
-                checkAccountNetworkPermissions(account, nw);
+                checkNetworkPermissions(account, nw);
             } catch (PermissionDeniedException e) {
                 continue;
             }
