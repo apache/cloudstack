@@ -20,6 +20,7 @@
 package org.apache.cloudstack.storage.to;
 
 import com.cloud.agent.api.LogLevel;
+import com.cloud.offering.DiskOffering;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 
 import com.cloud.agent.api.to.DataObjectType;
@@ -116,8 +117,8 @@ public class VolumeObjectTO extends DownloadableObjectTO implements DataTO {
         iopsWriteRate = volume.getIopsWriteRate();
         iopsWriteRateMax = volume.getIopsWriteRateMax();
         iopsWriteRateMaxLength = volume.getIopsWriteRateMaxLength();
-        cacheMode = volume.getCacheMode();
         hypervisorType = volume.getHypervisorType();
+        setCacheMode(volume.getCacheMode());
         setDeviceId(volume.getDeviceId());
         this.migrationOptions = volume.getMigrationOptions();
         this.directDownload = volume.isDirectDownload();
@@ -343,6 +344,10 @@ public class VolumeObjectTO extends DownloadableObjectTO implements DataTO {
     }
 
     public void setCacheMode(DiskCacheMode cacheMode) {
+        if (DiskCacheMode.HYPERVISOR_DEFAULT.equals(cacheMode) && !Hypervisor.HypervisorType.KVM.equals(hypervisorType)) {
+            this.cacheMode = DiskOffering.DiskCacheMode.NONE;
+            return;
+        }
         this.cacheMode = cacheMode;
     }
 
