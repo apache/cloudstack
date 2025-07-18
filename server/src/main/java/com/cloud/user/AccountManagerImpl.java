@@ -650,6 +650,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return false;
     }
 
+    @Override
     public boolean isResourceDomainAdmin(Long accountId) {
         if (accountId != null) {
             AccountVO acct = _accountDao.findById(accountId);

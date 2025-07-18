@@ -423,6 +423,11 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
+    public boolean isResourceDomainAdmin(Long accountId) {
+        return false;
+    }
+
+    @Override
     public boolean isNormalUser(long accountId) {
         // TODO Auto-generated method stub
         return false;
