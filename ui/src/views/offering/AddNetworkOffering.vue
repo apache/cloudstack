@@ -248,6 +248,7 @@
             <tooltip-label :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description"/>
           </template>
           <a-select
+            :getPopupContainer="(trigger) => trigger.parentNode"
             showSearch
             optionFilterProp="label"
             v-model:value="form.serviceofferingid"

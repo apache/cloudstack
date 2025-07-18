@@ -47,6 +47,7 @@
             <tooltip-label :title="$t('label.systemvmtype')" :tooltip="apiParams.systemvmtype.description"/>
           </template>
           <a-select
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.systemvmtype"
             showSearch
             optionFilterProp="label"
@@ -214,6 +215,7 @@
             <tooltip-label :title="$t('label.deploymentplanner')" :tooltip="apiParams.deploymentplanner.description"/>
           </template>
           <a-select
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.deploymentplanner"
             showSearch
             optionFilterProp="label"
@@ -245,6 +247,7 @@
         </a-form-item>
         <a-form-item name="pcidevice" ref="pcidevice" :label="$t('label.gpu')" v-if="!isSystem">
           <a-select
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.pcidevice"
             showSearch
             optionFilterProp="label"
@@ -260,6 +263,7 @@
         </a-form-item>
         <a-form-item name="vgputype" ref="vgputype" :label="$t('label.vgputype')" v-if="vGpuVisible">
           <a-select
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.vgputype"
             showSearch
             optionFilterProp="label"
@@ -306,9 +310,9 @@
           <a-select
             id="zone-selection"
             mode="multiple"
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.zoneid"
             showSearch
-            :getPopupContainer="(trigger) => trigger.parentNode"
             optionFilterProp="label"
             :filterOption="(input, option) => {
               return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
@@ -333,6 +337,7 @@
             <tooltip-label :title="$t('label.vmware.storage.policy')" :tooltip="apiParams.storagepolicy.description"/>
           </template>
           <a-select
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.storagepolicy"
             :placeholder="apiParams.storagepolicy.description"
             showSearch
@@ -521,6 +526,7 @@
                   </template>
                   <a-select
                     mode="tags"
+                    :getPopupContainer="(trigger) => trigger.parentNode"
                     v-model:value="form.storagetags"
                     showSearch
                     optionFilterProp="value"
@@ -560,6 +566,7 @@
               <br /><br />
               <a-form-item :label="$t('label.disk.offerings')" name="diskofferingid" ref="diskofferingid">
                 <a-select
+                  :getPopupContainer="(trigger) => trigger.parentNode"
                   v-model:value="form.diskofferingid"
                   :loading="loading"
                   :placeholder="$t('label.diskoffering')">

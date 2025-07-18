@@ -202,6 +202,7 @@
             <tooltip-label :title="$t('label.storagetags')" :tooltip="apiParams.tags.description"/>
           </template>
           <a-select
+            :getPopupContainer="(trigger) => trigger.parentNode"
             mode="tags"
             v-model:value="form.tags"
             showSearch
@@ -275,6 +276,7 @@
             <tooltip-label :title="$t('label.vmware.storage.policy')" :tooltip="apiParams.storagepolicy.description"/>
           </template>
           <a-select
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.storagepolicy"
             :placeholder="apiParams.storagepolicy.description"
             showSearch
