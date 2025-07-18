@@ -9551,8 +9551,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (!status) {
                 UserVmVO vmVO = _vmDao.findById(vmId);
                 expunge(vmVO);
-                logger.debug("Successfully cleaned up VM {} after create instance from backup failed", vmId);
-                throw new CloudRuntimeException("Unable to stop the instance before restore");
+                logger.debug("Successfully cleaned up Instance {} after create Instance from backup failed", vmId);
+                throw new CloudRuntimeException("Unable to stop the Instance before restore");
             }
 
             Long isoId = vm.getIsoId();
@@ -9568,9 +9568,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             UserVmVO vmVO = _vmDao.findById(vmId);
             try {
                 expunge(vmVO);
-                logger.debug("Successfully cleaned up VM {} after create instance from backup failed", vmId);
+                logger.debug("Successfully cleaned up Instance {} after create Instance from backup failed", vmId);
             } catch (Exception cleanupException) {
-                logger.debug("Failed to cleanup VM {} after create instance from backup failed", vmId, cleanupException);
+                logger.debug("Failed to cleanup Instance {} after create Instance from backup failed", vmId, cleanupException);
             }
             throw e;
         }

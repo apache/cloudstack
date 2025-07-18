@@ -1019,8 +1019,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         List<DiskOfferingInfo> dataDiskOfferingsInfoFromBackup = getDataDiskOfferingListFromBackup(backup);
         int index = 0;
         if (dataDiskOfferingsInfo.size() != dataDiskOfferingsInfoFromBackup.size()) {
-            throw new InvalidParameterValueException("Unable to restore VM with the current backup " +
-                    "as the backup has different number of disks as the VM");
+            throw new InvalidParameterValueException("Unable to create Instance from Backup " +
+                    "as the backup has a different number of disks than the Instance.");
         }
         for (DiskOfferingInfo diskOfferingInfo : dataDiskOfferingsInfo) {
             if (index < dataDiskOfferingsInfoFromBackup.size()) {
@@ -1070,7 +1070,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             if (volume.getType() == Volume.Type.DATADISK) {
                 DiskOfferingVO diskOffering = diskOfferingDao.findByUuid(volume.getDiskOfferingId());
                 if (diskOffering == null || diskOffering.getState().equals(DiskOffering.State.Inactive)) {
-                    throw new CloudRuntimeException("Unable to find the disk offering with uuid (" + volume.getDiskOfferingId() + ") stored in backup. Please specify a valid disk offering id while creating the instance");
+                    throw new CloudRuntimeException("Unable to find the disk offering with uuid (" + volume.getDiskOfferingId() + ") stored in backup. " +
+                            "Please specify a valid disk offering id while creating the instance");
                 }
                 Long size = volume.getSize() / (1024 * 1024 * 1024);
                 diskOfferingInfoList.add(new DiskOfferingInfo(diskOffering, size, volume.getMinIops(), volume.getMaxIops(), volume.getDeviceId()));
@@ -1093,7 +1094,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         String networkIdsString = backup.getDetail(ApiConstants.NETWORK_IDS);
         if (networkIdsString == null) {
-            throw new CloudRuntimeException("Backup doesn't contain network information. Please specify atleast one valid network while creating instance");
+            throw new CloudRuntimeException("Backup doesn't contain network information. " +
+                    "Please specify at least one valid network while creating instance");
         }
         List<String> networkUuids = List.of(networkIdsString.split(","));
 
@@ -1117,7 +1119,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         for (String networkUuid: networkUuids) {
             Network network = networkDao.findByUuid(networkUuid);
             if (network == null) {
-                throw new CloudRuntimeException("Unable to find network with the uuid " + networkUuid + "stored in backup. Please specify a valid network id while creating the instance");
+                throw new CloudRuntimeException("Unable to find network with the uuid " + networkUuid + "stored in backup. " +
+                        "Please specify a valid network id while creating the instance");
             }
             Long networkId = network.getId();
             Network.IpAddresses ipAddresses = null;
@@ -1147,12 +1150,12 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(vmId);
         if (vm == null) {
-            throw new CloudRuntimeException("VM ID " + backup.getVmId() + " couldn't be found on existing or removed VMs");
+            throw new CloudRuntimeException("Instance with ID " + backup.getVmId() + " couldn't be found.");
         }
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
 
         if (vm.getRemoved() != null) {
-            throw new CloudRuntimeException("The VM could not be found");
+            throw new CloudRuntimeException("Instance with ID " + backup.getVmId() + " couldn't be found.");
         }
         if (!vm.getState().equals(VirtualMachine.State.Stopped)) {
             throw new CloudRuntimeException("The VM should be in stopped state");
@@ -1165,7 +1168,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         List<VolumeVO> vmVolumes = volumeDao.findByInstance(vmId);
         if (vmVolumes.size() != backupVolumes.size()) {
-            throw new CloudRuntimeException("Unable to restore VM with the current backup as the backup has different number of disks as the VM");
+            throw new CloudRuntimeException("Unable to create Instance from backup as the backup has a different number of disks than the Instance");
         }
 
         int index = 0;
@@ -1181,11 +1184,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(backup.getBackupOfferingId());
         if (offering == null) {
-            throw new CloudRuntimeException("Failed to find backup offering of the VM backup.");
+            throw new CloudRuntimeException("Failed to find backup offering");
         }
         final BackupProvider backupProvider = getBackupProvider(offering.getProvider());
         if (!backupProvider.supportsInstanceFromBackup()) {
-            throw new CloudRuntimeException("Create instance from VM is not supported by the " + offering.getProvider() + " plugin.");
+            throw new CloudRuntimeException("Create instance from backup is not supported by the " + offering.getProvider() + " provider.");
         }
 
         String backupDetailsInMessage = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backup, "uuid", "externalId", "newVMId", "type", "status", "date");
@@ -1193,8 +1196,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         try {
             updateVmState(vm, VirtualMachine.Event.RestoringRequested, VirtualMachine.State.Restoring);
             updateVolumeState(vm, Volume.Event.RestoreRequested, Volume.State.Restoring);
-            eventId = ActionEventUtils.onStartedActionEvent(User.UID_SYSTEM, vm.getAccountId(), EventTypes.EVENT_VM_BACKUP_RESTORE_TO_VM,
-                    String.format("Restoring backup %s to VM %s", backup.getUuid(), vm.getInstanceName()),
+            eventId = ActionEventUtils.onStartedActionEvent(User.UID_SYSTEM, vm.getAccountId(), EventTypes.EVENT_VM_CREATE_FROM_BACKUP,
+                    String.format("Creating Instance %s from backup %s", vm.getInstanceName(), backup.getUuid()),
                     vm.getId(), ApiCommandResourceType.VirtualMachine.toString(),
                     true, 0);
 
@@ -1211,16 +1214,16 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         } catch (Exception e) {
             updateVolumeState(vm, Volume.Event.RestoreFailed, Volume.State.Ready);
             updateVmState(vm, VirtualMachine.Event.RestoringFailed, VirtualMachine.State.Stopped);
-            logger.error(String.format("Failed to restore backup [%s] to VM %s due to: [%s].", backupDetailsInMessage, vm.getInstanceName(), e.getMessage()), e);
-            ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_BACKUP_RESTORE_TO_VM,
-                    String.format("Failed to restore backup %s to VM %s", backup.getUuid(), vm.getInstanceName()),
+            logger.error(String.format("Failed to create Instance [%s] from backup [%s] due to: [%s].", vm.getInstanceName(), backupDetailsInMessage, e.getMessage()), e);
+            ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE_FROM_BACKUP,
+                    String.format("Failed to create Instance %s from backup %s", vm.getInstanceName(), backup.getUuid()),
                     vm.getId(), ApiCommandResourceType.VirtualMachine.toString(), eventId);
-            throw new CloudRuntimeException(String.format("Error restoring backup [%s] to VM %s.", backupDetailsInMessage, vm.getUuid()));
+            throw new CloudRuntimeException(String.format("Error while creating Instance [%s] from backup [%s].", vm.getUuid(), backupDetailsInMessage));
         }
         updateVolumeState(vm, Volume.Event.RestoreSucceeded, Volume.State.Ready);
         updateVmState(vm, VirtualMachine.Event.RestoringSuccess, VirtualMachine.State.Stopped);
-        ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_BACKUP_RESTORE_TO_VM,
-                String.format("Successfully completed restoring backup %s to VM %s", backup.getUuid(), vm.getInstanceName()),
+        ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_CREATE_FROM_BACKUP,
+                String.format("Successfully created Instance %s from backup %s", vm.getInstanceName(), backup.getUuid()),
                 vm.getId(), ApiCommandResourceType.VirtualMachine.toString(),eventId);
         return true;
     }
@@ -1980,7 +1983,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (org.apache.commons.collections.CollectionUtils.isEmpty(backupsForVm)) {
             removeVMFromBackupOffering(vm.getId(), true);
         } else {
-            throw new CloudRuntimeException(String.format("This VM [uuid: %s, name: %s] has a "
+            throw new CloudRuntimeException(String.format("This Instance [uuid: %s, name: %s] has a "
                             + "Backup Offering [id: %s, external id: %s] with %s backups. Please, remove the backup offering "
                             + "before proceeding to VM exclusion!", vm.getUuid(), vm.getInstanceName(), vm.getBackupOfferingId(),
                     vm.getBackupExternalId(), backupsForVm.size()));
