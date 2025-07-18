@@ -143,7 +143,7 @@ public class ResetVMUserDataCmd extends BaseCmd implements UserCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException {
 
-        CallContext.current().setEventDetails("Vm Id: " + getId());
+        CallContext.current().setEventDetails("VM Id: " + getId());
         UserVm result = _userVmService.resetVMUserData(this);
 
         if (result != null) {
