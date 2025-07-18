@@ -3166,6 +3166,7 @@
 "message.error.sbdomain.username": "Please enter SMB domain username.",
 "message.error.secret.key": "Please enter secret key.",
 "message.error.select": "Please select option.",
+"message.error.select.account.to.dedicate": "Please select an account to dedicate to.",
 "message.error.select.domain.to.dedicate": "Please select domain to dedicate to.",
 "message.error.select.zone.type": "Please select zone type below.",
 "message.error.server": "Please enter server.",
