@@ -134,21 +134,21 @@ export default {
         this.tabs = this.defaultTabs
         return
       }
-      // VPC IPs with source nat have only VPN
-      if (this.resource && this.resource.vpcid && this.resource.issourcenat) {
-        this.tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'vpn'))
-        return
-      }
-      // VPC IPs with vpnenabled have only VPN
-      if (this.resource && this.resource.vpcid && this.resource.vpnenabled) {
-        this.tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'vpn'))
-        return
-      }
-      // VPC IPs with static nat have nothing
-      if (this.resource && this.resource.vpcid && this.resource.isstaticnat) {
-        return
-      }
       if (this.resource && this.resource.vpcid) {
+        // VPC IPs with source nat have only VPN
+        if (this.resource.issourcenat) {
+          this.tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'vpn'))
+          return
+        }
+
+        // VPC IPs with static nat have nothing
+        if (this.resource.isstaticnat) {
+          if (this.resource.virtualmachinetype === 'DomainRouter') {
+            this.tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'vpn'))
+          }
+          return
+        }
+
         // VPC IPs don't have firewall
         let tabs = this.$route.meta.tabs.filter(tab => tab.name !== 'firewall')
 
@@ -194,6 +194,9 @@ export default {
       this.actions = this.$route.meta.actions || []
     },
     fetchNetwork () {
+      if (!this.resource.associatednetworkid) {
+        return null
+      }
       return new Promise((resolve, reject) => {
         getAPI('listNetworks', {
           listAll: true,

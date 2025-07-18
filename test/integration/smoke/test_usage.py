@@ -1732,6 +1732,14 @@ class TestVpnUsage(cloudstackTestCase):
             domainid=cls.virtual_machine.domainid,
             services=cls.services["server"]
         )
+        src_nat_list = PublicIPAddress.list(
+            cls.api_client,
+            accountid=cls.virtual_machine.account,
+            zoneid=cls.virtual_machine.zoneid,
+            domainid=cls.virtual_machine.domainid,
+            issourcenat=True
+        )
+        cls.public_ip = src_nat_list[0]
         return
 
     @classmethod
@@ -1770,11 +1778,11 @@ class TestVpnUsage(cloudstackTestCase):
         # 4. Delete this account.
 
         self.debug("Created VPN with public IP: %s" %
-                   self.public_ip.ipaddress.id)
+                   self.public_ip.ipaddress)
         # Assign VPN to Public IP
         vpn = Vpn.create(
             self.apiclient,
-            self.public_ip.ipaddress.id,
+            self.public_ip.id,
             account=self.account.name,
             domainid=self.account.domainid
         )

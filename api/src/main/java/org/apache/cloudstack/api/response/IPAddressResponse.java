@@ -175,6 +175,10 @@ public class IPAddressResponse extends BaseResponseWithAnnotations implements Co
     @Param(description="true if range is dedicated for System VMs")
     private boolean forSystemVms;
 
+    @SerializedName(ApiConstants.FOR_PROVIDER)
+    @Param(description="true if range is dedicated for external network providers")
+    private boolean forProvider;
+
     public void setIpAddress(String ipAddress) {
         this.ipAddress = ipAddress;
     }
@@ -332,4 +336,6 @@ public class IPAddressResponse extends BaseResponseWithAnnotations implements Co
     public void setForSystemVms(boolean forSystemVms) {
         this.forSystemVms = forSystemVms;
     }
+
+    public void setForProvider(boolean forProvider) { this.forProvider = forProvider; }
 }

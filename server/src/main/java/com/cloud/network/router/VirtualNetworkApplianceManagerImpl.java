@@ -203,6 +203,7 @@ import com.cloud.network.rules.StaticNatImpl;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcService;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpn.Site2SiteVpnManager;
@@ -335,6 +336,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
     @Inject private NetworkService networkService;
     @Inject private VpcService vpcService;
+    @Inject private VpcManager vpcManager;
 
     @Autowired
     @Qualifier("networkHelper")
@@ -2042,6 +2044,12 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             type = "vpcrouter";
             if (_disableRpFilter) {
                 rpFilter = " disable_rp_filter=true";
+            }
+            Vpc vpc = vpcManager.getActiveVpc(router.getVpcId());
+            if (vpcManager.isSrcNatIpRequiredForVpcVr(vpc.getVpcOfferingId())) {
+                buf.append(" has_public_network=true");
+            } else {
+                buf.append(" has_public_network=false");
             }
         } else if (!publicNetwork) {
             type = "dhcpsrvr";

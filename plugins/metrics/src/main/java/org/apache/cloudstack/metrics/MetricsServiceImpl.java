@@ -701,7 +701,7 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
             metricsResponse.setCpuTotal(hostResponse.getCpuNumber(), hostResponse.getCpuSpeed());
             metricsResponse.setCpuUsed(hostResponse.getCpuUsed(), hostResponse.getCpuNumber(), hostResponse.getCpuSpeed());
             metricsResponse.setCpuAllocated(hostResponse.getCpuAllocated(), hostResponse.getCpuNumber(), hostResponse.getCpuSpeed());
-            metricsResponse.setLoadAverage(hostResponse.getAverageLoad());
+            metricsResponse.setCpuAverageLoad(hostResponse.getAverageLoad());
             metricsResponse.setMemTotal(hostResponse.getMemoryTotal());
             metricsResponse.setMemAllocated(hostResponse.getMemoryAllocated());
             metricsResponse.setMemUsed(hostResponse.getMemoryUsed());

@@ -645,6 +645,17 @@ public class NetUtils {
         return String.format("%s/%s", long2Ip(start), netmaskSize);
     }
 
+    public static String getCleanIp4CidrList(final String cidrList) {
+        List<String> cleanCidrs = new ArrayList<>();
+        for (String cidr : cidrList.split(",")) {
+            if (!isValidIp4Cidr(cidr.trim())) {
+                throw new CloudRuntimeException("Invalid CIDR: " + cidr);
+            }
+            cleanCidrs.add(getCleanIp4Cidr(cidr.trim()));
+        }
+        return String.join(",", cleanCidrs);
+    }
+
     public static String[] getIpRangeFromCidr(final String cidr, final long size) {
         assert size < MAX_CIDR : "You do know this is not for ipv6 right?  Keep it smaller than 32 but you have " + size;
         final String[] result = new String[2];
@@ -1840,6 +1851,22 @@ public class NetUtils {
     }
 
     /**
+     Return the size of smallest CIDR which contains the IP range (startIp-endIp).
+     */
+    public static int getBigCidrSizeOfIpRange(long startIp, long endIp) {
+        assert startIp <= MAX_IPv4_ADDR : "Keep startIp smaller than or equals to " + MAX_IPv4_ADDR;
+        assert endIp <= MAX_IPv4_ADDR : "Keep endIp smaller than or equals to " + MAX_IPv4_ADDR;
+        for (int cidrSize = MAX_CIDR; cidrSize >= 1; cidrSize--) {
+            long minStartIp = startIp & (((long) 0xffffffff) >> (MAX_CIDR - cidrSize) << (MAX_CIDR - cidrSize));
+            long maxEndIp = (minStartIp | (((long) 0x1) << (MAX_CIDR - cidrSize)) - 1);
+            if (minStartIp <= startIp && maxEndIp >= endIp) {
+                return cidrSize;
+            }
+        }
+        return MAX_CIDR;
+    }
+
+    /**
      Return the list of pairs (Network Address, Network cidrsize)
      */
     public static List<Pair<Long, Integer>> splitIpRangeIntoSubnets(long startIp, long endIp) {
@@ -1883,5 +1910,12 @@ public class NetUtils {
         final long startNetMask = ip2Long(getCidrNetmask(size));
         final long start = (ip & startNetMask);
         return String.format("%s/%s", long2Ip(start), size);
+    }
+
+    public static String getIpv6Gateway(String ipv6Cidr) {
+        IPv6Network network = IPv6Network.fromString(ipv6Cidr);
+        IPv6Address netrisV6Gateway = network.getFirst().add(1);
+        String netmask = network.getNetmask().toString();
+        return netrisV6Gateway.toString() + "/" + netmask;
     }
 }

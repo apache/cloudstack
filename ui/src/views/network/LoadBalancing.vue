@@ -40,7 +40,7 @@
           <tooltip-label :title="$t('label.sourcecidrlist')" bold :tooltip="createLoadBalancerRuleParams.cidrlist.description" :tooltip-placement="'right'"/>
           <a-input v-model:value="newRule.cidrlist"></a-input>
         </div>
-        <div class="form__item">
+        <div class="form__item" v-if="lbProvider !== 'Netris'">
           <div class="form__label">{{ $t('label.algorithm') }}</div>
           <a-select
             v-model:value="newRule.algorithm"
@@ -64,7 +64,7 @@
             :filterOption="(input, option) => {
               return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option value="tcp-proxy" :label="$t('label.tcp.proxy')">{{ $t('label.tcp.proxy') }}</a-select-option>
+            <a-select-option v-if="lbProvider !== 'Netris'" value="tcp-proxy" :label="$t('label.tcp.proxy')">{{ $t('label.tcp.proxy') }}</a-select-option>
             <a-select-option value="tcp" :label="$t('label.tcp')">{{ $t('label.tcp') }}</a-select-option>
             <a-select-option value="udp" :label="$t('label.udp')">{{ $t('label.udp') }}</a-select-option>
           </a-select>
@@ -134,7 +134,7 @@
         <template v-if="column.key === 'protocol'">
           {{ getCapitalise(record.protocol) }}
         </template>
-        <template v-if="column.key === 'stickiness'">
+        <template v-if="column.key === 'stickiness' && !this.isNetrisZone">
           <a-button @click="() => openStickinessModal(record.id)">
             {{ returnStickinessLabel(record.id) }}
           </a-button>
@@ -409,7 +409,7 @@
           <p class="edit-rule__label">{{ $t('label.name') }}</p>
           <a-input v-focus="true" v-model:value="editRuleDetails.name" />
         </div>
-        <div class="edit-rule__item">
+        <div v-if="lbProvider !== 'Netris'" class="edit-rule__item">
           <p class="edit-rule__label">{{ $t('label.algorithm') }}</p>
           <a-select
             v-model:value="editRuleDetails.algorithm"
@@ -423,7 +423,7 @@
             <a-select-option value="source" :label="$t('label.lb.algorithm.source')">{{ $t('label.lb.algorithm.source') }}</a-select-option>
           </a-select>
         </div>
-        <div class="edit-rule__item">
+        <div v-if="lbProvider !== 'Netris'" class="edit-rule__item">
           <p class="edit-rule__label">{{ $t('label.protocol') }}</p>
           <a-select
             v-model:value="editRuleDetails.protocol"
@@ -781,9 +781,11 @@ export default {
         vmguestip: [],
         cidrlist: ''
       },
+      lbProvider: null,
       addVmModalVisible: false,
       addVmModalLoading: false,
       addVmModalNicLoading: false,
+      zoneloading: false,
       vms: [],
       nics: [],
       totalCount: 0,
@@ -801,10 +803,6 @@ export default {
         {
           title: this.$t('label.privateport'),
           dataIndex: 'privateport'
-        },
-        {
-          key: 'algorithm',
-          title: this.$t('label.algorithm')
         },
         {
           key: 'cidrlist',
@@ -920,7 +918,8 @@ export default {
         expectedcode: undefined,
         urlpath: '/'
       },
-      healthMonitorLoading: false
+      healthMonitorLoading: false,
+      isNetrisZone: false
     }
   },
   computed: {
@@ -979,6 +978,7 @@ export default {
     fetchData () {
       this.fetchListTiers()
       this.fetchLBRules()
+      this.fetchZone()
     },
     fetchListTiers () {
       this.tiers.loading = true
@@ -1071,6 +1071,25 @@ export default {
         }).finally(() => {
           this.loading = false
         })
+      })
+    },
+    fetchZone () {
+      this.zoneloading = true
+      getAPI('listZones', {
+        id: this.resource.zoneid
+      }).then(response => {
+        this.lbProvider = response?.listzonesresponse?.zone?.[0]?.provider || null
+        if (this.lbProvider != null) {
+          this.isNetrisZone = this.lbProvider === 'Netris'
+        }
+      }).finally(() => {
+        this.zoneloading = false
+        if (this.lbProvider !== 'Netris') {
+          this.column.push({
+            key: 'algorithm',
+            title: this.$t('label.algorithm')
+          })
+        }
       })
     },
     returnAlgorithmName (name) {
@@ -1377,7 +1396,7 @@ export default {
       this.selectedRule = rule
       this.editRuleModalVisible = true
       this.editRuleDetails.name = this.selectedRule.name
-      this.editRuleDetails.algorithm = this.selectedRule.algorithm
+      this.editRuleDetails.algorithm = this.lbProvider !== 'Netris' ? this.selectedRule.algorithm : undefined
       this.editRuleDetails.protocol = this.selectedRule.protocol
     },
     handleSubmitEditForm () {

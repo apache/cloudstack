@@ -17,29 +17,44 @@
 
 <template>
   <a-spin :spinning="componentLoading">
-    <div class="new-route" v-ctrl-enter="handleAdd">
-      <a-input v-model:value="newRoute" :placeholder="$t('label.cidr.destination.network')" v-focus="true"></a-input>
+    <div class="form" v-ctrl-enter="handleAdd">
+      <div class="form__label">
+        <a-input v-model:value="newRoute" :placeholder="$t('label.cidr.destination.network')" v-focus="true"></a-input>
+      </div>
+      <div class="form__label" v-if="this.$route.fullPath.startsWith('/vpc')">
+        <div :span="24" class="form__label">via</div>
+      </div>
+      <div class="form__label" v-if="this.$route.fullPath.startsWith('/vpc')">
+        <a-input v-model:value="nexthop" :placeholder="$t('label.nexthop')"></a-input>
+      </div>
       <a-button type="primary" :disabled="!('createStaticRoute' in $store.getters.apis)" @click="handleAdd">{{ $t('label.add.route') }}</a-button>
     </div>
 
-    <div class="list">
-      <div v-for="(route, index) in routes" :key="index" class="list__item">
-        <div class="list__col">
-          <div class="list__label">{{ $t('label.cidr.destination.network') }}</div>
-          <div>{{ route.cidr }}</div>
-        </div>
-        <div class="actions">
-          <tooltip-button :tooltip="$t('label.edit.tags')" icon="tag-outlined" @onClick="() => openTagsModal(route)" />
+    <a-divider/>
+    <a-table
+      size="small"
+      style="overflow-y: auto"
+      :loading="loading"
+      :columns="columns"
+      :dataSource="routes"
+      :pagination="false"
+      :rowKey="record => record.id">
+      <template #bodyCell="{ column, text, record }">
+        <template v-if="column.key === 'vpcgatewayip'">
+          <router-link :to="{ path: '/privategw/' + record.vpcgatewayid }" >{{ text }}</router-link>
+        </template>
+        <template v-if="column.key === 'actions'">
+          <tooltip-button :tooltip="$t('label.edit.tags')" icon="tag-outlined" @onClick="() => openTagsModal(record)" />
           <tooltip-button
             :tooltip="$t('label.delete')"
             :disabled="!('deleteStaticRoute' in $store.getters.apis)"
             icon="delete-outlined"
             type="primary"
             :danger="true"
-            @onClick="() => handleDelete(route)" />
-        </div>
-      </div>
-    </div>
+            @onClick="() => handleDelete(record)" />
+        </template>
+      </template>
+    </a-table>
 
     <a-modal
       :title="$t('label.edit.tags')"
@@ -90,10 +105,12 @@
 import { ref, reactive, toRaw } from 'vue'
 import { getAPI, postAPI } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
+import TooltipLabel from '@/components/widgets/TooltipLabel.vue'
 
 export default {
   name: 'StaticRoutesTab',
   components: {
+    TooltipLabel,
     TooltipButton
   },
   props: {
@@ -114,7 +131,27 @@ export default {
       tagsModalVisible: false,
       tags: [],
       tagsLoading: false,
-      newRoute: null
+      newRoute: null,
+      nexthop: null,
+      columns: [
+        {
+          title: this.$t('label.cidr.destination.network'),
+          dataIndex: 'cidr'
+        },
+        {
+          title: this.$t('label.vpc.gateway.ip'),
+          key: 'vpcgatewayip',
+          dataIndex: 'vpcgatewayip'
+        },
+        {
+          title: this.$t('label.nexthop'),
+          dataIndex: 'nexthop'
+        },
+        {
+          title: this.$t('label.actions'),
+          key: 'actions'
+        }
+      ]
     }
   },
   created () {
@@ -141,10 +178,15 @@ export default {
     },
     fetchData () {
       this.componentLoading = true
-      getAPI('listStaticRoutes', {
-        gatewayid: this.resource.id,
-        listall: true
-      }).then(json => {
+      var params = {
+        listAll: true
+      }
+      if (this.$route.fullPath.startsWith('/vpc')) {
+        params.vpcid = this.resource.id
+      } else {
+        params.gatewayid = this.resource.id
+      }
+      getAPI('listStaticRoutes', params).then(json => {
         this.routes = json.liststaticroutesresponse.staticroute
       }).catch(error => {
         this.$notifyError(error)
@@ -157,10 +199,18 @@ export default {
       if (!this.newRoute) return
 
       this.componentLoading = true
-      postAPI('createStaticRoute', {
-        cidr: this.newRoute,
-        gatewayid: this.resource.id
-      }).then(response => {
+      var params = {
+        cidr: this.newRoute
+      }
+      if (this.$route.fullPath.startsWith('/vpc')) {
+        params.vpcid = this.resource.id
+        if (this.nexthop) {
+          params.nexthop = this.nexthop
+        }
+      } else {
+        params.gatewayid = this.resource.id
+      }
+      postAPI('createStaticRoute', params).then(response => {
         this.$pollJob({
           jobId: response.createstaticrouteresponse.jobid,
           title: this.$t('message.success.add.static.route'),
@@ -367,20 +417,38 @@ export default {
     margin-left: auto;
   }
 
-  .new-route {
+  .form {
     display: flex;
-    padding-top: 10px;
+    margin-right: -20px;
+    margin-bottom: 20px;
+    flex-direction: column;
+    align-items: flex-start;
 
-    input {
-      margin-right: 10px;
+    @media (min-width: 760px) {
+      flex-direction: row;
     }
 
-    button {
-      &:not(:last-child) {
-        margin-right: 10px;
+    &__item {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      padding-right: 20px;
+      margin-bottom: 20px;
+
+      @media (min-width: 760px) {
+        margin-bottom: 0;
       }
+
+      input,
+      .ant-select {
+        margin-top: auto;
+      }
+
     }
 
+    &__label {
+      font-size: 18px;
+      font-weight: bold;
+    }
   }
-
 </style>

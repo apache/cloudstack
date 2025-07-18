@@ -25,6 +25,7 @@ import java.util.Set;
 import javax.inject.Inject;
 
 
+import com.cloud.network.IpAddress;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 
@@ -171,6 +172,11 @@ public class PaloAltoExternalFirewallElement extends ExternalFirewallDeviceManag
 
     @Override
     public boolean release(Network config, NicProfile nic, VirtualMachineProfile vm, ReservationContext context) {
+        return true;
+    }
+
+    @Override
+    public boolean releaseIp(IpAddress ipAddress) {
         return true;
     }
 

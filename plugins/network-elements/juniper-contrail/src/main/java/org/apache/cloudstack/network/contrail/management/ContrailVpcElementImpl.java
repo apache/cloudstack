@@ -201,4 +201,9 @@ public class ContrailVpcElementImpl extends ContrailElementImpl implements Netwo
     public boolean updateVpcSourceNatIp(Vpc vpc, IpAddress address) {
         return true;
     }
+
+    @Override
+    public boolean updateVpc(Vpc vpc, String previousVpcName) {
+        return true;
+    }
 }
