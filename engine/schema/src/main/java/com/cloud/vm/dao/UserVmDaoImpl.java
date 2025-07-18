@@ -57,7 +57,7 @@ import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicVO;
-import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
@@ -130,7 +130,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     private static final int VM_DETAILS_BATCH_SIZE = 100;
 
     @Inject
-    protected UserVmDetailsDao _detailsDao;
+    protected VMInstanceDetailsDao _detailsDao;
     @Inject
     protected NicDao _nicDao;
 
@@ -445,10 +445,10 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
 
         final Map<String, Boolean> visibilityMap = _detailsDao.listDetailsVisibility(vm.getId());
 
-        List<UserVmDetailVO> details = new ArrayList<UserVmDetailVO>();
+        List<VMInstanceDetailVO> details = new ArrayList<VMInstanceDetailVO>();
         for (Map.Entry<String, String> entry : detailsStr.entrySet()) {
             boolean display = !hiddenDetails.contains(entry.getKey()) && visibilityMap.getOrDefault(entry.getKey(), true);
-            details.add(new UserVmDetailVO(vm.getId(), entry.getKey(), entry.getValue(), display));
+            details.add(new VMInstanceDetailVO(vm.getId(), entry.getKey(), entry.getValue(), display));
         }
 
         _detailsDao.saveDetails(details);

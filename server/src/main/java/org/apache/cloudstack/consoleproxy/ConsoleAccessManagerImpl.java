@@ -63,12 +63,12 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.ConsoleSessionVO;
-import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.ConsoleSessionDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.logging.log4j.LogManager;
@@ -92,7 +92,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     @Inject
     private EntityManager entityManager;
     @Inject
-    private UserVmDetailsDao userVmDetailsDao;
+    private VMInstanceDetailsDao vmInstanceDetailsDao;
     @Inject
     private KeysManager keysManager;
     @Inject
@@ -344,8 +344,8 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         if (hostVo.getHypervisorType() == Hypervisor.HypervisorType.KVM &&
                 (hostVo.getResourceState().equals(ResourceState.ErrorInMaintenance) ||
                         hostVo.getResourceState().equals(ResourceState.ErrorInPrepareForMaintenance))) {
-            UserVmDetailVO detailAddress = userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.KVM_VNC_ADDRESS);
-            UserVmDetailVO detailPort = userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.KVM_VNC_PORT);
+            VMInstanceDetailVO detailAddress = vmInstanceDetailsDao.findDetail(vm.getId(), VmDetailConstants.KVM_VNC_ADDRESS);
+            VMInstanceDetailVO detailPort = vmInstanceDetailsDao.findDetail(vm.getId(), VmDetailConstants.KVM_VNC_PORT);
             if (detailAddress != null && detailPort != null) {
                 portInfo = new Pair<>(detailAddress.getValue(), Integer.valueOf(detailPort.getValue()));
             } else {
@@ -372,7 +372,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         }
 
         String sid = vm.getVncPassword();
-        UserVmDetailVO details = userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.KEYBOARD);
+        VMInstanceDetailVO details = vmInstanceDetailsDao.findDetail(vm.getId(), VmDetailConstants.KEYBOARD);
 
         String tag = vm.getUuid();
         String displayName = vm.getHostName();
@@ -416,7 +416,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     }
 
     private String generateConsoleAccessUrl(String rootUrl, ConsoleProxyClientParam param, String token, int vncPort,
-                                            VirtualMachine vm, HostVO hostVo, UserVmDetailVO details) {
+                                            VirtualMachine vm, HostVO hostVo, VMInstanceDetailVO details) {
         StringBuilder sb = new StringBuilder(rootUrl);
         if (param.getHypervHost() != null || !ConsoleProxyManager.NoVncConsoleDefault.value()) {
             sb.append("/ajax?token=" + token);
@@ -450,7 +450,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
                                                                     int port, String sid, String tag, String ticket,
                                                                     String sessionUuid, String addr,
                                                                     String extraSecurityToken, VirtualMachine vm,
-                                                                    HostVO hostVo, UserVmDetailVO details,
+                                                                    HostVO hostVo, VMInstanceDetailVO details,
                                                                     Pair<String, Integer> portInfo, String host,
                                                                     String displayName) {
         ConsoleProxyClientParam param = new ConsoleProxyClientParam();

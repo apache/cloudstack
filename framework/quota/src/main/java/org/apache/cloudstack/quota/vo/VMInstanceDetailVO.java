@@ -26,8 +26,8 @@ import javax.persistence.Table;
 import org.apache.cloudstack.api.ResourceDetail;
 
 @Entity
-@Table(name = "user_vm_details")
-public class UserVmDetailVO implements ResourceDetail {
+@Table(name = "vm_instance_details")
+public class VMInstanceDetailVO implements ResourceDetail {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -45,10 +45,10 @@ public class UserVmDetailVO implements ResourceDetail {
     @Column(name = "display")
     private boolean display = true;
 
-    public UserVmDetailVO() {
+    public VMInstanceDetailVO() {
     }
 
-    public UserVmDetailVO(long vmId, String name, String value, boolean display) {
+    public VMInstanceDetailVO(long vmId, String name, String value, boolean display) {
         this.resourceId = vmId;
         this.name = name;
         this.value = value;
