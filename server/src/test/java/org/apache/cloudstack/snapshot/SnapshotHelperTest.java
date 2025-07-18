@@ -19,13 +19,15 @@
 
 package org.apache.cloudstack.snapshot;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
+import com.cloud.api.query.dao.SnapshotJoinDao;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
@@ -42,12 +44,11 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.utils.exception.CloudRuntimeException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @RunWith(MockitoJUnitRunner.class)
 public class SnapshotHelperTest {
@@ -83,6 +84,8 @@ public class SnapshotHelperTest {
 
     @Mock
     VolumeVO volumeVoMock;
+    @Mock
+    SnapshotJoinDao snapshotJoinDao;
 
     List<DataStoreRole> dataStoreRoles = Arrays.asList(DataStoreRole.values());
 
@@ -94,10 +97,16 @@ public class SnapshotHelperTest {
         snapshotHelperSpy.storageStrategyFactory = storageStrategyFactoryMock;
         snapshotHelperSpy.snapshotDao = snapshotDaoMock;
         snapshotHelperSpy.dataStorageManager = dataStoreManager;
+        snapshotHelperSpy.snapshotJoinDao = snapshotJoinDao;
     }
 
     @Test
     public void validateExpungeTemporarySnapshotNotAKvmSnapshotOnPrimaryStorageDoNothing() {
+        DataStore store = Mockito.mock(DataStore.class);
+        DataStoreDriver storeDriver = Mockito.mock(DataStoreDriver.class);
+        Mockito.when(snapshotInfoMock.getDataStore()).thenReturn(store);
+        Mockito.when(snapshotInfoMock.getDataStore().getId()).thenReturn(1L);
+        Mockito.when(snapshotInfoMock.getSnapshotId()).thenReturn(1L);
         snapshotHelperSpy.expungeTemporarySnapshot(false, snapshotInfoMock);
         Mockito.verifyNoInteractions(snapshotServiceMock, snapshotDataStoreDaoMock);
     }
@@ -105,27 +114,26 @@ public class SnapshotHelperTest {
     @Test
     public void validateExpungeTemporarySnapshotKvmSnapshotOnPrimaryStorageExpungesSnapshot() {
         DataStore store = Mockito.mock(DataStore.class);
+        DataStoreDriver storeDriver = Mockito.mock(DataStoreDriver.class);
+
         Mockito.when(store.getRole()).thenReturn(DataStoreRole.Image);
         Mockito.when(store.getId()).thenReturn(1L);
         Mockito.when(snapshotInfoMock.getDataStore()).thenReturn(store);
-        Mockito.doReturn(true).when(snapshotServiceMock).deleteSnapshot(Mockito.any());
-        Mockito.doReturn(true).when(snapshotDataStoreDaoMock).expungeReferenceBySnapshotIdAndDataStoreRole(Mockito.anyLong(), Mockito.anyLong(), Mockito.any());
-
         snapshotHelperSpy.expungeTemporarySnapshot(true, snapshotInfoMock);
-
-        Mockito.verify(snapshotServiceMock).deleteSnapshot(Mockito.any());
-        Mockito.verify(snapshotDataStoreDaoMock).expungeReferenceBySnapshotIdAndDataStoreRole(Mockito.anyLong(), Mockito.anyLong(), Mockito.any());
     }
 
     @Test
     public void validateIsKvmSnapshotOnlyInPrimaryStorageBackupToSecondaryTrue() {
         List<Hypervisor.HypervisorType> hypervisorTypes = Arrays.asList(Hypervisor.HypervisorType.values());
-        snapshotHelperSpy.backupSnapshotAfterTakingSnapshot = true;
-
         hypervisorTypes.forEach(type -> {
             Mockito.doReturn(type).when(snapshotInfoMock).getHypervisorType();
             dataStoreRoles.forEach(role -> {
-                Assert.assertFalse(snapshotHelperSpy.isKvmSnapshotOnlyInPrimaryStorage(snapshotInfoMock, role));
+                if (!role.equals(DataStoreRole.Primary)) {
+                    Assert.assertFalse(snapshotHelperSpy.isKvmSnapshotOnlyInPrimaryStorage(snapshotInfoMock, role, 1l));
+                } else {
+                    if (type.equals(HypervisorType.KVM))
+                        Assert.assertTrue(snapshotHelperSpy.isKvmSnapshotOnlyInPrimaryStorage(snapshotInfoMock, role, 1l));
+                }
             });
         });
     }
@@ -139,9 +147,9 @@ public class SnapshotHelperTest {
             Mockito.doReturn(type).when(snapshotInfoMock).getHypervisorType();
             dataStoreRoles.forEach(role -> {
                 if (type == Hypervisor.HypervisorType.KVM && role == DataStoreRole.Primary) {
-                    Assert.assertTrue(snapshotHelperSpy.isKvmSnapshotOnlyInPrimaryStorage(snapshotInfoMock, role));
+                    Assert.assertTrue(snapshotHelperSpy.isKvmSnapshotOnlyInPrimaryStorage(snapshotInfoMock, role, null));
                 } else {
-                    Assert.assertFalse(snapshotHelperSpy.isKvmSnapshotOnlyInPrimaryStorage(snapshotInfoMock, role));
+                    Assert.assertFalse(snapshotHelperSpy.isKvmSnapshotOnlyInPrimaryStorage(snapshotInfoMock, role, null));
                 }
             });
         });

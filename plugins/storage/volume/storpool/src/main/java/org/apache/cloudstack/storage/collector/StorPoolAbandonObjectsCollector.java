@@ -19,27 +19,10 @@
 
 package org.apache.cloudstack.storage.collector;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import com.cloud.dc.dao.ClusterDao;
 
-import javax.inject.Inject;
-
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-//import org.apache.cloudstack.storage.datastore.util.StorPoolHelper;
-import org.apache.cloudstack.storage.datastore.util.StorPoolUtil;
-import org.apache.commons.collections.CollectionUtils;
+import com.cloud.storage.dao.SnapshotDetailsDao;
+import com.cloud.storage.dao.SnapshotDetailsVO;
 
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -48,16 +31,47 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.util.StorPoolHelper;
+import org.apache.cloudstack.storage.datastore.util.StorPoolUtil;
+import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpApiResponse;
+import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpConnectionDesc;
+
+import org.apache.commons.collections.CollectionUtils;
+
+import javax.inject.Inject;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class StorPoolAbandonObjectsCollector extends ManagerBase implements Configurable {
     @Inject
     private PrimaryDataStoreDao storagePoolDao;
     @Inject
     private StoragePoolDetailsDao storagePoolDetailsDao;
+    @Inject
+    private SnapshotDetailsDao snapshotDetailsDao;
+    @Inject
+    private ClusterDao clusterDao;
 
     private ScheduledExecutorService _volumeTagsUpdateExecutor;
+    private ScheduledExecutorService snapshotRecoveryCheckExecutor;
     private static final String ABANDON_LOGGER = "/var/log/cloudstack/management/storpool-abandoned-objects";
 
 
@@ -69,6 +83,9 @@ public class StorPoolAbandonObjectsCollector extends ManagerBase implements Conf
             "storpool.snapshot.tags.checkup", "86400",
             "Minimal interval (in seconds) to check and report if StorPool snapshot exists in CloudStack snapshots database",
             false);
+    static final ConfigKey<Integer> snapshotRecoveryFromRemoteCheck = new ConfigKey<Integer>("Advanced", Integer.class,
+            "storpool.snapshot.recovery.from.remote.check", "300",
+            "Minimal interval (in seconds) to check and recover StorPool snapshot from remote", false);
 
     @Override
     public String getConfigComponentName() {
@@ -77,7 +94,7 @@ public class StorPoolAbandonObjectsCollector extends ManagerBase implements Conf
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] { volumeCheckupTagsInterval, snapshotCheckupTagsInterval };
+        return new ConfigKey<?>[] { volumeCheckupTagsInterval, snapshotCheckupTagsInterval, snapshotRecoveryFromRemoteCheck };
     }
 
     @Override
@@ -93,6 +110,8 @@ public class StorPoolAbandonObjectsCollector extends ManagerBase implements Conf
         }
         _volumeTagsUpdateExecutor = Executors.newScheduledThreadPool(2,
                 new NamedThreadFactory("StorPoolAbandonObjectsCollector"));
+        snapshotRecoveryCheckExecutor = Executors.newScheduledThreadPool(1,
+                new NamedThreadFactory("StorPoolSnapshotRecoveryCheck"));
 
         if (volumeCheckupTagsInterval.value() > 0) {
             _volumeTagsUpdateExecutor.scheduleAtFixedRate(new StorPoolVolumesTagsUpdate(),
@@ -101,6 +120,10 @@ public class StorPoolAbandonObjectsCollector extends ManagerBase implements Conf
         if (snapshotCheckupTagsInterval.value() > 0) {
             _volumeTagsUpdateExecutor.scheduleAtFixedRate(new StorPoolSnapshotsTagsUpdate(),
                     snapshotCheckupTagsInterval.value(), snapshotCheckupTagsInterval.value(), TimeUnit.SECONDS);
+        }
+        if (snapshotRecoveryFromRemoteCheck.value() > 0) {
+            snapshotRecoveryCheckExecutor.scheduleAtFixedRate(new StorPoolSnapshotRecoveryCheck(),
+                    snapshotRecoveryFromRemoteCheck.value(), snapshotRecoveryFromRemoteCheck.value(), TimeUnit.SECONDS);
         }
     }
 
@@ -321,5 +344,85 @@ public class StorPoolAbandonObjectsCollector extends ManagerBase implements Conf
             }
         }
         return map;
+    }
+
+    class StorPoolSnapshotRecoveryCheck extends ManagedContextRunnable {
+
+        @Override
+        protected void runInContext() {
+            List<StoragePoolVO> spPools = storagePoolDao.findPoolsByProvider(StorPoolUtil.SP_PROVIDER_NAME);
+            if (CollectionUtils.isEmpty(spPools)) {
+                return;
+            }
+            List<SnapshotDetailsVO> snapshotDetails = snapshotDetailsDao.findDetails(StorPoolUtil.SP_RECOVERED_SNAPSHOT);
+            if (CollectionUtils.isEmpty(snapshotDetails)) {
+                return;
+            }
+            Map<Long, StoragePoolVO> onePoolforZone = new HashMap<>();
+            for (StoragePoolVO storagePoolVO : spPools) {
+                onePoolforZone.put(storagePoolVO.getDataCenterId(), storagePoolVO);
+            }
+            List<Long> recoveredSnapshots = new ArrayList<>();
+            for (StoragePoolVO storagePool : onePoolforZone.values()) {
+                collectRecoveredSnapshotAfterExport(snapshotDetails, recoveredSnapshots, storagePool);
+            }
+            for (Long recoveredSnapshot : recoveredSnapshots) {
+                snapshotDetailsDao.remove(recoveredSnapshot);
+            }
+        }
+
+        private void collectRecoveredSnapshotAfterExport(List<SnapshotDetailsVO> snapshotDetails, List<Long> recoveredSnapshots, StoragePoolVO storagePool) {
+            try {
+                logger.debug(String.format("Checking StorPool recovered snapshots for zone [%s]",
+                        storagePool.getDataCenterId()));
+                SpConnectionDesc conn = StorPoolUtil.getSpConnection(storagePool.getUuid(),
+                        storagePool.getId(), storagePoolDetailsDao, storagePoolDao);
+                JsonArray arr = StorPoolUtil.snapshotsList(conn);
+                List<String> snapshots = snapshotsForRecovery(arr);
+                if (snapshots.isEmpty()) {
+                    return;
+                }
+                for (SnapshotDetailsVO snapshot : snapshotDetails) {
+                    String[] snapshotOnRemote = snapshot.getValue().split(";");
+                    if (snapshotOnRemote.length != 2) {
+                        continue;
+                    }
+                    String name = snapshot.getValue().split(";")[0];
+                    String location = snapshot.getValue().split(";")[1];
+                    if (name == null || location == null) {
+                        StorPoolUtil.spLog("Could not find name or location for the snapshot %s", snapshot.getValue());
+                        continue;
+                    }
+                    if (snapshots.contains(name)) {
+                        findRecoveredSnapshots(recoveredSnapshots, conn, snapshot, name, location);
+                    }
+                }
+            } catch (Exception e) {
+                logger.debug(String.format("Could not collect StorPool recovered snapshots %s", e.getMessage()));
+            }
+        }
+
+        private void findRecoveredSnapshots(List<Long> recoveredSnapshots, SpConnectionDesc conn, SnapshotDetailsVO snapshot, String name, String location) {
+            Long clusterId = StorPoolHelper.findClusterIdByGlobalId(StorPoolUtil.getSnapshotClusterId(name, conn), clusterDao);
+            conn = StorPoolHelper.getSpConnectionDesc(conn, clusterId);
+            SpApiResponse resp = StorPoolUtil.snapshotUnexport(name, location, conn);
+            if (resp.getError() == null) {
+                StorPoolUtil.spLog("Unexport of snapshot %s was successful", name);
+                recoveredSnapshots.add(snapshot.getId());
+            } else {
+                StorPoolUtil.spLog("Could not recover StorPool snapshot %s", resp.getError());
+            }
+        }
+    }
+
+    private static List<String> snapshotsForRecovery(JsonArray arr) {
+        List<String> snapshots = new ArrayList<>();
+        for (int i = 0; i < arr.size(); i++) {
+            boolean recoveringFromRemote = arr.get(i).getAsJsonObject().get("recoveringFromRemote").getAsBoolean();
+            if (!recoveringFromRemote) {
+               snapshots.add(arr.get(i).getAsJsonObject().get("name").getAsString());
+            }
+        }
+        return snapshots;
     }
 }
