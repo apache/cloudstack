@@ -502,16 +502,12 @@ public class NoVncClient {
         return nioSocketConnection.readServerInit();
     }
 
-    public int getNextBytes() {
-        return nioSocketConnection.readNextBytes();
+    public int readAvailableDataIntoBuffer(ByteBuffer buffer, int maxSize) {
+        return nioSocketConnection.readAvailableDataIntoBuffer(buffer, maxSize);
     }
 
     public boolean isTLSConnectionEstablished() {
         return nioSocketConnection.isTLSConnection();
-    }
-
-    public void readBytes(byte[] arr, int len) {
-        nioSocketConnection.readNextByteArray(arr, len);
     }
 
     public void processHandshakeSecurityType(int secType, String vmPassword, String host, int port) {
