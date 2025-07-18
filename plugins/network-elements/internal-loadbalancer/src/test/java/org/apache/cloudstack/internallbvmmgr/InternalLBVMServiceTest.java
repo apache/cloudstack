@@ -16,6 +16,9 @@
 // under the License.
 package org.apache.cloudstack.internallbvmmgr;
 
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.nullable;
 
 import java.lang.reflect.Field;
@@ -24,13 +27,17 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.event.ActionEventUtils;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.lb.InternalLoadBalancerVMService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.BDDMockito;
 import org.mockito.Matchers;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -82,6 +89,8 @@ public class InternalLBVMServiceTest extends TestCase {
     @Inject
     AccountDao _accountDao;
 
+    private MockedStatic<ActionEventUtils> actionEventUtilsMocked;
+
     long validVmId = 1L;
     long nonExistingVmId = 2L;
     long nonInternalLbVmId = 3L;
@@ -120,11 +129,16 @@ public class InternalLBVMServiceTest extends TestCase {
         Mockito.when(_domainRouterDao.findById(validVmId)).thenReturn(validVm);
         Mockito.when(_domainRouterDao.findById(nonExistingVmId)).thenReturn(null);
         Mockito.when(_domainRouterDao.findById(nonInternalLbVmId)).thenReturn(nonInternalLbVm);
+
+        actionEventUtilsMocked = Mockito.mockStatic(ActionEventUtils.class);
+        BDDMockito.given(ActionEventUtils.onStartedActionEvent(anyLong(), anyLong(), anyString(), anyString(), anyLong(), anyString(), anyBoolean(), anyLong()))
+                .willReturn(1L);
     }
 
     @Override
     @After
     public void tearDown() {
+        actionEventUtilsMocked.close();
         CallContext.unregister();
     }
 
