@@ -46,6 +46,9 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.api.query.dao.ManagementServerJoinDao;
 import com.cloud.api.query.vo.ManagementServerJoinVO;
+import com.cloud.gpu.VgpuProfileVO;
+import com.cloud.gpu.dao.VgpuProfileDao;
+import com.cloud.offering.ServiceOffering;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
@@ -954,6 +957,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private HostPodDao _hostPodDao;
     @Inject
+    private VgpuProfileDao vgpuProfileDao;
+    @Inject
     private VMInstanceDao _vmInstanceDao;
     @Inject
     private VolumeDao _volumeDao;
@@ -1544,6 +1549,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw new InvalidParameterValueException("Unsupported operation, VM uses Local storage, cannot migrate");
         }
 
+        validateVgpuProfileForVmMigration(vmProfile);
+
         final Type hostType = srcHost.getType();
         Pair<List<HostVO>, Integer> allHostsPair = null;
         List<HostVO> allHosts = null;
@@ -1668,6 +1675,17 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         return new Ternary<>(otherHosts, suitableHosts, requiresStorageMotion);
+    }
+
+    private void validateVgpuProfileForVmMigration(final VirtualMachineProfile vmProfile) {
+        // Validate if the VM is using a vGPU profile that supports migration.
+        ServiceOffering serviceOffering = vmProfile.getServiceOffering();
+        if (serviceOffering.getVgpuProfileId() != null) {
+            VgpuProfileVO vgpuProfile = vgpuProfileDao.findById(serviceOffering.getVgpuProfileId());
+            if (vgpuProfile == null || "passthrough".equals(vgpuProfile.getName())) {
+                throw new InvalidParameterValueException("Unsupported operation, VM uses host passthrough, cannot migrate");
+            }
+        }
     }
 
     /**

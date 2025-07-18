@@ -30,16 +30,19 @@ import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.gpu.HostGpuGroupsVO;
+import com.cloud.gpu.VgpuProfileVO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceState.Event;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.UpdateClusterCmd;
@@ -650,9 +653,15 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
     }
 
     @Override
-    public boolean isGPUDeviceAvailable(final Host host, final String groupName, final String vgpuType) {
+    public boolean isGPUDeviceAvailable(ServiceOffering offering, Host host, Long vmId) {
         // TODO Auto-generated method stub
         return false;
+    }
+
+    @Override
+    public GPUDeviceTO getGPUDevice(VirtualMachine vm, long hostId, VgpuProfileVO vgpuProfile, int gpuCount) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
     @Override
@@ -669,6 +678,16 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
 
     @Override
     public void updateGPUDetails(final long hostId, final HashMap<String, HashMap<String, VgpuTypesInfo>> deviceDetails) {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void updateGPUDetailsForVmStop(final VirtualMachine vm, final GPUDeviceTO gpuDeviceTO) {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void updateGPUDetailsForVmStart(long hostId, long vmId, GPUDeviceTO gpuDevice) {
         // TODO Auto-generated method stub
     }
 

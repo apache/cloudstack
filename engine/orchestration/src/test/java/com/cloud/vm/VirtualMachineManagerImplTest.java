@@ -40,6 +40,7 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import com.cloud.resource.ResourceManager;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -215,6 +216,8 @@ public class VirtualMachineManagerImplTest {
     private VpcDao vpcDao;
     @Mock
     private EntityManager _entityMgr;
+    @Mock
+    private ResourceManager _resourceMgr;
     @Mock
     private DeploymentPlanningManager _dpMgr;
     @Mock

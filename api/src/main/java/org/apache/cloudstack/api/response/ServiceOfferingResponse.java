@@ -234,6 +234,46 @@ public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
     @Param(description = "true if virtual machine root disk will be encrypted on storage", since = "4.18")
     private Boolean encryptRoot;
 
+    @SerializedName(ApiConstants.GPU_CARD_ID)
+    @Param(description = "the ID of the gpu card to which service offering is linked", since = "4.21")
+    private String gpuCardId;
+
+    @SerializedName(ApiConstants.GPU_CARD_NAME)
+    @Param(description = "the name of the gpu card to which service offering is linked", since = "4.21")
+    private String gpuCardName;
+
+    @SerializedName(ApiConstants.VGPU_PROFILE_ID)
+    @Param(description = "the ID of the vgpu profile to which service offering is linked", since = "4.21")
+    private String vgpuProfileId;
+
+    @SerializedName(ApiConstants.VGPU_PROFILE_NAME)
+    @Param(description = "the name of the vgpu profile to which service offering is linked", since = "4.21")
+    private String vgpuProfileName;
+
+    @SerializedName(ApiConstants.VIDEORAM)
+    @Param(description = "the video RAM size in MB")
+    private Long videoRam;
+
+    @SerializedName(ApiConstants.MAXHEADS)
+    @Param(description = "the maximum number of display heads")
+    private Long maxHeads;
+
+    @SerializedName(ApiConstants.MAXRESOLUTIONX)
+    @Param(description = "the maximum X resolution")
+    private Long maxResolutionX;
+
+    @SerializedName(ApiConstants.MAXRESOLUTIONY)
+    @Param(description = "the maximum Y resolution")
+    private Long maxResolutionY;
+
+    @SerializedName(ApiConstants.GPU_COUNT)
+    @Param(description = "the count of GPUs to attach ", since = "4.21")
+    private Integer gpuCount;
+
+    @SerializedName(ApiConstants.GPU_DISPLAY)
+    @Param(description = "whether GPU device is used for display or not ", since = "4.21")
+    private Boolean gpuDisplay;
+
     @SerializedName(ApiConstants.PURGE_RESOURCES)
     @Param(description = "Whether to cleanup VM and its associated resource upon expunge", since = "4.20")
     private Boolean purgeResources;
@@ -583,6 +623,86 @@ public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
     }
 
     public void setEncryptRoot(Boolean encrypt) { this.encryptRoot = encrypt; }
+
+    public String getVgpuProfileName() {
+        return vgpuProfileName;
+    }
+
+    public void setVgpuProfileName(String vgpuProfileName) {
+        this.vgpuProfileName = vgpuProfileName;
+    }
+
+    public Long getVideoRam() {
+        return videoRam;
+    }
+
+    public void setVideoRam(Long videoRam) {
+        this.videoRam = videoRam;
+    }
+
+    public Long getMaxHeads() {
+        return maxHeads;
+    }
+
+    public void setMaxHeads(Long maxHeads) {
+        this.maxHeads = maxHeads;
+    }
+
+    public Long getMaxResolutionX() {
+        return maxResolutionX;
+    }
+
+    public void setMaxResolutionX(Long maxResolutionX) {
+        this.maxResolutionX = maxResolutionX;
+    }
+
+    public Long getMaxResolutionY() {
+        return maxResolutionY;
+    }
+
+    public void setMaxResolutionY(Long maxResolutionY) {
+        this.maxResolutionY = maxResolutionY;
+    }
+
+    public String getVgpuProfileId() {
+        return vgpuProfileId;
+    }
+
+    public void setVgpuProfileId(String vgpuProfileId) {
+        this.vgpuProfileId = vgpuProfileId;
+    }
+
+    public String getGpuCardName() {
+        return gpuCardName;
+    }
+
+    public void setGpuCardName(String gpuCardName) {
+        this.gpuCardName = gpuCardName;
+    }
+
+    public String getGpuCardId() {
+        return gpuCardId;
+    }
+
+    public void setGpuCardId(String gpuCardId) {
+        this.gpuCardId = gpuCardId;
+    }
+
+    public Integer getGpuCount() {
+        return gpuCount;
+    }
+
+    public void setGpuCount(Integer gpuCount) {
+        this.gpuCount = gpuCount;
+    }
+
+    public Boolean getGpuDisplay() {
+        return gpuDisplay;
+    }
+
+    public void setGpuDisplay(Boolean gpuDisplay) {
+        this.gpuDisplay = gpuDisplay;
+    }
 
     public void setPurgeResources(Boolean purgeResources) {
         this.purgeResources = purgeResources;

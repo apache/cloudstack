@@ -163,7 +163,7 @@
       </chart-card>
     </a-col>
     <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }" v-if="'listVirtualMachines' in $store.getters.apis">
-      <chart-card :loading="loading" class="dashboard-card">
+      <chart-card :loading="loading" class="dashboard-compute">
         <template #title>
           <div class="center">
             <h3>
@@ -200,7 +200,7 @@
         </a-row>
         <a-divider style="margin: 1px 0px; border-width: 0px;"/>
         <div
-          v-for="usageType in ['vm', 'cpu', 'memory', 'project']"
+          v-for="usageType in ['vm', 'cpu', 'memory', 'gpu', 'project']"
           :key="usageType">
           <div v-if="usageType + 'total' in entity">
             <div>
@@ -606,6 +606,8 @@ export default {
           return 'label.cpunumber'
         case 'memory':
           return 'label.memory'
+        case 'gpu':
+          return 'label.gpu'
         case 'primarystorage':
           return 'label.primary.storage'
         case 'secondarystorage':
@@ -679,6 +681,13 @@ export default {
   .dashboard-card {
     width: 100%;
     min-height: 420px;
+  }
+
+  .dashboard-compute {
+    width: 100%;
+    overflow-x:hidden;
+    overflow-y: scroll;
+    max-height: 420px;
   }
 
   .dashboard-storage {

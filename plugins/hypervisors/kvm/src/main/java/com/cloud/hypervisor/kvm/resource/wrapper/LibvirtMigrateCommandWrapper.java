@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -40,9 +41,13 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
+import com.cloud.agent.api.VgpuTypesInfo;
+import com.cloud.agent.api.to.GPUDeviceTO;
+import com.cloud.hypervisor.kvm.resource.LibvirtGpuDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtXMLParser;
 import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -225,6 +230,8 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             }
 
             xmlDesc = updateVmSharesIfNeeded(command, xmlDesc, libvirtComputingResource);
+
+            xmlDesc = updateGpuDevicesIfNeeded(command, xmlDesc, libvirtComputingResource);
 
             dconn = libvirtUtilitiesHelper.retrieveQemuConnection(destinationUri);
 
@@ -417,6 +424,116 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         return setOfLabels;
     }
 
+        String updateGpuDevicesIfNeeded(MigrateCommand migrateCommand, String xmlDesc, LibvirtComputingResource libvirtComputingResource)
+            throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        GPUDeviceTO gpuDevice = migrateCommand.getVirtualMachine().getGpuDevice();
+        if (gpuDevice == null || CollectionUtils.isEmpty(gpuDevice.getGpuDevices())) {
+            logger.debug("No GPU device to update for VM [{}].", migrateCommand.getVmName());
+            return xmlDesc;
+        }
+
+        List<VgpuTypesInfo> devices = gpuDevice.getGpuDevices();
+        logger.info("Updating GPU devices for VM [{}] during migration. Number of devices: {}",
+                    migrateCommand.getVmName(), devices.size());
+
+        // Parse XML and find devices element
+        DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
+        DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+        Document document;
+        try (InputStream inputStream = IOUtils.toInputStream(xmlDesc, StandardCharsets.UTF_8)) {
+            document = docBuilder.parse(inputStream);
+        }
+
+        NodeList devicesList = document.getElementsByTagName("devices");
+        if (devicesList.getLength() == 0) {
+            logger.warn("No devices section found in XML for VM [{}]", migrateCommand.getVmName());
+            return xmlDesc;
+        }
+
+        Element devicesElement = (Element) devicesList.item(0);
+
+        // Remove existing GPU hostdev elements and add new ones
+        removeExistingGpuHostdevElements(devicesElement);
+        addNewGpuHostdevElements(document, devicesElement, devices);
+
+        String newXmlDesc = LibvirtXMLParser.getXml(document);
+        logger.debug("Updated XML configuration for VM [{}] with new GPU devices", migrateCommand.getVmName());
+
+        return newXmlDesc;
+    }
+
+    /**
+     * Removes existing GPU hostdev elements from the devices section.
+     * GPU devices are identified as hostdev elements with type='pci' or type='mdev'.
+     */
+    private void removeExistingGpuHostdevElements(Element devicesElement) {
+        NodeList hostdevNodes = devicesElement.getElementsByTagName("hostdev");
+        List<Node> nodesToRemove = new ArrayList<>();
+
+        for (int i = 0; i < hostdevNodes.getLength(); i++) {
+            Node hostdevNode = hostdevNodes.item(i);
+            if (hostdevNode.getNodeType() == Node.ELEMENT_NODE) {
+                Element hostdevElement = (Element) hostdevNode;
+                String hostdevType = hostdevElement.getAttribute("type");
+
+                // Remove hostdev elements that represent GPU devices (type='pci' or type='mdev')
+                if ("pci".equals(hostdevType) || "mdev".equals(hostdevType)) {
+                    // Additional check: ensure this is actually a GPU device by checking mode='subsystem'
+                    String mode = hostdevElement.getAttribute("mode");
+                    if ("subsystem".equals(mode)) {
+                        nodesToRemove.add(hostdevNode);
+                    }
+                }
+            }
+        }
+
+        // Remove the nodes
+        for (Node node : nodesToRemove) {
+            devicesElement.removeChild(node);
+        }
+
+        logger.debug("Removed {} existing GPU hostdev elements", nodesToRemove.size());
+    }
+
+    /**
+     * Adds new GPU hostdev elements to the devices section based on the GPU devices
+     * allocated on the destination host.
+     */
+    private void addNewGpuHostdevElements(Document document, Element devicesElement, List<VgpuTypesInfo> devices)
+            throws ParserConfigurationException, IOException, SAXException {
+        if (devices.isEmpty()) {
+            return;
+        }
+
+        // Reuse parser for efficiency
+        DocumentBuilderFactory factory = ParserUtils.getSaferDocumentBuilderFactory();
+        DocumentBuilder builder = factory.newDocumentBuilder();
+
+        for (VgpuTypesInfo deviceInfo : devices) {
+            Element hostdevElement = createGpuHostdevElement(document, deviceInfo, builder);
+            devicesElement.appendChild(hostdevElement);
+            logger.debug("Added new GPU hostdev element for device: {} (type: {}, busAddress: {})",
+                         deviceInfo.getDeviceName(), deviceInfo.getDeviceType(), deviceInfo.getBusAddress());
+        }
+    }
+
+    /**
+     * Creates a hostdev element for a GPU device using LibvirtGpuDef.
+     */
+    private Element createGpuHostdevElement(Document document, VgpuTypesInfo deviceInfo, DocumentBuilder builder)
+            throws IOException, SAXException {
+        // Generate GPU XML using LibvirtGpuDef
+        LibvirtGpuDef gpuDef = new LibvirtGpuDef();
+        gpuDef.defGpu(deviceInfo);
+        String gpuXml = gpuDef.toString();
+
+        // Parse and import into target document
+        try (InputStream xmlStream = IOUtils.toInputStream(gpuXml, StandardCharsets.UTF_8)) {
+            Document gpuDocument = builder.parse(xmlStream);
+            Element hostdevElement = gpuDocument.getDocumentElement();
+            return (Element) document.importNode(hostdevElement, true);
+        }
+    }
 
     /**
      * Checks if the CPU shares are equal in the source host and destination host.

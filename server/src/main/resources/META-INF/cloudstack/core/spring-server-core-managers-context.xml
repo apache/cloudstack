@@ -391,4 +391,7 @@
     </bean>
 
     <bean id="guiThemeServiceImpl" class="org.apache.cloudstack.gui.theme.GuiThemeServiceImpl" />
+
+    <bean id="GpuServiceImpl" class="org.apache.cloudstack.gpu.GpuServiceImpl" />
+
 </beans>
