@@ -60,7 +60,7 @@
           apiName="listBackups"
           :resource="resource"
           :params="{virtualmachineid: dataResource.id}"
-          :columns="['name', 'status', 'size', 'virtualsize', 'type', 'created']"
+          :columns="['name', 'status', 'size', 'virtualsize', 'type', 'intervaltype', 'created']"
           :routerlinks="(record) => { return { name: '/backup/' + record.id } }"
           :showSearch="false"/>
       </a-tab-pane>

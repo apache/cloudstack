@@ -127,9 +127,12 @@ export default {
       this.dataPreFill.templateid = this.vmdetails.templateid
       this.dataPreFill.isoid = this.vmdetails.templateid
       this.dataPreFill.allowIpAddressesFetch = !this.resource.virtualmachineid
-      this.dataPreFill.networkids = (this.vmdetails.networkids || '').split(',')
-      this.dataPreFill.ipAddresses = (this.vmdetails.ipaddresses || '').split(',')
-      this.dataPreFill.macAddresses = (this.vmdetails.macaddresses || '').split(',')
+      if (this.vmdetails.nics) {
+        const nics = JSON.parse(this.vmdetails.nics)
+        this.dataPreFill.networkids = nics.map(nic => nic.networkid)
+        this.dataPreFill.ipAddresses = nics.map(nic => nic.ipaddress)
+        this.dataPreFill.macAddresses = nics.map(nic => nic.macaddress)
+      }
       const volumes = JSON.parse(this.resource.volumes)
       const disksdetails = volumes.map((volume, index) => ({
         name: volume.path,

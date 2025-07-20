@@ -371,6 +371,7 @@ public class ApiConstants {
     public static final String NETMASK = "netmask";
     public static final String NEW_NAME = "newname";
     public static final String NIC = "nic";
+    public static final String NICS = "nics";
     public static final String NIC_NETWORK_LIST = "nicnetworklist";
     public static final String NIC_IP_ADDRESS_LIST = "nicipaddresslist";
     public static final String NIC_MULTIQUEUE_NUMBER = "nicmultiqueuenumber";
@@ -486,6 +487,7 @@ public class ApiConstants {
     public static final String SERIAL = "serial";
     public static final String SERVICE_IP = "serviceip";
     public static final String SERVICE_OFFERING_ID = "serviceofferingid";
+    public static final String SERVICE_OFFERING_NAME = "serviceofferingname";
     public static final String SESSIONKEY = "sessionkey";
     public static final String SHOW_CAPACITIES = "showcapacities";
     public static final String SHOW_REMOVED = "showremoved";

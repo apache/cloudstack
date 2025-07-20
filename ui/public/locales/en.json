@@ -1191,6 +1191,7 @@
 "label.instance": "Instance",
 "label.instance.conversion.support": "Instance Conversion Supported",
 "label.instance.groups": "Instance groups",
+"label.instance.metadata": "Instance metadata",
 "label.instance.name": "Instance name",
 "label.instancename": "Internal name",
 "label.instanceport": "Instance port",

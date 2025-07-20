@@ -17,7 +17,9 @@
 
 package org.apache.cloudstack.backup.dao;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -25,6 +27,8 @@ import java.util.Objects;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.offering.ServiceOffering;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.template.VirtualMachineTemplate;
@@ -52,7 +56,10 @@ import com.cloud.utils.db.TransactionCallback;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.network.Network;
+import com.cloud.network.dao.NetworkDao;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements BackupDao {
 
@@ -76,6 +83,12 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
 
     @Inject
     BackupDetailsDao backupDetailsDao;
+
+    @Inject
+    ServiceOfferingDao serviceOfferingDao;
+
+    @Inject
+    NetworkDao networkDao;
 
     private SearchBuilder<BackupVO> backupSearch;
     private GenericSearchBuilder<BackupVO, Long> CountBackupsByAccount;
@@ -286,6 +299,36 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
         return customSearchIncludingRemoved(sc, null);
     }
 
+    Map<String, String> getDetailsFromBackupDetails(Long backupId) {
+        Map<String, String> details = backupDetailsDao.listDetailsKeyPairs(backupId, true);
+        if (details == null) {
+            return null;
+        }
+        if (details.containsKey(ApiConstants.SERVICE_OFFERING_ID)) {
+            ServiceOffering serviceOffering = serviceOfferingDao.findByUuid(details.get(ApiConstants.SERVICE_OFFERING_ID));
+            if (serviceOffering != null) {
+                details.put(ApiConstants.SERVICE_OFFERING_ID, serviceOffering.getUuid());
+                details.put(ApiConstants.SERVICE_OFFERING_NAME, serviceOffering.getName());
+            }
+        }
+        if (details.containsKey(ApiConstants.NICS)) {
+            Type type = new TypeToken<List<Map<String, String>>>() {}.getType();
+            List<Map<String, String>> nics = new Gson().fromJson(details.get(ApiConstants.NICS), type);
+
+            for (Map<String, String> nic : nics) {
+                String networkUuid = nic.get(ApiConstants.NETWORK_ID);
+                if (networkUuid != null) {
+                    Network network = networkDao.findByUuid(networkUuid);
+                    if (network != null) {
+                        nic.put(ApiConstants.NETWORK_NAME, network.getName());
+                    }
+                }
+            }
+            details.put(ApiConstants.NICS, new Gson().toJson(nics));
+        }
+        return details;
+    }
+
     @Override
     public BackupResponse newBackupResponse(Backup backup, Boolean listVmDetails) {
         VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
@@ -333,16 +376,18 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
         response.setZone(zone.getName());
 
         if (Boolean.TRUE.equals(listVmDetails)) {
-            Map<String, String> details = backupDetailsDao.listDetailsKeyPairs(backup.getId(), true);
-            details.put(ApiConstants.HYPERVISOR, vm.getHypervisorType().toString());
+            Map<String, String> vmDetails = new HashMap<>();
+            vmDetails.put(ApiConstants.HYPERVISOR, vm.getHypervisorType().toString());
             VirtualMachineTemplate template = templateDao.findById(vm.getTemplateId());
             if (template != null) {
-                details.put(ApiConstants.TEMPLATE_ID, template.getUuid());
-                details.put(ApiConstants.IS_ISO, String.valueOf(template.getFormat().equals(Storage.ImageFormat.ISO)));
+                vmDetails.put(ApiConstants.TEMPLATE_ID, template.getUuid());
+                vmDetails.put(ApiConstants.TEMPLATE_NAME, template.getName());
+                vmDetails.put(ApiConstants.IS_ISO, String.valueOf(template.getFormat().equals(Storage.ImageFormat.ISO)));
             }
-            if (details != null) {
-                response.setVmDetails(details);
-            }
+
+            Map<String, String> details = getDetailsFromBackupDetails(backup.getId());
+            vmDetails.putAll(details);
+            response.setVmDetails(vmDetails);
         }
 
         response.setObjectName("backup");
