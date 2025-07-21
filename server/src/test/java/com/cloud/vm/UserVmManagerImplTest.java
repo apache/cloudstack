@@ -3367,11 +3367,11 @@ public class UserVmManagerImplTest {
         when(backupDao.findById(backupId)).thenReturn(backup);
 
         UserVmVO userVmVO = new UserVmVO();
-        userVmVO.setTemplateId(templateId);
         when(userVmDao.findByIdIncludingRemoved(vmId)).thenReturn(userVmVO);
         VMTemplateVO template = mock(VMTemplateVO.class);
         when(template.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
-        when(templateDao.findById(templateId)).thenReturn(template);
+        when(backup.getDetail(ApiConstants.TEMPLATE_ID)).thenReturn("template-uuid");
+        when(templateDao.findByUuid("template-uuid")).thenReturn(template);
 
         DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
         when(backup.getDetail(ApiConstants.SERVICE_OFFERING_ID)).thenReturn("service-offering-uuid");
@@ -3542,11 +3542,11 @@ public class UserVmManagerImplTest {
         when(backupDao.findById(backupId)).thenReturn(backup);
 
         UserVmVO userVmVO = new UserVmVO();
-        userVmVO.setTemplateId(isoId);
         when(userVmDao.findByIdIncludingRemoved(vmId)).thenReturn(userVmVO);
         VMTemplateVO iso = mock(VMTemplateVO.class);
         when(iso.getFormat()).thenReturn(Storage.ImageFormat.ISO);
-        when(templateDao.findById(isoId)).thenReturn(iso);
+        when(backup.getDetail(ApiConstants.TEMPLATE_ID)).thenReturn("iso-uuid");
+        when(templateDao.findByUuid("iso-uuid")).thenReturn(iso);
 
         ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
         DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);

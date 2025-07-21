@@ -41,12 +41,14 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -58,9 +60,11 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -111,6 +115,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.atLeastOnce;
+
+import javax.inject.Inject;
 
 @RunWith(MockitoJUnitRunner.class)
 public class BackupManagerTest {
@@ -180,6 +186,9 @@ public class BackupManagerTest {
 
     @Mock
     private NetworkService networkService;
+
+    @Mock
+    private UserVmDetailsDao userVmDetailsDao;
 
     private AccountVO account;
     private UserVO user;
@@ -808,11 +817,21 @@ public class BackupManagerTest {
         Long vmId = 1L;
         VirtualMachine vm = mock(VirtualMachine.class);
         when(vm.getServiceOfferingId()).thenReturn(1L);
+        when(vm.getTemplateId()).thenReturn(2L);
         when(vm.getId()).thenReturn(vmId);
 
         ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
         when(serviceOffering.getUuid()).thenReturn("service-offering-uuid");
         when(serviceOfferingDao.findById(1L)).thenReturn(serviceOffering);
+        VMTemplateVO template = mock(VMTemplateVO.class);
+        when(template.getUuid()).thenReturn("template-uuid");
+        when(vmTemplateDao.findById(2L)).thenReturn(template);
+
+        UserVmDetailVO userVmDetail = mock(UserVmDetailVO.class);
+        when(userVmDetail.getName()).thenReturn("mocked-detail-name");
+        when(userVmDetail.getValue()).thenReturn("mocked-detail-value");
+        List<UserVmDetailVO> vmDetails = Collections.singletonList(userVmDetail);
+        when(userVmDetailsDao.listDetails(vmId)).thenReturn(vmDetails);
 
         UserVmJoinVO userVmJoinVO = mock(UserVmJoinVO.class);
         when(userVmJoinVO.getNetworkUuid()).thenReturn("mocked-network-uuid");
@@ -822,7 +841,8 @@ public class BackupManagerTest {
         Map<String, String> details = backupManager.getBackupDetailsFromVM(vm);
 
         assertEquals("service-offering-uuid", details.get(ApiConstants.SERVICE_OFFERING_ID));
-        assertEquals("mocked-network-uuid", details.get(ApiConstants.NETWORK_IDS));
+        assertEquals("[{\"networkid\":\"mocked-network-uuid\"}]", details.get(ApiConstants.NICS));
+        assertEquals("{\"mocked-detail-name\":\"mocked-detail-value\"}", details.get(ApiConstants.VM_SETTINGS));
     }
 
     @Test
@@ -1284,7 +1304,6 @@ public class BackupManagerTest {
 
         // Test case 1: Missing network information
         Backup backup1 = mock(Backup.class);
-        when(backup1.getDetail(ApiConstants.NETWORK_IDS)).thenReturn(null);
         List<Long> networkIds1 = new ArrayList<>();
         try {
             backupManager.getIpToNetworkMapFromBackup(backup1, true, networkIds1);
@@ -1295,10 +1314,10 @@ public class BackupManagerTest {
 
         // Test case 2: IP preservation enabled with IP information
         Backup backup2 = mock(Backup.class);
-        when(backup2.getDetail(ApiConstants.NETWORK_IDS)).thenReturn(networkUuid1 + "," + networkUuid2);
-        when(backup2.getDetail(ApiConstants.IP_ADDRESSES)).thenReturn(ip1 + "," + ip2);
-        when(backup2.getDetail(ApiConstants.IP6_ADDRESSES)).thenReturn(ipv61 + "," + ipv62);
-        when(backup2.getDetail(ApiConstants.MAC_ADDRESSES)).thenReturn(mac1 + "," + mac2);
+        String nicsJson = String.format("[{\"networkid\":\"%s\",\"ipaddress\":\"%s\",\"ip6address\":\"%s\",\"macaddress\":\"%s\"}," +
+                        "{\"networkid\":\"%s\",\"ipaddress\":\"%s\",\"ip6address\":\"%s\",\"macaddress\":\"%s\"}]",
+                        networkUuid1, ip1, ipv61, mac1, networkUuid2, ip2, ipv62, mac2);
+        when(backup2.getDetail(ApiConstants.NICS)).thenReturn(nicsJson);
 
         NetworkVO network1 = mock(NetworkVO.class);
         NetworkVO network2 = mock(NetworkVO.class);
@@ -1324,10 +1343,8 @@ public class BackupManagerTest {
 
         // Test case 3: IP preservation enabled but missing IP information
         Backup backup3 = mock(Backup.class);
-        when(backup3.getDetail(ApiConstants.NETWORK_IDS)).thenReturn(networkUuid1);
-        when(backup3.getDetail(ApiConstants.IP_ADDRESSES)).thenReturn(null);
-        when(backup3.getDetail(ApiConstants.IP6_ADDRESSES)).thenReturn(null);
-        when(backup3.getDetail(ApiConstants.MAC_ADDRESSES)).thenReturn(null);
+        nicsJson = String.format("[{\"networkid\":\"%s\"}]", networkUuid1);
+        when(backup3.getDetail(ApiConstants.NICS)).thenReturn(nicsJson);
 
         List<Long> networkIds3 = new ArrayList<>();
         Map<Long, Network.IpAddresses> result3 = backupManager.getIpToNetworkMapFromBackup(backup3, true, networkIds3);
@@ -1339,7 +1356,8 @@ public class BackupManagerTest {
 
         // Test case 4: IP preservation disabled
         Backup backup4 = mock(Backup.class);
-        when(backup4.getDetail(ApiConstants.NETWORK_IDS)).thenReturn(networkUuid1);
+        nicsJson = String.format("[{\"networkid\":\"%s\"}]", networkUuid1);
+        when(backup4.getDetail(ApiConstants.NICS)).thenReturn(nicsJson);
 
         List<Long> networkIds4 = new ArrayList<>();
         Map<Long, Network.IpAddresses> result4 = backupManager.getIpToNetworkMapFromBackup(backup4, false, networkIds4);
