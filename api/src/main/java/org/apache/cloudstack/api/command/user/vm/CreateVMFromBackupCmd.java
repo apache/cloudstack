@@ -50,9 +50,6 @@ import com.cloud.vm.VirtualMachine;
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class CreateVMFromBackupCmd extends BaseDeployVMCmd {
 
-    @Inject
-    BackupManager backupManager;
-
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////

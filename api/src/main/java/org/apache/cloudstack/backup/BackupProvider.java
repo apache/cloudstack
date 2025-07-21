@@ -104,13 +104,13 @@ public interface BackupProvider {
     void syncBackupMetrics(Long zoneId);
 
     /**
-     * This method should TODO
-     * @param vm the machine to get restore point for
+     * Returns a list of Backup.RestorePoint
+     * @param vm the machine to get the restore points for
      */
     List<Backup.RestorePoint> listRestorePoints(VirtualMachine vm);
 
     /**
-     * This method should TODO
+     * Creates and returns an entry in the backups table by getting the information from restorePoint and vm.
      *
      * @param restorePoint the restore point to create a backup for
      * @param vm           The machine for which to create a backup

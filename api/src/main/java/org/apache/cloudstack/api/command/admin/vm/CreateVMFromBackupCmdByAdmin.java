@@ -39,10 +39,10 @@ import com.cloud.vm.VirtualMachine;
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class CreateVMFromBackupCmdByAdmin extends CreateVMFromBackupCmd implements AdminCmd {
 
-    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "destination Pod ID to deploy the VM to - parameter available for root admin only", since = "4.13")
+    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "destination Pod ID to deploy the VM to - parameter available for root admin only", since = "4.21")
     private Long podId;
 
-    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, description = "destination Cluster ID to deploy the VM to - parameter available for root admin only", since = "4.13")
+    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, description = "destination Cluster ID to deploy the VM to - parameter available for root admin only", since = "4.21")
     private Long clusterId;
 
     public Long getPodId() {
