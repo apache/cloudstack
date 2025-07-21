@@ -138,7 +138,7 @@ class TestNetworkACL(cloudstackTestCase):
             self.services["lbrule"],
             ipaddressid=public_ip.ipaddress.id,
             accountid=self.account.name,
-            vpcid= vpc.id,
+            vpcid=vpc.id,
             networkid=ntwk.id,
             domainid=self.account.domainid)
 
