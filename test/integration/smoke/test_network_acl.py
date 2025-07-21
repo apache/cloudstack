@@ -148,7 +148,7 @@ class TestNetworkACL(cloudstackTestCase):
             self.virtual_machine,
             self.services["natrule"],
             ipaddressid=public_ip.ipaddress.id,
-            vpcid= vpc.id,
+            vpcid=vpc.id,
             networkid=ntwk.id)
 
     @classmethod
