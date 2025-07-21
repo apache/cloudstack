@@ -16,9 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.host;
 
-import com.cloud.host.Host;
-import com.cloud.user.Account;
-import com.cloud.vm.VmDetailConstants;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -29,9 +29,8 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.GuestOSCategoryResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.cloud.host.Host;
+import com.cloud.user.Account;
 
 @APICommand(name = "updateHost", description = "Updates a host.", responseObject = HostResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -110,13 +109,7 @@ public class UpdateHostCmd extends BaseCmd {
     }
 
     public Map<String, String> getExternalDetails() {
-        Map<String, String> customparameterMap = convertDetailsToMap(externalDetails);
-        Map<String, String> details = new HashMap<>();
-        for (String key : customparameterMap.keySet()) {
-            String value = customparameterMap.get(key);
-            details.put(VmDetailConstants.EXTERNAL_DETAIL_PREFIX + key, value);
-        }
-        return details;
+        return convertExternalDetailsToMap(externalDetails);
     }
 
     /////////////////////////////////////////////////////

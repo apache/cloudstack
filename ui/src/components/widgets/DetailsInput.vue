@@ -97,17 +97,25 @@ export default {
       editBuffer: {}
     }
   },
+  created () {
+    if (this.value && typeof this.value === 'object') {
+      this.tableData = this.mapToTableData(this.value)
+    }
+  },
   watch: {
     value (newVal) {
-      this.tableData = Object.entries(newVal || {}).map(([key, value]) => ({
-        key,
-        value,
-        editing: false
-      }))
+      this.tableData = this.mapToTableData(newVal)
     }
   },
   emits: ['update:value'],
   methods: {
+    mapToTableData (obj) {
+      return Object.entries(obj || {}).map(([key, value]) => ({
+        key,
+        value,
+        editing: false
+      }))
+    },
     addEntry () {
       if (!this.newKey || !this.newValue) return
       const existingIndex = this.tableData.findIndex(row => row.key === this.newKey)

@@ -2791,7 +2791,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         if (MapUtils.isNotEmpty(externalDetails)) {
-            updateExternalHypervisorDetails(hostId, externalDetails);
+            _hostDetailsDao.replaceExternalDetails(hostId, externalDetails);
         }
 
         if (url != null) {
@@ -2809,16 +2809,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 isUpdateFromHostHealthCheck, isUpdateHostAllocation, annotation);
 
         return updatedHost;
-    }
-
-    private void updateExternalHypervisorDetails(long hostId, Map<String, String> externalDetails) {
-        HostVO host = _hostDao.findById(hostId);
-        _hostDao.loadDetails(host);
-        for (Map.Entry<String, String> entry : externalDetails.entrySet()) {
-            host.getDetails().put(entry.getKey(), entry.getValue());
-        }
-
-        _hostDao.saveDetails(host);
     }
 
     private void sendAlertAndAnnotationForAutoEnableDisableKVMHostFeature(HostVO host, String allocationState,

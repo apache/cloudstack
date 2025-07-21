@@ -134,7 +134,7 @@ public class AddClusterCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.EXTERNAL_DETAILS,
             type = CommandType.MAP,
-            description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].endpoint.url=urlvalue",
+            description = "Details in key/value pairs to be added to the extension-resource mapping. Use the format externaldetails[i].<key>=<value>. Example: externaldetails[0].endpoint.url=https://example.com",
             since = "4.21.0")
     protected Map externalDetails;
 

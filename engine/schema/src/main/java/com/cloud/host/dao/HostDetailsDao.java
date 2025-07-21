@@ -33,5 +33,6 @@ public interface HostDetailsDao extends GenericDao<DetailVO, Long> {
 
     List<DetailVO> findByName(String name);
 
-    List<DetailVO> findByNameAndValue(String name, String value);
+    void replaceExternalDetails(long hostId, Map<String, String> details);
+
 }
