@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.backup;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -53,9 +54,11 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.DomainManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.VirtualMachineManager;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -149,8 +152,10 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
@@ -190,6 +195,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     private VMTemplateDao vmTemplateDao;
     @Inject
     private UserVmJoinDao userVmJoinDao;
+    @Inject
+    private UserVmDetailsDao userVmDetailsDao;
     @Inject
     private NetworkDao networkDao;
     @Inject
@@ -324,12 +331,24 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     @Override
-    public Map<String, String> getVmDetailsForBackup(VirtualMachine vm) {
+    public Map<String, String> getBackupDetailsFromVM(VirtualMachine vm) {
         HashMap<String, String> details = new HashMap<>();
-        ServiceOffering serviceOffering =  serviceOfferingDao.findById(vm.getServiceOfferingId());
-        details.put(ApiConstants.SERVICE_OFFERING_ID, serviceOffering.getUuid());
-        List<UserVmJoinVO> userVmJoinVOs = userVmJoinDao.searchByIds(vm.getId());
 
+        ServiceOffering serviceOffering = serviceOfferingDao.findById(vm.getServiceOfferingId());
+        details.put(ApiConstants.SERVICE_OFFERING_ID, serviceOffering.getUuid());
+        VirtualMachineTemplate template = vmTemplateDao.findById(vm.getTemplateId());
+        details.put(ApiConstants.TEMPLATE_ID, template.getUuid());
+
+        List<UserVmDetailVO> vmDetails = userVmDetailsDao.listDetails(vm.getId());
+        HashMap<String, String> settings = new HashMap<>();
+        for (UserVmDetailVO detail : vmDetails) {
+            settings.put(detail.getName(), detail.getValue());
+        }
+        if (!settings.isEmpty()) {
+            details.put(ApiConstants.VM_SETTINGS, new Gson().toJson(settings));
+        }
+
+        List<UserVmJoinVO> userVmJoinVOs = userVmJoinDao.searchByIds(vm.getId());
         if (userVmJoinVOs != null && !userVmJoinVOs.isEmpty()) {
             List<Map<String, String>> nics = new ArrayList<>();
             Set<String> seen = new HashSet<>();
@@ -1102,7 +1121,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                     "Please specify at least one valid network while creating instance");
         }
 
-        List<Map<String, String>> nics = new Gson().fromJson(nicsJson, List.class);
+        Type type = new TypeToken<List<Map<String, String>>>(){}.getType();
+        List<Map<String, String>> nics = new Gson().fromJson(nicsJson, type);
 
         for (Map<String, String> nic : nics) {
             String networkUuid = nic.get(ApiConstants.NETWORK_ID);

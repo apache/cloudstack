@@ -607,6 +607,7 @@ public class ApiConstants {
     public static final String VM_DETAILS = "vmdetails";
     public static final String VM_LIMIT = "vmlimit";
     public static final String VM_TOTAL = "vmtotal";
+    public static final String VM_SETTINGS = "vmsettings";
     public static final String VM_TYPE = "vmtype";
     public static final String VNET = "vnet";
     public static final String IS_VOLATILE = "isvolatile";

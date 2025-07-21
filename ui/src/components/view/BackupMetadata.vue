@@ -7,11 +7,11 @@
         <div style="width: 100%">
           <strong>{{ getFieldLabel(item) }}</strong>
           <br/>
-                      <div v-if="item === 'nics'">
-              <div v-for="(nic, idx) in getNicEntities()" :key="idx">
-                <router-link :to="{ path: '/guestnetwork/' + nic.networkid }">
-                  {{ nic.networkname || nic.networkid }}
-                </router-link>
+          <div v-if="item === 'nics'">
+            <div v-for="(nic, idx) in getNicEntities()" :key="idx">
+              <router-link :to="{ path: '/guestnetwork/' + nic.networkid }">
+                {{ nic.networkname || nic.networkid }}
+              </router-link>
               <br/>
               IP Address: {{ nic.ipaddress }}
               <span v-if="nic.ip6address && nic.ip6address !== 'null'"> | IPv6: {{ nic.ip6address }}</span>
@@ -29,6 +29,14 @@
             <router-link :to="{ path: '/computeoffering/' + backupMetadata[item] }">
               {{ getServiceOfferingDisplayName() }}
             </router-link>
+          </div>
+          <div v-else-if="item === 'vmsettings'">
+            <div v-for="(value, key, index) in getVmSettings()" :key="key">
+              {{ key }}
+              <br/>
+              {{ value }}
+              <div v-if="index < Object.keys(getVmSettings()).length - 1" style="margin: 6px 0; border-bottom: 1px dashed #d9d9d9;"></div>
+            </div>
           </div>
           <div v-else>{{ backupMetadata[item] }}</div>
         </div>
@@ -66,19 +74,22 @@ export default {
       }
       fieldOrder.push('serviceofferingid')
       fieldOrder.push('nics')
+      fieldOrder.push('vmsettings')
 
       return fieldOrder.filter(field => this.backupMetadata[field] !== undefined)
     },
     getNicEntities () {
       if (this.backupMetadata.nics) {
-        const nics = JSON.parse(this.backupMetadata.nics)
-        return nics
+        return JSON.parse(this.backupMetadata.nics)
       }
       return []
     },
     getFieldLabel (field) {
       if (field === 'templateid') {
         return this.backupMetadata.isiso === 'true' ? this.$t('label.iso') : this.$t('label.template')
+      }
+      if (field === 'vmsettings') {
+        return this.$t('label.settings')
       }
       return this.$t('label.' + String(field).toLowerCase())
     },
@@ -93,6 +104,12 @@ export default {
         return this.backupMetadata.serviceofferingname
       }
       return this.backupMetadata.serviceofferingid
+    },
+    getVmSettings () {
+      if (this.backupMetadata.vmsettings) {
+        return JSON.parse(this.backupMetadata.vmsettings)
+      }
+      return {}
     }
   }
 }

@@ -240,7 +240,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         backup.setDomainId(vm.getDomainId());
         backup.setZoneId(vm.getDataCenterId());
         backup.setName(backupManager.getBackupNameFromVM(vm));
-        Map<String, String> details = backupManager.getVmDetailsForBackup(vm);
+        Map<String, String> details = backupManager.getBackupDetailsFromVM(vm);
         backup.setDetails(details);
 
         return backupDao.persist(backup);

@@ -804,7 +804,7 @@ public class BackupManagerTest {
     }
 
     @Test
-    public void testGetVmDetailsForBackup() {
+    public void testGetBackupDetailsFromVM() {
         Long vmId = 1L;
         VirtualMachine vm = mock(VirtualMachine.class);
         when(vm.getServiceOfferingId()).thenReturn(1L);
@@ -819,7 +819,7 @@ public class BackupManagerTest {
         List<UserVmJoinVO> userVmJoinVOs = Collections.singletonList(userVmJoinVO);
         when(userVmJoinDao.searchByIds(vmId)).thenReturn(userVmJoinVOs);
 
-        Map<String, String> details = backupManager.getVmDetailsForBackup(vm);
+        Map<String, String> details = backupManager.getBackupDetailsFromVM(vm);
 
         assertEquals("service-offering-uuid", details.get(ApiConstants.SERVICE_OFFERING_ID));
         assertEquals("mocked-network-uuid", details.get(ApiConstants.NETWORK_IDS));

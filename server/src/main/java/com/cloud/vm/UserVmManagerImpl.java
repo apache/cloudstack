@@ -25,6 +25,7 @@ import static org.apache.cloudstack.api.ApiConstants.MIN_IOPS;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Type;
 import java.net.URLDecoder;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
@@ -400,6 +401,8 @@ import com.cloud.vm.dao.VmStatsDao;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
@@ -9411,7 +9414,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     public UserVm allocateVMFromBackup(CreateVMFromBackupCmd cmd) throws InsufficientCapacityException, ResourceAllocationException, ResourceUnavailableException {
-        //Verify that all objects exist before passing them to the service
         Account owner = _accountService.getActiveAccountById(cmd.getEntityOwnerId());
         Long zoneId = cmd.getZoneId();
         DataCenter zone = _dcDao.findById(zoneId);
@@ -9453,19 +9455,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
         verifyServiceOffering(cmd, serviceOffering);
 
-        Long templateId;
         VirtualMachineTemplate template;
         if (cmd.getTemplateId() != null) {
-            templateId = cmd.getTemplateId();
+            Long templateId = cmd.getTemplateId();
             template = _templateDao.findById(templateId);
             if (template == null) {
                 throw new InvalidParameterValueException("Unable to use template " + templateId);
             }
         } else {
-            templateId = backupVm.getTemplateId();
-            template = _templateDao.findById(templateId);
+            String templateUuid = backup.getDetail(ApiConstants.TEMPLATE_ID);
+            if (templateUuid == null) {
+                throw new CloudRuntimeException("Backup doesn't contain Template uuid. Please specify a valid Template/ISO while creating the instance");
+            }
+            template = _templateDao.findByUuid(templateUuid);
             if (template == null) {
-                throw new CloudRuntimeException("Unable to find template associated with the backup. Please specify a valid template while creating instance");
+                throw new CloudRuntimeException("Unable to find template associated with the backup. Please specify a valid Template/ISO while creating instance");
             }
         }
         verifyTemplate(cmd, template, serviceOffering.getId());
@@ -9534,7 +9538,23 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             ipToNetworkMap = backupManager.getIpToNetworkMapFromBackup(backup, cmd.getPreserveIp(), networkIds);
         }
 
-        return createVirtualMachine(cmd, zone, owner, serviceOffering, template, hypervisorType, diskOfferingId, size, overrideDiskOfferingId, dataDiskOfferingsInfo, networkIds, ipToNetworkMap, null, null);
+        UserVm vm = createVirtualMachine(cmd, zone, owner, serviceOffering, template, hypervisorType, diskOfferingId, size, overrideDiskOfferingId, dataDiskOfferingsInfo, networkIds, ipToNetworkMap, null, null);
+
+        String vmSettingsFromBackup = backup.getDetail(ApiConstants.VM_SETTINGS);
+        if (vm != null && vmSettingsFromBackup != null) {
+            UserVmVO vmVO = _vmDao.findById(vm.getId());
+            Map<String, String> details = userVmDetailsDao.listDetailsKeyPairs(vm.getId());
+            vmVO.setDetails(details);
+
+            Type type = new TypeToken<Map<String, String>>(){}.getType();
+            Map<String, String> vmDetailsFromBackup = new Gson().fromJson(vmSettingsFromBackup, type);
+            for (Map.Entry<String, String> entry : vmDetailsFromBackup.entrySet()) {
+                vmVO.setDetail(entry.getKey(), entry.getValue());
+            }
+            _vmDao.saveDetails(vmVO);
+        }
+
+        return vm;
     }
 
     @Override

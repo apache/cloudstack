@@ -262,7 +262,7 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
 
     void checkDiskOfferingSizeAgainstBackup(List<DiskOfferingInfo> dataDiskOfferingsInfo, Backup backup);
 
-    Map<String, String> getVmDetailsForBackup(VirtualMachine vm);
+    Map<String, String> getBackupDetailsFromVM(VirtualMachine vm);
 
     String createVolumeInfoFromVolumes(List<Volume> vmVolumes);
 

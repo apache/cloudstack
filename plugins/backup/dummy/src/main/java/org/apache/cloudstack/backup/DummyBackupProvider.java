@@ -172,7 +172,7 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
         backup.setName(backupManager.getBackupNameFromVM(vm));
         List<Volume> volumes = new ArrayList<>(volumeDao.findByInstance(vm.getId()));
         backup.setBackedUpVolumes(backupManager.createVolumeInfoFromVolumes(volumes));
-        Map<String, String> details = backupManager.getVmDetailsForBackup(vm);
+        Map<String, String> details = backupManager.getBackupDetailsFromVM(vm);
         backup.setDetails(details);
 
         backup = backupDao.persist(backup);
