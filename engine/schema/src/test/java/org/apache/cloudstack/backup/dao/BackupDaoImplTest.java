@@ -167,6 +167,7 @@ public class BackupDaoImplTest {
         VMTemplateVO template = mock(VMTemplateVO.class);
         when(template.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
         when(template.getUuid()).thenReturn(templateUuid);
+        when(template.getName()).thenReturn("template1");
         when(templateDao.findById(templateId)).thenReturn(template);
         Map<String, String> details = new HashMap<>();
 
@@ -185,7 +186,7 @@ public class BackupDaoImplTest {
         Assert.assertEquals("offering-uuid", response.getBackupOfferingId());
         Assert.assertEquals("test-offering", response.getBackupOffering());
         Assert.assertEquals("MANUAL", response.getIntervalType());
-        Assert.assertEquals("{isiso=false, hypervisor=Simulator, templateid=template-uuid1}", response.getVmDetails().toString());
+        Assert.assertEquals("{isiso=false, hypervisor=Simulator, templatename=template1, templateid=template-uuid1}", response.getVmDetails().toString());
         Assert.assertEquals(true, response.getVmOfferingRemoved());
     }
 }
