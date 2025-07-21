@@ -523,6 +523,7 @@ export default {
           }
           params[key] = values[key]
         }
+        params.forceupdateostype = this.form.forceupdateostype || false
         postAPI('updateTemplate', params).then(json => {
           if (this.userdataid !== null) {
             this.linkUserdataToTemplate(this.userdataid, json.updatetemplateresponse.template.id, this.userdatapolicy)

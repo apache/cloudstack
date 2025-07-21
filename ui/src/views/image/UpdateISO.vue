@@ -310,6 +310,7 @@ export default {
           if (!this.isValidValueForKey(values, key)) continue
           params[key] = values[key]
         }
+        params.forceupdateostype = this.form.forceupdateostype || false
         postAPI('updateIso', params).then(json => {
           if (this.userdataid !== null) {
             this.linkUserdataToTemplate(this.userdataid, json.updateisoresponse.iso.id, this.userdatapolicy)
