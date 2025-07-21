@@ -130,7 +130,7 @@ class TestNetworkACL(cloudstackTestCase):
             self.apiclient,
             zoneid=self.zone.id,
             accountid=self.account.name,
-            domainid= self.domain.id,
+            domainid=self.domain.id,
             vpcid= vpc.id
         )
         LoadBalancerRule.create(
