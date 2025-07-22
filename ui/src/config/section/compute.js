@@ -449,7 +449,7 @@ export default {
           message: (record) => { return record.backupofferingid ? 'message.action.expunge.instance.with.backups' : 'message.action.expunge.instance' },
           docHelp: 'adminguide/virtual_machines.html#deleting-vms',
           dataView: true,
-          show: (record, store) => { return record.hypervisor !== 'External' && ['Destroyed', 'Expunging'].includes(record.state) && store.features.allowuserexpungerecovervm && record.vmtype !== 'sharedfsvm' }
+          show: (record, store) => { return ['Destroyed', 'Expunging'].includes(record.state) && store.features.allowuserexpungerecovervm && record.vmtype !== 'sharedfsvm' }
         },
         {
           api: 'destroyVirtualMachine',
