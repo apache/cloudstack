@@ -63,7 +63,7 @@
   </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { genericCompare } from '@/utils/sort.js'
 import OsLogo from '@/components/widgets/OsLogo'
 
@@ -164,7 +164,7 @@ export default {
         params.directdownload = true
       }
       return new Promise((resolve, reject) => {
-        api('registerTemplate', params).then(json => {
+        postAPI('registerTemplate', params).then(json => {
           const result = json.registertemplateresponse.template[0]
           resolve(result)
         }).catch(error => {
@@ -225,7 +225,7 @@ export default {
       let osTypeId = this.defaultOsTypeId
       this.loading = true
       try {
-        const json = await api('listOsTypes', { keyword: osName, filter: 'name,id' })
+        const json = await getAPI('listOsTypes', { keyword: osName, filter: 'name,id' })
         if (json && json.listostypesresponse && json.listostypesresponse.ostype && json.listostypesresponse.ostype.length > 0) {
           osTypeId = json.listostypesresponse.ostype[0].id
         }
