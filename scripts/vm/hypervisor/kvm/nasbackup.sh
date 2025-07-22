@@ -288,8 +288,8 @@ done
 sanity_checks
 
 if [ "$OP" = "backup" ]; then
-  STATE=$(virsh -c qemu:///system list | grep $VM | awk '{print $3}')
-  if [ "$STATE" = "running" ]; then
+  STATE=$(virsh -c qemu:///system list | awk -v vm="$VM" '$2 == vm {print $3}')
+  if [ -n "$STATE" ] && [ "$STATE" = "running" ]; then
     backup_running_vm
   else
     backup_stopped_vm

@@ -9549,7 +9549,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             Type type = new TypeToken<Map<String, String>>(){}.getType();
             Map<String, String> vmDetailsFromBackup = new Gson().fromJson(vmSettingsFromBackup, type);
             for (Map.Entry<String, String> entry : vmDetailsFromBackup.entrySet()) {
-                vmVO.setDetail(entry.getKey(), entry.getValue());
+                if (!details.containsKey(entry.getKey())) {
+                    vmVO.setDetail(entry.getKey(), entry.getValue());
+                }
             }
             _vmDao.saveDetails(vmVO);
         }
