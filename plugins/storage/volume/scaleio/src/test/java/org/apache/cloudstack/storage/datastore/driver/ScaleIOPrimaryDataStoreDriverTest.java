@@ -555,6 +555,18 @@ public class ScaleIOPrimaryDataStoreDriverTest {
 
     @Test
     public void testGetVolumeSizeRequiredOnPool() {
+        Assert.assertEquals(8L * (1024 * 1024 * 1024),
+                scaleIOPrimaryDataStoreDriver.getVolumeSizeRequiredOnPool(
+                        52428800,
+                        null,
+                        false));
+
+        Assert.assertEquals(8L * (1024 * 1024 * 1024),
+                scaleIOPrimaryDataStoreDriver.getVolumeSizeRequiredOnPool(
+                        52428800,
+                        52428800L,
+                        true));
+
         Assert.assertEquals(16L * (1024 * 1024 * 1024),
                 scaleIOPrimaryDataStoreDriver.getVolumeSizeRequiredOnPool(
                         10L * (1024 * 1024 * 1024),
