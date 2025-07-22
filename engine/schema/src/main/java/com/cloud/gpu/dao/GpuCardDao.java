@@ -33,22 +33,6 @@ public interface GpuCardDao extends GenericDao<GpuCardVO, Long> {
      */
     GpuCardVO findByVendorIdAndDeviceId(String vendorId, String deviceId);
 
-    /**
-     * List all GPU cards by vendor name
-     *
-     * @param vendorName the vendor name
-     * @return list of GpuCardVO
-     */
-    List<GpuCardVO> listByVendorName(String vendorName);
-
-    /**
-     * List all GPU cards by device name
-     *
-     * @param deviceName the device name
-     * @return list of GpuCardVO
-     */
-    List<GpuCardVO> listByDeviceName(String deviceName);
-
     Pair<List<GpuCardVO>, Integer> searchAndCountGpuCards(
             Long id, String keyword, String vendorId, String vendorName,
             String deviceId, String deviceName, boolean activeOnly, Long startIndex, Long pageSize);

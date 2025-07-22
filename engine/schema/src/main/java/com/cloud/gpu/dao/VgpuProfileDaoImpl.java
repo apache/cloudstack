@@ -43,13 +43,6 @@ public class VgpuProfileDaoImpl extends GenericDaoBase<VgpuProfileVO, Long> impl
     }
 
     @Override
-    public VgpuProfileVO findByName(String profileName) {
-        SearchCriteria<VgpuProfileVO> sc = allFieldSearch.create();
-        sc.setParameters("name", profileName);
-        return findOneBy(sc);
-    }
-
-    @Override
     public VgpuProfileVO findByNameAndCardId(String name, long cardId) {
         SearchCriteria<VgpuProfileVO> sc = allFieldSearch.create();
         sc.setParameters("name", name);

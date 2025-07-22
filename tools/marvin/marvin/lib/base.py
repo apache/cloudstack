@@ -3339,6 +3339,14 @@ class Host:
         apiclient.deleteHost(cmd)
         return
 
+    def discoverGpuDevices(self, apiclient):
+        """Discover GPU devices on the host"""
+        # Host must be in maintenance mode before deletion
+        cmd = discoverGpuDevices.discoverGpuDevicesCmd()
+        cmd.id = self.id
+        apiclient.discoverGpuDevices(cmd)
+        return
+
     @classmethod
     def enableMaintenance(cls, apiclient, id):
         """enables maintenance mode Host"""

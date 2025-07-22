@@ -24,14 +24,6 @@ import java.util.List;
 
 public interface VgpuProfileDao extends GenericDao<VgpuProfileVO, Long> {
 
-    /**
-     * Find vGPU profile by name
-     *
-     * @param profileName the vGPU profile name
-     * @return VgpuProfileVO
-     */
-    VgpuProfileVO findByName(String profileName);
-
     VgpuProfileVO findByNameAndCardId(String name, long cardId);
 
     int removeByCardId(long cardId);

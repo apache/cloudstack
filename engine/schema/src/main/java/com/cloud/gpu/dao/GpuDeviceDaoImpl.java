@@ -50,7 +50,7 @@ public class GpuDeviceDaoImpl extends GenericDaoBase<GpuDeviceVO, Long> implemen
     private static final String MANAGED_STATE = "managedState";
     private static final String TYPE = "type";
     private final SearchBuilder<GpuDeviceVO> allFieldSearch;
-    private SearchBuilder<GpuDeviceVO> gpuDevicesForAllocationSearch;
+    private SearchBuilder<GpuDeviceVO> devicesForAllocationSearch;
     @Inject
     private GpuCardDao gpuCardDao;
     @Inject
@@ -67,24 +67,18 @@ public class GpuDeviceDaoImpl extends GenericDaoBase<GpuDeviceVO, Long> implemen
         allFieldSearch.and(PARENT_GPU_DEVICE_ID, allFieldSearch.entity().getParentGpuDeviceId(), SearchCriteria.Op.EQ);
         allFieldSearch.and(VM_ID, allFieldSearch.entity().getVmId(), SearchCriteria.Op.EQ);
         allFieldSearch.done();
+
+        devicesForAllocationSearch = createSearchBuilder();
+        devicesForAllocationSearch.and(HOST_ID, devicesForAllocationSearch.entity().getHostId(), SearchCriteria.Op.EQ);
+        devicesForAllocationSearch.and(VGPU_PROFILE_ID, devicesForAllocationSearch.entity().getVgpuProfileId(), SearchCriteria.Op.IN);
+        devicesForAllocationSearch.and(STATE, devicesForAllocationSearch.entity().getState(), SearchCriteria.Op.EQ);
+        devicesForAllocationSearch.and(MANAGED_STATE, devicesForAllocationSearch.entity().getManagedState(), SearchCriteria.Op.EQ);
+        devicesForAllocationSearch.and(TYPE, devicesForAllocationSearch.entity().getType(), SearchCriteria.Op.NEQ);
+        devicesForAllocationSearch.done();
     }
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-
-        gpuDevicesForAllocationSearch = createSearchBuilder();
-        gpuDevicesForAllocationSearch.and(HOST_ID, gpuDevicesForAllocationSearch.entity().getHostId(),
-                SearchCriteria.Op.EQ);
-        gpuDevicesForAllocationSearch.and(VGPU_PROFILE_ID, gpuDevicesForAllocationSearch.entity().getVgpuProfileId(),
-                SearchCriteria.Op.IN);
-        gpuDevicesForAllocationSearch.and(STATE, gpuDevicesForAllocationSearch.entity().getState(),
-                SearchCriteria.Op.EQ);
-        gpuDevicesForAllocationSearch.and(MANAGED_STATE, gpuDevicesForAllocationSearch.entity().getManagedState(),
-                SearchCriteria.Op.EQ);
-        gpuDevicesForAllocationSearch.and(TYPE, gpuDevicesForAllocationSearch.entity().getType(),
-                SearchCriteria.Op.NEQ);
-
-        gpuDevicesForAllocationSearch.done();
         return super.configure(name, params);
     }
 
@@ -144,7 +138,7 @@ public class GpuDeviceDaoImpl extends GenericDaoBase<GpuDeviceVO, Long> implemen
 
     @Override
     public List<GpuDeviceVO> listDevicesForAllocation(Long hostId, Long vgpuProfileId) {
-        SearchCriteria<GpuDeviceVO> sc = gpuDevicesForAllocationSearch.create();
+        SearchCriteria<GpuDeviceVO> sc = devicesForAllocationSearch.create();
         sc.setParameters(HOST_ID, hostId);
         sc.setParameters(VGPU_PROFILE_ID, vgpuProfileId);
         sc.setParameters(STATE, GpuDevice.State.Free);
@@ -227,7 +221,6 @@ public class GpuDeviceDaoImpl extends GenericDaoBase<GpuDeviceVO, Long> implemen
         sb.select(null, SearchCriteria.Func.DISTINCT, sb.entity().getCardId());
         sb.done();
         SearchCriteria<GpuDeviceVO> sc = sb.create();
-        List<GpuDeviceVO> devices = listBy(sc);
 
         List<GpuDeviceVO> gpuDevices = listBy(sc);
         if (CollectionUtils.isEmpty(gpuDevices)) {
@@ -246,7 +239,6 @@ public class GpuDeviceDaoImpl extends GenericDaoBase<GpuDeviceVO, Long> implemen
         sb.select(null, SearchCriteria.Func.DISTINCT, sb.entity().getVgpuProfileId());
         sb.done();
         SearchCriteria<GpuDeviceVO> sc = sb.create();
-        List<GpuDeviceVO> devices = listBy(sc);
 
         List<GpuDeviceVO> gpuDevices = listBy(sc);
         if (CollectionUtils.isEmpty(gpuDevices)) {

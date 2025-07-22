@@ -24,7 +24,7 @@ from marvin.cloudstackTestCase import cloudstackTestCase
 
 # base - contains all resources as entities and defines create, delete,
 # list operations on them
-from marvin.lib.base import Account, VirtualMachine, ServiceOffering, NetworkOffering, Network, Template, GpuDevice
+from marvin.lib.base import Account, Host, Capacities, VirtualMachine, ServiceOffering, NetworkOffering, Network, Template, GpuDevice
 
 # utils - utility classes for common cleanup, external library wrappers etc
 from marvin.lib.utils import cleanup_resources, get_hypervisor_type, validateList
@@ -66,7 +66,7 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
         gpuhosts = 0
         if cls.hypervisor.lower() in ["xenserver"]:
             for ghost in hosts:
-                if ghost.hypervisorversion >= "6.2.0":
+                if ghost and ghost.hypervisorversion >= "6.2.0":
                     sshClient = SshClient(
                         host=ghost.ipaddress,
                         port=cls.testdata['configurableData']['host']["publicport"],
@@ -85,6 +85,13 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
                         continue
         elif cls.hypervisor.lower() == "kvm" or cls.hypervisor.lower() == "simulator":
             # Check if the host has a GPU
+            for host in hosts:
+                h = Host(host.__dict__)
+                h.discoverGpuDevices(cls.apiclient)
+
+            hosts = list_hosts(
+                cls.apiclient
+            )
             for host in hosts:
                 if host.gputotal != None and host.gputotal > 0:
                     gpuhosts = gpuhosts + 1
@@ -118,6 +125,8 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
             self.testdata["account"],
             domainid=self.domain.id
         )
+
+        self.gpu_capacity_total, self.gpu_capacity_used = self.get_gpu_capacity()
 
         if self.hypervisor.lower() in ["xenserver"]:
 
@@ -213,6 +222,15 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
                     present")
 
 
+    def get_gpu_capacity(self):
+        """Get GPU capacity for the host
+        """
+        capacities = Capacities.list(self.apiclient, fetchlatest=True)
+        for c in capacities:
+            if c.name == "GPU":
+                return c.capacitytotal, c.capacityused
+        return 0, 0
+
     @attr(tags=['advanced', 'basic', 'vgpu'])
     def test_deploy_vgpu_enabled_vm(self):
         """Test Deploy Virtual Machine
@@ -225,7 +243,7 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
         if self.hypervisor.lower() not in ["xenserver", "kvm", "simulator"]:
             self.cleanup.append(self.account)
             self.skipTest("This test case is written specifically\
-                    for XenServer hypervisor")
+                    for XenServer, KVM & Simulator hypervisor")
 
         self.virtual_machine = VirtualMachine.create(
             self.apiclient,
@@ -243,10 +261,7 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
             self.apiclient,
             id=self.virtual_machine.id)
 
-        self.debug(
-            "Verify listVirtualMachines response for virtual machine: %s"
-            % self.virtual_machine.id
-        )
+        self.debug("Verify listVirtualMachines response for virtual machine: %s" % self.virtual_machine.id)
 
         self.assertEqual(
             isinstance(list_vms, list),
@@ -275,6 +290,21 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
             "Running",
             msg="VM is not in Running state"
         )
+
+        # Check capacity changes
+        total, used = self.get_gpu_capacity()
+
+        self.assertEqual(
+            total,
+            self.gpu_capacity_total,
+            "Total GPU capacity did not change after VM deployment"
+        )
+        self.assertEqual(
+            used,
+            self.gpu_capacity_used + 1,
+            "Used GPU capacity did not change by 1 after VM deployment"
+        )
+
         if self.hypervisor.lower() in ["xenserver"]:
             hosts = list_hosts(
                 self.apiclient,

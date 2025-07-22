@@ -54,20 +54,6 @@ public class GpuCardDaoImpl extends GenericDaoBase<GpuCardVO, Long> implements G
     }
 
     @Override
-    public List<GpuCardVO> listByVendorName(String vendorName) {
-        SearchCriteria<GpuCardVO> sc = allFieldSearch.create();
-        sc.setParameters("vendorName", vendorName);
-        return listBy(sc);
-    }
-
-    @Override
-    public List<GpuCardVO> listByDeviceName(String deviceName) {
-        SearchCriteria<GpuCardVO> sc = allFieldSearch.create();
-        sc.setParameters("deviceName", deviceName);
-        return listBy(sc);
-    }
-
-    @Override
     public Pair<List<GpuCardVO>, Integer> searchAndCountGpuCards(Long id, String keyword, String vendorId,
             String vendorName, String deviceId, String deviceName, boolean activeOnly, Long startIndex, Long pageSize
     ) {
