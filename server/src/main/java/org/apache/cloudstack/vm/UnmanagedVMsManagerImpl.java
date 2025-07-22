@@ -1962,27 +1962,12 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         RemoteInstanceTO remoteInstanceTO = new RemoteInstanceTO(sourceVM);
         List<String> destinationStoragePools = selectInstanceConversionStoragePools(convertStoragePools, sourceVMwareInstance.getDisks(), serviceOffering, dataDiskOfferingMap);
         ConvertInstanceCommand cmd = new ConvertInstanceCommand(remoteInstanceTO,
-                Hypervisor.HypervisorType.KVM, destinationStoragePools, temporaryConvertLocation, ovfTemplateDirConvertLocation, false, false);
+                Hypervisor.HypervisorType.KVM, temporaryConvertLocation, ovfTemplateDirConvertLocation, false, false);
         int timeoutSeconds = UnmanagedVMsManager.ConvertVmwareInstanceToKvmTimeout.value() * 60 * 60;
         cmd.setWait(timeoutSeconds);
 
-        Answer convertAnswer;
-        try {
-             convertAnswer = agentManager.send(convertHost.getId(), cmd);
-        } catch (AgentUnavailableException | OperationTimedoutException e) {
-            String err = String.format("Could not send the convert instance command to host %s due to: %s",
-                    convertHost, e.getMessage());
-            logger.error(err, e);
-            throw new CloudRuntimeException(err);
-        }
-
-        if (!convertAnswer.getResult()) {
-            String err = String.format("The convert process failed for instance %s from VMware to KVM on host %s: %s",
-                    sourceVM, convertHost, convertAnswer.getDetails());
-            logger.error(err);
-            throw new CloudRuntimeException(err);
-        }
-        return ((ConvertInstanceAnswer) convertAnswer).getConvertedInstance();
+        return convertAndImportToKVM(cmd, convertHost, importHost, sourceVM,
+                remoteInstanceTO, destinationStoragePools, temporaryConvertLocation);
     }
 
     private UnmanagedInstanceTO convertVmwareInstanceToKVMAfterExportingOVFToConvertLocation(
@@ -1997,7 +1982,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         RemoteInstanceTO remoteInstanceTO = new RemoteInstanceTO(sourceVMwareInstance.getName(), sourceVMwareInstance.getPath(), vcenterHost, vcenterUsername, vcenterPassword, datacenterName);
         List<String> destinationStoragePools = selectInstanceConversionStoragePools(convertStoragePools, sourceVMwareInstance.getDisks(), serviceOffering, dataDiskOfferingMap);
         ConvertInstanceCommand cmd = new ConvertInstanceCommand(remoteInstanceTO,
-                Hypervisor.HypervisorType.KVM, destinationStoragePools, temporaryConvertLocation, null, false, true);
+                Hypervisor.HypervisorType.KVM, temporaryConvertLocation, null, false, true);
         int timeoutSeconds = UnmanagedVMsManager.ConvertVmwareInstanceToKvmTimeout.value() * 60 * 60;
         cmd.setWait(timeoutSeconds);
         int noOfThreads = UnmanagedVMsManager.ThreadsOnKVMHostToImportVMwareVMFiles.value();
@@ -2065,7 +2050,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         List<StoragePoolVO> pools = new ArrayList<>();
         pools.addAll(primaryDataStoreDao.findClusterWideStoragePoolsByHypervisorAndPoolType(destinationCluster.getId(), Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.NetworkFilesystem));
         pools.addAll(primaryDataStoreDao.findZoneWideStoragePoolsByHypervisorAndPoolType(destinationCluster.getDataCenterId(), Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.NetworkFilesystem));
-        List<String> diskOfferingTags = new ArrayList<>();
         if (pools.isEmpty()) {
             String msg = String.format("Cannot find suitable storage pools in the cluster %s for the conversion", destinationCluster.getName());
             logger.error(msg);
@@ -2092,39 +2076,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 logger.error(msg);
                 throw new CloudRuntimeException(msg);
             }
-            diskOfferingTags.add(diskOffering.getTags());
-        }
-        if (serviceOffering.getDiskOfferingId() != null) {
-            DiskOfferingVO diskOffering = diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
-            if (diskOffering != null) {
-                diskOfferingTags.add(diskOffering.getTags());
-            }
-        }
-
-        pools = getPoolsWithMatchingTags(pools, diskOfferingTags);
-        if (pools.isEmpty()) {
-            String msg = String.format("Cannot find suitable storage pools in cluster %s for the conversion", destinationCluster);
-            logger.error(msg);
-            throw new CloudRuntimeException(msg);
-        }
-        return pools;
-    }
-
-    private List<StoragePoolVO> getPoolsWithMatchingTags(List<StoragePoolVO> pools, List<String> diskOfferingTags) {
-        if (diskOfferingTags.isEmpty()) {
-            return pools;
-        }
-        List<StoragePoolVO> poolsSupportingTags = new ArrayList<>(pools);
-        for (String tags : diskOfferingTags) {
-            boolean tagsMatched = false;
-            for (StoragePoolVO pool : pools) {
-                if (volumeApiService.doesStoragePoolSupportDiskOfferingTags(pool, tags)) {
-                    poolsSupportingTags.add(pool);
-                    tagsMatched = true;
-                }
-            }
-            if (!tagsMatched) {
-                String msg = String.format("Cannot find suitable storage pools for the conversion with disk offering tags %s", tags);
+            if (getStoragePoolWithTags(pools, diskOffering.getTags()) == null) {
+                String msg = String.format("Cannot find suitable storage pool for disk offering %s", diskOffering.getName());
                 logger.error(msg);
                 throw new CloudRuntimeException(msg);
             }

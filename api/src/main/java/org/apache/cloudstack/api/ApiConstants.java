@@ -90,9 +90,11 @@ public class ApiConstants {
     public static final String CONVERT_INSTANCE_HOST_ID = "convertinstancehostid";
     public static final String CONVERT_INSTANCE_STORAGE_POOL_ID = "convertinstancepoolid";
     public static final String ENABLED_REVOCATION_CHECK = "enabledrevocationcheck";
+    public static final String COMBINED_CAPACITY_ORDERING = "COMBINED";
     public static final String CONTROLLER = "controller";
     public static final String CONTROLLER_UNIT = "controllerunit";
     public static final String COPY_IMAGE_TAGS = "copyimagetags";
+    public static final String CPU_OVERCOMMIT_RATIO = "cpuOvercommitRatio";
     public static final String CSR = "csr";
     public static final String PRIVATE_KEY = "privatekey";
     public static final String DATASTORE_HOST = "datastorehost";
@@ -124,6 +126,7 @@ public class ApiConstants {
     public static final String CNI_CONFIG_DETAILS = "cniconfigdetails";
     public static final String CNI_CONFIG_NAME = "cniconfigname";
     public static final String COMPONENT = "component";
+    public static final String CPU = "CPU";
     public static final String CPU_CORE_PER_SOCKET = "cpucorepersocket";
     public static final String CPU_NUMBER = "cpunumber";
     public static final String CPU_SPEED = "cpuspeed";
@@ -220,6 +223,7 @@ public class ApiConstants {
     public static final String FORCED_DESTROY_LOCAL_STORAGE = "forcedestroylocalstorage";
     public static final String FORCE_DELETE_HOST = "forcedeletehost";
     public static final String FORCE_MS_TO_IMPORT_VM_FILES = "forcemstoimportvmfiles";
+    public static final String FORCE_UPDATE_OS_TYPE = "forceupdateostype";
     public static final String FORMAT = "format";
     public static final String FOR_VIRTUAL_NETWORK = "forvirtualnetwork";
     public static final String FOR_SYSTEM_VMS = "forsystemvms";
@@ -346,6 +350,7 @@ public class ApiConstants {
     public static final String MAX_BACKUPS = "maxbackups";
     public static final String MAX_CPU_NUMBER = "maxcpunumber";
     public static final String MAX_MEMORY = "maxmemory";
+    public static final String MEMORY_OVERCOMMIT_RATIO = "memoryOvercommitRatio";
     public static final String MIN_CPU_NUMBER = "mincpunumber";
     public static final String MIN_MEMORY = "minmemory";
     public static final String MIGRATION_TYPE = "migrationtype";
@@ -445,6 +450,7 @@ public class ApiConstants {
     public static final String PUBLIC_END_PORT = "publicendport";
     public static final String PUBLIC_ZONE = "publiczone";
     public static final String PURGE_RESOURCES = "purgeresources";
+    public static final String RAM = "RAM";
     public static final String REBALANCE = "rebalance";
     public static final String RECEIVED_BYTES = "receivedbytes";
     public static final String RECONNECT = "reconnect";
@@ -1266,6 +1272,22 @@ public class ApiConstants {
             "added, it will be interpreted as \"23:59:59\"). If the recommended format is not used, the date will be considered in the server timezone.";
 
     public static final String VMWARE_DC = "vmwaredc";
+
+    public static final String CSS = "css";
+
+    public static final String JSON_CONFIGURATION = "jsonconfiguration";
+
+    public static final String COMMON_NAMES = "commonnames";
+
+    public static final String COMMON_NAME = "commonname";
+
+    public static final String DOMAIN_IDS = "domainids";
+
+    public static final String SHOW_PUBLIC = "showpublic";
+
+    public static final String LIST_ONLY_DEFAULT_THEME = "listonlydefaulttheme";
+
+    public static final String RECURSIVE_DOMAINS = "recursivedomains";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.

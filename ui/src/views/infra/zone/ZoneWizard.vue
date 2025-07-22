@@ -74,8 +74,10 @@
         :prefillContent="zoneConfig"
       />
       <zone-wizard-launch-zone
-        v-else
+        v-else-if="zoneSteps[currentStep].name === 'launch'"
         @backPressed="backPressed"
+        @nextPressed="nextPressed"
+        @fieldsChanged="onFieldsChanged"
         @closeAction="onCloseAction"
         @refresh-data="onRefreshData"
         @stepError="onStepError"
@@ -84,6 +86,15 @@
         :launchData="launchData"
         :isFixError="stepFixError"
         :prefillContent="zoneConfig"
+      />
+
+      <zone-wizard-register-template
+        v-else-if="zoneSteps[currentStep].name === 'registerTemplate'"
+        :zoneid="returnedZoneId"
+        :arch="selectedArch"
+        :zoneSuperType="selectedZoneSuperType"
+        @closeAction="onCloseAction"
+        @refresh-data="onRefreshData"
       />
     </div>
   </div>
@@ -95,6 +106,7 @@ import ZoneWizardCoreZoneTypeStep from '@views/infra/zone/ZoneWizardCoreZoneType
 import ZoneWizardZoneDetailsStep from '@views/infra/zone/ZoneWizardZoneDetailsStep'
 import ZoneWizardNetworkSetupStep from '@views/infra/zone/ZoneWizardNetworkSetupStep'
 import ZoneWizardAddResources from '@views/infra/zone/ZoneWizardAddResources'
+import ZoneWizardRegisterTemplate from '@views/infra/zone/ZoneWizardRegisterTemplate'
 import ZoneWizardLaunchZone from '@views/infra/zone/ZoneWizardLaunchZone'
 
 export default {
@@ -103,6 +115,7 @@ export default {
     ZoneWizardCoreZoneTypeStep,
     ZoneWizardZoneDetailsStep,
     ZoneWizardNetworkSetupStep,
+    ZoneWizardRegisterTemplate,
     ZoneWizardAddResources,
     ZoneWizardLaunchZone
   },
@@ -114,6 +127,13 @@ export default {
       launchZone: false,
       launchData: {},
       stepChild: '',
+      registerTemplateStep: {
+        name: 'registerTemplate',
+        title: 'label.register.template',
+        step: ['registerTemplateAction'],
+        description: this.$t('message.desc.register.template'),
+        hint: this.$t('message.hint.register.template')
+      },
       coreZoneTypeStep: {
         name: 'coreType',
         title: 'label.core.zone.type',
@@ -158,7 +178,10 @@ export default {
           hint: this.$t('message.launch.zone.hint')
         }
       ],
-      zoneConfig: {}
+      zoneConfig: {},
+      returnedZoneId: null,
+      selectedArch: null,
+      selectedZoneSuperType: 'Core'
     }
   },
   computed: {
@@ -166,6 +189,9 @@ export default {
       var steps = [...this.steps]
       if (this.zoneConfig.zoneSuperType !== 'Edge') {
         steps.splice(1, 0, this.coreZoneTypeStep)
+      }
+      if (this.zoneConfig.hypervisor === 'KVM') {
+        steps.splice(steps.length, 0, this.registerTemplateStep)
       }
       return steps
     }
@@ -200,7 +226,15 @@ export default {
         data.zoneType !== this.zoneConfig.zoneType) {
         this.zoneConfig.physicalNetworks = null
       }
-
+      if (data.zoneSuperType && data.zoneSuperType !== this.selectedZoneSuperType) {
+        this.selectedZoneSuperType = data.zoneSuperType
+      }
+      if (data.arch && data.arch !== this.selectedArch) {
+        this.selectedArch = data.arch
+      }
+      if (data.zoneReturned?.id) {
+        this.returnedZoneId = data.zoneReturned.id
+      }
       this.zoneConfig = { ...this.zoneConfig, ...data }
     },
     onCloseAction () {
