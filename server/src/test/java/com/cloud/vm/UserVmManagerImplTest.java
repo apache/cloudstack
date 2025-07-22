@@ -3324,6 +3324,7 @@ public class UserVmManagerImplTest {
         when(templateDao.findById(templateId)).thenReturn(template);
         DiskOfferingInfo rootDiskOfferingInfo = new DiskOfferingInfo(diskOffering, 10L, 1000L, 2000L);
         when(backupManager.getRootDiskOfferingInfoFromBackup(backup)).thenReturn(rootDiskOfferingInfo);
+        Mockito.when(backupManager.canCreateInstanceFromBackup(backupId)).thenReturn(true);
 
         Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
@@ -3382,6 +3383,7 @@ public class UserVmManagerImplTest {
         NetworkVO network1 = mock(NetworkVO.class);
         NetworkVO network2 = mock(NetworkVO.class);
         when(backupManager.getDataDiskOfferingListFromBackup(backup)).thenReturn(List.of(new DiskOfferingInfo(diskOffering, 10L, 1000L, 2000L)));
+        Mockito.when(backupManager.canCreateInstanceFromBackup(backupId)).thenReturn(true);
 
         Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), eq(false), any(), any(), any(),
@@ -3498,6 +3500,7 @@ public class UserVmManagerImplTest {
         when(templateDao.findById(isoId)).thenReturn(iso);
         DiskOfferingInfo rootDiskOfferingInfo = new DiskOfferingInfo(diskOffering, 10L, 1000L, 2000L);
         when(backupManager.getRootDiskOfferingInfoFromBackup(backup)).thenReturn(rootDiskOfferingInfo);
+        Mockito.when(backupManager.canCreateInstanceFromBackup(backupId)).thenReturn(true);
 
         Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
@@ -3559,6 +3562,7 @@ public class UserVmManagerImplTest {
         NetworkVO network1 = mock(NetworkVO.class);
         NetworkVO network2 = mock(NetworkVO.class);
         when(backupManager.getDataDiskOfferingListFromBackup(backup)).thenReturn(List.of(new DiskOfferingInfo(diskOffering, 10L, 1000L, 2000L)));
+        Mockito.when(backupManager.canCreateInstanceFromBackup(backupId)).thenReturn(true);
 
         Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), eq(false), any(), any(), any(),
