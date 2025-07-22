@@ -304,6 +304,14 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
         if (details == null) {
             return null;
         }
+        if (details.containsKey(ApiConstants.TEMPLATE_ID)) {
+            VirtualMachineTemplate template = templateDao.findByUuid(details.get(ApiConstants.TEMPLATE_ID));
+            if (template != null) {
+                details.put(ApiConstants.TEMPLATE_ID, template.getUuid());
+                details.put(ApiConstants.TEMPLATE_NAME, template.getName());
+                details.put(ApiConstants.IS_ISO, String.valueOf(template.getFormat().equals(Storage.ImageFormat.ISO)));
+            }
+        }
         if (details.containsKey(ApiConstants.SERVICE_OFFERING_ID)) {
             ServiceOffering serviceOffering = serviceOfferingDao.findByUuid(details.get(ApiConstants.SERVICE_OFFERING_ID));
             if (serviceOffering != null) {
@@ -378,13 +386,6 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
         if (Boolean.TRUE.equals(listVmDetails)) {
             Map<String, String> vmDetails = new HashMap<>();
             vmDetails.put(ApiConstants.HYPERVISOR, vm.getHypervisorType().toString());
-            VirtualMachineTemplate template = templateDao.findById(vm.getTemplateId());
-            if (template != null) {
-                vmDetails.put(ApiConstants.TEMPLATE_ID, template.getUuid());
-                vmDetails.put(ApiConstants.TEMPLATE_NAME, template.getName());
-                vmDetails.put(ApiConstants.IS_ISO, String.valueOf(template.getFormat().equals(Storage.ImageFormat.ISO)));
-            }
-
             Map<String, String> details = getDetailsFromBackupDetails(backup.getId());
             vmDetails.putAll(details);
             response.setVmDetails(vmDetails);

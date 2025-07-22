@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupOfferingVO;
@@ -42,6 +43,10 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -81,6 +86,12 @@ public class BackupDaoImplTest {
 
     @Mock
     private VMTemplateDao templateDao;
+
+    @Mock
+    ServiceOfferingDao serviceOfferingDao;
+
+    @Mock
+    NetworkDao networkDao;
 
     @Test
     public void testLoadDetails() {
@@ -125,6 +136,7 @@ public class BackupDaoImplTest {
         Long backupId = 7L;
         Long templateId = 8L;
         String templateUuid = "template-uuid1";
+        String serviceOfferingUuid = "service-offering-uuid1";
 
         BackupVO backup = new BackupVO();
         ReflectionTestUtils.setField(backup, "id", backupId);
@@ -168,8 +180,20 @@ public class BackupDaoImplTest {
         when(template.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
         when(template.getUuid()).thenReturn(templateUuid);
         when(template.getName()).thenReturn("template1");
-        when(templateDao.findById(templateId)).thenReturn(template);
+        when(templateDao.findByUuid(templateUuid)).thenReturn(template);
         Map<String, String> details = new HashMap<>();
+        details.put(ApiConstants.TEMPLATE_ID, templateUuid);
+
+        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+        when(serviceOffering.getUuid()).thenReturn(serviceOfferingUuid);
+        when(serviceOffering.getName()).thenReturn("service-offering1");
+        when(serviceOfferingDao.findByUuid(serviceOfferingUuid)).thenReturn(serviceOffering);
+        details.put(ApiConstants.SERVICE_OFFERING_ID, serviceOfferingUuid);
+
+        NetworkVO network = mock(NetworkVO.class);
+        when(network.getName()).thenReturn("network1");
+        when(networkDao.findByUuid("network-uuid1")).thenReturn(network);
+        details.put(ApiConstants.NICS, "[{\"networkid\":\"network-uuid1\"}]");
 
         Mockito.when(backupDetailsDao.listDetailsKeyPairs(backup.getId(), true)).thenReturn(details);
 
@@ -186,7 +210,9 @@ public class BackupDaoImplTest {
         Assert.assertEquals("offering-uuid", response.getBackupOfferingId());
         Assert.assertEquals("test-offering", response.getBackupOffering());
         Assert.assertEquals("MANUAL", response.getIntervalType());
-        Assert.assertEquals("{isiso=false, hypervisor=Simulator, templatename=template1, templateid=template-uuid1}", response.getVmDetails().toString());
+        Assert.assertEquals("{serviceofferingid=service-offering-uuid1, isiso=false, hypervisor=Simulator, " +
+                "nics=[{\"networkid\":\"network-uuid1\",\"networkname\":\"network1\"}], serviceofferingname=service-offering1, " +
+                "templatename=template1, templateid=template-uuid1}", response.getVmDetails().toString());
         Assert.assertEquals(true, response.getVmOfferingRemoved());
     }
 }
