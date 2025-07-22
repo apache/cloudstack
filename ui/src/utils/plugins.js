@@ -566,8 +566,11 @@ export const cpuArchitectureUtilPlugin = {
 
 export const imagesUtilPlugin = {
   install (app) {
-    app.config.globalProperties.$fetchTemplateTypes = function () {
-      const baseTypes = ['USER', 'VNF']
+    app.config.globalProperties.$fetchTemplateTypes = function (hypervisor) {
+      const baseTypes = ['USER']
+      if (hypervisor !== 'External') {
+        baseTypes.push('VNF')
+      }
       const adminTypes = ['SYSTEM', 'BUILTIN', 'ROUTING']
       const types = [...baseTypes]
       if (store.getters.userInfo?.roletype === 'Admin') {

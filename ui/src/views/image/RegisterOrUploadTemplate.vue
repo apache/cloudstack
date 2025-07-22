@@ -1060,6 +1060,7 @@ export default {
       this.fetchRootDisk(hyperVisor)
       this.fetchNicAdapterTypes()
       this.fetchKeyboardType()
+      this.templateTypes.opts = this.$fetchTemplateTypes(hyperVisor)
 
       this.form.rootDiskControllerType = this.rootDisk.opts.length > 0 ? 'osdefault' : ''
     },
