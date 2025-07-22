@@ -1061,6 +1061,9 @@ export default {
       this.fetchNicAdapterTypes()
       this.fetchKeyboardType()
       this.templateTypes.opts = this.$fetchTemplateTypes(hyperVisor)
+      if (this.form.templatetype && !this.templateTypes.opts.find(opt => opt.id === this.form.templatetype)) {
+        this.form.templatetype = undefined
+      }
 
       this.form.rootDiskControllerType = this.rootDisk.opts.length > 0 ? 'osdefault' : ''
     },
