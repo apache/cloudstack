@@ -2238,6 +2238,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 sc.addAnd("state", SearchCriteria.Op.NEQ, State.Expunging);
                 List<VMInstanceVO> vms = _vmInstanceDao.search(sc, null);
                 if (vms != null && !vms.isEmpty()) {
+                    if (Boolean.FALSE.equals(cmd.getForceUpdateOsType())) {
+                        String message = String.format("Updating OS type will update the guest OS configuration " +
+                            "for all of the %d Instance(s) deployed with this Template/ISO, which may affect their behavior. " +
+                            "To proceed, please set the 'forceupdateostype' parameter to true.", vms.size());
+                        throw new InvalidParameterValueException(message);
+                    }
                     for (VMInstanceVO vm: vms) {
                         vm.setGuestOSId(guestOSId);
                         _vmInstanceDao.update(vm.getId(), vm);
