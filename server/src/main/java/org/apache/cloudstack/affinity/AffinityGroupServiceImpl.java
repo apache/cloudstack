@@ -43,6 +43,7 @@ import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
@@ -433,6 +434,10 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
         }
         if (UserVmManager.SHAREDFSVM.equals(vmInstance.getUserVmType())) {
             throw new InvalidParameterValueException("Operation not supported on Shared FileSystem Instance");
+        }
+        if (Hypervisor.HypervisorType.External.equals(vmInstance.getHypervisorType())) {
+            throw new InvalidParameterValueException(String.format("Operation not supported for %s hypervisor Instance",
+                    Hypervisor.HypervisorType.External.name()));
         }
 
         // Check that the VM is stopped
