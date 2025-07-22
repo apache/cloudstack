@@ -24,7 +24,6 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import com.cloud.network.IpAddress;
 import org.apache.cloudstack.network.BgpPeer;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -947,12 +946,6 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
     ResourceUnavailableException {
         return true;
     }
-
-    @Override
-    public boolean releaseIp(IpAddress ipAddress) {
-        return true;
-    }
-
 
     @Override
     public boolean configDhcpSupportForSubnet(final Network network, final NicProfile nic, final VirtualMachineProfile vm, final DeployDestination dest,

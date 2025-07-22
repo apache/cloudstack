@@ -32,7 +32,6 @@ public class CreateOrUpdateNetrisACLCommand extends NetrisCommand {
     private String netrisAclName;
     private String reason;
 
-
     public CreateOrUpdateNetrisACLCommand(long zoneId, Long accountId, Long domainId, String name, Long id, String vpcName, Long vpcId, boolean isVpc, String action,
                                           String sourcePrefix, String destPrefix, Integer destPortStart, Integer destPortEnd, String protocol) {
         super(zoneId, accountId, domainId, name, id, isVpc);

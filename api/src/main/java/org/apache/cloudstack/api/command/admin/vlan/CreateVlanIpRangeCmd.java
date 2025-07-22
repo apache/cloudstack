@@ -115,7 +115,7 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     @Parameter(name = ApiConstants.FOR_SYSTEM_VMS, type = CommandType.BOOLEAN, description = "true if IP range is set to system vms, false if not")
     private Boolean forSystemVms;
 
-    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "Provider name for which the IP range is reserved for", since = "4.20.0")
+    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "Provider name for which the IP range is reserved for", since = "4.21.0")
     private String provider;
 
     /////////////////////////////////////////////////////

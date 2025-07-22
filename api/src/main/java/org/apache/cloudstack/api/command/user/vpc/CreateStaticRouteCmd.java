@@ -57,7 +57,8 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name = ApiConstants.NEXT_HOP,
             type = CommandType.STRING,
-            description = "the next hop of static route. Mutually exclusive with the gatewayid parameter")
+            description = "the next hop of static route. Mutually exclusive with the gatewayid parameter",
+            since = "4.21.0")
     private String nextHop;
 
     @Parameter(name = ApiConstants.CIDR, required = true, type = CommandType.STRING, description = "static route cidr")

@@ -45,7 +45,7 @@ public class ListNetrisProvidersCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     ///
-    @Parameter(name = ApiConstants.ZONE_ID, description = "Netris provider added to the specific zone",
+    @Parameter(name = ApiConstants.ZONE_ID, description = "ID of the zone",
             type = CommandType.UUID, entityType = ZoneResponse.class)
     Long zoneId;
 

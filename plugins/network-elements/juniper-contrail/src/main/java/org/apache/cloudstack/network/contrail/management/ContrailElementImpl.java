@@ -242,11 +242,6 @@ public class ContrailElementImpl extends AdapterBase
         return true;
     }
 
-    @Override
-    public boolean releaseIp(IpAddress ipAddress) {
-        return false;
-    }
-
     /**
      * Network disable
      */

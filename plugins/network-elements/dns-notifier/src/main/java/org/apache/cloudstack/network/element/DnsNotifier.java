@@ -26,7 +26,6 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
@@ -84,11 +83,6 @@ public class DnsNotifier extends AdapterBase implements NetworkElement {
         nic.getIPv4Address();
         nic.getIPv6Address();
         // signal to the dns server that the vm is being shutdown and remove the mapping.
-        return true;
-    }
-
-    @Override
-    public boolean releaseIp(IpAddress ipAddress) {
         return true;
     }
 

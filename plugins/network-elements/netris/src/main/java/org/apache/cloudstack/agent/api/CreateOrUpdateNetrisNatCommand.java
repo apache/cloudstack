@@ -35,7 +35,6 @@ public class CreateOrUpdateNetrisNatCommand extends NetrisCommand {
     // Parameters for SNAT (Static NAT)
     private String vmIp;
 
-
     public CreateOrUpdateNetrisNatCommand(long zoneId, Long accountId, Long domainId, String vpcName, Long vpcId, String vNetName, Long networkId, boolean isVpc, String vpcCidr) {
         super(zoneId, accountId, domainId, vNetName, networkId, isVpc);
         this.vpcName = vpcName;

@@ -24,7 +24,6 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import com.cloud.network.IpAddress;
 import com.cloud.api.commands.DeleteCiscoNexusVSMCmd;
 import com.cloud.api.commands.DisableCiscoNexusVSMCmd;
 import com.cloud.api.commands.EnableCiscoNexusVSMCmd;
@@ -103,11 +102,6 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
     @Override
     public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, ReservationContext context) throws ConcurrentOperationException,
         ResourceUnavailableException {
-        return true;
-    }
-
-    @Override
-    public boolean releaseIp(IpAddress ipAddress) {
         return true;
     }
 

@@ -362,7 +362,6 @@ public class BridgeVifDriver extends VifDriverBase {
             }
 
             String scriptPath = null;
-            // TODO: check for netris as well
             if (cmdout != null && cmdout.contains("vxlan")) {
                 scriptPath = _modifyVxlanPath;
             } else {

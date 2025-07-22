@@ -34,7 +34,6 @@ public class CreateNetrisVnetCommand extends NetrisCommand {
         this.gateway = gateway;
     }
 
-
     public Long getVpcId() {
         return vpcId;
     }

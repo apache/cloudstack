@@ -30,7 +30,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 
-import com.cloud.network.IpAddress;
 import org.apache.cloudstack.api.commands.AddSspCmd;
 import org.apache.cloudstack.api.commands.DeleteSspCmd;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -509,11 +508,6 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
         ResourceUnavailableException {
         logger.trace("release");
         return deleteNicEnv(network, nic, context);
-    }
-
-    @Override
-    public boolean releaseIp(IpAddress ipAddress) {
-        return true;
     }
 
     /* (non-Javadoc)

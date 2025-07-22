@@ -126,7 +126,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.PROVIDER,
             type = CommandType.STRING,
             description = "Name of the provider providing the service",
-            since = "4.20.0")
+            since = "4.21.0")
     private String provider;
 
     @Parameter(name = ApiConstants.NSX_SUPPORT_LB,

@@ -288,11 +288,6 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
     }
 
     @Override
-    public boolean releaseIp(IpAddress ipAddress) {
-        return true;
-    }
-
-    @Override
     public boolean shutdown(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException {
         return canHandle(network, Network.Service.Connectivity);
     }
@@ -945,10 +940,5 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
     @Override
     public boolean updateVpcSourceNatIp(Vpc vpc, IpAddress address) {
         return nsxService.updateVpcSourceNatIp(vpc, address);
-    }
-
-    @Override
-    public boolean updateVpc(Vpc vpc, String previousVpcName) {
-        return true;
     }
 }

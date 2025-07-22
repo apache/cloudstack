@@ -419,11 +419,6 @@ IpDeployer, StaticNatServiceProvider, GslbServiceProvider {
     }
 
     @Override
-    public boolean releaseIp(IpAddress ipAddress) {
-        return true;
-    }
-
-    @Override
     public boolean shutdown(Network guestConfig, ReservationContext context, boolean cleanup)
             throws ResourceUnavailableException, ConcurrentOperationException {
         if (!canHandle(guestConfig, Service.Lb)) {

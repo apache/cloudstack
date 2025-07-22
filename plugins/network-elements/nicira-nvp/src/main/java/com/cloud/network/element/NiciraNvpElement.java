@@ -449,11 +449,6 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
     }
 
     @Override
-    public boolean releaseIp(IpAddress ipAddress) {
-        return true;
-    }
-
-    @Override
     public boolean shutdown(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException {
         if (!canHandle(network, Service.Connectivity)) {
             return false;

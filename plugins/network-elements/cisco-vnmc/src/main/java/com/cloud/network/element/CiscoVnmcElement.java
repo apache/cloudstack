@@ -433,11 +433,6 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
         return true;
     }
 
-    @Override
-    public boolean releaseIp(IpAddress ipAddress) {
-        return true;
-    }
-
     private boolean cleanupLogicalEdgeFirewall(long vlanId, long hostId) {
         CleanupLogicalEdgeFirewallCommand cmd = new CleanupLogicalEdgeFirewallCommand(vlanId);
         Answer answer = _agentMgr.easySend(hostId, cmd);

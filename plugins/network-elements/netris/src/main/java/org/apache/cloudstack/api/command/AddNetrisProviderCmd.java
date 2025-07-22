@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.network.netris.NetrisProvider;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -35,7 +36,9 @@ import javax.inject.Inject;
 
 @APICommand(name = AddNetrisProviderCmd.APINAME, description = "Add Netris Provider to CloudStack",
         responseObject = NetrisProviderResponse.class, requestHasSensitiveInfo = false,
-        responseHasSensitiveInfo = false, since = "4.21.0")
+        responseHasSensitiveInfo = false,
+        authorized = {RoleType.Admin},
+        since = "4.21.0")
 public class AddNetrisProviderCmd extends BaseCmd {
     public static final String APINAME = "addNetrisProvider";
     public static final Logger LOGGER = LoggerFactory.getLogger(AddNetrisProviderCmd.class.getName());
@@ -53,7 +56,7 @@ public class AddNetrisProviderCmd extends BaseCmd {
     @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "Netris provider URL")
     private String url;
 
-    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "Username to log into Netris")
+    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "Username to login into Netris")
     private String username;
 
     @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, required = true, description = "Password to login into Netris")
@@ -62,7 +65,7 @@ public class AddNetrisProviderCmd extends BaseCmd {
     @Parameter(name = ApiConstants.SITE_NAME, type = CommandType.STRING, required = true, description = "Netris Site name")
     private String siteName;
 
-    @Parameter(name = ApiConstants.TENANT_NAME, type = CommandType.STRING, required = true, description = "Password to login into Netris")
+    @Parameter(name = ApiConstants.TENANT_NAME, type = CommandType.STRING, required = true, description = "Netris Tenant name")
     private String tenantName;
 
     @Parameter(name = ApiConstants.NETRIS_TAG, type = CommandType.STRING, required = true, description = "Netris tag for vNets")

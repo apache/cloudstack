@@ -176,7 +176,7 @@ public class IPAddressResponse extends BaseResponseWithAnnotations implements Co
     private boolean forSystemVms;
 
     @SerializedName(ApiConstants.FOR_PROVIDER)
-    @Param(description="true if range is dedicated for external network providers")
+    @Param(description="true if range is dedicated for external network providers", since = "4.21.0")
     private boolean forProvider;
 
     public void setIpAddress(String ipAddress) {

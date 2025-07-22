@@ -24,7 +24,6 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.network.IpAddress;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -134,11 +133,6 @@ public class ElasticLoadBalancerElement extends AdapterBase implements LoadBalan
     public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, ReservationContext context) throws ConcurrentOperationException,
         ResourceUnavailableException {
 
-        return true;
-    }
-
-    @Override
-    public boolean releaseIp(IpAddress ipAddress) {
         return true;
     }
 

@@ -26,7 +26,6 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.network.IpAddress;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.springframework.stereotype.Component;
@@ -173,11 +172,6 @@ public class GloboDnsElement extends AdapterBase implements ResourceStateAdapter
 
         RemoveRecordCommand cmd = new RemoveRecordCommand(hostNameOfVirtualMachine(vm), nic.getIPv4Address(), network.getNetworkDomain(), GloboDNSOverride.value());
         callCommand(cmd, zoneId);
-        return true;
-    }
-
-    @Override
-    public boolean releaseIp(IpAddress ipAddress) {
         return true;
     }
 

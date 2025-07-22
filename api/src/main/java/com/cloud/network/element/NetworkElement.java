@@ -92,7 +92,9 @@ public interface NetworkElement extends Adapter {
      * Release IP from the network provider if reserved
      * @param ipAddress
      */
-    boolean releaseIp(IpAddress ipAddress);
+    default boolean releaseIp(IpAddress ipAddress) {
+        return true;
+    }
 
     /**
      * The network is being shutdown.

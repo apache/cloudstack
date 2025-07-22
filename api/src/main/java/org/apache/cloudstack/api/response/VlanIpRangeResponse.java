@@ -128,7 +128,7 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
     private Boolean forSystemVms;
 
     @SerializedName(ApiConstants.PROVIDER)
-    @Param(description = "indicates whether IP range is dedicated to NSX resources or not", since = "4.20.0")
+    @Param(description = "indicates to which provider the IP range is dedicated to", since = "4.21.0")
     private String provider;
 
     public void setId(String id) {

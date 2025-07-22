@@ -35,7 +35,6 @@ public class NetrisCommand extends Command {
         this.isVpc = isVpc;
     }
 
-
     public String getName() {
         return name;
     }

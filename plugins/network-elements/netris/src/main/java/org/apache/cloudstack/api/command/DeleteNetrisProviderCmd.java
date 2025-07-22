@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -35,7 +36,8 @@ import static org.apache.cloudstack.api.command.DeleteNetrisProviderCmd.APINAME;
 
 @APICommand(name = APINAME, description = "delete Netris Provider to CloudStack",
         responseObject = NetrisProviderResponse.class, requestHasSensitiveInfo = false,
-        responseHasSensitiveInfo = false, since = "4.21.0")
+        responseHasSensitiveInfo = false,
+        authorized = {RoleType.Admin}, since = "4.21.0")
 public class DeleteNetrisProviderCmd extends BaseCmd {
     public static final String APINAME = "deleteNetrisProvider";
 

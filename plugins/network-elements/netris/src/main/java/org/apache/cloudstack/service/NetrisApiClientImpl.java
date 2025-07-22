@@ -1245,7 +1245,6 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         return true;
     }
 
-
     private VnetResAddBody updateVnetInternal(VPCListing associatedVpc, String netrisVnetName, String prevVnetName) {
         logger.debug("Updating Netris vNet name from {} to {} ", netrisVnetName, prevVnetName);
         try {
@@ -1275,7 +1274,6 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             gatewayV4.setDhcp(dhcp);
             List<VnetEditBodyGateways> gatewaysList = new ArrayList<>();
             gatewaysList.add(gatewayV4);
-
 
             if (vnetsBody.getGateways().size() > 1 && Objects.nonNull(vnetsBody.getGateways().get(1))) {
                 String netrisV6Gateway = vnetsBody.getGateways().get(1).getPrefix();
@@ -1951,8 +1949,6 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             return null;
         }
     }
-
-
 
     private String getNetrisVpcNameSuffix(Long vpcId, String vpcName, Long networkId, String networkName, boolean isVpc) {
         String suffix = null;

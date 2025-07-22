@@ -108,7 +108,7 @@ public class ListPublicIpAddressesCmd extends BaseListRetrieveOnlyResourceCountC
     @Parameter(name = ApiConstants.FOR_SYSTEM_VMS, type = CommandType.BOOLEAN, description = "true if range is dedicated for system VMs", since = "4.20.0")
     private Boolean forSystemVMs;
 
-    @Parameter(name = ApiConstants.FOR_PROVIDER, type = CommandType.BOOLEAN, description = "true if range is dedicated for external network provider", since = "4.20.0")
+    @Parameter(name = ApiConstants.FOR_PROVIDER, type = CommandType.BOOLEAN, description = "true if range is dedicated for external network provider", since = "4.21.0")
     private Boolean forProvider;
 
     /////////////////////////////////////////////////////

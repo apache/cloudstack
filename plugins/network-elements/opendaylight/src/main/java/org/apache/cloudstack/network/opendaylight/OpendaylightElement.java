@@ -27,7 +27,6 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.network.IpAddress;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.network.opendaylight.agent.commands.StartupOpenDaylightControllerCommand;
@@ -100,11 +99,6 @@ public class OpendaylightElement extends AdapterBase implements ConnectivityProv
     public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, ReservationContext context) throws ConcurrentOperationException,
     ResourceUnavailableException {
         // TODO Auto-generated method stub
-        return true;
-    }
-
-    @Override
-    public boolean releaseIp(IpAddress ipAddress) {
         return true;
     }
 

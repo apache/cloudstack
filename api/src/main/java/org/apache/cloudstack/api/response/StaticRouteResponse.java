@@ -47,11 +47,11 @@ public class StaticRouteResponse extends BaseResponse implements ControlledEntit
     private String vpcGatewayId;
 
     @SerializedName(ApiConstants.VPC_GATEWAY_IP)
-    @Param(description = "IP of VPC gateway the route is created for")
+    @Param(description = "IP of VPC gateway the route is created for", since = "4.21.0")
     private String vpcGatewayIp;
 
     @SerializedName(ApiConstants.NEXT_HOP)
-    @Param(description = "Next hop of the static route")
+    @Param(description = "Next hop of the static route", since = "4.21.0")
     private String nextHop;
 
     @SerializedName(ApiConstants.CIDR)

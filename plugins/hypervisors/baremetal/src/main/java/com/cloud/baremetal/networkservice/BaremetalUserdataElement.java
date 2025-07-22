@@ -30,7 +30,6 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
@@ -123,11 +122,6 @@ public class BaremetalUserdataElement extends AdapterBase implements NetworkElem
         ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
-    }
-
-    @Override
-    public boolean releaseIp(IpAddress ipAddress) {
-        return true;
     }
 
     @Override

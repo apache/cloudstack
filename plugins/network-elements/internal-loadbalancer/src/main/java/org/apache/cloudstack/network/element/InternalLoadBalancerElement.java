@@ -26,7 +26,6 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import com.cloud.network.IpAddress;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
@@ -219,11 +218,6 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
     @Override
     public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, ReservationContext context) throws ConcurrentOperationException,
         ResourceUnavailableException {
-        return true;
-    }
-
-    @Override
-    public boolean releaseIp(IpAddress ipAddress) {
         return true;
     }
 
