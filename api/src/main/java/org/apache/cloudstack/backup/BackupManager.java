@@ -234,6 +234,8 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
 
     Map<Long, Network.IpAddresses> getIpToNetworkMapFromBackup(Backup backup, boolean preserveIps, List<Long> networkIds);
 
+    Boolean canCreateInstanceFromBackup(Long backupId);
+
     /**
      * Restore a backup to a new Instance
      */

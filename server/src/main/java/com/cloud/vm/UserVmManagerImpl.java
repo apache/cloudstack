@@ -9414,11 +9414,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     public UserVm allocateVMFromBackup(CreateVMFromBackupCmd cmd) throws InsufficientCapacityException, ResourceAllocationException, ResourceUnavailableException {
-        Account owner = _accountService.getActiveAccountById(cmd.getEntityOwnerId());
-        Long zoneId = cmd.getZoneId();
-        DataCenter zone = _dcDao.findById(zoneId);
+        if (!backupManager.canCreateInstanceFromBackup(cmd.getBackupId())) {
+            throw new CloudRuntimeException("Create instance from backup is not supported for this provider.");
+        }
+        DataCenter zone = _dcDao.findById(cmd.getZoneId());
         if (zone == null) {
-            throw new InvalidParameterValueException("Unable to find zone by id=" + zoneId);
+            throw new InvalidParameterValueException("Unable to find zone by id=" + cmd.getZoneId());
         }
 
         BackupVO backup = backupDao.findById(cmd.getBackupId());
@@ -9527,6 +9528,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         List<Long> networkIds = cmd.getNetworkIds();
+        Account owner = _accountService.getActiveAccountById(cmd.getEntityOwnerId());
         LinkedHashMap<Integer, Long> userVmNetworkMap = getVmOvfNetworkMapping(zone, owner, template, cmd.getVmNetworkMap());
         if (MapUtils.isNotEmpty(userVmNetworkMap)) {
             networkIds = new ArrayList<>(userVmNetworkMap.values());

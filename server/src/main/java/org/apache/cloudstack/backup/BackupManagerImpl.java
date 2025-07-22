@@ -1154,6 +1154,17 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     @Override
+    public Boolean canCreateInstanceFromBackup(final Long backupId) {
+        final BackupVO backup = backupDao.findById(backupId);
+        BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(backup.getBackupOfferingId());
+        if (offering == null) {
+            throw new CloudRuntimeException("Failed to find backup offering");
+        }
+        final BackupProvider backupProvider = getBackupProvider(offering.getProvider());
+        return backupProvider.supportsInstanceFromBackup();
+    }
+
+    @Override
     public boolean restoreBackupToVM(final Long backupId, final Long vmId) throws ResourceUnavailableException {
         final BackupVO backup = backupDao.findById(backupId);
         if (backup == null) {
