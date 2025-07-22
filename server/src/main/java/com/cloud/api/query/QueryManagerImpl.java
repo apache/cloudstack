@@ -1631,7 +1631,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 userVmSearchCriteria.setParameters("hostId", hostId);
             }
 
-            if (storageId != null /* than pool != null as well */) {
+            if (storageId != null) {
                 if (pool.getPoolType().equals(Storage.StoragePoolType.DatastoreCluster)) {
                     List<StoragePoolVO> childDatastores = storagePoolDao.listChildStoragePoolsInDatastoreCluster(storageId);
                     userVmSearchCriteria.setJoinParameters("volume", "storagePoolId", childDatastores.stream().map(StoragePoolVO::getId).toArray());
