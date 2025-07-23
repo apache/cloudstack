@@ -401,20 +401,17 @@ export default {
         return null
       }
       const details = this.dataResource[detailsKey]
-      if (!details || Object.keys(details).length === 0) {
+      if (!details || typeof details !== 'object') {
         return null
       }
       const prefix = 'External:'
-      if (details && typeof details === 'object' && Object.keys(details).length > 0) {
-        const result = {}
-        for (const key in details) {
-          if (key.startsWith(prefix)) {
-            result[key.substring(prefix.length)] = details[key]
-          }
+      const result = {}
+      for (const key in details) {
+        if (key.startsWith(prefix)) {
+          result[key.substring(prefix.length)] = details[key]
         }
-        return result
       }
-      return null
+      return Object.keys(result).length > 0 ? result : null
     }
   },
   created () {
