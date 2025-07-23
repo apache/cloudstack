@@ -148,7 +148,7 @@
                       @handle-image-search-filter="filters => fetchImages(filters)"
                       @update-image="updateFieldValue"
                       @update-disk-size="updateFieldValue"
-                      @change-iso-hypervisor="value => hypervisor = value" />
+                      @change-iso-hypervisor="value => form.hypervisor = value" />
                     <a-card
                       v-else
                       :tabList="imageTypeList"
@@ -853,7 +853,7 @@
                 :deployButtonMenuOptions="deployMenuOptions"
                 @handle-cancel="() => $router.back()"
                 @handle-deploy="handleSubmit"
-                @handle-deploy-menu="handleSubmitAndStay" />
+                @handle-deploy-menu="(index, e) => handleSubmitAndStay(e)" />
             </div>
           </a-form>
         </a-card>
@@ -868,7 +868,7 @@
                 :deployButtonMenuOptions="deployMenuOptions"
                 @handle-cancel="() => $router.back()"
                 @handle-deploy="handleSubmit"
-                @handle-deploy-menu="handleSubmitAndStay" />
+                @handle-deploy-menu="(index, e) => handleSubmitAndStay(e)" />
             </template>
           </info-card>
         </a-affix>
