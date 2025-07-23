@@ -99,7 +99,7 @@ public class KVMPhysicalDisk {
             try {
                 Qcow2Inspector.validateQcow2File(path);
             } catch (RuntimeException e) {
-                throw new CloudRuntimeException("The volume file at path " + path + " is not a valid QCOW2");
+                throw new CloudRuntimeException("The volume file at path " + path + " is not a valid QCOW2. Error: " + e.getMessage());
             }
         }
     }
