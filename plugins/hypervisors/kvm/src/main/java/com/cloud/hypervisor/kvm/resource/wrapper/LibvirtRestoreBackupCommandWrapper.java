@@ -75,8 +75,12 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
                 restoreVolumesOfDestroyedVMs(volumePaths, vmName, backupPath, backupRepoType, backupRepoAddress, mountOptions);
             }
         } catch (CloudRuntimeException e) {
-            logger.error("Failed to restore backup for VM: " + vmName, e);
-            return new BackupAnswer(command, false, e.getMessage());
+            String errorMessage = "Failed to restore backup for VM: " + vmName + ".";
+            if (e.getMessage() != null && !e.getMessage().isEmpty()) {
+                errorMessage += " Details: " + e.getMessage();
+            }
+            logger.error(errorMessage);
+            return new BackupAnswer(command, false, errorMessage);
         }
 
         return new BackupAnswer(command, true, newVolumeId);

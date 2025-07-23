@@ -278,8 +278,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
     public static String createVolumeInfoFromVolumes(List<VolumeVO> vmVolumes) {
         List<Backup.VolumeInfo> list = new ArrayList<>();
-        vmVolumes.sort(Comparator.comparing(Volume::getDeviceId));
-        for (Volume vol : vmVolumes) {
+        vmVolumes.sort(Comparator.comparing(VolumeVO::getDeviceId));
+        for (VolumeVO vol : vmVolumes) {
             list.add(new Backup.VolumeInfo(vol.getUuid(), vol.getPath(), vol.getVolumeType(), vol.getSize()));
         }
         return new Gson().toJson(list.toArray(), Backup.VolumeInfo[].class);
