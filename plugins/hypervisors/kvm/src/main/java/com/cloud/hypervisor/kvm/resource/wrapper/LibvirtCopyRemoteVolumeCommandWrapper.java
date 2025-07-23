@@ -30,14 +30,7 @@ import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.Storage;
-import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.cloudstack.utils.qemu.QemuImg;
-import org.apache.cloudstack.utils.qemu.QemuImgException;
-import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.log4j.Logger;
-import org.libvirt.LibvirtException;
-
-import java.util.Map;
 
 @ResourceWrapper(handles = CopyRemoteVolumeCommand.class)
 public final class LibvirtCopyRemoteVolumeCommandWrapper extends CommandWrapper<CopyRemoteVolumeCommand, Answer, LibvirtComputingResource> {
@@ -64,7 +57,8 @@ public final class LibvirtCopyRemoteVolumeCommandWrapper extends CommandWrapper<
                 s_logger.debug("Volume " + srcFile + " copy successful, copied to file: " + filename);
                 final KVMPhysicalDisk vol = pool.getPhysicalDisk(filename);
                 final String path = vol.getPath();
-                long size = getVirtualSizeFromFile(path);
+                KVMPhysicalDisk.checkQcow2File(path);
+                long size = KVMPhysicalDisk.getVirtualSizeFromFile(path);
                 return new CopyRemoteVolumeAnswer(command, "", filename, size);
             } else {
                 String msg = "Unsupported storage pool type: " + storageFilerTO.getType().toString() + ", only local and NFS pools are supported";
@@ -74,21 +68,6 @@ public final class LibvirtCopyRemoteVolumeCommandWrapper extends CommandWrapper<
             s_logger.error("Error while copying volume file from remote host: " + e.getMessage(), e);
             String msg = "Failed to copy volume due to: " + e.getMessage();
             return new Answer(command, false, msg);
-        }
-    }
-
-    private long getVirtualSizeFromFile(String path) {
-        try {
-            QemuImg qemu = new QemuImg(0);
-            QemuImgFile qemuFile = new QemuImgFile(path);
-            Map<String, String> info = qemu.info(qemuFile);
-            if (info.containsKey(QemuImg.VIRTUAL_SIZE)) {
-                return Long.parseLong(info.get(QemuImg.VIRTUAL_SIZE));
-            } else {
-                throw new CloudRuntimeException("Unable to determine virtual size of volume at path " + path);
-            }
-        } catch (QemuImgException | LibvirtException ex) {
-            throw new CloudRuntimeException("Error when inspecting volume at path " + path, ex);
         }
     }
 }

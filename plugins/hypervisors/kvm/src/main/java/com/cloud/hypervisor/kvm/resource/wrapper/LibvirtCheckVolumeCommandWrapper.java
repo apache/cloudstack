@@ -30,14 +30,7 @@ import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.Storage;
-import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.cloudstack.utils.qemu.QemuImg;
-import org.apache.cloudstack.utils.qemu.QemuImgException;
-import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.log4j.Logger;
-import org.libvirt.LibvirtException;
-
-import java.util.Map;
 
 @ResourceWrapper(handles = CheckVolumeCommand.class)
 public final class LibvirtCheckVolumeCommandWrapper extends CommandWrapper<CheckVolumeCommand, Answer, LibvirtComputingResource> {
@@ -57,7 +50,8 @@ public final class LibvirtCheckVolumeCommandWrapper extends CommandWrapper<Check
                     storageFilerTO.getType() == Storage.StoragePoolType.NetworkFilesystem) {
                 final KVMPhysicalDisk vol = pool.getPhysicalDisk(srcFile);
                 final String path = vol.getPath();
-                long size = getVirtualSizeFromFile(path);
+                KVMPhysicalDisk.checkQcow2File(path);
+                long size = KVMPhysicalDisk.getVirtualSizeFromFile(path);
                 return  new CheckVolumeAnswer(command, "", size);
             } else {
                 return new Answer(command, false, "Unsupported Storage Pool");
@@ -66,21 +60,6 @@ public final class LibvirtCheckVolumeCommandWrapper extends CommandWrapper<Check
         } catch (final Exception e) {
             s_logger.error("Error while locating disk: "+ e.getMessage());
             return new Answer(command, false, result);
-        }
-    }
-
-    private long getVirtualSizeFromFile(String path) {
-        try {
-            QemuImg qemu = new QemuImg(0);
-            QemuImgFile qemuFile = new QemuImgFile(path);
-            Map<String, String> info = qemu.info(qemuFile);
-            if (info.containsKey(QemuImg.VIRTUAL_SIZE)) {
-                return Long.parseLong(info.get(QemuImg.VIRTUAL_SIZE));
-            } else {
-                throw new CloudRuntimeException("Unable to determine virtual size of volume at path " + path);
-            }
-        } catch (QemuImgException | LibvirtException ex) {
-            throw new CloudRuntimeException("Error when inspecting volume at path " + path, ex);
         }
     }
 }

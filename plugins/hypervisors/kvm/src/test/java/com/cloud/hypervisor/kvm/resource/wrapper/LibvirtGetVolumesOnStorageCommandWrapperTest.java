@@ -38,6 +38,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
 import org.mockito.Spy;
@@ -116,12 +117,17 @@ public class LibvirtGetVolumesOnStorageCommandWrapperTest {
         }
         Mockito.when(storagePool.listPhysicalDisks()).thenReturn(physicalDisks);
 
-        Answer answer = libvirtGetVolumesOnStorageCommandWrapper.execute(command, libvirtComputingResource);
-        Assert.assertTrue(answer instanceof GetVolumesOnStorageAnswer);
-        Assert.assertTrue(answer.getResult());
-        List<VolumeOnStorageTO> volumes = ((GetVolumesOnStorageAnswer) answer).getVolumes();
-        Assert.assertEquals(numberDisks, volumes.size());
-        volumeOnStorageTOMock.constructed().forEach(s -> Mockito.verify(s, times(1)).setQemuEncryptFormat(QemuObject.EncryptFormat.LUKS.toString()));
+        try (MockedStatic<KVMPhysicalDisk> mockedKVMPhysicalDisk = Mockito.mockStatic(KVMPhysicalDisk.class)) {
+            mockedKVMPhysicalDisk.when(() -> KVMPhysicalDisk.checkQcow2File(Mockito.anyString()))
+                    .thenAnswer(invocation -> null);
+
+            Answer answer = libvirtGetVolumesOnStorageCommandWrapper.execute(command, libvirtComputingResource);
+            Assert.assertTrue(answer instanceof GetVolumesOnStorageAnswer);
+            Assert.assertTrue(answer.getResult());
+            List<VolumeOnStorageTO> volumes = ((GetVolumesOnStorageAnswer) answer).getVolumes();
+            Assert.assertEquals(numberDisks, volumes.size());
+            volumeOnStorageTOMock.constructed().forEach(s -> Mockito.verify(s, times(1)).setQemuEncryptFormat(QemuObject.EncryptFormat.LUKS.toString()));
+        }
     }
 
     @Test
