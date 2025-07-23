@@ -113,7 +113,10 @@
       :closable="true"
       :footer="null"
       @cancel="closeModals">
-      <update-custom-action :resource="customActionForUpdate" @close-action="closeModals" />
+      <update-custom-action
+      :key="customActionForUpdate.id"
+      :resource="customActionForUpdate"
+      @close-action="closeModals" />
     </a-modal>
   </div>
 </template>
