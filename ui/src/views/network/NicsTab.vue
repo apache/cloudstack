@@ -32,7 +32,7 @@
           @confirm="setAsDefault(record.nic)"
           :okText="$t('label.yes')"
          :cancelText="$t('label.no')"
-          v-if="!record.nic.isdefault"
+          v-if="!record.nic.isdefault && resource.hypervisor !== 'External'"
         >
           <tooltip-button
             tooltipPlacement="bottom"
@@ -41,14 +41,14 @@
             icon="check-square-outlined" />
         </a-popconfirm>
         <tooltip-button
-          v-if="record.nic.type !== 'L2'"
+          v-if="record.nic.type !== 'L2' && resource.hypervisor !== 'External'"
           tooltipPlacement="bottom"
           :tooltip="$t('label.change.ip.address')"
           icon="swap-outlined"
           :disabled="!('updateVmNicIp' in $store.getters.apis)"
           @onClick="onChangeIPAddress(record)" />
         <tooltip-button
-          v-if="record.nic.type !== 'L2'"
+          v-if="record.nic.type !== 'L2' && resource.hypervisor !== 'External'"
           tooltipPlacement="bottom"
           :tooltip="$t('label.edit.secondary.ips')"
           icon="environment-outlined"
@@ -59,7 +59,7 @@
           @confirm="removeNIC(record.nic)"
           :okText="$t('label.yes')"
           :cancelText="$t('label.no')"
-          v-if="!record.nic.isdefault"
+          v-if="!record.nic.isdefault && resource.hypervisor !== 'External'"
         >
           <tooltip-button
             tooltipPlacement="bottom"
