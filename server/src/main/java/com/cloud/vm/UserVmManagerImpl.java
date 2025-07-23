@@ -9513,7 +9513,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 if (overrideDiskOffering.isComputeOnly()) {
                     updateDetailsWithRootDiskAttributes(cmd.getDetails(), rootVmDiskInfoFromBackup);
                 } else {
-                    Long rootDiskSize = Long.parseLong(cmd.getDetails().getOrDefault(VmDetailConstants.ROOT_DISK_SIZE, null));
+                    String diskSizeFromDetails = cmd.getDetails().get(VmDetailConstants.ROOT_DISK_SIZE);
+                    Long rootDiskSize = diskSizeFromDetails == null ? null : Long.parseLong(diskSizeFromDetails);
                     checkRootDiskSizeAgainstBackup(rootDiskSize, overrideDiskOffering, rootVmDiskInfoFromBackup.getSize());
                 }
             }

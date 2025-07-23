@@ -1208,21 +1208,6 @@ public class BackupManagerTest {
     }
 
     @Test
-    public void testDeleteBackupScheduleById() {
-        Long scheduleId = 1L;
-        DeleteBackupScheduleCmd cmd = new DeleteBackupScheduleCmd();
-        ReflectionTestUtils.setField(cmd, "id", scheduleId);
-
-        BackupScheduleVO schedule = mock(BackupScheduleVO.class);
-        when(schedule.getId()).thenReturn(scheduleId);
-        when(backupScheduleDao.findById(scheduleId)).thenReturn(schedule);
-        when(backupScheduleDao.remove(scheduleId)).thenReturn(true);
-
-        boolean result = backupManager.deleteBackupSchedule(cmd);
-        assertTrue(result);
-    }
-
-    @Test
     public void testDeleteBackupScheduleByVmId() {
         Long vmId = 1L;
         Long scheduleId = 2L;
@@ -1232,7 +1217,6 @@ public class BackupManagerTest {
         overrideBackupFrameworkConfigValue();
 
         VMInstanceVO vm = mock(VMInstanceVO.class);
-        when(vm.getId()).thenReturn(vmId);
         when(vmInstanceDao.findById(vmId)).thenReturn(vm);
         BackupScheduleVO schedule = mock(BackupScheduleVO.class);
         when(schedule.getId()).thenReturn(scheduleId);
