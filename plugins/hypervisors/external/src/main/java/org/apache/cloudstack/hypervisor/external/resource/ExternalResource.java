@@ -68,10 +68,10 @@ import com.cloud.utils.component.ComponentContext;
 
 public class ExternalResource implements ServerResource {
     protected Logger logger = LogManager.getLogger(getClass());
-    protected static final int CPU = 4;
-    protected static final long CPU_SPEED = 4000L;
-    protected static final long RAM = 16000 * 1024 * 1024L;
-    protected static final long DOM0_RAM = 768 * 1024 * 1024L;
+    protected static final int CPU = 0;
+    protected static final long CPU_SPEED = 0;
+    protected static final long RAM = 0;
+    protected static final long DOM0_RAM = 0;
     protected static final String CAPABILITIES = "hvm";
 
     protected ExternalProvisioner externalProvisioner;
