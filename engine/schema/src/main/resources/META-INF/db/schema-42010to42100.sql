@@ -233,3 +233,6 @@ CREATE TABLE IF NOT EXISTS `cloud`.`gui_themes_details` (
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_gui_themes_details__gui_theme_id` FOREIGN KEY (`gui_theme_id`) REFERENCES `gui_themes`(`id`)
 );
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backup_schedule', 'uuid', 'VARCHAR(40) NOT NULL');
+UPDATE `cloud`.`backup_schedule` SET uuid = UUID();
