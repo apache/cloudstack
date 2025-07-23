@@ -27,7 +27,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.manager.ScaleIOSDCManager;
@@ -59,7 +58,6 @@ public class ScaleIOHostListener implements HypervisorHostListener {
     @Inject private DataStoreManager _dataStoreMgr;
     @Inject private HostDao _hostDao;
     @Inject private StoragePoolHostDao _storagePoolHostDao;
-    @Inject private PrimaryDataStoreDao _primaryDataStoreDao;
     @Inject private StoragePoolDetailsDao _storagePoolDetailsDao;
     private ScaleIOSDCManager _sdcManager = new ScaleIOSDCManagerImpl();
 
@@ -109,9 +107,10 @@ public class ScaleIOHostListener implements HypervisorHostListener {
         if (systemId == null) {
             throw new CloudRuntimeException("Failed to get the system id for PowerFlex storage pool " + storagePool.getName());
         }
-        Map<String,String> details = new HashMap<>();
+        Map<String, String> details = new HashMap<>();
         details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
         _sdcManager = ComponentContext.inject(_sdcManager);
+        _sdcManager.populateSdcSettings(details, host.getDataCenterId());
         if (_sdcManager.areSDCConnectionsWithinLimit(poolId)) {
             details.put(ScaleIOSDCManager.ConnectOnDemand.key(), String.valueOf(ScaleIOSDCManager.ConnectOnDemand.valueIn(host.getDataCenterId())));
             String mdms = _sdcManager.getMdms(poolId);
@@ -120,7 +119,7 @@ public class ScaleIOHostListener implements HypervisorHostListener {
 
         ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, storagePool, storagePool.getPath(), details);
         ModifyStoragePoolAnswer answer  = sendModifyStoragePoolCommand(cmd, storagePool, host);
-        Map<String,String> poolDetails = answer.getPoolInfo().getDetails();
+        Map<String, String> poolDetails = answer.getPoolInfo().getDetails();
         if (MapUtils.isEmpty(poolDetails)) {
             String msg = String.format("PowerFlex storage SDC details not found on the host: %s, (re)install SDC and restart agent", host);
             logger.warn(msg);
@@ -137,7 +136,7 @@ public class ScaleIOHostListener implements HypervisorHostListener {
         }
 
         if (StringUtils.isBlank(sdcId)) {
-            String msg = String.format("Couldn't retrieve PowerFlex storage SDC details from the host: %s, (re)install SDC and restart agent", host);
+            String msg = String.format("Couldn't retrieve PowerFlex storage SDC details from the host: %s, add MDMs if On-demand connect disabled or try (re)install SDC & restart agent", host);
             logger.warn(msg);
             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "SDC details not found on host: " + host.getUuid(), msg);
             return null;
@@ -201,9 +200,10 @@ public class ScaleIOHostListener implements HypervisorHostListener {
         if (systemId == null) {
             throw new CloudRuntimeException("Failed to get the system id for PowerFlex storage pool " + storagePool.getName());
         }
-        Map<String,String> details = new HashMap<>();
+        Map<String, String> details = new HashMap<>();
         details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
         _sdcManager = ComponentContext.inject(_sdcManager);
+        _sdcManager.populateSdcSettings(details, host.getDataCenterId());
         if (_sdcManager.canUnprepareSDC(host, dataStore)) {
             details.put(ScaleIOSDCManager.ConnectOnDemand.key(), String.valueOf(ScaleIOSDCManager.ConnectOnDemand.valueIn(host.getDataCenterId())));
             String mdms = _sdcManager.getMdms(poolId);

@@ -65,7 +65,7 @@
 <script>
 
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -121,7 +121,7 @@ export default {
       this.fetchServiceOfferings()
     },
     fetchCapabilities (id) {
-      api('listCapabilities').then(json => {
+      getAPI('listCapabilities').then(json => {
         this.capability = json.listcapabilitiesresponse.capability || []
         this.minCpu = this.capability.sharedfsvmmincpucount
         this.minMemory = this.capability.sharedfsvmminramsize
@@ -140,7 +140,7 @@ export default {
       } else {
         params.account = this.owner.account
       }
-      api('listServiceOfferings', params).then(json => {
+      getAPI('listServiceOfferings', params).then(json => {
         var items = json.listserviceofferingsresponse.serviceoffering || []
         if (items != null) {
           for (var i = 0; i < items.length; i++) {
@@ -169,7 +169,7 @@ export default {
           serviceofferingid: values.serviceofferingid
         }
         this.loading = true
-        api('changeSharedFileSystemServiceOffering', data).then(response => {
+        postAPI('changeSharedFileSystemServiceOffering', data).then(response => {
           this.$pollJob({
             jobId: response.changesharedfilesystemserviceofferingresponse.jobid,
             title: this.$t('label.change.service.offering'),
