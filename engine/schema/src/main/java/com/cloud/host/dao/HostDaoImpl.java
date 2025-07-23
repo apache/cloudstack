@@ -72,6 +72,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.JoinBuilder.JoinType;
+import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
@@ -1601,6 +1602,17 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
+    public List<HostVO> listHostsByMsDcResourceState(long msId, long dcId, List<ResourceState> excludedResourceStates) {
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getManagementServerId(), Op.EQ, msId);
+        sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
+        if (CollectionUtils.isNotEmpty(excludedResourceStates)) {
+            sc.and(sc.entity().getResourceState(), Op.NIN, excludedResourceStates.toArray());
+        }
+        return listBy(sc.create());
+    }
+
+    @Override
     public List<HostVO> listHostsByMs(long msId) {
         SearchCriteria<HostVO> sc = ResponsibleMsSearch.create();
         sc.setParameters("managementServerId", msId);
@@ -1608,10 +1620,32 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
-    public int countByMs(long msId) {
-        SearchCriteria<HostVO> sc = ResponsibleMsSearch.create();
-        sc.setParameters("managementServerId", msId);
-        return getCount(sc);
+    public List<HostVO> listHostsByMsResourceState(long msId, List<ResourceState> excludedResourceStates) {
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getManagementServerId(), Op.EQ, msId);
+        if (CollectionUtils.isNotEmpty(excludedResourceStates)) {
+            sc.and(sc.entity().getResourceState(), Op.NIN, excludedResourceStates.toArray());
+        }
+        return listBy(sc.create());
+    }
+
+    @Override
+    public int countHostsByMsResourceStateTypeAndHypervisorType(long msId,
+                                                                List<ResourceState> excludedResourceStates,
+                                                                List<Type> hostTypes,
+                                                                List<HypervisorType> hypervisorTypes) {
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getManagementServerId(), Op.EQ, msId);
+        if (CollectionUtils.isNotEmpty(excludedResourceStates)) {
+            sc.and(sc.entity().getResourceState(), Op.NIN, excludedResourceStates.toArray());
+        }
+        if (CollectionUtils.isNotEmpty(hostTypes)) {
+            sc.and(sc.entity().getType(), Op.IN, hostTypes.toArray());
+        }
+        if (CollectionUtils.isNotEmpty(hypervisorTypes)) {
+            sc.and(sc.entity().getHypervisorType(), Op.IN, hypervisorTypes.toArray());
+        }
+        return getCount(sc.create());
     }
 
     @Override

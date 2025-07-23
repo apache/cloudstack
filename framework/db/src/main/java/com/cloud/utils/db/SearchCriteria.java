@@ -39,7 +39,8 @@ public class SearchCriteria<K> {
                 " NOT BETWEEN ? AND ? ",
                 2), IN(" IN () ", -1), NOTIN(" NOT IN () ", -1), LIKE(" LIKE ? ", 1), NLIKE(" NOT LIKE ? ", 1), NIN(" NOT IN () ", -1), NULL(" IS NULL ", 0), NNULL(
                 " IS NOT NULL ",
-                0), SC(" () ", 1), TEXT("  () ", 1), RP("", 0), AND(" AND ", 0), OR(" OR ", 0), NOT(" NOT ", 0), FIND_IN_SET(" ) ", 1), BINARY_OR(" & ?) > 0", 1);
+                0), SC(" () ", 1), TEXT("  () ", 1), RP("", 0), AND(" AND ", 0), OR(" OR ", 0), NOT(" NOT ", 0), FIND_IN_SET(" ) ", 1), BINARY_OR(" & ?) > 0", 1),
+                LIKE_REPLACE(", ?, ?)", 3), LIKE_CONCAT(", ?)", 2);
 
         private final String op;
         int params;
@@ -60,7 +61,8 @@ public class SearchCriteria<K> {
     }
 
     public enum Func {
-        NATIVE("@", 1), MAX("MAX(@)", 1), MIN("MIN(@)", 1), FIRST("FIRST(@)", 1), LAST("LAST(@)", 1), SUM("SUM(@)", 1), COUNT("COUNT(@)", 1), DISTINCT("DISTINCT(@)", 1), DISTINCT_PAIR("DISTINCT @, @", 2);
+        NATIVE("@", 1), MAX("MAX(@)", 1), MIN("MIN(@)", 1), FIRST("FIRST(@)", 1), LAST("LAST(@)", 1), SUM("SUM(@)", 1), COUNT("COUNT(@)", 1), DISTINCT("DISTINCT(@)", 1), DISTINCT_PAIR("DISTINCT @, @", 2),
+                CONCAT("CONCAT(@,@)", 2);
 
         private String func;
         private int count;

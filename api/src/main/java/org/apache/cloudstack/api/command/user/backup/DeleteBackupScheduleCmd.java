@@ -43,7 +43,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
         description = "Deletes the backup schedule of a VM",
         responseObject = SuccessResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class DeleteBackupScheduleCmd  extends BaseCmd {
+public class DeleteBackupScheduleCmd extends BaseCmd {
 
     @Inject
     private BackupManager backupManager;
@@ -52,17 +52,13 @@ public class DeleteBackupScheduleCmd  extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
-            type = CommandType.UUID,
-            entityType = UserVmResponse.class,
-            description = "ID of the VM")
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class,
+            description = "ID of the VM from which all backup schedules will be deleted.")
     private Long vmId;
 
-    @Parameter(name = ApiConstants.ID,
-            type = CommandType.UUID,
-            entityType = BackupScheduleResponse.class,
-            description = "ID of the schedule",
-            since = "4.20.1")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = BackupScheduleResponse.class,
+            since = "4.20.1", description = "ID of the backup schedule to be deleted. It has precedence over the 'virtualmachineid' parameter, " +
+            "i.e., when the 'id' parameter is specified, the 'virtualmachineid' parameter will be ignored.")
     private Long id;
 
     /////////////////////////////////////////////////////
