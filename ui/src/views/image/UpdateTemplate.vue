@@ -103,6 +103,14 @@
               </a-select>
             </a-form-item>
           </a-col>
+          <a-col :md="24" :lg="24" v-if="hasOstypeidChanged()">
+            <a-form-item name="forceupdateostype" ref="forceupdateostype">
+              <template #label>
+                <tooltip-label :title="$t('label.force.update.os.type')" :tooltip="apiParams.forceupdateostype.description"/>
+              </template>
+              <a-switch v-model:checked="form.forceupdateostype" />
+            </a-form-item>
+          </a-col>
         </a-row>
         <a-row :gutter="12">
           <a-col :md="24" :lg="12">
@@ -150,6 +158,12 @@
             <tooltip-label :title="$t('label.isdynamicallyscalable')" :tooltip="apiParams.isdynamicallyscalable.description"/>
           </template>
           <a-switch v-model:checked="form.isdynamicallyscalable" />
+        </a-form-item>
+        <a-form-item name="forcks" ref="forcks">
+          <template #label>
+            <tooltip-label :title="$t('label.forcks')" :tooltip="apiParams.forcks.description"/>
+          </template>
+          <a-switch v-model:checked="form.forcks" />
         </a-form-item>
         <a-form-item name="templatetype" ref="templatetype" v-if="isAdmin">
           <template #label>
@@ -217,7 +231,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
@@ -245,7 +259,8 @@ export default {
       userdataid: null,
       userdatapolicy: null,
       userdatapolicylist: {},
-      architectureTypes: {}
+      architectureTypes: {},
+      originalOstypeid: null
     }
   },
   beforeCreate () {
@@ -274,7 +289,7 @@ export default {
         displaytext: [{ required: true, message: this.$t('message.error.required.input') }],
         ostypeid: [{ required: true, message: this.$t('message.error.select') }]
       })
-      const resourceFields = ['name', 'displaytext', 'architecture', 'passwordenabled', 'ostypeid', 'isdynamicallyscalable', 'userdataid', 'userdatapolicy']
+      const resourceFields = ['name', 'displaytext', 'architecture', 'passwordenabled', 'ostypeid', 'isdynamicallyscalable', 'userdataid', 'userdatapolicy', 'forcks']
       if (this.isAdmin) {
         resourceFields.push('templatetype')
         resourceFields.push('templatetag')
@@ -288,6 +303,10 @@ export default {
               break
             case 'userdatapolicy':
               this.userdatapolicy = fieldValue
+              break
+            case 'ostypeid':
+              this.form[field] = fieldValue
+              this.originalOstypeid = fieldValue
               break
             default:
               this.form[field] = fieldValue
@@ -328,7 +347,7 @@ export default {
       params.listAll = true
       this.osTypes.opts = []
       this.osTypes.loading = true
-      api('listOsTypes', params).then(json => {
+      getAPI('listOsTypes', params).then(json => {
         const listOsTypes = json.listostypesresponse.ostype
         this.osTypes.opts = listOsTypes
       }).finally(() => {
@@ -466,7 +485,7 @@ export default {
       this.userdata.opts = []
       this.userdata.loading = true
 
-      api('listUserData', params).then(json => {
+      getAPI('listUserData', params).then(json => {
         const userdataIdAndName = []
         const userdataOpts = json.listuserdataresponse.userdata
         userdataIdAndName.push({
@@ -504,7 +523,8 @@ export default {
           }
           params[key] = values[key]
         }
-        api('updateTemplate', params).then(json => {
+        params.forceupdateostype = this.form.forceupdateostype || false
+        postAPI('updateTemplate', params).then(json => {
           if (this.userdataid !== null) {
             this.linkUserdataToTemplate(this.userdataid, json.updatetemplateresponse.template.id, this.userdatapolicy)
           }
@@ -533,13 +553,16 @@ export default {
       if (userdatapolicy) {
         params.userdatapolicy = userdatapolicy
       }
-      api('linkUserDataToTemplate', params).then(json => {
+      postAPI('linkUserDataToTemplate', params).then(json => {
         this.closeAction()
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
         this.loading = false
       })
+    },
+    hasOstypeidChanged () {
+      return this.form.ostypeid !== this.originalOstypeid
     }
   }
 }

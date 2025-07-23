@@ -16,8 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.guest;
 
-import org.apache.commons.collections.MapUtils;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -25,17 +29,13 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.GuestOSCategoryResponse;
 import org.apache.cloudstack.api.response.GuestOSResponse;
-import org.apache.cloudstack.acl.RoleType;
+import org.apache.commons.collections.MapUtils;
 
 import com.cloud.event.EventTypes;
 import com.cloud.storage.GuestOS;
 import com.cloud.user.Account;
-
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 
 @APICommand(name = "updateGuestOs", description = "Updates the information about Guest OS", responseObject = GuestOSResponse.class,
         since = "4.4.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -50,7 +50,7 @@ public class UpdateGuestOsCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = GuestOSResponse.class, required = true, description = "UUID of the Guest OS")
     private Long id;
 
-    @Parameter(name = ApiConstants.OS_DISPLAY_NAME, type = CommandType.STRING, required = true, description = "Unique display name for Guest OS")
+    @Parameter(name = ApiConstants.OS_DISPLAY_NAME, type = CommandType.STRING, description = "Unique display name for Guest OS")
     private String osDisplayName;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, required = false, description = "Map of (key/value pairs)")
@@ -58,6 +58,12 @@ public class UpdateGuestOsCmd extends BaseAsyncCmd {
 
     @Parameter(name="forDisplay", type=CommandType.BOOLEAN, description="whether this guest OS is available for end users", authorized = {RoleType.Admin})
     private Boolean display;
+
+    @Parameter(name = ApiConstants.OS_CATEGORY_ID, type = CommandType.UUID, entityType = GuestOSCategoryResponse.class,
+            description = "the ID of the OS category", since = "4.21.0")
+    private Long osCategoryId;
+
+
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -71,9 +77,9 @@ public class UpdateGuestOsCmd extends BaseAsyncCmd {
         return osDisplayName;
     }
 
-    public Map getDetails() {
-        Map<String, String> detailsMap = new HashMap<>();;
-        if (MapUtils.isNotEmpty(detailsMap)) {
+    public Map<String, String> getDetails() {
+        Map<String, String> detailsMap = new HashMap<>();
+        if (MapUtils.isNotEmpty(details)) {
             Collection<?> servicesCollection = details.values();
             Iterator<?> iter = servicesCollection.iterator();
             while (iter.hasNext()) {
@@ -88,6 +94,10 @@ public class UpdateGuestOsCmd extends BaseAsyncCmd {
 
     public Boolean getForDisplay() {
         return display;
+    }
+
+    public Long getOsCategoryId() {
+        return osCategoryId;
     }
 
     /////////////////////////////////////////////////////

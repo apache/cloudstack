@@ -52,7 +52,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { postAPI } from '@/api'
 
 export default {
   name: 'UpdateKubernetesSupportedVersion',
@@ -127,7 +127,7 @@ export default {
         if (this.isValidValueForKey(values, 'state') && this.arrayHasItems(this.states)) {
           params.state = this.states[values.state].id
         }
-        api('updateKubernetesSupportedVersion', params).then(json => {
+        postAPI('updateKubernetesSupportedVersion', params).then(json => {
           this.$message.success(`${this.$t('message.success.update.kubeversion')}: ${this.resource.name}`)
           this.$emit('refresh-data')
           this.closeAction()

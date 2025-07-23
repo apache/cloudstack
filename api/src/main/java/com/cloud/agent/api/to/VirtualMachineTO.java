@@ -31,8 +31,8 @@ public class VirtualMachineTO {
     private String name;
     private BootloaderType bootloader;
     private VirtualMachine.State state;
-    Type type;
-    int cpus;
+    private Type type;
+    private int cpus;
 
     /**
         'speed' is still here since 4.0.X/4.1.X management servers do not support
@@ -43,49 +43,50 @@ public class VirtualMachineTO {
          So this is here for backwards compatibility with 4.0.X/4.1.X management servers
          and newer agents.
     */
-    Integer speed;
-    Integer minSpeed;
-    Integer maxSpeed;
+    private Integer speed;
+    private Integer minSpeed;
+    private Integer maxSpeed;
 
-    long minRam;
-    long maxRam;
-    String hostName;
-    String arch;
-    String os;
-    String platformEmulator;
-    String bootArgs;
-    String[] bootupScripts;
-    boolean enableHA;
-    boolean limitCpuUse;
-    boolean enableDynamicallyScaleVm;
+    private long minRam;
+    private long maxRam;
+    private String hostName;
+    private String arch;
+    private String os;
+    private String platformEmulator;
+    private String bootArgs;
+    private String[] bootupScripts;
+    private boolean enableHA;
+    private boolean limitCpuUse;
+    private boolean enableDynamicallyScaleVm;
     @LogLevel(LogLevel.Log4jLevel.Off)
-    String vncPassword;
-    String vncAddr;
-    Map<String, String> details;
-    String uuid;
-    String bootType;
-    String bootMode;
-    boolean enterHardwareSetup;
+    private String vncPassword;
+    private String vncAddr;
+    private Map<String, String> details;
+    private Map<String, String> params;
+    private String uuid;
+    private String bootType;
+    private String bootMode;
+    private boolean enterHardwareSetup;
 
-    DiskTO[] disks;
-    NicTO[] nics;
-    GPUDeviceTO gpuDevice;
-    Integer vcpuMaxLimit;
-    List<String[]> vmData = null;
+    private DiskTO[] disks;
+    private NicTO[] nics;
+    private GPUDeviceTO gpuDevice;
+    private Integer vcpuMaxLimit;
+    private List<String[]> vmData = null;
 
-    String configDriveLabel = null;
-    String configDriveIsoRootFolder = null;
-    String configDriveIsoFile = null;
-    NetworkElement.Location configDriveLocation = NetworkElement.Location.SECONDARY;
+    private String configDriveLabel = null;
+    private String configDriveIsoRootFolder = null;
+    private String configDriveIsoFile = null;
+    private NetworkElement.Location configDriveLocation = NetworkElement.Location.SECONDARY;
 
-    Double cpuQuotaPercentage = null;
+    private Double cpuQuotaPercentage = null;
 
-    Map<String, String> guestOsDetails = new HashMap<String, String>();
-    Map<String, String> extraConfig = new HashMap<>();
-    Map<Long, String> networkIdToNetworkNameMap = new HashMap<>();
-    DeployAsIsInfoTO deployAsIsInfo;
-    String metadataManufacturer;
-    String metadataProductName;
+    private Map<String, String> guestOsDetails = new HashMap<String, String>();
+    private Map<String, String> extraConfig = new HashMap<>();
+    private Map<Long, String> networkIdToNetworkNameMap = new HashMap<>();
+    private DeployAsIsInfoTO deployAsIsInfo;
+    private String metadataManufacturer;
+    private String metadataProductName;
 
     public VirtualMachineTO(long id, String instanceName, VirtualMachine.Type type, int cpus, Integer speed, long minRam, long maxRam, BootloaderType bootloader,
             String os, boolean enableHA, boolean limitCpuUse, String vncPassword) {
@@ -258,6 +259,10 @@ public class VirtualMachineTO {
 
     public void setBootupScripts(String[] bootupScripts) {
         this.bootupScripts = bootupScripts;
+    }
+
+    public void setEnableHA(boolean enableHA) {
+        this.enableHA = enableHA;
     }
 
     public DiskTO[] getDisks() {
@@ -433,6 +438,42 @@ public class VirtualMachineTO {
 
     public void setDeployAsIsInfo(DeployAsIsInfoTO deployAsIsInfo) {
         this.deployAsIsInfo = deployAsIsInfo;
+    }
+
+    public void setSpeed(Integer speed) {
+        this.speed = speed;
+    }
+
+    public void setMinSpeed(Integer minSpeed) {
+        this.minSpeed = minSpeed;
+    }
+
+    public void setMaxSpeed(Integer maxSpeed) {
+        this.maxSpeed = maxSpeed;
+    }
+
+    public void setMinRam(long minRam) {
+        this.minRam = minRam;
+    }
+
+    public void setMaxRam(long maxRam) {
+        this.maxRam = maxRam;
+    }
+
+    public void setLimitCpuUse(boolean limitCpuUse) {
+        this.limitCpuUse = limitCpuUse;
+    }
+
+    public Map<String, String> getParams() {
+        return params;
+    }
+
+    public void setParams(Map<String, String> params) {
+        this.params = params;
+    }
+
+    public void setExtraConfig(Map<String, String> extraConfig) {
+        this.extraConfig = extraConfig;
     }
 
     public String getMetadataManufacturer() {

@@ -1008,6 +1008,17 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
     @Override
     @DB()
+    public List<T> listByUuids(final Collection<String> uuids) {
+        if (org.apache.commons.collections.CollectionUtils.isEmpty(uuids)) {
+            return Collections.emptyList();
+        }
+        SearchCriteria<T> sc = createSearchCriteria();
+        sc.addAnd("uuid", SearchCriteria.Op.IN, uuids.toArray());
+        return listBy(sc);
+    }
+
+    @Override
+    @DB()
     public T findByUuidIncludingRemoved(final String uuid) {
         SearchCriteria<T> sc = createSearchCriteria();
         sc.addAnd("uuid", SearchCriteria.Op.EQ, uuid);

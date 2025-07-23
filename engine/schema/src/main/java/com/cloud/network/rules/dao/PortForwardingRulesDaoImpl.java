@@ -58,6 +58,8 @@ public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRul
         AllFieldsSearch.and("vmId", AllFieldsSearch.entity().getVirtualMachineId(), Op.EQ);
         AllFieldsSearch.and("purpose", AllFieldsSearch.entity().getPurpose(), Op.EQ);
         AllFieldsSearch.and("dstIp", AllFieldsSearch.entity().getDestinationIpAddress(), Op.EQ);
+        AllFieldsSearch.and("sourcePortStart", AllFieldsSearch.entity().getSourcePortStart(), Op.EQ);
+        AllFieldsSearch.and("sourcePortEnd", AllFieldsSearch.entity().getSourcePortEnd(), Op.EQ);
         AllFieldsSearch.done();
 
         ApplicationSearch = createSearchBuilder();
@@ -172,6 +174,15 @@ public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRul
         SearchCriteria<PortForwardingRuleVO> sc = AllFieldsSearch.create();
         sc.setParameters("id", id);
         sc.setParameters("dstIp", secondaryIp);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public PortForwardingRuleVO findByNetworkAndPorts(long networkId, int startPort, int endPort) {
+        SearchCriteria<PortForwardingRuleVO> sc = AllFieldsSearch.create();
+        sc.setParameters("networkId", networkId);
+        sc.setParameters("sourcePortStart", startPort);
+        sc.setParameters("sourcePortEnd", endPort);
         return findOneBy(sc);
     }
 
