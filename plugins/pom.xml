@@ -90,8 +90,6 @@
         <module>hypervisors/external</module>
         <module>hypervisors/hyperv</module>
         <module>hypervisors/kvm</module>
-        <module>hypervisors/ovm3</module>
-        <module>hypervisors/ovm</module>
         <module>hypervisors/ucs</module>
         <module>hypervisors/xenserver</module>
 
