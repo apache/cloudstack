@@ -136,7 +136,6 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DeviceType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DiscardType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DiskProtocol;
-import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtUtilitiesHelper;
 import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.MigrationOptions;
 import com.cloud.storage.ScopeType;
@@ -1789,15 +1788,6 @@ public class KVMStorageProcessor implements StorageProcessor {
     private static final String TAG_AVOID_DISK_FROM_SNAPSHOT = "<disk name='%s' snapshot='no' />";
 
     /**
-     * Virsh command to merge (blockcommit) snapshot into the base file.<br><br>
-     * 1st parameter: VM's name;<br>
-     * 2nd parameter: disk's label (target.dev tag from VM's XML);<br>
-     * 3rd parameter: the absolute path of the base file;
-     * 4th parameter: the flag '--delete', if Libvirt supports it. Libvirt started to support it on version <b>6.0.0</b>;
-     */
-    private static final String COMMAND_MERGE_SNAPSHOT = "virsh blockcommit %s %s --base %s --active --wait %s --pivot";
-
-    /**
      * Flag to take disk-only snapshots from VM.<br><br>
      * Libvirt lib for java does not have the enum virDomainSnapshotCreateFlags.
      * @see <a href="https://libvirt.org/html/libvirt-libvirt-domain-snapshot.html">Module libvirt-domain-snapshot from libvirt</a>
@@ -2238,7 +2228,7 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             String convertResult = convertBaseFileToSnapshotFileInStorageDir(ObjectUtils.defaultIfNull(secondaryPool, primaryPool), disk, snapshotPath, directoryPath, volume, cmd.getWait());
 
-            mergeSnapshotIntoBaseFile(vm, diskLabel, diskPath, snapshotName, volume, conn);
+            resource.mergeSnapshotIntoBaseFile(vm, diskLabel, diskPath, null, true, snapshotName, volume, conn);
 
             validateConvertResult(convertResult, snapshotPath);
         } catch (LibvirtException e) {
@@ -2431,59 +2421,6 @@ public class KVMStorageProcessor implements StorageProcessor {
     }
 
     /**
-     * Merges the snapshot into base file to keep volume and VM behavior after stopping - starting.
-     * @param vm Domain of the VM;
-     * @param diskLabel Disk label to manage snapshot and base file;
-     * @param baseFilePath Path of the base file;
-     * @param snapshotName Name of the snapshot;
-     * @throws LibvirtException
-     */
-    protected void mergeSnapshotIntoBaseFile(Domain vm, String diskLabel, String baseFilePath, String snapshotName, VolumeObjectTO volume,
-            Connect conn) throws LibvirtException {
-        boolean isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit = LibvirtUtilitiesHelper.isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit(conn);
-        String vmName = vm.getName();
-        String mergeCommand = String.format(COMMAND_MERGE_SNAPSHOT, vmName, diskLabel, baseFilePath, isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit ? "--delete" : "");
-        String mergeResult = Script.runSimpleBashScript(mergeCommand);
-
-        if (mergeResult == null) {
-            logger.debug(String.format("Successfully merged snapshot [%s] into VM [%s] %s base file.", snapshotName, vmName, volume));
-            manuallyDeleteUnusedSnapshotFile(isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit, getSnapshotTemporaryPath(baseFilePath, snapshotName));
-            return;
-        }
-
-        String errorMsg = String.format("Failed to merge snapshot [%s] into VM [%s] %s base file. Command [%s] resulted in [%s]. If the VM is stopped and then started, it"
-          + " will start to write in the base file again. All changes made between the snapshot and the VM stop will be in the snapshot. If the VM is stopped, the snapshot must be"
-          + " merged into the base file manually.", snapshotName, vmName, volume, mergeCommand, mergeResult);
-
-        logger.warn(String.format("%s VM XML: [%s].", errorMsg, vm.getXMLDesc(0)));
-        throw new CloudRuntimeException(errorMsg);
-    }
-
-    /**
-     * Manually deletes the unused snapshot file.<br/>
-     * This method is necessary due to Libvirt created the tag '--delete' on command 'virsh blockcommit' on version <b>1.2.9</b>, however it was only implemented on version
-     *  <b>6.0.0</b>.
-     * @param snapshotPath The unused snapshot file to manually delete.
-     */
-    protected void manuallyDeleteUnusedSnapshotFile(boolean isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit, String snapshotPath) {
-        if (isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit) {
-            logger.debug(String.format("The current Libvirt's version supports the flag '--delete' on command 'virsh blockcommit', we will skip the manually deletion of the"
-                    + " unused snapshot file [%s] as it already was automatically deleted.", snapshotPath));
-            return;
-        }
-
-        logger.debug(String.format("The current Libvirt's version does not supports the flag '--delete' on command 'virsh blockcommit', therefore we will manually delete the"
-                + " unused snapshot file [%s].", snapshotPath));
-
-        try {
-            Files.deleteIfExists(Paths.get(snapshotPath));
-            logger.debug(String.format("Manually deleted unused snapshot file [%s].", snapshotPath));
-        } catch (IOException ex) {
-            throw new CloudRuntimeException(String.format("Unable to manually delete unused snapshot file [%s] due to [%s].", snapshotPath, ex.getMessage()));
-        }
-    }
-
-    /**
      * Creates the snapshot directory in the primary storage, if it does not exist; then, converts the base file (VM's old writing file) to the snapshot directory.
      * @param pool         Storage to create folder, if not exists;
      * @param baseFile     Base file of VM, which will be converted;
@@ -2569,7 +2506,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         String diskLabelToSnapshot = diskToSnapshotAndDisksToAvoid.first();
         String disksToAvoidsOnSnapshot = diskToSnapshotAndDisksToAvoid.second().stream().map(diskLabel -> String.format(TAG_AVOID_DISK_FROM_SNAPSHOT, diskLabel))
           .collect(Collectors.joining());
-        String snapshotTemporaryPath = getSnapshotTemporaryPath(diskPath, snapshotName);
+        String snapshotTemporaryPath = resource.getSnapshotTemporaryPath(diskPath, snapshotName);
 
         String createSnapshotXmlFormated = String.format(XML_CREATE_DISK_SNAPSHOT, snapshotName, diskLabelToSnapshot, snapshotTemporaryPath, disksToAvoidsOnSnapshot);
 
@@ -2618,18 +2555,6 @@ public class KVMStorageProcessor implements StorageProcessor {
         }
 
         return new Pair<>(diskLabelToSnapshot, disksToAvoid);
-    }
-
-    /**
-     * Retrieves the temporary path of the snapshot.
-     * @param diskPath Path of the disk to snapshot;
-     * @param snapshotName Snapshot name;
-     * @return the path of the disk replacing the disk with the snapshot.
-     */
-    protected String getSnapshotTemporaryPath(String diskPath, String snapshotName) {
-        String[] diskPathSplitted = diskPath.split(File.separator);
-        diskPathSplitted[diskPathSplitted.length - 1] = snapshotName;
-        return String.join(File.separator, diskPathSplitted);
     }
 
     /**

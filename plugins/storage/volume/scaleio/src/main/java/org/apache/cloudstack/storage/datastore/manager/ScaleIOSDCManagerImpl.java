@@ -183,12 +183,13 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
                     storagePoolHost.setLocalPath(sdcId);
                     storagePoolHostDao.update(storagePoolHost.getId(), storagePoolHost);
                 }
+
+                int waitTimeInSecs = 15; // Wait for 15 secs (usual tests with SDC service start took 10-15 secs)
+                if (isHostSdcConnected(sdcId, dataStore, waitTimeInSecs)) {
+                    return sdcId;
+                }
             }
 
-            int waitTimeInSecs = 15; // Wait for 15 secs (usual tests with SDC service start took 10-15 secs)
-            if (isHostSdcConnected(sdcId, dataStore, waitTimeInSecs)) {
-                return sdcId;
-            }
             return null;
         } finally {
             if (storageSystemIdLock != null) {
@@ -204,9 +205,10 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
 
     private String prepareSDCOnHost(Host host, DataStore dataStore, String systemId, String mdms) {
         logger.debug("Preparing SDC on the host {}", host);
-        Map<String,String> details = new HashMap<>();
+        Map<String, String> details = new HashMap<>();
         details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
         details.put(ScaleIOGatewayClient.STORAGE_POOL_MDMS, mdms);
+        populateSdcSettings(details, host.getDataCenterId());
         PrepareStorageClientCommand cmd = new PrepareStorageClientCommand(((PrimaryDataStore) dataStore).getPoolType(), dataStore.getUuid(), details);
         int timeoutSeconds = 60;
         cmd.setWait(timeoutSeconds);
@@ -247,7 +249,7 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
         }
 
         if (StringUtils.isBlank(sdcId)) {
-            logger.warn("Couldn't retrieve PowerFlex storage SDC details from the host: {}, try (re)install SDC and restart agent", host);
+            logger.warn("Couldn't retrieve PowerFlex storage SDC details from the host: {}, add MDMs if On-demand connect disabled or try (re)install SDC & restart agent", host);
             return null;
         }
 
@@ -297,8 +299,7 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
             }
 
             if (!canUnprepareSDC(host, dataStore)) {
-                logger.debug("Cannot unprepare SDC, there might be other connected pools of same PowerFlex storage cluster," +
-                        "or some volumes mapped to the SDC that belongs to any of the storage pools of the PowerFlex storage cluster");
+                logger.debug("Cannot unprepare SDC, there are other pools of the same PowerFlex storage cluster with some volumes mapped to the host SDC");
                 return false;
             }
 
@@ -324,6 +325,7 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
         logger.debug(String.format("Unpreparing SDC on the host %s (%s)", host.getId(), host.getName()));
         Map<String,String> details = new HashMap<>();
         details.put(ScaleIOGatewayClient.STORAGE_POOL_MDMS, mdms);
+        populateSdcSettings(details, host.getDataCenterId());
         UnprepareStorageClientCommand cmd = new UnprepareStorageClientCommand(((PrimaryDataStore) dataStore).getPoolType(), dataStore.getUuid(), details);
         int timeoutSeconds = 60;
         cmd.setWait(timeoutSeconds);
@@ -359,18 +361,28 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
             return false;
         }
 
-        List<StoragePoolHostVO> poolHostVOsBySdc = storagePoolHostDao.findByLocalPath(sdcId);
-        if (CollectionUtils.isNotEmpty(poolHostVOsBySdc) && poolHostVOsBySdc.size() > 1) {
-            logger.debug(String.format("There are other connected pools with the same SDC of the host %s, shouldn't unprepare SDC", host));
-            return false;
-        }
-
         try {
-            final ScaleIOGatewayClient client = getScaleIOClient(dataStore.getId());
-            return client.listVolumesMappedToSdc(sdcId).isEmpty();
+            if (logger.isDebugEnabled()) {
+                List<StoragePoolHostVO> poolHostVOsBySdc = storagePoolHostDao.findByLocalPath(sdcId);
+                if (CollectionUtils.isNotEmpty(poolHostVOsBySdc) && poolHostVOsBySdc.size() > 1) {
+                    logger.debug(String.format("There are other connected pools with the same SDC of the host %s", host));
+                }
+            }
+
+            return !areVolumesMappedToPoolSdc(dataStore.getId(), sdcId);
         } catch (Exception e) {
             logger.warn("Unable to check whether the SDC of the pool: " + dataStore.getId() + " can be unprepared on the host: " + host.getId() + ", due to " + e.getMessage(), e);
             return false;
+        }
+    }
+
+    private boolean areVolumesMappedToPoolSdc(long storagePoolId, String sdcId) throws Exception {
+        try {
+            final ScaleIOGatewayClient client = getScaleIOClient(storagePoolId);
+            return CollectionUtils.isNotEmpty(client.listVolumesMappedToSdc(sdcId));
+        } catch (Exception e) {
+            logger.warn("Unable to check the volumes mapped to SDC of the pool: " + storagePoolId + ", due to " + e.getMessage());
+            throw e;
         }
     }
 
@@ -467,7 +479,21 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
 
     private ScaleIOGatewayClient getScaleIOClient(final Long storagePoolId) throws Exception {
         StoragePoolVO storagePool = storagePoolDao.findById(storagePoolId);
+        if (storagePool == null) {
+            throw new CloudRuntimeException("Unable to find the storage pool with id " + storagePoolId);
+        }
         return ScaleIOGatewayClientConnectionPool.getInstance().getClient(storagePool, storagePoolDetailsDao);
+    }
+
+    @Override
+    public void populateSdcSettings(Map<String, String> details, long dataCenterId) {
+        if (details == null) {
+            details = new HashMap<>();
+        }
+
+        details.put(ScaleIOSDCManager.MdmsChangeApplyWaitTime.key(), String.valueOf(ScaleIOSDCManager.MdmsChangeApplyWaitTime.valueIn(dataCenterId)));
+        details.put(ScaleIOSDCManager.ValidateMdmsOnConnect.key(), String.valueOf(ScaleIOSDCManager.ValidateMdmsOnConnect.valueIn(dataCenterId)));
+        details.put(ScaleIOSDCManager.BlockSdcUnprepareIfRestartNeededAndVolumesAreAttached.key(), String.valueOf(ScaleIOSDCManager.BlockSdcUnprepareIfRestartNeededAndVolumesAreAttached.valueIn(dataCenterId)));
     }
 
     @Override
@@ -477,6 +503,6 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey[]{ConnectOnDemand};
+        return new ConfigKey[]{ConnectOnDemand, MdmsChangeApplyWaitTime, ValidateMdmsOnConnect, BlockSdcUnprepareIfRestartNeededAndVolumesAreAttached};
     }
 }

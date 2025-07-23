@@ -67,6 +67,13 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item name="forceupdateostype" ref="forceupdateostype" v-if="hasOstypeidChanged()">
+          <template #label>
+            <tooltip-label :title="$t('label.force.update.os.type')" :tooltip="apiParams.forceupdateostype.description"/>
+          </template>
+          <a-switch v-model:checked="form.forceupdateostype" />
+        </a-form-item>
+
         <a-form-item name="isdynamicallyscalable" ref="isdynamicallyscalable">
           <template #label>
             <tooltip-label :title="$t('label.isdynamicallyscalable')" :tooltip="apiParams.isdynamicallyscalable.description"/>
@@ -150,7 +157,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
@@ -172,7 +179,8 @@ export default {
       userdataid: null,
       userdatapolicy: null,
       userdatapolicylist: {},
-      architectureTypes: {}
+      architectureTypes: {},
+      originalOstypeid: null
     }
   },
   beforeCreate () {
@@ -195,7 +203,7 @@ export default {
         displaytext: [{ required: true, message: this.$t('message.error.required.input') }],
         ostypeid: [{ required: true, message: this.$t('message.error.select') }]
       })
-      const resourceFields = ['name', 'displaytext', 'passwordenabled', 'isdynamicallyscalable', 'ostypeid', 'userdataid', 'userdatapolicy']
+      const resourceFields = ['name', 'displaytext', 'passwordenabled', 'isdynamicallyscalable', 'ostypeid', 'forceupdateostype', 'userdataid', 'userdatapolicy']
 
       for (var field of resourceFields) {
         var fieldValue = this.resource[field]
@@ -207,12 +215,19 @@ export default {
             case 'userdatapolicy':
               this.userdatapolicy = fieldValue
               break
+            case 'ostypeid':
+              this.form[field] = fieldValue
+              this.originalOstypeid = fieldValue
+              break
             default:
               this.form[field] = fieldValue
               break
           }
         }
       }
+    },
+    hasOstypeidChanged () {
+      return this.form.ostypeid !== this.originalOstypeid
     },
     fetchData () {
       this.fetchOsTypes()
@@ -228,7 +243,7 @@ export default {
       params.listAll = true
       this.osTypes.opts = []
       this.osTypes.loading = true
-      api('listOsTypes', params).then(json => {
+      getAPI('listOsTypes', params).then(json => {
         const listOsTypes = json.listostypesresponse.ostype
         this.osTypes.opts = listOsTypes
       }).finally(() => {
@@ -262,7 +277,7 @@ export default {
       this.userdata.opts = []
       this.userdata.loading = true
 
-      api('listUserData', params).then(json => {
+      getAPI('listUserData', params).then(json => {
         const userdataIdAndName = []
         const userdataOpts = json.listuserdataresponse.userdata
         userdataIdAndName.push({
@@ -295,7 +310,8 @@ export default {
           if (!this.isValidValueForKey(values, key)) continue
           params[key] = values[key]
         }
-        api('updateIso', params).then(json => {
+        params.forceupdateostype = this.form.forceupdateostype || false
+        postAPI('updateIso', params).then(json => {
           if (this.userdataid !== null) {
             this.linkUserdataToTemplate(this.userdataid, json.updateisoresponse.iso.id, this.userdatapolicy)
           }
@@ -325,7 +341,7 @@ export default {
       if (userdatapolicy) {
         params.userdatapolicy = userdatapolicy
       }
-      api('linkUserDataToTemplate', params).then(json => {
+      postAPI('linkUserDataToTemplate', params).then(json => {
         this.closeAction()
       }).catch(error => {
         this.$notifyError(error)
