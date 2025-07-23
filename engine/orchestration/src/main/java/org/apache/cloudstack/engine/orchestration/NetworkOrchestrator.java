@@ -594,7 +594,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatService,
                             "Offering for Isolated networks with Source Nat service enabled", TrafficType.Guest, null, false, Availability.Required, null,
                             defaultIsolatedSourceNatEnabledNetworkOfferingProviders, true, Network.GuestType.Isolated, false, null, true, null, false, false, null, false, null,
-                            true, false, false, false, false, null, null,null, true, null, null, false);
+                            true, false, false, false, false, null, null, null, true, null, null, false);
                 }
 
                 //#5 - default vpc offering with LB service
