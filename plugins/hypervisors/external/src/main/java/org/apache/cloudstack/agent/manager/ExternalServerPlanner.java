@@ -86,6 +86,11 @@ public class ExternalServerPlanner extends AdapterBase implements DeploymentPlan
                     extensionVO, vmProfile.getInstanceName());
             return null;
         }
+        if (!extensionVO.isPathReady()) {
+            logger.error("{} path is not in ready state therefore planning can not be done for deployment of external instance {}",
+                    extensionVO, vmProfile.getInstanceName());
+            return null;
+        }
 
         String haVmTag = (String)vmProfile.getParameter(VirtualMachineProfile.Param.HaTag);
 

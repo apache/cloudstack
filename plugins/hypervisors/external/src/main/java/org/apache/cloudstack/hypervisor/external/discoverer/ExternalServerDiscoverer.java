@@ -140,6 +140,7 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
         params.put("extensionName", extension.getName());
         params.put("extensionRelativePath", extension.getRelativePath());
         params.put("extensionState", extension.getState());
+        params.put("extensionPathReady", extension.isPathReady());
     }
 
     @Override

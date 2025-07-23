@@ -425,6 +425,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         ExtensionVO extensionVO = extensionDao.createForUpdate(extension.getId());
         extensionVO.setPathReady(ready);
         extensionDao.update(extension.getId(), extensionVO);
+        updateAllExtensionHosts(extension, null, false);
     }
 
     protected void disableExtension(long extensionId) {
@@ -1530,7 +1531,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
 
     public class PathStateCheckWorker extends ManagedContextRunnable {
 
-        protected void runCleanupForLongestRunningManagementServer() {
+        protected void runCheckUsingLongestRunningManagementServer() {
             try {
                 List<ManagementServerHostVO> msHosts = managementServerHostDao.listBy(ManagementServerHost.State.Up);
                 msHosts.sort(Comparator.comparingLong(ManagementServerHostVO::getRunid));
@@ -1554,7 +1555,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             try {
                 if (gcLock.lock(3)) {
                     try {
-                        runCleanupForLongestRunningManagementServer();
+                        runCheckUsingLongestRunningManagementServer();
                     } finally {
                         gcLock.unlock();
                     }

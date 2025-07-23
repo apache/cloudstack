@@ -87,6 +87,7 @@ public class ExternalResource implements ServerResource {
     private String extensionName;
     private String extensionRelativePath;
     private Extension.State extensionState;
+    private boolean extensionPathReady;
 
     protected boolean isExtensionDisconnected() {
         return StringUtils.isAnyBlank(extensionName, extensionRelativePath);
@@ -94,6 +95,10 @@ public class ExternalResource implements ServerResource {
 
     protected boolean isExtensionNotEnabled() {
         return !Extension.State.Enabled.equals(extensionState);
+    }
+
+    protected boolean isExtensionPathNotReady() {
+        return !extensionPathReady;
     }
 
     public ExternalResource() {
@@ -176,8 +181,12 @@ public class ExternalResource implements ServerResource {
             logger.error("Extension not connected to host: {}", name);
             return "Extension not connected";
         }
-        logger.error("Extension: {} connected to host: {} is not in Enabled state", extensionName, name);
-        return "Extension is disabled";
+        if (isExtensionNotEnabled()) {
+            logger.error("Extension: {} connected to host: {} is not in Enabled state", extensionName, name);
+            return "Extension is disabled";
+        }
+        logger.error("Extension: {} connected to host: {} is not having path in Ready state", extensionName, name);
+        return "Extension is not ready";
     }
 
     private Answer execute(ExtensionRoutingUpdateCommand cmd) {
@@ -241,14 +250,14 @@ public class ExternalResource implements ServerResource {
     }
 
     public StartAnswer execute(StartCommand cmd) {
-        if (isExtensionDisconnected() || isExtensionNotEnabled()) {
+        if (isExtensionDisconnected() || isExtensionNotEnabled() || isExtensionPathNotReady()) {
             return new StartAnswer(cmd, logAndGetExtensionNotConnectedOrDisabledError());
         }
         return externalProvisioner.startInstance(guid, extensionName, extensionRelativePath, cmd);
     }
 
     public StopAnswer execute(StopCommand cmd) {
-        if (isExtensionDisconnected() || isExtensionNotEnabled()) {
+        if (isExtensionDisconnected() || isExtensionNotEnabled() || isExtensionPathNotReady()) {
             return new StopAnswer(cmd, logAndGetExtensionNotConnectedOrDisabledError(), false);
         }
         if (cmd.isExpungeVM()) {
@@ -258,28 +267,28 @@ public class ExternalResource implements ServerResource {
     }
 
     public RebootAnswer execute(RebootCommand cmd) {
-        if (isExtensionDisconnected() || isExtensionNotEnabled()) {
+        if (isExtensionDisconnected() || isExtensionNotEnabled() || isExtensionPathNotReady()) {
             return new RebootAnswer(cmd, logAndGetExtensionNotConnectedOrDisabledError(), false);
         }
         return externalProvisioner.rebootInstance(guid, extensionName, extensionRelativePath, cmd);
     }
 
     public PrepareExternalProvisioningAnswer execute(PrepareExternalProvisioningCommand cmd) {
-        if (isExtensionDisconnected() || isExtensionNotEnabled()) {
+        if (isExtensionDisconnected() || isExtensionNotEnabled() || isExtensionPathNotReady()) {
             return new PrepareExternalProvisioningAnswer(cmd, false, logAndGetExtensionNotConnectedOrDisabledError());
         }
         return externalProvisioner.prepareExternalProvisioning(guid, extensionName, extensionRelativePath, cmd);
     }
 
     public RunCustomActionAnswer execute(RunCustomActionCommand cmd) {
-        if (isExtensionDisconnected() || isExtensionNotEnabled()) {
+        if (isExtensionDisconnected() || isExtensionNotEnabled() || isExtensionPathNotReady()) {
             return new RunCustomActionAnswer(cmd, false, logAndGetExtensionNotConnectedOrDisabledError());
         }
         return externalProvisioner.runCustomAction(guid, extensionName, extensionRelativePath, cmd);
     }
 
     public Answer execute(Command cmd) {
-        if (isExtensionDisconnected() || isExtensionNotEnabled()) {
+        if (isExtensionDisconnected() || isExtensionNotEnabled() || isExtensionPathNotReady()) {
             return new Answer(cmd, false, logAndGetExtensionNotConnectedOrDisabledError());
         }
         RunCustomActionCommand runCustomActionCommand = new RunCustomActionCommand(cmd.toString());
@@ -351,6 +360,7 @@ public class ExternalResource implements ServerResource {
         extensionName = (String)params.get("extensionName");
         extensionRelativePath = (String)params.get("extensionRelativePath");
         extensionState = (Extension.State)params.get("extensionState");
+        extensionPathReady = (boolean)params.get("extensionPathReady");
         return true;
     }
 
