@@ -56,5 +56,7 @@ public interface VpcProvider extends NetworkElement {
 
     boolean updateVpcSourceNatIp(Vpc vpc, IpAddress address);
 
-    default boolean updateVpc(Vpc vpc, String previousVpcName) { return true; }
+    default boolean updateVpc(Vpc vpc, String previousVpcName) {
+        return true;
+    }
 }

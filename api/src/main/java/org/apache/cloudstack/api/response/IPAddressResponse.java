@@ -337,5 +337,7 @@ public class IPAddressResponse extends BaseResponseWithAnnotations implements Co
         this.forSystemVms = forSystemVms;
     }
 
-    public void setForProvider(boolean forProvider) { this.forProvider = forProvider; }
+    public void setForProvider(boolean forProvider) {
+        this.forProvider = forProvider;
+    }
 }
