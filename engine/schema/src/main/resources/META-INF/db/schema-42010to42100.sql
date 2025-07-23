@@ -295,3 +295,7 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.service_offering', 'gpu_count', 'int
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.service_offering', 'gpu_display', 'boolean DEFAULT false COMMENT "enable GPU display"');
 CALL `cloud`.`IDEMPOTENT_DROP_FOREIGN_KEY`('cloud.service_offering','fk_service_offering__vgpu_profile_id');
 CALL `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`('cloud.service_offering', 'fk_service_offering__vgpu_profile_id', '(vgpu_profile_id)', '`vgpu_profile`(`id`)');
+
+-- Add uuid column for backup schedule
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backup_schedule', 'uuid', 'VARCHAR(40) NOT NULL');
+UPDATE `cloud`.`backup_schedule` SET uuid = UUID();

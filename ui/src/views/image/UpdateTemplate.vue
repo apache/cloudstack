@@ -103,6 +103,14 @@
               </a-select>
             </a-form-item>
           </a-col>
+          <a-col :md="24" :lg="24" v-if="hasOstypeidChanged()">
+            <a-form-item name="forceupdateostype" ref="forceupdateostype">
+              <template #label>
+                <tooltip-label :title="$t('label.force.update.os.type')" :tooltip="apiParams.forceupdateostype.description"/>
+              </template>
+              <a-switch v-model:checked="form.forceupdateostype" />
+            </a-form-item>
+          </a-col>
         </a-row>
         <a-row :gutter="12">
           <a-col :md="24" :lg="12">
@@ -251,7 +259,8 @@ export default {
       userdataid: null,
       userdatapolicy: null,
       userdatapolicylist: {},
-      architectureTypes: {}
+      architectureTypes: {},
+      originalOstypeid: null
     }
   },
   beforeCreate () {
@@ -294,6 +303,10 @@ export default {
               break
             case 'userdatapolicy':
               this.userdatapolicy = fieldValue
+              break
+            case 'ostypeid':
+              this.form[field] = fieldValue
+              this.originalOstypeid = fieldValue
               break
             default:
               this.form[field] = fieldValue
@@ -510,6 +523,7 @@ export default {
           }
           params[key] = values[key]
         }
+        params.forceupdateostype = this.form.forceupdateostype || false
         postAPI('updateTemplate', params).then(json => {
           if (this.userdataid !== null) {
             this.linkUserdataToTemplate(this.userdataid, json.updatetemplateresponse.template.id, this.userdatapolicy)
@@ -546,6 +560,9 @@ export default {
       }).finally(() => {
         this.loading = false
       })
+    },
+    hasOstypeidChanged () {
+      return this.form.ostypeid !== this.originalOstypeid
     }
   }
 }
