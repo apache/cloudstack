@@ -290,7 +290,10 @@ public interface ExtensionCustomAction extends InternalIdentity, Identity {
             try {
                 switch (type) {
                     case BOOLEAN:
-                        return Arrays.asList("true", "false").contains(value);
+                        if (!Arrays.asList("true", "false").contains(value)) {
+                            throw new IllegalArgumentException();
+                        }
+                        return Boolean.parseBoolean(value);
                     case DATE:
                         return DateUtil.parseTZDateString(value);
                     case NUMBER:

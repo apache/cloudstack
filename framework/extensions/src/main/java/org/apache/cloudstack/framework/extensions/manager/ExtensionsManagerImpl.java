@@ -1347,7 +1347,8 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         runCustomActionCommand.setExternalDetails(externalDetails);
         runCustomActionCommand.setWait(customActionVO.getTimeout());
         try {
-            logger.info("Running custom action: {}", GsonHelper.getGson().toJson(runCustomActionCommand));
+            logger.info("Running custom action: {} with {} parameters", actionName,
+                    (parameters != null ? parameters.keySet().size() : 0));
             Answer answer = agentMgr.send(hostId, runCustomActionCommand);
             if (!(answer instanceof RunCustomActionAnswer)) {
                 logger.error("Unexpected answer [{}] received for {}", answer.getClass().getSimpleName(),
