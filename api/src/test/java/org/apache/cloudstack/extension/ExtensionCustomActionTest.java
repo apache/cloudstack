@@ -332,7 +332,7 @@ public class ExtensionCustomActionTest {
         assertEquals(true, result);
     }
 
-    @Test
+    @Test(expected = InvalidParameterValueException.class)
     public void testValidatedValueInvalidBoolean() {
         ExtensionCustomAction.Parameter param = new ExtensionCustomAction.Parameter(
             "testParam",
@@ -343,7 +343,6 @@ public class ExtensionCustomActionTest {
         );
 
         Object result = param.validatedValue("maybe");
-        assertEquals(false, result);
     }
 
     @Test
