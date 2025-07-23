@@ -60,10 +60,10 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.network.Network.IpAddresses;
 import com.cloud.offering.DiskOffering;
-import com.cloud.offering.DiskOfferingInfo;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VmDetailConstants;
+import com.cloud.vm.VmDiskInfo;
 import com.cloud.utils.net.Dhcp;
 
 public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityGroupAction, UserCmd {
@@ -272,7 +272,7 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
             description = "Lease expiry action, valid values are STOP and DESTROY")
     private String leaseExpiryAction;
 
-    private List<DiskOfferingInfo> dataDiskOfferingsInfo;
+    private List<VmDiskInfo> dataDiskInfoList;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -519,14 +519,17 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
         return sshKeyPairs;
     }
 
-    public List<DiskOfferingInfo> getDataDiskOfferingsInfo() {
-        if (this.dataDiskOfferingsInfo != null) {
-            return this.dataDiskOfferingsInfo;
+    public List<VmDiskInfo> getDataDiskInfoList() {
+        if (this.dataDiskInfoList != null) {
+            return this.dataDiskInfoList;
         }
         if (dataDisksDetails == null || dataDisksDetails.isEmpty()) {
             return null;
         }
-        List<DiskOfferingInfo> diskOfferingInfoList = new ArrayList<>();
+        if (dataDiskTemplateToDiskOfferingList != null) {
+            throw new InvalidParameterValueException("datadisktemplatetodiskofferinglist parameter can't be specified along with datadisksdetails parameter");
+        }
+        List<VmDiskInfo> vmDiskInfoList = new ArrayList<>();
         Collection dataDisksCollection = dataDisksDetails.values();
         Iterator iter = dataDisksCollection.iterator();
         while (iter.hasNext()) {
@@ -568,11 +571,11 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
                 minIops = Long.parseLong(dataDisk.get(ApiConstants.MIN_IOPS));
                 maxIops = Long.parseLong(dataDisk.get(ApiConstants.MAX_IOPS));
             }
-            DiskOfferingInfo diskOfferingInfo = new DiskOfferingInfo(diskOffering, size, minIops, maxIops, deviceId);
-            diskOfferingInfoList.add(diskOfferingInfo);
+            VmDiskInfo vmDiskInfo = new VmDiskInfo(diskOffering, size, minIops, maxIops, deviceId);
+            vmDiskInfoList.add(vmDiskInfo);
         }
-        this.dataDiskOfferingsInfo = diskOfferingInfoList;
-        return dataDiskOfferingsInfo;
+        this.dataDiskInfoList = vmDiskInfoList;
+        return dataDiskInfoList;
     }
 
     public Long getHostId() {

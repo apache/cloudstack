@@ -512,8 +512,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     @DB
     public void allocate(final String vmInstanceName, final VirtualMachineTemplate template, final ServiceOffering serviceOffering,
-                         final DiskOfferingInfo rootDiskOfferingInfo, final List<DiskOfferingInfo> dataDiskOfferings,
-                         final LinkedHashMap<? extends Network, List<? extends NicProfile>> auxiliaryNetworks, final DeploymentPlan plan, final HypervisorType hyperType, final Map<String, Map<Integer, String>> extraDhcpOptions, final Map<Long, DiskOffering> datadiskTemplateToDiskOfferingMap, Volume volume, Snapshot snapshot)
+                         final DiskOfferingInfo rootDiskOfferingInfo, final List<DiskOfferingInfo> dataDiskOfferings, List<Long> dataDiskDeviceIds,
+                         final LinkedHashMap<? extends Network, List<? extends NicProfile>> auxiliaryNetworks,final DeploymentPlan plan, final HypervisorType hyperType,
+                         final Map<String, Map<Integer, String>> extraDhcpOptions, final Map<Long, DiskOffering> datadiskTemplateToDiskOfferingMap, Volume volume, Snapshot snapshot)
                     throws InsufficientCapacityException {
 
         logger.info("allocating virtual machine from template: {} with hostname: {} and {} networks", template, vmInstanceName, auxiliaryNetworks.size());
@@ -556,25 +557,24 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             // Create new Volume context and inject event resource type, id and details to generate VOLUME.CREATE event for the ROOT disk.
             CallContext volumeContext = CallContext.register(CallContext.current(), ApiCommandResourceType.Volume);
             try {
-                Long nextDiskNumber = 1L;
                 if (dataDiskOfferings != null) {
+                    int index = 0;
                     for (final DiskOfferingInfo dataDiskOfferingInfo : dataDiskOfferings) {
-                        Long deviceId = dataDiskOfferingInfo.getDeviceId();
-                        volumeMgr.allocateRawVolume(Type.DATADISK, "DATA-" + persistedVm.getId() + "-" + String.valueOf(deviceId), dataDiskOfferingInfo.getDiskOffering(), dataDiskOfferingInfo.getSize(),
+                        Long deviceId = dataDiskDeviceIds.get(index++);
+                        String volumeName = deviceId == null ? "DATA-" + persistedVm.getId() : "DATA-" + persistedVm.getId() + "-" + String.valueOf(deviceId);
+                        volumeMgr.allocateRawVolume(Type.DATADISK, volumeName, dataDiskOfferingInfo.getDiskOffering(), dataDiskOfferingInfo.getSize(),
                                 dataDiskOfferingInfo.getMinIops(), dataDiskOfferingInfo.getMaxIops(), persistedVm, template, owner, deviceId);
-                        if (nextDiskNumber <= deviceId) {
-                            nextDiskNumber = deviceId + 1;
-                        }
                     }
                 }
                 if (datadiskTemplateToDiskOfferingMap != null && !datadiskTemplateToDiskOfferingMap.isEmpty()) {
+                    Long diskNumber = 1L;
                     for (Entry<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap : datadiskTemplateToDiskOfferingMap.entrySet()) {
                         DiskOffering diskOffering = dataDiskTemplateToDiskOfferingMap.getValue();
                         long diskOfferingSize = diskOffering.getDiskSize() / (1024 * 1024 * 1024);
                         VMTemplateVO dataDiskTemplate = _templateDao.findById(dataDiskTemplateToDiskOfferingMap.getKey());
-                        volumeMgr.allocateRawVolume(Type.DATADISK, "DATA-" + persistedVm.getId() + "-" + String.valueOf(nextDiskNumber), diskOffering, diskOfferingSize, null, null,
-                                persistedVm, dataDiskTemplate, owner, nextDiskNumber);
-                        nextDiskNumber++;
+                        volumeMgr.allocateRawVolume(Type.DATADISK, "DATA-" + persistedVm.getId() + "-" + String.valueOf( diskNumber), diskOffering, diskOfferingSize, null, null,
+                                persistedVm, dataDiskTemplate, owner,  diskNumber);
+                         diskNumber++;
                     }
                 }
             } finally {
@@ -620,7 +620,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     public void allocate(final String vmInstanceName, final VirtualMachineTemplate template, final ServiceOffering serviceOffering,
             final LinkedHashMap<? extends Network, List<? extends NicProfile>> networks, final DeploymentPlan plan, final HypervisorType hyperType, Volume volume, Snapshot snapshot) throws InsufficientCapacityException {
         DiskOffering diskOffering = _diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
-        allocate(vmInstanceName, template, serviceOffering, new DiskOfferingInfo(diskOffering), new ArrayList<>(), networks, plan, hyperType, null, null, volume, snapshot);
+        allocate(vmInstanceName, template, serviceOffering, new DiskOfferingInfo(diskOffering), new ArrayList<>(), new ArrayList<>(), networks, plan, hyperType, null, null, volume, snapshot);
     }
 
     VirtualMachineGuru getVmGuru(final VirtualMachine vm) {

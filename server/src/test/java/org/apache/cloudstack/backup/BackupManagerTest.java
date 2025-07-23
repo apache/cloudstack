@@ -36,7 +36,6 @@ import com.cloud.network.NetworkService;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.offering.DiskOffering;
-import com.cloud.offering.DiskOfferingInfo;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -62,6 +61,7 @@ import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VmDiskInfo;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -843,7 +843,7 @@ public class BackupManagerTest {
     }
 
     @Test
-    public void getDataDiskOfferingListFromBackup() {
+    public void getDataDiskInfoListFromBackup() {
         Long size1 = 5L * 1024 * 1024 * 1024;
         Long size2 = 10L * 1024 * 1024 * 1024;
         Backup backup = mock(Backup.class);
@@ -877,24 +877,24 @@ public class BackupManagerTest {
         when(diskOfferingDao.findByUuid("disk-offering-uuid-1")).thenReturn(diskOffering1);
         when(diskOfferingDao.findByUuid("disk-offering-uuid-2")).thenReturn(diskOffering2);
 
-        List<DiskOfferingInfo> diskOfferingInfoList = backupManager.getDataDiskOfferingListFromBackup(backup);
+        List<VmDiskInfo> vmDiskInfoList = backupManager.getDataDiskInfoListFromBackup(backup);
 
-        assertEquals(2, diskOfferingInfoList.size());
-        assertEquals("disk-offering-uuid-1", diskOfferingInfoList.get(0).getDiskOffering().getUuid());
-        assertEquals(Long.valueOf(5), diskOfferingInfoList.get(0).getSize());
-        assertEquals(Long.valueOf(1), diskOfferingInfoList.get(0).getDeviceId());
-        assertEquals(Long.valueOf(100), diskOfferingInfoList.get(0).getMinIops());
-        assertEquals(Long.valueOf(300), diskOfferingInfoList.get(0).getMaxIops());
+        assertEquals(2, vmDiskInfoList.size());
+        assertEquals("disk-offering-uuid-1", vmDiskInfoList.get(0).getDiskOffering().getUuid());
+        assertEquals(Long.valueOf(5), vmDiskInfoList.get(0).getSize());
+        assertEquals(Long.valueOf(1), vmDiskInfoList.get(0).getDeviceId());
+        assertEquals(Long.valueOf(100), vmDiskInfoList.get(0).getMinIops());
+        assertEquals(Long.valueOf(300), vmDiskInfoList.get(0).getMaxIops());
 
-        assertEquals("disk-offering-uuid-2", diskOfferingInfoList.get(1).getDiskOffering().getUuid());
-        assertEquals(Long.valueOf(10), diskOfferingInfoList.get(1).getSize());
-        assertEquals(Long.valueOf(2), diskOfferingInfoList.get(1).getDeviceId());
-        assertEquals(Long.valueOf(200), diskOfferingInfoList.get(1).getMinIops());
-        assertEquals(Long.valueOf(400), diskOfferingInfoList.get(1).getMaxIops());
+        assertEquals("disk-offering-uuid-2", vmDiskInfoList.get(1).getDiskOffering().getUuid());
+        assertEquals(Long.valueOf(10), vmDiskInfoList.get(1).getSize());
+        assertEquals(Long.valueOf(2), vmDiskInfoList.get(1).getDeviceId());
+        assertEquals(Long.valueOf(200), vmDiskInfoList.get(1).getMinIops());
+        assertEquals(Long.valueOf(400), vmDiskInfoList.get(1).getMaxIops());
     }
 
     @Test
-    public void getDataDiskOfferingListFromBackupNullIops() {
+    public void getDataDiskInfoListFromBackupNullIops() {
         Long size = 5L * 1024 * 1024 * 1024;
         Backup backup = mock(Backup.class);
         Backup.VolumeInfo volumeInfo1 = mock(Backup.VolumeInfo.class);
@@ -912,18 +912,18 @@ public class BackupManagerTest {
 
         when(diskOfferingDao.findByUuid("disk-offering-uuid-1")).thenReturn(diskOffering);
 
-        List<DiskOfferingInfo> diskOfferingInfoList = backupManager.getDataDiskOfferingListFromBackup(backup);
+        List<VmDiskInfo> vmDiskInfoList = backupManager.getDataDiskInfoListFromBackup(backup);
 
-        assertEquals(1, diskOfferingInfoList.size());
-        assertEquals("disk-offering-uuid-1", diskOfferingInfoList.get(0).getDiskOffering().getUuid());
-        assertEquals(Long.valueOf(5), diskOfferingInfoList.get(0).getSize());
-        assertEquals(Long.valueOf(1), diskOfferingInfoList.get(0).getDeviceId());
-        assertNull(diskOfferingInfoList.get(0).getMinIops());
-        assertNull(diskOfferingInfoList.get(0).getMaxIops());
+        assertEquals(1, vmDiskInfoList.size());
+        assertEquals("disk-offering-uuid-1", vmDiskInfoList.get(0).getDiskOffering().getUuid());
+        assertEquals(Long.valueOf(5), vmDiskInfoList.get(0).getSize());
+        assertEquals(Long.valueOf(1), vmDiskInfoList.get(0).getDeviceId());
+        assertNull(vmDiskInfoList.get(0).getMinIops());
+        assertNull(vmDiskInfoList.get(0).getMaxIops());
     }
 
     @Test (expected = InvalidParameterValueException.class)
-    public void testCheckDiskOfferingSizeAgainstBackup() {
+    public void testCheckVmDisksSizeAgainstBackup() {
         Long sizeInBackup = 5L * 1024 * 1024 * 1024;
         Long sizeInCmd = 2L;
         Backup backup = mock(Backup.class);
@@ -936,13 +936,13 @@ public class BackupManagerTest {
         DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
         when(diskOffering.getState()).thenReturn(DiskOffering.State.Active);
         when(diskOfferingDao.findByUuid("disk-offering-uuid-1")).thenReturn(diskOffering);
-        List<DiskOfferingInfo> diskOfferingInfoList = List.of(new DiskOfferingInfo(diskOffering, sizeInCmd, 1L, null, null));
+        List<VmDiskInfo> vmDiskInfoList = List.of(new VmDiskInfo(diskOffering, sizeInCmd, 1L, null, null));
 
-        backupManager.checkDiskOfferingSizeAgainstBackup(diskOfferingInfoList, backup);
+        backupManager.checkVmDisksSizeAgainstBackup(vmDiskInfoList, backup);
     }
 
     @Test
-    public void testGetRootDiskOfferingInfoFromBackup() {
+    public void testGetRootDiskInfoFromBackup() {
         Long size = 5L * 1024 * 1024 * 1024;
         Backup backup = mock(Backup.class);
         Backup.VolumeInfo volumeInfo = mock(Backup.VolumeInfo.class);
@@ -955,11 +955,11 @@ public class BackupManagerTest {
         when(diskOffering.getUuid()).thenReturn("root-disk-offering-uuid");
         when(diskOfferingDao.findByUuid("root-disk-offering-uuid")).thenReturn(diskOffering);
 
-        DiskOfferingInfo diskOfferingInfo = backupManager.getRootDiskOfferingInfoFromBackup(backup);
+        VmDiskInfo VmDiskInfo = backupManager.getRootDiskInfoFromBackup(backup);
 
-        assertEquals("root-disk-offering-uuid", diskOfferingInfo.getDiskOffering().getUuid());
-        assertEquals(Long.valueOf(5), diskOfferingInfo.getSize());
-        assertEquals(null, diskOfferingInfo.getDeviceId());
+        assertEquals("root-disk-offering-uuid", VmDiskInfo.getDiskOffering().getUuid());
+        assertEquals(Long.valueOf(5), VmDiskInfo.getSize());
+        assertEquals(null, VmDiskInfo.getDeviceId());
     }
 
     @Test

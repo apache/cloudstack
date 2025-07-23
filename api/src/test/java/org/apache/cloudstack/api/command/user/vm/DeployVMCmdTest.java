@@ -47,8 +47,8 @@ import com.cloud.vm.VmDetailConstants;
 import com.cloud.network.Network;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.offering.DiskOffering;
-import com.cloud.offering.DiskOfferingInfo;
 import com.cloud.network.Network.IpAddresses;
+import com.cloud.vm.VmDiskInfo;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DeployVMCmdTest {
@@ -308,7 +308,7 @@ public class DeployVMCmdTest {
     }
 
     @Test
-    public void testGetDataDiskOfferingInfo() {
+    public void testGetDataDiskInfoList() {
         Map<String, Object> dataDisksDetails = new HashMap<>();
         Map<String, String> dataDisk = new HashMap<>();
         dataDisk.put(ApiConstants.DISK_OFFERING_ID, "offering-uuid");
@@ -326,7 +326,7 @@ public class DeployVMCmdTest {
         when(diskOffering.isCustomizedIops()).thenReturn(true);
         when(entityMgr.findByUuid(DiskOffering.class, "offering-uuid")).thenReturn(diskOffering);
 
-        List<DiskOfferingInfo> result = cmd.getDataDiskOfferingsInfo();
+        List<VmDiskInfo> result = cmd.getDataDiskInfoList();
 
         assertNotNull(result);
         assertEquals(1, result.size());

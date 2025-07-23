@@ -48,7 +48,6 @@ import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.offering.DiskOffering;
-import com.cloud.offering.DiskOfferingInfo;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -60,6 +59,7 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VmDiskInfo;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -1038,19 +1038,19 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     @Override
-    public void checkDiskOfferingSizeAgainstBackup(List<DiskOfferingInfo> dataDiskOfferingsInfo, Backup backup) {
-        List<DiskOfferingInfo> dataDiskOfferingsInfoFromBackup = getDataDiskOfferingListFromBackup(backup);
+    public void checkVmDisksSizeAgainstBackup(List<VmDiskInfo> vmDiskInfoList, Backup backup) {
+        List<VmDiskInfo> vmDiskInfoListFromBackup = getDataDiskInfoListFromBackup(backup);
         int index = 0;
-        if (dataDiskOfferingsInfo.size() != dataDiskOfferingsInfoFromBackup.size()) {
+        if (vmDiskInfoList.size() != vmDiskInfoListFromBackup.size()) {
             throw new InvalidParameterValueException("Unable to create Instance from Backup " +
                     "as the backup has a different number of disks than the Instance.");
         }
-        for (DiskOfferingInfo diskOfferingInfo : dataDiskOfferingsInfo) {
-            if (index < dataDiskOfferingsInfoFromBackup.size()) {
-                if (diskOfferingInfo.getSize() < dataDiskOfferingsInfoFromBackup.get(index).getSize()) {
+        for (VmDiskInfo vmDiskInfo : vmDiskInfoList) {
+            if (index < vmDiskInfoListFromBackup.size()) {
+                if (vmDiskInfo.getSize() < vmDiskInfoListFromBackup.get(index).getSize()) {
                     throw new InvalidParameterValueException(
                             String.format("Instance volume size %d[GiB] cannot be less than the backed-up volume size %d[GiB].",
-                            diskOfferingInfo.getSize(), dataDiskOfferingsInfoFromBackup.get(index).getSize()));
+                            vmDiskInfo.getSize(), vmDiskInfoListFromBackup.get(index).getSize()));
                 }
             }
             index++;
@@ -1058,9 +1058,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     @Override
-    public DiskOfferingInfo getRootDiskOfferingInfoFromBackup(Backup backup) {
+    public VmDiskInfo getRootDiskInfoFromBackup(Backup backup) {
         List<Backup.VolumeInfo> volumes = backup.getBackedUpVolumes();
-        DiskOfferingInfo rootDiskOffering = null;
+        VmDiskInfo rootDiskOffering = null;
         if (volumes == null || volumes.isEmpty()) {
             throw new CloudRuntimeException("Failed to get backed-up volumes info from backup");
         }
@@ -1073,7 +1073,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                             volume.getDiskOfferingId()));
                 }
                 Long size = volume.getSize() / (1024 * 1024 * 1024);
-                rootDiskOffering = new DiskOfferingInfo(diskOffering, size, volume.getMinIops(), volume.getMaxIops());
+                rootDiskOffering = new VmDiskInfo(diskOffering, size, volume.getMinIops(), volume.getMaxIops());
             }
         }
         if (rootDiskOffering == null) {
@@ -1083,8 +1083,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     @Override
-    public List<DiskOfferingInfo> getDataDiskOfferingListFromBackup(Backup backup) {
-        List<DiskOfferingInfo> diskOfferingInfoList = new ArrayList<>();
+    public List<VmDiskInfo> getDataDiskInfoListFromBackup(Backup backup) {
+        List<VmDiskInfo> vmDiskInfoList = new ArrayList<>();
         List<Backup.VolumeInfo> volumes = backup.getBackedUpVolumes();
         if (volumes == null || volumes.isEmpty()) {
             throw new CloudRuntimeException("Failed to get backed-up Volumes info from backup");
@@ -1097,10 +1097,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                             "Please specify a valid disk offering id while creating the instance");
                 }
                 Long size = volume.getSize() / (1024 * 1024 * 1024);
-                diskOfferingInfoList.add(new DiskOfferingInfo(diskOffering, size, volume.getMinIops(), volume.getMaxIops(), volume.getDeviceId()));
+                vmDiskInfoList.add(new VmDiskInfo(diskOffering, size, volume.getMinIops(), volume.getMaxIops(), volume.getDeviceId()));
             }
         }
-        return diskOfferingInfoList;
+        return vmDiskInfoList;
     }
 
     private List<String> parseAddressString(String input) {

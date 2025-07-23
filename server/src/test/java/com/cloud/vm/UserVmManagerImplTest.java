@@ -133,7 +133,6 @@ import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.offering.DiskOffering;
-import com.cloud.offering.DiskOfferingInfo;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -3322,8 +3321,8 @@ public class UserVmManagerImplTest {
         VMTemplateVO template = mock(VMTemplateVO.class);
         when(template.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
         when(templateDao.findById(templateId)).thenReturn(template);
-        DiskOfferingInfo rootDiskOfferingInfo = new DiskOfferingInfo(diskOffering, 10L, 1000L, 2000L);
-        when(backupManager.getRootDiskOfferingInfoFromBackup(backup)).thenReturn(rootDiskOfferingInfo);
+        VmDiskInfo rootVmDiskInfo = new VmDiskInfo(diskOffering, 10L, 1000L, 2000L);
+        when(backupManager.getRootDiskInfoFromBackup(backup)).thenReturn(rootVmDiskInfo);
         Mockito.when(backupManager.canCreateInstanceFromBackup(backupId)).thenReturn(true);
 
         Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
@@ -3353,7 +3352,7 @@ public class UserVmManagerImplTest {
         when(cmd.getTemplateId()).thenReturn(null);
         when(cmd.getNetworkIds()).thenReturn(null);
         when(cmd.getIpToNetworkMap()).thenReturn(null);
-        when(cmd.getDataDiskOfferingsInfo()).thenReturn(null);
+        when(cmd.getDataDiskInfoList()).thenReturn(null);
         when(cmd.getOverrideDiskOfferingId()).thenReturn(null);
 
         Account owner = mock(Account.class);
@@ -3377,12 +3376,12 @@ public class UserVmManagerImplTest {
         DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
         when(backup.getDetail(ApiConstants.SERVICE_OFFERING_ID)).thenReturn("service-offering-uuid");
         when(_serviceOfferingDao.findByUuid("service-offering-uuid")).thenReturn(serviceOffering);
-        DiskOfferingInfo rootDiskOfferingInfo = new DiskOfferingInfo(diskOffering, 10L, 1000L, 2000L);
-        when(backupManager.getRootDiskOfferingInfoFromBackup(backup)).thenReturn(rootDiskOfferingInfo);
+        VmDiskInfo rootVmDiskInfo = new VmDiskInfo(diskOffering, 10L, 1000L, 2000L);
+        when(backupManager.getRootDiskInfoFromBackup(backup)).thenReturn(rootVmDiskInfo);
 
         NetworkVO network1 = mock(NetworkVO.class);
         NetworkVO network2 = mock(NetworkVO.class);
-        when(backupManager.getDataDiskOfferingListFromBackup(backup)).thenReturn(List.of(new DiskOfferingInfo(diskOffering, 10L, 1000L, 2000L)));
+        when(backupManager.getDataDiskInfoListFromBackup(backup)).thenReturn(List.of(new VmDiskInfo(diskOffering, 10L, 1000L, 2000L)));
         Mockito.when(backupManager.canCreateInstanceFromBackup(backupId)).thenReturn(true);
 
         Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
@@ -3498,8 +3497,8 @@ public class UserVmManagerImplTest {
         VMTemplateVO iso = mock(VMTemplateVO.class);
         when(iso.getFormat()).thenReturn(Storage.ImageFormat.ISO);
         when(templateDao.findById(isoId)).thenReturn(iso);
-        DiskOfferingInfo rootDiskOfferingInfo = new DiskOfferingInfo(diskOffering, 10L, 1000L, 2000L);
-        when(backupManager.getRootDiskOfferingInfoFromBackup(backup)).thenReturn(rootDiskOfferingInfo);
+        VmDiskInfo rootVmDiskInfo = new VmDiskInfo(diskOffering, 10L, 1000L, 2000L);
+        when(backupManager.getRootDiskInfoFromBackup(backup)).thenReturn(rootVmDiskInfo);
         Mockito.when(backupManager.canCreateInstanceFromBackup(backupId)).thenReturn(true);
 
         Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
@@ -3530,7 +3529,7 @@ public class UserVmManagerImplTest {
         when(cmd.getHostId()).thenReturn(null);
         when(cmd.getNetworkIds()).thenReturn(null);
         when(cmd.getIpToNetworkMap()).thenReturn(null);
-        when(cmd.getDataDiskOfferingsInfo()).thenReturn(null);
+        when(cmd.getDataDiskInfoList()).thenReturn(null);
 
         Account owner = mock(Account.class);
         when(accountService.getActiveAccountById(accountId)).thenReturn(owner);
@@ -3556,12 +3555,12 @@ public class UserVmManagerImplTest {
         when(backup.getDetail(ApiConstants.SERVICE_OFFERING_ID)).thenReturn("service-offering-uuid");
         when(_serviceOfferingDao.findByUuid("service-offering-uuid")).thenReturn(serviceOffering);
 
-        DiskOfferingInfo rootDiskOfferingInfo = new DiskOfferingInfo(diskOffering, 10L, 1000L, 2000L);
-        when(backupManager.getRootDiskOfferingInfoFromBackup(backup)).thenReturn(rootDiskOfferingInfo);
+        VmDiskInfo rootVmDiskInfo = new VmDiskInfo(diskOffering, 10L, 1000L, 2000L);
+        when(backupManager.getRootDiskInfoFromBackup(backup)).thenReturn(rootVmDiskInfo);
 
         NetworkVO network1 = mock(NetworkVO.class);
         NetworkVO network2 = mock(NetworkVO.class);
-        when(backupManager.getDataDiskOfferingListFromBackup(backup)).thenReturn(List.of(new DiskOfferingInfo(diskOffering, 10L, 1000L, 2000L)));
+        when(backupManager.getDataDiskInfoListFromBackup(backup)).thenReturn(List.of(new VmDiskInfo(diskOffering, 10L, 1000L, 2000L)));
         Mockito.when(backupManager.canCreateInstanceFromBackup(backupId)).thenReturn(true);
 
         Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),

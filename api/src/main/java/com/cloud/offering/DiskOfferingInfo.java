@@ -23,7 +23,6 @@ public class DiskOfferingInfo {
     private Long _size;
     private Long _minIops;
     private Long _maxIops;
-    private Long _deviceId;
 
     public DiskOfferingInfo() {
     }
@@ -37,11 +36,6 @@ public class DiskOfferingInfo {
         _size = size;
         _minIops = minIops;
         _maxIops = maxIops;
-    }
-
-    public DiskOfferingInfo(DiskOffering diskOffering, Long size, Long minIops, Long maxIops, Long deviceId) {
-        this(diskOffering, size, minIops, maxIops);
-        _deviceId = deviceId;
     }
 
     public void setDiskOffering(DiskOffering diskOffering) {
@@ -74,13 +68,5 @@ public class DiskOfferingInfo {
 
     public Long getMaxIops() {
         return _maxIops;
-    }
-
-    public void setDeviceId(Long deviceId) {
-        _deviceId = deviceId;
-    }
-
-    public Long getDeviceId() {
-        return _deviceId;
     }
 }

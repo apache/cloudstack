@@ -124,6 +124,7 @@ public interface VirtualMachineManager extends Manager {
      * @param defaultNetwork The default network for the VM.
      * @param rootDiskOffering For created VMs not based on templates, root disk offering specifies the root disk.
      * @param dataDiskOfferings Data disks to attach to the VM.
+     * @param dataDiskDeviceIds Device Ids to assign the data disks to.
      * @param auxiliaryNetworks additional networks to attach the VMs to.
      * @param plan How to deploy the VM.
      * @param hyperType Hypervisor type
@@ -131,7 +132,7 @@ public interface VirtualMachineManager extends Manager {
      * @throws InsufficientCapacityException If there are insufficient capacity to deploy this vm.
      */
     void allocate(String vmInstanceName, VirtualMachineTemplate template, ServiceOffering serviceOffering, DiskOfferingInfo rootDiskOfferingInfo,
-                  List<DiskOfferingInfo> dataDiskOfferings, LinkedHashMap<? extends Network, List<? extends NicProfile>> auxiliaryNetworks, DeploymentPlan plan,
+                  List<DiskOfferingInfo> dataDiskOfferings, List<Long> dataDiskDeviceIds, LinkedHashMap<? extends Network, List<? extends NicProfile>> auxiliaryNetworks, DeploymentPlan plan,
                   HypervisorType hyperType, Map<String, Map<Integer, String>> extraDhcpOptions, Map<Long, DiskOffering> datadiskTemplateToDiskOfferingMap, Volume volume, Snapshot snapshot) throws InsufficientCapacityException;
 
     void allocate(String vmInstanceName, VirtualMachineTemplate template, ServiceOffering serviceOffering,

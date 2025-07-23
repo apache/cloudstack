@@ -34,12 +34,12 @@ import org.apache.cloudstack.framework.config.Configurable;
 
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
-import com.cloud.offering.DiskOfferingInfo;
 import com.cloud.storage.Volume;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VmDiskInfo;
 
 /**
  * Backup and Recover Manager Interface
@@ -258,11 +258,11 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
 
     BackupOffering updateBackupOffering(UpdateBackupOfferingCmd updateBackupOfferingCmd);
 
-    DiskOfferingInfo getRootDiskOfferingInfoFromBackup(Backup backup);
+    VmDiskInfo getRootDiskInfoFromBackup(Backup backup);
 
-    List<DiskOfferingInfo> getDataDiskOfferingListFromBackup(Backup backup);
+    List<VmDiskInfo> getDataDiskInfoListFromBackup(Backup backup);
 
-    void checkDiskOfferingSizeAgainstBackup(List<DiskOfferingInfo> dataDiskOfferingsInfo, Backup backup);
+    void checkVmDisksSizeAgainstBackup(List<VmDiskInfo> vmDiskInfoList, Backup backup);
 
     Map<String, String> getBackupDetailsFromVM(VirtualMachine vm);
 
