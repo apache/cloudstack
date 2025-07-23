@@ -19,6 +19,7 @@ package org.apache.cloudstack.backup;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -277,6 +278,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
     public static String createVolumeInfoFromVolumes(List<VolumeVO> vmVolumes) {
         List<Backup.VolumeInfo> list = new ArrayList<>();
+        vmVolumes.sort(Comparator.comparing(VolumeVO::getDeviceId));
         for (VolumeVO vol : vmVolumes) {
             list.add(new Backup.VolumeInfo(vol.getUuid(), vol.getPath(), vol.getVolumeType(), vol.getSize()));
         }

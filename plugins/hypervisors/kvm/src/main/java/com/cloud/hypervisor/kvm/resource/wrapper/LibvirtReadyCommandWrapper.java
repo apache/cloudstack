@@ -43,7 +43,7 @@ public final class LibvirtReadyCommandWrapper extends CommandWrapper<ReadyComman
     public Answer execute(final ReadyCommand command, final LibvirtComputingResource libvirtComputingResource) {
         Map<String, String> hostDetails = new HashMap<String, String>();
 
-        if (hostSupportsUefi(libvirtComputingResource.isUbuntuHost()) && libvirtComputingResource.isUefiPropertiesFileLoaded()) {
+        if (hostSupportsUefi(libvirtComputingResource.isUbuntuOrDebianHost()) && libvirtComputingResource.isUefiPropertiesFileLoaded()) {
             hostDetails.put(Host.HOST_UEFI_ENABLE, Boolean.TRUE.toString());
         }
 
@@ -58,10 +58,10 @@ public final class LibvirtReadyCommandWrapper extends CommandWrapper<ReadyComman
         return new ReadyAnswer(command, hostDetails);
     }
 
-    private boolean hostSupportsUefi(boolean isUbuntuHost) {
+    private boolean hostSupportsUefi(boolean isUbuntuOrDebianHost) {
         int timeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.AGENT_SCRIPT_TIMEOUT) * 1000; // Get property value & convert to milliseconds
         int result;
-        if (isUbuntuHost) {
+        if (isUbuntuOrDebianHost) {
             logger.debug("Running command : [dpkg -l ovmf] with timeout : " + timeout + " ms");
             result = Script.executeCommandForExitValue(timeout, Script.getExecutableAbsolutePath("dpkg"), "-l", "ovmf");
         } else {
