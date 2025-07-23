@@ -610,7 +610,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     defaultVPCOffProviders.remove(Service.Lb);
                     offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworksNoLB,
                             "Offering for Isolated VPC networks with Source Nat service enabled and LB service disabled", TrafficType.Guest, null, false, Availability.Optional,
-                            null, defaultVPCOffProviders, true, Network.GuestType.Isolated, false, null, false, null, false, false, null, false, null, true, true, false, false, false, null, null, null,true, null, null, false);
+                            null, defaultVPCOffProviders, true, Network.GuestType.Isolated, false, null, false, null, false, false, null, false, null, true, true, false, false, false, null, null, null, true, null, null, false);
                 }
 
                 //#7 - isolated offering with source nat disabled
