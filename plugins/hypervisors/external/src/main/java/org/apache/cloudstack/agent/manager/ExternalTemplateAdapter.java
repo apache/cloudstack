@@ -69,7 +69,7 @@ public class ExternalTemplateAdapter extends TemplateAdapterBase implements Temp
         Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
         _accountMgr.checkAccess(caller, null, true, owner);
         Storage.TemplateType templateType = templateMgr.validateTemplateType(cmd, _accountMgr.isAdmin(caller.getAccountId()),
-                CollectionUtils.isEmpty(cmd.getZoneIds()));
+                CollectionUtils.isEmpty(cmd.getZoneIds()), Hypervisor.HypervisorType.External);
 
         List<Long> zoneId = cmd.getZoneIds();
         // ignore passed zoneId if we are using region wide image store

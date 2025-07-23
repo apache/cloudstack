@@ -46,6 +46,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import com.cloud.cpu.CPU;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.template.TemplateManager;
@@ -118,7 +119,7 @@ public class ExternalTemplateAdapterTest {
             when(cmd.getExternalDetails()).thenReturn(Collections.emptyMap());
             when(_accountMgr.getAccount(anyLong())).thenReturn(mock(com.cloud.user.Account.class));
             when(_accountMgr.isAdmin(anyLong())).thenReturn(true);
-            when(templateMgr.validateTemplateType(any(), anyBoolean(), anyBoolean())).thenReturn(com.cloud.storage.Storage.TemplateType.USER);
+            when(templateMgr.validateTemplateType(any(), anyBoolean(), anyBoolean(), Hypervisor.HypervisorType.External)).thenReturn(com.cloud.storage.Storage.TemplateType.USER);
             when(_userDao.findById(any())).thenReturn(mock(UserVO.class));
             when(cmd.getEntityOwnerId()).thenReturn(1L);
             when(cmd.getTemplateName()).thenReturn("t");

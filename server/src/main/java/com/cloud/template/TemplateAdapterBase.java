@@ -419,22 +419,22 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
         _accountMgr.checkAccess(caller, null, true, owner);
 
-        TemplateType templateType = templateMgr.validateTemplateType(cmd, _accountMgr.isAdmin(caller.getAccountId()),
-                CollectionUtils.isEmpty(cmd.getZoneIds()));
-
-        List<Long> zoneId = cmd.getZoneIds();
-        // ignore passed zoneId if we are using region wide image store
-        List<ImageStoreVO> stores = _imgStoreDao.findRegionImageStores();
-        if (stores != null && stores.size() > 0) {
-            zoneId = null;
-        }
-
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
         if(hypervisorType == HypervisorType.None) {
             throw new InvalidParameterValueException(String.format(
                     "Hypervisor Type: %s is invalid. Supported Hypervisor types are: %s",
                     cmd.getHypervisor(),
                     StringUtils.join(Arrays.stream(HypervisorType.values()).filter(h -> h != HypervisorType.None).map(HypervisorType::name).toArray(), ", ")));
+        }
+
+        TemplateType templateType = templateMgr.validateTemplateType(cmd, _accountMgr.isAdmin(caller.getAccountId()),
+                CollectionUtils.isEmpty(cmd.getZoneIds()), hypervisorType);
+
+        List<Long> zoneId = cmd.getZoneIds();
+        // ignore passed zoneId if we are using region wide image store
+        List<ImageStoreVO> stores = _imgStoreDao.findRegionImageStores();
+        if (stores != null && stores.size() > 0) {
+            zoneId = null;
         }
 
         Map details = cmd.getDetails();

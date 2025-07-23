@@ -29,6 +29,7 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StoragePool;
@@ -141,7 +142,7 @@ public interface TemplateManager {
     public static final String MESSAGE_REGISTER_PUBLIC_TEMPLATE_EVENT = "Message.RegisterPublicTemplate.Event";
     public static final String MESSAGE_RESET_TEMPLATE_PERMISSION_EVENT = "Message.ResetTemplatePermission.Event";
 
-    TemplateType validateTemplateType(BaseCmd cmd, boolean isAdmin, boolean isCrossZones);
+    TemplateType validateTemplateType(BaseCmd cmd, boolean isAdmin, boolean isCrossZones, Hypervisor.HypervisorType hypervisorType);
 
     List<DatadiskTO> getTemplateDisksOnImageStore(VirtualMachineTemplate template, DataStoreRole role, String configurationId);
 

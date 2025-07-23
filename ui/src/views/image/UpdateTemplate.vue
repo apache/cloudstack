@@ -178,8 +178,8 @@
             v-model:value="form.templatetype"
             :placeholder="apiParams.templatetype.description"
             @change="val => { selectedTemplateType = val }">
-            <a-select-option v-for="opt in templatetypes" :key="opt">
-              {{ opt }}
+            <a-select-option v-for="opt in templatetypes" :key="opt.id">
+              {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -239,7 +239,7 @@ export default {
   },
   data () {
     return {
-      templatetypes: ['BUILTIN', 'USER', 'SYSTEM', 'ROUTING', 'VNF'],
+      templatetypes: [],
       emptyAllowedFields: ['templatetag'],
       rootDisk: {},
       nicAdapterType: {},
@@ -261,6 +261,7 @@ export default {
   },
   created () {
     this.initForm()
+    this.templatetypes = this.$fetchTemplateTypes(this.resource.hypervisor)
     this.rootDisk.loading = false
     this.rootDisk.opts = []
     this.nicAdapterType.loading = false
