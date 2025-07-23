@@ -29,7 +29,7 @@ import com.google.gson.annotations.SerializedName;
 @EntityReference(value = BackupSchedule.class)
 public class BackupScheduleResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "ID of the backup schedule.")
+    @Param(description = "ID of the backup schedule.", since = "4.21.0")
     private String id;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_NAME)
