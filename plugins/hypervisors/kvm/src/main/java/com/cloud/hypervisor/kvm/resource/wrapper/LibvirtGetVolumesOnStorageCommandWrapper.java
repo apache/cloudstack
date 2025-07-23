@@ -31,7 +31,6 @@ import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
@@ -82,13 +81,6 @@ public final class LibvirtGetVolumesOnStorageCommandWrapper extends CommandWrapp
             }
             if (!isDiskFormatSupported(disk)) {
                 return new GetVolumesOnStorageAnswer(command, false, String.format("disk format %s is unsupported", disk.getFormat()));
-            }
-            if (PhysicalDiskFormat.QCOW2.equals(disk.getFormat())) {
-                try {
-                    KVMPhysicalDisk.checkQcow2File(disk.getPath());
-                } catch (CloudRuntimeException e) {
-                    return new GetVolumesOnStorageAnswer(command, false, e.getMessage());
-                }
             }
             Map<String, String> info = getDiskFileInfo(storagePool, disk, true);
             if (info == null) {
@@ -141,14 +133,6 @@ public final class LibvirtGetVolumesOnStorageCommandWrapper extends CommandWrapp
         for (KVMPhysicalDisk disk: disks) {
             if (!isDiskFormatSupported(disk)) {
                 continue;
-            }
-            if (PhysicalDiskFormat.QCOW2.equals(disk.getFormat())) {
-                try {
-                    KVMPhysicalDisk.checkQcow2File(disk.getPath());
-                } catch (CloudRuntimeException e) {
-                    logger.error("Error while checking for qcow2 volume file: " + e.getMessage());
-                    continue;
-                }
             }
             VolumeOnStorageTO volumeOnStorageTO = new VolumeOnStorageTO(Hypervisor.HypervisorType.KVM, disk.getName(), disk.getName(), disk.getPath(),
                     disk.getFormat().toString(), disk.getSize(), disk.getVirtualSize());
