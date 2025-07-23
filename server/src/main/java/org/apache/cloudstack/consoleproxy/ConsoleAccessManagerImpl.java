@@ -209,7 +209,8 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
             }
 
             if (Hypervisor.HypervisorType.External.equals(vm.getHypervisorType())) {
-                logger.info("Console access to this instance cannot be provided in case of hypervisor type External");
+                logger.error("Console access for {} cannot be provided it is {} hypervisor instance", vm,
+                        Hypervisor.HypervisorType.External);
                 return new ConsoleEndpoint(false, null, "Console access to this instance cannot be provided");
             }
 

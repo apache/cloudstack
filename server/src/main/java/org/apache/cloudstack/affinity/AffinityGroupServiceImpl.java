@@ -436,8 +436,10 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
             throw new InvalidParameterValueException("Operation not supported on Shared FileSystem Instance");
         }
         if (Hypervisor.HypervisorType.External.equals(vmInstance.getHypervisorType())) {
-            throw new InvalidParameterValueException(String.format("Operation not supported for %s hypervisor Instance",
-                    Hypervisor.HypervisorType.External.name()));
+            logger.error("Update VM Affinity Group not supported for {} as it is {} hypervisor instance",
+                    vmInstance, Hypervisor.HypervisorType.External.name());
+            throw new InvalidParameterValueException(String.format("Operation not supported for instance: %s",
+                    vmInstance.getName()));
         }
 
         // Check that the VM is stopped

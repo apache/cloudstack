@@ -515,8 +515,10 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             throw new InvalidParameterValueException("Operation not supported on Shared FileSystem Instance");
         }
         if (Hypervisor.HypervisorType.External.equals(userVm.getHypervisorType())) {
-            throw new InvalidParameterValueException(String.format("Operation not supported for %s hypervisor Instance",
-                    Hypervisor.HypervisorType.External.name()));
+            logger.error("Create VM snapshot not supported for {} as it is {} hypervisor instance",
+                    userVm, Hypervisor.HypervisorType.External.name());
+            throw new InvalidParameterValueException(String.format("Operation not supported for instance: %s",
+                    userVm.getName()));
         }
         VMSnapshotVO vmSnapshot = _vmSnapshotDao.findById(vmSnapshotId);
         if (vmSnapshot == null) {

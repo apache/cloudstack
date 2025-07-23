@@ -968,8 +968,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Operation not supported on Shared FileSystem Instance");
         }
         if (Hypervisor.HypervisorType.External.equals(userVm.getHypervisorType())) {
-            throw new InvalidParameterValueException(String.format("Operation not supported for %s hypervisor Instance",
-                    Hypervisor.HypervisorType.External.name()));
+            logger.error("Reset VM userdata not supported for {} as it is {} hypervisor instance",
+                    userVm, Hypervisor.HypervisorType.External.name());
+            throw new InvalidParameterValueException(String.format("Operation not supported for instance: %s",
+                    userVm.getName()));
         }
         _accountMgr.checkAccess(caller, null, true, userVm);
 
@@ -1019,8 +1021,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Operation not supported on Shared FileSystem Instance");
         }
         if (Hypervisor.HypervisorType.External.equals(userVm.getHypervisorType())) {
-            throw new InvalidParameterValueException(String.format("Operation not supported for %s hypervisor Instance",
-                    Hypervisor.HypervisorType.External.name()));
+            logger.error("Reset VM SSH key not supported for {} as it is {} hypervisor instance",
+                    userVm, Hypervisor.HypervisorType.External.name());
+            throw new InvalidParameterValueException(String.format("Operation not supported for instance: %s",
+                    userVm.getName()));
         }
 
         VMTemplateVO template = _templateDao.findByIdIncludingRemoved(userVm.getTemplateId());
@@ -1954,8 +1958,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Unable to find VM's UUID");
         }
         if (Hypervisor.HypervisorType.External.equals(vm.getHypervisorType())) {
-            throw new InvalidParameterValueException(String.format("Operation not supported for %s hypervisor Instance",
-                    Hypervisor.HypervisorType.External.name()));
+            logger.error("Scale VM not supported for {} as it is {} hypervisor instance",
+                    vm, Hypervisor.HypervisorType.External.name());
+            throw new InvalidParameterValueException(String.format("Operation not supported for instance: %s",
+                    vm.getName()));
         }
         CallContext.current().setEventDetails("Vm Id: " + vm.getUuid());
 
@@ -8539,8 +8545,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Operation not supported on Shared FileSystem Instance");
         }
         if (Hypervisor.HypervisorType.External.equals(vm.getHypervisorType())) {
-            throw new InvalidParameterValueException(String.format("Operation not supported for %s hypervisor Instance",
-                    Hypervisor.HypervisorType.External.name()));
+            logger.error("Restore VM not supported for {} as it is {} hypervisor instance",
+                    vm, Hypervisor.HypervisorType.External.name());
+            throw new InvalidParameterValueException(String.format("Operation not supported for instance: %s",
+                    vm.getName()));
         }
         _accountMgr.checkAccess(caller, null, true, vm);
 
