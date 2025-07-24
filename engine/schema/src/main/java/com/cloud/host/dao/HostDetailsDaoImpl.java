@@ -154,7 +154,7 @@ public class HostDetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implement
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.done();
         SearchCriteria<DetailVO> sc = sb.create();
-        sc.setParameters("resourceId", hostId);
+        sc.setParameters("hostId", hostId);
         sc.setParameters("name", VmDetailConstants.EXTERNAL_DETAIL_PREFIX + "%");
         remove(sc);
         for (DetailVO detail : detailVOs) {
