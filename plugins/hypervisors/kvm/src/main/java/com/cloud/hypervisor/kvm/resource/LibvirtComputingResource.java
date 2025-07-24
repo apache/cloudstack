@@ -2027,8 +2027,21 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 String numaNode = getJsonStringValueOrNull(jsonObject, "numa_node");
                 String pciRoot = getJsonStringValueOrNull(jsonObject, "pci_root");
 
+                Long maxInstances = getJsonLongValueOrNull(jsonObject, "max_instances");
+                Long videoRam = getJsonLongValueOrNull(jsonObject, "video_ram");
+                Long maxHeads = getJsonLongValueOrNull(jsonObject, "max_heads");
+                Long maxResolutionX = getJsonLongValueOrNull(jsonObject, "max_resolution_x");
+                Long maxResolutionY = getJsonLongValueOrNull(jsonObject, "max_resolution_y");
+
                 VgpuTypesInfo vgpuType = new VgpuTypesInfo(GpuDevice.DeviceType.PCI, vendorName + " " + deviceName,
                         "passthrough", busAddress, vendorId, vendorName, deviceId, deviceName, numaNode, pciRoot);
+
+                vgpuType.setMaxVgpuPerGpu(maxInstances);
+                vgpuType.setVideoRam(videoRam);
+                vgpuType.setMaxHeads(maxHeads);
+                vgpuType.setMaxResolutionX(maxResolutionX);
+                vgpuType.setMaxResolutionY(maxResolutionY);
+
                 if (fullPassthroughEnabled) {
                     vgpuType.setPassthroughEnabled(true);
                 } else {
@@ -2078,11 +2091,22 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     protected VgpuTypesInfo getGpuDeviceFromVfInstance(JsonElement vfInstance, String busAddress, String vendorId,
             String vendorName, String deviceId, String deviceName, String numaNode, String pciRoot) {
-        String vfPciAddress = vfInstance.getAsJsonObject().get("vf_pci_address").getAsString();
-        String vfProfile = vfInstance.getAsJsonObject().get("vf_profile").getAsString();
+        JsonObject vfInstanceJsonObject = vfInstance.getAsJsonObject();
+        String vfPciAddress = vfInstanceJsonObject.get("vf_pci_address").getAsString();
+        String vfProfile = vfInstanceJsonObject.get("vf_profile").getAsString();
+        Long maxInstances = getJsonLongValueOrNull(vfInstanceJsonObject, "max_instances");
+        Long videoRam = getJsonLongValueOrNull(vfInstanceJsonObject, "video_ram");
+        Long maxHeads = getJsonLongValueOrNull(vfInstanceJsonObject, "max_heads");
+        Long maxResolutionX = getJsonLongValueOrNull(vfInstanceJsonObject, "max_resolution_x");
+        Long maxResolutionY = getJsonLongValueOrNull(vfInstanceJsonObject, "max_resolution_y");
         VgpuTypesInfo device = new VgpuTypesInfo(GpuDevice.DeviceType.PCI, vendorName + " " + deviceName, vfProfile, vfPciAddress, vendorId, vendorName, deviceId, deviceName, numaNode, pciRoot);
         device.setParentBusAddress(busAddress);
-        device.setVmName(getJsonStringValueOrNull(vfInstance.getAsJsonObject(), "used_by_vm"));
+        device.setMaxVgpuPerGpu(maxInstances);
+        device.setVideoRam(videoRam);
+        device.setMaxHeads(maxHeads);
+        device.setMaxResolutionX(maxResolutionX);
+        device.setMaxResolutionY(maxResolutionY);
+        device.setVmName(getJsonStringValueOrNull(vfInstanceJsonObject, "used_by_vm"));
         return device;
     }
 

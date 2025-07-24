@@ -335,67 +335,126 @@ set -euo pipefail
 
 # Escape a string for JSON
 json_escape() {
-  local str=${1//\\/\\\\}
-  str=${str//\"/\\\"}
-  str=${str//$'\n'/\\n}
-  printf '"%s"' "$str"
+	local str="$1"
+	str=${str//\\/\\\\}
+	str=${str//\"/\\\"}
+	str=${str//
+/\\n}
+	str=${str//
+/\\r}
+	str=${str//	/\\t}
+	printf '"%s"' "$str"
+}
+
+# Cache for nodedev XML data to avoid repeated virsh calls
+declare -A nodedev_cache
+
+# Get nodedev name for a PCI address (e.g. "00:02.0" -> "pci_0000_00_02_0")
+get_nodedev_name() {
+	local addr="$1"
+	echo "pci_$(echo "$addr" | sed 's/[:.]/\_/g' | sed 's/^/0000_/')"
+}
+
+# Get cached nodedev XML for a PCI address
+get_nodedev_xml() {
+	local addr="$1"
+	local nodedev_name
+	nodedev_name=$(get_nodedev_name "$addr")
+
+	if [[ -z "${nodedev_cache[$nodedev_name]:-}" ]]; then
+		if nodedev_cache[$nodedev_name]=$(virsh nodedev-dumpxml "$nodedev_name" 2>/dev/null); then
+			true # Cache populated successfully
+		else
+			nodedev_cache[$nodedev_name]="" # Cache empty result to avoid retries
+		fi
+	fi
+
+	echo "${nodedev_cache[$nodedev_name]}"
 }
 
 # Given a PCI address (e.g. "00:02.0"), return its IOMMU group or "null"
 get_iommu_group() {
-  local addr="$1"
-  for grp in /sys/kernel/iommu_groups/*/devices/*; do
-    if [[ "${grp##*/}" == "0000:$addr" ]]; then
-      echo "${grp#*/iommu_groups/}" | cut -d/ -f1
-      return
-    fi
-  done
-  echo "null"
+	local addr="$1"
+	local xml
+	xml=$(get_nodedev_xml "$addr")
+
+	if [[ -n "$xml" ]]; then
+		if [[ $xml =~ \<iommuGroup[^\>]*number=\'([0-9]+)\' ]]; then
+			echo "${BASH_REMATCH[1]}"
+			return
+		fi
+	fi
+	echo "null"
 }
 
 # Given a PCI address, output "TOTALVFS NUMVFS"
 get_sriov_counts() {
-  local addr="$1"
-  local path="/sys/bus/pci/devices/0000:$addr"
-  if [[ -f "$path/sriov_totalvfs" ]]; then
-    echo "$(<"$path/sriov_totalvfs") $(<"$path/sriov_numvfs")"
-  else
-    echo "0 0"
-  fi
+	local addr="$1"
+	local xml
+	xml=$(get_nodedev_xml "$addr")
+
+	local totalvfs=0
+	local numvfs=0
+
+	if [[ -n "$xml" ]]; then
+		if [[ $xml =~ \<capability[^\>]*type=\'virt_functions\' ]]; then
+			# Count max VFs from capability
+			totalvfs=$(echo "$xml" | grep -o '<capability[^>]*type=.virt_functions.' | wc -l)
+			if [[ $totalvfs -eq 0 ]]; then
+				# Try alternative method - look for maxCount attribute
+				if [[ $xml =~ maxCount=\'([0-9]+)\' ]]; then
+					totalvfs="${BASH_REMATCH[1]}"
+				fi
+			fi
+
+			# Count current VFs by looking for address elements within virt_functions capability
+			numvfs=$(echo "$xml" | sed -n '/<capability[^>]*type=.virt_functions./,/<\/capability>/p' | grep -c '<address ')
+		fi
+	fi
+
+	echo "$totalvfs $numvfs"
 }
 
 # Given a PCI address, return its NUMA node (or -1 if none)
 get_numa_node() {
-  local addr="$1"
-  local path="/sys/bus/pci/devices/0000:$addr/numa_node"
-  if [[ -f "$path" ]]; then
-    echo "$(<"$path")"
-  else
-    echo "-1"
-  fi
+	local addr="$1"
+	local xml
+	xml=$(get_nodedev_xml "$addr")
+
+	if [[ -n "$xml" ]]; then
+		if [[ $xml =~ \<numa[^\>]*node=\'([0-9]+)\' ]]; then
+			echo "${BASH_REMATCH[1]}"
+			return
+		fi
+	fi
+	echo "-1"
 }
 
 # Given a PCI address, return its PCI root (the top‐level bridge ID, e.g. "0000:00:03")
 get_pci_root() {
-  local addr="$1"
-  local devpath
-  devpath=$(readlink -f "/sys/bus/pci/devices/0000:$addr")
-  while [[ "$devpath" != "/sys/devices/pci0000:00" ]]; do
-    base=$(basename "$devpath")
-    if [[ $base =~ ^([0-9A-Fa-f]{2}):([0-9A-Fa-f]{2})\.([0-9A-Fa-f])$ ]]; then
-      root="$base"
-      parent=$(dirname "$devpath")
-      pb=$(basename "$parent")
-      # if parent is not another PCI device, we've found the root of this chain
-      if [[ ! $pb =~ ^([0-9A-Fa-f]{2}):([0-9A-Fa-f]{2})\.([0-9A-Fa-f])$ ]]; then
-        echo "0000:$root"
-        return
-      fi
-    fi
-    devpath=$(dirname "$devpath")
-  done
-  # fallback
-  echo "0000:$addr"
+	local addr="$1"
+	local xml
+	xml=$(get_nodedev_xml "$addr")
+
+	if [[ -n "$xml" ]]; then
+		# Extract the parent device from XML
+		if [[ $xml =~ \<parent\>([^\<]+)\<\/parent\> ]]; then
+			local parent="${BASH_REMATCH[1]}"
+			# If parent is a PCI device, recursively find its root
+			if [[ $parent =~ ^pci_0000_([0-9A-Fa-f]{2})_([0-9A-Fa-f]{2})_([0-9A-Fa-f])$ ]]; then
+				local parent_addr="${BASH_REMATCH[1]}:${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
+				get_pci_root "$parent_addr"
+				return
+			else
+				# Parent is not PCI device, so current device is the root
+				echo "0000:$addr"
+				return
+			fi
+		fi
+	fi
+
+	# fallback
+	echo "0000:$addr"
 }
 
 # Build VM → hostdev maps:
@@ -406,51 +465,77 @@ declare -A pci_to_vm mdev_to_vm
 # Gather all VM names (including inactive)
 mapfile -t VMS < <(virsh list --all --name | grep -v '^$')
 for VM in "${VMS[@]}"; do
-  # Skip if dumpxml fails
-  if ! xml=$(virsh dumpxml "$VM" 2>/dev/null); then
-    continue
-  fi
+	# Skip if dumpxml fails
+	if ! xml=$(virsh dumpxml "$VM" 2>/dev/null); then
+		continue
+	fi
 
-  # -- PCI hostdevs: locate <hostdev type='pci'> blocks and extract BDF --
-  while IFS= read -r line; do
-    if [[ $line =~ \<hostdev && $line =~ type=\'pci\' ]]; then
-      # Within this hostdev block, find the <address .../> line
-      while IFS= read -r sub; do
-        if [[ $sub =~ bus=\'0x([0-9A-Fa-f]{2})\'[[:space:]]slot=\'0x([0-9A-Fa-f]{2})\'[[:space:]]function=\'0x([0-9A-Fa-f])\' ]]; then
-          B="${BASH_REMATCH[1]}"
-          S="${BASH_REMATCH[2]}"
-          F="${BASH_REMATCH[3]}"
-          BDF="${B}:${S}.${F}"
-          pci_to_vm["$BDF"]="$VM"
-          break
-        fi
-      done
-    fi
-  done <<< "$xml"
+	flat_xml=$(echo "$xml" | tr -d '\n\r')
 
-  # -- MDEV hostdevs: locate <hostdev type='mdev'> and extract UUID --
-  while IFS= read -r line; do
-    if [[ $line =~ \<hostdev && $line =~ type=\'mdev\' ]]; then
-      # Within this hostdev block, find the <address uuid='...'/> line
-      while IFS= read -r sub; do
-        if [[ $sub =~ uuid=\'([0-9a-fA-F-]+)\' ]]; then
-          UUID="${BASH_REMATCH[1]}"
-          mdev_to_vm["$UUID"]="$VM"
-          break
-        fi
-      done
-    fi
-  done <<< "$xml"
+	# -- PCI hostdevs: locate <hostdev type='pci'> blocks and extract BDF --
+	pci_dev_xml=$flat_xml
+	while [[ $pci_dev_xml =~ (<hostdev.*type=\'pci\'.*?<\/hostdev>) ]]; do
+		hostdev_block="${BASH_REMATCH[1]}"
+		if [[ $hostdev_block =~ bus=\'0x([0-9a-fA-F]{2})\'[[:space:]]*slot=\'0x([0-9a-fA-F]{2})\'[[:space:]]*function=\'0x([0-9a-fA-F])\' ]]; then
+			B="${BASH_REMATCH[1]}"
+			S="${BASH_REMATCH[2]}"
+			F="${BASH_REMATCH[3]}"
+			BDF="${B}:${S}.${F}"
+			pci_to_vm["$BDF"]="$VM"
+		fi
+		pci_dev_xml="${pci_dev_xml#*$hostdev_block}" # Move to next match
+	done
+
+	# -- MDEV hostdevs: locate <hostdev type='mdev'> and extract UUID --
+	mdev_xml=$flat_xml
+	while [[ $mdev_xml =~ (<hostdev.*type=\'mdev\'.*?<\/hostdev>) ]]; do
+		hostdev_block="${BASH_REMATCH[1]}"
+		if [[ $hostdev_block =~ uuid=\'([0-9a-fA-F-]+)\' ]]; then
+			UUID="${BASH_REMATCH[1]}"
+			mdev_to_vm["$UUID"]="$VM"
+		fi
+		mdev_xml="${mdev_xml#*$hostdev_block}" # Move to next match
+	done
 done
 
 # Helper: convert a VM name to JSON value (quoted string or null)
 to_json_vm() {
-  local vm="$1"
-  if [[ -z "$vm" ]]; then
-    echo "null"
-  else
-    json_escape "$vm"
-  fi
+	local vm="$1"
+	if [[ -z "$vm" ]]; then
+		echo "null"
+	else
+		json_escape "$vm"
+	fi
+}
+
+# Parse a "description" file for GPU properties and set global variables
+# Expects one argument: the path to the description file
+parse_and_add_gpu_properties() {
+    local desc_file="$1"
+    # Reset properties to null defaults
+    MAX_INSTANCES="null"
+    VIDEO_RAM="null"
+    MAX_HEADS="null"
+    MAX_RESOLUTION_X="null"
+    MAX_RESOLUTION_Y="null"
+
+    if [[ -f "$desc_file" ]]; then
+        local desc
+        desc=$(<"$desc_file")
+        if [[ $desc =~ max_instance=([0-9]+) ]]; then
+            MAX_INSTANCES="${BASH_REMATCH[1]}"
+        fi
+        if [[ $desc =~ framebuffer=([0-9]+)M? ]]; then # Support with or without 'M' suffix
+            VIDEO_RAM="${BASH_REMATCH[1]}"
+        fi
+        if [[ $desc =~ num_heads=([0-9]+) ]]; then
+            MAX_HEADS="${BASH_REMATCH[1]}"
+        fi
+        if [[ $desc =~ max_resolution=([0-9]+)x([0-9]+) ]]; then
+            MAX_RESOLUTION_X="${BASH_REMATCH[1]}"
+            MAX_RESOLUTION_Y="${BASH_REMATCH[2]}"
+        fi
+    fi
 }
 
 # === GPU Discovery ===
@@ -461,177 +546,175 @@ echo '{ "gpus": ['
 
 first_gpu=true
 for LINE in "${LINES[@]}"; do
-  # Parse lspci -nnm fields: SLOT "CLASS [CODE]" "VENDOR [VID]" "DEVICE [DID]" ...
-  if [[ $LINE =~ ^([^[:space:]]+)[[:space:]]\"([^\"]+)\"[[:space:]]\"([^\"]+)\"[[:space:]]\"([^\"]+)\" ]]; then
-    PCI_ADDR="${BASH_REMATCH[1]}"
-    PCI_CLASS="${BASH_REMATCH[2]}"
-    VENDOR_FIELD="${BASH_REMATCH[3]}"
-    DEVICE_FIELD="${BASH_REMATCH[4]}"
-  else
-    continue
-  fi
+	# Parse lspci -nnm fields: SLOT "CLASS [CODE]" "VENDOR [VID]" "DEVICE [DID]" ...
+	if [[ $LINE =~ ^([^[:space:]]+)[[:space:]]\"([^\"]+)\"[[:space:]]\"([^\"]+)\"[[:space:]]\"([^\"]+)\" ]]; then
+		PCI_ADDR="${BASH_REMATCH[1]}"
+		PCI_CLASS="${BASH_REMATCH[2]}"
+		VENDOR_FIELD="${BASH_REMATCH[3]}"
+		DEVICE_FIELD="${BASH_REMATCH[4]}"
+	else
+		continue
+	fi
 
-  # Only process GPU classes
-  if [[ ! "$PCI_CLASS" =~ (3D\ controller) ]]; then
-    continue
-  fi
+	# Only process GPU classes
+	if [[ ! "$PCI_CLASS" =~ (3D\ controller) ]]; then
+		continue
+	fi
 
-  # Extract vendor name and ID
-  VENDOR=$(sed -E 's/ \[[0-9A-Fa-f]{4}\]$//' <<<"$VENDOR_FIELD")
-  VENDOR_ID=$(sed -E 's/.*\[([0-9A-Fa-f]{4})\]$/\1/' <<<"$VENDOR_FIELD")
-  # Extract device name and ID
-  DEVICE=$(sed -E 's/ \[[0-9A-Fa-f]{4}\]$//' <<<"$DEVICE_FIELD")
-  DEVICE_ID=$(sed -E 's/.*\[([0-9A-Fa-f]{4})\]$/\1/' <<<"$DEVICE_FIELD")
+	# Extract vendor name and ID
+	VENDOR=$(sed -E 's/ \[[0-9A-Fa-f]{4}\]$//' <<<"$VENDOR_FIELD")
+	VENDOR_ID=$(sed -E 's/.*\[([0-9A-Fa-f]{4})\]$/\1/' <<<"$VENDOR_FIELD")
+	# Extract device name and ID
+	DEVICE=$(sed -E 's/ \[[0-9A-Fa-f]{4}\]$//' <<<"$DEVICE_FIELD")
+	DEVICE_ID=$(sed -E 's/.*\[([0-9A-Fa-f]{4})\]$/\1/' <<<"$DEVICE_FIELD")
 
-  # Kernel driver
-  DRV_PATH="/sys/bus/pci/devices/0000:$PCI_ADDR/driver"
-  if [[ -L $DRV_PATH ]]; then
-    DRIVER=$(basename "$(readlink "$DRV_PATH")")
-  else
-    DRIVER="unknown"
-  fi
+	# Kernel driver
+	DRV_PATH="/sys/bus/pci/devices/0000:$PCI_ADDR/driver"
+	if [[ -L $DRV_PATH ]]; then
+		DRIVER=$(basename "$(readlink "$DRV_PATH")")
+	else
+		DRIVER="unknown"
+	fi
 
-  # IOMMU group
-  IOMMU=$(get_iommu_group "$PCI_ADDR")
+	# IOMMU group
+	IOMMU=$(get_iommu_group "$PCI_ADDR")
 
-  # PCI root (to group GPUs under same PCIe switch/root complex)
-  PCI_ROOT=$(get_pci_root "$PCI_ADDR")
+	# PCI root (to group GPUs under same PCIe switch/root complex)
+	PCI_ROOT=$(get_pci_root "$PCI_ADDR")
 
-  # NUMA node
-  NUMA_NODE=$(get_numa_node "$PCI_ADDR")
+	# NUMA node
+	NUMA_NODE=$(get_numa_node "$PCI_ADDR")
 
-  # SR-IOV counts
-  read -r TOTALVFS NUMVFS < <(get_sriov_counts "$PCI_ADDR")
+	# SR-IOV counts
+	read -r TOTALVFS NUMVFS < <(get_sriov_counts "$PCI_ADDR")
 
-  # === full_passthrough usage ===
-  FULL_USED_JSON="null"
-  if (( TOTALVFS == 0 )); then
-    raw="${pci_to_vm[$PCI_ADDR]:-}"
-    FULL_USED_JSON=$(to_json_vm "$raw")
-  fi
+	# Get Physical GPU properties from its own description file, if available
+	PF_DESC_PATH="/sys/bus/pci/devices/0000:$PCI_ADDR/description"
+	parse_and_add_gpu_properties "$PF_DESC_PATH"
+	# Save physical function's properties before they are overwritten by vGPU/VF processing
+	PF_MAX_INSTANCES=$MAX_INSTANCES
+	PF_VIDEO_RAM=$VIDEO_RAM
+	PF_MAX_HEADS=$MAX_HEADS
+	PF_MAX_RESOLUTION_X=$MAX_RESOLUTION_X
+	PF_MAX_RESOLUTION_Y=$MAX_RESOLUTION_Y
 
-  # === vGPU (MDEV) instances ===
-  VGPU_ARRAY="[]"
-  MDEV_BASE="/sys/bus/pci/devices/0000:$PCI_ADDR/mdev_supported_types"
-  if [[ -d "$MDEV_BASE" ]]; then
-    declare -a vlist=()
-    for PROF_DIR in "$MDEV_BASE"/*; do
-      [[ -d "$PROF_DIR" ]] || continue
+	# === full_passthrough usage ===
+	raw="${pci_to_vm[$PCI_ADDR]:-}"
+	FULL_USED_JSON=$(to_json_vm "$raw")
 
-      # Read the human-readable profile name from the 'name' file
-      if [[ -f "$PROF_DIR/name" ]]; then
-        PROFILE_NAME=$(<"$PROF_DIR/name")
-      else
-        PROFILE_NAME=$(basename "$PROF_DIR")
-      fi
+	# === vGPU (MDEV) instances ===
+	VGPU_ARRAY="[]"
+	declare -a vlist=()
+	MDEV_BASE="/sys/bus/pci/devices/0000:$PCI_ADDR/mdev_supported_types"
+	if [[ -d "$MDEV_BASE" ]]; then
+		for PROF_DIR in "$MDEV_BASE"/*; do
+			[[ -d "$PROF_DIR" ]] || continue
 
-      # Fetch max_instance from the description file, if present
-      # num_heads=4, frl_config=60, framebuffer=2048M, max_resolution=4096x2160, max_instance=4
-      MAX_INSTANCES="null"
-      VIDEO_RAM="null"
-      MAX_HEADS="null"
-      MAX_RESOLUTION_X="null"
-      MAX_RESOLUTION_Y="null"
-      if [[ -f "$PROF_DIR/description" ]]; then
-        # description format: “…, max_instance=24” etc.
-        desc=$(<"$PROF_DIR/description")
-        if [[ $desc =~ num_heads=([0-9]+) ]]; then
-          MAX_HEADS="${BASH_REMATCH[1]}"
-        fi
-        if [[ $desc =~ framebuffer=([0-9]+) ]]; then
-          VIDEO_RAM="${BASH_REMATCH[1]}"
-        fi
-        if [[ $desc =~ max_resolution=([0-9]+)x([0-9]+) ]]; then
-          MAX_RESOLUTION_X="${BASH_REMATCH[1]}"
-          MAX_RESOLUTION_Y="${BASH_REMATCH[2]}"
-        fi
-        if [[ $desc =~ max_instance=([0-9]+) ]]; then
-          MAX_INSTANCES="${BASH_REMATCH[1]}"
-        fi
-      fi
+			# Read the human-readable profile name from the 'name' file
+			if [[ -f "$PROF_DIR/name" ]]; then
+				PROFILE_NAME=$(<"$PROF_DIR/name")
+			else
+				PROFILE_NAME=$(basename "$PROF_DIR")
+			fi
 
-      # Under each profile, existing UUIDs appear in:
-      #    /sys/bus/pci/devices/0000:$PCI_ADDR/mdev_supported_types/<PROFILE>/devices/*
-      DEVICE_DIR="$PROF_DIR/devices"
-      if [[ -d "$DEVICE_DIR" ]]; then
-        for UDIR in "$DEVICE_DIR"/*; do
-          [[ -d $UDIR ]] || continue
-          MDEV_UUID=$(basename "$UDIR")
+			# Fetch max_instance from the description file, if present
+			parse_and_add_gpu_properties "$PROF_DIR/description"
 
-          # libvirt_address uses PF BDF
-          DOMAIN="0x0000"
-          BUS="0x${PCI_ADDR:0:2}"
-          SLOT="0x${PCI_ADDR:3:2}"
-          FUNC="0x${PCI_ADDR:6:1}"
+			# Under each profile, existing UUIDs appear in:
+			#    /sys/bus/pci/devices/0000:$PCI_ADDR/mdev_supported_types/<PROFILE>/devices/*
+			DEVICE_DIR="$PROF_DIR/devices"
+			if [[ -d "$DEVICE_DIR" ]]; then
+				for UDIR in "$DEVICE_DIR"/*; do
+					[[ -d $UDIR ]] || continue
+					MDEV_UUID=$(basename "$UDIR")
 
-          # Determine which VM uses this UUID
-          raw="${mdev_to_vm[$MDEV_UUID]:-}"
-          USED_JSON=$(to_json_vm "$raw")
+					# libvirt_address uses PF BDF
+					DOMAIN="0x0000"
+					BUS="0x${PCI_ADDR:0:2}"
+					SLOT="0x${PCI_ADDR:3:2}"
+					FUNC="0x${PCI_ADDR:6:1}"
 
-          vlist+=( \
-            "{\"mdev_uuid\":\"$MDEV_UUID\",\"profile_name\":$(json_escape "$PROFILE_NAME"),"\
-            "\"max_instances\":$MAX_INSTANCES,\"video_ram\":$VIDEO_RAM,\"max_heads\":$MAX_HEADS,"\
-            "\"max_resolution_x\":$MAX_RESOLUTION_X,\"max_resolution_y\":$MAX_RESOLUTION_Y,\"libvirt_address\":{"\
-            "\"domain\":\"$DOMAIN\",\"bus\":\"$BUS\",\"slot\":\"$SLOT\",\"function\":\"$FUNC\"},\"used_by_vm\":$USED_JSON}" )
-        done
-      fi
-    done
-    VGPU_ARRAY="[${vlist[*]}]"
-  fi
+					# Determine which VM uses this UUID
+					raw="${mdev_to_vm[$MDEV_UUID]:-}"
+					USED_JSON=$(to_json_vm "$raw")
 
-  # === VF instances (SR-IOV / MIG) ===
-  VF_ARRAY="[]"
-  if (( TOTALVFS > 0 )); then
-    declare -a flist=()
-    for VF_LINK in /sys/bus/pci/devices/0000:"$PCI_ADDR"/virtfn*; do
-      [[ -L $VF_LINK ]] || continue
-      VF_PATH=$(readlink -f "$VF_LINK")
-      VF_ADDR=${VF_PATH##*/}   # e.g. "0000:65:00.2"
-      VF_BDF="${VF_ADDR:5}"   # "65:00.2"
+					vlist+=(
+						"{\"mdev_uuid\":\"$MDEV_UUID\",\"profile_name\":$(json_escape "$PROFILE_NAME"),"
+						"\"max_instances\":$MAX_INSTANCES,\"video_ram\":$VIDEO_RAM,\"max_heads\":$MAX_HEADS,"
+						"\"max_resolution_x\":$MAX_RESOLUTION_X,\"max_resolution_y\":$MAX_RESOLUTION_Y,\"libvirt_address\":{"
+						"\"domain\":\"$DOMAIN\",\"bus\":\"$BUS\",\"slot\":\"$SLOT\",\"function\":\"$FUNC\"},\"used_by_vm\":$USED_JSON}")
+				done
+			fi
+		done
+		if [ ${#vlist[@]} -gt 0 ]; then
+			VGPU_ARRAY="[$(
+				IFS=,
+				echo "${vlist[*]}"
+			)]"
+		fi
+	fi
 
-      DOMAIN="0x0000"
-      BUS="0x${VF_BDF:0:2}"
-      SLOT="0x${VF_BDF:3:2}"
-      FUNC="0x${VF_BDF:6:1}"
+	# === VF instances (SR-IOV / MIG) ===
+	VF_ARRAY="[]"
+	declare -a flist=()
+	if ((TOTALVFS > 0)); then
+		for VF_LINK in /sys/bus/pci/devices/0000:"$PCI_ADDR"/virtfn*; do
+			[[ -L $VF_LINK ]] || continue
+			VF_PATH=$(readlink -f "$VF_LINK")
+			VF_ADDR=${VF_PATH##*/} # e.g. "0000:65:00.2"
+			VF_BDF="${VF_ADDR:5}"  # "65:00.2"
 
-      # Determine vf_type and vf_profile
-      VF_TYPE="sr-iov"
-      VF_PROFILE=""
-      if VF_LINE=$(lspci -nnm -s "$VF_BDF" 2>/dev/null); then
-        if [[ $VF_LINE =~ \"([^\"]+)\"[[:space:]]\"([^\"]+)\"[[:space:]]\"([^\"]+)\"[[:space:]]\"([^\"]+)\" ]]; then
-          VF_DEVICE_FIELD="${BASH_REMATCH[4]}"
-          VF_PROFILE=$(sed -E 's/ \[[0-9A-Fa-f]{4}\]$//' <<<"$VF_DEVICE_FIELD")
-        fi
-      fi
-      VF_PROFILE_JSON=$(json_escape "$VF_PROFILE")
+			DOMAIN="0x0000"
+			BUS="0x${VF_BDF:0:2}"
+			SLOT="0x${VF_BDF:3:2}"
+			FUNC="0x${VF_BDF:6:1}"
 
-      # Determine which VM uses this VF_BDF
-      raw="${pci_to_vm[$VF_BDF]:-}"
-      USED_JSON=$(to_json_vm "$raw")
+			# Determine vf_type and vf_profile
+			VF_TYPE="sr-iov"
+			VF_PROFILE=""
+			if VF_LINE=$(lspci -nnm -s "$VF_BDF" 2>/dev/null); then
+				if [[ $VF_LINE =~ \"([^\"]+)\"[[:space:]]\"([^\"]+)\"[[:space:]]\"([^\"]+)\"[[:space:]]\"([^\"]+)\" ]]; then
+					VF_DEVICE_FIELD="${BASH_REMATCH[4]}"
+					VF_PROFILE=$(sed -E 's/ \[[0-9A-Fa-f]{4}\]$//' <<<"$VF_DEVICE_FIELD")
+				fi
+			fi
+			VF_PROFILE_JSON=$(json_escape "$VF_PROFILE")
 
-      flist+=( \
-        "{\"vf_pci_address\":\"$VF_BDF\",\"vf_profile\":$VF_PROFILE_JSON,\"libvirt_address\":{"\
-        "\"domain\":\"$DOMAIN\",\"bus\":\"$BUS\",\"slot\":\"$SLOT\",\"function\":\"$FUNC\"},\"used_by_vm\":$USED_JSON}" )
-    done
-    VF_ARRAY="[${flist[*]}]"
-  fi
+			# Determine which VM uses this VF_BDF
+			raw="${pci_to_vm[$VF_BDF]:-}"
+			USED_JSON=$(to_json_vm "$raw")
 
-  # === full_passthrough block ===
-  # If vgpu_instances and vf_instances are empty, we can assume full passthrough
-  FP_ENABLED=$(( ${#VGPU_ARRAY} == 2 && ${#VF_ARRAY} == 2 )) || true
-  DOMAIN="0x0000"
-  BUS="0x${PCI_ADDR:0:2}"
-  SLOT="0x${PCI_ADDR:3:2}"
-  FUNC="0x${PCI_ADDR:6:1}"
+			flist+=(
+				"{\"vf_pci_address\":\"$VF_BDF\",\"vf_profile\":$VF_PROFILE_JSON,\"libvirt_address\":{"
+				"\"domain\":\"$DOMAIN\",\"bus\":\"$BUS\",\"slot\":\"$SLOT\",\"function\":\"$FUNC\"},\"used_by_vm\":$USED_JSON}")
+		done
+		if [ ${#flist[@]} -gt 0 ]; then
+			VF_ARRAY="[$(
+				IFS=,
+				echo "${flist[*]}"
+			)]"
+		fi
+	fi
 
-  # Emit JSON
-  if $first_gpu; then
-    first_gpu=false
-  else
-    echo ","
-  fi
+	# === full_passthrough block ===
+	# If vgpu_instances and vf_instances are empty, we can assume full passthrough
+	FP_ENABLED=0
+	if [[ ${#vlist[@]} -eq 0 && ${#flist[@]} -eq 0 ]]; then
+		FP_ENABLED=1
+	fi
+	DOMAIN="0x0000"
+	BUS="0x${PCI_ADDR:0:2}"
+	SLOT="0x${PCI_ADDR:3:2}"
+	FUNC="0x${PCI_ADDR:6:1}"
 
-  cat <<JSON
+	# Emit JSON
+	if $first_gpu; then
+		first_gpu=false
+	else
+		echo ","
+	fi
+
+	cat <<JSON
     {
       "pci_address":$(json_escape "$PCI_ADDR"),
       "vendor_id":$(json_escape "$VENDOR_ID"),
@@ -645,6 +728,11 @@ for LINE in "${LINES[@]}"; do
       "numa_node":$NUMA_NODE,
       "sriov_totalvfs":$TOTALVFS,
       "sriov_numvfs":$NUMVFS,
+      "max_instances":$PF_MAX_INSTANCES,
+      "video_ram":$PF_VIDEO_RAM,
+      "max_heads":$PF_MAX_HEADS,
+      "max_resolution_x":$PF_MAX_RESOLUTION_X,
+      "max_resolution_y":$PF_MAX_RESOLUTION_Y,
 
       "full_passthrough": {
         "enabled":$FP_ENABLED,
