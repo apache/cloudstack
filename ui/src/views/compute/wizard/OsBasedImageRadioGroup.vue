@@ -145,6 +145,11 @@ export default {
     selected (newVal, oldVal) {
       if (newVal === oldVal) return
       this.onSelectTemplateIso()
+    },
+    imagesList () {
+      if (this.value === '' && this.imagesList && this.imagesList.length > 0) {
+        this.onClickRow(this.imagesList[0])
+      }
     }
   },
   emits: ['emit-update-image', 'handle-search-filter'],
