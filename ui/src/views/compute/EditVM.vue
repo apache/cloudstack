@@ -145,7 +145,6 @@ export default {
       template: {},
       userDataEnabled: false,
       securityGroupsEnabled: false,
-      dynamicScalingVmConfig: false,
       loading: false,
       securitygroups: {
         loading: false,
@@ -189,7 +188,6 @@ export default {
       this.fetchInstaceGroups()
       this.fetchServiceOfferingData()
       this.fetchTemplateData()
-      this.fetchDynamicScalingVmConfig()
       this.fetchUserData()
     },
     fetchZoneDetails () {
@@ -241,18 +239,8 @@ export default {
         this.template = templateResponses[0]
       })
     },
-    fetchDynamicScalingVmConfig () {
-      const params = {}
-      params.name = 'enable.dynamic.scale.vm'
-      params.zoneid = this.resource.zoneid
-      var apiName = 'listConfigurations'
-      api(apiName, params).then(json => {
-        const configResponse = json.listconfigurationsresponse.configuration
-        this.dynamicScalingVmConfig = configResponse[0]?.value === 'true'
-      })
-    },
-    canDynamicScalingEnabled () {
-      return this.template.isdynamicallyscalable && this.serviceOffering.dynamicscalingenabled && this.dynamicScalingVmConfig
+    isDynamicScalingEnabled () {
+      return this.template.isdynamicallyscalable && this.serviceOffering.dynamicscalingenabled && this.$store.getters.features.dynamicscalingenabled
     },
     fetchOsTypes () {
       this.osTypes.loading = true
