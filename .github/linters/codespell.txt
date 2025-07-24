@@ -190,7 +190,6 @@ erro
 erronous
 everthing
 everytime
-excetion
 excption
 excute
 execept
