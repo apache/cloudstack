@@ -116,10 +116,12 @@ export default {
             params[key] = values[key]
           }
         }
-        if (values.details) {
+        if (values.details && Object.keys(values.details).length > 0) {
           Object.entries(values.details).forEach(([key, value]) => {
             params['details[0].' + key] = value
           })
+        } else {
+          params.cleanupdetails = true
         }
         postAPI('updateExtension', params).then(response => {
           this.$emit('refresh-data')
