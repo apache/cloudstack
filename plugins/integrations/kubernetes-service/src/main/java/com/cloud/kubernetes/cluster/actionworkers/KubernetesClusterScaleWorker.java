@@ -532,6 +532,8 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         }
         scaleTimeoutTime = System.currentTimeMillis() + KubernetesClusterService.KubernetesClusterScaleTimeout.value() * 1000;
         final long originalClusterSize = kubernetesCluster.getNodeCount();
+
+        // DEFAULT node type means only the global service offering has been set for the Kubernetes cluster
         boolean scaleClusterDefaultOffering = serviceOfferingNodeTypeMap.containsKey(DEFAULT.name());
         if (scaleClusterDefaultOffering) {
             final ServiceOffering existingServiceOffering = serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId());
@@ -546,38 +548,37 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         ServiceOffering defaultServiceOffering = serviceOfferingNodeTypeMap.getOrDefault(DEFAULT.name(), null);
 
         for (KubernetesClusterNodeType nodeType : Arrays.asList(CONTROL, ETCD, WORKER)) {
-            boolean isWorkerNodeOrAllNodes = WORKER == nodeType;
-            final long newVMRequired = (!isWorkerNodeOrAllNodes || clusterSize == null) ? 0 : clusterSize - originalClusterSize;
+            boolean isWorkerNode = WORKER == nodeType;
+            final long newVMRequired = (!isWorkerNode || clusterSize == null) ? 0 : clusterSize - originalClusterSize;
             if (!scaleClusterDefaultOffering && !serviceOfferingNodeTypeMap.containsKey(nodeType.name()) && newVMRequired == 0) {
                 continue;
             }
 
-            Long existingNodeTypeOfferingId = getKubernetesClusterNodeTypeOfferingId(kubernetesCluster, nodeType);
-            boolean clusterHasExistingOfferingForNodeType = existingNodeTypeOfferingId != null;
-            boolean serviceOfferingScalingNeeded = isServiceOfferingScalingNeededForNodeType(nodeType, serviceOfferingNodeTypeMap, kubernetesCluster);
-            ServiceOffering serviceOffering = serviceOfferingNodeTypeMap.getOrDefault(nodeType.name(), defaultServiceOffering);
-            boolean updateNodeOffering = serviceOfferingNodeTypeMap.containsKey(nodeType.name()) ||
-                    scaleClusterDefaultOffering && clusterHasExistingOfferingForNodeType;
-            boolean updateClusterOffering = isWorkerNodeOrAllNodes && scaleClusterDefaultOffering;
-            if (isWorkerNodeOrAllNodes && autoscalingChanged) {
+            ServiceOffering existingServiceOffering = getExistingServiceOfferingForNodeType(nodeType, kubernetesCluster);
+            ServiceOffering scalingServiceOffering = serviceOfferingNodeTypeMap.getOrDefault(nodeType.name(), defaultServiceOffering);
+            boolean isNodeOfferingScalingNeeded = isServiceOfferingScalingNeededForNodeType(existingServiceOffering, scalingServiceOffering);
+            boolean updateNodeOffering = serviceOfferingNodeTypeMap.containsKey(nodeType.name()) || isNodeOfferingScalingNeeded;
+
+            boolean updateClusterOffering = isWorkerNode && scaleClusterDefaultOffering;
+            if (isWorkerNode && autoscalingChanged) {
                 boolean autoScaled = autoscaleCluster(this.isAutoscalingEnabled, minSize, maxSize);
-                if (autoScaled && serviceOfferingScalingNeeded) {
-                    scaleKubernetesClusterOffering(nodeType, serviceOffering, updateNodeOffering, updateClusterOffering);
+                if (autoScaled && isNodeOfferingScalingNeeded) {
+                    scaleKubernetesClusterOffering(nodeType, scalingServiceOffering, updateNodeOffering, updateClusterOffering);
                 }
                 stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
                 return autoScaled;
             }
-            final boolean clusterSizeScalingNeeded = isWorkerNodeOrAllNodes && clusterSize != null && clusterSize != originalClusterSize;
-            if (serviceOfferingScalingNeeded && clusterSizeScalingNeeded) {
+            final boolean clusterSizeScalingNeeded = isWorkerNode && clusterSize != null && clusterSize != originalClusterSize;
+            if (isNodeOfferingScalingNeeded && clusterSizeScalingNeeded) {
                 if (newVMRequired > 0) {
-                    scaleKubernetesClusterOffering(nodeType, serviceOffering, updateNodeOffering, updateClusterOffering);
+                    scaleKubernetesClusterOffering(nodeType, scalingServiceOffering, updateNodeOffering, updateClusterOffering);
                     scaleKubernetesClusterSize(nodeType);
                 } else {
                     scaleKubernetesClusterSize(nodeType);
-                    scaleKubernetesClusterOffering(nodeType, serviceOffering, updateNodeOffering, updateClusterOffering);
+                    scaleKubernetesClusterOffering(nodeType, scalingServiceOffering, updateNodeOffering, updateClusterOffering);
                 }
-            } else if (serviceOfferingScalingNeeded) {
-                scaleKubernetesClusterOffering(nodeType, serviceOffering, updateNodeOffering, updateClusterOffering);
+            } else if (isNodeOfferingScalingNeeded) {
+                scaleKubernetesClusterOffering(nodeType, scalingServiceOffering, updateNodeOffering, updateClusterOffering);
             } else if (clusterSizeScalingNeeded) {
                 scaleKubernetesClusterSize(nodeType);
             }
@@ -587,43 +588,45 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         return true;
     }
 
-    private Long getKubernetesClusterNodeTypeOfferingId(KubernetesCluster kubernetesCluster, KubernetesClusterNodeType nodeType) {
-        if (nodeType == WORKER) {
-            return kubernetesCluster.getWorkerNodeServiceOfferingId();
-        } else if (nodeType == ETCD) {
-            return kubernetesCluster.getEtcdNodeServiceOfferingId();
-        } else if (nodeType == CONTROL) {
-            return kubernetesCluster.getControlNodeServiceOfferingId();
-        }
-        return null;
-    }
-
-    protected boolean isServiceOfferingScalingNeededForNodeType(KubernetesClusterNodeType nodeType,
-                                                                Map<String, ServiceOffering> map, KubernetesCluster kubernetesCluster) {
-        // DEFAULT node type means only the global service offering has been set for the Kubernetes cluster
-        Long existingOfferingId = map.containsKey(DEFAULT.name()) ?
-                kubernetesCluster.getServiceOfferingId() :
-                getExistingOfferingIdForNodeType(nodeType, kubernetesCluster);
+    private ServiceOffering getExistingServiceOfferingForNodeType(KubernetesClusterNodeType nodeType, KubernetesCluster kubernetesCluster) {
+        Long existingOfferingId = getExistingOfferingIdForNodeType(nodeType, kubernetesCluster);
         if (existingOfferingId == null) {
-            logAndThrow(Level.ERROR, String.format("The Kubernetes cluster %s does not have a global service offering set", kubernetesCluster.getName()));
+            logAndThrow(Level.ERROR, String.format("The Kubernetes cluster %s does not have a service offering set for node type %s",
+                    kubernetesCluster.getName(), nodeType.name()));
         }
         ServiceOffering existingOffering = serviceOfferingDao.findById(existingOfferingId);
         if (existingOffering == null) {
-            logAndThrow(Level.ERROR, String.format("Cannot find the global service offering with ID %s set on the Kubernetes cluster %s", existingOfferingId, kubernetesCluster.getName()));
+            logAndThrow(Level.ERROR, String.format("Cannot find service offering with ID %s set on the Kubernetes cluster %s node type %s",
+                    existingOfferingId, kubernetesCluster.getName(), nodeType.name()));
         }
-        ServiceOffering newOffering = map.containsKey(DEFAULT.name()) ? map.get(DEFAULT.name()) : map.get(nodeType.name());
-        return newOffering != null && newOffering.getId() != existingOffering.getId();
+        return existingOffering;
+    }
+
+    protected void compareExistingToScalingServiceOfferingForNodeType(Long existingOfferingId, Long scalingOfferingId,
+                                                                      KubernetesClusterNodeType nodeType) {
+        if (existingOfferingId.equals(scalingOfferingId)) {
+            String err = String.format("Cannot scale the nodes of type %s as the provided offering %s " +
+                    "is the same as the existing offering", nodeType.name(), scalingOfferingId);
+            logger.error(err);
+            throw new CloudRuntimeException(err);
+        }
+    }
+
+    protected boolean isServiceOfferingScalingNeededForNodeType(ServiceOffering existingServiceOffering,
+                                                                ServiceOffering scalingServiceOffering) {
+        return scalingServiceOffering != null && existingServiceOffering != null &&
+                scalingServiceOffering.getId() != existingServiceOffering.getId();
     }
 
     protected Long getExistingOfferingIdForNodeType(KubernetesClusterNodeType nodeType, KubernetesCluster kubernetesCluster) {
         List<KubernetesClusterVmMapVO> clusterVms = kubernetesClusterVmMapDao.listByClusterIdAndVmType(kubernetesCluster.getId(), nodeType);
         if (CollectionUtils.isEmpty(clusterVms)) {
-            return null;
+            return kubernetesCluster.getServiceOfferingId();
         }
         KubernetesClusterVmMapVO clusterVm = clusterVms.get(0);
         UserVmVO clusterUserVm = userVmDao.findById(clusterVm.getVmId());
         if (clusterUserVm == null) {
-            return null;
+            return kubernetesCluster.getServiceOfferingId();
         }
         return clusterUserVm.getServiceOfferingId();
     }
