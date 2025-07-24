@@ -170,6 +170,7 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -812,7 +813,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new CloudRuntimeException("Error while copying volume of remote instance: " + answer.getDetails());
         }
         CopyRemoteVolumeAnswer copyRemoteVolumeAnswer = (CopyRemoteVolumeAnswer) answer;
-        if(!copyRemoteVolumeAnswer.getResult()) {
+        checkVolume(copyRemoteVolumeAnswer.getVolumeDetails());
+        if (!copyRemoteVolumeAnswer.getResult()) {
             throw new CloudRuntimeException("Unable to copy volume of remote instance");
         }
         diskProfile.setSize(copyRemoteVolumeAnswer.getSize());
@@ -2653,7 +2655,13 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new CloudRuntimeException("Disk not found or is invalid");
         }
         CheckVolumeAnswer checkVolumeAnswer = (CheckVolumeAnswer) answer;
-        if(!checkVolumeAnswer.getResult()) {
+        try {
+            checkVolume(checkVolumeAnswer.getVolumeDetails());
+        } catch (CloudRuntimeException e) {
+            cleanupFailedImportVM(userVm);
+            throw e;
+        }
+        if (!checkVolumeAnswer.getResult()) {
             cleanupFailedImportVM(userVm);
             throw new CloudRuntimeException("Disk not found or is invalid");
         }
@@ -2677,6 +2685,31 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         networkOrchestrationService.importNic(macAddress,0,network, true, userVm, requestedIpPair, zone, true);
         publishVMUsageUpdateResourceCount(userVm, dummyOffering);
         return userVm;
+    }
+
+    private void checkVolume(Map<VolumeOnStorageTO.Detail, String> volumeDetails) {
+        if (MapUtils.isEmpty(volumeDetails)) {
+            return;
+        }
+
+        if (volumeDetails.containsKey(VolumeOnStorageTO.Detail.IS_LOCKED)) {
+            String isLocked = volumeDetails.get(VolumeOnStorageTO.Detail.IS_LOCKED);
+            if (Boolean.parseBoolean(isLocked)) {
+                logFailureAndThrowException("Locked volume cannot be imported or unmanaged.");
+            }
+        }
+        if (volumeDetails.containsKey(VolumeOnStorageTO.Detail.IS_ENCRYPTED)) {
+            String isEncrypted = volumeDetails.get(VolumeOnStorageTO.Detail.IS_ENCRYPTED);
+            if (Boolean.parseBoolean(isEncrypted)) {
+                logFailureAndThrowException("Encrypted volume cannot be imported or unmanaged.");
+            }
+        }
+        if (volumeDetails.containsKey(VolumeOnStorageTO.Detail.BACKING_FILE)) {
+            String backingFile = volumeDetails.get(VolumeOnStorageTO.Detail.BACKING_FILE);
+            if (StringUtils.isNotBlank(backingFile)) {
+                logFailureAndThrowException("Volume with backing file cannot be imported or unmanaged.");
+            }
+        }
     }
 
     private NetworkVO getDefaultNetwork(DataCenter zone, Account owner, boolean selectAny) throws InsufficientCapacityException, ResourceAllocationException {
