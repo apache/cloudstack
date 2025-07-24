@@ -64,11 +64,14 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterDaoImpl;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
+import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.dao.GuestOSDaoImpl;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateDaoImpl;
 import com.cloud.storage.dao.VMTemplateZoneDao;
@@ -101,15 +104,13 @@ public class SystemVmTemplateRegistration {
     public static final String TEMPORARY_SECONDARY_STORE = "tmp";
     private static final String PARTIAL_TEMPLATE_FOLDER = String.format("/template/tmpl/%d/", Account.ACCOUNT_ID_SYSTEM);
     private static final String storageScriptsDir = "scripts/storage/secondary";
-    private static final Integer OTHER_LINUX_ID = 99;
-    private static final Integer LINUX_5_ID = 15;
+    private static Integer LINUX_12_ID = 363;
     private static final Integer LINUX_7_ID = 183;
     private static final Integer SCRIPT_TIMEOUT = 1800000;
     private static final Integer LOCK_WAIT_TIMEOUT = 1200;
     protected static final List<CPU.CPUArch> DOWNLOADABLE_TEMPLATE_ARCH_TYPES = Arrays.asList(
             CPU.CPUArch.arm64
     );
-
 
     public static String CS_MAJOR_VERSION = null;
     public static String CS_TINY_VERSION = null;
@@ -132,6 +133,8 @@ public class SystemVmTemplateRegistration {
     ClusterDao clusterDao;
     @Inject
     ConfigurationDao configurationDao;
+    @Inject
+    private GuestOSDao guestOSDao;
 
     private String systemVmTemplateVersion;
 
@@ -147,6 +150,7 @@ public class SystemVmTemplateRegistration {
         imageStoreDetailsDao = new ImageStoreDetailsDaoImpl();
         clusterDao = new ClusterDaoImpl();
         configurationDao = new ConfigurationDaoImpl();
+        guestOSDao = new GuestOSDaoImpl();
         tempDownloadDir = new File(System.getProperty("java.io.tmpdir"));
     }
 
@@ -331,13 +335,13 @@ public class SystemVmTemplateRegistration {
         }
     };
 
-    public static final Map<Hypervisor.HypervisorType, Integer> hypervisorGuestOsMap = new HashMap<Hypervisor.HypervisorType, Integer>() {
+    public static Map<Hypervisor.HypervisorType, Integer> hypervisorGuestOsMap = new HashMap<Hypervisor.HypervisorType, Integer>() {
         {
-            put(Hypervisor.HypervisorType.KVM, LINUX_5_ID);
-            put(Hypervisor.HypervisorType.XenServer, OTHER_LINUX_ID);
-            put(Hypervisor.HypervisorType.VMware, OTHER_LINUX_ID);
-            put(Hypervisor.HypervisorType.Hyperv, LINUX_5_ID);
-            put(Hypervisor.HypervisorType.LXC, LINUX_5_ID);
+            put(Hypervisor.HypervisorType.KVM, LINUX_12_ID);
+            put(Hypervisor.HypervisorType.XenServer, LINUX_12_ID);
+            put(Hypervisor.HypervisorType.VMware, LINUX_12_ID);
+            put(Hypervisor.HypervisorType.Hyperv, LINUX_12_ID);
+            put(Hypervisor.HypervisorType.LXC, LINUX_12_ID);
             put(Hypervisor.HypervisorType.Ovm3, LINUX_7_ID);
         }
     };
@@ -595,6 +599,20 @@ public class SystemVmTemplateRegistration {
         vmInstanceDao.updateSystemVmTemplateId(templateId, hypervisorType);
     }
 
+    public void updateSystemVmTemplateGuestOsId() {
+        String systemVmGuestOsName = "Debian GNU/Linux 12 (64-bit)";
+        GuestOSVO guestOS = guestOSDao.findOneByDisplayName(systemVmGuestOsName);
+        if (guestOS != null) {
+            LOGGER.debug("Updating SystemVM Template Guest OS [{}] id", systemVmGuestOsName);
+            SystemVmTemplateRegistration.LINUX_12_ID = Math.toIntExact(guestOS.getId());
+            hypervisorGuestOsMap.put(Hypervisor.HypervisorType.KVM, LINUX_12_ID);
+            hypervisorGuestOsMap.put(Hypervisor.HypervisorType.XenServer, LINUX_12_ID);
+            hypervisorGuestOsMap.put(Hypervisor.HypervisorType.VMware, LINUX_12_ID);
+            hypervisorGuestOsMap.put(Hypervisor.HypervisorType.Hyperv, LINUX_12_ID);
+            hypervisorGuestOsMap.put(Hypervisor.HypervisorType.LXC, LINUX_12_ID);
+        }
+    }
+
     public void updateConfigurationParams(Map<String, String> configParams) {
         for (Map.Entry<String, String> config : configParams.entrySet()) {
             boolean updated = configurationDao.update(config.getKey(), config.getValue());
@@ -731,6 +749,7 @@ public class SystemVmTemplateRegistration {
         Long templateId = null;
         try {
             MetadataTemplateDetails templateDetails = getMetadataTemplateDetails(hypervisor, arch);
+            updateSystemVmTemplateGuestOsId();
             templateId = performTemplateRegistrationOperations(hypervisor, name,
                     templateDetails.getArch(), templateDetails.getUrl(),
                     templateDetails.getChecksum(), hypervisorImageFormat.get(hypervisor),
