@@ -122,7 +122,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import TungstenNetworkAction from '@/views/network/tungsten/TungstenNetworkAction'
 import TungstenNetworkTable from '@/views/network/tungsten/TungstenNetworkTable'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -233,7 +233,7 @@ export default {
       this.dataSource = []
       this.fetchLoading = true
 
-      api(this.apiName, params).then(json => {
+      postAPI(this.apiName, params).then(json => {
         let responseName
         let objectName
         for (const key in json) {
@@ -274,7 +274,7 @@ export default {
           const fieldIndex = this.currentAction.fields.findIndex(item => item.name === field.name)
           this.currentAction.fields[fieldIndex].loading = true
 
-          api(field.api, params).then(json => {
+          postAPI(field.api, params).then(json => {
             let responseName
             let objectName
             for (const key in json) {
@@ -357,7 +357,7 @@ export default {
             }
           }
         }
-        api(this.currentAction.api, params).then(json => {
+        postAPI(this.currentAction.api, params).then(json => {
           const jsonResponseName = [this.currentAction.api, 'response'].join('').toLowerCase()
           const jobId = json[jsonResponseName].jobid
           if (!jobId) {
@@ -404,7 +404,7 @@ export default {
       }
 
       this.fetchLoading = true
-      api(this.currentAction.api, params).then(json => {
+      postAPI(this.currentAction.api, params).then(json => {
         const jsonResponseName = [this.currentAction.api, 'response'].join('').toLowerCase()
         const jobId = json[jsonResponseName].jobid
         const resourceName = record.name || record.uuid || record.id

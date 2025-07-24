@@ -260,7 +260,11 @@ known_categories = {
     'addNodesToKubernetesCluster': 'Kubernetes Service',
     'removeNodesFromKubernetesCluster': 'Kubernetes Service',
     'configureStorageAccess': 'Storage Access Groups',
-    'listStorageAccessGroups': 'Storage Access Groups'
+    'listStorageAccessGroups': 'Storage Access Groups',
+    'listGuiThemes': 'GUI Theme',
+    'createGuiTheme': 'GUI Theme',
+    'updateGuiTheme': 'GUI Theme',
+    'removeGuiTheme': 'GUI Theme'
 }
 
 

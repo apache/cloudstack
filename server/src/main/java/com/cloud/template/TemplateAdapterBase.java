@@ -194,7 +194,8 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 
         if (!isAdmin && zoneIdList == null && !isRegionStore ) {
             // domain admin and user should also be able to register template on a region store
-            throw new InvalidParameterValueException("Please specify a valid zone Id. Only admins can create templates in all zones.");
+            throw new InvalidParameterValueException("Template registered for 'All zones' can only be owned a Root Admin account. " +
+                    "Please select specific zone(s).");
         }
 
         // check for the url format only when url is not null. url can be null incase of form based upload

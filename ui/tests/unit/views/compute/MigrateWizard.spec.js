@@ -148,7 +148,6 @@ describe('Views > compute > MigrateWizard.vue', () => {
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
           method: 'GET',
-          data: new URLSearchParams(),
           params: {
             command: 'findHostsForMigration',
             virtualmachineid: undefined,
@@ -171,7 +170,6 @@ describe('Views > compute > MigrateWizard.vue', () => {
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
           method: 'GET',
-          data: new URLSearchParams(),
           params: {
             command: 'findHostsForMigration',
             virtualmachineid: null,
@@ -194,7 +192,6 @@ describe('Views > compute > MigrateWizard.vue', () => {
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
           method: 'GET',
-          data: new URLSearchParams(),
           params: {
             command: 'findHostsForMigration',
             virtualmachineid: 'test-id-value',
@@ -218,7 +215,6 @@ describe('Views > compute > MigrateWizard.vue', () => {
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
           method: 'GET',
-          data: new URLSearchParams(),
           params: {
             command: 'findHostsForMigration',
             virtualmachineid: 'test-id-value',
@@ -246,7 +242,6 @@ describe('Views > compute > MigrateWizard.vue', () => {
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
           method: 'GET',
-          data: new URLSearchParams(),
           params: {
             command: 'findHostsForMigration',
             virtualmachineid: 'test-id-value',
@@ -350,14 +345,13 @@ describe('Views > compute > MigrateWizard.vue', () => {
         expect(mockAxios).toHaveBeenCalled()
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
-          method: 'GET',
-          data: new URLSearchParams(),
-          params: {
+          method: 'POST',
+          data: common.createDataParams({
             command: 'migrateVirtualMachineWithVolume',
+            response: 'json',
             hostid: 'test-host-id',
-            virtualmachineid: 'test-resource-id',
-            response: 'json'
-          }
+            virtualmachineid: 'test-resource-id'
+          })
         })
         done()
       })
@@ -396,14 +390,13 @@ describe('Views > compute > MigrateWizard.vue', () => {
         expect(mockAxios).toHaveBeenCalled()
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
-          method: 'GET',
-          data: new URLSearchParams(),
-          params: {
+          method: 'POST',
+          data: common.createDataParams({
             command: 'migrateVirtualMachine',
+            response: 'json',
             hostid: 'test-host-id',
-            virtualmachineid: 'test-resource-id',
-            response: 'json'
-          }
+            virtualmachineid: 'test-resource-id'
+          })
         })
         done()
       })
@@ -442,14 +435,13 @@ describe('Views > compute > MigrateWizard.vue', () => {
         expect(mockAxios).toHaveBeenCalled()
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
-          method: 'GET',
-          data: new URLSearchParams(),
-          params: {
+          method: 'POST',
+          data: common.createDataParams({
             command: 'migrateSystemVm',
+            response: 'json',
             hostid: 'test-host-id',
-            virtualmachineid: 'test-resource-id',
-            response: 'json'
-          }
+            virtualmachineid: 'test-resource-id'
+          })
         })
         done()
       })

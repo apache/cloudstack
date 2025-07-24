@@ -156,6 +156,14 @@ public class AgentProperties{
     public static final Property<Integer> CMDS_TIMEOUT = new Property<>("cmds.timeout", 7200);
 
     /**
+     * The timeout (in seconds) for the snapshot merge operation, mainly used for classic volume snapshots and disk-only VM snapshots on file-based storage.<br>
+     * This configuration is only considered if libvirt.events.enabled is also true. <br>
+     * Data type: Integer.<br>
+     * Default value: <code>259200</code>
+     */
+    public static final Property<Integer> QCOW2_DELTA_MERGE_TIMEOUT = new Property<>("qcow2.delta.merge.timeout", 60 * 60 * 72);
+
+    /**
      * This parameter sets the VM migration speed (in mbps). The default value is -1,<br>
      * which means that the agent will try to guess the speed of the guest network and consume all possible bandwidth.<br>
      * When entering a value, make sure to enter it in megabits per second.<br>
@@ -833,7 +841,7 @@ public class AgentProperties{
         private T defaultValue;
         private Class<T> typeClass;
 
-        Property(String name, T value) {
+        public Property(String name, T value) {
             init(name, value);
         }
 

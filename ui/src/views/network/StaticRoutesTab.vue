@@ -88,7 +88,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
@@ -141,7 +141,7 @@ export default {
     },
     fetchData () {
       this.componentLoading = true
-      api('listStaticRoutes', {
+      getAPI('listStaticRoutes', {
         gatewayid: this.resource.id,
         listall: true
       }).then(json => {
@@ -157,7 +157,7 @@ export default {
       if (!this.newRoute) return
 
       this.componentLoading = true
-      api('createStaticRoute', {
+      postAPI('createStaticRoute', {
         cidr: this.newRoute,
         gatewayid: this.resource.id
       }).then(response => {
@@ -190,7 +190,7 @@ export default {
     },
     handleDelete (route) {
       this.componentLoading = true
-      api('deleteStaticRoute', {
+      postAPI('deleteStaticRoute', {
         id: route.id
       }).then(response => {
         this.$pollJob({
@@ -220,7 +220,7 @@ export default {
       })
     },
     fetchTags (route) {
-      api('listTags', {
+      getAPI('listTags', {
         resourceId: route.id,
         resourceType: 'StaticRoute',
         listAll: true
@@ -232,7 +232,7 @@ export default {
     },
     handleDeleteTag (tag) {
       this.tagsLoading = true
-      api('deleteTags', {
+      postAPI('deleteTags', {
         'tags[0].key': tag.key,
         'tags[0].value': tag.value,
         resourceIds: this.selectedRule.id,
@@ -269,7 +269,7 @@ export default {
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
 
-        api('createTags', {
+        postAPI('createTags', {
           'tags[0].key': values.key,
           'tags[0].value': values.value,
           resourceIds: this.selectedRule.id,

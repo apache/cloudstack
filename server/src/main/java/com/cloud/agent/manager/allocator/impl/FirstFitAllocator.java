@@ -30,15 +30,18 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.agent.manager.allocator.HostAllocator;
+import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentClusterPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
+import com.cloud.deploy.FirstFitPlanner;
 import com.cloud.gpu.GPU;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
@@ -58,15 +61,16 @@ import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 /**
@@ -99,7 +103,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
     @Inject
     CapacityDao _capacityDao;
     @Inject
-    UserVmDetailsDao _userVmDetailsDao;
+    VMInstanceDetailsDao _vmInstanceDetailsDao;
 
     boolean _checkHvm = true;
     static DecimalFormat decimalFormat = new DecimalFormat("#.##");
@@ -120,9 +124,9 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
         Account account = vmProfile.getOwner();
 
         boolean isVMDeployedWithUefi = false;
-        UserVmDetailVO userVmDetailVO = _userVmDetailsDao.findDetail(vmProfile.getId(), "UEFI");
-        if(userVmDetailVO != null){
-            if ("secure".equalsIgnoreCase(userVmDetailVO.getValue()) || "legacy".equalsIgnoreCase(userVmDetailVO.getValue())) {
+        VMInstanceDetailVO vmInstanceDetailVO = _vmInstanceDetailsDao.findDetail(vmProfile.getId(), "UEFI");
+        if(vmInstanceDetailVO != null){
+            if ("secure".equalsIgnoreCase(vmInstanceDetailVO.getValue()) || "legacy".equalsIgnoreCase(vmInstanceDetailVO.getValue())) {
                 isVMDeployedWithUefi = true;
             }
         }
@@ -295,7 +299,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             Collections.shuffle(hosts);
         } else if (vmAllocationAlgorithm.equals("userdispersing")) {
             hosts = reorderHostsByNumberOfVms(plan, hosts, account);
-        }else if(vmAllocationAlgorithm.equals("firstfitleastconsumed")){
+        } else if(vmAllocationAlgorithm.equals("firstfitleastconsumed")){
             hosts = reorderHostsByCapacity(plan, hosts);
         }
 
@@ -372,13 +376,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
     private List<? extends Host> reorderHostsByCapacity(DeploymentPlan plan, List<? extends Host> hosts) {
         Long zoneId = plan.getDataCenterId();
         Long clusterId = plan.getClusterId();
-        //Get capacity by which we should reorder
-        String capacityTypeToOrder = _configDao.getValue(Config.HostCapacityTypeToOrderClusters.key());
-        short capacityType = CapacityVO.CAPACITY_TYPE_CPU;
-        if("RAM".equalsIgnoreCase(capacityTypeToOrder)){
-            capacityType = CapacityVO.CAPACITY_TYPE_MEMORY;
-        }
-        Pair<List<Long>, Map<Long, Double>> result = _capacityDao.orderHostsByFreeCapacity(zoneId, clusterId, capacityType);
+        Pair<List<Long>, Map<Long, Double>> result = getOrderedHostsByCapacity(zoneId, clusterId);
         List<Long> hostIdsByFreeCapacity = result.first();
         Map<Long, String> sortedHostByCapacity = result.second().entrySet()
                 .stream()
@@ -405,6 +403,37 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
         }
 
         return reorderedHosts;
+    }
+
+    private Pair<List<Long>, Map<Long, Double>> getOrderedHostsByCapacity(Long zoneId, Long clusterId) {
+        double cpuToMemoryWeight = ConfigurationManager.HostCapacityTypeCpuMemoryWeight.value();
+        // Get capacity by which we should reorder
+        short capacityType = FirstFitPlanner.getHostCapacityTypeToOrderCluster(
+                _configDao.getValue(Config.HostCapacityTypeToOrderClusters.key()), cpuToMemoryWeight);
+        logger.debug("CapacityType: {} is used for Host ordering", FirstFitPlanner.getCapacityTypeName(capacityType));
+        if (capacityType >= 0) { // for CPU or RAM
+            return _capacityDao.orderHostsByFreeCapacity(zoneId, clusterId, capacityType);
+        }
+        List<CapacityVO> capacities = _capacityDao.listHostCapacityByCapacityTypes(zoneId, clusterId,
+                List.of(Capacity.CAPACITY_TYPE_CPU, Capacity.CAPACITY_TYPE_MEMORY));
+        Map<Long, Double> hostByComputedCapacity = getHostByCombinedCapacities(capacities, cpuToMemoryWeight);
+        return new Pair<>(new ArrayList<>(hostByComputedCapacity.keySet()), hostByComputedCapacity);
+    }
+
+    @NotNull
+    public static Map<Long, Double> getHostByCombinedCapacities(List<CapacityVO> capacities, double cpuToMemoryWeight) {
+        Map<Long, Double> hostByComputedCapacity = new HashMap<>();
+        for (CapacityVO capacityVO : capacities) {
+            long hostId = capacityVO.getHostOrPoolId();
+            double applicableWeight = capacityVO.getCapacityType() == Capacity.CAPACITY_TYPE_CPU ? cpuToMemoryWeight : 1 - cpuToMemoryWeight;
+            double capacityMetric = applicableWeight * (capacityVO.getTotalCapacity() - (capacityVO.getUsedCapacity() + capacityVO.getReservedCapacity()))/capacityVO.getTotalCapacity();
+            hostByComputedCapacity.merge(hostId, capacityMetric, Double::sum);
+        }
+
+        return hostByComputedCapacity.entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
     }
 
     private List<? extends Host> reorderHostsByNumberOfVms(DeploymentPlan plan, List<? extends Host> hosts, Account account) {

@@ -1571,6 +1571,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.TAKE);
 
             if (snapshotStrategy == null) {
+                _snapshotDao.remove(snapshotId);
+                logger.debug("No strategy found for creation of snapshot [{}], removing its record from the database.", snapshot);
                 throw new CloudRuntimeException(String.format("Can't find snapshot strategy to deal with snapshot:%s", snapshot.getSnapshotVO()));
             }
 

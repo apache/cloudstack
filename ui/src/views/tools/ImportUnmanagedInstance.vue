@@ -387,7 +387,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import _ from 'lodash'
 import InfoCard from '@/components/view/InfoCard'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -804,7 +804,7 @@ export default {
       if (!('listall' in options)) {
         options.listall = true
       }
-      api(param.list, options).then((response) => {
+      getAPI(param.list, options).then((response) => {
         param.loading = false
         _.map(response, (responseItem, responseKey) => {
           if (Object.keys(responseItem).length === 0) {
@@ -836,7 +836,7 @@ export default {
       this.totalComputeOfferings = 0
       this.computeOfferings = []
       this.offeringsMap = []
-      api('listServiceOfferings', {
+      getAPI('listServiceOfferings', {
         keyword: options.keyword,
         page: options.page,
         pageSize: options.pageSize,
@@ -929,7 +929,7 @@ export default {
       }
     },
     fetchKvmHostsForConversion () {
-      api('listHosts', {
+      getAPI('listHosts', {
         zoneid: this.zoneid,
         hypervisor: this.cluster.hypervisortype,
         type: 'Routing',
@@ -944,11 +944,17 @@ export default {
           } else {
             host.name = host.name + ' (' + this.$t('label.not.supported') + ')'
           }
+          if (host.details['host.virtv2v.version']) {
+            host.name = host.name + ' (virt-v2v=' + host.details['host.virtv2v.version'] + ')'
+          }
+          if (host.details['host.ovftool.version']) {
+            host.name = host.name + ' (ovftool=' + host.details['host.ovftool.version'] + ')'
+          }
         })
       })
     },
     fetchKvmHostsForImporting () {
-      api('listHosts', {
+      getAPI('listHosts', {
         clusterid: this.cluster.id,
         hypervisor: this.cluster.hypervisortype,
         type: 'Routing',
@@ -970,12 +976,12 @@ export default {
             params.scope = 'ZONE'
           }
         }
-        api('listStoragePools', params).then(json => {
+        getAPI('listStoragePools', params).then(json => {
           this.storagePoolsForConversion = json.liststoragepoolsresponse.storagepool || []
         })
       } else if (this.selectedStorageOptionForConversion === 'local') {
         const kvmHost = this.kvmHostsForConversion.filter(x => x.id === this.selectedKvmHostForConversion)[0]
-        api('listStoragePools', {
+        getAPI('listStoragePools', {
           scope: 'HOST',
           ipaddress: kvmHost.ipaddress,
           status: 'Up'
@@ -1213,7 +1219,7 @@ export default {
         this.updateLoading(true)
         const name = params.name
         return new Promise((resolve, reject) => {
-          api(importapi, params).then(response => {
+          postAPI(importapi, params).then(response => {
             var jobId
             if (this.isDiskImport || this.isExternalImport || this.selectedVmwareVcenter) {
               jobId = response.importvmresponse.jobid

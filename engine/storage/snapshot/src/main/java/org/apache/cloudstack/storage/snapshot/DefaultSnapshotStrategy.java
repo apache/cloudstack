@@ -23,7 +23,15 @@ import java.util.Objects;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.VolumeApiServiceImpl;
 import com.cloud.utils.db.TransactionCallback;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
@@ -99,6 +107,15 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
     VolumeDetailsDao _volumeDetailsDaoImpl;
     @Inject
     SnapshotZoneDao snapshotZoneDao;
+
+    @Inject
+    private VMSnapshotDao vmSnapshotDao;
+
+    @Inject
+    private VMSnapshotDetailsDao vmSnapshotDetailsDao;
+
+    @Inject
+    private VMInstanceDao vmInstanceDao;
 
     private final List<Snapshot.State> snapshotStatesAbleToDeleteSnapshot = Arrays.asList(Snapshot.State.Destroying, Snapshot.State.Destroyed, Snapshot.State.Error, Snapshot.State.Hidden);
 
@@ -610,6 +627,9 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
 
     @Override
     public StrategyPriority canHandle(Snapshot snapshot, Long zoneId, SnapshotOperation op) {
+        if (SnapshotOperation.TAKE.equals(op)) {
+            return validateVmSnapshot(snapshot);
+        }
         if (SnapshotOperation.REVERT.equals(op)) {
             long volumeId = snapshot.getVolumeId();
             VolumeVO volumeVO = volumeDao.findById(volumeId);
@@ -623,6 +643,30 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
         if (zoneId != null && SnapshotOperation.DELETE.equals(op)) {
             logger.debug(String.format("canHandle for zone ID: %d, operation: %s - %s", zoneId, op, StrategyPriority.DEFAULT));
         }
+        return StrategyPriority.DEFAULT;
+    }
+
+    private StrategyPriority validateVmSnapshot(Snapshot snapshot) {
+        VolumeVO volumeVO = volumeDao.findById(snapshot.getVolumeId());
+        Long instanceId = volumeVO.getInstanceId();
+        if (instanceId == null) {
+            return StrategyPriority.DEFAULT;
+        }
+
+        VMInstanceVO vm = vmInstanceDao.findById(instanceId);
+        if (vm == null) {
+            return StrategyPriority.DEFAULT;
+        }
+
+        for (VMSnapshotVO vmSnapshotVO : vmSnapshotDao.findByVmAndByType(vm.getId(), VMSnapshot.Type.Disk)) {
+            List<VMSnapshotDetailsVO> vmSnapshotDetails = vmSnapshotDetailsDao.listDetails(vmSnapshotVO.getId());
+            if (vmSnapshotDetails.stream().anyMatch(vmSnapshotDetailsVO -> VolumeApiServiceImpl.KVM_FILE_BASED_STORAGE_SNAPSHOT.equals(vmSnapshotDetailsVO.getName()))) {
+                logger.warn("VM [{}] already has KVM File-Based storage VM snapshots. These VM snapshots and volume snapshots are not supported " +
+                        "together for KVM. As restoring volume snapshots will erase the VM snapshots and cause data loss.", vm.getUuid());
+                return StrategyPriority.CANT_HANDLE;
+            }
+        }
+
         return StrategyPriority.DEFAULT;
     }
 

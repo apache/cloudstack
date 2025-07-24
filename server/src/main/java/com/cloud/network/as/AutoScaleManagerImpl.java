@@ -1810,7 +1810,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                         vmHostName, diskOfferingId, dataDiskSize, null,
                         hypervisorType, HTTPMethod.GET, userData, userDataId, userDataDetails, sshKeyPairs,
                         null, null, true, null, affinityGroupIdList, customParameters, null, null, null,
-                        null, true, overrideDiskOfferingId);
+                        null, true, overrideDiskOfferingId, null, null);
             } else {
                 if (networkModel.checkSecurityGroupSupportForNetwork(owner, zone, networkIds,
                         Collections.emptyList())) {
@@ -1818,13 +1818,13 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                             owner, vmHostName,vmHostName, diskOfferingId, dataDiskSize, null,
                             hypervisorType, HTTPMethod.GET, userData, userDataId, userDataDetails, sshKeyPairs,
                             null, null, true, null, affinityGroupIdList, customParameters, null, null, null,
-                            null, true, overrideDiskOfferingId, null);
+                            null, true, overrideDiskOfferingId, null, null, null);
                 } else {
                     vm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner, vmHostName, vmHostName,
                             diskOfferingId, dataDiskSize, null,
                             hypervisorType, HTTPMethod.GET, userData, userDataId, userDataDetails, sshKeyPairs,
                             null, addrs, true, null, affinityGroupIdList, customParameters, null, null, null,
-                            null, true, null, overrideDiskOfferingId);
+                            null, true, null, overrideDiskOfferingId, null, null);
                 }
             }
 

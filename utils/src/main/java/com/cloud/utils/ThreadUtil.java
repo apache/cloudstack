@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,21 +15,26 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.vm.dao;
+//
 
+package com.cloud.utils;
 
-import org.springframework.stereotype.Component;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
+public class ThreadUtil {
 
-import com.cloud.vm.UserVmDetailVO;
+    protected static Logger LOGGER = LogManager.getLogger(AutoCloseableUtil.class);
 
-@Component
-public class UserVmDetailsDaoImpl extends ResourceDetailsDaoBase<UserVmDetailVO> implements UserVmDetailsDao {
+    public static void wait(Object object, long timeoutInMillis, long id, String uuid, String name) {
+        synchronized (object) {
+            try {
+                object.wait(timeoutInMillis);
+            } catch (InterruptedException e) {
+                LOGGER.warn("PingTask interrupted while waiting to retry ping [id: {}, uuid: {}, name: {}]", id, uuid, name, e);
+                Thread.currentThread().interrupt(); // Restore interrupted status
+            }
+        }
 
-    @Override
-    public void addDetail(long resourceId, String key, String value, boolean display) {
-        super.addDetail(new UserVmDetailVO(resourceId, key, value, display));
     }
-
 }

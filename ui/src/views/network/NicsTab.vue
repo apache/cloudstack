@@ -227,7 +227,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import NicsTable from '@/views/network/NicsTable'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
@@ -282,7 +282,7 @@ export default {
   },
   methods: {
     listNetworks () {
-      api('listNetworks', {
+      getAPI('listNetworks', {
         listAll: 'true',
         showicon: true,
         zoneid: this.vm.zoneid
@@ -294,7 +294,7 @@ export default {
     fetchSecondaryIPs (nicId) {
       this.showSecondaryIpModal = true
       this.selectedNicId = nicId
-      api('listNics', {
+      getAPI('listNics', {
         nicId: nicId,
         keyword: '',
         virtualmachineid: this.vm.id
@@ -305,7 +305,7 @@ export default {
     fetchPublicIps (networkid) {
       this.listIps.loading = true
       this.listIps.opts = []
-      api('listPublicIpAddresses', {
+      getAPI('listPublicIpAddresses', {
         networkid: networkid,
         allocatedonly: false,
         forvirtualnetwork: false
@@ -372,7 +372,7 @@ export default {
       }
       this.showAddNetworkModal = false
       this.loadingNic = true
-      api('addNicToVirtualMachine', params).then(response => {
+      postAPI('addNicToVirtualMachine', params).then(response => {
         this.$pollJob({
           jobId: response.addnictovirtualmachineresponse.jobid,
           successMessage: this.$t('message.success.add.network'),
@@ -414,13 +414,13 @@ export default {
       const params = {}
       params.virtualmachineid = virtualmachineid
       params.networkid = networkid
-      return api('listNics', params).then(response => {
+      return getAPI('listNics', params).then(response => {
         return response.listnicsresponse.nic[0]
       })
     },
     setAsDefault (item) {
       this.loadingNic = true
-      api('updateDefaultNicForVirtualMachine', {
+      postAPI('updateDefaultNicForVirtualMachine', {
         virtualmachineid: this.vm.id,
         nicid: item.id
       }).then(response => {
@@ -456,7 +456,7 @@ export default {
       if (this.editIpAddressValue) {
         params.ipaddress = this.editIpAddressValue
       }
-      api('updateVmNicIp', params).then(response => {
+      postAPI('updateVmNicIp', params).then(response => {
         this.$pollJob({
           jobId: response.updatevmnicipresponse.jobid,
           successMessage: this.$t('message.success.update.ipaddress'),
@@ -486,7 +486,7 @@ export default {
     removeNIC (item) {
       this.loadingNic = true
 
-      api('removeNicFromVirtualMachine', {
+      postAPI('removeNicFromVirtualMachine', {
         nicid: item.id,
         virtualmachineid: this.vm.id
       }).then(response => {
@@ -523,7 +523,7 @@ export default {
         params.ipaddress = this.newSecondaryIp
       }
 
-      api('addIpToNic', params).then(response => {
+      postAPI('addIpToNic', params).then(response => {
         this.$pollJob({
           jobId: response.addiptovmnicresponse.jobid,
           successMessage: this.$t('message.success.add.secondary.ipaddress'),
@@ -555,7 +555,7 @@ export default {
     removeSecondaryIP (id) {
       this.loadingNic = true
 
-      api('removeIpFromNic', { id }).then(response => {
+      postAPI('removeIpFromNic', { id }).then(response => {
         this.$pollJob({
           jobId: response.removeipfromnicresponse.jobid,
           successMessage: this.$t('message.success.remove.secondary.ipaddress'),

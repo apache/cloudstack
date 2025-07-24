@@ -623,7 +623,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import AddDiskOffering from '@/views/offering/AddDiskOffering'
 import { isAdmin } from '@/role'
 import { mixinForm } from '@/utils/mixin'
@@ -845,7 +845,7 @@ export default {
     },
     fetchDiskOfferings () {
       this.diskOfferingLoading = true
-      api('listDiskOfferings', {
+      getAPI('listDiskOfferings', {
         listall: true
       }).then(json => {
         this.diskOfferings = json.listdiskofferingsresponse.diskoffering || []
@@ -873,7 +873,7 @@ export default {
     },
     checkIfDomainAdminIsAllowedToInformTag () {
       const params = { id: store.getters.userInfo.accountid }
-      api('isAccountAllowedToCreateOfferingsWithTags', params).then(json => {
+      getAPI('isAccountAllowedToCreateOfferingsWithTags', params).then(json => {
         this.isDomainAdminAllowedToInformTags = json.isaccountallowedtocreateofferingswithtagsresponse.isallowed.isallowed
       })
     },
@@ -886,7 +886,7 @@ export default {
       params.showicon = true
       params.details = 'min'
       this.domainLoading = true
-      api('listDomains', params).then(json => {
+      getAPI('listDomains', params).then(json => {
         const listDomains = json.listdomainsresponse.domain
         this.domains = this.domains.concat(listDomains)
       }).finally(() => {
@@ -897,7 +897,7 @@ export default {
       const params = {}
       params.showicon = true
       this.zoneLoading = true
-      api('listZones', params).then(json => {
+      getAPI('listZones', params).then(json => {
         const listZones = json.listzonesresponse.zone
         if (listZones) {
           this.zones = this.zones.concat(listZones)
@@ -909,7 +909,7 @@ export default {
     fetchStorageTagData () {
       this.storageTagLoading = true
       this.storageTags = []
-      api('listStorageTags').then(json => {
+      getAPI('listStorageTags').then(json => {
         const tags = json.liststoragetagsresponse.storagetag || []
         for (const tag of tags) {
           if (!this.storageTags.includes(tag.name)) {
@@ -922,7 +922,7 @@ export default {
     },
     fetchDeploymentPlannerData () {
       this.deploymentPlannerLoading = true
-      api('listDeploymentPlanners').then(json => {
+      getAPI('listDeploymentPlanners').then(json => {
         const planners = json.listdeploymentplannersresponse.deploymentPlanner
         this.deploymentPlanners = this.deploymentPlanners.concat(planners)
         this.deploymentPlanners.unshift({ name: '' })
@@ -939,7 +939,7 @@ export default {
       const zoneid = this.zones[zoneIndex].id
       if ('importVsphereStoragePolicies' in this.$store.getters.apis) {
         this.storagePolicies = []
-        api('listVsphereStoragePolicies', {
+        getAPI('listVsphereStoragePolicies', {
           zoneid: zoneid
         }).then(response => {
           this.storagePolicies = response.listvspherestoragepoliciesresponse.StoragePolicy || []
@@ -1139,7 +1139,7 @@ export default {
         if (values.storagepolicy) {
           params.storagepolicy = values.storagepolicy
         }
-        api('createServiceOffering', params).then(json => {
+        postAPI('createServiceOffering', params).then(json => {
           const message = this.isSystem
             ? `${this.$t('message.create.service.offering')}: `
             : `${this.$t('message.create.compute.offering')}: `

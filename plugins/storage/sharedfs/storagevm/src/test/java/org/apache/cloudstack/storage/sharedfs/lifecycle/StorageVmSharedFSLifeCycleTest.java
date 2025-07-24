@@ -17,39 +17,6 @@
 
 package org.apache.cloudstack.storage.sharedfs.lifecycle;
 
-import static org.apache.cloudstack.storage.sharedfs.provider.StorageVmSharedFSProvider.SHAREDFSVM_MIN_CPU_COUNT;
-import static org.apache.cloudstack.storage.sharedfs.provider.StorageVmSharedFSProvider.SHAREDFSVM_MIN_RAM_SIZE;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.when;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Optional;
-
-import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.storage.sharedfs.SharedFS;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
-import org.mockito.junit.MockitoJUnitRunner;
-
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -85,6 +52,38 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
+import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
+import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.storage.sharedfs.SharedFS;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
+
+
+import static org.apache.cloudstack.storage.sharedfs.provider.StorageVmSharedFSProvider.SHAREDFSVM_MIN_CPU_COUNT;
+import static org.apache.cloudstack.storage.sharedfs.provider.StorageVmSharedFSProvider.SHAREDFSVM_MIN_RAM_SIZE;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class StorageVmSharedFSLifeCycleTest {
@@ -258,7 +257,7 @@ public class StorageVmSharedFSLifeCycleTest {
                 anyString(), anyLong(), anyLong(), isNull(), any(Hypervisor.HypervisorType.class), any(BaseCmd.HTTPMethod.class), anyString(),
                 isNull(), isNull(), anyList(), isNull(), any(Network.IpAddresses.class), isNull(), isNull(), isNull(),
                 anyMap(), isNull(), isNull(), isNull(), isNull(),
-                anyBoolean(), anyString(), isNull())).thenReturn(vm);
+                anyBoolean(), anyString(), isNull(), isNull(), isNull())).thenReturn(vm);
 
         VolumeVO volume = mock(VolumeVO.class);
         when(volume.getId()).thenReturn(s_volumeId);

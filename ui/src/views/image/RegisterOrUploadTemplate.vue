@@ -473,7 +473,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import store from '@/store'
 import { axios } from '../../utils/request'
 import { mixinForm } from '@/utils/mixin'
@@ -655,7 +655,7 @@ export default {
         name: 'hypervisor.custom.display.name'
       }
       this.loading = true
-      api('listConfigurations', params).then(json => {
+      getAPI('listConfigurations', params).then(json => {
         if (json.listconfigurationsresponse.configuration !== null) {
           const config = json.listconfigurationsresponse.configuration[0]
           if (config && config.name === params.name) {
@@ -684,7 +684,7 @@ export default {
       this.zones.loading = true
       this.zones.opts = []
 
-      api('listZones', params).then(json => {
+      getAPI('listZones', params).then(json => {
         const listZonesResponse = json.listzonesresponse.zone
         listZones = listZones.concat(listZonesResponse)
         this.zones.opts = listZones
@@ -703,7 +703,7 @@ export default {
       this.hyperVisor.loading = true
       let listhyperVisors = this.hyperVisor.opts || []
 
-      api('listHypervisors', params).then(json => {
+      getAPI('listHypervisors', params).then(json => {
         const listResponse = json.listhypervisorsresponse.hypervisor || []
         if (listResponse) {
           listhyperVisors = listhyperVisors.concat(listResponse)
@@ -722,7 +722,7 @@ export default {
       this.osTypes.opts = []
       this.osTypes.loading = true
 
-      api('listOsTypes').then(json => {
+      getAPI('listOsTypes').then(json => {
         const listOsTypes = json.listostypesresponse.ostype
         this.osTypes.opts = listOsTypes
         this.defaultOsType = this.osTypes.opts[1].description
@@ -738,7 +738,7 @@ export default {
       this.userdata.opts = []
       this.userdata.loading = true
 
-      api('listUserData', params).then(json => {
+      getAPI('listUserData', params).then(json => {
         const listUserdata = json.listuserdataresponse.userdata
         this.userdata.opts = listUserdata
       }).finally(() => {
@@ -751,7 +751,7 @@ export default {
 
       this.form.xenserverToolsVersion61plus = true
 
-      api('listConfigurations', params).then(json => {
+      getAPI('listConfigurations', params).then(json => {
         if (json.listconfigurationsresponse.configuration !== null && json.listconfigurationsresponse.configuration[0].value !== 'xenserver61') {
           this.form.xenserverToolsVersion61plus = false
         }
@@ -1079,7 +1079,7 @@ export default {
         }
         if (this.currentForm === 'Create') {
           this.loading = true
-          api('registerTemplate', params).then(json => {
+          postAPI('registerTemplate', params).then(json => {
             if (this.userdataid !== null) {
               this.linkUserdataToTemplate(this.userdataid, json.registertemplateresponse.template[0].id, this.userdatapolicy)
             }
@@ -1103,7 +1103,7 @@ export default {
               duration: 0
             })
           }
-          api('getUploadParamsForTemplate', params).then(json => {
+          getAPI('getUploadParamsForTemplate', params).then(json => {
             this.uploadParams = (json.postuploadtemplateresponse && json.postuploadtemplateresponse.getuploadparams) ? json.postuploadtemplateresponse.getuploadparams : ''
             this.handleUpload()
             if (this.userdataid !== null) {
@@ -1145,7 +1145,7 @@ export default {
       if (userdatapolicy) {
         params.userdatapolicy = userdatapolicy
       }
-      api('linkUserDataToTemplate', params).then(json => {
+      postAPI('linkUserDataToTemplate', params).then(json => {
         this.closeAction()
       }).catch(error => {
         this.$notifyError(error)
@@ -1164,7 +1164,7 @@ export default {
       params.showicon = true
       params.details = 'min'
       this.domainLoading = true
-      api('listDomains', params).then(json => {
+      getAPI('listDomains', params).then(json => {
         this.domains = json.listdomainsresponse.domain
       }).finally(() => {
         this.domainLoading = false
@@ -1180,7 +1180,7 @@ export default {
       }
     },
     fetchAccounts () {
-      api('listAccounts', {
+      getAPI('listAccounts', {
         domainid: this.domainid
       }).then(response => {
         this.accounts = response.listaccountsresponse.account || []

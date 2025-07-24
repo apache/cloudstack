@@ -801,10 +801,18 @@ public class EventTypes {
     // Resource Limit
     public static final String EVENT_RESOURCE_LIMIT_UPDATE = "RESOURCE.LIMIT.UPDATE";
 
+    // Management Server
+    public static final String EVENT_MANAGEMENT_SERVER_REMOVE = "MANAGEMENT.SERVER.REMOVE";
+
     public static final String VM_LEASE_EXPIRED = "VM.LEASE.EXPIRED";
     public static final String VM_LEASE_DISABLED = "VM.LEASE.DISABLED";
     public static final String VM_LEASE_CANCELLED = "VM.LEASE.CANCELLED";
     public static final String VM_LEASE_EXPIRING = "VM.LEASE.EXPIRING";
+
+    // GUI Theme
+    public static final String EVENT_GUI_THEME_CREATE = "GUI.THEME.CREATE";
+    public static final String EVENT_GUI_THEME_REMOVE = "GUI.THEME.REMOVE";
+    public static final String EVENT_GUI_THEME_UPDATE = "GUI.THEME.UPDATE";
 
     static {
 
@@ -1301,11 +1309,19 @@ public class EventTypes {
         entityEventDetails.put(EVENT_SHAREDFS_EXPUNGE, SharedFS.class);
         entityEventDetails.put(EVENT_SHAREDFS_RECOVER, SharedFS.class);
 
+        // Management Server
+        entityEventDetails.put(EVENT_MANAGEMENT_SERVER_REMOVE, "ManagementServer");
+
         // VM Lease
         entityEventDetails.put(VM_LEASE_EXPIRED, VirtualMachine.class);
         entityEventDetails.put(VM_LEASE_EXPIRING, VirtualMachine.class);
         entityEventDetails.put(VM_LEASE_DISABLED, VirtualMachine.class);
         entityEventDetails.put(VM_LEASE_CANCELLED, VirtualMachine.class);
+
+        // GUI theme
+        entityEventDetails.put(EVENT_GUI_THEME_CREATE, "GuiTheme");
+        entityEventDetails.put(EVENT_GUI_THEME_REMOVE, "GuiTheme");
+        entityEventDetails.put(EVENT_GUI_THEME_UPDATE, "GuiTheme");
     }
 
     public static boolean isNetworkEvent(String eventType) {

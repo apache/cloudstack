@@ -78,7 +78,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import IpRangesTabPublic from './IpRangesTabPublic'
 import IpRangesTabManagement from './IpRangesTabManagement'
@@ -129,7 +129,7 @@ export default {
     async fetchData () {
       this.fetchTrafficTypes()
       this.fetchLoading = true
-      api('listNetworks', {
+      getAPI('listNetworks', {
         listAll: true,
         trafficType: 'Public',
         isSystem: true,
@@ -152,7 +152,7 @@ export default {
     },
     fetchTrafficTypes () {
       this.fetchLoading = true
-      api('listTrafficTypes', { physicalnetworkid: this.resource.id }).then(json => {
+      getAPI('listTrafficTypes', { physicalnetworkid: this.resource.id }).then(json => {
         this.traffictypes = json.listtraffictypesresponse.traffictype
       }).catch(error => {
         this.$notifyError(error)
@@ -163,7 +163,7 @@ export default {
     fetchZones () {
       return new Promise((resolve, reject) => {
         this.fetchLoading = true
-        api('listZones', { id: this.resource.zoneid }).then(json => {
+        getAPI('listZones', { id: this.resource.zoneid }).then(json => {
           const zone = json.listzonesresponse.zone || []
           this.networkType = zone[0].networktype
           resolve(this.networkType)
@@ -176,7 +176,7 @@ export default {
       })
     },
     fetchGuestNetwork () {
-      api('listNetworks', {
+      getAPI('listNetworks', {
         listAll: true,
         trafficType: 'Guest',
         zoneId: this.resource.zoneid
@@ -193,7 +193,7 @@ export default {
       })
     },
     deleteTrafficType (trafficType) {
-      api('deleteTrafficType', { id: trafficType.id }).then(response => {
+      postAPI('deleteTrafficType', { id: trafficType.id }).then(response => {
         this.$pollJob({
           jobId: response.deletetraffictyperesponse.jobid,
           title: this.$t('label.delete.traffic.type'),

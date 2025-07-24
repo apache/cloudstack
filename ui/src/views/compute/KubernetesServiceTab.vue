@@ -174,7 +174,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { isAdmin } from '@/role'
 import { mixinDevice } from '@/utils/mixin.js'
 import DetailsTab from '@/components/view/DetailsTab'
@@ -343,7 +343,7 @@ export default {
     },
     fetchComments () {
       this.clusterConfigLoading = true
-      api('listAnnotations', { entityid: this.resource.id, entitytype: 'KUBERNETES_CLUSTER', annotationfilter: 'all' }).then(json => {
+      getAPI('listAnnotations', { entityid: this.resource.id, entitytype: 'KUBERNETES_CLUSTER', annotationfilter: 'all' }).then(json => {
         if (json.listannotationsresponse?.annotation) {
           this.annotations = json.listannotationsresponse.annotation
         }
@@ -359,7 +359,7 @@ export default {
       if (!this.isObjectEmpty(this.resource)) {
         var params = {}
         params.id = this.resource.id
-        api('getKubernetesClusterConfig', params).then(json => {
+        getAPI('getKubernetesClusterConfig', params).then(json => {
           const config = json.getkubernetesclusterconfigresponse.clusterconfig
           if (!this.isObjectEmpty(config) &&
             this.isValidValueForKey(config, 'configdata') &&
@@ -387,7 +387,7 @@ export default {
         this.resource.kubernetesversionid !== '') {
         var params = {}
         params.id = this.resource.kubernetesversionid
-        api('listKubernetesSupportedVersions', params).then(json => {
+        getAPI('listKubernetesSupportedVersions', params).then(json => {
           const versionObjs = json.listkubernetessupportedversionsresponse.kubernetessupportedversion
           if (this.arrayHasItems(versionObjs)) {
             this.kubernetesVersion = versionObjs[0]
@@ -416,7 +416,7 @@ export default {
     fetchNetwork () {
       this.networkLoading = true
       return new Promise((resolve, reject) => {
-        api('listNetworks', {
+        getAPI('listNetworks', {
           listAll: true,
           id: this.resource.networkid
         }).then(json => {
@@ -449,7 +449,7 @@ export default {
           params.associatednetworkid = this.resource.networkid
         }
       }
-      api('listPublicIpAddresses', params).then(json => {
+      getAPI('listPublicIpAddresses', params).then(json => {
         let ips = json.listpublicipaddressesresponse.publicipaddress
         if (this.arrayHasItems(ips)) {
           ips = ips.filter(x => x.issourcenat)
@@ -465,7 +465,7 @@ export default {
       const params = {}
       params.name = 'cloud.kubernetes.etcd.node.start.port'
       var apiName = 'listConfigurations'
-      api(apiName, params).then(json => {
+      getAPI(apiName, params).then(json => {
         const configResponse = json.listconfigurationsresponse.configuration
         this.etcdSshPort = configResponse[0]?.value
       })
@@ -489,7 +489,7 @@ export default {
         id: this.resource.id,
         nodeids: node.id
       }
-      api('scaleKubernetesCluster', params).then(json => {
+      postAPI('scaleKubernetesCluster', params).then(json => {
         const jobId = json.scalekubernetesclusterresponse.jobid
         console.log(jobId)
         this.$store.dispatch('AddAsyncJob', {

@@ -20,6 +20,7 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseGsonHelper;
 import com.cloud.api.ApiServer;
 import com.cloud.serializer.Param;
+import com.cloud.server.ManagementServerImpl;
 import com.cloud.user.Account;
 import com.cloud.utils.HttpUtils;
 import com.cloud.utils.encoding.URLEncoder;
@@ -171,9 +172,18 @@ public class ApiResponseSerializer {
         if (result != null && log != null) {
             StringBuilder sb = new StringBuilder();
             sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-            sb.append("<").append(result.getResponseName()).append(" cloud-stack-version=\"").append(ApiDBUtils.getVersion()).append("\">");
             log.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-            log.append("<").append(result.getResponseName()).append(" cloud-stack-version=\"").append(ApiDBUtils.getVersion()).append("\">");
+
+            sb.append("<").append(result.getResponseName());
+            log.append("<").append(result.getResponseName());
+
+            boolean authenticated = CallContext.current().getCallingAccount().getId() != Account.ACCOUNT_ID_SYSTEM;
+            if (ManagementServerImpl.exposeCloudStackVersionInApiXmlResponse.value() && authenticated) {
+                sb.append(" cloud-stack-version=\"").append(ApiDBUtils.getVersion()).append("\"");
+                log.append(" cloud-stack-version=\"").append(ApiDBUtils.getVersion()).append("\"");
+            }
+            sb.append(">");
+            log.append(">");
 
             if (result instanceof ListResponse) {
                 Integer count = ((ListResponse)result).getCount();

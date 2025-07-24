@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.vm;
+package org.apache.cloudstack.gui.theme;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -23,36 +23,30 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.api.ResourceDetail;
-
 @Entity
-@Table(name = "user_vm_details")
-public class UserVmDetailVO implements ResourceDetail {
+@Table(name = "gui_themes_details")
+public class GuiThemeDetailsVO implements GuiThemeDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    private long id;
+    @Column(name = "id", nullable = false)
+    private Long id;
 
-    @Column(name = "vm_id")
-    private long resourceId;
+    @Column(name = "gui_theme_id", nullable = false)
+    private Long guiThemeId;
 
-    @Column(name = "name")
-    private String name;
+    @Column(name = "type", nullable = false, length = 100)
+    private String type;
 
-    @Column(name = "value", length = 5120)
+    @Column(name = "value", nullable = false, length = 65535)
     private String value;
 
-    @Column(name = "display")
-    private boolean display = true;
-
-    public UserVmDetailVO() {
+    public GuiThemeDetailsVO() {
     }
 
-    public UserVmDetailVO(long vmId, String name, String value, boolean display) {
-        this.resourceId = vmId;
-        this.name = name;
+    public GuiThemeDetailsVO(Long guiThemeId, String type, String value) {
+        this.guiThemeId = guiThemeId;
+        this.type = type;
         this.value = value;
-        this.display = display;
     }
 
     @Override
@@ -61,8 +55,28 @@ public class UserVmDetailVO implements ResourceDetail {
     }
 
     @Override
-    public String getName() {
-        return name;
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    @Override
+    public Long getGuiThemeId() {
+        return guiThemeId;
+    }
+
+    @Override
+    public void setGuiThemeId(Long guiThemeId) {
+        this.guiThemeId = guiThemeId;
+    }
+
+    @Override
+    public String getType() {
+        return type;
+    }
+
+    @Override
+    public void setType(String type) {
+        this.type = type;
     }
 
     @Override
@@ -71,19 +85,6 @@ public class UserVmDetailVO implements ResourceDetail {
     }
 
     @Override
-    public long getResourceId() {
-        return resourceId;
-    }
-
-    @Override
-    public boolean isDisplay() {
-        return display;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public void setValue(String value) {
         this.value = value;
     }

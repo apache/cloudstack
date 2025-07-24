@@ -55,7 +55,7 @@
 </template>
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import _ from 'lodash'
 
 export default {
@@ -110,7 +110,7 @@ export default {
         isofilter: isoFilter
       }
       return new Promise((resolve, reject) => {
-        api('listIsos', params).then((response) => {
+        getAPI('listIsos', params).then((response) => {
           const isos = response.listisosresponse.iso || []
           this.isos.push(...isos)
           resolve(response)
@@ -138,7 +138,7 @@ export default {
 
         this.loading = true
         const title = this.$t('label.action.attach.iso')
-        api('attachIso', params).then(json => {
+        postAPI('attachIso', params).then(json => {
           const jobId = json.attachisoresponse.jobid
           if (jobId) {
             this.$pollJob({

@@ -35,7 +35,7 @@
                       <resource-icon :image="resourceIcon" size="4x" style="margin-right: 5px"/>
                     </span>
                     <span v-else>
-                      <os-logo v-if="resource.ostypeid || resource.ostypename || ['guestoscategory'].includes($route.path.split('/')[1])" :osId="resource.ostypeid" :osName="resource.ostypename || resource.name" size="3x" @update-osname="setResourceOsType"/>
+                      <os-logo v-if="resource.ostypeid || resource.ostypename || ['guestoscategory'].includes($route.path.split('/')[1])" :osId="resource.ostypeid" :osName="resource.ostypename || resource.osdisplayname || resource.name" size="3x" />
                       <render-icon v-else-if="typeof $route.meta.icon ==='string'" style="font-size: 36px" :icon="$route.meta.icon" />
                       <font-awesome-icon
                         v-else-if="$route.meta.icon && Array.isArray($route.meta.icon)"
@@ -153,18 +153,18 @@
                 <span style="margin-left: 10px;"><copy-label :label="resource.id" /></span>
               </div>
             </div>
-            <div class="resource-detail-item" v-if="resource.ostypename && resource.ostypeid">
+            <div class="resource-detail-item" v-if="(resource.ostypename || resource.osdisplayname) && resource.ostypeid">
               <div class="resource-detail-item__label">{{ $t('label.ostypename') }}</div>
               <div class="resource-detail-item__details">
                 <span v-if="images.guestoscategory">
                   <resource-icon :image="images.guestoscategory" size="1x" style="margin-right: 5px"/>
                 </span>
-                <os-logo v-else :osId="resource.ostypeid" :osName="resource.ostypename" size="lg" style="margin-left: -1px" />
+                <os-logo v-else :osId="resource.ostypeid" :osName="resource.ostypename || resource.osdisplayname" size="lg" style="margin-left: -1px" />
                 <span style="margin-left: 8px">
                   <router-link v-if="$router.resolve('/guestos/' + resource.ostypeid).matched[0].redirect !== '/exception/404'" :to="{ path: '/guestos/' + resource.ostypeid }">
-                    {{ resource.ostypename }}
+                    {{ resource.ostypename || resource.osdisplayname }}
                   </router-link>
-                  <span v-else>{{ resource.ostypename }}</span>
+                  <span v-else>{{ resource.ostypename || resource.osdisplayname }}</span>
                 </span>
               </div>
             </div>
@@ -900,7 +900,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { createPathBasedOnVmType } from '@/utils/plugins'
 import { validateLinks } from '@/utils/links'
 import Console from '@/components/widgets/Console'
@@ -1071,7 +1071,7 @@ export default {
     fetchOsCategoryAndIcon () {
       const osId = this.resource.guestosid || this.resource.ostypeid
       if (osId && 'listOsTypes' in this.$store.getters.apis) {
-        api('listOsTypes', { id: osId }).then(json => {
+        getAPI('listOsTypes', { id: osId }).then(json => {
           this.osCategoryId = json?.listostypesresponse?.ostype?.[0]?.oscategoryid || null
           if (this.osCategoryId) {
             this.fetchResourceIcon(this.osCategoryId, 'guestoscategory')
@@ -1120,7 +1120,7 @@ export default {
     },
     fetchAccount () {
       return new Promise((resolve, reject) => {
-        api('listAccounts', {
+        getAPI('listAccounts', {
           name: this.resource.account,
           domainid: this.resource.domainid,
           showicon: true
@@ -1135,7 +1135,7 @@ export default {
     fetchResourceIcon (resourceid, type) {
       if (resourceid) {
         return new Promise((resolve, reject) => {
-          api('listResourceIcon', {
+          getAPI('listResourceIcon', {
             resourceids: resourceid,
             resourcetype: type
           }).then(json => {
@@ -1173,7 +1173,7 @@ export default {
       if (!('getUserKeys' in this.$store.getters.apis)) {
         return
       }
-      api('getUserKeys', { id: this.resource.id }).then(json => {
+      getAPI('getUserKeys', { id: this.resource.id }).then(json => {
         this.showKeys = true
         this.newResource.secretkey = json.getuserkeysresponse.userkeys.secretkey
         if (!this.isAdmin()) {
@@ -1196,7 +1196,7 @@ export default {
       if (this.$route.meta.name === 'project') {
         params.projectid = this.resource.id
       }
-      api('listTags', params).then(json => {
+      getAPI('listTags', params).then(json => {
         if (json.listtagsresponse && json.listtagsresponse.tag) {
           this.tags = json.listtagsresponse.tag
         }
@@ -1231,7 +1231,7 @@ export default {
       args.resourcetype = this.resourceType
       args['tags[0].key'] = this.inputKey
       args['tags[0].value'] = this.inputValue
-      api('createTags', args).then(json => {
+      postAPI('createTags', args).then(json => {
       }).finally(e => {
         this.getTags()
       })
@@ -1247,14 +1247,10 @@ export default {
       args.resourcetype = this.resourceType
       args['tags[0].key'] = tag.key
       args['tags[0].value'] = tag.value
-      api('deleteTags', args).then(json => {
+      postAPI('deleteTags', args).then(json => {
       }).finally(e => {
         this.getTags()
       })
-    },
-    setResourceOsType (name) {
-      this.newResource.ostypename = name
-      this.$emit('change-resource', this.newResource)
     },
     getRouterQuery (item) {
       const query = {}

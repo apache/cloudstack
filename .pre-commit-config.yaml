@@ -32,6 +32,12 @@ repos:
         name: run oxipng
         description: optimize PNG images with lossless compression
         args: ['-o', '4', '--strip', 'safe', '--alpha']
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.27.2
+    hooks:
+      - id: gitleaks
+        name: run gitleaks
+        description: detect hardcoded secrets
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
     hooks:
@@ -94,7 +100,7 @@ repos:
         ^setup/bindir/cloud-setup-encryption\.in$|
         ^venv/.*$
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.43.0
+    rev: v0.45.0
     hooks:
       - id: markdownlint
         name: run markdownlint

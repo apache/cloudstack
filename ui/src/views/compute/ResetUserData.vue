@@ -124,7 +124,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { genericCompare } from '@/utils/sort.js'
 import UserDataSelection from '@views/compute/wizard/UserDataSelection'
 
@@ -231,7 +231,7 @@ export default {
       this.loadingData = true
       this.items = []
       this.total = 0
-      api('listUserData', this.options).then(response => {
+      getAPI('listUserData', this.options).then(response => {
         this.total = response.listuserdataresponse.count
         if (this.total !== 0) {
           this.items = response.listuserdataresponse.userdata
@@ -246,7 +246,7 @@ export default {
       params.isrecursive = true
       params.templatefilter = 'all'
       var apiName = 'listTemplates'
-      api(apiName, params).then(json => {
+      getAPI(apiName, params).then(json => {
         const templateResponses = json.listtemplatesresponse.template
         this.template = templateResponses[0]
         this.updateTemplateLinkedUserData(this.template.userdataid)
@@ -259,7 +259,7 @@ export default {
       }
       this.templateUserDataParams = []
 
-      api('listUserData', { id: id }).then(json => {
+      getAPI('listUserData', { id: id }).then(json => {
         const resp = json?.listuserdataresponse?.userdata || []
         if (resp) {
           var params = resp[0].params
@@ -303,7 +303,7 @@ export default {
       }
       this.form.userdataid = id
       this.userDataParams = []
-      api('listUserData', { id: id }).then(json => {
+      getAPI('listUserData', { id: id }).then(json => {
         const resp = json?.listuserdataresponse?.userdata || []
         if (resp.length > 0) {
           var params = resp[0].params
@@ -362,11 +362,8 @@ export default {
       params.id = this.resource.resetUserDataResourceId ? this.resource.resetUserDataResourceId : this.resource.id
 
       const resetUserDataApiName = this.resource.resetUserDataApiName ? this.resource.resetUserDataApiName : 'resetUserDataForVirtualMachine'
-      const httpMethod = params.userdata ? 'POST' : 'GET'
-      const args = httpMethod === 'POST' ? {} : params
-      const data = httpMethod === 'POST' ? params : {}
 
-      api(resetUserDataApiName, args, httpMethod, data).then(json => {
+      postAPI(resetUserDataApiName, params).then(json => {
         this.$message.success({
           content: `${this.$t('label.action.userdata.reset')} - ${this.$t('label.success')}`,
           duration: 2

@@ -49,6 +49,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
+
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -230,6 +231,7 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Snapshot;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
@@ -284,12 +286,13 @@ import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import com.google.gson.Gson;
+
 
 public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMachineManager, VmWorkJobHandler, Listener, Configurable {
 
@@ -378,7 +381,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Inject
     private ClusterDetailsDao _clusterDetailsDao;
     @Inject
-    private UserVmDetailsDao userVmDetailsDao;
+    private VMInstanceDetailsDao vmInstanceDetailsDao;
     @Inject
     private VolumeOrchestrationService volumeMgr;
     @Inject
@@ -503,8 +506,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     @DB
     public void allocate(final String vmInstanceName, final VirtualMachineTemplate template, final ServiceOffering serviceOffering,
-            final DiskOfferingInfo rootDiskOfferingInfo, final List<DiskOfferingInfo> dataDiskOfferings,
-            final LinkedHashMap<? extends Network, List<? extends NicProfile>> auxiliaryNetworks, final DeploymentPlan plan, final HypervisorType hyperType, final Map<String, Map<Integer, String>> extraDhcpOptions, final Map<Long, DiskOffering> datadiskTemplateToDiskOfferingMap)
+                         final DiskOfferingInfo rootDiskOfferingInfo, final List<DiskOfferingInfo> dataDiskOfferings,
+                         final LinkedHashMap<? extends Network, List<? extends NicProfile>> auxiliaryNetworks, final DeploymentPlan plan, final HypervisorType hyperType, final Map<String, Map<Integer, String>> extraDhcpOptions, final Map<Long, DiskOffering> datadiskTemplateToDiskOfferingMap, Volume volume, Snapshot snapshot)
                     throws InsufficientCapacityException {
 
         logger.info("allocating virtual machine from template: {} with hostname: {} and {} networks", template, vmInstanceName, auxiliaryNetworks.size());
@@ -542,7 +545,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             logger.debug("Allocating disks for {}",  persistedVm);
 
-            allocateRootVolume(persistedVm, template, rootDiskOfferingInfo, owner, rootDiskSizeFinal);
+            allocateRootVolume(persistedVm, template, rootDiskOfferingInfo, owner, rootDiskSizeFinal, volume, snapshot);
 
             // Create new Volume context and inject event resource type, id and details to generate VOLUME.CREATE event for the ROOT disk.
             CallContext volumeContext = CallContext.register(CallContext.current(), ApiCommandResourceType.Volume);
@@ -583,7 +586,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    private void allocateRootVolume(VMInstanceVO vm, VirtualMachineTemplate template, DiskOfferingInfo rootDiskOfferingInfo, Account owner, Long rootDiskSizeFinal) {
+    private void allocateRootVolume(VMInstanceVO vm, VirtualMachineTemplate template, DiskOfferingInfo rootDiskOfferingInfo, Account owner, Long rootDiskSizeFinal, Volume volume, Snapshot snapshot) {
         // Create new Volume context and inject event resource type, id and details to generate VOLUME.CREATE event for the ROOT disk.
         CallContext volumeContext = CallContext.register(CallContext.current(), ApiCommandResourceType.Volume);
         try {
@@ -595,7 +598,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 logger.debug("%s has format [{}]. Skipping ROOT volume [{}] allocation.", template.toString(), ImageFormat.BAREMETAL, rootVolumeName);
             } else {
                 volumeMgr.allocateTemplatedVolumes(Type.ROOT, rootVolumeName, rootDiskOfferingInfo.getDiskOffering(), rootDiskSizeFinal,
-                        rootDiskOfferingInfo.getMinIops(), rootDiskOfferingInfo.getMaxIops(), template, vm, owner);
+                        rootDiskOfferingInfo.getMinIops(), rootDiskOfferingInfo.getMaxIops(), template, vm, owner, volume, snapshot);
             }
         } finally {
             // Remove volumeContext and pop vmContext back
@@ -605,9 +608,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @Override
     public void allocate(final String vmInstanceName, final VirtualMachineTemplate template, final ServiceOffering serviceOffering,
-            final LinkedHashMap<? extends Network, List<? extends NicProfile>> networks, final DeploymentPlan plan, final HypervisorType hyperType) throws InsufficientCapacityException {
+            final LinkedHashMap<? extends Network, List<? extends NicProfile>> networks, final DeploymentPlan plan, final HypervisorType hyperType, Volume volume, Snapshot snapshot) throws InsufficientCapacityException {
         DiskOffering diskOffering = _diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
-        allocate(vmInstanceName, template, serviceOffering, new DiskOfferingInfo(diskOffering), new ArrayList<>(), networks, plan, hyperType, null, null);
+        allocate(vmInstanceName, template, serviceOffering, new DiskOfferingInfo(diskOffering), new ArrayList<>(), networks, plan, hyperType, null, null, volume, snapshot);
     }
 
     VirtualMachineGuru getVmGuru(final VirtualMachine vm) {
@@ -1367,8 +1370,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                                 _resourceMgr.updateGPUDetails(destHostId, gpuDevice.getGroupDetails());
                             }
 
-                            if (userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.DEPLOY_VM) != null) {
-                                userVmDetailsDao.removeDetail(vm.getId(), VmDetailConstants.DEPLOY_VM);
+                            if (vmInstanceDetailsDao.findDetail(vm.getId(), VmDetailConstants.DEPLOY_VM) != null) {
+                                vmInstanceDetailsDao.removeDetail(vm.getId(), VmDetailConstants.DEPLOY_VM);
                             }
 
                             startedVm = vm;
@@ -1550,16 +1553,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final ClusterDetailsVO clusterDetailRam = _clusterDetailsDao.findDetail(clusterId, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO);
         final float parsedClusterCpuDetailCpu = Float.parseFloat(clusterDetailCpu.getValue());
         final float parsedClusterDetailRam = Float.parseFloat(clusterDetailRam.getValue());
-        UserVmDetailVO vmDetailCpu = userVmDetailsDao.findDetail(vmProfile.getId(), VmDetailConstants.CPU_OVER_COMMIT_RATIO);
-        UserVmDetailVO vmDetailRam = userVmDetailsDao.findDetail(vmProfile.getId(), VmDetailConstants.MEMORY_OVER_COMMIT_RATIO);
+        VMInstanceDetailVO vmDetailCpu = vmInstanceDetailsDao.findDetail(vmProfile.getId(), VmDetailConstants.CPU_OVER_COMMIT_RATIO);
+        VMInstanceDetailVO vmDetailRam = vmInstanceDetailsDao.findDetail(vmProfile.getId(), VmDetailConstants.MEMORY_OVER_COMMIT_RATIO);
 
         if ((vmDetailCpu == null && parsedClusterCpuDetailCpu > 1f) ||
                 (vmDetailCpu != null && Float.parseFloat(vmDetailCpu.getValue()) != parsedClusterCpuDetailCpu)) {
-            userVmDetailsDao.addDetail(vmProfile.getId(), VmDetailConstants.CPU_OVER_COMMIT_RATIO, clusterDetailCpu.getValue(), true);
+            vmInstanceDetailsDao.addDetail(vmProfile.getId(), VmDetailConstants.CPU_OVER_COMMIT_RATIO, clusterDetailCpu.getValue(), true);
         }
         if ((vmDetailRam == null && parsedClusterDetailRam > 1f) ||
                 (vmDetailRam != null && Float.parseFloat(vmDetailRam.getValue()) != parsedClusterDetailRam)) {
-            userVmDetailsDao.addDetail(vmProfile.getId(), VmDetailConstants.MEMORY_OVER_COMMIT_RATIO, clusterDetailRam.getValue(), true);
+            vmInstanceDetailsDao.addDetail(vmProfile.getId(), VmDetailConstants.MEMORY_OVER_COMMIT_RATIO, clusterDetailRam.getValue(), true);
         }
 
         vmProfile.setCpuOvercommitRatio(Float.parseFloat(clusterDetailCpu.getValue()));
@@ -3321,7 +3324,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             if (defaultNic != null && VirtualMachine.Type.User.equals(vm.getType())) {
                 UserVmVO userVm = _userVmDao.findById(vm.getId());
-                Map<String, String> details = userVmDetailsDao.listDetailsKeyPairs(vm.getId());
+                Map<String, String> details = vmInstanceDetailsDao.listDetailsKeyPairs(vm.getId());
                 userVm.setDetails(details);
 
                 Network network = _networkModel.getNetwork(defaultNic.getNetworkId());
@@ -4839,29 +4842,29 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     private void removeCustomOfferingDetails(long vmId) {
-        Map<String, String> details = userVmDetailsDao.listDetailsKeyPairs(vmId);
+        Map<String, String> details = vmInstanceDetailsDao.listDetailsKeyPairs(vmId);
         details.remove(UsageEventVO.DynamicParameters.cpuNumber.name());
         details.remove(UsageEventVO.DynamicParameters.cpuSpeed.name());
         details.remove(UsageEventVO.DynamicParameters.memory.name());
-        List<UserVmDetailVO> detailList = new ArrayList<>();
+        List<VMInstanceDetailVO> detailList = new ArrayList<>();
         for(Map.Entry<String, String> entry: details.entrySet()) {
-            UserVmDetailVO detailVO = new UserVmDetailVO(vmId, entry.getKey(), entry.getValue(), true);
+            VMInstanceDetailVO detailVO = new VMInstanceDetailVO(vmId, entry.getKey(), entry.getValue(), true);
             detailList.add(detailVO);
         }
-        userVmDetailsDao.saveDetails(detailList);
+        vmInstanceDetailsDao.saveDetails(detailList);
     }
 
     private void saveCustomOfferingDetails(long vmId, ServiceOffering serviceOffering) {
-        Map<String, String> details = userVmDetailsDao.listDetailsKeyPairs(vmId);
+        Map<String, String> details = vmInstanceDetailsDao.listDetailsKeyPairs(vmId);
         details.put(UsageEventVO.DynamicParameters.cpuNumber.name(), serviceOffering.getCpu().toString());
         details.put(UsageEventVO.DynamicParameters.cpuSpeed.name(), serviceOffering.getSpeed().toString());
         details.put(UsageEventVO.DynamicParameters.memory.name(), serviceOffering.getRamSize().toString());
-        List<UserVmDetailVO> detailList = new ArrayList<>();
+        List<VMInstanceDetailVO> detailList = new ArrayList<>();
         for (Map.Entry<String, String> entry: details.entrySet()) {
-            UserVmDetailVO detailVO = new UserVmDetailVO(vmId, entry.getKey(), entry.getValue(), true);
+            VMInstanceDetailVO detailVO = new VMInstanceDetailVO(vmId, entry.getKey(), entry.getValue(), true);
             detailList.add(detailVO);
         }
-        userVmDetailsDao.saveDetails(detailList);
+        vmInstanceDetailsDao.saveDetails(detailList);
     }
 
     @Override
@@ -6179,7 +6182,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     public Map<Long, Boolean> getDiskOfferingSuitabilityForVm(long vmId, List<Long> diskOfferingIds) {
         VMInstanceVO vm = _vmDao.findById(vmId);
-        if (userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.DEPLOY_VM) != null) {
+        if (vmInstanceDetailsDao.findDetail(vm.getId(), VmDetailConstants.DEPLOY_VM) != null) {
             return new HashMap<>();
         }
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);

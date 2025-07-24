@@ -35,11 +35,16 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.projects.Project;
+import com.cloud.projects.ProjectManager;
+import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
+import org.apache.cloudstack.api.command.user.volume.AssignVolumeCmd;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.user.volume.AssignVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ChangeOfferingForVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CheckAndRepairVolumeCmd;
@@ -159,8 +164,6 @@ import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.offering.DiskOffering;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
-import com.cloud.projects.Project;
-import com.cloud.projects.ProjectManager;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.serializer.GsonHelper;
@@ -212,7 +215,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.DiskProfile;
-import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmService;
 import com.cloud.vm.UserVmVO;
@@ -234,7 +237,7 @@ import com.cloud.vm.VmWorkResizeVolume;
 import com.cloud.vm.VmWorkSerializer;
 import com.cloud.vm.VmWorkTakeVolumeSnapshot;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
@@ -280,7 +283,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @Inject
     private UserVmDao _userVmDao;
     @Inject
-    private UserVmDetailsDao userVmDetailsDao;
+    private VMInstanceDetailsDao vmInstanceDetailsDao;
     @Inject
     private UserVmService _userVmService;
     @Inject
@@ -361,6 +364,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     HostPodDao podDao;
     @Inject
     EndPointSelector _epSelector;
+
+    @Inject
+    private VMSnapshotDetailsDao vmSnapshotDetailsDao;
+
+    public static final String KVM_FILE_BASED_STORAGE_SNAPSHOT = "kvmFileBasedStorageSnapshot";
 
     protected Gson _gson;
 
@@ -1402,6 +1410,29 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 shrinkOk);
     }
 
+    protected void validateNoVmSnapshots(VolumeVO volume) {
+        if (volume.getInstanceId() != null) {
+            if (vmHasVmSnapshotsExceptKvmDiskOnlySnapshots(volume.getInstanceId())) {
+                throw new InvalidParameterValueException("The volume is attached to a VM with memory&disk VM snapshots; therefore, it cannot be resized.");
+            }
+        }
+    }
+
+    protected boolean vmHasVmSnapshotsExceptKvmDiskOnlySnapshots(long instanceId) {
+        for (VMSnapshotVO vmSnapshotVO : _vmSnapshotDao.findByVm(instanceId)) {
+            if (VMSnapshot.Type.DiskAndMemory.equals(vmSnapshotVO.getType())) {
+                return true;
+            }
+            List<VMSnapshotDetailsVO> vmSnapshotDetails = vmSnapshotDetailsDao.listDetails(vmSnapshotVO.getId());
+            if (vmSnapshotDetails.stream().
+                    noneMatch(vmSnapshotDetailsVO -> KVM_FILE_BASED_STORAGE_SNAPSHOT.equals(vmSnapshotDetailsVO.getName()))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /**
      * A volume should not be resized if it covers ALL the following scenarios: <br>
      * 1 - Root volume <br>
@@ -1566,13 +1597,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             _volsDao.update(volume.getId(), volume);
             if (Volume.Type.ROOT.equals(volume.getVolumeType()) && userVm != null) {
-                UserVmDetailVO userVmDetailVO = userVmDetailsDao.findDetail(userVm.getId(), VmDetailConstants.ROOT_DISK_SIZE);
-                if (userVmDetailVO != null) {
-                    userVmDetailVO.setValue(String.valueOf(newSize/ GiB_TO_BYTES));
-                    userVmDetailsDao.update(userVmDetailVO.getId(), userVmDetailVO);
+                VMInstanceDetailVO vmInstanceDetailVO = vmInstanceDetailsDao.findDetail(userVm.getId(), VmDetailConstants.ROOT_DISK_SIZE);
+                if (vmInstanceDetailVO != null) {
+                    vmInstanceDetailVO.setValue(String.valueOf(newSize/ GiB_TO_BYTES));
+                    vmInstanceDetailsDao.update(vmInstanceDetailVO.getId(), vmInstanceDetailVO);
                 } else {
-                    UserVmDetailVO detailVO = new UserVmDetailVO(userVm.getId(), VmDetailConstants.ROOT_DISK_SIZE, String.valueOf(newSize/ GiB_TO_BYTES), true);
-                    userVmDetailsDao.persist(detailVO);
+                    VMInstanceDetailVO detailVO = new VMInstanceDetailVO(userVm.getId(), VmDetailConstants.ROOT_DISK_SIZE, String.valueOf(newSize/ GiB_TO_BYTES), true);
+                    vmInstanceDetailsDao.persist(detailVO);
                 }
             }
 
@@ -2378,12 +2409,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         // if the caller is looking to change the size of the volume
         if (newSize != null && currentSize != newSize) {
-            if (volume.getInstanceId() != null) {
-                // Check that VM to which this volume is attached does not have VM snapshots
-                if (_vmSnapshotDao.findByVm(volume.getInstanceId()).size() > 0) {
-                    throw new InvalidParameterValueException("A volume that is attached to a VM with any VM snapshots cannot be resized.");
-                }
-            }
+            validateNoVmSnapshots(volume);
 
             if (!validateVolumeSizeInBytes(newSize)) {
                 throw new InvalidParameterValueException("Requested size out of range");
@@ -2434,6 +2460,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 if (!shrinkOk) {
                     throw new InvalidParameterValueException("Going from existing size of " + currentSize + " to size of " + newSize + " would shrink the volume."
                             + "Need to sign off by supplying the shrinkok parameter with value of true.");
+                }
+                if (ApiDBUtils.getHypervisorTypeFromFormat(volume.getDataCenterId(), volume.getFormat()) == HypervisorType.XenServer) {
+                    throw new InvalidParameterValueException("Shrink volume is not supported for the XenServer hypervisor.");
                 }
             }
         }
@@ -4006,7 +4035,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     @Override
-    public Snapshot allocSnapshotForVm(Long vmId, Long volumeId, String snapshotName) throws ResourceAllocationException {
+    public Snapshot allocSnapshotForVm(Long vmId, Long volumeId, String snapshotName, Long vmSnapshotId) throws ResourceAllocationException {
         Account caller = CallContext.current().getCallingAccount();
         VMInstanceVO vm = _vmInstanceDao.findById(vmId);
         if (vm == null) {
@@ -4056,6 +4085,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         if (storagePool.getPoolType() == Storage.StoragePoolType.PowerFlex) {
             throw new InvalidParameterValueException("Cannot perform this operation, unsupported on storage pool type " + storagePool.getPoolType());
+        }
+
+        if (vmSnapshotDetailsDao.listDetails(vmSnapshotId).stream().anyMatch(vmSnapshotDetailsVO -> KVM_FILE_BASED_STORAGE_SNAPSHOT.equals(vmSnapshotDetailsVO.getName()))) {
+            throw new InvalidParameterValueException("Cannot perform this operation, unsupported VM snapshot type.");
         }
 
         return snapshotMgr.allocSnapshot(volumeId, Snapshot.MANUAL_POLICY_ID, snapshotName, null, true, null);

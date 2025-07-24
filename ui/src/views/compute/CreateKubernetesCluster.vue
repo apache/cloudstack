@@ -430,7 +430,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -574,7 +574,7 @@ export default {
       const params = {}
       this.zoneLoading = true
       params.showicon = true
-      api('listZones', params).then(json => {
+      getAPI('listZones', params).then(json => {
         var listZones = json.listzonesresponse.zone
         if (listZones) {
           listZones = listZones.filter(x => x.allocationstate === 'Enabled')
@@ -606,7 +606,7 @@ export default {
         params.zoneid = this.selectedZone.id
       }
       this.kubernetesVersionLoading = true
-      api('listKubernetesSupportedVersions', params).then(json => {
+      getAPI('listKubernetesSupportedVersions', params).then(json => {
         const versionObjs = json.listkubernetessupportedversionsresponse.kubernetessupportedversion
         if (this.arrayHasItems(versionObjs)) {
           for (var i = 0; i < versionObjs.length; i++) {
@@ -631,7 +631,7 @@ export default {
       this.serviceOfferings = []
       const params = {}
       this.serviceOfferingLoading = true
-      api('listServiceOfferings', params).then(json => {
+      getAPI('listServiceOfferings', params).then(json => {
         var items = json.listserviceofferingsresponse.serviceoffering
         var minCpu = 2
         var minMemory = 2048
@@ -674,7 +674,7 @@ export default {
           forcks: true
         }
         this.templateLoading = true
-        api('listTemplates', params).then(json => {
+        getAPI('listTemplates', params).then(json => {
           var templates = json?.listtemplatesresponse?.template || []
           ckstemplates.push(...templates)
         }).finally(() => {
@@ -690,7 +690,7 @@ export default {
       }
       this.networkLoading = true
       this.networks = []
-      api('listNetworks', params).then(json => {
+      getAPI('listNetworks', params).then(json => {
         var listNetworks = json.listnetworksresponse.network
         if (this.arrayHasItems(listNetworks)) {
           listNetworks = listNetworks.filter(n => n.type !== 'L2')
@@ -707,7 +707,7 @@ export default {
     fetchKeyPairData () {
       const params = {}
       this.keyPairLoading = true
-      api('listSSHKeyPairs', params).then(json => {
+      getAPI('listSSHKeyPairs', params).then(json => {
         const listKeyPairs = json.listsshkeypairsresponse.sshkeypair
         if (this.arrayHasItems(listKeyPairs)) {
           for (var i = 0; i < listKeyPairs.length; i++) {
@@ -730,7 +730,7 @@ export default {
       }
       this.hypervisorLoading = true
 
-      api('listHypervisors', params).then(json => {
+      getAPI('listHypervisors', params).then(json => {
         const listResponse = json.listhypervisorsresponse.hypervisor || []
         if (listResponse) {
           this.selectedZoneHypervisors = listResponse
@@ -747,7 +747,7 @@ export default {
         name: 'cloud.kubernetes.cluster.network.offering'
       }
       this.configLoading = true
-      api('listConfigurations', params).then(json => {
+      getAPI('listConfigurations', params).then(json => {
         if (json.listconfigurationsresponse.configuration !== null) {
           const config = json.listconfigurationsresponse.configuration[0]
           if (config && config.name === params.name) {
@@ -766,7 +766,7 @@ export default {
           name: offeringName
         }
 
-        api('listNetworkOfferings', args).then(json => {
+        getAPI('listNetworkOfferings', args).then(json => {
           const listNetworkOfferings = json.listnetworkofferingsresponse.networkoffering || []
           resolve(listNetworkOfferings)
           this.cksNetworkOffering = listNetworkOfferings[0] || {}
@@ -779,13 +779,13 @@ export default {
       const params = {}
       params.zoneid = this.selectedZone.id
       params.isallocated = false
-      api('listASNumbers', params).then(json => {
+      getAPI('listASNumbers', params).then(json => {
         this.asNumbersZone = json.listasnumbersresponse.asnumber
       })
     },
     fetchCniConfigurations () {
       this.cniConfigLoading = true
-      api('listCniConfiguration', {}).then(
+      getAPI('listCniConfiguration', {}).then(
         response => {
           const listResponse = response.listcniconfigurationresponse.cniconfig || []
           if (listResponse) {
@@ -802,7 +802,7 @@ export default {
       }
       this.form.cniconfigurationid = id
       this.cniConfigParams = []
-      api('listCniConfiguration', { id: id }).then(json => {
+      getAPI('listCniConfiguration', { id: id }).then(json => {
         const resp = json?.listcniconfigurationresponse?.cniconfig || []
         if (resp) {
           var params = resp[0].params
@@ -913,7 +913,7 @@ export default {
           params.asnumber = values.asnumber
         }
 
-        api('createKubernetesCluster', params).then(json => {
+        postAPI('createKubernetesCluster', params).then(json => {
           const jobId = json.createkubernetesclusterresponse.jobid
           this.$pollJob({
             jobId,

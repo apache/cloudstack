@@ -124,7 +124,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import InstanceVolumesStoragePoolSelectListView from '@/components/view/InstanceVolumesStoragePoolSelectListView'
 
@@ -213,7 +213,7 @@ export default {
     },
     fetchData () {
       this.loading = true
-      api('findHostsForMigration', {
+      getAPI('findHostsForMigration', {
         virtualmachineid: this.resource.id,
         keyword: this.searchQuery,
         page: this.page,
@@ -264,7 +264,7 @@ export default {
     fetchVolumes () {
       this.loading = true
       this.volumes = []
-      api('listVolumes', {
+      getAPI('listVolumes', {
         listAll: true,
         virtualmachineid: this.resource.id
       }).then(response => {
@@ -312,7 +312,7 @@ export default {
           params['migrateto[' + i + '].pool'] = mapping.pool
         }
       }
-      api(migrateApi, params).then(response => {
+      postAPI(migrateApi, params).then(response => {
         const jobId = response[migrateApi.toLowerCase() + 'response'].jobid
         this.$pollJob({
           jobId: jobId,

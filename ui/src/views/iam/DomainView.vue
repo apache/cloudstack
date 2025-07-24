@@ -78,7 +78,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import store from '@/store'
 import { mixinDevice } from '@/utils/mixin.js'
 
@@ -173,7 +173,7 @@ export default {
 
       this.loading = true
       params.showicon = true
-      api('listDomains', params).then(json => {
+      getAPI('listDomains', params).then(json => {
         const domains = json.listdomainsresponse.domain || []
         this.treeData = this.generateTreeData(domains)
         this.resource = domains[0] || {}
@@ -274,23 +274,20 @@ export default {
       }
       param.loading = true
       param.opts = []
-      api(possibleApi, params).then(json => {
-        param.loading = false
-        for (const obj in json) {
-          if (obj.includes('response')) {
-            for (const res in json[obj]) {
-              if (res === 'count') {
-                continue
-              }
-              param.opts = json[obj][res]
-              break
+      postAPI(possibleApi, params)
+        .then(json => {
+          param.loading = false
+          const responseObj = Object.values(json).find(obj => obj.includes('response'))
+          if (responseObj) {
+            const responseData = Object.entries(responseObj).find(([res, value]) => res !== 'count')
+            if (responseData) {
+              param.opts = responseData[1]
             }
-            break
           }
-        }
-      }).catch(() => {
-        param.loading = false
-      })
+        })
+        .catch(() => {
+          param.loading = false
+        })
     },
     generateTreeData (treeData) {
       const result = []

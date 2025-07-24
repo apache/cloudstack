@@ -41,7 +41,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
@@ -100,7 +100,7 @@ export default {
       this.itemCount = 0
       this.fetchLoading = true
       this.zones = []
-      api(this.imageApi, params).then(json => {
+      getAPI(this.imageApi, params).then(json => {
         const imageResponse = json?.[this.imageApi.toLowerCase() + 'response']?.[this.$route.meta.name] || []
         this.zones = imageResponse.map(i => ({
           id: i.zoneid,
@@ -122,7 +122,7 @@ export default {
       }
       const zoneids = this.zones.map(z => z.id)
       this.loading = true
-      api('listZones', { showicon: true, ids: zoneids.join(',') }).then(json => {
+      getAPI('listZones', { showicon: true, ids: zoneids.join(',') }).then(json => {
         this.zones = json.listzonesresponse.zone || []
       }).finally(() => {
         this.loading = false

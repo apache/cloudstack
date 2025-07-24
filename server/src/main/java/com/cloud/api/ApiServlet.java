@@ -22,8 +22,11 @@ import java.net.URLDecoder;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
+import java.util.Set;
 
 import javax.inject.Inject;
 import javax.servlet.ServletConfig;
@@ -34,6 +37,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ApiServerService;
@@ -43,9 +47,11 @@ import org.apache.cloudstack.api.auth.APIAuthenticationManager;
 import org.apache.cloudstack.api.auth.APIAuthenticationType;
 import org.apache.cloudstack.api.auth.APIAuthenticator;
 import org.apache.cloudstack.api.command.user.consoleproxy.CreateConsoleEndpointCmd;
+import org.apache.cloudstack.api.command.user.gui.theme.ListGuiThemesCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.managed.context.ManagedContext;
 import org.apache.cloudstack.utils.consoleproxy.ConsoleAccessUtils;
+import org.apache.commons.collections.MapUtils;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -78,6 +84,39 @@ public class ApiServlet extends HttpServlet {
     private static final Logger ACCESSLOGGER = LogManager.getLogger("apiserver." + ApiServlet.class.getName());
     private static final String REPLACEMENT = "_";
     private static final String LOGGER_REPLACEMENTS = "[\n\r\t]";
+    private static final Pattern GET_REQUEST_COMMANDS = Pattern.compile("^(get|list|query|find)(\\w+)+$");
+    private static final HashSet<String> GET_REQUEST_COMMANDS_LIST = new HashSet<>(Set.of("isaccountallowedtocreateofferingswithtags",
+            "readyforshutdown", "cloudianisenabled", "quotabalance", "quotasummary", "quotatarifflist", "quotaisenabled", "quotastatement", "verifyoauthcodeandgetuser"));
+    private static final HashSet<String> POST_REQUESTS_TO_DISABLE_LOGGING = new HashSet<>(Set.of(
+            "login",
+            "oauthlogin",
+            "createaccount",
+            "createuser",
+            "updateuser",
+            "forgotpassword",
+            "resetpassword",
+            "importrole",
+            "updaterolepermission",
+            "updateprojectrolepermission",
+            "createstoragepool",
+            "addhost",
+            "updatehostpassword",
+            "addcluster",
+            "addvmwaredc",
+            "configureoutofbandmanagement",
+            "uploadcustomcertificate",
+            "addciscovnmcresource",
+            "addnetscalerloadbalancer",
+            "createtungstenfabricprovider",
+            "addnsxcontroller",
+            "configtungstenfabricservice",
+            "createnetworkacl",
+            "updatenetworkaclitem",
+            "quotavalidateactivationrule",
+            "quotatariffupdate",
+            "listandswitchsamlaccount",
+            "uploadresourceicon"
+    ));
 
     @Inject
     ApiServerService apiServer;
@@ -193,11 +232,24 @@ public class ApiServlet extends HttpServlet {
 
         utf8Fixup(req, params);
 
+        final Object[] commandObj = params.get(ApiConstants.COMMAND);
+        final String command = commandObj == null ? null : (String) commandObj[0];
+
         // logging the request start and end in management log for easy debugging
         String reqStr = "";
         String cleanQueryString = StringUtils.cleanString(req.getQueryString());
         if (LOGGER.isDebugEnabled()) {
             reqStr = auditTrailSb.toString() + " " + cleanQueryString;
+            if (req.getMethod().equalsIgnoreCase("POST") && org.apache.commons.lang3.StringUtils.isNotBlank(command)) {
+                if (!POST_REQUESTS_TO_DISABLE_LOGGING.contains(command.toLowerCase()) && !reqParams.containsKey(ApiConstants.USER_DATA)) {
+                    String cleanParamsString = getCleanParamsString(reqParams);
+                    if (org.apache.commons.lang3.StringUtils.isNotBlank(cleanParamsString)) {
+                        reqStr += "\n" + cleanParamsString;
+                    }
+                } else {
+                    reqStr += " " + command;
+                }
+            }
             LOGGER.debug("===START=== " + reqStr);
         }
 
@@ -213,8 +265,6 @@ public class ApiServlet extends HttpServlet {
                 responseType = (String)responseTypeParam[0];
             }
 
-            final Object[] commandObj = params.get(ApiConstants.COMMAND);
-            final String command = commandObj == null ? null : (String) commandObj[0];
             final Object[] userObj = params.get(ApiConstants.USERNAME);
             String username = userObj == null ? null : (String)userObj[0];
             if (LOGGER.isTraceEnabled()) {
@@ -317,6 +367,19 @@ public class ApiServlet extends HttpServlet {
                 }
             }
 
+            if (apiServer.isPostRequestsAndTimestampsEnforced() && !isStateChangingCommandUsingPOST(command, req.getMethod(), params)) {
+                String errorText = String.format("State changing command %s needs to be sent using POST request", command);
+                if (command.equalsIgnoreCase("updateConfiguration") && params.containsKey("name")) {
+                    errorText = String.format("Changes for configuration %s needs to be sent using POST request", params.get("name")[0]);
+                }
+                auditTrailSb.append(" " + HttpServletResponse.SC_BAD_REQUEST + " " + errorText);
+                final String serializedResponse =
+                        apiServer.getSerializedApiError(new ServerApiException(ApiErrorCode.BAD_REQUEST, errorText), params,
+                                responseType);
+                HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_BAD_REQUEST, responseType, ApiServer.JSONcontentType.value());
+                return;
+            }
+
             Long userId = null;
             if (!isNew) {
                 userId = (Long)session.getAttribute("userid");
@@ -336,6 +399,8 @@ public class ApiServlet extends HttpServlet {
                 CallContext.register(accountMgr.getSystemUser(), accountMgr.getSystemAccount());
             }
             setProjectContext(params);
+            setGuiThemeParameterIfApiCallIsUnauthenticated(userId, command, req, params);
+
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace(String.format("verifying request for user %s from %s with %d parameters",
                         userId, remoteAddress.getHostAddress(), params.size()));
@@ -396,6 +461,19 @@ public class ApiServlet extends HttpServlet {
         }
     }
 
+    private void setGuiThemeParameterIfApiCallIsUnauthenticated(Long userId, String command, HttpServletRequest req, Map<String, Object[]> params) {
+        String listGuiThemesApiName = ListGuiThemesCmd.class.getAnnotation(APICommand.class).name();
+
+        if (userId != null || !listGuiThemesApiName.equalsIgnoreCase(command)) {
+            return;
+        }
+
+        String serverName = req.getServerName();
+        LOGGER.info("Unauthenticated call to {} API, thus, the `commonName` parameter will be inferred as {}.", listGuiThemesApiName, serverName);
+        params.put(ApiConstants.COMMON_NAME, new String[]{serverName});
+    }
+
+
     private boolean checkIfAuthenticatorIsOf2FA(String command) {
         boolean verify2FA = false;
         APIAuthenticator apiAuthenticator = authManager.getAPIAuthenticator(command);
@@ -405,6 +483,15 @@ public class ApiServlet extends HttpServlet {
             verify2FA = false;
         }
         return verify2FA;
+    }
+
+    private boolean isStateChangingCommandUsingPOST(String command, String method, Map<String, Object[]> params) {
+        if (command == null || (!GET_REQUEST_COMMANDS.matcher(command.toLowerCase()).matches() && !GET_REQUEST_COMMANDS_LIST.contains(command.toLowerCase())
+                && !command.equalsIgnoreCase("updateConfiguration") && !method.equals("POST"))) {
+            return false;
+        }
+        return !command.equalsIgnoreCase("updateConfiguration") || method.equals("POST") || (params.containsKey("name")
+                && params.get("name")[0].toString().equalsIgnoreCase(ApiServer.EnforcePostRequestsAndTimestamps.key()));
     }
 
     protected boolean skip2FAcheckForAPIs(String command) {
@@ -643,5 +730,46 @@ public class ApiServlet extends HttpServlet {
             }
         }
         return null;
+    }
+
+    private String getCleanParamsString(Map<String, String[]> reqParams) {
+        if (MapUtils.isEmpty(reqParams)) {
+            return "";
+        }
+
+        StringBuilder cleanParamsString = new StringBuilder();
+        for (Map.Entry<String, String[]> reqParam : reqParams.entrySet()) {
+            if (org.apache.commons.lang3.StringUtils.isBlank(reqParam.getKey())) {
+                continue;
+            }
+
+            cleanParamsString.append(reqParam.getKey());
+            cleanParamsString.append("=");
+
+            if (reqParam.getKey().toLowerCase().contains("password")
+                    || reqParam.getKey().toLowerCase().contains("privatekey")
+                    || reqParam.getKey().toLowerCase().contains("accesskey")
+                    || reqParam.getKey().toLowerCase().contains("secretkey")) {
+                cleanParamsString.append("\n");
+                continue;
+            }
+
+            if (reqParam.getValue() == null || reqParam.getValue().length == 0) {
+                cleanParamsString.append("\n");
+                continue;
+            }
+
+            for (String param : reqParam.getValue()) {
+                if (org.apache.commons.lang3.StringUtils.isBlank(param)) {
+                    continue;
+                }
+                String cleanParamString = StringUtils.cleanString(param.trim());
+                cleanParamsString.append(cleanParamString);
+                cleanParamsString.append(" ");
+            }
+            cleanParamsString.append("\n");
+        }
+
+        return cleanParamsString.toString();
     }
 }
