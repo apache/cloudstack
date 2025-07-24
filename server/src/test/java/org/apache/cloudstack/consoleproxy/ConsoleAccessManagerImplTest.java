@@ -29,7 +29,7 @@ import com.cloud.vm.ConsoleSessionVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.ConsoleSessionDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ResponseObject;
@@ -62,7 +62,7 @@ public class ConsoleAccessManagerImplTest {
     @Mock
     private EntityManager entityManager;
     @Mock
-    private UserVmDetailsDao userVmDetailsDao;
+    private VMInstanceDetailsDao vmInstanceDetailsDao;
     @Mock
     private KeysManager keysManager;
     @Mock

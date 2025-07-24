@@ -61,10 +61,10 @@ import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -103,7 +103,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
     @Inject
     CapacityDao _capacityDao;
     @Inject
-    UserVmDetailsDao _userVmDetailsDao;
+    VMInstanceDetailsDao _vmInstanceDetailsDao;
 
     boolean _checkHvm = true;
     static DecimalFormat decimalFormat = new DecimalFormat("#.##");
@@ -124,9 +124,9 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
         Account account = vmProfile.getOwner();
 
         boolean isVMDeployedWithUefi = false;
-        UserVmDetailVO userVmDetailVO = _userVmDetailsDao.findDetail(vmProfile.getId(), "UEFI");
-        if(userVmDetailVO != null){
-            if ("secure".equalsIgnoreCase(userVmDetailVO.getValue()) || "legacy".equalsIgnoreCase(userVmDetailVO.getValue())) {
+        VMInstanceDetailVO vmInstanceDetailVO = _vmInstanceDetailsDao.findDetail(vmProfile.getId(), "UEFI");
+        if(vmInstanceDetailVO != null){
+            if ("secure".equalsIgnoreCase(vmInstanceDetailVO.getValue()) || "legacy".equalsIgnoreCase(vmInstanceDetailVO.getValue())) {
                 isVMDeployedWithUefi = true;
             }
         }

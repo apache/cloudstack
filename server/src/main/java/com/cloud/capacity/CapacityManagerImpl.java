@@ -89,7 +89,7 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateListener;
 import com.cloud.utils.fsm.StateMachine2;
-import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -97,7 +97,7 @@ import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
@@ -130,7 +130,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     @Inject
     protected UserVmDao _userVMDao;
     @Inject
-    protected UserVmDetailsDao _userVmDetailsDao;
+    protected VMInstanceDetailsDao _vmInstanceDetailsDao;
     @Inject
     ClusterDao _clusterDao;
     @Inject
@@ -660,7 +660,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     }
 
     protected Map<String, String> getVmDetailsForCapacityCalculation(long vmId) {
-        return _userVmDetailsDao.listDetailsKeyPairs(vmId,
+        return _vmInstanceDetailsDao.listDetailsKeyPairs(vmId,
                 List.of(VmDetailConstants.CPU_OVER_COMMIT_RATIO,
                         VmDetailConstants.MEMORY_OVER_COMMIT_RATIO,
                         UsageEventVO.DynamicParameters.memory.name(),
@@ -769,7 +769,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
             } else {
                 // signal if not done already, that the VM has been stopped for skip.counting.hours,
                 // hence capacity will not be reserved anymore.
-                UserVmDetailVO messageSentFlag = _userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.MESSAGE_RESERVED_CAPACITY_FREED_FLAG);
+                VMInstanceDetailVO messageSentFlag = _vmInstanceDetailsDao.findDetail(vm.getId(), VmDetailConstants.MESSAGE_RESERVED_CAPACITY_FREED_FLAG);
                 if (messageSentFlag == null || !Boolean.valueOf(messageSentFlag.getValue())) {
                     _messageBus.publish(_name, "VM_ReservedCapacity_Free", PublishScope.LOCAL, vm);
 

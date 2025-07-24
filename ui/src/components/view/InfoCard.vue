@@ -35,7 +35,7 @@
                       <resource-icon :image="resourceIcon" size="4x" style="margin-right: 5px"/>
                     </span>
                     <span v-else>
-                      <os-logo v-if="resource.ostypeid || resource.ostypename || ['guestoscategory'].includes($route.path.split('/')[1])" :osId="resource.ostypeid" :osName="resource.ostypename || resource.name" size="3x" @update-osname="setResourceOsType"/>
+                      <os-logo v-if="resource.ostypeid || resource.ostypename || ['guestoscategory'].includes($route.path.split('/')[1])" :osId="resource.ostypeid" :osName="resource.ostypename || resource.osdisplayname || resource.name" size="3x" />
                       <render-icon v-else-if="typeof $route.meta.icon ==='string'" style="font-size: 36px" :icon="$route.meta.icon" />
                       <font-awesome-icon
                         v-else-if="$route.meta.icon && Array.isArray($route.meta.icon)"
@@ -153,18 +153,18 @@
                 <span style="margin-left: 10px;"><copy-label :label="resource.id" /></span>
               </div>
             </div>
-            <div class="resource-detail-item" v-if="resource.ostypename && resource.ostypeid">
+            <div class="resource-detail-item" v-if="(resource.ostypename || resource.osdisplayname) && resource.ostypeid">
               <div class="resource-detail-item__label">{{ $t('label.ostypename') }}</div>
               <div class="resource-detail-item__details">
                 <span v-if="images.guestoscategory">
                   <resource-icon :image="images.guestoscategory" size="1x" style="margin-right: 5px"/>
                 </span>
-                <os-logo v-else :osId="resource.ostypeid" :osName="resource.ostypename" size="lg" style="margin-left: -1px" />
+                <os-logo v-else :osId="resource.ostypeid" :osName="resource.ostypename || resource.osdisplayname" size="lg" style="margin-left: -1px" />
                 <span style="margin-left: 8px">
                   <router-link v-if="$router.resolve('/guestos/' + resource.ostypeid).matched[0].redirect !== '/exception/404'" :to="{ path: '/guestos/' + resource.ostypeid }">
-                    {{ resource.ostypename }}
+                    {{ resource.ostypename || resource.osdisplayname }}
                   </router-link>
-                  <span v-else>{{ resource.ostypename }}</span>
+                  <span v-else>{{ resource.ostypename || resource.osdisplayname }}</span>
                 </span>
               </div>
             </div>
@@ -1251,10 +1251,6 @@ export default {
       }).finally(e => {
         this.getTags()
       })
-    },
-    setResourceOsType (name) {
-      this.newResource.ostypename = name
-      this.$emit('change-resource', this.newResource)
     },
     getRouterQuery (item) {
       const query = {}
