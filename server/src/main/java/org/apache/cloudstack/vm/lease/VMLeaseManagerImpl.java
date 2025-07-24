@@ -18,23 +18,21 @@
 
 package org.apache.cloudstack.vm.lease;
 
-import com.cloud.api.ApiGsonHelper;
-import com.cloud.api.query.dao.UserVmJoinDao;
-import com.cloud.api.query.vo.UserVmJoinVO;
-import com.cloud.event.ActionEventUtils;
-import com.cloud.event.EventTypes;
-import com.cloud.user.Account;
-import com.cloud.user.User;
-import com.cloud.utils.DateUtil;
-import com.cloud.utils.Pair;
-import com.cloud.utils.component.ComponentContext;
-import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.concurrency.NamedThreadFactory;
-import com.cloud.utils.db.GlobalLock;
-import com.cloud.vm.VmDetailConstants;
-import com.cloud.vm.dao.UserVmDetailsDao;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
@@ -52,26 +50,29 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.time.DateUtils;
 
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import com.cloud.api.ApiGsonHelper;
+import com.cloud.api.query.dao.UserVmJoinDao;
+import com.cloud.api.query.vo.UserVmJoinVO;
+import com.cloud.event.ActionEventUtils;
+import com.cloud.event.EventTypes;
+import com.cloud.user.Account;
+import com.cloud.user.User;
+import com.cloud.utils.DateUtil;
+import com.cloud.utils.Pair;
+import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.concurrency.NamedThreadFactory;
+import com.cloud.utils.db.GlobalLock;
+import com.cloud.vm.VmDetailConstants;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, Configurable {
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 5;   // 5 seconds
 
     @Inject
-    private UserVmDetailsDao userVmDetailsDao;
+    private VMInstanceDetailsDao vmInstanceDetailsDao;
 
     @Inject
     private UserVmJoinDao userVmJoinDao;
@@ -131,7 +132,7 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
         List<UserVmJoinVO> leaseExpiringForInstances = userVmJoinDao.listLeaseInstancesExpiringInDays(-1);
         logger.debug("Total instances found for lease cancellation: {}", leaseExpiringForInstances.size());
         for (UserVmJoinVO instance : leaseExpiringForInstances) {
-            userVmDetailsDao.addDetail(instance.getId(), VmDetailConstants.INSTANCE_LEASE_EXECUTION,
+            vmInstanceDetailsDao.addDetail(instance.getId(), VmDetailConstants.INSTANCE_LEASE_EXECUTION,
                     LeaseActionExecution.CANCELLED.name(), false);
             String leaseCancellationMsg = String.format("Lease is cancelled for the instance: %s (id: %s) ", instance.getName(), instance.getUuid());
             ActionEventUtils.onActionEvent(instance.getUserId(), instance.getAccountId(), instance.getDomainId(),
@@ -370,7 +371,7 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
 
                     if (VMLeaseManager.class.getSimpleName().equals(params.get(JOB_INITIATOR))) {
                         logger.debug("Lease expiry job: {} successfully executed for instanceId: {}", asyncExpiryJob.getId(), asyncExpiryJob.getInstanceId());
-                        userVmDetailsDao.addDetail(asyncExpiryJob.getInstanceId(), VmDetailConstants.INSTANCE_LEASE_EXECUTION, LeaseActionExecution.DONE.name(), false);
+                        vmInstanceDetailsDao.addDetail(asyncExpiryJob.getInstanceId(), VmDetailConstants.INSTANCE_LEASE_EXECUTION, LeaseActionExecution.DONE.name(), false);
                     }
                 }
             } catch (final Exception e) {

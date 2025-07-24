@@ -18,16 +18,31 @@
 
 package org.apache.cloudstack.vm.lease;
 
-import com.cloud.api.query.dao.UserVmJoinDao;
-import com.cloud.api.query.vo.UserVmJoinVO;
-import com.cloud.event.ActionEventUtils;
-import com.cloud.user.User;
-import com.cloud.utils.component.ComponentContext;
-import com.cloud.utils.db.GlobalLock;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VmDetailConstants;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.UUID;
+
+import javax.naming.ConfigurationException;
+
 import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
 import org.apache.cloudstack.api.command.user.vm.StopVMCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -47,29 +62,16 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.context.ApplicationContext;
 
-import javax.naming.ConfigurationException;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import com.cloud.api.query.dao.UserVmJoinDao;
+import com.cloud.api.query.vo.UserVmJoinVO;
+import com.cloud.event.ActionEventUtils;
+import com.cloud.user.User;
+import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VmDetailConstants;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class VMLeaseManagerImplTest {
@@ -88,7 +90,7 @@ public class VMLeaseManagerImplTest {
     MessageBus messageBus;
 
     @Mock
-    private UserVmDetailsDao userVmDetailsDao;
+    private VMInstanceDetailsDao vmInstanceDetailsDao;
 
     @Mock
     private AsyncJobManager asyncJobManager;
@@ -104,7 +106,7 @@ public class VMLeaseManagerImplTest {
         vmLeaseManager.setAsyncJobDispatcher(asyncJobDispatcher);
         when(asyncJobDispatcher.getName()).thenReturn("AsyncJobDispatcher");
         when(asyncJobManager.submitAsyncJob(any(AsyncJobVO.class))).thenReturn(1L);
-        doNothing().when(userVmDetailsDao).addDetail(
+        doNothing().when(vmInstanceDetailsDao).addDetail(
                 anyLong(), anyString(), anyString(), anyBoolean()
         );
         try {
@@ -275,7 +277,7 @@ public class VMLeaseManagerImplTest {
             utilities.when(() -> ActionEventUtils.onStartedActionEvent(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(),
                     Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyLong())).thenReturn(1L);
             vmLeaseManager.cancelLeaseOnExistingInstances();
-            verify(userVmDetailsDao).addDetail(1L, VmDetailConstants.INSTANCE_LEASE_EXECUTION, VMLeaseManager.LeaseActionExecution.CANCELLED.name(), false);
+            verify(vmInstanceDetailsDao).addDetail(1L, VmDetailConstants.INSTANCE_LEASE_EXECUTION, VMLeaseManager.LeaseActionExecution.CANCELLED.name(), false);
         }
     }
 

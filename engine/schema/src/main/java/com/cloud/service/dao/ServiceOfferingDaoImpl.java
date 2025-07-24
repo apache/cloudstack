@@ -39,7 +39,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 
 @Component
 @DB()
@@ -48,7 +48,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
     @Inject
     protected ServiceOfferingDetailsDao detailsDao;
     @Inject
-    protected UserVmDetailsDao userVmDetailsDao;
+    protected VMInstanceDetailsDao vmInstanceDetailsDao;
     @Inject
     private DiskOfferingDao diskOfferingDao;
 
@@ -176,7 +176,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
             if (vmId == null) {
                 throw new CloudRuntimeException("missing argument vmId");
             }
-            Map<String, String> dynamicOffering = userVmDetailsDao.listDetailsKeyPairs(vmId);
+            Map<String, String> dynamicOffering = vmInstanceDetailsDao.listDetailsKeyPairs(vmId);
             return getComputeOffering(offering, dynamicOffering);
         }
         return offering;
@@ -190,7 +190,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
             if (vmId == null) {
                 throw new CloudRuntimeException("missing argument vmId");
             }
-            Map<String, String> dynamicOffering = userVmDetailsDao.listDetailsKeyPairs(vmId);
+            Map<String, String> dynamicOffering = vmInstanceDetailsDao.listDetailsKeyPairs(vmId);
             return getComputeOffering(offering, dynamicOffering);
         }
         return offering;
