@@ -244,9 +244,6 @@ ALTER TABLE `cloud`.`backups` MODIFY COLUMN `name` VARCHAR(255) NOT NULL;
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'description', 'VARCHAR(1024) COMMENT "description for the backup"');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'backup_interval_type', 'int(5) COMMENT "type of backup, e.g. manual, recurring - hourly, daily, weekly or monthly"');
 
--- Make the column vm_id in backups table nullable to handle orphan backups
-ALTER TABLE `cloud`.`backups` MODIFY COLUMN `vm_id` BIGINT UNSIGNED NULL;
-
 -- Create backup details table
 CREATE TABLE IF NOT EXISTS `cloud`.`backup_details` (
   `id` bigint unsigned NOT NULL auto_increment,

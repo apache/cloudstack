@@ -273,11 +273,6 @@ public class BackupVO implements Backup {
         return details;
     }
 
-    public void setDetail(String name, String value) {
-        assert (details != null) : "Did you forget to load the details?";
-        this.details.put(name, value);
-    }
-
     @Override
     public String getDetail(String name) {
         return this.details.get(name);

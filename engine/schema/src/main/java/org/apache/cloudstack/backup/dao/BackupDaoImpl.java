@@ -54,7 +54,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.network.Network;
 import com.cloud.network.dao.NetworkDao;
@@ -351,9 +350,7 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
         response.setName(backup.getName());
         response.setDescription(backup.getDescription());
         response.setVmName(vm.getHostName());
-        if (vm.getState() != VirtualMachine.State.Expunging) {
-            response.setVmId(vm.getUuid());
-        }
+        response.setVmId(vm.getUuid());
         if (vm.getBackupOfferingId() == null || vm.getBackupOfferingId() != backup.getBackupOfferingId()) {
             response.setVmOfferingRemoved(true);
         }
