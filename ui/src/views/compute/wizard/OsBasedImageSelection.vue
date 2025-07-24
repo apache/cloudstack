@@ -112,7 +112,7 @@
           v-model:value="localSelectedIsoHypervisor"
           :preFillContent="preFillContent"
           :options="isoHypervisorItems"
-          @change="handleIsoHypervisorChange()"
+          @change="handleIsoHypervisorChange"
           showSearch
           optionFilterProp="label"
           :filterOption="filterOption" />
@@ -325,8 +325,8 @@ export default {
     emitUpdateDiskSize (decorator, value) {
       this.$emit('update-disk-size', decorator, value)
     },
-    handleIsoHypervisorChange () {
-      this.$emit('change-iso-hypervisor', this.localIsoHypervisor)
+    handleIsoHypervisorChange (hypervisor) {
+      this.$emit('change-iso-hypervisor', hypervisor)
     }
   }
 }

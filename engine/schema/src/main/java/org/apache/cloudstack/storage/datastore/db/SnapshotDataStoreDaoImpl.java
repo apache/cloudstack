@@ -418,6 +418,12 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     }
 
     @Override
+    public SnapshotDataStoreVO findBySnapshotIdInAnyState(long snapshotId, DataStoreRole role) {
+        SearchCriteria<SnapshotDataStoreVO> sc = createSearchCriteriaBySnapshotIdAndStoreRole(snapshotId, role);
+        return findOneBy(sc);
+    }
+
+    @Override
     public List<SnapshotDataStoreVO> listAllByVolumeAndDataStore(long volumeId, DataStoreRole role) {
         SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.create();
         sc.setParameters(VOLUME_ID, volumeId);

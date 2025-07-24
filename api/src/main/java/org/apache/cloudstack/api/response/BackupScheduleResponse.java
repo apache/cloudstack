@@ -28,6 +28,9 @@ import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = BackupSchedule.class)
 public class BackupScheduleResponse extends BaseResponse {
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "ID of the backup schedule.", since = "4.21.0")
+    private String id;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_NAME)
     @Param(description = "name of the VM")
@@ -51,7 +54,11 @@ public class BackupScheduleResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.MAX_BACKUPS)
     @Param(description = "maximum number of backups retained")
-    private Integer maxBakups;
+    private Integer maxBackups;
+
+    public void setId(String id) {
+        this.id = id;
+    }
 
     public String getVmName() {
         return vmName;
@@ -93,7 +100,7 @@ public class BackupScheduleResponse extends BaseResponse {
         this.timezone = timezone;
     }
 
-    public void setMaxBakups(Integer maxBakups) {
-        this.maxBakups = maxBakups;
+    public void setMaxBackups(Integer maxBackups) {
+        this.maxBackups = maxBackups;
     }
 }

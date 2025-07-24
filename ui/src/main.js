@@ -44,7 +44,7 @@ import {
 import { VueAxios } from './utils/request'
 import directives from './utils/directives'
 import Cookies from 'js-cookie'
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import { applyCustomGuiTheme } from './utils/guiTheme'
 
 vueApp.use(VueAxios, router)
@@ -106,7 +106,7 @@ fetch('config.json?ts=' + Date.now())
     let domainid = null
 
     if (userid !== undefined && Cookies.get('sessionkey')) {
-      await api('listUsers', { userid: userid }).then(response => {
+      await getAPI('listUsers', { userid: userid }).then(response => {
         accountid = response.listusersresponse.user[0].accountid
         domainid = response.listusersresponse.user[0].domainid
       })

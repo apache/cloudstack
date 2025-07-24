@@ -25,6 +25,9 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotOptions;
 import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotStrategy;
@@ -99,6 +102,13 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
     HostDao hostDao;
     @Inject
     PrimaryDataStoreDao primaryDataStoreDao;
+
+    @Inject
+    VMSnapshotDetailsDao vmSnapshotDetailsDao;
+
+    protected static final String KVM_FILE_BASED_STORAGE_SNAPSHOT = "kvmFileBasedStorageSnapshot";
+
+    protected static final String STORAGE_SNAPSHOT = "kvmStorageSnapshot";
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -469,16 +479,39 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
     @Override
     public StrategyPriority canHandle(Long vmId, Long rootPoolId, boolean snapshotMemory) {
         UserVmVO vm = userVmDao.findById(vmId);
-        if (vm.getState() == State.Running && !snapshotMemory) {
+        if (State.Running.equals(vm.getState()) && !snapshotMemory) {
+            logger.debug("Default VM snapshot strategy cannot handle VM snapshot for [{}] as it is running and its memory will not be affected.", vm);
+            return StrategyPriority.CANT_HANDLE;
+        }
+
+        if (vmHasKvmDiskOnlySnapshot(vm)) {
+            logger.debug("Default VM snapshot strategy cannot handle VM snapshot for [{}] as it has a disk-only VM snapshot using kvmFileBasedStorageSnapshot strategy." +
+                    "These two strategies are not compatible, as reverting a disk-only VM snapshot will erase newer disk-and-memory VM snapshots.", vm);
             return StrategyPriority.CANT_HANDLE;
         }
 
         List<VolumeVO> volumes = volumeDao.findByInstance(vmId);
         for (VolumeVO volume : volumes) {
             if (volume.getFormat() != ImageFormat.QCOW2) {
+                logger.debug("Default VM snapshot strategy cannot handle VM snapshot for [{}] as it has a volume [{}] that is not in the QCOW2 format.", vm, volume);
                 return StrategyPriority.CANT_HANDLE;
             }
         }
         return StrategyPriority.DEFAULT;
+    }
+
+    private boolean vmHasKvmDiskOnlySnapshot(UserVm vm) {
+        if (!Hypervisor.HypervisorType.KVM.equals(vm.getHypervisorType())) {
+            return false;
+        }
+
+        for (VMSnapshotVO vmSnapshotVO : vmSnapshotDao.findByVmAndByType(vm.getId(), VMSnapshot.Type.Disk)) {
+            List<VMSnapshotDetailsVO> vmSnapshotDetails = vmSnapshotDetailsDao.listDetails(vmSnapshotVO.getId());
+            if (vmSnapshotDetails.stream().anyMatch(vmSnapshotDetailsVO -> vmSnapshotDetailsVO.getName().equals(KVM_FILE_BASED_STORAGE_SNAPSHOT))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

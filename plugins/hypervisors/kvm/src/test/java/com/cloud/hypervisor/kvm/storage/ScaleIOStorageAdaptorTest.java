@@ -93,6 +93,34 @@ public class ScaleIOStorageAdaptorTest {
     }
 
     @Test
+    public void testPrepareStorageClient_SDCServiceNotRestarted() {
+        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl status scini"))).thenReturn(3);
+        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl is-enabled scini"))).thenReturn(0);
+        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl is-active scini"))).thenReturn(0);
+        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl restart scini"))).thenReturn(1);
+
+        Ternary<Boolean, Map<String, String>, String> result = scaleIOStorageAdaptor.prepareStorageClient(poolUuid, new HashMap<>());
+
+        Assert.assertFalse(result.first());
+        Assert.assertNull(result.second());
+        Assert.assertEquals("Couldn't restart SDC service on host", result.third());
+    }
+
+    @Test
+    public void testPrepareStorageClient_SDCServiceRestarted() {
+        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl status scini"))).thenReturn(3);
+        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl is-enabled scini"))).thenReturn(0);
+        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl is-active scini"))).thenReturn(0);
+        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl restart scini"))).thenReturn(0);
+
+        Ternary<Boolean, Map<String, String>, String> result = scaleIOStorageAdaptor.prepareStorageClient(poolUuid, new HashMap<>());
+
+        Assert.assertFalse(result.first());
+        Assert.assertNull(result.second());
+        Assert.assertEquals("Couldn't get the SDC details on the host", result.third());
+    }
+
+    @Test
     public void testPrepareStorageClient_SDCServiceNotStarted() {
         when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl status scini"))).thenReturn(3);
         when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl is-enabled scini"))).thenReturn(0);
@@ -194,8 +222,12 @@ public class ScaleIOStorageAdaptorTest {
         details.put(ScaleIOGatewayClient.STORAGE_POOL_MDMS, "1.1.1.1,2.2.2.2");
         when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl status scini"))).thenReturn(3);
         when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl is-enabled scini"))).thenReturn(0);
+        when(Script.executeCommand(Mockito.eq("sed -i '/1.1.1.1\\,/d' /etc/emc/scaleio/drv_cfg.txt"))).thenReturn(new Pair<>(null, null));
         when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl restart scini"))).thenReturn(0);
         when(Script.runSimpleBashScript(Mockito.eq("/opt/emc/scaleio/sdc/bin/drv_cfg --query_mdms|grep 1.1.1.1"))).thenReturn("MDM-ID 71fd458f0775010f SDC ID 4421a91a00000000 INSTALLATION ID 204930df2cbcaf8e IPs [0]-1.1.1.1 [1]-2.2.2.2");
+        when(Script.executeCommand(Mockito.eq("/opt/emc/scaleio/sdc/bin/drv_cfg"))).thenReturn(new Pair<>(null, null));
+        when(Script.executeCommand(Mockito.eq("/opt/emc/scaleio/sdc/bin/drv_cfg --query_vols"))).thenReturn(new Pair<>("", null));
+
 
         Pair<Boolean, String> result = scaleIOStorageAdaptor.unprepareStorageClient(poolUuid, details);
 
