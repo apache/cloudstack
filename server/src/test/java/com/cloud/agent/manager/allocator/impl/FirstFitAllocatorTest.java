@@ -37,9 +37,9 @@ import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
-import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.junit.Assert;
@@ -70,7 +70,7 @@ public class FirstFitAllocatorTest {
     ResourceManager resourceManagerMock;
 
     @Mock
-    UserVmDetailsDao userVmDetailsDaoMock;
+    VMInstanceDetailsDao userVmDetailsDaoMock;
 
     @Mock
     ServiceOfferingDetailsDao serviceOfferingDetailsDao;
@@ -345,7 +345,7 @@ public class FirstFitAllocatorTest {
     @Test
     public void filterHostsWithUefiEnabledTestNoDetailWithUefiShouldNotFilterAnyHost() {
         List<HostVO> suitableHosts = new ArrayList<>(Arrays.asList(host1, host2, host3));
-        UserVmDetailVO userVmDetailVO = null;
+        VMInstanceDetailVO userVmDetailVO = null;
 
         Mockito.doReturn(userVmDetailVO).when(userVmDetailsDaoMock).findDetail(Mockito.anyLong(), Mockito.anyString());
         firstFitAllocatorSpy.filterHostsWithUefiEnabled(type, virtualMachineProfile, clusterId, podId, dcId, suitableHosts);
@@ -359,7 +359,7 @@ public class FirstFitAllocatorTest {
     @Test
     public void filterHostsWithUefiEnabledTestDetailWithUefiWithInvalidModeShouldNotFilterAnyHost() {
         List<HostVO> suitableHosts = new ArrayList<>(Arrays.asList(host1, host2, host3));
-        UserVmDetailVO userVmDetailVO = mock(UserVmDetailVO.class);
+        VMInstanceDetailVO userVmDetailVO = mock(VMInstanceDetailVO.class);
         String bootMode = "Invalid mode";
 
         Mockito.doReturn(bootMode).when(userVmDetailVO).getValue();
@@ -376,7 +376,7 @@ public class FirstFitAllocatorTest {
     public void filterHostsWithUefiEnabledTestDetailWithUefiWithLegacyModeShouldFilterHost() {
         List<HostVO> suitableHosts = new ArrayList<>(Arrays.asList(host1, host2, host3));
         List<HostVO> uefiHosts = new ArrayList<>(Arrays.asList(host2, host3));
-        UserVmDetailVO userVmDetailVO = mock(UserVmDetailVO.class);
+        VMInstanceDetailVO userVmDetailVO = mock(VMInstanceDetailVO.class);
         String bootMode = ApiConstants.BootMode.LEGACY.toString();
 
         Mockito.doReturn(bootMode).when(userVmDetailVO).getValue();
@@ -393,7 +393,7 @@ public class FirstFitAllocatorTest {
     public void filterHostsWithUefiEnabledTestDetailWithUefiWithSecureModeShouldFilterHost() {
         List<HostVO> suitableHosts = new ArrayList<>(Arrays.asList(host1, host2, host3));
         List<HostVO> uefiHosts = new ArrayList<>(Arrays.asList(host2, host3));
-        UserVmDetailVO userVmDetailVO = mock(UserVmDetailVO.class);
+        VMInstanceDetailVO userVmDetailVO = mock(VMInstanceDetailVO.class);
         String bootMode = ApiConstants.BootMode.SECURE.toString();
 
         Mockito.doReturn(bootMode).when(userVmDetailVO).getValue();

@@ -97,7 +97,7 @@ public class FirstFitAllocator extends BaseAllocator {
     @Inject
     CapacityDao _capacityDao;
     @Inject
-    VMInstanceDetailsDao _vmInstanceDetailsDao;
+    VMInstanceDetailsDao vmInstanceDetailsDao;
 
     boolean _checkHvm = true;
 
@@ -184,7 +184,7 @@ public class FirstFitAllocator extends BaseAllocator {
     }
 
     protected void filterHostsWithUefiEnabled(Type type, VirtualMachineProfile vmProfile, Long clusterId, Long podId, long dcId, List<HostVO> clusterHosts) {
-        VMInstanceDetailVO vmInstanceDetailVO = _vmInstanceDetailsDao.findDetail(vmProfile.getId(), "UEFI");
+        VMInstanceDetailVO vmInstanceDetailVO = vmInstanceDetailsDao.findDetail(vmProfile.getId(), "UEFI");
 
         if (vmInstanceDetailVO == null) {
             return;
