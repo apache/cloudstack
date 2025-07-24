@@ -262,10 +262,9 @@ export default {
 
 <style scoped lang="less">
 .form-layout {
-  width: 80vw;
-
+  width: 60vw;
   @media (min-width: 600px) {
-    width: 450px;
+    width: 550px;
   }
 
   .action-button {
