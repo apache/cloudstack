@@ -33,6 +33,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -48,9 +49,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.acl.RoleService;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ExtensionCustomActionResponse;
 import org.apache.cloudstack.api.response.ExtensionResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.extension.CustomActionResultResponse;
 import org.apache.cloudstack.extension.Extension;
 import org.apache.cloudstack.extension.ExtensionCustomAction;
@@ -113,6 +118,7 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.org.Cluster;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.SearchBuilder;
@@ -166,6 +172,8 @@ public class ExtensionsManagerImplTest {
     private AlertManager alertManager;
     @Mock
     private VMTemplateDao templateDao;
+    @Mock
+    private RoleService roleService;
 
     @Before
     public void setUp() {
@@ -685,7 +693,7 @@ public class ExtensionsManagerImplTest {
 
         when(managementServerHostDao.listBy(any())).thenReturn(Arrays.asList(msHost1, msHost2));
 
-        try (MockedStatic<ManagementServerNode> managementServerNodeMockedStatic = Mockito.mockStatic(ManagementServerNode.class)) {
+        try (MockedStatic<ManagementServerNode> managementServerNodeMockedStatic = mockStatic(ManagementServerNode.class)) {
             managementServerNodeMockedStatic.when(ManagementServerNode::getManagementServerId).thenReturn(101L);
             doReturn(new Pair<>(true, "ok")).when(extensionsManager).prepareExtensionPathOnCurrentServer(anyString(), anyBoolean(), anyString());
             doReturn(true).when(extensionsManager).prepareExtensionPathOnMSPeer(eq(ext), eq(msHost2));
@@ -720,7 +728,7 @@ public class ExtensionsManagerImplTest {
 
         when(managementServerHostDao.listBy(any())).thenReturn(Arrays.asList(msHost1, msHost2));
 
-        try (MockedStatic<ManagementServerNode> managementServerNodeMockedStatic = Mockito.mockStatic(ManagementServerNode.class)) {
+        try (MockedStatic<ManagementServerNode> managementServerNodeMockedStatic = mockStatic(ManagementServerNode.class)) {
             managementServerNodeMockedStatic.when(ManagementServerNode::getManagementServerId).thenReturn(101L);
             doReturn(new Pair<>(true, "ok")).when(extensionsManager).prepareExtensionPathOnCurrentServer(anyString(), anyBoolean(), anyString());
             doReturn(false).when(extensionsManager).prepareExtensionPathOnMSPeer(eq(ext), eq(msHost2));
@@ -748,7 +756,7 @@ public class ExtensionsManagerImplTest {
 
         when(managementServerHostDao.listBy(any())).thenReturn(Collections.singletonList(msHost));
 
-        try (MockedStatic<ManagementServerNode> managementServerNodeMockedStatic = Mockito.mockStatic(ManagementServerNode.class)) {
+        try (MockedStatic<ManagementServerNode> managementServerNodeMockedStatic = mockStatic(ManagementServerNode.class)) {
             managementServerNodeMockedStatic.when(ManagementServerNode::getManagementServerId).thenReturn(101L);
             doReturn(new Pair<>(true, "ok")).when(extensionsManager).prepareExtensionPathOnCurrentServer(anyString(), anyBoolean(), anyString());
 
@@ -1272,6 +1280,17 @@ public class ExtensionsManagerImplTest {
         verify(extensionCustomActionDao).remove(actionId);
     }
 
+    private void mockCallerRole(RoleType roleType) {
+        CallContext callContextMock = Mockito.mock(CallContext.class);
+        when(CallContext.current()).thenReturn(callContextMock);
+        Account accountMock = mock(Account.class);
+        when(accountMock.getRoleId()).thenReturn(1L);
+        Role role = mock(Role.class);
+        when(role.getRoleType()).thenReturn(roleType);
+        when(roleService.findRole(1L)).thenReturn(role);
+        when(callContextMock.getCallingAccount()).thenReturn(accountMock);
+    }
+
     @Test
     public void testListCustomActions_ReturnsResponses() {
         ListCustomActionCmd cmd = mock(ListCustomActionCmd.class);
@@ -1299,11 +1318,15 @@ public class ExtensionsManagerImplTest {
         doReturn(resp1).when(extensionsManager).createCustomActionResponse(eq(action1));
         doReturn(resp2).when(extensionsManager).createCustomActionResponse(eq(action2));
 
-        List<ExtensionCustomActionResponse> result = extensionsManager.listCustomActions(cmd);
 
-        assertEquals(2, result.size());
-        assertTrue(result.contains(resp1));
-        assertTrue(result.contains(resp2));
+        try (MockedStatic<CallContext> ignored = mockStatic(CallContext.class)) {
+            mockCallerRole(RoleType.Admin);
+            List<ExtensionCustomActionResponse> result = extensionsManager.listCustomActions(cmd);
+
+            assertEquals(2, result.size());
+            assertTrue(result.contains(resp1));
+            assertTrue(result.contains(resp2));
+        }
     }
 
     @Test
@@ -1479,6 +1502,8 @@ public class ExtensionsManagerImplTest {
         when(extensionCustomActionDao.findById(1L)).thenReturn(actionVO);
         when(actionVO.isEnabled()).thenReturn(true);
         when(actionVO.getResourceType()).thenReturn(ExtensionCustomAction.ResourceType.VirtualMachine);
+        when(actionVO.getAllowedRoleTypes()).thenReturn(
+                RoleType.toCombinedMask(List.of(RoleType.Admin, RoleType.DomainAdmin, RoleType.User)));
 
         ExtensionVO extensionVO = mock(ExtensionVO.class);
         when(extensionDao.findById(anyLong())).thenReturn(extensionVO);
@@ -1497,9 +1522,12 @@ public class ExtensionsManagerImplTest {
 
         when(agentMgr.send(anyLong(), any(Command.class))).thenReturn(answer);
 
-        CustomActionResultResponse result = extensionsManager.runCustomAction(cmd);
+        try (MockedStatic<CallContext> ignored = mockStatic(CallContext.class)) {
+            mockCallerRole(RoleType.User);
+            CustomActionResultResponse result = extensionsManager.runCustomAction(cmd);
 
-        assertTrue(result.getSuccess());
+            assertTrue(result.getSuccess());
+        }
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -1508,7 +1536,27 @@ public class ExtensionsManagerImplTest {
         when(cmd.getCustomActionId()).thenReturn(99L);
         when(extensionCustomActionDao.findById(99L)).thenReturn(null);
 
-        extensionsManager.runCustomAction(cmd);
+
+        try (MockedStatic<CallContext> ignored = mockStatic(CallContext.class)) {
+            mockCallerRole(RoleType.Admin);
+            extensionsManager.runCustomAction(cmd);
+        }
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void runCustomAction_ActionNotAllowedForRole_ThrowsException() {
+        RunCustomActionCmd cmd = mock(RunCustomActionCmd.class);
+        when(cmd.getCustomActionId()).thenReturn(2L);
+
+        ExtensionCustomActionVO actionVO = mock(ExtensionCustomActionVO.class);
+        when(extensionCustomActionDao.findById(2L)).thenReturn(actionVO);
+        when(actionVO.getAllowedRoleTypes()).thenReturn(
+                RoleType.toCombinedMask(List.of(RoleType.Admin, RoleType.DomainAdmin)));
+
+        try (MockedStatic<CallContext> ignored = mockStatic(CallContext.class)) {
+            mockCallerRole(RoleType.User);
+            extensionsManager.runCustomAction(cmd);
+        }
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -1520,7 +1568,10 @@ public class ExtensionsManagerImplTest {
         when(extensionCustomActionDao.findById(2L)).thenReturn(actionVO);
         when(actionVO.isEnabled()).thenReturn(false);
 
-        extensionsManager.runCustomAction(cmd);
+        try (MockedStatic<CallContext> ignored = mockStatic(CallContext.class)) {
+            mockCallerRole(RoleType.Admin);
+            extensionsManager.runCustomAction(cmd);
+        }
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -1537,7 +1588,11 @@ public class ExtensionsManagerImplTest {
         when(extensionVO.getState()).thenReturn(Extension.State.Enabled);
         when(extensionDao.findById(1L)).thenReturn(extensionVO);
 
-        extensionsManager.runCustomAction(cmd);
+
+        try (MockedStatic<CallContext> ignored = mockStatic(CallContext.class)) {
+            mockCallerRole(RoleType.Admin);
+            extensionsManager.runCustomAction(cmd);
+        }
     }
 
     @Test
@@ -1566,9 +1621,12 @@ public class ExtensionsManagerImplTest {
 
         when(agentMgr.send(anyLong(), any(Command.class))).thenThrow(OperationTimedoutException.class);
 
-        CustomActionResultResponse result = extensionsManager.runCustomAction(cmd);
+        try (MockedStatic<CallContext> ignored = mockStatic(CallContext.class)) {
+            mockCallerRole(RoleType.Admin);
+            CustomActionResultResponse result = extensionsManager.runCustomAction(cmd);
 
-        assertFalse(result.getSuccess());
+            assertFalse(result.getSuccess());
+        }
     }
 
     @Test
