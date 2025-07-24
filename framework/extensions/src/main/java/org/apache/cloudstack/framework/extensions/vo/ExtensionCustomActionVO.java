@@ -17,6 +17,8 @@
 package org.apache.cloudstack.framework.extensions.vo;
 
 import org.apache.cloudstack.extension.ExtensionCustomAction;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+
 import com.cloud.utils.db.GenericDao;
 
 import javax.persistence.Column;
@@ -203,6 +205,11 @@ public class ExtensionCustomActionVO implements ExtensionCustomAction {
 
     public void setRemoved(Date removed) {
         this.removed = removed;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Extension Custom Action %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "uuid", "name", "extensionId", "resourceType"));
     }
 
 }
