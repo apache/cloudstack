@@ -344,7 +344,7 @@ import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
-import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -358,7 +358,7 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
@@ -435,7 +435,7 @@ public class ApiDBUtils {
     static HighAvailabilityManager s_haMgr;
     static VpcManager s_vpcMgr;
     static TaggedResourceService s_taggedResourceService;
-    static UserVmDetailsDao s_userVmDetailsDao;
+    static VMInstanceDetailsDao s_vmInstanceDetailsDao;
     static SSHKeyPairDao s_sshKeyPairDao;
 
     static ConditionDao s_asConditionDao;
@@ -640,7 +640,7 @@ public class ApiDBUtils {
     @Inject
     private TaggedResourceService taggedResourceService;
     @Inject
-    private UserVmDetailsDao userVmDetailsDao;
+    private VMInstanceDetailsDao vmInstanceDetailsDao;
     @Inject
     private SSHKeyPairDao sshKeyPairDao;
 
@@ -840,7 +840,7 @@ public class ApiDBUtils {
         s_vpcMgr = vpcMgr;
         s_taggedResourceService = taggedResourceService;
         s_sshKeyPairDao = sshKeyPairDao;
-        s_userVmDetailsDao = userVmDetailsDao;
+        s_vmInstanceDetailsDao = vmInstanceDetailsDao;
         s_asConditionDao = asConditionDao;
         s_asPolicyDao = asPolicyDao;
         s_asPolicyConditionMapDao = asPolicyConditionMapDao;
@@ -1622,8 +1622,8 @@ public class ApiDBUtils {
         return null;
     }
 
-    public static UserVmDetailVO  findPublicKeyByVmId(long vmId) {
-        return s_userVmDetailsDao.findDetail(vmId, VmDetailConstants.SSH_PUBLIC_KEY);
+    public static VMInstanceDetailVO findPublicKeyByVmId(long vmId) {
+        return s_vmInstanceDetailsDao.findDetail(vmId, VmDetailConstants.SSH_PUBLIC_KEY);
     }
 
     public static void getAutoScaleVmGroupPolicies(long vmGroupId, List<AutoScalePolicy> scaleUpPolicies, List<AutoScalePolicy> scaleDownPolicies) {

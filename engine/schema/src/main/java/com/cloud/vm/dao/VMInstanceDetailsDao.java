@@ -14,14 +14,12 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.quota.dao;
+package com.cloud.vm.dao;
 
-import java.util.Map;
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 
 import com.cloud.utils.db.GenericDao;
+import com.cloud.vm.VMInstanceDetailVO;
 
-import org.apache.cloudstack.quota.vo.UserVmDetailVO;
-
-public interface UserVmDetailsDao extends GenericDao<UserVmDetailVO, Long> {
-    Map<String, String> listDetailsKeyPairs(long resourceId);
+public interface VMInstanceDetailsDao extends GenericDao<VMInstanceDetailVO, Long>, ResourceDetailsDao<VMInstanceDetailVO> {
 }

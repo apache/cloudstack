@@ -56,9 +56,9 @@ import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
-import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -97,7 +97,7 @@ public class FirstFitAllocator extends BaseAllocator {
     @Inject
     CapacityDao _capacityDao;
     @Inject
-    UserVmDetailsDao _userVmDetailsDao;
+    VMInstanceDetailsDao vmInstanceDetailsDao;
 
     boolean _checkHvm = true;
 
@@ -185,13 +185,13 @@ public class FirstFitAllocator extends BaseAllocator {
     }
 
     protected void filterHostsWithUefiEnabled(Type type, VirtualMachineProfile vmProfile, Long clusterId, Long podId, long dcId, List<HostVO> clusterHosts) {
-        UserVmDetailVO userVmDetailVO = _userVmDetailsDao.findDetail(vmProfile.getId(), "UEFI");
+        VMInstanceDetailVO vmInstanceDetailVO = vmInstanceDetailsDao.findDetail(vmProfile.getId(), "UEFI");
 
-        if (userVmDetailVO == null) {
+        if (vmInstanceDetailVO == null) {
             return;
         }
 
-        if (!StringUtils.equalsAnyIgnoreCase(userVmDetailVO.getValue(), ApiConstants.BootMode.SECURE.toString(), ApiConstants.BootMode.LEGACY.toString())) {
+        if (!StringUtils.equalsAnyIgnoreCase(vmInstanceDetailVO.getValue(), ApiConstants.BootMode.SECURE.toString(), ApiConstants.BootMode.LEGACY.toString())) {
             return;
         }
 
@@ -235,12 +235,12 @@ public class FirstFitAllocator extends BaseAllocator {
             }
 
             if (avoid.shouldAvoid(host)) {
-                logger.debug("Host [{}] is in avoid set, skipping this and trying other available hosts", () -> host);
+                logger.debug("Host [{}] is in avoid set, skipping this and trying other available hosts", host);
                 continue;
             }
 
             if (capacityManager.checkIfHostReachMaxGuestLimit(host)) {
-                logger.debug("Adding host [{}] to the avoid set because this host already has the max number of running (user and/or system) VMs.", () ->  host);
+                logger.debug("Adding host [{}] to the avoid set because this host already has the max number of running (user and/or system) VMs.", host);
                 avoid.addHost(host.getId());
                 continue;
             }
