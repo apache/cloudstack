@@ -76,8 +76,6 @@ import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManagerImpl;
 import com.cloud.network.dao.IPAddressVO;
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.GuestOsCategory;
@@ -99,10 +97,10 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ManagementServerImplTest {
@@ -147,13 +145,7 @@ public class ManagementServerImplTest {
     UserDataManager userDataManager;
 
     @Mock
-    VpcDao vpcDao;
-
-    @Mock
-    NetworkDao networkDao;
-
-    @Mock
-    UserVmDetailsDao userVmDetailsDao;
+    VMInstanceDetailsDao vmInstanceDetailsDao;
 
     @Mock
     HostDetailsDao hostDetailsDao;
@@ -183,19 +175,6 @@ public class ManagementServerImplTest {
     public void setup() throws IllegalAccessException, NoSuchFieldException {
         closeable = MockitoAnnotations.openMocks(this);
         CallContext.register(Mockito.mock(User.class), Mockito.mock(Account.class));
-        spy._accountMgr = _accountMgr;
-        spy.userDataDao = _userDataDao;
-        spy.templateDao = templateDao;
-        spy._userVmDao = _userVmDao;
-        spy.annotationDao = annotationDao;
-        spy._UserVmDetailsDao = userVmDetailsDao;
-        spy._detailsDao = hostDetailsDao;
-        spy.userDataManager = userDataManager;
-        spy._vpcDao = vpcDao;
-        spy.networkDao = networkDao;
-        spy._configDao = configDao;
-        spy._configDepot = configDepot;
-        spy._domainDao = domainDao;
     }
 
     @After
@@ -606,10 +585,10 @@ public class ManagementServerImplTest {
         UserVmVO vm = Mockito.mock(UserVmVO.class);
         Mockito.when(vm.getId()).thenReturn(1L);
         if (uefiValue == null) {
-            Mockito.when(userVmDetailsDao.findDetail(vm.getId(), ApiConstants.BootType.UEFI.toString())).thenReturn(null);
+            Mockito.when(vmInstanceDetailsDao.findDetail(vm.getId(), ApiConstants.BootType.UEFI.toString())).thenReturn(null);
         } else {
-            UserVmDetailVO detail = new UserVmDetailVO(vm.getId(), ApiConstants.BootType.UEFI.toString(), uefiValue, true);
-            Mockito.when(userVmDetailsDao.findDetail(vm.getId(), ApiConstants.BootType.UEFI.toString())).thenReturn(detail);
+            VMInstanceDetailVO detail = new VMInstanceDetailVO(vm.getId(), ApiConstants.BootType.UEFI.toString(), uefiValue, true);
+            Mockito.when(vmInstanceDetailsDao.findDetail(vm.getId(), ApiConstants.BootType.UEFI.toString())).thenReturn(detail);
             Mockito.when(hostDetailsDao.findByName(Host.HOST_UEFI_ENABLE)).thenReturn(new ArrayList<>(List.of(new DetailVO(1l, Host.HOST_UEFI_ENABLE, "true"), new DetailVO(2l, Host.HOST_UEFI_ENABLE, "false"))));
         }
         return vm;
