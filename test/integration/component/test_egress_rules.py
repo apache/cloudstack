@@ -375,19 +375,19 @@ class TestAuthorizeIngressRule(cloudstackTestCase):
                                               )
         self.debug("Created security group with ID: %s" % security_group.id)
         # Default Security group should not have any ingress rule
-        sercurity_groups = SecurityGroup.list(
+        security_groups = SecurityGroup.list(
                                               self.apiclient,
                                               account=self.account.name,
                                               domainid=self.account.domainid
                                               )
         self.assertEqual(
-                         isinstance(sercurity_groups, list),
+                         isinstance(security_groups, list),
                          True,
                          "Check for list security groups response"
                          )
 
         self.assertEqual(
-                            len(sercurity_groups),
+                            len(security_groups),
                             2,
                             "Check List Security groups response"
                             )
@@ -533,19 +533,19 @@ class TestDefaultGroupEgress(cloudstackTestCase):
         self.debug("Created security group with ID: %s" % security_group.id)
 
         # Default Security group should not have any ingress rule
-        sercurity_groups = SecurityGroup.list(
+        security_groups = SecurityGroup.list(
                                               self.apiclient,
                                               account=self.account.name,
                                               domainid=self.account.domainid
                                               )
         self.assertEqual(
-                         isinstance(sercurity_groups, list),
+                         isinstance(security_groups, list),
                          True,
                          "Check for list security groups response"
                          )
 
         self.assertEqual(
-                            len(sercurity_groups),
+                            len(security_groups),
                             2,
                             "Check List Security groups response"
                             )
@@ -730,19 +730,19 @@ class TestDefaultGroupEgressAfterDeploy(cloudstackTestCase):
         self.debug("Created security group with ID: %s" % security_group.id)
 
         # Default Security group should not have any ingress rule
-        sercurity_groups = SecurityGroup.list(
+        security_groups = SecurityGroup.list(
                                               self.apiclient,
                                               account=self.account.name,
                                               domainid=self.account.domainid
                                               )
         self.assertEqual(
-                         isinstance(sercurity_groups, list),
+                         isinstance(security_groups, list),
                          True,
                          "Check for list security groups response"
                          )
 
         self.assertEqual(
-                            len(sercurity_groups),
+                            len(security_groups),
                             2,
                             "Check List Security groups response"
                             )
@@ -910,19 +910,19 @@ class TestRevokeEgressRule(cloudstackTestCase):
         self.debug("Created security group with ID: %s" % security_group.id)
 
         # Default Security group should not have any ingress rule
-        sercurity_groups = SecurityGroup.list(
+        security_groups = SecurityGroup.list(
                                         self.apiclient,
                                         account=self.account.name,
                                         domainid=self.account.domainid
                                         )
         self.assertEqual(
-                         isinstance(sercurity_groups, list),
+                         isinstance(security_groups, list),
                          True,
                          "Check for list security groups response"
                          )
 
         self.assertEqual(
-                            len(sercurity_groups),
+                            len(security_groups),
                             2,
                             "Check List Security groups response"
                             )
@@ -1188,19 +1188,19 @@ class TestInvalidAccountAuthroize(cloudstackTestCase):
         self.debug("Created security group with ID: %s" % security_group.id)
 
         # Default Security group should not have any ingress rule
-        sercurity_groups = SecurityGroup.list(
+        security_groups = SecurityGroup.list(
                                         self.apiclient,
                                         account=self.account.name,
                                         domainid=self.account.domainid
                                         )
         self.assertEqual(
-                         isinstance(sercurity_groups, list),
+                         isinstance(security_groups, list),
                          True,
                          "Check for list security groups response"
                          )
 
         self.assertEqual(
-                            len(sercurity_groups),
+                            len(security_groups),
                             2,
                             "Check List Security groups response"
                             )
@@ -1320,19 +1320,19 @@ class TestMultipleAccountsEgressRuleNeg(cloudstackTestCase):
         self.debug("Created security group with ID: %s" % security_group.id)
 
         # Default Security group should not have any ingress rule
-        sercurity_groups = SecurityGroup.list(
+        security_groups = SecurityGroup.list(
                                         self.apiclient,
                                         account=self.accountA.name,
                                         domainid=self.accountA.domainid
                                         )
         self.assertEqual(
-                         isinstance(sercurity_groups, list),
+                         isinstance(security_groups, list),
                          True,
                          "Check for list security groups response"
                          )
 
         self.assertEqual(
-                            len(sercurity_groups),
+                            len(security_groups),
                             2,
                             "Check List Security groups response"
                             )
@@ -1568,19 +1568,19 @@ class TestMultipleAccountsEgressRule(cloudstackTestCase):
         self.debug("Created security group with ID: %s" % security_groupA.id)
 
         # Default Security group should not have any ingress rule
-        sercurity_groups = SecurityGroup.list(
+        security_groups = SecurityGroup.list(
                                         self.apiclient,
                                         account=self.accountA.name,
                                         domainid=self.accountA.domainid
                                         )
         self.assertEqual(
-                         isinstance(sercurity_groups, list),
+                         isinstance(security_groups, list),
                          True,
                          "Check for list security groups response"
                          )
 
         self.assertEqual(
-                            len(sercurity_groups),
+                            len(security_groups),
                             2,
                             "Check List Security groups response"
                             )
@@ -1594,19 +1594,19 @@ class TestMultipleAccountsEgressRule(cloudstackTestCase):
         self.debug("Created security group with ID: %s" % security_groupB.id)
 
         # Default Security group should not have any ingress rule
-        sercurity_groups = SecurityGroup.list(
+        security_groups = SecurityGroup.list(
                                     self.apiclient,
                                     account=self.accountB.name,
                                     domainid=self.accountB.domainid
                                     )
         self.assertEqual(
-                         isinstance(sercurity_groups, list),
+                         isinstance(security_groups, list),
                          True,
                          "Check for list security groups response"
                          )
 
         self.assertEqual(
-                            len(sercurity_groups),
+                            len(security_groups),
                             2,
                             "Check List Security groups response"
                             )
@@ -1847,19 +1847,19 @@ class TestStartStopVMWithEgressRule(cloudstackTestCase):
         self.debug("Created security group with ID: %s" % security_group.id)
 
         # Default Security group should not have any ingress rule
-        sercurity_groups = SecurityGroup.list(
+        security_groups = SecurityGroup.list(
                                         self.apiclient,
                                         account=self.account.name,
                                         domainid=self.account.domainid
                                         )
         self.assertEqual(
-                         isinstance(sercurity_groups, list),
+                         isinstance(security_groups, list),
                          True,
                          "Check for list security groups response"
                          )
 
         self.assertEqual(
-                            len(sercurity_groups),
+                            len(security_groups),
                             2,
                             "Check List Security groups response"
                             )
@@ -2037,19 +2037,19 @@ class TestInvalidParametersForEgress(cloudstackTestCase):
         self.debug("Created security group with ID: %s" % security_group.id)
 
         # Default Security group should not have any ingress rule
-        sercurity_groups = SecurityGroup.list(
+        security_groups = SecurityGroup.list(
                                         self.apiclient,
                                         account=self.account.name,
                                         domainid=self.account.domainid
                                         )
         self.assertEqual(
-                         isinstance(sercurity_groups, list),
+                         isinstance(security_groups, list),
                          True,
                          "Check for list security groups response"
                          )
 
         self.assertEqual(
-                            len(sercurity_groups),
+                            len(security_groups),
                             2,
                             "Check List Security groups response"
                             )

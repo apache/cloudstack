@@ -95,7 +95,7 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicDetailsDao;
 import com.cloud.vm.dao.NicExtraDhcpOptionDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
@@ -127,7 +127,7 @@ public class ResourceCleanupServiceImpl extends ManagerBase implements ResourceC
     @Inject
     InlineLoadBalancerNicMapDao inlineLoadBalancerNicMapDao;
     @Inject
-    UserVmDetailsDao userVmDetailsDao;
+    VMInstanceDetailsDao vmInstanceDetailsDao;
     @Inject
     VMSnapshotDao vmSnapshotDao;
     @Inject
@@ -273,7 +273,7 @@ public class ResourceCleanupServiceImpl extends ManagerBase implements ResourceC
         }
         purgeVMVolumes(vmIds, batchSize);
         purgeVMNics(vmIds, batchSize);
-        userVmDetailsDao.batchExpungeForResources(vmIds, batchSize);
+        vmInstanceDetailsDao.batchExpungeForResources(vmIds, batchSize);
         purgeVMSnapshots(vmIds, batchSize);
         autoScaleVmGroupVmMapDao.expungeByVmList(vmIds, batchSize);
         commandExecLogDao.expungeByVmList(vmIds, batchSize);

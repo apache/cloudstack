@@ -24,7 +24,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.framework.security.keys.KeysManager;
 import org.junit.Assert;
@@ -51,7 +51,7 @@ public class ConsoleAccessManagerImplTest {
     @Mock
     private EntityManager entityManager;
     @Mock
-    private UserVmDetailsDao userVmDetailsDao;
+    private VMInstanceDetailsDao vmInstanceDetailsDao;
     @Mock
     private KeysManager keysManager;
     @Mock
