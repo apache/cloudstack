@@ -157,7 +157,7 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 /**
@@ -223,7 +223,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     @Inject
     protected CapacityDao _capacityDao;
     @Inject
-    UserVmDetailsDao _vmDetailsDao;
+    VMInstanceDetailsDao _vmDetailsDao;
     @Inject
     protected ResourceManager _resourceMgr;
     @Inject
