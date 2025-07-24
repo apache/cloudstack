@@ -125,7 +125,7 @@ public class CapabilitiesResponse extends BaseResponse {
     private Integer instancesDisksStatsRetentionTime;
 
     @SerializedName(ApiConstants.DYNAMIC_SCALING_ENABLED)
-    @Param(description = "true if dynamically scaling for instances is enabled", since = "4.19.4")
+    @Param(description = "true if dynamically scaling for instances is enabled", since = "4.21.0")
     private Boolean dynamicScalingEnabled;
 
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
