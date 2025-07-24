@@ -48,6 +48,8 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ExtensionCustomActionParameterResponse;
@@ -124,6 +126,7 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.org.Cluster;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
@@ -201,6 +204,9 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
 
     @Inject
     VMTemplateDao templateDao;
+
+    @Inject
+    RoleService roleService;
 
     private ScheduledExecutorService extensionPathStateCheckExecutor;
 
@@ -1037,6 +1043,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         final Boolean enabled = cmd.isEnabled();
         final SearchBuilder<ExtensionCustomActionVO> sb = extensionCustomActionDao.createSearchBuilder();
         final Filter searchFilter = new Filter(ExtensionCustomActionVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+        final Account caller = CallContext.current().getCallingAccount();
 
         ExtensionCustomAction.ResourceType resourceType = null;
         if (StringUtils.isNotBlank(resourceTypeStr)) {
@@ -1055,8 +1062,10 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             extensionId = extension.getId();
         }
 
+        final Role role = roleService.findRole(caller.getRoleId());
+
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("extensionid", sb.entity().getExtensionId(), SearchCriteria.Op.EQ);
+        sb.and("extensionId", sb.entity().getExtensionId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("keyword", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("enabled", sb.entity().isEnabled(), SearchCriteria.Op.EQ);
@@ -1065,13 +1074,16 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             sb.or("resourceType", sb.entity().getResourceType(), SearchCriteria.Op.EQ);
             sb.cp();
         }
+        if (!RoleType.Admin.equals(role.getRoleType())) {
+            sb.and("roleType", sb.entity().getAllowedRoleTypes(), SearchCriteria.Op.BINARY_OR);
+        }
         sb.done();
         final SearchCriteria<ExtensionCustomActionVO> sc = sb.create();
         if (id != null) {
             sc.setParameters("id", id);
         }
         if (extensionId != null) {
-            sc.setParameters("extensionid", extensionId);
+            sc.setParameters("extensionId", extensionId);
         }
         if (StringUtils.isNotBlank(name)) {
             sc.setParameters("name", name);
@@ -1084,6 +1096,9 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         }
         if (resourceType != null) {
             sc.setParameters("resourceType",  resourceType);
+        }
+        if (!RoleType.Admin.equals(role.getRoleType())) {
+            sc.setParameters("roleType", role.getRoleType().getMask());
         }
         final Pair<List<ExtensionCustomActionVO>, Integer> result = extensionCustomActionDao.searchAndCount(sc, searchFilter);
         List<ExtensionCustomActionResponse> responses = new ArrayList<>();
@@ -1235,12 +1250,22 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         final String resourceTypeStr = cmd.getResourceType();
         final String resourceUuid = cmd.getResourceId();
         Map<String, String> cmdParameters = cmd.getParameters();
+        final Account caller = CallContext.current().getCallingAccount();
 
         String error = "Internal error running action";
         ExtensionCustomActionVO customActionVO = extensionCustomActionDao.findById(id);
         if (customActionVO == null) {
             logger.error("Invalid custom action specified with ID: {}", id);
             throw new InvalidParameterValueException(error);
+        }
+        final Role role = roleService.findRole(caller.getRoleId());
+        if (!RoleType.Admin.equals(role.getRoleType())) {
+            final Set<RoleType> allowedRoles = RoleType.fromCombinedMask(customActionVO.getAllowedRoleTypes());
+            if (!allowedRoles.contains(role.getRoleType())) {
+                logger.error("Caller does not have permission to run {} with {} having role: {}",
+                        customActionVO, caller, role.getRoleType().name());
+                throw new InvalidParameterValueException(error);
+            }
         }
         if (!customActionVO.isEnabled()) {
             logger.error("Failed to run {} as it is not enabled", customActionVO);
