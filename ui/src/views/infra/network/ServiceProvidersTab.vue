@@ -1118,7 +1118,7 @@ export default {
           ],
           lists: [
             {
-              title: 'label.nsx.controller',
+              title: 'label.nsx.provider',
               api: 'listNsxControllers',
               mapping: {
                 zoneid: {
