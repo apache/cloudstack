@@ -214,8 +214,8 @@
             </a-form-item>
           </a-col>
         </a-row>
-        <a-row :gutter="12" v-if="(hyperKVMShow || hyperCustomShow) && currentForm === 'Create'">
-          <a-col :md="24" :lg="12">
+        <a-row :gutter="12">
+          <a-col :md="24" :lg="12" v-if="(hyperKVMShow || hyperCustomShow) && currentForm === 'Create'">
             <a-form-item ref="directdownload" name="directdownload">
               <template #label>
                 <tooltip-label :title="$t('label.directdownload')" :tooltip="apiParams.directdownload.description"/>
@@ -223,7 +223,7 @@
               <a-switch v-model:checked="form.directdownload" @change="handleChangeDirect" />
             </a-form-item>
           </a-col>
-          <a-col :md="24" :lg="12" v-if="allowDirectDownload">
+          <a-col :md="24" :lg="12">
             <a-form-item ref="checksum" name="checksum">
               <template #label>
                 <tooltip-label :title="$t('label.checksum')" :tooltip="apiParams.checksum.description"/>
@@ -452,6 +452,11 @@
                       {{ $t('label.ispublic') }}
                     </a-checkbox>
                   </a-col>
+                  <a-col :span="12">
+                    <a-checkbox value="forCks" v-if="currentForm === 'Create'">
+                      {{ $t('label.forcks') }}
+                    </a-checkbox>
+                  </a-col>
                 </a-row>
               </a-checkbox-group>
             </a-form-item>
@@ -468,7 +473,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import store from '@/store'
 import { axios } from '../../utils/request'
 import { mixinForm } from '@/utils/mixin'
@@ -582,8 +587,8 @@ export default {
       this.fetchCustomHypervisorName()
       this.fetchZone()
       this.fetchOsTypes()
-      this.fetchTemplateTypes()
-      this.fetchArchitectureTypes()
+      this.templateTypes.opts = this.$fetchTemplateTypes()
+      this.architectureTypes.opts = this.$fetchCpuArchitectureTypes()
       this.fetchUserData()
       this.fetchUserdataPolicy()
       if ('listDomains' in this.$store.getters.apis) {
@@ -650,7 +655,7 @@ export default {
         name: 'hypervisor.custom.display.name'
       }
       this.loading = true
-      api('listConfigurations', params).then(json => {
+      getAPI('listConfigurations', params).then(json => {
         if (json.listconfigurationsresponse.configuration !== null) {
           const config = json.listconfigurationsresponse.configuration[0]
           if (config && config.name === params.name) {
@@ -679,7 +684,7 @@ export default {
       this.zones.loading = true
       this.zones.opts = []
 
-      api('listZones', params).then(json => {
+      getAPI('listZones', params).then(json => {
         const listZonesResponse = json.listzonesresponse.zone
         listZones = listZones.concat(listZonesResponse)
         this.zones.opts = listZones
@@ -698,7 +703,7 @@ export default {
       this.hyperVisor.loading = true
       let listhyperVisors = this.hyperVisor.opts || []
 
-      api('listHypervisors', params).then(json => {
+      getAPI('listHypervisors', params).then(json => {
         const listResponse = json.listhypervisorsresponse.hypervisor || []
         if (listResponse) {
           listhyperVisors = listhyperVisors.concat(listResponse)
@@ -717,7 +722,7 @@ export default {
       this.osTypes.opts = []
       this.osTypes.loading = true
 
-      api('listOsTypes').then(json => {
+      getAPI('listOsTypes').then(json => {
         const listOsTypes = json.listostypesresponse.ostype
         this.osTypes.opts = listOsTypes
         this.defaultOsType = this.osTypes.opts[1].description
@@ -726,46 +731,6 @@ export default {
         this.osTypes.loading = false
       })
     },
-    fetchTemplateTypes () {
-      this.templateTypes.opts = []
-      const templatetypes = []
-      templatetypes.push({
-        id: 'USER',
-        description: 'USER'
-      })
-      templatetypes.push({
-        id: 'VNF',
-        description: 'VNF'
-      })
-      if (this.isAdminRole) {
-        templatetypes.push({
-          id: 'SYSTEM',
-          description: 'SYSTEM'
-        })
-        templatetypes.push({
-          id: 'BUILTIN',
-          description: 'BUILTIN'
-        })
-        templatetypes.push({
-          id: 'ROUTING',
-          description: 'ROUTING'
-        })
-      }
-      this.templateTypes.opts = templatetypes
-    },
-    fetchArchitectureTypes () {
-      this.architectureTypes.opts = []
-      const typesList = []
-      typesList.push({
-        id: 'x86_64',
-        description: 'AMD 64 bits (x86_64)'
-      })
-      typesList.push({
-        id: 'aarch64',
-        description: 'ARM 64 bits (aarch64)'
-      })
-      this.architectureTypes.opts = typesList
-    },
     fetchUserData () {
       const params = {}
       params.listAll = true
@@ -773,7 +738,7 @@ export default {
       this.userdata.opts = []
       this.userdata.loading = true
 
-      api('listUserData', params).then(json => {
+      getAPI('listUserData', params).then(json => {
         const listUserdata = json.listuserdataresponse.userdata
         this.userdata.opts = listUserdata
       }).finally(() => {
@@ -786,7 +751,7 @@ export default {
 
       this.form.xenserverToolsVersion61plus = true
 
-      api('listConfigurations', params).then(json => {
+      getAPI('listConfigurations', params).then(json => {
         if (json.listconfigurationsresponse.configuration !== null && json.listconfigurationsresponse.configuration[0].value !== 'xenserver61') {
           this.form.xenserverToolsVersion61plus = false
         }
@@ -1114,7 +1079,7 @@ export default {
         }
         if (this.currentForm === 'Create') {
           this.loading = true
-          api('registerTemplate', params).then(json => {
+          postAPI('registerTemplate', params).then(json => {
             if (this.userdataid !== null) {
               this.linkUserdataToTemplate(this.userdataid, json.registertemplateresponse.template[0].id, this.userdatapolicy)
             }
@@ -1138,7 +1103,7 @@ export default {
               duration: 0
             })
           }
-          api('getUploadParamsForTemplate', params).then(json => {
+          getAPI('getUploadParamsForTemplate', params).then(json => {
             this.uploadParams = (json.postuploadtemplateresponse && json.postuploadtemplateresponse.getuploadparams) ? json.postuploadtemplateresponse.getuploadparams : ''
             this.handleUpload()
             if (this.userdataid !== null) {
@@ -1180,7 +1145,7 @@ export default {
       if (userdatapolicy) {
         params.userdatapolicy = userdatapolicy
       }
-      api('linkUserDataToTemplate', params).then(json => {
+      postAPI('linkUserDataToTemplate', params).then(json => {
         this.closeAction()
       }).catch(error => {
         this.$notifyError(error)
@@ -1199,7 +1164,7 @@ export default {
       params.showicon = true
       params.details = 'min'
       this.domainLoading = true
-      api('listDomains', params).then(json => {
+      getAPI('listDomains', params).then(json => {
         this.domains = json.listdomainsresponse.domain
       }).finally(() => {
         this.domainLoading = false
@@ -1215,7 +1180,7 @@ export default {
       }
     },
     fetchAccounts () {
-      api('listAccounts', {
+      getAPI('listAccounts', {
         domainid: this.domainid
       }).then(response => {
         this.accounts = response.listaccountsresponse.account || []

@@ -323,7 +323,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -425,7 +425,7 @@ export default {
   methods: {
     fetchInitData () {
       this.loading = true
-      api('listAutoScaleVmGroups', {
+      getAPI('listAutoScaleVmGroups', {
         listAll: true,
         id: this.resource.id
       }).then(response => {
@@ -437,12 +437,12 @@ export default {
           this.policy = this.policies?.[0]
           this.selectedPolicyId = this.policy.id
         }
-        api('listLoadBalancerRules', {
+        getAPI('listLoadBalancerRules', {
           listAll: true,
           id: lbruleid
         }).then(response => {
           const networkid = response.listloadbalancerrulesresponse?.loadbalancerrule?.[0]?.networkid
-          api('listNetworks', {
+          getAPI('listNetworks', {
             listAll: true,
             projectid: this.resource.projectid,
             id: networkid
@@ -450,7 +450,7 @@ export default {
             const services = response.listnetworksresponse?.network?.[0]?.service
             const index = services.map(svc => { return svc.name }).indexOf('Lb')
             const provider = services[index].provider[0].name
-            api('listCounters', {
+            getAPI('listCounters', {
               listAll: true,
               provider: provider
             }).then(response => {
@@ -464,7 +464,7 @@ export default {
     },
     fetchData () {
       this.loading = true
-      api('listAutoScalePolicies', {
+      getAPI('listAutoScalePolicies', {
         listAll: true,
         id: this.selectedPolicyId
       }).then(response => {
@@ -507,7 +507,7 @@ export default {
     async pollJob (jobId) {
       return new Promise(resolve => {
         const asyncJobInterval = setInterval(() => {
-          api('queryAsyncJobResult', { jobId }).then(async json => {
+          getAPI('queryAsyncJobResult', { jobId }).then(async json => {
             const result = json.queryasyncjobresultresponse
             if (result.jobstatus === 0) {
               return
@@ -522,7 +522,7 @@ export default {
     addCondition (params) {
       this.loading = true
       return new Promise((resolve, reject) => {
-        api('createCondition', params).then(async json => {
+        postAPI('createCondition', params).then(async json => {
           this.$pollJob({
             jobId: json.conditionresponse.jobid,
             successMethod: (result) => {
@@ -543,7 +543,7 @@ export default {
     deleteCondition (conditionId) {
       this.loading = true
       return new Promise((resolve, reject) => {
-        api('deleteCondition', { id: conditionId }).then(response => {
+        postAPI('deleteCondition', { id: conditionId }).then(response => {
           const jobId = response.deleteconditionresponse.jobid
           this.$pollJob({
             title: this.$t('label.action.delete.condition'),
@@ -587,7 +587,7 @@ export default {
       }
 
       this.updateConditionModalLoading = true
-      api('updateCondition', {
+      postAPI('updateCondition', {
         id: this.selectedCondition.id,
         relationaloperator: this.updateConditionDetails.relationaloperator,
         threshold: this.updateConditionDetails.threshold
@@ -726,7 +726,7 @@ export default {
     createAutoScalePolicy (params) {
       this.loading = true
       return new Promise((resolve, reject) => {
-        api('createAutoScalePolicy', params).then(async json => {
+        postAPI('createAutoScalePolicy', params).then(async json => {
           this.$pollJob({
             jobId: json.autoscalepolicyresponse.jobid,
             successMethod: (result) => {
@@ -760,7 +760,7 @@ export default {
       }
 
       return new Promise((resolve, reject) => {
-        api('updateAutoScalePolicy', {
+        postAPI('updateAutoScalePolicy', {
           id: this.policy.id,
           name: this.policy.name,
           duration: this.policy.duration,
@@ -790,7 +790,7 @@ export default {
       this.loading = true
 
       return new Promise((resolve, reject) => {
-        api('updateAutoScaleVmGroup', params).then(response => {
+        postAPI('updateAutoScaleVmGroup', params).then(response => {
           this.$pollJob({
             jobId: response.updateautoscalevmgroupresponse.jobid,
             successMethod: (result) => {

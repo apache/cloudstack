@@ -44,7 +44,9 @@
     <template #renderItem="{item}">
       <a-list-item v-if="(item in dataResource && !customDisplayItems.includes(item)) || (offeringDetails.includes(item) && dataResource.serviceofferingdetails)">
         <div style="width: 100%">
-          <strong>{{ item === 'service' ? $t('label.supportedservices') : $t(getDetailTitle(item)) }}</strong>
+          <strong>{{ item === 'service' ? $t('label.supportedservices') :
+           $route.meta.name === 'cniconfiguration' && item === 'userdata' ? $t('label.' + String($route.meta.name).toLowerCase()) :
+           $t(getDetailTitle(item)) }}</strong>
           <br/>
           <div v-if="Array.isArray(dataResource[item]) && item === 'service'">
             <div v-for="(service, idx) in dataResource[item]" :key="idx">
@@ -96,6 +98,9 @@
           <div v-else-if="$route.meta.name === 'userdata' && item === 'userdata'">
             <div style="white-space: pre-wrap;"> {{ decodeUserData(dataResource.userdata)}} </div>
           </div>
+          <div v-else-if="$route.meta.name === 'cniconfiguration' && item === 'userdata'">
+            <div style="white-space: pre-wrap;"> {{ dataResource.userdata}} </div>
+          </div>
           <div v-else-if="$route.meta.name === 'guestnetwork' && item === 'egressdefaultpolicy'">
             {{ dataResource[item]? $t('message.egress.rules.allow') : $t('message.egress.rules.deny') }}
           </div>
@@ -127,6 +132,9 @@
           <div v-else-if="item === 'usersource'">
             {{ $t(getUserSourceLabel(dataResource[item])) }}
           </div>
+          <div v-else-if="$route.meta.name === 'kubernetes' && item === 'cniconfigname'">
+              <router-link :to="{ path: '/cniconfiguration/' + dataResource.cniconfigurationid }">{{ dataResource.cniconfigname }}</router-link>
+          </div>
           <div v-else>{{ dataResource[item] }}</div>
         </div>
       </a-list-item>
@@ -145,6 +153,13 @@
         </div>
       </a-list-item>
       <a-list-item v-else-if="['startdate', 'enddate'].includes(item)">
+        <div>
+          <strong>{{ $t('label.' + item.replace('date', '.date.and.time'))}}</strong>
+          <br/>
+          <div>{{ $toLocaleDate(dataResource[item]) }}</div>
+        </div>
+      </a-list-item>
+      <a-list-item v-else-if="item === 'leaseexpirydate' && dataResource[item]">
         <div>
           <strong>{{ $t('label.' + item.replace('date', '.date.and.time'))}}</strong>
           <br/>
@@ -218,6 +233,9 @@ export default {
       if (this.$route.meta.name === 'webhookdeliveries') {
         items.push('startdate')
         items.push('enddate')
+      }
+      if (this.$route.meta.name === 'vm') {
+        items.push('leaseexpirydate')
       }
       return items
     },

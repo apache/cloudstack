@@ -50,13 +50,14 @@
     <bean id="ipv6ServiceImpl" class="com.cloud.network.Ipv6ServiceImpl" />
     <bean id="managementServiceConfigurationImpl" class="com.cloud.configuration.ManagementServiceConfigurationImpl" />
     <bean class="org.apache.cloudstack.networkoffering.ChildTestConfiguration" />
-    <bean id="UservmDetailsDaoImpl" class="com.cloud.vm.dao.UserVmDetailsDaoImpl" />
+    <bean id="UservmDetailsDaoImpl" class="com.cloud.vm.dao.VMInstanceDetailsDaoImpl" />
     <bean id="hostGpuGroupsDaoImpl" class="com.cloud.gpu.dao.HostGpuGroupsDaoImpl" />
     <bean id="vGPUTypesDaoImpl" class="com.cloud.gpu.dao.VGPUTypesDaoImpl" />
     <bean id="usageEventDaoImpl" class="com.cloud.event.dao.UsageEventDaoImpl" />
     <bean id="usageEventDetailsDaoImpl" class="com.cloud.event.dao.UsageEventDetailsDaoImpl" />
     <bean id="storagePoolHostDaoImpl" class="com.cloud.storage.dao.StoragePoolHostDaoImpl" />
     <bean id="storagePoolTagsDaoImpl" class="com.cloud.storage.dao.StoragePoolTagsDaoImpl" />
+    <bean id="storagePoolAndAccessGroupMapDaoImpl" class="com.cloud.storage.dao.StoragePoolAndAccessGroupMapDaoImpl" />
     <bean id="primaryDataStoreDaoImpl" class="org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl" />
     <bean id="userIpAddressDetailsDao" class="org.apache.cloudstack.resourcedetail.dao.UserIpAddressDetailsDaoImpl" />
     <bean id="loadBalancerVMMapDaoImpl" class="com.cloud.network.dao.LoadBalancerVMMapDaoImpl" />

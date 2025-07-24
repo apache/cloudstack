@@ -157,7 +157,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import DedicateDomain from '../../components/view/DedicateDomain'
 import ResourceIcon from '@/components/view/ResourceIcon'
 
@@ -213,13 +213,14 @@ export default {
     fetchData () {
       this.fetchZones()
       this.fetchHypervisors()
-      this.fetchArchitectureTypes()
+      this.architectureTypes.opts = this.$fetchCpuArchitectureTypes()
+      this.selectedArchitecture = this.architectureTypes?.opts?.[0]?.id || null
       this.params = this.$store.getters.apis.addCluster.params
       Object.keys(this.placeholder).forEach(item => { this.returnPlaceholder(item) })
     },
     fetchZones () {
       this.loading = true
-      api('listZones', { showicon: true }).then(response => {
+      getAPI('listZones', { showicon: true }).then(response => {
         this.zonesList = response.listzonesresponse.zone || []
         this.zoneId = this.zonesList[0].id || null
         this.fetchPods()
@@ -231,7 +232,7 @@ export default {
     },
     fetchHypervisors () {
       this.loading = true
-      api('listHypervisors').then(response => {
+      getAPI('listHypervisors').then(response => {
         this.hypervisorsList = response.listhypervisorsresponse.hypervisor || []
         this.hypervisor = this.hypervisorsList[0].name || null
       }).catch(error => {
@@ -240,23 +241,9 @@ export default {
         this.loading = false
       })
     },
-    fetchArchitectureTypes () {
-      this.architectureTypes.opts = []
-      const typesList = []
-      typesList.push({
-        id: 'x86_64',
-        description: 'AMD 64 bits (x86_64)'
-      })
-      typesList.push({
-        id: 'aarch64',
-        description: 'ARM 64 bits (aarch64)'
-      })
-      this.architectureTypes.opts = typesList
-      this.selectedArchitecture = this.architectureTypes.opts[0].id
-    },
     fetchPods () {
       this.loading = true
-      api('listPods', {
+      getAPI('listPods', {
         zoneid: this.zoneId
       }).then(response => {
         this.podsList = response.listpodsresponse.pod || []
@@ -270,7 +257,7 @@ export default {
     fetchVMwareCred () {
       this.loading = true
       this.clustertype = 'ExternalManaged'
-      api('listVmwareDcs', {
+      getAPI('listVmwareDcs', {
         zoneid: this.zoneId
       }).then(response => {
         var vmwaredcs = response.listvmwaredcsresponse.VMwareDC
@@ -355,7 +342,7 @@ export default {
       if (this.password) {
         data.password = this.password
       }
-      api('addCluster', {}, 'POST', data).then(response => {
+      postAPI('addCluster', data).then(response => {
         const cluster = response.addclusterresponse.cluster[0] || {}
         if (cluster.id && this.showDedicated) {
           this.dedicateCluster(cluster.id)
@@ -375,7 +362,7 @@ export default {
     },
     dedicateCluster (clusterId) {
       this.loading = true
-      api('dedicateCluster', {
+      postAPI('dedicateCluster', {
         clusterId,
         domainId: this.dedicatedDomainId,
         account: this.dedicatedAccount

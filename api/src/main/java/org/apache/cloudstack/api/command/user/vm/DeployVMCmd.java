@@ -16,17 +16,28 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import com.cloud.agent.api.LogLevel;
+import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InsufficientServerCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.Network;
+import com.cloud.network.Network.IpAddresses;
+import com.cloud.offering.DiskOffering;
+import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.uservm.UserVm;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.Dhcp;
+import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VmDetailConstants;
 
-import javax.annotation.Nonnull;
-
+import java.util.Objects;
+import java.util.stream.Stream;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ACL;
@@ -48,34 +59,29 @@ import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.vm.lease.VMLeaseManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import com.cloud.agent.api.LogLevel;
-import com.cloud.event.EventTypes;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientServerCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.Network;
-import com.cloud.network.Network.IpAddresses;
-import com.cloud.offering.DiskOffering;
-import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.uservm.UserVm;
-import com.cloud.utils.net.Dhcp;
-import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VmDetailConstants;
+import javax.annotation.Nonnull;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 @APICommand(name = "deployVirtualMachine", description = "Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
@@ -95,7 +101,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     private Long serviceOfferingId;
 
     @ACL
-    @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class, required = true, description = "the ID of the template for the virtual machine")
+    @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class, description = "the ID of the template for the virtual machine")
     private Long templateId;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "host name for the virtual machine", validations = {ApiArgValidator.RFCComplianceDomainName})
@@ -278,6 +284,19 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             description = "Enable packed virtqueues or not.")
     private Boolean nicPackedVirtQueues;
 
+    @Parameter(name = ApiConstants.INSTANCE_LEASE_DURATION, type = CommandType.INTEGER, since = "4.21.0",
+            description = "Number of days instance is leased for.")
+    private Integer leaseDuration;
+
+    @Parameter(name = ApiConstants.INSTANCE_LEASE_EXPIRY_ACTION, type = CommandType.STRING, since = "4.21.0",
+            description = "Lease expiry action, valid values are STOP and DESTROY")
+    private String leaseExpiryAction;
+
+    @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.UUID, entityType = VolumeResponse.class, since = "4.21")
+    private Long volumeId;
+
+    @Parameter(name = ApiConstants.SNAPSHOT_ID, type = CommandType.UUID, entityType = SnapshotResponse.class, since = "4.21")
+    private Long snapshotId;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -473,6 +492,22 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
 
     public String getPassword() {
         return password;
+    }
+
+    public Integer getLeaseDuration() {
+        return leaseDuration;
+    }
+
+    public VMLeaseManager.ExpiryAction getLeaseExpiryAction() {
+        if (StringUtils.isBlank(leaseExpiryAction)) {
+            return null;
+        }
+        VMLeaseManager.ExpiryAction action = EnumUtils.getEnumIgnoreCase(VMLeaseManager.ExpiryAction.class, leaseExpiryAction);
+        if (action == null) {
+            throw new InvalidParameterValueException("Invalid value configured for leaseexpiryaction, valid values are: " +
+                    com.cloud.utils.EnumUtils.listValues(VMLeaseManager.ExpiryAction.values()));
+        }
+        return action;
     }
 
     public List<Long> getNetworkIds() {
@@ -720,6 +755,18 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
         }
         return null;
     }
+
+    public Long getVolumeId() {
+        return volumeId;
+    }
+
+    public Long getSnapshotId() {
+        return snapshotId;
+    }
+
+    public boolean isVolumeOrSnapshotProvided() {
+        return volumeId != null || snapshotId != null;
+    }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -816,6 +863,10 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
 
     @Override
     public void create() throws ResourceAllocationException {
+        if (Stream.of(templateId, snapshotId, volumeId).filter(Objects::nonNull).count() != 1) {
+            throw new CloudRuntimeException("Please provide only one of the following parameters - template ID, volume ID or snapshot ID");
+        }
+
         try {
             UserVm vm = _userVmService.createVirtualMachine(this);
 

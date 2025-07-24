@@ -75,6 +75,15 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
     }
 
     @Override
+    public ZoneResponse newMinimalDataCenterResponse(ResponseView view, DataCenterJoinVO dataCenter) {
+        ZoneResponse zoneResponse = new ZoneResponse(null);
+        zoneResponse.setId(dataCenter.getUuid());
+        zoneResponse.setName(dataCenter.getName());
+        zoneResponse.setObjectName("zone");
+        return zoneResponse;
+    }
+
+    @Override
     public ZoneResponse newDataCenterResponse(ResponseView view, DataCenterJoinVO dataCenter, Boolean showCapacities, Boolean showResourceImage) {
         ZoneResponse zoneResponse = new ZoneResponse();
         zoneResponse.setId(dataCenter.getUuid());
@@ -82,6 +91,7 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
         zoneResponse.setSecurityGroupsEnabled(ApiDBUtils.isSecurityGroupEnabledInZone(dataCenter.getId()));
         zoneResponse.setLocalStorageEnabled(dataCenter.isLocalStorageEnabled());
         zoneResponse.setType(ObjectUtils.defaultIfNull(dataCenter.getType(), DataCenter.Type.Core).toString());
+        zoneResponse.setStorageAccessGroups(dataCenter.getStorageAccessGroups());
 
         if ((dataCenter.getDescription() != null) && !dataCenter.getDescription().equalsIgnoreCase("null")) {
             zoneResponse.setDescription(dataCenter.getDescription());

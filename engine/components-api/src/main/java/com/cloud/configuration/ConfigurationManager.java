@@ -65,6 +65,12 @@ public interface ConfigurationManager {
             "allow.non.rfc1918.compliant.ips", "Advanced", "false",
             "Allows non-compliant RFC 1918 IPs for Shared, Isolated networks and VPCs", true, null);
 
+    ConfigKey<Float> HostCapacityTypeCpuMemoryWeight = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Float.class,
+            "host.capacityType.to.order.clusters.cputomemoryweight",
+            "0.5",
+            "Weight for CPU (as a value between 0 and 1) applied to compute capacity for Pods, Clusters and Hosts for COMBINED capacityType for ordering. Weight for RAM will be (1 - weight of CPU)",
+            true, ConfigKey.Scope.Global);
+
     /**
      * @param offering
      * @return
@@ -77,12 +83,14 @@ public interface ConfigurationManager {
 
     /**
      * Updates a configuration entry with a new value
-     *
      * @param userId
      * @param name
+     * @param category
      * @param value
+     * @param scope
+     * @param id
      */
-    String updateConfiguration(long userId, String name, String category, String value, String scope, Long id);
+    String updateConfiguration(long userId, String name, String category, String value, ConfigKey.Scope scope, Long id);
 
 //    /**
 //     * Creates a new service offering
@@ -147,12 +155,12 @@ public interface ConfigurationManager {
      * @param startIp
      * @param endIp
      * @param allocationState
-     * @param skipGatewayOverlapCheck
-     *            (true if it is ok to not validate that gateway IP address overlap with Start/End IP of the POD)
+     * @param skipGatewayOverlapCheck (true if it is ok to not validate that gateway IP address overlap with Start/End IP of the POD)
+     * @param storageAccessGroups
      * @return Pod
      */
     HostPodVO createPod(long userId, String podName, DataCenter zone, String gateway, String cidr, String startIp, String endIp, String allocationState,
-        boolean skipGatewayOverlapCheck);
+                        boolean skipGatewayOverlapCheck, List<String> storageAccessGroups);
 
     /**
      * Creates a new zone
@@ -170,13 +178,14 @@ public interface ConfigurationManager {
      * @param isSecurityGroupEnabled
      * @param ip6Dns1
      * @param ip6Dns2
+     * @param storageAccessGroups
      * @return
      * @throws
      * @throws
      */
     DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String guestCidr, String domain,
         Long domainId, NetworkType zoneType, String allocationState, String networkDomain, boolean isSecurityGroupEnabled, boolean isLocalStorageEnabled, String ip6Dns1,
-        String ip6Dns2, boolean isEdge);
+        String ip6Dns2, boolean isEdge, List<String> storageAccessGroups);
 
     /**
      * Deletes a VLAN from the database, along with all of its IP addresses. Will not delete VLANs that have allocated

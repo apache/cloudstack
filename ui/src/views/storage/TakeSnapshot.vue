@@ -66,10 +66,10 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('label.asyncbackup')" name="asyncbackup" ref="asyncbackup">
+        <a-form-item :label="$t('label.asyncbackup')" name="asyncbackup" ref="asyncbackup" v-if="!supportsStorageSnapshot">
           <a-switch v-model:checked="form.asyncbackup" />
         </a-form-item>
-        <a-form-item :label="$t('label.quiescevm')">
+        <a-form-item :label="$t('label.quiescevm')" name="quiescevm" ref="quiescevm" v-if="quiescevm && hypervisorSupportsQuiesceVm">
           <a-switch v-model:checked="form.quiescevm" />
         </a-form-item>
         <a-divider/>
@@ -124,7 +124,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -152,6 +152,7 @@ export default {
     return {
       actionLoading: false,
       quiescevm: false,
+      hypervisorSupportsQuiesceVm: false,
       supportsStorageSnapshot: false,
       inputValue: '',
       inputKey: '',
@@ -168,6 +169,10 @@ export default {
   created () {
     this.initForm()
     this.quiescevm = this.resource.quiescevm
+    if (['KVM', 'VMware'].includes(this.resource.hypervisor)) {
+      this.hypervisorSupportsQuiesceVm = true
+    }
+
     this.supportsStorageSnapshot = this.resource.supportsstoragesnapshot
     this.fetchZoneData()
   },
@@ -190,7 +195,7 @@ export default {
       const params = {}
       params.showicon = true
       this.zoneLoading = true
-      api('listZones', params).then(json => {
+      getAPI('listZones', params).then(json => {
         const listZones = json.listzonesresponse.zone
         if (listZones) {
           this.zones = listZones
@@ -234,7 +239,7 @@ export default {
         this.actionLoading = true
         const title = this.$t('label.action.take.snapshot')
         const description = this.$t('label.volume') + ' ' + this.resource.id
-        api('createSnapshot', params).then(json => {
+        postAPI('createSnapshot', params).then(json => {
           const jobId = json.createsnapshotresponse.jobid
           if (jobId) {
             this.$pollJob({

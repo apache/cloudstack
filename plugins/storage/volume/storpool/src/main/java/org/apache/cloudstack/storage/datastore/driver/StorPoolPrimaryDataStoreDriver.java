@@ -37,6 +37,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreState
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -171,6 +172,8 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private ServiceOfferingDetailsDao serviceOfferingDetailDao;
     @Inject
     private ServiceOfferingDao serviceOfferingDao;
+    @Inject
+    private VolumeDataFactory volumeDataFactory;
 
     private SnapshotDataStoreVO getSnapshotImageStoreRef(long snapshotId, long zoneId) {
         List<SnapshotDataStoreVO> snaps = snapshotDataStoreDao.listReadyBySnapshot(snapshotId, DataStoreRole.Image);
@@ -222,7 +225,6 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 StorPoolUtil.volumeRemoveTags(StorPoolStorageAdaptor.getVolumeNameFromPath(volume.getPath(), true), conn);
             }
         }
-
     }
 
     private void updateStoragePool(final long poolId, final long deltaUsedBytes) {
@@ -327,19 +329,14 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             Long vmId, SpConnectionDesc conn) {
         SpApiResponse resp = new SpApiResponse();
         Map<String, String> tags = StorPoolHelper.addStorPoolTags(name, getVMInstanceUUID(vmId), "volume", getVcPolicyTag(vmId), tier);
-        if (tier != null || template != null) {
-            StorPoolUtil.spLog(
-                    "Creating volume [%s] with template [%s] or tier tags [%s] described in disk/service offerings details",
-                    vinfo.getUuid(), template, tier);
-            resp = StorPoolUtil.volumeCreate(size, null, template, tags, conn);
-        } else {
-            StorPoolUtil.spLog(
-                    "StorpoolPrimaryDataStoreDriver.createAsync volume: name=%s, uuid=%s, isAttached=%s vm=%s, payload=%s, template: %s",
-                    vinfo.getName(), vinfo.getUuid(), vinfo.isAttachedVM(), vinfo.getAttachedVmName(),
-                    vinfo.getpayload(), conn.getTemplateName());
-            resp = StorPoolUtil.volumeCreate(name, null, size, getVMInstanceUUID(vinfo.getInstanceId()), null,
-                    "volume", vinfo.getMaxIops(), conn);
+        if (vinfo.getDeviceId() != null) {
+            tags.put("disk", vinfo.getDeviceId().toString());
         }
+        if (template == null) {
+            template = conn.getTemplateName();
+        }
+        StorPoolVolumeDef volume = new StorPoolVolumeDef(null, size, tags, null, vinfo.getMaxIops(), template, null, null, null);
+        resp = StorPoolUtil.volumeCreate(volume, conn);
         return resp;
     }
 
@@ -412,19 +409,31 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             if (err == null && needResize) {
                 err = notifyQemuForTheNewSize(data, err, vol, payload);
             }
-
             if (err != null) {
                 // try restoring volume to its initial size
                 SpApiResponse response = StorPoolUtil.volumeUpdate(name, oldSize, true, oldMaxIops, conn);
                 if (response.getError() != null) {
                     logger.debug(String.format("Could not resize StorPool volume %s back to its original size. Error: %s", name, response.getError()));
                 }
+            } else {
+                updateVolumeWithTheNewSize(vol, payload);
             }
         } catch (Exception e) {
             logger.debug("sending resize command failed", e);
             err = e.toString();
         }
         return err;
+    }
+
+    private void updateVolumeWithTheNewSize(VolumeObject vol, ResizeVolumePayload payload) {
+        vol.setSize(payload.newSize);
+        vol.update();
+        if (payload.newMaxIops != null) {
+            VolumeVO volume = volumeDao.findById(vol.getId());
+            volume.setMaxIops(payload.newMaxIops);
+            volumeDao.update(volume.getId(), volume);
+        }
+        updateStoragePool(vol.getPoolId(), payload.newSize - vol.getSize());
     }
 
     private String notifyQemuForTheNewSize(DataObject data, String err, VolumeObject vol, ResizeVolumePayload payload)
@@ -455,35 +464,32 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
         SpApiResponse resp = new SpApiResponse();
         if (tier != null || template != null) {
-            Map<String, String> tags = StorPoolHelper.addStorPoolTags(null, null, null, null, tier);
-            StorPoolVolumeDef spVolume = new StorPoolVolumeDef(name, payload.newSize, tags, null, null, template, null, null,
-                    payload.shrinkOk);
-            resp = StorPoolUtil.volumeUpdate(spVolume, conn);
+            resp = updateVolumeByStorPoolQoS(payload, conn, name, tier, template);
         } else {
-            long maxIops = payload.newMaxIops == null ? Long.valueOf(0) : payload.newMaxIops;
-
-            StorPoolVolumeDef spVolume = new StorPoolVolumeDef(name, payload.newSize, null, null, maxIops, null, null, null,
-                    payload.shrinkOk);
-            StorPoolUtil.spLog(
-                    "StorpoolPrimaryDataStoreDriverImpl.resize: name=%s, uuid=%s, oldSize=%d, newSize=%s, shrinkOk=%s, maxIops=%s",
-                    name, vol.getUuid(), vol.getSize(), payload.newSize, payload.shrinkOk, maxIops);
-
-            resp = StorPoolUtil.volumeUpdate(spVolume, conn);
+            resp = updateVolumeByOffering(vol, payload, conn, name);
         }
         if (resp.getError() != null) {
             err = String.format("Could not resize StorPool volume %s. Error: %s", name, resp.getError());
-        } else {
-            vol.setSize(payload.newSize);
-            vol.update();
-            if (payload.newMaxIops != null) {
-                VolumeVO volume = volumeDao.findById(vol.getId());
-                volume.setMaxIops(payload.newMaxIops);
-                volumeDao.update(volume.getId(), volume);
-            }
-
-            updateStoragePool(vol.getPoolId(), payload.newSize - vol.getSize());
         }
         return err;
+    }
+
+    private static SpApiResponse updateVolumeByStorPoolQoS(ResizeVolumePayload payload, SpConnectionDesc conn, String name, String tier, String template) {
+        Map<String, String> tags = StorPoolHelper.addStorPoolTags(null, null, null, null, tier);
+        StorPoolVolumeDef spVolume = new StorPoolVolumeDef(name, payload.newSize, tags, null, null, template, null, null,
+                payload.shrinkOk);
+        return StorPoolUtil.volumeUpdate(spVolume, conn);
+    }
+
+    private static SpApiResponse updateVolumeByOffering(VolumeObject vol, ResizeVolumePayload payload, SpConnectionDesc conn, String name) {
+        long maxIops = payload.newMaxIops == null ? Long.valueOf(0) : payload.newMaxIops;
+
+        StorPoolVolumeDef spVolume = new StorPoolVolumeDef(name, payload.newSize, null, null, maxIops, null, null, null,
+                payload.shrinkOk);
+        StorPoolUtil.spLog(
+                "StorpoolPrimaryDataStoreDriverImpl.resize: name=%s, uuid=%s, oldSize=%d, newSize=%s, shrinkOk=%s, maxIops=%s",
+                name, vol.getUuid(), vol.getSize(), payload.newSize, payload.shrinkOk, maxIops);
+        return StorPoolUtil.volumeUpdate(spVolume, conn);
     }
 
     @Override
@@ -623,8 +629,11 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 VolumeInfo vinfo = (VolumeInfo)dstData;
                 final String volumeName = vinfo.getUuid();
                 final Long size = vinfo.getSize();
+
                 SpConnectionDesc conn = StorPoolUtil.getSpConnection(vinfo.getDataStore().getUuid(), vinfo.getDataStore().getId(), storagePoolDetailsDao, primaryStoreDao);
-                SpApiResponse resp = StorPoolUtil.volumeCreate(volumeName, snapshotName, size, null, null, "volume", sinfo.getBaseVolume().getMaxIops(), conn);
+
+                StorPoolVolumeDef spVolume = createVolumeWithTags(sinfo, snapshotName, vinfo, volumeName, size, conn);
+                SpApiResponse resp = StorPoolUtil.volumeCreate(spVolume, conn);
                 if (resp.getError() == null) {
                     updateStoragePool(dstData.getDataStore().getId(), size);
 
@@ -640,9 +649,10 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     SnapshotDataStoreVO snap = getSnapshotImageStoreRef(sinfo.getId(), vinfo.getDataCenterId());
                     SnapshotDetailsVO snapshotDetail = snapshotDetailsDao.findDetail(sinfo.getId(), StorPoolUtil.SP_DELAY_DELETE);
                     if (snapshotDetail != null) {
-                        err = String.format("Could not create volume from snapshot due to: %s. The snapshot was created with the delayDelete option.", resp.getError());
+                        answer = new Answer(cmd, false, String.format("Could not create volume from snapshot due to: %s. The snapshot was created with the delayDelete option.", resp.getError()));
                     } else if (snap != null && StorPoolStorageAdaptor.getVolumeNameFromPath(snap.getInstallPath(), false) == null) {
-                        SpApiResponse emptyVolumeCreateResp = StorPoolUtil.volumeCreate(volumeName, null, size, null, null, "volume", null, conn);
+                        spVolume.setParent(null);
+                        SpApiResponse emptyVolumeCreateResp = StorPoolUtil.volumeCreate(spVolume, conn);
                         if (emptyVolumeCreateResp.getError() == null) {
                             answer = createVolumeFromSnapshot(srcData, dstData, size, emptyVolumeCreateResp);
                         } else {
@@ -652,7 +662,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                         answer = new Answer(cmd, false, String.format("The snapshot %s does not exists neither on primary, neither on secondary storage. Cannot create volume from snapshot", snapshotName));
                     }
                 } else {
-                    err = String.format("Could not create Storpool volume %s from snapshot %s. Error: %s", volumeName, snapshotName, resp.getError());
+                    answer = new Answer(cmd, false, String.format("Could not create Storpool volume %s from snapshot %s. Error: %s", volumeName, snapshotName, resp.getError()));
                 }
             } else if (srcType == DataObjectType.SNAPSHOT && dstType == DataObjectType.SNAPSHOT) {
                 SnapshotInfo sinfo = (SnapshotInfo)srcData;
@@ -818,19 +828,23 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     if (tier == null) {
                         template = getTemplateFromOfferingDetail(vinfo.getDiskOfferingId());
                     }
-                }
-
-                if (tier != null || template != null) {
-                    Map<String, String> tags = StorPoolHelper.addStorPoolTags(name, getVMInstanceUUID(vmId), "volume", getVcPolicyTag(vmId), tier);
-
                     StorPoolUtil.spLog(
                             "Creating volume [%s] with template [%s] or tier tags [%s] described in disk/service offerings details",
                             vinfo.getUuid(), template, tier);
-                    resp = StorPoolUtil.volumeCreate(size, parentName, template, tags, conn);
-                } else {
-                    resp = StorPoolUtil.volumeCreate(name, parentName, size, getVMInstanceUUID(vmId),
-                            getVcPolicyTag(vmId), "volume", vinfo.getMaxIops(), conn);
                 }
+
+                Map<String, String> tags = StorPoolHelper.addStorPoolTags(name, getVMInstanceUUID(vmId), "volume", getVcPolicyTag(vmId), tier);
+
+                if (vinfo.getDeviceId() != null) {
+                    tags.put("disk", vinfo.getDeviceId().toString());
+                }
+
+                if (template == null) {
+                    template = conn.getTemplateName();
+                }
+
+                StorPoolVolumeDef volumeDef = new StorPoolVolumeDef(null, size, tags, parentName, null, template, null, null, null);
+                resp = StorPoolUtil.volumeCreate(volumeDef, conn);
 
                 if (resp.getError() == null) {
                     updateStoragePool(dstData.getDataStore().getId(), vinfo.getSize());
@@ -975,6 +989,27 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         callback.complete(res);
     }
 
+    private StorPoolVolumeDef createVolumeWithTags(SnapshotInfo sinfo, String snapshotName, VolumeInfo vinfo, String volumeName, Long size, SpConnectionDesc conn) {
+        Pair<String, String> templateAndTier = getTemplateAndTier(vinfo, conn);
+        Map<String, String> tags = StorPoolHelper.addStorPoolTags(volumeName, getVMInstanceUUID(vinfo.getInstanceId()), "volume", getVcPolicyTag(vinfo.getInstanceId()), templateAndTier.first());
+        return new StorPoolVolumeDef(null, size, tags, snapshotName, sinfo.getBaseVolume().getMaxIops(), templateAndTier.second(), null, null, null);
+    }
+
+    private Pair<String, String> getTemplateAndTier(VolumeInfo vinfo, SpConnectionDesc conn) {
+        String tier = null;
+        String template = null;
+        if (vinfo.getDiskOfferingId() != null) {
+            tier = getTierFromOfferingDetail(vinfo.getDiskOfferingId());
+            if (tier == null) {
+                template = getTemplateFromOfferingDetail(vinfo.getDiskOfferingId());
+            }
+        }
+
+        if (template == null) {
+            template = conn.getTemplateName();
+        }
+        return new Pair<>(tier, template);
+    }
     private Answer createVolumeSnapshot(StorageSubSystemCommand cmd, Long size, SpConnectionDesc conn,
             String volName, TemplateObjectTO dstTO) {
         Answer answer;
@@ -1295,18 +1330,33 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             return;
         }
         StoragePoolVO poolVO = primaryStoreDao.findById(volume.getPoolId());
-        if (poolVO != null) {
-            try {
-                SpConnectionDesc conn = StorPoolUtil.getSpConnection(poolVO.getUuid(), poolVO.getId(), storagePoolDetailsDao, primaryStoreDao);
-                String volName = StorPoolStorageAdaptor.getVolumeNameFromPath(volume.getPath(), true);
-                VMInstanceVO userVM = vmInstanceDao.findById(vmId);
-                SpApiResponse resp = StorPoolUtil.volumeUpdateIopsAndTags(volName, volume.getInstanceId() != null ? userVM.getUuid() : "", null, conn, getVcPolicyTag(vmId));
-                if (resp.getError() != null) {
-                    logger.warn(String.format("Could not update VC policy tags of a volume with id [%s]", volume.getUuid()));
-                }
-            } catch (Exception e) {
-                logger.warn(String.format("Could not update Virtual machine tags due to %s", e.getMessage()));
+        if (poolVO != null && StoragePoolType.StorPool.equals(poolVO.getPoolType())) {
+            VolumeInfo vInfo = volumeDataFactory.getVolume(volumeId);
+            if (vInfo == null) {
+                StorPoolUtil.spLog("Could not find volume with volume ID [%s] to set tags", volumeId);
+                return;
             }
+            updateVolumeWithTags(poolVO, vInfo);
+        }
+    }
+
+    private void updateVolumeWithTags(StoragePoolVO poolVO, VolumeInfo vInfo) {
+        try {
+            SpConnectionDesc conn = StorPoolUtil.getSpConnection(poolVO.getUuid(), poolVO.getId(), storagePoolDetailsDao, primaryStoreDao);
+            String volName = StorPoolStorageAdaptor.getVolumeNameFromPath(vInfo.getPath(), true);
+            Pair<String, String> templateAndTier = getTemplateAndTier(vInfo, conn);
+            Map<String, String> tags = StorPoolHelper.addStorPoolTags(volName, getVMInstanceUUID(vInfo.getInstanceId()), "volume", getVcPolicyTag(vInfo.getInstanceId()), templateAndTier.first());
+            if (vInfo.getDeviceId() != null) {
+                tags.put("disk", vInfo.getDeviceId().toString());
+            }
+            StorPoolVolumeDef spVolume = new StorPoolVolumeDef(volName, null, tags, null, null, templateAndTier.second(), null, null, null);
+            StorPoolUtil.spLog("Updating volume's tags [%s] with template [%s]", tags, templateAndTier.second());
+            SpApiResponse resp = StorPoolUtil.volumeUpdate(spVolume, conn);
+            if (resp.getError() != null) {
+                logger.warn(String.format("Could not update VC policy tags of a volume with id [%s]", vInfo.getUuid()));
+            }
+        } catch (Exception e) {
+            logger.warn(String.format("Could not update Virtual machine tags due to %s", e.getMessage()));
         }
     }
 

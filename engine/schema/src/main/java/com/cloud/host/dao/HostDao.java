@@ -19,6 +19,7 @@ package com.cloud.host.dao;
 import java.util.Date;
 import java.util.List;
 
+import com.cloud.cpu.CPU;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
@@ -30,6 +31,7 @@ import com.cloud.resource.ResourceState;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 
 /**
  * Data Access Object for server
@@ -82,6 +84,10 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<HostVO> findHypervisorHostInCluster(long clusterId);
 
+    List<HostVO> findHypervisorHostInPod(long podId);
+
+    List<HostVO> findHypervisorHostInZone(long zoneId);
+
     HostVO findAnyStateHypervisorHostInCluster(long clusterId);
 
     HostVO findOldestExistentHypervisorHostInCluster(long clusterId);
@@ -94,9 +100,13 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<HostVO> findByPodId(Long podId);
 
+    List<HostVO> findByPodId(Long podId, Type type);
+
     List<Long> listIdsByPodId(Long podId);
 
     List<HostVO> findByClusterId(Long clusterId);
+
+    List<HostVO> findByClusterId(Long clusterId, Type type);
 
     List<Long> listIdsByClusterId(Long clusterId);
 
@@ -167,14 +177,24 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<HostVO> listHostsByMsAndDc(long msId, long dcId);
 
+    List<HostVO> listHostsByMsDcResourceState(long msId, long dcId, List<ResourceState> excludedResourceStates);
+
     List<HostVO> listHostsByMs(long msId);
 
+    List<HostVO> listHostsByMsResourceState(long msId, List<ResourceState> excludedResourceStates);
+
     /**
-     * Retrieves the number of hosts/agents this {@see ManagementServer} has responsibility over.
-     * @param msId the id of the {@see ManagementServer}
-     * @return the number of hosts/agents this {@see ManagementServer} has responsibility over
+     * Count Hosts by given Management Server, Host and Hypervisor Types,
+     * and exclude Hosts with given Resource States.
+     *
+     * @param msId                   Management Server Id
+     * @param excludedResourceStates Resource States to be excluded
+     * @param hostTypes              Host Types
+     * @param hypervisorTypes        Hypervisor Types
+     * @return Hosts count
      */
-    int countByMs(long msId);
+    int countHostsByMsResourceStateTypeAndHypervisorType(long msId, List<ResourceState> excludedResourceStates,
+                                                         List<Type> hostTypes, List<HypervisorType> hypervisorTypes);
 
     /**
      * Retrieves the host ids/agents this {@see ManagementServer} has responsibility over.
@@ -212,5 +232,13 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<HypervisorType> listDistinctHypervisorTypes(final Long zoneId);
 
+    List<Pair<HypervisorType, CPU.CPUArch>> listDistinctHypervisorArchTypes(final Long zoneId);
+
+    List<CPU.CPUArch> listDistinctArchTypes(final Long clusterId);
+
     List<HostVO> listByIds(final List<Long> ids);
+
+    Long findClusterIdByVolumeInfo(VolumeInfo volumeInfo);
+
+    List<String> listDistinctStorageAccessGroups(String name, String keyword);
 }

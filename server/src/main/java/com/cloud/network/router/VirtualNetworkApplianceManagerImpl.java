@@ -262,7 +262,7 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.NicIpAliasVO;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 
@@ -310,7 +310,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     @Inject protected RemoteAccessVpnDao _vpnDao;
     @Inject protected NicDao _nicDao;
     @Inject private NicIpAliasDao _nicIpAliasDao;
-    @Inject private UserVmDetailsDao _vmDetailsDao;
+    @Inject private VMInstanceDetailsDao _vmDetailsDao;
     @Inject protected VirtualRouterProviderDao _vrProviderDao;
     @Inject private ManagementServerHostDao _msHostDao;
     @Inject private Site2SiteCustomerGatewayDao _s2sCustomerGatewayDao;
@@ -2072,6 +2072,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
          * service, we need to override the DHCP response to return DNS server
          * rather than virtual router itself.
          */
+        boolean useRouterIpResolver = getUseRouterIpAsResolver(router);
         if (dnsProvided || dhcpProvided) {
             if (defaultDns1 != null) {
                 buf.append(" dns1=").append(defaultDns1);
@@ -2092,6 +2093,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
             if (useExtDns) {
                 buf.append(" useextdns=true");
+            }
+            if (useRouterIpResolver) {
+                buf.append(" userouteripresolver=true");
             }
         }
 
@@ -2130,6 +2134,18 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         }
 
         return true;
+    }
+
+    private boolean getUseRouterIpAsResolver(DomainRouterVO router) {
+        if (router == null || router.getVpcId() == null) {
+            return false;
+        }
+        Vpc vpc = _vpcDao.findById(router.getVpcId());
+        if (vpc == null) {
+            logger.warn(String.format("Cannot find VPC with ID %s from router %s", router.getVpcId(), router.getName()));
+            return false;
+        }
+        return vpc.useRouterIpAsResolver();
     }
 
     /**

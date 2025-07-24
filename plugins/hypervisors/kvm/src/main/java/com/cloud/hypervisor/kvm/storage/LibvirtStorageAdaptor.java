@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.utils.cryptsetup.KeyFile;
+import org.apache.cloudstack.utils.qemu.QemuImageOptions;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
@@ -223,8 +224,33 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             } else {
                 Script.runSimpleBashScript("mv " + templateFilePath + " " + destinationFile);
             }
+        } else if (destPool.getType() == StoragePoolType.RBD) {
+            String temporaryExtractFilePath = sourceFile.getParent() + File.separator + templateUuid;
+            extractDownloadedTemplate(templateFilePath, destPool, temporaryExtractFilePath);
+            createTemplateOnRBDFromDirectDownloadFile(temporaryExtractFilePath, templateUuid, destPool, timeout);
         }
         return destPool.getPhysicalDisk(templateUuid);
+    }
+
+    private void createTemplateOnRBDFromDirectDownloadFile(String srcTemplateFilePath, String templateUuid, KVMStoragePool destPool, int timeout) {
+        try {
+            QemuImg.PhysicalDiskFormat srcFileFormat = QemuImg.PhysicalDiskFormat.QCOW2;
+            QemuImgFile srcFile = new QemuImgFile(srcTemplateFilePath, srcFileFormat);
+            QemuImg qemu = new QemuImg(timeout);
+            Map<String, String> info = qemu.info(srcFile);
+            Long virtualSize = Long.parseLong(info.get(QemuImg.VIRTUAL_SIZE));
+            KVMPhysicalDisk destDisk = new KVMPhysicalDisk(destPool.getSourceDir() + "/" + templateUuid, templateUuid, destPool);
+            destDisk.setFormat(PhysicalDiskFormat.RAW);
+            destDisk.setSize(virtualSize);
+            destDisk.setVirtualSize(virtualSize);
+            QemuImgFile destFile = new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(destPool, destDisk.getPath()));
+            destFile.setFormat(PhysicalDiskFormat.RAW);
+            qemu.convert(srcFile, destFile);
+        } catch (LibvirtException | QemuImgException e) {
+            String err = String.format("Error creating template from direct download file on pool %s: %s", destPool.getUuid(), e.getMessage());
+            logger.error(err, e);
+            throw new CloudRuntimeException(err, e);
+        }
     }
 
     public StorageVol getVolume(StoragePool pool, String volName) {
@@ -1608,13 +1634,15 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     } else {
                         destFile = new QemuImgFile(destPath, destFormat);
                         try {
-                            qemu.convert(srcFile, destFile);
+                            boolean isQCOW2 = PhysicalDiskFormat.QCOW2.equals(sourceFormat);
+                            qemu.convert(srcFile, destFile, null, null, new QemuImageOptions(srcFile.getFormat(), srcFile.getFileName(), null),
+                                    null, false, isQCOW2);
                             Map<String, String> destInfo = qemu.info(destFile);
                             Long virtualSize = Long.parseLong(destInfo.get(QemuImg.VIRTUAL_SIZE));
                             newDisk.setVirtualSize(virtualSize);
                             newDisk.setSize(virtualSize);
-                        } catch (QemuImgException | LibvirtException e) {
-                            logger.error("Failed to convert " + srcFile.getFileName() + " to " + destFile.getFileName() + " the error was: " + e.getMessage());
+                        } catch (QemuImgException e) {
+                            logger.error("Failed to convert [{}] to [{}] due to: [{}].", srcFile.getFileName(), destFile.getFileName(), e.getMessage(), e);
                             newDisk = null;
                         }
                     }

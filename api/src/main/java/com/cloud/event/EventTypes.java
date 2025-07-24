@@ -289,6 +289,8 @@ public class EventTypes {
 
     //registering userdata events
     public static final String EVENT_REGISTER_USER_DATA = "REGISTER.USER.DATA";
+    public static final String EVENT_REGISTER_CNI_CONFIG = "REGISTER.CNI.CONFIG";
+    public static final String EVENT_DELETE_CNI_CONFIG = "DELETE.CNI.CONFIG";
 
     //register for user API and secret keys
     public static final String EVENT_REGISTER_FOR_SECRET_API_KEY = "REGISTER.USER.KEY";
@@ -465,6 +467,7 @@ public class EventTypes {
     public static final String EVENT_ENABLE_PRIMARY_STORAGE = "ENABLE.PS";
     public static final String EVENT_DISABLE_PRIMARY_STORAGE = "DISABLE.PS";
     public static final String EVENT_SYNC_STORAGE_POOL = "SYNC.STORAGE.POOL";
+    public static final String EVENT_CONFIGURE_STORAGE_ACCESS = "CONFIGURE.STORAGE.ACCESS";
     public static final String EVENT_CHANGE_STORAGE_POOL_SCOPE = "CHANGE.STORAGE.POOL.SCOPE";
 
     // VPN
@@ -687,6 +690,9 @@ public class EventTypes {
     public static final String EVENT_EXTERNAL_OPENDAYLIGHT_CONFIGURE_CONTROLLER = "PHYSICAL.ODLCONTROLLER.CONFIGURE";
 
     //Guest OS related events
+    public static final String EVENT_GUEST_OS_CATEGORY_ADD = "GUEST.OS.CATEGORY.ADD";
+    public static final String EVENT_GUEST_OS_CATEGORY_DELETE = "GUEST.OS.CATEGORY.DELETE";
+    public static final String EVENT_GUEST_OS_CATEGORY_UPDATE = "GUEST.OS.CATEGORY.UPDATE";
     public static final String EVENT_GUEST_OS_ADD = "GUEST.OS.ADD";
     public static final String EVENT_GUEST_OS_REMOVE = "GUEST.OS.REMOVE";
     public static final String EVENT_GUEST_OS_UPDATE = "GUEST.OS.UPDATE";
@@ -794,6 +800,19 @@ public class EventTypes {
 
     // Resource Limit
     public static final String EVENT_RESOURCE_LIMIT_UPDATE = "RESOURCE.LIMIT.UPDATE";
+
+    // Management Server
+    public static final String EVENT_MANAGEMENT_SERVER_REMOVE = "MANAGEMENT.SERVER.REMOVE";
+
+    public static final String VM_LEASE_EXPIRED = "VM.LEASE.EXPIRED";
+    public static final String VM_LEASE_DISABLED = "VM.LEASE.DISABLED";
+    public static final String VM_LEASE_CANCELLED = "VM.LEASE.CANCELLED";
+    public static final String VM_LEASE_EXPIRING = "VM.LEASE.EXPIRING";
+
+    // GUI Theme
+    public static final String EVENT_GUI_THEME_CREATE = "GUI.THEME.CREATE";
+    public static final String EVENT_GUI_THEME_REMOVE = "GUI.THEME.REMOVE";
+    public static final String EVENT_GUI_THEME_UPDATE = "GUI.THEME.UPDATE";
 
     static {
 
@@ -1289,6 +1308,20 @@ public class EventTypes {
         entityEventDetails.put(EVENT_SHAREDFS_DESTROY, SharedFS.class);
         entityEventDetails.put(EVENT_SHAREDFS_EXPUNGE, SharedFS.class);
         entityEventDetails.put(EVENT_SHAREDFS_RECOVER, SharedFS.class);
+
+        // Management Server
+        entityEventDetails.put(EVENT_MANAGEMENT_SERVER_REMOVE, "ManagementServer");
+
+        // VM Lease
+        entityEventDetails.put(VM_LEASE_EXPIRED, VirtualMachine.class);
+        entityEventDetails.put(VM_LEASE_EXPIRING, VirtualMachine.class);
+        entityEventDetails.put(VM_LEASE_DISABLED, VirtualMachine.class);
+        entityEventDetails.put(VM_LEASE_CANCELLED, VirtualMachine.class);
+
+        // GUI theme
+        entityEventDetails.put(EVENT_GUI_THEME_CREATE, "GuiTheme");
+        entityEventDetails.put(EVENT_GUI_THEME_REMOVE, "GuiTheme");
+        entityEventDetails.put(EVENT_GUI_THEME_UPDATE, "GuiTheme");
     }
 
     public static boolean isNetworkEvent(String eventType) {

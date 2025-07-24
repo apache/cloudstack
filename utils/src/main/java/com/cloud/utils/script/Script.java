@@ -47,8 +47,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.joda.time.Duration;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.script.OutputInterpreter.TimedOutLogger;
 
@@ -156,25 +158,15 @@ public class Script implements Callable<String> {
         boolean obscureParam = false;
         for (int i = 0; i < command.length; i++) {
             String cmd = command[i];
-            if (obscureParam) {
-                builder.append("******").append(" ");
-                obscureParam = false;
-            } else {
-                builder.append(command[i]).append(" ");
+            if (StringUtils.isNotEmpty(cmd) && cmd.startsWith("vi://")) {
+                String[] tokens = cmd.split("@");
+                if (tokens.length >= 2) {
+                    builder.append("vi://").append("******@").append(tokens[1]).append(" ");
+                } else {
+                    builder.append("vi://").append("******").append(" ");
+                }
+                continue;
             }
-
-            if ("-y".equals(cmd) || "-z".equals(cmd)) {
-                obscureParam = true;
-                _passwordCommand = true;
-            }
-        }
-        return builder.toString();
-    }
-
-    protected String buildCommandLine(List<String> command) {
-        StringBuilder builder = new StringBuilder();
-        boolean obscureParam = false;
-        for (String cmd : command) {
             if (obscureParam) {
                 builder.append("******").append(" ");
                 obscureParam = false;
@@ -679,6 +671,26 @@ public class Script implements Callable<String> {
         return runScript(getScriptForCommandRun(command));
     }
 
+    /**
+     * Execute command and return standard output and standard error.
+     *
+     * @param command OS command to be executed
+     * @return {@link Pair} with standard output as first and standard error as second field
+     */
+    public static Pair<String, String> executeCommand(String command) {
+        // wrap command into bash
+        Script script = new Script("/bin/bash");
+        script.add("-c");
+        script.add(command);
+
+        // parse all lines from the output
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+        String stdErr = script.execute(parser);
+        String stdOut = parser.getLines();
+        LOGGER.debug(String.format("Command [%s] result - stdout: [%s], stderr: [%s]", command, stdOut, stdErr));
+        return new Pair<>(stdOut, stdErr);
+    }
+
     public static int executeCommandForExitValue(long timeout, String... command) {
         return runScriptForExitValue(getScriptForCommandRun(timeout, command));
     }
@@ -786,5 +798,18 @@ public class Script implements Callable<String> {
         } else {
             return result.trim();
         }
+    }
+
+    public static String runSimpleBashScriptWithFullResult(String command, int timeout) {
+        Script script = new Script("/bin/bash", Duration.standardSeconds(timeout));
+        script.add("-c");
+        script.add(command);
+
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+
+        if (script.execute(parser) != null) {
+            throw new CloudRuntimeException(String.format("Error executing command [%s]", script));
+        }
+        return parser.getLines();
     }
 }

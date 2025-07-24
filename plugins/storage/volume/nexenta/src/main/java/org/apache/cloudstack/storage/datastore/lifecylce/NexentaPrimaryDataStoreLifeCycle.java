@@ -24,6 +24,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
@@ -58,6 +59,8 @@ public class NexentaPrimaryDataStoreLifeCycle
     StorageManager _storageMgr;
     @Inject
     private StoragePoolAutomation storagePoolAutomation;
+    @Inject
+    private StoragePoolAndAccessGroupMapDao storagePoolAndAccessGroupMapDao;
 
     @Override
     public DataStore initialize(Map<String, Object> dsInfos) {
@@ -130,16 +133,14 @@ public class NexentaPrimaryDataStoreLifeCycle
     public boolean attachZone(DataStore dataStore, ZoneScope scope, Hypervisor.HypervisorType hypervisorType) {
         dataStoreHelper.attachZone(dataStore);
 
-        List<HostVO> xenServerHosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(Hypervisor.HypervisorType.XenServer, scope.getScopeId());
-        List<HostVO> vmWareServerHosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(Hypervisor.HypervisorType.VMware, scope.getScopeId());
-        List<HostVO> kvmHosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(Hypervisor.HypervisorType.KVM, scope.getScopeId());
-        List<HostVO> hosts = new ArrayList<HostVO>();
+        List<HostVO> hostsToConnect = new ArrayList<>();
+        Hypervisor.HypervisorType[] hypervisorTypes = {Hypervisor.HypervisorType.XenServer, Hypervisor.HypervisorType.VMware, Hypervisor.HypervisorType.KVM};
 
-        hosts.addAll(xenServerHosts);
-        hosts.addAll(vmWareServerHosts);
-        hosts.addAll(kvmHosts);
-
-        for (HostVO host : hosts) {
+        for (Hypervisor.HypervisorType type : hypervisorTypes) {
+            hostsToConnect.addAll(_resourceMgr.getEligibleUpAndEnabledHostsInZoneForStorageConnection(dataStore, scope.getScopeId(), type));
+        }
+        logger.debug(String.format("In createPool. Attaching the pool to each of the hosts in %s.", hostsToConnect));
+        for (HostVO host : hostsToConnect) {
             try {
                 _storageMgr.connectHostToSharedPool(host, dataStore.getId());
             } catch (Exception e) {

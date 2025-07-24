@@ -41,7 +41,6 @@ import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
-import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -65,8 +64,11 @@ public class SnapshotObject implements SnapshotInfo {
     protected Logger logger = LogManager.getLogger(getClass());
     private SnapshotVO snapshot;
     private DataStore store;
+    private DataStore imageStore;
     private Object payload;
     private Boolean fullBackup;
+    private String checkpointPath;
+    private boolean kvmIncrementalSnapshot = false;
     private String url;
     @Inject
     protected SnapshotDao snapshotDao;
@@ -111,12 +113,14 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public SnapshotInfo getParent() {
-
+        logger.trace("Searching for parents of snapshot [{}], in store [{}] with role [{}].", snapshot.getSnapshotId(), store.getId(), store.getRole());
         SnapshotDataStoreVO snapStoreVO = snapshotStoreDao.findByStoreSnapshot(store.getRole(), store.getId(), snapshot.getId());
-        Long parentId = null;
         if (snapStoreVO != null) {
-            parentId = snapStoreVO.getParentSnapshotId();
-            if (parentId != null && parentId != 0) {
+            long parentId = snapStoreVO.getParentSnapshotId();
+            if (parentId != 0) {
+                if (HypervisorType.KVM.equals(snapshot.getHypervisorType())) {
+                    return getCorrectIncrementalParent(parentId);
+                }
                 return snapshotFactory.getSnapshot(parentId, store);
             }
         }
@@ -124,10 +128,36 @@ public class SnapshotObject implements SnapshotInfo {
         return null;
     }
 
+    /**
+     * Returns the snapshotInfo of the passed snapshot parentId. Will search for the snapshot reference which has a checkpoint path. If none is found, throws an exception.
+     * */
+    protected SnapshotInfo getCorrectIncrementalParent(long parentId) {
+        List<SnapshotDataStoreVO> parentSnapshotDatastoreVos = snapshotStoreDao.findBySnapshotId(parentId);
+
+        if (parentSnapshotDatastoreVos.isEmpty()) {
+            return null;
+        }
+
+        logger.debug("Found parent snapshot references {}, will filter to just one.", parentSnapshotDatastoreVos);
+
+        SnapshotDataStoreVO parent = parentSnapshotDatastoreVos.stream().filter(snapshotDataStoreVO -> snapshotDataStoreVO.getKvmCheckpointPath() != null)
+                .findFirst().
+                orElseThrow(() -> new CloudRuntimeException(String.format("Could not find snapshot parent with id [%s]. None of the records have a checkpoint path.", parentId)));
+
+        SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(parentId, parent.getDataStoreId(), parent.getRole());
+        snapshotInfo.setKvmIncrementalSnapshot(parent.getKvmCheckpointPath() != null);
+
+        logger.debug("Filtered snapshot references {} to just {}.", parentSnapshotDatastoreVos, parent);
+
+        return snapshotInfo;
+    }
+
     @Override
     public SnapshotInfo getChild() {
         QueryBuilder<SnapshotDataStoreVO> sc = QueryBuilder.create(SnapshotDataStoreVO.class);
-        sc.and(sc.entity().getDataStoreId(), Op.EQ, store.getId());
+        if (!HypervisorType.KVM.equals(snapshot.getHypervisorType())) {
+            sc.and(sc.entity().getDataStoreId(), Op.EQ, store.getId());
+        }
         sc.and(sc.entity().getRole(), Op.EQ, store.getRole());
         sc.and(sc.entity().getState(), Op.NIN, State.Destroying, State.Destroyed, State.Error);
         sc.and(sc.entity().getParentSnapshotId(), Op.EQ, getId());
@@ -214,6 +244,16 @@ public class SnapshotObject implements SnapshotInfo {
     @Override
     public DataStore getDataStore() {
         return store;
+    }
+
+    @Override
+    public DataStore getImageStore() {
+        return imageStore;
+    }
+
+    @Override
+    public void setImageStore(DataStore imageStore) {
+        this.imageStore = imageStore;
     }
 
     @Override
@@ -454,6 +494,26 @@ public class SnapshotObject implements SnapshotInfo {
     }
 
     @Override
+    public String getCheckpointPath() {
+        return checkpointPath;
+    }
+
+    @Override
+    public void setCheckpointPath(String checkpointPath) {
+        this.checkpointPath = checkpointPath;
+    }
+
+    @Override
+    public void setKvmIncrementalSnapshot(boolean isKvmIncrementalSnapshot) {
+        this.kvmIncrementalSnapshot = isKvmIncrementalSnapshot;
+    }
+
+    @Override
+    public boolean isKvmIncrementalSnapshot() {
+        return kvmIncrementalSnapshot;
+    }
+
+    @Override
     public boolean delete() {
         if (store != null) {
             return store.delete(this);
@@ -468,8 +528,7 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public String toString() {
-        return String.format("SnapshotObject %s",
-                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                        this, "snapshot", "store"));
+        return String.format("%s, dataStoreId %s, imageStore id %s, checkpointPath %s.", snapshot, store != null? store.getId() : 0,
+                imageStore != null ? imageStore.getId() : 0, checkpointPath);
     }
 }

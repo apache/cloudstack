@@ -27,7 +27,6 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.storage.snapshot.SnapshotManager;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
@@ -110,7 +109,7 @@ import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -124,7 +123,7 @@ import com.cloud.vm.VmWorkJobHandler;
 import com.cloud.vm.VmWorkJobHandlerProxy;
 import com.cloud.vm.VmWorkSerializer;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
@@ -165,7 +164,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
     @Inject
     protected ServiceOfferingDao _serviceOfferingDao;
     @Inject
-    protected UserVmDetailsDao _userVmDetailsDao;
+    protected VMInstanceDetailsDao _vmInstanceDetailsDao;
     @Inject
     protected VMSnapshotDetailsDao _vmSnapshotDetailsDao;
     @Inject
@@ -379,14 +378,8 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             //Other Storage volume plugins could integrate this with their own functionality for group snapshots
             VMSnapshotStrategy snapshotStrategy = storageStrategyFactory.getVmSnapshotStrategy(userVmVo.getId(), rootVolumePool.getId(), snapshotMemory);
             if (snapshotStrategy == null) {
-                String message;
-                if (!SnapshotManager.VmStorageSnapshotKvm.value() && !snapshotMemory) {
-                    message = "Creating a snapshot of a running KVM instance without memory is not supported";
-                } else {
-                    message = "KVM does not support the type of snapshot requested";
-                }
-
-                logger.debug(message);
+                String message = String.format("No strategy was able to handle requested snapshot for VM [%s].", userVmVo.getUuid());
+                logger.error(message);
                 throw new CloudRuntimeException(message);
             }
 
@@ -480,9 +473,9 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
     protected void addSupportForCustomServiceOffering(long vmId, long serviceOfferingId, long vmSnapshotId) {
         ServiceOfferingVO serviceOfferingVO = _serviceOfferingDao.findById(serviceOfferingId);
         if (serviceOfferingVO.isDynamic()) {
-            List<UserVmDetailVO> vmDetails = _userVmDetailsDao.listDetails(vmId);
+            List<VMInstanceDetailVO> vmDetails = _vmInstanceDetailsDao.listDetails(vmId);
             List<VMSnapshotDetailsVO> vmSnapshotDetails = new ArrayList<VMSnapshotDetailsVO>();
-            for (UserVmDetailVO detail : vmDetails) {
+            for (VMInstanceDetailVO detail : vmDetails) {
                 if(detail.getName().equalsIgnoreCase(VmDetailConstants.CPU_NUMBER) || detail.getName().equalsIgnoreCase(VmDetailConstants.CPU_SPEED) || detail.getName().equalsIgnoreCase(VmDetailConstants.MEMORY)) {
                     vmSnapshotDetails.add(new VMSnapshotDetailsVO(vmSnapshotId, detail.getName(), detail.getValue(), detail.isDisplay()));
                 }
@@ -819,9 +812,9 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
      * @return map
      */
     protected Map<String, String> getVmMapDetails(UserVm userVm) {
-        List<UserVmDetailVO> userVmDetails = _userVmDetailsDao.listDetails(userVm.getId());
+        List<VMInstanceDetailVO> userVmDetails = _vmInstanceDetailsDao.listDetails(userVm.getId());
         Map<String, String> details = new HashMap<String, String>();
-        for (UserVmDetailVO detail : userVmDetails) {
+        for (VMInstanceDetailVO detail : userVmDetails) {
             details.put(detail.getName(), detail.getValue());
         }
         return details;
@@ -950,11 +943,11 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         ServiceOfferingVO serviceOfferingVO = _serviceOfferingDao.findById(vmSnapshotVo.getServiceOfferingId());
         if (serviceOfferingVO.isDynamic()) {
             List<VMSnapshotDetailsVO> vmSnapshotDetails = _vmSnapshotDetailsDao.listDetails(vmSnapshotVo.getId());
-            List<UserVmDetailVO> userVmDetails = new ArrayList<UserVmDetailVO>();
+            List<VMInstanceDetailVO> userVmDetails = new ArrayList<VMInstanceDetailVO>();
             for (VMSnapshotDetailsVO detail : vmSnapshotDetails) {
-                userVmDetails.add(new UserVmDetailVO(userVm.getId(), detail.getName(), detail.getValue(), detail.isDisplay()));
+                userVmDetails.add(new VMInstanceDetailVO(userVm.getId(), detail.getName(), detail.getValue(), detail.isDisplay()));
             }
-            _userVmDetailsDao.saveDetails(userVmDetails);
+            _vmInstanceDetailsDao.saveDetails(userVmDetails);
         }
     }
 

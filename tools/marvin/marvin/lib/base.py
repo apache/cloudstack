@@ -527,7 +527,9 @@ class VirtualMachine:
                customcpuspeed=None, custommemory=None, rootdisksize=None,
                rootdiskcontroller=None, vpcid=None, macaddress=None, datadisktemplate_diskoffering_list={},
                properties=None, nicnetworklist=None, bootmode=None, boottype=None, dynamicscalingenabled=None,
-               userdataid=None, userdatadetails=None, extraconfig=None, size=None, overridediskofferingid=None):
+               userdataid=None, userdatadetails=None, extraconfig=None, size=None, overridediskofferingid=None,
+               leaseduration=None, leaseexpiryaction=None, volumeid=None, snapshotid=None):
+
         """Create the instance"""
 
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -690,6 +692,18 @@ class VirtualMachine:
 
         if extraconfig:
             cmd.extraconfig = extraconfig
+
+        if leaseduration:
+            cmd.leaseduration = leaseduration
+
+        if leaseexpiryaction:
+            cmd.leaseexpiryaction = leaseexpiryaction
+
+        if volumeid:
+            cmd.volumeid = volumeid
+
+        if snapshotid:
+            cmd.snapshotid = snapshotid
 
         virtual_machine = apiclient.deployVirtualMachine(cmd, method=method)
 
@@ -1208,12 +1222,15 @@ class Volume:
 
     @classmethod
     def create_from_snapshot(cls, apiclient, snapshot_id, services,
-                             account=None, domainid=None, projectid=None):
+                             account=None, domainid=None, projectid=None, zoneid=None, disk_offering=None, size=None):
         """Create Volume from snapshot"""
         cmd = createVolume.createVolumeCmd()
         cmd.name = "-".join([services["diskname"], random_gen()])
         cmd.snapshotid = snapshot_id
-        cmd.zoneid = services["zoneid"]
+        if zoneid:
+            cmd.zoneid = zoneid
+        elif "zoneid" in services:
+            cmd.zoneid = services["zoneid"]
         if "size" in services:
             cmd.size = services["size"]
         if "ispublic" in services:
@@ -1231,6 +1248,12 @@ class Volume:
 
         if projectid:
             cmd.projectid = projectid
+
+        if disk_offering:
+            cmd.diskofferingid = disk_offering
+
+        if size:
+            cmd.size = size
 
         return Volume(apiclient.createVolume(cmd).__dict__)
 
@@ -2729,10 +2752,13 @@ class DiskOffering:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, tags=None, custom=False, domainid=None, cacheMode=None, **kwargs):
+    def create(cls, apiclient, services, tags=None, custom=False, domainid=None, cacheMode=None, displaytext=None, **kwargs):
         """Create Disk offering"""
         cmd = createDiskOffering.createDiskOfferingCmd()
-        cmd.displaytext = services["displaytext"]
+        if displaytext:
+            cmd.displaytext = displaytext
+        else:
+            cmd.displaytext = services["displaytext"]
         cmd.name = services["name"]
         if custom:
             cmd.customized = True
@@ -4575,6 +4601,7 @@ class Project:
 
     def __init__(self, items):
         self.__dict__.update(items)
+
 
     @classmethod
     def create(cls, apiclient, services, account=None, domainid=None, userid=None, accountid=None):
@@ -6720,7 +6747,7 @@ class GuestOSCategory:
 class GuestOS:
     """Manage Guest OS"""
 
-    def __init__(self, items, services):
+    def __init__(self, items):
         self.__dict__.update(items)
 
     @classmethod
@@ -6735,7 +6762,7 @@ class GuestOS:
         if details is not None:
             cmd.details = details
 
-        return (apiclient.addGuestOs(cmd))
+        return GuestOS(apiclient.addGuestOs(cmd).__dict__)
 
     @classmethod
     def remove(cls, apiclient, id):
@@ -6772,10 +6799,13 @@ class GuestOS:
 
         return (apiclient.listOsTypes(cmd))
 
+    def delete(self, apiclient):
+        self.remove(apiclient, self.id)
+
 class GuestOsMapping:
     """Manage Guest OS Mappings"""
 
-    def __init__(self, items, services):
+    def __init__(self, items):
         self.__dict__.update(items)
 
     @classmethod
@@ -6793,7 +6823,7 @@ class GuestOsMapping:
         if forced is not None:
             cmd.forced = forced
 
-        return (apiclient.addGuestOsMapping(cmd))
+        return GuestOsMapping(apiclient.addGuestOsMapping(cmd).__dict__)
 
     @classmethod
     def remove(cls, apiclient, id):
@@ -6836,6 +6866,9 @@ class GuestOsMapping:
             cmd.hypervisorversion = hypervisorversion
 
         return (apiclient.listGuestOsMapping(cmd))
+
+    def delete(self, apiclient):
+        self.remove(apiclient, self.id)
 
 class VMSchedule:
 

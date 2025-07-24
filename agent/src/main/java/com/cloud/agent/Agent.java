@@ -453,22 +453,30 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         certExecutor.schedule(new PostCertificateRenewalTask(this), 5, TimeUnit.SECONDS);
     }
 
-    private void scheduleHostLBCheckerTask(final long checkInterval) {
+    private void scheduleHostLBCheckerTask(final String lbAlgorithm, final long checkInterval) {
         String name = "HostLBCheckerTask";
         if (hostLbCheckExecutor != null && !hostLbCheckExecutor.isShutdown()) {
+            logger.info("Shutting down the preferred host checker task {}", name);
             hostLbCheckExecutor.shutdown();
             try {
                 if (!hostLbCheckExecutor.awaitTermination(1, TimeUnit.SECONDS)) {
                     hostLbCheckExecutor.shutdownNow();
                 }
             } catch (InterruptedException e) {
-                logger.debug("Forcing {} shutdown as it did not shutdown in the desired time due to: {}",
+                logger.debug("Forcing the preferred host checker task {} shutdown as it did not shutdown in the desired time due to: {}",
                         name, e.getMessage());
                 hostLbCheckExecutor.shutdownNow();
             }
         }
         if (checkInterval > 0L) {
-            logger.info("Scheduling preferred host task with host.lb.interval={}ms", checkInterval);
+            if ("shuffle".equalsIgnoreCase(lbAlgorithm)) {
+                logger.info("Scheduling the preferred host checker task to trigger once (to apply lb algorithm '{}') after host.lb.interval={} ms", lbAlgorithm, checkInterval);
+                hostLbCheckExecutor = Executors.newSingleThreadScheduledExecutor((new NamedThreadFactory(name)));
+                hostLbCheckExecutor.schedule(new PreferredHostCheckerTask(), checkInterval, TimeUnit.MILLISECONDS);
+                return;
+            }
+
+            logger.info("Scheduling a recurring preferred host checker task with lb algorithm '{}' and host.lb.interval={} ms", lbAlgorithm, checkInterval);
             hostLbCheckExecutor = Executors.newSingleThreadScheduledExecutor((new NamedThreadFactory(name)));
             hostLbCheckExecutor.scheduleAtFixedRate(new PreferredHostCheckerTask(), checkInterval, checkInterval,
                     TimeUnit.MILLISECONDS);
@@ -800,6 +808,9 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                         }
                         commandsInProgress.incrementAndGet();
                         try {
+                            if (cmd.isReconcile()) {
+                                cmd.setRequestSequence(request.getSequence());
+                            }
                             answer = serverResource.executeRequest(cmd);
                         } finally {
                             commandsInProgress.decrementAndGet();
@@ -925,7 +936,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         return new SetupCertificateAnswer(true);
     }
 
-    private void processManagementServerList(final List<String> msList, final List<String> avoidMsList, final String lbAlgorithm, final Long lbCheckInterval) {
+    private void processManagementServerList(final List<String> msList, final List<String> avoidMsList, final String lbAlgorithm, final Long lbCheckInterval, final boolean triggerHostLB) {
         if (CollectionUtils.isNotEmpty(msList) && StringUtils.isNotEmpty(lbAlgorithm)) {
             try {
                 final String newMSHosts = String.format("%s%s%s", com.cloud.utils.StringUtils.toCSVList(msList), IAgentShell.hostLbAlgorithmSeparator, lbAlgorithm);
@@ -938,22 +949,24 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
             }
         }
         shell.setAvoidHosts(avoidMsList);
-        if ("shuffle".equals(lbAlgorithm)) {
-            scheduleHostLBCheckerTask(0);
-        } else {
-            scheduleHostLBCheckerTask(shell.getLbCheckerInterval(lbCheckInterval));
+        if (triggerHostLB) {
+            logger.info("Triggering the preferred host checker task now");
+            ScheduledExecutorService hostLbExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("HostLB-Executor"));
+            hostLbExecutor.schedule(new PreferredHostCheckerTask(), 0, TimeUnit.MILLISECONDS);
+            hostLbExecutor.shutdown();
         }
+        scheduleHostLBCheckerTask(lbAlgorithm, shell.getLbCheckerInterval(lbCheckInterval));
     }
 
     private Answer setupManagementServerList(final SetupMSListCommand cmd) {
-        processManagementServerList(cmd.getMsList(), cmd.getAvoidMsList(), cmd.getLbAlgorithm(), cmd.getLbCheckInterval());
+        processManagementServerList(cmd.getMsList(), cmd.getAvoidMsList(), cmd.getLbAlgorithm(), cmd.getLbCheckInterval(), cmd.getTriggerHostLb());
         return new SetupMSListAnswer(true);
     }
 
     private Answer migrateAgentToOtherMS(final MigrateAgentConnectionCommand cmd) {
         try {
             if (CollectionUtils.isNotEmpty(cmd.getMsList())) {
-                processManagementServerList(cmd.getMsList(), cmd.getAvoidMsList(), cmd.getLbAlgorithm(), cmd.getLbCheckInterval());
+                processManagementServerList(cmd.getMsList(), cmd.getAvoidMsList(), cmd.getLbAlgorithm(), cmd.getLbCheckInterval(), false);
             }
             Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("MigrateAgentConnection-Job")).schedule(() -> {
                 migrateAgentConnection(cmd.getAvoidMsList());
@@ -1021,6 +1034,8 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         if ((answer.isSendStartup()) && reconnectAllowed) {
             logger.info("Management server requested startup command to reinitialize the agent");
             sendStartup(link);
+        } else {
+            serverResource.processPingAnswer((PingAnswer) answer);
         }
         shell.setAvoidHosts(answer.getAvoidMsList());
     }
@@ -1041,7 +1056,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         }
 
         verifyAgentArch(ready.getArch());
-        processManagementServerList(ready.getMsHostList(), ready.getAvoidMsHostList(), ready.getLbAlgorithm(), ready.getLbCheckInterval());
+        processManagementServerList(ready.getMsHostList(), ready.getAvoidMsHostList(), ready.getLbAlgorithm(), ready.getLbCheckInterval(), false);
 
         logger.info("Ready command is processed for agent [id: {}, uuid: {}, name: {}]", getId(), getUuid(), getName());
     }
@@ -1087,6 +1102,9 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
             Answer answer = null;
             commandsInProgress.incrementAndGet();
             try {
+                if (command.isReconcile()) {
+                    command.setRequestSequence(req.getSequence());
+                }
                 answer = serverResource.executeRequest(command);
             } finally {
                 commandsInProgress.decrementAndGet();

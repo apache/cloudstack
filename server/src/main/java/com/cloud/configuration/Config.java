@@ -504,7 +504,6 @@ public enum Config {
             "300",
             "The time interval in seconds when the management server polls for snapshots to be scheduled.",
             null),
-    SnapshotDeltaMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.delta.max", "16", "max delta snapshots between two full snapshots.", null),
     KVMSnapshotEnabled("Hidden", SnapshotManager.class, Boolean.class, "kvm.snapshot.enabled", "false", "Whether volume snapshot is enabled on running instances on a KVM host", null),
 
     // Advanced
@@ -898,8 +897,9 @@ public enum Config {
             String.class,
             "host.capacityType.to.order.clusters",
             "CPU",
-            "The host capacity type (CPU or RAM) is used by deployment planner to order clusters during VM resource allocation",
-            "CPU,RAM"),
+            "The host capacity type (CPU, RAM, COMBINED) is used by deployment planner to order clusters during VM resource allocation",
+            "CPU,RAM,COMBINED"),
+
     ApplyAllocationAlgorithmToPods(
             "Advanced",
             ManagementServer.class,

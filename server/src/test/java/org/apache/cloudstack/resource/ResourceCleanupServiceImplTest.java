@@ -17,6 +17,11 @@
 package org.apache.cloudstack.resource;
 
 import java.lang.reflect.Field;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.zone.ZoneRules;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -70,7 +75,7 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicDetailsDao;
 import com.cloud.vm.dao.NicExtraDhcpOptionDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
@@ -106,7 +111,7 @@ public class ResourceCleanupServiceImplTest {
     @Mock
     VMSnapshotDetailsDao vmSnapshotDetailsDao;
     @Mock
-    UserVmDetailsDao userVmDetailsDao;
+    VMInstanceDetailsDao vmInstanceDetailsDao;
     @Mock
     AutoScaleVmGroupVmMapDao autoScaleVmGroupVmMapDao;
     @Mock
@@ -292,7 +297,7 @@ public class ResourceCleanupServiceImplTest {
         resourceCleanupService.purgeLinkedVMEntities(new ArrayList<>(), 50L);
         Mockito.verify(resourceCleanupService, Mockito.never()).purgeVMVolumes(Mockito.anyList(),
                 Mockito.anyLong());
-        Mockito.verify(userVmDetailsDao, Mockito.never())
+        Mockito.verify(vmInstanceDetailsDao, Mockito.never())
                 .batchExpungeForResources(Mockito.anyList(), Mockito.anyLong());
     }
 
@@ -302,7 +307,7 @@ public class ResourceCleanupServiceImplTest {
                 Mockito.eq(batchSize));
         Mockito.doReturn(2L).when(resourceCleanupService).purgeVMNics(Mockito.anyList(),
                 Mockito.eq(batchSize));
-        Mockito.when(userVmDetailsDao.batchExpungeForResources(Mockito.anyList(), Mockito.anyLong())).thenReturn(2L);
+        Mockito.when(vmInstanceDetailsDao.batchExpungeForResources(Mockito.anyList(), Mockito.anyLong())).thenReturn(2L);
         Mockito.doReturn(2L).when(resourceCleanupService).purgeVMSnapshots(Mockito.anyList(),
                 Mockito.eq(batchSize));
         Mockito.when(autoScaleVmGroupVmMapDao.expungeByVmList(Mockito.anyList(), Mockito.anyLong())).thenReturn(2);
@@ -322,7 +327,7 @@ public class ResourceCleanupServiceImplTest {
 
         Mockito.verify(resourceCleanupService, Mockito.times(1)).purgeVMVolumes(ids, batchSize);
         Mockito.verify(resourceCleanupService, Mockito.times(1)).purgeVMNics(ids, batchSize);
-        Mockito.verify(userVmDetailsDao, Mockito.times(1))
+        Mockito.verify(vmInstanceDetailsDao, Mockito.times(1))
                 .batchExpungeForResources(ids, batchSize);
         Mockito.verify(resourceCleanupService, Mockito.times(1))
                 .purgeVMSnapshots(ids, batchSize);
@@ -629,9 +634,23 @@ public class ResourceCleanupServiceImplTest {
         Date result = resourceCleanupService.calculatePastDateFromConfig(
                 ResourceCleanupService.ExpungedResourcesPurgeKeepPastDays.key(),
                 days);
-        Date today = new Date();
-        long diff = today.getTime() - result.getTime();
-        Assert.assertEquals(days, TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS));
+        Instant resultInstant = result.toInstant();
+        ZoneId systemZone = ZoneId.systemDefault();
+        ZoneRules rules = systemZone.getRules();
+        ZonedDateTime resultDateTime = resultInstant.atZone(systemZone);
+        boolean isDSTInResultDateTime = rules.isDaylightSavings(resultDateTime.toInstant());
+
+        ZonedDateTime todayDateTime = ZonedDateTime.now(systemZone);
+        boolean isDSTInTodayDateTime = rules.isDaylightSavings(todayDateTime.toInstant());
+
+        Duration duration = Duration.between(resultDateTime, todayDateTime);
+        long actualDays = TimeUnit.DAYS.convert(duration.toMillis(), TimeUnit.MILLISECONDS);
+
+        if (!isDSTInResultDateTime && isDSTInTodayDateTime) {
+            Assert.assertEquals(days - 1, actualDays);
+        } else {
+            Assert.assertEquals(days, actualDays);
+        }
     }
 
     @Test

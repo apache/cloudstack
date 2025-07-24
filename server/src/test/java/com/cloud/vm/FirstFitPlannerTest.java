@@ -17,6 +17,7 @@
 package com.cloud.vm;
 
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -30,6 +31,8 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.capacity.CapacityVO;
+import com.cloud.dc.ClusterDetailsVO;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.framework.config.ConfigDepot;
@@ -42,10 +45,10 @@ import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.test.utils.SpringUtils;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -95,7 +98,7 @@ import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -113,7 +116,7 @@ public class FirstFitPlannerTest {
     @Inject
     HostDetailsDao hostDetailsDao;
     @Inject
-    UserVmDetailsDao vmDetailsDao;
+    VMInstanceDetailsDao vmDetailsDao;
     @Inject
     ConfigurationDao configDao;
     @Inject
@@ -138,7 +141,9 @@ public class FirstFitPlannerTest {
     ScopedConfigStorage scopedStorage;
     @Inject
     HostDao hostDao;
-
+    @Inject
+    private ClusterDetailsDao clusterDetailsDao;
+    private static final double TOLERANCE = 0.0001;
     private static long domainId = 1L;
     long dataCenterId = 1L;
     long accountId = 1L;
@@ -241,6 +246,69 @@ public class FirstFitPlannerTest {
         assertTrue("Reordered cluster list does not have clusters exceeding threshold", (clusterList.containsAll(clustersCrossingThreshold)));
     }
 
+
+    @Test
+    public void testGetClusterOrderCapacityType() {
+        Assert.assertEquals(1, FirstFitPlanner.getHostCapacityTypeToOrderCluster("CPU", 0.5));
+        Assert.assertEquals(0, FirstFitPlanner.getHostCapacityTypeToOrderCluster("RAM", 0.5));
+        String combinedOrder = "COMBINED";
+        Assert.assertEquals(1, FirstFitPlanner.getHostCapacityTypeToOrderCluster(combinedOrder, 1)); // cputomemoryweight:1 -> CPU
+        Assert.assertEquals(0, FirstFitPlanner.getHostCapacityTypeToOrderCluster(combinedOrder, 0)); // cputomemoryweight: 0 -> RAM
+        Assert.assertEquals(-1, FirstFitPlanner.getHostCapacityTypeToOrderCluster(combinedOrder, 0.5));
+    }
+
+    @Test
+    public void testGetPodByCombinedCapacities() {
+        List<CapacityVO> mockCapacity = getPodCapacities();
+        ClusterDetailsVO clusterDetailsOverCommitRatio = mock(ClusterDetailsVO.class);
+        when(clusterDetailsOverCommitRatio.getValue()).thenReturn("1.0");
+        when(clusterDetailsDao.findDetail(anyLong(), anyString())).thenReturn(clusterDetailsOverCommitRatio);
+
+        Map<Long, Double> podByCombinedCapacity = planner.getPodByCombinedCapacities(mockCapacity, 0.5);
+        Long firstPodId = podByCombinedCapacity.keySet().iterator().next();
+        Assert.assertEquals("Pod with ID 1 should be first in ordering", Long.valueOf(1L), firstPodId);
+        Assert.assertEquals("Pod 1 combined capacity should match expected value",
+                0.0390625, podByCombinedCapacity.get(1L), TOLERANCE);
+        Assert.assertEquals("Pod 2 combined capacity should match expected value",
+                0.0703125, podByCombinedCapacity.get(2L), TOLERANCE);
+
+        // Test scenario 2: Modified capacity usage (0.7 weight)
+        when(mockCapacity.get(0).getUsedCapacity()).thenReturn(1500L);
+        podByCombinedCapacity = planner.getPodByCombinedCapacities(mockCapacity, 0.7);
+        firstPodId = podByCombinedCapacity.keySet().iterator().next();
+        Assert.assertEquals("Pod with ID 2 should be first in ordering", Long.valueOf(2L), firstPodId);
+        Assert.assertEquals("Pod 2 combined capacity should match expected value",
+                0.04843750, podByCombinedCapacity.get(2L), TOLERANCE);
+        Assert.assertEquals("Pod 1 combined capacity should match expected value",
+                0.05156250, podByCombinedCapacity.get(1L), TOLERANCE);
+    }
+
+    @Test
+    public void testGetClusterByCombinedCapacities() {
+        List<CapacityVO> mockCapacity = getClusterCapacities();
+        ClusterDetailsVO clusterDetailsOverCommitRatio = mock(ClusterDetailsVO.class);
+        when(clusterDetailsOverCommitRatio.getValue()).thenReturn("1.0");
+        when(clusterDetailsDao.findDetail(anyLong(), anyString())).thenReturn(clusterDetailsOverCommitRatio);
+
+        Map<Long, Double> clusterByCombinedCapacity = planner.getClusterByCombinedCapacities(mockCapacity, 0.5);
+        Long firstClusterId = clusterByCombinedCapacity.keySet().iterator().next();
+        Assert.assertEquals("Cluster with ID 1 should be first in ordering", Long.valueOf(1L), firstClusterId);
+        Assert.assertEquals("Cluster 1 combined capacity should match expected value",
+                0.046875, clusterByCombinedCapacity.get(1L), TOLERANCE);
+        Assert.assertEquals("Cluster 2 combined capacity should match expected value",
+                0.07421875, clusterByCombinedCapacity.get(2L), TOLERANCE);
+
+        // Test scenario 2: Modified capacity usage (0.7 weight)
+        when(mockCapacity.get(0).getUsedCapacity()).thenReturn(2000L);
+        clusterByCombinedCapacity = planner.getClusterByCombinedCapacities(mockCapacity, 0.7);
+        firstClusterId = clusterByCombinedCapacity.keySet().iterator().next();
+        Assert.assertEquals("Cluster with ID 2 should be first in ordering", Long.valueOf(2L), firstClusterId);
+        Assert.assertEquals("Cluster 2 combined capacity should match expected value",
+                0.05390625, clusterByCombinedCapacity.get(2L), TOLERANCE);
+        Assert.assertEquals("Cluster 1 combined capacity should match expected value",
+                0.0625, clusterByCombinedCapacity.get(1L), TOLERANCE);
+    }
+
     private List<Long> initializeForClusterThresholdDisabled() {
         when(configDepot.getConfigStringValue(DeploymentClusterPlanner.ClusterThresholdEnabled.key(),
                 ConfigKey.Scope.Global, null)).thenReturn(Boolean.FALSE.toString());
@@ -293,7 +361,7 @@ public class FirstFitPlannerTest {
 
         when(
             capacityDao.listClustersInZoneOrPodByHostCapacities(dataCenterId, 12L, noOfCpusInOffering * cpuSpeedInOffering, ramInOffering * 1024L * 1024L,
-                Capacity.CAPACITY_TYPE_CPU, true)).thenReturn(clustersWithEnoughCapacity);
+                    true)).thenReturn(clustersWithEnoughCapacity);
 
         Map<Long, Double> clusterCapacityMap = new HashMap<Long, Double>();
         clusterCapacityMap.put(1L, 2048D);
@@ -327,7 +395,7 @@ public class FirstFitPlannerTest {
         hostList6.add(new Long(15));
         String[] implicitHostTags = {"GPU"};
         int ramInBytes = ramInOffering * 1024 * 1024;
-        when(serviceOfferingDetailsDao.findDetail(ArgumentMatchers.anyLong(), anyString())).thenReturn(null);
+        when(serviceOfferingDetailsDao.findDetail(anyLong(), anyString())).thenReturn(null);
         when(hostGpuGroupsDao.listHostIds()).thenReturn(hostList0);
         when(capacityDao.listHostsWithEnoughCapacity(noOfCpusInOffering * cpuSpeedInOffering, ramInBytes, new Long(1), Host.Type.Routing.toString())).thenReturn(hostList1);
         when(capacityDao.listHostsWithEnoughCapacity(noOfCpusInOffering * cpuSpeedInOffering, ramInBytes, new Long(2), Host.Type.Routing.toString())).thenReturn(hostList2);
@@ -408,8 +476,8 @@ public class FirstFitPlannerTest {
         }
 
         @Bean
-        public UserVmDetailsDao userVmDetailsDao() {
-            return Mockito.mock(UserVmDetailsDao.class);
+        public VMInstanceDetailsDao vmInstanceDetailsDao() {
+            return Mockito.mock(VMInstanceDetailsDao.class);
         }
 
         @Bean
@@ -504,5 +572,71 @@ public class FirstFitPlannerTest {
                 return SpringUtils.includedInBasePackageClasses(mdr.getClassMetadata().getClassName(), cs);
             }
         }
+    }
+
+    List<CapacityVO> getClusterCapacities() {
+        CapacityVO cpuCapacity1 = mock(CapacityVO.class);
+        when(cpuCapacity1.getClusterId()).thenReturn(1L);
+        when(cpuCapacity1.getTotalCapacity()).thenReturn(32000L);
+        when(cpuCapacity1.getReservedCapacity()).thenReturn(0L);
+        when(cpuCapacity1.getUsedCapacity()).thenReturn(1000L);
+        when(cpuCapacity1.getCapacityType()).thenReturn(CapacityVO.CAPACITY_TYPE_CPU);
+
+        CapacityVO cpuCapacity2 = mock(CapacityVO.class);
+        when(cpuCapacity2.getClusterId()).thenReturn(2L);
+        when(cpuCapacity2.getTotalCapacity()).thenReturn(32000L);
+        when(cpuCapacity2.getReservedCapacity()).thenReturn(0L);
+        when(cpuCapacity2.getUsedCapacity()).thenReturn(750L);
+        when(cpuCapacity2.getCapacityType()).thenReturn(CapacityVO.CAPACITY_TYPE_CPU);
+
+        CapacityVO memCapacity1 = mock(CapacityVO.class);
+        when(memCapacity1.getClusterId()).thenReturn(1L);
+        when(memCapacity1.getTotalCapacity()).thenReturn(8589934592L);
+        when(memCapacity1.getReservedCapacity()).thenReturn(0L);
+        when(memCapacity1.getUsedCapacity()).thenReturn(536870912L);
+        when(memCapacity1.getCapacityType()).thenReturn(CapacityVO.CAPACITY_TYPE_MEMORY);
+
+        CapacityVO memCapacity2 = mock(CapacityVO.class);
+        when(memCapacity2.getClusterId()).thenReturn(2L);
+        when(memCapacity2.getTotalCapacity()).thenReturn(8589934592L);
+        when(memCapacity2.getReservedCapacity()).thenReturn(0L);
+        when(memCapacity2.getUsedCapacity()).thenReturn(1073741824L);
+        when(memCapacity2.getCapacityType()).thenReturn(CapacityVO.CAPACITY_TYPE_MEMORY);
+        return Arrays.asList(cpuCapacity1, memCapacity1, cpuCapacity2, memCapacity2);
+    }
+
+    List<CapacityVO> getPodCapacities() {
+        CapacityVO cpuCapacity1 = mock(CapacityVO.class);
+        when(cpuCapacity1.getPodId()).thenReturn(1L);
+        when(cpuCapacity1.getClusterId()).thenReturn(1L);
+        when(cpuCapacity1.getTotalCapacity()).thenReturn(32000L);
+        when(cpuCapacity1.getReservedCapacity()).thenReturn(0L);
+        when(cpuCapacity1.getUsedCapacity()).thenReturn(500L);
+        when(cpuCapacity1.getCapacityType()).thenReturn(CapacityVO.CAPACITY_TYPE_CPU);
+
+        CapacityVO cpuCapacity2 = mock(CapacityVO.class);
+        when(cpuCapacity2.getPodId()).thenReturn(2L);
+        when(cpuCapacity2.getClusterId()).thenReturn(1L);
+        when(cpuCapacity2.getTotalCapacity()).thenReturn(32000L);
+        when(cpuCapacity2.getReservedCapacity()).thenReturn(0L);
+        when(cpuCapacity2.getUsedCapacity()).thenReturn(500L);
+        when(cpuCapacity2.getCapacityType()).thenReturn(CapacityVO.CAPACITY_TYPE_CPU);
+
+        CapacityVO memCapacity1 = mock(CapacityVO.class);
+        when(memCapacity1.getPodId()).thenReturn(1L);
+        when(memCapacity1.getClusterId()).thenReturn(1L);
+        when(memCapacity1.getTotalCapacity()).thenReturn(8589934592L);
+        when(memCapacity1.getReservedCapacity()).thenReturn(0L);
+        when(memCapacity1.getUsedCapacity()).thenReturn(536870912L);
+        when(memCapacity1.getCapacityType()).thenReturn(CapacityVO.CAPACITY_TYPE_MEMORY);
+
+        CapacityVO memCapacity2 = mock(CapacityVO.class);
+        when(memCapacity2.getPodId()).thenReturn(2L);
+        when(memCapacity2.getClusterId()).thenReturn(1L);
+        when(memCapacity2.getTotalCapacity()).thenReturn(8589934592L);
+        when(memCapacity2.getReservedCapacity()).thenReturn(0L);
+        when(memCapacity2.getUsedCapacity()).thenReturn(1073741824L);
+        when(memCapacity2.getCapacityType()).thenReturn(CapacityVO.CAPACITY_TYPE_MEMORY);
+        return Arrays.asList(cpuCapacity1, memCapacity1, cpuCapacity2, memCapacity2);
     }
 }

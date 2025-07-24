@@ -78,7 +78,7 @@ public class Upgrade42000to42010 extends DbUpgradeAbstractImpl implements DbUpgr
         try {
             systemVmTemplateRegistration.updateSystemVmTemplates(conn);
         } catch (Exception e) {
-            throw new CloudRuntimeException("Failed to find / register SystemVM template(s)");
+            throw new CloudRuntimeException("Failed to find / register SystemVM template(s)", e);
         }
     }
 
@@ -99,8 +99,6 @@ public class Upgrade42000to42010 extends DbUpgradeAbstractImpl implements DbUpgr
         DbUpgradeUtils.addIndexIfNeeded(conn, "vlan", "removed");
 
         DbUpgradeUtils.addIndexIfNeeded(conn, "network_offering_details", "name");
-
-        DbUpgradeUtils.addIndexIfNeeded(conn, "network_offering_details", "resource_id", "resource_type");
 
         DbUpgradeUtils.addIndexIfNeeded(conn, "service_offering", "cpu");
         DbUpgradeUtils.addIndexIfNeeded(conn, "service_offering", "speed");

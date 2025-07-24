@@ -248,6 +248,7 @@ cp -r plugins/network-elements/cisco-vnmc/src/main/scripts/network/cisco/* ${RPM
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/lib
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup
+mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/cks/conf
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/management
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/systemd/system/%{name}-management.service.d
@@ -273,7 +274,7 @@ wget https://github.com/apache/cloudstack-cloudmonkey/releases/download/$CMK_REL
 chmod +x ${RPM_BUILD_ROOT}%{_bindir}/cmk
 
 cp -r client/target/utilities/scripts/db/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup
-
+cp -r plugins/integrations/kubernetes-service/src/main/resources/conf/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/cks/conf
 cp -r client/target/cloud-client-ui-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/
 cp -r client/target/classes/META-INF/webapp ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapp
 cp ui/dist/config.json ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/
@@ -307,6 +308,11 @@ install -D server/target/conf/cloudstack-sudoers ${RPM_BUILD_ROOT}%{_sysconfdir}
 touch ${RPM_BUILD_ROOT}%{_localstatedir}/run/%{name}-management.pid
 #install -D server/target/conf/cloudstack-catalina.logrotate ${RPM_BUILD_ROOT}%{_sysconfdir}/logrotate.d/%{name}-catalina
 install -D server/target/conf/cloudstack-management.logrotate ${RPM_BUILD_ROOT}%{_sysconfdir}/logrotate.d/%{name}-management
+
+install -D plugins/integrations/kubernetes-service/src/main/resources/conf/etcd-node.yml ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/cks/conf/etcd-node.yml
+install -D plugins/integrations/kubernetes-service/src/main/resources/conf/k8s-control-node.yml ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/cks/conf/k8s-control-node.yml
+install -D plugins/integrations/kubernetes-service/src/main/resources/conf/k8s-control-node-add.yml ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/cks/conf/k8s-control-node-add.yml
+install -D plugins/integrations/kubernetes-service/src/main/resources/conf/k8s-node.yml ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/cks/conf/k8s-node.yml
 
 # SystemVM template
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/templates/systemvm
@@ -470,6 +476,8 @@ if [ -f %{_sysconfdir}/sysconfig/%{name}-management ] ; then
 fi
 
 chown -R cloud:cloud /var/log/cloudstack/management
+chown -R cloud:cloud /usr/share/cloudstack-management/templates
+find /usr/share/cloudstack-management/templates -type d -exec chmod 0770 {} \;
 
 systemctl daemon-reload
 
@@ -606,10 +614,14 @@ pip3 install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %attr(0755,root,root) %{_bindir}/%{name}-sysvmadm
 %attr(0755,root,root) %{_bindir}/%{name}-setup-encryption
 %attr(0755,root,root) %{_bindir}/cmk
+%{_datadir}/%{name}-management/cks/conf/*.yml
 %{_datadir}/%{name}-management/setup/*.sql
 %{_datadir}/%{name}-management/setup/*.sh
 %{_datadir}/%{name}-management/setup/server-setup.xml
 %{_datadir}/%{name}-management/webapp/*
+%dir %attr(0770, cloud, cloud) %{_datadir}/%{name}-management/templates
+%dir %attr(0770, cloud, cloud) %{_datadir}/%{name}-management/templates/systemvm
+%attr(0644, cloud, cloud) %{_datadir}/%{name}-management/templates/systemvm/*
 %attr(0755,root,root) %{_bindir}/%{name}-external-ipallocator.py
 %attr(0755,root,root) %{_initrddir}/%{name}-ipallocator
 %dir %attr(0770,root,root) %{_localstatedir}/log/%{name}/ipallocator

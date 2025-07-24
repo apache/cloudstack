@@ -457,7 +457,7 @@
 <script>
 import { ref, reactive, toRaw, h } from 'vue'
 import { Button } from 'ant-design-vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import { genericCompare } from '@/utils/sort.js'
 import { sourceToken } from '@/utils/request'
@@ -731,7 +731,7 @@ export default {
       if (!projectId || !projectId.length || projectId.length !== 36) {
         return
       }
-      api('listProjects', { id: projectId, listall: true, details: 'min' }).then(json => {
+      getAPI('listProjects', { id: projectId, listall: true, details: 'min' }).then(json => {
         if (!json || !json.listprojectsresponse || !json.listprojectsresponse.project) return
         const projects = json.listprojectsresponse.project
         const project = json.listprojectsresponse.project[0]
@@ -829,7 +829,12 @@ export default {
       }
 
       if (this.$route && this.$route.meta && this.$route.meta.permission) {
-        this.apiName = (this.$route.meta.getApiToCall && this.$route.meta.getApiToCall()) || this.$route.meta.permission[0]
+        this.apiName = this.$route.meta.permission[0]
+        if (!store.getters.metrics && !this.dataView &&
+            this.apiName && this.apiName.endsWith('Metrics') &&
+            store.getters.apis[this.apiName.replace(/Metrics$/, '')]) {
+          this.apiName = this.apiName.replace(/Metrics$/, '')
+        }
         if (this.$route.meta.columns) {
           const columns = this.$route.meta.columns
           if (columns && typeof columns === 'function') {
@@ -914,10 +919,14 @@ export default {
       if (['listVirtualMachinesMetrics'].includes(this.apiName) && this.dataView) {
         delete params.details
         delete params.isvnf
-        params.details = 'group,nics,secgrp,tmpl,servoff,diskoff,iso,volume,affgrp'
+        params.details = 'group,nics,secgrp,tmpl,servoff,diskoff,iso,volume,affgrp,backoff'
       }
 
       this.loading = true
+      if (this.$route.path.startsWith('/cniconfiguration')) {
+        params.forcks = true
+        console.log('here')
+      }
       if (this.$route.params && this.$route.params.id) {
         params.id = this.$route.params.id
         if (['listNetworks'].includes(this.apiName) && 'displaynetwork' in this.$route.query) {
@@ -979,7 +988,7 @@ export default {
         delete params.listall
       }
 
-      api(this.apiName, params).then(json => {
+      postAPI(this.apiName, params).then(json => {
         var responseName
         var objectName
         for (const key in json) {
@@ -1010,7 +1019,7 @@ export default {
         this.itemCount = apiItemCount
 
         if (this.dataView && this.$route.path.includes('/zone/') && 'listVmwareDcs' in this.$store.getters.apis) {
-          api('listVmwareDcs', { zoneid: this.items[0].id }).then(response => {
+          getAPI('listVmwareDcs', { zoneid: this.items[0].id }).then(response => {
             this.items[0].vmwaredc = response.listvmwaredcsresponse.VMwareDC
           })
         }
@@ -1184,9 +1193,9 @@ export default {
       this.getFirstIndexFocus()
 
       this.showAction = true
-      const listIconForFillValues = ['copy-outlined', 'CopyOutlined', 'edit-outlined', 'EditOutlined', 'share-alt-outlined', 'ShareAltOutlined']
+      const listIconForFillValues = ['copy-outlined', 'CopyOutlined', 'edit-outlined', 'EditOutlined', 'share-alt-outlined', 'ShareAltOutlined', 'minus-square-outlined']
       for (const param of this.currentAction.paramFields) {
-        if (param.type === 'list' && ['tags', 'hosttags', 'storagetags', 'files'].includes(param.name)) {
+        if (param.type === 'list' && ['tags', 'hosttags', 'storagetags', 'storageaccessgroups', 'files'].includes(param.name)) {
           param.type = 'string'
         }
         this.setRules(param)
@@ -1256,6 +1265,9 @@ export default {
       }
       var paramName = param.name
       var extractedParamName = paramName.replace('ids', '').replace('id', '').toLowerCase()
+      if (extractedParamName.endsWith('ory')) {
+        extractedParamName = extractedParamName.slice(0, -3) + 'orie'
+      }
       var params = { listall: true }
       for (const filter in filters) {
         params[filter] = filters[filter]
@@ -1306,7 +1318,7 @@ export default {
       if (showIcon) {
         params.showicon = true
       }
-      api(possibleApi, params).then(json => {
+      postAPI(possibleApi, params).then(json => {
         param.loading = false
         for (const obj in json) {
           if (obj.includes('response')) {
@@ -1410,6 +1422,8 @@ export default {
         fieldValue = this.resource[fieldName] ? this.resource[fieldName] : null
         if (fieldValue) {
           this.form[field.name] = fieldValue
+        } else if (field.type === 'boolean' && field.name === 'rebalance' && this.currentAction.api === 'cancelMaintenance') {
+          this.form[field.name] = true
         }
       })
     },
@@ -1474,7 +1488,7 @@ export default {
     callGroupApi (params, resourceName) {
       return new Promise((resolve, reject) => {
         const action = this.currentAction
-        api(action.api, params).then(json => {
+        postAPI(action.api, params).then(json => {
           resolve(this.handleResponse(json, resourceName, this.getDataIdentifier(params), action, false))
           this.closeAction()
         }).catch(error => {
@@ -1566,6 +1580,10 @@ export default {
           }
         }
 
+        if (['cancelMaintenance'].includes(action.api) && (params.rebalance === undefined || params.rebalance === null || params.rebalance === '')) {
+          params.rebalance = true
+        }
+
         for (const key in values) {
           const input = values[key]
           for (const param of action.params) {
@@ -1581,7 +1599,7 @@ export default {
               }
               break
             }
-            if (input === '' && !['tags', 'hosttags', 'storagetags', 'dns2', 'ip6dns1',
+            if (input === '' && !['tags', 'hosttags', 'storagetags', 'storageaccessgroups', 'dns2', 'ip6dns1',
               'ip6dns2', 'internaldns2', 'networkdomain', 'secretkey'].includes(key)) {
               break
             }
@@ -1635,13 +1653,8 @@ export default {
 
         var hasJobId = false
         this.actionLoading = true
-        let args = null
-        if (action.post) {
-          args = [action.api, {}, 'POST', params]
-        } else {
-          args = [action.api, params]
-        }
-        api(...args).then(json => {
+        const args = [action.api, params]
+        postAPI(...args).then(json => {
           var response = this.handleResponse(json, resourceName, this.getDataIdentifier(params), action)
           if (!response) {
             this.fetchData()
@@ -1719,6 +1732,7 @@ export default {
       delete query.domainid
       delete query.state
       delete query.annotationfilter
+      delete query.leased
       if (this.$route.name === 'template') {
         query.templatefilter = filter
       } else if (this.$route.name === 'iso') {
@@ -1768,6 +1782,8 @@ export default {
           query.domainid = this.$store.getters.userInfo.domainid
         } else if (['running', 'stopped'].includes(filter)) {
           query.state = filter
+        } else if (filter === 'leased') {
+          query.leased = true
         }
       } else if (this.$route.name === 'comment') {
         query.annotationfilter = filter

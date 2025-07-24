@@ -160,7 +160,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { postAPI } from '@/api'
 
 export default {
   name: 'AddPaloAltoFirewall',
@@ -399,7 +399,7 @@ export default {
     },
     addNetworkServiceProvider (args) {
       return new Promise((resolve, reject) => {
-        api('addNetworkServiceProvider', args).then(async json => {
+        postAPI('addNetworkServiceProvider', args).then(async json => {
           this.$pollJob({
             jobId: json.addnetworkserviceproviderresponse.jobid,
             successMethod: (result) => {
@@ -420,7 +420,7 @@ export default {
     },
     addPaloAltoFirewall (args) {
       return new Promise((resolve, reject) => {
-        api('addPaloAltoFirewall', args).then(json => {
+        postAPI('addPaloAltoFirewall', args).then(json => {
           const jobId = json.addpaloaltofirewallresponse.jobid || null
           resolve(jobId)
         }).catch(error => {
