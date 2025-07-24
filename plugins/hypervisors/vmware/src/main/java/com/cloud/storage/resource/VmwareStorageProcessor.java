@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
-import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
+import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplianceCommand;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
@@ -3775,7 +3775,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
     }
 
     @Override
-    public Answer checkDataStoreStoragePolicyCompliance(CheckDataStoreStoragePolicyComplainceCommand cmd) {
+    public Answer checkDataStoreStoragePolicyCompliance(CheckDataStoreStoragePolicyComplianceCommand cmd) {
         String primaryStorageNameLabel = cmd.getStoragePool().getUuid();
         String storagePolicyId = cmd.getStoragePolicyId();
         VmwareContext context = hostService.getServiceContext(cmd);

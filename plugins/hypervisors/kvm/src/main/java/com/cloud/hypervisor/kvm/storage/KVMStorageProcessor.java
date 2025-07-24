@@ -62,7 +62,7 @@ import org.apache.cloudstack.direct.download.DirectTemplateDownloader;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
-import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
+import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplianceCommand;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
@@ -3115,8 +3115,8 @@ public class KVMStorageProcessor implements StorageProcessor {
     }
 
     @Override
-    public Answer checkDataStoreStoragePolicyCompliance(CheckDataStoreStoragePolicyComplainceCommand cmd) {
-        logger.info("'CheckDataStoreStoragePolicyComplainceCommand' not currently applicable for KVMStorageProcessor");
+    public Answer checkDataStoreStoragePolicyCompliance(CheckDataStoreStoragePolicyComplianceCommand cmd) {
+        logger.info("'CheckDataStoreStoragePolicyComplianceCommand' not currently applicable for KVMStorageProcessor");
         return new Answer(cmd,false,"Not currently applicable for KVMStorageProcessor");
     }
 
