@@ -148,7 +148,7 @@
                       @handle-image-search-filter="filters => fetchImages(filters)"
                       @update-image="updateFieldValue"
                       @update-disk-size="updateFieldValue"
-                      @change-iso-hypervisor="value => hypervisor = value" />
+                      @change-iso-hypervisor="value => form.hypervisor = value" />
                     <a-card
                       v-else
                       :tabList="imageTypeList"
