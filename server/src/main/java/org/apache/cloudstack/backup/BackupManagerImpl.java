@@ -57,7 +57,7 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.DomainManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.fsm.NoTransitionException;
-import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VmDiskInfo;
 import javax.inject.Inject;
@@ -153,7 +153,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -197,7 +197,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     @Inject
     private UserVmJoinDao userVmJoinDao;
     @Inject
-    private UserVmDetailsDao userVmDetailsDao;
+    private VMInstanceDetailsDao vmInstanceDetailsDao;
     @Inject
     private NetworkDao networkDao;
     @Inject
@@ -340,9 +340,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         VirtualMachineTemplate template = vmTemplateDao.findById(vm.getTemplateId());
         details.put(ApiConstants.TEMPLATE_ID, template.getUuid());
 
-        List<UserVmDetailVO> vmDetails = userVmDetailsDao.listDetails(vm.getId());
+        List<VMInstanceDetailVO> vmDetails = vmInstanceDetailsDao.listDetails(vm.getId());
         HashMap<String, String> settings = new HashMap<>();
-        for (UserVmDetailVO detail : vmDetails) {
+        for (VMInstanceDetailVO detail : vmDetails) {
             settings.put(detail.getName(), detail.getValue());
         }
         if (!settings.isEmpty()) {

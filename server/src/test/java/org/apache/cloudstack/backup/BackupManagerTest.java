@@ -58,12 +58,12 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
-import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmDiskInfo;
 import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -201,7 +201,7 @@ public class BackupManagerTest {
     private NetworkService networkService;
 
     @Mock
-    private UserVmDetailsDao userVmDetailsDao;
+    private VMInstanceDetailsDao vmInstanceDetailsDao;
 
     private AccountVO account;
     private UserVO user;
@@ -932,11 +932,11 @@ public class BackupManagerTest {
         when(template.getUuid()).thenReturn("template-uuid");
         when(vmTemplateDao.findById(2L)).thenReturn(template);
 
-        UserVmDetailVO userVmDetail = mock(UserVmDetailVO.class);
-        when(userVmDetail.getName()).thenReturn("mocked-detail-name");
-        when(userVmDetail.getValue()).thenReturn("mocked-detail-value");
-        List<UserVmDetailVO> vmDetails = Collections.singletonList(userVmDetail);
-        when(userVmDetailsDao.listDetails(vmId)).thenReturn(vmDetails);
+        VMInstanceDetailVO vmInstanceDetail = mock(VMInstanceDetailVO.class);
+        when(vmInstanceDetail.getName()).thenReturn("mocked-detail-name");
+        when(vmInstanceDetail.getValue()).thenReturn("mocked-detail-value");
+        List<VMInstanceDetailVO> vmDetails = Collections.singletonList(vmInstanceDetail);
+        when(vmInstanceDetailsDao.listDetails(vmId)).thenReturn(vmDetails);
 
         UserVmJoinVO userVmJoinVO = mock(UserVmJoinVO.class);
         when(userVmJoinVO.getNetworkUuid()).thenReturn("mocked-network-uuid");
