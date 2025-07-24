@@ -185,9 +185,9 @@
           </div>
         </div>
       </a-list-item>
-      <a-list-item v-else-if="item === 'externaldetails' && ['host'].includes($route.meta.name) && filteredExternalDetails">
+      <a-list-item v-else-if="item === 'externaldetails' && ['host', 'computeoffering'].includes($route.meta.name) && filteredExternalDetails">
         <div>
-          <strong>{{ $t('label.configuration.details') }}</strong>
+          <strong>{{ ['host', 'computeoffering'].includes($route.meta.name) ? $t('label.externaldetails') : $t('label.configuration.details') }}</strong>
           <br/>
           <div>
             <object-list-table :data-map="filteredExternalDetails" />
@@ -267,7 +267,7 @@ export default {
         items.push('enddate')
       } else if (this.$route.meta.name === 'vm') {
         items.push('leaseexpirydate')
-      } else if (this.$route.meta.name === 'host') {
+      } else if (['host', 'computeoffering'].includes(this.$route.meta.name)) {
         items.push('externaldetails')
       }
       return items
@@ -394,7 +394,8 @@ export default {
     },
     filteredExternalDetails () {
       const detailsKeys = {
-        host: 'details'
+        host: 'details',
+        computeoffering: 'serviceofferingdetails'
       }
       const detailsKey = detailsKeys[this.$route.meta.name]
       if (!detailsKey || !this.dataResource) {
