@@ -118,6 +118,9 @@ import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
 import org.apache.cloudstack.api.command.user.network.DeleteNetworkACLCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
+import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotCmd;
+import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotCmd;
+import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
@@ -266,6 +269,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             DetachVolumeCmd.class,
             ResizeVolumeCmd.class,
             ListNetworksCmd.class,
+            CreateSnapshotCmd.class,
+            ListSnapshotsCmd.class,
+            DeleteSnapshotCmd.class,
             ListPublicIpAddressesCmd.class,
             AssociateIPAddrCmd.class,
             DisassociateIPAddrCmd.class,
