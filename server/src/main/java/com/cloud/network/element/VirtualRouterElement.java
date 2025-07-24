@@ -257,7 +257,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
     @Override
     public boolean prepare(final Network network, final NicProfile nic, final VirtualMachineProfile vm, final DeployDestination dest, final ReservationContext context)
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        if (vm.getType() != VirtualMachine.Type.User || vm.getHypervisorType() == HypervisorType.BareMetal || vm.getHypervisorType() == HypervisorType.External) {
+        if (vm.getType() != VirtualMachine.Type.User || vm.getHypervisorType() == HypervisorType.BareMetal) {
             return false;
         }
 
