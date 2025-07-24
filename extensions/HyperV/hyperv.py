@@ -105,6 +105,10 @@ class HyperVManager:
         except Exception as e:
             fail(str(e))
 
+    def vm_not_present(self, exception):
+        vm_not_present_str = f'Hyper-V was unable to find a virtual machine with name "{self.data["vmname"]}"'
+        return vm_not_present_str in str(exception)
+
     def create(self):
         vm_name = self.data["vmname"]
         cpus = self.data["cpus"]
@@ -180,7 +184,13 @@ class HyperVManager:
         succeed({"status": "success", "message": "Instance started"})
 
     def stop(self):
-        self.run_ps(f'Stop-VM -Name "{self.data["vmname"]}" -Force')
+        try:
+            self.run_ps_int(f'Stop-VM -Name "{self.data["vmname"]}" -Force')
+        except Exception as e:
+            if self.vm_not_present(e):
+                succeed({"status": "success", "message": "Instance stopped"})
+            else:
+                fail(str(e))
         succeed({"status": "success", "message": "Instance stopped"})
 
     def reboot(self):
@@ -199,7 +209,13 @@ class HyperVManager:
         succeed({"status": "success", "power_state": power_state})
 
     def delete(self):
-        self.run_ps(f'Remove-VM -Name "{self.data["vmname"]}" -Force')
+        try:
+            self.run_ps_int(f'Remove-VM -Name "{self.data["vmname"]}" -Force')
+        except Exception as e:
+            if self.vm_not_present(e):
+                succeed({"status": "success", "message": "Instance deleted"})
+            else:
+                fail(str(e))
         succeed({"status": "success", "message": "Instance deleted"})
 
     def suspend(self):

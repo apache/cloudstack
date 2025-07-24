@@ -178,6 +178,16 @@ execute_and_wait() {
     wait_for_proxmox_task "$upid"
 }
 
+vm_not_present() {
+    response=$(call_proxmox_api GET "/cluster/nextid?vmid=$vmid")
+    vmid_result=$(echo "$response" | jq -r '.data // empty')
+    if [[ "$vmid_result" == "$vmid" ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
 prepare() {
     response=$(call_proxmox_api GET "/cluster/nextid")
     vmid=$(echo "$response" | jq -r '.data // ""')
@@ -240,11 +250,19 @@ start() {
 }
 
 delete() {
+    if vm_not_present; then
+        echo '{"status": "success", "message": "Instance deleted"}'
+        return 0
+    fi
     execute_and_wait DELETE "/nodes/${node}/qemu/${vmid}"
     echo '{"status": "success", "message": "Instance deleted"}'
 }
 
 stop() {
+    if vm_not_present; then
+        echo '{"status": "success", "message": "Instance stopped"}'
+        return 0
+    fi
     execute_and_wait POST "/nodes/${node}/qemu/${vmid}/status/stop"
     echo '{"status": "success", "message": "Instance stopped"}'
 }
