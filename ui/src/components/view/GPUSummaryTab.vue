@@ -227,7 +227,7 @@ export default {
         if (device.virtualmachineid) {
           summary.allocated++
           summary.uniqueVMs.add(device.virtualmachineid)
-        } else if (device.managedstate !== 'Unmanaged') {
+        } else if (device.managedstate !== 'Unmanaged' && device.state !== 'Error') {
           summary.available++
         }
       })

@@ -832,7 +832,10 @@ public class GpuServiceImpl extends ManagerBase implements GpuService, Pluggable
                     device.getManagedState())) {
                 remainingCapacity = 1L;
             }
-            if (device.getType().equals(GpuDevice.DeviceType.VGPUOnly) || GpuDevice.ManagedState.Unmanaged.equals(device.getManagedState())) {
+            if (GpuDevice.DeviceType.VGPUOnly.equals(device.getType()) ||
+                GpuDevice.ManagedState.Unmanaged.equals(device.getManagedState()) ||
+                GpuDevice.State.Error.equals(device.getState())
+            ) {
                 maxCapacity = 0L;
                 remainingCapacity = 0L;
             }
