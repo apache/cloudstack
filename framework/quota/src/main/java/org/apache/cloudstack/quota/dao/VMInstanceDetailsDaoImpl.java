@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.cloudstack.quota.vo.UserVmDetailVO;
+import org.apache.cloudstack.quota.vo.VMInstanceDetailVO;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.GenericDaoBase;
@@ -28,10 +28,10 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-public class UserVmDetailsDaoImpl extends GenericDaoBase<UserVmDetailVO, Long> implements UserVmDetailsDao {
-    private SearchBuilder<UserVmDetailVO> AllFieldsSearch;
+public class VMInstanceDetailsDaoImpl extends GenericDaoBase<VMInstanceDetailVO, Long> implements VMInstanceDetailsDao {
+    private SearchBuilder<VMInstanceDetailVO> AllFieldsSearch;
 
-    public UserVmDetailsDaoImpl() {
+    public VMInstanceDetailsDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("resourceId", AllFieldsSearch.entity().getResourceId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("name", AllFieldsSearch.entity().getName(), SearchCriteria.Op.EQ);
@@ -43,11 +43,11 @@ public class UserVmDetailsDaoImpl extends GenericDaoBase<UserVmDetailVO, Long> i
     @Override
     public Map<String, String> listDetailsKeyPairs(long resourceId) {
         Map<String, String> details = new HashMap<String, String>();
-        SearchCriteria<UserVmDetailVO> sc = AllFieldsSearch.create();
+        SearchCriteria<VMInstanceDetailVO> sc = AllFieldsSearch.create();
         sc.setParameters("resourceId", resourceId);
 
-        List<UserVmDetailVO> results = search(sc, null);
-        for (UserVmDetailVO result : results) {
+        List<VMInstanceDetailVO> results = search(sc, null);
+        for (VMInstanceDetailVO result : results) {
             details.put(result.getName(), result.getValue());
         }
         return details;
