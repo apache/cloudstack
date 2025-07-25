@@ -23,6 +23,10 @@
 ALTER TABLE `cloud`.`backup_schedule` ADD COLUMN `max_backups` int(8) default NULL COMMENT 'maximum number of backups to maintain';
 ALTER TABLE `cloud`.`backups` ADD COLUMN `backup_interval_type` int(5) COMMENT 'type of backup, e.g. manual, recurring - hourly, daily, weekly or monthly';
 
+-- Update default value for the config 'vm.network.nic.max.secondary.ipaddresses' (and value to default value if value is null)
+UPDATE `cloud`.`configuration` SET default_value = '10' WHERE name = 'vm.network.nic.max.secondary.ipaddresses';
+UPDATE `cloud`.`configuration` SET value = '10' WHERE name = 'vm.network.nic.max.secondary.ipaddresses' AND value IS NULL;
+
 -- Add console_endpoint_creator_address column to cloud.console_session table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.console_session', 'console_endpoint_creator_address', 'VARCHAR(45)');
 
