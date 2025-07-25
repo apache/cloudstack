@@ -27,6 +27,7 @@ public class MonitorService extends ConfigBase {
     public Integer healthChecksBasicRunInterval;
     public Integer healthChecksAdvancedRunInterval;
     public String excludedHealthChecks;
+    public String includedServices;
     public Map<String, String> healthChecksConfig;
 
     public MonitorService() {
@@ -90,6 +91,10 @@ public class MonitorService extends ConfigBase {
 
     public void setExcludedHealthChecks(String excludedHealthChecks) {
         this.excludedHealthChecks = excludedHealthChecks;
+    }
+
+    public void setIncludedServices(String includedServices) {
+        this.includedServices = includedServices;
     }
 
     public void setHealthChecksConfig(Map<String, String> healthChecksConfig) {

@@ -70,6 +70,7 @@ public class SetMonitorServiceConfigItem extends AbstractConfigItemFacade {
         }
 
         monitorService.setExcludedHealthChecks(command.getAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_EXCLUDED));
+        monitorService.setIncludedServices(command.getAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_INCLUDED_SERVICES));
         monitorService.setHealthChecksConfig(command.getHealthChecksConfig());
     }
 
