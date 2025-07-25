@@ -238,6 +238,43 @@ CREATE TABLE IF NOT EXISTS `cloud`.`gui_themes_details` (
     CONSTRAINT `fk_gui_themes_details__gui_theme_id` FOREIGN KEY (`gui_theme_id`) REFERENCES `gui_themes`(`id`)
 );
 
+-- Netris Plugin
+CREATE TABLE `cloud`.`netris_providers` (
+                                            `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+                                            `uuid` varchar(40),
+                                            `zone_id` bigint unsigned NOT NULL COMMENT 'Zone ID',
+                                            `host_id` bigint unsigned NOT NULL COMMENT 'Host ID',
+                                            `name` varchar(40),
+                                            `url` varchar(255) NOT NULL,
+                                            `username` varchar(255) NOT NULL,
+                                            `password` varchar(255) NOT NULL,
+                                            `site_name` varchar(255) NOT NULL,
+                                            `tenant_name` varchar(255) NOT NULL,
+                                            `netris_tag` varchar(255) NOT NULL,
+                                            `created` datetime NOT NULL COMMENT 'created date',
+                                            `removed` datetime COMMENT 'removed date if not null',
+                                            PRIMARY KEY (`id`),
+                                            CONSTRAINT `fk_netris_providers__zone_id` FOREIGN KEY `fk_netris_providers__zone_id` (`zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
+                                            INDEX `i_netris_providers__zone_id`(`zone_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Drop the Tungsten and NSX columns from the network offerings (replaced by checking the provider on the ntwk_offering_service_map table)
+ALTER TABLE `cloud`.`network_offerings` DROP COLUMN `for_tungsten`;
+ALTER TABLE `cloud`.`network_offerings` DROP COLUMN `for_nsx`;
+
+-- Drop the Tungsten and NSX columns from the VPC offerings (replaced by checking the provider on the vpc_offering_service_map table)
+ALTER TABLE `cloud`.`vpc_offerings` DROP COLUMN `for_nsx`;
+
+-- Add next_hop to the static_routes table
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.static_routes', 'next_hop', 'varchar(50) COMMENT "next hop of the static route" AFTER `vpc_gateway_id`');
+
+-- Add `for_router` to `user_ip_address` table
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.user_ip_address', 'for_router', 'tinyint(1) DEFAULT 0 COMMENT "True if the ip address is used by Domain Router to expose services"');
+
+-- Add Netris Autoscaling rules
+INSERT IGNORE INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'Netris', 'cpu', 'VM CPU - average percentage', 'vm.cpu.average.percentage', NOW());
+INSERT IGNORE INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'Netris', 'memory', 'VM Memory - average percentage', 'vm.memory.average.percentage', NOW());
+
 -- Rename user_vm_details to vm_instance_details
 ALTER TABLE `cloud`.`user_vm_details` RENAME TO `cloud`.`vm_instance_details`;
 ALTER TABLE `cloud`.`vm_instance_details` DROP FOREIGN KEY `fk_user_vm_details__vm_id`;

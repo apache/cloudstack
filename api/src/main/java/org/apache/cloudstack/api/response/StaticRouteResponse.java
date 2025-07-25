@@ -42,9 +42,17 @@ public class StaticRouteResponse extends BaseResponse implements ControlledEntit
     @Param(description = "VPC the static route belongs to")
     private String vpcId;
 
-    @SerializedName(ApiConstants.GATEWAY_ID)
+    @SerializedName(ApiConstants.VPC_GATEWAY_ID)
     @Param(description = "VPC gateway the route is created for")
-    private String gatewayId;
+    private String vpcGatewayId;
+
+    @SerializedName(ApiConstants.VPC_GATEWAY_IP)
+    @Param(description = "IP of VPC gateway the route is created for", since = "4.21.0")
+    private String vpcGatewayIp;
+
+    @SerializedName(ApiConstants.NEXT_HOP)
+    @Param(description = "Next hop of the static route", since = "4.21.0")
+    private String nextHop;
 
     @SerializedName(ApiConstants.CIDR)
     @Param(description = "static route CIDR")
@@ -95,8 +103,16 @@ public class StaticRouteResponse extends BaseResponse implements ControlledEntit
         this.vpcId = vpcId;
     }
 
-    public void setGatewayId(String gatewayId) {
-        this.gatewayId = gatewayId;
+    public void setVpcGatewayId(String vpcGatewayId) {
+        this.vpcGatewayId = vpcGatewayId;
+    }
+
+    public void setVpcGatewayIp(String vpcGatewayIp) {
+        this.vpcGatewayIp = vpcGatewayIp;
+    }
+
+    public void setNextHop(String nextHop) {
+        this.nextHop = nextHop;
     }
 
     public void setCidr(String cidr) {

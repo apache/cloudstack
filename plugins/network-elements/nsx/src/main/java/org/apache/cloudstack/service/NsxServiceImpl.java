@@ -18,6 +18,7 @@ package org.apache.cloudstack.service;
 
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
+import com.cloud.network.SDNProviderNetworkRule;
 import com.cloud.network.nsx.NsxService;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.vpc.Vpc;
@@ -138,7 +139,8 @@ public class NsxServiceImpl implements NsxService, Configurable {
         return result.getResult();
     }
 
-    public NsxAnswer createPortForwardRule(NsxNetworkRule netRule) {
+    public NsxAnswer createPortForwardRule(NsxNetworkRule nsxNetRule) {
+        SDNProviderNetworkRule netRule = nsxNetRule.getBaseRule();
         // TODO: if port doesn't exist in default list of services, create a service entry
         CreateNsxPortForwardRuleCommand createPortForwardCmd = new CreateNsxPortForwardRuleCommand(netRule.getDomainId(),
                 netRule.getAccountId(), netRule.getZoneId(), netRule.getNetworkResourceId(),
@@ -147,7 +149,8 @@ public class NsxServiceImpl implements NsxService, Configurable {
         return nsxControllerUtils.sendNsxCommand(createPortForwardCmd, netRule.getZoneId());
     }
 
-    public boolean deletePortForwardRule(NsxNetworkRule netRule) {
+    public boolean deletePortForwardRule(NsxNetworkRule nsxNetRule) {
+        SDNProviderNetworkRule netRule = nsxNetRule.getBaseRule();
         DeleteNsxNatRuleCommand deleteCmd = new DeleteNsxNatRuleCommand(netRule.getDomainId(),
                 netRule.getAccountId(), netRule.getZoneId(), netRule.getNetworkResourceId(),
                 netRule.getNetworkResourceName(), netRule.isVpcResource(),  netRule.getVmId(), netRule.getRuleId(), netRule.getPrivatePort(), netRule.getProtocol());
@@ -156,20 +159,22 @@ public class NsxServiceImpl implements NsxService, Configurable {
         return result.getResult();
     }
 
-    public boolean createLbRule(NsxNetworkRule netRule) {
+    public boolean createLbRule(NsxNetworkRule nsxNetRule) {
+        SDNProviderNetworkRule netRule = nsxNetRule.getBaseRule();
         CreateNsxLoadBalancerRuleCommand command = new CreateNsxLoadBalancerRuleCommand(netRule.getDomainId(),
                 netRule.getAccountId(), netRule.getZoneId(), netRule.getNetworkResourceId(),
-                netRule.getNetworkResourceName(), netRule.isVpcResource(),  netRule.getMemberList(), netRule.getRuleId(),
+                netRule.getNetworkResourceName(), netRule.isVpcResource(),  nsxNetRule.getMemberList(), netRule.getRuleId(),
                 netRule.getPublicPort(), netRule.getPrivatePort(), netRule.getAlgorithm(), netRule.getProtocol());
         command.setPublicIp(netRule.getPublicIp());
         NsxAnswer result = nsxControllerUtils.sendNsxCommand(command, netRule.getZoneId());
         return result.getResult();
     }
 
-    public boolean deleteLbRule(NsxNetworkRule netRule) {
+    public boolean deleteLbRule(NsxNetworkRule nsxNetRule) {
+        SDNProviderNetworkRule netRule = nsxNetRule.getBaseRule();
         DeleteNsxLoadBalancerRuleCommand command = new DeleteNsxLoadBalancerRuleCommand(netRule.getDomainId(),
                 netRule.getAccountId(), netRule.getZoneId(), netRule.getNetworkResourceId(),
-                netRule.getNetworkResourceName(), netRule.isVpcResource(),  netRule.getMemberList(), netRule.getRuleId(),
+                netRule.getNetworkResourceName(), netRule.isVpcResource(),  nsxNetRule.getMemberList(), netRule.getRuleId(),
                 netRule.getVmId());
         NsxAnswer result = nsxControllerUtils.sendNsxCommand(command, netRule.getZoneId());
         return result.getResult();
