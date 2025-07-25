@@ -257,7 +257,8 @@ public class BridgeVifDriver extends VifDriverBase {
                 protocol = Networks.BroadcastDomainType.Vlan.scheme();
             }
             if (isValidProtocolAndVnetId(vNetId, protocol))  {
-                s_logger.debug("creating a vNet dev and bridge for public traffic per traffic label {}" + trafficLabel);
+                s_logger.debug(String.format("creating a vNet dev and bridge for %s traffic per traffic label %s",
+                        Networks.TrafficType.Storage.name(), trafficLabel));
                 storageBrName = createVnetBr(vNetId, storageBrName, protocol);
             }
             intf.defBridgeNet(storageBrName, null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter));
