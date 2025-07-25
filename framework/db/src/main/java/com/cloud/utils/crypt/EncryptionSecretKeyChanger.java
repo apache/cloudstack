@@ -632,7 +632,7 @@ public class EncryptionSecretKeyChanger {
 
     private void migrateUserVmDetails(Connection conn) {
         System.out.println("Begin migrate user vm details");
-        migrateDetails(conn, "user_vm_details", PASSWORD);
+        migrateDetails(conn, "vm_instance_details", PASSWORD);
         System.out.println("End migrate user vm details");
     }
 

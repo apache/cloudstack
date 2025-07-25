@@ -336,7 +336,7 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
             + "    END)) as total "
             + " from vm_instance vm "
             + " join service_offering so on so.id = vm.service_offering_id "
-            + " left join user_vm_details vmd on vmd.vm_id = vm.id and vmd.name = '%s' "
+            + " left join vm_instance_details vmd on vmd.vm_id = vm.id and vmd.name = '%s' "
             + " where vm.type = 'User' and state not in ('Destroyed', 'Error', 'Expunging') and display_vm = true and account_id = ? ";
 
     @Override
