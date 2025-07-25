@@ -304,6 +304,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NicIpAlias;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.NicIpAliasVO;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -3752,6 +3753,30 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
     }
 
+    protected boolean serviceOfferingExternalDetailsNeedUpdate(final Map<String, String> offeringDetails,
+               final Map<String, String> externalDetails) {
+        if (MapUtils.isEmpty(externalDetails)) {
+            return false;
+        }
+
+        Map<String, String> existingExternalDetails = offeringDetails.entrySet().stream()
+                .filter(detail -> detail.getKey().startsWith(VmDetailConstants.EXTERNAL_DETAIL_PREFIX))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        if (MapUtils.isEmpty(existingExternalDetails) || existingExternalDetails.size() != externalDetails.size()) {
+            return true;
+        }
+
+        for (Map.Entry<String, String> entry : externalDetails.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+            if (!value.equals(existingExternalDetails.get(key))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_SERVICE_OFFERING_EDIT, eventDescription = "updating service offering")
     public ServiceOffering updateServiceOffering(final UpdateServiceOfferingCmd cmd) {
@@ -3766,6 +3791,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         String hostTags = cmd.getHostTags();
         ServiceOffering.State state = cmd.getState();
         boolean purgeResources = cmd.isPurgeResources();
+        final Map<String, String> externalDetails = cmd.getExternalDetails();
 
         if (userId == null) {
             userId = Long.valueOf(User.UID_SYSTEM);
@@ -3783,7 +3809,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         List<Long> existingZoneIds = _serviceOfferingDetailsDao.findZoneIds(id);
         Collections.sort(existingZoneIds);
 
-        String purgeResourceStr = _serviceOfferingDetailsDao.getDetail(id, ServiceOffering.PURGE_DB_ENTITIES_KEY);
+        Map<String, String> offeringDetails = _serviceOfferingDetailsDao.listDetailsKeyPairs(id);
+        String purgeResourceStr = offeringDetails.get(ServiceOffering.PURGE_DB_ENTITIES_KEY);
         boolean existingPurgeResources = false;
         if (StringUtils.isNotBlank(purgeResourceStr)) {
             existingPurgeResources = Boolean.parseBoolean(purgeResourceStr);
@@ -3857,8 +3884,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         final boolean updateNeeded = name != null || displayText != null || sortKey != null || storageTags != null || hostTags != null || state != null;
+        final boolean serviceOfferingExternalDetailsNeedUpdate =
+                serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails);
         final boolean detailsUpdateNeeded = !filteredDomainIds.equals(existingDomainIds) ||
-                !filteredZoneIds.equals(existingZoneIds) || purgeResources != existingPurgeResources;
+                !filteredZoneIds.equals(existingZoneIds) || purgeResources != existingPurgeResources ||
+                serviceOfferingExternalDetailsNeedUpdate;
         if (!updateNeeded && !detailsUpdateNeeded) {
             return _serviceOfferingDao.findById(id);
         }
@@ -3900,6 +3930,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             SearchBuilder<ServiceOfferingDetailsVO> sb = _serviceOfferingDetailsDao.createSearchBuilder();
             sb.and("offeringId", sb.entity().getResourceId(), SearchCriteria.Op.EQ);
             sb.and("detailName", sb.entity().getName(), SearchCriteria.Op.EQ);
+            sb.and("detailNameLike", sb.entity().getName(), SearchCriteria.Op.LIKE);
             sb.done();
             SearchCriteria<ServiceOfferingDetailsVO> sc = sb.create();
             sc.setParameters("offeringId", String.valueOf(id));
@@ -3923,6 +3954,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (purgeResources) {
                     detailsVO.add(new ServiceOfferingDetailsVO(id, ServiceOffering.PURGE_DB_ENTITIES_KEY,
                             "true", false));
+                }
+            }
+            if (serviceOfferingExternalDetailsNeedUpdate) {
+                SearchCriteria<ServiceOfferingDetailsVO> externalDetailsRemoveSC = sb.create();
+                externalDetailsRemoveSC.setParameters("detailNameLike", VmDetailConstants.EXTERNAL_DETAIL_PREFIX + "%");
+                _serviceOfferingDetailsDao.remove(externalDetailsRemoveSC);
+                for (Map.Entry<String, String> entry : externalDetails.entrySet()) {
+                    detailsVO.add(new ServiceOfferingDetailsVO(id, entry.getKey(), entry.getValue(), true));
                 }
             }
         }

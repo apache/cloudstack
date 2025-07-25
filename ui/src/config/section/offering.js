@@ -16,6 +16,7 @@
 // under the License.
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
+import { getFilteredExternalDetails } from '@/utils/extension'
 
 export default {
   name: 'offering',
@@ -95,7 +96,12 @@ export default {
         label: 'label.edit',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
-        args: ['name', 'displaytext', 'storageaccessgroups', 'hosttags']
+        args: ['name', 'displaytext', 'storageaccessgroups', 'hosttags', 'externaldetails'],
+        mapping: {
+          externaldetails: {
+            transformedvalue: (record) => { return getFilteredExternalDetails(record.serviceofferingdetails) }
+          }
+        }
       }, {
         api: 'updateServiceOffering',
         icon: 'lock-outlined',

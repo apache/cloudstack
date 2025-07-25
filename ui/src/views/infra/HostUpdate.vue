@@ -103,6 +103,7 @@ import { ref, reactive, toRaw } from 'vue'
 import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import DetailsInput from '@/components/widgets/DetailsInput'
+import { getFilteredExternalDetails } from '@/utils/extension'
 
 export default {
   name: 'HostUpdate',
@@ -142,17 +143,7 @@ export default {
   },
   computed: {
     resourceExternalDetails () {
-      const prefix = 'External:'
-      if (!this.resource.details || typeof this.resource.details !== 'object' || Object.keys(this.resource.details).length === 0) {
-        return null
-      }
-      const result = {}
-      for (const key in this.resource.details) {
-        if (key.startsWith(prefix)) {
-          result[key.substring(prefix.length)] = this.resource.details[key]
-        }
-      }
-      return result
+      return getFilteredExternalDetails(this.resource.details)
     }
   },
   methods: {

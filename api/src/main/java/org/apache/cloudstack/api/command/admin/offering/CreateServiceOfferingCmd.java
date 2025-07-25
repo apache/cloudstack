@@ -267,7 +267,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
             type = CommandType.MAP,
             description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].endpoint.url=urlvalue",
             since = "4.21.0")
-    protected Map externalDetails;
+    private Map externalDetails;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////

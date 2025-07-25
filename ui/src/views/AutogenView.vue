@@ -363,6 +363,9 @@
                     {{ opt.name && opt.type ? opt.name + ' (' + opt.type + ')' : opt.name || opt.description }}
                   </a-select-option>
                 </a-select>
+                <details-input
+                  v-else-if="field.type==='map'"
+                  v-model:value="form[field.name]" />
                 <a-input-number
                   v-else-if="field.type==='long'"
                   v-focus="fieldIndex === firstIndex"
@@ -473,6 +476,7 @@ import OsLogo from '@/components/widgets/OsLogo'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import BulkActionProgress from '@/components/view/BulkActionProgress'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import DetailsInput from '@/components/widgets/DetailsInput'
 
 export default {
   name: 'Resource',
@@ -485,7 +489,8 @@ export default {
     BulkActionProgress,
     TooltipLabel,
     OsLogo,
-    ResourceIcon
+    ResourceIcon,
+    DetailsInput
   },
   mixins: [mixinDevice],
   provide: function () {
@@ -1423,6 +1428,15 @@ export default {
           this.form[field.name] = fieldValue
         } else if (field.type === 'boolean' && field.name === 'rebalance' && this.currentAction.api === 'cancelMaintenance') {
           this.form[field.name] = true
+        } else if (field.type === 'map') {
+          const transformedValue = this.currentAction.mapping?.[field.name]?.transformedvalue
+          if (typeof transformedValue === 'function') {
+            this.form[field.name] = transformedValue(this.resource)
+          } else if (typeof transformedValue === 'object' && transformedValue !== null) {
+            this.form[field.name] = { ...transformedValue }
+          } else {
+            this.form[field.name] = {}
+          }
         }
       })
     },
@@ -1623,6 +1637,10 @@ export default {
               } else {
                 params[key] = param.opts[input].name
               }
+            } else if (param.type === 'map' && typeof input === 'object') {
+              Object.entries(values.externaldetails).forEach(([key, value]) => {
+                params[param.name + '[0].' + key] = value
+              })
             } else {
               params[key] = input
             }

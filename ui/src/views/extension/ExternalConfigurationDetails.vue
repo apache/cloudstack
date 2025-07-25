@@ -37,6 +37,7 @@
 <script>
 import { getAPI } from '@/api'
 import ObjectListTable from '@/components/view/ObjectListTable'
+import { getFilteredExternalDetails } from '@/utils/extension'
 
 export default {
   name: 'ExternalConfigurationDetails',
@@ -78,18 +79,7 @@ export default {
       if (!detailsKey || !this.resource) {
         return null
       }
-      const details = this.resource[detailsKey]
-      if (!details || typeof details !== 'object') {
-        return null
-      }
-      const prefix = 'External:'
-      const result = {}
-      for (const key in details) {
-        if (key.startsWith(prefix)) {
-          result[key.substring(prefix.length)] = details[key]
-        }
-      }
-      return Object.keys(result).length > 0 ? result : null
+      return getFilteredExternalDetails(this.resource[detailsKey])
     },
     extensionResourceDetails () {
       if (!this.resource?.id || !this.extension?.resources) {
