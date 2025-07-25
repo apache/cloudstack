@@ -52,11 +52,11 @@
       </div>
       <div v-if="userdataDefaultOverridePolicy === 'ALLOWOVERRIDE' || userdataDefaultOverridePolicy === 'APPEND' || !userdataDefaultOverridePolicy">
         <span v-if="userdataDefaultOverridePolicy === 'ALLOWOVERRIDE'" >
-          {{ $t('label.userdata.do.override') }}
+          {{ $t('label.user.data.do.override') }}
           <a-switch v-model:checked="doUserdataOverride" style="margin-left: 10px"/>
         </span>
         <span v-if="userdataDefaultOverridePolicy === 'APPEND'">
-          {{ $t('label.userdata.do.append') }}
+          {{ $t('label.user.data.do.append') }}
           <a-switch v-model:checked="doUserdataAppend" style="margin-left: 10px"/>
         </span>
         <a-step>
@@ -198,11 +198,11 @@ export default {
       userDataValues: {},
       templateUserDataCols: [
         {
-          title: this.$t('label.userdata'),
+          title: this.$t('label.user.data'),
           dataIndex: 'userdata'
         },
         {
-          title: this.$t('label.userdatapolicy'),
+          title: this.$t('label.user.data.policy'),
           dataIndex: 'userdataoverridepolicy'
         }
       ],
@@ -282,11 +282,11 @@ export default {
     loadUserdataTabList () {
       this.userdataTabList = [{
         key: 'userdataregistered',
-        tab: this.$t('label.userdata.registered')
+        tab: this.$t('label.user.data.registered')
       },
       {
         key: 'userdatatext',
-        tab: this.$t('label.userdata.text')
+        tab: this.$t('label.user.data.text')
       }]
     },
     onUserdataTabChange (key, type) {
@@ -365,7 +365,7 @@ export default {
 
       postAPI(resetUserDataApiName, params).then(json => {
         this.$message.success({
-          content: `${this.$t('label.action.userdata.reset')} - ${this.$t('label.success')}`,
+          content: `${this.$t('label.action.user.data.reset')} - ${this.$t('label.success')}`,
           duration: 2
         })
         this.$emit('refresh-data')

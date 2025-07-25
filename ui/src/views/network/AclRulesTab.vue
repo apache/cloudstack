@@ -25,7 +25,7 @@
         :disabled="!('createNetworkACL' in $store.getters.apis)"
         @click="openAddRuleModal">
         <template #icon><plus-outlined /></template>
-        {{ $t('label.add') }} {{ $t('label.aclid') }}
+        {{ $t('label.add.acl.rule') }}
       </a-button>
 
       <a-button type="dashed" @click="exportAclList" style="width: 100%">

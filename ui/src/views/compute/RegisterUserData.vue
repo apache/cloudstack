@@ -35,26 +35,22 @@
             :placeholder="apiParams.name.description"
             v-focus="true" />
         </a-form-item>
-        <div v-if="$route.name === 'userdata'">
-          <a-form-item name="userdata" ref="userdata">
-            <template #label>
-              <tooltip-label :title="$t('label.userdata')" :tooltip="apiParams.userdata.description"/>
-            </template>
-            <a-textarea
-              v-model:value="form.userdata"
-              :placeholder="apiParams.userdata.description"/>
-          </a-form-item>
-        </div>
-        <div v-else>
-          <a-form-item name="cniconfig" ref="cniconfig">
-            <template #label>
-              <tooltip-label :title="$t('label.cniconfiguration')" :tooltip="apiParams.cniconfig.description"/>
-            </template>
-            <a-textarea
-              v-model:value="form.cniconfig"
-              :placeholder="apiParams.cniconfig.description"/>
-          </a-form-item>
-        </div>
+        <a-form-item name="userdata" ref="userdata">
+          <template #label>
+            <tooltip-label :title="$t('label.user.data')" :tooltip="$t('label.register.user.data.details')"/>
+          </template>
+          <a-textarea
+            v-model:value="form.userdata"
+            :placeholder="$t('label.register.user.data.details')"/>
+        </a-form-item>
+        <a-form-item name="cniconfig" ref="cniconfig">
+          <template #label>
+            <tooltip-label :title="$t('label.cniconfiguration')" :tooltip="apiParams.cniconfig.description"/>
+          </template>
+          <a-textarea
+            v-model:value="form.cniconfig"
+            :placeholder="apiParams.cniconfig.description"/>
+        </a-form-item>
         <a-form-item name="isbase64" ref="isbase64" :label="$t('label.is.base64.encoded')">
           <a-checkbox v-model:checked="form.isbase64"></a-checkbox>
         </a-form-item>
@@ -63,6 +59,7 @@
             <tooltip-label
               :title="$route.name === 'userdata' ? $t('label.userdataparams') : $t('label.cniconfigparams')"
               :tooltip="apiParams.params.description"/>
+            <tooltip-label :title="$t('label.user.data.params')" :tooltip="apiParams.params.description"/>
           </template>
           <a-select
             mode="tags"
@@ -169,7 +166,7 @@ export default {
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.name') }],
-        userdata: [{ required: true, message: this.$t('message.error.userdata') }]
+        userdata: [{ required: true, message: this.$t('message.error.user.data') }]
       })
     },
     fetchData () {

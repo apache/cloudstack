@@ -136,13 +136,18 @@ public class StorageVmSharedFSLifeCycle implements SharedFSLifeCycle {
         return fsVmConfig;
     }
 
-    private String getStorageVmName(String fileShareName) {
+    private String getStorageVmPrefix(String fileShareName) {
         String prefix = String.format("%s-%s", SharedFSVmNamePrefix, fileShareName);
-        String suffix = Long.toHexString(System.currentTimeMillis());
-
         if (!NetUtils.verifyDomainNameLabel(prefix, true)) {
             prefix = prefix.replaceAll("[^a-zA-Z0-9-]", "");
         }
+        return prefix;
+    }
+
+    private String getStorageVmName(String fileShareName) {
+        String prefix = getStorageVmPrefix(fileShareName);
+        String suffix = Long.toHexString(System.currentTimeMillis());
+
         int nameLength = prefix.length() + suffix.length() + SharedFSVmNamePrefix.length();
         if (nameLength > 63) {
             int prefixLength = prefix.length() - (nameLength - 63);
@@ -232,8 +237,18 @@ public class StorageVmSharedFSLifeCycle implements SharedFSLifeCycle {
         Account owner = accountMgr.getActiveAccountById(sharedFS.getAccountId());
         UserVm vm = deploySharedFSVM(sharedFS.getDataCenterId(), owner, List.of(networkId), sharedFS.getName(), sharedFS.getServiceOfferingId(), diskOfferingId, sharedFS.getFsType(), size, minIops, maxIops);
 
-        List<VolumeVO> volumes = volumeDao.findByInstanceAndType(vm.getId(), Volume.Type.DATADISK);
-        return new Pair<>(volumes.get(0).getId(), vm.getId());
+        List<VolumeVO> volumes = volumeDao.findByInstance(vm.getId());
+        VolumeVO dataVol = null;
+        for (VolumeVO vol : volumes) {
+            String volumeName = vol.getName();
+            String updatedVolumeName = SharedFSVmNamePrefix + "-" + volumeName;
+            vol.setName(updatedVolumeName);
+            volumeDao.update(vol.getId(), vol);
+            if (vol.getVolumeType() == Volume.Type.DATADISK) {
+                dataVol = vol;
+            }
+        }
+        return new Pair<>(dataVol.getId(), vm.getId());
     }
 
     @Override

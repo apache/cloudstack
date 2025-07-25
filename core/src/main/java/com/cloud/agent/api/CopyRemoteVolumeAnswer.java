@@ -17,21 +17,28 @@
 
 package com.cloud.agent.api;
 
+import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
+
+import java.util.Map;
+
 public class CopyRemoteVolumeAnswer extends Answer {
 
     private String remoteIp;
     private String filename;
 
     private long size;
+    private Map<VolumeOnStorageTO.Detail, String> volumeDetails;
 
     CopyRemoteVolumeAnswer() {
     }
 
-    public CopyRemoteVolumeAnswer(CopyRemoteVolumeCommand cmd, String details, String filename, long size) {
-        super(cmd, true, details);
+    public CopyRemoteVolumeAnswer(CopyRemoteVolumeCommand cmd, final boolean success, String details, String filename, long size,
+                                  Map<VolumeOnStorageTO.Detail, String> volumeDetails) {
+        super(cmd, success, details);
         this.remoteIp = cmd.getRemoteIp();
         this.filename = filename;
         this.size = size;
+        this.volumeDetails = volumeDetails;
     }
 
     public String getRemoteIp() {
@@ -52,6 +59,10 @@ public class CopyRemoteVolumeAnswer extends Answer {
 
     public long getSize() {
         return size;
+    }
+
+    public Map<VolumeOnStorageTO.Detail, String> getVolumeDetails() {
+        return volumeDetails;
     }
 
     public String getString() {
