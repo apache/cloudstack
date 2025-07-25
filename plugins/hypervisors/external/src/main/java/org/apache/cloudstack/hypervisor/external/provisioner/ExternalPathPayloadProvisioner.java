@@ -92,6 +92,8 @@ import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 public class ExternalPathPayloadProvisioner extends ManagerBase implements ExternalProvisioner, PluggableService {
 
@@ -623,6 +625,38 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
                 String.format("Failed to execute custom action '%s' on external system", actionName), filename);
     }
 
+    protected VirtualMachine.PowerState getPowerStateFromString(String powerStateStr) {
+        if (StringUtils.isBlank(powerStateStr)) {
+            return VirtualMachine.PowerState.PowerUnknown;
+        }
+        if (powerStateStr.equalsIgnoreCase(VirtualMachine.PowerState.PowerOn.toString())) {
+            return VirtualMachine.PowerState.PowerOn;
+        } else if (powerStateStr.equalsIgnoreCase(VirtualMachine.PowerState.PowerOff.toString())) {
+            return VirtualMachine.PowerState.PowerOff;
+        }
+        return VirtualMachine.PowerState.PowerUnknown;
+    }
+
+    protected VirtualMachine.PowerState parsePowerStateFromResponse(UserVmVO userVmVO, String response) {
+        logger.debug("Power status response from the external system for {} : {}", userVmVO, response);
+        if (StringUtils.isBlank(response)) {
+            logger.warn("Empty response while trying to fetch the power status of the {}", userVmVO);
+            return VirtualMachine.PowerState.PowerUnknown;
+        }
+        if (!response.trim().startsWith("{")) {
+            return getPowerStateFromString(response);
+        }
+        try {
+            JsonObject jsonObj = new JsonParser().parse(response).getAsJsonObject();
+            String powerState = jsonObj.has("power_state") ? jsonObj.get("power_state").getAsString() : null;
+            return getPowerStateFromString(powerState);
+        } catch (Exception e) {
+            logger.warn("Failed to parse power status response: {} for {} as JSON: {}",
+                    response, userVmVO, e.getMessage());
+            return VirtualMachine.PowerState.PowerUnknown;
+        }
+    }
+
     private VirtualMachine.PowerState getVmPowerState(UserVmVO userVmVO, Map<String, Map<String, String>> accessDetails,
                   String extensionName, String extensionPath) {
         final HypervisorGuru hvGuru = hypervisorGuruManager.getGuru(Hypervisor.HypervisorType.External);
@@ -631,23 +665,16 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
         accessDetails.put(ApiConstants.VIRTUAL_MACHINE, virtualMachineTO.getExternalDetails());
         Map<String, Object> modifiedDetails = loadAccessDetails(accessDetails, virtualMachineTO);
         String vmUUID = userVmVO.getUuid();
-        logger.debug("Trying to get VM power status from the external system for the VM {}", vmUUID);
+        logger.debug("Trying to get VM power status from the external system for {}", userVmVO);
         Pair<Boolean, String> result = getInstanceStatusOnExternalSystem(extensionName, extensionPath, vmUUID,
                 modifiedDetails, AgentManager.Wait.value());
-        if (result.first()) {
-            if (result.second().equalsIgnoreCase(VirtualMachine.PowerState.PowerOn.toString())) {
-                return VirtualMachine.PowerState.PowerOn;
-            } else if (result.second().equalsIgnoreCase(VirtualMachine.PowerState.PowerOff.toString())) {
-                return VirtualMachine.PowerState.PowerOff;
-            } else {
-                return VirtualMachine.PowerState.PowerUnknown;
-            }
-        } else {
-            logger.debug("Exception occurred while trying to fetch the power status of the {} : {}", userVmVO, result.second());
+        if (!result.first()) {
+            logger.warn("Failure response received while trying to fetch the power status of the {} : {}",
+                    userVmVO, result.second());
             return VirtualMachine.PowerState.PowerUnknown;
         }
+        return parsePowerStateFromResponse(userVmVO, result.second());
     }
-
     public Pair<Boolean, String> prepareExternalProvisioningInternal(String extensionName, String filename,
                              String vmUUID, Map<String, Object> accessDetails, int wait) {
         return executeExternalCommand(extensionName, "prepare", accessDetails, wait,

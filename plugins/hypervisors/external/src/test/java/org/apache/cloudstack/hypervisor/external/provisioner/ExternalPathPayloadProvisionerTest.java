@@ -675,4 +675,76 @@ public class ExternalPathPayloadProvisionerTest {
             provisioner.prepareExternalPayload(extensionName, details);
         }
     }
+
+    @Test
+    public void getPowerStateFromStringReturnsPowerOnForValidInput() {
+        VirtualMachine.PowerState result = provisioner.getPowerStateFromString("PowerOn");
+        assertEquals(VirtualMachine.PowerState.PowerOn, result);
+    }
+
+    @Test
+    public void getPowerStateFromStringReturnsPowerOffForValidInput() {
+        VirtualMachine.PowerState result = provisioner.getPowerStateFromString("PowerOff");
+        assertEquals(VirtualMachine.PowerState.PowerOff, result);
+    }
+
+    @Test
+    public void getPowerStateFromStringReturnsPowerUnknownForInvalidInput() {
+        VirtualMachine.PowerState result = provisioner.getPowerStateFromString("InvalidState");
+        assertEquals(VirtualMachine.PowerState.PowerUnknown, result);
+    }
+
+    @Test
+    public void getPowerStateFromStringReturnsPowerUnknownForBlankInput() {
+        VirtualMachine.PowerState result = provisioner.getPowerStateFromString("");
+        assertEquals(VirtualMachine.PowerState.PowerUnknown, result);
+    }
+
+    @Test
+    public void parsePowerStateFromResponseReturnsPowerOnForValidJson() {
+        String response = "{\"power_state\":\"PowerOn\"}";
+        UserVmVO vm = mock(UserVmVO.class);
+        VirtualMachine.PowerState result = provisioner.parsePowerStateFromResponse(vm, response);
+        assertEquals(VirtualMachine.PowerState.PowerOn, result);
+    }
+
+    @Test
+    public void parsePowerStateFromResponseReturnsPowerOffForValidJson() {
+        String response = "{\"power_state\":\"PowerOff\"}";
+        UserVmVO vm = mock(UserVmVO.class);
+        VirtualMachine.PowerState result = provisioner.parsePowerStateFromResponse(vm, response);
+        assertEquals(VirtualMachine.PowerState.PowerOff, result);
+    }
+
+    @Test
+    public void parsePowerStateFromResponseReturnsPowerUnknownForInvalidJson() {
+        String response = "{\"invalid_key\":\"value\"}";
+        UserVmVO vm = mock(UserVmVO.class);
+        VirtualMachine.PowerState result = provisioner.parsePowerStateFromResponse(vm, response);
+        assertEquals(VirtualMachine.PowerState.PowerUnknown, result);
+    }
+
+    @Test
+    public void parsePowerStateFromResponseReturnsPowerUnknownForMalformedJson() {
+        String response = "{power_state:PowerOn";
+        UserVmVO vm = mock(UserVmVO.class);
+        VirtualMachine.PowerState result = provisioner.parsePowerStateFromResponse(vm, response);
+        assertEquals(VirtualMachine.PowerState.PowerUnknown, result);
+    }
+
+    @Test
+    public void parsePowerStateFromResponseReturnsPowerUnknownForBlankResponse() {
+        String response = "";
+        UserVmVO vm = mock(UserVmVO.class);
+        VirtualMachine.PowerState result = provisioner.parsePowerStateFromResponse(vm, response);
+        assertEquals(VirtualMachine.PowerState.PowerUnknown, result);
+    }
+
+    @Test
+    public void parsePowerStateFromResponseReturnsPowerStateForPlainTextResponse() {
+        String response = "PowerOn";
+        UserVmVO vm = mock(UserVmVO.class);
+        VirtualMachine.PowerState result = provisioner.parsePowerStateFromResponse(vm, response);
+        assertEquals(VirtualMachine.PowerState.PowerOn, result);
+    }
 }

@@ -157,7 +157,19 @@ status() {
   vm_status=$(jq -r '.status' "$file")
   [[ -z "$vm_status" || "$vm_status" == "null" ]] && vm_status="unknown"
 
-  jq -n --arg ps "$vm_status" '{status: "success", power_state: $ps}'
+  case "${vm_status,,}" in
+    "running"|"poweron")
+      power_state="PowerOn"
+      ;;
+    "stopped"|"shutdown"|"poweroff")
+      power_state="PowerOff"
+      ;;
+    *)
+      power_state="$vm_status"
+      ;;
+  esac
+
+  jq -n --arg ps "$power_state" '{status: "success", power_state: $ps}'
 }
 
 testaction() {
