@@ -39,6 +39,18 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.bgp.ASNumber;
+import com.cloud.bgp.ASNumberRange;
+import com.cloud.configuration.ConfigurationService;
+import com.cloud.dc.ASNumberRangeVO;
+import com.cloud.dc.ASNumberVO;
+import com.cloud.dc.VlanDetailsVO;
+import com.cloud.dc.dao.ASNumberDao;
+import com.cloud.dc.dao.ASNumberRangeDao;
+import com.cloud.dc.dao.VlanDetailsDao;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.network.vpc.VpcGateway;
+import com.cloud.storage.BucketVO;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -264,8 +276,6 @@ import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
 import com.cloud.api.query.vo.VpcOfferingJoinVO;
 import com.cloud.api.response.ApiResponseSerializer;
-import com.cloud.bgp.ASNumber;
-import com.cloud.bgp.ASNumberRange;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
@@ -274,8 +284,6 @@ import com.cloud.configuration.Resource.ResourceOwnerType;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceLimit;
-import com.cloud.dc.ASNumberRangeVO;
-import com.cloud.dc.ASNumberVO;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
@@ -286,11 +294,7 @@ import com.cloud.dc.Pod;
 import com.cloud.dc.StorageNetworkIpRange;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
-import com.cloud.dc.VlanDetailsVO;
 import com.cloud.dc.VlanVO;
-import com.cloud.dc.dao.ASNumberDao;
-import com.cloud.dc.dao.ASNumberRangeDao;
-import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.event.Event;
@@ -299,7 +303,6 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.ControlState;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
-import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorCapabilities;
 import com.cloud.network.GuestVlan;
 import com.cloud.network.GuestVlanRange;
@@ -384,7 +387,6 @@ import com.cloud.server.ResourceIconManager;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.service.ServiceOfferingVO;
-import com.cloud.storage.BucketVO;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
@@ -1003,8 +1005,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
             }
             vlanResponse.setForSystemVms(isForSystemVms(vlan.getId()));
-            VlanDetailsVO vlanDetail = vlanDetailsDao.findDetail(vlan.getId(), ApiConstants.NSX_DETAIL_KEY);
-            vlanResponse.setForNsx(Objects.nonNull(vlanDetail) && vlanDetail.getValue().equals("true"));
+            vlanResponse.setProvider(getProviderFromVlanDetailKey(vlan));
             vlanResponse.setObjectName("vlan");
             return vlanResponse;
         } catch (InstantiationException | IllegalAccessException e) {
@@ -1012,6 +1013,15 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
     }
 
+    private String getProviderFromVlanDetailKey(Vlan vlan) {
+        for (Map.Entry<String, String> entry : ConfigurationService.ProviderDetailKeyMap.entrySet()) {
+            VlanDetailsVO vlanDetail = vlanDetailsDao.findDetail(vlan.getId(), entry.getValue());
+            if (Objects.nonNull(vlanDetail) && "true".equals(vlanDetail.getValue())) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
     /**
      * Return true if vlan IP range is dedicated for system vms (SSVM and CPVM), false if not
      * @param vlanId vlan id
@@ -1032,6 +1042,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             if (nic != null) {
                 addSystemVmInfoToIpResponse(nic, response);
             }
+        }
+        if (ipAddress.isForRouter()) {
+            response.setVirtualMachineType(Type.DomainRouter.toString());
         }
         if (ipAddress.getAssociatedWithVmId() != null) {
             addUserVmDetailsInIpResponse(response, ipAddress);
@@ -1059,12 +1072,25 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     private void addUserVmDetailsInIpResponse(IPAddressResponse response, IpAddress ipAddress) {
-        UserVm userVm = ApiDBUtils.findUserVmById(ipAddress.getAssociatedWithVmId());
-        if (userVm != null) {
-            response.setVirtualMachineId(userVm.getUuid());
-            response.setVirtualMachineName(userVm.getHostName());
-            response.setVirtualMachineType(userVm.getType().toString());
-            response.setVirtualMachineDisplayName(ObjectUtils.firstNonNull(userVm.getDisplayName(), userVm.getHostName()));
+        VirtualMachine vm = ApiDBUtils.findVMInstanceById(ipAddress.getAssociatedWithVmId());
+        if (vm == null) {
+            return;
+        }
+        if (vm.getType().equals(Type.User)) {
+            UserVm userVm = ApiDBUtils.findUserVmById(ipAddress.getAssociatedWithVmId());
+            if (userVm != null) {
+                response.setVirtualMachineId(userVm.getUuid());
+                response.setVirtualMachineName(userVm.getHostName());
+                response.setVirtualMachineType(userVm.getType().toString());
+                response.setVirtualMachineDisplayName(ObjectUtils.firstNonNull(userVm.getDisplayName(), userVm.getHostName()));
+            }
+        } else if (vm.getType().equals(Type.DomainRouter)) {
+            final boolean isAdmin = Account.Type.ADMIN.equals(CallContext.current().getCallingAccount().getType());
+            if (isAdmin) {
+                response.setVirtualMachineId(vm.getUuid());
+                response.setVirtualMachineName(vm.getHostName());
+            }
+            response.setVirtualMachineType(vm.getType().toString());
         }
     }
 
@@ -1165,6 +1191,9 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         ipResponse.setPortable(ipAddr.isPortable());
         ipResponse.setForSystemVms(ipAddr.isForSystemVms());
+        if (Objects.nonNull(getProviderFromVlanDetailKey(vlan))) {
+            ipResponse.setForProvider(true);
+        }
 
         //set tag information
         List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(ResourceObjectType.PublicIpAddress, ipAddr.getId());
@@ -1227,6 +1256,13 @@ public class ApiResponseHelper implements ResponseGenerator {
                     } else {
                         ipResponse.setVirtualMachineDisplayName(vm.getHostName());
                     }
+                }
+            } else if (nic.getVmType() == Type.DomainRouter) {
+                VirtualMachine vm = ApiDBUtils.findVMInstanceById(nic.getInstanceId());
+                if (vm != null) {
+                    ipResponse.setVirtualMachineId(vm.getUuid());
+                    ipResponse.setVirtualMachineName(vm.getHostName());
+                    ipResponse.setVirtualMachineType(vm.getType().toString());
                 }
             } else if (nic.getVmType().isUsedBySystem()) {
                 ipResponse.setIsSystem(true);
@@ -2444,8 +2480,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             serviceResponses.add(svcRsp);
         }
         response.setForVpc(_configMgr.isOfferingForVpc(offering));
-        response.setForTungsten(offering.isForTungsten());
-        response.setForNsx(offering.isForNsx());
+        response.setForTungsten(_ntwkModel.isProviderForNetworkOffering(Provider.Tungsten, offering.getId()));
+        response.setForNsx(_ntwkModel.isProviderForNetworkOffering(Provider.Nsx, offering.getId()));
         if (offering.getNetworkMode() != null) {
             response.setNetworkMode(offering.getNetworkMode().name());
         }
@@ -3175,12 +3211,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<? extends Network.Provider> serviceProviders = ApiDBUtils.getProvidersForService(service);
         List<ProviderResponse> serviceProvidersResponses = new ArrayList<ProviderResponse>();
         for (Network.Provider serviceProvider : serviceProviders) {
-            // return only Virtual Router/JuniperSRX/CiscoVnmc as a provider for the firewall
-            if (service == Service.Firewall
-                    && !(serviceProvider == Provider.VirtualRouter || serviceProvider == Provider.CiscoVnmc || serviceProvider == Provider.PaloAlto || serviceProvider == Provider.BigSwitchBcf || serviceProvider == Provider.Tungsten)) {
-                continue;
-            }
-
             ProviderResponse serviceProviderResponse = createServiceProviderResponse(serviceProvider);
             serviceProvidersResponses.add(serviceProviderResponse);
         }
@@ -3790,6 +3820,16 @@ public class ApiResponseHelper implements ResponseGenerator {
             if (vpc != null) {
                 response.setVpcId(vpc.getUuid());
             }
+        }
+        if (result.getVpcGatewayId() != null) {
+            VpcGateway vpcGateway = _entityMgr.findById(VpcGateway.class, result.getVpcGatewayId());
+            if (vpcGateway != null) {
+                response.setVpcGatewayId(vpcGateway.getUuid());
+                response.setVpcGatewayIp(vpcGateway.getIp4Address());
+            }
+        }
+        if (result.getNextHop() != null) {
+            response.setNextHop(result.getNextHop());
         }
         response.setCidr(result.getCidr());
 

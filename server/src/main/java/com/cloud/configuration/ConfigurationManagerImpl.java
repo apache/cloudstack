@@ -50,6 +50,9 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.dao.NetrisProviderDao;
+import com.cloud.network.element.NetrisProviderVO;
+import com.cloud.network.netris.NetrisService;
 import org.apache.cloudstack.acl.RoleType;
 import com.cloud.gpu.VgpuProfileVO;
 import com.cloud.gpu.dao.VgpuProfileDao;
@@ -470,6 +473,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     Ipv6Service ipv6Service;
     @Inject
     NsxProviderDao nsxProviderDao;
+    @Inject
+    NetrisProviderDao netrisProviderDao;
+    @Inject
+    private javax.inject.Provider<NetrisService> netrisServiceProvider;
     @Inject
     VMLeaseManager vmLeaseManager;
 
@@ -2811,10 +2818,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 final boolean success = _zoneDao.remove(zoneId);
 
                 if (success) {
-                    NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(zoneId);
-                    if (Objects.nonNull(nsxProvider)) {
-                        nsxProviderDao.remove(nsxProvider.getId());
-                    }
+                    deleteExternalProviderIfAny(zoneId);
 
                     // delete template refs for this zone
                     templateZoneDao.deleteByZoneId(zoneId);
@@ -2838,6 +2842,17 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 return success;
             }
         });
+    }
+
+    private void deleteExternalProviderIfAny(Long zoneId) {
+        NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(zoneId);
+        if (Objects.nonNull(nsxProvider)) {
+            nsxProviderDao.remove(nsxProvider.getId());
+        }
+        NetrisProviderVO netrisProvider = netrisProviderDao.findByZoneId(zoneId);
+        if (Objects.nonNull(netrisProvider)) {
+            netrisProviderDao.remove(netrisProvider.getId());
+        }
     }
 
     @Override
@@ -4817,6 +4832,19 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Unable to find zone by id " + zoneId);
         }
 
+        // If external provider is provided, verify zone has that provider enabled and the controller added
+        Provider provider = cmd.getProvider();
+        NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(zoneId);
+        NetrisProviderVO netrisProvider = netrisProviderDao.findByZoneId(zoneId);
+        if (Objects.nonNull(provider) && ObjectUtils.anyNotNull(nsxProvider, netrisProvider)) {
+            boolean unsupported =
+                    (Provider.Nsx == provider && nsxProvider == null) ||
+                            (Provider.Netris == provider && netrisProvider == null);
+            if (unsupported) {
+                throw new InvalidParameterValueException(String.format("Cannot add public IP range as the zone does not support provider: %s", provider.getName()));
+            }
+        }
+
         // verify that physical network exists
         PhysicalNetworkVO pNtwk = null;
         if (physicalNetworkId != null) {
@@ -4946,7 +4974,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         return commitVlan(zoneId, podId, startIP, endIP, newVlanGateway, newVlanNetmask, vlanId, forVirtualNetwork, forSystemVms, networkId, physicalNetworkId, startIPv6, endIPv6, ip6Gateway,
-                ip6Cidr, domain, vlanOwner, network, sameSubnet, cmd.isForNsx());
+                ip6Cidr, domain, vlanOwner, network, sameSubnet, cmd.getProvider());
     }
 
     private Network getNetwork(Long networkId) {
@@ -4977,7 +5005,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     private Vlan commitVlan(final Long zoneId, final Long podId, final String startIP, final String endIP, final String newVlanGatewayFinal, final String newVlanNetmaskFinal,
             final String vlanId, final Boolean forVirtualNetwork, final Boolean forSystemVms, final Long networkId, final Long physicalNetworkId, final String startIPv6, final String endIPv6,
-            final String ip6Gateway, final String ip6Cidr, final Domain domain, final Account vlanOwner, final Network network, final Pair<Boolean, Pair<String, String>> sameSubnet, boolean forNsx) {
+            final String ip6Gateway, final String ip6Cidr, final Domain domain, final Account vlanOwner, final Network network, final Pair<Boolean, Pair<String, String>> sameSubnet, Provider provider) {
         final GlobalLock commitVlanLock = GlobalLock.getInternLock("CommitVlan");
         commitVlanLock.lock(5);
         logger.debug("Acquiring lock for committing vlan");
@@ -5005,13 +5033,19 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         newVlanNetmask = sameSubnet.second().second();
                     }
                     final Vlan vlan = createVlanAndPublicIpRange(zoneId, networkId, physicalNetworkId, forVirtualNetwork, forSystemVms, podId, startIP, endIP, newVlanGateway, newVlanNetmask, vlanId,
-                            false, domain, vlanOwner, startIPv6, endIPv6, ip6Gateway, ip6Cidr, forNsx);
+                            false, domain, vlanOwner, startIPv6, endIPv6, ip6Gateway, ip6Cidr, provider);
                     // create an entry in the nic_secondary table. This will be the new
                     // gateway that will be configured on the corresponding routervm.
                     return vlan;
                 }
             });
 
+            if (provider == Provider.Netris && netrisProviderDao.findByZoneId(zoneId) != null) {
+                if (Objects.nonNull(netrisServiceProvider) && Objects.nonNull(netrisServiceProvider.get())) {
+                    NetrisService netrisService = netrisServiceProvider.get();
+                    netrisService.createIPAMAllocationsForZoneLevelPublicRanges(zoneId);
+                }
+            }
             messageBus.publish(_name, MESSAGE_CREATE_VLAN_IP_RANGE_EVENT, PublishScope.LOCAL, vlan);
 
             return vlan;
@@ -5132,7 +5166,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Override
     @DB
     public Vlan createVlanAndPublicIpRange(final long zoneId, final long networkId, final long physicalNetworkId, final boolean forVirtualNetwork, final boolean forSystemVms, final Long podId, final String startIP, final String endIP,
-                                           final String vlanGateway, final String vlanNetmask, String vlanId, boolean bypassVlanOverlapCheck, Domain domain, final Account vlanOwner, final String startIPv6, final String endIPv6, final String vlanIp6Gateway, final String vlanIp6Cidr, boolean forNsx) {
+                                           final String vlanGateway, final String vlanNetmask, String vlanId, boolean bypassVlanOverlapCheck, Domain domain, final Account vlanOwner, final String startIPv6, final String endIPv6, final String vlanIp6Gateway, final String vlanIp6Cidr, Provider provider) {
         final Network network = _networkModel.getNetwork(networkId);
 
         boolean ipv4 = false, ipv6 = false;
@@ -5182,6 +5216,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // 1) if vlan is specified for the guest network range, it should be the
         // same as network's vlan
         // 2) if vlan is missing, default it to the guest network's vlan
+        boolean forExternalProvider = ConfigurationService.IsIpRangeForProvider(provider);
         if (network.getTrafficType() == TrafficType.Guest) {
             boolean connectivityWithoutVlan = isConnectivityWithoutVlan(network);
             String networkVlanId = getNetworkVlanId(network, connectivityWithoutVlan);
@@ -5194,11 +5229,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             } else {
                 vlanId = networkVlanId;
             }
-        } else if (network.getTrafficType() == TrafficType.Public && vlanId == null && !forNsx) {
+        } else if (network.getTrafficType() == TrafficType.Public && vlanId == null && !forExternalProvider) {
             throw new InvalidParameterValueException("Unable to determine vlan id or untagged vlan for public network");
         }
 
-        if (vlanId == null && !forNsx) {
+        if (vlanId == null && !forExternalProvider) {
             vlanId = Vlan.UNTAGGED;
         }
 
@@ -5295,7 +5330,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (isSharedNetworkWithoutSpecifyVlan) {
             bypassVlanOverlapCheck = true;
         }
-        if (!bypassVlanOverlapCheck && !forNsx && !_zoneDao.findVnet(zoneId, physicalNetworkId, BroadcastDomainType.getValue(BroadcastDomainType.fromString(vlanId))).isEmpty()) {
+        if (!bypassVlanOverlapCheck && !forExternalProvider && !_zoneDao.findVnet(zoneId, physicalNetworkId, BroadcastDomainType.getValue(BroadcastDomainType.fromString(vlanId))).isEmpty()) {
             throw new InvalidParameterValueException("The VLAN tag " + vlanId + " is already being used for dynamic vlan allocation for the guest network in zone "
                     + zone.getName());
         }
@@ -5311,7 +5346,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // Everything was fine, so persist the VLAN
         final VlanVO vlan = commitVlanAndIpRange(zoneId, networkId, physicalNetworkId, podId, startIP, endIP, vlanGateway, vlanNetmask, vlanId, domain, vlanOwner, vlanIp6Gateway, vlanIp6Cidr,
-                ipv4, zone, vlanType, ipv6Range, ipRange, forSystemVms, forNsx);
+                ipv4, zone, vlanType, ipv6Range, ipRange, forSystemVms, provider);
 
         return vlan;
     }
@@ -5412,14 +5447,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     private VlanVO commitVlanAndIpRange(final long zoneId, final long networkId, final long physicalNetworkId, final Long podId, final String startIP, final String endIP,
             final String vlanGateway, final String vlanNetmask, final String vlanId, final Domain domain, final Account vlanOwner, final String vlanIp6Gateway, final String vlanIp6Cidr,
-            final boolean ipv4, final DataCenterVO zone, final VlanType vlanType, final String ipv6Range, final String ipRange, final boolean forSystemVms, final boolean forNsx) {
+            final boolean ipv4, final DataCenterVO zone, final VlanType vlanType, final String ipv6Range, final String ipRange, final boolean forSystemVms, final Provider provider) {
         return Transaction.execute(new TransactionCallback<>() {
             @Override
             public VlanVO doInTransaction(final TransactionStatus status) {
                 VlanVO vlan = new VlanVO(vlanType, vlanId, vlanGateway, vlanNetmask, zone.getId(), ipRange, networkId, physicalNetworkId, vlanIp6Gateway, vlanIp6Cidr, ipv6Range);
                 logger.debug("Saving vlan range " + vlan);
                 vlan = _vlanDao.persist(vlan);
-                vlanDetailsDao.addDetail(vlan.getId(), ApiConstants.NSX_DETAIL_KEY, String.valueOf(forNsx), true);
+                if (Objects.nonNull(provider)) {
+                    addProviderVlanDetailKey(vlan, provider);
+                }
 
                 // IPv6 use a used ip map, is different from ipv4, no need to save
                 // public ip range
@@ -5458,6 +5495,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         });
 
+    }
+
+    private void addProviderVlanDetailKey(Vlan vlan, Provider provider) {
+        vlanDetailsDao.addDetail(vlan.getId(), getProviderDetailKey(provider.getName()),
+                String.valueOf(ConfigurationService.IsIpRangeForProvider(provider)), true);
+    }
+
+    private String getProviderDetailKey(String providerName) {
+        return ConfigurationService.ProviderDetailKeyMap.get(providerName);
     }
 
     @Override
@@ -6405,7 +6451,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Map<String, String> detailsStr = cmd.getDetails();
         final Boolean egressDefaultPolicy = cmd.getEgressDefaultPolicy();
         Boolean forVpc = cmd.getForVpc();
-        Boolean forNsx = cmd.isForNsx();
+        boolean forNsx = cmd.isForNsx();
+        boolean forNetris = cmd.isForNetris();
         Boolean forTungsten = cmd.getForTungsten();
         String networkModeStr = cmd.getNetworkMode();
         boolean nsxSupportInternalLbSvc = cmd.getNsxSupportsInternalLbService();
@@ -6444,8 +6491,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
-        if (Boolean.TRUE.equals(forNsx) && Boolean.TRUE.equals(forTungsten)) {
-            throw new InvalidParameterValueException("Network Offering cannot be for both Tungsten-Fabric and NSX");
+        if ((Boolean.TRUE.equals(forTungsten) ? 1 : 0) + (forNetris ? 1 : 0) + (forNsx ? 1 : 0) > 1) {
+            throw new InvalidParameterValueException("Network Offering cannot be for multiple providers - Tungsten-Fabric, NSX and Netris");
         }
 
         NetworkOffering.NetworkMode networkMode = null;
@@ -6658,7 +6705,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // offering
         final Map<Capability, String> sourceNatServiceCapabilityMap = cmd.getServiceCapabilities(Service.SourceNat);
         if (!serviceProviderMap.containsKey(Service.SourceNat) && sourceNatServiceCapabilityMap != null && !sourceNatServiceCapabilityMap.isEmpty()) {
-            throw new InvalidParameterValueException("Capabilities for source NAT service can be specifed only when source NAT service is enabled for network offering.");
+            throw new InvalidParameterValueException("Capabilities for source NAT service can be specified only when source NAT service is enabled for network offering.");
         }
         validateSourceNatServiceCapablities(sourceNatServiceCapabilityMap);
 
@@ -6666,7 +6713,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // offering
         final Map<Capability, String> staticNatServiceCapabilityMap = cmd.getServiceCapabilities(Service.StaticNat);
         if (!serviceProviderMap.containsKey(Service.StaticNat) && sourceNatServiceCapabilityMap != null && !staticNatServiceCapabilityMap.isEmpty()) {
-            throw new InvalidParameterValueException("Capabilities for static NAT service can be specifed only when static NAT service is enabled for network offering.");
+            throw new InvalidParameterValueException("Capabilities for static NAT service can be specified only when static NAT service is enabled for network offering.");
         }
         validateStaticNatServiceCapablities(staticNatServiceCapabilityMap);
 
@@ -6727,7 +6774,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         final NetworkOfferingVO offering = createNetworkOffering(name, displayText, trafficType, tags, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType, false,
-                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc, forTungsten, forNsx, networkMode, domainIds, zoneIds, enable, internetProtocol, routingMode, specifyAsNumber);
+                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc, forTungsten, forNsx, forNetris, networkMode, domainIds, zoneIds, enable, internetProtocol, routingMode, specifyAsNumber);
         if (Boolean.TRUE.equals(forNsx) && nsxSupportInternalLbSvc) {
             offering.setInternalLb(true);
             offering.setPublicLb(false);
@@ -6894,7 +6941,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                                    final Long serviceOfferingId,
                                                    final boolean conserveMode, final Map<Service, Map<Capability, String>> serviceCapabilityMap, final boolean specifyIpRanges, final boolean isPersistent,
                                                    final Map<Detail, String> details, final boolean egressDefaultPolicy, final Integer maxconn, final boolean enableKeepAlive, Boolean forVpc,
-                                                   Boolean forTungsten, boolean forNsx, NetworkOffering.NetworkMode networkMode, final List<Long> domainIds, final List<Long> zoneIds, final boolean enableOffering, final NetUtils.InternetProtocol internetProtocol,
+                                                   Boolean forTungsten, boolean forNsx, boolean forNetris, NetworkOffering.NetworkMode networkMode, final List<Long> domainIds, final List<Long> zoneIds, final boolean enableOffering, final NetUtils.InternetProtocol internetProtocol,
                                                    final NetworkOffering.RoutingMode routingMode, final boolean specifyAsNumber) {
 
         String servicePackageUuid;
@@ -6989,6 +7036,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     } else {
                         serviceProviderMap.put(Service.Gateway, Sets.newHashSet(Provider.VirtualRouter));
                     }
+                } else {
+                    Set<Provider> providers = serviceProviderMap.get(Service.NetworkACL);
+                    serviceProviderMap.put(Service.Gateway, Sets.newHashSet(providers.iterator().next()));
                 }
             }
         }
@@ -7121,9 +7171,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (serviceOfferingId != null) {
             offeringFinal.setServiceOfferingId(serviceOfferingId);
         }
-
-        offeringFinal.setForTungsten(Objects.requireNonNullElse(forTungsten, false));
-        offeringFinal.setForNsx(Objects.requireNonNullElse(forNsx, false));
         offeringFinal.setNetworkMode(networkMode);
 
         if (enableOffering) {
@@ -7194,7 +7241,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                 logger.trace("Added service for the network offering: " + offService + " with provider " + provider.getName());
                             }
 
-                            if (vpcOff && !forNsx) {
+                            if (vpcOff && !forNsx && !forNetris) {
                                 final List<Service> supportedSvcs = new ArrayList<>();
                                 supportedSvcs.addAll(serviceProviderMap.keySet());
                                 _vpcMgr.validateNtwkOffForVpc(offering, supportedSvcs);

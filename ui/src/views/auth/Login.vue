@@ -93,6 +93,18 @@
             v-model:value="form.domain"
           >
             <template #prefix>
+              <project-outlined />
+            </template>
+          </a-input>
+        </a-form-item>
+        <a-form-item ref="project" name="project" v-if="$config.displayProjectFieldOnLogin">
+          <a-input
+            size="large"
+            type="text"
+            :placeholder="$t('label.project')"
+            v-model:value="form.project"
+          >
+            <template #prefix>
               <block-outlined />
             </template>
           </a-input>
@@ -230,7 +242,8 @@ export default {
         loginType: 0
       },
       server: '',
-      forgotPasswordEnabled: false
+      forgotPasswordEnabled: false,
+      project: null
     }
   },
   created () {
@@ -255,7 +268,8 @@ export default {
       this.form = reactive({
         server: (this.server.apiHost || '') + this.server.apiBase,
         username: this.$route.query?.username || '',
-        domain: this.$route.query?.domain || ''
+        domain: this.$route.query?.domain || '',
+        project: null
       })
       this.rules = reactive({})
       this.setRules()
@@ -447,7 +461,7 @@ export default {
           })
       })
     },
-    loginSuccess (res) {
+    async loginSuccess (res) {
       this.$notification.destroy()
       this.$store.commit('SET_COUNT_NOTIFY', 0)
       if (store.getters.twoFaEnabled === true && store.getters.twoFaProvider !== '' && store.getters.twoFaProvider !== undefined) {
@@ -456,8 +470,32 @@ export default {
         this.$router.push({ path: '/setup2FA' }).catch(() => {})
       } else {
         this.$store.commit('SET_LOGIN_FLAG', true)
+        const values = toRaw(this.form)
+        if (values.project) {
+          await this.getProject(values.project)
+          this.$store.dispatch('ProjectView', this.project.id)
+          this.$store.dispatch('SetProject', this.project)
+          this.$store.dispatch('ToggleTheme', this.project.id === undefined ? 'light' : 'dark')
+        }
         this.$router.push({ path: '/dashboard' }).catch(() => {})
       }
+    },
+    getProject (projectName) {
+      return new Promise((resolve, reject) => {
+        getAPI('listProjects', {
+          response: 'json',
+          domainId: this.selectedDomain,
+          details: 'min'
+        }).then((response) => {
+          const projects = response.listprojectsresponse.project
+          this.project = projects.filter(project => project.name === projectName)?.[0] || null
+          resolve(this.project)
+        }).catch((error) => {
+          this.$notifyError(error)
+        }).finally(() => {
+          this.loading = false
+        })
+      })
     },
     requestFailed (err) {
       if (err && err.response && err.response.data && err.response.data.loginresponse) {

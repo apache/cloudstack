@@ -23,6 +23,10 @@
 ALTER TABLE `cloud`.`backup_schedule` ADD COLUMN `max_backups` int(8) default NULL COMMENT 'maximum number of backups to maintain';
 ALTER TABLE `cloud`.`backups` ADD COLUMN `backup_interval_type` int(5) COMMENT 'type of backup, e.g. manual, recurring - hourly, daily, weekly or monthly';
 
+-- Update default value for the config 'vm.network.nic.max.secondary.ipaddresses' (and value to default value if value is null)
+UPDATE `cloud`.`configuration` SET default_value = '10' WHERE name = 'vm.network.nic.max.secondary.ipaddresses';
+UPDATE `cloud`.`configuration` SET value = '10' WHERE name = 'vm.network.nic.max.secondary.ipaddresses' AND value IS NULL;
+
 -- Add console_endpoint_creator_address column to cloud.console_session table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.console_session', 'console_endpoint_creator_address', 'VARCHAR(45)');
 
@@ -295,6 +299,43 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.service_offering', 'gpu_count', 'int
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.service_offering', 'gpu_display', 'boolean DEFAULT false COMMENT "enable GPU display"');
 CALL `cloud`.`IDEMPOTENT_DROP_FOREIGN_KEY`('cloud.service_offering','fk_service_offering__vgpu_profile_id');
 CALL `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`('cloud.service_offering', 'fk_service_offering__vgpu_profile_id', '(vgpu_profile_id)', '`vgpu_profile`(`id`)');
+
+-- Netris Plugin
+CREATE TABLE `cloud`.`netris_providers` (
+                                            `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+                                            `uuid` varchar(40),
+                                            `zone_id` bigint unsigned NOT NULL COMMENT 'Zone ID',
+                                            `host_id` bigint unsigned NOT NULL COMMENT 'Host ID',
+                                            `name` varchar(40),
+                                            `url` varchar(255) NOT NULL,
+                                            `username` varchar(255) NOT NULL,
+                                            `password` varchar(255) NOT NULL,
+                                            `site_name` varchar(255) NOT NULL,
+                                            `tenant_name` varchar(255) NOT NULL,
+                                            `netris_tag` varchar(255) NOT NULL,
+                                            `created` datetime NOT NULL COMMENT 'created date',
+                                            `removed` datetime COMMENT 'removed date if not null',
+                                            PRIMARY KEY (`id`),
+                                            CONSTRAINT `fk_netris_providers__zone_id` FOREIGN KEY `fk_netris_providers__zone_id` (`zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
+                                            INDEX `i_netris_providers__zone_id`(`zone_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Drop the Tungsten and NSX columns from the network offerings (replaced by checking the provider on the ntwk_offering_service_map table)
+ALTER TABLE `cloud`.`network_offerings` DROP COLUMN `for_tungsten`;
+ALTER TABLE `cloud`.`network_offerings` DROP COLUMN `for_nsx`;
+
+-- Drop the Tungsten and NSX columns from the VPC offerings (replaced by checking the provider on the vpc_offering_service_map table)
+ALTER TABLE `cloud`.`vpc_offerings` DROP COLUMN `for_nsx`;
+
+-- Add next_hop to the static_routes table
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.static_routes', 'next_hop', 'varchar(50) COMMENT "next hop of the static route" AFTER `vpc_gateway_id`');
+
+-- Add `for_router` to `user_ip_address` table
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.user_ip_address', 'for_router', 'tinyint(1) DEFAULT 0 COMMENT "True if the ip address is used by Domain Router to expose services"');
+
+-- Add Netris Autoscaling rules
+INSERT IGNORE INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'Netris', 'cpu', 'VM CPU - average percentage', 'vm.cpu.average.percentage', NOW());
+INSERT IGNORE INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'Netris', 'memory', 'VM Memory - average percentage', 'vm.memory.average.percentage', NOW());
 
 -- Rename user_vm_details to vm_instance_details
 ALTER TABLE `cloud`.`user_vm_details` RENAME TO `cloud`.`vm_instance_details`;
