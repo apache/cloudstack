@@ -5370,6 +5370,29 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final VlanVO vlan = commitVlanAndIpRange(zoneId, networkId, physicalNetworkId, podId, startIP, endIP, vlanGateway, vlanNetmask, vlanId, domain, vlanOwner, vlanIp6Gateway, vlanIp6Cidr,
                 ipv4, zone, vlanType, ipv6Range, ipRange, forSystemVms, provider);
 
+        if (vlan != null) {
+            final NetworkVO networkVO = _networkDao.findById(networkId);
+            if (ipv4) {
+                String networkCidr = networkVO.getCidr();
+                String newCidr = NetUtils.getCidrFromGatewayAndNetmask(vlanGateway, vlanNetmask);
+                String newNetworkCidr = com.cloud.utils.StringUtils.updateCommaSeparatedStringWithValue(networkCidr, newCidr, true);
+                networkVO.setCidr(newNetworkCidr);
+
+                String networkGateway = networkVO.getGateway();
+                String newNetworkGateway = com.cloud.utils.StringUtils.updateCommaSeparatedStringWithValue(networkGateway, vlanGateway, true);
+                networkVO.setGateway(newNetworkGateway);
+            } else if (ipv6) {
+                String networkIp6Cidr = networkVO.getIp6Cidr();
+                String newNetworkIp6Cidr = com.cloud.utils.StringUtils.updateCommaSeparatedStringWithValue(networkIp6Cidr, vlanIp6Cidr, true);
+                networkVO.setIp6Cidr(newNetworkIp6Cidr);
+
+                String networkIp6Gateway = networkVO.getIp6Gateway();
+                String newNetworkIp6Gateway = com.cloud.utils.StringUtils.updateCommaSeparatedStringWithValue(networkIp6Gateway, vlanIp6Gateway, true);
+                networkVO.setIp6Gateway(newNetworkIp6Gateway);
+            }
+            _networkDao.update(networkId, networkVO);
+        }
+
         return vlan;
     }
 
@@ -6413,6 +6436,30 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     private boolean deleteAndPublishVlanAndPublicIpRange(final long userId, final long vlanDbId, final Account caller) {
         VlanVO deletedVlan = deleteVlanAndPublicIpRange(userId, vlanDbId, caller);
         if (deletedVlan != null) {
+            final boolean ipv4 = deletedVlan.getVlanGateway() != null;
+            final boolean ipv6 = deletedVlan.getIp6Gateway() != null;
+            final long networkId = deletedVlan.getNetworkId();
+            final NetworkVO networkVO = _networkDao.findById(networkId);
+            if (ipv4) {
+                String networkCidr = networkVO.getCidr();
+                String cidrToRemove = NetUtils.getCidrFromGatewayAndNetmask(deletedVlan.getVlanGateway(), deletedVlan.getVlanNetmask());
+                String newNetworkCidr = com.cloud.utils.StringUtils.updateCommaSeparatedStringWithValue(networkCidr, cidrToRemove, false);
+                networkVO.setCidr(newNetworkCidr);
+
+                String networkGateway = networkVO.getGateway();
+                String newNetworkGateway = com.cloud.utils.StringUtils.updateCommaSeparatedStringWithValue(networkGateway, deletedVlan.getVlanGateway(), false);
+                networkVO.setGateway(newNetworkGateway);
+            } else if (ipv6) {
+                String networkIp6Cidr = networkVO.getIp6Cidr();
+                String newNetworkIp6Cidr = com.cloud.utils.StringUtils.updateCommaSeparatedStringWithValue(networkIp6Cidr, deletedVlan.getIp6Cidr(), false);
+                networkVO.setIp6Cidr(newNetworkIp6Cidr);
+
+                String networkIp6Gateway = networkVO.getIp6Gateway();
+                String newNetworkIp6Gateway = com.cloud.utils.StringUtils.updateCommaSeparatedStringWithValue(networkIp6Gateway, deletedVlan.getIp6Gateway(), false);
+                networkVO.setIp6Gateway(newNetworkIp6Gateway);
+            }
+            _networkDao.update(networkId, networkVO);
+
             messageBus.publish(_name, MESSAGE_DELETE_VLAN_IP_RANGE_EVENT, PublishScope.LOCAL, deletedVlan);
             return true;
         }
