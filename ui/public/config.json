@@ -98,6 +98,7 @@
   "basicZoneEnabled": true,
   "multipleServer": false,
   "allowSettingTheme": true,
+  "displayProjectFieldOnLogin": false,
   "imageSelectionInterface": "modern",
   "showUserCategoryForModernImageSelection": true,
   "showAllCategoryForModernImageSelection": false,

@@ -19,6 +19,10 @@
 -- Schema upgrade from 4.20.1.0 to 4.21.0.0
 --;
 
+-- Update default value for the config 'vm.network.nic.max.secondary.ipaddresses' (and value to default value if value is null)
+UPDATE `cloud`.`configuration` SET default_value = '10' WHERE name = 'vm.network.nic.max.secondary.ipaddresses';
+UPDATE `cloud`.`configuration` SET value = '10' WHERE name = 'vm.network.nic.max.secondary.ipaddresses' AND value IS NULL;
+
 -- Add console_endpoint_creator_address column to cloud.console_session table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.console_session', 'console_endpoint_creator_address', 'VARCHAR(45)');
 
