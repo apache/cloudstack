@@ -556,7 +556,12 @@ for LINE in "${LINES[@]}"; do
 		continue
 	fi
 
-	# Only process GPU classes
+	# If this is a VF, skip it. It will be processed under its PF.
+	if [[ -e "/sys/bus/pci/devices/0000:$PCI_ADDR/physfn" ]]; then
+		continue
+	fi
+
+	# Only process GPU classes (3D controller)
 	if [[ ! "$PCI_CLASS" =~ (3D\ controller) ]]; then
 		continue
 	fi
@@ -639,10 +644,7 @@ for LINE in "${LINES[@]}"; do
 					USED_JSON=$(to_json_vm "$raw")
 
 					vlist+=(
-						"{\"mdev_uuid\":\"$MDEV_UUID\",\"profile_name\":$(json_escape "$PROFILE_NAME"),"
-						"\"max_instances\":$MAX_INSTANCES,\"video_ram\":$VIDEO_RAM,\"max_heads\":$MAX_HEADS,"
-						"\"max_resolution_x\":$MAX_RESOLUTION_X,\"max_resolution_y\":$MAX_RESOLUTION_Y,\"libvirt_address\":{"
-						"\"domain\":\"$DOMAIN\",\"bus\":\"$BUS\",\"slot\":\"$SLOT\",\"function\":\"$FUNC\"},\"used_by_vm\":$USED_JSON}")
+						"{\"mdev_uuid\":\"$MDEV_UUID\",\"profile_name\":$(json_escape "$PROFILE_NAME"),\"max_instances\":$MAX_INSTANCES,\"video_ram\":$VIDEO_RAM,\"max_heads\":$MAX_HEADS,\"max_resolution_x\":$MAX_RESOLUTION_X,\"max_resolution_y\":$MAX_RESOLUTION_Y,\"libvirt_address\":{\"domain\":\"$DOMAIN\",\"bus\":\"$BUS\",\"slot\":\"$SLOT\",\"function\":\"$FUNC\"},\"used_by_vm\":$USED_JSON}")
 				done
 			fi
 		done
@@ -669,8 +671,7 @@ for LINE in "${LINES[@]}"; do
 			SLOT="0x${VF_BDF:3:2}"
 			FUNC="0x${VF_BDF:6:1}"
 
-			# Determine vf_type and vf_profile
-			VF_TYPE="sr-iov"
+			# Determine vf_profile
 			VF_PROFILE=""
 			if VF_LINE=$(lspci -nnm -s "$VF_BDF" 2>/dev/null); then
 				if [[ $VF_LINE =~ \"([^\"]+)\"[[:space:]]\"([^\"]+)\"[[:space:]]\"([^\"]+)\"[[:space:]]\"([^\"]+)\" ]]; then
@@ -685,8 +686,7 @@ for LINE in "${LINES[@]}"; do
 			USED_JSON=$(to_json_vm "$raw")
 
 			flist+=(
-				"{\"vf_pci_address\":\"$VF_BDF\",\"vf_profile\":$VF_PROFILE_JSON,\"libvirt_address\":{"
-				"\"domain\":\"$DOMAIN\",\"bus\":\"$BUS\",\"slot\":\"$SLOT\",\"function\":\"$FUNC\"},\"used_by_vm\":$USED_JSON}")
+				"{\"vf_pci_address\":\"$VF_BDF\",\"vf_profile\":$VF_PROFILE_JSON,\"libvirt_address\":{\"domain\":\"$DOMAIN\",\"bus\":\"$BUS\",\"slot\":\"$SLOT\",\"function\":\"$FUNC\"},\"used_by_vm\":$USED_JSON}")
 		done
 		if [ ${#flist[@]} -gt 0 ]; then
 			VF_ARRAY="[$(

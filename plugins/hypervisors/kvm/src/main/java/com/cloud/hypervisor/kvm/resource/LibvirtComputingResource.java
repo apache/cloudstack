@@ -2052,13 +2052,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 gpuDevices.add(vgpuType);
 
                 for (JsonElement vgpuInstance : vgpuInstances) {
-                    gpuDevices.add(getGpuDeviceFromVgpuInstance(vgpuInstance, busAddress, vendorId, vendorName, deviceId,
-                            deviceName, numaNode, pciRoot));
+                    VgpuTypesInfo vgpu = getGpuDeviceFromVgpuInstance(vgpuInstance, busAddress, vendorId, vendorName,
+                            deviceId, deviceName, numaNode, pciRoot);
+                    if (vgpu != null) {
+                        gpuDevices.add(vgpu);
+                    }
                 }
 
                 for (JsonElement vfInstance : vfInstances) {
-                    gpuDevices.add(getGpuDeviceFromVfInstance(vfInstance, busAddress, vendorId, vendorName, deviceId,
-                            deviceName, numaNode, pciRoot));
+                    VgpuTypesInfo vf = getGpuDeviceFromVfInstance(vfInstance, busAddress, vendorId, vendorName,
+                            deviceId, deviceName, numaNode, pciRoot);
+                    if (vf != null) {
+                        gpuDevices.add(vf);
+                    }
                 }
             }
 
@@ -2073,6 +2079,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         JsonObject vgpuInstanceJsonObject = vgpuInstance.getAsJsonObject();
         String mdevUuid = getJsonStringValueOrNull(vgpuInstanceJsonObject, "mdev_uuid");
         String profileName = getJsonStringValueOrNull(vgpuInstanceJsonObject, "profile_name");
+        if (profileName == null || profileName.isEmpty()) {
+            return null; // Skip if profile name is not provided
+        }
         Long maxInstances = getJsonLongValueOrNull(vgpuInstanceJsonObject, "max_instances");
         Long videoRam = getJsonLongValueOrNull(vgpuInstanceJsonObject, "video_ram");
         Long maxHeads = getJsonLongValueOrNull(vgpuInstanceJsonObject, "max_heads");
@@ -2094,6 +2103,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         JsonObject vfInstanceJsonObject = vfInstance.getAsJsonObject();
         String vfPciAddress = vfInstanceJsonObject.get("vf_pci_address").getAsString();
         String vfProfile = vfInstanceJsonObject.get("vf_profile").getAsString();
+        if (vfProfile == null || vfProfile.isEmpty()) {
+            return null; // Skip if profile name is not provided
+        }
         Long maxInstances = getJsonLongValueOrNull(vfInstanceJsonObject, "max_instances");
         Long videoRam = getJsonLongValueOrNull(vfInstanceJsonObject, "video_ram");
         Long maxHeads = getJsonLongValueOrNull(vfInstanceJsonObject, "max_heads");
