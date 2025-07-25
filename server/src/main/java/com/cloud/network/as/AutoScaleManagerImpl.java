@@ -1718,7 +1718,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
         int erroredInstanceCount = autoScaleVmGroupVmMapDao.getErroredInstanceCount(asGroup.getId());
         if (erroredInstanceCount > AutoScaleManager.AutoScaleErroredInstanceThreshold.value()) {
-            s_logger.warn("number of Errored Instances are greater than the threshold in this group for scaling up, so do nothing more");
+            s_logger.warn("Number of Errored Instances are greater than the threshold in this group for scaling up, so do nothing more");
             return false;
         }
         return true;
