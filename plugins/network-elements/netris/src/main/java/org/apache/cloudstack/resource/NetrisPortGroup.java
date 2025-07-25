@@ -14,21 +14,17 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.vm.dao;
+package org.apache.cloudstack.resource;
 
+public class NetrisPortGroup {
+    private String ports;
 
-import org.springframework.stereotype.Component;
-
-import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
-
-import com.cloud.vm.UserVmDetailVO;
-
-@Component
-public class UserVmDetailsDaoImpl extends ResourceDetailsDaoBase<UserVmDetailVO> implements UserVmDetailsDao {
-
-    @Override
-    public void addDetail(long resourceId, String key, String value, boolean display) {
-        super.addDetail(new UserVmDetailVO(resourceId, key, value, display));
+    public NetrisPortGroup() {
     }
 
+    public NetrisPortGroup(String ports) {
+        this.ports = ports;
+    }
+
+    public String getPorts() { return ports; }
 }

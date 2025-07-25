@@ -30,6 +30,7 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.net.Ip;
 import org.junit.Assert;
@@ -44,6 +45,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -60,6 +62,8 @@ public class NetworkModelImplTest {
 
     @Mock
     private VpcDao vpcDao;
+    @Inject
+    private NetworkOfferingServiceMapDao networkOfferingServiceMapDao;
 
     @InjectMocks
     private NetworkModelImpl networkModel = new NetworkModelImpl();
@@ -70,8 +74,10 @@ public class NetworkModelImplTest {
     public void setUp() {
         networkOfferingDao = Mockito.mock(NetworkOfferingDao.class);
         networkServiceMapDao = Mockito.mock(NetworkServiceMapDao.class);
+        networkOfferingServiceMapDao = Mockito.mock(NetworkOfferingServiceMapDao.class);
         networkModel._networkOfferingDao = networkOfferingDao;
         networkModel._ntwkSrvcDao = networkServiceMapDao;
+        networkModel._ntwkOfferingSrvcDao = networkOfferingServiceMapDao;
     }
 
     private void prepareMocks(boolean isIp6, Network network, DataCenter zone, VpcVO vpc,
@@ -216,7 +222,6 @@ public class NetworkModelImplTest {
         PublicIpAddress publicIpAddress2 = new PublicIp(ipAddressVO2, vlanVO, 0x0ac00000L);
         NetworkOfferingVO networkOfferingVO = new NetworkOfferingVO();
         networkOfferingVO.setForVpc(true);
-        networkOfferingVO.setForNsx(false);
         Network network = new NetworkVO();
         List<NetworkServiceMapVO> networkServiceMapVOs = new ArrayList<>();
         networkServiceMapVOs.add(new NetworkServiceMapVO(15L, Network.Service.Firewall, Network.Provider.VPCVirtualRouter));
@@ -229,6 +234,7 @@ public class NetworkModelImplTest {
         Map<PublicIpAddress, Set<Network.Service>> ipToServices = new HashMap<>();
         ipToServices.put(publicIpAddress1, services1);
         ipToServices.put(publicIpAddress2, services2);
+        Mockito.when(networkOfferingServiceMapDao.isProviderForNetworkOffering(networkOfferingVO.getId(), Network.Provider.Nsx)).thenReturn(false);
         Map<Network.Provider, ArrayList<PublicIpAddress>> result = networkModel.getProviderToIpList(network, ipToServices);
         Assert.assertNotNull(result);
     }

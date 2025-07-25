@@ -41,7 +41,7 @@
             v-model:value="form.displaytext"
             :placeholder="apiParams.displaytext.description"/>
         </a-form-item>
-        <a-form-item name="networkrate" ref="networkrate" v-if="!forNsx">
+        <a-form-item name="networkrate" ref="networkrate" v-if="form.provider !== 'NSX' && form.provider !== 'Netris'">
           <template #label>
             <tooltip-label :title="$t('label.networkrate')" :tooltip="apiParams.networkrate.description"/>
           </template>
@@ -60,10 +60,10 @@
             <a-radio-button value="isolated">
               {{ $t('label.isolated') }}
             </a-radio-button>
-            <a-radio-button value="l2" v-if="!forNsx">
+            <a-radio-button value="l2" v-if="form.provider !== 'NSX' && form.provider !== 'Netris'">
               {{ $t('label.l2') }}
             </a-radio-button>
-            <a-radio-button value="shared" v-if="!forNsx">
+            <a-radio-button value="shared" v-if="form.provider !== 'NSX' && form.provider !== 'Netris'">
               {{ $t('label.shared') }}
             </a-radio-button>
           </a-radio-group>
@@ -93,7 +93,7 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-row :gutter="12" v-if="!forNsx">
+        <a-row :gutter="12" v-if="form.provider !== 'NSX' && form.provider !== 'Netris'">
           <a-col :md="12" :lg="12">
             <a-form-item name="specifyvlan" ref="specifyvlan">
               <template #label>
@@ -117,19 +117,31 @@
               <template #label>
                 <tooltip-label :title="$t('label.vpc')" :tooltip="apiParams.forvpc.description"/>
               </template>
-              <a-switch v-model:checked="form.forvpc" @change="val => { handleForVpcChange(val) }" />
+              <a-switch v-model:checked="form.forvpc" @change="handleForVpcChange" />
             </a-form-item>
           </a-col>
           <a-col :md="12" :lg="12">
-            <a-form-item name="fornsx" ref="fornsx" v-if="guestType === 'isolated'">
+            <a-form-item name="provider" ref="provider">
               <template #label>
-                <tooltip-label :title="$t('label.nsx')" :tooltip="apiParams.fornsx.description"/>
+                <tooltip-label :title="$t('label.provider')" :tooltip="apiParams.provider.description"/>
               </template>
-              <a-switch v-model:checked="form.fornsx" @change="val => { handleForNsxChange(val) }" />
+              <a-select
+                v-model:value="form.provider"
+                v-focus="true"
+                @change="handleProviderChange"
+                showSearch
+                optionFilterProp="label"
+                :filterOption="(input, option) => {
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }"
+                :placeholder="apiParams.provider.description" >
+                <a-select-option :value="'NSX'" :label="$t('label.nsx')"> {{ $t('label.nsx') }} </a-select-option>
+                <a-select-option :value="'Netris'" :label="$t('label.netris')"> {{ $t('label.netris') }} </a-select-option>
+              </a-select>
             </a-form-item>
           </a-col>
         </a-row>
-        <a-row :gutter="12" v-if="forNsx">
+        <a-row :gutter="12" v-if="form.provider === 'NSX'">
           <a-col :md="12" :lg="12">
             <a-form-item name="nsxsupportlb" ref="nsxsupportlb" v-if="guestType === 'isolated'">
               <template #label>
@@ -180,7 +192,7 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-row :gutter="12" v-if="routingMode === 'dynamic' && !forVpc && forNsx">
+        <a-row :gutter="12" v-if="routingMode === 'dynamic' && !forVpc && form.provider === 'NSX'">
           <a-col :md="12" :lg="12">
             <a-form-item name="specifyasnumber" ref="specifyasnumber">
               <template #label>
@@ -195,7 +207,7 @@
         </a-form-item>
         <a-row :gutter="12">
           <a-col :md="12" :lg="12">
-            <a-form-item name="promiscuousmode" ref="promiscuousmode" v-if="!forNsx">
+            <a-form-item name="promiscuousmode" ref="promiscuousmode" v-if="form.provider !== 'NSX' && form.provider !== 'Netris'">
               <template #label>
                 <tooltip-label :title="$t('label.promiscuousmode')" :tooltip="$t('message.network.offering.promiscuous.mode')"/>
               </template>
@@ -213,7 +225,7 @@
                 </a-radio-button>
               </a-radio-group>
             </a-form-item>
-            <a-form-item name="macaddresschanges" ref="macaddresschanges" v-if="!forNsx">
+            <a-form-item name="macaddresschanges" ref="macaddresschanges" v-if="form.provider !== 'NSX' && form.provider !== 'Netris'">
               <template #label>
                 <tooltip-label :title="$t('label.macaddresschanges')" :tooltip="$t('message.network.offering.mac.address.changes')"/>
               </template>
@@ -233,7 +245,7 @@
             </a-form-item>
           </a-col>
           <a-col :md="12" :lg="12">
-            <a-form-item name="forgedtransmits" ref="forgedtransmits" v-if="!forNsx">
+            <a-form-item name="forgedtransmits" ref="forgedtransmits" v-if="form.provider !== 'NSX' && form.provider !== 'Netris'">
               <template #label>
                 <tooltip-label :title="$t('label.forgedtransmits')" :tooltip="$t('message.network.offering.forged.transmits')"/>
               </template>
@@ -251,7 +263,7 @@
                 </a-radio-button>
               </a-radio-group>
             </a-form-item>
-            <a-form-item name="maclearning" ref="maclearning" v-if="!forNsx">
+            <a-form-item name="maclearning" ref="maclearning" v-if="form.provider !== 'NSX' && form.provider !== 'Netris'">
               <template #label>
                 <tooltip-label :title="$t('label.maclearning')" :tooltip="$t('message.network.offering.mac.learning')"/>
               </template>
@@ -290,8 +302,8 @@
                   <CheckBoxSelectPair
                     :resourceKey="item.name"
                     :checkBoxLabel="item.description"
-                    :forNsx="forNsx"
-                    :defaultCheckBoxValue="forNsx"
+                    :forExternalNetProvider="form.provider === 'NSX' || form.provider === 'Netris'"
+                    :defaultCheckBoxValue="form.provider === 'NSX' || form.provider === 'Netris'"
                     :selectOptions="!supportedServiceLoading ? item.provider: []"
                     @handle-checkselectpair-change="handleSupportedServiceChange"/>
                 </a-list-item>
@@ -454,7 +466,8 @@
         <a-form-item
           name="conservemode"
           ref="conservemode"
-          v-if="(guestType === 'shared' || guestType === 'isolated') && !forNsx && networkmode !== 'ROUTED'">
+          v-if="(guestType === 'shared' || guestType === 'isolated') &&
+          (form.provider !== 'NSX' && form.provider !== 'Netris') && networkmode !== 'ROUTED'">
           <template #label>
             <tooltip-label :title="$t('label.conservemode')" :tooltip="apiParams.conservemode.description"/>
           </template>
@@ -589,7 +602,7 @@ export default {
       selectedDomains: [],
       selectedZones: [],
       forVpc: false,
-      forNsx: false,
+      provider: '',
       lbType: 'publicLb',
       macLearningValue: '',
       supportedServices: [],
@@ -646,7 +659,13 @@ export default {
         description: 'Nsx',
         enabled: true
       },
-      nsxSupportedServicesMap: {}
+      Netris: {
+        name: 'Netris',
+        description: 'Netris',
+        enabled: true
+      },
+      nsxSupportedServicesMap: {},
+      netrisSupportedServicesMap: {}
     }
   },
   beforeCreate () {
@@ -882,7 +901,7 @@ export default {
       this.supportedServiceLoading = true
       var supportedServices = this.supportedServices
       var self = this
-      if (!this.forNsx) {
+      if (this.provider !== 'NSX' && this.provider !== 'Netris') {
         if (this.networkmode === 'ROUTED' && this.guestType === 'isolated') {
           supportedServices = supportedServices.filter(service => {
             return !['SourceNat', 'StaticNat', 'Lb', 'PortForwarding', 'Vpn'].includes(service.name)
@@ -899,7 +918,7 @@ export default {
                 }
                 provider.enabled = enabledProviders.includes(provider.name)
               } else { // *** non-vpc ***
-                provider.enabled = !['InternalLbVm', 'VpcVirtualRouter', 'Nsx'].includes(provider.name)
+                provider.enabled = !['InternalLbVm', 'VpcVirtualRouter', 'Nsx', 'Netris'].includes(provider.name)
               }
               providers[providerIndex] = provider
             })
@@ -915,11 +934,25 @@ export default {
       } else {
         supportedServices = this.supportedSvcs
         supportedServices = supportedServices.filter(svc => {
-          return Object.keys(this.nsxSupportedServicesMap).includes(svc.name)
+          if (this.provider === 'NSX') {
+            return Object.keys(this.nsxSupportedServicesMap).includes(svc.name)
+          } else if (this.provider === 'Netris') {
+            return Object.keys(this.netrisSupportedServicesMap).includes(svc.name)
+          }
         })
         supportedServices = supportedServices.map(svc => {
           if (!['Dhcp', 'Dns', 'UserData'].includes(svc.name)) {
-            svc.provider = [this.NSX]
+            if (this.provider === 'NSX') {
+              svc.provider = [this.NSX]
+            } else if (this.provider === 'Netris') {
+              svc.provider = [this.Netris]
+            }
+          } else {
+            if (this.forVpc) {
+              svc.provider = [this.VPCVR]
+            } else {
+              svc.provider = [this.VR]
+            }
           }
           return svc
         })
@@ -930,33 +963,67 @@ export default {
     },
     handleForVpcChange (forVpc) {
       this.forVpc = forVpc
-      if (this.forNsx) {
+      if (this.provider === 'NSX') {
         this.nsxSupportedServicesMap = {
           Dhcp: this.forVpc ? this.VPCVR : this.VR,
           Dns: this.forVpc ? this.VPCVR : this.VR,
           UserData: this.forVpc ? this.VPCVR : this.VR,
-          SourceNat: this.NSX,
-          StaticNat: this.NSX,
-          PortForwarding: this.NSX,
-          Lb: this.NSX,
+          ...(this.networkmode === 'NATTED' && {
+            SourceNat: this.NSX,
+            StaticNat: this.NSX,
+            PortForwarding: this.NSX,
+            Lb: this.NSX
+          }),
           ...(forVpc && { NetworkACL: this.NSX }),
           ...(!forVpc && { Firewall: this.NSX })
+        }
+      } else if (this.provider === 'Netris') {
+        this.netrisSupportedServicesMap = {
+          Dhcp: this.forVpc ? this.VPCVR : this.VR,
+          Dns: this.forVpc ? this.VPCVR : this.VR,
+          UserData: this.forVpc ? this.VPCVR : this.VR,
+          ...(this.networkmode === 'NATTED' && {
+            SourceNat: this.Netris,
+            StaticNat: this.Netris,
+            PortForwarding: this.Netris,
+            Lb: this.Netris
+          }),
+          ...(forVpc && { NetworkACL: this.Netris }),
+          ...(!forVpc && { Firewall: this.Netris })
         }
       }
       this.updateSupportedServices()
     },
-    handleForNsxChange (forNsx) {
-      this.forNsx = forNsx
-      this.nsxSupportedServicesMap = {
-        Dhcp: this.forVpc ? this.VPCVR : this.VR,
-        Dns: this.forVpc ? this.VPCVR : this.VR,
-        UserData: this.forVpc ? this.VPCVR : this.VR,
-        SourceNat: this.NSX,
-        StaticNat: this.NSX,
-        PortForwarding: this.NSX,
-        Lb: this.NSX,
-        ...(this.forVpc && { NetworkACL: this.NSX }),
-        ...(!this.forVpc && { Firewall: this.NSX })
+    handleProviderChange (provider) {
+      this.provider = provider
+      if (this.provider === 'NSX') {
+        this.nsxSupportedServicesMap = {
+          Dhcp: this.forVpc ? this.VPCVR : this.VR,
+          Dns: this.forVpc ? this.VPCVR : this.VR,
+          UserData: this.forVpc ? this.VPCVR : this.VR,
+          ...(this.networkmode === 'NATTED' && {
+            SourceNat: this.NSX,
+            StaticNat: this.NSX,
+            PortForwarding: this.NSX,
+            Lb: this.NSX
+          }),
+          ...(this.forVpc && { NetworkACL: this.NSX }),
+          ...(!this.forVpc && { Firewall: this.NSX })
+        }
+      } else if (this.provider === 'Netris') {
+        this.netrisSupportedServicesMap = {
+          Dhcp: this.forVpc ? this.VPCVR : this.VR,
+          Dns: this.forVpc ? this.VPCVR : this.VR,
+          UserData: this.forVpc ? this.VPCVR : this.VR,
+          ...(this.networkmode === 'NATTED' && {
+            SourceNat: this.Netris,
+            StaticNat: this.Netris,
+            PortForwarding: this.Netris,
+            Lb: this.Netris
+          }),
+          ...(this.forVpc && { NetworkACL: this.Netris }),
+          ...(!this.forVpc && { Firewall: this.Netris })
+        }
       }
       this.fetchSupportedServiceData()
     },
@@ -1083,10 +1150,15 @@ export default {
           params.specifyasnumber = values.specifyasnumber
         }
         params.routingmode = values.routingmode
-        if (values.fornsx === true) {
-          params.fornsx = true
+        const forNsx = values.provider === 'NSX'
+        if (forNsx === true) {
+          params.provider = 'NSX'
           params.nsxsupportlb = values.nsxsupportlb
           params.nsxsupportsinternallb = values.nsxsupportsinternallb
+        }
+        const forNetris = values.provider === 'Netris'
+        if (forNetris) {
+          params.provider = 'Netris'
         }
         if (values.guestiptype === 'isolated') {
           params.networkmode = values.networkmode

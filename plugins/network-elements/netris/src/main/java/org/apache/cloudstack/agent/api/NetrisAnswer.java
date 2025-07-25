@@ -14,14 +14,17 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.quota.dao;
+package org.apache.cloudstack.agent.api;
 
-import java.util.Map;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
 
-import com.cloud.utils.db.GenericDao;
+public class NetrisAnswer extends Answer {
+    public NetrisAnswer(final Command command, final boolean success, final String details) {
+        super(command, success, details);
+    }
 
-import org.apache.cloudstack.quota.vo.UserVmDetailVO;
-
-public interface UserVmDetailsDao extends GenericDao<UserVmDetailVO, Long> {
-    Map<String, String> listDetailsKeyPairs(long resourceId);
+    public NetrisAnswer(final Command command, final Exception e) {
+        super(command, e);
+    }
 }
