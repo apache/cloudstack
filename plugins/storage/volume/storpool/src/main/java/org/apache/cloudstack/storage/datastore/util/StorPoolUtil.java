@@ -707,13 +707,14 @@ public class StorPoolUtil {
         return json.get("clusterId").getAsString();
     }
 
-    public static SpApiResponse snapshotFromRemote(String name, String remoteLocation, String template,
+    public static SpApiResponse snapshotFromRemote(String name, String remoteLocation, String template, Map<String, String> tags,
             SpConnectionDesc conn) {
         Map<String, Object> json = new HashMap<>();
         json.put("remoteId", name);
         json.put("remoteLocation", remoteLocation);
         json.put("template", template);
         json.put("name", "");
+        json.put("tags", tags);
         return POST("SnapshotFromRemote", json, conn);
     }
 

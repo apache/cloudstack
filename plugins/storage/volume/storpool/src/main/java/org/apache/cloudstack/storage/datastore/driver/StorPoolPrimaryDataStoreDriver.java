@@ -676,6 +676,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     VolumeObjectTO to = (VolumeObjectTO)dstData.getTO();
                     to.setPath(StorPoolUtil.devPath(StorPoolUtil.getNameFromResponse(resp, false)));
                     to.setSize(size);
+                    updateVolumePoolType(vinfo);
 
                     answer = new CopyCmdAnswer(to);
                     StorPoolUtil.spLog("Created volume=%s with uuid=%s from snapshot=%s with uuid=%s", StorPoolUtil.getNameFromResponse(resp, false), volumeName, snapshotName, sinfo.getUuid());
