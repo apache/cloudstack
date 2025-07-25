@@ -133,7 +133,7 @@ public class ListBackupsCmd extends BaseListProjectAndAccountResourcesCmd {
             if (backup == null) {
                 continue;
             }
-            BackupResponse backupResponse = _responseGenerator.createBackupResponse(backup, this.getListVmDetails());
+            BackupResponse backupResponse = backupManager.createBackupResponse(backup, this.getListVmDetails());
             responses.add(backupResponse);
         }
         final ListResponse<BackupResponse> response = new ListResponse<>();

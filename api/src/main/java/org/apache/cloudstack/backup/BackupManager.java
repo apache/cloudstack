@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.command.user.backup.CreateBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.DeleteBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupOfferingsCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupsCmd;
+import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
@@ -269,6 +270,8 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
     String createVolumeInfoFromVolumes(List<Volume> vmVolumes);
 
     String getBackupNameFromVM(VirtualMachine vm);
+
+    BackupResponse createBackupResponse(Backup backup, Boolean listVmDetails);
 
     Capacity getBackupStorageUsedStats(Long zoneId);
 

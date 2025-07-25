@@ -45,7 +45,6 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.BackupOfferingResponse;
-import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.BackupScheduleResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
@@ -75,7 +74,6 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.backup.BackupSchedule;
 import org.apache.cloudstack.backup.dao.BackupDao;
@@ -2274,10 +2272,6 @@ public class ApiDBUtils {
 
     public static ResourceIconVO getResourceIconByResourceUUID(String resourceUUID, ResourceObjectType resourceType) {
         return s_resourceIconDao.findByResourceUuid(resourceUUID, resourceType);
-    }
-
-    public static BackupResponse newBackupResponse(Backup backup, Boolean listVmDetails) {
-        return s_backupDao.newBackupResponse(backup, listVmDetails);
     }
 
     public static BackupScheduleResponse newBackupScheduleResponse(BackupSchedule schedule) {

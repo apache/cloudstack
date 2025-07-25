@@ -5025,11 +5025,6 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public BackupResponse createBackupResponse(Backup backup, Boolean listVmDetails) {
-        return ApiDBUtils.newBackupResponse(backup, listVmDetails);
-    }
-
-    @Override
     public BackupScheduleResponse createBackupScheduleResponse(BackupSchedule schedule) {
         return ApiDBUtils.newBackupScheduleResponse(schedule);
     }

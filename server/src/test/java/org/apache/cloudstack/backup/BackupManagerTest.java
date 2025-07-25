@@ -21,9 +21,12 @@ import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.alert.AlertManager;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.configuration.Resource;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.Domain;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
@@ -31,6 +34,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkService;
 import com.cloud.network.dao.NetworkDao;
@@ -40,6 +44,7 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
@@ -54,6 +59,7 @@ import com.cloud.user.DomainManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -73,7 +79,9 @@ import org.apache.cloudstack.api.command.admin.backup.UpdateBackupOfferingCmd;
 import org.apache.cloudstack.api.command.user.backup.CreateBackupCmd;
 import org.apache.cloudstack.api.command.user.backup.CreateBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.DeleteBackupScheduleCmd;
+import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.backup.dao.BackupDao;
+import org.apache.cloudstack.backup.dao.BackupDetailsDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.backup.dao.BackupScheduleDao;
 import org.apache.cloudstack.context.CallContext;
@@ -124,6 +132,9 @@ public class BackupManagerTest {
 
     @Mock
     BackupOfferingDao backupOfferingDao;
+
+    @Mock
+    BackupDetailsDao backupDetailsDao;
 
     @Mock
     BackupProvider backupProvider;
@@ -202,6 +213,12 @@ public class BackupManagerTest {
 
     @Mock
     private VMInstanceDetailsDao vmInstanceDetailsDao;
+
+    @Mock
+    AccountDao accountDao;
+
+    @Mock
+    DomainDao domainDao;
 
     private AccountVO account;
     private UserVO user;
@@ -1202,7 +1219,7 @@ public class BackupManagerTest {
             verify(backupOfferingDao, times(1)).findById(vm.getBackupOfferingId());
             verify(backupManager, times(1)).getBackupProvider("testbackupprovider");
             verify(backupScheduleDao, times(1)).remove(backupScheduleId);
-            usageEventUtilsMocked.verify(() -> UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVE, accountId, zoneId, vmId, resourceName,
+            usageEventUtilsMocked.verify(() -> UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVED_AND_BACKUPS_DELETED, accountId, zoneId, vmId, resourceName,
                     offeringId, null, null, Backup.class.getSimpleName(), vmUuid));
         }
     }
@@ -1504,8 +1521,99 @@ public class BackupManagerTest {
             verify(resourceLimitMgr).decrementResourceCount(accountId, Resource.ResourceType.backup);
             verify(resourceLimitMgr).decrementResourceCount(accountId, Resource.ResourceType.backup_storage, backup.getSize());
             verify(backupDao).remove(backupId);
-            usageEventUtilsMocked.verify(() -> UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_BACKUPS_DELETED, accountId, zoneId, vmId, resourceName,
+            usageEventUtilsMocked.verify(() -> UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVED_AND_BACKUPS_DELETED, accountId, zoneId, vmId, resourceName,
                     backupOfferingId, null, null, Backup.class.getSimpleName(), vmUuid));
         }
+    }
+
+    @Test
+    public void testNewBackupResponse() {
+        Long vmId = 1L;
+        Long accountId = 2L;
+        Long domainId = 3L;
+        Long zoneId = 4L;
+        Long vmOfferingId = 5L;
+        Long backupOfferingId = 6L;
+        Long backupId = 7L;
+        Long templateId = 8L;
+        String templateUuid = "template-uuid1";
+        String serviceOfferingUuid = "service-offering-uuid1";
+
+        BackupVO backup = new BackupVO();
+        ReflectionTestUtils.setField(backup, "id", backupId);
+        ReflectionTestUtils.setField(backup, "uuid", "backup-uuid");
+        backup.setVmId(vmId);
+        backup.setAccountId(accountId);
+        backup.setDomainId(domainId);
+        backup.setZoneId(zoneId);
+        backup.setBackupOfferingId(backupOfferingId);
+        backup.setType("Full");
+        backup.setBackupIntervalType((short) Backup.Type.MANUAL.ordinal());
+
+        VMInstanceVO vm = new VMInstanceVO(vmId, 0L, "test-vm", "test-vm", VirtualMachine.Type.User,
+                0L, Hypervisor.HypervisorType.Simulator, 0L, domainId, accountId, 0L, false);
+        vm.setDataCenterId(zoneId);
+        vm.setBackupOfferingId(vmOfferingId);
+        vm.setTemplateId(templateId);
+
+        AccountVO account = new AccountVO();
+        account.setUuid("account-uuid");
+        account.setAccountName("test-account");
+
+        DomainVO domain = new DomainVO();
+        domain.setUuid("domain-uuid");
+        domain.setName("test-domain");
+
+        DataCenterVO zone = new DataCenterVO(1L, "test-zone", null, null, null, null, null, null, null, null, DataCenter.NetworkType.Advanced, null, null);
+        zone.setUuid("zone-uuid");
+
+        BackupOfferingVO offering = Mockito.mock(BackupOfferingVO.class);
+        Mockito.when(offering.getUuid()).thenReturn("offering-uuid");
+        Mockito.when(offering.getName()).thenReturn("test-offering");
+
+        Mockito.when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
+        Mockito.when(accountDao.findByIdIncludingRemoved(accountId)).thenReturn(account);
+        Mockito.when(domainDao.findByIdIncludingRemoved(domainId)).thenReturn(domain);
+        Mockito.when(dataCenterDao.findByIdIncludingRemoved(zoneId)).thenReturn(zone);
+        Mockito.when(backupOfferingDao.findByIdIncludingRemoved(backupOfferingId)).thenReturn(offering);
+
+        VMTemplateVO template = mock(VMTemplateVO.class);
+        when(template.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+        when(template.getUuid()).thenReturn(templateUuid);
+        when(template.getName()).thenReturn("template1");
+        when(vmTemplateDao.findByUuid(templateUuid)).thenReturn(template);
+        Map<String, String> details = new HashMap<>();
+        details.put(ApiConstants.TEMPLATE_ID, templateUuid);
+
+        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+        when(serviceOffering.getUuid()).thenReturn(serviceOfferingUuid);
+        when(serviceOffering.getName()).thenReturn("service-offering1");
+        when(serviceOfferingDao.findByUuid(serviceOfferingUuid)).thenReturn(serviceOffering);
+        details.put(ApiConstants.SERVICE_OFFERING_ID, serviceOfferingUuid);
+
+        NetworkVO network = mock(NetworkVO.class);
+        when(network.getName()).thenReturn("network1");
+        when(networkDao.findByUuid("network-uuid1")).thenReturn(network);
+        details.put(ApiConstants.NICS, "[{\"networkid\":\"network-uuid1\"}]");
+
+        Mockito.when(backupDetailsDao.listDetailsKeyPairs(backup.getId(), true)).thenReturn(details);
+
+        BackupResponse response = backupManager.createBackupResponse(backup, true);
+
+        Assert.assertEquals("backup-uuid", response.getId());
+        Assert.assertEquals("test-vm", response.getVmName());
+        Assert.assertEquals("account-uuid", response.getAccountId());
+        Assert.assertEquals("test-account", response.getAccount());
+        Assert.assertEquals("domain-uuid", response.getDomainId());
+        Assert.assertEquals("test-domain", response.getDomain());
+        Assert.assertEquals("zone-uuid", response.getZoneId());
+        Assert.assertEquals("test-zone", response.getZone());
+        Assert.assertEquals("offering-uuid", response.getBackupOfferingId());
+        Assert.assertEquals("test-offering", response.getBackupOffering());
+        Assert.assertEquals("MANUAL", response.getIntervalType());
+        Assert.assertEquals("{serviceofferingid=service-offering-uuid1, isiso=false, hypervisor=Simulator, " +
+                "nics=[{\"networkid\":\"network-uuid1\",\"networkname\":\"network1\"}], serviceofferingname=service-offering1, " +
+                "templatename=template1, templateid=template-uuid1}", response.getVmDetails().toString());
+        Assert.assertEquals(true, response.getVmOfferingRemoved());
     }
 }

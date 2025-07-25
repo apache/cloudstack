@@ -16,16 +16,9 @@
 // under the License.
 package org.apache.cloudstack.backup.dao;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.response.BackupResponse;
-import org.apache.cloudstack.backup.Backup;
-import org.apache.cloudstack.backup.BackupOfferingVO;
 import org.apache.cloudstack.backup.BackupVO;
 import org.junit.Assert;
 import org.junit.Test;
@@ -37,26 +30,6 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.domain.DomainVO;
-import com.cloud.domain.dao.DomainDao;
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkVO;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.storage.Storage;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.user.AccountVO;
-import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.dao.VMInstanceDao;
-
 @RunWith(MockitoJUnitRunner.class)
 public class BackupDaoImplTest {
     @Spy
@@ -65,33 +38,6 @@ public class BackupDaoImplTest {
 
     @Mock
     BackupDetailsDao backupDetailsDao;
-
-    @Mock
-    SearchBuilder<BackupVO> backupSearch;
-
-    @Mock
-    VMInstanceDao vmInstanceDao;
-
-    @Mock
-    AccountDao accountDao;
-
-    @Mock
-    DomainDao domainDao;
-
-    @Mock
-    DataCenterDao dataCenterDao;
-
-    @Mock
-    BackupOfferingDao backupOfferingDao;
-
-    @Mock
-    private VMTemplateDao templateDao;
-
-    @Mock
-    ServiceOfferingDao serviceOfferingDao;
-
-    @Mock
-    NetworkDao networkDao;
 
     @Test
     public void testLoadDetails() {
@@ -123,96 +69,5 @@ public class BackupDaoImplTest {
         backupDao.saveDetails(backup);
 
         Mockito.verify(backupDetailsDao).saveDetails(Mockito.anyList());
-    }
-
-    @Test
-    public void testNewBackupResponse() {
-        Long vmId = 1L;
-        Long accountId = 2L;
-        Long domainId = 3L;
-        Long zoneId = 4L;
-        Long vmOfferingId = 5L;
-        Long backupOfferingId = 6L;
-        Long backupId = 7L;
-        Long templateId = 8L;
-        String templateUuid = "template-uuid1";
-        String serviceOfferingUuid = "service-offering-uuid1";
-
-        BackupVO backup = new BackupVO();
-        ReflectionTestUtils.setField(backup, "id", backupId);
-        ReflectionTestUtils.setField(backup, "uuid", "backup-uuid");
-        backup.setVmId(vmId);
-        backup.setAccountId(accountId);
-        backup.setDomainId(domainId);
-        backup.setZoneId(zoneId);
-        backup.setBackupOfferingId(backupOfferingId);
-        backup.setType("Full");
-        backup.setBackupIntervalType((short) Backup.Type.MANUAL.ordinal());
-
-        VMInstanceVO vm = new VMInstanceVO(vmId, 0L, "test-vm", "test-vm", VirtualMachine.Type.User,
-                0L, Hypervisor.HypervisorType.Simulator, 0L, domainId, accountId, 0L, false);
-        vm.setDataCenterId(zoneId);
-        vm.setBackupOfferingId(vmOfferingId);
-        vm.setTemplateId(templateId);
-
-        AccountVO account = new AccountVO();
-        account.setUuid("account-uuid");
-        account.setAccountName("test-account");
-
-        DomainVO domain = new DomainVO();
-        domain.setUuid("domain-uuid");
-        domain.setName("test-domain");
-
-        DataCenterVO zone = new DataCenterVO(1L, "test-zone", null, null, null, null, null, null, null, null, DataCenter.NetworkType.Advanced, null, null);
-        zone.setUuid("zone-uuid");
-
-        BackupOfferingVO offering = Mockito.mock(BackupOfferingVO.class);
-        Mockito.when(offering.getUuid()).thenReturn("offering-uuid");
-        Mockito.when(offering.getName()).thenReturn("test-offering");
-
-        Mockito.when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
-        Mockito.when(accountDao.findByIdIncludingRemoved(accountId)).thenReturn(account);
-        Mockito.when(domainDao.findByIdIncludingRemoved(domainId)).thenReturn(domain);
-        Mockito.when(dataCenterDao.findByIdIncludingRemoved(zoneId)).thenReturn(zone);
-        Mockito.when(backupOfferingDao.findByIdIncludingRemoved(backupOfferingId)).thenReturn(offering);
-
-        VMTemplateVO template = mock(VMTemplateVO.class);
-        when(template.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
-        when(template.getUuid()).thenReturn(templateUuid);
-        when(template.getName()).thenReturn("template1");
-        when(templateDao.findByUuid(templateUuid)).thenReturn(template);
-        Map<String, String> details = new HashMap<>();
-        details.put(ApiConstants.TEMPLATE_ID, templateUuid);
-
-        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
-        when(serviceOffering.getUuid()).thenReturn(serviceOfferingUuid);
-        when(serviceOffering.getName()).thenReturn("service-offering1");
-        when(serviceOfferingDao.findByUuid(serviceOfferingUuid)).thenReturn(serviceOffering);
-        details.put(ApiConstants.SERVICE_OFFERING_ID, serviceOfferingUuid);
-
-        NetworkVO network = mock(NetworkVO.class);
-        when(network.getName()).thenReturn("network1");
-        when(networkDao.findByUuid("network-uuid1")).thenReturn(network);
-        details.put(ApiConstants.NICS, "[{\"networkid\":\"network-uuid1\"}]");
-
-        Mockito.when(backupDetailsDao.listDetailsKeyPairs(backup.getId(), true)).thenReturn(details);
-
-        BackupResponse response = backupDao.newBackupResponse(backup, true);
-
-        Assert.assertEquals("backup-uuid", response.getId());
-        Assert.assertEquals("test-vm", response.getVmName());
-        Assert.assertEquals("account-uuid", response.getAccountId());
-        Assert.assertEquals("test-account", response.getAccount());
-        Assert.assertEquals("domain-uuid", response.getDomainId());
-        Assert.assertEquals("test-domain", response.getDomain());
-        Assert.assertEquals("zone-uuid", response.getZoneId());
-        Assert.assertEquals("test-zone", response.getZone());
-        Assert.assertEquals("offering-uuid", response.getBackupOfferingId());
-        Assert.assertEquals("test-offering", response.getBackupOffering());
-        Assert.assertEquals("MANUAL", response.getIntervalType());
-        Assert.assertEquals("{serviceofferingid=service-offering-uuid1, isiso=false, hypervisor=Simulator, " +
-                "nics=[{\"networkid\":\"network-uuid1\",\"networkname\":\"network1\"}], serviceofferingname=service-offering1, " +
-                "templatename=template1, templateid=template-uuid1}", response.getVmDetails().toString());
-        Assert.assertEquals(true, response.getVmOfferingRemoved());
     }
 }

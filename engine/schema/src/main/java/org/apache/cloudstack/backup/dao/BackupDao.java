@@ -19,7 +19,6 @@ package org.apache.cloudstack.backup.dao;
 
 import java.util.List;
 
-import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupVO;
 
@@ -39,7 +38,6 @@ public interface BackupDao extends GenericDao<BackupVO, Long> {
     List<Backup> listByOfferingId(Long backupOfferingId);
     List<BackupVO> listBackupsByVMandIntervalType(Long vmId, Backup.Type backupType);
     List<Long> listVmIdsWithBackupsInZone(Long zoneId);
-    BackupResponse newBackupResponse(Backup backup, Boolean listVmDetails);
     public Long countBackupsForAccount(long accountId);
     public Long calculateBackupStorageForAccount(long accountId);
     void loadDetails(BackupVO backup);

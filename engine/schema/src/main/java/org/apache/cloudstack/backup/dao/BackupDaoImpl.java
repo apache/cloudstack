@@ -17,48 +17,32 @@
 
 package org.apache.cloudstack.backup.dao;
 
-import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import com.cloud.offering.ServiceOffering;
 import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.storage.Storage;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.db.GenericSearchBuilder;
 
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupDetailVO;
-import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.backup.BackupVO;
 import org.apache.commons.collections.CollectionUtils;
 
-import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
-import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
-import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.cloud.network.Network;
 import com.cloud.network.dao.NetworkDao;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 
 public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements BackupDao {
 
@@ -296,99 +280,5 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
         SearchCriteria<Long> sc = backupVmSearchInZone.create();
         sc.setParameters("zone_id", zoneId);
         return customSearchIncludingRemoved(sc, null);
-    }
-
-    Map<String, String> getDetailsFromBackupDetails(Long backupId) {
-        Map<String, String> details = backupDetailsDao.listDetailsKeyPairs(backupId, true);
-        if (details == null) {
-            return null;
-        }
-        if (details.containsKey(ApiConstants.TEMPLATE_ID)) {
-            VirtualMachineTemplate template = templateDao.findByUuid(details.get(ApiConstants.TEMPLATE_ID));
-            if (template != null) {
-                details.put(ApiConstants.TEMPLATE_ID, template.getUuid());
-                details.put(ApiConstants.TEMPLATE_NAME, template.getName());
-                details.put(ApiConstants.IS_ISO, String.valueOf(template.getFormat().equals(Storage.ImageFormat.ISO)));
-            }
-        }
-        if (details.containsKey(ApiConstants.SERVICE_OFFERING_ID)) {
-            ServiceOffering serviceOffering = serviceOfferingDao.findByUuid(details.get(ApiConstants.SERVICE_OFFERING_ID));
-            if (serviceOffering != null) {
-                details.put(ApiConstants.SERVICE_OFFERING_ID, serviceOffering.getUuid());
-                details.put(ApiConstants.SERVICE_OFFERING_NAME, serviceOffering.getName());
-            }
-        }
-        if (details.containsKey(ApiConstants.NICS)) {
-            Type type = new TypeToken<List<Map<String, String>>>() {}.getType();
-            List<Map<String, String>> nics = new Gson().fromJson(details.get(ApiConstants.NICS), type);
-
-            for (Map<String, String> nic : nics) {
-                String networkUuid = nic.get(ApiConstants.NETWORK_ID);
-                if (networkUuid != null) {
-                    Network network = networkDao.findByUuid(networkUuid);
-                    if (network != null) {
-                        nic.put(ApiConstants.NETWORK_NAME, network.getName());
-                    }
-                }
-            }
-            details.put(ApiConstants.NICS, new Gson().toJson(nics));
-        }
-        return details;
-    }
-
-    @Override
-    public BackupResponse newBackupResponse(Backup backup, Boolean listVmDetails) {
-        VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
-        AccountVO account = accountDao.findByIdIncludingRemoved(backup.getAccountId());
-        DomainVO domain = domainDao.findByIdIncludingRemoved(backup.getDomainId());
-        DataCenterVO zone = dataCenterDao.findByIdIncludingRemoved(backup.getZoneId());
-        Long offeringId = backup.getBackupOfferingId();
-        BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(offeringId);
-
-        BackupResponse response = new BackupResponse();
-        response.setId(backup.getUuid());
-        response.setName(backup.getName());
-        response.setDescription(backup.getDescription());
-        response.setVmName(vm.getHostName());
-        response.setVmId(vm.getUuid());
-        if (vm.getBackupOfferingId() == null || vm.getBackupOfferingId() != backup.getBackupOfferingId()) {
-            response.setVmOfferingRemoved(true);
-        }
-        response.setExternalId(backup.getExternalId());
-        response.setType(backup.getType());
-        response.setDate(backup.getDate());
-        response.setSize(backup.getSize());
-        response.setProtectedSize(backup.getProtectedSize());
-        response.setStatus(backup.getStatus());
-        if (backup.getBackupIntervalType() != null) {
-            response.setIntervalType(Backup.Type.values()[backup.getBackupIntervalType()].toString());
-        }
-        // ACS 4.20: For backups taken prior this release the backup.backed_volumes column would be empty hence use vm_instance.backup_volumes
-        String backedUpVolumes;
-        if (Objects.isNull(backup.getBackedUpVolumes())) {
-            backedUpVolumes = new Gson().toJson(vm.getBackupVolumeList().toArray(), Backup.VolumeInfo[].class);
-        } else {
-            backedUpVolumes = new Gson().toJson(backup.getBackedUpVolumes().toArray(), Backup.VolumeInfo[].class);
-        }
-        response.setVolumes(backedUpVolumes);
-        response.setBackupOfferingId(offering.getUuid());
-        response.setBackupOffering(offering.getName());
-        response.setAccountId(account.getUuid());
-        response.setAccount(account.getAccountName());
-        response.setDomainId(domain.getUuid());
-        response.setDomain(domain.getName());
-        response.setZoneId(zone.getUuid());
-        response.setZone(zone.getName());
-
-        if (Boolean.TRUE.equals(listVmDetails)) {
-            Map<String, String> vmDetails = new HashMap<>();
-            vmDetails.put(ApiConstants.HYPERVISOR, vm.getHypervisorType().toString());
-            Map<String, String> details = getDetailsFromBackupDetails(backup.getId());
-            vmDetails.putAll(details);
-            response.setVmDetails(vmDetails);
-        }
-
-        response.setObjectName("backup");
-        return response;
     }
 }

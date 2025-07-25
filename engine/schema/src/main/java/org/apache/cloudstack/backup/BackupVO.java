@@ -282,10 +282,6 @@ public class BackupVO implements Backup {
         this.details = details;
     }
 
-    public void addDetails(Map<String, String> details) {
-        this.details.putAll(details);
-    }
-
     public Date getRemoved() {
         return removed;
     }

@@ -1037,7 +1037,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     StoragePoolTagsDao storagePoolTagsDao;
     @Inject
-    BackupManager backupManager;
+    private BackupManager backupManager;
     @Inject
     protected ManagementServerJoinDao managementServerJoinDao;
 
