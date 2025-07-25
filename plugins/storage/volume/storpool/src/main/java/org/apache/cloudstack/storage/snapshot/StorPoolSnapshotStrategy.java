@@ -33,6 +33,8 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -477,9 +479,18 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
                 .valueIn(snapshot.getDataStore().getId());
         StoragePoolDetailVO template = storagePoolDetailsDao.findDetail(storagePoolVO.getId(),
                 StorPoolUtil.SP_TEMPLATE);
+        Map<String, String> tags = addStorPoolTags(snapshot);
         SpApiResponse respFromRemote = StorPoolUtil.snapshotFromRemote(snapshotName, localLocation,
-                template.getValue(), connectionRemote);
+                template.getValue(), tags, connectionRemote);
         return respFromRemote;
+    }
+
+    @NotNull
+    private static Map<String, String> addStorPoolTags(DataObject snapshot) {
+        Map<String, String> tags = new HashMap<>();
+        tags.put("cs", "snapshot");
+        tags.put("uuid", snapshot.getUuid());
+        return tags;
     }
 
     private void keepExportedSnapshot(DataObject snapshot, String location, String snapshotName) {
