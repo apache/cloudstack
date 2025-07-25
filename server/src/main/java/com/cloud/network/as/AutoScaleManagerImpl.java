@@ -2254,8 +2254,9 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             Network.Provider provider = getLoadBalancerServiceProvider(asGroup.getLoadBalancerId());
             if (Network.Provider.Netscaler.equals(provider)) {
                 checkNetScalerAsGroup(asGroup);
-            } else if (Network.Provider.VirtualRouter.equals(provider) || Network.Provider.VPCVirtualRouter.equals(provider)) {
-                checkVirtualRouterAsGroup(asGroup);
+            } else if (Network.Provider.VirtualRouter.equals(provider) || Network.Provider.VPCVirtualRouter.equals(provider) ||
+                       Network.Provider.Netris.equals(provider)) {
+                checkAutoscalingGroup(asGroup);
             }
         }
     }
@@ -2635,7 +2636,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         countersNumberMap.put(key, countersNumberMap.get(key) + 1);
     }
 
-    protected void monitorVirtualRouterAsGroup(AutoScaleVmGroupVO asGroup) {
+    protected void monitorAutoscalingGroup(AutoScaleVmGroupVO asGroup) {
         if (!checkAsGroupMaxAndMinMembers(asGroup)) {
             return;
         }
@@ -2665,7 +2666,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
     }
 
-    protected void checkVirtualRouterAsGroup(AutoScaleVmGroupVO asGroup) {
+    protected void checkAutoscalingGroup(AutoScaleVmGroupVO asGroup) {
         AutoScaleVmGroupTO groupTO = lbRulesMgr.toAutoScaleVmGroupTO(asGroup);
 
         Map<String, Double> countersMap = new HashMap<>();
@@ -3015,8 +3016,9 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                     Network.Provider provider = getLoadBalancerServiceProvider(asGroup.getLoadBalancerId());
                     if (Network.Provider.Netscaler.equals(provider)) {
                         logger.debug("Skipping the monitoring on AutoScale VmGroup with Netscaler provider: " + asGroup);
-                    } else if (Network.Provider.VirtualRouter.equals(provider) || Network.Provider.VPCVirtualRouter.equals(provider)) {
-                        monitorVirtualRouterAsGroup(asGroup);
+                    } else if (Network.Provider.VirtualRouter.equals(provider) || Network.Provider.VPCVirtualRouter.equals(provider) ||
+                               Network.Provider.Netris.equals(provider)) {
+                        monitorAutoscalingGroup(asGroup);
                     }
                 }
             } catch (final Exception e) {

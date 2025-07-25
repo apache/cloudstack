@@ -51,6 +51,10 @@ public class BridgeVifDriver extends VifDriverBase {
     private String _controlCidr = NetUtils.getLinkLocalCIDR();
     private Long libvirtVersion;
 
+    private static boolean isVxlanOrNetris(String protocol) {
+        return protocol.equals(Networks.BroadcastDomainType.Vxlan.scheme()) || protocol.equals(Networks.BroadcastDomainType.Netris.scheme());
+    }
+
     @Override
     public void configure(Map<String, Object> params) throws ConfigurationException {
 
@@ -177,7 +181,7 @@ public class BridgeVifDriver extends VifDriverBase {
 
     protected boolean isBroadcastTypeVlanOrVxlan(final NicTO nic) {
         return nic != null && (nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan
-                || nic.getBroadcastType() == Networks.BroadcastDomainType.Vxlan);
+                || nic.getBroadcastType() == Networks.BroadcastDomainType.Vxlan || nic.getBroadcastType() == Networks.BroadcastDomainType.Netris);
     }
 
     protected boolean isValidProtocolAndVnetId(final String vNetId, final String protocol) {
@@ -284,7 +288,7 @@ public class BridgeVifDriver extends VifDriverBase {
 
     private String createVnetBr(String vNetId, String pifKey, String protocol) throws InternalErrorException {
         String nic = _pifs.get(pifKey);
-        if (nic == null || protocol.equals(Networks.BroadcastDomainType.Vxlan.scheme())) {
+        if (nic == null || isVxlanOrNetris(protocol)) {
             // if not found in bridge map, maybe traffic label refers to pif already?
             File pif = new File("/sys/class/net/" + pifKey);
             if (pif.isDirectory()) {
@@ -292,7 +296,7 @@ public class BridgeVifDriver extends VifDriverBase {
             }
         }
         String brName = "";
-        if (protocol.equals(Networks.BroadcastDomainType.Vxlan.scheme())) {
+        if (isVxlanOrNetris(protocol)) {
             brName = generateVxnetBrName(nic, vNetId);
         } else {
             brName = generateVnetBrName(nic, vNetId);
@@ -304,7 +308,7 @@ public class BridgeVifDriver extends VifDriverBase {
     private void createVnet(String vnetId, String pif, String brName, String protocol) throws InternalErrorException {
         synchronized (_vnetBridgeMonitor) {
             String script = _modifyVlanPath;
-            if (protocol.equals(Networks.BroadcastDomainType.Vxlan.scheme())) {
+            if (isVxlanOrNetris(protocol)) {
                 script = _modifyVxlanPath;
             }
             final Script command = new Script(script, _timeout, logger);

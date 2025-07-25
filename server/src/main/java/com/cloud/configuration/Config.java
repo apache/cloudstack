@@ -395,7 +395,7 @@ public enum Config {
             null),
     MaxNumberOfSecondaryIPsPerNIC(
             "Network", ManagementServer.class, Integer.class,
-            "vm.network.nic.max.secondary.ipaddresses", "256",
+            "vm.network.nic.max.secondary.ipaddresses", "10",
             "Specify the number of secondary ip addresses per nic per vm. Default value 10 is used, if not specified.", null),
 
     EnableServiceMonitoring(
