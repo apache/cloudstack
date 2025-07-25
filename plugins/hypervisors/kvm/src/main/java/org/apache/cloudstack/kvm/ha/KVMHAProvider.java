@@ -35,12 +35,13 @@ import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement.PowerOperat
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagementService;
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
+import com.cloud.host.Status;
 
 import javax.inject.Inject;
 import java.security.InvalidParameterException;
 
 public final class KVMHAProvider extends HAAbstractHostProvider implements HAProvider<Host>, Configurable {
-    private final static Logger LOG = Logger.getLogger(KVMHAProvider.class);
+    private final static Logger logger = Logger.getLogger(KVMHAProvider.class);
 
     @Inject
     protected KVMHostActivityChecker hostActivityChecker;
@@ -75,28 +76,34 @@ public final class KVMHAProvider extends HAAbstractHostProvider implements HAPro
                 final OutOfBandManagementResponse resp = outOfBandManagementService.executePowerOperation(r, PowerOperation.RESET, null);
                 return resp.getSuccess();
             } else {
-                LOG.warn("OOBM recover operation failed for the host " + r.getName());
+                logger.warn("OOBM recover operation failed for the host " + r.getName());
                 return false;
             }
         } catch (Exception e){
-            LOG.warn("OOBM service is not configured or enabled for this host " + r.getName() + " error is " + e.getMessage());
+            logger.warn("OOBM service is not configured or enabled for this host " + r.getName() + " error is " + e.getMessage());
             throw new HARecoveryException(" OOBM service is not configured or enabled for this host " + r.getName(), e);
         }
     }
 
     @Override
     public boolean fence(Host r) throws HAFenceException {
-
         try {
-            if (outOfBandManagementService.isOutOfBandManagementEnabled(r)){
-                final OutOfBandManagementResponse resp = outOfBandManagementService.executePowerOperation(r, PowerOperation.OFF, null);
-                return resp.getSuccess();
+            // host exists and is managed OOB
+            if (r != null && outOfBandManagementService.isOutOfBandManagementEnabled(r)) {
+                // check host status
+                if (Status.Down.equals(r.getStatus())) {
+                    logger.info("Host " + r.getName() + " is already down. Returning success.");
+                    return true;
+                } else {
+                    final OutOfBandManagementResponse resp = outOfBandManagementService.executePowerOperation(r, PowerOperation.OFF, null);
+                    return resp.getSuccess();
+                }
             } else {
-                LOG.warn("OOBM fence operation failed for this host " + r.getName());
+                logger.warn("OOBM fence operation failed for this host " + r.getName());
                 return false;
             }
         } catch (Exception e){
-            LOG.warn("OOBM service is not configured or enabled for this host " + r.getName() + " error is " + e.getMessage());
+            logger.warn("OOBM service is not configured or enabled for this host " + r.getName() + " error is " + e.getMessage());
             throw new HAFenceException("OBM service is not configured or enabled for this host " + r.getName() , e);
         }
     }
