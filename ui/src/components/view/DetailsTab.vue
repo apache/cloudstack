@@ -185,15 +185,6 @@
           </div>
         </div>
       </a-list-item>
-      <a-list-item v-else-if="item === 'externaldetails' && ['host', 'computeoffering'].includes($route.meta.name) && filteredExternalDetails">
-        <div>
-          <strong>{{ ['host', 'computeoffering'].includes($route.meta.name) ? $t('label.externaldetails') : $t('label.configuration.details') }}</strong>
-          <br/>
-          <div>
-            <object-list-table :data-map="filteredExternalDetails" />
-          </div>
-        </div>
-      </a-list-item>
       <a-list-item v-else-if="item === 'parameters' && ['customaction'].includes($route.meta.name) && Array.isArray(dataResource[item]) && dataResource[item].length > 0">
         <div>
           <strong>{{ $t('label.' + String(item).toLowerCase()) }}</strong>
@@ -203,6 +194,9 @@
           </div>
         </div>
       </a-list-item>
+      <external-configuration-details
+        v-else-if="item === 'externaldetails' && (['host', 'computeoffering'].includes($route.meta.name) || (['cluster'].includes($route.meta.name) && dataResource.extensionid))"
+        :resource="dataResource" />
     </template>
     <HostInfo :resource="dataResource" v-if="$route.meta.name === 'host' && 'listHosts' in $store.getters.apis" />
     <DedicateData :resource="dataResource" v-if="dedicatedSectionActive" />
@@ -214,7 +208,8 @@
 import DedicateData from './DedicateData'
 import HostInfo from '@/views/infra/HostInfo'
 import VmwareData from './VmwareData'
-import ObjectListTable from '@/components/view/ObjectListTable.vue'
+import ObjectListTable from '@/components/view/ObjectListTable'
+import ExternalConfigurationDetails from '@/views/extension/ExternalConfigurationDetails'
 import { genericCompare } from '@/utils/sort'
 
 export default {
@@ -223,7 +218,8 @@ export default {
     DedicateData,
     HostInfo,
     VmwareData,
-    ObjectListTable
+    ObjectListTable,
+    ExternalConfigurationDetails
   },
   props: {
     resource: {
@@ -267,7 +263,7 @@ export default {
         items.push('enddate')
       } else if (this.$route.meta.name === 'vm') {
         items.push('leaseexpirydate')
-      } else if (['host', 'computeoffering'].includes(this.$route.meta.name)) {
+      } else if (['cluster', 'host', 'computeoffering'].includes(this.$route.meta.name)) {
         items.push('externaldetails')
       }
       return items
@@ -391,28 +387,6 @@ export default {
         return routes.join('<br>')
       }
       return null
-    },
-    filteredExternalDetails () {
-      const detailsKeys = {
-        host: 'details',
-        computeoffering: 'serviceofferingdetails'
-      }
-      const detailsKey = detailsKeys[this.$route.meta.name]
-      if (!detailsKey || !this.dataResource) {
-        return null
-      }
-      const details = this.dataResource[detailsKey]
-      if (!details || typeof details !== 'object') {
-        return null
-      }
-      const prefix = 'External:'
-      const result = {}
-      for (const key in details) {
-        if (key.startsWith(prefix)) {
-          result[key.substring(prefix.length)] = details[key]
-        }
-      }
-      return Object.keys(result).length > 0 ? result : null
     }
   },
   created () {
