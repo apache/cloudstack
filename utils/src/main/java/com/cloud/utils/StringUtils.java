@@ -24,14 +24,17 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class StringUtils extends org.apache.commons.lang3.StringUtils {
     private static final char[] hexChar = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
@@ -408,5 +411,54 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
         String appendedTags = sb.toString();
         String[] finalMergedTagsArray = appendedTags.split(",");
         return finalMergedTagsArray;
+    }
+
+
+    /**
+     * Converts the comma separated numbers and ranges to numbers
+     * @param originalString the original string (can be null or empty) containing list of comma separated values that has to be updated
+     * @param value the value to add to, or remove from the original string
+     * @param add if true, adds the input value; if false, removes it
+     * @return String containing the modified original string (or null if empty)
+     */
+    public static String updateCommaSeparatedStringWithValue(String originalString, String value, boolean add) {
+        if (org.apache.commons.lang3.StringUtils.isEmpty(value)) {
+            return originalString;
+        }
+
+        Set<String> values = new LinkedHashSet<>();
+
+        if (org.apache.commons.lang3.StringUtils.isNotEmpty(originalString)) {
+            values.addAll(Arrays.stream(originalString.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .collect(Collectors.toList()));
+        }
+
+        if (add) {
+            values.add(value);
+        } else {
+            values.remove(value);
+        }
+
+        return values.isEmpty() ? null : String.join(",", values);
+    }
+
+    /**
+     * Returns the first value from a comma-separated string.
+     * @param inputString the input string (can be null or empty) containing list of comma separated values
+     * @return the first value, or null if none found
+     */
+    public static String getFirstValueFromCommaSeparatedString(String inputString) {
+        if (org.apache.commons.lang3.StringUtils.isEmpty(inputString)) {
+            return inputString;
+        }
+
+        String[] values = inputString.split(",");
+        if (values.length > 0) {
+            return values[0].trim();
+        }
+
+        return null;
     }
 }
