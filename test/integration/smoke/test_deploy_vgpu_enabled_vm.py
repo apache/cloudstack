@@ -319,7 +319,7 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
 
         qresultset = self.dbclient.execute("select id from vm_instance where uuid = '%s';" % self.virtual_machine.id)
         vm_id = qresultset[0]
-        qresultset = self.dbclient.execute("select name, value from user_vm_details where vm_id = '%d';" % vm_id)
+        qresultset = self.dbclient.execute("select name, value from vm_instance_details where vm_id = '%d';" % vm_id)
         detailKeys = [x[0] for x in qresultset]
 
         self.assertTrue('mks.enable3d' in detailKeys and 'mks.use3dRenderer' in detailKeys and 'svga.autodetect' in detailKeys and 'svga.vramSize' in detailKeys, "VM details do not contain 3D GPU details")
