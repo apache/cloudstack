@@ -28,6 +28,8 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -36,6 +38,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -620,6 +624,55 @@ public class ExternalPathPayloadProvisionerTest {
 
             fileUtilMock.verifyNoInteractions();
             Mockito.verify(logger, Mockito.never()).trace(anyString(), any(), any(), any(), any());
+        }
+    }
+
+    @Test
+    public void prepareExternalPayloadCreatesFileInNewDirectory() throws IOException {
+        String extensionName = "test-extension";
+        Map<String, Object> details = Map.of("key", "value");
+        String result = provisioner.prepareExternalPayload(extensionName, details);
+        assertNotNull(result);
+        Path payloadFile = Paths.get(result);
+        assertTrue(Files.exists(payloadFile));
+        assertTrue(Files.isRegularFile(payloadFile));
+        assertEquals("{\"key\":\"value\"}", Files.readString(payloadFile));
+    }
+
+    @Test
+    public void prepareExternalPayloadCreatesFileInExistingDirectory() throws IOException {
+        String extensionName = "test-extension";
+        Map<String, Object> details = Map.of("key", "value");
+        Path existingDir = Paths.get(tempDataDir.getAbsolutePath(), extensionName);
+        Files.createDirectories(existingDir);
+        doNothing().when(provisioner).scheduleExtensionPayloadDirectoryCleanup(extensionName);
+        String result = provisioner.prepareExternalPayload(extensionName, details);
+        assertNotNull(result);
+        Path payloadFile = Paths.get(result);
+        assertTrue(Files.exists(payloadFile));
+        assertTrue(Files.isRegularFile(payloadFile));
+        assertEquals("{\"key\":\"value\"}", Files.readString(payloadFile));
+    }
+
+    @Test
+    public void prepareExternalPayloadSchedulesCleanupForExistingDirectory() throws IOException {
+        String extensionName = "test-extension";
+        Map<String, Object> details = Map.of("key", "value");
+        Path existingDir = Paths.get(tempDataDir.getAbsolutePath(), extensionName);
+        Files.createDirectories(existingDir);
+        doNothing().when(provisioner).scheduleExtensionPayloadDirectoryCleanup(extensionName);
+        provisioner.prepareExternalPayload(extensionName, details);
+    }
+
+    @Test(expected = IOException.class)
+    public void prepareExternalPayloadThrowsExceptionWhenFileCannotBeWritten() throws IOException {
+        String extensionName = "test-extension";
+        Map<String, Object> details = Map.of("key", "value");
+        Path existingDir = Paths.get(tempDataDir.getAbsolutePath(), extensionName);
+        Files.createDirectories(existingDir);
+        try (MockedStatic<Files> filesMock = Mockito.mockStatic(Files.class)) {
+            filesMock.when(() -> Files.writeString(any(Path.class), anyString(), eq(StandardOpenOption.CREATE_NEW))).thenThrow(IOException.class);
+            provisioner.prepareExternalPayload(extensionName, details);
         }
     }
 }

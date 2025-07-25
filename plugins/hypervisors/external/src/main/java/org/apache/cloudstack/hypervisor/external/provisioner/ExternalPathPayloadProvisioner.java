@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -784,8 +785,7 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
 
     protected String prepareExternalPayload(String extensionName, Map<String, Object> details) throws IOException {
         String json = GsonHelper.getGson().toJson(details);
-        long epochMillis = System.currentTimeMillis();
-        String fileName = epochMillis + ".json";
+        String fileName = UUID.randomUUID() + ".json";
         String extensionPayloadDir = extensionsDataDirectory + File.separator + extensionName;
         Path payloadDirPath = Paths.get(extensionPayloadDir);
         if (!Files.exists(payloadDirPath)) {
