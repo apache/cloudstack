@@ -15,7 +15,4 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# Marvin dependencies are installed via its bundle
-
-# Install the SolidFire SDK for Python
-solidfire-sdk-python
+pre-commit
