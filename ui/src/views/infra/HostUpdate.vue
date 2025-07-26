@@ -64,7 +64,22 @@
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item name="oscategoryid" ref="oscategoryid">
+      <a-form-item name="guestosasrule" ref="guestosasrule">
+        <template #label>
+          <tooltip-label :title="$t('label.guestosasrule')"/>
+        </template>
+        <a-switch v-model:checked="form.guestosasrule"/>
+      </a-form-item>
+      <a-form-item v-if="form.guestosasrule" name="guestosrule" ref="guestosrule">
+        <template #label>
+          <tooltip-label :title="$t('label.guestosrule')" :tooltip="apiParams.guestosrule.description"/>
+        </template>
+        <a-textarea
+          v-model:value="form.guestosrule"
+          :placeholder="apiParams.guestosrule.name">
+        </a-textarea>
+      </a-form-item>
+      <a-form-item v-if="!form.guestosasrule" name="oscategoryid" ref="oscategoryid">
         <template #label>
           <tooltip-label :title="$t('label.oscategoryid')" :tooltip="apiParams.oscategoryid.description"/>
         </template>
@@ -133,6 +148,7 @@ export default {
   methods: {
     initForm () {
       this.formRef = ref()
+      const guestOsRule = this.resource?.guestosrule
       this.form = reactive({
         name: this.resource.name,
         hosttags: this.resource.explicithosttags,
@@ -140,6 +156,8 @@ export default {
         storageaccessgroups: this.resource.storageaccessgroups
           ? this.resource.storageaccessgroups.split(',')
           : [],
+        guestosasrule: guestOsRule !== undefined,
+        guestosrule: guestOsRule,
         oscategoryid: this.resource.oscategoryid
       })
       this.rules = reactive({})
@@ -178,13 +196,21 @@ export default {
         params.id = this.resource.id
         params.name = values.name
         params.hosttags = values.hosttags
-        params.oscategoryid = values.oscategoryid
+
+        if (values.guestosasrule === true) {
+          params.guestosrule = values.guestosrule
+        } else {
+          params.oscategoryid = values.oscategoryid || this.oscategoryids.filter(os => os.name === 'None')[0].id
+        }
+
         if (values.istagarule !== undefined) {
           params.istagarule = values.istagarule
         }
+
+        Object.keys(params).forEach((key) => (params[key] == null) && delete params[key])
         this.loading = true
 
-        postAPI('updateHost', params).then(json => {
+        postAPI('updateHost', {}, 'POST', params).then(() => {
           this.$message.success({
             content: `${this.$t('label.action.update.host')} - ${values.name}`,
             duration: 2

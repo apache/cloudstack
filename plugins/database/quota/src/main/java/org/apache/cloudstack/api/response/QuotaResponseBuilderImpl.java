@@ -1035,7 +1035,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         addAllPresetVariables(PresetVariables.class, quotaType, usageTypeVariablesAndDescriptions, null);
         List<String> usageTypeVariables = usageTypeVariablesAndDescriptions.stream().map(Pair::first).collect(Collectors.toList());
 
-        try (JsInterpreter jsInterpreter = new JsInterpreter(QuotaConfig.QuotaActivationRuleTimeout.value())) {
+        try (JsInterpreter jsInterpreter = new JsInterpreter(QuotaConfig.QuotaActivationRuleTimeout.value(), QuotaConfig.QuotaActivationRuleTimeout.key())) {
             Map<String, String> newVariables = injectUsageTypeVariables(jsInterpreter, usageTypeVariables);
             String scriptToExecute = jsInterpreterHelper.replaceScriptVariables(activationRule, newVariables);
             jsInterpreter.executeScript(String.format("new Function(\"%s\")", scriptToExecute.replaceAll("\n", "")));
