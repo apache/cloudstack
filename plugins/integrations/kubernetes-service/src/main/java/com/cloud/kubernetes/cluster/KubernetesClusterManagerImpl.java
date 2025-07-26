@@ -434,7 +434,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     public VMTemplateVO getKubernetesServiceTemplate(DataCenter dataCenter, Hypervisor.HypervisorType hypervisorType) {
-        VMTemplateVO template = templateDao.findSystemVMReadyTemplate(dataCenter.getId(), hypervisorType);
+        String preferredArchitecture = ResourceManager.SystemVmPreferredArchitecture.valueIn(dataCenter.getId());
+        VMTemplateVO template = templateDao.findSystemVMReadyTemplate(dataCenter.getId(), hypervisorType, preferredArchitecture);
         if (DataCenter.Type.Edge.equals(dataCenter.getType()) && template != null && !template.isDirectDownload()) {
             logger.debug(String.format("Template %s can not be used for edge zone %s", template, dataCenter));
             template = templateDao.findRoutingTemplate(hypervisorType, networkHelper.getHypervisorRouterTemplateConfigMap().get(hypervisorType).valueIn(dataCenter.getId()));
@@ -1303,6 +1304,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
         final Network defaultNetwork = getKubernetesClusterNetworkIfMissing(cmd.getName(), zone, owner, (int)controlNodeCount, (int)clusterSize, cmd.getExternalLoadBalancerIpAddress(), cmd.getNetworkId());
         final VMTemplateVO finalTemplate = getKubernetesServiceTemplate(zone, deployDestination.getCluster().getHypervisorType());
+
+        compareKubernetesIsoArchToSelectedTemplateArch(clusterKubernetesVersion, finalTemplate);
+
         final long cores = serviceOffering.getCpu() * (controlNodeCount + clusterSize);
         final long memory = serviceOffering.getRamSize() * (controlNodeCount + clusterSize);
 
@@ -1329,6 +1333,21 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
         CallContext.current().putContextParameter(KubernetesCluster.class, cluster.getUuid());
         return cluster;
+    }
+
+    private void compareKubernetesIsoArchToSelectedTemplateArch(KubernetesSupportedVersion clusterKubernetesVersion, VMTemplateVO finalTemplate) {
+        VMTemplateVO cksIso = templateDao.findById(clusterKubernetesVersion.getIsoId());
+        if (cksIso == null) {
+            String err = String.format("Cannot find Kubernetes ISO associated to the Kubernetes version %s (id=%s)",
+                    clusterKubernetesVersion.getName(), clusterKubernetesVersion.getUuid());
+            throw new CloudRuntimeException(err);
+        }
+        if (!cksIso.getArch().equals(finalTemplate.getArch())) {
+            String err = String.format("The selected Kubernetes ISO %s arch (%s) doesn't match the template %s arch (%s) " +
+                            "to deploy the Kubernetes cluster",
+                    clusterKubernetesVersion.getName(), cksIso.getArch(), finalTemplate.getName(), finalTemplate.getArch());
+            throw new CloudRuntimeException(err);
+        }
     }
 
     private SecurityGroup getOrCreateSecurityGroupForAccount(Account owner) {
