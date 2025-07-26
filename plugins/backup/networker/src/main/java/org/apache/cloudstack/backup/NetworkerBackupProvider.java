@@ -21,21 +21,27 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.offering.DiskOffering;
+import com.cloud.offering.ServiceOffering;
+import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.utils.script.Script;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SshHelper;
-import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDaoImpl;
 import org.apache.cloudstack.backup.networker.NetworkerClient;
@@ -115,6 +121,18 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
 
     @Inject
     private VMInstanceDao vmInstanceDao;
+
+    @Inject
+    private VMTemplateDao vmTemplateDao;
+
+    @Inject
+    ServiceOfferingDao serviceOfferingDao;
+
+    @Inject
+    private BackupManager backupManager;
+
+    @Inject
+    private DiskOfferingDao diskOfferingDao;
 
     private static String getUrlDomain(String url) throws URISyntaxException {
         URI uri;
@@ -371,10 +389,10 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
     }
 
     @Override
-    public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, String volumeUuid, String hostIp, String dataStoreUuid, Pair<String, VirtualMachine.State> vmNameAndState) {
+    public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, Backup.VolumeInfo backupVolumeInfo, String hostIp, String dataStoreUuid, Pair<String, VirtualMachine.State> vmNameAndState) {
         String networkerServer;
-        VolumeVO volume = volumeDao.findByUuid(volumeUuid);
-        VMInstanceVO backupSourceVm = vmInstanceDao.findById(backup.getVmId());
+        VolumeVO volume = volumeDao.findByUuid(backupVolumeInfo.getUuid());
+        final DiskOffering diskOffering = diskOfferingDao.findByUuid(backupVolumeInfo.getDiskOfferingId());
         StoragePoolHostVO dataStore = storagePoolHostDao.findByUuid(dataStoreUuid);
         HostVO hostVO = hostDao.findByIp(hostIp);
 
@@ -384,9 +402,8 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         final String SSID = networkerBackup.getShortId();
         final String clusterName = networkerBackup.getClientHostname();
         final String destinationNetworkerClient = hostVO.getName().split("\\.")[0];
-        Long restoredVolumeDiskSize = 0L;
 
-        LOG.debug("Restoring volume {} with uuid {} from backup {} on the Networker Backup Provider", volume, volumeUuid, backup);
+        LOG.debug("Restoring volume {} with uuid {} from backup {} on the Networker Backup Provider", volume, backupVolumeInfo, backup);
 
         if ( SSID.isEmpty() ) {
             LOG.debug("There was an error retrieving the SSID for backup with id " + externalBackupId + " from EMC NEtworker");
@@ -401,18 +418,13 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
             throw new CloudRuntimeException(String.format("Failed to convert API to HOST : %s", e));
         }
 
-        // Find volume size  from backup vols
-        for ( Backup.VolumeInfo VMVolToRestore : backupSourceVm.getBackupVolumeList()) {
-            if (VMVolToRestore.getUuid().equals(volumeUuid))
-                restoredVolumeDiskSize = (VMVolToRestore.getSize());
-        }
-
         VolumeVO restoredVolume = new VolumeVO(Volume.Type.DATADISK, null, backup.getZoneId(),
                 backup.getDomainId(), backup.getAccountId(), 0, null,
                 backup.getSize(), null, null, null);
 
-        restoredVolume.setName("RV-"+volume.getName());
-        restoredVolume.setProvisioningType(volume.getProvisioningType());
+        String volumeName = volume != null ? volume.getName() : backupVolumeInfo.getUuid();
+        restoredVolume.setName("RV-" + volumeName);
+        restoredVolume.setProvisioningType(diskOffering.getProvisioningType());
         restoredVolume.setUpdated(new Date());
         restoredVolume.setUuid(UUID.randomUUID().toString());
         restoredVolume.setRemoved(null);
@@ -420,8 +432,8 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         restoredVolume.setPoolId(volume.getPoolId());
         restoredVolume.setPath(restoredVolume.getUuid());
         restoredVolume.setState(Volume.State.Copying);
-        restoredVolume.setSize(restoredVolumeDiskSize);
-        restoredVolume.setDiskOfferingId(volume.getDiskOfferingId());
+        restoredVolume.setSize(backupVolumeInfo.getSize());
+        restoredVolume.setDiskOfferingId(diskOffering.getId());
 
         try {
             volumeDao.persist(restoredVolume);
@@ -461,7 +473,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
     }
 
     @Override
-    public Pair<Boolean, Backup> takeBackup(VirtualMachine vm) {
+    public Pair<Boolean, Backup> takeBackup(VirtualMachine vm, Boolean quiesceVM) {
         String networkerServer;
         String clusterName;
 
@@ -511,7 +523,10 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         LOG.info("EMC Networker finished backup job for vm {} with saveset Time: {}", vm, saveTime);
         BackupVO backup = getClient(vm.getDataCenterId()).registerBackupForVm(vm, backupJobStart, saveTime);
         if (backup != null) {
-            backup.setBackedUpVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
+            List<Volume> volumes = new ArrayList<>(volumeDao.findByInstance(vm.getId()));
+            backup.setBackedUpVolumes(backupManager.createVolumeInfoFromVolumes(volumes));
+            Map<String, String> details = backupManager.getBackupDetailsFromVM(vm);
+            backup.setDetails(details);
             backupDao.persist(backup);
             return new Pair<>(true, backup);
         } else {
@@ -536,35 +551,11 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         return false;
     }
 
-    @Override
-    public Map<VirtualMachine, Backup.Metric> getBackupMetrics(Long zoneId, List<VirtualMachine> vms) {
-        final Map<VirtualMachine, Backup.Metric> metrics = new HashMap<>();
-        long vmBackupSize=0L;
-        long vmBackupProtectedSize=0L;
-
-        if (CollectionUtils.isEmpty(vms)) {
-            LOG.warn("Unable to get VM Backup Metrics because the list of VMs is empty.");
-            return metrics;
-        }
-
-        for (final VirtualMachine vm : vms) {
-            for ( Backup.VolumeInfo thisVMVol : vm.getBackupVolumeList()) {
-                vmBackupProtectedSize += (thisVMVol.getSize() / 1024L / 1024L);
-            }
-            final ArrayList<String> vmBackups = getClient(zoneId).getBackupsForVm(vm);
-            for ( String vmBackup : vmBackups ) {
-                NetworkerBackup vmNwBackup = getClient(zoneId).getNetworkerBackupInfo(vmBackup);
-                vmBackupSize += vmNwBackup.getSize().getValue() / 1024L;
-            }
-            Backup.Metric vmBackupMetric = new Backup.Metric(vmBackupSize,vmBackupProtectedSize);
-            LOG.debug(String.format("Metrics for VM [%s] is [backup size: %s, data size: %s].", vm, vmBackupMetric.getBackupSize(), vmBackupMetric.getDataSize()));
-            metrics.put(vm, vmBackupMetric);
-        }
-        return metrics;
+    public void syncBackupMetrics(Long zoneId) {
     }
 
     @Override
-    public Backup createNewBackupEntryForRestorePoint(Backup.RestorePoint restorePoint, VirtualMachine vm, Backup.Metric metric) {
+    public Backup createNewBackupEntryForRestorePoint(Backup.RestorePoint restorePoint, VirtualMachine vm) {
         // Technically an administrator can manually create a backup for a VM by utilizing the KVM scripts
         // with the proper parameters. So we will register any backups taken on the Networker side from
         // outside Cloudstack. If ever Networker will support KVM out of the box this functionality also will
@@ -597,6 +588,16 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
             backup.setAccountId(vm.getAccountId());
             backup.setDomainId(vm.getDomainId());
             backup.setZoneId(vm.getDataCenterId());
+            backup.setName(backupManager.getBackupNameFromVM(vm));
+
+            HashMap<String, String> details = new HashMap<>();
+            details.put(ApiConstants.HYPERVISOR, vm.getHypervisorType().toString());
+            ServiceOffering serviceOffering =  serviceOfferingDao.findById(vm.getServiceOfferingId());
+            details.put(ApiConstants.SERVICE_OFFERING_ID, serviceOffering.getUuid());
+            VirtualMachineTemplate template =  vmTemplateDao.findById(vm.getTemplateId());
+            details.put(ApiConstants.TEMPLATE_ID, template.getUuid());
+            backup.setDetails(details);
+
             backupDao.persist(backup);
             return backup;
         }
@@ -612,5 +613,24 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
     }
 
     @Override
+    public boolean supportsInstanceFromBackup() {
+        return false;
+    }
+
+    @Override
+    public Pair<Long, Long> getBackupStorageStats(Long zoneId) {
+        return new Pair<>(0L, 0L);
+    }
+
+    @Override
+    public void syncBackupStorageStats(Long zoneId) {
+    }
+
+    @Override
     public boolean willDeleteBackupsOnOfferingRemoval() { return false; }
+
+    @Override
+    public boolean restoreBackupToVM(VirtualMachine vm, Backup backup, String hostIp, String dataStoreUuid) {
+        return true;
+    }
 }

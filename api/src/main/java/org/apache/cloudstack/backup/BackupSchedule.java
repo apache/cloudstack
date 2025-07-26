@@ -31,5 +31,6 @@ public interface BackupSchedule extends InternalIdentity {
     Date getScheduledTimestamp();
     Long getAsyncJobId();
     Integer getMaxBackups();
+    Boolean getQuiesceVM();
     String getUuid();
 }

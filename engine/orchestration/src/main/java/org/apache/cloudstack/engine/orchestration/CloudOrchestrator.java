@@ -60,6 +60,7 @@ import com.cloud.utils.component.ComponentContext;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VmDiskInfo;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -162,7 +163,8 @@ public class CloudOrchestrator implements OrchestrationService {
     @Override
     public VirtualMachineEntity createVirtualMachine(String id, String owner, String templateId, String hostName, String displayName, String hypervisor, int cpu,
                                                      int speed, long memory, Long diskSize, List<String> computeTags, List<String> rootDiskTags, Map<String, List<NicProfile>> networkNicMap, DeploymentPlan plan,
-                                                     Long rootDiskSize, Map<String, Map<Integer, String>> extraDhcpOptionMap, Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap, Long dataDiskOfferingId, Long rootDiskOfferingId, Volume volume, Snapshot snapshot) throws InsufficientCapacityException {
+                                                     Long rootDiskSize, Map<String, Map<Integer, String>> extraDhcpOptionMap, Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap, Long dataDiskOfferingId, Long rootDiskOfferingId,
+                                                     List<VmDiskInfo> dataDiskInfoList, Volume volume, Snapshot snapshot) throws InsufficientCapacityException {
 
         // VirtualMachineEntityImpl vmEntity = new VirtualMachineEntityImpl(id, owner, hostName, displayName, cpu, speed, memory, computeTags, rootDiskTags, networks,
         // vmEntityManager);
@@ -187,7 +189,6 @@ public class CloudOrchestrator implements OrchestrationService {
         // Else, a disk offering is optional, and if present will be used to create the data disk
 
         DiskOfferingInfo rootDiskOfferingInfo = new DiskOfferingInfo();
-        List<DiskOfferingInfo> dataDiskOfferings = new ArrayList<DiskOfferingInfo>();
 
         ServiceOfferingVO computeOffering = _serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
 
@@ -210,6 +211,8 @@ public class CloudOrchestrator implements OrchestrationService {
             }
         }
 
+        List<DiskOfferingInfo> dataDiskOfferings = new ArrayList<DiskOfferingInfo>();
+        List<Long> dataDiskDeviceIds = new ArrayList<>();
         if (dataDiskOfferingId != null) {
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(dataDiskOfferingId);
             if (diskOffering == null) {
@@ -243,6 +246,12 @@ public class CloudOrchestrator implements OrchestrationService {
                 }
 
                 dataDiskOfferings.add(dataDiskOfferingInfo);
+                dataDiskDeviceIds.add(null);
+            }
+        } else if (dataDiskInfoList != null){
+            dataDiskOfferings.addAll(dataDiskInfoList);
+            for (VmDiskInfo dataDiskInfo : dataDiskInfoList) {
+                dataDiskDeviceIds.add(dataDiskInfo.getDeviceId());
             }
         }
 
@@ -262,8 +271,8 @@ public class CloudOrchestrator implements OrchestrationService {
             template = _templateDao.findByIdIncludingRemoved(new Long(templateId));
         } else
             template = _templateDao.findById(new Long(templateId));
-        _itMgr.allocate(vm.getInstanceName(), template, computeOffering, rootDiskOfferingInfo, dataDiskOfferings, networkIpMap, plan,
-            hypervisorType, extraDhcpOptionMap, dataDiskTemplateToDiskOfferingMap, volume, snapshot);
+        _itMgr.allocate(vm.getInstanceName(), template, computeOffering, rootDiskOfferingInfo, dataDiskOfferings, dataDiskDeviceIds,
+                networkIpMap, plan, hypervisorType, extraDhcpOptionMap, dataDiskTemplateToDiskOfferingMap, volume, snapshot);
 
         return vmEntity;
     }
@@ -271,7 +280,7 @@ public class CloudOrchestrator implements OrchestrationService {
     @Override
     public VirtualMachineEntity createVirtualMachineFromScratch(String id, String owner, String isoId, String hostName, String displayName, String hypervisor, String os,
         int cpu, int speed, long memory, Long diskSize, List<String> computeTags, List<String> rootDiskTags, Map<String, List<NicProfile>> networkNicMap, DeploymentPlan plan,
-        Map<String, Map<Integer, String>> extraDhcpOptionMap, Long diskOfferingId, Volume volume, Snapshot snapshot)
+        Map<String, Map<Integer, String>> extraDhcpOptionMap, Long diskOfferingId, List<VmDiskInfo> dataDiskInfoList, Volume volume, Snapshot snapshot)
         throws InsufficientCapacityException {
 
         // VirtualMachineEntityImpl vmEntity = new VirtualMachineEntityImpl(id, owner, hostName, displayName, cpu, speed, memory, computeTags, rootDiskTags, networks, vmEntityManager);
@@ -317,6 +326,14 @@ public class CloudOrchestrator implements OrchestrationService {
                 rootDiskOfferingInfo.setMaxIops(maxIops != null && maxIops.trim().length() > 0 ? Long.parseLong(maxIops) : null);
             }
         }
+        List<DiskOfferingInfo> dataDiskOfferings = new ArrayList<>();
+        List<Long> dataDiskDeviceIds = new ArrayList<>();
+        if (dataDiskInfoList != null) {
+            dataDiskOfferings.addAll(dataDiskInfoList);
+            for (VmDiskInfo dataDiskInfo : dataDiskInfoList) {
+                dataDiskDeviceIds.add(dataDiskInfo.getDeviceId());
+            }
+        }
 
         LinkedHashMap<Network, List<? extends NicProfile>> networkIpMap = new LinkedHashMap<Network, List<? extends NicProfile>>();
         for (String uuid : networkNicMap.keySet()) {
@@ -328,7 +345,8 @@ public class CloudOrchestrator implements OrchestrationService {
 
         HypervisorType hypervisorType = HypervisorType.valueOf(hypervisor);
 
-        _itMgr.allocate(vm.getInstanceName(), _templateDao.findByIdIncludingRemoved(new Long(isoId)), computeOffering, rootDiskOfferingInfo, new ArrayList<DiskOfferingInfo>(), networkIpMap, plan, hypervisorType, extraDhcpOptionMap, null, volume, snapshot);
+        _itMgr.allocate(vm.getInstanceName(), _templateDao.findByIdIncludingRemoved(new Long(isoId)), computeOffering, rootDiskOfferingInfo, dataDiskOfferings, dataDiskDeviceIds,
+                networkIpMap, plan, hypervisorType, extraDhcpOptionMap, null, volume, snapshot);
 
         return vmEntity;
     }

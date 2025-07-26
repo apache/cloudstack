@@ -134,6 +134,8 @@ public class ListCapacityCmd extends BaseListCmd {
                 int res = resp1.getZoneName().compareTo(resp2.getZoneName());
                 if (res != 0) {
                     return res;
+                } else if (getSortBy() != null) {
+                    return 0;
                 } else {
                     return resp1.getCapacityType().compareTo(resp2.getCapacityType());
                 }
