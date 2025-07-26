@@ -17,7 +17,7 @@
 
 <template>
   <a-spin :spinning="fetchLoading">
-    <a-tabs :tabPosition="device === 'mobile' ? 'top' : 'left'" :animated="false">
+    <a-tabs :tabPosition="device === 'mobile' ? 'top' : 'left'" :animated="false" @tabClick="onClick">
       <a-tab-pane v-for="(item, index) in traffictypes" :tab="item.traffictype" :key="index">
         <a-popconfirm
           :title="$t('message.confirm.delete.traffic.type')"
@@ -84,6 +84,7 @@ import IpRangesTabPublic from './IpRangesTabPublic'
 import IpRangesTabManagement from './IpRangesTabManagement'
 import IpRangesTabStorage from './IpRangesTabStorage'
 import IpRangesTabGuest from './IpRangesTabGuest'
+import { trafficTypeTab } from '@/config/section/infra/phynetworks.js'
 
 export default {
   name: 'TrafficTypesTab',
@@ -221,6 +222,9 @@ export default {
         this.fetchLoading = false
         this.fetchTrafficTypes()
       })
+    },
+    onClick (trafficType) {
+      trafficTypeTab.index = trafficType
     }
   }
 }
