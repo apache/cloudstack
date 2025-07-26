@@ -1058,7 +1058,7 @@ public class GpuServiceImpl extends ManagerBase implements GpuService, Pluggable
                 device.setState(GpuDevice.State.Free);
             } else {
                 VMInstanceVO vm = vmInstanceDao.findById(device.getVmId());
-                if (vm != null &&  vm.getState().equals(VirtualMachine.State.Stopped)) {
+                if (vm != null && vm.getState().equals(VirtualMachine.State.Stopped) && !GpuDetachOnStop.valueIn(vm.getDomainId())) {
                     device.setState(GpuDevice.State.Allocated);
                 } else {
                     logger.warn("VM with ID {} not found for GPU device {}. Allocated to a removed VM. Setting state to Free.",

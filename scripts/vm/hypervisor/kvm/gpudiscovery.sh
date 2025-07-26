@@ -377,14 +377,9 @@ get_iommu_group() {
 	local addr="$1"
 	local xml
 	xml=$(get_nodedev_xml "$addr")
-
-	if [[ -n "$xml" ]]; then
-		if [[ $xml =~ \<iommuGroup[^\>]*number=\'([0-9]+)\' ]]; then
-			echo "${BASH_REMATCH[1]}"
-			return
-		fi
-	fi
-	echo "null"
+	local group
+	group=$(echo "$xml" | xmlstarlet sel -t -v "//iommuGroup/@number" 2>/dev/null || true)
+	echo "${group:-null}"
 }
 
 # Given a PCI address, output "TOTALVFS NUMVFS"
@@ -397,22 +392,17 @@ get_sriov_counts() {
 	local numvfs=0
 
 	if [[ -n "$xml" ]]; then
-		if [[ $xml =~ \<capability[^\>]*type=\'virt_functions\' ]]; then
-			# Count max VFs from capability
-			totalvfs=$(echo "$xml" | grep -o '<capability[^>]*type=.virt_functions.' | wc -l)
-			if [[ $totalvfs -eq 0 ]]; then
-				# Try alternative method - look for maxCount attribute
-				if [[ $xml =~ maxCount=\'([0-9]+)\' ]]; then
-					totalvfs="${BASH_REMATCH[1]}"
-				fi
-			fi
+		# Check for SR-IOV capability before parsing
+		local cap_xml
+		cap_xml=$(echo "$xml" | xmlstarlet sel -t -c "//capability[@type='virt_functions']" 2>/dev/null || true)
 
-			# Count current VFs by looking for address elements within virt_functions capability
-			numvfs=$(echo "$xml" | sed -n '/<capability[^>]*type=.virt_functions./,/<\/capability>/p' | grep -c '<address ')
+		if [[ -n "$cap_xml" ]]; then
+			totalvfs=$(echo "$cap_xml" | xmlstarlet sel -t -v "/capability/@maxCount" 2>/dev/null || true)
+			numvfs=$(echo "$cap_xml" | xmlstarlet sel -t -v "count(/capability/address)" 2>/dev/null || true)
 		fi
 	fi
 
-	echo "$totalvfs $numvfs"
+	echo "${totalvfs:-0} ${numvfs:-0}"
 }
 
 # Given a PCI address, return its NUMA node (or -1 if none)
@@ -420,14 +410,9 @@ get_numa_node() {
 	local addr="$1"
 	local xml
 	xml=$(get_nodedev_xml "$addr")
-
-	if [[ -n "$xml" ]]; then
-		if [[ $xml =~ \<numa[^\>]*node=\'([0-9]+)\' ]]; then
-			echo "${BASH_REMATCH[1]}"
-			return
-		fi
-	fi
-	echo "-1"
+	local node
+	node=$(echo "$xml" | xmlstarlet sel -t -v "//numa/@node" 2>/dev/null || true)
+	echo "${node:--1}"
 }
 
 # Given a PCI address, return its PCI root (the top‐level bridge ID, e.g. "0000:00:03")
@@ -438,8 +423,9 @@ get_pci_root() {
 
 	if [[ -n "$xml" ]]; then
 		# Extract the parent device from XML
-		if [[ $xml =~ \<parent\>([^\<]+)\<\/parent\> ]]; then
-			local parent="${BASH_REMATCH[1]}"
+		local parent
+		parent=$(echo "$xml" | xmlstarlet sel -t -v "/device/parent" 2>/dev/null || true)
+		if [[ -n "$parent" ]]; then
 			# If parent is a PCI device, recursively find its root
 			if [[ $parent =~ ^pci_0000_([0-9A-Fa-f]{2})_([0-9A-Fa-f]{2})_([0-9A-Fa-f])$ ]]; then
 				local parent_addr="${BASH_REMATCH[1]}:${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
@@ -470,32 +456,24 @@ for VM in "${VMS[@]}"; do
 		continue
 	fi
 
-	flat_xml=$(echo "$xml" | tr -d '\n\r')
+	# -- PCI hostdevs: use xmlstarlet to extract BDF for all PCI host devices --
+	while read -r bus slot func; do
+		[[ -n "$bus" && -n "$slot" && -n "$func" ]] || continue
+		# Format to match lspci output (e.g., 01:00.0) by padding with zeros
+		bus_fmt=$(printf "%02x" "0x$bus")
+		slot_fmt=$(printf "%02x" "0x$slot")
+		func_fmt=$(printf "%x" "0x$func")
+		BDF="$bus_fmt:$slot_fmt.$func_fmt"
+		pci_to_vm["$BDF"]="$VM"
+	done < <(echo "$xml" | xmlstarlet sel -T -t -m "//hostdev[@type='pci']/source/address" \
+		-v "substring-after(@bus, '0x')" -o " " \
+		-v "substring-after(@slot, '0x')" -o " " \
+		-v "substring-after(@function, '0x')" -n 2>/dev/null || true)
 
-	# -- PCI hostdevs: locate <hostdev type='pci'> blocks and extract BDF --
-	pci_dev_xml=$flat_xml
-	while [[ $pci_dev_xml =~ (<hostdev.*type=\'pci\'.*?<\/hostdev>) ]]; do
-		hostdev_block="${BASH_REMATCH[1]}"
-		if [[ $hostdev_block =~ bus=\'0x([0-9a-fA-F]{2})\'[[:space:]]*slot=\'0x([0-9a-fA-F]{2})\'[[:space:]]*function=\'0x([0-9a-fA-F])\' ]]; then
-			B="${BASH_REMATCH[1]}"
-			S="${BASH_REMATCH[2]}"
-			F="${BASH_REMATCH[3]}"
-			BDF="${B}:${S}.${F}"
-			pci_to_vm["$BDF"]="$VM"
-		fi
-		pci_dev_xml="${pci_dev_xml#*$hostdev_block}" # Move to next match
-	done
-
-	# -- MDEV hostdevs: locate <hostdev type='mdev'> and extract UUID --
-	mdev_xml=$flat_xml
-	while [[ $mdev_xml =~ (<hostdev.*type=\'mdev\'.*?<\/hostdev>) ]]; do
-		hostdev_block="${BASH_REMATCH[1]}"
-		if [[ $hostdev_block =~ uuid=\'([0-9a-fA-F-]+)\' ]]; then
-			UUID="${BASH_REMATCH[1]}"
-			mdev_to_vm["$UUID"]="$VM"
-		fi
-		mdev_xml="${mdev_xml#*$hostdev_block}" # Move to next match
-	done
+	# -- MDEV hostdevs: use xmlstarlet to extract UUIDs --
+	while IFS= read -r UUID; do
+		[[ -n "$UUID" ]] && mdev_to_vm["$UUID"]="$VM"
+	done < <(echo "$xml" | xmlstarlet sel -T -t -m "//hostdev[@type='mdev']" -v "@uuid" -n 2>/dev/null || true)
 done
 
 # Helper: convert a VM name to JSON value (quoted string or null)
