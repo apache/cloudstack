@@ -2327,6 +2327,17 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         return templateType;
     }
 
+    @Override
+    public DataStore verifyHeuristicRulesForZone(VMTemplateVO template, Long zoneId) {
+        HeuristicType heuristicType;
+        if (ImageFormat.ISO.equals(template.getFormat())) {
+            heuristicType = HeuristicType.ISO;
+        } else {
+            heuristicType = HeuristicType.TEMPLATE;
+        }
+        return heuristicRuleHelper.getImageStoreIfThereIsHeuristicRule(zoneId, heuristicType, template);
+    }
+
     void validateDetails(VMTemplateVO template, Map<String, String> details) {
         if (MapUtils.isEmpty(details)) {
             return;
