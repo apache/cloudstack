@@ -75,7 +75,7 @@ repos:
         name: run codespell
         description: Check spelling with codespell
         args: [--ignore-words=.github/linters/codespell.txt]
-        exclude: ^ui/package\.json$|^ui/package-lock\.json$|^ui/public/js/less\.min\.js$|^ui/public/locales/.*[^n].*\.json$
+        exclude: ^systemvm/agent/noVNC/|^ui/package\.json$|^ui/package-lock\.json$|^ui/public/js/less\.min\.js$|^ui/public/locales/.*[^n].*\.json$
   - repo: https://github.com/pycqa/flake8
     rev: 7.0.0
     hooks:
