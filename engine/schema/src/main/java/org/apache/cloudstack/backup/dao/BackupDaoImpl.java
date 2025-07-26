@@ -24,6 +24,7 @@ import java.util.Objects;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericSearchBuilder;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.backup.Backup;
@@ -63,7 +64,7 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
     private SearchBuilder<BackupVO> backupSearch;
     private GenericSearchBuilder<BackupVO, Long> CountBackupsByAccount;
     private GenericSearchBuilder<BackupVO, SumCount> CalculateBackupStorageByAccount;
-    private SearchBuilder<BackupVO> ListBackupsByVMandIntervalType;
+    private SearchBuilder<BackupVO> listBackupsBySchedule;
 
     public BackupDaoImpl() {
     }
@@ -91,12 +92,11 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
         CalculateBackupStorageByAccount.and("removed", CalculateBackupStorageByAccount.entity().getRemoved(), SearchCriteria.Op.NULL);
         CalculateBackupStorageByAccount.done();
 
-        ListBackupsByVMandIntervalType = createSearchBuilder();
-        ListBackupsByVMandIntervalType.and("vmId", ListBackupsByVMandIntervalType.entity().getVmId(), SearchCriteria.Op.EQ);
-        ListBackupsByVMandIntervalType.and("intervalType", ListBackupsByVMandIntervalType.entity().getBackupIntervalType(), SearchCriteria.Op.EQ);
-        ListBackupsByVMandIntervalType.and("status", ListBackupsByVMandIntervalType.entity().getStatus(), SearchCriteria.Op.EQ);
-        ListBackupsByVMandIntervalType.and("removed", ListBackupsByVMandIntervalType.entity().getRemoved(), SearchCriteria.Op.NULL);
-        ListBackupsByVMandIntervalType.done();
+        listBackupsBySchedule = createSearchBuilder();
+        listBackupsBySchedule.and("backup_schedule_id", listBackupsBySchedule.entity().getBackupScheduleId(), SearchCriteria.Op.EQ);
+        listBackupsBySchedule.and("status", listBackupsBySchedule.entity().getStatus(), SearchCriteria.Op.EQ);
+        listBackupsBySchedule.and("removed", listBackupsBySchedule.entity().getRemoved(), SearchCriteria.Op.NULL);
+        listBackupsBySchedule.done();
     }
 
     @Override
@@ -184,12 +184,11 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
     }
 
     @Override
-    public List<BackupVO> listBackupsByVMandIntervalType(Long vmId, Backup.Type backupType) {
-        SearchCriteria<BackupVO> sc = ListBackupsByVMandIntervalType.create();
-        sc.setParameters("vmId", vmId);
-        sc.setParameters("type", backupType.ordinal());
+    public List<BackupVO> listBySchedule(Long backupScheduleId) {
+        SearchCriteria<BackupVO> sc = listBackupsBySchedule.create();
+        sc.setParameters("backup_schedule_id", backupScheduleId);
         sc.setParameters("status", Backup.Status.BackedUp);
-        return listBy(sc, null);
+        return listBy(sc, new Filter(BackupVO.class, "date", true));
     }
 
     @Override

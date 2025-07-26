@@ -44,6 +44,8 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.google.gson.Gson;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.backup.UpdateBackupOfferingCmd;
 import org.apache.cloudstack.api.command.user.backup.CreateBackupScheduleCmd;
@@ -54,6 +56,7 @@ import org.apache.cloudstack.backup.dao.BackupScheduleDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -74,9 +77,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -128,24 +133,38 @@ public class BackupManagerTest {
     DataCenterDao dataCenterDao;
 
     @Mock
-    AlertManager alertManager;
+    private AlertManager alertManagerMock;
+
+    @Mock
+    private Domain domainMock;
 
     @Mock
     private VMInstanceVO vmInstanceVOMock;
 
     @Mock
-    private CallContext callContextMock;
+    private CreateBackupScheduleCmd createBackupScheduleCmdMock;
+
+    @Mock
+    private BackupOfferingVO backupOfferingVOMock;
+
+    @Mock
+    private AsyncJobVO asyncJobVOMock;
+
+    @Mock
+    private BackupScheduleVO backupScheduleVOMock;
 
     @Mock
     private AccountVO accountVOMock;
 
     @Mock
-    private DeleteBackupScheduleCmd deleteBackupScheduleCmdMock;
+    private CallContext callContextMock;
 
     @Mock
-    private BackupScheduleVO backupScheduleVOMock;
+    private DeleteBackupScheduleCmd deleteBackupScheduleCmdMock;
 
     private UserVO user;
+
+    private Gson gson;
 
     private String[] hostPossibleValues = {"127.0.0.1", "hostname"};
     private String[] datastoresPossibleValues = {"e9804933-8609-4de3-bccc-6278072a496c", "datastore-name"};
@@ -155,6 +174,8 @@ public class BackupManagerTest {
 
     @Before
     public void setup() throws Exception {
+        gson = new Gson();
+
         closeable = MockitoAnnotations.openMocks(this);
         when(backupOfferingDao.findById(null)).thenReturn(null);
         when(backupOfferingDao.findById(123l)).thenReturn(null);
@@ -452,98 +473,84 @@ public class BackupManagerTest {
     }
 
     @Test
-    public void testConfigureBackupScheduleLimitReached() {
-        Long vmId = 1L;
-        Long zoneId = 2L;
-        Long accountId = 3L;
-        Long domainId = 4L;
+    public void configureBackupScheduleTestEnsureLimitCheckIsPerformed() {
+        long vmId = 1L;
+        long zoneId = 2L;
+        long accountId = 3L;
+        long domainId = 4L;
+        long backupOfferingId = 5L;
 
-        CreateBackupScheduleCmd cmd = Mockito.mock(CreateBackupScheduleCmd.class);
-        when(cmd.getVmId()).thenReturn(vmId);
-        when(cmd.getTimezone()).thenReturn("GMT");
-        when(cmd.getIntervalType()).thenReturn(DateUtil.IntervalType.DAILY);
-        when(cmd.getMaxBackups()).thenReturn(8);
+        when(createBackupScheduleCmdMock.getVmId()).thenReturn(vmId);
+        when(createBackupScheduleCmdMock.getTimezone()).thenReturn("GMT");
+        when(createBackupScheduleCmdMock.getIntervalType()).thenReturn(DateUtil.IntervalType.DAILY);
+        when(createBackupScheduleCmdMock.getMaxBackups()).thenReturn(8);
 
-        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
-        when(vmInstanceDao.findById(vmId)).thenReturn(vm);
-        when(vm.getDataCenterId()).thenReturn(zoneId);
-        when(vm.getAccountId()).thenReturn(accountId);
+        when(vmInstanceDao.findById(vmId)).thenReturn(vmInstanceVOMock);
+        when(vmInstanceVOMock.getDataCenterId()).thenReturn(zoneId);
+        when(vmInstanceVOMock.getAccountId()).thenReturn(accountId);
+        when(vmInstanceVOMock.getBackupOfferingId()).thenReturn(backupOfferingId);
+
+        when(backupOfferingDao.findById(backupOfferingId)).thenReturn(backupOfferingVOMock);
+        when(backupOfferingVOMock.isUserDrivenBackupAllowed()).thenReturn(true);
 
         overrideBackupFrameworkConfigValue();
 
-        Account account = Mockito.mock(Account.class);
-        when(accountManager.getAccount(accountId)).thenReturn(account);
-        when(account.getDomainId()).thenReturn(domainId);
-        Domain domain = Mockito.mock(Domain.class);
-        when(domainManager.getDomain(domainId)).thenReturn(domain);
-        when(resourceLimitMgr.findCorrectResourceLimitForAccount(account, Resource.ResourceType.backup, null)).thenReturn(10L);
-        when(resourceLimitMgr.findCorrectResourceLimitForDomain(domain, Resource.ResourceType.backup, null)).thenReturn(1L);
+        when(accountManager.getAccount(accountId)).thenReturn(accountVOMock);
+        when(accountVOMock.getDomainId()).thenReturn(domainId);
+        when(domainManager.getDomain(domainId)).thenReturn(domainMock);
+        when(resourceLimitMgr.findCorrectResourceLimitForAccount(accountVOMock, Resource.ResourceType.backup, null)).thenReturn(10L);
+        when(resourceLimitMgr.findCorrectResourceLimitForDomain(domainMock, Resource.ResourceType.backup, null)).thenReturn(1L);
 
         InvalidParameterValueException exception = Assert.assertThrows(InvalidParameterValueException.class,
-                () -> backupManager.configureBackupSchedule(cmd));
-        Assert.assertEquals(exception.getMessage(), "Max number of backups shouldn't exceed the domain/account level backup limit");
+                () -> backupManager.configureBackupSchedule(createBackupScheduleCmdMock));
+        Assert.assertEquals("'maxbackups' should not exceed the domain/account backup limit.", exception.getMessage());
     }
 
     @Test
-    public void testCreateScheduledBackup() throws ResourceAllocationException {
+    public void createBackupTestCreateScheduledBackup() throws ResourceAllocationException {
         Long vmId = 1L;
         Long zoneId = 2L;
         Long scheduleId = 3L;
         Long backupOfferingId = 4L;
         Long accountId = 5L;
         Long backupId = 6L;
-        Long oldestBackupId = 7L;
         Long newBackupSize = 1000000000L;
-        Long oldBackupSize = 400000000L;
 
-        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
-        when(vmInstanceDao.findById(vmId)).thenReturn(vm);
-        when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
-        when(vm.getId()).thenReturn(vmId);
-        when(vm.getDataCenterId()).thenReturn(zoneId);
-        when(vm.getBackupOfferingId()).thenReturn(backupOfferingId);
-        when(vm.getAccountId()).thenReturn(accountId);
+        when(vmInstanceDao.findById(vmId)).thenReturn(vmInstanceVOMock);
+        when(vmInstanceVOMock.getDataCenterId()).thenReturn(zoneId);
+        when(vmInstanceVOMock.getBackupOfferingId()).thenReturn(backupOfferingId);
+        when(vmInstanceVOMock.getAccountId()).thenReturn(accountId);
 
         overrideBackupFrameworkConfigValue();
-        BackupOfferingVO offering = Mockito.mock(BackupOfferingVO.class);
-        when(backupOfferingDao.findById(backupOfferingId)).thenReturn(offering);
-        when(offering.isUserDrivenBackupAllowed()).thenReturn(true);
-        when(offering.getProvider()).thenReturn("test");
+        when(backupOfferingDao.findById(backupOfferingId)).thenReturn(backupOfferingVOMock);
+        when(backupOfferingVOMock.isUserDrivenBackupAllowed()).thenReturn(true);
+        when(backupOfferingVOMock.getProvider()).thenReturn("test");
 
-        Account account = Mockito.mock(Account.class);
-        when(accountManager.getAccount(accountId)).thenReturn(account);
+        Mockito.doReturn(scheduleId).when(backupManager).getBackupScheduleId(asyncJobVOMock);
+
+        when(accountManager.getAccount(accountId)).thenReturn(accountVOMock);
 
         BackupScheduleVO schedule = mock(BackupScheduleVO.class);
-        when(schedule.getScheduleType()).thenReturn(DateUtil.IntervalType.DAILY);
-        when(schedule.getMaxBackups()).thenReturn(0);
         when(backupScheduleDao.findById(scheduleId)).thenReturn(schedule);
-        when(backupScheduleDao.findByVMAndIntervalType(vmId, DateUtil.IntervalType.DAILY)).thenReturn(schedule);
+        when(schedule.getMaxBackups()).thenReturn(2);
 
         BackupProvider backupProvider = mock(BackupProvider.class);
         Backup backup = mock(Backup.class);
         when(backup.getId()).thenReturn(backupId);
         when(backup.getSize()).thenReturn(newBackupSize);
         when(backupProvider.getName()).thenReturn("test");
-        when(backupProvider.takeBackup(vm)).thenReturn(new Pair<>(true, backup));
+        when(backupProvider.takeBackup(vmInstanceVOMock)).thenReturn(new Pair<>(true, backup));
         Map<String, BackupProvider> backupProvidersMap = new HashMap<>();
         backupProvidersMap.put(backupProvider.getName().toLowerCase(), backupProvider);
         ReflectionTestUtils.setField(backupManager, "backupProvidersMap", backupProvidersMap);
 
         BackupVO backupVO = mock(BackupVO.class);
         when(backupVO.getId()).thenReturn(backupId);
-        BackupVO oldestBackupVO = mock(BackupVO.class);
-        when(oldestBackupVO.getSize()).thenReturn(oldBackupSize);
-        when(oldestBackupVO.getId()).thenReturn(oldestBackupId);
-        when(oldestBackupVO.getVmId()).thenReturn(vmId);
-        when(oldestBackupVO.getBackupOfferingId()).thenReturn(backupOfferingId);
+        BackupVO oldestBackupVO = mock(BackupVO.class);;
 
         when(backupDao.findById(backupId)).thenReturn(backupVO);
         List<BackupVO> backups = new ArrayList<>(List.of(oldestBackupVO));
-        when(backupDao.listBackupsByVMandIntervalType(vmId, Backup.Type.DAILY)).thenReturn(backups);
-        when(backupDao.findByIdIncludingRemoved(oldestBackupId)).thenReturn(oldestBackupVO);
-        when(backupOfferingDao.findByIdIncludingRemoved(backupOfferingId)).thenReturn(offering);
-        when(backupProvider.deleteBackup(oldestBackupVO, false)).thenReturn(true);
-        when(backupDao.remove(oldestBackupVO.getId())).thenReturn(true);
+        when(backupDao.listBySchedule(scheduleId)).thenReturn(backups);
 
         try (MockedStatic<ActionEventUtils> ignored = Mockito.mockStatic(ActionEventUtils.class)) {
             Mockito.when(ActionEventUtils.onActionEvent(Mockito.anyLong(), Mockito.anyLong(),
@@ -551,51 +558,39 @@ public class BackupManagerTest {
                     Mockito.anyString(), Mockito.anyString(),
                     Mockito.anyLong(), Mockito.anyString())).thenReturn(1L);
 
-            Assert.assertEquals(backupManager.createBackup(vmId, scheduleId), true);
-
+            assertTrue(backupManager.createBackup(vmId, asyncJobVOMock));
             Mockito.verify(resourceLimitMgr, times(1)).incrementResourceCount(accountId, Resource.ResourceType.backup);
             Mockito.verify(resourceLimitMgr, times(1)).incrementResourceCount(accountId, Resource.ResourceType.backup_storage, newBackupSize);
             Mockito.verify(backupDao, times(1)).update(backupVO.getId(), backupVO);
-
-            Mockito.verify(resourceLimitMgr, times(1)).decrementResourceCount(accountId, Resource.ResourceType.backup);
-            Mockito.verify(resourceLimitMgr, times(1)).decrementResourceCount(accountId, Resource.ResourceType.backup_storage, oldBackupSize);
-            Mockito.verify(backupDao, times(1)).remove(oldestBackupId);
+            Mockito.verify(backupManager, times(1)).deleteOldestBackupFromScheduleIfRequired(vmId, scheduleId);
         }
     }
 
-    @Test (expected = ResourceAllocationException.class)
-    public void testCreateBackupLimitReached() throws ResourceAllocationException {
+    @Test(expected = ResourceAllocationException.class)
+    public void createBackupTestResourceLimitReached() throws ResourceAllocationException {
         Long vmId = 1L;
         Long zoneId = 2L;
         Long scheduleId = 3L;
         Long backupOfferingId = 4L;
         Long accountId = 5L;
 
-        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
-        when(vmInstanceDao.findById(vmId)).thenReturn(vm);
-        when(vm.getDataCenterId()).thenReturn(zoneId);
-        when(vm.getBackupOfferingId()).thenReturn(backupOfferingId);
-        when(vm.getAccountId()).thenReturn(accountId);
+        when(vmInstanceDao.findById(vmId)).thenReturn(vmInstanceVOMock);
+        when(vmInstanceVOMock.getDataCenterId()).thenReturn(zoneId);
+        when(vmInstanceVOMock.getBackupOfferingId()).thenReturn(backupOfferingId);
+        when(vmInstanceVOMock.getAccountId()).thenReturn(accountId);
 
         overrideBackupFrameworkConfigValue();
         BackupOfferingVO offering = Mockito.mock(BackupOfferingVO.class);
         when(backupOfferingDao.findById(backupOfferingId)).thenReturn(offering);
         when(offering.isUserDrivenBackupAllowed()).thenReturn(true);
 
-        BackupScheduleVO schedule = mock(BackupScheduleVO.class);
-        when(schedule.getScheduleType()).thenReturn(DateUtil.IntervalType.DAILY);
-        when(backupScheduleDao.findById(scheduleId)).thenReturn(schedule);
+        Mockito.doReturn(scheduleId).when(backupManager).getBackupScheduleId(asyncJobVOMock);
 
         Account account = Mockito.mock(Account.class);
-        when(account.getId()).thenReturn(accountId);
         when(accountManager.getAccount(accountId)).thenReturn(account);
         Mockito.doThrow(new ResourceAllocationException("", Resource.ResourceType.backup_storage)).when(resourceLimitMgr).checkResourceLimit(account, Resource.ResourceType.backup_storage, 0L);
 
-        backupManager.createBackup(vmId, scheduleId);
-
-        String msg = "Backup storage space resource limit exceeded for account id : " + accountId + ". Failed to create backup";
-        Mockito.verify(alertManager, times(1)).sendAlert(AlertManager.AlertType.ALERT_TYPE_UPDATE_RESOURCE_COUNT, 0L, 0L, msg, "Backup storage space resource limit exceeded for account id : " + accountId
-                + ". Failed to create backups; please use updateResourceLimit to increase the limit");
+        backupManager.createBackup(vmId, asyncJobVOMock);
     }
 
     @Test
@@ -765,5 +760,213 @@ public class BackupManagerTest {
 
         boolean success = backupManager.deleteBackupSchedule(deleteBackupScheduleCmdMock);
         assertTrue(success);
+    }
+
+    @Test
+    public void validateAndGetDefaultBackupRetentionIfRequiredTestReturnZeroAsDefaultValue() {
+        int retention = backupManager.validateAndGetDefaultBackupRetentionIfRequired(null, backupOfferingVOMock, null);
+        assertEquals(0, retention);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateAndGetDefaultBackupRetentionIfRequiredTestThrowExceptionWhenBackupOfferingProviderIsVeeam() {
+        Mockito.when(backupOfferingVOMock.getProvider()).thenReturn("veeam");
+        backupManager.validateAndGetDefaultBackupRetentionIfRequired(1, backupOfferingVOMock, vmInstanceVOMock);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateAndGetDefaultBackupRetentionIfRequiredTestThrowExceptionWhenMaxBackupsIsLessThanZero() {
+        backupManager.validateAndGetDefaultBackupRetentionIfRequired(-1, backupOfferingVOMock, vmInstanceVOMock);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateAndGetDefaultBackupRetentionIfRequiredTestThrowExceptionWhenMaxBackupsExceedsAccountLimit() {
+        int maxBackups = 6;
+        long accountId = 1L;
+        long accountLimit = 5L;
+        long domainId = 10L;
+        long domainLimit = -1L;
+
+        when(vmInstanceVOMock.getAccountId()).thenReturn(accountId);
+        when(accountManager.getAccount(accountId)).thenReturn(accountVOMock);
+        when(resourceLimitMgr.findCorrectResourceLimitForAccount(accountVOMock, Resource.ResourceType.backup, null)).thenReturn(accountLimit);
+        when(accountVOMock.getDomainId()).thenReturn(domainId);
+        when(domainManager.getDomain(domainId)).thenReturn(domainMock);
+        when(resourceLimitMgr.findCorrectResourceLimitForDomain(domainMock, Resource.ResourceType.backup, null)).thenReturn(domainLimit);
+        when(accountVOMock.getId()).thenReturn(accountId);
+        when(accountManager.isRootAdmin(accountId)).thenReturn(false);
+
+        backupManager.validateAndGetDefaultBackupRetentionIfRequired(maxBackups, backupOfferingVOMock, vmInstanceVOMock);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateAndGetDefaultBackupRetentionIfRequiredTestThrowExceptionWhenMaxBackupsExceedsDomainLimit() {
+        int maxBackups = 6;
+        long accountId = 1L;
+        long accountLimit = -1L;
+        long domainId = 10L;
+        long domainLimit = 5L;
+
+        when(vmInstanceVOMock.getAccountId()).thenReturn(accountId);
+        when(accountManager.getAccount(accountId)).thenReturn(accountVOMock);
+        when(resourceLimitMgr.findCorrectResourceLimitForAccount(accountVOMock, Resource.ResourceType.backup, null)).thenReturn(accountLimit);
+        when(accountVOMock.getDomainId()).thenReturn(domainId);
+        when(domainManager.getDomain(domainId)).thenReturn(domainMock);
+        when(resourceLimitMgr.findCorrectResourceLimitForDomain(domainMock, Resource.ResourceType.backup, null)).thenReturn(domainLimit);
+        when(accountVOMock.getId()).thenReturn(accountId);
+        when(accountManager.isRootAdmin(accountId)).thenReturn(false);
+
+        backupManager.validateAndGetDefaultBackupRetentionIfRequired(maxBackups, backupOfferingVOMock, vmInstanceVOMock);
+    }
+
+    @Test
+    public void validateAndGetDefaultBackupRetentionIfRequiredTestIgnoreLimitCheckWhenAccountIsRootAdmin() {
+        int maxBackups = 6;
+        long accountId = 1L;
+        long accountLimit = 5L;
+        long domainId = 10L;
+        long domainLimit = 5L;
+
+        when(vmInstanceVOMock.getAccountId()).thenReturn(accountId);
+        when(accountManager.getAccount(accountId)).thenReturn(accountVOMock);
+        when(resourceLimitMgr.findCorrectResourceLimitForAccount(accountVOMock, Resource.ResourceType.backup, null)).thenReturn(accountLimit);
+        when(accountVOMock.getDomainId()).thenReturn(domainId);
+        when(domainManager.getDomain(domainId)).thenReturn(domainMock);
+        when(resourceLimitMgr.findCorrectResourceLimitForDomain(domainMock, Resource.ResourceType.backup, null)).thenReturn(domainLimit);
+        when(accountVOMock.getId()).thenReturn(accountId);
+        when(accountManager.isRootAdmin(accountId)).thenReturn(true);
+
+        int retention = backupManager.validateAndGetDefaultBackupRetentionIfRequired(maxBackups, backupOfferingVOMock, vmInstanceVOMock);
+        assertEquals(maxBackups, retention);
+    }
+
+    @Test
+    public void getBackupScheduleTestReturnNullWhenBackupIsManual() {
+        String jobParams = "{}";
+        when(asyncJobVOMock.getCmdInfo()).thenReturn(jobParams);
+        when(asyncJobVOMock.getId()).thenReturn(1L);
+
+        Long backupScheduleId = backupManager.getBackupScheduleId(asyncJobVOMock);
+        assertNull(backupScheduleId);
+    }
+
+    @Test
+    public void getBackupScheduleTestReturnBackupScheduleIdWhenBackupIsScheduled() {
+        Map<String, String> params = Map.of(
+                ApiConstants.SCHEDULE_ID, "100"
+        );
+        String jobParams = gson.toJson(params);
+        when(asyncJobVOMock.getCmdInfo()).thenReturn(jobParams);
+        when(asyncJobVOMock.getId()).thenReturn(1L);
+
+        Long backupScheduleId = backupManager.getBackupScheduleId(asyncJobVOMock);
+        assertEquals(Long.valueOf("100"), backupScheduleId);
+    }
+
+    @Test
+    public void getBackupScheduleTestReturnNullWhenSpecifiedBackupScheduleIdIsNotALongValue() {
+        Map<String, String> params = Map.of(
+                ApiConstants.SCHEDULE_ID, "InvalidValue"
+        );
+        String jobParams = gson.toJson(params);
+        when(asyncJobVOMock.getCmdInfo()).thenReturn(jobParams);
+        when(asyncJobVOMock.getId()).thenReturn(1L);
+
+        Long backupScheduleId = backupManager.getBackupScheduleId(asyncJobVOMock);
+        assertNull(backupScheduleId);
+    }
+
+    @Test
+    public void deleteOldestBackupFromScheduleIfRequiredTestSkipDeletionWhenBackupScheduleIsNotFound() {
+        backupManager.deleteOldestBackupFromScheduleIfRequired(1L, 1L);
+        Mockito.verify(backupManager, Mockito.never()).deleteExcessBackups(Mockito.anyList(), Mockito.anyInt(), Mockito.anyLong());
+    }
+
+    @Test
+    public void deleteOldestBackupFromScheduleIfRequiredTestSkipDeletionWhenRetentionIsEqualToZero() {
+        Mockito.when(backupScheduleDao.findById(1L)).thenReturn(backupScheduleVOMock);
+        Mockito.when(backupScheduleVOMock.getMaxBackups()).thenReturn(0);
+        backupManager.deleteOldestBackupFromScheduleIfRequired(1L, 1L);
+        Mockito.verify(backupManager, Mockito.never()).deleteExcessBackups(Mockito.anyList(), Mockito.anyInt(), Mockito.anyLong());
+    }
+
+    @Test
+    public void deleteOldestBackupFromScheduleIfRequiredTestSkipDeletionWhenAmountOfBackupsToBeDeletedIsLessThanOne() {
+        List<BackupVO> backups = List.of(Mockito.mock(BackupVO.class), Mockito.mock(BackupVO.class));
+        Mockito.when(backupScheduleDao.findById(1L)).thenReturn(backupScheduleVOMock);
+        Mockito.when(backupScheduleVOMock.getMaxBackups()).thenReturn(2);
+        Mockito.when(backupDao.listBySchedule(1L)).thenReturn(backups);
+        backupManager.deleteOldestBackupFromScheduleIfRequired(1L, 1L);
+        Mockito.verify(backupManager, Mockito.never()).deleteExcessBackups(Mockito.anyList(), Mockito.anyInt(), Mockito.anyLong());
+    }
+
+    @Test
+    public void deleteOldestBackupFromScheduleIfRequiredTestDeleteBackupsWhenRequired() {
+        List<BackupVO> backups = List.of(Mockito.mock(BackupVO.class), Mockito.mock(BackupVO.class));
+        Mockito.when(backupScheduleDao.findById(1L)).thenReturn(backupScheduleVOMock);
+        Mockito.when(backupScheduleVOMock.getMaxBackups()).thenReturn(1);
+        Mockito.when(backupDao.listBySchedule(1L)).thenReturn(backups);
+        Mockito.doNothing().when(backupManager).deleteExcessBackups(Mockito.anyList(), Mockito.anyInt(), Mockito.anyLong());
+        backupManager.deleteOldestBackupFromScheduleIfRequired(1L, 1L);
+        Mockito.verify(backupManager).deleteExcessBackups(Mockito.anyList(), Mockito.anyInt(), Mockito.anyLong());
+    }
+
+    @Test
+    public void deleteExcessBackupsTestEnsureBackupsAreDeletedWhenMethodIsCalled() {
+        try (MockedStatic<ActionEventUtils> actionEventUtils = Mockito.mockStatic(ActionEventUtils.class)) {
+            List<BackupVO> backups = List.of(Mockito.mock(BackupVO.class),
+                    Mockito.mock(BackupVO.class),
+                    Mockito.mock(BackupVO.class));
+
+            Mockito.when(backups.get(0).getId()).thenReturn(1L);
+            Mockito.when(backups.get(1).getId()).thenReturn(2L);
+            Mockito.when(backups.get(0).getAccountId()).thenReturn(1L);
+            Mockito.when(backups.get(1).getAccountId()).thenReturn(2L);
+            Mockito.doReturn(true).when(backupManager).deleteBackup(Mockito.anyLong(), Mockito.eq(false));
+
+            actionEventUtils.when(() -> ActionEventUtils.onStartedActionEvent(
+                    Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(),
+                    Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(),
+                    Mockito.anyBoolean(), Mockito.anyInt())).thenReturn(1L);
+            actionEventUtils.when(() -> ActionEventUtils.onCompletedActionEvent(
+                    Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(),
+                    Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(),
+                    Mockito.anyString(), Mockito.anyInt())).thenReturn(2L);
+
+            backupManager.deleteExcessBackups(backups, 2, 1L);
+            Mockito.verify(backupManager, times(2)).deleteBackup(Mockito.anyLong(), Mockito.eq(false));
+        }
+    }
+
+    @Test
+    public void sendExceededBackupLimitAlertTestSendAlertForBackupResourceType() {
+        String accountUuid = UUID.randomUUID().toString();
+        String expectedMessage = "Failed to create backup: backup resource limit exceeded for account with ID: " + accountUuid + ".";
+        String expectedAlertDetails = expectedMessage + " Please, use the 'updateResourceLimit' API to increase the backup limit.";
+
+        backupManager.sendExceededBackupLimitAlert(accountUuid, Resource.ResourceType.backup);
+        verify(alertManagerMock).sendAlert(
+                AlertManager.AlertType.ALERT_TYPE_UPDATE_RESOURCE_COUNT,
+                0L,
+                0L,
+                expectedMessage,
+                expectedAlertDetails
+        );
+    }
+
+    @Test
+    public void sendExceededBackupLimitAlertTestSendAlertForBackupStorageResourceType() {
+        String accountUuid = UUID.randomUUID().toString();
+        String expectedMessage = "Failed to create backup: backup storage space resource limit exceeded for account with ID: " + accountUuid + ".";
+        String expectedAlertDetails = expectedMessage + " Please, use the 'updateResourceLimit' API to increase the backup limit.";
+
+        backupManager.sendExceededBackupLimitAlert(accountUuid, Resource.ResourceType.backup_storage);
+        verify(alertManagerMock).sendAlert(
+                AlertManager.AlertType.ALERT_TYPE_UPDATE_RESOURCE_COUNT,
+                0L,
+                0L,
+                expectedMessage,
+                expectedAlertDetails
+        );
     }
 }
