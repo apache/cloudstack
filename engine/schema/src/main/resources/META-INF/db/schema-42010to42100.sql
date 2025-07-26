@@ -282,3 +282,8 @@ ALTER TABLE `cloud`.`vm_instance_details` ADD CONSTRAINT `fk_vm_instance_details
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backup_schedule', 'uuid', 'VARCHAR(40) NOT NULL');
 UPDATE `cloud`.`backup_schedule` SET uuid = UUID();
+
+ALTER TABLE `cloud`.`networks` MODIFY COLUMN `cidr` varchar(255) DEFAULT NULL COMMENT 'CloudStack managed vms get IP address from cidr.In general this cidr also serves as the network CIDR. But in case IP reservation feature is being used by a Guest network, networkcidr is the Effective network CIDR for that network';
+ALTER TABLE `cloud`.`networks` MODIFY COLUMN `gateway` varchar(255) DEFAULT NULL COMMENT 'gateway(s) for this network configuration';
+ALTER TABLE `cloud`.`networks` MODIFY COLUMN `ip6_cidr` varchar(1024) DEFAULT NULL COMMENT 'IPv6 cidr(s) for this network';
+ALTER TABLE `cloud`.`networks` MODIFY COLUMN `ip6_gateway` varchar(1024) DEFAULT NULL COMMENT 'IPv6 gateway(s) for this network';
