@@ -16,30 +16,6 @@
 // under the License.
 package com.cloud.storage.snapshot;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-
-import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
-import org.apache.cloudstack.framework.async.AsyncCallFuture;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.mockito.stubbing.Answer;
-
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -62,6 +38,32 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
+import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 @RunWith(MockitoJUnitRunner.class)
 public class SnapshotManagerImplTest {
@@ -176,7 +178,7 @@ public class SnapshotManagerImplTest {
     }
     @Test
     public void testValidatePolicyZonesNoZones() {
-        snapshotManager.validatePolicyZones(null, Mockito.mock(VolumeVO.class), Mockito.mock(Account.class));
+        snapshotManager.validatePolicyZones(null, null, Mockito.mock(VolumeVO.class), Mockito.mock(Account.class));
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -186,7 +188,7 @@ public class SnapshotManagerImplTest {
         DataCenterVO zone = Mockito.mock(DataCenterVO.class);
         Mockito.when(zone.getType()).thenReturn(DataCenter.Type.Edge);
         Mockito.when(dataCenterDao.findById(1L)).thenReturn(zone);
-        snapshotManager.validatePolicyZones(List.of(1L), volumeVO, Mockito.mock(Account.class));
+        snapshotManager.validatePolicyZones(List.of(1L), null, volumeVO, Mockito.mock(Account.class));
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -197,7 +199,7 @@ public class SnapshotManagerImplTest {
         Mockito.when(zone.getType()).thenReturn(DataCenter.Type.Core);
         Mockito.when(dataCenterDao.findById(1L)).thenReturn(zone);
         Mockito.when(dataCenterDao.findById(2L)).thenReturn(null);
-        snapshotManager.validatePolicyZones(List.of(2L), volumeVO, Mockito.mock(Account.class));
+        snapshotManager.validatePolicyZones(List.of(2L), null, volumeVO, Mockito.mock(Account.class));
     }
 
     @Test(expected = PermissionDeniedException.class)
@@ -211,7 +213,7 @@ public class SnapshotManagerImplTest {
         Mockito.when(zone1.getAllocationState()).thenReturn(Grouping.AllocationState.Disabled);
         Mockito.when(dataCenterDao.findById(2L)).thenReturn(zone1);
         Mockito.when(accountManager.isRootAdmin(Mockito.any())).thenReturn(false);
-        snapshotManager.validatePolicyZones(List.of(2L), volumeVO, Mockito.mock(Account.class));
+        snapshotManager.validatePolicyZones(List.of(2L), null, volumeVO, Mockito.mock(Account.class));
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -225,7 +227,7 @@ public class SnapshotManagerImplTest {
         Mockito.when(zone1.getType()).thenReturn(DataCenter.Type.Edge);
         Mockito.when(zone1.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
         Mockito.when(dataCenterDao.findById(2L)).thenReturn(zone1);
-        snapshotManager.validatePolicyZones(List.of(2L), volumeVO, Mockito.mock(Account.class));
+        snapshotManager.validatePolicyZones(List.of(2L), null, volumeVO, Mockito.mock(Account.class));
     }
 
     @Test
@@ -239,7 +241,7 @@ public class SnapshotManagerImplTest {
         Mockito.when(zone1.getType()).thenReturn(DataCenter.Type.Core);
         Mockito.when(zone1.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
         Mockito.when(dataCenterDao.findById(2L)).thenReturn(zone1);
-        snapshotManager.validatePolicyZones(List.of(2L), volumeVO, Mockito.mock(Account.class));
+        snapshotManager.validatePolicyZones(List.of(2L), null, volumeVO, Mockito.mock(Account.class));
     }
 
     @Test
@@ -308,15 +310,14 @@ public class SnapshotManagerImplTest {
 
     @Test(expected = InvalidParameterValueException.class)
     public void testGetCheckedSnapshotForCopyNoSnapshot() {
-        snapshotManager.getCheckedSnapshotForCopy(1L, List.of(100L), null);
+        SnapshotVO snapshotVO = Mockito.mock(SnapshotVO.class);
+        snapshotManager.getCheckedSnapshotForCopy(snapshotVO, List.of(100L), null, false);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void testGetCheckedSnapshotForCopyNoSnapshotBackup() {
-        final long snapshotId = 1L;
         SnapshotVO snapshotVO = Mockito.mock(SnapshotVO.class);
-        Mockito.when(snapshotDao.findById(snapshotId)).thenReturn(snapshotVO);
-        snapshotManager.getCheckedSnapshotForCopy(snapshotId, List.of(100L), null);
+        snapshotManager.getCheckedSnapshotForCopy(snapshotVO, List.of(100L), null, false);
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -325,73 +326,62 @@ public class SnapshotManagerImplTest {
         SnapshotVO snapshotVO = Mockito.mock(SnapshotVO.class);
         Mockito.when(snapshotVO.getState()).thenReturn(Snapshot.State.BackedUp);
         Mockito.when(snapshotVO.getLocationType()).thenReturn(Snapshot.LocationType.PRIMARY);
-        Mockito.when(snapshotDao.findById(snapshotId)).thenReturn(snapshotVO);
-        snapshotManager.getCheckedSnapshotForCopy(snapshotId, List.of(100L), null);
+        snapshotManager.getCheckedSnapshotForCopy(snapshotVO, List.of(100L), null, false);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void testGetCheckedSnapshotForCopyDestNotSpecified() {
-        final long snapshotId = 1L;
         SnapshotVO snapshotVO = Mockito.mock(SnapshotVO.class);
         Mockito.when(snapshotVO.getState()).thenReturn(Snapshot.State.BackedUp);
-        Mockito.when(snapshotDao.findById(snapshotId)).thenReturn(snapshotVO);
-        snapshotManager.getCheckedSnapshotForCopy(snapshotId, new ArrayList<>(), null);
+        snapshotManager.getCheckedSnapshotForCopy(snapshotVO, new ArrayList<>(), 1L, false);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void testGetCheckedSnapshotForCopyDestContainsSource() {
-        final long snapshotId = 1L;
         SnapshotVO snapshotVO = Mockito.mock(SnapshotVO.class);
         Mockito.when(snapshotVO.getState()).thenReturn(Snapshot.State.BackedUp);
         Mockito.when(snapshotVO.getVolumeId()).thenReturn(1L);
-        Mockito.when(snapshotDao.findById(snapshotId)).thenReturn(snapshotVO);
         Mockito.when(volumeDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(VolumeVO.class));
-        snapshotManager.getCheckedSnapshotForCopy(snapshotId, List.of(100L, 1L), 1L);
+        snapshotManager.getCheckedSnapshotForCopy(snapshotVO, List.of(100L, 1L), 1L, false);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void testGetCheckedSnapshotForCopyNullSourceZone() {
-        final long snapshotId = 1L;
         SnapshotVO snapshotVO = Mockito.mock(SnapshotVO.class);
         Mockito.when(snapshotVO.getState()).thenReturn(Snapshot.State.BackedUp);
         Mockito.when(snapshotVO.getVolumeId()).thenReturn(1L);
-        Mockito.when(snapshotDao.findById(snapshotId)).thenReturn(snapshotVO);
         VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
         Mockito.when(volumeVO.getDataCenterId()).thenReturn(1L);
         Mockito.when(volumeDao.findById(Mockito.anyLong())).thenReturn(volumeVO);
-        snapshotManager.getCheckedSnapshotForCopy(snapshotId, List.of(100L, 101L), null);
+        snapshotManager.getCheckedSnapshotForCopy(snapshotVO, List.of(100L, 101L), null, false);
     }
 
     @Test
     public void testGetCheckedSnapshotForCopyValid() {
-        final long snapshotId = 1L;
         final Long zoneId = 1L;
         SnapshotVO snapshotVO = Mockito.mock(SnapshotVO.class);
         Mockito.when(snapshotVO.getState()).thenReturn(Snapshot.State.BackedUp);
         Mockito.when(snapshotVO.getVolumeId()).thenReturn(1L);
-        Mockito.when(snapshotDao.findById(snapshotId)).thenReturn(snapshotVO);
         VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
         Mockito.when(volumeVO.getDataCenterId()).thenReturn(zoneId);
         Mockito.when(volumeDao.findById(Mockito.anyLong())).thenReturn(volumeVO);
         Mockito.when(dataCenterDao.findById(zoneId)).thenReturn(Mockito.mock(DataCenterVO.class));
-        Pair<SnapshotVO, Long> result = snapshotManager.getCheckedSnapshotForCopy(snapshotId, List.of(100L, 101L), null);
+        Pair<SnapshotVO, Long> result = snapshotManager.getCheckedSnapshotForCopy(snapshotVO, List.of(100L, 101L), null, false);
         Assert.assertNotNull(result.first());
         Assert.assertEquals(zoneId, result.second());
     }
 
     @Test
     public void testGetCheckedSnapshotForCopyNullDest() {
-        final long snapshotId = 1L;
         final Long zoneId = 1L;
         SnapshotVO snapshotVO = Mockito.mock(SnapshotVO.class);
         Mockito.when(snapshotVO.getState()).thenReturn(Snapshot.State.BackedUp);
         Mockito.when(snapshotVO.getVolumeId()).thenReturn(1L);
-        Mockito.when(snapshotDao.findById(snapshotId)).thenReturn(snapshotVO);
         VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
         Mockito.when(volumeVO.getDataCenterId()).thenReturn(zoneId);
         Mockito.when(volumeDao.findById(Mockito.anyLong())).thenReturn(volumeVO);
         Mockito.when(dataCenterDao.findById(zoneId)).thenReturn(Mockito.mock(DataCenterVO.class));
-        Pair<SnapshotVO, Long> result = snapshotManager.getCheckedSnapshotForCopy(snapshotId, List.of(100L, 101L), null);
+        Pair<SnapshotVO, Long> result = snapshotManager.getCheckedSnapshotForCopy(snapshotVO, List.of(100L, 101L), null, false);
         Assert.assertNotNull(result.first());
         Assert.assertEquals(zoneId, result.second());
     }

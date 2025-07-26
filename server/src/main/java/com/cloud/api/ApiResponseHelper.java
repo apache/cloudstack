@@ -887,6 +887,15 @@ public class ApiResponseHelper implements ResponseGenerator {
             zoneResponses.add(zoneResponse);
         }
         policyResponse.setZones(new HashSet<>(zoneResponses));
+        List<StoragePoolResponse> poolResponses = new ArrayList<>();
+        List<StoragePoolVO> pools = ApiDBUtils.findSnapshotPolicyPools(policy, vol);
+        for (StoragePoolVO pool : pools) {
+            StoragePoolResponse storagePoolResponse = new StoragePoolResponse();
+            storagePoolResponse.setId(pool.getUuid());
+            storagePoolResponse.setName(pool.getName());
+            poolResponses.add(storagePoolResponse);
+        }
+        policyResponse.setStoragePools(new HashSet<>(poolResponses));
 
         return policyResponse;
     }
