@@ -1651,11 +1651,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         for (final HostAllocator allocator : hostAllocators) {
-            if (CollectionUtils.isNotEmpty(filteredHosts)) {
-                suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, filteredHosts, HostAllocator.RETURN_UPTO_ALL, false);
-            } else {
-                suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, HostAllocator.RETURN_UPTO_ALL, false);
-            }
+            suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, filteredHosts, HostAllocator.RETURN_UPTO_ALL, false);
 
             if (CollectionUtils.isNotEmpty(suitableHosts)) {
                 break;
@@ -1664,10 +1660,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         _dpMgr.reorderHostsByPriority(plan.getHostPriorities(), suitableHosts);
 
-        if (suitableHosts.isEmpty()) {
+        if (CollectionUtils.isEmpty(suitableHosts)) {
             logger.warn("No suitable hosts found.");
         } else {
-            logger.debug("Hosts having capacity and suitable for migration: {}", suitableHosts);
+            logger.debug("Hosts having capacity and are suitable for migration: {}", suitableHosts);
         }
 
         // Only list hosts of the same architecture as the source Host in a multi-arch zone
