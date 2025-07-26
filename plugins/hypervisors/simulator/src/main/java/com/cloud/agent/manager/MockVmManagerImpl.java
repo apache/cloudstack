@@ -25,7 +25,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.VgpuTypesInfo;
+import com.cloud.agent.api.to.GPUDeviceTO;
+import com.cloud.simulator.MockGpuDevice;
+import com.cloud.simulator.MockGpuDeviceVO;
+import com.cloud.simulator.dao.MockGpuDeviceDao;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
@@ -99,6 +105,8 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     @Inject
     MockHostDao _mockHostDao = null;
     @Inject
+    MockGpuDeviceDao _mockGpuDeviceDao = null;
+    @Inject
     MockSecurityRulesDao _mockSecurityDao = null;
     private final Map<String, Map<String, Ternary<String, Long, Long>>> _securityRules = new ConcurrentHashMap<String, Map<String, Ternary<String, Long, Long>>>();
 
@@ -111,7 +119,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
         return true;
     }
 
-    public String startVM(final String vmName, final NicTO[] nics, final int cpuHz, final long ramSize, final String bootArgs, final String hostGuid) {
+    public String startVM(final String vmName, final NicTO[] nics, GPUDeviceTO gpuDeviceTO, final int cpuHz, final long ramSize, final String bootArgs, final String hostGuid) {
 
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
         MockHost host = null;
@@ -157,6 +165,22 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
         try {
             txn.start();
             vm = _mockVmDao.persist((MockVMVO)vm);
+            if (gpuDeviceTO != null) {
+                List<VgpuTypesInfo> gpuDevices = gpuDeviceTO.getGpuDevices();
+                for (VgpuTypesInfo gpuDevice : gpuDevices) {
+                    MockGpuDeviceVO mockGpuDevice = _mockGpuDeviceDao.listByHostIdAndBusAddress(host.getId(), gpuDevice.getBusAddress());
+                    mockGpuDevice.setVmId(vm.getId());
+                    mockGpuDevice.setState(MockGpuDevice.State.Allocated);
+                    _mockGpuDeviceDao.persist(mockGpuDevice);
+                }
+            } else {
+                List<MockGpuDeviceVO> mockGpuDevices = _mockGpuDeviceDao.listByVmId(vm.getId());
+                for (MockGpuDeviceVO mockGpuDevice : mockGpuDevices) {
+                    mockGpuDevice.setVmId(null);
+                    mockGpuDevice.setState(MockGpuDevice.State.Available);
+                    _mockGpuDeviceDao.persist(mockGpuDevice);
+                }
+            }
             txn.commit();
         } catch (final Exception ex) {
             txn.rollback();
@@ -331,7 +355,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     @Override
     public StartAnswer startVM(final StartCommand cmd, final SimulatorInfo info) {
         final VirtualMachineTO vm = cmd.getVirtualMachine();
-        final String result = startVM(vm.getName(), vm.getNics(), vm.getCpus() * vm.getMaxSpeed(), vm.getMaxRam(), vm.getBootArgs(), info.getHostUuid());
+        final String result = startVM(vm.getName(), vm.getNics(), vm.getGpuDevice(), vm.getCpus() * vm.getMaxSpeed(), vm.getMaxRam(), vm.getBootArgs(), info.getHostUuid());
         if (result != null) {
             return new StartAnswer(cmd, result);
         } else {
@@ -362,6 +386,33 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             }
             vm.setHostId(destHost.getId());
             _mockVmDao.update(vm.getId(), vm);
+
+            // Unassign existing GPU Devices
+            List<MockGpuDeviceVO> devices = _mockGpuDeviceDao.listByVmId(vm.getId());
+            for (MockGpuDeviceVO mockGpuDevice : devices) {
+                mockGpuDevice.setVmId(null);
+                mockGpuDevice.setState(MockGpuDevice.State.Available);
+                _mockGpuDeviceDao.persist(mockGpuDevice);
+            }
+
+            // Assign GPU Devices to the new host
+            GPUDeviceTO gpuDeviceTO = cmd.getVirtualMachine().getGpuDevice();
+            if (gpuDeviceTO != null) {
+                List<VgpuTypesInfo> gpuDevices = gpuDeviceTO.getGpuDevices();
+                if (CollectionUtils.isNotEmpty(gpuDevices)) {
+                    for (VgpuTypesInfo gpuDevice : gpuDevices) {
+                        MockGpuDeviceVO mockGpuDevice = _mockGpuDeviceDao.listByHostIdAndBusAddress(destHost.getId(), gpuDevice.getBusAddress());
+                        if (mockGpuDevice != null) {
+                            mockGpuDevice.setVmId(vm.getId());
+                            mockGpuDevice.setState(MockGpuDevice.State.Allocated);
+                            _mockGpuDeviceDao.persist(mockGpuDevice);
+                        } else {
+                            return new MigrateAnswer(cmd, false, "No GPU device found on destination host for bus address: " + gpuDevice.getBusAddress(), null);
+                        }
+                    }
+                }
+            }
+
             txn.commit();
             return new MigrateAnswer(cmd, true, null, 0);
         } catch (final Exception ex) {
@@ -496,6 +547,11 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             final MockVm vm = _mockVmDao.findByVmName(vmName);
             if (vm != null) {
                 vm.setPowerState(PowerState.PowerOff);
+                _mockGpuDeviceDao.listByVmId(vm.getId()).forEach(mockGpuDevice -> {
+                    mockGpuDevice.setVmId(null);
+                    mockGpuDevice.setState(MockGpuDevice.State.Available);
+                    _mockGpuDeviceDao.persist(mockGpuDevice);
+                });
                 _mockVmDao.update(vm.getId(), (MockVMVO)vm);
             }
 

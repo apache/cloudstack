@@ -203,8 +203,13 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
                 }
 
             }
-            // In case of non-GPU VMs, protect GPU enabled Hosts and prefer VM deployment on non-GPU Hosts.
-            if (((serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString()) == null) && !(hostGpuGroupsDao.listHostIds().isEmpty())) || nonUefiVMDeploy) {
+            // In case of non-GPU VMs, protect GPU enabled Hosts and prefer VM deployment on
+            // non-GPU Hosts.
+            if (((offering.getVgpuProfileId() == null &&
+                  serviceOfferingDetailsDao.findDetail(offering.getId(),
+                          GPU.Keys.vgpuType.toString()) == null)
+                 && !(hostGpuGroupsDao.listHostIds().isEmpty())) || nonUefiVMDeploy
+            ) {
                 int requiredCpu = offering.getCpu() * offering.getSpeed();
                 long requiredRam = offering.getRamSize() * 1024L * 1024L;
                 reorderClustersBasedOnImplicitTags(clusterList, requiredCpu, requiredRam);

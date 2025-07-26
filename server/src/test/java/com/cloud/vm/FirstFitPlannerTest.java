@@ -350,6 +350,7 @@ public class FirstFitPlannerTest {
         when(offering.getCpu()).thenReturn(noOfCpusInOffering);
         when(offering.getSpeed()).thenReturn(cpuSpeedInOffering);
         when(offering.getRamSize()).thenReturn(ramInOffering);
+        when(offering.getVgpuProfileId()).thenReturn(null);
 
         List<Long> clustersWithEnoughCapacity = new ArrayList<Long>();
         clustersWithEnoughCapacity.add(1L);

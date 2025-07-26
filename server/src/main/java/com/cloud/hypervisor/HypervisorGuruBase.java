@@ -23,10 +23,13 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.agent.api.to.GPUDeviceTO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.gpu.VgpuProfileVO;
+import com.cloud.gpu.dao.VgpuProfileDao;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.user.Account;
@@ -109,6 +112,8 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     private ResourceManager _resourceMgr;
     @Inject
     protected ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
+    @Inject
+    protected VgpuProfileDao vgpuProfileDao;
     @Inject
     protected ServiceOfferingDao serviceOfferingDao;
     @Inject
@@ -325,9 +330,8 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
 
         // Set GPU details
         ServiceOfferingDetailsVO offeringDetail = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString());
-        if (offeringDetail != null) {
-            ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.pciDevice.toString());
-            to.setGpuDevice(_resourceMgr.getGPUDevice(vm.getHostId(), groupName.getValue(), offeringDetail.getValue()));
+        if (offering.getVgpuProfileId() != null || offeringDetail != null) {
+                to.setGpuDevice(getGpuDevice(offering, offeringDetail, vm, vmProfile.getHostId()));
         }
 
         // Workaround to make sure the TO has the UUID we need for Niciri integration
@@ -344,6 +348,21 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
 
         return to;
     }
+
+    private GPUDeviceTO getGpuDevice(ServiceOffering offering, ServiceOfferingDetailsVO offeringDetail, VirtualMachine vm, long hostId) {
+        if (offering.getVgpuProfileId() != null) {
+            VgpuProfileVO vgpuProfile = vgpuProfileDao.findById(offering.getVgpuProfileId());
+            if (vgpuProfile != null) {
+                int gpuCount = offering.getGpuCount() != null ? offering.getGpuCount() : 1;
+                return _resourceMgr.getGPUDevice(vm, hostId, vgpuProfile, gpuCount);
+            }
+        } else if (offeringDetail != null) {
+            ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.pciDevice.toString());
+            return _resourceMgr.getGPUDevice(vm.getHostId(), groupName.getValue(), offeringDetail.getValue());
+        }
+        return null;
+    }
+
 
     protected Long findClusterOfVm(VirtualMachine vm) {
         HostVO host = hostDao.findById(vm.getHostId());

@@ -102,4 +102,47 @@ public class LibvirtKvmAgentHookTest extends TestCase {
         assertEquals(t.isInitialized(), false);
         assertEquals(t.handle(source), source);
     }
+
+    @Test
+    public void testSanitizeBashCommandArgument() throws IOException {
+        LibvirtKvmAgentHook hook = new LibvirtKvmAgentHook(dir, script, method);
+
+        // Test case map: input -> expected output
+        java.util.Map<String, String> testCases = new java.util.LinkedHashMap<>();
+
+        // Edge cases
+        testCases.put("", ""); // Empty string
+        testCases.put("normalString123", "normalString123"); // Normal string without special chars
+
+        // Special character escaping
+        testCases.put("test\"string'with`special$chars", "test\\\"string\\'with\\`special\\$chars");
+        testCases.put("\\\"'`$|&;()<>*?![]{}~", "\\\\\\\"\\'\\`\\$\\|\\&\\;\\(\\)\\<\\>\\*\\?\\!\\[\\]\\{\\}\\~");
+
+        // XML content scenarios
+        testCases.put("<domain type='kvm'>\n  <name>test-vm</name>\n  <memory>1048576</memory>\n</domain>",
+                "\\<domain type=\\'kvm\\'\\>\n  \\<name\\>test-vm\\</name\\>\n  "
+                + "\\<memory\\>1048576\\</memory\\>\n\\</domain\\>");
+        testCases.put("<device path='/dev/disk' value=\"$HOME\" command=`ls -la`>&amp;</device>",
+                "\\<device path=\\'/dev/disk\\' value=\\\"\\$HOME\\\" command=\\`ls -la\\`\\>\\&amp\\;\\</device\\>");
+
+        // Multiline content (newlines should not be escaped)
+        testCases.put("line1\nline2\rline3\r\nline4", "line1\nline2\rline3\r\nline4");
+
+        // Security test cases
+        testCases.put("normal; rm -rf /; echo 'gotcha'", "normal\\; rm -rf /\\; echo \\'gotcha\\'");
+        testCases.put("data | grep pattern > output.txt", "data \\| grep pattern \\> output.txt");
+        testCases.put("$(whoami) and `date`", "\\$\\(whoami\\) and \\`date\\`");
+
+        // Test each case
+        for (java.util.Map.Entry<String, String> testCase : testCases.entrySet()) {
+            String input = testCase.getKey();
+            String expected = testCase.getValue();
+            String actual = hook.sanitizeBashCommandArgument(input);
+            assertEquals("Failed for input: " + input, expected, actual);
+        }
+
+        // Test null input separately since it can't be a map key
+        String nullResult = hook.sanitizeBashCommandArgument(null);
+        assertEquals("Null input should return empty string", "", nullResult);
+    }
 }

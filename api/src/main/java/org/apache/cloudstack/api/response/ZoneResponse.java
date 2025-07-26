@@ -97,6 +97,14 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
     @Param(description = "true if security groups support is enabled, false otherwise")
     private Boolean securityGroupsEnabled;
 
+    @SerializedName("gputotal")
+    @Param(description = "Total GPUs in the Zone", responseObject = Long.class, since = "4.21")
+    private Long gpuTotal;
+
+    @SerializedName("gpuused")
+    @Param(description = "Used GPUs in the Zone", responseObject = Long.class, since = "4.21")
+    private Long gpuUsed;
+
     @SerializedName("allocationstate")
     @Param(description = "the allocation state of the cluster")
     private String allocationState;
@@ -229,6 +237,14 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
 
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
         this.securityGroupsEnabled = securityGroupsEnabled;
+    }
+
+    public void setGpuTotal(Long gpuTotal) {
+        this.gpuTotal = gpuTotal;
+    }
+
+    public void setGpuUsed(Long gpuUsed) {
+        this.gpuUsed = gpuUsed;
     }
 
     public void setAllocationState(String allocationState) {
@@ -364,6 +380,14 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
 
     public boolean isSecurityGroupsEnabled() {
         return securityGroupsEnabled;
+    }
+
+    public Long getGpuUsed() {
+        return gpuUsed;
+    }
+
+    public Long getGpuTotal() {
+        return gpuTotal;
     }
 
     public boolean isLocalStorageEnabled() {

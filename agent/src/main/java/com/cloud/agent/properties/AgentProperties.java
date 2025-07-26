@@ -222,6 +222,15 @@ public class AgentProperties{
     public static final Property<String> AGENT_HOOKS_LIBVIRT_VM_XML_TRANSFORMER_SCRIPT = new Property<>("agent.hooks.libvirt_vm_xml_transformer.script", "libvirt-vm-xml-transformer.groovy");
 
     /**
+     * This property is used with the agent.hooks.basedir property to define the Libvirt VM XML transformer shell script.<br>
+     * The shell script is used to execute the Libvirt VM XML transformer script.<br>
+     * For more information see the agent.properties file.<br>
+     * Data type: String.<br>
+     * Default value: <code>libvirt-vm-xml-transformer.sh</code>
+     */
+    public static final Property<String> AGENT_HOOKS_LIBVIRT_VM_XML_TRANSFORMER_SHELL_SCRIPT = new Property<>("agent.hooks.libvirt_vm_xml_transformer.shell_script", "libvirt-vm-xml-transformer.sh");
+
+    /**
      * This property is used with the agent.hooks.basedir and agent.hooks.libvirt_vm_xml_transformer.script properties to define the Libvirt VM XML transformer method.<br>
      * Libvirt XML transformer hook does XML-to-XML transformation.<br>
      * The provider can use this to add/remove/modify some sort of attributes in Libvirt XML domain specification.<br>
@@ -242,6 +251,15 @@ public class AgentProperties{
     public static final Property<String> AGENT_HOOKS_LIBVIRT_VM_ON_START_SCRIPT = new Property<>("agent.hooks.libvirt_vm_on_start.script", "libvirt-vm-state-change.groovy");
 
     /**
+     * This property is used with the agent.hooks.basedir property to define the Libvirt VM on start shell script.<br>
+     * The shell script is used to execute the Libvirt VM on start script.<br>
+     * For more information see the agent.properties file.<br>
+     * Data type: String.<br>
+     * Default value: <code>libvirt-vm-state-change.sh</code>
+     */
+    public static final Property<String> AGENT_HOOKS_LIBVIRT_VM_ON_START_SHELL_SCRIPT = new Property<>("agent.hooks.libvirt_vm_on_start.shell_script", "libvirt-vm-state-change.sh");
+
+    /**
      * This property is used with the agent.hooks.basedir and agent.hooks.libvirt_vm_on_start.script properties to define the Libvirt VM on start method.<br>
      * The hook is called right after Libvirt successfully launched the VM.<br>
      * For more information see the agent.properties file.<br>
@@ -259,6 +277,15 @@ public class AgentProperties{
      * Default value: <code>libvirt-vm-state-change.groovy</code>
      */
     public static final Property<String> AGENT_HOOKS_LIBVIRT_VM_ON_STOP_SCRIPT = new Property<>("agent.hooks.libvirt_vm_on_stop.script", "libvirt-vm-state-change.groovy");
+
+    /**
+     * This property is used with the agent.hooks.basedir property to define the Libvirt VM on stop shell script.<br>
+     * The shell script is used to execute the Libvirt VM on stop script.<br>
+     * For more information see the agent.properties file.<br>
+     * Data type: String.<br>
+     * Default value: <code>libvirt-vm-state-change.sh</code>
+     */
+    public static final Property<String> AGENT_HOOKS_LIBVIRT_VM_ON_STOP_SHELL_SCRIPT = new Property<>("agent.hooks.libvirt_vm_on_stop.shell_script", "libvirt-vm-state-change.sh");
 
     /**
      * This property is used with the agent.hooks.basedir and agent.hooks.libvirt_vm_on_stop.script properties to define the Libvirt VM on stop method.<br>

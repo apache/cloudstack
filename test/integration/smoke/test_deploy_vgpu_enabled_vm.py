@@ -24,7 +24,7 @@ from marvin.cloudstackTestCase import cloudstackTestCase
 
 # base - contains all resources as entities and defines create, delete,
 # list operations on them
-from marvin.lib.base import Account, VirtualMachine, ServiceOffering, NetworkOffering, Network, Template
+from marvin.lib.base import Account, Host, Capacities, VirtualMachine, ServiceOffering, NetworkOffering, Network, Template, GpuDevice
 
 # utils - utility classes for common cleanup, external library wrappers etc
 from marvin.lib.utils import cleanup_resources, get_hypervisor_type, validateList
@@ -44,33 +44,34 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
     Test deploy a vGPU enabled VM into a user account
     """
     @classmethod
-    def setUpClass(self):
-        testClient = super(TestDeployvGPUenabledVM, self).getClsTestClient()
-        self.apiclient = testClient.getApiClient()
-        self.testdata = self.testClient.getParsedTestDataConfig()
-        self.hostConfig = self.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
-        self._cleanup = []
-        self.unsupportedHypervisor = False
-        self.noSuitableHost = False
-        # Need to add check whether zone containing the xen hypervisor or not
-        # as well
+    def setUpClass(cls):
+        testClient = super(TestDeployvGPUenabledVM, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.testdata = cls.testClient.getParsedTestDataConfig()
+        cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
+        cls._cleanup = []
+        cls.unsupportedHypervisor = False
+        cls.noSuitableHost = False
+        cls.hypervisor = testClient.getHypervisorInfo()
+
+        if cls.hypervisor.lower() not in ["xenserver", "vmware", "kvm", "simulator"]:
+            cls.unsupportedHypervisor = True
+            cls.skipTest("Skipping test because suitable hypervisor/host not present")
         hosts = list_hosts(
-            self.apiclient,
-            hypervisor="XenServer"
+            cls.apiclient
         )
         if hosts is None:
-             # GPU feature is supported only on XenServer.Check listhosts response
-             self.unsupportedHypervisor = True
+             cls.unsupportedHypervisor = True
              return
-        else:
-            gpuhosts = 0
+        gpuhosts = 0
+        if cls.hypervisor.lower() in ["xenserver"]:
             for ghost in hosts:
-                if ghost.hypervisorversion >= "6.2.0":
+                if ghost and ghost.hypervisorversion >= "6.2.0":
                     sshClient = SshClient(
                         host=ghost.ipaddress,
-                        port=self.testdata['configurableData']['host']["publicport"],
-                        user=self.hostConfig['username'],
-                        passwd=self.hostConfig['password'])
+                        port=cls.testdata['configurableData']['host']["publicport"],
+                        user=cls.hostConfig['username'],
+                        passwd=cls.hostConfig['password'])
                     if ghost.hypervisorversion == "6.2.0":
                         res = sshClient.execute(
                             "xe patch-list uuid=0850b186-4d47-11e3-a720-001b2151a503")
@@ -82,9 +83,25 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
                         gpuhosts = gpuhosts + 1
                     else:
                         continue
+        elif cls.hypervisor.lower() == "kvm" or cls.hypervisor.lower() == "simulator":
+            # Check if the host has a GPU
+            for host in hosts:
+                h = Host(host.__dict__)
+                h.discoverGpuDevices(cls.apiclient)
+
+            hosts = list_hosts(
+                cls.apiclient
+            )
+            for host in hosts:
+                if host.gputotal != None and host.gputotal > 0:
+                    gpuhosts = gpuhosts + 1
+        elif cls.hypervisor.lower() in ["vmware"]:
+            #
+            cls.noSuitableHost = True
+
         if gpuhosts == 0:
             # No XenServer available with GPU Drivers installed
-            self.noSuitableHost = True
+            cls.noSuitableHost = True
             return
 
     def setUp(self):
@@ -92,11 +109,10 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         if self.noSuitableHost or self.unsupportedHypervisor:
-            self.hypervisor = get_hypervisor_type(self.apiclient)
-            if self.hypervisor.lower() not in ["vmware"]:
-	            self.skipTest("Skipping test because suitable hypervisor/host not\
-        	            present")
-            self.testdata = self.testClient.getParsedTestDataConfig()
+            self.skipTest("Skipping test because suitable hypervisor/host not\
+                    present")
+        self.hypervisor = get_hypervisor_type(self.apiclient)
+        self.testdata = self.testClient.getParsedTestDataConfig()
 
         self.cleanup = []
 
@@ -109,6 +125,8 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
             self.testdata["account"],
             domainid=self.domain.id
         )
+
+        self.gpu_capacity_total, self.gpu_capacity_used = self.get_gpu_capacity()
 
         if self.hypervisor.lower() in ["xenserver"]:
 
@@ -123,39 +141,39 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
             self.testdata["mode"] = self.zone.networktype
 
             if self.template == FAILED:
-        	    assert False, "get_template() failed to return template with description %s" % self.testdata[
-                	"ostype"]
+                assert False, "get_template() failed to return template with description %s" % self.testdata[
+                    "ostype"]
 
             self.testdata["small"]["zoneid"] = self.zone.id
             self.testdata["small"]["template"] = self.template.id
 
             self.testdata["service_offerings"]["vgpu260qwin"]["serviceofferingdetails"] = [
-        	    {
-                	'pciDevice': 'Group of NVIDIA Corporation GK107GL [GRID K1] GPUs'}, {
-	                'vgpuType': 'GRID K120Q'}]
-        	# create a service offering
+                {
+                    'pciDevice': 'Group of NVIDIA Corporation GK107GL [GRID K1] GPUs'}, {
+                    'vgpuType': 'GRID K120Q'}]
+            # create a service offering
             self.service_offering = ServiceOffering.create(
-        	    self.apiclient,
-	            self.testdata["service_offerings"]["vgpu260qwin"],
-        	)
+                self.apiclient,
+                self.testdata["service_offerings"]["vgpu260qwin"],
+            )
             self.cleanup.append(self.service_offering)
 
         elif self.hypervisor.lower() in ["vmware"]:
             self.testdata["isolated_network"]["zoneid"] = self.zone.id
 
             self.userapiclient = self.testClient.getUserApiClient(
-         		UserName=self.account.name,
-		        DomainName=self.account.domain
-	        )
+                 UserName=self.account.name,
+                DomainName=self.account.domain
+            )
             self.service_offering = ServiceOffering.create(
-	            self.apiclient,
-        	    self.testdata["service_offering"])
+                self.apiclient,
+                self.testdata["service_offering"])
 
             # Create Shared Network Offering
             self.isolated_network_offering = NetworkOffering.create(
-	            self.apiclient,
-        	    self.testdata["isolated_network_offering"])
-        	# Enable Isolated Network offering
+                self.apiclient,
+                self.testdata["isolated_network_offering"])
+            # Enable Isolated Network offering
             self.isolated_network_offering.update(self.apiclient, state='Enabled')
 
             # Register a private template in the account with nic adapter vmxnet3
@@ -169,9 +187,51 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
                 details=[{"mks.enable3d" : "true", "mks.use3dRenderer" : "automatic",
                      "svga.autodetect" : "false", "svga.vramSize" : "131072"}]
             )
+        elif self.hypervisor.lower() in ["kvm", "simulator"]:
+            self.template = get_template(
+                self.apiclient,
+                self.zone.id,
+                self.testdata["ostype"])
+            self.cleanup.append(self.template)
+
+            # 1. Fetch available vgpu profile IDs from gpu devices on hosts
+            # 2. Create a service offering with vgpu profile ID
+            vgpu_profile_id_count_map = {}
+            vgpu_profile_id_device_map = {}
+            devices = GpuDevice.list(self.apiclient)
+            for device in devices:
+                if (device.state.lower() == "free" and device.managedstate.lower() == "managed" and device.gpudevicetype.lower() != "vgpuonly"):
+                    vgpu_profile_id_count_map[device.vgpuprofileid] = vgpu_profile_id_count_map.get(device.vgpuprofileid, 0) + 1
+                    vgpu_profile_id_device_map[device.vgpuprofileid] = device
+            if len(vgpu_profile_id_count_map) == 0:
+                self.skipTest("No GPU devices found on the host with state 'Free' and managed state 'Managed'")
+            else:
+                self.vgpu_profile_id = max(vgpu_profile_id_count_map, key=vgpu_profile_id_count_map.get)
+                self.vgpu_profile_name = vgpu_profile_id_device_map[self.vgpu_profile_id].vgpuprofilename
+                self.gpu_card_id = vgpu_profile_id_device_map[self.vgpu_profile_id].gpucardid
+                self.gpu_card_name = vgpu_profile_id_device_map[self.vgpu_profile_id].gpucardname
+                self.testdata["service_offering"]["vgpuprofileid"] = self.vgpu_profile_id
+                self.testdata["service_offering"]["gpucount"] = 1
+
+            self.service_offering = ServiceOffering.create(
+                self.apiclient,
+                self.testdata["service_offering"])
+            self.cleanup.append(self.service_offering)
+        else:
+            self.skipTest("Skipping test because suitable hypervisor/host not\
+                    present")
 
 
-    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    def get_gpu_capacity(self):
+        """Get GPU capacity for the host
+        """
+        capacities = Capacities.list(self.apiclient, fetchlatest=True)
+        for c in capacities:
+            if c.name == "GPU":
+                return c.capacitytotal, c.capacityused
+        return 0, 0
+
+    @attr(tags=['advanced', 'basic', 'vgpu'])
     def test_deploy_vgpu_enabled_vm(self):
         """Test Deploy Virtual Machine
 
@@ -180,18 +240,20 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
         # 2. Virtual Machine is vGPU enabled (via SSH)
         # 3. listVirtualMachines returns accurate information
         """
-        if self.hypervisor.lower() not in ["xenserver"]:
+        if self.hypervisor.lower() not in ["xenserver", "kvm", "simulator"]:
             self.cleanup.append(self.account)
             self.skipTest("This test case is written specifically\
-                    for XenServer hypervisor")
+                    for XenServer, KVM & Simulator hypervisor")
 
         self.virtual_machine = VirtualMachine.create(
             self.apiclient,
-            self.testdata["small"],
+            self.testdata["virtual_machine"],
+            hypervisor=self.hypervisor,
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
-            mode=self.testdata['mode']
+            templateid=self.template.id,
+            zoneid=self.zone.id
         )
         self.cleanup.append(self.virtual_machine)
 
@@ -199,10 +261,7 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
             self.apiclient,
             id=self.virtual_machine.id)
 
-        self.debug(
-            "Verify listVirtualMachines response for virtual machine: %s"
-            % self.virtual_machine.id
-        )
+        self.debug("Verify listVirtualMachines response for virtual machine: %s" % self.virtual_machine.id)
 
         self.assertEqual(
             isinstance(list_vms, list),
@@ -231,31 +290,53 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
             "Running",
             msg="VM is not in Running state"
         )
-        hosts = list_hosts(
-            self.apiclient,
-            id=vm.hostid
-        )
-        hostip = hosts[0].ipaddress
-        try:
-            sshClient = SshClient(
-                host=hostip,
-                port=self.testdata['configurableData']['host']["publicport"],
-                user=self.testdata['configurableData']['host']["username"],
-                passwd=self.testdata['configurableData']['host']["password"])
-            res = sshClient.execute(
-                "xe vgpu-list vm-name-label=%s params=type-uuid %s" %
-                (vm.instancename))
-            self.debug("SSH result: %s" % res)
-        except Exception as e:
-            self.fail("SSH Access failed for %s: %s" %
-                      (hostip, e)
-                      )
-        result = str(res)
+
+        # Check capacity changes
+        total, used = self.get_gpu_capacity()
+
         self.assertEqual(
-            result.count("type-uuid"),
-            1,
-            "VM is vGPU enabled."
+            total,
+            self.gpu_capacity_total,
+            "Total GPU capacity did not change after VM deployment"
         )
+        self.assertEqual(
+            used,
+            self.gpu_capacity_used + 1,
+            "Used GPU capacity did not change by 1 after VM deployment"
+        )
+
+        if self.hypervisor.lower() in ["xenserver"]:
+            hosts = list_hosts(
+                self.apiclient,
+                id=vm.hostid
+            )
+            hostip = hosts[0].ipaddress
+            try:
+                sshClient = SshClient(
+                    host=hostip,
+                    port=self.testdata['configurableData']['host']["publicport"],
+                    user=self.testdata['configurableData']['host']["username"],
+                    passwd=self.testdata['configurableData']['host']["password"])
+                res = sshClient.execute(
+                    "xe vgpu-list vm-name-label=%s params=type-uuid %s" %
+                    (vm.instancename))
+                self.debug("SSH result: %s" % res)
+            except Exception as e:
+                self.fail("SSH Access failed for %s: %s" %
+                        (hostip, e)
+                        )
+            result = str(res)
+            self.assertEqual(
+                result.count("type-uuid"),
+                1,
+                "VM is vGPU enabled."
+            )
+        elif self.hypervisor.lower() in ["kvm", "simulator"]:
+            self.assertEqual(self.virtual_machine.vgpuprofileid, self.vgpu_profile_id, "VM is vGPU enabled.")
+            self.assertEqual(self.virtual_machine.gpucount, 1, "VM is vGPU enabled.")
+            self.assertEqual(self.virtual_machine.gpucardid, self.gpu_card_id, "VM is vGPU enabled.")
+            self.assertEqual(self.virtual_machine.gpucardname, self.gpu_card_name, "VM is vGPU enabled.")
+            self.assertEqual(self.virtual_machine.vgpuprofilename, self.vgpu_profile_name, "VM is vGPU enabled.")
         self.cleanup.append(self.account)
 
     def tearDown(self):

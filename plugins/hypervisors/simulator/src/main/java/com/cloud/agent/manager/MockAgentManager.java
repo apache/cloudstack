@@ -16,10 +16,13 @@
 // under the License.
 package com.cloud.agent.manager;
 
+import java.util.List;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.GetGPUStatsCommand;
+import com.cloud.agent.api.VgpuTypesInfo;
 import org.apache.cloudstack.ca.SetupCertificateCommand;
 import org.apache.cloudstack.ca.SetupKeyStoreCommand;
 
@@ -54,6 +57,10 @@ public interface MockAgentManager extends Manager {
     GetHostStatsAnswer getHostStatistic(GetHostStatsCommand cmd);
 
     Answer checkHealth(CheckHealthCommand cmd);
+
+    Answer getGpuStats(GetGPUStatsCommand cmd, long hostId);
+
+    List<VgpuTypesInfo> getGPUDevices(long hostId);
 
     Answer pingTest(PingTestCommand cmd);
 

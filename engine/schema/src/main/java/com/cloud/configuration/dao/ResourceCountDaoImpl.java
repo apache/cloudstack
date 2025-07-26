@@ -339,19 +339,6 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
             + " left join vm_instance_details vmd on vmd.vm_id = vm.id and vmd.name = '%s' "
             + " where vm.type = 'User' and state not in ('Destroyed', 'Error', 'Expunging') and display_vm = true and account_id = ? ";
 
-    @Override
-    public long countCpuNumberAllocatedToAccount(long accountId) {
-        String sqlCountCpuNumberAllocatedToAccount = String.format(baseSqlCountComputingResourceAllocatedToAccount, ResourceType.cpu, ResourceType.cpu, "cpuNumber");
-        return executeSqlCountComputingResourcesForAccount(accountId, sqlCountCpuNumberAllocatedToAccount);
-    }
-
-    @Override
-    public long countMemoryAllocatedToAccount(long accountId) {
-        String serviceOfferingRamSizeField = "ram_size";
-        String sqlCountCpuNumberAllocatedToAccount = String.format(baseSqlCountComputingResourceAllocatedToAccount, serviceOfferingRamSizeField, serviceOfferingRamSizeField, "memory");
-        return executeSqlCountComputingResourcesForAccount(accountId, sqlCountCpuNumberAllocatedToAccount);
-    }
-
     private long executeSqlCountComputingResourcesForAccount(long accountId, String sqlCountComputingResourcesAllocatedToAccount) {
         TransactionLegacy tx = TransactionLegacy.currentTxn();
         try {
