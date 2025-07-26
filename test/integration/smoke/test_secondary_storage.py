@@ -41,12 +41,7 @@ class TestSecStorageServices(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            #Cleanup resources used
-            cleanup_resources(cls.apiclient, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestSecStorageServices, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -76,83 +71,75 @@ class TestSecStorageServices(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            #Clean up, terminate the created templates
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestSecStorageServices, self).tearDown()
 
     @attr(tags = ["advanced", "advancedns", "smoke", "basic", "eip", "sg"], required_hardware="false")
     def test_01_sys_vm_start(self):
         """Test system VM start
+
+        1. verify listHosts has all 'routing' hosts in UP state
+        2. verify listStoragePools shows all primary storage pools in UP state
+        3. verify that secondary storage was added successfully
         """
 
-        # 1. verify listHosts has all 'routing' hosts in UP state
-        # 2. verify listStoragePools shows all primary storage pools
-        #    in UP state
-        # 3. verify that secondary storage was added successfully
-
         list_hosts_response = list_hosts(
-                           self.apiclient,
-                           type='Routing',
-                           )
+            self.apiclient,
+            type='Routing',
+        )
         self.assertEqual(
-                            isinstance(list_hosts_response, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
+            isinstance(list_hosts_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
         # ListHosts has all 'routing' hosts in UP state
         self.assertNotEqual(
-                                len(list_hosts_response),
-                                0,
-                                "Check list host response"
-                            )
+            len(list_hosts_response),
+            0,
+            "Check list host response"
+        )
         for host in list_hosts_response:
             self.assertEqual(
-                        host.state,
-                        'Up',
-                        "Check state of routing hosts is Up or not"
-                        )
+                host.state,
+                'Up',
+                "Check state of routing hosts is Up or not"
+            )
 
         # ListStoragePools shows all primary storage pools in UP state
-        list_storage_response = list_storage_pools(
-                                                   self.apiclient,
-                                                   )
+        list_storage_response = list_storage_pools(self.apiclient)
         self.assertEqual(
-                            isinstance(list_storage_response, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
+            isinstance(list_storage_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
         self.assertNotEqual(
-                                len(list_storage_response),
-                                0,
-                                "Check list storage pools response"
-                            )
+            len(list_storage_response),
+            0,
+            "Check list storage pools response"
+        )
 
         for primary_storage in list_hosts_response:
             self.assertEqual(
-                        primary_storage.state,
-                        'Up',
-                        "Check state of primary storage pools is Up or not"
-                        )
+                primary_storage.state,
+                'Up',
+                "Check state of primary storage pools is Up or not"
+            )
         for _ in range(2):
             list_ssvm_response = list_ssvms(
-                                    self.apiclient,
-                                    systemvmtype='secondarystoragevm',
-                                    )
+                self.apiclient,
+                systemvmtype='secondarystoragevm',
+            )
 
             self.assertEqual(
-                            isinstance(list_ssvm_response, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
+                isinstance(list_ssvm_response, list),
+                True,
+                "Check list response returns a valid list"
+            )
             #Verify SSVM response
             self.assertNotEqual(
-                            len(list_ssvm_response),
-                            0,
-                            "Check list System VMs response"
-                        )
+                len(list_ssvm_response),
+                0,
+                "Check list System VMs response"
+            )
 
             for ssvm in list_ssvm_response:
                 if ssvm.state != 'Running':
@@ -160,22 +147,21 @@ class TestSecStorageServices(cloudstackTestCase):
                     continue
         for ssvm in list_ssvm_response:
             self.assertEqual(
-                            ssvm.state,
-                            'Running',
-                            "Check whether state of SSVM is running"
-                        )
+                ssvm.state,
+                'Running',
+                "Check whether state of SSVM is running"
+            )
 
         return
 
     @attr(tags = ["advanced", "advancedns", "smoke", "basic", "eip", "sg"], required_hardware="false")
     def test_02_sys_template_ready(self):
         """Test system templates are ready
-        """
 
-        # Validate the following
-        # If SSVM is in UP state and running
-        # 1. wait for listTemplates to show all builtin templates downloaded and
-        # in Ready state
+        Validate the following
+        If SSVM is in UP state and running
+        1. wait for listTemplates to show all builtin templates downloaded and in Ready state
+        """
 
         hypervisors = {}
         for zone in self.config.zones:
@@ -187,15 +173,14 @@ class TestSecStorageServices(cloudstackTestCase):
             for k, v in list(hypervisors.items()):
                 self.debug("Checking BUILTIN templates in zone: %s" %zid)
                 list_template_response = list_templates(
-                                        self.apiclient,
-                                        hypervisor=k,
-                                        zoneid=zid,
-                                        templatefilter=v,
-                                        listall=True,
-                                        account='system'
-                                        )
-                self.assertEqual(validateList(list_template_response)[0], PASS,\
-                        "templates list validation failed")
+                    self.apiclient,
+                    hypervisor=k,
+                    zoneid=zid,
+                    templatefilter=v,
+                    listall=True,
+                    account='system'
+                )
+                self.assertEqual(validateList(list_template_response)[0], PASS, "templates list validation failed")
 
                 # Ensure all BUILTIN templates are downloaded
                 templateid = None
@@ -204,13 +189,13 @@ class TestSecStorageServices(cloudstackTestCase):
                         templateid = template.id
 
                     template_response = list_templates(
-                                    self.apiclient,
-                                    id=templateid,
-                                    zoneid=zid,
-                                    templatefilter=v,
-                                    listall=True,
-                                    account='system'
-                                    )
+                        self.apiclient,
+                        id=templateid,
+                        zoneid=zid,
+                        templatefilter=v,
+                        listall=True,
+                        account='system'
+                    )
                     if isinstance(template_response, list):
                         template = template_response[0]
                     else:
@@ -230,13 +215,13 @@ class TestSecStorageServices(cloudstackTestCase):
     @attr(tags = ["advanced", "advancedns", "smoke", "basic", "eip", "sg"], required_hardware="false")
     def test_03_check_read_only_flag(self):
         """Test the secondary storage read-only flag
-        """
 
-        # Validate the following
-        # It is possible to enable/disable the read-only flag on a secondary storage and filter by it
-        # 1. Make the first secondary storage as read-only and verify its state has been changed
-        # 2. Search for the read-only storages and make sure ours is in the list
-        # 3. Make it again read/write and verify it has been set properly
+        Validate the following
+        It is possible to enable/disable the read-only flag on a secondary storage and filter by it
+        1. Make the first secondary storage as read-only and verify its state has been changed
+        2. Search for the read-only storages and make sure ours is in the list
+        3. Make it again read/write and verify it has been set properly
+        """
 
         first_storage = self.list_secondary_storages(self.apiclient)[0]
         first_storage_id = first_storage['id']
@@ -275,15 +260,15 @@ class TestSecStorageServices(cloudstackTestCase):
     @attr(tags = ["advanced", "advancedns", "smoke", "basic", "eip", "sg"], required_hardware="false")
     def test_04_migrate_to_read_only_storage(self):
         """Test migrations to a read-only secondary storage
-        """
 
-        # Validate the following
-        # It is not possible to migrate a storage to a read-only one
-        # NOTE: This test requires more than one secondary storage in the system
-        # 1. Make the first storage read-only
-        # 2. Try complete migration from the second to the first storage - it should fail
-        # 3. Try balanced migration from the second to the first storage - it should fail
-        # 4. Make the first storage read-write again
+        Validate the following
+        It is not possible to migrate a storage to a read-only one
+        NOTE: This test requires more than one secondary storage in the system
+        1. Make the first storage read-only
+        2. Try complete migration from the second to the first storage - it should fail
+        3. Try balanced migration from the second to the first storage - it should fail
+        4. Make the first storage read-write again
+        """
 
         storages = self.list_secondary_storages(self.apiclient)
         if (len(storages)) < 2:
@@ -332,12 +317,12 @@ class TestSecStorageServices(cloudstackTestCase):
     @attr(tags = ["advanced", "advancedns", "smoke", "basic", "eip", "sg"], required_hardware="false")
     def test_05_migrate_to_less_free_space(self):
         """Test migrations when the destination storage has less space
-        """
 
-        # Validate the following
-        # Migration to a secondary storage with less space should be refused
-        # NOTE: This test requires more than one secondary storage in the system
-        # 1. Try complete migration from a storage with more (or equal) free space - migration should be refused
+        Validate the following
+        Migration to a secondary storage with less space should be refused
+        NOTE: This test requires more than one secondary storage in the system
+        1. Try complete migration from a storage with more (or equal) free space - migration should be refused
+        """
 
         storages = self.list_secondary_storages(self.apiclient)
         if (len(storages)) < 2 or (storages[0]['zoneid'] != storages[1]['zoneid']):
