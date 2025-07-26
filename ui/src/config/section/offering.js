@@ -95,7 +95,7 @@ export default {
         label: 'label.edit',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
-        args: ['name', 'displaytext', 'storageaccessgroups', 'hosttags']
+        args: ['name', 'displaytext', 'storagetags', 'hosttags']
       }, {
         api: 'updateServiceOffering',
         icon: 'lock-outlined',
