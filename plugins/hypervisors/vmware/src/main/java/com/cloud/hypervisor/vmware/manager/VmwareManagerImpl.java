@@ -60,7 +60,7 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobManagerImpl;
 import org.apache.cloudstack.management.ManagementServerHost;
-import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
+import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplianceCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
@@ -1574,7 +1574,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                 continue;
             }
             Collections.shuffle(hostIds);
-            CheckDataStoreStoragePolicyComplainceCommand command = new CheckDataStoreStoragePolicyComplainceCommand(storagePolicy.getPolicyId(), storageFilerTO);
+            CheckDataStoreStoragePolicyComplianceCommand command = new CheckDataStoreStoragePolicyComplianceCommand(storagePolicy.getPolicyId(), storageFilerTO);
             long targetHostId = hypervisorGuruManager.getGuruProcessedCommandTargetHost(hostIds.get(0), command);
             try {
                 Answer answer = _agentMgr.send(targetHostId, command);
