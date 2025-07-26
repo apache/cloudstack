@@ -282,3 +282,12 @@ ALTER TABLE `cloud`.`vm_instance_details` ADD CONSTRAINT `fk_vm_instance_details
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backup_schedule', 'uuid', 'VARCHAR(40) NOT NULL');
 UPDATE `cloud`.`backup_schedule` SET uuid = UUID();
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.console_session', 'domain_id', 'bigint(20) unsigned NOT NULL');
+
+UPDATE `cloud`.`console_session` `cs`
+SET `cs`.`domain_id` = (
+    SELECT `acc`.`domain_id`
+    FROM `cloud`.`account` `acc`
+    WHERE `acc`.`id` = `cs`.`account_id`
+);
