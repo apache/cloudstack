@@ -573,8 +573,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         long diskOfferingSize = diskOffering.getDiskSize() / (1024 * 1024 * 1024);
                         VMTemplateVO dataDiskTemplate = _templateDao.findById(dataDiskTemplateToDiskOfferingMap.getKey());
                         volumeMgr.allocateRawVolume(Type.DATADISK, "DATA-" + persistedVm.getId() + "-" + String.valueOf( diskNumber), diskOffering, diskOfferingSize, null, null,
-                                persistedVm, dataDiskTemplate, owner,  diskNumber);
-                         diskNumber++;
+                                persistedVm, dataDiskTemplate, owner, diskNumber);
+                        diskNumber++;
                     }
                 }
             } finally {

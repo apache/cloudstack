@@ -324,20 +324,18 @@ public class ResourceCleanupServiceImpl extends ManagerBase implements ResourceC
             }
             currentSkippedVmIds.addAll(vmIdsWithActiveVolumeSnapshots);
         }
-        if (CollectionUtils.isNotEmpty(currentSkippedVmIds)) {
-            vmIds.removeAll(currentSkippedVmIds);
-        }
 
         List<BackupVO> backups = backupDao.searchByVmIds(vmIds);
-        if (CollectionUtils.isNotEmpty(activeSnapshots)) {
+        if (CollectionUtils.isNotEmpty(backups)) {
             HashSet<Long> vmIdsWithBackups = backups.stream().map(BackupVO::getVmId)
                     .collect(Collectors.toCollection(HashSet::new));
             if (logger.isDebugEnabled()) {
                 logger.debug(String.format("Skipping purging VMs with IDs %s as they have backups",
-                        StringUtils.join(vmIdsWithActiveVolumeSnapshots)));
+                        StringUtils.join(vmIdsWithBackups)));
             }
             currentSkippedVmIds.addAll(vmIdsWithBackups);
         }
+
         if (CollectionUtils.isNotEmpty(currentSkippedVmIds)) {
             vmIds.removeAll(currentSkippedVmIds);
         }

@@ -416,7 +416,8 @@ public interface UserVmService {
     void deletePrivateTemplateRecord(Long templateId);
 
     HypervisorType getHypervisorTypeOfUserVM(long vmid);
-UserVm createVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException,
+
+    UserVm createVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException,
         StorageUnavailableException, ResourceAllocationException;
 
     /**
