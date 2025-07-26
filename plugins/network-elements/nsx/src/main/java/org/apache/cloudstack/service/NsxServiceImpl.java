@@ -16,15 +16,11 @@
 // under the License.
 package org.apache.cloudstack.service;
 
-import com.cloud.network.IpAddress;
-import com.cloud.network.Network;
-import com.cloud.network.SDNProviderNetworkRule;
-import com.cloud.network.nsx.NsxService;
-import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.vpc.Vpc;
-import com.cloud.network.vpc.VpcVO;
-import com.cloud.network.vpc.dao.VpcDao;
-import com.cloud.utils.exception.CloudRuntimeException;
+import java.util.List;
+import java.util.Objects;
+
+import javax.inject.Inject;
+
 import org.apache.cloudstack.NsxAnswer;
 import org.apache.cloudstack.agent.api.CreateNsxDistributedFirewallRulesCommand;
 import org.apache.cloudstack.agent.api.CreateNsxLoadBalancerRuleCommand;
@@ -34,8 +30,8 @@ import org.apache.cloudstack.agent.api.CreateNsxTier1GatewayCommand;
 import org.apache.cloudstack.agent.api.CreateOrUpdateNsxTier1NatRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxDistributedFirewallRulesCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxLoadBalancerRuleCommand;
-import org.apache.cloudstack.agent.api.DeleteNsxSegmentCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxNatRuleCommand;
+import org.apache.cloudstack.agent.api.DeleteNsxSegmentCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxTier1GatewayCommand;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -45,9 +41,15 @@ import org.apache.cloudstack.utils.NsxHelper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import javax.inject.Inject;
-import java.util.List;
-import java.util.Objects;
+import com.cloud.network.IpAddress;
+import com.cloud.network.Network;
+import com.cloud.network.SDNProviderNetworkRule;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.nsx.NsxService;
+import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class NsxServiceImpl implements NsxService, Configurable {
     @Inject
@@ -204,5 +206,10 @@ public class NsxServiceImpl implements NsxService, Configurable {
         return new ConfigKey<?>[] {
             NSX_API_FAILURE_RETRIES, NSX_API_FAILURE_INTERVAL
         };
+    }
+
+    @Override
+    public String getSegmentId(long domainId, long accountId, long zoneId, Long vpcId, long networkId) {
+        return NsxControllerUtils.getNsxSegmentId(domainId, accountId, zoneId, vpcId, networkId);
     }
 }

@@ -81,6 +81,14 @@
           </a-select-option>
         </a-select>
       </a-form-item>
+      <a-form-item name="externaldetails" ref="externaldetails" v-if="resource.hypervisor === 'External'">
+        <template #label>
+          <tooltip-label :title="$t('label.configuration.details')" :tooltip="apiParams.externaldetails.description"/>
+        </template>
+        <div style="margin-bottom: 10px">{{ $t('message.add.extension.resource.details') }}</div>
+        <details-input
+          v-model:value="form.externaldetails" />
+      </a-form-item>
 
       <div :span="24" class="action-button">
         <a-button :loading="loading" @click="onCloseAction">{{ $t('label.cancel') }}</a-button>
@@ -94,11 +102,14 @@
 import { ref, reactive, toRaw } from 'vue'
 import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import DetailsInput from '@/components/widgets/DetailsInput'
+import { getFilteredExternalDetails } from '@/utils/extension'
 
 export default {
-  name: 'EditVM',
+  name: 'HostUpdate',
   components: {
-    TooltipLabel
+    TooltipLabel,
+    DetailsInput
   },
   props: {
     action: {
@@ -130,6 +141,11 @@ export default {
     this.fetchOsCategories()
     this.fetchStorageAccessGroupsData()
   },
+  computed: {
+    resourceExternalDetails () {
+      return getFilteredExternalDetails(this.resource.details)
+    }
+  },
   methods: {
     initForm () {
       this.formRef = ref()
@@ -140,7 +156,8 @@ export default {
         storageaccessgroups: this.resource.storageaccessgroups
           ? this.resource.storageaccessgroups.split(',')
           : [],
-        oscategoryid: this.resource.oscategoryid
+        oscategoryid: this.resource.oscategoryid,
+        externaldetails: this.resourceExternalDetails
       })
       this.rules = reactive({})
     },
@@ -173,7 +190,6 @@ export default {
     handleSubmit () {
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
-        console.log(values)
         const params = {}
         params.id = this.resource.id
         params.name = values.name
@@ -181,6 +197,11 @@ export default {
         params.oscategoryid = values.oscategoryid
         if (values.istagarule !== undefined) {
           params.istagarule = values.istagarule
+        }
+        if (values.externaldetails) {
+          Object.entries(values.externaldetails).forEach(([key, value]) => {
+            params['externaldetails[0].' + key] = value
+          })
         }
         this.loading = true
 
@@ -232,10 +253,9 @@ export default {
 
 <style scoped lang="less">
 .form-layout {
-  width: 80vw;
-
+  width: 60vw;
   @media (min-width: 600px) {
-    width: 450px;
+    width: 550px;
   }
 
   .action-button {

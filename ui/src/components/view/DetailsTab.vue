@@ -135,6 +135,9 @@
           <div v-else-if="$route.meta.name === 'kubernetes' && item === 'cniconfigname'">
               <router-link :to="{ path: '/cniconfiguration/' + dataResource.cniconfigurationid }">{{ dataResource.cniconfigname }}</router-link>
           </div>
+          <div v-else-if="item === 'allowedroletypes' && Array.isArray(dataResource[item])">
+            {{ dataResource[item].join(', ') }}
+          </div>
           <div v-else>{{ dataResource[item] }}</div>
         </div>
       </a-list-item>
@@ -173,6 +176,27 @@
           <div>{{ dataResource[item].rbd_default_data_pool }}</div>
         </div>
       </a-list-item>
+      <a-list-item v-else-if="item === 'details' && ['extension', 'customaction'].includes($route.meta.name) && dataResource[item] && Object.keys(dataResource[item]).length > 0">
+        <div>
+          <strong>{{ $t('label.configuration.details') }}</strong>
+          <br/>
+          <div>
+            <object-list-table :data-map="dataResource[item]" />
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-else-if="item === 'parameters' && ['customaction'].includes($route.meta.name) && Array.isArray(dataResource[item]) && dataResource[item].length > 0">
+        <div>
+          <strong>{{ $t('label.' + String(item).toLowerCase()) }}</strong>
+          <br/>
+          <div>
+            <object-list-table :showHeader="true" :data-array="dataResource[item]" />
+          </div>
+        </div>
+      </a-list-item>
+      <external-configuration-details
+        v-else-if="item === 'externaldetails' && (['host', 'computeoffering'].includes($route.meta.name) || (['cluster'].includes($route.meta.name) && dataResource.extensionid))"
+        :resource="dataResource" />
     </template>
     <HostInfo :resource="dataResource" v-if="$route.meta.name === 'host' && 'listHosts' in $store.getters.apis" />
     <DedicateData :resource="dataResource" v-if="dedicatedSectionActive" />
@@ -184,6 +208,8 @@
 import DedicateData from './DedicateData'
 import HostInfo from '@/views/infra/HostInfo'
 import VmwareData from './VmwareData'
+import ObjectListTable from '@/components/view/ObjectListTable'
+import ExternalConfigurationDetails from '@/views/extension/ExternalConfigurationDetails'
 import { genericCompare } from '@/utils/sort'
 
 export default {
@@ -191,7 +217,9 @@ export default {
   components: {
     DedicateData,
     HostInfo,
-    VmwareData
+    VmwareData,
+    ObjectListTable,
+    ExternalConfigurationDetails
   },
   props: {
     resource: {
@@ -229,13 +257,14 @@ export default {
   },
   computed: {
     customDisplayItems () {
-      var items = ['ip4routes', 'ip6routes', 'privatemtu', 'publicmtu', 'provider', 'details']
+      var items = ['ip4routes', 'ip6routes', 'privatemtu', 'publicmtu', 'provider', 'details', 'parameters']
       if (this.$route.meta.name === 'webhookdeliveries') {
         items.push('startdate')
         items.push('enddate')
-      }
-      if (this.$route.meta.name === 'vm') {
+      } else if (this.$route.meta.name === 'vm') {
         items.push('leaseexpirydate')
+      } else if (['cluster', 'host', 'computeoffering'].includes(this.$route.meta.name)) {
+        items.push('externaldetails')
       }
       return items
     },

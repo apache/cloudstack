@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
@@ -298,5 +299,21 @@ public class VMTemplateDaoImplTest {
         verify(searchBuilder, never()).and(eq("isIso"), any(), eq(SearchCriteria.Op.EQ));
         verify(searchBuilder, times(1)).join(eq("templateZoneSearch"), any(), any(), any(), eq(JoinBuilder.JoinType.INNER));
         verify(templateDao, times(1)).customSearch(searchCriteria, null);
+    }
+
+    @Test
+    public void testListIdsByExtensionId_ReturnsIds() {
+        long extensionId = 42L;
+        List<Long> expectedIds = Arrays.asList(1L, 2L, 3L);
+        GenericSearchBuilder<VMTemplateVO, Long> searchBuilder = mock(GenericSearchBuilder.class);
+        SearchCriteria<Long> searchCriteria = mock(SearchCriteria.class);
+        when(templateDao.createSearchBuilder(Long.class)).thenReturn(searchBuilder);
+        when(searchBuilder.entity()).thenReturn(mock(VMTemplateVO.class));
+        when(searchBuilder.create()).thenReturn(searchCriteria);
+        doReturn(expectedIds).when(templateDao).customSearchIncludingRemoved(eq(searchCriteria), isNull());
+        List<Long> result = templateDao.listIdsByExtensionId(extensionId);
+        assertEquals(expectedIds, result);
+        verify(searchCriteria).setParameters("extensionId", extensionId);
+        verify(templateDao).customSearchIncludingRemoved(eq(searchCriteria), isNull());
     }
 }

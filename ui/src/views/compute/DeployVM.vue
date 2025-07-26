@@ -165,7 +165,7 @@
                           :key="templateKey"
                           @handle-search-filter="filters => fetchAllTemplates(filters)"
                           @update-template-iso="updateFieldValue" />
-                        <div>
+                        <div v-if="!isTemplateHypervisorExternal">
                           {{ $t('label.override.rootdisk.size') }}
                           <a-switch
                             v-model:checked="form.rootdisksizeitem"
@@ -291,7 +291,7 @@
                         <a-input v-model:value="form.memory"/>
                       </a-form-item>
                     </span>
-                    <span v-if="imageType!=='isoid'">
+                    <span v-if="imageType!=='isoid' && !isTemplateHypervisorExternal">
                       {{ $t('label.override.root.diskoffering') }}
                       <a-switch
                         v-model:checked="showOverrideDiskOfferingOption"
@@ -370,9 +370,10 @@
               <a-step
                 v-else
                 :title="imageType === 'templateid' ? $t('label.data.disk') : $t('label.disk.size')"
+                :disabled="isTemplateHypervisorExternal ? true : false"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description>
-                  <div v-if="zoneSelected">
+                  <div v-if="zoneSelected && !isTemplateHypervisorExternal">
                     <disk-offering-selection
                       :items="options.diskOfferings"
                       :row-count="rowCount.diskOfferings"
@@ -397,6 +398,9 @@
                     <a-form-item class="form-item-hidden">
                       <a-input v-model:value="form.size"/>
                     </a-form-item>
+                  </div>
+                  <div v-else-if="isTemplateHypervisorExternal" style="margin-bottom: 20px; margin-top: 7px">
+                    {{ $t('message.host.external.datadisk') }}
                   </div>
                 </template>
               </a-step>
@@ -571,7 +575,7 @@
                       ref="bootintosetup">
                       <a-switch v-model:checked="form.bootintosetup" />
                     </a-form-item>
-                    <a-form-item name="dynamicscalingenabled" ref="dynamicscalingenabled">
+                    <a-form-item name="dynamicscalingenabled" ref="dynamicscalingenabled" v-if="!!template && !isTemplateHypervisorExternal">
                       <template #label>
                         <tooltip-label :title="$t('label.dynamicscalingenabled')" :tooltip="$t('label.dynamicscalingenabled.tooltip')"/>
                       </template>
@@ -811,6 +815,17 @@
                         :filterOption="filterOption"
                       ></a-select>
                     </a-form-item>
+                    <a-form-item name="externaldetails" ref="externaldetails" v-if="imageType === 'templateid' && isTemplateHypervisorExternal">
+                      <template #label>
+                        <tooltip-label :title="$t('label.externaldetails')" :tooltip="apiParams.externaldetails.description" />
+                      </template>
+                      <a-switch v-model:checked="externalDetailsEnabled" @change="onExternalDetailsEnabledChange"/>
+                      <a-card v-if="externalDetailsEnabled" style="margin-top: 10px">
+                        <div style="margin-bottom: 10px">{{ $t('message.add.orchestrator.resource.details') }}</div>
+                        <details-input
+                          v-model:value="form.externaldetails" />
+                      </a-card>
+                    </a-form-item>
                     <a-form-item :label="$t('label.action.start.instance')" name="startvm" ref="startvm">
                       <a-switch v-model:checked="form.startvm" />
                     </a-form-item>
@@ -907,6 +922,7 @@ import UserDataSelection from '@views/compute/wizard/UserDataSelection'
 import SecurityGroupSelection from '@views/compute/wizard/SecurityGroupSelection'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import InstanceNicsNetworkSelectListView from '@/components/view/InstanceNicsNetworkSelectListView'
+import DetailsInput from '@/components/widgets/DetailsInput'
 
 export default {
   name: 'Wizard',
@@ -931,7 +947,8 @@ export default {
     ComputeSelection,
     SecurityGroupSelection,
     TooltipLabel,
-    InstanceNicsNetworkSelectListView
+    InstanceNicsNetworkSelectListView,
+    DetailsInput
   },
   props: {
     visible: {
@@ -1106,7 +1123,9 @@ export default {
       },
       architectureTypes: {
         opts: []
-      }
+      },
+      externalDetailsEnabled: false,
+      selectedExtensionId: null
     }
   },
   computed: {
@@ -1474,6 +1493,9 @@ export default {
     },
     guestOsCategoriesSelectionDisallowed () {
       return (!this.queryGuestOsCategoryId || this.options.guestOsCategories.length === 0) && (!!this.queryTemplateId || !!this.queryIsoId)
+    },
+    isTemplateHypervisorExternal () {
+      return !!this.template && this.template.hypervisor === 'External'
     }
   },
   watch: {
@@ -1640,6 +1662,9 @@ export default {
       this.doUserdataOverride = false
       this.doUserdataAppend = false
     }
+  },
+  beforeCreate () {
+    this.apiParams = this.$getApiParams('deployVirtualMachine')
   },
   created () {
     this.initForm()
@@ -1951,6 +1976,7 @@ export default {
           if (template.details['vmware-to-kvm-mac-addresses']) {
             this.dataPreFill.macAddressArray = JSON.parse(template.details['vmware-to-kvm-mac-addresses'])
           }
+          this.dataPreFill.hypervisorType = template.hypervisor
         }
       } else if (name === 'isoid') {
         this.imageType = 'isoid'
@@ -2123,19 +2149,11 @@ export default {
     },
     changeArchitecture (arch) {
       this.selectedArchitecture = arch
-      if (this.isModernImageSelection) {
-        this.fetchGuestOsCategories()
-        return
-      }
-      this.fetchImages()
+      this.updateImages()
     },
     changeImageType (imageType) {
       this.imageType = imageType
-      if (this.isModernImageSelection) {
-        this.fetchGuestOsCategories()
-      } else {
-        this.fetchImages()
-      }
+      this.updateImages()
     },
     handleSubmitAndStay (e) {
       this.form.stayonpage = true
@@ -2357,6 +2375,12 @@ export default {
           deployVmData.projectid = this.owner.projectid
         }
 
+        if (this.imageType === 'templateid' && this.template && this.template.hypervisor === 'External' && values.externaldetails) {
+          Object.entries(values.externaldetails).forEach(([key, value]) => {
+            deployVmData['externaldetails[0].' + key] = value
+          })
+        }
+
         const title = this.$t('label.launch.vm')
         const description = values.name || ''
         const password = this.$t('label.password')
@@ -2573,6 +2597,9 @@ export default {
       if (this.isZoneSelectedMultiArch) {
         args.arch = this.selectedArchitecture
       }
+      if (this.selectedExtensionId) {
+        args.extensionid = this.selectedExtensionId
+      }
       args.account = store.getters.project?.id ? null : this.owner.account
       args.domainid = store.getters.project?.id ? null : this.owner.domainid
       args.projectid = store.getters.project?.id || this.owner.projectid
@@ -2772,7 +2799,7 @@ export default {
       this.fetchOptions(this.params.hosts, 'hosts')
       if (this.clusterId && Array.isArray(this.options.clusters)) {
         const cluster = this.options.clusters.find(c => c.id === this.clusterId)
-        this.handleArchResourceSelected(cluster.arch)
+        this.handleComputeResourceSelected(cluster)
       }
     },
     onSelectHostId (value) {
@@ -2782,15 +2809,40 @@ export default {
       }
       if (this.hostId && Array.isArray(this.options.hosts)) {
         const host = this.options.hosts.find(h => h.id === this.hostId)
-        this.handleArchResourceSelected(host.arch)
+        this.handleComputeResourceSelected(host)
       }
     },
-    handleArchResourceSelected (resourceArch) {
-      if (!resourceArch || !this.isZoneSelectedMultiArch || this.selectedArchitecture === resourceArch) {
+    updateImages () {
+      if (this.isModernImageSelection) {
+        this.fetchGuestOsCategories()
         return
       }
-      this.selectedArchitecture = resourceArch
-      this.changeArchitecture(resourceArch, this.tabKey === 'templateid')
+      this.fetchImages()
+    },
+    handleComputeResourceSelected (computeResource) {
+      if (!computeResource) {
+        this.selectedExtensionId = null
+        return
+      }
+      const resourceArch = computeResource.arch
+      const needArchChange = resourceArch &&
+        this.isZoneSelectedMultiArch &&
+        this.selectedArchitecture !== resourceArch
+      const resourceHypervisor = computeResource.hypervisor || computeResource.hypervisortype
+      const resourceExtensionId = resourceHypervisor === 'External' ? computeResource.extensionid : null
+      const needExtensionIdChange = this.selectedExtensionId !== resourceExtensionId
+      if (!needArchChange && !needExtensionIdChange) {
+        return
+      }
+      if (needArchChange && !needExtensionIdChange) {
+        this.changeArchitecture(resourceArch, this.imageType === 'templateid')
+        return
+      }
+      this.selectedExtensionId = resourceExtensionId
+      if (needArchChange) {
+        this.selectedArchitecture = resourceArch
+      }
+      this.updateImages()
     },
     onSelectGuestOsCategory (value) {
       this.form.guestoscategoryid = value
@@ -3113,6 +3165,12 @@ export default {
         return Promise.reject(this.$t('message.error.number'))
       }
       return Promise.resolve()
+    },
+    onExternalDetailsEnabledChange (val) {
+      if (val || !this.form.externaldetails) {
+        return
+      }
+      this.form.externaldetails = undefined
     }
   }
 }

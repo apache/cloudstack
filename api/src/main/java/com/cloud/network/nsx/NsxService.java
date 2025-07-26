@@ -16,9 +16,10 @@
 // under the License.
 package com.cloud.network.nsx;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
+
 import com.cloud.network.IpAddress;
 import com.cloud.network.vpc.Vpc;
-import org.apache.cloudstack.framework.config.ConfigKey;
 
 public interface NsxService {
 
@@ -33,4 +34,5 @@ public interface NsxService {
 
     boolean createVpcNetwork(Long zoneId, long accountId, long domainId, Long vpcId, String vpcName, boolean sourceNatEnabled);
     boolean updateVpcSourceNatIp(Vpc vpc, IpAddress address);
+    String getSegmentId(long domainId, long accountId, long zoneId, Long vpcId, long networkId);
 }

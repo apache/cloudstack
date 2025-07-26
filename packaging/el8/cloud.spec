@@ -319,6 +319,11 @@ mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/templates/systemvm
 cp -r engine/schema/dist/systemvm-templates/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/templates/systemvm
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/templates/systemvm/md5sum.txt
 
+# Sample Extensions
+mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/extensions
+cp -r extensions/* ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/extensions
+ln -sf %{_sysconfdir}/%{name}/extensions ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/extensions
+
 # UI
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/ui
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-ui/
@@ -607,6 +612,7 @@ pip3 install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %{_datadir}/%{name}-management/lib/*.jar
 %{_datadir}/%{name}-management/logs
 %{_datadir}/%{name}-management/templates
+%{_datadir}/%{name}-management/extensions
 %attr(0755,root,root) %{_bindir}/%{name}-setup-databases
 %attr(0755,root,root) %{_bindir}/%{name}-migrate-databases
 %attr(0755,root,root) %{_bindir}/%{name}-set-guest-password
@@ -628,6 +634,8 @@ pip3 install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %{_defaultdocdir}/%{name}-management-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-management-%{version}/NOTICE
 %{_datadir}/%{name}-management/setup/wheel/*.whl
+%dir %attr(0755,cloud,cloud) %{_sysconfdir}/%{name}/extensions
+%attr(0755,cloud,cloud) %{_sysconfdir}/%{name}/extensions/*
 
 %files agent
 %attr(0755,root,root) %{_bindir}/%{name}-setup-agent

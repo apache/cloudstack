@@ -30,8 +30,6 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.commons.collections.MapUtils;
-import org.springframework.stereotype.Component;
 import org.apache.cloudstack.api.command.user.vmsnapshot.ListVMSnapshotCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
@@ -55,6 +53,8 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.commons.collections.MapUtils;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.RestoreVMSnapshotCommand;
 import com.cloud.agent.api.VMSnapshotTO;
@@ -69,6 +69,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.gpu.GPU;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
@@ -326,6 +327,10 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             throw new InvalidParameterValueException("Creating VM snapshot failed due to VM:" + vmId + " is a system VM or does not exist");
         }
 
+        if (HypervisorType.External.equals(userVmVo.getHypervisorType())) {
+            throw new InvalidParameterValueException("VM snapshot operation is not allowed for hypervisor type External");
+        }
+
         // VM snapshot with memory is not supported for VGPU Vms
         if (snapshotMemory && _serviceOfferingDetailsDao.findDetail(userVmVo.getServiceOfferingId(), GPU.Keys.vgpuType.toString()) != null) {
             throw new InvalidParameterValueException("VM snapshot with MEMORY is not supported for vGPU enabled VMs.");
@@ -508,6 +513,12 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         }
         if (UserVmManager.SHAREDFSVM.equals(userVm.getUserVmType())) {
             throw new InvalidParameterValueException("Operation not supported on Shared FileSystem Instance");
+        }
+        if (Hypervisor.HypervisorType.External.equals(userVm.getHypervisorType())) {
+            logger.error("Create VM snapshot not supported for {} as it is {} hypervisor instance",
+                    userVm, Hypervisor.HypervisorType.External.name());
+            throw new InvalidParameterValueException(String.format("Operation not supported for instance: %s",
+                    userVm.getName()));
         }
         VMSnapshotVO vmSnapshot = _vmSnapshotDao.findById(vmSnapshotId);
         if (vmSnapshot == null) {

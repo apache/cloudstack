@@ -94,6 +94,7 @@ import com.cloud.utils.ReflectUtil;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.UUIDManager;
 import com.cloud.vm.UserVmService;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.snapshot.VMSnapshotService;
 
 public abstract class BaseCmd {
@@ -483,5 +484,15 @@ public abstract class BaseCmd {
             }
         }
         return detailsMap;
+    }
+
+    public Map<String, String> convertExternalDetailsToMap(Map externalDetails) {
+        Map<String, String> customparameterMap = convertDetailsToMap(externalDetails);
+        Map<String, String> details = new HashMap<>();
+        for (String key : customparameterMap.keySet()) {
+            String value = customparameterMap.get(key);
+            details.put(VmDetailConstants.EXTERNAL_DETAIL_PREFIX + key, value);
+        }
+        return details;
     }
 }

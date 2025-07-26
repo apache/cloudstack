@@ -24,7 +24,7 @@ import org.apache.cloudstack.api.BaseResponse;
 
 public class UnmanageVMInstanceResponse extends BaseResponse {
 
-    @SerializedName(ApiConstants.RESULT)
+    @SerializedName(ApiConstants.SUCCESS)
     @Param(description = "result of the unmanage VM operation")
     private boolean success;
 

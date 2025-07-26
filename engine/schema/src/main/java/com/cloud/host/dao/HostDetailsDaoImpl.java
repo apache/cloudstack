@@ -18,6 +18,7 @@ package com.cloud.host.dao;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VmDetailConstants;
 
 @Component
 public class HostDetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implements HostDetailsDao {
@@ -129,5 +131,35 @@ public class HostDetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implement
         SearchCriteria<DetailVO> sc = DetailNameSearch.create();
         sc.setParameters("name", name);
         return listBy(sc);
+    }
+
+    @Override
+    public void replaceExternalDetails(long hostId, Map<String, String> details) {
+        if (details.isEmpty()) {
+            return;
+        }
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        txn.start();
+        List<DetailVO> detailVOs = new ArrayList<>();
+        for (Map.Entry<String, String> entry : details.entrySet()) {
+            String name = entry.getKey();
+            String value = entry.getValue();
+            if ("password".equals(entry.getKey())) {
+                value = DBEncryptionUtil.encrypt(value);
+            }
+            detailVOs.add(new DetailVO(hostId, name, value));
+        }
+        SearchBuilder<DetailVO> sb = createSearchBuilder();
+        sb.and("hostId", sb.entity().getHostId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.done();
+        SearchCriteria<DetailVO> sc = sb.create();
+        sc.setParameters("hostId", hostId);
+        sc.setParameters("name", VmDetailConstants.EXTERNAL_DETAIL_PREFIX + "%");
+        remove(sc);
+        for (DetailVO detail : detailVOs) {
+            persist(detail);
+        }
+        txn.commit();
     }
 }

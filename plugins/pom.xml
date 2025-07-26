@@ -87,6 +87,7 @@
         <module>host-allocators/random</module>
 
         <module>hypervisors/baremetal</module>
+        <module>hypervisors/external</module>
         <module>hypervisors/hyperv</module>
         <module>hypervisors/kvm</module>
         <module>hypervisors/ucs</module>

@@ -72,7 +72,7 @@
                       v-for="(opt, idx) in field.opts"
                       :key="idx"
                       :value="['account'].includes(field.name) ? opt.name : opt.id"
-                      :label="$t((['storageid'].includes(field.name) || !opt.path) ? opt.name : opt.path)">
+                      :label="$t((field.name.startsWith('domain') && opt.path) ? opt.path : opt.name)">
                       <div>
                         <span v-if="(field.name.startsWith('zone'))">
                           <span v-if="opt.icon">
@@ -89,7 +89,7 @@
                         <span v-if="(field.name.startsWith('managementserver'))">
                           <status :text="opt.state" />
                         </span>
-                        {{ $t((['storageid'].includes(field.name) || !opt.path) ? opt.name : opt.path) }}
+                        {{ $t((field.name.startsWith('domain') && opt.path) ? opt.path : opt.name) }}
                       </div>
                     </a-select-option>
                   </a-select>
@@ -309,7 +309,8 @@ export default {
           'clusterid', 'podid', 'groupid', 'entitytype', 'accounttype', 'systemvmtype', 'scope', 'provider',
           'type', 'scope', 'managementserverid', 'serviceofferingid',
           'diskofferingid', 'networkid', 'usagetype', 'restartrequired',
-          'displaynetwork', 'guestiptype', 'usersource', 'arch', 'oscategoryid', 'templatetype'].includes(item)
+          'displaynetwork', 'guestiptype', 'usersource', 'arch', 'oscategoryid', 'templatetype',
+          'extensionid'].includes(item)
         ) {
           type = 'list'
         } else if (item === 'tags') {
@@ -485,6 +486,7 @@ export default {
       let usageTypeIndex = -1
       let volumeIndex = -1
       let osCategoryIndex = -1
+      let extensionIndex = -1
 
       if (arrayField.includes('type')) {
         if (this.$route.path === '/alert') {
@@ -502,6 +504,12 @@ export default {
         zoneIndex = this.fields.findIndex(item => item.name === 'zoneid')
         this.fields[zoneIndex].loading = true
         promises.push(await this.fetchZones(searchKeyword))
+      }
+
+      if (arrayField.includes('extensionid')) {
+        extensionIndex = this.fields.findIndex(item => item.name === 'extensionid')
+        this.fields[extensionIndex].loading = true
+        promises.push(await this.fetchExtensions(searchKeyword))
       }
 
       if (arrayField.includes('domainid')) {
@@ -607,6 +615,12 @@ export default {
             this.fields[zoneIndex].opts = this.sortArray(zones[0].data)
           }
         }
+        if (extensionIndex > -1) {
+          const extensions = response.filter(item => item.type === 'extensionid')
+          if (extensions && extensions.length > 0) {
+            this.fields[extensionIndex].opts = this.sortArray(extensions[0].data)
+          }
+        }
         if (domainIndex > -1) {
           const domain = response.filter(item => item.type === 'domainid')
           if (domain && domain.length > 0) {
@@ -704,6 +718,9 @@ export default {
         if (zoneIndex > -1) {
           this.fields[zoneIndex].loading = false
         }
+        if (extensionIndex > -1) {
+          this.fields[extensionIndex].loading = false
+        }
         if (domainIndex > -1) {
           this.fields[domainIndex].loading = false
         }
@@ -790,6 +807,19 @@ export default {
           resolve({
             type: 'zoneid',
             data: zones
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
+    fetchExtensions (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        getAPI('listExtensions', { details: 'min', showicon: true, keyword: searchKeyword }).then(json => {
+          const extensions = json.listextensionsresponse.extension
+          resolve({
+            type: 'extensionid',
+            data: extensions
           })
         }).catch(error => {
           reject(error.response.headers['x-description'])
