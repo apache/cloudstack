@@ -84,6 +84,10 @@ class TestData():
     diskOfferingTier1Template = "diskOfferingTier1Template"
     diskOfferingTier2Template = "diskOfferingTier2Template"
     diskOfferingWithTagsAndTempl = "diskOfferingWithTagsAndTempl"
+    diskOfferingSmall = "diskOfferingSmall"
+    diskOfferingMedium = "diskOfferingMedium"
+    diskOfferingLarge = "diskOfferingLarge"
+    diskOfferingCustom = "diskOfferingCustom"
     domainId = "domainId"
     hypervisor = "hypervisor"
     login = "login"
@@ -100,6 +104,7 @@ class TestData():
     serviceOfferingsPrimary = "serviceOfferingsPrimary"
     serviceOfferingsIops = "serviceOfferingsIops"
     serviceOfferingsCeph = "serviceOfferingsCeph"
+    serviceOfferingEncrypted = "serviceOfferingEncrypted"
     scope = "scope"
     StorPool = "StorPool"
     storageTag = ["ssd", "ssd2"]
@@ -114,6 +119,8 @@ class TestData():
     volume_6 = "volume_6"
     volume_7 = "volume_7"
     zoneId = "zoneId"
+    sp_template_1 = 'sp_template_1'
+    sp_template_2 = 'sp_template_2'
 
     def __init__(self):
         sp_template_1 = 'ssd'
@@ -221,6 +228,18 @@ class TestData():
                 "customizediops": True,
                 "tags": sp_template_1,
             },
+            TestData.serviceOfferingEncrypted: {
+                "name": "Test-encrypted",
+                "displaytext": "SP Encrypted",
+                "cpunumber": 1,
+                "cpuspeed": 500,
+                "memory": 512,
+                "storagetype": "shared",
+                "customizediops": False,
+                "hypervisorsnapshotreserve": 200,
+                "encryptroot": True,
+                "tags": sp_template_1
+            },
             TestData.diskOffering: {
                 "name": "SP_DO_1",
                 "displaytext": "SP_DO_1 (5GB Min IOPS = 300; Max IOPS = 500)",
@@ -323,6 +342,38 @@ class TestData():
                 TestData.tags: sp_template_1,
                 "storagetype": "shared"
             },
+            TestData.diskOfferingSmall: {
+                "name": "Test-Small",
+                "displaytext": "Small Disk Offering",
+                "disksize" : 5,
+                "hypervisorsnapshotreserve": 200,
+                TestData.tags: sp_template_1,
+                "storagetype": "shared"
+            },
+            TestData.diskOfferingMedium: {
+                "name": "Test-Medium",
+                "displaytext": "Medium Disk Offering",
+                "disksize": 20,
+                "hypervisorsnapshotreserve": 200,
+                TestData.tags: sp_template_1,
+                "storagetype": "shared"
+            },
+            TestData.diskOfferingLarge: {
+                "name": "Test-Large",
+                "displaytext": "Large Disk Offering",
+                "disksize": 100,
+                "hypervisorsnapshotreserve": 200,
+                TestData.tags: sp_template_1,
+                "storagetype": "shared"
+            },
+            TestData.diskOfferingCustom: {
+                "name": "Test-Custom",
+                "displaytext": "Custom Disk Offering",
+                "custom": True,
+                "hypervisorsnapshotreserve": 200,
+                TestData.tags: sp_template_1,
+                "storagetype": "shared"
+            },
             TestData.volume_1: {
                 TestData.diskName: "test-volume-1",
             },
@@ -343,6 +394,12 @@ class TestData():
             },
             TestData.volume_7: {
                 TestData.diskName: "test-volume-7",
+            },
+            TestData.sp_template_1: {
+              "tags": "ssd"
+            },
+            TestData.sp_template_2: {
+                "tags": "ssd2"
             },
         }
 class StorPoolHelper():
@@ -847,3 +904,24 @@ class StorPoolHelper():
                 break
 
         return destinationHost
+
+    @classmethod
+    def updateStoragePoolTags(cls, apiclient, poolId, tags):
+        StoragePool.update(
+            apiclient,
+            id=poolId,
+            tags=tags
+        )
+
+    @classmethod
+    def get_pool(cls, zone):
+        storage_pools = zone.primaryStorages
+        sp_pools = []
+        for storage in storage_pools:
+            if storage['provider'] and "StorPool" in storage['provider']:
+                sp_pools.append(storage)
+
+        if len(sp_pools) < 2:
+            cls.debug("Cannot perform the tests because there aren't the required count of StorPool storage pools %s" % sp_pools)
+            return
+        return sp_pools

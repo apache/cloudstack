@@ -44,6 +44,7 @@ from marvin.lib.base import (Account,
                              VmSnapshot,
                              Volume,
                              SecurityGroup,
+                             DiskOffering,
                              )
 from marvin.lib.common import (get_zone,
                                get_domain,
@@ -79,9 +80,15 @@ class TestStoragePool(cloudstackTestCase):
     def setUpCloudStack(cls):
         config = cls.getClsConfig()
         StorPoolHelper.logger = cls
+        td = TestData()
+        cls.testdata = td.testdata
+        cls.helper = StorPoolHelper()
 
         zone = config.zones[0]
         assert zone is not None
+
+        sp_pools = cls.helper.get_pool(zone)
+        assert sp_pools is not None
 
         cls.spapi = spapi.Api(host=zone.spEndpoint, port=zone.spEndpointPort, auth=zone.spAuthToken, multiCluster=True)
         testClient = super(TestStoragePool, cls).getClsTestClient()
@@ -98,15 +105,8 @@ class TestStoragePool(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
         cls.zone = list_zones(cls.apiclient, name=zone.name)[0]
-        cls.debug(cls.zone)
-        cls.debug(list_zones(cls.apiclient, name=zone.name))
-        assert cls.zone is not None
 
         assert cls.zone is not None
-
-        td = TestData()
-        cls.testdata = td.testdata
-        cls.helper = StorPoolHelper()
 
         cls.account = cls.helper.create_account(
                             cls.apiclient,
@@ -120,34 +120,39 @@ class TestStoragePool(cloudstackTestCase):
         securitygroup = SecurityGroup.list(cls.apiclient, account = cls.account.name, domainid= cls.account.domainid)[0]
         cls.helper.set_securityGroups(cls.apiclient, account = cls.account.name, domainid= cls.account.domainid, id = securitygroup.id)
 
-        storpool_primary_storage = cls.testdata[TestData.primaryStorage]
-
-        storpool_service_offerings = cls.testdata[TestData.serviceOffering]
-
-        cls.template_name = storpool_primary_storage.get("name")
-
+        storpool_primary_storage = sp_pools[0]
+        cls.template_name = storpool_primary_storage["name"]
         storage_pool = list_storage_pools(
             cls.apiclient,
             name=cls.template_name
             )
+        if storage_pool is None:
+            storage_pool = StoragePool.create(cls.apiclient, storpool_primary_storage)
+        else:
+            storage_pool = storage_pool[0]
+        cls.storage_pool = storage_pool
+        cls.helper.updateStoragePoolTags(cls.apiclient, cls.storage_pool.id, cls.testdata[TestData.sp_template_1]["tags"])
+
+        cls.debug(pprint.pformat(storage_pool))
+
+
+        disk_offerings = list_disk_offering(
+            cls.apiclient,
+            name=cls.template_name
+            )
+        if disk_offerings is None:
+            offering = cls.testdata[TestData.diskOfferingCustom]
+            cls.disk_offerings = DiskOffering.create(cls.apiclient, services=offering, custom=True)
+        else:
+            cls.disk_offerings = disk_offerings[0]
+
+        storpool_service_offerings = cls.testdata[TestData.serviceOffering]
 
         service_offerings = list_service_offering(
             cls.apiclient,
             name=cls.template_name
             )
 
-        disk_offerings = list_disk_offering(
-            cls.apiclient,
-            name="ssd"
-            )
-
-        cls.disk_offerings = disk_offerings[0]
-        if storage_pool is None:
-            storage_pool = StoragePool.create(cls.apiclient, storpool_primary_storage)
-        else:
-            storage_pool = storage_pool[0]
-        cls.storage_pool = storage_pool
-        cls.debug(pprint.pformat(storage_pool))
         if service_offerings is None:
             service_offerings = ServiceOffering.create(cls.apiclient, storpool_service_offerings)
         else:

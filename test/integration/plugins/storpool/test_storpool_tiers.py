@@ -90,17 +90,17 @@ class TestStorPoolTiers(cloudstackTestCase):
         cls.qos = "SP_QOSCLASS"
         cls.spTemplate = "SP_TEMPLATE"
 
-        cls.disk_offerings_tier1_tags = cls.getDiskOffering(disk_offerings_tier1_tags, cls.qos, "ssd")
+        cls.disk_offerings_tier1_tags = cls.getDiskOffering(disk_offerings_tier1_tags, cls.qos, cls.testdata[TestData.sp_template_1]["tags"])
 
-        cls.disk_offerings_tier2_tags = cls.getDiskOffering(disk_offerings_tier2_tags, cls.qos, "virtual")
+        cls.disk_offerings_tier2_tags = cls.getDiskOffering(disk_offerings_tier2_tags, cls.qos, cls.testdata[TestData.sp_template_2]["tags"])
 
-        cls.disk_offerings_tier1_template = cls.getDiskOffering(disk_offerings_tier1_template, cls.spTemplate, "ssd")
+        cls.disk_offerings_tier1_template = cls.getDiskOffering(disk_offerings_tier1_template, cls.spTemplate, cls.testdata[TestData.sp_template_1]["tags"])
 
         cls.disk_offerings_tier2_template = cls.getDiskOffering(disk_offerings_tier2_template, cls.spTemplate,
-                                                                "virtual")
+                                                                cls.testdata[TestData.sp_template_2]["tags"])
         cls.disk_offerings_tier2_tags_template = cls.getDiskOffering(disk_offerings_tier2_tags_template, cls.spTemplate,
-                                                                     "virtual")
-        cls.resourceDetails(cls.qos, cls.disk_offerings_tier2_tags_template.id, "virtual")
+                                                                     cls.testdata[TestData.sp_template_2]["tags"])
+        cls.resourceDetails(cls.qos, cls.disk_offerings_tier2_tags_template.id, cls.testdata[TestData.sp_template_1]["tags"])
 
         cls.account = cls.helper.create_account(
             cls.apiclient,
@@ -115,25 +115,18 @@ class TestStorPoolTiers(cloudstackTestCase):
         cls.helper.set_securityGroups(cls.apiclient, account=cls.account.name, domainid=cls.account.domainid,
                                       id=securitygroup.id)
 
-        storpool_primary_storage = cls.testdata[TestData.primaryStorage]
+        sp_pools = cls.helper.get_pool(zone)
+        assert sp_pools is not None
+
+        storpool_primary_storage = sp_pools[0]
 
         storpool_service_offerings = cls.testdata[TestData.serviceOffering]
 
-        cls.template_name = storpool_primary_storage.get("name")
+        cls.template_name = storpool_primary_storage["name"]
 
         storage_pool = list_storage_pools(
             cls.apiclient,
             name=cls.template_name
-        )
-
-        service_offerings = list_service_offering(
-            cls.apiclient,
-            name=cls.template_name
-        )
-
-        disk_offerings = list_disk_offering(
-            cls.apiclient,
-            name="ssd"
         )
 
         if storage_pool is None:
@@ -141,7 +134,16 @@ class TestStorPoolTiers(cloudstackTestCase):
         else:
             storage_pool = storage_pool[0]
         cls.storage_pool = storage_pool
+        cls.helper.updateStoragePoolTags(cls.apiclient, cls.storage_pool.id, cls.testdata[TestData.sp_template_1]["tags"])
+
         cls.debug(pprint.pformat(storage_pool))
+
+
+        service_offerings = list_service_offering(
+            cls.apiclient,
+            name=cls.template_name
+        )
+
         if service_offerings is None:
             service_offerings = ServiceOffering.create(cls.apiclient, storpool_service_offerings)
         else:
