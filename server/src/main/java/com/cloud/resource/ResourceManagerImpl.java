@@ -320,7 +320,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     private final HashMap<String, ResourceStateAdapter> _resourceStateAdapters = new HashMap<>();
 
     private final HashMap<Integer, List<ResourceListener>> _lifeCycleListeners = new HashMap<>();
-    private HypervisorType _defaultSystemVMHypervisor;
 
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 30; // seconds
 
@@ -2784,7 +2783,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
-        _defaultSystemVMHypervisor = HypervisorType.getType(_configDao.getValue(Config.SystemVMDefaultHypervisor.toString()));
         _gson = GsonHelper.getGson();
 
         _hypervisorsInDC = _hostDao.createSearchBuilder(String.class);
@@ -2830,10 +2828,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public HypervisorType getDefaultHypervisor(final long zoneId) {
-        HypervisorType defaultHyper = HypervisorType.None;
-        if (_defaultSystemVMHypervisor != HypervisorType.None) {
-            defaultHyper = _defaultSystemVMHypervisor;
-        }
+        HypervisorType defaultHyper = HypervisorType.getType(ResourceManager.SystemVMDefaultHypervisor.value());
 
         final DataCenterVO dc = _dcDao.findById(zoneId);
         if (dc == null) {
@@ -4313,7 +4308,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         return new ConfigKey<?>[] {
                 KvmSshToAgentEnabled,
                 HOST_MAINTENANCE_LOCAL_STRATEGY,
-                SystemVmPreferredArchitecture
+                SystemVmPreferredArchitecture,
+                SystemVMDefaultHypervisor
         };
     }
 }
