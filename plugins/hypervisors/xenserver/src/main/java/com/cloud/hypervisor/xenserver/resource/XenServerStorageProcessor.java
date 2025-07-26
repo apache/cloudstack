@@ -77,6 +77,7 @@ import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.resource.StorageProcessor;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.storage.S3.ClientOptions;
 import com.google.common.annotations.VisibleForTesting;
@@ -1255,7 +1256,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
             final String folder = destPath;
             String finalPath = null;
 
-            final String localMountPoint = BaseMountPointOnHost + File.separator + UUID.nameUUIDFromBytes(secondaryStorageUrl.getBytes()).toString();
+            final String localMountPoint = BaseMountPointOnHost + File.separator + UuidUtils.nameUUIDFromBytes(secondaryStorageUrl.getBytes()).toString();
             if (fullbackup) {
                 // the first snapshot is always a full snapshot
 

@@ -26,7 +26,6 @@ import static org.mockito.Mockito.times;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.UUID;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.xmlrpc.XmlRpcException;
@@ -41,6 +40,7 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
@@ -310,7 +310,7 @@ public class Xenserver625StorageProcessorTest {
         String uuid = "hostUuid";
         Mockito.when(citrixResourceBase._host.getUuid()).thenReturn(uuid);
 
-        String srUuid = UUID.nameUUIDFromBytes(pathMock.getBytes()).toString();
+        String srUuid = UuidUtils.nameUUIDFromBytes(pathMock.getBytes()).toString();
 
         Host hostMock = Mockito.mock(Host.class);
 
@@ -337,7 +337,7 @@ public class Xenserver625StorageProcessorTest {
 
         SR srMock = Mockito.mock(SR.class);
         Mockito.doReturn(srMock).when(xenserver625StorageProcessor).retrieveAlreadyConfiguredSrWithoutException(connectionMock, pathMock);
-        String srUuid = UUID.nameUUIDFromBytes(pathMock.getBytes()).toString();
+        String srUuid = UuidUtils.nameUUIDFromBytes(pathMock.getBytes()).toString();
 
         Host hostMock = Mockito.mock(Host.class);
 
@@ -368,7 +368,7 @@ public class Xenserver625StorageProcessorTest {
         Mockito.when(citrixResourceBase._host.getUuid()).thenReturn(uuid);
 
         SR srMock = Mockito.mock(SR.class);
-        String srUuid = UUID.nameUUIDFromBytes(pathMock.getBytes()).toString();
+        String srUuid = UuidUtils.nameUUIDFromBytes(pathMock.getBytes()).toString();
 
         Host hostMock = Mockito.mock(Host.class);
 

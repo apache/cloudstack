@@ -5881,7 +5881,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public static String generateSecretUUIDFromString(String seed) {
-        return UUID.nameUUIDFromBytes(seed.getBytes()).toString();
+        return UuidUtils.nameUUIDFromBytes(seed.getBytes()).toString();
     }
 
     /**
