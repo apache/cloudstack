@@ -573,14 +573,14 @@ public class UserVmManagerImplTest {
         Mockito.verify(userVmVoMock, Mockito.times(cleanUpDetails || isDetailsEmpty ? 0 : 1)).setDetails(details);
         Mockito.verify(userVmDetailsDao, Mockito.times(cleanUpDetails ? 1 : 0)).removeDetail(vmId, "existingdetail");
         Mockito.verify(userVmDetailsDao, Mockito.times(0)).removeDetail(vmId, "systemdetail");
-        Mockito.verify(userVmDao, Mockito.times(cleanUpDetails || isDetailsEmpty ? 0 : 1)).saveDetails(userVmVoMock);
+        Mockito.verify(userVmDetailsDao, Mockito.times(cleanUpDetails || isDetailsEmpty ? 0 : 1)).saveDetails(userVmVoMock);
         Mockito.verify(userVmManagerImpl, Mockito.times(0)).updateDisplayVmFlag(false, vmId, userVmVoMock);
     }
 
     private void configureDoNothingForDetailsMethod() {
         Mockito.lenient().doNothing().when(userVmManagerImpl).updateDisplayVmFlag(false, vmId, userVmVoMock);
         Mockito.doNothing().when(userVmDetailsDao).removeDetail(anyLong(), anyString());
-        Mockito.doNothing().when(userVmDao).saveDetails(userVmVoMock);
+        Mockito.doNothing().when(userVmDetailsDao).saveDetails(userVmVoMock);
     }
 
     @SuppressWarnings("unchecked")

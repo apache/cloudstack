@@ -777,7 +777,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                         UserVmVO userVM = _userVMDao.findById(vm.getId());
                         _userVMDao.loadDetails(userVM);
                         userVM.setDetail(VmDetailConstants.MESSAGE_RESERVED_CAPACITY_FREED_FLAG, "true");
-                        _userVMDao.saveDetails(userVM);
+                        _userVmDetailsDao.saveDetails(userVM);
                     }
                 }
             }
@@ -1011,7 +1011,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
           _userVMDao.loadDetails(userVM);
           // free the message sent flag if it exists
           userVM.setDetail(VmDetailConstants.MESSAGE_RESERVED_CAPACITY_FREED_FLAG, "false");
-          _userVMDao.saveDetails(userVM);
+          _userVmDetailsDao.saveDetails(userVM);
       }
 
       return true;
