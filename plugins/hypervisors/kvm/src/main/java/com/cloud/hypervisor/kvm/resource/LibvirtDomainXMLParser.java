@@ -391,6 +391,7 @@ public class LibvirtDomainXMLParser {
             }
             extractCpuTuneDef(rootElement);
             extractCpuModeDef(rootElement);
+            extractBootDef(rootElement);
             return true;
         } catch (ParserConfigurationException e) {
             logger.debug(e.toString());
@@ -581,28 +582,25 @@ public class LibvirtDomainXMLParser {
         }
     }
 
-    private void extractBootDef(final Element rootElement) {
+    protected void extractBootDef(final Element rootElement) {
+        bootType = GuestDef.BootType.BIOS;
+        bootMode = GuestDef.BootMode.LEGACY;
         Element osElement = (Element) rootElement.getElementsByTagName("os").item(0);
-        if (osElement != null) {
-            NodeList loaderList = osElement.getElementsByTagName("loader");
-            if (loaderList.getLength() > 0) {
-                Element loader = (Element) loaderList.item(0);
-                String type = loader.getAttribute("type");
-                String secure = loader.getAttribute("secure");
-                if ("pflash".equalsIgnoreCase(type) || loader.getTextContent().toLowerCase().contains("uefi")) {
-                    bootType = GuestDef.BootType.UEFI;
-                } else {
-                    bootType = GuestDef.BootType.BIOS;
-                }
-                if ("yes".equalsIgnoreCase(secure)) {
-                    bootMode = GuestDef.BootMode.SECURE;
-                } else {
-                    bootMode = GuestDef.BootMode.LEGACY;
-                }
-            } else {
-                bootType = GuestDef.BootType.BIOS;
-                bootMode = GuestDef.BootMode.LEGACY;
-            }
+        if (osElement == null) {
+            return;
+        }
+        NodeList loaderList = osElement.getElementsByTagName("loader");
+        if (loaderList.getLength() == 0) {
+            return;
+        }
+        Element loader = (Element) loaderList.item(0);
+        String type = loader.getAttribute("type");
+        String secure = loader.getAttribute("secure");
+        if ("pflash".equalsIgnoreCase(type) || loader.getTextContent().toLowerCase().contains("uefi")) {
+            bootType = GuestDef.BootType.UEFI;
+        }
+        if ("yes".equalsIgnoreCase(secure)) {
+            bootMode = GuestDef.BootMode.SECURE;
         }
     }
 }
