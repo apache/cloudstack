@@ -145,9 +145,14 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
     @Param(description = "the type of the zone - core or edge", since = "4.18.0")
     String type;
 
+    @Deprecated(since = "4.21.0")
     @SerializedName(ApiConstants.NSX_ENABLED)
     @Param(description = "true, if zone is NSX enabled", since = "4.20.0")
     private boolean nsxEnabled = false;
+
+    @SerializedName(ApiConstants.PROVIDER)
+    @Param(description = "External network provider if any", since = "4.21.0")
+    private String provider = null;
 
     @SerializedName(ApiConstants.MULTI_ARCH)
     @Param(description = "true, if zone contains clusters and hosts from different CPU architectures", since = "4.20")
@@ -379,6 +384,14 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
 
     public boolean isNsxEnabled() {
         return nsxEnabled;
+    }
+
+    public String getProvider() {
+        return provider;
+    }
+
+    public void setProvider(String provider) {
+        this.provider = provider;
     }
 
     @Override

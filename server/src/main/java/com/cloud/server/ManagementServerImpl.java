@@ -44,8 +44,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.api.query.dao.ManagementServerJoinDao;
-import com.cloud.api.query.vo.ManagementServerJoinVO;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
@@ -639,6 +637,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationGroupVO;
 import org.apache.cloudstack.framework.config.impl.ConfigurationSubGroupVO;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
+import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.management.ManagementServerHost;
@@ -682,7 +681,9 @@ import com.cloud.alert.AlertManager;
 import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.query.dao.ManagementServerJoinDao;
 import com.cloud.api.query.dao.StoragePoolJoinDao;
+import com.cloud.api.query.vo.ManagementServerJoinVO;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
@@ -703,6 +704,7 @@ import com.cloud.dc.Pod;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanDetailsVO;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.ClusterDao;
@@ -711,6 +713,7 @@ import com.cloud.dc.dao.DomainVlanMapDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
@@ -758,12 +761,14 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVO;
+import com.cloud.network.dao.NetrisProviderDao;
 import com.cloud.network.dao.NetworkAccountDao;
 import com.cloud.network.dao.NetworkAccountVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.network.dao.NetworkDomainVO;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.dao.PublicIpQuarantineDao;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.org.Cluster;
@@ -848,9 +853,9 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.SecondaryStorageVmVO;
-import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
@@ -863,8 +868,8 @@ import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 
 public class ManagementServerImpl extends ManagerBase implements ManagementServer, Configurable {
     protected StateMachine2<State, VirtualMachine.Event, VirtualMachine> _stateMachine;
@@ -903,6 +908,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private DataCenterDao _dcDao;
     @Inject
     private VlanDao _vlanDao;
+    @Inject
+    private VlanDetailsDao vlanDetailsDao;
     @Inject
     private AccountVlanMapDao _accountVlanMapDao;
     @Inject
@@ -946,7 +953,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private StoragePoolJoinDao _poolJoinDao;
     @Inject
-    private NetworkDao networkDao;
+    protected NetworkDao networkDao;
     @Inject
     private StorageManager _storageMgr;
     @Inject
@@ -1016,7 +1023,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private NetworkModel _networkMgr;
     @Inject
-    private VpcDao _vpcDao;
+    protected VpcDao _vpcDao;
     @Inject
     private DomainVlanMapDao _domainVlanMapDao;
     @Inject
@@ -1048,6 +1055,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
     @Inject
     ResourceLimitService resourceLimitService;
+    @Inject
+    NsxProviderDao nsxProviderDao;
+    @Inject
+    NetrisProviderDao netrisProviderDao;
+    @Inject
+    ExtensionsManager extensionsManager;
 
     private LockControllerListener _lockControllerListener;
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
@@ -2632,6 +2645,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final String address = cmd.getIpAddress();
         final Boolean forLoadBalancing = cmd.isForLoadBalancing();
         final Map<String, String> tags = cmd.getTags();
+        boolean forProvider = cmd.isForProvider();
 
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("address", sb.entity().getAddress(), SearchCriteria.Op.EQ);
@@ -2677,13 +2691,21 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         if (isAllocated != null && isAllocated) {
             sb.and("allocated", sb.entity().getAllocatedTime(), SearchCriteria.Op.NNULL);
         }
+
+        if (forProvider) {
+            SearchBuilder<VlanDetailsVO> vlanDetailsSearch = vlanDetailsDao.createSearchBuilder();
+            vlanDetailsSearch.and("name", vlanDetailsSearch.entity().getName(), SearchCriteria.Op.IN);
+            vlanDetailsSearch.and("value", vlanDetailsSearch.entity().getValue(), SearchCriteria.Op.EQ);
+            sb.join("vlanDetailSearch", vlanDetailsSearch, sb.entity().getVlanId(), vlanDetailsSearch.entity().getResourceId(), JoinType.LEFT);
+        }
     }
 
     protected void setParameters(SearchCriteria<IPAddressVO> sc, final ListPublicIpAddressesCmd cmd, VlanType vlanType, Boolean isAllocated) {
         final Object keyword = cmd.getKeyword();
         final Long physicalNetworkId = cmd.getPhysicalNetworkId();
         final Long sourceNetworkId = cmd.getNetworkId();
-        final Long zone = cmd.getZoneId();
+        final Long vpcId = cmd.getVpcId();
+        Long zone = cmd.getZoneId();
         final String address = cmd.getIpAddress();
         final Long vlan = cmd.getVlanId();
         final Long ipId = cmd.getId();
@@ -2692,6 +2714,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Boolean forDisplay = cmd.getDisplay();
         final String state = cmd.getState();
         final Boolean forSystemVms = cmd.getForSystemVMs();
+        final boolean forProvider = cmd.isForProvider();
         final Map<String, String> tags = cmd.getTags();
 
         sc.setJoinParameters("vlanSearch", "vlanType", vlanType);
@@ -2756,6 +2779,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             sc.setParameters(FOR_SYSTEMVMS, false);
         } else {
             sc.setParameters(FOR_SYSTEMVMS, forSystemVms);
+        }
+
+        if (forProvider) {
+            sc.setJoinParameters("vlanDetailSearch", "name", ApiConstants.NETRIS_DETAIL_KEY, ApiConstants.NSX_DETAIL_KEY);
+            sc.setJoinParameters("vlanDetailSearch", "value", "true");
         }
     }
 
@@ -4629,6 +4657,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Map<String, Object> capabilities = new HashMap<>();
 
         final Account caller = getCaller();
+        final boolean isCallerAdmin = _accountService.isAdmin(caller.getId());
         boolean securityGroupsEnabled = false;
         boolean elasticLoadBalancerEnabled = false;
         boolean KVMSnapshotEnabled = false;
@@ -4657,10 +4686,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Integer apiLimitInterval = Integer.valueOf(_configDao.getValue(Config.ApiLimitInterval.key()));
         final Integer apiLimitMax = Integer.valueOf(_configDao.getValue(Config.ApiLimitMax.key()));
 
-        final boolean allowUserViewDestroyedVM = (QueryService.AllowUserViewDestroyedVM.valueIn(caller.getId()) | _accountService.isAdmin(caller.getId()));
-        final boolean allowUserExpungeRecoverVM = (UserVmManager.AllowUserExpungeRecoverVm.valueIn(caller.getId()) | _accountService.isAdmin(caller.getId()));
-        final boolean allowUserExpungeRecoverVolume = (VolumeApiServiceImpl.AllowUserExpungeRecoverVolume.valueIn(caller.getId()) | _accountService.isAdmin(caller.getId()));
-        final boolean allowUserForceStopVM = (UserVmManager.AllowUserForceStopVm.valueIn(caller.getId()) | _accountService.isAdmin(caller.getId()));
+        final boolean allowUserViewDestroyedVM = (QueryService.AllowUserViewDestroyedVM.valueIn(caller.getId()) | isCallerAdmin);
+        final boolean allowUserExpungeRecoverVM = (UserVmManager.AllowUserExpungeRecoverVm.valueIn(caller.getId()) | isCallerAdmin);
+        final boolean allowUserExpungeRecoverVolume = (VolumeApiServiceImpl.AllowUserExpungeRecoverVolume.valueIn(caller.getId()) | isCallerAdmin);
+        final boolean allowUserForceStopVM = (UserVmManager.AllowUserForceStopVm.valueIn(caller.getId()) | isCallerAdmin);
 
         final boolean allowUserViewAllDomainAccounts = (QueryService.AllowUserViewAllDomainAccounts.valueIn(caller.getDomainId()));
 
@@ -4709,6 +4738,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
         capabilities.put(ApiConstants.SHAREDFSVM_MIN_CPU_COUNT, fsVmMinCpu);
         capabilities.put(ApiConstants.SHAREDFSVM_MIN_RAM_SIZE, fsVmMinRam);
+        if (isCallerAdmin) {
+            capabilities.put(ApiConstants.EXTENSIONS_PATH, extensionsManager.getExtensionsPath());
+        }
 
         return capabilities;
     }

@@ -339,6 +339,11 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-hypervisor-external</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-storage-allocator-random</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -1090,6 +1095,11 @@
                 <dependency>
                     <groupId>org.apache.cloudstack</groupId>
                     <artifactId>cloud-plugin-network-nsx</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.cloudstack</groupId>
+                    <artifactId>cloud-plugin-network-netris</artifactId>
                     <version>${project.version}</version>
                 </dependency>
                 <dependency>

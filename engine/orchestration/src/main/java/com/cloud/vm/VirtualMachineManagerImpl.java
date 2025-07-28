@@ -72,6 +72,9 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.framework.ca.Certificate;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.extensions.dao.ExtensionDetailsDao;
+import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
+import org.apache.cloudstack.framework.extensions.vo.ExtensionDetailsVO;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
@@ -99,6 +102,7 @@ import org.apache.cloudstack.vm.UnmanagedVMsManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang3.ObjectUtils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -123,6 +127,8 @@ import com.cloud.agent.api.ModifyTargetsCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PlugNicAnswer;
 import com.cloud.agent.api.PlugNicCommand;
+import com.cloud.agent.api.PrepareExternalProvisioningAnswer;
+import com.cloud.agent.api.PrepareExternalProvisioningCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.RebootAnswer;
@@ -203,12 +209,14 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruBase;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.NetworkService;
 import com.cloud.network.Networks;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDetailVO;
@@ -335,6 +343,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Inject
     private HostDao _hostDao;
     @Inject
+    private HostDetailsDao hostDetailsDao;
+    @Inject
     private AlertManager _alertMgr;
     @Inject
     private GuestOSCategoryDao _guestOsCategoryDao;
@@ -417,6 +427,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Inject
     private DomainDao domainDao;
     @Inject
+    public NetworkService networkService;
+    @Inject
     ResourceCleanupService resourceCleanupService;
     @Inject
     VmWorkJobDao vmWorkJobDao;
@@ -433,6 +445,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @Inject
     private VolumeDataFactory volumeDataFactory;
+    @Inject
+    ExtensionsManager extensionsManager;
+    @Inject
+    ExtensionDetailsDao extensionDetailsDao;
 
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
@@ -594,8 +610,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (template.getFormat() == ImageFormat.ISO) {
                 volumeMgr.allocateRawVolume(Type.ROOT, rootVolumeName, rootDiskOfferingInfo.getDiskOffering(), rootDiskOfferingInfo.getSize(),
                         rootDiskOfferingInfo.getMinIops(), rootDiskOfferingInfo.getMaxIops(), vm, template, owner, null);
-            } else if (template.getFormat() == ImageFormat.BAREMETAL) {
-                logger.debug("%s has format [{}]. Skipping ROOT volume [{}] allocation.", template.toString(), ImageFormat.BAREMETAL, rootVolumeName);
+            } else if (Arrays.asList(ImageFormat.BAREMETAL, ImageFormat.EXTERNAL).contains(template.getFormat())) {
+                logger.debug("{} has format [{}]. Skipping ROOT volume [{}] allocation.", template, template.getFormat(), rootVolumeName);
             } else {
                 volumeMgr.allocateTemplatedVolumes(Type.ROOT, rootVolumeName, rootDiskOfferingInfo.getDiskOffering(), rootDiskSizeFinal,
                         rootDiskOfferingInfo.getMinIops(), rootDiskOfferingInfo.getMaxIops(), template, vm, owner, volume, snapshot);
@@ -653,6 +669,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     protected void advanceExpunge(VMInstanceVO vm) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
         if (isVmDestroyed(vm)) {
             return;
+        }
+
+        if (HypervisorType.External.equals(vm.getHypervisorType())) {
+            UserVmVO userVM = _userVmDao.findById(vm.getId());
+            _userVmDao.loadDetails(userVM);
+            userVM.setDetail(VmDetailConstants.EXPUNGE_EXTERNAL_VM, Boolean.TRUE.toString());
+            _userVmDao.saveDetails(userVM);
         }
 
         advanceStop(vm.getUuid(), VmDestroyForcestop.value());
@@ -1147,6 +1170,141 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         vmTO.setMetadataProductName(metadataProduct);
     }
 
+    protected void updateExternalVmDetailsFromPrepareAnswer(VirtualMachineTO vmTO, UserVmVO userVmVO,
+                            Map<String, String> newDetails) {
+        if (newDetails == null || newDetails.equals(vmTO.getDetails())) {
+            return;
+        }
+        vmTO.setDetails(newDetails);
+        userVmVO.setDetails(newDetails);
+        _userVmDao.saveDetails(userVmVO);
+    }
+
+    protected void updateExternalVmDataFromPrepareAnswer(VirtualMachineTO vmTO, VirtualMachineTO updatedTO) {
+        final String vncPassword = updatedTO.getVncPassword();
+        final Map<String, String> details = updatedTO.getDetails();
+        if ((vncPassword == null || vncPassword.equals(vmTO.getVncPassword())) &&
+                (details == null || details.equals(vmTO.getDetails()))) {
+            return;
+        }
+        UserVmVO userVmVO = _userVmDao.findById(vmTO.getId());
+        if (userVmVO == null) {
+            return;
+        }
+        if (vncPassword != null && !vncPassword.equals(userVmVO.getPassword())) {
+            userVmVO.setVncPassword(vncPassword);
+            vmTO.setVncPassword(vncPassword);
+        }
+        updateExternalVmDetailsFromPrepareAnswer(vmTO, userVmVO, updatedTO.getDetails());
+    }
+
+    protected void updateExternalVmNicsFromPrepareAnswer(VirtualMachineTO vmTO, VirtualMachineTO updatedTO) {
+        if (ObjectUtils.anyNull(vmTO.getNics(), updatedTO.getNics())) {
+            return;
+        }
+        Map<String, NicTO> originalNicsByUuid = new HashMap<>();
+        for (NicTO nic : vmTO.getNics()) {
+            originalNicsByUuid.put(nic.getNicUuid(), nic);
+        }
+        for (NicTO updatedNicTO : updatedTO.getNics()) {
+            final String nicUuid = updatedNicTO.getNicUuid();
+            NicTO originalNicTO = originalNicsByUuid.get(nicUuid);
+            if (originalNicTO == null) {
+                continue;
+            }
+            final String mac = updatedNicTO.getMac();
+            final String ip4 = updatedNicTO.getIp();
+            final String ip6 = updatedNicTO.getIp6Address();
+            if (Objects.equals(mac, originalNicTO.getMac()) &&
+                    Objects.equals(ip4, originalNicTO.getIp()) &&
+                    Objects.equals(ip6, originalNicTO.getIp6Address())) {
+                continue;
+            }
+            NicVO nicVO = _nicsDao.findByUuid(nicUuid);
+            if (nicVO == null) {
+                continue;
+            }
+            logger.debug("Updating {} during External VM preparation", nicVO);
+            if (ip4 != null && !ip4.equals(nicVO.getIPv4Address())) {
+                nicVO.setIPv4Address(ip4);
+                originalNicTO.setIp(ip4);
+            }
+            if (ip6 != null && !ip6.equals(nicVO.getIPv6Address())) {
+                nicVO.setIPv6Address(ip6);
+                originalNicTO.setIp6Address(ip6);
+            }
+            if (mac != null && !mac.equals(nicVO.getMacAddress())) {
+                nicVO.setMacAddress(mac);
+                originalNicTO.setMac(mac);
+            }
+            _nicsDao.update(nicVO.getId(), nicVO);
+        }
+    }
+
+    protected void updateExternalVmFromPrepareAnswer(VirtualMachineTO vmTO, VirtualMachineTO updatedTO) {
+        if (updatedTO == null) {
+            return;
+        }
+        updateExternalVmDataFromPrepareAnswer(vmTO, updatedTO);
+        updateExternalVmNicsFromPrepareAnswer(vmTO, updatedTO);
+        return;
+    }
+
+    protected void processPrepareExternalProvisioning(boolean firstStart, Host host,
+                 VirtualMachineProfile vmProfile, DataCenter dataCenter) throws CloudRuntimeException {
+        VirtualMachineTemplate template = vmProfile.getTemplate();
+        if (!firstStart || host == null || !HypervisorType.External.equals(host.getHypervisorType()) ||
+                template.getExtensionId() == null) {
+            return;
+        }
+        ExtensionDetailsVO detailsVO = extensionDetailsDao.findDetail(template.getExtensionId(),
+                ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM);
+        if (detailsVO == null || !Boolean.parseBoolean(detailsVO.getValue())) {
+            return;
+        }
+        logger.debug("Sending PrepareExternalProvisioningCommand for {}", vmProfile);
+        VirtualMachineTO virtualMachineTO = toVmTO(vmProfile);
+        if (virtualMachineTO.getNics() == null || virtualMachineTO.getNics().length == 0) {
+            List<NicVO> nics = _nicsDao.listByVmId(vmProfile.getId());
+            NicTO[] nicTOs = new NicTO[nics.size()];
+            nics.forEach(nicVO -> {
+                NicTO nicTO = toNicTO(_networkModel.getNicProfile(vmProfile.getVirtualMachine(), nicVO, dataCenter),
+                        HypervisorType.External);
+                nicTOs[nicTO.getDeviceId()] = nicTO;
+            });
+            virtualMachineTO.setNics(nicTOs);
+        }
+        Map<String, String> vmDetails = virtualMachineTO.getExternalDetails();
+        Map<String, Map<String, String>> externalDetails = extensionsManager.getExternalAccessDetails(host,
+                vmDetails);
+        PrepareExternalProvisioningCommand cmd = new PrepareExternalProvisioningCommand(virtualMachineTO);
+        cmd.setExternalDetails(externalDetails);
+        Answer answer = null;
+        CloudRuntimeException cre = new CloudRuntimeException("Failed to prepare VM");
+        try {
+            answer = _agentMgr.send(host.getId(), cmd);
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
+            logger.error("Failed PrepareExternalProvisioningCommand due to : {}", e.getMessage(), e);
+            throw cre;
+        }
+        if (answer == null) {
+            logger.error("Invalid answer received for PrepareExternalProvisioningCommand");
+            throw cre;
+        }
+        if (!(answer instanceof PrepareExternalProvisioningAnswer)) {
+            logger.error("Unexpected answer received for PrepareExternalProvisioningCommand: [result: {}, details: {}]",
+                    answer.getResult(), answer.getDetails());
+            throw cre;
+        }
+        PrepareExternalProvisioningAnswer prepareAnswer = (PrepareExternalProvisioningAnswer)answer;
+        if (!prepareAnswer.getResult()) {
+            logger.error("Unexpected answer received for PrepareExternalProvisioningCommand: [result: {}, details: {}]",
+                    answer.getResult(), answer.getDetails());
+            throw cre;
+        }
+        updateExternalVmFromPrepareAnswer(virtualMachineTO, prepareAnswer.getVirtualMachineTO());
+    }
+
     @Override
     public void orchestrateStart(final String vmUuid, final Map<VirtualMachineProfile.Param, Object> params, final DeploymentPlan planToDeploy, final DeploymentPlanner planner)
             throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
@@ -1157,6 +1315,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final User caller = cctxt.getCallingUser();
 
         VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
+
+        final boolean firstStart = vm.getUpdated() == 0;
 
         final VirtualMachineGuru vmGuru = getVmGuru(vm);
 
@@ -1257,7 +1417,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     }
                 }
 
-                final VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm, template, offering, owner, params);
+                VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm, template, offering, owner, params);
                 logBootModeParameters(params);
                 DeployDestination dest = null;
                 try {
@@ -1300,8 +1460,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                 try {
                     resetVmNicsDeviceId(vm.getId());
+
+                    processPrepareExternalProvisioning(firstStart, dest.getHost(), vmProfile, dest.getDataCenter());
+
                     _networkMgr.prepare(vmProfile, dest, ctx);
-                    if (vm.getHypervisorType() != HypervisorType.BareMetal) {
+                    if (vm.getHypervisorType() != HypervisorType.BareMetal && vm.getHypervisorType() != HypervisorType.External) {
                         checkAndAttemptMigrateVmAcrossCluster(vm, clusterId, dest.getStorageForDisks());
                         volumeMgr.prepare(vmProfile, dest);
                     }
@@ -1320,13 +1483,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     handlePath(vmTO.getDisks(), vm.getHypervisorType());
                     setVmNetworkDetails(vm, vmTO);
 
-
                     Commands cmds = new Commands(Command.OnError.Stop);
                     final Map<String, String> sshAccessDetails = _networkMgr.getSystemVMAccessDetails(vm);
                     final Map<String, String> ipAddressDetails = new HashMap<>(sshAccessDetails);
                     ipAddressDetails.remove(NetworkElementCommand.ROUTER_NAME);
 
                     StartCommand command = new StartCommand(vmTO, dest.getHost(), getExecuteInSequence(vm.getHypervisorType()));
+                    updateStartCommandWithExternalDetails(dest.getHost(), vmTO, command);
                     cmds.addCommand(command);
 
                     vmGuru.finalizeDeployment(cmds, vmProfile, dest, ctx);
@@ -1497,6 +1660,53 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (startedVm == null) {
             throw new CloudRuntimeException("Unable to start instance '" + vm.getHostName() + "' (" + vm.getUuid() + "), see management server log for details");
         }
+    }
+
+    protected void updateStartCommandWithExternalDetails(Host host, VirtualMachineTO vmTO, StartCommand command) {
+        if (!HypervisorType.External.equals(host.getHypervisorType())) {
+            return;
+        }
+        Map<String, String> vmExternalDetails = vmTO.getExternalDetails();
+        for (NicTO nic : vmTO.getNics()) {
+            if (!nic.isDefaultNic()) {
+                continue;
+            }
+            vmExternalDetails.put(VmDetailConstants.CLOUDSTACK_VLAN, networkService.getNicVlanValueForExternalVm(nic));
+        }
+        Map<String, Map<String, String>> externalDetails = extensionsManager.getExternalAccessDetails(host, vmExternalDetails);
+        command.setExternalDetails(externalDetails);
+    }
+
+    protected void updateStopCommandForExternalHypervisorType(final HypervisorType hypervisorType,
+                  final VirtualMachineProfile vmProfile, final StopCommand stopCommand) {
+        if (!HypervisorType.External.equals(hypervisorType) || vmProfile.getHostId() == null) {
+            return;
+        }
+        Host host = _hostDao.findById(vmProfile.getHostId());
+        if (host == null) {
+            return;
+        }
+        VirtualMachineTO vmTO = ObjectUtils.defaultIfNull(stopCommand.getVirtualMachine(), toVmTO(vmProfile));
+        if (MapUtils.isEmpty(vmTO.getGuestOsDetails())) {
+            vmTO.setGuestOsDetails(null);
+        }
+        if (MapUtils.isEmpty(vmTO.getExtraConfig())) {
+            vmTO.setExtraConfig(null);
+        }
+        if (MapUtils.isEmpty(vmTO.getNetworkIdToNetworkNameMap())) {
+            vmTO.setNetworkIdToNetworkNameMap(null);
+        }
+        Map<String, Map<String, String>> externalDetails = extensionsManager.getExternalAccessDetails(host, vmTO.getExternalDetails());
+        stopCommand.setVirtualMachine(vmTO);
+        stopCommand.setExternalDetails(externalDetails);
+    }
+
+    protected void updateRebootCommandWithExternalDetails(Host host, VirtualMachineTO vmTO, RebootCommand rebootCmd) {
+        if (!HypervisorType.External.equals(host.getHypervisorType())) {
+            return;
+        }
+        Map<String, Map<String, String>> externalDetails = extensionsManager.getExternalAccessDetails(host, vmTO.getExternalDetails());
+        rebootCmd.setExternalDetails(externalDetails);
     }
 
     public void setVmNetworkDetails(VMInstanceVO vm, VirtualMachineTO vmTO) {
@@ -1886,7 +2096,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     protected boolean sendStop(final VirtualMachineGuru guru, final VirtualMachineProfile profile, final boolean force, final boolean checkBeforeCleanup) {
         final VirtualMachine vm = profile.getVirtualMachine();
         Map<String, Boolean> vlanToPersistenceMap = getVlanToPersistenceMapForVM(vm.getId());
+
         StopCommand stpCmd = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), checkBeforeCleanup);
+        updateStopCommandForExternalHypervisorType(vm.getHypervisorType(), profile, stpCmd);
         if (MapUtils.isNotEmpty(vlanToPersistenceMap)) {
             stpCmd.setVlanToPersistenceMap(vlanToPersistenceMap);
         }
@@ -2017,7 +2229,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         try {
-            if (vm.getHypervisorType() != HypervisorType.BareMetal) {
+            if (vm.getHypervisorType() != HypervisorType.BareMetal && vm.getHypervisorType() != HypervisorType.External) {
                 volumeMgr.release(profile);
                 logger.debug("Successfully released storage resources for the VM {} in {} state", vm, state);
             }
@@ -2214,6 +2426,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         Map<String, Boolean> vlanToPersistenceMap = getVlanToPersistenceMapForVM(vm.getId());
         final StopCommand stop = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), false, cleanUpEvenIfUnableToStop);
         stop.setControlIp(getControlNicIpForVM(vm));
+        updateStopCommandForExternalHypervisorType(vm.getHypervisorType(), profile, stop);
         if (MapUtils.isNotEmpty(vlanToPersistenceMap)) {
             stop.setVlanToPersistenceMap(vlanToPersistenceMap);
         }
@@ -2263,6 +2476,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 } else {
                     logger.warn("Unable to actually stop {} but continue with release because it's a force stop", vm);
                     vmGuru.finalizeStop(profile, answer);
+                    if (HypervisorType.External.equals(profile.getHypervisorType())) {
+                        try {
+                            stateTransitTo(vm, VirtualMachine.Event.OperationSucceeded, null);
+                        } catch (final NoTransitionException e) {
+                            logger.warn("Unable to transition the state " + vm, e);
+                        }
+                    }
+
                 }
             } else {
                 if (VirtualMachine.systemVMs.contains(vm.getType())) {
@@ -3730,6 +3951,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             VirtualMachineTO vmTo = getVmTO(vm.getId());
             checkAndSetEnterSetupMode(vmTo, params);
             rebootCmd.setVirtualMachine(vmTo);
+            updateRebootCommandWithExternalDetails(host, vmTo, rebootCmd);
             cmds.addCommand(rebootCmd);
             _agentMgr.send(host.getId(), cmds);
 

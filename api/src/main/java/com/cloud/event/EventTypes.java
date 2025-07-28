@@ -29,13 +29,15 @@ import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.datacenter.DataCenterIpv4GuestSubnet;
+import org.apache.cloudstack.extension.Extension;
+import org.apache.cloudstack.extension.ExtensionCustomAction;
 import org.apache.cloudstack.ha.HAConfig;
 import org.apache.cloudstack.network.BgpPeer;
 import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap;
 import org.apache.cloudstack.quota.QuotaTariff;
-import org.apache.cloudstack.storage.sharedfs.SharedFS;
 import org.apache.cloudstack.storage.object.Bucket;
 import org.apache.cloudstack.storage.object.ObjectStore;
+import org.apache.cloudstack.storage.sharedfs.SharedFS;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.vm.schedule.VMSchedule;
 
@@ -499,6 +501,8 @@ public class EventTypes {
 
     public static final String EVENT_ZONE_VLAN_ASSIGN = "ZONE.VLAN.ASSIGN";
     public static final String EVENT_ZONE_VLAN_RELEASE = "ZONE.VLAN.RELEASE";
+    public static final String EVENT_ZONE_VXLAN_ASSIGN = "ZONE.VXLAN.ASSIGN";
+    public static final String EVENT_ZONE_VXLAN_RELEASE = "ZONE.VXLAN.RELEASE";
 
     // Projects
     public static final String EVENT_PROJECT_CREATE = "PROJECT.CREATE";
@@ -804,6 +808,7 @@ public class EventTypes {
     // Management Server
     public static final String EVENT_MANAGEMENT_SERVER_REMOVE = "MANAGEMENT.SERVER.REMOVE";
 
+    // VM Lease
     public static final String VM_LEASE_EXPIRED = "VM.LEASE.EXPIRED";
     public static final String VM_LEASE_DISABLED = "VM.LEASE.DISABLED";
     public static final String VM_LEASE_CANCELLED = "VM.LEASE.CANCELLED";
@@ -813,6 +818,19 @@ public class EventTypes {
     public static final String EVENT_GUI_THEME_CREATE = "GUI.THEME.CREATE";
     public static final String EVENT_GUI_THEME_REMOVE = "GUI.THEME.REMOVE";
     public static final String EVENT_GUI_THEME_UPDATE = "GUI.THEME.UPDATE";
+
+    // Extension
+    public static final String EVENT_EXTENSION_CREATE = "EXTENSION.CREATE";
+    public static final String EVENT_EXTENSION_UPDATE = "EXTENSION.UPDATE";
+    public static final String EVENT_EXTENSION_DELETE = "EXTENSION.DELETE";
+    public static final String EVENT_EXTENSION_RESOURCE_REGISTER = "EXTENSION.RESOURCE.REGISTER";
+    public static final String EVENT_EXTENSION_RESOURCE_UNREGISTER = "EXTENSION.RESOURCE.UNREGISTER";
+    public static final String EVENT_EXTENSION_CUSTOM_ACTION_ADD = "EXTENSION.CUSTOM.ACTION.ADD";
+    public static final String EVENT_EXTENSION_CUSTOM_ACTION_UPDATE = "EXTENSION.CUSTOM.ACTION.UPDATE";
+    public static final String EVENT_EXTENSION_CUSTOM_ACTION_DELETE = "EXTENSION.CUSTOM.ACTION.DELETE";
+
+    // Custom Action
+    public static final String EVENT_CUSTOM_ACTION = "CUSTOM.ACTION";
 
     static {
 
@@ -1322,6 +1340,16 @@ public class EventTypes {
         entityEventDetails.put(EVENT_GUI_THEME_CREATE, "GuiTheme");
         entityEventDetails.put(EVENT_GUI_THEME_REMOVE, "GuiTheme");
         entityEventDetails.put(EVENT_GUI_THEME_UPDATE, "GuiTheme");
+
+        // Extension
+        entityEventDetails.put(EVENT_EXTENSION_CREATE, Extension.class);
+        entityEventDetails.put(EVENT_EXTENSION_UPDATE, Extension.class);
+        entityEventDetails.put(EVENT_EXTENSION_DELETE, Extension.class);
+        entityEventDetails.put(EVENT_EXTENSION_RESOURCE_REGISTER, Extension.class);
+        entityEventDetails.put(EVENT_EXTENSION_RESOURCE_UNREGISTER, Extension.class);
+        entityEventDetails.put(EVENT_EXTENSION_CUSTOM_ACTION_ADD, ExtensionCustomAction.class);
+        entityEventDetails.put(EVENT_EXTENSION_CUSTOM_ACTION_UPDATE, ExtensionCustomAction.class);
+        entityEventDetails.put(EVENT_EXTENSION_CUSTOM_ACTION_DELETE, ExtensionCustomAction.class);
     }
 
     public static boolean isNetworkEvent(String eventType) {

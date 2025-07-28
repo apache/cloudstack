@@ -553,6 +553,10 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         if (template == null) {
             throw new InvalidParameterValueException("Unable to find template by id " + cmd.getTemplateId());
         }
+        if (HypervisorType.External.equals(template.getHypervisorType())) {
+            logger.error("Cannot create AutoScale Vm Profile with {} as it is an {} hypervisor template", template, HypervisorType.External);
+            throw new InvalidParameterValueException(String.format("Unable to create AutoScale Vm Profile with template: %s", template.getName()));
+        }
 
         // validations
         HashMap<String, String> deployParams = cmd.getDeployParamMap();
@@ -2250,8 +2254,9 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             Network.Provider provider = getLoadBalancerServiceProvider(asGroup.getLoadBalancerId());
             if (Network.Provider.Netscaler.equals(provider)) {
                 checkNetScalerAsGroup(asGroup);
-            } else if (Network.Provider.VirtualRouter.equals(provider) || Network.Provider.VPCVirtualRouter.equals(provider)) {
-                checkVirtualRouterAsGroup(asGroup);
+            } else if (Network.Provider.VirtualRouter.equals(provider) || Network.Provider.VPCVirtualRouter.equals(provider) ||
+                       Network.Provider.Netris.equals(provider)) {
+                checkAutoscalingGroup(asGroup);
             }
         }
     }
@@ -2631,7 +2636,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         countersNumberMap.put(key, countersNumberMap.get(key) + 1);
     }
 
-    protected void monitorVirtualRouterAsGroup(AutoScaleVmGroupVO asGroup) {
+    protected void monitorAutoscalingGroup(AutoScaleVmGroupVO asGroup) {
         if (!checkAsGroupMaxAndMinMembers(asGroup)) {
             return;
         }
@@ -2661,7 +2666,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
     }
 
-    protected void checkVirtualRouterAsGroup(AutoScaleVmGroupVO asGroup) {
+    protected void checkAutoscalingGroup(AutoScaleVmGroupVO asGroup) {
         AutoScaleVmGroupTO groupTO = lbRulesMgr.toAutoScaleVmGroupTO(asGroup);
 
         Map<String, Double> countersMap = new HashMap<>();
@@ -3011,8 +3016,9 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                     Network.Provider provider = getLoadBalancerServiceProvider(asGroup.getLoadBalancerId());
                     if (Network.Provider.Netscaler.equals(provider)) {
                         logger.debug("Skipping the monitoring on AutoScale VmGroup with Netscaler provider: " + asGroup);
-                    } else if (Network.Provider.VirtualRouter.equals(provider) || Network.Provider.VPCVirtualRouter.equals(provider)) {
-                        monitorVirtualRouterAsGroup(asGroup);
+                    } else if (Network.Provider.VirtualRouter.equals(provider) || Network.Provider.VPCVirtualRouter.equals(provider) ||
+                               Network.Provider.Netris.equals(provider)) {
+                        monitorAutoscalingGroup(asGroup);
                     }
                 }
             } catch (final Exception e) {

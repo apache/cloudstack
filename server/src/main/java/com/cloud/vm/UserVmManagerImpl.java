@@ -251,6 +251,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
@@ -966,6 +967,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (UserVmManager.SHAREDFSVM.equals(userVm.getUserVmType())) {
             throw new InvalidParameterValueException("Operation not supported on Shared FileSystem Instance");
         }
+        if (Hypervisor.HypervisorType.External.equals(userVm.getHypervisorType())) {
+            logger.error("Reset VM userdata not supported for {} as it is {} hypervisor instance",
+                    userVm, Hypervisor.HypervisorType.External.name());
+            throw new InvalidParameterValueException(String.format("Operation not supported for instance: %s",
+                    userVm.getName()));
+        }
         _accountMgr.checkAccess(caller, null, true, userVm);
 
         VMTemplateVO template = _templateDao.findByIdIncludingRemoved(userVm.getTemplateId());
@@ -1012,6 +1019,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
         if (UserVmManager.SHAREDFSVM.equals(userVm.getUserVmType())) {
             throw new InvalidParameterValueException("Operation not supported on Shared FileSystem Instance");
+        }
+        if (Hypervisor.HypervisorType.External.equals(userVm.getHypervisorType())) {
+            logger.error("Reset VM SSH key not supported for {} as it is {} hypervisor instance",
+                    userVm, Hypervisor.HypervisorType.External.name());
+            throw new InvalidParameterValueException(String.format("Operation not supported for instance: %s",
+                    userVm.getName()));
         }
 
         VMTemplateVO template = _templateDao.findByIdIncludingRemoved(userVm.getTemplateId());
@@ -1943,6 +1956,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         VirtualMachine vm = (VirtualMachine) this._entityMgr.findById(VirtualMachine.class, vmId);
         if (vm == null) {
             throw new InvalidParameterValueException("Unable to find VM's UUID");
+        }
+        if (Hypervisor.HypervisorType.External.equals(vm.getHypervisorType())) {
+            logger.error("Scale VM not supported for {} as it is {} hypervisor instance",
+                    vm, Hypervisor.HypervisorType.External.name());
+            throw new InvalidParameterValueException(String.format("Operation not supported for instance: %s",
+                    vm.getName()));
         }
         CallContext.current().setEventDetails("Vm Id: " + vm.getUuid());
 
@@ -4306,7 +4325,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
             }
 
-            if (hypervisorType != HypervisorType.BareMetal) {
+            if (hypervisorType != HypervisorType.BareMetal && hypervisorType != HypervisorType.External) {
                 // check if we have available pools for vm deployment
                 long availablePools = _storagePoolDao.countPoolsByStatus(StoragePoolStatus.Up);
                 if (availablePools < 1) {
@@ -6324,7 +6343,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
-        // Add extraConfig to user_vm_details table
+        // Add extraConfig to vm_instance_details table
         String extraConfig = cmd.getExtraConfig();
         if (StringUtils.isNotBlank(extraConfig)) {
             if (EnableAdditionalVmConfig.valueIn(callerId)) {
@@ -6482,7 +6501,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     /**
-     * Persist extra configuration data in the user_vm_details table as key/value pair
+     * Persist extra configuration data in the vm_instance_details table as key/value pair
      * @param decodedUrl String consisting of the extra config data to appended onto the vmx file for VMware instances
      */
     protected void persistExtraConfigVmware(String decodedUrl, UserVm vm) {
@@ -6506,7 +6525,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     /**
-     * Used to persist extra configuration settings in user_vm_details table for the XenServer hypervisor
+     * Used to persist extra configuration settings in vm_instance_details table for the XenServer hypervisor
      * persists config as key/value pair e.g key = extraconfig-1 , value="PV-bootloader=pygrub" and so on to extraconfig-N where
      * N denotes the number of extra configuration settings passed by user
      *
@@ -6587,9 +6606,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     /**
      * Persist extra configuration data on KVM
-     * persisted in the user_vm_details DB as extraconfig-1, and so on depending on the number of configurations
+     * persisted in the vm_instance_details DB as extraconfig-1, and so on depending on the number of configurations
      * For KVM, extra config is passed as XML
-     * @param decodedUrl string containing xml configuration to be persisted into user_vm_details table
+     * @param decodedUrl string containing xml configuration to be persisted into vm_instance_details table
      * @param vm
      */
     protected void persistExtraConfigKvm(String decodedUrl, UserVm vm) {
@@ -8525,6 +8544,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (UserVmManager.SHAREDFSVM.equals(vm.getUserVmType())) {
             throw new InvalidParameterValueException("Operation not supported on Shared FileSystem Instance");
         }
+        if (Hypervisor.HypervisorType.External.equals(vm.getHypervisorType())) {
+            logger.error("Restore VM not supported for {} as it is {} hypervisor instance",
+                    vm, Hypervisor.HypervisorType.External.name());
+            throw new InvalidParameterValueException(String.format("Operation not supported for instance: %s",
+                    vm.getName()));
+        }
         _accountMgr.checkAccess(caller, null, true, vm);
 
         VMTemplateVO template;
@@ -8550,6 +8575,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             } else if (diskOffering != null && diskOffering.getDiskSize() < templateSize) {
                 throw new InvalidParameterValueException(String.format("Disk size for selected offering [%s] is less than the template's size [%s]", diskOffering.getDiskSize(), templateSize));
             }
+        }
+
+        if (HypervisorType.External.equals(vm.getHypervisorType())) {
+            throw new InvalidParameterValueException("Restore VM instance operation is not allowed for External hypervisor type");
         }
 
         //check if there are any active snapshots on volumes associated with the VM

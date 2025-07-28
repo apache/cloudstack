@@ -14,14 +14,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.resource;
+package com.cloud.network;
 
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.vpc.VpcVO;
 
 import java.util.Objects;
 
-public class NsxOpObject {
+public class SDNProviderOpObject {
     VpcVO vpcVO;
     NetworkVO networkVO;
     long accountId;
@@ -116,8 +116,8 @@ public class NsxOpObject {
             return this;
         }
 
-        public NsxOpObject build() {
-            NsxOpObject object = new NsxOpObject();
+        public SDNProviderOpObject build() {
+            SDNProviderOpObject object = new SDNProviderOpObject();
             object.setVpcVO(this.vpcVO);
             object.setNetworkVO(this.networkVO);
             object.setDomainId(this.domainId);

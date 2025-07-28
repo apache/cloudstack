@@ -61,6 +61,9 @@
                   <a-tag v-if="resource.instancename">
                     {{ resource.instancename }}
                   </a-tag>
+                  <a-tag :color="$config.theme['@link-color']" v-if="$route.path.startsWith('/extension') && !resource.isuserdefined">
+                    {{ $t('label.inbuilt') }}
+                  </a-tag>
                   <a-tag v-if="resource.type">
                     <span v-if="['USER.LOGIN', 'USER.LOGOUT', 'ROUTER.HEALTH.CHECKS', 'FIREWALL.CLOSE', 'ALERT.SERVICE.DOMAINROUTER'].includes(resource.type)">{{ $t(resource.type.toLowerCase()) }}</span>
                     <span v-else>
@@ -482,7 +485,7 @@
               <div class="resource-detail-item__label">{{ $t('label.vmname') }}</div>
               <div class="resource-detail-item__details">
                 <desktop-outlined />
-                <router-link :to="{ path: createPathBasedOnVmType(resource.vmtype, resource.virtualmachineid) }">{{ resource.vmname || resource.vm || resource.virtualmachinename || resource.virtualmachineid }} </router-link>
+                <router-link :to="{ path: createPathBasedOnVmType(resource.vmtype || resource.virtualmachinetype, resource.virtualmachineid) }">{{ resource.vmname || resource.vm || resource.virtualmachinename || resource.virtualmachineid }} </router-link>
                 <status class="status status--end" :text="resource.vmstate" v-if="resource.vmstate"/>
               </div>
             </div>
@@ -700,6 +703,14 @@
                 <solution-outlined />
                 <router-link v-if="!isStatic && $router.resolve('/userdata/' + resource.userdataid).matched[0].redirect !== '/exception/404'" :to="{ path: '/userdata/' + resource.userdataid }">{{ resource.userdataname || resource.userdataid }}</router-link>
                 <span v-else>{{ resource.userdataname || resource.userdataid }}</span>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.extensionid">
+              <div class="resource-detail-item__label">{{ $t('label.extensionid') }}</div>
+              <div class="resource-detail-item__details">
+                <appstore-add-outlined />
+                <router-link v-if="$router.resolve('/extension/' + resource.extensionid).matched[0].redirect !== '/exception/404'" :to="{ path: '/extension/' + resource.extensionid }">{{ resource.extensionname || resource.extensionid }}</router-link>
+                <span v-else>{{ resource.extensionname || resource.extensionid }}</span>
               </div>
             </div>
             <div class="resource-detail-item" v-if="resource.owner">

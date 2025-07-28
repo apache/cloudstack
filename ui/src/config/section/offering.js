@@ -16,6 +16,7 @@
 // under the License.
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
+import { getFilteredExternalDetails } from '@/utils/extension'
 
 export default {
   name: 'offering',
@@ -40,7 +41,7 @@ export default {
       filters: ['active', 'inactive'],
       columns: ['name', 'displaytext', 'state', 'cpunumber', 'cpuspeed', 'memory', 'domain', 'zone', 'order'],
       details: () => {
-        var fields = ['name', 'id', 'displaytext', 'offerha', 'provisioningtype', 'storagetype', 'iscustomized', 'iscustomizediops', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'hosttags', 'tags', 'storageaccessgroups', 'storagetags', 'domain', 'zone', 'created', 'dynamicscalingenabled', 'diskofferingstrictness', 'encryptroot', 'purgeresources', 'leaseduration', 'leaseexpiryaction']
+        var fields = ['name', 'id', 'displaytext', 'offerha', 'provisioningtype', 'storagetype', 'iscustomized', 'iscustomizediops', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'hosttags', 'tags', 'storageaccessgroups', 'storagetags', 'domain', 'zone', 'created', 'dynamicscalingenabled', 'diskofferingstrictness', 'encryptroot', 'purgeresources', 'leaseduration', 'leaseexpiryaction', 'externaldetails']
         if (store.getters.apis.createServiceOffering &&
           store.getters.apis.createServiceOffering.params.filter(x => x.name === 'storagepolicy').length > 0) {
           fields.splice(6, 0, 'vspherestoragepolicy')
@@ -95,7 +96,12 @@ export default {
         label: 'label.edit',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
-        args: ['name', 'displaytext', 'storageaccessgroups', 'hosttags']
+        args: ['name', 'displaytext', 'storageatags', 'hosttags', 'externaldetails'],
+        mapping: {
+          externaldetails: {
+            transformedvalue: (record) => { return getFilteredExternalDetails(record.serviceofferingdetails) }
+          }
+        }
       }, {
         api: 'updateServiceOffering',
         icon: 'lock-outlined',
