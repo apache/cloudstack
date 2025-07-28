@@ -645,7 +645,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
     public boolean canHandle(VirtualMachineProfile vm, DeploymentPlan plan, ExcludeList avoid) {
         // check what the ServiceOffering says. If null, check the global config
         ServiceOffering offering = vm.getServiceOffering();
-        if (vm.getHypervisorType() != HypervisorType.BareMetal) {
+        if (vm.getHypervisorType() != HypervisorType.BareMetal && vm.getHypervisorType() != HypervisorType.External) {
             if (offering != null && offering.getDeploymentPlanner() != null) {
                 if (offering.getDeploymentPlanner().equals(getName())) {
                     return true;
