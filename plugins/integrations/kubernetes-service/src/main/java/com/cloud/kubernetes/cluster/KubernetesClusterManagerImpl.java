@@ -1604,6 +1604,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 if (zone.isSecurityGroupEnabled()) {
                     newCluster.setSecurityGroupId(finalSecurityGroup.getId());
                 }
+                newCluster.setCsiEnabled(cmd.getEnableCsi());
                 kubernetesClusterDao.persist(newCluster);
                 addKubernetesClusterDetails(newCluster, defaultNetwork, cmd);
                 return newCluster;

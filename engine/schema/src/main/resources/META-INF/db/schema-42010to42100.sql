@@ -203,3 +203,6 @@ SET `sort_key` = CASE
     ELSE `sort_key`
 END;
 -- End: Changes for Guest OS category cleanup
+
+-- Add csi_enabled column to kubernetes_cluster table - Move to 4.22
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.kubernetes', 'csi_enabled', 'TINYINT(1) unsigned NOT NULL DEFAULT 0 COMMENT "true if kubernetes cluster is using csi, false otherwise" ');

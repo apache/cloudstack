@@ -196,6 +196,7 @@ public class ApiConstants {
     public static final String DURATION = "duration";
     public static final String ELIGIBLE = "eligible";
     public static final String EMAIL = "email";
+    public static final String ENABLE_CSI = "enablecsi";
     public static final String END_ASN = "endasn";
     public static final String END_DATE = "enddate";
     public static final String END_IP = "endip";
