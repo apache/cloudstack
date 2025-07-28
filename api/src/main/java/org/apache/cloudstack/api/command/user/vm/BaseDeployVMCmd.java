@@ -272,6 +272,12 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
             description = "Lease expiry action, valid values are STOP and DESTROY")
     private String leaseExpiryAction;
 
+    @Parameter(name = ApiConstants.EXTERNAL_DETAILS,
+            type = CommandType.MAP,
+            description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].server.type=typevalue",
+            since = "4.21.0")
+    protected Map externalDetails;
+
     private List<VmDiskInfo> dataDiskInfoList;
 
     /////////////////////////////////////////////////////
@@ -352,9 +358,15 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
             customparameterMap.put(VmDetailConstants.NIC_PACKED_VIRTQUEUES_ENABLED, BooleanUtils.toStringTrueFalse(nicPackedVirtQueues));
         }
 
+        if (MapUtils.isNotEmpty(externalDetails)) {
+            customparameterMap.putAll(getExternalDetails());
+        }
         return customparameterMap;
     }
 
+    public Map<String, String> getExternalDetails() {
+        return convertExternalDetailsToMap(externalDetails);
+    }
 
     public ApiConstants.BootMode getBootMode() {
         if (StringUtils.isNotBlank(bootMode)) {

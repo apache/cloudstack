@@ -651,14 +651,14 @@ public class TemplateManagerImplTest {
     public void testRegisterTemplateWithTemplateType() {
         RegisterTemplateCmd cmd = Mockito.mock(RegisterTemplateCmd.class);
         when(cmd.getTemplateType()).thenReturn(Storage.TemplateType.SYSTEM.toString());
-        Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, true);
+        Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, true, Hypervisor.HypervisorType.KVM);
         Assert.assertEquals(Storage.TemplateType.SYSTEM, type);
     }
 
     @Test
     public void testRegisterTemplateWithoutTemplateType() {
         RegisterTemplateCmd cmd = Mockito.mock(RegisterTemplateCmd.class);
-        Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, true);
+        Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, true, Hypervisor.HypervisorType.KVM);
         Assert.assertEquals(Storage.TemplateType.USER, type);
     }
 
@@ -666,21 +666,21 @@ public class TemplateManagerImplTest {
     public void testRegisterTemplateWithSystemTemplateTypeByUser() {
         RegisterVnfTemplateCmd cmd = Mockito.mock(RegisterVnfTemplateCmd.class);
         when(cmd.getTemplateType()).thenReturn(Storage.TemplateType.SYSTEM.toString());
-        Storage.TemplateType type = templateManager.validateTemplateType(cmd, false, true);
+        Storage.TemplateType type = templateManager.validateTemplateType(cmd, false, true, Hypervisor.HypervisorType.KVM);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void testRegisterVnfTemplateWithTemplateType() {
         RegisterVnfTemplateCmd cmd = Mockito.mock(RegisterVnfTemplateCmd.class);
         when(cmd.getTemplateType()).thenReturn(Storage.TemplateType.SYSTEM.toString());
-        Storage.TemplateType type = templateManager.validateTemplateType(cmd, false, true);
+        Storage.TemplateType type = templateManager.validateTemplateType(cmd, false, true, Hypervisor.HypervisorType.KVM);
         Assert.assertEquals(Storage.TemplateType.VNF, type);
     }
 
     @Test
     public void testRegisterVnfTemplateWithoutTemplateType() {
         RegisterVnfTemplateCmd cmd = Mockito.mock(RegisterVnfTemplateCmd.class);
-        Storage.TemplateType type = templateManager.validateTemplateType(cmd, false, true);
+        Storage.TemplateType type = templateManager.validateTemplateType(cmd, false, true, Hypervisor.HypervisorType.KVM);
         Assert.assertEquals(Storage.TemplateType.VNF, type);
     }
 
@@ -688,14 +688,14 @@ public class TemplateManagerImplTest {
     public void testUpdateTemplateWithTemplateType() {
         UpdateTemplateCmd cmd = Mockito.mock(UpdateTemplateCmd.class);
         when(cmd.getTemplateType()).thenReturn(Storage.TemplateType.SYSTEM.toString());
-        Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, true);
+        Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, true, Hypervisor.HypervisorType.XenServer);
         Assert.assertEquals(Storage.TemplateType.SYSTEM, type);
     }
 
     @Test
     public void testUpdateTemplateWithoutTemplateType() {
         UpdateTemplateCmd cmd = Mockito.mock(UpdateTemplateCmd.class);
-        Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, true);
+        Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, true, Hypervisor.HypervisorType.KVM);
         Assert.assertNull(type);
     }
 
@@ -703,7 +703,7 @@ public class TemplateManagerImplTest {
     public void testUpdateTemplateWithInvalidTemplateType() {
         UpdateTemplateCmd cmd = Mockito.mock(UpdateTemplateCmd.class);
         when(cmd.getTemplateType()).thenReturn("invalidtype");
-        Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, true);
+        Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, true, Hypervisor.HypervisorType.VMware);
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -711,42 +711,42 @@ public class TemplateManagerImplTest {
         UpdateTemplateCmd cmd = Mockito.mock(UpdateTemplateCmd.class);
         when(cmd.getTemplateType()).thenReturn(Storage.TemplateType.USER.toString());
         when(cmd.isRoutingType()).thenReturn(true);
-        Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, true);
+        Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, true, Hypervisor.HypervisorType.KVM);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void testUpdateTemplateWithInvalidCrossZonesForSystem() {
         UpdateTemplateCmd cmd = Mockito.mock(UpdateTemplateCmd.class);
         when(cmd.getTemplateType()).thenReturn(Storage.TemplateType.SYSTEM.toString());
-        Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, false);
+        Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, false, Hypervisor.HypervisorType.KVM);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void testUpdateTemplateWithSystemTemplateTypeByUser() {
         UpdateVnfTemplateCmd cmd = Mockito.mock(UpdateVnfTemplateCmd.class);
         when(cmd.getTemplateType()).thenReturn(Storage.TemplateType.SYSTEM.toString());
-        Storage.TemplateType type = templateManager.validateTemplateType(cmd, false, true);
+        Storage.TemplateType type = templateManager.validateTemplateType(cmd, false, true, Hypervisor.HypervisorType.XenServer);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void testUpdateVnfTemplateWithTemplateType() {
         UpdateVnfTemplateCmd cmd = Mockito.mock(UpdateVnfTemplateCmd.class);
         when(cmd.getTemplateType()).thenReturn(Storage.TemplateType.SYSTEM.toString());
-        Storage.TemplateType type = templateManager.validateTemplateType(cmd, false, true);
+        Storage.TemplateType type = templateManager.validateTemplateType(cmd, false, true, Hypervisor.HypervisorType.KVM);
         Assert.assertEquals(Storage.TemplateType.VNF, type);
     }
 
     @Test
     public void testUpdateVnfTemplateWithoutTemplateType() {
         UpdateVnfTemplateCmd cmd = Mockito.mock(UpdateVnfTemplateCmd.class);
-        Storage.TemplateType type = templateManager.validateTemplateType(cmd, false, true);
+        Storage.TemplateType type = templateManager.validateTemplateType(cmd, false, true, Hypervisor.HypervisorType.KVM);
         Assert.assertNull(type);
     }
 
     @Test
     public void testDeleteTemplateWithTemplateType() {
         DeleteTemplateCmd cmd = new DeleteTemplateCmd();
-        Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, true);
+        Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, true, Hypervisor.HypervisorType.VMware);
         Assert.assertNull(type);
     }
 

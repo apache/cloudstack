@@ -282,10 +282,12 @@ export default {
       acquireLoading: false,
       acquireIp: null,
       listPublicIpAddress: [],
-      changeSourceNat: false
+      changeSourceNat: false,
+      zoneExtNetProvider: ''
     }
   },
-  created () {
+  async created () {
+    await this.fetchZones()
     this.fetchData()
   },
   watch: {
@@ -321,12 +323,25 @@ export default {
       } else {
         params.associatednetworkid = this.resource.id
       }
+      if (['nsx', 'netris'].includes(this.zoneExtNetProvider?.toLowerCase())) {
+        params.forprovider = true
+      }
       this.fetchLoading = true
       getAPI('listPublicIpAddresses', params).then(json => {
         this.totalIps = json.listpublicipaddressesresponse.count || 0
         this.ips = json.listpublicipaddressesresponse.publicipaddress || []
       }).finally(() => {
         this.fetchLoading = false
+      })
+    },
+    fetchZones () {
+      return new Promise((resolve, reject) => {
+        getAPI('listZones', {
+          id: this.resource.zoneid
+        }).then(json => {
+          this.zoneExtNetProvider = json?.listzonesresponse?.zone?.[0]?.provider || null
+          resolve(this.zoneExtNetProvider)
+        }).catch(reject)
       })
     },
     fetchListPublicIpAddress () {
@@ -337,6 +352,9 @@ export default {
           account: this.resource.account,
           forvirtualnetwork: true,
           allocatedonly: false
+        }
+        if (['nsx', 'netris'].includes(this.zoneExtNetProvider?.toLowerCase())) {
+          params.forprovider = true
         }
         getAPI('listPublicIpAddresses', params).then(json => {
           const listPublicIps = json.listpublicipaddressesresponse.publicipaddress || []

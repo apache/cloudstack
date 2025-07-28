@@ -208,6 +208,12 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
                 return new ConsoleEndpoint(false, null, "Cannot find VM with ID " + vmId);
             }
 
+            if (Hypervisor.HypervisorType.External.equals(vm.getHypervisorType())) {
+                logger.error("Console access for {} cannot be provided it is {} hypervisor instance", vm,
+                        Hypervisor.HypervisorType.External);
+                return new ConsoleEndpoint(false, null, "Console access to this instance cannot be provided");
+            }
+
             if (!checkSessionPermission(vm, account)) {
                 return new ConsoleEndpoint(false, null, "Permission denied");
             }

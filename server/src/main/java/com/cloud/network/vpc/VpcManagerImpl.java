@@ -48,8 +48,22 @@ import com.cloud.bgp.BGPService;
 import com.cloud.dc.ASNumberVO;
 import com.cloud.dc.dao.ASNumberDao;
 import com.cloud.dc.Vlan;
+import com.cloud.network.RemoteAccessVpn;
+import com.cloud.network.Site2SiteVpnConnection;
+import com.cloud.network.dao.NetrisProviderDao;
 import com.cloud.network.dao.NsxProviderDao;
+import com.cloud.network.dao.RemoteAccessVpnDao;
+import com.cloud.network.dao.RemoteAccessVpnVO;
+import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
+import com.cloud.network.dao.Site2SiteCustomerGatewayVO;
+import com.cloud.network.dao.Site2SiteVpnConnectionDao;
+import com.cloud.network.dao.Site2SiteVpnConnectionVO;
+import com.cloud.network.element.NetrisProviderVO;
+import com.cloud.network.element.NetworkACLServiceProvider;
 import com.cloud.network.element.NsxProviderVO;
+import com.cloud.network.rules.RulesManager;
+import com.cloud.network.vpn.RemoteAccessVpnService;
+import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.collect.Sets;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.alert.AlertService;
@@ -292,13 +306,29 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Inject
     private NsxProviderDao nsxProviderDao;
     @Inject
+    private NetrisProviderDao netrisProviderDao;
+    @Inject
     RoutedIpv4Manager routedIpv4Manager;
+    @Inject
+    DomainRouterDao domainRouterDao;
+    @Inject
+    RulesManager rulesManager;
+    @Inject
+    VMInstanceDao vmInstanceDao;
+    @Inject
+    RemoteAccessVpnDao remoteAccessVpnDao;
+    @Inject
+    RemoteAccessVpnService remoteAccessVpnMgr;
+    @Inject
+    Site2SiteVpnConnectionDao site2SiteVpnConnectionDao;
+    @Inject
+    Site2SiteCustomerGatewayDao site2SiteCustomerGatewayDao;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VpcChecker"));
     private List<VpcProvider> vpcElements = null;
     private final List<Service> nonSupportedServices = Arrays.asList(Service.SecurityGroup, Service.Firewall);
     private final List<Provider> supportedProviders = Arrays.asList(Provider.VPCVirtualRouter, Provider.NiciraNvp, Provider.InternalLbVm, Provider.Netscaler,
-            Provider.JuniperContrailVpcRouter, Provider.Ovs, Provider.BigSwitchBcf, Provider.ConfigDrive, Provider.Nsx);
+            Provider.JuniperContrailVpcRouter, Provider.Ovs, Provider.BigSwitchBcf, Provider.ConfigDrive, Provider.Nsx, Provider.Netris);
 
     int _cleanupInterval;
     int _maxNetworks;
@@ -315,6 +345,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         hTypes.add(HypervisorType.LXC);
         hTypes.add(HypervisorType.Hyperv);
         hTypes.add(HypervisorType.Ovm3);
+        hTypes.add(HypervisorType.External);
     }
 
     private void checkVpcDns(VpcOffering vpcOffering, String ip4Dns1, String ip4Dns2, String ip6Dns1, String ip6Dns2) {
@@ -354,7 +385,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     }
                     createVpcOffering(VpcOffering.defaultVPCOfferingName, VpcOffering.defaultVPCOfferingName, svcProviderMap,
                             true, State.Enabled, null, false,
-                            false, false, false, null, null, false);
+                            false, false, null, null, false);
                 }
 
                 // configure default vpc offering with Netscaler as LB Provider
@@ -374,7 +405,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         }
                     }
                     createVpcOffering(VpcOffering.defaultVPCNSOfferingName, VpcOffering.defaultVPCNSOfferingName,
-                            svcProviderMap, false, State.Enabled, null, false, false, false, false, null, null, false);
+                            svcProviderMap, false, State.Enabled, null, false, false, false, null, null, false);
 
                 }
 
@@ -395,7 +426,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         }
                     }
                     createVpcOffering(VpcOffering.redundantVPCOfferingName, VpcOffering.redundantVPCOfferingName, svcProviderMap, true, State.Enabled,
-                            null, false, false, true, false, null, null, false);
+                            null, false, false, true, null, null, false);
                 }
 
                 // configure default vpc offering with NSX as network service provider in NAT mode
@@ -412,7 +443,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         }
                     }
                     createVpcOffering(VpcOffering.DEFAULT_VPC_NAT_NSX_OFFERING_NAME, VpcOffering.DEFAULT_VPC_NAT_NSX_OFFERING_NAME, svcProviderMap, false,
-                            State.Enabled, null, false, false, false, true, NetworkOffering.NetworkMode.NATTED, null, false);
+                            State.Enabled, null, false, false, false, NetworkOffering.NetworkMode.NATTED, null, false);
 
                 }
 
@@ -430,7 +461,43 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         }
                     }
                     createVpcOffering(VpcOffering.DEFAULT_VPC_ROUTE_NSX_OFFERING_NAME, VpcOffering.DEFAULT_VPC_ROUTE_NSX_OFFERING_NAME, svcProviderMap, false,
-                            State.Enabled, null, false, false, false, true, NetworkOffering.NetworkMode.ROUTED, null, false);
+                            State.Enabled, null, false, false, false, NetworkOffering.NetworkMode.ROUTED, null, false);
+
+                }
+
+                // configure default vpc offering with Netris as network service provider in Route mode
+                if (_vpcOffDao.findByUniqueName(VpcOffering.DEFAULT_VPC_ROUTE_NETRIS_OFFERING_NAME) == null) {
+                    logger.debug(String.format("Creating default VPC offering for Netris network service provider %s in Routed mode", VpcOffering.DEFAULT_VPC_ROUTE_NETRIS_OFFERING_NAME));
+                    final Map<Service, Set<Provider>> svcProviderMap = new HashMap<>();
+                    final Set<Provider> defaultProviders = Set.of(Provider.Netris);
+                    for (final Service svc : getSupportedServices()) {
+                        if (List.of(Service.UserData, Service.Dhcp, Service.Dns).contains(svc)) {
+                            final Set<Provider> userDataProvider = Set.of(Provider.VPCVirtualRouter);
+                            svcProviderMap.put(svc, userDataProvider);
+                        } else if (List.of(Service.SourceNat, Service.NetworkACL).contains(svc)){
+                            svcProviderMap.put(svc, defaultProviders);
+                        }
+                    }
+                    createVpcOffering(VpcOffering.DEFAULT_VPC_ROUTE_NETRIS_OFFERING_NAME, VpcOffering.DEFAULT_VPC_ROUTE_NETRIS_OFFERING_NAME, svcProviderMap, false,
+                            State.Enabled, null, false, false, false, NetworkOffering.NetworkMode.ROUTED, null, false);
+
+                }
+
+                // configure default vpc offering with Netris as network service provider in NAT mode
+                if (_vpcOffDao.findByUniqueName(VpcOffering.DEFAULT_VPC_NAT_NETRIS_OFFERING_NAME) == null) {
+                    logger.debug(String.format("Creating default VPC offering for Netris network service provider %s in NAT mode", VpcOffering.DEFAULT_VPC_NAT_NETRIS_OFFERING_NAME));
+                    final Map<Service, Set<Provider>> svcProviderMap = new HashMap<>();
+                    final Set<Provider> defaultProviders = Set.of(Provider.Netris);
+                    for (final Service svc : getSupportedServices()) {
+                        if (List.of(Service.UserData, Service.Dhcp, Service.Dns, Service.Vpn).contains(svc)) {
+                            final Set<Provider> userDataProvider = Set.of(Provider.VPCVirtualRouter);
+                            svcProviderMap.put(svc, userDataProvider);
+                        } else {
+                            svcProviderMap.put(svc, defaultProviders);
+                        }
+                    }
+                    createVpcOffering(VpcOffering.DEFAULT_VPC_NAT_NETRIS_OFFERING_NAME, VpcOffering.DEFAULT_VPC_NAT_NETRIS_OFFERING_NAME, svcProviderMap, false,
+                            State.Enabled, null, false, false, false, NetworkOffering.NetworkMode.NATTED, null, false);
 
                 }
             }
@@ -490,7 +557,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final Long serviceOfferingId = cmd.getServiceOfferingId();
         final List<Long> domainIds = cmd.getDomainIds();
         final List<Long> zoneIds = cmd.getZoneIds();
-        final Boolean forNsx = cmd.isForNsx();
+        final String provider = cmd.getProvider();
+        final Boolean forNsx = Objects.nonNull(provider) && provider.equalsIgnoreCase("NSX");
         final String networkModeStr = cmd.getNetworkMode();
         final boolean enable = cmd.getEnable();
 
@@ -552,7 +620,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         return createVpcOffering(vpcOfferingName, displayText, supportedServices,
-                serviceProviderList, serviceCapabilityList, internetProtocol, serviceOfferingId, forNsx, networkMode,
+                serviceProviderList, serviceCapabilityList, internetProtocol, serviceOfferingId, provider, networkMode,
                 domainIds, zoneIds, (enable ? State.Enabled : State.Disabled), routingMode, specifyAsNumber);
     }
 
@@ -560,7 +628,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @ActionEvent(eventType = EventTypes.EVENT_VPC_OFFERING_CREATE, eventDescription = "creating vpc offering", create = true)
     public VpcOffering createVpcOffering(final String name, final String displayText, final List<String> supportedServices, final Map<String, List<String>> serviceProviders,
                                          final Map serviceCapabilityList, final NetUtils.InternetProtocol internetProtocol, final Long serviceOfferingId,
-                                         final Boolean forNsx, final NetworkOffering.NetworkMode networkMode, List<Long> domainIds, List<Long> zoneIds, State state,
+                                         final String externalProvider, final NetworkOffering.NetworkMode networkMode, List<Long> domainIds, List<Long> zoneIds, State state,
                                          NetworkOffering.RoutingMode routingMode, boolean specifyAsNumber) {
 
         if (!Ipv6Service.Ipv6OfferingCreationEnabled.value() && !(internetProtocol == null || NetUtils.InternetProtocol.IPv4.equals(internetProtocol))) {
@@ -644,7 +712,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         Service redundantRouterService = Service.SourceNat;
         if (CollectionUtils.isNotEmpty(sourceNatServiceProviders)) {
             svcProviderMap.put(Service.Gateway, sourceNatServiceProviders);
-        } else if (NetworkOffering.NetworkMode.ROUTED.equals(networkMode)) {
+        } else if (NetworkOffering.NetworkMode.ROUTED.equals(networkMode) && org.apache.commons.lang3.StringUtils.isBlank(externalProvider)) {
+            // For Routed mode, add the Gateway service except for external providers such as NSX, Netris to not override the svcProviderMap mapping
             svcProviderMap.put(Service.Gateway, Sets.newHashSet(Provider.VPCVirtualRouter));
             redundantRouterService = Service.Gateway;
         }
@@ -655,7 +724,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final boolean offersRegionLevelVPC = isVpcOfferingForRegionLevelVpc(serviceCapabilityList);
         final boolean redundantRouter = isVpcOfferingRedundantRouter(serviceCapabilityList, redundantRouterService);
         final VpcOfferingVO offering = createVpcOffering(name, displayText, svcProviderMap, false, state, serviceOfferingId, supportsDistributedRouter, offersRegionLevelVPC,
-                redundantRouter, forNsx, networkMode, routingMode, specifyAsNumber);
+                redundantRouter, networkMode, routingMode, specifyAsNumber);
 
         if (offering != null) {
             List<VpcOfferingDetailsVO> detailsVO = new ArrayList<>();
@@ -681,9 +750,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
     @DB
-    protected VpcOfferingVO createVpcOffering(final String name, final String displayText, final Map<Network.Service, Set<Network.Provider>> svcProviderMap,
+    protected VpcOfferingVO createVpcOffering(final String name, final String displayText, final Map<Service, Set<Provider>> svcProviderMap,
                                               final boolean isDefault, final State state, final Long serviceOfferingId, final boolean supportsDistributedRouter, final boolean offersRegionLevelVPC,
-                                              final boolean redundantRouter, Boolean forNsx, NetworkOffering.NetworkMode networkMode, NetworkOffering.RoutingMode routingMode, boolean specifyAsNumber) {
+                                              final boolean redundantRouter, NetworkOffering.NetworkMode networkMode, NetworkOffering.RoutingMode routingMode, boolean specifyAsNumber) {
 
         return Transaction.execute(new TransactionCallback<VpcOfferingVO>() {
             @Override
@@ -694,7 +763,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 if (state != null) {
                     offering.setState(state);
                 }
-                offering.setForNsx(forNsx);
                 offering.setNetworkMode(networkMode);
                 offering.setSpecifyAsNumber(specifyAsNumber);
                 if (Objects.nonNull(routingMode)) {
@@ -1309,11 +1377,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             cmd.getIp6Dns2(), cmd.isDisplay(), cmd.getPublicMtu(), cmd.getCidrSize(), cmd.getAsNumber(), bgpPeerIds, cmd.getUseVrIpResolver());
 
         String sourceNatIP = cmd.getSourceNatIP();
-        boolean forNsx = isVpcForNsx(vpc);
+        boolean forNsx = isVpcForProvider(Provider.Nsx, vpc);
+        boolean forNetris = isVpcForProvider(Provider.Netris, vpc);
         try {
-            if (sourceNatIP != null || forNsx) {
-                if (forNsx) {
-                    logger.info("Provided source NAT IP will be ignored in an NSX-enabled zone");
+            if (sourceNatIP != null || forNsx || forNetris) {
+                if (forNsx || forNetris) {
+                    logger.info("Provided source NAT IP will be ignored in an NSX-enabled or Netris-enabled zone");
                     sourceNatIP = null;
                 }
                 logger.info(String.format("Trying to allocate the specified IP [%s] as the source NAT of VPC [%s].", sourceNatIP, vpc));
@@ -1342,15 +1411,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         return NetworkOffering.RoutingMode.Dynamic == vpcOffering.getRoutingMode();
     }
 
-    private boolean isVpcForNsx(Vpc vpc) {
+    private boolean isVpcForProvider(Provider provider, Vpc vpc) {
         if (vpc == null) {
             return false;
         }
-        VpcOfferingServiceMapVO mapVO = _vpcOffSvcMapDao.findByServiceProviderAndOfferingId(Service.SourceNat.getName(), Provider.Nsx.getName(), vpc.getVpcOfferingId());
-        if (mapVO != null) {
-            logger.debug(String.format("The VPC %s is NSX-based and supports the %s service", vpc.getName(), Service.SourceNat.getName()));
-        }
-        return mapVO != null;
+        return _vpcOffSvcMapDao.isProviderForVpcOffering(provider, vpc.getVpcOfferingId());
     }
 
     private void allocateSourceNatIp(Vpc vpc, String sourceNatIP) {
@@ -1358,9 +1423,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         DataCenter zone = _dcDao.findById(vpc.getZoneId());
         // reserve this ip and then
         try {
-            if (isVpcForNsx(vpc) && org.apache.commons.lang3.StringUtils.isBlank(sourceNatIP)) {
+            if (isVpcForProvider(Provider.Nsx, vpc) && org.apache.commons.lang3.StringUtils.isBlank(sourceNatIP)) {
                 logger.debug(String.format("Reserving a source NAT IP for NSX VPC %s", vpc.getName()));
-                sourceNatIP = reserveSourceNatIpForNsxVpc(account, zone);
+                sourceNatIP = reserveSourceNatIpForProviderVpc(account, zone, Provider.Nsx);
+            } else if (isVpcForProvider(Provider.Netris, vpc) && org.apache.commons.lang3.StringUtils.isBlank(sourceNatIP)) {
+                logger.debug(String.format("Reserving a source NAT IP for Netris VPC %s", vpc.getName()));
+                sourceNatIP = reserveSourceNatIpForProviderVpc(account, zone, Provider.Netris);
             }
             IpAddress ip = _ipAddrMgr.allocateIp(account, false, CallContext.current().getCallingAccount(), CallContext.current().getCallingUser(), zone, null, sourceNatIP);
             this.associateIPToVpc(ip.getId(), vpc.getId());
@@ -1369,8 +1437,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
     }
 
-    private String reserveSourceNatIpForNsxVpc(Account account, DataCenter zone) throws ResourceAllocationException {
-        IpAddress ipAddress = _ntwkSvc.reserveIpAddressWithVlanDetail(account, zone, true, ApiConstants.NSX_DETAIL_KEY);
+    private String reserveSourceNatIpForProviderVpc(Account account, DataCenter zone, Provider provider) throws ResourceAllocationException {
+        String detailKey = provider == Provider.Nsx ? ApiConstants.NSX_DETAIL_KEY : ApiConstants.NETRIS_DETAIL_KEY;
+        IpAddress ipAddress = _ntwkSvc.reserveIpAddressWithVlanDetail(account, zone, true, detailKey);
         return ipAddress.getAddress().addr();
     }
 
@@ -1534,6 +1603,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         _accountMgr.checkAccess(caller, null, false, vpcToUpdate);
 
         final VpcVO vpc = vpcDao.createForUpdate(vpcId);
+        String previousVpcName = vpcToUpdate.getName();
 
         if (vpcName != null) {
             vpc.setName(vpcName);
@@ -1569,10 +1639,20 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             } else {
                 if (logger.isDebugEnabled()) {
                     logger.debug("no restart needed.");
+                    if (isVpcForProvider(Provider.Netris, vpcToUpdate)) {
+                        final String aclProvider = _vpcSrvcDao.getProviderForServiceInVpc(vpc.getId(), Service.NetworkACL);
+                        for (final VpcProvider provider : getVpcElements()) {
+                            if ((provider instanceof NetworkACLServiceProvider && provider.getName().equalsIgnoreCase(aclProvider))) {
+                                vpcToUpdate.setName(vpcName);
+                                provider.updateVpc(vpcToUpdate, previousVpcName);
+                                break;
+                            }
+                        }
+                    }
                 }
             }
             return vpcDao.findById(vpcId);
-        } else if (isVpcForNsx(vpcToUpdate)) {
+        } else if (isVpcForProvider(Provider.Nsx, vpcToUpdate)) {
             if (logger.isDebugEnabled()) {
                 logger.debug("no restart needed.");
             }
@@ -1591,14 +1671,15 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         if (! userIps.isEmpty()) {
             try {
                 _ipAddrMgr.updateSourceNatIpAddress(requestedIp, userIps);
-                if (isVpcForNsx(vpc)) {
-                    VpcProvider nsxElement = (VpcProvider) _ntwkModel.getElementImplementingProvider(Provider.Nsx.getName());
-                    if (nsxElement == null) {
-                        return true;
+                if (isVpcForProvider(Provider.Nsx, vpc) || isVpcForProvider(Provider.Netris, vpc)) {
+                    boolean isForNsx = _vpcOffSvcMapDao.isProviderForVpcOffering(Provider.Nsx, vpc.getVpcOfferingId());
+                    String providerName = isForNsx ? Provider.Nsx.getName() : Provider.Netris.getName();
+                    VpcProvider providerElement = (VpcProvider) _ntwkModel.getElementImplementingProvider(providerName);
+                    if (Objects.nonNull(providerElement)) {
+                        providerElement.updateVpcSourceNatIp(vpc, requestedIp);
+                        return false;
                     }
-                    nsxElement.updateVpcSourceNatIp(vpc, requestedIp);
-                    // The NSX source NAT IP change does not require to update the VPC VR
-                    return false;
+                    return true;
                 }
             } catch (Exception e) { // pokemon exception from transaction
                 String msg = String.format("Update of source NAT ip to %s for network \"%s\"/%s failed due to %s",
@@ -2054,7 +2135,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         // 5) When aclId is provided, verify that ACLProvider is supported by
         // network offering
-        if (aclId != null && !_ntwkModel.areServicesSupportedByNetworkOffering(guestNtwkOff.getId(), Service.NetworkACL) && !guestNtwkOff.isForNsx()) {
+        boolean isForNsx = _ntwkModel.isProviderForNetworkOffering(Provider.Nsx, guestNtwkOff.getId());
+        if (aclId != null && !_ntwkModel.areServicesSupportedByNetworkOffering(guestNtwkOff.getId(), Service.NetworkACL) && !isForNsx) {
             throw new InvalidParameterValueException("Cannot apply NetworkACL. Network Offering does not support NetworkACL service");
         }
 
@@ -2072,7 +2154,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         // 2) Only Isolated networks with Source nat service enabled can be
         // added to vpc
-        if (!guestNtwkOff.isForNsx()
+        boolean isForNsx = _ntwkModel.isProviderForNetworkOffering(Provider.Nsx, guestNtwkOff.getId());
+        boolean isForNNetris = _ntwkModel.isProviderForNetworkOffering(Provider.Netris, guestNtwkOff.getId());
+        if (!isForNsx && !isForNNetris
                 && !(guestNtwkOff.getGuestType() == GuestType.Isolated && (supportedSvcs.contains(Service.SourceNat) || supportedSvcs.contains(Service.Gateway)))) {
 
             throw new InvalidParameterValueException("Only network offerings of type " + GuestType.Isolated + " with service " + Service.SourceNat.getName()
@@ -2199,6 +2283,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         _s2sVpnMgr.cleanupVpnConnectionByVpc(vpc.getId());
         logger.debug("Cleaning up existed site to site VPN gateways");
         _s2sVpnMgr.cleanupVpnGatewayByVpc(vpc.getId());
+
+        List<RemoteAccessVpnVO> vpns = remoteAccessVpnDao.listByVpcId(vpc.getId());
+        for (RemoteAccessVpnVO vpn : vpns) {
+            logger.debug("Disabling remote access VPN on {}", vpn.getServerAddressId());
+            remoteAccessVpnMgr.destroyRemoteAccessVpnForIp(vpn.getServerAddressId(), caller, true);
+        }
 
         // 2) release all ip addresses
         final List<IPAddressVO> ipsToRelease = _ipAddressDao.listByAssociatedVpc(vpc.getId(), null);
@@ -2334,6 +2424,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     restartRequired = true;
                     return false;
                 }
+                reconfigStaticNatForVpcVr(vpcId);
                 return true;
             }
 
@@ -2840,28 +2931,38 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     public boolean applyStaticRoutesForVpc(final long vpcId) throws ResourceUnavailableException {
         final Account caller = CallContext.current().getCallingAccount();
-        final List<? extends StaticRoute> routes = _staticRouteDao.listByVpcId(vpcId);
+        final List<StaticRouteVO> routes = getVpcStaticRoutes(vpcId);
         return applyStaticRoutes(routes, caller, true);
     }
 
-    protected boolean applyStaticRoutes(final List<? extends StaticRoute> routes, final Account caller, final boolean updateRoutesInDB) throws ResourceUnavailableException {
-        final boolean success = true;
-        final List<StaticRouteProfile> staticRouteProfiles = new ArrayList<StaticRouteProfile>(routes.size());
-        final Map<Long, VpcGateway> gatewayMap = new HashMap<Long, VpcGateway>();
-        for (final StaticRoute route : routes) {
-            VpcGateway gateway = gatewayMap.get(route.getVpcGatewayId());
-            if (gateway == null) {
-                gateway = _vpcGatewayDao.findById(route.getVpcGatewayId());
-                gatewayMap.put(gateway.getId(), gateway);
+    @Override
+    public boolean applyStaticRouteForVpcVpnIfNeeded(final Long vpcId, boolean updateAllVpn) throws ResourceUnavailableException {
+        if (isProviderSupportServiceInVpc(vpcId, Service.Vpn, Network.Provider.VPCVirtualRouter)) {
+            boolean isVpcVRSourceNat = isProviderSupportServiceInVpc(vpcId, Service.SourceNat, Network.Provider.VPCVirtualRouter);
+            if (isVpcVRSourceNat) {
+                logger.debug("Skipping static route configuration as VPC VR is Source NAT");
+                return true;
             }
-            staticRouteProfiles.add(new StaticRouteProfile(route, gateway));
+            logger.debug("Configuring static route for VPC VR of VPC " + vpcId);
+            final Account caller = CallContext.current().getCallingAccount();
+            final List<StaticRouteVO> routes = getVpcStaticRoutes(vpcId, updateAllVpn);
+            return applyStaticRoutes(routes, caller, false);
         }
+        return true;
+    }
+
+    protected boolean applyStaticRoutes(final List<StaticRouteVO> routes, final Account caller, final boolean updateRoutesInDB) throws ResourceUnavailableException {
+        final boolean success = true;
+        final List<StaticRouteProfile> staticRouteProfiles = getVpcStaticRoutes(routes);
         if (!applyStaticRoutes(staticRouteProfiles)) {
             logger.warn("Routes are not completely applied");
             return false;
         } else {
             if (updateRoutesInDB) {
-                for (final StaticRoute route : routes) {
+                for (final StaticRouteVO route : routes) {
+                    if (route.isForVpn()) {
+                        continue;
+                    }
                     if (route.getState() == StaticRoute.State.Revoke) {
                         _staticRouteDao.remove(route.getId());
                         logger.debug("Removed route " + route + " from the DB");
@@ -2924,7 +3025,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @DB
     protected boolean revokeStaticRoutesForVpc(final Vpc vpc, final Account caller) throws ResourceUnavailableException {
         // get all static routes for the vpc
-        final List<StaticRouteVO> routes = _staticRouteDao.listByVpcId(vpc.getId());
+        final List<StaticRouteVO> routes = getVpcStaticRoutes(vpc.getId());
         logger.debug("Found {} to revoke for the vpc {}", routes.size(), vpc);
         if (!routes.isEmpty()) {
             // mark all of them as revoke
@@ -2945,23 +3046,46 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_STATIC_ROUTE_CREATE, eventDescription = "creating static route", create = true)
-    public StaticRoute createStaticRoute(final long gatewayId, final String cidr) throws NetworkRuleConflictException {
+    public StaticRoute createStaticRoute(final Long gatewayId, Long vpcId, final String nextHop, final String cidr) throws NetworkRuleConflictException {
         final Account caller = CallContext.current().getCallingAccount();
 
         // parameters validation
-        final VpcGateway gateway = _vpcGatewayDao.findById(gatewayId);
-        if (gateway == null) {
-            throw new InvalidParameterValueException("Invalid gateway id is given");
+        if (gatewayId == null && nextHop == null) {
+            throw new InvalidParameterValueException("one of gatewayId and nextHop must be specified");
         }
 
-        if (gateway.getState() != VpcGateway.State.Ready) {
-            throw new InvalidParameterValueException("Gateway is not in the " + VpcGateway.State.Ready + " state: " + gateway.getState());
+        if (gatewayId != null && nextHop != null) {
+            throw new InvalidParameterValueException("Only one of gatewayId and nextHop can be specified");
         }
 
-        final Vpc vpc = getActiveVpc(gateway.getVpcId());
+        if (gatewayId != null) {
+            final VpcGateway gateway = _vpcGatewayDao.findById(gatewayId);
+            if (gateway == null) {
+                throw new InvalidParameterValueException("Invalid gateway id is given");
+            }
+
+            if (gateway.getState() != VpcGateway.State.Ready) {
+                throw new InvalidParameterValueException("Gateway is not in the " + VpcGateway.State.Ready + " state: " + gateway.getState());
+            }
+
+            if (vpcId != null) {
+                if (!vpcId.equals(gateway.getVpcId())) {
+                    throw new InvalidParameterValueException("Invalid gateway id is given");
+                }
+            } else {
+                vpcId = gateway.getVpcId();
+            }
+        } else if (nextHop != null) {
+            if (vpcId == null) {
+                throw new InvalidParameterValueException("vpcId must be specified");
+            }
+        }
+
+        final Vpc vpc = getActiveVpc(vpcId);
         if (vpc == null) {
             throw new InvalidParameterValueException("Can't add static route to VPC that is being deleted");
         }
+
         _accountMgr.checkAccess(caller, null, false, vpc);
 
         if (!NetUtils.isValidIp4Cidr(cidr)) {
@@ -2984,10 +3108,15 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             throw new InvalidParameterValueException("The static gateway cidr overlaps with one of the denied routes of the zone the VPC belongs to");
         }
 
+        // 4) validate next hop
+        if (nextHop != null && !isNextHopValid(nextHop, vpc)) {
+            throw new InvalidParameterValueException(String.format("Next hop %s is invalid. It must be within VPC CIDR or on the same public or private network", nextHop));
+        }
+
         return Transaction.execute(new TransactionCallbackWithException<StaticRouteVO, NetworkRuleConflictException>() {
             @Override
             public StaticRouteVO doInTransaction(final TransactionStatus status) throws NetworkRuleConflictException {
-                StaticRouteVO newRoute = new StaticRouteVO(gateway.getId(), cidr, vpc.getId(), vpc.getAccountId(), vpc.getDomainId());
+                StaticRouteVO newRoute = new StaticRouteVO(gatewayId, cidr, vpc.getId(), vpc.getAccountId(), vpc.getDomainId(), nextHop);
                 logger.debug("Adding static route " + newRoute);
                 newRoute = _staticRouteDao.persist(newRoute);
 
@@ -3001,6 +3130,44 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 return newRoute;
             }
         });
+    }
+
+    private boolean isNextHopValid(String nextHop, Vpc vpc) {
+        // Scenario 1: VM as next hop
+        if (NetUtils.isIpWithInCidrRange(nextHop, vpc.getCidr())) {
+            logger.debug("The next Hop {} is valid as it is within the VPC cidr {}", nextHop, vpc.getCidr());
+            return true;
+        }
+        // Scenario 2: Another public IP as next hop
+        List<IPAddressVO> ips = _ipAddressDao.listByAssociatedVpc(vpc.getId(), null);
+        List<Long> vlanIds = new ArrayList<>();
+        for (IPAddressVO ip : ips) {
+            if (vlanIds.contains(ip.getVlanId())) {
+                continue;
+            }
+            VlanVO vlan = _vlanDao.findById(ip.getVlanId());
+            if (vlan != null) {
+                String vlanCidr = NetUtils.getCidrFromGatewayAndNetmask(vlan.getVlanGateway(), vlan.getVlanNetmask());
+                if (NetUtils.isIpWithInCidrRange(nextHop, vlanCidr)) {
+                    logger.debug("The next Hop {} is valid as it is on the same network as Public IP address {} ", nextHop, ip.getAddress());
+                    return true;
+                }
+            }
+            vlanIds.add(ip.getVlanId());
+        }
+
+        // Scenario 3: An IP on private gateway as next hop
+        List<VpcGatewayVO> vpcGateways = _vpcGatewayDao.listByVpcId(vpc.getId());
+        for (VpcGatewayVO vpcGateway : vpcGateways) {
+            String vpcGatewayCidr = NetUtils.getCidrFromGatewayAndNetmask(vpcGateway.getGateway(), vpcGateway.getNetmask());
+            if (NetUtils.isIpWithInCidrRange(nextHop, vpcGatewayCidr)) {
+                logger.debug("The next Hop {} is valid as it is on the same network as private gateway {} ", nextHop, vpcGateway.getIp4Address());
+                return true;
+            }
+        }
+
+        logger.debug("The next Hop {} is invalid", nextHop);
+        return false;
     }
 
     protected boolean isCidrDenylisted(final String cidr, final long zoneId) {
@@ -3208,7 +3375,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         logger.debug(String.format("Associating IP [%s] to VPC [%s]", ipToAssoc, vpc));
 
-        final boolean isSourceNatFinal = isSrcNatIpRequired(vpc.getVpcOfferingId()) && getExistingSourceNatInVpc(vpc.getAccountId(), vpcId, false) == null;
+        final boolean isSourceNatFinal = isSrcNatIpRequired(vpc.getVpcOfferingId()) && getExistingSourceNatInVpc(vpc.getAccountId(), vpcId, false, false) == null;
         try {
             IPAddressVO updatedIpAddress = Transaction.execute((TransactionCallbackWithException<IPAddressVO, CloudRuntimeException>) status -> {
                 final IPAddressVO ip = _ipAddressDao.findById(ipId);
@@ -3311,7 +3478,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         return guestNetwork;
     }
 
-    protected IPAddressVO getExistingSourceNatInVpc(final long ownerId, final long vpcId, final boolean forNsx) {
+    protected IPAddressVO getExistingSourceNatInVpc(final long ownerId, final long vpcId, final boolean forNsx, final boolean forNetris) {
 
         final List<IPAddressVO> addrs = listPublicIpsAssignedToVpc(ownerId, true, vpcId);
 
@@ -3322,7 +3489,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             // Account already has ip addresses
             for (final IPAddressVO addr : addrs) {
                 if (addr.isSourceNat()) {
-                    if (!forNsx) {
+                    if (!forNsx && !forNetris) {
                         sourceNatIp = addr;
                     } else {
                         if (addr.isForSystemVms()) {
@@ -3359,16 +3526,21 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final long dcId = vpc.getZoneId();
         NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(dcId);
         boolean forNsx = nsxProvider != null;
+        NetrisProviderVO netrisProvider = netrisProviderDao.findByZoneId(dcId);
+        boolean forNetris = netrisProvider != null;
 
-        final IPAddressVO sourceNatIp = getExistingSourceNatInVpc(owner.getId(), vpc.getId(), forNsx);
+        final IPAddressVO sourceNatIp = getExistingSourceNatInVpc(owner.getId(), vpc.getId(), forNsx, forNetris);
 
         PublicIp ipToReturn = null;
 
         if (sourceNatIp != null) {
             ipToReturn = PublicIp.createFromAddrAndVlan(sourceNatIp, _vlanDao.findById(sourceNatIp.getVlanId()));
         } else {
-            if (forNsx) {
-                ipToReturn = _ipAddrMgr.assignPublicIpAddress(dcId, podId, owner, Vlan.VlanType.VirtualNetwork, null, null, false, true);
+            if (forNsx || forNetris) {
+                // Assign VR (helper VM) public NIC IP address from the separate provider Public IP range/pool
+                // NSX: VR uses Public IP from the system VM range
+                // Netris: VR uses Public IP from the non system VM range
+                ipToReturn = _ipAddrMgr.assignPublicIpAddress(dcId, podId, owner, Vlan.VlanType.VirtualNetwork, null, null, false, forNsx);
             } else {
                 ipToReturn = _ipAddrMgr.assignDedicateIpAddress(owner, null, vpc.getId(), dcId, true);
             }
@@ -3411,10 +3583,22 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final Map<Network.Service, Set<Network.Provider>> vpcOffSvcProvidersMap = getVpcOffSvcProvidersMap(vpcOfferingId);
         return (Objects.nonNull(vpcOffSvcProvidersMap.get(Network.Service.SourceNat))
                 && (vpcOffSvcProvidersMap.get(Network.Service.SourceNat).contains(Network.Provider.VPCVirtualRouter)
-                || vpcOffSvcProvidersMap.get(Service.SourceNat).contains(Provider.Nsx)))
+                || vpcOffSvcProvidersMap.get(Service.SourceNat).contains(Provider.Nsx)
+                || vpcOffSvcProvidersMap.get(Service.SourceNat).contains(Provider.Netris)))
                 || (Objects.nonNull(vpcOffSvcProvidersMap.get(Network.Service.Gateway))
-                && vpcOffSvcProvidersMap.get(Service.Gateway).contains(Network.Provider.VPCVirtualRouter));
+                    && (vpcOffSvcProvidersMap.get(Service.Gateway).contains(Network.Provider.VPCVirtualRouter)
+                    || vpcOffSvcProvidersMap.get(Service.Gateway).contains(Provider.Nsx)
+                    || vpcOffSvcProvidersMap.get(Service.Gateway).contains(Network.Provider.Netris)));
     }
+
+     @Override
+     public boolean isSrcNatIpRequiredForVpcVr(long vpcOfferingId) {
+         final Map<Network.Service, Set<Network.Provider>> vpcOffSvcProvidersMap = getVpcOffSvcProvidersMap(vpcOfferingId);
+         return (Objects.nonNull(vpcOffSvcProvidersMap.get(Network.Service.SourceNat))
+                 && vpcOffSvcProvidersMap.get(Network.Service.SourceNat).contains(Network.Provider.VPCVirtualRouter))
+                 || (Objects.nonNull(vpcOffSvcProvidersMap.get(Network.Service.Gateway))
+                 && vpcOffSvcProvidersMap.get(Service.Gateway).contains(Network.Provider.VPCVirtualRouter));
+     }
 
     /**
      * rollingRestartVpc performs restart of routers of a VPC by first
@@ -3504,5 +3688,245 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     protected boolean isDefaultAcl(long aclId) {
         return aclId == NetworkACL.DEFAULT_ALLOW || aclId == NetworkACL.DEFAULT_DENY;
+    }
+
+    @Override
+    public List<StaticRouteProfile> getVpcStaticRoutes(final List<? extends StaticRoute> routes) {
+        final List<StaticRouteProfile> staticRouteProfiles = new ArrayList<>(routes.size());
+        final Map<Long, VpcGateway> gatewayMap = new HashMap<Long, VpcGateway>();
+        for (final StaticRoute route : routes) {
+            if (route.getVpcGatewayId() != null) {
+                VpcGateway gateway = gatewayMap.get(route.getVpcGatewayId());
+                if (gateway == null) {
+                    gateway = _entityMgr.findById(VpcGateway.class, route.getVpcGatewayId());
+                    gatewayMap.put(gateway.getId(), gateway);
+                }
+                staticRouteProfiles.add(new StaticRouteProfile(route, gateway));
+            } else {
+                staticRouteProfiles.add(new StaticRouteProfile(route));
+            }
+        }
+        return staticRouteProfiles;
+    }
+
+    @Override
+    public List<StaticRouteVO> getVpcStaticRoutes(Long vpcId) {
+        return getVpcStaticRoutes(vpcId, false);
+    }
+
+    public List<StaticRouteVO> getVpcStaticRoutes(Long vpcId, boolean updateAllVpn) {
+        final List<StaticRouteVO> routes = _staticRouteDao.listByVpcId(vpcId);
+
+        if (isProviderSupportServiceInVpc(vpcId, Service.Vpn, Network.Provider.VPCVirtualRouter)
+                && !isProviderSupportServiceInVpc(vpcId, Service.SourceNat, Network.Provider.VPCVirtualRouter)) {
+
+            Vpc vpc = vpcDao.findById(vpcId);
+            IPAddressVO ipAddressForVpcVR = getIpAddressForVpcVr(vpc, null, false);
+            String nextHop = getFirstGuestIpAddressForVpcVr(vpc.getId());
+
+            if (ipAddressForVpcVR != null && (updateAllVpn || nextHop != null)) {
+                // Add Static Routes for Remote Access VPN
+                List<StaticRouteVO> staticRoutesForRemoteAccessVpn = new ArrayList<>();
+                RemoteAccessVpnVO remoteAccessVpn = remoteAccessVpnDao.findByPublicIpAddress(ipAddressForVpcVR.getId());
+                if (remoteAccessVpn != null) {
+                    String ipRange = remoteAccessVpn.getIpRange();
+                    String startIp = ipRange.split("-")[0];
+                    String endIp = ipRange.split("-")[1];
+                    int cidrSize = NetUtils.getBigCidrSizeOfIpRange(NetUtils.ip2Long(startIp), NetUtils.ip2Long(endIp));
+                    String cidr = NetUtils.transformCidr(startIp + "/" + cidrSize);
+                    if (nextHop == null || RemoteAccessVpn.State.Removed.equals(remoteAccessVpn.getState())) {
+                        StaticRouteVO newRoute = new StaticRouteVO(cidr, vpc.getId(), vpc.getAccountId(), vpc.getDomainId(), null,
+                                StaticRoute.State.Revoke, true);
+                        staticRoutesForRemoteAccessVpn.add(newRoute);
+                    } else {
+                        StaticRoute.State state = updateAllVpn ? StaticRoute.State.Update : StaticRoute.State.Add;
+                        StaticRouteVO newRoute = new StaticRouteVO(cidr, vpc.getId(), vpc.getAccountId(), vpc.getDomainId(), nextHop,
+                                state, true);
+                        staticRoutesForRemoteAccessVpn.add(newRoute);
+                    }
+                }
+                logger.debug("Adding {} static routes for Remote Access VPN", staticRoutesForRemoteAccessVpn.size());
+                routes.addAll(staticRoutesForRemoteAccessVpn);
+
+                // Add Static Routes for Site-to-Site VPN connections
+                List<StaticRouteVO> staticRoutesForSite2SiteVpn = new ArrayList<>();
+                List<Site2SiteVpnConnectionVO> vpnConnections = site2SiteVpnConnectionDao.listByVpcId(vpcId);
+                for (Site2SiteVpnConnectionVO vpnConnection : vpnConnections) {
+                    Site2SiteCustomerGatewayVO customerGateway = site2SiteCustomerGatewayDao.findById(vpnConnection.getCustomerGatewayId());
+                    if (nextHop == null || Site2SiteVpnConnection.State.Removed.equals(vpnConnection.getState())) {
+                        for (String cidr: customerGateway.getGuestCidrList().split(",")) {
+                            StaticRouteVO newRoute = new StaticRouteVO(cidr, vpc.getId(), vpc.getAccountId(), vpc.getDomainId(), null,
+                                    StaticRoute.State.Revoke, true);
+                            staticRoutesForSite2SiteVpn.add(newRoute);
+                        }
+                    } else {
+                        StaticRoute.State state = updateAllVpn ? StaticRoute.State.Update : StaticRoute.State.Add;
+                        for (String cidr : customerGateway.getGuestCidrList().split(",")) {
+                            StaticRouteVO newRoute = new StaticRouteVO(cidr, vpc.getId(), vpc.getAccountId(), vpc.getDomainId(), nextHop,
+                                    state, true);
+                            staticRoutesForSite2SiteVpn.add(newRoute);
+                        }
+                    }
+                }
+                logger.debug("Adding {} static routes for {} Site-to-Site VPN connections",
+                        staticRoutesForSite2SiteVpn.size(), vpnConnections.size());
+                routes.addAll(staticRoutesForSite2SiteVpn);
+            }
+        }
+
+        logger.debug("Found {} static routes for VPC {}", routes.size(), vpcId);
+        return routes;
+    }
+
+    @Override
+    public boolean isProviderSupportServiceInVpc(long vpcId, Service service, Provider provider) {
+        return _vpcSrvcDao.canProviderSupportServiceInVpc(vpcId, service, provider);
+    }
+
+    @Override
+    public IPAddressVO getIpAddressForVpcVr(Vpc vpc, IPAddressVO ipAddress, boolean allocateIpIfNeeded) {
+        // Validate if the IP address is associated to a VPC VR
+        final List<IPAddressVO> ips = _ipAddressDao.listByAssociatedVpc(vpc.getId(), null);
+        IPAddressVO ipAddressForVR = ips.stream().filter(ip -> ip.isForRouter()).findFirst().orElse(null);
+        if (ipAddressForVR != null) {
+            if (ipAddress != null && ipAddressForVR.getId() != ipAddress.getId()) {
+                throw new InvalidParameterValueException(String.format("Cannot assign Public IP %s to VPC VR as %s has been associated to the VPC VR.",
+                        ipAddress.getAddress().addr(), ipAddressForVR.getAddress().addr()));
+            }
+            return ipAddressForVR;
+        } else if (ipAddress != null) {
+            if (ipAddress.isSourceNat()) {
+                throw new InvalidParameterValueException("Vpn service can not be configured on the Source NAT IP of VPC id=" + ipAddress.getVpcId());
+            }
+            return ipAddress;
+        }
+
+        if (allocateIpIfNeeded) {
+            Account account = _accountMgr.getAccount(vpc.getAccountId());
+            DataCenter zone = _dcDao.findById(vpc.getZoneId());
+            try {
+                IpAddress ip = _ipAddrMgr.allocateIp(account, false, CallContext.current().getCallingAccount(),
+                        CallContext.current().getCallingUser(), zone, null, null);
+                this.associateIPToVpc(ip.getId(), vpc.getId());
+                return _ipAddressDao.findById(ip.getId());
+            } catch (InsufficientAddressCapacityException | ResourceAllocationException |
+                     ResourceUnavailableException ex) {
+                throw new InvalidParameterValueException("Cannot assign Public IP to VPC VR: " + ex.getMessage());
+            }
+        } else {
+            return null;
+        }
+    }
+
+    /* This method configures the Static Nat for VPC VR if it is used for VPN but not Source NAT.
+     * (1) Update forRouter to true and one-to-one to true
+     * (2) Get current network and router ID/IP
+     * (3) Get new network and router ID/IP
+     * (4) If network or IP is changed (in case VPC tier is removed or shutdown), disable/apply Static NAT with new VM ID and VM IP
+     * (5) otherwise, If VPC VR ID does not exist or is changed, update the VM ID.
+     * (6) otherwise, do nothing
+     *
+     * This is used in the following processes
+     * (1) create remote access VPN
+     * (2) create S2S VPN
+     * (3) destroy Router
+     * (4) restart Vpc with cleanup
+     * (5) add VPC tier
+     * (6) delete VPC tier
+     * (7) remove VPC
+     */
+
+    @Override
+    public boolean configStaticNatForVpcVr(Vpc vpc, IPAddressVO ipAddress) {
+        logger.debug("Configuring static nat for VPC VR of VPC " + vpc.getId());
+        // (1) Update forRouter to true and one-to-one to true
+        if (!ipAddress.isForRouter()) {
+            ipAddress.setForRouter(true);
+            ipAddress.setOneToOneNat(true);
+            _ipAddressDao.update(ipAddress.getId(), ipAddress);
+        }
+
+        // (2) Get current network and router ID/IP
+        Long currentNetworkId = ipAddress.getAssociatedWithNetworkId();
+        Long currentRouterId = ipAddress.getAssociatedWithVmId();
+        String currentRouterIp = ipAddress.getVmIp();
+
+        // (3) Get new network and router ID/IP
+        Long newNetworkId = null;
+        Long newRouterId = null;
+        String newRouterIp = null;
+        List<NetworkVO> networks = _ntwkDao.listByVpc(vpc.getId());
+        for (NetworkVO network : networks) {
+            NicVO newNic = nicDao.findNonPlaceHolderByNetworkIdAndType(network.getId(), VirtualMachine.Type.DomainRouter);
+            if (newNic != null) {
+                logger.debug("Got VPC VR NIC for network {}: {}", network.getId(), newNic);
+                newNetworkId = network.getId();
+                newRouterId = newNic.getInstanceId();
+                newRouterIp = newNic.getIPv4Address();
+                break;
+            }
+        }
+
+        // Do nothing if the current and new network and router are Null
+        if (ObjectUtils.allNull(currentNetworkId, currentRouterId, newNetworkId, newRouterId)) {
+            logger.debug("The current and new network and router are Null, do nothing");
+            return true;
+        }
+
+        if (currentNetworkId == null || !currentNetworkId.equals(newNetworkId)) {
+            // (4) If network or IP is changed (in case VPC tier is removed or shutdown), disable/apply Static NAT with new VM ID and VM IP
+            if (currentNetworkId != null) {
+                // Disable Static NAT for current VPC VR
+                logger.debug("Disabling static nat for VPC VR (network: {}, router: {})", currentNetworkId, currentRouterId);
+                CallContext ctx = CallContext.current();
+                if (!rulesManager.applyStaticNatForIp(ipAddress.getId(), false, ctx.getCallingAccount(),true)) {
+                    throw new CloudRuntimeException("Failed to disable static nat for VPC VR");
+                }
+                ipAddress.setAssociatedWithNetworkId(null);
+                ipAddress.setAssociatedWithVmId(null);
+                ipAddress.setVmIp(null);
+                _ipAddressDao.update(ipAddress.getId(), ipAddress);
+            }
+            if (newNetworkId != null) {
+                // Enable static nat for the new VPC VR
+                logger.debug("Enabling static nat for VPC VR  (network: {}, router: {})", newNetworkId, newRouterId);
+                ipAddress.setAssociatedWithNetworkId(newNetworkId);
+                ipAddress.setAssociatedWithVmId(newRouterId);
+                ipAddress.setVmIp(newRouterIp);
+                _ipAddressDao.update(ipAddress.getId(), ipAddress);
+                CallContext ctx = CallContext.current();
+                if (!rulesManager.applyStaticNatForIp(ipAddress.getId(), false, ctx.getCallingAccount(),false)) {
+                    throw new CloudRuntimeException("Failed to enable static nat for VPC VR");
+                }
+            }
+        } else if (currentRouterId == null || !currentRouterId.equals(newRouterId)) {
+            // (5) otherwise, If VPC VR ID does not exist or is changed, update the VM ID.
+            ipAddress.setAssociatedWithVmId(newRouterId);
+            ipAddress.setVmIp(newRouterIp);
+            _ipAddressDao.update(ipAddress.getId(), ipAddress);
+        }
+        return true;
+    }
+
+    @Override
+    public void reconfigStaticNatForVpcVr(Long vpcId) {
+        Vpc vpc = vpcDao.findById(vpcId);
+        IPAddressVO ipAddressForVpcVR = getIpAddressForVpcVr(vpc, null, false);
+        if (ipAddressForVpcVR != null && !configStaticNatForVpcVr(vpc, ipAddressForVpcVR)) {
+            throw new CloudRuntimeException("Failed to reconfig static nat for VPC VR as part of the process");
+        }
+    }
+
+    private String getFirstGuestIpAddressForVpcVr(Long vpcId) {
+        String nextHop = null;
+        List<NetworkVO> networks = _ntwkDao.listByVpc(vpcId);
+        for (NetworkVO network : networks) {
+            NicVO nic = nicDao.findNonPlaceHolderByNetworkIdAndType(network.getId(), VirtualMachine.Type.DomainRouter);
+            if (nic != null) {
+                nextHop = nic.getIPv4Address();
+                break;
+            }
+        }
+        return nextHop;
     }
 }

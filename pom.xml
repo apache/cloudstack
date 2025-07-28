@@ -140,7 +140,7 @@
         <cs.gmavenplus.version>3.0.2</cs.gmavenplus.version>
         <cs.google-http-client>1.42.3</cs.google-http-client>
         <cs.groovy.version>2.4.17</cs.groovy.version>
-        <cs.gson.version>1.7.2</cs.gson.version>
+        <cs.gson.version>2.10.1</cs.gson.version>
         <cs.guava.version>31.1-jre</cs.guava.version>
         <cs.httpclient.version>4.5.14</cs.httpclient.version>
         <cs.httpcore.version>4.4.16</cs.httpcore.version>

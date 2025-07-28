@@ -1577,11 +1577,11 @@ public class AutoScaleManagerImplTest {
         when(asVmGroupMock.getState()).thenReturn(AutoScaleVmGroup.State.ENABLED);
         when(asVmGroupMock.getLoadBalancerId()).thenReturn(loadBalancerId);
         Mockito.doReturn(Network.Provider.VirtualRouter).when(autoScaleManagerImplSpy).getLoadBalancerServiceProvider(loadBalancerId);
-        Mockito.doNothing().when(autoScaleManagerImplSpy).checkVirtualRouterAsGroup(asVmGroupMock);
+        Mockito.doNothing().when(autoScaleManagerImplSpy).checkAutoscalingGroup(asVmGroupMock);
 
         autoScaleManagerImplSpy.checkAutoScaleVmGroup(asVmGroupMock);
 
-        Mockito.verify(autoScaleManagerImplSpy).checkVirtualRouterAsGroup(asVmGroupMock);
+        Mockito.verify(autoScaleManagerImplSpy).checkAutoscalingGroup(asVmGroupMock);
         Mockito.verify(autoScaleManagerImplSpy, never()).checkNetScalerAsGroup(asVmGroupMock);
     }
 
@@ -1590,11 +1590,11 @@ public class AutoScaleManagerImplTest {
         when(asVmGroupMock.getState()).thenReturn(AutoScaleVmGroup.State.ENABLED);
         when(asVmGroupMock.getLoadBalancerId()).thenReturn(loadBalancerId);
         Mockito.doReturn(Network.Provider.VPCVirtualRouter).when(autoScaleManagerImplSpy).getLoadBalancerServiceProvider(loadBalancerId);
-        Mockito.doNothing().when(autoScaleManagerImplSpy).checkVirtualRouterAsGroup(asVmGroupMock);
+        Mockito.doNothing().when(autoScaleManagerImplSpy).checkAutoscalingGroup(asVmGroupMock);
 
         autoScaleManagerImplSpy.checkAutoScaleVmGroup(asVmGroupMock);
 
-        Mockito.verify(autoScaleManagerImplSpy).checkVirtualRouterAsGroup(asVmGroupMock);
+        Mockito.verify(autoScaleManagerImplSpy).checkAutoscalingGroup(asVmGroupMock);
         Mockito.verify(autoScaleManagerImplSpy, never()).checkNetScalerAsGroup(asVmGroupMock);
     }
 
@@ -1607,7 +1607,7 @@ public class AutoScaleManagerImplTest {
 
         autoScaleManagerImplSpy.checkAutoScaleVmGroup(asVmGroupMock);
 
-        Mockito.verify(autoScaleManagerImplSpy, never()).checkVirtualRouterAsGroup(asVmGroupMock);
+        Mockito.verify(autoScaleManagerImplSpy, never()).checkAutoscalingGroup(asVmGroupMock);
         Mockito.verify(autoScaleManagerImplSpy).checkNetScalerAsGroup(asVmGroupMock);
     }
 
@@ -1989,7 +1989,7 @@ public class AutoScaleManagerImplTest {
         Mockito.doNothing().when(autoScaleManagerImplSpy).doScaleUp(vmGroupId, 1);
         Mockito.doNothing().when(autoScaleManagerImplSpy).cleanupAsVmGroupStatistics(groupTO);
 
-        autoScaleManagerImplSpy.checkVirtualRouterAsGroup(asVmGroupMock);
+        autoScaleManagerImplSpy.checkAutoscalingGroup(asVmGroupMock);
 
         Mockito.verify(autoScaleManagerImplSpy).doScaleUp(vmGroupId, 1);
     }
@@ -2005,7 +2005,7 @@ public class AutoScaleManagerImplTest {
         Mockito.doNothing().when(autoScaleManagerImplSpy).doScaleDown(vmGroupId);
         Mockito.doNothing().when(autoScaleManagerImplSpy).cleanupAsVmGroupStatistics(groupTO);
 
-        autoScaleManagerImplSpy.checkVirtualRouterAsGroup(asVmGroupMock);
+        autoScaleManagerImplSpy.checkAutoscalingGroup(asVmGroupMock);
 
         Mockito.verify(autoScaleManagerImplSpy).doScaleDown(vmGroupId);
     }
@@ -2225,7 +2225,7 @@ public class AutoScaleManagerImplTest {
         Mockito.doNothing().when(autoScaleManagerImplSpy).getVmStatsFromHosts(groupTO);
         Mockito.doNothing().when(autoScaleManagerImplSpy).getNetworkStatsFromVirtualRouter(groupTO);
 
-        autoScaleManagerImplSpy.monitorVirtualRouterAsGroup(asVmGroupMock);
+        autoScaleManagerImplSpy.monitorAutoscalingGroup(asVmGroupMock);
 
         Mockito.verify(autoScaleManagerImplSpy).getVmStatsFromHosts(groupTO);
         Mockito.verify(autoScaleManagerImplSpy).getNetworkStatsFromVirtualRouter(groupTO);
