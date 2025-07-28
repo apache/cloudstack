@@ -94,7 +94,8 @@ export default {
   },
   methods: {
     fetchData () {
-      if (!['cluster'].includes(this.$route.meta.name)) {
+      if (!['cluster'].includes(this.$route.meta.name) || !this.resource.extensionid) {
+        this.extension = {}
         return
       }
       this.loading = true
