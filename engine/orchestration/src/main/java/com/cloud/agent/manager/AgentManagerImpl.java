@@ -676,17 +676,17 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected Status investigate(final AgentAttache agent) {
         final Long hostId = agent.getId();
         final HostVO host = _hostDao.findById(hostId);
-        if (host != null && host.getType() != null && !host.getType().isVirtual()) {
-            logger.debug("Checking if agent ({}) is alive", host);
-            final Answer answer = easySend(hostId, new CheckHealthCommand());
-            if (answer != null && answer.getResult()) {
-                final Status status = Status.Up;
-                logger.debug("Agent ({}) responded to checkHealthCommand, reporting that agent is {}", host, status);
-                return status;
-            }
-            return _haMgr.investigate(hostId);
+        if (host == null || host.getType() == null || host.getType().isVirtual()) {
+            return Status.Alert;
         }
-        return Status.Alert;
+        logger.debug("Checking if agent ({}) is alive", host);
+        final Answer answer = easySend(hostId, new CheckHealthCommand());
+        if (answer != null && answer.getResult()) {
+            final Status status = Status.Up;
+            logger.debug("Agent ({}) responded to checkHealthCommand, reporting that agent is {}", host, status);
+            return status;
+        }
+        return _haMgr.investigate(hostId);
     }
 
     protected AgentAttache getAttache(final Long hostId) throws AgentUnavailableException {

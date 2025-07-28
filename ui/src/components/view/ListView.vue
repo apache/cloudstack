@@ -201,6 +201,9 @@
           >
             <a-tag style="margin-left: 5px">{{ $t('label.gpu.enabled') }}</a-tag>
           </span>
+          <span v-if="$route.path.startsWith('/extension') && !record.isuserdefined" style="padding-left: 10px;">
+            <a-tag :color="$config.theme['@link-color']">{{ $t('label.inbuilt') }}</a-tag>
+          </span>
         </span>
       </template>
       <template v-if="column.key === 'templatetype'">
@@ -473,6 +476,9 @@
           :text="text ? text : ''"
           displayText
         />
+      </template>
+      <template v-if="column.key === 'availability' && $route.path.startsWith('/extension')">
+        <status :text="text ? text : ''" displayText />
       </template>
       <template v-if="column.key === 'cpunumber'">
         <span>{{ record.serviceofferingdetails?.mincpunumber && record.serviceofferingdetails?.maxcpunumber ?
@@ -797,6 +803,10 @@
           :to="{ path: '/webhook/' + record.webhookid }"
         >{{ text }}</router-link>
         <span v-else> {{ text }} </span>
+      </template>
+      <template v-if="column.key === 'extensionname'">
+        <router-link v-if="$router.resolve('/extension/' + record.extensionid).matched[0].redirect !== '/exception/404'" :to="{ path: '/extension/' + record.extensionid }">{{ text }}</router-link>
+        <span v-else>  {{ text + record}} </span>
       </template>
       <template v-if="column.key === 'success'">
         <status :text="text ? 'success' : 'error'" />
@@ -1133,7 +1143,7 @@ export default {
         '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm', '/annotation',
         '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering',
         '/tungstenfabric', '/oauthsetting', '/guestos', '/guestoshypervisormapping', '/webhook', 'webhookdeliveries', '/quotatariff', '/sharedfs',
-        '/ipv4subnets', '/managementserver', '/gpucard', '/gpudevices', '/vgpuprofile'].join('|'))
+        '/ipv4subnets', '/managementserver', '/gpucard', '/gpudevices', '/vgpuprofile', '/extension'].join('|'))
         .test(this.$route.path)
     },
     enableGroupAction () {

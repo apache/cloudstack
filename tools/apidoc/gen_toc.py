@@ -268,6 +268,10 @@ known_categories = {
     'removeGuiTheme': 'GUI Theme',
     'Gpu': 'GPU',
     'Vgpu': 'GPU',
+    'Extension' : 'Extension',
+    'Extensions' : 'Extension',
+    'CustomAction' : 'Extension',
+    'CustomActions' : 'Extension'
 }
 
 

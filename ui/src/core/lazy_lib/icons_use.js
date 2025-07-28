@@ -19,6 +19,7 @@ import {
   AimOutlined,
   ApartmentOutlined,
   ApiOutlined,
+  AppstoreAddOutlined,
   AppstoreOutlined,
   ArrowDownOutlined,
   ArrowRightOutlined,
@@ -138,6 +139,7 @@ import {
   PictureOutlined,
   PieChartOutlined,
   PlayCircleOutlined,
+  PlaySquareOutlined,
   PlusCircleOutlined,
   PlusOutlined,
   PlusSquareOutlined,
@@ -192,6 +194,7 @@ export default {
     app.component('AimOutlined', AimOutlined)
     app.component('ApartmentOutlined', ApartmentOutlined)
     app.component('ApiOutlined', ApiOutlined)
+    app.component('AppstoreAddOutlined', AppstoreAddOutlined)
     app.component('AppstoreOutlined', AppstoreOutlined)
     app.component('ArrowDownOutlined', ArrowDownOutlined)
     app.component('ArrowRightOutlined', ArrowRightOutlined)
@@ -311,6 +314,7 @@ export default {
     app.component('PictureOutlined', PictureOutlined)
     app.component('PieChartOutlined', PieChartOutlined)
     app.component('PlayCircleOutlined', PlayCircleOutlined)
+    app.component('PlaySquareOutlined', PlaySquareOutlined)
     app.component('PlusCircleOutlined', PlusCircleOutlined)
     app.component('PlusOutlined', PlusOutlined)
     app.component('PlusSquareOutlined', PlusSquareOutlined)

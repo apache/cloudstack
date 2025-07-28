@@ -38,6 +38,7 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
 import org.apache.cloudstack.api.response.BackupOfferingResponse;
+import org.apache.cloudstack.api.response.ExtensionResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.IsoVmResponse;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -176,6 +177,11 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
             description = "Flag to indicate if the VMs should be filtered by GPU support. If set to true, only VMs that support GPU will be returned.",
             since = "4.21.0")
     private Boolean gpuEnabled;
+
+    @Parameter(name = ApiConstants.EXTENSION_ID, type = CommandType.UUID,
+            entityType = ExtensionResponse.class, description = "The ID of the Orchestrator extension for the VM",
+            since = "4.21.0")
+    private Long extensionId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -326,6 +332,10 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
 
     public Boolean getGpuEnabled() {
         return gpuEnabled;
+    }
+
+    public Long getExtensionId() {
+        return extensionId;
     }
 
     /////////////////////////////////////////////////////

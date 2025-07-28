@@ -89,6 +89,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -1044,5 +1045,55 @@ public class ConfigurationManagerImplTest {
 
         configurationManagerImplSpy.getConfigurationType(configuration.key());
         Mockito.verify(configurationManagerImplSpy).parseConfigurationTypeIntoString(configuration.type(), configurationVOMock);
+    }
+
+    @Test
+    public void serviceOfferingExternalDetailsNeedUpdateReturnsFalseWhenExternalDetailsIsEmpty() {
+        Map<String, String> offeringDetails = Map.of("key1", "value1");
+        Map<String, String> externalDetails = Collections.emptyMap();
+
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void serviceOfferingExternalDetailsNeedUpdateReturnsTrueWhenExistingExternalDetailsIsEmpty() {
+        Map<String, String> offeringDetails = Map.of("key1", "value1");
+        Map<String, String> externalDetails = Map.of("External:key1", "value1");
+
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void serviceOfferingExternalDetailsNeedUpdateReturnsTrueWhenSizesDiffer() {
+        Map<String, String> offeringDetails = Map.of("External:key1", "value1");
+        Map<String, String> externalDetails = Map.of("External:key1", "value1", "External:key2", "value2");
+
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void serviceOfferingExternalDetailsNeedUpdateReturnsTrueWhenValuesDiffer() {
+        Map<String, String> offeringDetails = Map.of("External:key1", "value1");
+        Map<String, String> externalDetails = Map.of("External:key1", "differentValue");
+
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void serviceOfferingExternalDetailsNeedUpdateReturnsFalseWhenDetailsMatch() {
+        Map<String, String> offeringDetails = Map.of("External:key1", "value1", "External:key2", "value2");
+        Map<String, String> externalDetails = Map.of("External:key1", "value1", "External:key2", "value2");
+
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails);
+
+        Assert.assertFalse(result);
     }
 }

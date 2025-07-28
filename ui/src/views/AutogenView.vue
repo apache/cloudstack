@@ -59,7 +59,7 @@
                     <template #suffixIcon><filter-outlined class="ant-select-suffix" /></template>
                     <a-select-option
                       v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) &&
-                      ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool', 'kubernetes', 'computeoffering', 'systemoffering', 'diskoffering', 'sharedfs'].includes($route.name) ||
+                      ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool', 'kubernetes', 'computeoffering', 'systemoffering', 'diskoffering', 'sharedfs', 'extension'].includes($route.name) ||
                       ['account'].includes($route.name)"
                       key="all"
                       :label="$t('label.all')"
@@ -471,6 +471,9 @@
                     {{ (opt.name && opt.type ? opt.name + ' (' + opt.type + ')' : opt.name || opt.description) }}
                   </a-select-option>
                 </a-select>
+                <details-input
+                  v-else-if="field.type==='map'"
+                  v-model:value="form[field.name]" />
                 <a-input-number
                   v-else-if="field.type==='long'"
                   v-focus="fieldIndex === firstIndex"
@@ -600,6 +603,7 @@ import OsLogo from '@/components/widgets/OsLogo'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import BulkActionProgress from '@/components/view/BulkActionProgress'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import DetailsInput from '@/components/widgets/DetailsInput'
 
 export default {
   name: 'Resource',
@@ -612,7 +616,8 @@ export default {
     BulkActionProgress,
     TooltipLabel,
     OsLogo,
-    ResourceIcon
+    ResourceIcon,
+    DetailsInput
   },
   mixins: [mixinDevice],
   provide: function () {
@@ -775,7 +780,8 @@ export default {
   },
   watch: {
     '$route' (to, from) {
-      if (to.fullPath !== from.fullPath && !to.fullPath.includes('action/') && to?.query?.tab !== 'browser') {
+      console.log('DEBUG - Route changed from', from.fullPath, 'to', to.fullPath)
+      if (to.fullPath !== from.fullPath && !to.fullPath.includes('/action/') && to?.query?.tab !== 'browser') {
         if ('page' in to.query) {
           this.page = Number(to.query.page)
           this.pageSize = Number(to.query.pagesize)
@@ -819,7 +825,7 @@ export default {
         return this.$route.query.filter
       }
       const routeName = this.$route.name
-      if ((this.projectView && routeName === 'vm') || (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) && ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool'].includes(routeName)) || ['account', 'guestnetwork', 'guestvlans', 'oauthsetting', 'guestos', 'guestoshypervisormapping', 'kubernetes', 'asnumbers', 'networkoffering'].includes(routeName)) {
+      if ((this.projectView && routeName === 'vm') || (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) && ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool'].includes(routeName)) || ['account', 'guestnetwork', 'guestvlans', 'oauthsetting', 'guestos', 'guestoshypervisormapping', 'kubernetes', 'asnumbers', 'networkoffering', 'extension'].includes(routeName)) {
         return 'all'
       }
       if (['publicip'].includes(routeName)) {
@@ -890,10 +896,13 @@ export default {
       const refreshed = ('irefresh' in params)
 
       params.listall = true
+
+      this.dataView = !!(this.$route?.params?.id || !!this.$route?.query?.dataView)
+
       if (this.$route.meta.params) {
         const metaParams = this.$route.meta.params
         if (typeof metaParams === 'function') {
-          Object.assign(params, metaParams())
+          Object.assign(params, metaParams(this.dataView))
         } else {
           Object.assign(params, metaParams)
         }
@@ -937,14 +946,9 @@ export default {
         'vpc', 'securitygroups', 'publicip', 'vpncustomergateway', 'template', 'iso', 'event', 'kubernetes', 'sharedfs',
         'autoscalevmgroup', 'vnfapp', 'webhook'].includes(this.$route.name)
 
-      if ((this.$route && this.$route.params && this.$route.params.id) || this.$route.query.dataView) {
-        this.dataView = true
-        if (!refreshed) {
-          this.resource = {}
-          this.$emit('change-resource', this.resource)
-        }
-      } else {
-        this.dataView = false
+      if (this.dataView && !refreshed) {
+        this.resource = {}
+        this.$emit('change-resource', this.resource)
       }
 
       if (this.dataView && ['Admin'].includes(this.$store.getters.userInfo.roletype) && this.routeName === 'volume') {
@@ -1551,6 +1555,15 @@ export default {
           this.form[field.name] = fieldValue
         } else if (field.type === 'boolean' && field.name === 'rebalance' && this.currentAction.api === 'cancelMaintenance') {
           this.form[field.name] = true
+        } else if (field.type === 'map') {
+          const transformedValue = this.currentAction.mapping?.[field.name]?.transformedvalue
+          if (typeof transformedValue === 'function') {
+            this.form[field.name] = transformedValue(this.resource)
+          } else if (typeof transformedValue === 'object' && transformedValue !== null) {
+            this.form[field.name] = { ...transformedValue }
+          } else {
+            this.form[field.name] = {}
+          }
         }
       })
     },
@@ -1751,6 +1764,10 @@ export default {
               } else {
                 params[key] = param.opts[input].name
               }
+            } else if (param.type === 'map' && typeof input === 'object') {
+              Object.entries(values.externaldetails).forEach(([key, value]) => {
+                params[param.name + '[0].' + key] = value
+              })
             } else {
               params[key] = input
             }
@@ -1946,6 +1963,12 @@ export default {
         }
       } else if (['computeoffering', 'systemoffering', 'diskoffering'].includes(this.$route.name)) {
         query.state = filter
+      } else if (['extension'].includes(this.$route.name)) {
+        if (filter === 'all') {
+          delete query.type
+        } else {
+          query.type = filter
+        }
       }
       query.filter = filter
       query.page = '1'
