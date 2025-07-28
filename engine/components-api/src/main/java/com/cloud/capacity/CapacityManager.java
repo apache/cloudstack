@@ -16,14 +16,11 @@
 // under the License.
 package com.cloud.capacity;
 
-import java.util.Map;
-
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.host.Host;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine;
@@ -130,6 +127,10 @@ public interface CapacityManager {
                     true,
                     ConfigKey.Scope.Zone);
 
+    ConfigKey<Integer> CapacityCalculateWorkers = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Integer.class,
+            "capacity.calculate.workers", "1",
+            "Number of worker threads to be used for capacities calculation", true);
+
     public boolean releaseVmCapacity(VirtualMachine vm, boolean moveFromReserved, boolean moveToReservered, Long hostId);
 
     void allocateVmCapacity(VirtualMachine vm, boolean fromLastHost);
@@ -140,12 +141,10 @@ public interface CapacityManager {
      * @param ram required RAM
      * @param cpuOverprovisioningFactor factor to apply to the actual host cpu
      */
-    boolean checkIfHostHasCapacity(long hostId, Integer cpu, long ram, boolean checkFromReservedCapacity, float cpuOverprovisioningFactor, float memoryOvercommitRatio,
+    boolean checkIfHostHasCapacity(Host host, Integer cpu, long ram, boolean checkFromReservedCapacity, float cpuOverprovisioningFactor, float memoryOvercommitRatio,
         boolean considerReservedCapacity);
 
     void updateCapacityForHost(Host host);
-
-    void updateCapacityForHost(Host host, Map<Long, ServiceOfferingVO> offeringsMap);
 
     /**
      * @param pool storage pool
@@ -163,12 +162,12 @@ public interface CapacityManager {
 
     /**
      * Check if specified host has capability to support cpu cores and speed freq
-     * @param hostId the host to be checked
+     * @param host the host to be checked
      * @param cpuNum cpu number to check
      * @param cpuSpeed cpu Speed to check
      * @return true if the count of host's running VMs >= hypervisor limit
      */
-    boolean checkIfHostHasCpuCapability(long hostId, Integer cpuNum, Integer cpuSpeed);
+    boolean checkIfHostHasCpuCapability(Host host, Integer cpuNum, Integer cpuSpeed);
 
     /**
      * Check if cluster will cross threshold if the cpu/memory requested are accommodated

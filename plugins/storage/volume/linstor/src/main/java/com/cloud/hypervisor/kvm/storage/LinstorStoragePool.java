@@ -75,7 +75,7 @@ public class LinstorStoragePool implements KVMStoragePool {
     @Override
     public boolean connectPhysicalDisk(String volumeUuid, Map<String, String> details)
     {
-        return _storageAdaptor.connectPhysicalDisk(volumeUuid, this, details);
+        return _storageAdaptor.connectPhysicalDisk(volumeUuid, this, details, false);
     }
 
     @Override
@@ -280,22 +280,52 @@ public class LinstorStoragePool implements KVMStoragePool {
         return sc.execute(parser);
     }
 
+    private boolean checkLinstorNodeOnline(String nodeName) {
+        return ((LinstorStorageAdaptor)_storageAdaptor).isNodeOnline(this, nodeName);
+    }
+
+    /**
+     * Checks output of drbdsetup status output if this node has any valid connection to the specified
+     * otherNodeName.
+     * If there is no connection, ask the Linstor controller if the node is seen online and return false if not.
+     * If there is a connection but not connected(valid) return false.
+     * @param output Output of the drbdsetup status --json command
+     * @param otherNodeName Name of the node to check against
+     * @return true if we could say that this node thinks the node in question is reachable, otherwise false.
+     */
     private boolean checkDrbdSetupStatusOutput(String output, String otherNodeName) {
         JsonParser jsonParser = new JsonParser();
         JsonArray jResources = (JsonArray) jsonParser.parse(output);
+        boolean connectionFound = false;
         for (JsonElement jElem : jResources) {
             JsonObject jRes = (JsonObject) jElem;
             JsonArray jConnections = jRes.getAsJsonArray("connections");
             for (JsonElement jConElem : jConnections) {
                 JsonObject jConn = (JsonObject) jConElem;
-                if (jConn.getAsJsonPrimitive("name").getAsString().equals(otherNodeName)
-                        && jConn.getAsJsonPrimitive("connection-state").getAsString().equalsIgnoreCase("Connected")) {
-                    return true;
+                if (jConn.getAsJsonPrimitive("name").getAsString().equals(otherNodeName))
+                {
+                    connectionFound = true;
+                    if (jConn.getAsJsonPrimitive("connection-state").getAsString()
+                            .equalsIgnoreCase("Connected")) {
+                        return true;
+                    }
                 }
             }
         }
-        LOGGER.warn(String.format("checkDrbdSetupStatusOutput: no resource connected to %s.", otherNodeName));
-        return false;
+        boolean otherNodeOnline = false;
+        if (connectionFound) {
+            LOGGER.warn(String.format(
+                    "checkingHeartBeat: connection found, but not in state 'Connected' to %s", otherNodeName));
+        } else {
+            LOGGER.warn(String.format(
+                    "checkingHeartBeat: no resource connected to %s, checking LINSTOR", otherNodeName));
+            otherNodeOnline = checkLinstorNodeOnline(otherNodeName);
+        }
+        LOGGER.info(String.format(
+                "checkingHeartBeat: other node %s is %s.",
+                otherNodeName,
+                otherNodeOnline ? "online on controller" : "down"));
+        return otherNodeOnline;
     }
 
     private String executeDrbdEventsNow(OutputInterpreter.AllLinesParser parser) {

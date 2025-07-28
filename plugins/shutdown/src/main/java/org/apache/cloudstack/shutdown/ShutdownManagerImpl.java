@@ -134,6 +134,7 @@ public class ShutdownManagerImpl extends ManagerBase implements ShutdownManager,
     public ReadyForShutdownResponse readyForShutdown(Long managementserverid) {
         Long[] msIds = null;
         boolean shutdownTriggeredAnywhere = false;
+        String msUuid = null;
         State[] shutdownTriggeredStates = {State.ShuttingDown, State.PreparingToShutDown, State.ReadyToShutDown};
         if (managementserverid == null) {
             List<ManagementServerHostVO> msHosts = msHostDao.listBy(shutdownTriggeredStates);
@@ -146,11 +147,12 @@ public class ShutdownManagerImpl extends ManagerBase implements ShutdownManager,
             }
         } else {
             ManagementServerHostVO msHost = msHostDao.findById(managementserverid);
+            msUuid = msHost.getUuid();
             msIds = new Long[]{msHost.getMsid()};
             shutdownTriggeredAnywhere = Arrays.asList(shutdownTriggeredStates).contains(msHost.getState());
         }
         long pendingJobCount = countPendingJobs(msIds);
-        return new ReadyForShutdownResponse(managementserverid, shutdownTriggeredAnywhere, pendingJobCount == 0, pendingJobCount);
+        return new ReadyForShutdownResponse(msUuid, shutdownTriggeredAnywhere, pendingJobCount == 0, pendingJobCount);
     }
 
     @Override

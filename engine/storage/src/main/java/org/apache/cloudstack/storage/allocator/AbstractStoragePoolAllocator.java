@@ -124,17 +124,23 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     protected List<StoragePool> reorderPoolsByCapacity(DeploymentPlan plan, List<StoragePool> pools) {
         Long zoneId = plan.getDataCenterId();
         Long clusterId = plan.getClusterId();
-        short capacityType;
 
         if (CollectionUtils.isEmpty(pools)) {
             return null;
         }
 
-        if (pools.get(0).getPoolType().isShared()) {
+        short capacityType = Capacity.CAPACITY_TYPE_LOCAL_STORAGE;
+        String storageType = "local";
+        StoragePool storagePool = pools.get(0);
+        if (storagePool.isShared()) {
             capacityType = Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED;
-        } else {
-            capacityType = Capacity.CAPACITY_TYPE_LOCAL_STORAGE;
+            storageType = "shared";
         }
+
+        logger.debug(String.format(
+                "Filtering storage pools by capacity type [%s] as the first storage pool of the list, with name [%s] and ID [%s], is a [%s] storage.",
+                capacityType, storagePool.getName(), storagePool.getUuid(), storageType
+        ));
 
         List<Long> poolIdsByCapacity = capacityDao.orderHostsByFreeCapacity(zoneId, clusterId, capacityType);
 
@@ -221,6 +227,8 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     }
 
     List<StoragePool> reorderStoragePoolsBasedOnAlgorithm(List<StoragePool> pools, DeploymentPlan plan, Account account) {
+        logger.debug(String.format("Using allocation algorithm [%s] to reorder pools.", allocationAlgorithm));
+
         if (allocationAlgorithm.equals("random") || allocationAlgorithm.equals("userconcentratedpod_random") || (account == null)) {
             reorderRandomPools(pools);
         } else if (StringUtils.equalsAny(allocationAlgorithm, "userdispersing", "firstfitleastconsumed")) {

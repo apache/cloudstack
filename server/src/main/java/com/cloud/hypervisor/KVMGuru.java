@@ -134,21 +134,22 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
             if (host == null) {
                 throw new CloudRuntimeException("Host with id: " + vm.getHostId() + " not found");
             }
-            logger.debug("Limiting CPU usage for VM: " + vm.getUuid() + " on host: " + host.getUuid());
+            logger.debug("Limiting CPU usage for VM: {} on host: {}", vm, host);
             double hostMaxSpeed = getHostCPUSpeed(host);
             double maxSpeed = getVmSpeed(to);
             try {
                 BigDecimal percent = new BigDecimal(maxSpeed / hostMaxSpeed);
                 percent = percent.setScale(2, RoundingMode.HALF_DOWN);
                 if (percent.compareTo(new BigDecimal(1)) == 1) {
-                    logger.debug("VM " + vm.getUuid() + " CPU MHz exceeded host " + host.getUuid() + " CPU MHz, limiting VM CPU to the host maximum");
+                    logger.debug("VM {} CPU MHz exceeded host {} CPU MHz, limiting VM CPU to the host maximum", vm, host);
                     percent = new BigDecimal(1);
                 }
                 to.setCpuQuotaPercentage(percent.doubleValue());
-                logger.debug("Host: " + host.getUuid() + " max CPU speed = " + hostMaxSpeed + "MHz, VM: " + vm.getUuid() +
-                        "max CPU speed = " + maxSpeed + "MHz. Setting CPU quota percentage as: " + percent.doubleValue());
+                logger.debug("Host: {} max CPU speed = {} MHz, VM: {} max CPU speed = {} MHz. " +
+                        "Setting CPU quota percentage as: {}",
+                        host, hostMaxSpeed, vm, maxSpeed, percent.doubleValue());
             } catch (NumberFormatException e) {
-                logger.error("Error calculating VM: " + vm.getUuid() + " quota percentage, it wll not be set. Error: " + e.getMessage(), e);
+                logger.error("Error calculating VM: {} quota percentage, it will not be set. Error: {}", vm, e.getMessage(), e);
             }
         }
     }
@@ -241,9 +242,11 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         }
 
         Long lastHostId = virtualMachine.getLastHostId();
-        logger.info(String.format("%s is not running; therefore, we use the last host [%s] that the VM was running on to derive the unconstrained service offering max CPU and memory.", vmDescription, lastHostId));
 
         HostVO lastHost = lastHostId == null ? null : hostDao.findById(lastHostId);
+        logger.info("{} is not running; therefore, we use the last host [{}] with id {} that the " +
+                        "VM was running on to derive the unconstrained service offering max CPU " +
+                "and memory.", vmDescription, lastHost, lastHostId);
         if (lastHost != null) {
             maxHostMemory = lastHost.getTotalMemory();
             maxHostCpuCore = lastHost.getCpus();

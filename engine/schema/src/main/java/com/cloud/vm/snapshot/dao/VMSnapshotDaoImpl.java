@@ -176,7 +176,7 @@ public class VMSnapshotDaoImpl extends GenericDaoBase<VMSnapshotVO, Long> implem
                     .append("; updatedTime=")
                     .append(oldUpdatedTime);
             } else {
-                logger.debug("Unable to update VM snapshot: id=" + vo.getId() + ", as there is no such snapshot exists in the database anymore");
+                logger.debug("Unable to update VM snapshot: {}, as there is no such snapshot exists in the database anymore", vo);
             }
         }
         return rows > 0;

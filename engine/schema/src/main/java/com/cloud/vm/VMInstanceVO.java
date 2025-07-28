@@ -503,7 +503,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 
     @Override
     public String toString() {
-        return String.format("VM instance %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "instanceName", "uuid", "type"));
+        return String.format("VM instance %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "instanceName", "uuid", "type", "state"));
     }
 
     @Override

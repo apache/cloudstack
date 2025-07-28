@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloud-engine</artifactId>
-        <version>4.20.1.0-SNAPSHOT</version>
+        <version>4.20.2.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <dependencies>
@@ -164,6 +164,15 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <test.mode>true</test.mode>
+                    </systemPropertyVariables>
+                </configuration>
             </plugin>
         </plugins>
     </build>

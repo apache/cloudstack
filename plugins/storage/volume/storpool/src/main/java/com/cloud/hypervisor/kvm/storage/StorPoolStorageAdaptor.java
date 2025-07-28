@@ -139,6 +139,9 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
     }
 
     public static String getVolumeNameFromPath(final String volumeUuid, boolean tildeNeeded) {
+        if (volumeUuid == null) {
+            return null;
+        }
         if (volumeUuid.startsWith("/dev/storpool/")) {
             return volumeUuid.split("/")[3];
         } else if (volumeUuid.startsWith("/dev/storpool-byid/")) {
@@ -249,7 +252,7 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public boolean connectPhysicalDisk(String volumeUuid, KVMStoragePool pool, Map<String, String> details) {
+    public boolean connectPhysicalDisk(String volumeUuid, KVMStoragePool pool, Map<String, String> details, boolean isVMMigrate) {
         SP_LOG("StorPoolStorageAdaptor.connectPhysicalDisk: uuid=%s, pool=%s", volumeUuid, pool);
 
         LOGGER.debug(String.format("connectPhysicalDisk: uuid=%s, pool=%s", volumeUuid, pool));

@@ -1280,9 +1280,10 @@ export default {
       params.clustertype = clusterType
       params.podId = this.stepData.podReturned.id
       let clusterName = this.prefillContent?.clusterName || null
-      if (this.isEdgeZone) {
+      if (!clusterName && this.isEdgeZone) {
         clusterName = 'Cluster-' + this.stepData.zoneReturned.name
       }
+      params.arch = this.prefillContent?.arch || null
 
       if (hypervisor === 'VMware') {
         params.username = this.prefillContent?.vCenterUsername || null

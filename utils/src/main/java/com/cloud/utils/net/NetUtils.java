@@ -102,6 +102,10 @@ public class NetUtils {
     public final static int IPV6_EUI64_11TH_BYTE = -1;
     public final static int IPV6_EUI64_12TH_BYTE = -2;
 
+    // Regex
+    public final static Pattern HOSTNAME_PATTERN = Pattern.compile("[a-zA-Z0-9-]+");
+    public final static Pattern START_HOSTNAME_PATTERN = Pattern.compile("^[0-9-].*");
+
     public static String extractHost(String uri) throws URISyntaxException {
         return (new URI(uri)).getHost();
     }
@@ -843,7 +847,7 @@ public class NetUtils {
         isSuperset, isSubset, neitherSubetNorSuperset, sameSubnet, errorInCidrFormat
     }
 
-    public static SupersetOrSubset isNetowrkASubsetOrSupersetOfNetworkB(final String cidrA, final String cidrB) {
+    public static SupersetOrSubset isNetworkASubsetOrSupersetOfNetworkB(final String cidrA, final String cidrB) {
         if (!areCidrsNotEmpty(cidrA, cidrB)) {
             return SupersetOrSubset.errorInCidrFormat;
         }
@@ -1054,23 +1058,33 @@ public class NetUtils {
         return Integer.toString(portRange[0]) + ":" + Integer.toString(portRange[1]);
     }
 
+    /**
+     * Validates a domain name.
+     *
+     * <p>Domain names must satisfy the following constraints:
+     * <ul>
+     *   <li>Length between 1 and 63 characters</li>
+     *   <li>Contain only ASCII letters 'a' through 'z' (case-insensitive)</li>
+     *   <li>Can include digits '0' through '9' and hyphens (-)</li>
+     *   <li>Must not start or end with a hyphen</li>
+     *   <li>If used as hostname, must not start with a digit</li>
+     * </ul>
+     *
+     * @param hostName The domain name to validate
+     * @param isHostName If true, verifies whether the domain name starts with a digit
+     * @return true if the domain name is valid, false otherwise
+     */
     public static boolean verifyDomainNameLabel(final String hostName, final boolean isHostName) {
-        // must be between 1 and 63 characters long and may contain only the ASCII letters 'a' through 'z' (in a
-        // case-insensitive manner),
-        // the digits '0' through '9', and the hyphen ('-').
-        // Can not start with a hyphen and digit, and must not end with a hyphen
-        // If it's a host name, don't allow to start with digit
-
         if (hostName.length() > 63 || hostName.length() < 1) {
             LOGGER.warn("Domain name label must be between 1 and 63 characters long");
             return false;
-        } else if (!hostName.toLowerCase().matches("[a-z0-9-]*")) {
+        } else if (!HOSTNAME_PATTERN.matcher(hostName).matches()) {
             LOGGER.warn("Domain name label may contain only the ASCII letters 'a' through 'z' (in a case-insensitive manner)");
             return false;
         } else if (hostName.startsWith("-") || hostName.endsWith("-")) {
-            LOGGER.warn("Domain name label can not start  with a hyphen and digit, and must not end with a hyphen");
+            LOGGER.warn("Domain name label can not start or end with a hyphen");
             return false;
-        } else if (isHostName && hostName.matches("^[0-9-].*")) {
+        } else if (isHostName && START_HOSTNAME_PATTERN.matcher(hostName).matches()) {
             LOGGER.warn("Host name can't start with digit");
             return false;
         }

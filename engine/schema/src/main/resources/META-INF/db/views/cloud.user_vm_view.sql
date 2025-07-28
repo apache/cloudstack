@@ -83,6 +83,7 @@ SELECT
     `iso`.`uuid` AS `iso_uuid`,
     `iso`.`name` AS `iso_name`,
     `iso`.`display_text` AS `iso_display_text`,
+    `vm_template`.`arch` AS `arch`,
     `service_offering`.`id` AS `service_offering_id`,
     `service_offering`.`uuid` AS `service_offering_uuid`,
     `disk_offering`.`uuid` AS `disk_offering_uuid`,

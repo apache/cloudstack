@@ -89,6 +89,8 @@
           <a-input
             v-model:value="vcenter"
             :placeholder="apiParams.vcenter.description"
+            @blur="onSelectExternalVmwareDatacenter"
+            @pressEnter="onSelectExternalVmwareDatacenter"
           />
         </a-form-item>
         <a-form-item ref="datacenter" name="datacenter">
@@ -98,6 +100,8 @@
           <a-input
             v-model:value="datacenter"
             :placeholder="apiParams.datacentername.description"
+            @blur="onSelectExternalVmwareDatacenter"
+            @pressEnter="onSelectExternalVmwareDatacenter"
           />
         </a-form-item>
         <a-form-item ref="username" name="username">
@@ -107,6 +111,8 @@
           <a-input
             v-model:value="username"
             :placeholder="apiParams.username.description"
+            @blur="onSelectExternalVmwareDatacenter"
+            @pressEnter="onSelectExternalVmwareDatacenter"
           />
         </a-form-item>
         <a-form-item ref="password" name="password">
@@ -116,8 +122,12 @@
           <a-input-password
             v-model:value="password"
             :placeholder="apiParams.password.description"
+            @blur="onSelectExternalVmwareDatacenter"
+            @pressEnter="onSelectExternalVmwareDatacenter"
           />
         </a-form-item>
+        &nbsp;
+        <tooltip-label :title="$t('label.press.enter')" :tooltip="$t('label.press.enter.tooltip')"/>
       </div>
       <div class="card-footer">
         <a-button
@@ -217,6 +227,8 @@ export default {
       } else {
         params.existingvcenterid = this.selectedExistingVcenterId
       }
+      params.page = 1
+      params.pagesize = 10
       api('listVmwareDcVms', params).then(json => {
         const obj = {
           params: params,
@@ -254,6 +266,11 @@ export default {
       }).finally(() => {
         this.loading = false
       })
+    },
+    onSelectExternalVmwareDatacenter (value) {
+      if (this.vcenterSelectedOption === 'new' && !(this.vcenter === '' || this.datacentername === '' || this.username === '' || this.password === '')) {
+        this.listVmwareDatacenterVms()
+      }
     },
     onSelectExistingVmwareDatacenter (value) {
       this.selectedExistingVcenterId = value

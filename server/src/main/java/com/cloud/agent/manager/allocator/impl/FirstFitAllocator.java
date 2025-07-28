@@ -25,7 +25,6 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.springframework.stereotype.Component;
@@ -130,8 +129,8 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             // FirstFitAllocator should be used for user VMs only since it won't care whether the host is capable of routing or not
             return new ArrayList<>();
         }
-
-        logger.debug("Looking for hosts in zone [{}], pod [{}], cluster [{}]", dcId, podId, clusterId);
+        String paramAsStringToLog = String.format("zone [%s], pod [%s], cluster [%s]", dcId, podId, clusterId);
+        logger.debug("Looking for hosts in {}", paramAsStringToLog);
 
         String hostTagOnOffering = offering.getHostTag();
         String hostTagOnTemplate = template.getTemplateTag();
@@ -203,8 +202,8 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
 
 
         if (clusterHosts.isEmpty()) {
-            logger.error("No suitable host found for vm [{}] with tags [{}].", vmProfile, hostTagOnOffering);
-            throw new CloudRuntimeException(String.format("No suitable host found for vm [%s].", vmProfile));
+            logger.warn("No suitable host found for VM [{}] with tags {} in {}.", vmProfile, hostTagOnOffering, paramAsStringToLog);
+            return null;
         }
         // add all hosts that we are not considering to the avoid list
         List<HostVO> allhostsInCluster = _hostDao.listAllUpAndEnabledNonHAHosts(type, clusterId, podId, dcId, null);
@@ -321,15 +320,14 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             }
             if (avoid.shouldAvoid(host)) {
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Host name: " + host.getName() + ", hostId: " + host.getId() + " is in avoid set, skipping this and trying other available hosts");
+                    logger.debug("Host: {} is in avoid set, skipping this and trying other available hosts", host);
                 }
                 continue;
             }
 
             //find number of guest VMs occupying capacity on this host.
             if (_capacityMgr.checkIfHostReachMaxGuestLimit(host)) {
-                logger.debug(() -> String.format("Adding host [%s] to the avoid set because this host already has the max number of running (user and/or system) VMs.",
-                        ReflectionToStringBuilderUtils.reflectOnlySelectedFields(host, "uuid", "name")));
+                logger.debug("Adding host [{}] to the avoid set because this host already has the max number of running (user and/or system) VMs.", host);
                 avoid.addHost(host.getId());
                 continue;
             }
@@ -337,9 +335,8 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             // Check if GPU device is required by offering and host has the availability
             if ((offeringDetails   = _serviceOfferingDetailsDao.findDetail(serviceOfferingId, GPU.Keys.vgpuType.toString())) != null) {
                 ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(serviceOfferingId, GPU.Keys.pciDevice.toString());
-                if(!_resourceMgr.isGPUDeviceAvailable(host.getId(), groupName.getValue(), offeringDetails.getValue())){
-                    logger.debug(String.format("Adding host [%s] to avoid set, because this host does not have required GPU devices available.",
-                            ReflectionToStringBuilderUtils.reflectOnlySelectedFields(host, "uuid", "name")));
+                if(!_resourceMgr.isGPUDeviceAvailable(host, groupName.getValue(), offeringDetails.getValue())){
+                    logger.debug("Adding host [{}] to avoid set, because this host does not have required GPU devices available.", host);
                     avoid.addHost(host.getId());
                     continue;
                 }
@@ -347,12 +344,13 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             Pair<Boolean, Boolean> cpuCapabilityAndCapacity = _capacityMgr.checkIfHostHasCpuCapabilityAndCapacity(host, offering, considerReservedCapacity);
             if (cpuCapabilityAndCapacity.first() && cpuCapabilityAndCapacity.second()) {
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Found a suitable host, adding to list: " + host.getId());
+                    logger.debug("Found a suitable host, adding to list: {}", host);
                 }
                 suitableHosts.add(host);
             } else {
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Not using host " + host.getId() + "; host has cpu capability? " + cpuCapabilityAndCapacity.first() + ", host has capacity?" + cpuCapabilityAndCapacity.second());
+                    logger.debug("Not using host {}; host has cpu capability? {}, host has capacity?{}",
+                            host, cpuCapabilityAndCapacity.first(), cpuCapabilityAndCapacity.second());
                 }
                 avoid.addHost(host.getId());
             }

@@ -28,6 +28,7 @@ import javax.persistence.Table;
 
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.NicSecondaryIp;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
 @Table(name = "nic_secondary_ips")
@@ -86,6 +87,14 @@ public class NicSecondaryIpVO implements NicSecondaryIp {
 
     @Column(name = "vmId")
     long vmId;
+
+    @Override
+    public String toString() {
+        return String.format("NicSecondaryIp %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "name", "vmId",
+                        "nicId", "ip4Address", "ip6Address", "networkId"));
+    }
 
     @Override
     public long getId() {

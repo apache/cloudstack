@@ -117,7 +117,7 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
         ObjectStoreEntity  objectStore = (ObjectStoreEntity)_dataStoreMgr.getDataStore(objectStoreVO.getId(), DataStoreRole.Object);
         try {
             if(!objectStore.createUser(ownerId)) {
-                logger.error("Failed to create user in objectstore "+ objectStore.getName());
+                logger.error("Failed to create user in objectstore {}", objectStore);
                 return null;
             }
         } catch (CloudRuntimeException e) {

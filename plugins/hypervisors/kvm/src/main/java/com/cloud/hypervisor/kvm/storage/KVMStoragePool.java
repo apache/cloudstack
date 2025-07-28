@@ -62,6 +62,14 @@ public interface KVMStoragePool {
 
     public long getUsed();
 
+    default Long getCapacityIops() {
+        return null;
+    }
+
+    default Long getUsedIops() {
+        return null;
+    }
+
     public long getAvailable();
 
     public boolean refresh();

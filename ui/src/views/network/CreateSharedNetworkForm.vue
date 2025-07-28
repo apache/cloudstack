@@ -793,6 +793,10 @@ export default {
       if (this.scopeType === 'domain') {
         params.domainid = this.selectedDomain.id
       }
+      console.log(params?.tags?.length === 0)
+      if (!params?.tags || params.tags.length === 0) {
+        params.istagged = false
+      }
       this.handleNetworkOfferingChange(null)
       this.networkOfferings = []
       api('listNetworkOfferings', params).then(json => {

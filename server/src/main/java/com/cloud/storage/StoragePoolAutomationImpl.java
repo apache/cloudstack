@@ -128,8 +128,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
             for (StoragePoolVO sp : spes) {
                 if (sp.getParent() != pool.getParent() && sp.getId() != pool.getParent()) { // If Datastore cluster is tried to prepare for maintenance then child storage pools are also kept in PrepareForMaintenance mode
                     if (sp.getStatus() == StoragePoolStatus.PrepareForMaintenance) {
-                        throw new CloudRuntimeException("Only one storage pool in a cluster can be in PrepareForMaintenance mode, " + sp.getId() +
-                                " is already in  PrepareForMaintenance mode ");
+                        throw new CloudRuntimeException(String.format("Only one storage pool in a cluster can be in PrepareForMaintenance mode, %s is already in  PrepareForMaintenance mode ", sp));
                     }
                 }
             }
@@ -172,7 +171,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                         logger.debug("ModifyStoragePool false succeeded");
                     }
                     if (pool.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
-                        logger.debug(String.format("Started synchronising datastore cluster storage pool %s with vCenter", pool.getUuid()));
+                        logger.debug("Started synchronising datastore cluster storage pool {} with vCenter", pool);
                         storageManager.syncDatastoreClusterStoragePool(pool.getId(), ((ModifyStoragePoolAnswer) answer).getDatastoreClusterChildren(), host.getId());
                     }
                 }
@@ -348,7 +347,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                     logger.debug("ModifyStoragePool add succeeded");
                 }
                 if (pool.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
-                    logger.debug(String.format("Started synchronising datastore cluster storage pool %s with vCenter", pool.getUuid()));
+                    logger.debug("Started synchronising datastore cluster storage pool {} with vCenter", pool);
                     storageManager.syncDatastoreClusterStoragePool(pool.getId(), ((ModifyStoragePoolAnswer) answer).getDatastoreClusterChildren(), host.getId());
                 }
             }

@@ -264,7 +264,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             }
             _accountMgr.checkAccess(caller, null, true, vpc);
             if (!gateway.getVpcId().equals(acl.getVpcId())) {
-                throw new InvalidParameterValueException("private gateway: " + privateGatewayId + " and ACL: " + aclId + " do not belong to the same VPC");
+                throw new InvalidParameterValueException(String.format("private gateway: %s and ACL: %s do not belong to the same VPC", vo, acl));
             }
         }
 
@@ -301,7 +301,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             validateAclAssociatedToVpc(acl.getVpcId(), caller, acl.getUuid());
 
             if (!network.getVpcId().equals(acl.getVpcId())) {
-                throw new InvalidParameterValueException("Network: " + networkId + " and ACL: " + aclId + " do not belong to the same VPC");
+                throw new InvalidParameterValueException(String.format("Network: %s and ACL: %s do not belong to the same VPC", network, acl));
             }
         }
 
@@ -510,7 +510,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
      * @return the Id of the network ACL that is created.
      */
     protected Long createAclListForNetworkAndReturnAclListId(CreateNetworkACLCmd aclItemCmd, Network network) {
-        logger.debug("Network " + network.getId() + " is not associated with any ACL. Creating an ACL before adding acl item");
+        logger.debug("Network {} is not associated with any ACL. Creating an ACL before adding acl item", network);
 
         if (!networkModel.areServicesSupportedByNetworkOffering(network.getNetworkOfferingId(), Network.Service.NetworkACL)) {
             throw new InvalidParameterValueException("Network Offering does not support NetworkACL service");
@@ -525,18 +525,18 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         String description = "ACL for " + aclName;
         NetworkACL acl = _networkAclMgr.createNetworkACL(aclName, description, network.getVpcId(), aclItemCmd.isDisplay());
         if (acl == null) {
-            throw new CloudRuntimeException("Error while create ACL before adding ACL Item for network " + network.getId());
+            throw new CloudRuntimeException(String.format("Error while create ACL before adding ACL Item for network %s", network));
         }
-        logger.debug("Created ACL: " + aclName + " for network " + network.getId());
+        logger.debug("Created ACL: {} for network {}", aclName, network);
         Long aclId = acl.getId();
         //Apply acl to network
         try {
             if (!_networkAclMgr.replaceNetworkACL(acl, (NetworkVO)network)) {
-                throw new CloudRuntimeException("Unable to apply auto created ACL to network " + network.getId());
+                throw new CloudRuntimeException(String.format("Unable to apply auto created ACL to network %s", network));
             }
-            logger.debug("Created ACL is applied to network " + network.getId());
+            logger.debug("Created ACL is applied to network {}", network);
         } catch (ResourceUnavailableException e) {
-            throw new CloudRuntimeException("Unable to apply auto created ACL to network " + network.getId(), e);
+            throw new CloudRuntimeException(String.format("Unable to apply auto created ACL to network %s", network), e);
         }
         return aclId;
     }
@@ -1063,7 +1063,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
      */
     protected void validateAclConsistency(MoveNetworkAclItemCmd moveNetworkAclItemCmd, NetworkACLVO lockedAcl, List<NetworkACLItemVO> allAclRules) {
         if (CollectionUtils.isEmpty(allAclRules)) {
-            logger.debug(String.format("No ACL rules for [id=%s, name=%s]. Therefore, there is no need for consistency validation.", lockedAcl.getUuid(), lockedAcl.getName()));
+            logger.debug("No ACL rules for {}. Therefore, there is no need for consistency validation.", lockedAcl);
             return;
         }
         String aclConsistencyHash = moveNetworkAclItemCmd.getAclConsistencyHash();

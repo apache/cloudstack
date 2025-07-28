@@ -19,21 +19,6 @@
 
 package com.cloud.utils.testcase;
 
-import com.cloud.utils.concurrency.NamedThreadFactory;
-import com.cloud.utils.exception.NioConnectionException;
-import com.cloud.utils.nio.HandlerFactory;
-import com.cloud.utils.nio.Link;
-import com.cloud.utils.nio.NioClient;
-import com.cloud.utils.nio.NioServer;
-import com.cloud.utils.nio.Task;
-import com.cloud.utils.nio.Task.Type;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
@@ -44,6 +29,22 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import com.cloud.utils.concurrency.NamedThreadFactory;
+import com.cloud.utils.exception.NioConnectionException;
+import com.cloud.utils.nio.HandlerFactory;
+import com.cloud.utils.nio.Link;
+import com.cloud.utils.nio.NioClient;
+import com.cloud.utils.nio.NioServer;
+import com.cloud.utils.nio.Task;
+import com.cloud.utils.nio.Task.Type;
 
 /**
  * NioTest demonstrates that NioServer can function without getting its main IO
@@ -99,7 +100,7 @@ public class NioTest {
         testBytes = new byte[1000000];
         randomGenerator.nextBytes(testBytes);
 
-        server = new NioServer("NioTestServer", 0, 1, new NioTestServer(), null);
+        server = new NioServer("NioTestServer", 0, 1, new NioTestServer(), null,  null);
         try {
             server.start();
         } catch (final NioConnectionException e) {
@@ -111,7 +112,7 @@ public class NioTest {
             maliciousClients.add(maliciousClient);
             maliciousExecutor.submit(new ThreadedNioClient(maliciousClient));
 
-            final NioClient client = new NioClient("NioTestClient-" + i, "127.0.0.1", server.getPort(), 1, new NioTestClient());
+            final NioClient client = new NioClient("NioTestClient-" + i, "127.0.0.1", server.getPort(), 1, null, new NioTestClient());
             clients.add(client);
             clientExecutor.submit(new ThreadedNioClient(client));
         }
@@ -180,17 +181,17 @@ public class NioTest {
     public class NioMaliciousClient extends NioClient {
 
         public NioMaliciousClient(String name, String host, int port, int workers, HandlerFactory factory) {
-            super(name, host, port, workers, factory);
+            super(name, host, port, workers, null, factory);
         }
 
         @Override
         protected void init() throws IOException {
             _selector = Selector.open();
             try {
-                _clientConnection = SocketChannel.open();
-                logger.info("Connecting to " + _host + ":" + _port);
-                final InetSocketAddress peerAddr = new InetSocketAddress(_host, _port);
-                _clientConnection.connect(peerAddr);
+                clientConnection = SocketChannel.open();
+                logger.info("Connecting to {}:{}", host, _port);
+                final InetSocketAddress peerAddr = new InetSocketAddress(host, _port);
+                clientConnection.connect(peerAddr);
                 // This is done on purpose, the malicious client would connect
                 // to the server and then do nothing, hence using a large sleep value
                 Thread.sleep(Long.MAX_VALUE);

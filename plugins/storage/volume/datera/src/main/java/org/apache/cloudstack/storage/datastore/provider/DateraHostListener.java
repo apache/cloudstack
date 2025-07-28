@@ -86,7 +86,7 @@ public class DateraHostListener implements HypervisorHostListener {
         HostVO host = _hostDao.findById(hostId);
 
         if (host == null) {
-            logger.error("Failed to add host by HostListener as host was not found with id : " + hostId);
+            logger.error("Failed to add host by HostListener as host was not found with id : {}", hostId);
             return false;
         }
         StoragePoolHostVO storagePoolHost = storagePoolHostDao.findByPoolHost(storagePoolId, hostId);
@@ -280,9 +280,8 @@ public class DateraHostListener implements HypervisorHostListener {
         }
 
         if (!answer.getResult()) {
-            String msg = "Unable to modify targets on the following host: " + hostId;
-
             HostVO host = _hostDao.findById(hostId);
+            String msg = String.format("Unable to modify targets on the following host: %s", host);
 
             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), msg, msg);
 
@@ -294,21 +293,22 @@ public class DateraHostListener implements HypervisorHostListener {
         Answer answer = _agentMgr.easySend(hostId, cmd);
 
         if (answer == null) {
-            throw new CloudRuntimeException("Unable to get an answer to the modify storage pool command (" + storagePool.getId() + ")");
+            throw new CloudRuntimeException(String.format("Unable to get an answer to the modify storage pool command (%s)", storagePool));
         }
 
         if (!answer.getResult()) {
-            String msg = "Unable to attach storage pool " + storagePool.getId() + " to host " + hostId;
+            String msg = String.format("Unable to attach storage pool %s to host %d", storagePool, hostId);
 
             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, storagePool.getDataCenterId(), storagePool.getPodId(), msg, msg);
 
-            throw new CloudRuntimeException("Unable to establish a connection from agent to storage pool " + storagePool.getId() + " due to " + answer.getDetails() +
-                " (" + storagePool.getId() + ")");
+            throw new CloudRuntimeException(String.format(
+                    "Unable to establish a connection from agent to storage pool %s due to %s",
+                    storagePool, answer.getDetails()));
         }
 
-        assert (answer instanceof ModifyStoragePoolAnswer) : "ModifyStoragePoolAnswer expected ; Pool = " + storagePool.getId() + " Host = " + hostId;
+        assert (answer instanceof ModifyStoragePoolAnswer) : String.format("ModifyStoragePoolAnswer expected ; Pool = %s Host = %d", storagePool, hostId);
 
-        logger.info("Connection established between storage pool " + storagePool + " and host + " + hostId);
+        logger.info("Connection established between storage pool {} and host + {}", storagePool, hostId);
     }
 
     private List<Map<String, String>> getTargets(long clusterId, long storagePoolId) {

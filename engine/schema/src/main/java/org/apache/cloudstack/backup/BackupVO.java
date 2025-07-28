@@ -19,6 +19,7 @@ package org.apache.cloudstack.backup;
 
 import com.cloud.utils.db.GenericDao;
 import com.google.gson.Gson;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
@@ -92,6 +93,12 @@ public class BackupVO implements Backup {
 
     public BackupVO() {
         this.uuid = UUID.randomUUID().toString();
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Backup %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                this, "id", "uuid", "vmId", "backupType", "externalId"));
     }
 
     @Override

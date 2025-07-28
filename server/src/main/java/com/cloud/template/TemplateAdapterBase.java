@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.inject.Inject;
 
@@ -193,7 +194,8 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 
         if (!isAdmin && zoneIdList == null && !isRegionStore ) {
             // domain admin and user should also be able to register template on a region store
-            throw new InvalidParameterValueException("Please specify a valid zone Id. Only admins can create templates in all zones.");
+            throw new InvalidParameterValueException("Template registered for 'All zones' can only be owned a Root Admin account. " +
+                    "Please select specific zone(s).");
         }
 
         // check for the url format only when url is not null. url can be null incase of form based upload
@@ -236,14 +238,18 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                 }
                 Account caller = CallContext.current().getCallingAccount();
                 if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())) {
-                    throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zoneId);
+                    throw new PermissionDeniedException(String.format("Cannot perform this operation, Zone %s is currently disabled", zone));
                 }
             }
         }
 
         List<VMTemplateVO> systemvmTmplts = _tmpltDao.listAllSystemVMTemplates();
         for (VMTemplateVO template : systemvmTmplts) {
-            if (template.getName().equalsIgnoreCase(name) || template.getDisplayText().equalsIgnoreCase(displayText)) {
+            if ((template.getName().equalsIgnoreCase(name) ||
+                    template.getDisplayText().equalsIgnoreCase(displayText)) &&
+                    Objects.equals(template.getArch(), arch)) {
+                logger.error("{} for same arch {} is having same name or description", template,
+                        template.getArch());
                 throw new IllegalArgumentException("Cannot use reserved names for templates");
             }
         }

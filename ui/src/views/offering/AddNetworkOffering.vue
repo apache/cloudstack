@@ -190,7 +190,7 @@
             </a-form-item>
           </a-col>
         </a-row>
-        <a-form-item name="userdatal2" ref="userdatal2" :label="$t('label.userdatal2')" v-if="guestType === 'l2'">
+        <a-form-item name="userdatal2" ref="userdatal2" :label="$t('label.user.data')" v-if="guestType === 'l2'">
           <a-switch v-model:checked="form.userdatal2" />
         </a-form-item>
         <a-row :gutter="12">
@@ -452,7 +452,7 @@
         <a-form-item
           name="conservemode"
           ref="conservemode"
-          v-if="(guestType === 'shared' || guestType === 'isolated') && !isVpcVirtualRouterForAtLeastOneService && !forNsx && networkmode !== 'ROUTED'">
+          v-if="(guestType === 'shared' || guestType === 'isolated') && !forNsx && networkmode !== 'ROUTED'">
           <template #label>
             <tooltip-label :title="$t('label.conservemode')" :tooltip="apiParams.conservemode.description"/>
           </template>

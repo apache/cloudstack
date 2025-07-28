@@ -30,7 +30,10 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
+import com.cloud.hypervisor.xenserver.resource.XcpServer83Resource;
+import com.cloud.hypervisor.xenserver.resource.Xenserver84Resource;
 import org.apache.cloudstack.hypervisor.xenserver.XenserverConfigs;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.apache.xmlrpc.XmlRpcException;
@@ -144,8 +147,8 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             sc.and(sc.entity().getGuid(), Op.EQ, guid);
             List<ClusterVO> clusters = sc.list();
             ClusterVO clu = clusters.get(0);
-            List<HostVO> clusterHosts = _resourceMgr.listAllHostsInCluster(clu.getId());
-            if (clusterHosts == null || clusterHosts.size() == 0) {
+            List<Long> clusterHostIds = _hostDao.listIdsByClusterId(clu.getId());
+            if (CollectionUtils.isEmpty(clusterHostIds)) {
                 clu.setGuid(null);
                 _clusterDao.update(clu.getId(), clu);
                 _clusterDao.update(cluster.getId(), cluster);
@@ -245,8 +248,8 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             if (clu.getGuid() == null) {
                 setClusterGuid(clu, poolUuid);
             } else {
-                List<HostVO> clusterHosts = _resourceMgr.listAllHostsInCluster(clusterId);
-                if (clusterHosts != null && clusterHosts.size() > 0) {
+                List<Long> clusterHostIds = _hostDao.listIdsByClusterId(clusterId);
+                if (CollectionUtils.isNotEmpty(clusterHostIds)) {
                     if (!clu.getGuid().equals(poolUuid)) {
                         String msg = "Please join the host " +  hostIp + " to XS pool  "
                                 + clu.getGuid() + " through XC/XS before adding it through CS UI";
@@ -264,7 +267,6 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 } catch (Exception e) {
                     logger.debug("Caught exception during logout", e);
                 }
-                conn.dispose();
                 conn = null;
             }
 
@@ -434,6 +436,10 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             }
         } else if (prodBrand.equals("XCP_Kronos")) {
             return new XcpOssResource();
+        } else if (prodBrand.equals("XenServer") && prodVersion.equals("8.4.0")) {
+            return new Xenserver84Resource();
+        }  else if (prodBrand.equals("XCP-ng") && (prodVersion.equals("8.3.0"))) {
+            return new XcpServer83Resource();
         } else if (prodBrand.equals("XenServer") || prodBrand.equals("XCP-ng") || prodBrand.equals("Citrix Hypervisor")) {
             final String[] items = prodVersion.split("\\.");
             if ((Integer.parseInt(items[0]) > 6) ||

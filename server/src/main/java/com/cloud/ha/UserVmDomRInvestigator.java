@@ -18,6 +18,7 @@ package com.cloud.ha;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -26,6 +27,7 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.host.Host;
+import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.NetworkModel;
@@ -73,7 +75,8 @@ public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
             List<VirtualRouter> routers = _vnaMgr.getRoutersForNetwork(nic.getNetworkId());
             if (routers == null || routers.isEmpty()) {
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Unable to find a router in network " + nic.getNetworkId() + " to ping " + vm);
+                    logger.debug("Unable to find a router in network {} to ping {}",
+                            _networkMgr.getNetwork(nic.getNetworkId()), vm);
                 }
                 continue;
             }
@@ -102,26 +105,26 @@ public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
     @Override
     public Status isAgentAlive(Host agent) {
         if (logger.isDebugEnabled()) {
-            logger.debug("checking if agent (" + agent.getId() + ") is alive");
+            logger.debug("checking if agent ({}) is alive", agent);
         }
 
         if (agent.getPodId() == null) {
             return null;
         }
 
-        List<Long> otherHosts = findHostByPod(agent.getPodId(), agent.getId());
+        List<HostVO> otherHosts = findHostByPod(agent.getPodId(), agent.getId());
 
-        for (Long hostId : otherHosts) {
+        for (HostVO host : otherHosts) {
             if (logger.isDebugEnabled()) {
-                logger.debug("sending ping from (" + hostId + ") to agent's host ip address (" + agent.getPrivateIpAddress() + ")");
+                logger.debug("sending ping from ({}) to agent's host ip address ({})", host, agent.getPrivateIpAddress());
             }
-            Status hostState = testIpAddress(hostId, agent.getPrivateIpAddress());
+            Status hostState = testIpAddress(host.getId(), agent.getPrivateIpAddress());
             assert hostState != null;
             // In case of Status.Unknown, next host will be tried
             if (hostState == Status.Up) {
                 if (logger.isDebugEnabled()) {
-                    logger.debug("ping from (" + hostId + ") to agent's host ip address (" + agent.getPrivateIpAddress() +
-                        ") successful, returning that agent is disconnected");
+                    logger.debug("ping from ({}) to agent's host ip address ({}) successful, returning that agent is disconnected",
+                            host, agent.getPrivateIpAddress());
                 }
                 return Status.Disconnected; // the computing host ip is ping-able, but the computing agent is down, report that the agent is disconnected
             } else if (hostState == Status.Down) {
@@ -157,15 +160,17 @@ public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
         if (vm.getHypervisorType() == HypervisorType.XenServer || vm.getHypervisorType() == HypervisorType.KVM) {
             otherHosts.add(router.getHostId());
         } else {
-            otherHosts = findHostByPod(router.getPodIdToDeployIn(), null);
+            List<HostVO> otherHostsList = findHostByPod(router.getPodIdToDeployIn(), null);
+            otherHosts = otherHostsList.stream().map(HostVO::getId).collect(Collectors.toList());
         }
         for (Long hostId : otherHosts) {
             try {
                 Answer pingTestAnswer = _agentMgr.easySend(hostId, new PingTestCommand(routerPrivateIp, privateIp));
                 if (pingTestAnswer != null && pingTestAnswer.getResult()) {
                     if (logger.isDebugEnabled()) {
-                        logger.debug("user vm's " + vm.getHostName() + " ip address " + privateIp + "  has been successfully pinged from the Virtual Router " +
-                            router.getHostName() + ", returning that vm is alive");
+                        logger.debug("user vm's {} ip address {}  has been successfully " +
+                                "pinged from the Virtual Router {}, returning that vm is alive",
+                                vm, privateIp, router);
                     }
                     return Boolean.TRUE;
                 }

@@ -181,7 +181,7 @@ public class ResourceIconManagerImpl extends ManagerBase implements ResourceIcon
                     Pair<Long, Long> accountDomainPair = getAccountDomain(id, resourceType);
                     Long domainId = accountDomainPair.second();
                     Long accountId = accountDomainPair.first();
-                    resourceManagerUtil.checkResourceAccessible(accountId, domainId, String.format("Account ' %s ' doesn't have permissions to upload icon for resource ' %s ", caller, id));
+                    resourceManagerUtil.checkResourceAccessible(accountId, domainId, String.format("Account ' %s ' doesn't have permissions to upload icon for resource [id: %s, uuid: %s] ", caller, id, resourceUuid));
 
                     if (existingResourceIcon == null) {
                         resourceIcon = new ResourceIconVO(id, resourceType, resourceUuid, base64Image);
@@ -221,7 +221,7 @@ public class ResourceIconManagerImpl extends ManagerBase implements ResourceIcon
                     Pair<Long, Long> accountDomainPair = getAccountDomain(id, resourceType);
                     Long domainId = accountDomainPair.second();
                     Long accountId = accountDomainPair.first();
-                    resourceManagerUtil.checkResourceAccessible(accountId, domainId, String.format("Account ' %s ' doesn't have permissions to upload icon for resource ' %s ", caller, id));
+                    resourceManagerUtil.checkResourceAccessible(accountId, domainId, String.format("Account ' %s ' doesn't have permissions to upload icon for resource [id: %s, uuid: %s]", caller, id, resourceId));
                     resourceIconDao.remove(resourceIcon.getId());
                     logger.debug("Removed icon for resources (" +
                             String.join(", ", resourceIds) + ")");

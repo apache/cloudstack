@@ -88,6 +88,7 @@ export default {
             this.showSwitcher = false
             return
           }
+          this.samlAccounts = samlAccounts
           this.samlAccounts = _.orderBy(samlAccounts, ['domainPath'], ['asc'])
           const currentAccount = this.samlAccounts.filter(x => {
             return x.userId === store.getters.userInfo.id
@@ -109,6 +110,8 @@ export default {
           this.$message.success(`Switched to "${account.accountName} (${account.domainPath})"`)
           this.$router.go()
         })
+      }).else(error => {
+        console.log('error refreshing with new user context: ' + error)
       })
     }
   }

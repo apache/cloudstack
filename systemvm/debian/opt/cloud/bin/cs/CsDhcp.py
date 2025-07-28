@@ -82,7 +82,7 @@ class CsDhcp(CsDataBag):
                 CsHelper.service("dnsmasq", "reload")
 
     def configure_server(self):
-        # self.conf.addeq("dhcp-hostsfile=%s" % DHCP_HOSTS)
+        self.conf.add("bind-interfaces", 0)
         idx = 0
         listen_address = ["127.0.0.1"]
         for i in self.devinfo:
@@ -139,8 +139,7 @@ class CsDhcp(CsDataBag):
             # Listen Address
             if self.cl.is_redundant():
                 listen_address.append(gateway)
-            else:
-                listen_address.append(ip)
+            listen_address.append(ip)
             # Add localized "data-server" records in /etc/hosts for VPC routers
             if self.config.is_vpc() or self.config.is_router():
                 self.add_host(gateway, "%s data-server" % CsHelper.get_hostname())

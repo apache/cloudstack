@@ -92,30 +92,29 @@ public class SnapshotHelper {
      * @param snapInfo the snapshot info to delete.
      */
     public void expungeTemporarySnapshot(boolean kvmSnapshotOnlyInPrimaryStorage, SnapshotInfo snapInfo) {
-        if (!kvmSnapshotOnlyInPrimaryStorage) {
-            if (snapInfo != null) {
-                logger.trace(String.format("Snapshot [%s] is not a temporary backup to create a volume from snapshot. Not expunging it.", snapInfo.getId()));
-            }
-            return;
-        }
-
         if (snapInfo == null) {
             logger.warn("Unable to expunge snapshot due to its info is null.");
             return;
         }
 
+        if (!kvmSnapshotOnlyInPrimaryStorage) {
+            logger.trace("Snapshot [{}] is not a temporary backup to create a volume from snapshot. Not expunging it.", snapInfo.getSnapshotVO());
+            return;
+        }
+
         if (!DataStoreRole.Image.equals(snapInfo.getDataStore().getRole())) {
-            logger.debug(String.format("Expunge template for Snapshot [%s] is called for primary storage role. Not expunging it, " +
-                    "but we will still expunge the database reference of the snapshot for image storage role if any", snapInfo.getId()));
+            logger.debug("Expunge template for Snapshot [{}] is called for primary storage role. Not expunging it, " +
+                    "but we will still expunge the database reference of the snapshot for image storage role if any", snapInfo.getSnapshotVO());
         } else {
-            logger.debug(String.format("Expunging snapshot [%s] due to it is a temporary backup to create a volume from snapshot. It is occurring because the global setting [%s]"
-                    + " has the value [%s].", snapInfo.getId(), SnapshotInfo.BackupSnapshotAfterTakingSnapshot.key(), backupSnapshotAfterTakingSnapshot));
+            logger.debug("Expunging snapshot [{}] due to it is a temporary backup to create a volume from snapshot." +
+                            " It is occurring because the global setting [{}] has the value [{}].",
+                    snapInfo.getSnapshotVO(), SnapshotInfo.BackupSnapshotAfterTakingSnapshot.key(), backupSnapshotAfterTakingSnapshot);
 
             try {
                 snapshotService.deleteSnapshot(snapInfo);
             } catch (CloudRuntimeException ex) {
-                logger.warn(String.format("Unable to delete the temporary snapshot [%s] on secondary storage due to [%s]. We still will expunge the database reference, consider"
-                        + " manually deleting the file [%s].", snapInfo.getId(), ex.getMessage(), snapInfo.getPath()), ex);
+                logger.warn("Unable to delete the temporary snapshot [{}] on secondary storage due to [{}]. We still will expunge the database reference, consider"
+                        + " manually deleting the file [{}].", snapInfo, ex.getMessage(), snapInfo.getPath(), ex);
             }
         }
 
@@ -136,7 +135,7 @@ public class SnapshotHelper {
     public SnapshotInfo backupSnapshotToSecondaryStorageIfNotExists(SnapshotInfo snapInfo, DataStoreRole dataStoreRole, Snapshot snapshot, boolean kvmSnapshotOnlyInPrimaryStorage) throws CloudRuntimeException {
         if (!isSnapshotBackupable(snapInfo, dataStoreRole, kvmSnapshotOnlyInPrimaryStorage)) {
             logger.trace(String.format("Snapshot [%s] is already on secondary storage or is not a KVM snapshot that is only kept in primary storage. Therefore, we do not back it up."
-              + " up.", snapInfo.getId()));
+              + " up.", snapInfo.getSnapshotVO()));
 
             return snapInfo;
         }

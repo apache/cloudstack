@@ -88,6 +88,7 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
         routerResponse.setZoneId(router.getDataCenterUuid());
         routerResponse.setName(router.getName());
         routerResponse.setTemplateId(router.getTemplateUuid());
+        routerResponse.setArch(router.getArch().getType());
         VMTemplateVO template = ApiDBUtils.findTemplateById(router.getTemplateId());
         if (template != null) {
             routerResponse.setTemplateName(template.getName());

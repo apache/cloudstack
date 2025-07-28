@@ -141,7 +141,7 @@ public class NexentaPrimaryDataStoreLifeCycle
 
         for (HostVO host : hosts) {
             try {
-                _storageMgr.connectHostToSharedPool(host.getId(), dataStore.getId());
+                _storageMgr.connectHostToSharedPool(host, dataStore.getId());
             } catch (Exception e) {
                 logger.warn("Unable to establish a connection between " + host + " and " + dataStore, e);
             }

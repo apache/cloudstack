@@ -80,7 +80,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
     private final String findOneHostOnPrimaryStorage = "select t.id from "
                             + "(select h.id, cd.value, hd.value as " + VOL_ENCRYPT_COLUMN_NAME + " "
                             + "from host h join storage_pool_host_ref s on h.id = s.host_id  "
-                            + "join cluster c on c.id=h.cluster_id "
+                            + "join cluster c on c.id=h.cluster_id and c.allocation_state = 'Enabled'"
                             + "left join cluster_details cd on c.id=cd.cluster_id and cd.name='" + CapacityManager.StorageOperationsExcludeCluster.key() + "' "
                             + "left join host_details hd on h.id=hd.host_id and hd.name='" + HOST_VOLUME_ENCRYPTION + "' "
                             + "where h.status = 'Up' and h.type = 'Routing' and h.resource_state = 'Enabled' and s.pool_id = ? ";
@@ -299,7 +299,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
 
     @Override
     public EndPoint select(DataObject srcData, DataObject destData, StorageAction action, boolean encryptionRequired) {
-        logger.error("IR24 select BACKUPSNAPSHOT from primary to secondary " + srcData.getId() + " dest=" + destData.getId());
+        logger.error("IR24 select BACKUPSNAPSHOT from primary to secondary {} dest={}", srcData, destData);
         if (action == StorageAction.BACKUPSNAPSHOT && srcData.getDataStore().getRole() == DataStoreRole.Primary) {
             SnapshotInfo srcSnapshot = (SnapshotInfo)srcData;
             VolumeInfo volumeInfo = srcSnapshot.getBaseVolume();

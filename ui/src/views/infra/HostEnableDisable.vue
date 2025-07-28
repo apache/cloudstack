@@ -18,7 +18,7 @@
 <template>
   <div class="form-layout">
     <a-form
-      :ref="formRef"
+      ref="formRef"
       :model="form"
       :rules="rules"
       @finish="handleSubmit"
@@ -28,15 +28,15 @@
     >
       <a-alert type="warning">
         <template #message>
-          <span v-html="$t('message.confirm.enable.host')" />
+          <span v-html="resourcestate === 'Disabled' ? $t('message.confirm.enable.host') : $t('message.confirm.disable.host') " />
         </template>
       </a-alert>
-      <div v-show="enableKVMAutoEnableDisableSetting" class="reason">
+      <div v-show="kvmAutoEnableDisableSetting" class="reason">
         <a-form-item
           class="form__item"
           name="reason"
           ref="reason"
-          :label="'The setting \'enable.kvm.host.auto.enable.disable\' is enabled, ' +
+          :label="'The Auto Enable/Disable KVM Hosts functionality is enabled, ' +
             ' can specify a reason for ' + (resourcestate === 'Enabled' ? 'disabling' : 'enabling') + ' this host'">
           <a-textarea
             v-model:value="form.reason"
@@ -54,7 +54,7 @@
 </template>
 
 <script>
-import { ref, reactive, toRaw } from 'vue'
+import { reactive, toRaw } from 'vue'
 import { api } from '@/api'
 
 export default {
@@ -69,7 +69,7 @@ export default {
     return {
       resourcestate: '',
       allocationstate: '',
-      enableKVMAutoEnableDisableSetting: false
+      kvmAutoEnableDisableSetting: false
     }
   },
   created () {
@@ -78,11 +78,8 @@ export default {
     this.resourcestate = this.resource.resourcestate
     this.allocationstate = this.resourcestate === 'Enabled' ? 'Disable' : 'Enable'
   },
-  beforeCreate () {
-  },
   methods: {
     initForm () {
-      this.formRef = ref()
       this.form = reactive({})
       this.rules = reactive({})
     },
@@ -91,17 +88,15 @@ export default {
         return
       }
       api('listConfigurations', { name: 'enable.kvm.host.auto.enable.disable', clusterid: this.resource.clusterid }).then(json => {
-        if (json.listconfigurationsresponse.configuration[0]) {
-          this.enableKVMAutoEnableDisableSetting = json.listconfigurationsresponse.configuration[0].value
+        if (json.listconfigurationsresponse.configuration?.[0]) {
+          this.kvmAutoEnableDisableSetting = json?.listconfigurationsresponse?.configuration?.[0]?.value || false
         }
       })
     },
     handleSubmit (e) {
-      e.preventDefault()
-      this.formRef.value.validate().then(() => {
+      this.$refs.formRef.validate().then(() => {
         const values = toRaw(this.form)
-
-        var data = {
+        const data = {
           allocationstate: this.allocationstate,
           id: this.resource.id
         }
@@ -110,24 +105,27 @@ export default {
         }
         api('updateHost', data).then(_ => {
           this.$emit('close-action')
+          this.$emit('refresh-data')
+        }).catch(err => {
+          this.$message.error(err.message || 'Failed to update host status')
         })
+      }).catch(() => {
+        this.$message.error('Validation failed. Please check the inputs.')
       })
     }
   }
 }
-
 </script>
 
 <style scoped>
 .reason {
-  padding-top: 20px
+  padding-top: 20px;
 }
 
 .form-layout {
-    width: 30vw;
-
-    @media (min-width: 500px) {
-      width: 450px;
-    }
+  width: 30vw;
+  @media (min-width: 500px) {
+    width: 450px;
   }
+}
 </style>

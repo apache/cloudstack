@@ -19,6 +19,7 @@ package org.apache.cloudstack.storage.template;
 import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
@@ -300,7 +301,18 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
             logger.error(errorString);
             return new CreateEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
         }
-
+        File parentFolder = file.getParentFile();
+        if (parentFolder != null && parentFolder.exists()) {
+            Path folderPath = parentFolder.toPath();
+            Script script = new Script(true, "chmod", 1440 * 1000, logger);
+            script.add("755", folderPath.toString());
+            result = script.execute();
+            if (result != null) {
+                String errMsg = "Unable to set permissions for " + folderPath + " due to " + result;
+                logger.error(errMsg);
+                throw new CloudRuntimeException(errMsg);
+            }
+        }
         return new CreateEntityDownloadURLAnswer("", CreateEntityDownloadURLAnswer.RESULT_SUCCESS);
 
     }

@@ -18,6 +18,7 @@ package com.cloud.hypervisor.kvm.resource;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -248,7 +249,9 @@ public class LibvirtVMDef {
                         guestDef.append("<boot dev='" + bo + "'/>\n");
                     }
                 }
-                guestDef.append("<smbios mode='sysinfo'/>\n");
+                if (_arch == null || !_arch.equals("aarch64")) {
+                    guestDef.append("<smbios mode='sysinfo'/>\n");
+                }
                 guestDef.append("</os>\n");
                 if (iothreads) {
                     guestDef.append(String.format("<iothreads>%s</iothreads>", NUMBER_OF_IOTHREADS));
@@ -678,7 +681,7 @@ public class LibvirtVMDef {
         }
 
         public enum DiskBus {
-            IDE("ide"), SCSI("scsi"), VIRTIO("virtio"), XEN("xen"), USB("usb"), UML("uml"), FDC("fdc"), SATA("sata");
+            IDE("ide"), SCSI("scsi"), VIRTIO("virtio"), XEN("xen"), USB("usb"), UML("uml"), FDC("fdc"), SATA("sata"), VIRTIOBLK("virtio-blk");
             String _bus;
 
             DiskBus(String bus) {
@@ -894,8 +897,8 @@ public class LibvirtVMDef {
             }
         }
 
-        public void defISODisk(String volPath) {
-            _diskType = DiskType.FILE;
+        public void defISODisk(String volPath, DiskType diskType) {
+            _diskType = diskType;
             _deviceType = DeviceType.CDROM;
             _sourcePath = volPath;
             _diskLabel = getDevLabel(3, DiskBus.IDE, true);
@@ -904,8 +907,8 @@ public class LibvirtVMDef {
             _bus = DiskBus.IDE;
         }
 
-        public void defISODisk(String volPath, boolean isUefiEnabled) {
-            _diskType = DiskType.FILE;
+        public void defISODisk(String volPath, boolean isUefiEnabled, DiskType diskType) {
+            _diskType = diskType;
             _deviceType = DeviceType.CDROM;
             _sourcePath = volPath;
             _bus = isUefiEnabled ? DiskBus.SATA : DiskBus.IDE;
@@ -914,18 +917,18 @@ public class LibvirtVMDef {
             _diskCacheMode = DiskCacheMode.NONE;
         }
 
-        public void defISODisk(String volPath, Integer devId) {
-            defISODisk(volPath, devId, null);
+        public void defISODisk(String volPath, Integer devId, DiskType diskType) {
+            defISODisk(volPath, devId, null, diskType);
         }
 
-        public void defISODisk(String volPath, Integer devId, String diskLabel) {
+        public void defISODisk(String volPath, Integer devId, String diskLabel, DiskType diskType) {
             if (devId == null && StringUtils.isBlank(diskLabel)) {
                 LOGGER.debug(String.format("No ID or label informed for volume [%s].", volPath));
-                defISODisk(volPath);
+                defISODisk(volPath, diskType);
                 return;
             }
 
-            _diskType = DiskType.FILE;
+            _diskType = diskType;
             _deviceType = DeviceType.CDROM;
             _sourcePath = volPath;
 
@@ -942,11 +945,11 @@ public class LibvirtVMDef {
             _bus = DiskBus.IDE;
         }
 
-        public void defISODisk(String volPath, Integer devId,boolean isSecure) {
+        public void defISODisk(String volPath, Integer devId, boolean isSecure, DiskType diskType) {
             if (!isSecure) {
-                defISODisk(volPath, devId);
+                defISODisk(volPath, devId, diskType);
             } else {
-                _diskType = DiskType.FILE;
+                _diskType = diskType;
                 _deviceType = DeviceType.CDROM;
                 _sourcePath = volPath;
                 _diskLabel = getDevLabel(devId, DiskBus.SATA, true);
@@ -2293,7 +2296,7 @@ public class LibvirtVMDef {
 
     public static class WatchDogDef {
         enum WatchDogModel {
-            I6300ESB("i6300esb"), IB700("ib700"), DIAG288("diag288"), ITCO("itco");
+            I6300ESB("i6300esb"), IB700("ib700"), DIAG288("diag288"), ITCO("itco"), NONE("none");
             String model;
 
             WatchDogModel(String model) {
@@ -2346,9 +2349,89 @@ public class LibvirtVMDef {
 
         @Override
         public String toString() {
+            if (WatchDogModel.NONE == model) {
+                // Do not add watchodogs when the model is set to none
+                return "";
+            }
             StringBuilder wacthDogBuilder = new StringBuilder();
             wacthDogBuilder.append("<watchdog model='" + model + "' action='" + action + "'/>\n");
             return wacthDogBuilder.toString();
+        }
+    }
+
+    public static class TpmDef {
+        enum TpmModel {
+            TIS("tpm-tis"), // TPM Interface Specification (TIS)
+            CRB("tpm-crb"); // Command-Response Buffer (CRB)
+
+            final String model;
+
+            TpmModel(String model) {
+                this.model = model;
+            }
+
+            @Override
+            public String toString() {
+                return model;
+            }
+        }
+
+        enum TpmVersion {
+            V1_2("1.2"),    // 1.2
+            V2_0("2.0");    // 2.0. Default version. The CRB model is only supported with version 2.0.
+
+            final String version;
+
+            TpmVersion(String version) {
+                this.version = version;
+            }
+
+            @Override
+            public String toString() {
+                return version;
+            }
+        }
+
+        private TpmModel model;
+        private TpmVersion version = TpmVersion.V2_0;
+
+        public TpmDef(TpmModel model, TpmVersion version) {
+            this.model = model;
+            if (version != null) {
+                this.version = version;
+            }
+        }
+
+        public TpmDef(String model, String version) {
+            this.model = Arrays.stream(TpmModel.values())
+                    .filter(tpmModel -> tpmModel.toString().equals(model))
+                    .findFirst()
+                    .orElse(null);
+            if (version != null) {
+                this.version = Arrays.stream(TpmVersion.values())
+                        .filter(tpmVersion -> tpmVersion.toString().equals(version))
+                        .findFirst()
+                        .orElse(this.version);;
+            }
+        }
+
+        public TpmModel getModel() {
+            return model;
+        }
+
+        public TpmVersion getVersion() {
+            return version;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder tpmBuidler = new StringBuilder();
+            if (model != null) {
+                tpmBuidler.append("<tpm model='").append(model).append("'>\n");
+                tpmBuidler.append("<backend type='emulator' version='").append(version).append("'/>\n");
+                tpmBuidler.append("</tpm>\n");
+            }
+            return tpmBuidler.toString();
         }
     }
 

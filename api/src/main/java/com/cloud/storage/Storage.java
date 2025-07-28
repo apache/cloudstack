@@ -16,14 +16,10 @@
 // under the License.
 package com.cloud.storage;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-
 import org.apache.commons.lang.NotImplementedException;
-import org.apache.commons.lang3.StringUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class Storage {
     public static enum ImageFormat {
@@ -139,6 +135,21 @@ public class Storage {
         ISODISK /* Template corresponding to a iso (non root disk) present in an OVA */
     }
 
+    public enum EncryptionSupport {
+        /**
+         * Encryption not supported.
+         */
+        Unsupported,
+        /**
+         * Will use hypervisor encryption driver (qemu -> luks)
+         */
+        Hypervisor,
+        /**
+         * Storage pool handles encryption and just provides an encrypted volume
+         */
+        Storage
+    }
+
     /**
      * StoragePoolTypes carry some details about the format and capabilities of a storage pool. While not necessarily a
      * 1:1 with PrimaryDataStoreDriver (and for KVM agent, KVMStoragePool and StorageAdaptor) implementations, it is
@@ -150,61 +161,37 @@ public class Storage {
      * ensure this is available on the agent side as well. This is best done by defining the StoragePoolType in a common
      * package available on both management server and agent plugin jars.
      */
-    public static class StoragePoolType {
-        private static final Map<String, StoragePoolType> map = new LinkedHashMap<>();
+    public static enum StoragePoolType {
+        Filesystem(false, true, EncryptionSupport.Hypervisor), // local directory
+        NetworkFilesystem(true, true, EncryptionSupport.Hypervisor), // NFS
+        IscsiLUN(true, false, EncryptionSupport.Unsupported), // shared LUN, with a clusterfs overlay
+        Iscsi(true, false, EncryptionSupport.Unsupported), // for e.g., ZFS Comstar
+        ISO(false, false, EncryptionSupport.Unsupported), // for iso image
+        LVM(false, false, EncryptionSupport.Unsupported), // XenServer local LVM SR
+        CLVM(true, false, EncryptionSupport.Unsupported),
+        RBD(true, true, EncryptionSupport.Unsupported), // http://libvirt.org/storage.html#StorageBackendRBD
+        SharedMountPoint(true, true, EncryptionSupport.Hypervisor),
+        VMFS(true, true, EncryptionSupport.Unsupported), // VMware VMFS storage
+        PreSetup(true, true, EncryptionSupport.Unsupported), // for XenServer, Storage Pool is set up by customers.
+        EXT(false, true, EncryptionSupport.Unsupported), // XenServer local EXT SR
+        OCFS2(true, false, EncryptionSupport.Unsupported),
+        SMB(true, false, EncryptionSupport.Unsupported),
+        Gluster(true, false, EncryptionSupport.Unsupported),
+        PowerFlex(true, true, EncryptionSupport.Hypervisor), // Dell EMC PowerFlex/ScaleIO (formerly VxFlexOS)
+        ManagedNFS(true, false, EncryptionSupport.Unsupported),
+        Linstor(true, true, EncryptionSupport.Storage),
+        DatastoreCluster(true, true, EncryptionSupport.Unsupported), // for VMware, to abstract pool of clusters
+        StorPool(true, true, EncryptionSupport.Hypervisor),
+        FiberChannel(true, true, EncryptionSupport.Unsupported); // Fiber Channel Pool for KVM hypervisors is used to find the volume by WWN value (/dev/disk/by-id/wwn-<wwnvalue>)
 
-        public static final StoragePoolType Filesystem = new StoragePoolType("Filesystem", false, true, true);
-        public static final StoragePoolType NetworkFilesystem = new StoragePoolType("NetworkFilesystem", true, true, true);
-        public static final StoragePoolType IscsiLUN = new StoragePoolType("IscsiLUN", true, false, false);
-        public static final StoragePoolType Iscsi = new StoragePoolType("Iscsi", true, false, false);
-        public static final StoragePoolType ISO = new StoragePoolType("ISO", false, false, false);
-        public static final StoragePoolType LVM = new StoragePoolType("LVM", false, false, false);
-        public static final StoragePoolType CLVM = new StoragePoolType("CLVM", true, false, false);
-        public static final StoragePoolType RBD = new StoragePoolType("RBD", true, true, false);
-        public static final StoragePoolType SharedMountPoint = new StoragePoolType("SharedMountPoint", true, true, true);
-        public static final StoragePoolType VMFS = new StoragePoolType("VMFS", true, true, false);
-        public static final StoragePoolType PreSetup = new StoragePoolType("PreSetup", true, true, false);
-        public static final StoragePoolType EXT = new StoragePoolType("EXT", false, true, false);
-        public static final StoragePoolType OCFS2 = new StoragePoolType("OCFS2", true, false, false);
-        public static final StoragePoolType SMB = new StoragePoolType("SMB", true, false, false);
-        public static final StoragePoolType Gluster = new StoragePoolType("Gluster", true, false, false);
-        public static final StoragePoolType PowerFlex = new StoragePoolType("PowerFlex", true, true, true);
-        public static final StoragePoolType ManagedNFS = new StoragePoolType("ManagedNFS", true, false, false);
-        public static final StoragePoolType Linstor = new StoragePoolType("Linstor", true, true, false);
-        public static final StoragePoolType DatastoreCluster = new StoragePoolType("DatastoreCluster", true, true, false);
-        public static final StoragePoolType StorPool = new StoragePoolType("StorPool", true,true,true);
-        public static final StoragePoolType FiberChannel = new StoragePoolType("FiberChannel", true,true,false);
-
-
-        private final String name;
         private final boolean shared;
         private final boolean overProvisioning;
-        private final boolean encryption;
+        private final EncryptionSupport encryption;
 
-        /**
-         * New StoragePoolType, set the name to check with it in Dao (Note: Do not register it into the map of pool types).
-         * @param name name of the StoragePoolType.
-         */
-        public StoragePoolType(String name) {
-            this.name = name;
-            this.shared = false;
-            this.overProvisioning = false;
-            this.encryption = false;
-        }
-
-        /**
-         * Define a new StoragePoolType, and register it into the map of pool types known to the management server.
-         * @param name Simple unique name of the StoragePoolType.
-         * @param shared Storage pool is shared/accessible to multiple hypervisors
-         * @param overProvisioning Storage pool supports overProvisioning
-         * @param encryption Storage pool supports encrypted volumes
-         */
-        public StoragePoolType(String name, boolean shared, boolean overProvisioning, boolean encryption) {
-            this.name = name;
+        StoragePoolType(boolean shared, boolean overProvisioning, EncryptionSupport encryption) {
             this.shared = shared;
             this.overProvisioning = overProvisioning;
             this.encryption = encryption;
-            addStoragePoolType(this);
         }
 
         public boolean isShared() {
@@ -216,49 +203,11 @@ public class Storage {
         }
 
         public boolean supportsEncryption() {
+            return encryption == EncryptionSupport.Hypervisor || encryption == EncryptionSupport.Storage;
+        }
+
+        public EncryptionSupport encryptionSupportMode() {
             return encryption;
-        }
-
-        private static void addStoragePoolType(StoragePoolType storagePoolType) {
-            map.putIfAbsent(storagePoolType.name, storagePoolType);
-        }
-
-        public static StoragePoolType[] values() {
-            return map.values().toArray(StoragePoolType[]::new).clone();
-        }
-
-        public static StoragePoolType valueOf(String name) {
-            if (StringUtils.isBlank(name)) {
-                return null;
-            }
-
-            StoragePoolType storage = map.get(name);
-            if (storage == null) {
-                throw new IllegalArgumentException("StoragePoolType '" + name + "' not found");
-            }
-            return storage;
-        }
-
-        @Override
-        public String toString() {
-            return name;
-        }
-
-        public String name() {
-            return name;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            StoragePoolType that = (StoragePoolType) o;
-            return Objects.equals(name, that.name);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(name);
         }
     }
 

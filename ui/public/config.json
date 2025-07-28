@@ -13,6 +13,7 @@
   "loginTitle": "CloudStack",
   "loginFavicon": "assets/logo.svg",
   "loginFooter": "",
+  "resetPasswordFooter": "",
   "logo": "assets/logo.svg",
   "minilogo": "assets/mini-logo.svg",
   "banner": "assets/banner.svg",

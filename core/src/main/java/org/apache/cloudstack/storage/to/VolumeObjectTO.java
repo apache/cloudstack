@@ -30,6 +30,7 @@ import com.cloud.offering.DiskOffering.DiskCacheMode;
 import com.cloud.storage.MigrationOptions;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import java.util.Arrays;
 
@@ -258,7 +259,9 @@ public class VolumeObjectTO extends DownloadableObjectTO implements DataTO {
 
     @Override
     public String toString() {
-        return new StringBuilder("volumeTO[uuid=").append(uuid).append("|path=").append(path).append("|datastore=").append(dataStore).append("]").toString();
+        return String.format("volumeTO %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "name", "path", "dataStore"));
     }
 
     public void setBytesReadRate(Long bytesReadRate) {

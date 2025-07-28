@@ -129,7 +129,9 @@ export default {
     initForm () {
       this.formRef = ref()
       this.form = reactive({
-        server: (this.server.apiHost || '') + this.server.apiBase
+        server: (this.server.apiHost || '') + this.server.apiBase,
+        username: this.$route.query?.username || '',
+        domain: this.$route.query?.domain || ''
       })
       this.rules = {
         username: [{

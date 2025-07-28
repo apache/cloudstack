@@ -449,12 +449,16 @@ export default {
         services.push({
           name: 'Dhcp',
           provider: [
-            { name: 'VpcVirtualRouter' }
+            { name: 'VpcVirtualRouter' },
+            { name: 'ConfigDrive' }
           ]
         })
         services.push({
           name: 'Dns',
-          provider: [{ name: 'VpcVirtualRouter' }]
+          provider: [
+            { name: 'VpcVirtualRouter' },
+            { name: 'ConfigDrive' }
+          ]
         })
         services.push({
           name: 'Lb',

@@ -672,6 +672,18 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     }
 
     @Override
+    public List<CapacityVO> listByHostIdTypes(Long hostId, List<Short> capacityTypes) {
+        SearchBuilder<CapacityVO> sb = createSearchBuilder();
+        sb.and("hostId", sb.entity().getHostOrPoolId(), SearchCriteria.Op.EQ);
+        sb.and("type", sb.entity().getCapacityType(), SearchCriteria.Op.IN);
+        sb.done();
+        SearchCriteria<CapacityVO> sc = sb.create();
+        sc.setParameters("hostId", hostId);
+        sc.setParameters("type", capacityTypes.toArray());
+        return listBy(sc);
+    }
+
+    @Override
     public List<Long> listClustersInZoneOrPodByHostCapacities(long id, long vmId, int requiredCpu, long requiredRam, short capacityTypeForOrdering, boolean isZone) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;

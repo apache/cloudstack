@@ -149,6 +149,11 @@ public interface GenericDao<T, ID extends Serializable> {
     List<T> listAll(Filter filter);
 
     /**
+     * Look IDs for all active rows.
+     */
+    List<ID> listAllIds();
+
+    /**
      * Search for the entity beans
      * @param sc
      * @param filter

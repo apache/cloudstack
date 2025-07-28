@@ -1718,6 +1718,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             if (template != null) {
                 vmResponse.setTemplateId(template.getUuid());
                 vmResponse.setTemplateName(template.getName());
+                vmResponse.setArch(template.getArch().getType());
             }
             vmResponse.setCreated(vm.getCreated());
             vmResponse.setHypervisor(vm.getHypervisorType().getHypervisorDisplayName());
@@ -2565,6 +2566,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setIsSystem(networkOffering.isSystemOnly());
             response.setNetworkOfferingAvailability(networkOffering.getAvailability().toString());
             response.setIsPersistent(networkOffering.isPersistent());
+            response.setSpecifyVlan(networkOffering.isSpecifyVlan());
             if (Network.GuestType.Isolated.equals(network.getGuestType()) && network.getVpcId() == null) {
                 response.setEgressDefaultPolicy(networkOffering.isEgressDefaultPolicy());
             }
@@ -5265,6 +5267,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setMemory(instance.getMemory());
         response.setOperatingSystemId(instance.getOperatingSystemId());
         response.setOperatingSystem(instance.getOperatingSystem());
+        response.setBootMode(instance.getBootMode());
+        response.setBootType(instance.getBootType());
         response.setObjectName("unmanagedinstance");
 
         if (instance.getDisks() != null) {
@@ -5439,7 +5443,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setAddress(backupRepository.getAddress());
         response.setProviderName(backupRepository.getProvider());
         response.setType(backupRepository.getType());
-        response.setMountOptions(backupRepository.getMountOptions());
         response.setCapacityBytes(backupRepository.getCapacityBytes());
         response.setObjectName("backuprepository");
         DataCenter zone = ApiDBUtils.findZoneById(backupRepository.getZoneId());

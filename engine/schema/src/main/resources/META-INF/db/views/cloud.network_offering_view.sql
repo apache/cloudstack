@@ -76,13 +76,9 @@ SELECT
 FROM
     `cloud`.`network_offerings`
         LEFT JOIN
-    `cloud`.`network_offering_details` AS `domain_details` ON `domain_details`.`network_offering_id` = `network_offerings`.`id` AND `domain_details`.`name`='domainid'
+    `cloud`.`domain` AS `domain` ON `domain`.id IN (SELECT value from `network_offering_details` where `name` = 'domainid' and `network_offering_id` = `network_offerings`.`id`)
         LEFT JOIN
-    `cloud`.`domain` AS `domain` ON FIND_IN_SET(`domain`.`id`, `domain_details`.`value`)
-        LEFT JOIN
-    `cloud`.`network_offering_details` AS `zone_details` ON `zone_details`.`network_offering_id` = `network_offerings`.`id` AND `zone_details`.`name`='zoneid'
-        LEFT JOIN
-    `cloud`.`data_center` AS `zone` ON FIND_IN_SET(`zone`.`id`, `zone_details`.`value`)
+    `cloud`.`data_center` AS `zone` ON `zone`.`id` IN (SELECT value from `network_offering_details` where `name` = 'zoneid' and `network_offering_id` = `network_offerings`.`id`)
         LEFT JOIN
     `cloud`.`network_offering_details` AS `offering_details` ON `offering_details`.`network_offering_id` = `network_offerings`.`id` AND `offering_details`.`name`='internetProtocol'
 GROUP BY

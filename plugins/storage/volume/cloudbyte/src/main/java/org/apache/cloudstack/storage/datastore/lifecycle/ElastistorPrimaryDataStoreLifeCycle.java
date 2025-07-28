@@ -365,8 +365,8 @@ public class ElastistorPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLif
 
         if (!dataStoreVO.isManaged()) {
             boolean success = false;
-            for (HostVO h : allHosts) {
-                success = createStoragePool(h.getId(), primarystore);
+            for (HostVO host : allHosts) {
+                success = createStoragePool(host, primarystore);
                 if (success) {
                     break;
                 }
@@ -377,7 +377,7 @@ public class ElastistorPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLif
         List<HostVO> poolHosts = new ArrayList<HostVO>();
         for (HostVO h : allHosts) {
             try {
-                storageMgr.connectHostToSharedPool(h.getId(), primarystore.getId());
+                storageMgr.connectHostToSharedPool(h, primarystore.getId());
                 poolHosts.add(h);
             } catch (Exception e) {
                 logger.warn("Unable to establish a connection between " + h + " and " + primarystore, e);
@@ -393,8 +393,8 @@ public class ElastistorPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLif
         return true;
     }
 
-    private boolean createStoragePool(long hostId, StoragePool pool) {
-        logger.debug("creating pool " + pool.getName() + " on  host " + hostId);
+    private boolean createStoragePool(Host host, StoragePool pool) {
+        logger.debug(String.format("creating pool %s on host %s", pool, host));
         if (pool.getPoolType() != StoragePoolType.NetworkFilesystem && pool.getPoolType() != StoragePoolType.Filesystem && pool.getPoolType() != StoragePoolType.IscsiLUN
                 && pool.getPoolType() != StoragePoolType.Iscsi && pool.getPoolType() != StoragePoolType.VMFS && pool.getPoolType() != StoragePoolType.SharedMountPoint
                 && pool.getPoolType() != StoragePoolType.PreSetup && pool.getPoolType() != StoragePoolType.OCFS2 && pool.getPoolType() != StoragePoolType.RBD
@@ -403,17 +403,17 @@ public class ElastistorPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLif
             return false;
         }
         CreateStoragePoolCommand cmd = new CreateStoragePoolCommand(true, pool);
-        final Answer answer = agentMgr.easySend(hostId, cmd);
+        final Answer answer = agentMgr.easySend(host.getId(), cmd);
         if (answer != null && answer.getResult()) {
             return true;
         } else {
             primaryDataStoreDao.expunge(pool.getId());
             String msg = "";
             if (answer != null) {
-                msg = "Can not create storage pool through host " + hostId + " due to " + answer.getDetails();
+                msg = String.format("Can not create storage pool through host %s due to %s", host, answer.getDetails());
                 logger.warn(msg);
             } else {
-                msg = "Can not create storage pool through host " + hostId + " due to CreateStoragePoolCommand returns null";
+                msg = String.format("Can not create storage pool through host %s due to CreateStoragePoolCommand returns null", host);
                 logger.warn(msg);
             }
             throw new CloudRuntimeException(msg);
@@ -433,7 +433,7 @@ public class ElastistorPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLif
         List<HostVO> poolHosts = new ArrayList<HostVO>();
         for (HostVO host : hosts) {
             try {
-                storageMgr.connectHostToSharedPool(host.getId(), dataStore.getId());
+                storageMgr.connectHostToSharedPool(host, dataStore.getId());
                 poolHosts.add(host);
             } catch (Exception e) {
                 logger.warn("Unable to establish a connection between " + host + " and " + dataStore, e);

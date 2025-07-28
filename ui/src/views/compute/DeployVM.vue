@@ -559,7 +559,7 @@
                   </span>
                   <div style="margin-top: 15px" v-if="showDetails">
                     <div
-                      v-if="vm.templateid && ['KVM', 'VMware', 'XenServer'].includes(hypervisor) && !template.deployasis">
+                      v-if="['KVM', 'VMware', 'XenServer'].includes(hypervisor) && ((vm.templateid && !template.deployasis) || vm.isoid)">
                       <a-form-item :label="$t('label.boottype')" name="boottype" ref="boottype">
                         <a-select
                           v-model:value="form.boottype"
@@ -603,7 +603,7 @@
                           @change="val => { dynamicscalingenabled = val }"/>
                       </a-form-item>
                     </a-form-item>
-                    <a-form-item :label="$t('label.userdata')">
+                    <a-form-item :label="$t('label.user.data')">
                       <a-card>
                         <div v-if="this.template && this.template.userdataid">
                           <a-text type="primary">
@@ -657,11 +657,11 @@
                         </div><br/><br/>
                         <div v-if="userdataDefaultOverridePolicy === 'ALLOWOVERRIDE' || userdataDefaultOverridePolicy === 'APPEND' || !userdataDefaultOverridePolicy">
                           <span v-if="userdataDefaultOverridePolicy === 'ALLOWOVERRIDE'" >
-                            {{ $t('label.userdata.do.override') }}
+                            {{ $t('label.user.data.do.override') }}
                             <a-switch v-model:checked="doUserdataOverride" style="margin-left: 10px"/>
                           </span>
                           <span v-if="userdataDefaultOverridePolicy === 'APPEND'">
-                            {{ $t('label.userdata.do.append') }}
+                            {{ $t('label.user.data.do.append') }}
                             <a-switch v-model:checked="doUserdataAppend" style="margin-left: 10px"/>
                           </span>
                           <a-step
@@ -838,36 +838,31 @@
                 </template>
               </a-step>
             </a-steps>
-            <div class="card-footer">
-              <a-form-item name="stayonpage" ref="stayonpage">
-                <a-switch
-                  class="form-item-hidden"
-                  v-model:checked="form.stayonpage" />
-              </a-form-item>
-              <!-- ToDo extract as component -->
-              <a-button @click="() => $router.back()" :disabled="loading.deploy">
-                {{ $t('label.cancel') }}
-              </a-button>
-              <a-dropdown-button style="margin-left: 10px" type="primary" ref="submit" @click="handleSubmit" :loading="loading.deploy">
-                <rocket-outlined />
-                {{ this.form.startvm ? $t('label.launch.vm') : $t('label.create.vm') }}
-                <template #icon><down-outlined /></template>
-                <template #overlay>
-                  <a-menu type="primary" @click="handleSubmitAndStay" theme="dark" class="btn-stay-on-page">
-                    <a-menu-item type="primary" key="1">
-                      <rocket-outlined />
-                      {{ this.form.startvm ? $t('label.launch.vm.and.stay') : $t('label.create.vm.and.stay') }}
-                    </a-menu-item>
-                  </a-menu>
-                </template>
-              </a-dropdown-button>
+            <div class="card-footer" v-if="isMobile()">
+              <deploy-buttons
+                :loading="loading.deploy"
+                :deployButtonText="form.startvm ? $t('label.launch.vm') : $t('label.create.vm')"
+                :deployButtonMenuOptions="deployMenuOptions"
+                @handle-cancel="() => $router.back()"
+                @handle-deploy="handleSubmit"
+                @handle-deploy-menu="(index, e) => handleSubmitAndStay(e)" />
             </div>
           </a-form>
         </a-card>
       </a-col>
       <a-col :md="24" :lg="7" v-if="!isMobile()">
         <a-affix :offsetTop="75" class="vm-info-card">
-          <info-card :resource="vm" :title="$t('label.yourinstance')" @change-resource="(data) => resource = data" />
+          <info-card :footerVisible="true" :resource="vm" :title="$t('label.yourinstance')" @change-resource="(data) => resource = data">
+            <template #footer-content>
+              <deploy-buttons
+                :loading="loading.deploy"
+                :deployButtonText="form.startvm ? $t('label.launch.vm') : $t('label.create.vm')"
+                :deployButtonMenuOptions="deployMenuOptions"
+                @handle-cancel="() => $router.back()"
+                @handle-deploy="handleSubmit"
+                @handle-deploy-menu="(index, e) => handleSubmitAndStay(e)" />
+            </template>
+          </info-card>
         </a-affix>
       </a-col>
     </a-row>
@@ -885,6 +880,7 @@ import eventBus from '@/config/eventBus'
 
 import OwnershipSelection from '@views/compute/wizard/OwnershipSelection'
 import InfoCard from '@/components/view/InfoCard'
+import DeployButtons from '@views/compute/wizard/DeployButtons'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import ComputeOfferingSelection from '@views/compute/wizard/ComputeOfferingSelection'
 import ComputeSelection from '@views/compute/wizard/ComputeSelection'
@@ -905,6 +901,9 @@ export default {
   name: 'Wizard',
   components: {
     OwnershipSelection,
+    InfoCard,
+    DeployButtons,
+    ResourceIcon,
     SshKeyPairSelection,
     UserDataSelection,
     NetworkConfiguration,
@@ -914,11 +913,9 @@ export default {
     DiskSizeSelection,
     MultiDiskSelection,
     DiskOfferingSelection,
-    InfoCard,
     ComputeOfferingSelection,
     ComputeSelection,
     SecurityGroupSelection,
-    ResourceIcon,
     TooltipLabel,
     InstanceNicsNetworkSelectListView
   },
@@ -982,8 +979,7 @@ export default {
         keyboards: [],
         bootTypes: [],
         bootModes: [],
-        ioPolicyTypes: [],
-        dynamicScalingVmConfig: false
+        ioPolicyTypes: []
       },
       rowCount: {},
       loading: {
@@ -1043,11 +1039,11 @@ export default {
       userDataValues: {},
       templateUserDataCols: [
         {
-          title: this.$t('label.userdata'),
+          title: this.$t('label.user.data'),
           dataIndex: 'userdata'
         },
         {
-          title: this.$t('label.userdatapolicy'),
+          title: this.$t('label.user.data.policy'),
           dataIndex: 'userdataoverridepolicy'
         }
       ],
@@ -1278,13 +1274,6 @@ export default {
             type: 'Routing'
           },
           field: 'hostid'
-        },
-        dynamicScalingVmConfig: {
-          list: 'listConfigurations',
-          options: {
-            zoneid: _.get(this.zone, 'id'),
-            name: 'enable.dynamic.scale.vm'
-          }
         }
       }
     },
@@ -1396,11 +1385,11 @@ export default {
       let tabList = []
       tabList = [{
         key: 'userdataregistered',
-        tab: this.$t('label.userdata.registered')
+        tab: this.$t('label.user.data.registered')
       },
       {
         key: 'userdatatext',
-        tab: this.$t('label.userdata.text')
+        tab: this.$t('label.user.data.text')
       }]
 
       return tabList
@@ -1427,13 +1416,16 @@ export default {
       return Boolean('listUserData' in this.$store.getters.apis)
     },
     dynamicScalingVmConfigValue () {
-      return this.options.dynamicScalingVmConfig?.[0]?.value === 'true'
+      return this.$store.getters.features.dynamicscalingenabled
     },
     isCustomizedDiskIOPS () {
       return this.diskSelected?.iscustomizediops || false
     },
     isCustomizedIOPS () {
       return this.rootDiskSelected?.iscustomizediops || this.serviceOffering?.iscustomizediops || false
+    },
+    deployMenuOptions () {
+      return [this.form.startvm ? this.$t('label.launch.vm.and.stay') : this.$t('label.create.vm.and.stay')]
     }
   },
   watch: {
@@ -1940,18 +1932,16 @@ export default {
         this.form.userdataid = undefined
         return
       }
+
       this.form.userdataid = id
       this.userDataParams = []
       api('listUserData', { id: id }).then(json => {
         const resp = json?.listuserdataresponse?.userdata || []
         if (resp[0]) {
-          var params = resp[0].params
-          if (params) {
-            var dataParams = params.split(',')
-          }
-          var that = this
-          dataParams.forEach(function (val, index) {
-            that.userDataParams.push({
+          const params = resp[0].params
+          const dataParams = params ? params.split(',') : []
+          dataParams.forEach((val, index) => {
+            this.userDataParams.push({
               id: index,
               key: val
             })
@@ -2314,14 +2304,14 @@ export default {
         domainid: store.getters.userInfo.domainid,
         account: store.getters.userInfo.account
       }
-      if (OwnerOptions.selectedAccountType === this.$t('label.account')) {
+      if (OwnerOptions.selectedAccountType === 'Account') {
         if (!OwnerOptions.selectedAccount) {
           return
         }
         this.owner.account = OwnerOptions.selectedAccount
         this.owner.domainid = OwnerOptions.selectedDomain
         this.owner.projectid = null
-      } else if (OwnerOptions.selectedAccountType === this.$t('label.project')) {
+      } else if (OwnerOptions.selectedAccountType === 'Project') {
         if (!OwnerOptions.selectedProject) {
           return
         }
@@ -2368,7 +2358,7 @@ export default {
       param.loading = true
       param.opts = []
       const options = param.options || {}
-      if (!('listall' in options) && !['zones', 'pods', 'clusters', 'hosts', 'dynamicScalingVmConfig', 'hypervisors'].includes(name)) {
+      if (!('listall' in options) && !['zones', 'pods', 'clusters', 'hosts', 'hypervisors'].includes(name)) {
         options.listall = true
       }
       api(param.list, options).then((response) => {
@@ -2571,14 +2561,28 @@ export default {
       if (this.clusterId === null) {
         this.form.clusterid = undefined
       }
-
       this.fetchOptions(this.params.hosts, 'hosts')
+      if (this.clusterId && Array.isArray(this.options.clusters)) {
+        const cluster = this.options.clusters.find(c => c.id === this.clusterId)
+        this.handleArchResourceSelected(cluster.arch)
+      }
     },
     onSelectHostId (value) {
       this.hostId = value
       if (this.hostId === null) {
         this.form.hostid = undefined
       }
+      if (this.hostId && Array.isArray(this.options.hosts)) {
+        const host = this.options.hosts.find(h => h.id === this.hostId)
+        this.handleArchResourceSelected(host.arch)
+      }
+    },
+    handleArchResourceSelected (resourceArch) {
+      if (!resourceArch || !this.isZoneSelectedMultiArch || this.selectedArchitecture === resourceArch) {
+        return
+      }
+      this.selectedArchitecture = resourceArch
+      this.changeArchitecture(resourceArch, this.tabKey === 'templateid')
     },
     handleSearchFilter (name, options) {
       this.params[name].options = { ...this.params[name].options, ...options }
@@ -2885,10 +2889,6 @@ export default {
   .card-footer {
     text-align: right;
     margin-top: 2rem;
-
-    button + button {
-      margin-left: 8px;
-    }
   }
 
   .ant-list-item-meta-avatar {
@@ -2928,7 +2928,7 @@ export default {
   .vm-info-card {
     .ant-card-body {
       min-height: 250px;
-      max-height: calc(100vh - 150px);
+      height: calc(100vh - 258px);
       overflow-y: auto;
       scroll-behavior: smooth;
     }
@@ -2948,13 +2948,5 @@ export default {
 
   .form-item-hidden {
     display: none;
-  }
-
-  .btn-stay-on-page {
-    &.ant-dropdown-menu-dark {
-      .ant-dropdown-menu-item:hover {
-        background: transparent !important;
-      }
-    }
   }
 </style>

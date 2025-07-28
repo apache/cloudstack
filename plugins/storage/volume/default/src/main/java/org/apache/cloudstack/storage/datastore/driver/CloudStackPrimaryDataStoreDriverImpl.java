@@ -256,7 +256,9 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
                 }
             }
         } catch (Exception ex) {
-            logger.debug("Unable to destroy volume" + data.getId(), ex);
+            logger.debug(String.format(
+                    "Unable to destroy volume [id: %d, uuid: %s]",
+                    data.getId(), data.getUuid()), ex);
             result.setResult(ex.toString());
         }
         callback.complete(result);
@@ -264,7 +266,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 
     @Override
     public void copyAsync(DataObject srcdata, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
-        logger.debug(String.format("Copying volume %s(%s) to %s(%s)", srcdata.getId(), srcdata.getType(), destData.getId(), destData.getType()));
+        logger.debug("Copying volume [{}] to [{}]", srcdata, destData);
         boolean encryptionRequired = anyVolumeRequiresEncryption(srcdata, destData);
         DataStore store = destData.getDataStore();
         if (store.getRole() == DataStoreRole.Primary) {
@@ -381,7 +383,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
             callback.complete(result);
             return;
         } catch (Exception e) {
-            logger.debug("Failed to take snapshot: " + snapshot.getId(), e);
+            logger.debug("Failed to take snapshot: {}", snapshot, e);
             result = new CreateCmdResult(null, null);
             result.setResult(e.toString());
         }
@@ -416,7 +418,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
                 }
             }
         } catch (Exception ex) {
-            logger.debug("Unable to revert snapshot " + snapshot.getId(), ex);
+            logger.debug("Unable to revert snapshot {}", snapshot, ex);
             result.setResult(ex.toString());
         }
         callback.complete(result);
@@ -430,9 +432,18 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
         boolean encryptionRequired = anyVolumeRequiresEncryption(vol);
         long [] endpointsToRunResize = resizeParameter.hosts;
 
+        CreateCmdResult result = new CreateCmdResult(null, null);
+
         // if hosts are provided, they are where the VM last ran. We can use that.
         if (endpointsToRunResize == null || endpointsToRunResize.length == 0) {
             EndPoint ep = epSelector.select(data, encryptionRequired);
+            if (ep == null) {
+                String errMsg = String.format(NO_REMOTE_ENDPOINT_WITH_ENCRYPTION, encryptionRequired);
+                logger.error(errMsg);
+                result.setResult(errMsg);
+                callback.complete(result);
+                return;
+            }
             endpointsToRunResize = new long[] {ep.getId()};
         }
         ResizeVolumeCommand resizeCmd = new ResizeVolumeCommand(vol.getPath(), new StorageFilerTO(pool), vol.getSize(),
@@ -440,7 +451,6 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
         if (pool.getParent() != 0) {
             resizeCmd.setContextParam(DiskTO.PROTOCOL_TYPE, Storage.StoragePoolType.DatastoreCluster.toString());
         }
-        CreateCmdResult result = new CreateCmdResult(null, null);
         try {
             ResizeVolumeAnswer answer = (ResizeVolumeAnswer) storageMgr.sendToPool(pool, endpointsToRunResize, resizeCmd);
             if (answer != null && answer.getResult()) {
@@ -457,7 +467,6 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
                 logger.debug("return a null answer, mark it as failed for unknown reason");
                 result.setResult("return a null answer, mark it as failed for unknown reason");
             }
-
         } catch (Exception e) {
             logger.debug("sending resize command failed", e);
             result.setResult(e.toString());
@@ -476,7 +485,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
             if (storagePoolVO != null) {
                 volumeVO.setPoolId(storagePoolVO.getId());
             } else {
-                logger.warn(String.format("Unable to find datastore %s while updating the new datastore of the volume %d", datastoreUUID, vol.getId()));
+                logger.warn("Unable to find datastore {} while updating the new datastore of the volume {}", datastoreUUID, vol);
             }
         }
 
