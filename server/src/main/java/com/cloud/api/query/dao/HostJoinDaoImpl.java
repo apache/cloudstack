@@ -28,7 +28,6 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import com.cloud.user.AccountManager;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
@@ -55,6 +54,7 @@ import com.cloud.host.HostStats;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.StorageStats;
+import com.cloud.user.AccountManager;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -120,6 +120,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
     private void setNewHostResponseBase(HostJoinVO host, EnumSet<HostDetails> details, HostResponse hostResponse) {
         hostResponse.setId(host.getUuid());
         hostResponse.setCapabilities(host.getCapabilities());
+        hostResponse.setClusterInternalId(host.getClusterId());
         hostResponse.setClusterId(host.getClusterUuid());
         hostResponse.setCpuSockets(host.getCpuSockets());
         hostResponse.setCpuNumber(host.getCpus());
@@ -259,8 +260,10 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                     hostResponse.setUefiCapability(new Boolean(false));
                 }
             }
-            if (details.contains(HostDetails.all) && (host.getHypervisorType() == Hypervisor.HypervisorType.KVM ||
-                    host.getHypervisorType() == Hypervisor.HypervisorType.Custom)) {
+            if (details.contains(HostDetails.all) &&
+                    Arrays.asList(Hypervisor.HypervisorType.KVM,
+                            Hypervisor.HypervisorType.Custom,
+                            Hypervisor.HypervisorType.External).contains(host.getHypervisorType())) {
                 //only kvm has the requirement to return host details
                 try {
                     hostResponse.setDetails(hostDetails, host.getHypervisorType());

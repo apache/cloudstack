@@ -282,3 +282,318 @@ ALTER TABLE `cloud`.`vm_instance_details` ADD CONSTRAINT `fk_vm_instance_details
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backup_schedule', 'uuid', 'VARCHAR(40) NOT NULL');
 UPDATE `cloud`.`backup_schedule` SET uuid = UUID();
+
+-- Extension framework
+UPDATE `cloud`.`configuration` SET value = CONCAT(value, ',External') WHERE name = 'hypervisor.list';
+
+CREATE TABLE IF NOT EXISTS `cloud`.`extension` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(40) NOT NULL UNIQUE,
+  `name` varchar(255) NOT NULL,
+  `description` varchar(4096),
+  `type` varchar(255) NOT NULL COMMENT 'Type of the extension: Orchestrator, etc',
+  `relative_path` varchar(2048) NOT NULL COMMENT 'Path for the extension relative to the root extensions directory',
+  `path_ready` tinyint(1) DEFAULT '0' COMMENT 'True if the extension path is in ready state across management servers',
+  `is_user_defined` tinyint(1) DEFAULT '0' COMMENT 'True if the extension is added by admin',
+  `state` char(32) NOT NULL COMMENT 'State of the extension - Enabled or Disabled',
+  `created` datetime NOT NULL,
+  `removed` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `cloud`.`extension_details` (
+  `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `extension_id` bigint unsigned NOT NULL COMMENT 'extension to which the detail is related to',
+  `name` varchar(255) NOT NULL COMMENT 'name of the detail',
+  `value` varchar(255) NOT NULL COMMENT 'value of the detail',
+  `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_extension_details__extension_id` FOREIGN KEY (`extension_id`)
+    REFERENCES `extension` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `cloud`.`extension_resource_map` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `extension_id` bigint(20) unsigned NOT NULL,
+  `resource_id` bigint(20) unsigned NOT NULL,
+  `resource_type` char(255) NOT NULL,
+  `created` datetime NOT NULL,
+  `removed` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_extension_resource_map__extension_id` FOREIGN KEY (`extension_id`)
+      REFERENCES `cloud`.`extension`(`id`) ON DELETE CASCADE,
+  INDEX `idx_extension_resource` (`resource_id`, `resource_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `cloud`.`extension_resource_map_details` (
+  `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `extension_resource_map_id` bigint unsigned NOT NULL COMMENT 'mapping to which the detail is related',
+  `name` varchar(255) NOT NULL COMMENT 'name of the detail',
+  `value` varchar(255) NOT NULL COMMENT 'value of the detail',
+  `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_extension_resource_map_details__map_id` FOREIGN KEY (`extension_resource_map_id`)
+    REFERENCES `extension_resource_map` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `cloud`.`extension_custom_action` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(255) NOT NULL UNIQUE,
+  `name` varchar(255) NOT NULL,
+  `description` varchar(4096),
+  `extension_id` bigint(20) unsigned NOT NULL,
+  `resource_type` varchar(255),
+  `allowed_role_types` int unsigned NOT NULL DEFAULT '1',
+  `success_message` varchar(4096),
+  `error_message` varchar(4096),
+  `enabled` boolean DEFAULT true,
+  `timeout` int unsigned NOT NULL DEFAULT '5' COMMENT 'The timeout in seconds to wait for the action to complete before failing',
+  `created` datetime NOT NULL,
+  `removed` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_extension_custom_action__extension_id` FOREIGN KEY (`extension_id`)
+    REFERENCES `cloud`.`extension`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `cloud`.`extension_custom_action_details` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `extension_custom_action_id` bigint(20) unsigned NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `value` TEXT NOT NULL,
+  `display` tinyint(1) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_custom_action_details__action_id` FOREIGN KEY (`extension_custom_action_id`)
+    REFERENCES `cloud`.`extension_custom_action`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vm_template', 'extension_id', 'bigint unsigned DEFAULT NULL COMMENT "id of the extension"');
+
+-- Add built-in Extensions and Custom Actions
+
+DROP PROCEDURE IF EXISTS `cloud`.`INSERT_EXTENSION_IF_NOT_EXISTS`;
+CREATE PROCEDURE `cloud`.`INSERT_EXTENSION_IF_NOT_EXISTS`(
+    IN ext_name VARCHAR(255),
+    IN ext_desc VARCHAR(255),
+    IN ext_path VARCHAR(255)
+)
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM `cloud`.`extension` WHERE `name` = ext_name
+    ) THEN
+        INSERT INTO `cloud`.`extension` (
+            `uuid`, `name`, `description`, `type`,
+            `relative_path`, `path_ready`,
+            `is_user_defined`, `state`, `created`, `removed`
+        )
+        VALUES (
+            UUID(), ext_name, ext_desc, 'Orchestrator',
+            ext_path, 1, 0, 'Enabled', NOW(), NULL
+        )
+;   END IF
+;END;
+
+DROP PROCEDURE IF EXISTS `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`;
+CREATE PROCEDURE `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`(
+    IN ext_name VARCHAR(255),
+    IN detail_key VARCHAR(255),
+    IN detail_value TEXT,
+    IN display TINYINT(1)
+)
+BEGIN
+    DECLARE ext_id BIGINT
+;   SELECT `id` INTO ext_id FROM `cloud`.`extension` WHERE `name` = ext_name LIMIT 1
+;   IF NOT EXISTS (
+        SELECT 1 FROM `cloud`.`extension_details`
+        WHERE `extension_id` = ext_id AND `name` = detail_key
+    ) THEN
+        INSERT INTO `cloud`.`extension_details` (
+            `extension_id`, `name`, `value`, `display`
+        )
+        VALUES (
+            ext_id, detail_key, detail_value, display
+        )
+;   END IF
+;END;
+
+CALL `cloud`.`INSERT_EXTENSION_IF_NOT_EXISTS`('Proxmox', 'Sample extension for Proxmox written in bash', 'Proxmox/proxmox.sh');
+CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('Proxmox', 'orchestratorrequirespreparevm', 'true', 0);
+
+CALL `cloud`.`INSERT_EXTENSION_IF_NOT_EXISTS`('HyperV', 'Sample extension for HyperV written in python', 'HyperV/hyperv.py');
+
+DROP PROCEDURE IF EXISTS `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_IF_NOT_EXISTS`;
+CREATE PROCEDURE `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_IF_NOT_EXISTS`(
+    IN ext_name VARCHAR(255),
+    IN action_name VARCHAR(255),
+    IN action_desc VARCHAR(4096),
+    IN resource_type VARCHAR(255),
+    IN allowed_roles INT UNSIGNED,
+    IN success_msg VARCHAR(4096),
+    IN error_msg VARCHAR(4096),
+    IN timeout_seconds INT UNSIGNED
+)
+BEGIN
+    DECLARE ext_id BIGINT
+;   SELECT `id` INTO ext_id FROM `cloud`.`extension` WHERE `name` = ext_name LIMIT 1
+;   IF NOT EXISTS (
+        SELECT 1 FROM `cloud`.`extension_custom_action` WHERE `name` = action_name AND `extension_id` = ext_id
+    ) THEN
+        INSERT INTO `cloud`.`extension_custom_action` (
+            `uuid`, `name`, `description`, `extension_id`, `resource_type`,
+            `allowed_role_types`, `success_message`, `error_message`,
+            `enabled`, `timeout`, `created`, `removed`
+        )
+        VALUES (
+            UUID(), action_name, action_desc, ext_id, resource_type,
+            allowed_roles, success_msg, error_msg,
+            1, timeout_seconds, NOW(), NULL
+        )
+;   END IF
+;END;
+
+DROP PROCEDURE IF EXISTS `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_DETAILS_IF_NOT_EXISTS`;
+CREATE PROCEDURE `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_DETAILS_IF_NOT_EXISTS` (
+    IN ext_name VARCHAR(255),
+    IN action_name VARCHAR(255),
+    IN param_json TEXT
+)
+BEGIN
+    DECLARE action_id BIGINT UNSIGNED
+;   SELECT `eca`.`id` INTO action_id FROM `cloud`.`extension_custom_action` `eca`
+    JOIN `cloud`.`extension` `e` ON `e`.`id` = `eca`.`extension_id`
+    WHERE `eca`.`name` = action_name AND `e`.`name` = ext_name LIMIT 1
+;   IF NOT EXISTS (
+        SELECT 1 FROM `cloud`.`extension_custom_action_details`
+        WHERE `extension_custom_action_id` = action_id
+          AND `name` = 'parameters'
+    ) THEN
+        INSERT INTO `cloud`.`extension_custom_action_details` (
+            `extension_custom_action_id`,
+            `name`,
+            `value`,
+            `display`
+        ) VALUES (
+            action_id,
+            'parameters',
+            param_json,
+            0
+        )
+;   END IF
+;END;
+
+CALL `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_IF_NOT_EXISTS`('Proxmox', 'ListSnapshots', 'List Instance snapshots', 'VirtualMachine', 15, 'Snapshots fetched for {{resourceName}} in {{extensionName}}', 'List Snapshots failed for {{resourceName}}', 60);
+CALL `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_IF_NOT_EXISTS`('Proxmox', 'CreateSnapshot', 'Create an Instance snapshot', 'VirtualMachine', 15, 'Snapshot created for {{resourceName}} in {{extensionName}}', 'Snapshot creation failed for {{resourceName}}', 60);
+CALL `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_IF_NOT_EXISTS`('Proxmox', 'RestoreSnapshot', 'Restore Instance to the specific snapshot', 'VirtualMachine', 15, 'Successfully restored snapshot for {{resourceName}} in {{extensionName}}', 'Restore snapshot failed for {{resourceName}}', 60);
+CALL `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_IF_NOT_EXISTS`('Proxmox', 'DeleteSnapshot', 'Delete the specified snapshot', 'VirtualMachine', 15, 'Successfully deleted snapshot for {{resourceName}} in {{extensionName}}', 'Delete snapshot failed for {{resourceName}}', 60);
+
+CALL `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_DETAILS_IF_NOT_EXISTS`(
+    'Proxmox',
+    'ListSnapshots',
+    '[]'
+);
+CALL `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_DETAILS_IF_NOT_EXISTS`(
+    'Proxmox',
+    'CreateSnapshot',
+    '[
+      {
+        "name": "snap_name",
+        "type": "STRING",
+        "validationformat": "NONE",
+        "required": true
+      },
+      {
+        "name": "snap_description",
+        "type": "STRING",
+        "validationformat": "NONE",
+        "required": false
+      },
+      {
+        "name": "snap_save_memory",
+        "type": "BOOLEAN",
+        "validationformat": "NONE",
+        "required": false
+      }
+    ]'
+);
+CALL `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_DETAILS_IF_NOT_EXISTS`(
+    'Proxmox',
+    'RestoreSnapshot',
+    '[
+      {
+        "name": "snap_name",
+        "type": "STRING",
+        "validationformat": "NONE",
+        "required": true
+      }
+    ]'
+);
+CALL `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_DETAILS_IF_NOT_EXISTS`(
+    'Proxmox',
+    'DeleteSnapshot',
+    '[
+      {
+        "name": "snap_name",
+        "type": "STRING",
+        "validationformat": "NONE",
+        "required": true
+      }
+    ]'
+);
+
+CALL `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_IF_NOT_EXISTS`('HyperV', 'ListSnapshots', 'List checkpoints/snapshots for the Instance', 'VirtualMachine', 15, 'Snapshots fetched for {{resourceName}} in {{extensionName}}', 'List Snapshots failed for {{resourceName}}', 60);
+CALL `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_IF_NOT_EXISTS`('HyperV', 'CreateSnapshot', 'Create a checkpoint/snapshot for the Instance', 'VirtualMachine', 15, 'Snapshot created for {{resourceName}} in {{extensionName}}', 'Snapshot creation failed for {{resourceName}}', 60);
+CALL `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_IF_NOT_EXISTS`('HyperV', 'RestoreSnapshot', 'Restore Instance to the specified snapshot', 'VirtualMachine', 15, 'Successfully restored snapshot for {{resourceName}} in {{extensionName}}', 'Restore snapshot failed for {{resourceName}}', 60);
+CALL `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_IF_NOT_EXISTS`('HyperV', 'DeleteSnapshot', 'Delete the specified snapshot', 'VirtualMachine', 15, 'Successfully deleted snapshot for {{resourceName}} in {{extensionName}}', 'Delete snapshot failed for {{resourceName}}', 60);
+CALL `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_IF_NOT_EXISTS`('HyperV', 'Suspend', 'Suspend the Instance by freezing its current state in RAM', 'VirtualMachine', 15, 'Successfully suspended {{resourceName}} in {{extensionName}}', 'Suspend failed for {{resourceName}}', 60);
+CALL `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_IF_NOT_EXISTS`('HyperV', 'Resume', 'Resumes a suspended Instance, restoring CPU execution from memory.', 'VirtualMachine', 15, 'Successfully resumed {{resourceName}} in {{extensionName}}', 'Resume failed for {{resourceName}}', 60);
+
+CALL `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_DETAILS_IF_NOT_EXISTS`(
+    'HyperV',
+    'ListSnapshots',
+    '[]'
+);
+CALL `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_DETAILS_IF_NOT_EXISTS`(
+    'HyperV',
+    'CreateSnapshot',
+    '[
+      {
+        "name": "snapshot_name",
+        "type": "STRING",
+        "validationformat": "NONE",
+        "required": true
+      }
+    ]'
+);
+CALL `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_DETAILS_IF_NOT_EXISTS`(
+    'HyperV',
+    'RestoreSnapshot',
+    '[
+      {
+        "name": "snapshot_name",
+        "type": "STRING",
+        "validationformat": "NONE",
+        "required": true
+      }
+    ]'
+);
+CALL `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_DETAILS_IF_NOT_EXISTS`(
+    'HyperV',
+    'DeleteSnapshot',
+    '[
+      {
+        "name": "snapshot_name",
+        "type": "STRING",
+        "validationformat": "NONE",
+        "required": true
+      }
+    ]'
+);
+CALL `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_DETAILS_IF_NOT_EXISTS`(
+    'HyperV',
+    'Suspend',
+    '[]'
+);
+CALL `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_DETAILS_IF_NOT_EXISTS`(
+    'HyperV',
+    'Resume',
+    '[]'
+);

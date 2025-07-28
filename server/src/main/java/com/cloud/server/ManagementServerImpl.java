@@ -44,15 +44,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.cpu.CPU;
-import com.cloud.dc.VlanDetailsVO;
-import com.cloud.dc.dao.VlanDetailsDao;
-import com.cloud.network.dao.NetrisProviderDao;
-import com.cloud.network.dao.NsxProviderDao;
-
-import com.cloud.utils.security.CertificateHelper;
-import com.cloud.api.query.dao.ManagementServerJoinDao;
-import com.cloud.api.query.vo.ManagementServerJoinVO;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
@@ -646,6 +637,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationGroupVO;
 import org.apache.cloudstack.framework.config.impl.ConfigurationSubGroupVO;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
+import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.management.ManagementServerHost;
@@ -689,7 +681,9 @@ import com.cloud.alert.AlertManager;
 import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.query.dao.ManagementServerJoinDao;
 import com.cloud.api.query.dao.StoragePoolJoinDao;
+import com.cloud.api.query.vo.ManagementServerJoinVO;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
@@ -700,6 +694,7 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.consoleproxy.ConsoleProxyManagementState;
 import com.cloud.consoleproxy.ConsoleProxyManager;
+import com.cloud.cpu.CPU;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
@@ -709,6 +704,7 @@ import com.cloud.dc.Pod;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanDetailsVO;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.ClusterDao;
@@ -717,6 +713,7 @@ import com.cloud.dc.dao.DomainVlanMapDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
@@ -764,12 +761,14 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVO;
+import com.cloud.network.dao.NetrisProviderDao;
 import com.cloud.network.dao.NetworkAccountDao;
 import com.cloud.network.dao.NetworkAccountVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.network.dao.NetworkDomainVO;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.dao.PublicIpQuarantineDao;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.org.Cluster;
@@ -846,6 +845,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.utils.security.CertificateHelper;
 import com.cloud.utils.ssh.SSHKeysHelper;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DiskProfile;
@@ -853,9 +853,9 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.SecondaryStorageVmVO;
-import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
@@ -868,8 +868,8 @@ import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 
 public class ManagementServerImpl extends ManagerBase implements ManagementServer, Configurable {
     protected StateMachine2<State, VirtualMachine.Event, VirtualMachine> _stateMachine;
@@ -1059,6 +1059,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     NsxProviderDao nsxProviderDao;
     @Inject
     NetrisProviderDao netrisProviderDao;
+    @Inject
+    ExtensionsManager extensionsManager;
 
     private LockControllerListener _lockControllerListener;
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
@@ -4655,6 +4657,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Map<String, Object> capabilities = new HashMap<>();
 
         final Account caller = getCaller();
+        final boolean isCallerAdmin = _accountService.isAdmin(caller.getId());
         boolean securityGroupsEnabled = false;
         boolean elasticLoadBalancerEnabled = false;
         boolean KVMSnapshotEnabled = false;
@@ -4683,10 +4686,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Integer apiLimitInterval = Integer.valueOf(_configDao.getValue(Config.ApiLimitInterval.key()));
         final Integer apiLimitMax = Integer.valueOf(_configDao.getValue(Config.ApiLimitMax.key()));
 
-        final boolean allowUserViewDestroyedVM = (QueryService.AllowUserViewDestroyedVM.valueIn(caller.getId()) | _accountService.isAdmin(caller.getId()));
-        final boolean allowUserExpungeRecoverVM = (UserVmManager.AllowUserExpungeRecoverVm.valueIn(caller.getId()) | _accountService.isAdmin(caller.getId()));
-        final boolean allowUserExpungeRecoverVolume = (VolumeApiServiceImpl.AllowUserExpungeRecoverVolume.valueIn(caller.getId()) | _accountService.isAdmin(caller.getId()));
-        final boolean allowUserForceStopVM = (UserVmManager.AllowUserForceStopVm.valueIn(caller.getId()) | _accountService.isAdmin(caller.getId()));
+        final boolean allowUserViewDestroyedVM = (QueryService.AllowUserViewDestroyedVM.valueIn(caller.getId()) | isCallerAdmin);
+        final boolean allowUserExpungeRecoverVM = (UserVmManager.AllowUserExpungeRecoverVm.valueIn(caller.getId()) | isCallerAdmin);
+        final boolean allowUserExpungeRecoverVolume = (VolumeApiServiceImpl.AllowUserExpungeRecoverVolume.valueIn(caller.getId()) | isCallerAdmin);
+        final boolean allowUserForceStopVM = (UserVmManager.AllowUserForceStopVm.valueIn(caller.getId()) | isCallerAdmin);
 
         final boolean allowUserViewAllDomainAccounts = (QueryService.AllowUserViewAllDomainAccounts.valueIn(caller.getDomainId()));
 
@@ -4735,6 +4738,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
         capabilities.put(ApiConstants.SHAREDFSVM_MIN_CPU_COUNT, fsVmMinCpu);
         capabilities.put(ApiConstants.SHAREDFSVM_MIN_RAM_SIZE, fsVmMinRam);
+        if (isCallerAdmin) {
+            capabilities.put(ApiConstants.EXTENSIONS_PATH, extensionsManager.getExtensionsPath());
+        }
 
         return capabilities;
     }

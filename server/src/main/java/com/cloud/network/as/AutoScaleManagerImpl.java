@@ -553,6 +553,10 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         if (template == null) {
             throw new InvalidParameterValueException("Unable to find template by id " + cmd.getTemplateId());
         }
+        if (HypervisorType.External.equals(template.getHypervisorType())) {
+            logger.error("Cannot create AutoScale Vm Profile with {} as it is an {} hypervisor template", template, HypervisorType.External);
+            throw new InvalidParameterValueException(String.format("Unable to create AutoScale Vm Profile with template: %s", template.getName()));
+        }
 
         // validations
         HashMap<String, String> deployParams = cmd.getDeployParamMap();
