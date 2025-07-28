@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-(/opt/bin/kubectl get pods -A | grep cloud-controller-manager) && exit 0
+(/opt/bin/kubectl get pods -A | grep cloudstack-csi-controller) && exit 0
 
 if [ -e /opt/csi/snapshot-crds.yaml ]; then
     /opt/bin/kubectl apply -f /opt/csi/snapshot-crds.yaml
