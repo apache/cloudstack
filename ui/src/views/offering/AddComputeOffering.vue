@@ -734,7 +734,7 @@ export default {
       leaseduration: undefined,
       leaseexpiryaction: undefined,
       vgpuProfiles: [],
-      vgpuProfileLoading: false
+      vgpuProfileLoading: false,
       externalDetailsEnabled: false
     }
   },
