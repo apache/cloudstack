@@ -18,9 +18,9 @@
 name: CodeQL Analysis
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
-    branches: [master]
+    branches: [main]
 permissions:
   actions: read
   contents: read
