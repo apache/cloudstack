@@ -1411,7 +1411,7 @@ export default {
       return this.$route.query.arch || null
     },
     querySnapshotId () {
-      return this.$route.query.snapshotid | null
+      return this.$route.query.snapshotid || null
     },
     queryVolumeId () {
       return this.$route.query.volumeid || null
@@ -2682,21 +2682,28 @@ export default {
       args.showicon = 'true'
       args.id = this.queryVolumeId
       args.isvnf = false
+      args.state = 'Ready'
+      const pageSize = args.pageSize ? args.pageSize : 10
+      const pageStart = (args.page ? args.page - 1 : 0) * pageSize
+      const pageEnd = pageSize * (pageStart + 1)
 
       delete args.category
       delete args.public
       delete args.featured
+      delete args.page
+      delete args.pageSize
 
       return new Promise((resolve, reject) => {
         getAPI('listVolumes', args).then((response) => {
-          const listvolumesresponse = { count: 0, volume: [] }
+          let count = 0
+          const volumes = []
           response.listvolumesresponse.volume.forEach(volume => {
-            if (!volume.virtualmachineid && volume.state === 'Ready') {
-              listvolumesresponse.count += 1
-              listvolumesresponse.volume.push({ ...volume, displaytext: volume.name })
+            if (!volume.virtualmachineid) {
+              count += 1
+              volumes.push({ ...volume, displaytext: volume.name })
             }
           })
-          resolve({ listvolumesresponse })
+          resolve({ listvolumesresponse: { count, volume: volumes.slice(pageStart, pageEnd) } })
         }).catch((reason) => {
           // ToDo: Handle errors
           reject(reason)
@@ -2723,21 +2730,27 @@ export default {
       args.details = 'all'
       args.showicon = 'true'
       args.isvnf = false
+      const pageSize = args.pageSize ? args.pageSize : 10
+      const pageStart = (args.page ? args.page - 1 : 0) * pageSize
+      const pageEnd = pageSize * (pageStart + 1)
 
       delete args.category
       delete args.public
       delete args.featured
+      delete args.page
+      delete args.pageSize
 
       return new Promise((resolve, reject) => {
         getAPI('listSnapshots', args).then((response) => {
-          const listsnapshotsresponse = { count: 0, snapshot: [] }
+          let count = 0
+          const snapshots = []
           response.listsnapshotsresponse.snapshot.forEach(snapshot => {
             if (snapshot.volumetype === 'ROOT') {
-              listsnapshotsresponse.count += 1
-              listsnapshotsresponse.snapshot.push({ ...snapshot, displaytext: snapshot.name })
+              count += 1
+              snapshots.push({ ...snapshot, displaytext: snapshot.name })
             }
           })
-          resolve({ listsnapshotsresponse })
+          resolve({ listsnapshotsresponse: { count, snapshot: snapshots.slice(pageStart, pageEnd) } })
         }).catch((reason) => {
           // ToDo: Handle errors
           reject(reason)
@@ -2882,7 +2895,7 @@ export default {
       this.imageSearchFilters = params
       const volumeFilters = this.getImageFilters(params)
       volumeFilters.forEach((filter) => {
-        volumes[filter] = { count: 0, iso: [] }
+        volumes[filter] = { count: 0, volume: [] }
         promises.push(this.fetchUnattachedVolumes(filter, params))
       })
       this.options.volumes = volumes
@@ -2904,7 +2917,7 @@ export default {
       this.imageSearchFilters = params
       const snapshotFilters = this.getImageFilters(params)
       snapshotFilters.forEach((filter) => {
-        snapshots[filter] = { count: 0, iso: [] }
+        snapshots[filter] = { count: 0, snapshot: [] }
         promises.push(this.fetchRootSnapshots(filter, params))
       })
       this.options.snapshots = snapshots

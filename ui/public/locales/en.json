@@ -3875,7 +3875,7 @@
 "message.template.arch": "Please select a Template architecture.",
 "message.template.desc": "OS image that can be used to boot Instances.",
 "message.template.import.vm.temporary": "If a temporary Template is used, the reset Instance operation will not work after importing it.",
-"message.template.iso": "Please select a Template or ISO to continue.",
+"message.template.iso": "Please select a Template, ISO, volume or a snapshot to continue.",
 "message.template.type.change.warning": "WARNING: Changing the Template type to SYSTEM will disable further changes to the Template.",
 "message.tooltip.reserved.system.netmask": "The Network prefix that defines the Pod subnet. Uses CIDR notation.",
 "message.traffic.type.deleted": "Successfully deleted traffic type",
