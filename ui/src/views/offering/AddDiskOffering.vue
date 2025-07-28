@@ -202,6 +202,7 @@
             <tooltip-label :title="$t('label.storagetags')" :tooltip="apiParams.tags.description"/>
           </template>
           <a-select
+            :getPopupContainer="(trigger) => trigger.parentNode"
             mode="tags"
             v-model:value="form.tags"
             showSearch
@@ -226,6 +227,7 @@
           </template>
           <a-select
             mode="multiple"
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.domainid"
             showSearch
             optionFilterProp="label"
@@ -250,6 +252,7 @@
           <a-select
             id="zone-selection"
             mode="multiple"
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.zoneid"
             showSearch
             optionFilterProp="label"
@@ -273,6 +276,7 @@
             <tooltip-label :title="$t('label.vmware.storage.policy')" :tooltip="apiParams.storagepolicy.description"/>
           </template>
           <a-select
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.storagepolicy"
             :placeholder="apiParams.storagepolicy.description"
             showSearch
