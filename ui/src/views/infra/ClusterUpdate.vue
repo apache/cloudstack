@@ -181,15 +181,11 @@ export default {
         details: 'resource'
       }
       getAPI('listExtensions', params).then(json => {
-        this.extension = json.listextensionsresponse.extension[0]
-        if (!this.extension?.resources) {
-          return null
+        const resources = json?.listextensionsresponse?.extension?.[0]?.resources || []
+        const resourceMap = resources.find(r => r.id === this.resource.id)
+        if (resourceMap && resourceMap.details && typeof resourceMap.details === 'object') {
+          this.form.externaldetails = resourceMap.details
         }
-        const resourceMap = this.extension.resources.find(r => r.id === this.resource.id)
-        if (!resourceMap || !resourceMap.details || typeof resourceMap.details !== 'object') {
-          this.form.externaldetails = null
-        }
-        this.form.externaldetails = resourceMap.details
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
@@ -199,7 +195,6 @@ export default {
     handleSubmit () {
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
-        console.log(values)
         const params = {}
         params.id = this.resource.id
         params.clustername = values.name
