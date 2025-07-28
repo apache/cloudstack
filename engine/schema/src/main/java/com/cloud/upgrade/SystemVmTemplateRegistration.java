@@ -106,7 +106,6 @@ public class SystemVmTemplateRegistration {
     private static final String storageScriptsDir = "scripts/storage/secondary";
     private static final Integer OTHER_LINUX_ID = 99;
     private static Integer LINUX_12_ID = 363;
-    private static final Integer LINUX_7_ID = 183;
     private static final Integer SCRIPT_TIMEOUT = 1800000;
     private static final Integer LOCK_WAIT_TIMEOUT = 1200;
     protected static final List<CPU.CPUArch> DOWNLOADABLE_TEMPLATE_ARCH_TYPES = Arrays.asList(
@@ -325,7 +324,7 @@ public class SystemVmTemplateRegistration {
 
     public static final Map<String, MetadataTemplateDetails> NewTemplateMap = new HashMap<>();
 
-    public static final Map<Hypervisor.HypervisorType, String> RouterTemplateConfigurationNames = new HashMap<Hypervisor.HypervisorType, String>() {
+    public static final Map<Hypervisor.HypervisorType, String> RouterTemplateConfigurationNames = new HashMap<>() {
         {
             put(Hypervisor.HypervisorType.KVM, "router.template.kvm");
             put(Hypervisor.HypervisorType.VMware, "router.template.vmware");
@@ -336,14 +335,14 @@ public class SystemVmTemplateRegistration {
         }
     };
 
-    public static Map<Hypervisor.HypervisorType, Integer> hypervisorGuestOsMap = new HashMap<Hypervisor.HypervisorType, Integer>() {
+    public static Map<Hypervisor.HypervisorType, Integer> hypervisorGuestOsMap = new HashMap<>() {
         {
             put(Hypervisor.HypervisorType.KVM, LINUX_12_ID);
             put(Hypervisor.HypervisorType.XenServer, OTHER_LINUX_ID);
             put(Hypervisor.HypervisorType.VMware, OTHER_LINUX_ID);
             put(Hypervisor.HypervisorType.Hyperv, LINUX_12_ID);
             put(Hypervisor.HypervisorType.LXC, LINUX_12_ID);
-            put(Hypervisor.HypervisorType.Ovm3, LINUX_7_ID);
+            put(Hypervisor.HypervisorType.Ovm3, LINUX_12_ID);
         }
     };
 
@@ -600,15 +599,20 @@ public class SystemVmTemplateRegistration {
         vmInstanceDao.updateSystemVmTemplateId(templateId, hypervisorType);
     }
 
-    public void updateSystemVmTemplateGuestOsId() {
-        String systemVmGuestOsName = "Debian GNU/Linux 12 (64-bit)";
-        GuestOSVO guestOS = guestOSDao.findOneByDisplayName(systemVmGuestOsName);
-        if (guestOS != null) {
-            LOGGER.debug("Updating SystemVM Template Guest OS [{}] id", systemVmGuestOsName);
-            SystemVmTemplateRegistration.LINUX_12_ID = Math.toIntExact(guestOS.getId());
-            hypervisorGuestOsMap.put(Hypervisor.HypervisorType.KVM, LINUX_12_ID);
-            hypervisorGuestOsMap.put(Hypervisor.HypervisorType.Hyperv, LINUX_12_ID);
-            hypervisorGuestOsMap.put(Hypervisor.HypervisorType.LXC, LINUX_12_ID);
+    private void updateSystemVmTemplateGuestOsId() {
+        String systemVmGuestOsName = "Debian GNU/Linux 12 (64-bit)"; // default
+        try {
+            GuestOSVO guestOS = guestOSDao.findOneByDisplayName(systemVmGuestOsName);
+            if (guestOS != null) {
+                LOGGER.debug("Updating SystemVM Template Guest OS [{}] id", systemVmGuestOsName);
+                SystemVmTemplateRegistration.LINUX_12_ID = Math.toIntExact(guestOS.getId());
+                hypervisorGuestOsMap.put(Hypervisor.HypervisorType.KVM, LINUX_12_ID);
+                hypervisorGuestOsMap.put(Hypervisor.HypervisorType.Hyperv, LINUX_12_ID);
+                hypervisorGuestOsMap.put(Hypervisor.HypervisorType.LXC, LINUX_12_ID);
+                hypervisorGuestOsMap.put(Hypervisor.HypervisorType.Ovm3, LINUX_12_ID);
+            }
+        } catch (Exception e) {
+            LOGGER.warn("Couldn't update SystemVM Template Guest OS id, due to {}", e.getMessage());
         }
     }
 
@@ -748,7 +752,6 @@ public class SystemVmTemplateRegistration {
         Long templateId = null;
         try {
             MetadataTemplateDetails templateDetails = getMetadataTemplateDetails(hypervisor, arch);
-            updateSystemVmTemplateGuestOsId();
             templateId = performTemplateRegistrationOperations(hypervisor, name,
                     templateDetails.getArch(), templateDetails.getUrl(),
                     templateDetails.getChecksum(), hypervisorImageFormat.get(hypervisor),
@@ -831,7 +834,8 @@ public class SystemVmTemplateRegistration {
                     section.get("filename"),
                     section.get("downloadurl"),
                     section.get("checksum"),
-                    hypervisorType.second()));
+                    hypervisorType.second(),
+                    section.get("guestos")));
         }
         Ini.Section defaultSection = ini.get("default");
         return defaultSection.get("version").trim();
@@ -983,6 +987,10 @@ public class SystemVmTemplateRegistration {
     private void updateRegisteredTemplateDetails(Long templateId, MetadataTemplateDetails templateDetails) {
         VMTemplateVO templateVO = vmTemplateDao.findById(templateId);
         templateVO.setTemplateType(Storage.TemplateType.SYSTEM);
+        GuestOSVO guestOS = guestOSDao.findOneByDisplayName(templateDetails.getGuestOs());
+        if (guestOS != null) {
+            templateVO.setGuestOSId(guestOS.getId());
+        }
         boolean updated = vmTemplateDao.update(templateVO.getId(), templateVO);
         if (!updated) {
             String errMsg = String.format("updateSystemVmTemplates:Exception while updating template with id %s to be marked as 'system'", templateId);
@@ -998,9 +1006,13 @@ public class SystemVmTemplateRegistration {
         updateConfigurationParams(configParams);
     }
 
-    private void updateTemplateUrlAndChecksum(VMTemplateVO templateVO, MetadataTemplateDetails templateDetails) {
+    private void updateTemplateUrlChecksumAndGuestOsId(VMTemplateVO templateVO, MetadataTemplateDetails templateDetails) {
         templateVO.setUrl(templateDetails.getUrl());
         templateVO.setChecksum(templateDetails.getChecksum());
+        GuestOSVO guestOS = guestOSDao.findOneByDisplayName(templateDetails.getGuestOs());
+        if (guestOS != null) {
+            templateVO.setGuestOSId(guestOS.getId());
+        }
         boolean updated = vmTemplateDao.update(templateVO.getId(), templateVO);
         if (!updated) {
             String errMsg = String.format("updateSystemVmTemplates:Exception while updating 'url' and 'checksum' for hypervisor type %s", templateDetails.getHypervisorType());
@@ -1038,7 +1050,7 @@ public class SystemVmTemplateRegistration {
                 VMTemplateVO templateVO = vmTemplateDao.findLatestTemplateByTypeAndHypervisorAndArch(
                         templateDetails.getHypervisorType(), templateDetails.getArch(), Storage.TemplateType.SYSTEM);
                 if (templateVO != null) {
-                    updateTemplateUrlAndChecksum(templateVO, templateDetails);
+                    updateTemplateUrlChecksumAndGuestOsId(templateVO, templateDetails);
                 }
             }
         }
@@ -1047,6 +1059,7 @@ public class SystemVmTemplateRegistration {
 
     public void updateSystemVmTemplates(final Connection conn) {
         LOGGER.debug("Updating System Vm template IDs");
+        updateSystemVmTemplateGuestOsId();
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(final TransactionStatus status) {
@@ -1094,15 +1107,17 @@ public class SystemVmTemplateRegistration {
         private final String checksum;
         private final CPU.CPUArch arch;
         private String downloadedFilePath;
+        private final String guestOs;
 
         MetadataTemplateDetails(Hypervisor.HypervisorType hypervisorType, String name, String filename, String url,
-                                String checksum, CPU.CPUArch arch) {
+                                String checksum, CPU.CPUArch arch, String guestOs) {
             this.hypervisorType = hypervisorType;
             this.name = name;
             this.filename = filename;
             this.url = url;
             this.checksum = checksum;
             this.arch = arch;
+            this.guestOs = guestOs;
         }
 
         public Hypervisor.HypervisorType getHypervisorType() {
@@ -1127,6 +1142,10 @@ public class SystemVmTemplateRegistration {
 
         public CPU.CPUArch getArch() {
             return arch;
+        }
+
+        public String getGuestOs() {
+            return guestOs;
         }
 
         public String getDownloadedFilePath() {
