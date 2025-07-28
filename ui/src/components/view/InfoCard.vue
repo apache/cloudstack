@@ -34,6 +34,9 @@
                     <span v-if="(resource.icon && resource.icon.base64image || images.template || images.iso || resourceIcon) && !['router', 'systemvm', 'volume'].includes($route.path.split('/')[1])">
                       <resource-icon :image="getImage(resource.icon && resource.icon.base64image || images.template || images.iso || resourceIcon)" size="4x" style="margin-right: 5px"/>
                     </span>
+                    <span v-else-if="resource.vmtype === 'sharedfsvm'">
+                      <file-text-outlined style="font-size: 36px;" />
+                    </span>
                     <span v-else>
                       <os-logo v-if="resource.ostypeid || resource.ostypename || ['guestoscategory'].includes($route.path.split('/')[1])" :osId="resource.ostypeid" :osName="resource.ostypename || resource.name" size="3x" @update-osname="setResourceOsType"/>
                       <render-icon v-else-if="typeof $route.meta.icon ==='string'" style="font-size: 36px" :icon="$route.meta.icon" />
@@ -663,7 +666,7 @@
               </div>
             </div>
             <div class="resource-detail-item" v-if="resource.userdataname">
-              <div class="resource-detail-item__label">{{ $t('label.userdata') }}</div>
+              <div class="resource-detail-item__label">{{ $t('label.user.data') }}</div>
               <div class="resource-detail-item__details">
                 <solution-outlined />
                 <router-link v-if="!isStatic && $router.resolve('/userdata/' + resource.userdataid).matched[0].redirect !== '/exception/404'" :to="{ path: '/userdata/' + resource.userdataid }">{{ resource.userdataname || resource.userdataid }}</router-link>
@@ -727,6 +730,18 @@
                 <node-index-outlined />
                 <router-link v-if="!isStatic && $router.resolve('/webhook/' + resource.webhookid).matched[0].redirect !== '/exception/404'" :to="{ path: '/webhook/' + resource.webhookid }">{{ resource.webhookname || resource.webhookid }}</router-link>
                 <span v-else>{{ resource.webhookname || resource.webhookid }}</span>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.boottype">
+              <div class="resource-detail-item__label">{{ $t('label.boottype') }}</div>
+              <div class="resource-detail-item__details">
+                <span>{{ resource.boottype }}</span>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.bootmode">
+              <div class="resource-detail-item__label">{{ $t('label.bootmode') }}</div>
+              <div class="resource-detail-item__details">
+                <span>{{ resource.bootmode }}</span>
               </div>
             </div>
             <div class="resource-detail-item" v-if="resource.managementserverid">
@@ -876,6 +891,7 @@ import UploadResourceIcon from '@/components/view/UploadResourceIcon'
 import eventBus from '@/config/eventBus'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import ResourceLabel from '@/components/widgets/ResourceLabel'
+import { FileTextOutlined } from '@ant-design/icons-vue'
 
 export default {
   name: 'InfoCard',
@@ -887,7 +903,8 @@ export default {
     TooltipButton,
     UploadResourceIcon,
     ResourceIcon,
-    ResourceLabel
+    ResourceLabel,
+    FileTextOutlined
   },
   props: {
     resource: {
@@ -1223,6 +1240,9 @@ export default {
       } else {
         if (item.name === 'template') {
           query.templatefilter = 'self'
+          query.filter = 'self'
+        } else if (item.name === 'iso') {
+          query.isofilter = 'self'
           query.filter = 'self'
         }
 
