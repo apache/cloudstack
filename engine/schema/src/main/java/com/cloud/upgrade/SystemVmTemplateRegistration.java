@@ -104,6 +104,7 @@ public class SystemVmTemplateRegistration {
     public static final String TEMPORARY_SECONDARY_STORE = "tmp";
     private static final String PARTIAL_TEMPLATE_FOLDER = String.format("/template/tmpl/%d/", Account.ACCOUNT_ID_SYSTEM);
     private static final String storageScriptsDir = "scripts/storage/secondary";
+    private static final Integer OTHER_LINUX_ID = 99;
     private static Integer LINUX_12_ID = 363;
     private static final Integer LINUX_7_ID = 183;
     private static final Integer SCRIPT_TIMEOUT = 1800000;
@@ -338,8 +339,8 @@ public class SystemVmTemplateRegistration {
     public static Map<Hypervisor.HypervisorType, Integer> hypervisorGuestOsMap = new HashMap<Hypervisor.HypervisorType, Integer>() {
         {
             put(Hypervisor.HypervisorType.KVM, LINUX_12_ID);
-            put(Hypervisor.HypervisorType.XenServer, LINUX_12_ID);
-            put(Hypervisor.HypervisorType.VMware, LINUX_12_ID);
+            put(Hypervisor.HypervisorType.XenServer, OTHER_LINUX_ID);
+            put(Hypervisor.HypervisorType.VMware, OTHER_LINUX_ID);
             put(Hypervisor.HypervisorType.Hyperv, LINUX_12_ID);
             put(Hypervisor.HypervisorType.LXC, LINUX_12_ID);
             put(Hypervisor.HypervisorType.Ovm3, LINUX_7_ID);
@@ -606,8 +607,6 @@ public class SystemVmTemplateRegistration {
             LOGGER.debug("Updating SystemVM Template Guest OS [{}] id", systemVmGuestOsName);
             SystemVmTemplateRegistration.LINUX_12_ID = Math.toIntExact(guestOS.getId());
             hypervisorGuestOsMap.put(Hypervisor.HypervisorType.KVM, LINUX_12_ID);
-            hypervisorGuestOsMap.put(Hypervisor.HypervisorType.XenServer, LINUX_12_ID);
-            hypervisorGuestOsMap.put(Hypervisor.HypervisorType.VMware, LINUX_12_ID);
             hypervisorGuestOsMap.put(Hypervisor.HypervisorType.Hyperv, LINUX_12_ID);
             hypervisorGuestOsMap.put(Hypervisor.HypervisorType.LXC, LINUX_12_ID);
         }
