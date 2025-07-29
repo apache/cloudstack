@@ -1109,28 +1109,23 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
     }
 
-    private UserVm importVirtualMachineInternal(final UnmanagedInstanceTO unmanagedInstance, final String instanceName, final DataCenter zone, final Cluster cluster, final HostVO host,
-                                                final VirtualMachineTemplate template, final String displayName, final String hostName, final Account caller, final Account owner, final Long userId,
-                                                final ServiceOfferingVO serviceOffering, final Map<String, Long> dataDiskOfferingMap,
-                                                final Map<String, Long> nicNetworkMap, final Map<String, Network.IpAddresses> callerNicIpAddressMap,
-                                                final Map<String, String> details, final boolean migrateAllowed, final boolean forced, final boolean isImportUnmanagedFromSameHypervisor) {
-        logger.debug(LogUtils.logGsonWithoutException("Trying to import VM [%s] with name [%s], in zone [%s], cluster [%s], and host [%s], using template [%s], service offering [%s], disks map [%s], NICs map [%s] and details [%s].",
-                unmanagedInstance, instanceName, zone, cluster, host, template, serviceOffering, dataDiskOfferingMap, nicNetworkMap, details));
-        UserVm userVm = null;
-        ServiceOfferingVO validatedServiceOffering = null;
+    protected ServiceOfferingVO validateAndGetServiceOffering(UnmanagedInstanceTO unmanagedInstance, ServiceOfferingVO serviceOffering, Account owner, DataCenter zone, Map<String, String> details, Cluster cluster) {
         try {
-            validatedServiceOffering = getUnmanagedInstanceServiceOffering(unmanagedInstance, serviceOffering, owner, zone, details, cluster.getHypervisorType());
+            return getUnmanagedInstanceServiceOffering(unmanagedInstance, serviceOffering, owner, zone, details, cluster.getHypervisorType());
         } catch (Exception e) {
             String errorMsg = String.format("Failed to import Unmanaged VM [%s] because the service offering [%s] is not compatible due to [%s].", unmanagedInstance, serviceOffering, StringUtils.defaultIfEmpty(e.getMessage(), ""));
             logger.error(errorMsg, e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, errorMsg);
         }
+    }
 
-        String internalCSName = unmanagedInstance.getInternalCSName();
-        if (StringUtils.isEmpty(internalCSName)) {
-            internalCSName = instanceName;
-        }
-        Map<String, String> allDetails = new HashMap<>(details);
+    protected String getUnmanagedInstanceInternalName(UnmanagedInstanceTO unmanagedInstance, String instanceName) {
+        return StringUtils.isEmpty(unmanagedInstance.getInternalCSName()) ?
+                instanceName :
+                unmanagedInstance.getInternalCSName();
+    }
+
+    protected void addImportingVMDynamicOfferingDetails(ServiceOfferingVO validatedServiceOffering, ServiceOfferingVO serviceOffering, Map<String, String> allDetails) {
         if (validatedServiceOffering.isDynamic()) {
             allDetails.put(VmDetailConstants.CPU_NUMBER, String.valueOf(validatedServiceOffering.getCpu()));
             allDetails.put(VmDetailConstants.MEMORY, String.valueOf(validatedServiceOffering.getRamSize()));
@@ -1138,21 +1133,17 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 allDetails.put(VmDetailConstants.CPU_SPEED, String.valueOf(validatedServiceOffering.getSpeed()));
             }
         }
+    }
 
-        if (!migrateAllowed && host != null && !hostSupportsServiceOfferingAndTemplate(host, validatedServiceOffering, template)) {
-            throw new InvalidParameterValueException(String.format("Service offering: %s or template: %s is not compatible with host: %s of unmanaged VM: %s", serviceOffering.getUuid(), template.getUuid(), host.getUuid(), instanceName));
-        }
-        // Check disks and supplied disk offerings
-        List<UnmanagedInstanceTO.Disk> unmanagedInstanceDisks = unmanagedInstance.getDisks();
-        if (CollectionUtils.isEmpty(unmanagedInstanceDisks)) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("No attached disks found for the unmanaged VM: %s", instanceName));
-        }
-        Pair<UnmanagedInstanceTO.Disk, List<UnmanagedInstanceTO.Disk>> rootAndDataDisksPair = getRootAndDataDisks(unmanagedInstanceDisks, dataDiskOfferingMap);
-        final UnmanagedInstanceTO.Disk rootDisk = rootAndDataDisksPair.first();
-        final List<UnmanagedInstanceTO.Disk> dataDisks = rootAndDataDisksPair.second();
-        if (rootDisk == null || StringUtils.isEmpty(rootDisk.getController())) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM import failed. Unable to retrieve root disk details for VM: %s ", instanceName));
-        }
+    protected void checkImportingVMDisksAndDiskOfferings(UnmanagedInstanceTO unmanagedInstance,
+                                                         UnmanagedInstanceTO.Disk rootDisk,
+                                                         List<UnmanagedInstanceTO.Disk> dataDisks,
+                                                         Map<String, Long> dataDiskOfferingMap,
+                                                         ServiceOfferingVO validatedServiceOffering, Cluster cluster,
+                                                         Map<String, String> allDetails,
+                                                         boolean isImportUnmanagedFromSameHypervisor, Account owner,
+                                                         DataCenter zone, ServiceOfferingVO serviceOffering,
+                                                         boolean migrateAllowed) {
         if (cluster.getHypervisorType() == Hypervisor.HypervisorType.KVM) {
             Long rootDiskOfferingId = validatedServiceOffering.getDiskOfferingId();
             DiskOffering rootDiskOffering = diskOfferingDao.findById(rootDiskOfferingId);
@@ -1177,9 +1168,29 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             logger.error("Volume resource allocation error for owner: {}", owner, e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Volume resource allocation error for owner: %s. %s", owner.getUuid(), StringUtils.defaultString(e.getMessage())));
         }
+    }
+
+    private Pair<UnmanagedInstanceTO.Disk, List<UnmanagedInstanceTO.Disk>> getUnmanagedInstanceDisksPair(UnmanagedInstanceTO unmanagedInstance, Map<String, Long> dataDiskOfferingMap, String instanceName) {
+        List<UnmanagedInstanceTO.Disk> unmanagedInstanceDisks = unmanagedInstance.getDisks();
+        if (CollectionUtils.isEmpty(unmanagedInstanceDisks)) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("No attached disks found for the unmanaged VM: %s", instanceName));
+        }
+        Pair<UnmanagedInstanceTO.Disk, List<UnmanagedInstanceTO.Disk>> rootAndDataDisksPair = getRootAndDataDisks(unmanagedInstanceDisks, dataDiskOfferingMap);
+        final UnmanagedInstanceTO.Disk rootDisk = rootAndDataDisksPair.first();
+        if (rootDisk == null || StringUtils.isEmpty(rootDisk.getController())) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM import failed. Unable to retrieve root disk details for VM: %s ", instanceName));
+        }
+        return rootAndDataDisksPair;
+    }
+
+    private VirtualMachine.PowerState getImportingVMPowerState(UnmanagedInstanceTO unmanagedInstance) {
+        return unmanagedInstance.getPowerState().equals(UnmanagedInstanceTO.PowerState.PowerOn) ?
+                VirtualMachine.PowerState.PowerOn :
+                VirtualMachine.PowerState.PowerOff;
+    }
+
+    private void checkImportingVMNics(UnmanagedInstanceTO unmanagedInstance, Map<String, Network.IpAddresses> callerNicIpAddressMap, Map<String, String> allDetails, Map<String, Long> nicNetworkMap, Account owner, DataCenter zone, Cluster cluster, String hostName) {
         // Check NICs and supplied networks
-        Map<String, Network.IpAddresses> nicIpAddressMap = getNicIpAddresses(unmanagedInstance.getNics(), callerNicIpAddressMap);
-        Map<String, Long> allNicNetworkMap = getUnmanagedNicNetworkMap(unmanagedInstance.getName(), unmanagedInstance.getNics(), nicNetworkMap, nicIpAddressMap, zone, hostName, owner, cluster.getHypervisorType());
         if (!CollectionUtils.isEmpty(unmanagedInstance.getNics())) {
             allDetails.put(VmDetailConstants.NIC_ADAPTER, unmanagedInstance.getNics().get(0).getAdapterType());
         }
@@ -1187,14 +1198,11 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         if (StringUtils.isNotEmpty(unmanagedInstance.getVncPassword())) {
             allDetails.put(VmDetailConstants.KVM_VNC_PASSWORD, unmanagedInstance.getVncPassword());
         }
+    }
 
-        VirtualMachine.PowerState powerState = VirtualMachine.PowerState.PowerOff;
-        if (unmanagedInstance.getPowerState().equals(UnmanagedInstanceTO.PowerState.PowerOn)) {
-            powerState = VirtualMachine.PowerState.PowerOn;
-        }
-
+    private UserVm importAndGetImportingVM(DataCenter zone, HostVO host, VirtualMachineTemplate template, String internalCSName, String displayName, Account owner, Account caller, Long userId, ServiceOfferingVO validatedServiceOffering, String hostName, Cluster cluster, VirtualMachine.PowerState powerState, Map<String, String> allDetails, String instanceName) {
         try {
-            userVm = userVmManager.importVM(zone, host, template, internalCSName, displayName, owner,
+            return userVmManager.importVM(zone, host, template, internalCSName, displayName, owner,
                     null, caller, true, null, owner.getAccountId(), userId,
                     validatedServiceOffering, null, hostName,
                     cluster.getHypervisorType(), allDetails, powerState, null);
@@ -1203,11 +1211,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             logger.error(errorMsg, ice);
             throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, errorMsg);
         }
+    }
 
-        if (userVm == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import vm name: %s", instanceName));
-        }
-        List<Pair<DiskProfile, StoragePool>> diskProfileStoragePoolList = new ArrayList<>();
+    private void importVMDisksAfterImportingVM(UserVm userVm, Cluster cluster, VirtualMachineTemplate template, Account owner, UnmanagedInstanceTO.Disk rootDisk, List<UnmanagedInstanceTO.Disk> dataDisks, Map<String, String> details, ServiceOfferingVO serviceOffering, Map<String, Long> dataDiskOfferingMap, String instanceName, List<Pair<DiskProfile, StoragePool>> diskProfileStoragePoolList) {
         try {
             if (rootDisk.getCapacity() == null || rootDisk.getCapacity() == 0) {
                 throw new InvalidParameterValueException(String.format("Root disk ID: %s size is invalid", rootDisk.getDiskId()));
@@ -1239,6 +1245,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             cleanupFailedImportVM(userVm);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import volumes while importing vm: %s. %s", instanceName, StringUtils.defaultString(e.getMessage())));
         }
+    }
+
+    private void importVMNicsAfterImportingVM(UnmanagedInstanceTO unmanagedInstance, Map<String, Long> allNicNetworkMap, UserVm userVm, boolean forced, String instanceName, Map<String, Network.IpAddresses> nicIpAddressMap) {
         try {
             int nicIndex = 0;
             for (UnmanagedInstanceTO.Nic nic : unmanagedInstance.getNics()) {
@@ -1252,6 +1261,50 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             cleanupFailedImportVM(userVm);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import NICs while importing vm: %s. %s", instanceName, StringUtils.defaultString(e.getMessage())));
         }
+    }
+
+    private UserVm importVirtualMachineInternal(final UnmanagedInstanceTO unmanagedInstance, final String instanceName, final DataCenter zone, final Cluster cluster, final HostVO host,
+                                                final VirtualMachineTemplate template, final String displayName, final String hostName, final Account caller, final Account owner, final Long userId,
+                                                final ServiceOfferingVO serviceOffering, final Map<String, Long> dataDiskOfferingMap,
+                                                final Map<String, Long> nicNetworkMap, final Map<String, Network.IpAddresses> callerNicIpAddressMap,
+                                                final Map<String, String> details, final boolean migrateAllowed, final boolean forced, final boolean isImportUnmanagedFromSameHypervisor) {
+        logger.debug(LogUtils.logGsonWithoutException("Trying to import VM [%s] with name [%s], in zone [%s], cluster [%s], and host [%s], using template [%s], service offering [%s], disks map [%s], NICs map [%s] and details [%s].",
+                unmanagedInstance, instanceName, zone, cluster, host, template, serviceOffering, dataDiskOfferingMap, nicNetworkMap, details));
+
+        ServiceOfferingVO validatedServiceOffering = validateAndGetServiceOffering(unmanagedInstance, serviceOffering, owner, zone, details, cluster);
+        String internalCSName = getUnmanagedInstanceInternalName(unmanagedInstance, instanceName);
+        Map<String, String> allDetails = new HashMap<>(details);
+        addImportingVMDynamicOfferingDetails(validatedServiceOffering, serviceOffering, allDetails);
+
+        if (!migrateAllowed && host != null && !hostSupportsServiceOfferingAndTemplate(host, validatedServiceOffering, template)) {
+            throw new InvalidParameterValueException(String.format("Service offering: %s or template: %s is not compatible with host: %s of unmanaged VM: %s", serviceOffering.getUuid(), template.getUuid(), host.getUuid(), instanceName));
+        }
+
+        Pair<UnmanagedInstanceTO.Disk, List<UnmanagedInstanceTO.Disk>> disksPair = getUnmanagedInstanceDisksPair(unmanagedInstance, dataDiskOfferingMap, instanceName);
+        UnmanagedInstanceTO.Disk rootDisk = disksPair.first();
+        List<UnmanagedInstanceTO.Disk> dataDisks = disksPair.second();
+
+        checkImportingVMDisksAndDiskOfferings(unmanagedInstance, rootDisk, dataDisks, dataDiskOfferingMap,
+                validatedServiceOffering, cluster, allDetails, isImportUnmanagedFromSameHypervisor,
+                owner, zone, serviceOffering, migrateAllowed);
+
+        Map<String, Network.IpAddresses> nicIpAddressMap = getNicIpAddresses(unmanagedInstance.getNics(), callerNicIpAddressMap);
+        Map<String, Long> allNicNetworkMap = getUnmanagedNicNetworkMap(unmanagedInstance.getName(), unmanagedInstance.getNics(), nicNetworkMap, nicIpAddressMap, zone, hostName, owner, cluster.getHypervisorType());
+        checkImportingVMNics(unmanagedInstance, callerNicIpAddressMap, allDetails, nicNetworkMap,
+                owner, zone, cluster, hostName);
+
+        VirtualMachine.PowerState powerState = getImportingVMPowerState(unmanagedInstance);
+
+        UserVm userVm = importAndGetImportingVM(zone, host, template, internalCSName, displayName, owner, caller,
+                userId, validatedServiceOffering, hostName, cluster, powerState, allDetails, instanceName);
+
+        if (userVm == null) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import vm name: %s", instanceName));
+        }
+
+        List<Pair<DiskProfile, StoragePool>> diskProfileStoragePoolList = new ArrayList<>();
+        importVMDisksAfterImportingVM(userVm, cluster, template, owner, rootDisk, dataDisks, details, serviceOffering, dataDiskOfferingMap, instanceName, diskProfileStoragePoolList);
+        importVMNicsAfterImportingVM(unmanagedInstance, allNicNetworkMap, userVm, forced, instanceName, nicIpAddressMap);
         if (migrateAllowed) {
             userVm = migrateImportedVM(host, template, validatedServiceOffering, userVm, owner, diskProfileStoragePoolList);
         }
