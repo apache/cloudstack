@@ -50,12 +50,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.network.dao.NetrisProviderDao;
-import com.cloud.network.element.NetrisProviderVO;
-import com.cloud.network.netris.NetrisService;
 import org.apache.cloudstack.acl.RoleType;
-import com.cloud.gpu.VgpuProfileVO;
-import com.cloud.gpu.dao.VgpuProfileDao;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -207,6 +202,8 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.gpu.GPU;
+import com.cloud.gpu.VgpuProfileVO;
+import com.cloud.gpu.dao.VgpuProfileDao;
 import com.cloud.host.HostTagVO;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -230,10 +227,12 @@ import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.UserIpv6AddressVO;
+import com.cloud.network.as.AutoScaleManager;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.Ipv6GuestPrefixSubnetNetworkMapDao;
+import com.cloud.network.dao.NetrisProviderDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.NsxProviderDao;
@@ -242,7 +241,9 @@ import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.dao.UserIpv6AddressDao;
+import com.cloud.network.element.NetrisProviderVO;
 import com.cloud.network.element.NsxProviderVO;
+import com.cloud.network.netris.NetrisService;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.DiskOffering;
@@ -600,6 +601,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         configValuesForValidation.add(VMLeaseManager.InstanceLeaseSchedulerInterval.key());
         configValuesForValidation.add(VMLeaseManager.InstanceLeaseExpiryEventSchedulerInterval.key());
         configValuesForValidation.add(VMLeaseManager.InstanceLeaseExpiryEventDaysBefore.key());
+        configValuesForValidation.add(AutoScaleManager.AutoScaleErroredInstanceThreshold.key());
     }
 
     protected void weightBasedParametersForValidation() {

@@ -1365,7 +1365,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     for (int i = 0; i < retry; i++) {
                         lsuccess = true;
                         try {
-                            Thread.currentThread().wait(5 * 1000);
+                            Thread.sleep(5 * 1000);
                         } catch (final InterruptedException e) {
                             logger.debug("thread unexpectedly interrupted during wait, while updating cluster");
                         }
