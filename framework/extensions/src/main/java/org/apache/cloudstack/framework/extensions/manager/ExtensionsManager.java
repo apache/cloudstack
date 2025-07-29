@@ -46,6 +46,7 @@ import org.apache.cloudstack.framework.extensions.command.ExtensionServerActionB
 
 import com.cloud.host.Host;
 import com.cloud.org.Cluster;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 
 public interface ExtensionsManager extends Manager {
@@ -87,4 +88,9 @@ public interface ExtensionsManager extends Manager {
     Map<String, Map<String, String>> getExternalAccessDetails(Host host, Map<String, String> vmDetails);
 
     String handleExtensionServerCommands(ExtensionServerActionBaseCommand cmd);
+
+    Pair<Boolean, ExtensionResourceMap> extensionResourceMapDetailsNeedUpdate(final long resourceId,
+                      final ExtensionResourceMap.ResourceType resourceType, final Map<String, String> details);
+
+    void updateExtensionResourceMapDetails(final long extensionResourceMapId, final Map<String, String> details);
 }
