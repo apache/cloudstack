@@ -23,31 +23,35 @@ import com.cloud.utils.component.Manager;
 
 public interface AlertManager extends Manager, AlertService {
 
-    static final ConfigKey<Double> StorageCapacityThreshold = new ConfigKey<Double>(Double.class, "cluster.storage.capacity.notificationthreshold", "Alert", "0.75",
+    ConfigKey<Double> StorageCapacityThreshold = new ConfigKey<Double>(Double.class, "cluster.storage.capacity.notificationthreshold", "Alert", "0.75",
         "Percentage (as a value between 0 and 1) of storage utilization above which alerts will be sent about low storage available.", true, ConfigKey.Scope.Cluster,
         null);
-    static final ConfigKey<Double> CPUCapacityThreshold = new ConfigKey<Double>(Double.class, "cluster.cpu.allocated.capacity.notificationthreshold", "Alert", "0.75",
+    ConfigKey<Double> CPUCapacityThreshold = new ConfigKey<Double>(Double.class, "cluster.cpu.allocated.capacity.notificationthreshold", "Alert", "0.75",
         "Percentage (as a value between 0 and 1) of cpu utilization above which alerts will be sent about low cpu available.", true, ConfigKey.Scope.Cluster, null);
-    static final ConfigKey<Double> MemoryCapacityThreshold = new ConfigKey<Double>(Double.class, "cluster.memory.allocated.capacity.notificationthreshold", "Alert",
+    ConfigKey<Double> MemoryCapacityThreshold = new ConfigKey<Double>(Double.class, "cluster.memory.allocated.capacity.notificationthreshold", "Alert",
         "0.75", "Percentage (as a value between 0 and 1) of memory utilization above which alerts will be sent about low memory available.", true,
         ConfigKey.Scope.Cluster, null);
-    static final ConfigKey<Double> StorageAllocatedCapacityThreshold = new ConfigKey<Double>(Double.class, "cluster.storage.allocated.capacity.notificationthreshold",
+    ConfigKey<Double> StorageAllocatedCapacityThreshold = new ConfigKey<Double>(Double.class, "cluster.storage.allocated.capacity.notificationthreshold",
         "Alert", "0.75", "Percentage (as a value between 0 and 1) of allocated storage utilization above which alerts will be sent about low storage available.", true,
         ConfigKey.Scope.Cluster, null);
 
-    public static final ConfigKey<Boolean> AlertSmtpUseStartTLS = new ConfigKey<Boolean>("Advanced", Boolean.class, "alert.smtp.useStartTLS", "false",
+    ConfigKey<Boolean> AlertSmtpUseStartTLS = new ConfigKey<Boolean>("Advanced", Boolean.class, "alert.smtp.useStartTLS", "false",
             "If set to true and if we enable security via alert.smtp.useAuth, this will enable StartTLS to secure the connection.", true);
 
-    public static final ConfigKey<Boolean> AlertSmtpUseAuth = new ConfigKey<>(ConfigKey.CATEGORY_ALERT, Boolean.class, "alert.smtp.useAuth", "false", "If true, use SMTP authentication when sending emails.", false, ConfigKey.Scope.ManagementServer);
+    ConfigKey<Boolean> AlertSmtpUseAuth = new ConfigKey<>(ConfigKey.CATEGORY_ALERT, Boolean.class, "alert.smtp.useAuth", "false", "If true, use SMTP authentication when sending emails.", false, ConfigKey.Scope.ManagementServer);
 
-    public static final ConfigKey<String> AlertSmtpEnabledSecurityProtocols = new ConfigKey<String>(ConfigKey.CATEGORY_ADVANCED, String.class, "alert.smtp.enabledSecurityProtocols", "",
+    ConfigKey<String> AlertSmtpEnabledSecurityProtocols = new ConfigKey<String>(ConfigKey.CATEGORY_ADVANCED, String.class, "alert.smtp.enabledSecurityProtocols", "",
             "White-space separated security protocols; ex: \"TLSv1 TLSv1.1\". Supported protocols: SSLv2Hello, SSLv3, TLSv1, TLSv1.1 and TLSv1.2", true, ConfigKey.Kind.WhitespaceSeparatedListWithOptions, "SSLv2Hello,SSLv3,TLSv1,TLSv1.1,TLSv1.2");
 
-    public static final ConfigKey<Double> Ipv6SubnetCapacityThreshold = new ConfigKey<Double>("Advanced", Double.class,
+    ConfigKey<Double> Ipv6SubnetCapacityThreshold = new ConfigKey<Double>("Advanced", Double.class,
             "zone.virtualnetwork.ipv6subnet.capacity.notificationthreshold",
             "0.75",
             "Percentage (as a value between 0 and 1) of guest network IPv6 subnet utilization above which alerts will be sent.",
             true);
+
+    ConfigKey<String> AllowedRepetitiveAlertTypes = new ConfigKey<>(ConfigKey.CATEGORY_ALERT, String.class,
+            "alert.allowed.repetitive.types", "",
+            "Comma-separated list of alert types (by name) that can be sent multiple times", true);
 
     void clearAlert(AlertType alertType, long dataCenterId, long podId);
 

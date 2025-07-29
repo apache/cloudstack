@@ -19,7 +19,6 @@ package com.cloud.alert;
 import java.io.UnsupportedEncodingException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -41,6 +40,7 @@ import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -87,6 +87,7 @@ import com.cloud.org.Grouping.AllocationState;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.StorageManager;
 import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
@@ -96,20 +97,6 @@ import com.cloud.utils.db.TransactionStatus;
 
 public class AlertManagerImpl extends ManagerBase implements AlertManager, Configurable {
     protected Logger logger = LogManager.getLogger(AlertManagerImpl.class.getName());
-
-    public static final List<AlertType> ALERTS = Arrays.asList(AlertType.ALERT_TYPE_HOST
-            , AlertType.ALERT_TYPE_USERVM
-            , AlertType.ALERT_TYPE_DOMAIN_ROUTER
-            , AlertType.ALERT_TYPE_CONSOLE_PROXY
-            , AlertType.ALERT_TYPE_SSVM
-            , AlertType.ALERT_TYPE_STORAGE_MISC
-            , AlertType.ALERT_TYPE_MANAGEMENT_NODE
-            , AlertType.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED
-            , AlertType.ALERT_TYPE_UPLOAD_FAILED
-            , AlertType.ALERT_TYPE_OOBM_AUTH_ERROR
-            , AlertType.ALERT_TYPE_HA_ACTION
-            , AlertType.ALERT_TYPE_CA_CERT
-            , AlertType.ALERT_TYPE_EXTENSION_PATH_NOT_READY);
 
     private static final long INITIAL_CAPACITY_CHECK_DELAY = 30L * 1000L; // Thirty seconds expressed in milliseconds.
 
@@ -148,6 +135,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     Ipv6Service ipv6Service;
     @Inject
     HostDao hostDao;
+    @Inject
+    MessageBus messageBus;
 
     private Timer _timer = null;
     private long _capacityCheckPeriod = 60L * 60L * 1000L; // One hour by default.
@@ -164,6 +153,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     protected SMTPMailSender mailSender;
     protected String[] recipients = null;
     protected String senderAddress = null;
+
+    private final List<AlertType> allowedRepetitiveAlertTypes = new ArrayList<>();
 
     public AlertManagerImpl() {
         _executor = Executors.newCachedThreadPool(new NamedThreadFactory("Email-Alerts-Sender"));
@@ -234,10 +225,29 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 _capacityCheckPeriod = Long.parseLong(Config.CapacityCheckPeriod.getDefaultValue());
             }
         }
+        initMessageBusListener();
+        setupRepetitiveAlertTypes();
 
         _timer = new Timer("CapacityChecker");
 
         return true;
+    }
+
+    private void setupRepetitiveAlertTypes() {
+        allowedRepetitiveAlertTypes.clear();
+        String allowedRepetitiveAlertsStr = AllowedRepetitiveAlertTypes.value();
+        logger.trace("Allowed repetitive alert types specified by {}: {} ", AllowedRepetitiveAlertTypes.key(),
+                allowedRepetitiveAlertsStr);
+        String[] allowedRepetitiveAlertTypesArray = allowedRepetitiveAlertsStr.split(",");
+        for (String alertTypeName : allowedRepetitiveAlertTypesArray) {
+            AlertType type = AlertType.getAlertTypeByName(alertTypeName);
+            if (type == null) {
+                logger.warn("Unknown alert type name: {}, skipping it.", alertTypeName);
+                continue;
+            }
+            allowedRepetitiveAlertTypes.add(type);
+        }
+        logger.trace("{} alert types specified for repetitive alerts", allowedRepetitiveAlertTypes.size());
     }
 
     @Override
@@ -817,11 +827,10 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
 
     @Nullable
     private AlertVO getAlertForTrivialAlertType(AlertType alertType, long dataCenterId, Long podId, Long clusterId) {
-        AlertVO alert = null;
-        if (!ALERTS.contains(alertType)) {
-            alert = _alertDao.getLastAlert(alertType.getType(), dataCenterId, podId, clusterId);
+        if (alertType.isRepetitionAllowed() || allowedRepetitiveAlertTypes.contains(alertType)) {
+            return null;
         }
-        return alert;
+        return _alertDao.getLastAlert(alertType.getType(), dataCenterId, podId, clusterId);
     }
 
     protected void sendMessage(SMTPMailProperties mailProps) {
@@ -850,7 +859,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {CPUCapacityThreshold, MemoryCapacityThreshold, StorageAllocatedCapacityThreshold, StorageCapacityThreshold, AlertSmtpEnabledSecurityProtocols,
-            AlertSmtpUseStartTLS, Ipv6SubnetCapacityThreshold, AlertSmtpUseAuth};
+            AlertSmtpUseStartTLS, Ipv6SubnetCapacityThreshold, AlertSmtpUseAuth, AllowedRepetitiveAlertTypes};
     }
 
     @Override
@@ -863,5 +872,18 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             logger.warn("Failed to generate an alert of type=" + alertType + "; msg=" + msg);
             return false;
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void initMessageBusListener() {
+        messageBus.subscribe(EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, (senderAddress, subject, args) -> {
+            Ternary<String, ConfigKey.Scope, Long> updatedSetting = (Ternary<String, ConfigKey.Scope, Long>) args;
+            String updatedSettingName = updatedSetting.first();
+            if (!AllowedRepetitiveAlertTypes.key().equals(updatedSettingName)) {
+                return;
+
+            }
+            setupRepetitiveAlertTypes();
+        });
     }
 }
