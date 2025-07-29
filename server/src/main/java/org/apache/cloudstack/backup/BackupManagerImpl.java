@@ -62,6 +62,7 @@ import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.backup.dao.BackupScheduleDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
@@ -673,6 +674,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
      * @return The backup schedule ID. Returns null if the backup has been manually created
      */
     protected Long getBackupScheduleId(Object job) {
+        if (!(job instanceof AsyncJob)) {
+            return null;
+        }
+
         AsyncJobVO asyncJob = (AsyncJobVO) job;
         logger.debug("Trying to retrieve [{}] parameter from the job [ID: {}] parameters.", ApiConstants.SCHEDULE_ID, asyncJob.getId());
         String jobParamsRaw = asyncJob.getCmdInfo();
