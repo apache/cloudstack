@@ -74,9 +74,6 @@ public class RegisterUserDataCmd extends BaseRegisterUserDataCmd {
             length = 1048576)
     private String userData;
 
-    @Parameter(name = ApiConstants.PARAMS, type = CommandType.STRING, description = "comma separated list of variables declared in the User Data content")
-    private String params;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
