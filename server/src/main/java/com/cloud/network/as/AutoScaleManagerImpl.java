@@ -38,7 +38,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
-import com.cloud.network.NetworkModel;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
@@ -113,6 +112,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.IpAddresses;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.as.AutoScaleCounter.AutoScaleCounterParam;
 import com.cloud.network.as.dao.AutoScalePolicyConditionMapDao;
 import com.cloud.network.as.dao.AutoScalePolicyDao;
@@ -146,7 +146,9 @@ import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.server.ResourceTag;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.template.TemplateManager;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
@@ -280,6 +282,8 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     private NetworkOfferingDao networkOfferingDao;
     @Inject
     private VirtualMachineManager virtualMachineManager;
+    @Inject
+    GuestOSDao guestOSDao;
 
     private static final String PARAM_ROOT_DISK_SIZE = "rootdisksize";
     private static final String PARAM_DISK_OFFERING_ID = "diskofferingid";
@@ -1821,13 +1825,15 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             List<Long> affinityGroupIdList = getVmAffinityGroupId(deployParams);
             updateVmDetails(deployParams, customParameters);
 
-            String vmHostName = getNextVmHostName(asGroup);
+            Pair<String, String> vmHostAndDisplayName = getNextVmHostAndDisplayName(asGroup, template);
+            String vmHostName = vmHostAndDisplayName.first();
+            String vmDisplayName = vmHostAndDisplayName.second();
             asGroup.setNextVmSeq(asGroup.getNextVmSeq() + 1);
             autoScaleVmGroupDao.persist(asGroup);
 
             if (zone.getNetworkType() == NetworkType.Basic) {
                 vm = userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, null, owner, vmHostName,
-                        vmHostName, diskOfferingId, dataDiskSize, null, null,
+                        vmDisplayName, diskOfferingId, dataDiskSize, null, null,
                         hypervisorType, HTTPMethod.GET, userData, userDataId, userDataDetails, sshKeyPairs,
                         null, null, true, null, affinityGroupIdList, customParameters, null, null, null,
                         null, true, overrideDiskOfferingId, null, null);
@@ -1835,12 +1841,12 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                 if (networkModel.checkSecurityGroupSupportForNetwork(owner, zone, networkIds,
                         Collections.emptyList())) {
                     vm = userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, networkIds, null,
-                            owner, vmHostName,vmHostName, diskOfferingId, dataDiskSize, null, null,
+                            owner, vmHostName, vmDisplayName, diskOfferingId, dataDiskSize, null, null,
                             hypervisorType, HTTPMethod.GET, userData, userDataId, userDataDetails, sshKeyPairs,
                             null, null, true, null, affinityGroupIdList, customParameters, null, null, null,
                             null, true, overrideDiskOfferingId, null, null, null);
                 } else {
-                    vm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner, vmHostName, vmHostName,
+                    vm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner, vmHostName, vmDisplayName,
                             diskOfferingId, dataDiskSize, null, null,
                             hypervisorType, HTTPMethod.GET, userData, userDataId, userDataDetails, sshKeyPairs,
                             null, addrs, true, null, affinityGroupIdList, customParameters, null, null, null,
@@ -1965,13 +1971,20 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
     }
 
-    @Override
-    public String getNextVmHostName(AutoScaleVmGroupVO asGroup) {
+    protected Pair<String, String> getNextVmHostAndDisplayName(AutoScaleVmGroupVO asGroup, VirtualMachineTemplate template) {
+        template.getGuestOSId();
+        GuestOSVO guestOSVO = guestOSDao.findById(template.getGuestOSId());
+        boolean isWindows = guestOSVO != null && guestOSVO.getDisplayName().toLowerCase().contains("windows");
         String vmHostNameSuffix = "-" + asGroup.getNextVmSeq() + "-" +
                 RandomStringUtils.random(VM_HOSTNAME_RANDOM_SUFFIX_LENGTH, 0, 0, true, false, (char[])null, new SecureRandom()).toLowerCase();
         // Truncate vm group name because max length of vm name is 63
         int subStringLength = Math.min(asGroup.getName().length(), 63 - VM_HOSTNAME_PREFIX.length() - vmHostNameSuffix.length());
-        return VM_HOSTNAME_PREFIX + asGroup.getName().substring(0, subStringLength) + vmHostNameSuffix;
+        String displayName = VM_HOSTNAME_PREFIX + asGroup.getName().substring(0, subStringLength) + vmHostNameSuffix;
+        String hostName = displayName;
+        if (isWindows) {
+            hostName = displayName.substring(Math.max(0, displayName.length() - 15));
+        }
+        return new Pair<>(hostName, displayName);
     }
 
     @Override
