@@ -2539,10 +2539,11 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setType(network.getGuestType().toString());
         }
 
-        response.setGateway(network.getGateway());
+        response.setGateway(com.cloud.utils.StringUtils.getFirstValueFromCommaSeparatedString(network.getGateway()));
+        String cidr = com.cloud.utils.StringUtils.getFirstValueFromCommaSeparatedString(network.getCidr());
 
         // FIXME - either set netmask or cidr
-        response.setCidr(network.getCidr());
+        response.setCidr(cidr);
         if (network.getNetworkCidr() != null) {
             response.setNetworkCidr((network.getNetworkCidr()));
         }
@@ -2553,18 +2554,18 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (network.getNetworkCidr() != null) {
             response.setNetmask(NetUtils.cidr2Netmask(network.getNetworkCidr()));
         }
-        if (((network.getCidr()) != null) && (network.getNetworkCidr() == null)) {
-            response.setNetmask(NetUtils.cidr2Netmask(network.getCidr()));
+        if ((cidr != null) && (network.getNetworkCidr() == null)) {
+            response.setNetmask(NetUtils.cidr2Netmask(cidr));
         }
 
-        response.setIp6Gateway(network.getIp6Gateway());
-        response.setIp6Cidr(network.getIp6Cidr());
+        response.setIp6Gateway(com.cloud.utils.StringUtils.getFirstValueFromCommaSeparatedString(network.getIp6Gateway()));
+        response.setIp6Cidr(com.cloud.utils.StringUtils.getFirstValueFromCommaSeparatedString(network.getIp6Cidr()));
 
         // create response for reserved IP ranges that can be used for
         // non-cloudstack purposes
         String reservation = null;
-        if ((network.getCidr() != null) && (NetUtils.isNetworkAWithinNetworkB(network.getCidr(), network.getNetworkCidr()))) {
-            String[] guestVmCidrPair = network.getCidr().split("\\/");
+        if ((cidr != null) && (NetUtils.isNetworkAWithinNetworkB(cidr, network.getNetworkCidr()))) {
+            String[] guestVmCidrPair = cidr.split("\\/");
             String[] guestCidrPair = network.getNetworkCidr().split("\\/");
 
             Long guestVmCidrSize = Long.valueOf(guestVmCidrPair[1]);
