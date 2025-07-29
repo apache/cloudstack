@@ -46,6 +46,7 @@ import com.cloud.storage.Snapshot;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.utils.db.Filter;
@@ -96,7 +97,25 @@ public class SnapshotJoinDaoImpl extends GenericDaoBaseWithTagInformation<Snapsh
         } else {
             snapshotResponse.setRevertable(snapshotInfo.isRevertable());
             snapshotResponse.setPhysicalSize(snapshotInfo.getPhysicalSize());
+
+            boolean showChainSize = SnapshotManager.snapshotShowChainSize.valueIn(snapshot.getDataCenterId());
+            if (showChainSize && snapshotInfo.getParent() != null) {
+                long chainSize = calculateChainSize(snapshotInfo);
+                snapshotResponse.setChainSize(chainSize);
+            }
         }
+    }
+
+    private long calculateChainSize(SnapshotInfo snapshotInfo) {
+        long chainSize = snapshotInfo.getPhysicalSize();
+        SnapshotInfo parent = snapshotInfo.getParent();
+
+        while (parent != null) {
+            chainSize += parent.getPhysicalSize();
+            parent = parent.getParent();
+        }
+
+        return chainSize;
     }
 
     private String getSnapshotStatus(SnapshotJoinVO snapshot) {

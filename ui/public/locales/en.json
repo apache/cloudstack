@@ -505,6 +505,7 @@
 "label.certificate.upload.failed": "Certificate upload failed",
 "label.certificate.upload.failed.description": "Failed to update SSL Certificate. Failed to pass certificate validation check.",
 "label.certificateid": "Certificate ID",
+"label.chainsize": "Chain size",
 "label.change": "Change",
 "label.change.affinity": "Change affinity",
 "label.change.bgp.peers": "Change BGP peers",

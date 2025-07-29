@@ -324,7 +324,7 @@ export default {
         fields.push('zonename')
         return fields
       },
-      details: ['name', 'id', 'volumename', 'volumetype', 'snapshottype', 'intervaltype', 'physicalsize', 'virtualsize', 'account', 'domain', 'created'],
+      details: ['name', 'id', 'volumename', 'volumetype', 'snapshottype', 'intervaltype', 'physicalsize', 'virtualsize', 'chainsize', 'account', 'domain', 'created'],
       tabs: [
         {
           name: 'details',
