@@ -669,8 +669,8 @@ public class ApiResponseHelperTest {
             expected.setAccountId("accountUuid");
             expected.setHostName("host");
             expected.setHostId("hostUuid");
-            expected.setInstanceId("vmUuid");
-            expected.setInstanceName("vmName");
+            expected.setVmId("vmUuid");
+            expected.setVmName("vmName");
         }
 
         return expected;
@@ -735,8 +735,8 @@ public class ApiResponseHelperTest {
             Mockito.when(hostVOMock.getName()).thenReturn(expected.getHostName());
 
             apiDBUtilsStaticMock.when(() -> ApiDBUtils.findVMInstanceById(2L)).thenReturn(vmInstanceVOMock);
-            Mockito.when(vmInstanceVOMock.getUuid()).thenReturn(expected.getInstanceId());
-            Mockito.when(vmInstanceVOMock.getInstanceName()).thenReturn(expected.getInstanceName());
+            Mockito.when(vmInstanceVOMock.getUuid()).thenReturn(expected.getVmId());
+            Mockito.when(vmInstanceVOMock.getInstanceName()).thenReturn(expected.getVmName());
 
             ConsoleSessionResponse response = apiResponseHelper.createConsoleSessionResponse(consoleSessionMock, ResponseObject.ResponseView.Full);
 
@@ -755,8 +755,8 @@ public class ApiResponseHelperTest {
             Assert.assertEquals(expected.getAccountId(), response.getAccountId());
             Assert.assertEquals(expected.getHostId(), response.getHostId());
             Assert.assertEquals(expected.getHostName(), response.getHostName());
-            Assert.assertEquals(expected.getInstanceId(), response.getInstanceId());
-            Assert.assertEquals(expected.getInstanceName(), response.getInstanceName());
+            Assert.assertEquals(expected.getVmId(), response.getVmId());
+            Assert.assertEquals(expected.getVmName(), response.getVmName());
         }
     }
 }

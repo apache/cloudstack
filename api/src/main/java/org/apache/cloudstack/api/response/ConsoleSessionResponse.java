@@ -66,13 +66,13 @@ public class ConsoleSessionResponse extends BaseResponse {
     @Param(description = "ID of the user that created the console endpoint.")
     private String userId;
 
-    @SerializedName(ApiConstants.INSTANCE_ID)
-    @Param(description = "ID of the instance.")
-    private String instanceId;
+    @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
+    @Param(description = "ID of the virtual machine.")
+    private String vmId;
 
-    @SerializedName(ApiConstants.INSTANCE_NAME)
-    @Param(description = "Name of the instance.")
-    private String instanceName;
+    @SerializedName(ApiConstants.VIRTUAL_MACHINE_NAME)
+    @Param(description = "Name of the virtual machine.")
+    private String vmName;
 
     @SerializedName(ApiConstants.HOST_ID)
     @Param(description = "ID of the host.")
@@ -134,12 +134,12 @@ public class ConsoleSessionResponse extends BaseResponse {
         this.userId = userId;
     }
 
-    public void setInstanceId(String instanceId) {
-        this.instanceId = instanceId;
+    public void setVmId(String vmId) {
+        this.vmId = vmId;
     }
 
-    public void setInstanceName(String instanceName) {
-        this.instanceName = instanceName;
+    public void setVmName(String vmName) {
+        this.vmName = vmName;
     }
 
     public void setHostId(String hostId) {
@@ -202,12 +202,12 @@ public class ConsoleSessionResponse extends BaseResponse {
         return userId;
     }
 
-    public String getInstanceId() {
-        return instanceId;
+    public String getVmId() {
+        return vmId;
     }
 
-    public String getInstanceName() {
-        return instanceName;
+    public String getVmName() {
+        return vmName;
     }
 
     public String getHostId() {

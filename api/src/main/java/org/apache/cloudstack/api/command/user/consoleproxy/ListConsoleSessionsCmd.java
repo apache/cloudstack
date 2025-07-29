@@ -76,8 +76,8 @@ public class ListConsoleSessionsCmd extends BaseListCmd {
             ApiConstants.PARAMETER_DESCRIPTION_END_DATE_POSSIBLE_FORMATS)
     private Date endDate;
 
-    @Parameter(name = ApiConstants.INSTANCE_ID, type = CommandType.UUID, entityType = UserVmResponse.class, description = "The ID of the instance.")
-    private Long instanceId;
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class, description = "The ID of the virtual machine.")
+    private Long vmId;
 
     @Parameter(name = ApiConstants.CONSOLE_ENDPOINT_CREATOR_ADDRESS, type = CommandType.STRING, description = "IP address of the creator of the console endpoint.")
     private String consoleEndpointCreatorAddress;
@@ -126,8 +126,8 @@ public class ListConsoleSessionsCmd extends BaseListCmd {
         return endDate;
     }
 
-    public Long getInstanceId() {
-        return instanceId;
+    public Long getVmId() {
+        return vmId;
     }
 
     public String getConsoleEndpointCreatorAddress() {

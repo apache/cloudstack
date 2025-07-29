@@ -231,7 +231,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         List<Long> domainIds = isRecursive ? domainDao.getDomainAndChildrenIds(domainId) : List.of(domainId);
 
         return consoleSessionDao.listConsoleSessions(cmd.getId(), domainIds, accountId, userId,
-                cmd.getHostId(), cmd.getStartDate(), cmd.getEndDate(), cmd.getInstanceId(),
+                cmd.getHostId(), cmd.getStartDate(), cmd.getEndDate(), cmd.getVmId(),
                 cmd.getConsoleEndpointCreatorAddress(), cmd.getClientAddress(), cmd.isActiveOnly(),
                 cmd.getAcquired(), cmd.getPageSizeVal(), cmd.getStartIndex());
     }
