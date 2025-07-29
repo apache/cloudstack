@@ -403,7 +403,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     @Override
     public String createVolumeInfoFromVolumes(List<Volume> vmVolumes) {
         List<Backup.VolumeInfo> list = new ArrayList<>();
-        vmVolumes.sort(Comparator.comparing(VolumeVO::getDeviceId));
+        vmVolumes.sort(Comparator.comparing(Volume::getDeviceId));
         for (Volume vol : vmVolumes) {
             DiskOfferingVO diskOffering = diskOfferingDao.findById(vol.getDiskOfferingId());
             Backup.VolumeInfo volumeInfo = new Backup.VolumeInfo(vol.getUuid(), vol.getPath(), vol.getVolumeType(), vol.getSize(),

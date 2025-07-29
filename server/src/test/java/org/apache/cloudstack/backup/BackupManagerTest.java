@@ -1134,11 +1134,11 @@ public class BackupManagerTest {
                 diskOfferingId, null, 2048L, 1000L, 2000L, null);
         volume2.setUuid("uuid2");
         volume2.setPath("path2");
-        volume1.setDeviceId(1L);
+        volume2.setDeviceId(1L);
         volume2.setVolumeType(Volume.Type.DATADISK);
         volumes.add(volume2);
 
-        String expectedJson = "[{\"uuid\":\"uuid1\",\"type\":\"ROOT\",\"size\":1024,\"path\":\"path1\",\"deviceId\":1,\"diskOfferingId\":\"disk-offering-uuid\"},{\"uuid\":\"uuid2\",\"type\":\"DATADISK\",\"size\":2048,\"path\":\"path2\",\"diskOfferingId\":\"disk-offering-uuid\",\"minIops\":1000,\"maxIops\":2000}]";
+        String expectedJson = "[{\"uuid\":\"uuid1\",\"type\":\"ROOT\",\"size\":1024,\"path\":\"path1\",\"deviceId\":0,\"diskOfferingId\":\"disk-offering-uuid\"},{\"uuid\":\"uuid2\",\"type\":\"DATADISK\",\"size\":2048,\"path\":\"path2\",\"deviceId\":1,\"diskOfferingId\":\"disk-offering-uuid\",\"minIops\":1000,\"maxIops\":2000}]";
         String actualJson = backupManager.createVolumeInfoFromVolumes(new ArrayList<>(volumes));
 
         assertEquals(expectedJson, actualJson);
