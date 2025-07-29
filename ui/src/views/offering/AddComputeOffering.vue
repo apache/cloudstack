@@ -47,6 +47,7 @@
             <tooltip-label :title="$t('label.systemvmtype')" :tooltip="apiParams.systemvmtype.description"/>
           </template>
           <a-select
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.systemvmtype"
             showSearch
             optionFilterProp="label"
@@ -214,6 +215,7 @@
             <tooltip-label :title="$t('label.deploymentplanner')" :tooltip="apiParams.deploymentplanner.description"/>
           </template>
           <a-select
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.deploymentplanner"
             showSearch
             optionFilterProp="label"
@@ -306,6 +308,7 @@
           </template>
           <a-select
             mode="multiple"
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.domainid"
             showSearch
             optionFilterProp="label"
@@ -330,6 +333,7 @@
           <a-select
             id="zone-selection"
             mode="multiple"
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.zoneid"
             showSearch
             optionFilterProp="label"
@@ -356,6 +360,7 @@
             <tooltip-label :title="$t('label.vmware.storage.policy')" :tooltip="apiParams.storagepolicy.description"/>
           </template>
           <a-select
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.storagepolicy"
             :placeholder="apiParams.storagepolicy.description"
             showSearch
@@ -578,6 +583,7 @@
                   </template>
                   <a-select
                     mode="tags"
+                    :getPopupContainer="(trigger) => trigger.parentNode"
                     v-model:value="form.storagetags"
                     showSearch
                     optionFilterProp="value"
@@ -617,6 +623,7 @@
               <br /><br />
               <a-form-item :label="$t('label.disk.offerings')" name="diskofferingid" ref="diskofferingid">
                 <a-select
+                  :getPopupContainer="(trigger) => trigger.parentNode"
                   v-model:value="form.diskofferingid"
                   :loading="loading"
                   :placeholder="$t('label.diskoffering')">

@@ -190,7 +190,7 @@ public class ListClustersCmd extends BaseListCmd {
     @Override
     public void execute() {
         Pair<List<ClusterResponse>, Integer> clusterResponses = getClusterResponses();
-        ListResponse<ClusterResponse> response = new ListResponse<ClusterResponse>();
+        ListResponse<ClusterResponse> response = new ListResponse<>();
         response.setResponses(clusterResponses.first(), clusterResponses.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);

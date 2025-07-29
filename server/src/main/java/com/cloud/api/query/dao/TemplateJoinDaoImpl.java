@@ -482,6 +482,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         isoResponse.setExtractable(iso.isExtractable() && !(iso.getTemplateType() == TemplateType.PERHOST));
         isoResponse.setCreated(iso.getCreatedOnStore());
         isoResponse.setDynamicallyScalable(iso.isDynamicallyScalable());
+        isoResponse.setFormat(iso.getFormat());
         if (iso.getTemplateType() == TemplateType.PERHOST) {
             // for TemplateManager.XS_TOOLS_ISO and TemplateManager.VMWARE_TOOLS_ISO, we didn't download, but is ready to use.
             isoResponse.setReady(true);
@@ -581,9 +582,13 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             isoResponse.setZoneName(iso.getDataCenterName());
         }
 
-        Long isoSize = iso.getSize();
+        long isoSize = iso.getSize();
         if (isoSize > 0) {
             isoResponse.setSize(isoSize);
+        }
+        long isoPhysicalSize = iso.getPhysicalSize();
+        if (isoPhysicalSize > 0) {
+            isoResponse.setPhysicalSize(isoPhysicalSize);
         }
 
         if (iso.getUserDataId() != null) {

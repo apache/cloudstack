@@ -259,9 +259,14 @@ public class StorageVmSharedFSLifeCycleTest {
                 anyMap(), isNull(), isNull(), isNull(), isNull(),
                 anyBoolean(), anyString(), isNull(), isNull(), isNull())).thenReturn(vm);
 
-        VolumeVO volume = mock(VolumeVO.class);
-        when(volume.getId()).thenReturn(s_volumeId);
-        when(volumeDao.findByInstanceAndType(s_vmId, Volume.Type.DATADISK)).thenReturn(List.of(volume));
+        VolumeVO rootVol = mock(VolumeVO.class);
+        when(rootVol.getVolumeType()).thenReturn(Volume.Type.ROOT);
+        when(rootVol.getName()).thenReturn("ROOT-1");
+        VolumeVO dataVol = mock(VolumeVO.class);
+        when(dataVol.getId()).thenReturn(s_volumeId);
+        when(dataVol.getName()).thenReturn("DATA-1");
+        when(dataVol.getVolumeType()).thenReturn(Volume.Type.DATADISK);
+        when(volumeDao.findByInstance(s_vmId)).thenReturn(List.of(rootVol, dataVol));
 
          Pair<Long, Long> result = lifeCycle.deploySharedFS(sharedFS, s_networkId, s_diskOfferingId, s_size, s_minIops, s_maxIops);
          Assert.assertEquals(Optional.ofNullable(result.first()), Optional.ofNullable(s_volumeId));

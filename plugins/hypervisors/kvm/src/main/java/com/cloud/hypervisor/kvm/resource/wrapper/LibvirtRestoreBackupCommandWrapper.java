@@ -63,16 +63,25 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         String restoreVolumeUuid = command.getRestoreVolumeUUID();
 
         String newVolumeId = null;
-        if (Objects.isNull(vmExists)) {
-            String volumePath = restoreVolumePaths.get(0);
-            int lastIndex = volumePath.lastIndexOf("/");
-            newVolumeId = volumePath.substring(lastIndex + 1);
-            restoreVolume(backupPath, backupRepoType, backupRepoAddress, volumePath, diskType, restoreVolumeUuid,
-                    new Pair<>(vmName, command.getVmState()), mountOptions);
-        } else if (Boolean.TRUE.equals(vmExists)) {
-            restoreVolumesOfExistingVM(restoreVolumePaths, backedVolumeUUIDs, backupPath, backupRepoType, backupRepoAddress, mountOptions);
-        } else {
-            restoreVolumesOfDestroyedVMs(restoreVolumePaths, vmName, backupPath, backupRepoType, backupRepoAddress, mountOptions);
+        try {
+            if (Objects.isNull(vmExists)) {
+                String volumePath = restoreVolumePaths.get(0);
+                int lastIndex = volumePath.lastIndexOf("/");
+                newVolumeId = volumePath.substring(lastIndex + 1);
+                restoreVolume(backupPath, backupRepoType, backupRepoAddress, volumePath, diskType, restoreVolumeUuid,
+                        new Pair<>(vmName, command.getVmState()), mountOptions);
+            } else if (Boolean.TRUE.equals(vmExists)) {
+                restoreVolumesOfExistingVM(restoreVolumePaths, backedVolumeUUIDs, backupPath, backupRepoType, backupRepoAddress, mountOptions);
+            } else {
+                restoreVolumesOfDestroyedVMs(restoreVolumePaths, vmName, backupPath, backupRepoType, backupRepoAddress, mountOptions);
+            }
+        } catch (CloudRuntimeException e) {
+            String errorMessage = "Failed to restore backup for VM: " + vmName + ".";
+            if (e.getMessage() != null && !e.getMessage().isEmpty()) {
+                errorMessage += " Details: " + e.getMessage();
+            }
+            logger.error(errorMessage);
+            return new BackupAnswer(command, false, errorMessage);
         }
 
         return new BackupAnswer(command, true, newVolumeId);

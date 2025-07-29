@@ -60,12 +60,10 @@
               size="2x"
             />
           </span>
-          <os-logo
-            v-else
-            :osId="record.ostypeid"
-            :osName="record.osdisplayname"
-            size="xl"
-          />
+          <span v-else-if="record.vmtype === 'sharedfsvm'">
+            <file-text-outlined style="font-size: 18px;" />
+          </span>
+          <os-logo v-else :osId="record.ostypeid" :osName="record.osdisplayname" size="xl" />
         </span>
         <span style="min-width: 120px">
           <QuickView
@@ -1009,6 +1007,7 @@ import { createPathBasedOnVmType } from '@/utils/plugins'
 import { validateLinks } from '@/utils/links'
 import cronstrue from 'cronstrue/i18n'
 import moment from 'moment-timezone'
+import { FileTextOutlined } from '@ant-design/icons-vue'
 
 export default {
   name: 'ListView',
@@ -1019,7 +1018,8 @@ export default {
     CopyLabel,
     TooltipButton,
     ResourceIcon,
-    ResourceLabel
+    ResourceLabel,
+    FileTextOutlined
   },
   props: {
     columns: {

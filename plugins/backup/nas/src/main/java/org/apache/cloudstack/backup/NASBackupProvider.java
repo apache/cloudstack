@@ -60,6 +60,7 @@ import javax.inject.Inject;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -177,6 +178,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
         if (VirtualMachine.State.Stopped.equals(vm.getState())) {
             List<VolumeVO> vmVolumes = volumeDao.findByInstance(vm.getId());
+            vmVolumes.sort(Comparator.comparing(Volume::getDeviceId));
             List<String> volumePaths = getVolumePaths(vmVolumes);
             command.setVolumePaths(volumePaths);
         }
@@ -257,9 +259,14 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     }
 
     private boolean restoreVMBackup(VirtualMachine vm, Backup backup) {
-        List<Backup.VolumeInfo> backedVolumes = backup.getBackedUpVolumes();
-        List<String> backedVolumesUUIDs = backedVolumes.stream().map(volume -> volume.getUuid()).collect(Collectors.toList());
-        List<VolumeVO> restoreVolumes = volumeDao.findByInstance(vm.getId());
+        List<String> backedVolumesUUIDs = backup.getBackedUpVolumes().stream()
+                .sorted(Comparator.comparingLong(Backup.VolumeInfo::getDeviceId))
+                .map(Backup.VolumeInfo::getUuid)
+                .collect(Collectors.toList());
+
+        List<VolumeVO> restoreVolumes = volumeDao.findByInstance(vm.getId()).stream()
+                .sorted(Comparator.comparingLong(VolumeVO::getDeviceId))
+                .collect(Collectors.toList());
 
         LOG.debug("Restoring vm {} from backup {} on the NAS Backup Provider", vm, backup);
         BackupRepository backupRepository = getBackupRepository(backup);
@@ -294,9 +301,13 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             if (Objects.isNull(storagePool)) {
                 throw new CloudRuntimeException("Unable to find storage pool associated to the volume");
             }
-            String volumePathPrefix = String.format("/mnt/%s", storagePool.getUuid());
+            String volumePathPrefix;
             if (ScopeType.HOST.equals(storagePool.getScope())) {
                 volumePathPrefix = storagePool.getPath();
+            } else if (Storage.StoragePoolType.SharedMountPoint.equals(storagePool.getPoolType())) {
+                volumePathPrefix = storagePool.getPath();
+            } else {
+                volumePathPrefix = String.format("/mnt/%s", storagePool.getUuid());
             }
             volumePaths.add(String.format("%s/%s", volumePathPrefix, volume.getPath()));
         }
