@@ -1219,7 +1219,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                         try {
                             Thread.sleep(5 * 1000);
                         } catch (final InterruptedException e) {
-                            s_logger.debug("thread unexpectedly interupted during wait, while updating cluster");
+                            s_logger.debug("thread unexpectedly interrupted during wait, while updating cluster");
                         }
                         hosts = listAllUpAndEnabledHosts(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId());
                         for (final HostVO host : hosts) {
