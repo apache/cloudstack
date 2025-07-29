@@ -306,4 +306,7 @@
   <bean id="guiThemeDaoImpl" class="org.apache.cloudstack.gui.theme.dao.GuiThemeDaoImpl" />
   <bean id="guiThemeDetailsDaoImpl" class="org.apache.cloudstack.gui.theme.dao.GuiThemeDetailsDaoImpl" />
   <bean id="guiThemeJoinDaoImpl" class="org.apache.cloudstack.gui.theme.dao.GuiThemeJoinDaoImpl" />
+  <bean id="gpuCardDaoImpl" class="com.cloud.gpu.dao.GpuCardDaoImpl" />
+  <bean id="gpuDeviceDaoImpl" class="com.cloud.gpu.dao.GpuDeviceDaoImpl" />
+  <bean id="vgpuProfileDaoImpl" class="com.cloud.gpu.dao.VgpuProfileDaoImpl" />
 </beans>

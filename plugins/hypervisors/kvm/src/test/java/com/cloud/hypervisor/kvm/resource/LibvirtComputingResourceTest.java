@@ -23,6 +23,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -63,6 +64,8 @@ import javax.xml.xpath.XPathFactory;
 import com.cloud.utils.net.NetUtils;
 
 import com.cloud.vm.VmDetailConstants;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
@@ -163,6 +166,7 @@ import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.UnsupportedAnswer;
 import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
+import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
@@ -6624,11 +6628,13 @@ public class LibvirtComputingResourceTest {
 
         Mockito.doReturn(List.of("path")).when(volumeObjectToMock).getCheckpointPaths();
 
-        Mockito.doNothing().when(libvirtComputingResourceSpy).recreateCheckpointsOfDisk(Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.doNothing().when(libvirtComputingResourceSpy)
+                .recreateCheckpointsOfDisk(Mockito.any(), Mockito.any(), Mockito.any());
 
         boolean result = libvirtComputingResourceSpy.recreateCheckpointsOnVm(List.of(volumeObjectToMock), null, null);
 
-        Mockito.verify(libvirtComputingResourceSpy, Mockito.times(1)).recreateCheckpointsOfDisk(Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(libvirtComputingResourceSpy, Mockito.times(1))
+                .recreateCheckpointsOfDisk(Mockito.any(), Mockito.any(), Mockito.any());
         Assert.assertTrue(result);
     }
 
@@ -6778,5 +6784,346 @@ public class LibvirtComputingResourceTest {
     public void manuallyDeleteUnusedSnapshotFileTestLibvirtSupportingFlagDeleteOnCommandVirshBlockcommitIsTrueReturn() {
         libvirtComputingResourceSpy.manuallyDeleteUnusedSnapshotFile(true, "");
         Mockito.verify(libvirtComputingResourceSpy, Mockito.never()).deleteIfExists("");
+    }
+
+    @Test
+    public void testGetJsonStringValueOrNullWithValidStringValue() {
+        // Test case: field exists and has a string value
+        String jsonString = "{\"testField\": \"testValue\"}";
+        JsonParser jsonParser = new JsonParser();
+        JsonObject jsonObject = jsonParser.parse(jsonString).getAsJsonObject();
+
+        String result = libvirtComputingResourceSpy.getJsonStringValueOrNull(jsonObject, "testField");
+
+        assertEquals("testValue", result);
+    }
+
+    @Test
+    public void testGetJsonStringValueOrNull_withEmptyStringValue() {
+        // Test case: field exists and has an empty string value
+        String jsonString = "{\"testField\": \"\"}";
+        JsonParser jsonParser = new JsonParser();
+        JsonObject jsonObject = jsonParser.parse(jsonString).getAsJsonObject();
+
+        String result = libvirtComputingResourceSpy.getJsonStringValueOrNull(jsonObject, "testField");
+
+        assertEquals("", result);
+    }
+
+    @Test
+    public void testGetJsonStringValueOrNull_withNullValue() {
+        // Test case: field exists but is null
+        String jsonString = "{\"testField\": null}";
+        JsonParser jsonParser = new JsonParser();
+        JsonObject jsonObject = jsonParser.parse(jsonString).getAsJsonObject();
+
+        String result = libvirtComputingResourceSpy.getJsonStringValueOrNull(jsonObject, "testField");
+
+        assertNull(result);
+    }
+
+    @Test
+    public void testGetJsonStringValueOrNull_withMissingField() {
+        // Test case: field doesn't exist in the JSON object
+        String jsonString = "{\"otherField\": \"otherValue\"}";
+        JsonParser jsonParser = new JsonParser();
+        JsonObject jsonObject = jsonParser.parse(jsonString).getAsJsonObject();
+
+        String result = libvirtComputingResourceSpy.getJsonStringValueOrNull(jsonObject, "missingField");
+
+        assertNull(result);
+    }
+
+    @Test
+    public void testGetJsonStringValueOrNull_withEmptyJsonObject() {
+        // Test case: empty JSON object
+        String jsonString = "{}";
+        JsonParser jsonParser = new JsonParser();
+        JsonObject jsonObject = jsonParser.parse(jsonString).getAsJsonObject();
+
+        String result = libvirtComputingResourceSpy.getJsonStringValueOrNull(jsonObject, "anyField");
+
+        assertNull(result);
+    }
+
+    @Test
+    public void testGetJsonStringValueOrNull_withNumericValue() {
+        // Test case: field exists but contains a numeric value (should still work as it gets converted to string)
+        String jsonString = "{\"numericField\": 123}";
+        JsonParser jsonParser = new JsonParser();
+        JsonObject jsonObject = jsonParser.parse(jsonString).getAsJsonObject();
+
+        String result = libvirtComputingResourceSpy.getJsonStringValueOrNull(jsonObject, "numericField");
+
+        assertEquals("123", result);
+    }
+
+    @Test
+    public void testGetJsonStringValueOrNull_withBooleanValue() {
+        // Test case: field exists but contains a boolean value (should still work as it gets converted to string)
+        String jsonString = "{\"booleanField\": true}";
+        JsonParser jsonParser = new JsonParser();
+        JsonObject jsonObject = jsonParser.parse(jsonString).getAsJsonObject();
+
+        String result = libvirtComputingResourceSpy.getJsonStringValueOrNull(jsonObject, "booleanField");
+
+        assertEquals("true", result);
+    }
+
+    @Test
+    public void testGetJsonStringValueOrNull_withNullFieldName() {
+        // Test case: null field name should return null
+        String jsonString = "{\"testField\": \"testValue\"}";
+        JsonParser jsonParser = new JsonParser();
+        JsonObject jsonObject = jsonParser.parse(jsonString).getAsJsonObject();
+
+        String result = libvirtComputingResourceSpy.getJsonStringValueOrNull(jsonObject, null);
+
+        assertNull(result);
+    }
+
+    @Test
+    public void testGetJsonStringValueOrNull_withLongStringValue() {
+        // Test case: field exists and has a long string value
+        String longValue = "This is a very long string value that contains multiple words and special characters like @#$%^&*()";
+        String jsonString = "{\"longField\": \"" + longValue + "\"}";
+        JsonParser jsonParser = new JsonParser();
+        JsonObject jsonObject = jsonParser.parse(jsonString).getAsJsonObject();
+
+        String result = libvirtComputingResourceSpy.getJsonStringValueOrNull(jsonObject, "longField");
+
+        assertEquals(longValue, result);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testGetJsonStringValueOrNull_withNullJsonObject() {
+        // Test case: null JSON object should throw NullPointerException
+        // This tests that the method doesn't handle null objects gracefully, which is expected behavior
+        libvirtComputingResourceSpy.getJsonStringValueOrNull(null, "testField");
+    }
+
+    @Test
+    public void testGetJsonStringValueOrNull_withSpecialCharacters() {
+        // Test case: field contains JSON special characters and unicode
+        String jsonString = "{\"specialField\": \"Value with \\\"quotes\\\", \\n newlines, and unicode: \\u00E9\"}";
+        JsonParser jsonParser = new JsonParser();
+        JsonObject jsonObject = jsonParser.parse(jsonString).getAsJsonObject();
+
+        String result = libvirtComputingResourceSpy.getJsonStringValueOrNull(jsonObject, "specialField");
+
+        assertEquals("Value with \"quotes\", \n newlines, and unicode: é", result);
+    }
+
+    @Test
+    public void testParseGpuDevicesFromResult_withSuccess() {
+        String result = "{\"gpus\": ["
+                        + "    {"
+                        + "      \"pci_address\": \"00:03.0\","
+                        + "      \"vendor_id\": \"10de\","
+                        + "      \"device_id\": \"2484\","
+                        + "      \"vendor\": \"NVIDIA Corporation\","
+                        + "      \"device\": \"GeForce RTX 3070\","
+                        + "      \"driver\": \"nvidia\","
+                        + "      \"pci_class\": \"VGA compatible controller\","
+                        + "      \"iommu_group\": \"8\","
+                        + "      \"sriov_totalvfs\": 0,"
+                        + "      \"sriov_numvfs\": 0,"
+                        + "      \"full_passthrough\": {"
+                        + "        \"enabled\": 1,"
+                        + "        \"libvirt_address\": {"
+                        + "          \"domain\": \"0x0000\","
+                        + "          \"bus\": \"0x00\","
+                        + "          \"slot\": \"0x03\","
+                        + "          \"function\": \"0x0\""
+                        + "        },"
+                        + "        \"used_by_vm\": \"win10\""
+                        + "      },"
+                        + "      \"vgpu_instances\": [],"
+                        + "      \"vf_instances\": []"
+                        + "    },"
+                        + "    {"
+                        + "      \"pci_address\": \"00:AF.0\","
+                        + "      \"vendor_id\": \"10de\","
+                        + "      \"device_id\": \"1EB8\","
+                        + "      \"vendor\": \"NVIDIA Corporation\","
+                        + "      \"device\": \"Tesla T4\","
+                        + "      \"driver\": \"nvidia\","
+                        + "      \"pci_class\": \"3D controller\","
+                        + "      \"iommu_group\": \"12\","
+                        + "      \"sriov_totalvfs\": 0,"
+                        + "      \"sriov_numvfs\": 0,"
+                        + "      \"full_passthrough\": {"
+                        + "        \"enabled\": 0,"
+                        + "        \"libvirt_address\": {"
+                        + "          \"domain\": \"0x0000\","
+                        + "          \"bus\": \"0x00\","
+                        + "          \"slot\": \"0xAF\","
+                        + "          \"function\": \"0x0\""
+                        + "        },"
+                        + "        \"used_by_vm\": null"
+                        + "      },"
+                        + "      \"vgpu_instances\": ["
+                        + "        {"
+                        + "          \"mdev_uuid\": \"a1b2c3d4-5678-4e9a-8b0c-d1e2f3a4b5c6\","
+                        + "          \"profile_name\": \"grid_t4-16c\","
+                        + "          \"max_instances\": 4,"
+                        + "          \"libvirt_address\": {"
+                        + "            \"domain\": \"0x0000\","
+                        + "            \"bus\": \"0x00\","
+                        + "            \"slot\": \"0xAF\","
+                        + "            \"function\": \"0x0\""
+                        + "          },"
+                        + "          \"used_by_vm\": \"vm1\""
+                        + "        },"
+                        + "        {"
+                        + "          \"mdev_uuid\": \"b2c3d4e5-6789-4f0a-9c1d-e2f3a4b5c6d7\","
+                        + "          \"profile_name\": \"grid_t4-8c\","
+                        + "          \"max_instances\": 8,"
+                        + "          \"libvirt_address\": {"
+                        + "            \"domain\": \"0x0000\","
+                        + "            \"bus\": \"0x00\","
+                        + "            \"slot\": \"0xAF\","
+                        + "            \"function\": \"0x1\""
+                        + "          },"
+                        + "          \"used_by_vm\": \"vm2\""
+                        + "        }"
+                        + "      ],"
+                        + "      \"vf_instances\": []"
+                        + "    },"
+                        + "    {"
+                        + "      \"pci_address\": \"00:65.0\","
+                        + "      \"vendor_id\": \"10de\","
+                        + "      \"device_id\": \"20B0\","
+                        + "      \"vendor\": \"NVIDIA Corporation\","
+                        + "      \"device\": \"A100-SXM4-40GB\","
+                        + "      \"driver\": \"nvidia\","
+                        + "      \"pci_class\": \"VGA compatible controller\","
+                        + "      \"iommu_group\": \"15\","
+                        + "      \"sriov_totalvfs\": 7,"
+                        + "      \"sriov_numvfs\": 7,"
+                        + "      \"full_passthrough\": {"
+                        + "        \"enabled\": 0,"
+                        + "        \"libvirt_address\": {"
+                        + "          \"domain\": \"0x0000\","
+                        + "          \"bus\": \"0x00\","
+                        + "          \"slot\": \"0x65\","
+                        + "          \"function\": \"0x0\""
+                        + "        },"
+                        + "        \"used_by_vm\": null"
+                        + "      },"
+                        + "      \"vgpu_instances\": [],"
+                        + "      \"vf_instances\": ["
+                        + "        {"
+                        + "          \"vf_pci_address\": \"00:65.2\","
+                        + "          \"vf_profile\": \"1g.5gb\","
+                        + "          \"libvirt_address\": {"
+                        + "            \"domain\": \"0x0000\","
+                        + "            \"bus\": \"0x00\","
+                        + "            \"slot\": \"0x65\","
+                        + "            \"function\": \"0x2\""
+                        + "          },"
+                        + "          \"used_by_vm\": \"ml\""
+                        + "        },"
+                        + "        {"
+                        + "          \"vf_pci_address\": \"00:65.3\","
+                        + "          \"vf_profile\": \"2g.10gb\","
+                        + "          \"libvirt_address\": {"
+                        + "            \"domain\": \"0x0000\","
+                        + "            \"bus\": \"0x00\","
+                        + "            \"slot\": \"0x65\","
+                        + "            \"function\": \"0x3\""
+                        + "          },"
+                        + "          \"used_by_vm\": null"
+                        + "        }"
+                        + "      ]"
+                        + "    }"
+                        + "  ]"
+                        + "}";
+        List<VgpuTypesInfo> gpuDevices = libvirtComputingResourceSpy.parseGpuDevicesFromResult(result);
+        assertEquals(7, gpuDevices.size());
+        // Verify first GPU device (RTX 3070)
+        VgpuTypesInfo firstGpu = gpuDevices.get(0);
+        assertEquals("00:03.0", firstGpu.getBusAddress());
+        assertEquals("10de", firstGpu.getVendorId());
+        assertEquals("2484", firstGpu.getDeviceId());
+        assertEquals("NVIDIA Corporation", firstGpu.getVendorName());
+        assertEquals("GeForce RTX 3070", firstGpu.getDeviceName());
+        assertEquals("passthrough", firstGpu.getModelName());
+        assertEquals("NVIDIA Corporation GeForce RTX 3070", firstGpu.getGroupName());
+        assertTrue(firstGpu.isPassthroughEnabled());
+        assertEquals("win10", firstGpu.getVmName());
+
+        // Verify second GPU device (Tesla T4)
+        VgpuTypesInfo secondGpu = gpuDevices.get(1);
+        assertEquals("00:AF.0", secondGpu.getBusAddress());
+        assertEquals("10de", secondGpu.getVendorId());
+        assertEquals("1EB8", secondGpu.getDeviceId());
+        assertEquals("NVIDIA Corporation", secondGpu.getVendorName());
+        assertEquals("Tesla T4", secondGpu.getDeviceName());
+        assertEquals("passthrough", secondGpu.getModelName());
+        assertEquals("NVIDIA Corporation Tesla T4", secondGpu.getGroupName());
+        assertFalse(secondGpu.isPassthroughEnabled());
+        assertNull(secondGpu.getVmName());
+
+        // Verify third GPU device (A100-SXM4-40GB)
+        VgpuTypesInfo thirdGpu = gpuDevices.get(4);
+        assertEquals("00:65.0", thirdGpu.getBusAddress());
+        assertEquals("10de", thirdGpu.getVendorId());
+        assertEquals("20B0", thirdGpu.getDeviceId());
+        assertEquals("NVIDIA Corporation", thirdGpu.getVendorName());
+        assertEquals("A100-SXM4-40GB", thirdGpu.getDeviceName());
+        assertEquals("NVIDIA Corporation A100-SXM4-40GB", thirdGpu.getGroupName());
+        assertEquals("passthrough", thirdGpu.getModelName());
+        assertEquals("NVIDIA Corporation A100-SXM4-40GB", thirdGpu.getGroupName());
+        assertFalse(thirdGpu.isPassthroughEnabled());
+        assertNull(thirdGpu.getVmName());
+
+        // Verify vGPU instances from Tesla T4
+        VgpuTypesInfo vgpuInstance1 = gpuDevices.get(2);
+        assertEquals("a1b2c3d4-5678-4e9a-8b0c-d1e2f3a4b5c6", vgpuInstance1.getBusAddress());
+        assertEquals("00:AF.0", vgpuInstance1.getParentBusAddress());
+        assertEquals("10de", vgpuInstance1.getVendorId());
+        assertEquals("1EB8", vgpuInstance1.getDeviceId());
+        assertEquals("NVIDIA Corporation", vgpuInstance1.getVendorName());
+        assertEquals("Tesla T4", vgpuInstance1.getDeviceName());
+        assertEquals("NVIDIA Corporation Tesla T4", vgpuInstance1.getGroupName());
+        assertEquals("grid_t4-16c", vgpuInstance1.getModelName());
+        assertEquals(Long.valueOf(4), vgpuInstance1.getMaxVpuPerGpu());
+        assertEquals("vm1", vgpuInstance1.getVmName());
+
+        VgpuTypesInfo vgpuInstance2 = gpuDevices.get(3);
+        assertEquals("b2c3d4e5-6789-4f0a-9c1d-e2f3a4b5c6d7", vgpuInstance2.getBusAddress());
+        assertEquals("00:AF.0", vgpuInstance2.getParentBusAddress());
+        assertEquals("10de", vgpuInstance2.getVendorId());
+        assertEquals("1EB8", vgpuInstance2.getDeviceId());
+        assertEquals("NVIDIA Corporation", vgpuInstance2.getVendorName());
+        assertEquals("Tesla T4", vgpuInstance2.getDeviceName());
+        assertEquals("NVIDIA Corporation Tesla T4", vgpuInstance2.getGroupName());
+        assertEquals("grid_t4-8c", vgpuInstance2.getModelName());
+        assertEquals(Long.valueOf(8), vgpuInstance2.getMaxVpuPerGpu());
+        assertEquals("vm2", vgpuInstance2.getVmName());
+
+        // Verify VF instances from NVIDIA Corporation A100-SXM4-40GB
+        VgpuTypesInfo vfInstance1 = gpuDevices.get(5);
+        assertEquals("00:65.0", vfInstance1.getParentBusAddress());
+        assertEquals("00:65.2", vfInstance1.getBusAddress());
+        assertEquals("10de", vfInstance1.getVendorId());
+        assertEquals("20B0", vfInstance1.getDeviceId());
+        assertEquals("NVIDIA Corporation", vfInstance1.getVendorName());
+        assertEquals("A100-SXM4-40GB", vfInstance1.getDeviceName());
+        assertEquals("NVIDIA Corporation A100-SXM4-40GB", vfInstance1.getGroupName());
+        assertEquals("1g.5gb", vfInstance1.getModelName());
+        assertEquals("ml", vfInstance1.getVmName());
+
+        VgpuTypesInfo vfInstance2 = gpuDevices.get(6);
+        assertEquals("00:65.0", vfInstance2.getParentBusAddress());
+        assertEquals("00:65.3", vfInstance2.getBusAddress());
+        assertEquals("10de", vfInstance2.getVendorId());
+        assertEquals("20B0", vfInstance2.getDeviceId());
+        assertEquals("NVIDIA Corporation", vfInstance2.getVendorName());
+        assertEquals("A100-SXM4-40GB", vfInstance2.getDeviceName());
+        assertEquals("NVIDIA Corporation A100-SXM4-40GB", vfInstance1.getGroupName());
+        assertEquals("2g.10gb", vfInstance2.getModelName());
+        assertNull(vfInstance2.getVmName());
     }
 }

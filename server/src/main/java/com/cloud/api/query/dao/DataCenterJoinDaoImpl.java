@@ -25,11 +25,13 @@ import javax.inject.Inject;
 import com.cloud.cpu.CPU;
 import com.cloud.dc.ASNumberRangeVO;
 import com.cloud.dc.dao.ASNumberRangeDao;
+import com.cloud.gpu.dao.HostGpuGroupsDao;
 import com.cloud.network.Network;
 import com.cloud.network.dao.NetrisProviderDao;
 import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.element.NetrisProviderVO;
 import com.cloud.network.element.NsxProviderVO;
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
@@ -69,6 +71,8 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
     private NetrisProviderDao netrisProviderDao;
     @Inject
     private ASNumberRangeDao asNumberRangeDao;
+    @Inject
+    private HostGpuGroupsDao hostGpuGroupsDao;
 
     protected DataCenterJoinDaoImpl() {
 
@@ -97,6 +101,13 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
         zoneResponse.setLocalStorageEnabled(dataCenter.isLocalStorageEnabled());
         zoneResponse.setType(ObjectUtils.defaultIfNull(dataCenter.getType(), DataCenter.Type.Core).toString());
         zoneResponse.setStorageAccessGroups(dataCenter.getStorageAccessGroups());
+        Pair<Long, Long> gpuStats = hostGpuGroupsDao.getGpuStats(dataCenter.getId(), null, null, null);
+        if (gpuStats != null) {
+            Long totalGpuDevices = gpuStats.first();
+            Long usedGpuDevices = totalGpuDevices - gpuStats.second();
+            zoneResponse.setGpuTotal(totalGpuDevices);
+            zoneResponse.setGpuUsed(usedGpuDevices);
+        }
 
         if ((dataCenter.getDescription() != null) && !dataCenter.getDescription().equalsIgnoreCase("null")) {
             zoneResponse.setDescription(dataCenter.getDescription());

@@ -31,6 +31,9 @@ import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.datacenter.DataCenterIpv4GuestSubnet;
 import org.apache.cloudstack.extension.Extension;
 import org.apache.cloudstack.extension.ExtensionCustomAction;
+import org.apache.cloudstack.gpu.GpuCard;
+import org.apache.cloudstack.gpu.GpuDevice;
+import org.apache.cloudstack.gpu.VgpuProfile;
 import org.apache.cloudstack.ha.HAConfig;
 import org.apache.cloudstack.network.BgpPeer;
 import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap;
@@ -377,6 +380,21 @@ public class EventTypes {
     public static final String EVENT_DISK_OFFERING_CREATE = "DISK.OFFERING.CREATE";
     public static final String EVENT_DISK_OFFERING_EDIT = "DISK.OFFERING.EDIT";
     public static final String EVENT_DISK_OFFERING_DELETE = "DISK.OFFERING.DELETE";
+
+    // GPU Cards
+    public static final String EVENT_GPU_CARD_CREATE = "GPU.CARD.CREATE";
+    public static final String EVENT_GPU_CARD_EDIT = "GPU.CARD.EDIT";
+    public static final String EVENT_GPU_CARD_DELETE = "GPU.CARD.DELETE";
+
+    // vGPU Profile
+    public static final String EVENT_VGPU_PROFILE_CREATE = "VGPU.PROFILE.CREATE";
+    public static final String EVENT_VGPU_PROFILE_EDIT = "VGPU.PROFILE.EDIT";
+    public static final String EVENT_VGPU_PROFILE_DELETE = "VGPU.PROFILE.DELETE";
+
+    // GPU Devices
+    public static final String EVENT_GPU_DEVICE_CREATE = "GPU.DEVICE.CREATE";
+    public static final String EVENT_GPU_DEVICE_EDIT = "GPU.DEVICE.EDIT";
+    public static final String EVENT_GPU_DEVICE_DELETE = "GPU.DEVICE.DELETE";
 
     // Network offerings
     public static final String EVENT_NETWORK_OFFERING_CREATE = "NETWORK.OFFERING.CREATE";
@@ -1027,6 +1045,21 @@ public class EventTypes {
         entityEventDetails.put(EVENT_DISK_OFFERING_CREATE, DiskOffering.class);
         entityEventDetails.put(EVENT_DISK_OFFERING_EDIT, DiskOffering.class);
         entityEventDetails.put(EVENT_DISK_OFFERING_DELETE, DiskOffering.class);
+
+        // GPU Cards
+        entityEventDetails.put(EVENT_GPU_CARD_CREATE, GpuCard.class);
+        entityEventDetails.put(EVENT_GPU_CARD_EDIT, GpuCard.class);
+        entityEventDetails.put(EVENT_GPU_CARD_DELETE, GpuCard.class);
+
+        // vGPU Profiles
+        entityEventDetails.put(EVENT_VGPU_PROFILE_CREATE, VgpuProfile.class);
+        entityEventDetails.put(EVENT_VGPU_PROFILE_EDIT, VgpuProfile.class);
+        entityEventDetails.put(EVENT_VGPU_PROFILE_DELETE, VgpuProfile.class);
+
+        // GPU Devices
+        entityEventDetails.put(EVENT_GPU_DEVICE_CREATE, GpuDevice.class);
+        entityEventDetails.put(EVENT_GPU_DEVICE_EDIT, GpuDevice.class);
+        entityEventDetails.put(EVENT_GPU_DEVICE_DELETE, GpuDevice.class);
 
         // Network offerings
         entityEventDetails.put(EVENT_NETWORK_OFFERING_CREATE, NetworkOffering.class);

@@ -1479,6 +1479,45 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     }
 
     @Override
+    public Pair<Boolean, ExtensionResourceMap> extensionResourceMapDetailsNeedUpdate(long resourceId,
+                     ExtensionResourceMap.ResourceType resourceType, Map<String, String> externalDetails) {
+        if (MapUtils.isEmpty(externalDetails)) {
+            return new Pair<>(false, null);
+        }
+        ExtensionResourceMapVO extensionResourceMapVO =
+                extensionResourceMapDao.findByResourceIdAndType(resourceId, resourceType);
+        if (extensionResourceMapVO == null) {
+            return new Pair<>(true, null);
+        }
+        Map<String, String> mapDetails =
+                extensionResourceMapDetailsDao.listDetailsKeyPairs(extensionResourceMapVO.getId());
+        if (MapUtils.isEmpty(mapDetails) || mapDetails.size() != externalDetails.size()) {
+            return new Pair<>(true, extensionResourceMapVO);
+        }
+        for (Map.Entry<String, String> entry : externalDetails.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+            if (!value.equals(mapDetails.get(key))) {
+                return new Pair<>(true, extensionResourceMapVO);
+            }
+        }
+        return new Pair<>(false, extensionResourceMapVO);
+    }
+
+    @Override
+    public void updateExtensionResourceMapDetails(long extensionResourceMapId, Map<String, String> details) {
+        if (MapUtils.isEmpty(details)) {
+            return;
+        }
+        List<ExtensionResourceMapDetailsVO> detailsList = new ArrayList<>();
+        for (Map.Entry<String, String> entry : details.entrySet()) {
+            detailsList.add(new ExtensionResourceMapDetailsVO(extensionResourceMapId, entry.getKey(),
+                    entry.getValue()));
+        }
+        extensionResourceMapDetailsDao.saveDetails(detailsList);
+    }
+
+    @Override
     public Long getExtensionIdForCluster(long clusterId) {
         ExtensionResourceMapVO map = extensionResourceMapDao.findByResourceIdAndType(clusterId,
                 ExtensionResourceMap.ResourceType.Cluster);

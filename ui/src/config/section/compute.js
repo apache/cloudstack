@@ -54,8 +54,8 @@ export default {
         const metricsFields = ['cpunumber', 'cputotal', 'cpuused', 'memorytotal',
           {
             memoryused: (record) => {
-              if (record.memoryintfreekbs <= 0 || record.memorykbs <= 0) {
-                return '-'
+              if (!record.memoryintfreekbs || record.memoryintfreekbs <= 0 || record.memorykbs <= 0) {
+                return ''
               }
               return parseFloat(100.0 * (record.memorykbs - record.memoryintfreekbs) / record.memorykbs).toFixed(2) + '%'
             }
@@ -81,10 +81,10 @@ export default {
         fields.push('zonename')
         return fields
       },
-      searchFilters: ['name', 'zoneid', 'domainid', 'account', 'groupid', 'arch', 'extensionid', 'tags'],
+      searchFilters: ['name', 'gpuenabled', 'zoneid', 'domainid', 'account', 'groupid', 'arch', 'extensionid', 'tags'],
       details: () => {
         var fields = ['name', 'displayname', 'id', 'state', 'ipaddress', 'ip6address', 'templatename', 'ostypename',
-          'serviceofferingname', 'isdynamicallyscalable', 'haenable', 'hypervisor', 'arch', 'boottype', 'bootmode', 'account',
+          'serviceofferingname', 'gpucount', 'isdynamicallyscalable', 'haenable', 'hypervisor', 'arch', 'boottype', 'bootmode', 'account',
           'domain', 'zonename', 'userdataid', 'userdataname', 'userdataparams', 'userdatadetails', 'userdatapolicy',
           'hostcontrolstate', 'deleteprotection', 'leaseexpirydate', 'leaseexpiryaction']
         const listZoneHaveSGEnabled = store.getters.zones.filter(zone => zone.securitygroupsenabled === true)
