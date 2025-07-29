@@ -470,7 +470,7 @@ export default {
       })
     },
     fetchDomainAccounts (domainid) {
-      api('listAccounts', {
+      getAPI('listAccounts', {
         domainid: domainid
       }).then(response => {
         // Clean up the selected account from a previous domain

@@ -2528,64 +2528,64 @@ export default {
         if (exclude && exclude.length > 0 && exclude.includes(name)) {
           return resolve(null)
         }
-      }
-      this.loading[name] = true
-      param.loading = true
-      param.opts = []
-      const options = param.options || {}
-      if (!('listall' in options) && !['zones', 'pods', 'clusters', 'hosts', 'hypervisors'].includes(name)) {
-        options.listall = true
-      }
-      postApi(param.list, options).then((response) => {
-        param.loading = false
-        _.map(response, (responseItem, responseKey) => {
-          if (Object.keys(responseItem).length === 0) {
-            this.rowCount[name] = 0
-            this.options[name] = []
-            return
-          }
-          if (!responseKey.includes('response')) {
-            return
-          }
-          _.map(responseItem, (response, key) => {
-            if (key === 'count') {
-              this.rowCount[name] = response
+        this.loading[name] = true
+        param.loading = true
+        param.opts = []
+        const options = param.options || {}
+        if (!('listall' in options) && !['zones', 'pods', 'clusters', 'hosts', 'hypervisors'].includes(name)) {
+          options.listall = true
+        }
+        postAPI(param.list, options).then((response) => {
+          param.loading = false
+          _.map(response, (responseItem, responseKey) => {
+            if (Object.keys(responseItem).length === 0) {
+              this.rowCount[name] = 0
+              this.options[name] = []
               return
             }
             if (!responseKey.includes('response')) {
-              return resolve(null)
+              return
             }
             _.map(responseItem, (response, key) => {
               if (key === 'count') {
                 this.rowCount[name] = response
                 return
               }
-              param.opts = response
-              this.options[name] = response
-
-              if (name === 'hypervisors') {
-                const hypervisorFromResponse = response[0] && response[0].name ? response[0].name : null
-                this.dataPreFill.hypervisor = hypervisorFromResponse
-                this.form.hypervisor = hypervisorFromResponse
+              if (!responseKey.includes('response')) {
+                return resolve(null)
               }
+              _.map(responseItem, (response, key) => {
+                if (key === 'count') {
+                  this.rowCount[name] = response
+                  return
+                }
+                param.opts = response
+                this.options[name] = response
 
-              if (param.field) {
-                this.fillValue(param.field)
+                if (name === 'hypervisors') {
+                  const hypervisorFromResponse = response[0] && response[0].name ? response[0].name : null
+                  this.dataPreFill.hypervisor = hypervisorFromResponse
+                  this.form.hypervisor = hypervisorFromResponse
+                }
+
+                if (param.field) {
+                  this.fillValue(param.field)
+                }
+              })
+
+              if (name === 'zones') {
+                let zoneid = ''
+                if (this.$route.query.zoneid) {
+                  zoneid = this.$route.query.zoneid
+                } else if (this.options.zones.length === 1) {
+                  zoneid = this.options.zones[0].id
+                }
+                if (zoneid) {
+                  this.form.zoneid = zoneid
+                  this.onSelectZoneId(zoneid)
+                }
               }
             })
-
-            if (name === 'zones') {
-              let zoneid = ''
-              if (this.$route.query.zoneid) {
-                zoneid = this.$route.query.zoneid
-              } else if (this.options.zones.length === 1) {
-                zoneid = this.options.zones[0].id
-              }
-              if (zoneid) {
-                this.form.zoneid = zoneid
-                this.onSelectZoneId(zoneid)
-              }
-            }
           })
           resolve(response)
         }).catch(function (error) {
