@@ -880,6 +880,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         response.setMinSize(kubernetesCluster.getMinSize());
         response.setMaxSize(kubernetesCluster.getMaxSize());
         response.setClusterType(kubernetesCluster.getClusterType());
+        response.setCsiEnabled(kubernetesCluster.isCsiEnabled());
         response.setCreated(kubernetesCluster.getCreated());
 
         return response;

@@ -299,6 +299,7 @@ public class ApiConstants {
     public static final String IP_TOTAL = "iptotal";
     public static final String IS_CONTROL_NODE = "iscontrolnode";
     public static final String IS_CLEANUP_REQUIRED = "iscleanuprequired";
+    public static final String IS_CSI_ENABLED = "iscsienabled";
     public static final String IS_DYNAMIC = "isdynamic";
     public static final String IS_EDGE = "isedge";
     public static final String IS_ENCRYPTED = "isencrypted";
