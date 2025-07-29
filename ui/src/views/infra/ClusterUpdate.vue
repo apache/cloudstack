@@ -71,6 +71,14 @@
           </a-select-option>
         </a-select>
       </a-form-item>
+      <a-form-item name="externaldetails" ref="externaldetails" v-if="resource.hypervisortype === 'External' && resource.extensionid">
+        <template #label>
+          <tooltip-label :title="$t('label.configuration.details')" :tooltip="apiParams.externaldetails.description"/>
+        </template>
+        <div style="margin-bottom: 10px">{{ $t('message.add.extension.resource.details') }}</div>
+        <details-input
+          v-model:value="form.externaldetails" />
+      </a-form-item>
 
       <div :span="24" class="action-button">
         <a-button :loading="loading" @click="onCloseAction">{{ $t('label.cancel') }}</a-button>
@@ -84,11 +92,13 @@
 import { ref, reactive, toRaw } from 'vue'
 import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import DetailsInput from '@/components/widgets/DetailsInput'
 
 export default {
   name: 'ClusterUpdate',
   components: {
-    TooltipLabel
+    TooltipLabel,
+    DetailsInput
   },
   props: {
     action: {
@@ -145,6 +155,7 @@ export default {
     fetchData () {
       this.fetchArchitectureTypes()
       this.fetchStorageAccessGroupsData()
+      this.fetchExtensionResourceMapDetails()
     },
     fetchArchitectureTypes () {
       this.architectureTypes.opts = []
@@ -159,13 +170,39 @@ export default {
       })
       this.architectureTypes.opts = typesList
     },
+    fetchExtensionResourceMapDetails () {
+      this.form.externaldetails = null
+      if (!this.resource.id || !this.resource.extensionid) {
+        return
+      }
+      this.loading = true
+      const params = {
+        id: this.resource.extensionid,
+        details: 'resource'
+      }
+      getAPI('listExtensions', params).then(json => {
+        const resources = json?.listextensionsresponse?.extension?.[0]?.resources || []
+        const resourceMap = resources.find(r => r.id === this.resource.id)
+        if (resourceMap && resourceMap.details && typeof resourceMap.details === 'object') {
+          this.form.externaldetails = resourceMap.details
+        }
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.loading = false
+      })
+    },
     handleSubmit () {
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
-        console.log(values)
         const params = {}
         params.id = this.resource.id
         params.clustername = values.name
+        if (values.externaldetails) {
+          Object.entries(values.externaldetails).forEach(([key, value]) => {
+            params['externaldetails[0].' + key] = value
+          })
+        }
         this.loading = true
 
         postAPI('updateCluster', params).then(json => {

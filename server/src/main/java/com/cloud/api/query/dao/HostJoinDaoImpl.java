@@ -213,8 +213,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                 hostResponse.setMemWithOverprovisioning(decimalFormat.format(memWithOverprovisioning));
                 hostResponse.setMemoryAllocated(mem);
                 hostResponse.setMemoryAllocatedBytes(mem);
-                String memoryAllocatedPercentage = decimalFormat.format((float) mem / memWithOverprovisioning * 100.0f) +"%";
-                hostResponse.setMemoryAllocatedPercentage(memoryAllocatedPercentage);
+                hostResponse.setMemoryAllocatedPercentage(calculateResourceAllocatedPercentage(mem, memWithOverprovisioning));
 
                 String hostTags = host.getTag();
                 hostResponse.setHostTags(hostTags);
@@ -407,6 +406,9 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
     }
 
     private String calculateResourceAllocatedPercentage(float resource, float resourceWithOverProvision) {
+        if (resource == 0 || resourceWithOverProvision == 0) {
+            return "0.00%";
+        }
         DecimalFormat decimalFormat = new DecimalFormat("#.##");
         return decimalFormat.format(((float)resource / resourceWithOverProvision * 100.0f)) + "%";
     }

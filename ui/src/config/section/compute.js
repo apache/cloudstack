@@ -54,8 +54,8 @@ export default {
         const metricsFields = ['cpunumber', 'cputotal', 'cpuused', 'memorytotal',
           {
             memoryused: (record) => {
-              if (record.memoryintfreekbs <= 0 || record.memorykbs <= 0) {
-                return '-'
+              if (!record.memoryintfreekbs || record.memoryintfreekbs <= 0 || record.memorykbs <= 0) {
+                return ''
               }
               return parseFloat(100.0 * (record.memorykbs - record.memoryintfreekbs) / record.memorykbs).toFixed(2) + '%'
             }

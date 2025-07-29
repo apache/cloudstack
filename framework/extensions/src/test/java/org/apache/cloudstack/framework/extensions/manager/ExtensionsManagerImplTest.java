@@ -1743,6 +1743,82 @@ public class ExtensionsManagerImplTest {
     }
 
     @Test
+    public void extensionResourceMapDetailsNeedUpdateReturnsTrueWhenNoResourceMapExists() {
+        when(extensionResourceMapDao.findByResourceIdAndType(1L, ExtensionResourceMap.ResourceType.Cluster)).thenReturn(null);
+        Map<String, String> externalDetails = Map.of("key", "value");
+        Pair<Boolean, ExtensionResourceMap> result = extensionsManager.extensionResourceMapDetailsNeedUpdate(1L,
+            ExtensionResourceMap.ResourceType.Cluster, externalDetails);
+        assertTrue(result.first());
+        assertNull(result.second());
+    }
+
+    @Test
+    public void extensionResourceMapDetailsNeedUpdateReturnsFalseWhenDetailsMatch() {
+        ExtensionResourceMapVO resourceMap = mock(ExtensionResourceMapVO.class);
+        when(extensionResourceMapDao.findByResourceIdAndType(1L, ExtensionResourceMap.ResourceType.Cluster)).thenReturn(resourceMap);
+        when(extensionResourceMapDetailsDao.listDetailsKeyPairs(resourceMap.getId())).thenReturn(Map.of("key", "value"));
+        Map<String, String> externalDetails = Map.of("key", "value");
+        Pair<Boolean, ExtensionResourceMap> result = extensionsManager.extensionResourceMapDetailsNeedUpdate(1L,
+            ExtensionResourceMap.ResourceType.Cluster, externalDetails);
+        assertFalse(result.first());
+        assertEquals(resourceMap, result.second());
+    }
+
+    @Test
+    public void extensionResourceMapDetailsNeedUpdateReturnsTrueWhenDetailsDiffer() {
+        ExtensionResourceMapVO resourceMap = mock(ExtensionResourceMapVO.class);
+        when(extensionResourceMapDao.findByResourceIdAndType(1L, ExtensionResourceMap.ResourceType.Cluster)).thenReturn(resourceMap);
+        when(extensionResourceMapDetailsDao.listDetailsKeyPairs(resourceMap.getId())).thenReturn(Map.of("key", "oldValue"));
+        Map<String, String> externalDetails = Map.of("key", "newValue");
+        Pair<Boolean, ExtensionResourceMap> result = extensionsManager.extensionResourceMapDetailsNeedUpdate(1L,
+            ExtensionResourceMap.ResourceType.Cluster, externalDetails);
+        assertTrue(result.first());
+        assertEquals(resourceMap, result.second());
+    }
+
+    @Test
+    public void extensionResourceMapDetailsNeedUpdateReturnsTrueWhenExternalDetailsHaveExtraKeys() {
+        ExtensionResourceMapVO resourceMap = mock(ExtensionResourceMapVO.class);
+        when(extensionResourceMapDao.findByResourceIdAndType(1L, ExtensionResourceMap.ResourceType.Cluster)).thenReturn(resourceMap);
+        when(extensionResourceMapDetailsDao.listDetailsKeyPairs(resourceMap.getId())).thenReturn(Map.of("key", "value"));
+        Map<String, String> externalDetails = Map.of("key", "value", "extra", "something");
+        Pair<Boolean, ExtensionResourceMap> result = extensionsManager.extensionResourceMapDetailsNeedUpdate(1L,
+            ExtensionResourceMap.ResourceType.Cluster, externalDetails);
+        assertTrue(result.first());
+        assertEquals(resourceMap, result.second());
+    }
+
+    @Test
+    public void updateExtensionResourceMapDetails_SavesDetails_WhenDetailsProvided() {
+        long resourceMapId = 100L;
+        Map<String, String> details = Map.of("foo", "bar", "baz", "qux");
+        extensionsManager.updateExtensionResourceMapDetails(resourceMapId, details);
+        verify(extensionResourceMapDetailsDao).saveDetails(any());
+    }
+
+    @Test
+    public void updateExtensionResourceMapDetails_RemovesDetails_WhenDetailsIsNull() {
+        long resourceMapId = 101L;
+        extensionsManager.updateExtensionResourceMapDetails(resourceMapId, null);
+        verify(extensionResourceMapDetailsDao, never()).saveDetails(any());
+    }
+
+    @Test
+    public void updateExtensionResourceMapDetails_RemovesDetails_WhenDetailsIsEmpty() {
+        long resourceMapId = 102L;
+        extensionsManager.updateExtensionResourceMapDetails(resourceMapId, Collections.emptyMap());
+        verify(extensionResourceMapDetailsDao, never()).saveDetails(any());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void updateExtensionResourceMapDetails_ThrowsException_WhenSaveFails() {
+        long resourceMapId = 103L;
+        Map<String, String> details = Map.of("foo", "bar");
+        doThrow(CloudRuntimeException.class).when(extensionResourceMapDetailsDao).saveDetails(any());
+        extensionsManager.updateExtensionResourceMapDetails(resourceMapId, details);
+    }
+
+    @Test
     public void getExtensionIdForCluster_WhenMappingExists_ReturnsExtensionId() {
         long clusterId = 1L;
         long extensionId = 100L;

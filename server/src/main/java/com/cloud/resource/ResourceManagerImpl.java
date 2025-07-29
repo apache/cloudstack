@@ -198,6 +198,8 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.Manager;
@@ -231,8 +233,8 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
-import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.google.gson.Gson;
 
 @Component
@@ -1238,9 +1240,18 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         String managedstate = cmd.getManagedstate();
         String name = cmd.getClusterName();
         CPU.CPUArch arch = cmd.getArch();
+        final Map<String, String> externalDetails = cmd.getExternalDetails();
 
         // Verify cluster information and update the cluster if needed
         boolean doUpdate = false;
+        Pair<Boolean, ExtensionResourceMap> needDetailsUpdateMapPair =
+                extensionsManager.extensionResourceMapDetailsNeedUpdate(cluster.getId(),
+                ExtensionResourceMap.ResourceType.Cluster, externalDetails);
+        if (Boolean.TRUE.equals(needDetailsUpdateMapPair.first()) && needDetailsUpdateMapPair.second() == null) {
+            throw new InvalidParameterValueException(
+                    String.format("Cluster: %s is not registered with any extension, details cannot be updated",
+                            cluster.getName()));
+        }
 
         if (StringUtils.isNotBlank(name)) {
             if(cluster.getHypervisorType() == HypervisorType.VMware) {
@@ -1323,6 +1334,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         if (doUpdate) {
             _clusterDao.update(cluster.getId(), cluster);
+        }
+
+        if (Boolean.TRUE.equals(needDetailsUpdateMapPair.first())) {
+            ExtensionResourceMap extensionResourceMap = needDetailsUpdateMapPair.second();
+            extensionsManager.updateExtensionResourceMapDetails(extensionResourceMap.getId(), externalDetails);
         }
 
         if (newManagedState != null && !newManagedState.equals(oldManagedState)) {
