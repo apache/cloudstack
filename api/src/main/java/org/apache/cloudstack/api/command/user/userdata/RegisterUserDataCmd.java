@@ -21,8 +21,6 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.DomainResponse;
-import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -48,52 +46,8 @@ public class RegisterUserDataCmd extends BaseRegisterUserDataCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Name of the User Data")
-    private String name;
-
-    //Owner information
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the User Data. Must be used with domainId.")
-    private String accountName;
-
-    @Parameter(name = ApiConstants.DOMAIN_ID,
-            type = CommandType.UUID,
-            entityType = DomainResponse.class,
-            description = "an optional domainId for the User Data. If the account parameter is used, domainId must also be used.")
-    private Long domainId;
-
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "an optional project for the User Data")
-    private Long projectId;
-
-    @Parameter(name = ApiConstants.USER_DATA,
-            type = CommandType.STRING,
-            required = true,
-            description = "Base64 encoded User Data content. " +
-                    "Using HTTP GET (via querystring), you can send up to 4KB of data after base64 encoding. " +
-                    "Using HTTP POST (via POST body), you can send up to 32KB of data after base64 encoding, " +
-                    "which can be increased upto 1MB using the vm.userdata.max.length setting",
-            length = 1048576)
-    private String userData;
-
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
-
-    public String getName() {
-        return name;
-    }
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
-
-    public Long getProjectId() {
-        return projectId;
-    }
+    @Parameter(name = ApiConstants.USER_DATA, type = CommandType.STRING, required = true, description = "User data content", length = 1048576)
+    protected String userData;
 
     public String getUserData() {
         return userData;
