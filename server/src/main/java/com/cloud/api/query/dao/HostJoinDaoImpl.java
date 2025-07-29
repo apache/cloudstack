@@ -158,6 +158,8 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
         List<HostGpuGroupsVO> gpuGroups = ApiDBUtils.getGpuGroups(host.getId());
         if (gpuGroups != null && !gpuGroups.isEmpty()) {
             List<GpuResponse> gpus = new ArrayList<GpuResponse>();
+            long gpuRemaining = 0;
+            long gpuTotal = 0;
             for (HostGpuGroupsVO entry : gpuGroups) {
                 GpuResponse gpuResponse = new GpuResponse();
                 gpuResponse.setGpuGroupName(entry.getGroupName());
@@ -175,11 +177,15 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                         vgpuResponse.setRemainingCapacity(vgpuType.getRemainingCapacity());
                         vgpuResponse.setmaxCapacity(vgpuType.getMaxCapacity());
                         vgpus.add(vgpuResponse);
+                        gpuRemaining += vgpuType.getRemainingCapacity();
+                        gpuTotal += vgpuType.getMaxCapacity();
                     }
                     gpuResponse.setVgpu(vgpus);
                 }
                 gpus.add(gpuResponse);
             }
+            hostResponse.setGpuTotal(gpuTotal);
+            hostResponse.setGpuUsed(gpuTotal - gpuRemaining);
             hostResponse.setGpuGroup(gpus);
         }
         if (details.contains(HostDetails.all) || details.contains(HostDetails.capacity) || details.contains(HostDetails.stats) || details.contains(HostDetails.events)) {

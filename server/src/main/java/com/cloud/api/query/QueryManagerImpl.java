@@ -1535,6 +1535,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                     userVmSearchBuilder.entity().getId(), JoinBuilder.JoinType.INNER);
         }
 
+        if (cmd.getGpuEnabled() != null) {
+            SearchBuilder<ServiceOfferingVO> serviceOfferingSearch = _srvOfferingDao.createSearchBuilder();
+            _srvOfferingDao.addCheckForGpuEnabled(serviceOfferingSearch, cmd.getGpuEnabled());
+
+            userVmSearchBuilder.join("serviceOffering", serviceOfferingSearch, serviceOfferingSearch.entity().getId(), userVmSearchBuilder.entity().getServiceOfferingId(), JoinBuilder.JoinType.INNER);
+        }
+
         if (keyPairName != null) {
             SearchBuilder<VMInstanceDetailVO> vmDetailSearchKeys = vmInstanceDetailsDao.createSearchBuilder();
             SearchBuilder<VMInstanceDetailVO> vmDetailSearchVmIds = vmInstanceDetailsDao.createSearchBuilder();
@@ -4043,6 +4050,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         String storageType = cmd.getStorageType();
         ServiceOffering.State state = cmd.getState();
         final Long templateId = cmd.getTemplateId();
+        final Long vgpuProfileId = cmd.getVgpuProfileId();
+        final Boolean gpuEnabled = cmd.getGpuEnabled();
 
         final Account owner = accountMgr.finalizeOwner(caller, accountName, domainId, projectId);
 
@@ -4080,6 +4089,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (state != null) {
             serviceOfferingSearch.and("state", serviceOfferingSearch.entity().getState(), Op.EQ);
+        }
+
+        if (vgpuProfileId != null) {
+            serviceOfferingSearch.and("vgpuProfileId", serviceOfferingSearch.entity().getVgpuProfileId(), Op.EQ);
+        }
+
+        if (gpuEnabled != null) {
+            _srvOfferingDao.addCheckForGpuEnabled(serviceOfferingSearch, gpuEnabled);
         }
 
         if (vmId != null) {
@@ -4366,6 +4383,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         SearchCriteria<ServiceOfferingVO> sc = serviceOfferingSearch.create();
         if (state != null) {
             sc.setParameters("state", state);
+        }
+
+        if (vgpuProfileId != null) {
+            sc.setParameters("vgpuProfileId", vgpuProfileId);
         }
 
         if (vmId != null) {

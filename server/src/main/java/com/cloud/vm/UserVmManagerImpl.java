@@ -2805,18 +2805,39 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         long currentCpu = currentServiceOffering.getCpu();
         long currentMemory = currentServiceOffering.getRamSize();
         VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vmInstance.getTemplateId());
+        Long currentGpu = currentServiceOffering.getGpuCount() != null ? Long.valueOf(currentServiceOffering.getGpuCount()) : 0L;
+        Long newGpu = svcOffering.getGpuCount() != null ? Long.valueOf(svcOffering.getGpuCount()) : 0L;
         try {
-            if (newCpu > currentCpu) {
-                _resourceLimitMgr.checkVmCpuResourceLimit(owner, vmInstance.isDisplay(), svcOffering, template, newCpu - currentCpu);
-            }
-            if (newMemory > currentMemory) {
-                _resourceLimitMgr.checkVmMemoryResourceLimit(owner, vmInstance.isDisplay(), svcOffering, template, newMemory - currentMemory);
-            }
+            checkVmLimits(owner, vmInstance, svcOffering, template, newCpu, currentCpu, newMemory, currentMemory, newGpu, currentGpu);
         } catch (ResourceAllocationException e) {
             logger.error(String.format("Failed to updated VM due to: %s", e.getLocalizedMessage()));
             throw new InvalidParameterValueException(e.getLocalizedMessage());
         }
+        adjustVmLimits(owner, vmInstance, svcOffering, template, newCpu, currentCpu, newMemory, currentMemory, newGpu, currentGpu);
+    }
 
+    private void checkVmLimits(Account owner, UserVmVO vmInstance, ServiceOfferingVO svcOffering,
+            VMTemplateVO template, Long newCpu, Long currentCpu, Long newMemory, Long currentMemory,
+            Long newGpu, Long currentGpu
+    ) throws ResourceAllocationException {
+        if (newCpu > currentCpu) {
+            _resourceLimitMgr.checkVmCpuResourceLimit(owner, vmInstance.isDisplay(), svcOffering,
+                    template, newCpu - currentCpu);
+        }
+        if (newMemory > currentMemory) {
+            _resourceLimitMgr.checkVmMemoryResourceLimit(owner, vmInstance.isDisplay(), svcOffering,
+                    template, newMemory - currentMemory);
+        }
+        if (newGpu > currentGpu) {
+            _resourceLimitMgr.checkVmGpuResourceLimit(owner, vmInstance.isDisplay(), svcOffering,
+                    template, newGpu - currentGpu);
+        }
+    }
+
+    private void adjustVmLimits(Account owner, UserVmVO vmInstance, ServiceOfferingVO svcOffering,
+            VMTemplateVO template, Long newCpu, Long currentCpu, Long newMemory, Long currentMemory,
+            Long newGpu, Long currentGpu
+    ) {
         if (newCpu > currentCpu) {
             _resourceLimitMgr.incrementVmCpuResourceCount(owner.getAccountId(), vmInstance.isDisplay(), svcOffering, template, newCpu - currentCpu);
         } else if (newCpu > 0 && currentCpu > newCpu){
@@ -2826,6 +2847,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             _resourceLimitMgr.incrementVmMemoryResourceCount(owner.getAccountId(), vmInstance.isDisplay(), svcOffering, template, newMemory - currentMemory);
         } else if (newMemory > 0 && currentMemory > newMemory){
             _resourceLimitMgr.decrementVmMemoryResourceCount(owner.getAccountId(), vmInstance.isDisplay(), svcOffering, template, currentMemory - newMemory);
+        }
+        if (newGpu > currentGpu) {
+            _resourceLimitMgr.incrementVmGpuResourceCount(owner.getAccountId(), vmInstance.isDisplay(), svcOffering, template, newGpu - currentGpu);
+        } else if (newGpu > 0 && currentGpu > newGpu){
+            _resourceLimitMgr.decrementVmGpuResourceCount(owner.getAccountId(), vmInstance.isDisplay(), svcOffering, template, currentGpu - newGpu);
         }
     }
 
@@ -4211,6 +4237,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             try (CheckedReservation vmReservation = new CheckedReservation(owner, ResourceType.user_vm, resourceLimitHostTags, 1l, reservationDao, resourceLimitService);
                  CheckedReservation cpuReservation = new CheckedReservation(owner, ResourceType.cpu, resourceLimitHostTags, Long.valueOf(offering.getCpu()), reservationDao, resourceLimitService);
                  CheckedReservation memReservation = new CheckedReservation(owner, ResourceType.memory, resourceLimitHostTags, Long.valueOf(offering.getRamSize()), reservationDao, resourceLimitService);
+                 CheckedReservation gpuReservation = offering.getGpuCount() != null && offering.getGpuCount() > 0 ?
+                         new CheckedReservation(owner, ResourceType.gpu, resourceLimitHostTags, Long.valueOf(offering.getGpuCount()), reservationDao, resourceLimitService) : null;
             ) {
                 return getUncheckedUserVmResource(zone, hostName, displayName, owner, diskOfferingId, diskSize, networkList, securityGroupIdList, group, httpmethod, userData, userDataId, userDataDetails, sshKeyPairs, caller, requestedIps, defaultIps, isDisplayVm, keyboard, affinityGroupIdList, customParameters, customId, dhcpOptionMap, datadiskTemplateToDiskOfferringMap, userVmOVFPropertiesMap, dynamicScalingEnabled, vmType, template, hypervisorType, accountId, offering, isIso, rootDiskOfferingId, volumesSize, additionalDiskSize, volume, snapshot);
             } catch (ResourceAllocationException | CloudRuntimeException  e) {
@@ -5841,6 +5869,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         try (CheckedReservation vmReservation = new CheckedReservation(owner, ResourceType.user_vm, vmId, null, -1L, reservationDao, resourceLimitService);
              CheckedReservation cpuReservation = new CheckedReservation(owner, ResourceType.cpu, vmId, null, -1 * Long.valueOf(offering.getCpu()), reservationDao, resourceLimitService);
              CheckedReservation memReservation = new CheckedReservation(owner, ResourceType.memory, vmId, null, -1 * Long.valueOf(offering.getRamSize()), reservationDao, resourceLimitService);
+             CheckedReservation gpuReservation = offering.getGpuCount() != null && offering.getGpuCount() > 0 ?
+                     new CheckedReservation(owner, ResourceType.gpu, vmId, null, -1 * Long.valueOf(offering.getGpuCount()), reservationDao, resourceLimitService) : null;
         ) {
             try {
                 VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());

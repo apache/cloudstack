@@ -54,6 +54,8 @@ import com.cloud.network.dao.NetrisProviderDao;
 import com.cloud.network.element.NetrisProviderVO;
 import com.cloud.network.netris.NetrisService;
 import org.apache.cloudstack.acl.RoleType;
+import com.cloud.gpu.VgpuProfileVO;
+import com.cloud.gpu.dao.VgpuProfileDao;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -359,6 +361,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     DiskOfferingDao _diskOfferingDao;
     @Inject
     DiskOfferingDetailsDao diskOfferingDetailsDao;
+    @Inject
+    VgpuProfileDao vgpuProfileDao;
     @Inject
     NetworkOfferingDao _networkOfferingDao;
     @Inject
@@ -3450,6 +3454,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Integer leaseDuration = cmd.getLeaseDuration();
         VMLeaseManager.ExpiryAction leaseExpiryAction = validateAndGetLeaseExpiryAction(leaseDuration, cmd.getLeaseExpiryAction());
 
+        final Long vgpuProfileId = cmd.getVgpuProfileId();
+        Integer gpuCount = validateVgpuProfileAndGetGpuCount(vgpuProfileId, cmd.getGpuCount());
+
         return createServiceOffering(userId, cmd.isSystem(), vmType, cmd.getServiceOfferingName(), cpuNumber, memory, cpuSpeed, cmd.getDisplayText(),
                 cmd.getProvisioningType(), localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainIds(), cmd.getZoneIds(), cmd.getHostTag(),
                 cmd.getNetworkRate(), cmd.getDeploymentPlanner(), details, cmd.getRootDiskSize(), isCustomizedIops, cmd.getMinIops(), cmd.getMaxIops(),
@@ -3458,7 +3465,24 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 cmd.getIopsReadRate(), cmd.getIopsReadRateMax(), cmd.getIopsReadRateMaxLength(),
                 cmd.getIopsWriteRate(), cmd.getIopsWriteRateMax(), cmd.getIopsWriteRateMaxLength(),
                 cmd.getHypervisorSnapshotReserve(), cmd.getCacheMode(), storagePolicyId, cmd.getDynamicScalingEnabled(), diskOfferingId,
-                cmd.getDiskOfferingStrictness(), cmd.isCustomized(), cmd.getEncryptRoot(), cmd.isPurgeResources(), leaseDuration, leaseExpiryAction);
+                cmd.getDiskOfferingStrictness(), cmd.isCustomized(), cmd.getEncryptRoot(), vgpuProfileId, gpuCount, cmd.getGpuDisplay(), cmd.isPurgeResources(), leaseDuration, leaseExpiryAction);
+    }
+
+    private Integer validateVgpuProfileAndGetGpuCount(final Long vgpuProfileId, Integer gpuCount) {
+        Integer finalGpuCount = gpuCount;
+        if (vgpuProfileId != null) {
+            VgpuProfileVO vgpuProfile = vgpuProfileDao.findById(vgpuProfileId);
+            if (vgpuProfile == null) {
+                throw new InvalidParameterValueException("Please specify a valid vgpu profile.");
+            }
+            if (gpuCount != null && gpuCount < 1) {
+                throw new InvalidParameterValueException("GPU count must be greater than 0.");
+            }
+            if (gpuCount == null) {
+                finalGpuCount = 1;
+            }
+        }
+        return finalGpuCount;
     }
 
     protected ServiceOfferingVO createServiceOffering(final long userId, final boolean isSystem, final VirtualMachine.Type vmType,
@@ -3471,7 +3495,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                                       Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
                                                       final Integer hypervisorSnapshotReserve, String cacheMode, final Long storagePolicyID,
                                                       final boolean dynamicScalingEnabled, final Long diskOfferingId, final boolean diskOfferingStrictness,
-                                                      final boolean isCustomized, final boolean encryptRoot, final boolean purgeResources, Integer leaseDuration, VMLeaseManager.ExpiryAction leaseExpiryAction) {
+                                                      final boolean isCustomized, final boolean encryptRoot, Long vgpuProfileId, Integer gpuCount, Boolean gpuDisplay, final boolean purgeResources, Integer leaseDuration, VMLeaseManager.ExpiryAction leaseExpiryAction) {
 
         // Filter child domains when both parent and child domains are present
         List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
@@ -3553,6 +3577,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         serviceOffering.setDiskOfferingStrictness(diskOfferingStrictness);
+        serviceOffering.setVgpuProfileId(vgpuProfileId);
+        serviceOffering.setGpuCount(gpuCount);
+        serviceOffering.setGpuDisplay(gpuDisplay);
 
         DiskOfferingVO diskOffering = null;
         if (diskOfferingId == null) {

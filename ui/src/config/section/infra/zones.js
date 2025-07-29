@@ -27,7 +27,7 @@ export default {
   searchFilters: ['name', 'domainid', 'tags'],
   columns: () => {
     const fields = ['name', 'allocationstate', 'type', 'networktype']
-    const metricsFields = ['clusters', 'cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal']
+    const metricsFields = ['clusters', 'cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal', 'gputotal', 'gpuused']
     if (store.getters.metrics) {
       fields.push(...metricsFields)
     }

@@ -251,6 +251,7 @@
                       :value="serviceOffering ? serviceOffering.id : ''"
                       :loading="loading.serviceOfferings"
                       :preFillContent="dataPreFill"
+                      :show-gpu-filter="zone.gputotal && zone.gputotal > 0"
                       :minimum-cpunumber="templateConfigurationExists && selectedTemplateConfiguration && selectedTemplateConfiguration.cpunumber ? selectedTemplateConfiguration.cpunumber : 0"
                       :minimum-cpuspeed="templateConfigurationExists && selectedTemplateConfiguration && selectedTemplateConfiguration.cpuspeed ? selectedTemplateConfiguration.cpuspeed : 0"
                       :minimum-memory="templateConfigurationExists && selectedTemplateConfiguration && selectedTemplateConfiguration.memory ? selectedTemplateConfiguration.memory : 0"
@@ -1620,6 +1621,11 @@ export default {
           if (this.serviceOffering.memory) {
             this.vm.memory = this.serviceOffering.memory
           }
+          this.vm.gpucardid = this.serviceOffering.gpucardid ? this.serviceOffering.gpucardid : ''
+          this.vm.gpucardname = this.serviceOffering.gpucardname ? this.serviceOffering.gpucardname : ''
+          this.vm.gpucount = this.serviceOffering.gpucount ? this.serviceOffering.gpucount : 0
+          this.vm.vgpuprofileid = this.serviceOffering.vgpuprofileid ? this.serviceOffering.vgpuprofileid : ''
+          this.vm.vgpuprofilename = this.serviceOffering.vgpuprofilename ? this.serviceOffering.vgpuprofilename : ''
         }
 
         if (this.template && !this.template.deployasis && this.template.childtemplates && this.template.childtemplates.length > 0) {
@@ -2161,7 +2167,6 @@ export default {
     },
     handleSubmit (e) {
       console.log('wizard submit')
-      e.preventDefault()
       if (this.loading.deploy) return
       this.formRef.value.validate().then(async () => {
         const values = toRaw(this.form)
@@ -3211,8 +3216,18 @@ export default {
     .ant-card-body {
       min-height: 250px;
       max-height: calc(100vh - 140px);
+      overflow: hidden; // Prevent the entire card from scrolling
+    }
+
+    .card-content {
+      max-height: calc(100vh - 240px); // Reserve space for footer and card header/padding
       overflow-y: auto;
       scroll-behavior: smooth;
+    }
+
+    .card-footer {
+      border-top: 1px solid #f0f0f0;
+      flex-shrink: 0; // Ensure footer doesn't shrink
     }
 
     .resource-detail-item__label {

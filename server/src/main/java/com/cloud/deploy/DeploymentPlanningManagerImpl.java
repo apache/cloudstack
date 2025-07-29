@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.gpu.dao.VgpuProfileDao;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -94,7 +95,6 @@ import com.cloud.exception.AffinityConflictException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.StorageUnavailableException;
-import com.cloud.gpu.GPU;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -106,7 +106,6 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.resource.ResourceManager;
-import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
@@ -250,6 +249,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
     protected ClusterDetailsDao _clusterDetailsDao;
     @Inject
     protected ResourceManager _resourceMgr;
+    @Inject
+    protected VgpuProfileDao vgpuProfileDao;
     @Inject
     protected ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
 
@@ -586,10 +587,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             return false;
         }
 
-        ServiceOfferingDetailsVO offeringDetails = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString());
-        ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.pciDevice.toString());
-        if (offeringDetails != null && !_resourceMgr.isGPUDeviceAvailable(host, groupName.getValue(), offeringDetails.getValue())) {
-            logger.debug("Cannot deploy VM [{}] in the last host [{}] because this host does not have the required GPU devices available. Skipping this and trying other available hosts.",
+        if (!_resourceMgr.isGPUDeviceAvailable(offering, host, vm.getId())) {
+            logger.debug("Cannot deploy VM [{}] in the last host [{}] because this host does not have GPU devices available. Skipping this and trying other available hosts.",
                     vm, host);
             return false;
         }

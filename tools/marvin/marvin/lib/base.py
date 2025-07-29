@@ -2714,6 +2714,13 @@ class ServiceOffering:
         if "diskofferingid" in services:
             cmd.diskofferingid = services["diskofferingid"]
 
+        if "vgpuprofileid" in services:
+            cmd.vgpuprofileid = services["vgpuprofileid"]
+            cmd.gpucount = 1
+
+        if "gpucount" in services:
+            cmd.gpucount = services["gpucount"]
+
         # Service Offering private to that domain
         if domainid:
             cmd.domainid = domainid
@@ -3332,6 +3339,14 @@ class Host:
         cmd = deleteHost.deleteHostCmd()
         cmd.id = self.id
         apiclient.deleteHost(cmd)
+        return
+
+    def discoverGpuDevices(self, apiclient):
+        """Discover GPU devices on the host"""
+        # Host must be in maintenance mode before deletion
+        cmd = discoverGpuDevices.discoverGpuDevicesCmd()
+        cmd.id = self.id
+        apiclient.discoverGpuDevices(cmd)
         return
 
     @classmethod
@@ -7831,3 +7846,83 @@ class SharedFS:
         cmd.diskofferingid = diskofferingid
         cmd.size = size
         return (apiclient.changeSharedFileSystemDiskOffering(cmd))
+
+class GpuDevice:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    """Manage GPU Device"""
+    @classmethod
+    def create(cls, apiclient, services, name, description=None, hostid=None, busaddress=None, gpuCardId=None, vgpuProfileId=None, type=None, parentGpuDeviceId=None, numaNode=None, pciRoot=None):
+        """Create GPU Device"""
+        cmd = createGpuDevice.createGpuDeviceCmd()
+        cmd.name = name
+
+        if description:
+            cmd.description = description
+
+
+        if hostid:
+            cmd.hostid = hostid
+        elif "hostid" in services:
+            cmd.hostid = services["hostid"]
+
+        if busaddress:
+            cmd.busaddress = busaddress
+        elif "busaddress" in services:
+            cmd.busaddress = services["busaddress"]
+
+        if gpuCardId:
+            cmd.gpuCardId = gpuCardId
+        elif "gpuCardId" in services:
+            cmd.gpuCardId = services["gpuCardId"]
+
+        if vgpuProfileId:
+            cmd.vgpuProfileId = vgpuProfileId
+        elif "vgpuProfileId" in services:
+            cmd.vgpuProfileId = services["vgpuProfileId"]
+
+        if type:
+            cmd.type = type
+        elif "type" in services:
+            cmd.type = services["type"]
+
+        if parentGpuDeviceId:
+            cmd.parentGpuDeviceId = parentGpuDeviceId
+        elif "parentGpuDeviceId" in services:
+            cmd.parentGpuDeviceId = services["parentGpuDeviceId"]
+
+        if numaNode:
+            cmd.numaNode = numaNode
+        elif "numaNode" in services:
+            cmd.numaNode = services["numaNode"]
+
+        if pciRoot:
+            cmd.pciRoot = pciRoot
+        elif "pciRoot" in services:
+            cmd.pciRoot = services["pciRoot"]
+
+        return GpuDevice(apiclient.createGpuDevice(cmd).__dict__)
+
+    def delete(self, apiclient, expunge=True, forced=True):
+        """Delete GPU Device"""
+        cmd = deleteGpuDevice.deleteGpuDeviceCmd()
+        cmd.id = self.id
+        cmd.expunge = expunge
+        cmd.forced = forced
+        apiclient.deleteGpuDevice(cmd)
+
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listGpuDevices.listGpuDevicesCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return (apiclient.listGpuDevices(cmd))
+
+    def update(self, apiclient, **kwargs):
+        """Update GPU Device"""
+        cmd = updateGpuDevice.updateGpuDeviceCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return (apiclient.updateGpuDevice(cmd))
