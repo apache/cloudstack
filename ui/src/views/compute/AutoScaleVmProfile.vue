@@ -428,7 +428,6 @@ export default {
       } else {
         params.templatefilter = 'executable'
       }
-      params.isready = true
       getAPI('listTemplates', params).then(json => {
         this.templatesList = json.listtemplatesresponse?.template || []
       })
