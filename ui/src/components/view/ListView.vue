@@ -1230,45 +1230,45 @@ export default {
       this.editableValue = record.value
     },
     getUpdateApi () {
-      let apiString = ''
+      let apiCommand = ''
       switch (this.$route.name) {
         case 'template':
-          apiString = 'updateTemplate'
+          apiCommand = 'updateTemplate'
           break
         case 'iso':
-          apiString = 'updateIso'
+          apiCommand = 'updateIso'
           break
         case 'zone':
-          apiString = 'updateZone'
+          apiCommand = 'updateZone'
           break
         case 'computeoffering':
         case 'systemoffering':
-          apiString = 'updateServiceOffering'
+          apiCommand = 'updateServiceOffering'
           break
         case 'diskoffering':
-          apiString = 'updateDiskOffering'
+          apiCommand = 'updateDiskOffering'
           break
         case 'networkoffering':
-          apiString = 'updateNetworkOffering'
+          apiCommand = 'updateNetworkOffering'
           break
         case 'vpcoffering':
-          apiString = 'updateVPCOffering'
+          apiCommand = 'updateVPCOffering'
           break
         case 'guestoscategory':
-          apiString = 'updateOsCategory'
+          apiCommand = 'updateOsCategory'
           break
       }
-      return apiString
+      return apiCommand
     },
     isOrderUpdatable () {
       return this.getUpdateApi() in this.$store.getters.apis
     },
     handleUpdateOrder (id, index) {
       this.parentToggleLoading()
-      const apiString = this.getUpdateApi()
+      const apiCommand = this.getUpdateApi()
 
       return new Promise((resolve, reject) => {
-        postAPI(apiString, {
+        postAPI(apiCommand, {
           id,
           sortKey: index
         }).then((response) => {

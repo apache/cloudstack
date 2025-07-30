@@ -88,7 +88,7 @@
 </template>
 
 <script>
-import { postAPI } from '@/api'
+import { getAPI } from '@/api'
 import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
@@ -191,7 +191,7 @@ export default {
       if (this.showIcon) {
         params.showicon = true
       }
-      postAPI(this.api, params).then(json => {
+      getAPI(this.api, params).then(json => {
         const response = json[this.api.toLowerCase() + 'response'] || {}
         if (this.totalCount === null) {
           this.totalCount = response.count || 0
