@@ -16,6 +16,12 @@
 // under the License.
 package com.cloud.alert;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 
@@ -56,12 +62,6 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.StorageManager;
 import com.cloud.utils.Ternary;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AlertManagerImplTest {
@@ -226,7 +226,7 @@ public class AlertManagerImplTest {
         Mockito.verify(storageManager, Mockito.times(2)).createCapacityEntry(sharedPool, Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED, 10L);
         Mockito.verify(storageManager, Mockito.times(1)).createCapacityEntry(nonSharedPool, Capacity.CAPACITY_TYPE_LOCAL_STORAGE, 20L);
     }
-    
+
     @Test
     public void initMessageBusListenerSubscribesToConfigurationEditEvent() {
         MessageBus messageBusMock = Mockito.mock(MessageBus.class);
