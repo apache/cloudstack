@@ -48,6 +48,7 @@ import org.apache.cloudstack.utils.mailing.MailAddress;
 import org.apache.cloudstack.utils.mailing.SMTPMailProperties;
 import org.apache.cloudstack.utils.mailing.SMTPMailSender;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -233,14 +234,17 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         return true;
     }
 
-    private void setupRepetitiveAlertTypes() {
+    protected void setupRepetitiveAlertTypes() {
         allowedRepetitiveAlertTypes.clear();
         String allowedRepetitiveAlertsStr = AllowedRepetitiveAlertTypes.value();
         logger.trace("Allowed repetitive alert types specified by {}: {} ", AllowedRepetitiveAlertTypes.key(),
                 allowedRepetitiveAlertsStr);
+        if (StringUtils.isBlank(allowedRepetitiveAlertsStr)) {
+            return;
+        }
         String[] allowedRepetitiveAlertTypesArray = allowedRepetitiveAlertsStr.split(",");
         for (String alertTypeName : allowedRepetitiveAlertTypesArray) {
-            AlertType type = AlertType.getAlertTypeByName(alertTypeName);
+            AlertType type = AlertType.getAlertTypeByName(alertTypeName.trim());
             if (type == null) {
                 logger.warn("Unknown alert type name: {}, skipping it.", alertTypeName);
                 continue;
@@ -875,13 +879,12 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     }
 
     @SuppressWarnings("unchecked")
-    private void initMessageBusListener() {
+    protected void initMessageBusListener() {
         messageBus.subscribe(EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, (senderAddress, subject, args) -> {
             Ternary<String, ConfigKey.Scope, Long> updatedSetting = (Ternary<String, ConfigKey.Scope, Long>) args;
             String updatedSettingName = updatedSetting.first();
             if (!AllowedRepetitiveAlertTypes.key().equals(updatedSettingName)) {
                 return;
-
             }
             setupRepetitiveAlertTypes();
         });

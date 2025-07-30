@@ -21,6 +21,10 @@ import java.util.List;
 
 import javax.mail.MessagingException;
 
+import org.apache.cloudstack.alert.AlertService;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.mailing.SMTPMailSender;
@@ -35,6 +39,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.capacity.Capacity;
@@ -45,10 +50,12 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
+import com.cloud.event.EventTypes;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.StorageManager;
+import com.cloud.utils.Ternary;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -218,5 +225,80 @@ public class AlertManagerImplTest {
         alertManagerImplMock.recalculateStorageCapacities();
         Mockito.verify(storageManager, Mockito.times(2)).createCapacityEntry(sharedPool, Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED, 10L);
         Mockito.verify(storageManager, Mockito.times(1)).createCapacityEntry(nonSharedPool, Capacity.CAPACITY_TYPE_LOCAL_STORAGE, 20L);
+    }
+    
+    @Test
+    public void initMessageBusListenerSubscribesToConfigurationEditEvent() {
+        MessageBus messageBusMock = Mockito.mock(MessageBus.class);
+        alertManagerImplMock.messageBus = messageBusMock;
+        alertManagerImplMock.initMessageBusListener();
+        Mockito.verify(messageBusMock).subscribe(Mockito.eq(EventTypes.EVENT_CONFIGURATION_VALUE_EDIT), Mockito.any());
+    }
+
+    @Test
+    public void initMessageBusListenerTriggersSetupRepetitiveAlertTypesOnAllowedKeyEdit() {
+        MessageBus messageBusMock = Mockito.mock(MessageBus.class);
+        alertManagerImplMock.messageBus = messageBusMock;
+        alertManagerImplMock.initMessageBusListener();
+        ArgumentCaptor<MessageSubscriber> captor = ArgumentCaptor.forClass(MessageSubscriber.class);
+        Mockito.verify(messageBusMock).subscribe(Mockito.eq(EventTypes.EVENT_CONFIGURATION_VALUE_EDIT), captor.capture());
+        Ternary<String, ConfigKey.Scope, Long> args = new Ternary<>(AlertManager.AllowedRepetitiveAlertTypes.key(), ConfigKey.Scope.Global, 1L);
+        captor.getValue().onPublishMessage(null, null, args);
+        Mockito.verify(alertManagerImplMock).setupRepetitiveAlertTypes();
+    }
+
+    @Test
+    public void initMessageBusListenerDoesNotTriggerSetupRepetitiveAlertTypesOnOtherKeyEdit() {
+        MessageBus messageBusMock = Mockito.mock(MessageBus.class);
+        alertManagerImplMock.messageBus = messageBusMock;
+        alertManagerImplMock.initMessageBusListener();
+        ArgumentCaptor<MessageSubscriber> captor = ArgumentCaptor.forClass(MessageSubscriber.class);
+        Mockito.verify(messageBusMock).subscribe(Mockito.eq(EventTypes.EVENT_CONFIGURATION_VALUE_EDIT), captor.capture());
+        Ternary<String, ConfigKey.Scope, Long> args = new Ternary<>("some.other.key", ConfigKey.Scope.Global, 1L);
+        captor.getValue().onPublishMessage(null, null, args);
+        Mockito.verify(alertManagerImplMock, Mockito.never()).setupRepetitiveAlertTypes();
+    }
+
+    private void mockAllowedRepetitiveAlertTypesConfigKey(String value) {
+        ReflectionTestUtils.setField(AlertManager.AllowedRepetitiveAlertTypes, "_defaultValue", value);
+    }
+
+    @Test
+    public void setupRepetitiveAlertTypesParsesValidAlertTypesCorrectly() {
+        mockAllowedRepetitiveAlertTypesConfigKey("ALERT.CPU,ALERT.MEMORY");
+        alertManagerImplMock.setupRepetitiveAlertTypes();
+        List<AlertService.AlertType> expectedTypes = (List<AlertService.AlertType>)ReflectionTestUtils.getField(alertManagerImplMock, "allowedRepetitiveAlertTypes");
+        Assert.assertNotNull(expectedTypes);
+        Assert.assertEquals(2, expectedTypes.size());
+        Assert.assertTrue(expectedTypes.contains(AlertManager.AlertType.ALERT_TYPE_CPU));
+        Assert.assertTrue(expectedTypes.contains(AlertManager.AlertType.ALERT_TYPE_MEMORY));
+    }
+
+    @Test
+    public void setupRepetitiveAlertTypesHandlesEmptyConfigValue() {
+        mockAllowedRepetitiveAlertTypesConfigKey("");
+        alertManagerImplMock.setupRepetitiveAlertTypes();
+        List<AlertService.AlertType> expectedTypes = (List<AlertService.AlertType>)ReflectionTestUtils.getField(alertManagerImplMock, "allowedRepetitiveAlertTypes");
+        Assert.assertNotNull(expectedTypes);
+        Assert.assertTrue(expectedTypes.isEmpty());
+    }
+
+    @Test
+    public void setupRepetitiveAlertTypesIgnoresUnknownAlertTypes() {
+        mockAllowedRepetitiveAlertTypesConfigKey("ALERT.CPU,UNKNOWN_ALERT_TYPE");
+        alertManagerImplMock.setupRepetitiveAlertTypes();
+        List<AlertService.AlertType> expectedTypes = (List<AlertService.AlertType>)ReflectionTestUtils.getField(alertManagerImplMock, "allowedRepetitiveAlertTypes");
+        Assert.assertNotNull(expectedTypes);
+        Assert.assertEquals(1, expectedTypes.size());
+        Assert.assertTrue(expectedTypes.contains(AlertManager.AlertType.ALERT_TYPE_CPU));
+    }
+
+    @Test
+    public void setupRepetitiveAlertTypesHandlesNullConfigValue() {
+        mockAllowedRepetitiveAlertTypesConfigKey(null);
+        alertManagerImplMock.setupRepetitiveAlertTypes();
+        List<AlertService.AlertType> expectedTypes = (List<AlertService.AlertType>)ReflectionTestUtils.getField(alertManagerImplMock, "allowedRepetitiveAlertTypes");
+        Assert.assertNotNull(expectedTypes);
+        Assert.assertTrue(expectedTypes.isEmpty());
     }
 }
