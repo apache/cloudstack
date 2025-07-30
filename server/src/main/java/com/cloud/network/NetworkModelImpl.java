@@ -17,6 +17,8 @@
 
 package com.cloud.network;
 
+import static com.cloud.network.Network.Service.SecurityGroup;
+
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -145,8 +147,6 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
-import static com.cloud.network.Network.Service.SecurityGroup;
-
 public class NetworkModelImpl extends ManagerBase implements NetworkModel, Configurable {
     public static final String UNABLE_TO_USE_NETWORK = "Unable to use network with id= %s, permission denied";
     @Inject
@@ -207,7 +207,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     DomainManager _domainMgr;
 
     @Inject
-    NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;
+    protected NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;
     @Inject
     PhysicalNetworkDao _physicalNetworkDao;
     @Inject
@@ -494,7 +494,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     @Override
     public Map<Provider, ArrayList<PublicIpAddress>> getProviderToIpList(Network network, Map<PublicIpAddress, Set<Service>> ipToServices) {
         NetworkOffering offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-        if (!offering.isConserveMode() && !offering.isForNsx()) {
+        boolean isForNsx = isProviderForNetworkOffering(Provider.Nsx, offering.getId());
+        if (!offering.isConserveMode() && !isForNsx) {
             for (PublicIpAddress ip : ipToServices.keySet()) {
                 Set<Service> services = new HashSet<Service>();
                 services.addAll(ipToServices.get(ip));
@@ -1631,7 +1632,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         if (!canIpUsedForService(publicIp, service, networkId)) {
             return false;
         }
-        if (!offering.isConserveMode() && !offering.isForNsx()) {
+        boolean isForNsx = isProviderForNetworkOffering(Provider.Nsx, offering.getId());
+        if (!offering.isConserveMode() && !isForNsx) {
             return canIpUsedForNonConserveService(publicIp, service);
         }
         return true;
@@ -2195,29 +2197,29 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         if (nic == null) {
             return null;
         }
-        NetworkVO network = _networksDao.findById(networkId);
-        Integer networkRate = getNetworkRate(network.getId(), vm.getId());
+        DataCenter dc = _dcDao.findById(vm.getDataCenterId());
+        return getNicProfile(vm, nic, dc);
+    }
 
+    @Override
+    public NicProfile getNicProfile(VirtualMachine vm, Nic nic, DataCenter dataCenter) {
+        NetworkVO network = _networksDao.findById(nic.getNetworkId());
+        Integer networkRate = getNetworkRate(network.getId(), vm.getId());
         NicProfile profile =
-            new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate, isSecurityGroupSupportedInNetwork(network), getNetworkTag(
-                vm.getHypervisorType(), network));
+                new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate,
+                        isSecurityGroupSupportedInNetwork(network), getNetworkTag(vm.getHypervisorType(), network));
         if (network.getTrafficType() == TrafficType.Public && network.getPublicMtu() != null) {
             profile.setMtu(network.getPublicMtu());
         }
         if (network.getTrafficType() == TrafficType.Guest && network.getPrivateMtu() != null) {
             profile.setMtu(network.getPrivateMtu());
         }
-
-        DataCenter dc = _dcDao.findById(network.getDataCenterId());
-
-        Pair<String, String> ip4Dns = getNetworkIp4Dns(network, dc);
+        Pair<String, String> ip4Dns = getNetworkIp4Dns(network, dataCenter);
         profile.setIPv4Dns1(ip4Dns.first());
         profile.setIPv4Dns2(ip4Dns.second());
-
-        Pair<String, String> ip6Dns = getNetworkIp6Dns(network, dc);
+        Pair<String, String> ip6Dns = getNetworkIp6Dns(network, dataCenter);
         profile.setIPv6Dns1(ip6Dns.first());
         profile.setIPv6Dns2(ip6Dns.second());
-
         return profile;
     }
 
@@ -2310,6 +2312,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             }
             if (capabilities != null && implementedProvider != null) {
                 for (Service service : capabilities.keySet()) {
+                    logger.info("Add provider {} and service {}", implementedProvider.getName(), service.getName());
                     if (s_serviceToImplementedProvidersMap.containsKey(service)) {
                         List<Provider> providers = s_serviceToImplementedProvidersMap.get(service);
                         providers.add(implementedProvider);

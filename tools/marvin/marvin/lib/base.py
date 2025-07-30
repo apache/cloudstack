@@ -1577,6 +1577,8 @@ class Template:
             cmd.directdownload = services["directdownload"]
         if "checksum" in services:
             cmd.checksum = services["checksum"]
+        if "extensionid" in services:
+            cmd.extensionid = services["extensionid"]
 
         # Register Template
         template = apiclient.registerTemplate(cmd)
@@ -2712,6 +2714,13 @@ class ServiceOffering:
         if "diskofferingid" in services:
             cmd.diskofferingid = services["diskofferingid"]
 
+        if "vgpuprofileid" in services:
+            cmd.vgpuprofileid = services["vgpuprofileid"]
+            cmd.gpucount = 1
+
+        if "gpucount" in services:
+            cmd.gpucount = services["gpucount"]
+
         # Service Offering private to that domain
         if domainid:
             cmd.domainid = domainid
@@ -3330,6 +3339,14 @@ class Host:
         cmd = deleteHost.deleteHostCmd()
         cmd.id = self.id
         apiclient.deleteHost(cmd)
+        return
+
+    def discoverGpuDevices(self, apiclient):
+        """Discover GPU devices on the host"""
+        # Host must be in maintenance mode before deletion
+        cmd = discoverGpuDevices.discoverGpuDevicesCmd()
+        cmd.id = self.id
+        apiclient.discoverGpuDevices(cmd)
         return
 
     @classmethod
@@ -7362,6 +7379,129 @@ class Webhook:
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return apiclient.deleteWebhookDelivery(cmd)
 
+class Extension:
+    """Manage Extension Life cycle"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, name, type, **kwargs):
+        """Create Extension"""
+        cmd = createExtension.createExtensionCmd()
+        cmd.name = name
+        cmd.type = type
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+
+        return Extension(apiclient.createExtension(cmd).__dict__)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listExtensions.listExtensionsCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.listExtensions(cmd)
+
+    def delete(self, apiclient, unregisterresources=True, removeactions=True, cleanup=True):
+        """Delete Extension"""
+        if unregisterresources:
+            cmd = listExtensions.listExtensionsCmd()
+            cmd.id = self.id
+            extension = apiclient.listExtensions(cmd)[0]
+            if extension is not None and extension.resources is not None and len(extension.resources) > 0:
+                for resource in extension.resources:
+                    self.unregister(apiclient, resource.id, resource.type)
+        if unregisterresources:
+            actions = self.list_custom_actions(apiclient)
+            if actions is not None and len(actions) > 0:
+                for action in actions:
+                    cmd = deleteCustomAction.deleteCustomActionCmd()
+                    cmd.id = action.id
+                    apiclient.deleteCustomAction(cmd)
+        cmd = deleteExtension.deleteExtensionCmd()
+        cmd.id = self.id
+        cmd.cleanup=cleanup
+        apiclient.deleteExtension(cmd)
+
+    def update(self, apiclient, **kwargs):
+        """Update Extension"""
+
+        cmd = updateExtension.updateExtensionCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.updateExtension(cmd)
+
+    def list_custom_actions(self, apiclient, **kwargs):
+        """List Extension Custom Actions"""
+
+        cmd = listCustomActions.listCustomActionsCmd()
+        cmd.extensionid = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.listCustomActions(cmd)
+
+    def register(self, apiclient, resource_id, resource_type, **kwargs):
+        """Register Extension"""
+
+        cmd = registerExtension.registerExtensionCmd()
+        cmd.extensionid = self.id
+        cmd.resourceid = resource_id
+        cmd.resourcetype = resource_type
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.registerExtension(cmd)
+
+    def unregister(self, apiclient, resource_id, resource_type, **kwargs):
+        """Unregister Extension"""
+
+        cmd = unregisterExtension.unregisterExtensionCmd()
+        cmd.extensionid = self.id
+        cmd.resourceid = resource_id
+        cmd.resourcetype = resource_type
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.unregisterExtension(cmd)
+
+class ExtensionCustomAction:
+    """Manage Extension Custom Action Life cycle"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, extensionid, name, **kwargs):
+        """Create Custom Action"""
+        cmd = addCustomAction.addCustomActionCmd()
+        cmd.extensionid = extensionid
+        cmd.name = name
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+
+        return ExtensionCustomAction(apiclient.addCustomAction(cmd).__dict__)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listCustomActions.listCustomActionsCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.listCustomActions(cmd)
+
+    def delete(self, apiclient):
+        """Delete CustomAction"""
+        cmd = deleteCustomAction.deleteCustomActionCmd()
+        cmd.id = self.id
+        apiclient.deleteCustomAction(cmd)
+
+    def update(self, apiclient, **kwargs):
+        """Update CustomAction"""
+
+        cmd = updateCustomAction.updateCustomActionCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.updateCustomAction(cmd)
+
+    def run(self, apiclient, resourceid, **kwargs):
+        """Run CustomAction"""
+
+        cmd = runCustomAction.runCustomActionCmd()
+        cmd.customactionid = self.id
+        cmd.resourceid = resourceid
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.runCustomAction(cmd)
 
 class ZoneIpv4Subnet:
     """Manage IPv4 Subnet for Zone"""
@@ -7706,3 +7846,83 @@ class SharedFS:
         cmd.diskofferingid = diskofferingid
         cmd.size = size
         return (apiclient.changeSharedFileSystemDiskOffering(cmd))
+
+class GpuDevice:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    """Manage GPU Device"""
+    @classmethod
+    def create(cls, apiclient, services, name, description=None, hostid=None, busaddress=None, gpuCardId=None, vgpuProfileId=None, type=None, parentGpuDeviceId=None, numaNode=None, pciRoot=None):
+        """Create GPU Device"""
+        cmd = createGpuDevice.createGpuDeviceCmd()
+        cmd.name = name
+
+        if description:
+            cmd.description = description
+
+
+        if hostid:
+            cmd.hostid = hostid
+        elif "hostid" in services:
+            cmd.hostid = services["hostid"]
+
+        if busaddress:
+            cmd.busaddress = busaddress
+        elif "busaddress" in services:
+            cmd.busaddress = services["busaddress"]
+
+        if gpuCardId:
+            cmd.gpuCardId = gpuCardId
+        elif "gpuCardId" in services:
+            cmd.gpuCardId = services["gpuCardId"]
+
+        if vgpuProfileId:
+            cmd.vgpuProfileId = vgpuProfileId
+        elif "vgpuProfileId" in services:
+            cmd.vgpuProfileId = services["vgpuProfileId"]
+
+        if type:
+            cmd.type = type
+        elif "type" in services:
+            cmd.type = services["type"]
+
+        if parentGpuDeviceId:
+            cmd.parentGpuDeviceId = parentGpuDeviceId
+        elif "parentGpuDeviceId" in services:
+            cmd.parentGpuDeviceId = services["parentGpuDeviceId"]
+
+        if numaNode:
+            cmd.numaNode = numaNode
+        elif "numaNode" in services:
+            cmd.numaNode = services["numaNode"]
+
+        if pciRoot:
+            cmd.pciRoot = pciRoot
+        elif "pciRoot" in services:
+            cmd.pciRoot = services["pciRoot"]
+
+        return GpuDevice(apiclient.createGpuDevice(cmd).__dict__)
+
+    def delete(self, apiclient, expunge=True, forced=True):
+        """Delete GPU Device"""
+        cmd = deleteGpuDevice.deleteGpuDeviceCmd()
+        cmd.id = self.id
+        cmd.expunge = expunge
+        cmd.forced = forced
+        apiclient.deleteGpuDevice(cmd)
+
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listGpuDevices.listGpuDevicesCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return (apiclient.listGpuDevices(cmd))
+
+    def update(self, apiclient, **kwargs):
+        """Update GPU Device"""
+        cmd = updateGpuDevice.updateGpuDeviceCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return (apiclient.updateGpuDevice(cmd))

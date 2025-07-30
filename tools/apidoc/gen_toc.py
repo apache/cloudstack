@@ -98,6 +98,7 @@ known_categories = {
     'listNsxControllers': 'NSX',
     'addNsxController': 'NSX',
     'deleteNsxController': 'NSX',
+    'NetrisProvider': 'Netris',
     'Vpn': 'VPN',
     'Limit': 'Resource Limit',
     'Netscaler': 'Netscaler',
@@ -264,7 +265,13 @@ known_categories = {
     'listGuiThemes': 'GUI Theme',
     'createGuiTheme': 'GUI Theme',
     'updateGuiTheme': 'GUI Theme',
-    'removeGuiTheme': 'GUI Theme'
+    'removeGuiTheme': 'GUI Theme',
+    'Gpu': 'GPU',
+    'Vgpu': 'GPU',
+    'Extension' : 'Extension',
+    'Extensions' : 'Extension',
+    'CustomAction' : 'Extension',
+    'CustomActions' : 'Extension'
 }
 
 

@@ -195,7 +195,8 @@
           optionFilterProp="label"
           :filterOption="(input, option) => {
             return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }" >
+          }"
+          @change="val => { fetchDomainAccounts(val) }">
           <a-select-option v-for="dom in domains" :key="dom.id" :label="dom.path">
             {{ dom.path }}
           </a-select-option>
@@ -213,7 +214,20 @@
           :label="$t('label.account')"
           v-bind="formItemLayout"
           v-if="isDedicated">
-          <a-input v-model:value="form.account" />
+          <a-select
+            v-model:value="form.account"
+            v-focus="true"
+            showSearch
+            optionFilterProp="value"
+            :filterOption="(input, option) => {
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :placeholder="$t('message.error.select.account.to.dedicate')"
+            >
+            <a-select-option v-for="(acc, index) in selectedDomainAccounts" :value="acc.name" :key="index">
+              {{ acc.name }}
+            </a-select-option>
+          </a-select>
         </a-form-item>
         <a-form-item
           name="localstorageenabled"
@@ -276,7 +290,8 @@ export default {
     availableNetworkOfferings: null,
     ipV4Regex: /^(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)$/i,
     ipV6Regex: /^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|(([0-9A-Fa-f]{1,4}:){0,5}:((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|(::([0-9A-Fa-f]{1,4}:){0,5}((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))$/i,
-    formModel: {}
+    formModel: {},
+    selectedDomainAccounts: []
   }),
   created () {
     this.hypervisors = this.prefillContent?.hypervisors || null
@@ -452,6 +467,17 @@ export default {
         ],
         internalDns2: [{ ipV4: true, validator: this.checkIpFormat, message: this.$t('message.error.ipv4.address') }],
         hypervisor: [{ required: true, message: this.$t('message.error.hypervisor.type') }]
+      })
+    },
+    fetchDomainAccounts (domainid) {
+      getAPI('listAccounts', {
+        domainid: domainid
+      }).then(response => {
+        // Clean up the selected account from a previous domain
+        this.form.account = null
+        this.selectedDomainAccounts = response.listaccountsresponse.account || []
+      }).catch(error => {
+        this.$notifyError(error)
       })
     },
     fetchData () {

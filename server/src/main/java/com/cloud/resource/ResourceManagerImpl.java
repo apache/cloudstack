@@ -18,6 +18,7 @@ package com.cloud.resource;
 
 import static com.cloud.configuration.ConfigurationManagerImpl.MIGRATE_VM_ACROSS_CLUSTERS;
 import static com.cloud.configuration.ConfigurationManagerImpl.SET_HOST_DOWN_TO_MAINTENANCE;
+import static org.apache.cloudstack.gpu.GpuService.GpuDetachOnStop;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -38,11 +39,16 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.gpu.dao.VgpuProfileDao;
+import com.cloud.offering.ServiceOffering;
+import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.StoragePoolAndAccessGroupMapVO;
 import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
 import com.cloud.storage.dao.StoragePoolTagsDao;
-import com.cloud.utils.StringUtils;
+import com.cloud.gpu.GpuCardVO;
+import com.cloud.gpu.VgpuProfileVO;
+import com.cloud.gpu.dao.GpuCardDao;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -62,15 +68,24 @@ import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
+import org.apache.cloudstack.extension.Extension;
+import org.apache.cloudstack.extension.ExtensionResourceMap;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.extensions.dao.ExtensionDao;
+import org.apache.cloudstack.framework.extensions.dao.ExtensionResourceMapDao;
+import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
+import org.apache.cloudstack.framework.extensions.vo.ExtensionResourceMapVO;
+import org.apache.cloudstack.framework.extensions.vo.ExtensionVO;
+import org.apache.cloudstack.gpu.GpuService;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang3.ArrayUtils;
-
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
@@ -182,6 +197,8 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.Manager;
@@ -215,8 +232,8 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
-import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.google.gson.Gson;
 
 @Component
@@ -257,6 +274,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Inject
     protected VGPUTypesDao _vgpuTypesDao;
     @Inject
+    protected VgpuProfileDao vgpuProfileDao;
+    @Inject
+    private GpuCardDao gpuCardDao;
+    @Inject
     private PrimaryDataStoreDao _storagePoolDao;
     @Inject
     private StoragePoolTagsDao _storagePoolTagsDao;
@@ -284,6 +305,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     private ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
     @Inject
     private UserVmManager userVmManager;
+    @Inject
+    private GpuService gpuService;
 
     private List<? extends Discoverer> _discoverers;
 
@@ -305,7 +328,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Inject
     private ClusterVSMMapDao _clusterVSMMapDao;
     @Inject
-    private UserVmDetailsDao userVmDetailsDao;
+    private VMInstanceDetailsDao vmInstanceDetailsDao;
     @Inject
     private AnnotationDao annotationDao;
     @Inject
@@ -314,6 +337,12 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     private AnnotationService annotationService;
     @Inject
     private VolumeDao volumeDao;
+    @Inject
+    ExtensionResourceMapDao extensionResourceMapDao;
+    @Inject
+    ExtensionsManager extensionsManager;
+    @Inject
+    ExtensionDao extensionDao;
 
     private final long _nodeId = ManagementServerNode.getManagementServerId();
 
@@ -429,6 +458,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         final String username = cmd.getUsername();
         final String password = cmd.getPassword();
         CPU.CPUArch arch = cmd.getArch();
+        final Long extensionId = cmd.getExtensionId();
+        final Map<String, String> externalDetails = cmd.getExternalDetails();
 
         if (url != null) {
             url = URLDecoder.decode(url, com.cloud.utils.StringUtils.getPreferredCharset());
@@ -485,6 +516,22 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     && hypervisorType != HypervisorType.LXC && hypervisorType != HypervisorType.Simulator) {
                 throw new InvalidParameterValueException("Don't support hypervisor type " + hypervisorType + " in advanced security enabled zone");
             }
+        }
+
+        if (!HypervisorType.External.equals(hypervisorType) && extensionId != null) {
+            throw new InvalidParameterValueException("Extension can be specified only for External hypervisor type");
+        }
+
+        ExtensionVO extension = null;
+        if (extensionId != null) {
+            extension = extensionDao.findById(extensionId);
+            if (extension == null || !Extension.Type.Orchestrator.equals(extension.getType())) {
+                throw new InvalidParameterValueException("Invalid extension specified");
+            }
+        }
+
+        if (MapUtils.isNotEmpty(externalDetails) && extension == null) {
+            throw new InvalidParameterValueException("External details can be specified only with extension");
         }
 
         Cluster.ClusterType clusterType = null;
@@ -552,9 +599,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 details.put("ovm3pool", allParams.get("ovm3pool"));
                 details.put("ovm3cluster", allParams.get("ovm3cluster"));
             }
+
             details.put(VmDetailConstants.CPU_OVER_COMMIT_RATIO, CapacityManager.CpuOverprovisioningFactor.value().toString());
             details.put(VmDetailConstants.MEMORY_OVER_COMMIT_RATIO, CapacityManager.MemOverprovisioningFactor.value().toString());
             _clusterDetailsDao.persist(cluster.getId(), details);
+            if (HypervisorType.External.equals(cluster.getHypervisorType()) && extension != null) {
+                extensionsManager.registerExtensionWithCluster(cluster, extension, externalDetails);
+            }
             return result;
         }
 
@@ -660,21 +711,27 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             }
         }
 
-        String hypervisorType = cmd.getHypervisor().equalsIgnoreCase(HypervisorGuru.HypervisorCustomDisplayName.value()) ?
+        String hypervisorType =
+                cmd.getHypervisor().equalsIgnoreCase(HypervisorGuru.HypervisorCustomDisplayName.value()) ?
                 "Custom" : cmd.getHypervisor();
-        return discoverHostsFull(dcId, podId, clusterId, clusterName, url, username, password, hypervisorType, hostTags, storageAccessGroups, cmd.getFullUrlParams(), false);
+        return discoverHostsFull(dcId, podId, clusterId, clusterName, url, username, password, hypervisorType,
+                hostTags, storageAccessGroups, cmd.getFullUrlParams(), false, cmd.getExternalDetails());
     }
 
     @Override
-    public List<? extends Host> discoverHosts(final AddSecondaryStorageCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
+    public List<? extends Host> discoverHosts(final AddSecondaryStorageCmd cmd)
+            throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
         final Long dcId = cmd.getZoneId();
         final String url = cmd.getUrl();
-        return discoverHostsFull(dcId, null, null, null, url, null, null, "SecondaryStorage", null, null, null, false);
+        return discoverHostsFull(dcId, null, null, null, url, null, null, "SecondaryStorage",
+                null, null, null, false, null);
     }
 
-    private List<HostVO> discoverHostsFull(final Long dcId, final Long podId, Long clusterId, final String clusterName, String url, String username, String password,
-                                           final String hypervisorType, final List<String> hostTags, List<String> storageAccessGroups, final Map<String, String> params, final boolean deferAgentCreation) throws IllegalArgumentException, DiscoveryException,
-            InvalidParameterValueException {
+    private List<HostVO> discoverHostsFull(final Long dcId, final Long podId, Long clusterId, final String clusterName,
+               String url, String username, String password, final String hypervisorType, final List<String> hostTags,
+               List<String> storageAccessGroups, final Map<String, String> params, final boolean deferAgentCreation,
+               Map<String, String> cmdDetails)
+            throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
         URI uri;
 
         // Check if the zone exists in the system
@@ -795,25 +852,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         }
 
-        try {
-            uri = new URI(UriUtils.encodeURIComponent(url));
-            if (uri.getScheme() == null) {
-                throw new InvalidParameterValueException("uri.scheme is null " + url + ", add nfs:// (or cifs://) as a prefix");
-            } else if (uri.getScheme().equalsIgnoreCase("nfs")) {
-                if (uri.getHost() == null || uri.getHost().equalsIgnoreCase("") || uri.getPath() == null || uri.getPath().equalsIgnoreCase("")) {
-                    throw new InvalidParameterValueException("Your host and/or path is wrong.  Make sure it's of the format nfs://hostname/path");
-                }
-            } else if (uri.getScheme().equalsIgnoreCase("cifs")) {
-                // Don't validate against a URI encoded URI.
-                final URI cifsUri = new URI(url);
-                final String warnMsg = UriUtils.getCifsUriParametersProblems(cifsUri);
-                if (warnMsg != null) {
-                    throw new InvalidParameterValueException(warnMsg);
-                }
-            }
-        } catch (final URISyntaxException e) {
-            throw new InvalidParameterValueException(url + " is not a valid uri");
-        }
+        uri = validatedHostUrl(url, hypervisorType);
 
         final List<HostVO> hosts = new ArrayList<>();
         logger.info("Trying to add a new host at {} in data center {}", url, zone);
@@ -878,10 +917,27 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     }
 
                     HostVO host;
+                    Map<String, String> details = entry.getValue();
+                    if (details == null) {
+                        details = new HashMap<>();
+                    }
+
+                    if (cmdDetails != null) {
+                        if (HypervisorType.External.toString().equalsIgnoreCase(hypervisorType)) {
+                            List<ClusterDetailsVO> clusterDetails = _clusterDetailsDao.listDetails(clusterId);
+                            if (clusterDetails != null) {
+                                for (ClusterDetailsVO detail : clusterDetails) {
+                                    details.put(detail.getName(), detail.getValue());
+                                }
+                            }
+                        }
+                        details.putAll(cmdDetails);
+                    }
+
                     if (deferAgentCreation) {
-                        host = (HostVO)createHostAndAgentDeferred(resource, entry.getValue(), true, hostTags, storageAccessGroups, false);
+                        host = (HostVO)createHostAndAgentDeferred(resource, details, true, hostTags, storageAccessGroups, false);
                     } else {
-                        host = (HostVO)createHostAndAgent(resource, entry.getValue(), true, hostTags, storageAccessGroups, false);
+                        host = (HostVO)createHostAndAgent(resource, details, true, hostTags, storageAccessGroups, false);
                     }
                     if (host != null) {
                         hosts.add(host);
@@ -901,6 +957,33 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         String errorMsg = "Cannot find the server resources at " + url;
         logger.warn(errorMsg);
         throw new DiscoveryException("Unable to add the host: " + errorMsg);
+    }
+
+    @NotNull
+    private static URI validatedHostUrl(String url, String hostHypervisorType) {
+        URI uri;
+        try {
+            uri = new URI(UriUtils.encodeURIComponent(url));
+            if (uri.getScheme() == null) {
+                if (!HypervisorType.External.name().equalsIgnoreCase(hostHypervisorType)) {
+                    throw new InvalidParameterValueException("uri.scheme is null " + url + ", add nfs:// (or cifs://) as a prefix");
+                }
+            } else if (uri.getScheme().equalsIgnoreCase("nfs")) {
+                if (uri.getHost() == null || uri.getHost().equalsIgnoreCase("") || uri.getPath() == null || uri.getPath().equalsIgnoreCase("")) {
+                    throw new InvalidParameterValueException("Your host and/or path is wrong.  Make sure it's of the format nfs://hostname/path");
+                }
+            } else if (uri.getScheme().equalsIgnoreCase("cifs")) {
+                // Don't validate against a URI encoded URI.
+                final URI cifsUri = new URI(url);
+                final String warnMsg = UriUtils.getCifsUriParametersProblems(cifsUri);
+                if (warnMsg != null) {
+                    throw new InvalidParameterValueException(warnMsg);
+                }
+            }
+        } catch (final URISyntaxException e) {
+            throw new InvalidParameterValueException(url + " is not a valid uri");
+        }
+        return uri;
     }
 
     @Override
@@ -1109,6 +1192,15 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                         throw new CloudRuntimeException(String.format("Cluster: %s cannot be removed. Cluster still has storage pools", cluster));
                     }
 
+                    if (HypervisorType.External.toString().equalsIgnoreCase(cluster.getHypervisorType().toString())) {
+                        ExtensionResourceMapVO registeredExtension =
+                                extensionResourceMapDao.findByResourceIdAndType(cluster.getId(),
+                                        ExtensionResourceMap.ResourceType.Cluster);
+                        if (registeredExtension != null) {
+                            extensionsManager.unregisterExtensionWithCluster(cluster, registeredExtension.getExtensionId());
+                        }
+                    }
+
                     if (_clusterDao.remove(cmd.getId())) {
                         _capacityDao.removeBy(null, null, null, cluster.getId(), null);
                         // If this cluster is of type vmware, and if the nexus vswitch
@@ -1147,9 +1239,18 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         String managedstate = cmd.getManagedstate();
         String name = cmd.getClusterName();
         CPU.CPUArch arch = cmd.getArch();
+        final Map<String, String> externalDetails = cmd.getExternalDetails();
 
         // Verify cluster information and update the cluster if needed
         boolean doUpdate = false;
+        Pair<Boolean, ExtensionResourceMap> needDetailsUpdateMapPair =
+                extensionsManager.extensionResourceMapDetailsNeedUpdate(cluster.getId(),
+                ExtensionResourceMap.ResourceType.Cluster, externalDetails);
+        if (Boolean.TRUE.equals(needDetailsUpdateMapPair.first()) && needDetailsUpdateMapPair.second() == null) {
+            throw new InvalidParameterValueException(
+                    String.format("Cluster: %s is not registered with any extension, details cannot be updated",
+                            cluster.getName()));
+        }
 
         if (StringUtils.isNotBlank(name)) {
             if(cluster.getHypervisorType() == HypervisorType.VMware) {
@@ -1234,6 +1335,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             _clusterDao.update(cluster.getId(), cluster);
         }
 
+        if (Boolean.TRUE.equals(needDetailsUpdateMapPair.first())) {
+            ExtensionResourceMap extensionResourceMap = needDetailsUpdateMapPair.second();
+            extensionsManager.updateExtensionResourceMapDetails(extensionResourceMap.getId(), externalDetails);
+        }
+
         if (newManagedState != null && !newManagedState.equals(oldManagedState)) {
             if (newManagedState.equals(Managed.ManagedState.Unmanaged)) {
                 boolean success = false;
@@ -1259,7 +1365,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     for (int i = 0; i < retry; i++) {
                         lsuccess = true;
                         try {
-                            Thread.currentThread().wait(5 * 1000);
+                            Thread.sleep(5 * 1000);
                         } catch (final InterruptedException e) {
                             logger.debug("thread unexpectedly interrupted during wait, while updating cluster");
                         }
@@ -1409,8 +1515,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             }
 
             for (final VMInstanceVO vm : vms) {
+                ServiceOfferingVO offering = serviceOfferingDao.findById(vm.getServiceOfferingId());
                 if (hosts == null || hosts.isEmpty() || !answer.getMigrate()
-                        || _serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.vgpuType.toString()) != null) {
+                    || offering.getVgpuProfileId() != null
+                    || _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString()) != null
+                ) {
                     handleVmForLastHostOrWithVGpu(host, vm);
                 } else if (HypervisorType.LXC.equals(host.getHypervisorType()) && VirtualMachine.Type.User.equals(vm.getType())){
                     //Migration is not supported for LXC Vms. Schedule restart instead.
@@ -1692,8 +1801,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         for (VMInstanceVO vm : vms) {
             GetVncPortAnswer vmVncPortAnswer = (GetVncPortAnswer) _agentMgr.easySend(hostId, new GetVncPortCommand(vm.getId(), vm.getInstanceName()));
             if (vmVncPortAnswer != null) {
-                userVmDetailsDao.addDetail(vm.getId(), VmDetailConstants.KVM_VNC_ADDRESS, vmVncPortAnswer.getAddress(), true);
-                userVmDetailsDao.addDetail(vm.getId(), VmDetailConstants.KVM_VNC_PORT, String.valueOf(vmVncPortAnswer.getPort()), true);
+                vmInstanceDetailsDao.addDetail(vm.getId(), VmDetailConstants.KVM_VNC_ADDRESS, vmVncPortAnswer.getAddress(), true);
+                vmInstanceDetailsDao.addDetail(vm.getId(), VmDetailConstants.KVM_VNC_PORT, String.valueOf(vmVncPortAnswer.getPort()), true);
             }
         }
     }
@@ -2685,11 +2794,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Override
     public Host updateHost(final UpdateHostCmd cmd) throws NoTransitionException {
         return updateHost(cmd.getId(), cmd.getName(), cmd.getOsCategoryId(),
-                cmd.getAllocationState(), cmd.getUrl(), cmd.getHostTags(), cmd.getIsTagARule(), cmd.getAnnotation(), false);
+                cmd.getAllocationState(), cmd.getUrl(), cmd.getHostTags(), cmd.getIsTagARule(), cmd.getAnnotation(), false, cmd.getExternalDetails());
     }
 
     private Host updateHost(Long hostId, String name, Long guestOSCategoryId, String allocationState,
-                            String url, List<String> hostTags, Boolean isTagARule, String annotation, boolean isUpdateFromHostHealthCheck) throws NoTransitionException {
+                            String url, List<String> hostTags, Boolean isTagARule, String annotation, boolean isUpdateFromHostHealthCheck, Map<String, String> externalDetails) throws NoTransitionException {
         // Verify that the host exists
         final HostVO host = _hostDao.findById(hostId);
         if (host == null) {
@@ -2711,6 +2820,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         if (hostTags != null) {
             updateHostTags(host, hostId, hostTags, isTagARule);
+        }
+
+        if (MapUtils.isNotEmpty(externalDetails)) {
+            _hostDetailsDao.replaceExternalDetails(hostId, externalDetails);
         }
 
         if (url != null) {
@@ -2769,7 +2882,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public Host autoUpdateHostAllocationState(Long hostId, ResourceState.Event resourceEvent) throws NoTransitionException {
-        return updateHost(hostId, null, null, resourceEvent.toString(), null, null, null, null, true);
+        return updateHost(hostId, null, null, resourceEvent.toString(), null, null, null, null, true, null);
     }
 
     @Override
@@ -2800,7 +2913,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         _gpuAvailability.and("groupName", _gpuAvailability.entity().getGroupName(), Op.EQ);
         final SearchBuilder<VGPUTypesVO> join1 = _vgpuTypesDao.createSearchBuilder();
         join1.and("vgpuType", join1.entity().getVgpuType(), Op.EQ);
-        join1.and("remainingCapacity", join1.entity().getRemainingCapacity(), Op.GT);
+        join1.and("remainingCapacity", join1.entity().getRemainingCapacity(), Op.GTEQ);
         _gpuAvailability.join("groupId", join1, _gpuAvailability.entity().getId(), join1.entity().getGpuGroupId(), JoinBuilder.JoinType.INNER);
         _gpuAvailability.done();
 
@@ -2820,7 +2933,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         for (final ClusterVO cluster : clustersForZone) {
             final HypervisorType hType = cluster.getHypervisorType();
-            if (!forVirtualRouter || (hType != HypervisorType.BareMetal && hType != HypervisorType.Ovm)) {
+            if (!forVirtualRouter || (hType != HypervisorType.BareMetal && hType != HypervisorType.External && hType != HypervisorType.Ovm)) {
                 hypervisorTypes.add(hType);
             }
         }
@@ -3128,7 +3241,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         if (newHost) {
-            host = _hostDao.persist(host);
+            host = persistNewHost(host, startup);
         } else {
             _hostDao.update(host.getId(), host);
         }
@@ -3155,6 +3268,18 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         return host;
+    }
+
+    private HostVO persistNewHost(HostVO host, StartupCommand startup) {
+        HostVO hostVo = _hostDao.persist(host);
+        // Check for GPU devices again because we couldn't persist the GPU devices earlier due to missing host ID
+        if (startup instanceof StartupRoutingCommand &&
+            CollectionUtils.isNotEmpty(((StartupRoutingCommand) startup).getGpuDevices())) {
+            StartupRoutingCommand ssCmd = ((StartupRoutingCommand) startup);
+            host.setGpuGroups(getGroupDetails(host, ssCmd.getGpuDevices(), ssCmd.getGpuGroupDetails()));
+            _hostDao.update(hostVo.getId(), host);
+        }
+        return hostVo;
     }
 
     private void updateSupportsClonedVolumes(HostVO host, boolean supportsClonedVolumes) {
@@ -3543,7 +3668,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         host.setSpeed(ssCmd.getSpeed());
         host.setHypervisorType(hyType);
         host.setHypervisorVersion(ssCmd.getHypervisorVersion());
-        host.setGpuGroups(ssCmd.getGpuGroupDetails());
+        host.setGpuGroups(getGroupDetails(host, ssCmd.getGpuDevices(), ssCmd.getGpuGroupDetails()));
         return host;
     }
 
@@ -4167,7 +4292,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         sc.setParameters("hostId", hostId);
         sc.setParameters("groupName", groupName);
         sc.setJoinParameters("groupId", "vgpuType", vgpuType);
-        sc.setJoinParameters("groupId", "remainingCapacity", 0);
         return _hostGpuGroupsDao.customSearch(sc, searchFilter);
     }
 
@@ -4191,7 +4315,14 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         return sc.list();
     }
 
-    @Override
+    /**
+     * Check if host has GPU devices available
+     *
+     * @param host      the host to be checked
+     * @param groupName gpuCard name
+     * @param vgpuType  the VGPU type
+     * @return true when the host has the capacity with given VGPU type
+     */
     public boolean isGPUDeviceAvailable(final Host host, final String groupName, final String vgpuType) {
         if(!listAvailableGPUDevice(host.getId(), groupName, vgpuType).isEmpty()) {
             return true;
@@ -4200,6 +4331,65 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 logger.debug("Host: {} does not have GPU device available", host);
             }
             return false;
+        }
+    }
+
+    @Override
+    public boolean isGPUDeviceAvailable(ServiceOffering offering, Host host, Long vmId) {
+            // Check if GPU device is required by offering and host has the availability
+            ServiceOfferingDetailsVO offeringDetails = null;
+            if (offering.getVgpuProfileId() != null) {
+                VgpuProfileVO vgpuProfile = vgpuProfileDao.findById(offering.getVgpuProfileId());
+                if (vgpuProfile == null) {
+                    logger.debug("Host {} does not have GPU devices available.", host);
+                    return false;
+                }
+                int gpuCount = offering.getGpuCount() != null ? offering.getGpuCount() : 1;
+
+                if(!isGPUDeviceAvailable(host, vmId, vgpuProfile, gpuCount)) {
+                    logger.debug("Host {} does not have required GPU devices available.", host);
+                    return false;
+                }
+            } else if ((offeringDetails   = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString())) != null) {
+                ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.pciDevice.toString());
+                if(!isGPUDeviceAvailable(host, groupName.getValue(), offeringDetails.getValue())){
+                    logger.debug("Host {} does not have required GPU devices available.", host);
+                    return false;
+                }
+            }
+            return true;
+    }
+
+    /**
+     * Check if host has GPU devices available
+     *
+     * @param host        the host to be checked
+     * @param vmId        VM ID
+     * @param vgpuProfile the VGPU profile
+     * @param gpuCount    the number of GPUs requested
+     * @return true when the host has the capacity with given VGPU type
+     */
+    public boolean isGPUDeviceAvailable(Host host, Long vmId, VgpuProfileVO vgpuProfile, int gpuCount) {
+        if (host.getHypervisorType().equals(HypervisorType.XenServer)) {
+            GpuCardVO gpuCard = gpuCardDao.findById(vgpuProfile.getCardId());
+            String groupName = gpuCard.getGroupName();
+            String vgpuType = vgpuProfile.getName();
+            return isGPUDeviceAvailable(host, groupName, vgpuType);
+        } else {
+            return gpuService.isGPUDeviceAvailable(host, vmId, vgpuProfile, gpuCount);
+        }
+    }
+
+    @Override
+    public GPUDeviceTO getGPUDevice(VirtualMachine vm, long hostId, VgpuProfileVO vgpuProfile, int gpuCount) {
+        HostVO host = _hostDao.findById(vm.getHostId());
+        if (host.getHypervisorType().equals(HypervisorType.XenServer)) {
+            GpuCardVO gpuCard = gpuCardDao.findById(vgpuProfile.getCardId());
+            String groupName = gpuCard.getGroupName();
+            String vgpuType = vgpuProfile.getName();
+            return getGPUDevice(vm.getHostId(), groupName, vgpuType);
+        } else {
+            return gpuService.getGPUDevice(vm, hostId, vgpuProfile, gpuCount);
         }
     }
 
@@ -4227,6 +4417,31 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
+    public void updateGPUDetailsForVmStop(final VirtualMachine vm, final GPUDeviceTO gpuDevice) {
+        HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails;
+        if (gpuDevice == null || gpuDevice.getGpuDevices() != null) {
+            HostVO host = _hostDao.findById(vm.getHostId());
+            if (GpuDetachOnStop.valueIn(vm.getDomainId())) {
+                gpuService.deallocateAllGpuDevicesForVm(vm.getId());
+            }
+            groupDetails = gpuService.getGpuGroupDetailsFromGpuDevicesOnHost(host.getId());
+        } else {
+            groupDetails = gpuDevice.getGroupDetails();
+        }
+        updateGPUDetails(vm.getHostId(), groupDetails);
+    }
+
+    @Override
+    public void updateGPUDetailsForVmStart(long hostId, long vmId, GPUDeviceTO gpuDevice) {
+        HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = gpuDevice.getGroupDetails();
+        if (gpuDevice.getGpuDevices() != null) {
+            gpuService.allocateGpuDevicesToVmOnHost(vmId, hostId, gpuDevice.getGpuDevices());
+            groupDetails = gpuService.getGpuGroupDetailsFromGpuDevicesOnHost(hostId);
+        }
+        updateGPUDetails(hostId, groupDetails);
+    }
+
+    @Override
     public HashMap<String, HashMap<String, VgpuTypesInfo>> getGPUStatistics(final HostVO host) {
         final Answer answer = _agentMgr.easySend(host.getId(), new GetGPUStatsCommand(host.getGuid(), host.getName()));
         if (answer instanceof UnsupportedAnswer) {
@@ -4236,13 +4451,25 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             final String msg = String.format("Unable to obtain GPU stats for %s", host);
             logger.warn(msg);
             return null;
-        } else {
-            // now construct the result object
-            if (answer instanceof GetGPUStatsAnswer) {
-                return ((GetGPUStatsAnswer)answer).getGroupDetails();
-            }
+        } else if (answer instanceof GetGPUStatsAnswer) {
+            GetGPUStatsAnswer gpuStatsAnswer = (GetGPUStatsAnswer) answer;
+            return getGroupDetails(host, gpuStatsAnswer.getGpuDevices(), gpuStatsAnswer.getGroupDetails());
         }
         return null;
+    }
+
+    private HashMap<String, HashMap<String, VgpuTypesInfo>> getGroupDetails(HostVO host, List<VgpuTypesInfo> gpuDevices, HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails) {
+        HashMap<String, HashMap<String, VgpuTypesInfo>> finalGroupDetails;
+        if (host.getId() > 0) {
+            // The below method needs the host to be persisted in the DB to save the GPU devices for the host
+            gpuService.addGpuDevicesToHost(host, gpuDevices);
+        }
+        if (CollectionUtils.isNotEmpty(gpuDevices)) {
+            finalGroupDetails = gpuService.getGpuGroupDetailsFromGpuDevicesOnHost(host.getId());
+        } else {
+            finalGroupDetails = groupDetails;
+        }
+        return finalGroupDetails;
     }
 
     @Override

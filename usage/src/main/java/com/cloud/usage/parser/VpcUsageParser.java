@@ -17,15 +17,11 @@
 package com.cloud.usage.parser;
 
 import com.cloud.usage.UsageVpcVO;
-import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.UsageVO;
 import com.cloud.usage.dao.UsageVpcDao;
 import com.cloud.user.AccountVO;
-import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import org.apache.cloudstack.usage.UsageTypes;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import java.text.DecimalFormat;
@@ -33,31 +29,24 @@ import java.util.Date;
 import java.util.List;
 
 @Component
-public class VpcUsageParser {
-    private static final Logger LOGGER = LogManager.getLogger(VpcUsageParser.class.getName());
-
+public class VpcUsageParser extends UsageParser {
     @Inject
     private UsageVpcDao vpcDao;
-    @Inject
-    private UsageDao usageDao;
 
-    private static UsageDao s_usageDao;
-    private static UsageVpcDao s_usageVpcDao;
-    @PostConstruct
-    void init() {
-        s_usageDao = usageDao;
-        s_usageVpcDao = vpcDao;
+    @Override
+    public String getParserName() {
+        return "VPC";
     }
 
-    public static boolean parse(AccountVO account, Date startDate, Date endDate) {
-        LOGGER.debug("Parsing all VPC usage events for account {}", account);
+    @Override
+    protected boolean parse(AccountVO account, Date startDate, Date endDate) {
         if ((endDate == null) || endDate.after(new Date())) {
             endDate = new Date();
         }
 
-        final List<UsageVpcVO> usageVPCs = s_usageVpcDao.getUsageRecords(account.getId(), startDate, endDate);
+        final List<UsageVpcVO> usageVPCs = vpcDao.getUsageRecords(account.getId(), startDate, endDate);
         if (usageVPCs == null || usageVPCs.isEmpty()) {
-            LOGGER.debug(String.format("Cannot find any VPC usage for account [%s] in period between [%s] and [%s].", account, startDate, endDate));
+            logger.debug("Cannot find any VPC usage for account [{}] in period between [{}] and [{}].", account, startDate, endDate);
             return true;
         }
 
@@ -79,15 +68,15 @@ public class VpcUsageParser {
             String usageDisplay = dFormat.format(usage);
 
             long vpcId = usageVPC.getVpcId();
-            LOGGER.debug("Creating VPC usage record with id [{}], usage [{}], startDate [{}], and endDate [{}], for account [{}].",
-                    vpcId, usageDisplay, startDate, endDate, account);
+            logger.debug("Creating VPC usage record with id [{}], usage [{}], startDate [{}], and endDate [{}], for account [{}].",
+                    vpcId, usageDisplay, startDate, endDate, account.getId());
 
             String description = String.format("VPC usage for VPC ID: %d", usageVPC.getVpcId());
             UsageVO usageRecord =
                     new UsageVO(zoneId, account.getAccountId(), account.getDomainId(), description, usageDisplay + " Hrs",
                             UsageTypes.VPC, (double) usage, null, null, null, null, usageVPC.getVpcId(),
                             (long)0, null, startDate, endDate);
-            s_usageDao.persist(usageRecord);
+            usageDao.persist(usageRecord);
         }
 
         return true;

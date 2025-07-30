@@ -155,7 +155,9 @@ public class SnapshotObject implements SnapshotInfo {
     @Override
     public SnapshotInfo getChild() {
         QueryBuilder<SnapshotDataStoreVO> sc = QueryBuilder.create(SnapshotDataStoreVO.class);
-        sc.and(sc.entity().getDataStoreId(), Op.EQ, store.getId());
+        if (!HypervisorType.KVM.equals(snapshot.getHypervisorType())) {
+            sc.and(sc.entity().getDataStoreId(), Op.EQ, store.getId());
+        }
         sc.and(sc.entity().getRole(), Op.EQ, store.getRole());
         sc.and(sc.entity().getState(), Op.NIN, State.Destroying, State.Destroyed, State.Error);
         sc.and(sc.entity().getParentSnapshotId(), Op.EQ, getId());

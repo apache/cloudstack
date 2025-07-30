@@ -95,8 +95,6 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
     @Inject
     VMSnapshotDetailsDao vmSnapshotDetailsDao;
 
-    private static final String STORAGE_SNAPSHOT = "kvmStorageSnapshot";
-
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
        return super.configure(name, params);
@@ -356,12 +354,25 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
 
     @Override
     public StrategyPriority canHandle(Long vmId, Long rootPoolId, boolean snapshotMemory) {
-        if (SnapshotManager.VmStorageSnapshotKvm.value() && !snapshotMemory) {
-            UserVmVO vm = userVmDao.findById(vmId);
-            if (vm.getState() == VirtualMachine.State.Running) {
-                return StrategyPriority.HYPERVISOR;
-            }
+        UserVmVO vm = userVmDao.findById(vmId);
+        String cantHandleLog = String.format("Storage VM snapshot strategy cannot handle VM snapshot for [%s]", vm);
+
+        if (CollectionUtils.isNotEmpty(vmSnapshotDao.findByVmAndByType(vmId, VMSnapshot.Type.DiskAndMemory))) {
+            logger.debug("{} as it has VM snapshots with disk and memory.", cantHandleLog);
+            return StrategyPriority.CANT_HANDLE;
         }
+
+        if (!VirtualMachine.State.Running.equals(vm.getState())) {
+            logger.debug("{} as the VM is not running.", cantHandleLog);
+            return StrategyPriority.CANT_HANDLE;
+        }
+
+        if (SnapshotManager.VmStorageSnapshotKvm.value() && !snapshotMemory) {
+            return StrategyPriority.HYPERVISOR;
+        }
+
+        logger.debug("{} as {}.", () -> cantHandleLog, () -> snapshotMemory ? "A VM snapshot with memory was requested" :
+                String.format("%s is false", SnapshotManager.VmStorageSnapshotKvm.key()));
         return StrategyPriority.CANT_HANDLE;
     }
 
