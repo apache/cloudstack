@@ -24,7 +24,7 @@ import {
 } from '@/store/mutation-types'
 
 const getAPICommandsRegex = /^(get|list|query|find)\w+$/i
-const addlGetAPICommandsList = [
+const additionalGetAPICommandsList = [
   'isaccountallowedtocreateofferingswithtags',
   'readyforshutdown',
   'cloudianisenabled',
@@ -78,7 +78,7 @@ export function postAPI (command, data = {}) {
 }
 
 export function callAPI (command, args = {}) {
-  const isGetAPICommand = getAPICommandsRegex.test(command) || addlGetAPICommandsList.includes(command.toLowerCase())
+  const isGetAPICommand = getAPICommandsRegex.test(command) || additionalGetAPICommandsList.includes(command.toLowerCase())
   const call = isGetAPICommand ? getAPI : postAPI
   return call(command, args)
 }
