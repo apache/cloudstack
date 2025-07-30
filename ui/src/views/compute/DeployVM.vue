@@ -1508,6 +1508,9 @@ export default {
       return this.$config.showAllCategoryForModernImageSelection
     },
     guestOsCategoriesSelectionDisallowed () {
+      if (this.imageType === 'volumeid' || this.imageType === 'snapshotid') {
+        return true
+      }
       return (!this.queryGuestOsCategoryId || this.options.guestOsCategories.length === 0) && (!!this.queryTemplateId || !!this.queryIsoId)
     },
     isTemplateHypervisorExternal () {
@@ -2022,50 +2025,56 @@ export default {
           this.userdataDefaultOverridePolicy = this.iso.userdatapolicy
         }
       } else if (name === 'volumeid') {
-        this.imageType = 'volumeid'
-        this.resetTemplateAssociatedResources()
-        this.resetFromTemplateConfiguration()
-        this.form.templateid = null
-        this.form.isoid = null
-        this.form.volumeid = value
-        this.form.snapshotid = null
-        let volume = null
-        for (const entry of Object.values(this.options.volumes)) {
-          volume = entry?.volume.find(option => option.id === value)
-          if (volume) {
-            this.volume = volume
-            break
-          }
-        }
-        if (volume) {
-          this.updateTemplateLinkedUserData(this.volume.userdataid)
-          this.userdataDefaultOverridePolicy = this.volume.userdatapolicy
-        }
+        this.updateFieldValueForVolume(value)
       } else if (name === 'snapshotid') {
-        this.imageType = 'snapshotid'
-        this.resetTemplateAssociatedResources()
-        this.resetFromTemplateConfiguration()
-        this.form.templateid = null
-        this.form.isoid = null
-        this.form.volumeid = null
-        this.form.snapshotid = value
-        let snapshot = null
-        for (const entry of Object.values(this.options.snapshots)) {
-          snapshot = entry?.snapshot.find(option => option.id === value)
-          if (snapshot) {
-            this.snapshot = snapshot
-            break
-          }
-        }
-        if (snapshot) {
-          this.updateTemplateLinkedUserData(this.snapshot.userdataid)
-          this.userdataDefaultOverridePolicy = this.snapshot.userdatapolicy
-        }
+        this.updateFieldValueForSnapshot(value)
       } else if (['cpuspeed', 'cpunumber', 'memory'].includes(name)) {
         this.vm[name] = value
         this.form[name] = value
       } else {
         this.form[name] = value
+      }
+    },
+    updateFieldValueForVolume (value) {
+      this.imageType = 'volumeid'
+      this.resetTemplateAssociatedResources()
+      this.resetFromTemplateConfiguration()
+      this.form.templateid = null
+      this.form.isoid = null
+      this.form.volumeid = value
+      this.form.snapshotid = null
+      let volume = null
+      for (const entry of Object.values(this.options.volumes)) {
+        volume = entry?.volume.find(option => option.id === value)
+        if (volume) {
+          this.volume = volume
+          break
+        }
+      }
+      if (volume) {
+        this.updateTemplateLinkedUserData(this.volume.userdataid)
+        this.userdataDefaultOverridePolicy = this.volume.userdatapolicy
+      }
+    },
+    updateFieldValueForSnapshot (value) {
+      this.imageType = 'snapshotid'
+      this.resetTemplateAssociatedResources()
+      this.resetFromTemplateConfiguration()
+      this.form.templateid = null
+      this.form.isoid = null
+      this.form.volumeid = null
+      this.form.snapshotid = value
+      let snapshot = null
+      for (const entry of Object.values(this.options.snapshots)) {
+        snapshot = entry?.snapshot.find(option => option.id === value)
+        if (snapshot) {
+          this.snapshot = snapshot
+          break
+        }
+      }
+      if (snapshot) {
+        this.updateTemplateLinkedUserData(this.snapshot.userdataid)
+        this.userdataDefaultOverridePolicy = this.snapshot.userdatapolicy
       }
     },
     updateComputeOffering (id) {
