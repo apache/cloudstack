@@ -98,6 +98,7 @@ known_categories = {
     'listNsxControllers': 'NSX',
     'addNsxController': 'NSX',
     'deleteNsxController': 'NSX',
+    'NetrisProvider': 'Netris',
     'Vpn': 'VPN',
     'Limit': 'Resource Limit',
     'Netscaler': 'Netscaler',
@@ -260,7 +261,17 @@ known_categories = {
     'addNodesToKubernetesCluster': 'Kubernetes Service',
     'removeNodesFromKubernetesCluster': 'Kubernetes Service',
     'configureStorageAccess': 'Storage Access Groups',
-    'listStorageAccessGroups': 'Storage Access Groups'
+    'listStorageAccessGroups': 'Storage Access Groups',
+    'listGuiThemes': 'GUI Theme',
+    'createGuiTheme': 'GUI Theme',
+    'updateGuiTheme': 'GUI Theme',
+    'removeGuiTheme': 'GUI Theme',
+    'Gpu': 'GPU',
+    'Vgpu': 'GPU',
+    'Extension' : 'Extension',
+    'Extensions' : 'Extension',
+    'CustomAction' : 'Extension',
+    'CustomActions' : 'Extension'
 }
 
 

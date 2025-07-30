@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.UserCmd;
+import org.apache.cloudstack.api.response.ExtensionResponse;
 import org.apache.cloudstack.api.response.GuestOSCategoryResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
@@ -115,10 +116,15 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
             since = "4.20")
     private String arch;
 
-    @Parameter(name = ApiConstants.OS_CATEGORY_ID, type = CommandType.UUID, entityType= GuestOSCategoryResponse.class,
+    @Parameter(name = ApiConstants.OS_CATEGORY_ID, type = CommandType.UUID, entityType = GuestOSCategoryResponse.class,
             description = "the ID of the OS category for the template",
             since = "4.21.0")
     private Long osCategoryId;
+
+    @Parameter(name = ApiConstants.EXTENSION_ID, type = CommandType.UUID, entityType = ExtensionResponse.class,
+            description = "ID of the extension for the template",
+            since = "4.21.0")
+    private Long extensionId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -218,6 +224,10 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
 
     public Long getOsCategoryId() {
         return osCategoryId;
+    }
+
+    public Long getExtensionId() {
+        return extensionId;
     }
 
     @Override

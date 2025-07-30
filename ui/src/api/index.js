@@ -47,7 +47,7 @@ export function postAPI (command, data = {}) {
   params.append('response', 'json')
   if (data) {
     Object.entries(data).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
+      if (value !== undefined && value !== null) {
         params.append(key, value)
       }
     })
@@ -88,10 +88,13 @@ export function login (arg) {
   })
 }
 
-export function logout () {
-  message.destroy()
-  notification.destroy()
-  return postAPI('logout')
+export async function logout () {
+  const result = await postAPI('logout').finally(() => {
+    sourceToken.cancel()
+    message.destroy()
+    notification.destroy()
+  })
+  return result
 }
 
 export function oauthlogin (arg) {

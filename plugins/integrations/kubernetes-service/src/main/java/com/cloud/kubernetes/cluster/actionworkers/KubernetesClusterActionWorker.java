@@ -122,12 +122,12 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.ssh.SshHelper;
-import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.UserVmService;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 
 import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.CONTROL;
 import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.ETCD;
@@ -185,7 +185,7 @@ public class KubernetesClusterActionWorker {
     @Inject
     protected UserVmDao userVmDao;
     @Inject
-    protected UserVmDetailsDao userVmDetailsDao;
+    protected VMInstanceDetailsDao vmInstanceDetailsDao;
     @Inject
     protected UserVmService userVmService;
     @Inject
@@ -281,7 +281,7 @@ public class KubernetesClusterActionWorker {
             if (userVM == null) {
                 throw new CloudRuntimeException("Failed to find login user, Unable to log in to node to fetch details");
             }
-            UserVmDetailVO vmDetail = userVmDetailsDao.findDetail(vmId, VmDetailConstants.CKS_CONTROL_NODE_LOGIN_USER);
+            VMInstanceDetailVO vmDetail = vmInstanceDetailsDao.findDetail(vmId, VmDetailConstants.CKS_CONTROL_NODE_LOGIN_USER);
             if (vmDetail != null && !org.apache.commons.lang3.StringUtils.isEmpty(vmDetail.getValue())) {
                 return vmDetail.getValue();
             } else {
@@ -654,7 +654,7 @@ public class KubernetesClusterActionWorker {
             for (Long vmId : clusterVMs) {
                 UserVm controlNode = userVmDao.findById(vmId);
                 if (controlNode != null) {
-                    userVmDetailsDao.addDetail(vmId, VmDetailConstants.CKS_CONTROL_NODE_LOGIN_USER, CLUSTER_NODE_VM_USER, true);
+                    vmInstanceDetailsDao.addDetail(vmId, VmDetailConstants.CKS_CONTROL_NODE_LOGIN_USER, CLUSTER_NODE_VM_USER, true);
                 }
             }
         }

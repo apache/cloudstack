@@ -148,7 +148,7 @@
                       @handle-image-search-filter="filters => fetchImages(filters)"
                       @update-image="updateFieldValue"
                       @update-disk-size="updateFieldValue"
-                      @change-iso-hypervisor="value => hypervisor = value" />
+                      @change-iso-hypervisor="value => form.hypervisor = value" />
                     <a-card
                       v-else
                       :tabList="imageTypeList"
@@ -165,7 +165,7 @@
                           :key="templateKey"
                           @handle-search-filter="filters => fetchAllTemplates(filters)"
                           @update-template-iso="updateFieldValue" />
-                        <div>
+                        <div v-if="!isTemplateHypervisorExternal">
                           {{ $t('label.override.rootdisk.size') }}
                           <a-switch
                             v-model:checked="form.rootdisksizeitem"
@@ -251,6 +251,7 @@
                       :value="serviceOffering ? serviceOffering.id : ''"
                       :loading="loading.serviceOfferings"
                       :preFillContent="dataPreFill"
+                      :show-gpu-filter="zone.gputotal && zone.gputotal > 0"
                       :minimum-cpunumber="templateConfigurationExists && selectedTemplateConfiguration && selectedTemplateConfiguration.cpunumber ? selectedTemplateConfiguration.cpunumber : 0"
                       :minimum-cpuspeed="templateConfigurationExists && selectedTemplateConfiguration && selectedTemplateConfiguration.cpuspeed ? selectedTemplateConfiguration.cpuspeed : 0"
                       :minimum-memory="templateConfigurationExists && selectedTemplateConfiguration && selectedTemplateConfiguration.memory ? selectedTemplateConfiguration.memory : 0"
@@ -291,7 +292,7 @@
                         <a-input v-model:value="form.memory"/>
                       </a-form-item>
                     </span>
-                    <span v-if="imageType!=='isoid'">
+                    <span v-if="imageType!=='isoid' && !isTemplateHypervisorExternal">
                       {{ $t('label.override.root.diskoffering') }}
                       <a-switch
                         v-model:checked="showOverrideDiskOfferingOption"
@@ -370,9 +371,10 @@
               <a-step
                 v-else
                 :title="imageType === 'templateid' ? $t('label.data.disk') : $t('label.disk.size')"
+                :disabled="isTemplateHypervisorExternal ? true : false"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description>
-                  <div v-if="zoneSelected">
+                  <div v-if="zoneSelected && !isTemplateHypervisorExternal">
                     <disk-offering-selection
                       :items="options.diskOfferings"
                       :row-count="rowCount.diskOfferings"
@@ -397,6 +399,9 @@
                     <a-form-item class="form-item-hidden">
                       <a-input v-model:value="form.size"/>
                     </a-form-item>
+                  </div>
+                  <div v-else-if="isTemplateHypervisorExternal" style="margin-bottom: 20px; margin-top: 7px">
+                    {{ $t('message.host.external.datadisk') }}
                   </div>
                 </template>
               </a-step>
@@ -571,7 +576,7 @@
                       ref="bootintosetup">
                       <a-switch v-model:checked="form.bootintosetup" />
                     </a-form-item>
-                    <a-form-item name="dynamicscalingenabled" ref="dynamicscalingenabled">
+                    <a-form-item name="dynamicscalingenabled" ref="dynamicscalingenabled" v-if="!!template && !isTemplateHypervisorExternal">
                       <template #label>
                         <tooltip-label :title="$t('label.dynamicscalingenabled')" :tooltip="$t('label.dynamicscalingenabled.tooltip')"/>
                       </template>
@@ -611,7 +616,7 @@
                         </a-form-item>
                       </a-col>
                     </a-row>
-                    <a-form-item :label="$t('label.userdata')">
+                    <a-form-item :label="$t('label.user.data')">
                       <a-card>
                         <div v-if="this.template && this.template.userdataid">
                           <a-typography-text>
@@ -665,11 +670,11 @@
                         </div><br/><br/>
                         <div v-if="userdataDefaultOverridePolicy === 'ALLOWOVERRIDE' || userdataDefaultOverridePolicy === 'APPEND' || !userdataDefaultOverridePolicy">
                           <span v-if="userdataDefaultOverridePolicy === 'ALLOWOVERRIDE'" >
-                            {{ $t('label.userdata.do.override') }}
+                            {{ $t('label.user.data.do.override') }}
                             <a-switch v-model:checked="doUserdataOverride" style="margin-left: 10px"/>
                           </span>
                           <span v-if="userdataDefaultOverridePolicy === 'APPEND'">
-                            {{ $t('label.userdata.do.append') }}
+                            {{ $t('label.user.data.do.append') }}
                             <a-switch v-model:checked="doUserdataAppend" style="margin-left: 10px"/>
                           </span>
                           <a-step
@@ -811,6 +816,17 @@
                         :filterOption="filterOption"
                       ></a-select>
                     </a-form-item>
+                    <a-form-item name="externaldetails" ref="externaldetails" v-if="imageType === 'templateid' && isTemplateHypervisorExternal">
+                      <template #label>
+                        <tooltip-label :title="$t('label.externaldetails')" :tooltip="apiParams.externaldetails.description" />
+                      </template>
+                      <a-switch v-model:checked="externalDetailsEnabled" @change="onExternalDetailsEnabledChange"/>
+                      <a-card v-if="externalDetailsEnabled" style="margin-top: 10px">
+                        <div style="margin-bottom: 10px">{{ $t('message.add.orchestrator.resource.details') }}</div>
+                        <details-input
+                          v-model:value="form.externaldetails" />
+                      </a-card>
+                    </a-form-item>
                     <a-form-item :label="$t('label.action.start.instance')" name="startvm" ref="startvm">
                       <a-switch v-model:checked="form.startvm" />
                     </a-form-item>
@@ -853,7 +869,7 @@
                 :deployButtonMenuOptions="deployMenuOptions"
                 @handle-cancel="() => $router.back()"
                 @handle-deploy="handleSubmit"
-                @handle-deploy-menu="handleSubmitAndStay" />
+                @handle-deploy-menu="(index, e) => handleSubmitAndStay(e)" />
             </div>
           </a-form>
         </a-card>
@@ -868,7 +884,7 @@
                 :deployButtonMenuOptions="deployMenuOptions"
                 @handle-cancel="() => $router.back()"
                 @handle-deploy="handleSubmit"
-                @handle-deploy-menu="handleSubmitAndStay" />
+                @handle-deploy-menu="(index, e) => handleSubmitAndStay(e)" />
             </template>
           </info-card>
         </a-affix>
@@ -907,6 +923,7 @@ import UserDataSelection from '@views/compute/wizard/UserDataSelection'
 import SecurityGroupSelection from '@views/compute/wizard/SecurityGroupSelection'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import InstanceNicsNetworkSelectListView from '@/components/view/InstanceNicsNetworkSelectListView'
+import DetailsInput from '@/components/widgets/DetailsInput'
 
 export default {
   name: 'Wizard',
@@ -931,7 +948,8 @@ export default {
     ComputeSelection,
     SecurityGroupSelection,
     TooltipLabel,
-    InstanceNicsNetworkSelectListView
+    InstanceNicsNetworkSelectListView,
+    DetailsInput
   },
   props: {
     visible: {
@@ -996,8 +1014,7 @@ export default {
         keyboards: [],
         bootTypes: [],
         bootModes: [],
-        ioPolicyTypes: [],
-        dynamicScalingVmConfig: false
+        ioPolicyTypes: []
       },
       rowCount: {},
       loading: {
@@ -1058,11 +1075,11 @@ export default {
       userDataValues: {},
       templateUserDataCols: [
         {
-          title: this.$t('label.userdata'),
+          title: this.$t('label.user.data'),
           dataIndex: 'userdata'
         },
         {
-          title: this.$t('label.userdatapolicy'),
+          title: this.$t('label.user.data.policy'),
           dataIndex: 'userdataoverridepolicy'
         }
       ],
@@ -1106,7 +1123,9 @@ export default {
       },
       architectureTypes: {
         opts: []
-      }
+      },
+      externalDetailsEnabled: false,
+      selectedExtensionId: null
     }
   },
   computed: {
@@ -1418,11 +1437,11 @@ export default {
       let tabList = []
       tabList = [{
         key: 'userdataregistered',
-        tab: this.$t('label.userdata.registered')
+        tab: this.$t('label.user.data.registered')
       },
       {
         key: 'userdatatext',
-        tab: this.$t('label.userdata.text')
+        tab: this.$t('label.user.data.text')
       }]
 
       return tabList
@@ -1449,7 +1468,7 @@ export default {
       return Boolean('listUserData' in this.$store.getters.apis)
     },
     dynamicScalingVmConfigValue () {
-      return this.options.dynamicScalingVmConfig?.[0]?.value === 'true'
+      return this.$store.getters.features.dynamicscalingenabled
     },
     isCustomizedDiskIOPS () {
       return this.diskSelected?.iscustomizediops || false
@@ -1474,6 +1493,9 @@ export default {
     },
     guestOsCategoriesSelectionDisallowed () {
       return (!this.queryGuestOsCategoryId || this.options.guestOsCategories.length === 0) && (!!this.queryTemplateId || !!this.queryIsoId)
+    },
+    isTemplateHypervisorExternal () {
+      return !!this.template && this.template.hypervisor === 'External'
     }
   },
   watch: {
@@ -1598,6 +1620,11 @@ export default {
           if (this.serviceOffering.memory) {
             this.vm.memory = this.serviceOffering.memory
           }
+          this.vm.gpucardid = this.serviceOffering.gpucardid ? this.serviceOffering.gpucardid : ''
+          this.vm.gpucardname = this.serviceOffering.gpucardname ? this.serviceOffering.gpucardname : ''
+          this.vm.gpucount = this.serviceOffering.gpucount ? this.serviceOffering.gpucount : 0
+          this.vm.vgpuprofileid = this.serviceOffering.vgpuprofileid ? this.serviceOffering.vgpuprofileid : ''
+          this.vm.vgpuprofilename = this.serviceOffering.vgpuprofilename ? this.serviceOffering.vgpuprofilename : ''
         }
 
         if (this.template && !this.template.deployasis && this.template.childtemplates && this.template.childtemplates.length > 0) {
@@ -1640,6 +1667,9 @@ export default {
       this.doUserdataOverride = false
       this.doUserdataAppend = false
     }
+  },
+  beforeCreate () {
+    this.apiParams = this.$getApiParams('deployVirtualMachine')
   },
   created () {
     this.initForm()
@@ -1951,6 +1981,7 @@ export default {
           if (template.details['vmware-to-kvm-mac-addresses']) {
             this.dataPreFill.macAddressArray = JSON.parse(template.details['vmware-to-kvm-mac-addresses'])
           }
+          this.dataPreFill.hypervisorType = template.hypervisor
         }
       } else if (name === 'isoid') {
         this.imageType = 'isoid'
@@ -2123,19 +2154,11 @@ export default {
     },
     changeArchitecture (arch) {
       this.selectedArchitecture = arch
-      if (this.isModernImageSelection) {
-        this.fetchGuestOsCategories()
-        return
-      }
-      this.fetchImages()
+      this.updateImages()
     },
     changeImageType (imageType) {
       this.imageType = imageType
-      if (this.isModernImageSelection) {
-        this.fetchGuestOsCategories()
-      } else {
-        this.fetchImages()
-      }
+      this.updateImages()
     },
     handleSubmitAndStay (e) {
       this.form.stayonpage = true
@@ -2143,7 +2166,6 @@ export default {
     },
     handleSubmit (e) {
       console.log('wizard submit')
-      e.preventDefault()
       if (this.loading.deploy) return
       this.formRef.value.validate().then(async () => {
         const values = toRaw(this.form)
@@ -2357,6 +2379,12 @@ export default {
           deployVmData.projectid = this.owner.projectid
         }
 
+        if (this.imageType === 'templateid' && this.template && this.template.hypervisor === 'External' && values.externaldetails) {
+          Object.entries(values.externaldetails).forEach(([key, value]) => {
+            deployVmData['externaldetails[0].' + key] = value
+          })
+        }
+
         const title = this.$t('label.launch.vm')
         const description = values.name || ''
         const password = this.$t('label.password')
@@ -2504,7 +2532,7 @@ export default {
         param.loading = true
         param.opts = []
         const options = param.options || {}
-        if (!('listall' in options) && !['zones', 'pods', 'clusters', 'hosts', 'dynamicScalingVmConfig', 'hypervisors'].includes(name)) {
+        if (!('listall' in options) && !['zones', 'pods', 'clusters', 'hosts', 'hypervisors'].includes(name)) {
           options.listall = true
         }
         postAPI(param.list, options).then((response) => {
@@ -2513,42 +2541,51 @@ export default {
             if (Object.keys(responseItem).length === 0) {
               this.rowCount[name] = 0
               this.options[name] = []
-              return resolve(null)
+              return
             }
             if (!responseKey.includes('response')) {
-              return resolve(null)
+              return
             }
             _.map(responseItem, (response, key) => {
               if (key === 'count') {
                 this.rowCount[name] = response
                 return
               }
-              param.opts = response
-              this.options[name] = response
-
-              if (name === 'hypervisors') {
-                const hypervisorFromResponse = response[0] && response[0].name ? response[0].name : null
-                this.dataPreFill.hypervisor = hypervisorFromResponse
-                this.form.hypervisor = hypervisorFromResponse
+              if (!responseKey.includes('response')) {
+                return resolve(null)
               }
+              _.map(responseItem, (response, key) => {
+                if (key === 'count') {
+                  this.rowCount[name] = response
+                  return
+                }
+                param.opts = response
+                this.options[name] = response
 
-              if (param.field) {
-                this.fillValue(param.field)
+                if (name === 'hypervisors') {
+                  const hypervisorFromResponse = response[0] && response[0].name ? response[0].name : null
+                  this.dataPreFill.hypervisor = hypervisorFromResponse
+                  this.form.hypervisor = hypervisorFromResponse
+                }
+
+                if (param.field) {
+                  this.fillValue(param.field)
+                }
+              })
+
+              if (name === 'zones') {
+                let zoneid = ''
+                if (this.$route.query.zoneid) {
+                  zoneid = this.$route.query.zoneid
+                } else if (this.options.zones.length === 1) {
+                  zoneid = this.options.zones[0].id
+                }
+                if (zoneid) {
+                  this.form.zoneid = zoneid
+                  this.onSelectZoneId(zoneid)
+                }
               }
             })
-
-            if (name === 'zones') {
-              let zoneid = ''
-              if (this.$route.query.zoneid) {
-                zoneid = this.$route.query.zoneid
-              } else if (this.options.zones.length === 1) {
-                zoneid = this.options.zones[0].id
-              }
-              if (zoneid) {
-                this.form.zoneid = zoneid
-                this.onSelectZoneId(zoneid)
-              }
-            }
           })
           resolve(response)
         }).catch(function (error) {
@@ -2572,6 +2609,9 @@ export default {
       args.zoneid = _.get(this.zone, 'id')
       if (this.isZoneSelectedMultiArch) {
         args.arch = this.selectedArchitecture
+      }
+      if (this.selectedExtensionId) {
+        args.extensionid = this.selectedExtensionId
       }
       args.account = store.getters.project?.id ? null : this.owner.account
       args.domainid = store.getters.project?.id ? null : this.owner.domainid
@@ -2772,7 +2812,7 @@ export default {
       this.fetchOptions(this.params.hosts, 'hosts')
       if (this.clusterId && Array.isArray(this.options.clusters)) {
         const cluster = this.options.clusters.find(c => c.id === this.clusterId)
-        this.handleArchResourceSelected(cluster.arch)
+        this.handleComputeResourceSelected(cluster)
       }
     },
     onSelectHostId (value) {
@@ -2782,15 +2822,40 @@ export default {
       }
       if (this.hostId && Array.isArray(this.options.hosts)) {
         const host = this.options.hosts.find(h => h.id === this.hostId)
-        this.handleArchResourceSelected(host.arch)
+        this.handleComputeResourceSelected(host)
       }
     },
-    handleArchResourceSelected (resourceArch) {
-      if (!resourceArch || !this.isZoneSelectedMultiArch || this.selectedArchitecture === resourceArch) {
+    updateImages () {
+      if (this.isModernImageSelection) {
+        this.fetchGuestOsCategories()
         return
       }
-      this.selectedArchitecture = resourceArch
-      this.changeArchitecture(resourceArch, this.tabKey === 'templateid')
+      this.fetchImages()
+    },
+    handleComputeResourceSelected (computeResource) {
+      if (!computeResource) {
+        this.selectedExtensionId = null
+        return
+      }
+      const resourceArch = computeResource.arch
+      const needArchChange = resourceArch &&
+        this.isZoneSelectedMultiArch &&
+        this.selectedArchitecture !== resourceArch
+      const resourceHypervisor = computeResource.hypervisor || computeResource.hypervisortype
+      const resourceExtensionId = resourceHypervisor === 'External' ? computeResource.extensionid : null
+      const needExtensionIdChange = this.selectedExtensionId !== resourceExtensionId
+      if (!needArchChange && !needExtensionIdChange) {
+        return
+      }
+      if (needArchChange && !needExtensionIdChange) {
+        this.changeArchitecture(resourceArch, this.imageType === 'templateid')
+        return
+      }
+      this.selectedExtensionId = resourceExtensionId
+      if (needArchChange) {
+        this.selectedArchitecture = resourceArch
+      }
+      this.updateImages()
     },
     onSelectGuestOsCategory (value) {
       this.form.guestoscategoryid = value
@@ -3113,6 +3178,12 @@ export default {
         return Promise.reject(this.$t('message.error.number'))
       }
       return Promise.resolve()
+    },
+    onExternalDetailsEnabledChange (val) {
+      if (val || !this.form.externaldetails) {
+        return
+      }
+      this.form.externaldetails = undefined
     }
   }
 }
@@ -3153,8 +3224,18 @@ export default {
     .ant-card-body {
       min-height: 250px;
       max-height: calc(100vh - 140px);
+      overflow: hidden; // Prevent the entire card from scrolling
+    }
+
+    .card-content {
+      max-height: calc(100vh - 240px); // Reserve space for footer and card header/padding
       overflow-y: auto;
       scroll-behavior: smooth;
+    }
+
+    .card-footer {
+      border-top: 1px solid #f0f0f0;
+      flex-shrink: 0; // Ensure footer doesn't shrink
     }
 
     .resource-detail-item__label {

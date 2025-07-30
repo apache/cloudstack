@@ -65,6 +65,12 @@ public interface ConfigurationManager {
             "allow.non.rfc1918.compliant.ips", "Advanced", "false",
             "Allows non-compliant RFC 1918 IPs for Shared, Isolated networks and VPCs", true, null);
 
+    ConfigKey<Float> HostCapacityTypeCpuMemoryWeight = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Float.class,
+            "host.capacityType.to.order.clusters.cputomemoryweight",
+            "0.5",
+            "Weight for CPU (as a value between 0 and 1) applied to compute capacity for Pods, Clusters and Hosts for COMBINED capacityType for ordering. Weight for RAM will be (1 - weight of CPU)",
+            true, ConfigKey.Scope.Global);
+
     /**
      * @param offering
      * @return
@@ -217,6 +223,7 @@ public interface ConfigurationManager {
      * @param forVpc
      * @param forTungsten
      * @param forNsx
+     * @param forNetris
      * @param domainIds
      * @param zoneIds
      * @return network offering object
@@ -226,11 +233,11 @@ public interface ConfigurationManager {
                                             Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type, boolean systemOnly, Long serviceOfferingId,
                                             boolean conserveMode, Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges, boolean isPersistent,
                                             Map<NetworkOffering.Detail, String> details, boolean egressDefaultPolicy, Integer maxconn, boolean enableKeepAlive, Boolean forVpc,
-                                            Boolean forTungsten, boolean forNsx, NetworkOffering.NetworkMode networkMode, List<Long> domainIds, List<Long> zoneIds, boolean enableOffering, final NetUtils.InternetProtocol internetProtocol,
+                                            Boolean forTungsten, boolean forNsx, boolean forNetris, NetworkOffering.NetworkMode networkMode, List<Long> domainIds, List<Long> zoneIds, boolean enableOffering, final NetUtils.InternetProtocol internetProtocol,
                                             NetworkOffering.RoutingMode routingMode, boolean specifyAsNumber);
 
     Vlan createVlanAndPublicIpRange(long zoneId, long networkId, long physicalNetworkId, boolean forVirtualNetwork, boolean forSystemVms, Long podId, String startIP, String endIP,
-        String vlanGateway, String vlanNetmask, String vlanId, boolean bypassVlanOverlapCheck, Domain domain, Account vlanOwner, String startIPv6, String endIPv6, String vlanIp6Gateway, String vlanIp6Cidr, boolean forNsx)
+        String vlanGateway, String vlanNetmask, String vlanId, boolean bypassVlanOverlapCheck, Domain domain, Account vlanOwner, String startIPv6, String endIPv6, String vlanIp6Gateway, String vlanIp6Cidr, Provider provider)
         throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException;
 
     void createDefaultSystemNetworks(long zoneId) throws ConcurrentOperationException;

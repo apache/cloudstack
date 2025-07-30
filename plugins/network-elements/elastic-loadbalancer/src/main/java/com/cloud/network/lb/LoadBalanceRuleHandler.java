@@ -297,7 +297,7 @@ public class LoadBalanceRuleHandler {
                         elasticLbVmOffering.isOfferHA(), false, null);
                 elbVm.setRole(Role.LB);
                 elbVm = _routerDao.persist(elbVm);
-                _itMgr.allocate(elbVm.getInstanceName(), template, elasticLbVmOffering, networks, plan, null);
+                _itMgr.allocate(elbVm.getInstanceName(), template, elasticLbVmOffering, networks, plan, null, null, null);
                 elbVm = _routerDao.findById(elbVm.getId());
                 //TODO: create usage stats
             }

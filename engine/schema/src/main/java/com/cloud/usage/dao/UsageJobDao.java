@@ -37,4 +37,6 @@ public interface UsageJobDao extends GenericDao<UsageJobVO, Long> {
     UsageJobVO isOwner(String hostname, int pid);
 
     void updateJobSuccess(Long jobId, long startMillis, long endMillis, long execTime, boolean success);
+
+    void removeLastOpenJobsOwned(String hostname, int pid);
 }
