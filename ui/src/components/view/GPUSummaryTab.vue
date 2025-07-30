@@ -167,15 +167,7 @@ export default {
       Object.values(cardGroups).forEach(cardGroup => {
         const profileCount = Object.keys(cardGroup.profiles).length
 
-        // Filter devices for card summary calculation
-        // Exclude passthrough profile devices from aggregates if there are multiple profiles
-        let cardDevicesForSummary = cardGroup.devices
-        if (profileCount > 1) {
-          cardDevicesForSummary = cardGroup.devices.filter(device => !device.vgpuprofilename || device.vgpuprofilename.toLowerCase() !== 'passthrough'
-          )
-        }
-
-        const cardSummary = this.calculateSummary(cardDevicesForSummary)
+        const cardSummary = this.calculateSummary(cardGroup.devices)
         const cardKey = `card-${cardGroup.gpucardname}`
 
         const cardNode = {
@@ -192,7 +184,6 @@ export default {
           expandedKeys.push(cardKey)
 
           cardNode.children = Object.values(cardGroup.profiles)
-            .filter(profile => profile.vgpuprofilename.toLowerCase() !== 'passthrough')
             .map(profile => {
               const profileSummary = this.calculateSummary(profile.devices)
               return {
@@ -204,7 +195,6 @@ export default {
               }
             })
         }
-
         summaryTree.push(cardNode)
       })
 
@@ -222,6 +212,9 @@ export default {
       }
 
       devices.forEach(device => {
+        if (device.gpudevicetype === 'VGPUOnly') {
+          return
+        }
         summary.total++
 
         if (device.virtualmachineid) {

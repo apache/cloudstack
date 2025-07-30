@@ -473,7 +473,7 @@ for VM in "${VMS[@]}"; do
 	# -- MDEV hostdevs: use xmlstarlet to extract UUIDs --
 	while IFS= read -r UUID; do
 		[[ -n "$UUID" ]] && mdev_to_vm["$UUID"]="$VM"
-	done < <(echo "$xml" | xmlstarlet sel -T -t -m "//hostdev[@type='mdev']" -v "@uuid" -n 2>/dev/null || true)
+	done < <(echo "$xml" | xmlstarlet sel -T -t -m "//hostdev[@type='mdev']/source/address" -v "@uuid" -n 2>/dev/null || true)
 done
 
 # Helper: convert a VM name to JSON value (quoted string or null)
@@ -514,6 +514,55 @@ parse_and_add_gpu_properties() {
             MAX_RESOLUTION_Y="${BASH_REMATCH[2]}"
         fi
     fi
+}
+
+# Finds and formats mdev instances for a given PCI device (PF or VF).
+# Appends JSON strings for each found mdev instance to the global 'vlist' array.
+# Arguments:
+#   $1: mdev_base_path (e.g., /sys/bus/pci/devices/.../mdev_supported_types)
+#   $2: bdf (e.g., 01:00.0)
+process_mdev_instances() {
+	local mdev_base_path="$1"
+	local bdf="$2"
+
+	if [[ ! -d "$mdev_base_path" ]]; then
+		return
+	fi
+
+	for PROF_DIR in "$mdev_base_path"/*; do
+		[[ -d "$PROF_DIR" ]] || continue
+
+		local PROFILE_NAME
+		if [[ -f "$PROF_DIR/name" ]]; then
+			PROFILE_NAME=$(<"$PROF_DIR/name")
+		else
+			PROFILE_NAME=$(basename "$PROF_DIR")
+		fi
+
+		parse_and_add_gpu_properties "$PROF_DIR/description"
+
+		local DEVICE_DIR="$PROF_DIR/devices"
+		if [[ -d "$DEVICE_DIR" ]]; then
+			for UDIR in "$DEVICE_DIR"/*; do
+				[[ -d "$UDIR" ]] || continue
+				local MDEV_UUID
+				MDEV_UUID=$(basename "$UDIR")
+
+				local DOMAIN="0x0000"
+				local BUS="0x${bdf:0:2}"
+				local SLOT="0x${bdf:3:2}"
+				local FUNC="0x${bdf:6:1}"
+
+				local raw
+				raw="${mdev_to_vm[$MDEV_UUID]:-}"
+				local USED_JSON
+				USED_JSON=$(to_json_vm "$raw")
+
+				vlist+=(
+					"{\"mdev_uuid\":\"$MDEV_UUID\",\"profile_name\":$(json_escape "$PROFILE_NAME"),\"max_instances\":$MAX_INSTANCES,\"video_ram\":$VIDEO_RAM,\"max_heads\":$MAX_HEADS,\"max_resolution_x\":$MAX_RESOLUTION_X,\"max_resolution_y\":$MAX_RESOLUTION_Y,\"libvirt_address\":{\"domain\":\"$DOMAIN\",\"bus\":\"$BUS\",\"slot\":\"$SLOT\",\"function\":\"$FUNC\"},\"used_by_vm\":$USED_JSON}")
+			done
+		fi
+	done
 }
 
 # === GPU Discovery ===
@@ -588,51 +637,9 @@ for LINE in "${LINES[@]}"; do
 	# === vGPU (MDEV) instances ===
 	VGPU_ARRAY="[]"
 	declare -a vlist=()
+	# Process mdev on the Physical Function
 	MDEV_BASE="/sys/bus/pci/devices/0000:$PCI_ADDR/mdev_supported_types"
-	if [[ -d "$MDEV_BASE" ]]; then
-		for PROF_DIR in "$MDEV_BASE"/*; do
-			[[ -d "$PROF_DIR" ]] || continue
-
-			# Read the human-readable profile name from the 'name' file
-			if [[ -f "$PROF_DIR/name" ]]; then
-				PROFILE_NAME=$(<"$PROF_DIR/name")
-			else
-				PROFILE_NAME=$(basename "$PROF_DIR")
-			fi
-
-			# Fetch max_instance from the description file, if present
-			parse_and_add_gpu_properties "$PROF_DIR/description"
-
-			# Under each profile, existing UUIDs appear in:
-			#    /sys/bus/pci/devices/0000:$PCI_ADDR/mdev_supported_types/<PROFILE>/devices/*
-			DEVICE_DIR="$PROF_DIR/devices"
-			if [[ -d "$DEVICE_DIR" ]]; then
-				for UDIR in "$DEVICE_DIR"/*; do
-					[[ -d $UDIR ]] || continue
-					MDEV_UUID=$(basename "$UDIR")
-
-					# libvirt_address uses PF BDF
-					DOMAIN="0x0000"
-					BUS="0x${PCI_ADDR:0:2}"
-					SLOT="0x${PCI_ADDR:3:2}"
-					FUNC="0x${PCI_ADDR:6:1}"
-
-					# Determine which VM uses this UUID
-					raw="${mdev_to_vm[$MDEV_UUID]:-}"
-					USED_JSON=$(to_json_vm "$raw")
-
-					vlist+=(
-						"{\"mdev_uuid\":\"$MDEV_UUID\",\"profile_name\":$(json_escape "$PROFILE_NAME"),\"max_instances\":$MAX_INSTANCES,\"video_ram\":$VIDEO_RAM,\"max_heads\":$MAX_HEADS,\"max_resolution_x\":$MAX_RESOLUTION_X,\"max_resolution_y\":$MAX_RESOLUTION_Y,\"libvirt_address\":{\"domain\":\"$DOMAIN\",\"bus\":\"$BUS\",\"slot\":\"$SLOT\",\"function\":\"$FUNC\"},\"used_by_vm\":$USED_JSON}")
-				done
-			fi
-		done
-		if [ ${#vlist[@]} -gt 0 ]; then
-			VGPU_ARRAY="[$(
-				IFS=,
-				echo "${vlist[*]}"
-			)]"
-		fi
-	fi
+	process_mdev_instances "$MDEV_BASE" "$PCI_ADDR"
 
 	# === VF instances (SR-IOV / MIG) ===
 	VF_ARRAY="[]"
@@ -643,6 +650,12 @@ for LINE in "${LINES[@]}"; do
 			VF_PATH=$(readlink -f "$VF_LINK")
 			VF_ADDR=${VF_PATH##*/} # e.g. "0000:65:00.2"
 			VF_BDF="${VF_ADDR:5}"  # "65:00.2"
+
+			# For NVIDIA SR-IOV, check for vGPU (mdev) on the VF itself
+			if [[ "$VENDOR_ID" == "10de" ]]; then
+				VF_MDEV_BASE="$VF_PATH/mdev_supported_types"
+				process_mdev_instances "$VF_MDEV_BASE" "$VF_BDF"
+			fi
 
 			DOMAIN="0x0000"
 			BUS="0x${VF_BDF:0:2}"
@@ -672,6 +685,14 @@ for LINE in "${LINES[@]}"; do
 				echo "${flist[*]}"
 			)]"
 		fi
+	fi
+
+	# Consolidate all vGPU instances (from PF and VFs)
+	if [ ${#vlist[@]} -gt 0 ]; then
+		VGPU_ARRAY="[$(
+			IFS=,
+			echo "${vlist[*]}"
+		)]"
 	fi
 
 	# === full_passthrough block ===

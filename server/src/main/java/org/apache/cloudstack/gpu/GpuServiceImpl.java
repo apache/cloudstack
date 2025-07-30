@@ -795,7 +795,6 @@ public class GpuServiceImpl extends ManagerBase implements GpuService, Pluggable
                             vgpuProfile.getName(), gpuDevice.getBusAddress(), gpuCard.getVendorId(),
                             gpuCard.getVendorName(), gpuCard.getDeviceId(), gpuCard.getDeviceName());
                     vgpuInfo.setDisplay(serviceOffering.getGpuDisplay());
-
                     if (gpuDevice.getParentGpuDeviceId() != null) {
                         GpuDeviceVO parentGpuDevice = gpuDeviceDao.findById(gpuDevice.getParentGpuDeviceId());
                         if (parentGpuDevice != null) {
@@ -891,13 +890,19 @@ public class GpuServiceImpl extends ManagerBase implements GpuService, Pluggable
                         } else {
                             // Update the device's info
                             GpuDeviceVO parentGpuDevice = null;
-                            if (existingDevice.getParentGpuDeviceId() == null
-                                && deviceInfo.getParentBusAddress() != null) {
+                            if (deviceInfo.getParentBusAddress() != null) {
                                 parentGpuDevice = gpuDeviceDao.findByHostIdAndBusAddress(host.getId(),
                                         deviceInfo.getParentBusAddress());
                                 if (parentGpuDevice != null) {
                                     existingDevice.setParentGpuDeviceId(parentGpuDevice.getId());
+                                    parentGpuDevice.setType(GpuDevice.DeviceType.VGPUOnly);
+                                    gpuDeviceDao.persist(parentGpuDevice);
                                 }
+                            }
+                            if (deviceInfo.isPassthroughEnabled()) {
+                                existingDevice.setType(deviceInfo.getDeviceType());
+                            } else {
+                                existingDevice.setType(GpuDevice.DeviceType.VGPUOnly);
                             }
                             if (existingDevice.getPciRoot() == null) {
                                 existingDevice.setPciRoot(deviceInfo.getPciRoot());
@@ -913,7 +918,6 @@ public class GpuServiceImpl extends ManagerBase implements GpuService, Pluggable
                     for (final GpuDeviceVO device : gpuDevicesToDisableMap.values()) {
                         logger.info("Disabling GPU device {} on host {} due to missing address in the new devices on the host.", device, host);
                         device.setState(GpuDevice.State.Error);
-                        device.setManagedState(GpuDevice.ManagedState.Unmanaged);
                         gpuDeviceDao.update(device.getId(), device);
                         checkAndUpdateParentGpuDeviceState(device.getParentGpuDeviceId());
                     }
@@ -1024,11 +1028,14 @@ public class GpuServiceImpl extends ManagerBase implements GpuService, Pluggable
                     deviceInfo.getParentBusAddress());
             if (parentGpuDevice != null) {
                 parentGpuDeviceId = parentGpuDevice.getId();
+                parentGpuDevice.setType(GpuDevice.DeviceType.VGPUOnly);
+                gpuDeviceDao.persist(parentGpuDevice);
             }
         }
         GpuDeviceVO gpuDevice = new GpuDeviceVO(card.getId(), vgpuProfile.getId(), deviceInfo.getBusAddress(),
                 host.getId(), parentGpuDeviceId, deviceInfo.getNumaNode(), deviceInfo.getPciRoot());
         gpuDevice.setHostId(host.getId());
+        gpuDevice.setType(deviceInfo.getDeviceType());
         gpuDevice.setBusAddress(deviceInfo.getBusAddress());
         gpuDevice.setCardId(card.getId());
         setStateAndVmName(deviceInfo, gpuDevice, parentGpuDevice);
