@@ -1098,6 +1098,7 @@ export default {
           providerParams.transportzone = this.prefillContent?.transportZone || ''
 
           await this.addNsxController(providerParams)
+          await this.updateNsxServiceProviderStatus()
           this.stepData.stepMove.push('addNsxController')
         }
         this.stepData.stepMove.push('nsx')
@@ -1106,6 +1107,18 @@ export default {
         this.messageError = e
         this.processStatus = STATUS_FAILED
         this.setStepStatus(STATUS_FAILED)
+      }
+    },
+    async updateNsxServiceProviderStatus () {
+      const listParams = {}
+      listParams.name = 'Nsx'
+      const nsxPhysicalNetwork = this.stepData.physicalNetworksReturned.find(net => net.isolationmethods.trim().toUpperCase() === 'NSX')
+      const nsxPhysicalNetworkId = nsxPhysicalNetwork?.id || null
+      listParams.physicalNetworkId = nsxPhysicalNetworkId
+      const nsxProviderId = await this.listNetworkServiceProviders(listParams, 'nsxProvider')
+      console.log(nsxProviderId)
+      if (nsxProviderId !== null) {
+        await this.updateNetworkServiceProvider(nsxProviderId)
       }
     },
     async stepAddNetrisProvider () {
