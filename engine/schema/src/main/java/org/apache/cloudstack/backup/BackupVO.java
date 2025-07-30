@@ -88,11 +88,11 @@ public class BackupVO implements Backup {
     @Column(name = "zone_id")
     private long zoneId;
 
-    @Column(name = "backup_interval_type")
-    private short backupIntervalType;
-
     @Column(name = "backed_volumes", length = 65535)
     protected String backedUpVolumes;
+
+    @Column(name = "backup_schedule_id")
+    private Long backupScheduleId;
 
     public BackupVO() {
         this.uuid = UUID.randomUUID().toString();
@@ -211,14 +211,6 @@ public class BackupVO implements Backup {
         this.zoneId = zoneId;
     }
 
-    public short getBackupIntervalType() {
-        return backupIntervalType;
-    }
-
-    public void setBackupIntervalType(short backupIntervalType) {
-        this.backupIntervalType = backupIntervalType;
-    }
-
     @Override
     public Class<?> getEntityType() {
         return Backup.class;
@@ -246,5 +238,14 @@ public class BackupVO implements Backup {
 
     public void setRemoved(Date removed) {
         this.removed = removed;
+    }
+
+    @Override
+    public Long getBackupScheduleId() {
+        return backupScheduleId;
+    }
+
+    public void setBackupScheduleId(Long backupScheduleId) {
+        this.backupScheduleId = backupScheduleId;
     }
 }

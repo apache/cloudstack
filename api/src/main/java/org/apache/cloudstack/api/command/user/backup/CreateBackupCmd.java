@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.user.backup;
 
 import javax.inject.Inject;
 
-import com.cloud.storage.Snapshot;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -28,7 +27,6 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.BackupScheduleResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.backup.BackupManager;
@@ -62,27 +60,12 @@ public class CreateBackupCmd extends BaseAsyncCreateCmd {
             description = "ID of the VM")
     private Long vmId;
 
-    @Parameter(name = ApiConstants.SCHEDULE_ID,
-            type = CommandType.LONG,
-            entityType = BackupScheduleResponse.class,
-            description = "backup schedule ID of the VM, if this is null, it indicates that it is a manual backup.",
-            since = "4.21.0")
-    private Long scheduleId;
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
     public Long getVmId() {
         return vmId;
-    }
-
-    public Long getScheduleId() {
-        if (scheduleId != null) {
-            return scheduleId;
-        } else {
-            return Snapshot.MANUAL_POLICY_ID;
-        }
     }
 
     /////////////////////////////////////////////////////
@@ -92,7 +75,7 @@ public class CreateBackupCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            boolean result = backupManager.createBackup(getVmId(), getScheduleId());
+            boolean result = backupManager.createBackup(getVmId(), getJob());
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 response.setResponseName(getCommandName());
