@@ -23,6 +23,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
@@ -135,8 +136,11 @@ import com.cloud.server.ResourceTag;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.GuestOS;
+import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -259,9 +263,10 @@ public class AutoScaleManagerImplTest {
     LoadBalancingRulesService loadBalancingRulesService;
     @Mock
     VMInstanceDao vmInstanceDao;
-
     @Mock
     VirtualMachineManager virtualMachineManager;
+    @Mock
+    GuestOSDao guestOSDao;
 
     AccountVO account;
     UserVO user;
@@ -420,6 +425,11 @@ public class AutoScaleManagerImplTest {
         userDataDetails.put("0", new HashMap<>() {{ put("key1", "value1"); put("key2", "value2"); }});
         Mockito.doReturn(userDataFinal).when(userVmMgr).finalizeUserData(any(), any(), any());
         Mockito.doReturn(userDataFinal).when(userDataMgr).validateUserData(eq(userDataFinal), nullable(BaseCmd.HTTPMethod.class));
+
+        when(templateMock.getGuestOSId()).thenReturn(100L);
+        GuestOSVO guestOSMock = Mockito.mock(GuestOSVO.class);
+        when(guestOSDao.findById(anyLong())).thenReturn(guestOSMock);
+        when(guestOSMock.getName()).thenReturn("linux");
     }
 
     @After
@@ -2494,5 +2504,54 @@ public class AutoScaleManagerImplTest {
         autoScaleManagerImplSpy.destroyVm(virtualMachineId);
 
         Mockito.verify(userVmMgr).expunge(eq(userVmMock));
+    }
+
+    @Test
+    public void getNextVmHostAndDisplayNameGeneratesCorrectHostAndDisplayNameForLinuxTemplate() {
+        when(asVmGroupMock.getName()).thenReturn(vmGroupName);
+        when(asVmGroupMock.getNextVmSeq()).thenReturn(1L);
+        Pair<String, String> result = autoScaleManagerImplSpy.getNextVmHostAndDisplayName(asVmGroupMock, templateMock);
+        String vmHostNamePattern = AutoScaleManagerImpl.VM_HOSTNAME_PREFIX + vmGroupName +
+                "-" + asVmGroupMock.getNextVmSeq() + "-[a-z]{6}";
+        Assert.assertTrue(result.first().matches(vmHostNamePattern));
+        Assert.assertEquals(result.first(), result.second());
+    }
+
+    @Test
+    public void getNextVmHostAndDisplayNameGeneratesCorrectHostAndDisplayNameForWindowsTemplate() {
+        GuestOSVO guestOS = Mockito.mock(GuestOSVO.class);
+        when(asVmGroupMock.getName()).thenReturn(vmGroupName);
+        when(asVmGroupMock.getNextVmSeq()).thenReturn(1L);
+        when(templateMock.getGuestOSId()).thenReturn(1L);
+        when(guestOS.getName()).thenReturn("Windows Server");
+        when(guestOSDao.findById(1L)).thenReturn(guestOS);
+        Pair<String, String> result = autoScaleManagerImplSpy.getNextVmHostAndDisplayName(asVmGroupMock, templateMock);
+        String vmHostNamePattern = AutoScaleManagerImpl.VM_HOSTNAME_PREFIX + vmGroupName +
+                "-" + asVmGroupMock.getNextVmSeq() + "-[a-z]{6}";
+        Assert.assertTrue(result.second().matches(vmHostNamePattern));
+        Assert.assertEquals(15, result.first().length());
+        Assert.assertTrue(result.second().endsWith(result.first()));
+    }
+
+    @Test
+    public void getNextVmHostAndDisplayNameTruncatesGroupNameWhenExceedingMaxLength() {
+        when(asVmGroupMock.getName()).thenReturn(vmGroupNameWithMaxLength);
+        when(asVmGroupMock.getNextVmSeq()).thenReturn(1L);
+        Pair<String, String> result = autoScaleManagerImplSpy.getNextVmHostAndDisplayName(asVmGroupMock, templateMock);
+        Assert.assertTrue(result.first().length() <= 63);
+        Assert.assertTrue(result.second().length() <= 63);
+    }
+
+    @Test
+    public void getNextVmHostAndDisplayNameHandlesNullGuestOS() {
+        when(asVmGroupMock.getName()).thenReturn(vmGroupName);
+        when(asVmGroupMock.getNextVmSeq()).thenReturn(1L);
+        when(templateMock.getGuestOSId()).thenReturn(1L);
+        when(guestOSDao.findById(1L)).thenReturn(null);
+        Pair<String, String> result = autoScaleManagerImplSpy.getNextVmHostAndDisplayName(asVmGroupMock, templateMock);
+        String vmHostNamePattern = AutoScaleManagerImpl.VM_HOSTNAME_PREFIX + vmGroupName +
+                "-" + asVmGroupMock.getNextVmSeq() + "-[a-z]{6}";
+        Assert.assertTrue(result.first().matches(vmHostNamePattern));
+        Assert.assertEquals(result.first(), result.second());
     }
 }
