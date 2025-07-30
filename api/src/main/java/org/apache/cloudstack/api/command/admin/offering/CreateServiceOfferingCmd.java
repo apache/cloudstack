@@ -32,6 +32,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.VgpuProfileResponse;
 import org.apache.cloudstack.api.response.VsphereStoragePoliciesResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.vm.lease.VMLeaseManager;
@@ -262,6 +263,25 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.INSTANCE_LEASE_EXPIRY_ACTION, type = CommandType.STRING, since = "4.21.0",
             description = "Lease expiry action, valid values are STOP and DESTROY")
     private String leaseExpiryAction;
+
+    @Parameter(name = ApiConstants.VGPU_PROFILE_ID,
+            type = CommandType.UUID,
+            entityType = VgpuProfileResponse.class,
+            description = "the ID of the vGPU profile to which service offering should be mapped",
+            since = "4.21")
+    private Long vgpuProfileId;
+
+    @Parameter(name = ApiConstants.GPU_COUNT,
+            type = CommandType.INTEGER,
+            description = "Count of GPUs to be used with this service offering. This is applicable only when passed with vGPU profile.",
+            since = "4.21")
+    private Integer gpuCount;
+
+    @Parameter(name = ApiConstants.GPU_DISPLAY,
+            type = CommandType.BOOLEAN,
+            description = "Whether to enable GPU display for this service offering. This is applicable only when passed with vGPU profile. Defaults to false.",
+            since = "4.21")
+    private Boolean gpuDisplay;
 
     @Parameter(name = ApiConstants.EXTERNAL_DETAILS,
             type = CommandType.MAP,
@@ -527,6 +547,18 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     public boolean isPurgeResources() {
         return Boolean.TRUE.equals(purgeResources);
+    }
+
+    public Long getVgpuProfileId() {
+        return vgpuProfileId;
+    }
+
+    public Integer getGpuCount() {
+        return gpuCount;
+    }
+
+    public Boolean getGpuDisplay() {
+        return Boolean.TRUE.equals(gpuDisplay);
     }
 
     /////////////////////////////////////////////////////

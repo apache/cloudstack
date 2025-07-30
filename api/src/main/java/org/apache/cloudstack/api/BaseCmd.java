@@ -39,6 +39,7 @@ import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.gpu.GpuService;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerService;
 import org.apache.cloudstack.network.lb.InternalLoadBalancerVMService;
@@ -130,6 +131,8 @@ public abstract class BaseCmd {
     public ProjectRoleService projRoleService;
     @Inject
     public UserVmService _userVmService;
+    @Inject
+    public GpuService gpuService;
     @Inject
     public ManagementService _mgr;
     @Inject

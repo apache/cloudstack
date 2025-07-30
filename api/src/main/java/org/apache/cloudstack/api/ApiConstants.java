@@ -69,6 +69,7 @@ public class ApiConstants {
     public static final String BOOTABLE = "bootable";
     public static final String BIND_DN = "binddn";
     public static final String BIND_PASSWORD = "bindpass";
+    public static final String BUS_ADDRESS = "busaddress";
     public static final String BYTES_READ_RATE = "bytesreadrate";
     public static final String BYTES_READ_RATE_MAX = "bytesreadratemax";
     public static final String BYTES_READ_RATE_MAX_LENGTH = "bytesreadratemaxlength";
@@ -162,6 +163,7 @@ public class ApiConstants {
     public static final String DESTINATION_ZONE_ID = "destzoneid";
     public static final String DETAILS = "details";
     public static final String DEVICE_ID = "deviceid";
+    public static final String DEVICE_NAME = "devicename";
     public static final String DIRECT_DOWNLOAD = "directdownload";
     public static final String DISK = "disk";
     public static final String DISK_OFFERING_ID = "diskofferingid";
@@ -388,6 +390,7 @@ public class ApiConstants {
     public static final String NEW_START_IP = "newstartip";
     public static final String NEW_END_IP = "newendip";
     public static final String KUBERNETES_NODE_VERSION = "kubernetesnodeversion";
+    public static final String NUMA_NODE = "numanode";
     public static final String NUM_RETRIES = "numretries";
     public static final String OFFER_HA = "offerha";
     public static final String OS_DISTRIBUTION = "osdistribution";
@@ -404,6 +407,13 @@ public class ApiConstants {
     public static final String OS_TYPE_ID = "ostypeid";
     public static final String OS_DISPLAY_NAME = "osdisplayname";
     public static final String OS_NAME_FOR_HYPERVISOR = "osnameforhypervisor";
+    public static final String GPU_CARD_ID = "gpucardid";
+    public static final String GPU_CARD_NAME = "gpucardname";
+    public static final String GPU_COUNT = "gpucount";
+    public static final String GPU_DISPLAY = "gpudisplay";
+    public static final String GPU_DEVICE_TYPE = "gpudevicetype";
+    public static final String GPU_ENABLED = "gpuenabled";
+    public static final String MAX_VGPU_PER_PHYSICAL_GPU = "maxvgpuperphysicalgpu";
     public static final String GUEST_OS_LIST = "guestoslist";
     public static final String GUEST_OS_COUNT = "guestoscount";
     public static final String OS_MAPPING_CHECK_ENABLED = "osmappingcheckenabled";
@@ -415,9 +425,11 @@ public class ApiConstants {
     public static final String PARENT = "parent";
     public static final String PARENT_ID = "parentid";
     public static final String PARENT_DOMAIN_ID = "parentdomainid";
+    public static final String PARENT_GPU_DEVICE_ID = "parentgpudeviceid";
     public static final String PARENT_SUBNET = "parentsubnet";
     public static final String PARENT_TEMPLATE_ID = "parenttemplateid";
     public static final String PASSWORD = "password";
+    public static final String PCI_ROOT = "pciroot";
     public static final String CURRENT_PASSWORD = "currentpassword";
     public static final String SHOULD_UPDATE_PASSWORD = "update_passwd_on_host";
     public static final String PASSWORD_ENABLED = "passwordenabled";
@@ -589,6 +601,10 @@ public class ApiConstants {
     public static final String VALIDATION_FORMAT = "validationformat";
     public static final String VALUE = "value";
     public static final String VALUE_OPTIONS = "valueoptions";
+    public static final String VENDOR_ID = "vendorid";
+    public static final String VENDOR_NAME = "vendorname";
+    public static final String VGPU_PROFILE_ID = "vgpuprofileid";
+    public static final String VGPU_PROFILE_NAME = "vgpuprofilename";
     public static final String VIRTUAL_MACHINE = "virtualmachine";
     public static final String VIRTUAL_MACHINE_ID = "virtualmachineid";
     public static final String VIRTUAL_MACHINE_IDS = "virtualmachineids";

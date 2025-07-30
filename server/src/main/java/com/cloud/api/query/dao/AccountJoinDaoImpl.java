@@ -220,6 +220,9 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         response.setMemoryTotal(memoryTotal);
         response.setMemoryAvailable(memoryAvail);
 
+        //get resource limits for gpus
+        setGpuResourceLimits(account, fullView,response);
+
         //get resource limits for primary storage space and convert it from Bytes to GiB
         long primaryStorageLimit = ApiDBUtils.findCorrectResourceLimit(account.getPrimaryStorageLimit(), account.getId(), ResourceType.primary_storage);
         String primaryStorageLimitDisplay = (fullView || primaryStorageLimit == -1) ? Resource.UNLIMITED : String.valueOf(primaryStorageLimit / ResourceType.bytesToGiB);
@@ -276,6 +279,16 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         response.setObjectStorageLimit(objectStorageLimitDisplay);
         response.setObjectStorageTotal(objectStorageTotal);
         response.setObjectStorageAvailable(objectStorageAvail);
+    }
+
+    private void setGpuResourceLimits(AccountJoinVO account, boolean fullView, ResourceLimitAndCountResponse response) {
+        long gpuLimit = ApiDBUtils.findCorrectResourceLimit(account.getGpuLimit(), account.getId(), ResourceType.gpu);
+        String gpuLimitDisplay = (fullView || gpuLimit == -1) ? Resource.UNLIMITED : String.valueOf(gpuLimit);
+        long gpuTotal = (account.getGpuTotal() == null) ? 0 : account.getGpuTotal();
+        String gpuAvail = (fullView || gpuLimit == -1) ? Resource.UNLIMITED : String.valueOf(gpuLimit - gpuTotal);
+        response.setGpuLimit(gpuLimitDisplay);
+        response.setGpuTotal(gpuTotal);
+        response.setGpuAvailable(gpuAvail);
     }
 
     @Override

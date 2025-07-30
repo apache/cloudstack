@@ -140,6 +140,7 @@ jobs:
                   smoke/test_vm_deployment_planner
                   smoke/test_vm_strict_host_tags
                   smoke/test_vm_schedule
+                  smoke/test_deploy_vgpu_enabled_vm
                   smoke/test_vm_life_cycle
                   smoke/test_vm_lifecycle_unmanage_import
                   smoke/test_vm_snapshot_kvm

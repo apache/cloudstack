@@ -300,7 +300,6 @@ import com.cloud.domain.DomainVO;
 import com.cloud.event.Event;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.gpu.GPU;
 import com.cloud.host.ControlState;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -2195,15 +2194,13 @@ public class ApiResponseHelper implements ResponseGenerator {
                         result.get(0).getPodId(), result.get(0).getClusterId())) != null) {
             HashMap<String, Long> vgpuVMs = ApiDBUtils.getVgpuVmsCount(result.get(0).getDataCenterId(), result.get(0).getPodId(), result.get(0).getClusterId());
 
-            float capacityUsed = 0;
+            long capacityUsed = 0;
             long capacityMax = 0;
             for (VgpuTypesInfo capacity : gpuCapacities) {
                 if (vgpuVMs.containsKey(capacity.getGroupName().concat(capacity.getModelName()))) {
-                    capacityUsed += (float)vgpuVMs.get(capacity.getGroupName().concat(capacity.getModelName())) / capacity.getMaxVpuPerGpu();
+                    capacityUsed += vgpuVMs.get(capacity.getGroupName().concat(capacity.getModelName()));
                 }
-                if (capacity.getModelName().equals(GPU.GPUType.passthrough.toString())) {
-                    capacityMax += capacity.getMaxCapacity();
-                }
+                capacityMax += capacity.getMaxCapacity();
             }
 
             DataCenter zone = ApiDBUtils.findZoneById(result.get(0).getDataCenterId());
@@ -2224,10 +2221,11 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
             capacityResponse.setCapacityType(Capacity.CAPACITY_TYPE_GPU);
             capacityResponse.setCapacityName(CapacityVO.getCapacityName(Capacity.CAPACITY_TYPE_GPU));
-            capacityResponse.setCapacityUsed((long)Math.ceil(capacityUsed));
+            capacityResponse.setCapacityUsed(capacityUsed);
+            capacityResponse.setCapacityAllocated(capacityUsed);
             capacityResponse.setCapacityTotal(capacityMax);
             if (capacityMax > 0) {
-                capacityResponse.setPercentUsed(format.format(capacityUsed / capacityMax * 100f));
+                capacityResponse.setPercentUsed(format.format((float)capacityUsed / capacityMax * 100f));
             } else {
                 capacityResponse.setPercentUsed(format.format(0));
             }
@@ -2541,10 +2539,11 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setType(network.getGuestType().toString());
         }
 
-        response.setGateway(network.getGateway());
+        response.setGateway(com.cloud.utils.StringUtils.getFirstValueFromCommaSeparatedString(network.getGateway()));
+        String cidr = com.cloud.utils.StringUtils.getFirstValueFromCommaSeparatedString(network.getCidr());
 
         // FIXME - either set netmask or cidr
-        response.setCidr(network.getCidr());
+        response.setCidr(cidr);
         if (network.getNetworkCidr() != null) {
             response.setNetworkCidr((network.getNetworkCidr()));
         }
@@ -2555,18 +2554,18 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (network.getNetworkCidr() != null) {
             response.setNetmask(NetUtils.cidr2Netmask(network.getNetworkCidr()));
         }
-        if (((network.getCidr()) != null) && (network.getNetworkCidr() == null)) {
-            response.setNetmask(NetUtils.cidr2Netmask(network.getCidr()));
+        if ((cidr != null) && (network.getNetworkCidr() == null)) {
+            response.setNetmask(NetUtils.cidr2Netmask(cidr));
         }
 
-        response.setIp6Gateway(network.getIp6Gateway());
-        response.setIp6Cidr(network.getIp6Cidr());
+        response.setIp6Gateway(com.cloud.utils.StringUtils.getFirstValueFromCommaSeparatedString(network.getIp6Gateway()));
+        response.setIp6Cidr(com.cloud.utils.StringUtils.getFirstValueFromCommaSeparatedString(network.getIp6Cidr()));
 
         // create response for reserved IP ranges that can be used for
         // non-cloudstack purposes
         String reservation = null;
-        if ((network.getCidr() != null) && (NetUtils.isNetworkAWithinNetworkB(network.getCidr(), network.getNetworkCidr()))) {
-            String[] guestVmCidrPair = network.getCidr().split("\\/");
+        if ((cidr != null) && (NetUtils.isNetworkAWithinNetworkB(cidr, network.getNetworkCidr()))) {
+            String[] guestVmCidrPair = cidr.split("\\/");
             String[] guestCidrPair = network.getNetworkCidr().split("\\/");
 
             Long guestVmCidrSize = Long.valueOf(guestVmCidrPair[1]);
