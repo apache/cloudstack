@@ -671,7 +671,8 @@ export default {
       for (const filtername of filters) {
         const params = {
           templatefilter: filtername,
-          forcks: true
+          forcks: true,
+          isready: true
         }
         this.templateLoading = true
         getAPI('listTemplates', params).then(json => {

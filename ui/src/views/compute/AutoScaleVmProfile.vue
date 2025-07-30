@@ -424,9 +424,11 @@ export default {
       }
       if (isAdmin()) {
         params.templatefilter = 'all'
+        params.isready = true
       } else {
         params.templatefilter = 'executable'
       }
+      params.isready = true
       getAPI('listTemplates', params).then(json => {
         this.templatesList = json.listtemplatesresponse?.template || []
       })

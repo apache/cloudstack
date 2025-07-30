@@ -2546,6 +2546,7 @@ export default {
         args.arch = this.selectedArchitecture
       }
       args.templatefilter = templateFilter
+      args.isready = true
       args.details = 'all'
       args.showicon = 'true'
       args.id = this.queryTemplateId

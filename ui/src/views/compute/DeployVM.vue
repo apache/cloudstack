@@ -1797,12 +1797,14 @@ export default {
           apiName = 'listTemplates'
           params.listall = true
           params.templatefilter = this.isNormalAndDomainUser ? 'executable' : 'all'
+          params.isready = true
           params.id = this.queryTemplateId
           this.dataPreFill.templateid = this.queryTemplateId
         } else if (this.queryIsoId) {
           apiName = 'listIsos'
           params.listall = true
           params.isofilter = this.isNormalAndDomainUser ? 'executable' : 'all'
+          params.isready = true
           params.id = this.queryIsoId
           this.dataPreFill.isoid = this.queryIsoId
         } else if (this.queryNetworkId) {
@@ -2609,6 +2611,7 @@ export default {
       args.domainid = store.getters.project?.id ? null : this.owner.domainid
       args.projectid = store.getters.project?.id || this.owner.projectid
       args.templatefilter = templateFilter
+      args.isready = true
       args.details = 'all'
       args.showicon = 'true'
       args.id = this.queryTemplateId
@@ -2644,6 +2647,7 @@ export default {
       args.domainid = store.getters.project?.id ? null : this.owner.domainid
       args.projectid = store.getters.project?.id || this.owner.projectid
       args.isoFilter = isoFilter
+      args.isready = true
       args.bootable = true
       args.showicon = 'true'
       args.id = this.queryIsoId
