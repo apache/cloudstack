@@ -2101,6 +2101,14 @@ public class VmwareStorageProcessor implements StorageProcessor {
             AttachAnswer answer = new AttachAnswer(disk);
 
             if (isAttach) {
+                // Let's first find which disk controller should be used for the volume being attached.
+                //
+                // `controllerInfo` can not be null here. It is always defined when creating the `AttachComand` in
+                // `com.cloud.storage.VolumeApiServiceImpl#sendAttachVolumeCommand`.
+                //
+                // If `VmDetailConstants.ROOT_DISK_CONTROLLER` or `VmDetailConstants.DATA_DISK_CONTROLLER` are not present
+                // in `controllerInfo`, `com.cloud.hypervisor.vmware.util.VmwareHelper#getDiskControllersFromVmSettings`
+                // will return default values.
                 String rootDiskControllerDetail = controllerInfo.get(VmDetailConstants.ROOT_DISK_CONTROLLER);
                 String dataDiskControllerDetail = controllerInfo.get(VmDetailConstants.DATA_DISK_CONTROLLER);
                 Pair<DiskControllerMappingVO, DiskControllerMappingVO> specifiedDiskControllers = VmwareHelper.getDiskControllersFromVmSettings(rootDiskControllerDetail, dataDiskControllerDetail, false);
