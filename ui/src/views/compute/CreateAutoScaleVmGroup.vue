@@ -737,7 +737,7 @@
                     {{ $t('label.isadvanced') }}
                     <a-switch v-model:checked="showDetails" style="margin-left: 10px"/>
                   </span>
-                  <div style="margin-top: 15px" v-show="showDetails">
+                  <div style="margin-top: 15px" v-if="showDetails">
                     <a-form-item :label="$t('label.sshkeypairs')">
                       <ssh-key-pair-selection
                         :items="options.sshKeyPairs"
