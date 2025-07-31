@@ -1360,6 +1360,25 @@ export default {
             name: 'label.disabled'
           }
         ]
+      } else if (this.apiName.indexOf('listEvents') > -1) {
+        state = [
+          {
+            id: 'Created',
+            name: 'label.created'
+          },
+          {
+            id: 'Scheduled',
+            name: 'label.scheduled'
+          },
+          {
+            id: 'Started',
+            name: 'label.started'
+          },
+          {
+            id: 'Completed',
+            name: 'label.completed'
+          }
+        ]
       }
       return state
     },
