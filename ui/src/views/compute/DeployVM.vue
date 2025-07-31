@@ -3033,7 +3033,7 @@ export default {
       }
     },
     updateImages () {
-      if (this.isModernImageSelection) {
+      if (this.isModernImageSelection && this.imageType !== 'snapshotid' && this.imageType !== 'volumeid') {
         this.fetchGuestOsCategories()
         return
       }
