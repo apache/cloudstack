@@ -433,8 +433,14 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         return null;
     }
 
-    public VMTemplateVO getKubernetesServiceTemplate(DataCenter dataCenter, Hypervisor.HypervisorType hypervisorType) {
-        VMTemplateVO template = templateDao.findSystemVMReadyTemplate(dataCenter.getId(), hypervisorType);
+    public VMTemplateVO getKubernetesServiceTemplate(DataCenter dataCenter, Hypervisor.HypervisorType hypervisorType,
+                                                     KubernetesSupportedVersion clusterKubernetesVersion) {
+        String systemVMPreferredArchitecture = ResourceManager.SystemVmPreferredArchitecture.valueIn(dataCenter.getId());
+        VMTemplateVO cksIso = clusterKubernetesVersion != null ?
+                templateDao.findById(clusterKubernetesVersion.getIsoId()) :
+                null;
+        String preferredArchitecture = getCksClusterPreferredArch(systemVMPreferredArchitecture, cksIso);
+        VMTemplateVO template = templateDao.findSystemVMReadyTemplate(dataCenter.getId(), hypervisorType, preferredArchitecture);
         if (DataCenter.Type.Edge.equals(dataCenter.getType()) && template != null && !template.isDirectDownload()) {
             logger.debug(String.format("Template %s can not be used for edge zone %s", template, dataCenter));
             template = templateDao.findRoutingTemplate(hypervisorType, networkHelper.getHypervisorRouterTemplateConfigMap().get(hypervisorType).valueIn(dataCenter.getId()));
@@ -443,6 +449,14 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new CloudRuntimeException("Not able to find the System or Routing template in ready state for the zone " + dataCenter.getUuid());
         }
         return  template;
+    }
+
+    protected String getCksClusterPreferredArch(String systemVMPreferredArchitecture, VMTemplateVO cksIso) {
+        if (cksIso == null) {
+            return systemVMPreferredArchitecture;
+        }
+        String cksIsoArchName = cksIso.getArch().name();
+        return cksIsoArchName.equals(systemVMPreferredArchitecture) ? systemVMPreferredArchitecture : cksIsoArchName;
     }
 
     protected void validateIsolatedNetworkIpRules(long ipId, FirewallRule.Purpose purpose, Network network, int clusterTotalNodeCount) {
@@ -1302,7 +1316,10 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
 
         final Network defaultNetwork = getKubernetesClusterNetworkIfMissing(cmd.getName(), zone, owner, (int)controlNodeCount, (int)clusterSize, cmd.getExternalLoadBalancerIpAddress(), cmd.getNetworkId());
-        final VMTemplateVO finalTemplate = getKubernetesServiceTemplate(zone, deployDestination.getCluster().getHypervisorType());
+        final VMTemplateVO finalTemplate = getKubernetesServiceTemplate(zone, deployDestination.getCluster().getHypervisorType(), clusterKubernetesVersion);
+
+        compareKubernetesIsoArchToSelectedTemplateArch(clusterKubernetesVersion, finalTemplate);
+
         final long cores = serviceOffering.getCpu() * (controlNodeCount + clusterSize);
         final long memory = serviceOffering.getRamSize() * (controlNodeCount + clusterSize);
 
@@ -1329,6 +1346,21 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
         CallContext.current().putContextParameter(KubernetesCluster.class, cluster.getUuid());
         return cluster;
+    }
+
+    private void compareKubernetesIsoArchToSelectedTemplateArch(KubernetesSupportedVersion clusterKubernetesVersion, VMTemplateVO finalTemplate) {
+        VMTemplateVO cksIso = templateDao.findById(clusterKubernetesVersion.getIsoId());
+        if (cksIso == null) {
+            String err = String.format("Cannot find Kubernetes ISO associated to the Kubernetes version %s (id=%s)",
+                    clusterKubernetesVersion.getName(), clusterKubernetesVersion.getUuid());
+            throw new CloudRuntimeException(err);
+        }
+        if (!cksIso.getArch().equals(finalTemplate.getArch())) {
+            String err = String.format("The selected Kubernetes ISO %s arch (%s) doesn't match the template %s arch (%s) " +
+                            "to deploy the Kubernetes cluster",
+                    clusterKubernetesVersion.getName(), cksIso.getArch(), finalTemplate.getName(), finalTemplate.getArch());
+            throw new CloudRuntimeException(err);
+        }
     }
 
     private SecurityGroup getOrCreateSecurityGroupForAccount(Account owner) {
