@@ -35,38 +35,6 @@ import java.util.TimerTask;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.amazonaws.util.CollectionUtils;
-import com.cloud.alert.AlertManager;
-import com.cloud.capacity.Capacity;
-import com.cloud.capacity.CapacityVO;
-import com.cloud.configuration.Resource;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.domain.DomainVO;
-import com.cloud.domain.dao.DomainDao;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.network.Network;
-import com.cloud.network.NetworkService;
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.storage.Snapshot;
-import com.cloud.api.query.dao.UserVmJoinDao;
-import com.cloud.api.query.vo.UserVmJoinVO;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.offering.DiskOffering;
-import com.cloud.offering.ServiceOffering;
-import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.Storage;
-import com.cloud.storage.VolumeApiService;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.user.AccountVO;
-import com.cloud.user.DomainManager;
-import com.cloud.user.ResourceLimitService;
-import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.fsm.NoTransitionException;
-import com.cloud.vm.VMInstanceDetailVO;
-import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.VmDiskInfo;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -112,14 +80,25 @@ import org.apache.cloudstack.poll.BackgroundPollTask;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import com.amazonaws.util.CollectionUtils;
+import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDispatcher;
 import com.cloud.api.ApiGsonHelper;
+import com.cloud.api.query.dao.UserVmJoinDao;
+import com.cloud.api.query.vo.UserVmJoinVO;
+import com.cloud.capacity.Capacity;
+import com.cloud.capacity.CapacityVO;
+import com.cloud.configuration.Resource;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
@@ -127,21 +106,39 @@ import com.cloud.event.EventVO;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
+import com.cloud.network.Network;
+import com.cloud.network.NetworkService;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.offering.DiskOffering;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.projects.Project;
+import com.cloud.serializer.GsonHelper;
+import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
+import com.cloud.user.AccountVO;
+import com.cloud.user.DomainManager;
+import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
@@ -159,11 +156,15 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VmDiskInfo;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -547,7 +548,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         final DateUtil.IntervalType intervalType = cmd.getIntervalType();
         final String scheduleString = cmd.getSchedule();
         final TimeZone timeZone = TimeZone.getTimeZone(cmd.getTimezone());
-        final Integer maxBackups = cmd.getMaxBackups();
 
         if (intervalType == null) {
             throw new CloudRuntimeException("Invalid interval type provided");
@@ -560,43 +560,16 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (vm.getBackupOfferingId() == null) {
             throw new CloudRuntimeException("Cannot configure backup schedule for the VM without having any backup offering");
         }
-        if (maxBackups != null && maxBackups <= 0) {
-            throw new InvalidParameterValueException(String.format("maxBackups [%s] for instance %s should be greater than 0.", maxBackups, vm.getName()));
-        }
-
-        Backup.Type backupType = Backup.Type.valueOf(intervalType.name());
-        int intervalMaxBackups = backupType.getMax();
-        if (maxBackups != null && maxBackups > intervalMaxBackups) {
-            throw new InvalidParameterValueException(String.format("maxBackups [%s] for instance %s exceeds limit [%s] for interval type [%s].", maxBackups, vm.getName(),
-                    intervalMaxBackups, intervalType));
-        }
-
-        Account owner = accountManager.getAccount(vm.getAccountId());
-
-        long accountLimit = resourceLimitMgr.findCorrectResourceLimitForAccount(owner, Resource.ResourceType.backup, null);
-        long domainLimit = resourceLimitMgr.findCorrectResourceLimitForDomain(domainManager.getDomain(owner.getDomainId()), Resource.ResourceType.backup, null);
-        if (maxBackups != null && !accountManager.isRootAdmin(owner.getId()) && ((accountLimit != -1 && maxBackups > accountLimit) || (domainLimit != -1 && maxBackups > domainLimit))) {
-            String message = "domain/account";
-            if (owner.getType() == Account.Type.PROJECT) {
-                message = "domain/project";
-            }
-            throw new InvalidParameterValueException("Max number of backups shouldn't exceed the " + message + " level backup limit");
-        }
 
         final BackupOffering offering = backupOfferingDao.findById(vm.getBackupOfferingId());
         if (offering == null || !offering.isUserDrivenBackupAllowed()) {
             throw new CloudRuntimeException("The selected backup offering does not allow user-defined backup schedule");
         }
 
+        final int maxBackups = validateAndGetDefaultBackupRetentionIfRequired(cmd.getMaxBackups(), offering, vm);
+
         if (!"nas".equals(offering.getProvider()) && cmd.getQuiesceVM() != null) {
             throw new InvalidParameterValueException("Quiesce VM option is supported only for NAS backup provider");
-        }
-
-        if (maxBackups == null && !"veeam".equals(offering.getProvider())) {
-            throw new CloudRuntimeException("Please specify the maximum number of buckets to retain.");
-        }
-        if (maxBackups != null && "veeam".equals(offering.getProvider())) {
-            throw new CloudRuntimeException("The maximum backups to retain cannot be configured through CloudStack for Veeam. Retention is managed directly in Veeam based on the settings specified when creating the backup job.");
         }
 
         final String timezoneId = timeZone.getID();
@@ -624,6 +597,43 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         schedule.setQuiesceVM(cmd.getQuiesceVM());
         backupScheduleDao.update(schedule.getId(), schedule);
         return backupScheduleDao.findById(schedule.getId());
+    }
+
+    /**
+     * Validates the provided backup retention value and returns 0 as the default value if required.
+     *
+     * @param maxBackups The number of backups to retain, can be null
+     * @param offering The backup offering
+     * @param vm The VM associated with the backup schedule
+     * @return The validated number of backups to retain. If maxBackups is null, returns 0 as the default value
+     * @throws InvalidParameterValueException if the backup offering's provider is Veeam, or maxBackups is less than 0 or greater than the account and domain backup limits
+     */
+    protected int validateAndGetDefaultBackupRetentionIfRequired(Integer maxBackups, BackupOffering offering, VirtualMachine vm) {
+        if (maxBackups == null) {
+            return 0;
+        }
+        if ("veeam".equals(offering.getProvider())) {
+            throw new InvalidParameterValueException("The maximum amount of backups to retain cannot be directly configured via Apache CloudStack for Veeam. " +
+                    "Retention is managed directly in Veeam based on the settings specified when creating the backup job.");
+        }
+        if (maxBackups < 0) {
+            throw new InvalidParameterValueException("maxbackups value for backup schedule must be a non-negative integer.");
+        }
+
+        Account owner = accountManager.getAccount(vm.getAccountId());
+        long accountLimit = resourceLimitMgr.findCorrectResourceLimitForAccount(owner, Resource.ResourceType.backup, null);
+        boolean exceededAccountLimit = accountLimit != -1 && maxBackups > accountLimit;
+
+        long domainLimit = resourceLimitMgr.findCorrectResourceLimitForDomain(domainManager.getDomain(owner.getDomainId()), Resource.ResourceType.backup, null);
+        boolean exceededDomainLimit = domainLimit != -1 && maxBackups > domainLimit;
+
+        if (!accountManager.isRootAdmin(owner.getId()) && (exceededAccountLimit || exceededDomainLimit)) {
+            throw new InvalidParameterValueException(
+                    String.format("'maxbackups' should not exceed the domain/%s backup limit.", owner.getType() == Account.Type.PROJECT ? "project" : "account")
+            );
+        }
+
+        return maxBackups;
     }
 
     @Override
@@ -686,32 +696,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         return success;
     }
 
-    private void postCreateScheduledBackup(Backup.Type backupType, Long vmId) {
-        DateUtil.IntervalType intervalType = DateUtil.IntervalType.valueOf(backupType.name());
-        final BackupScheduleVO schedule = backupScheduleDao.findByVMAndIntervalType(vmId, intervalType);
-        if (schedule == null) {
-            return;
-        }
-        Integer maxBackups = schedule.getMaxBackups();
-        if (maxBackups == null) {
-            return;
-        }
-        List<BackupVO> backups = backupDao.listBackupsByVMandIntervalType(vmId, backupType);
-        while (backups.size() > maxBackups) {
-            BackupVO oldestBackup = backups.get(0);
-            if (deleteBackup(oldestBackup.getId(), false)) {
-                ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, oldestBackup.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_BACKUP_DELETE,
-                        "Successfully deleted oldest backup: " + oldestBackup.getId(), oldestBackup.getId(), ApiCommandResourceType.Backup.toString(), 0);
-            }
-            backups.remove(oldestBackup);
-        }
-    }
-
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_CREATE, eventDescription = "creating VM backup", async = true)
-    public boolean createBackup(CreateBackupCmd cmd) throws ResourceAllocationException {
+    public boolean createBackup(CreateBackupCmd cmd, Object job) throws ResourceAllocationException {
         Long vmId = cmd.getVmId();
-        Long scheduleId = cmd.getScheduleId();
 
         final VMInstanceVO vm = findVmById(vmId);
         validateBackupForZone(vm.getDataCenterId());
@@ -739,16 +727,14 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new InvalidParameterValueException("Quiesce VM option is supported only for NAS backup provider");
         }
 
-        Backup.Type type = getBackupType(scheduleId);
+        Long backupScheduleId = getBackupScheduleId(job);
+        boolean isScheduledBackup = backupScheduleId != null;
         Account owner = accountManager.getAccount(vm.getAccountId());
         try {
             resourceLimitMgr.checkResourceLimit(owner, Resource.ResourceType.backup);
         } catch (ResourceAllocationException e) {
-            if (type != Backup.Type.MANUAL) {
-                String msg = "Backup resource limit exceeded for account id : " + owner.getId() + ". Failed to create backup";
-                logger.warn(msg);
-                alertManager.sendAlert(AlertManager.AlertType.ALERT_TYPE_UPDATE_RESOURCE_COUNT, 0L, 0L, msg, "Backup resource limit exceeded for account id : " + owner.getId()
-                        + ". Failed to create backups; please use updateResourceLimit to increase the limit");
+            if (isScheduledBackup) {
+                sendExceededBackupLimitAlert(owner.getUuid(), Resource.ResourceType.backup);
             }
             throw e;
         }
@@ -766,11 +752,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         try {
             resourceLimitMgr.checkResourceLimit(owner, Resource.ResourceType.backup_storage, backupSize);
         } catch (ResourceAllocationException e) {
-            if (type != Backup.Type.MANUAL) {
-                String msg = "Backup storage space resource limit exceeded for account id : " + owner.getId() + ". Failed to create backup";
-                logger.warn(msg);
-                alertManager.sendAlert(AlertManager.AlertType.ALERT_TYPE_UPDATE_RESOURCE_COUNT, 0L, 0L, msg, "Backup storage space resource limit exceeded for account id : " + owner.getId()
-                        + ". Failed to create backups; please use updateResourceLimit to increase the limit");
+            if (isScheduledBackup) {
+                sendExceededBackupLimitAlert(owner.getUuid(), Resource.ResourceType.backup_storage);
             }
             throw e;
         }
@@ -787,7 +770,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         Backup backup = result.second();
         if (backup != null) {
             BackupVO vmBackup = backupDao.findById(result.second().getId());
-            vmBackup.setBackupIntervalType((short) type.ordinal());
+            vmBackup.setBackupScheduleId(backupScheduleId);
             if (cmd.getName() != null) {
                 vmBackup.setName(cmd.getName());
             }
@@ -796,10 +779,99 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup);
             resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, backup.getSize());
         }
-        if (type != Backup.Type.MANUAL) {
-            postCreateScheduledBackup(type, vm.getId());
+        if (isScheduledBackup) {
+            deleteOldestBackupFromScheduleIfRequired(vmId, backupScheduleId);
         }
         return true;
+    }
+
+    /**
+     * Sends an alert when the backup limit has been exceeded for a given account.
+     *
+     * @param ownerUuid The UUID of the account owner that exceeded the limit
+     * @param resourceType The type of resource limit that was exceeded (either {@link Resource.ResourceType#backup} or {@link Resource.ResourceType#backup_storage})
+     *
+     */
+    protected void sendExceededBackupLimitAlert(String ownerUuid, Resource.ResourceType resourceType) {
+        String message = String.format("Failed to create backup: backup %s limit exceeded for account with ID: %s.",
+                resourceType == Resource.ResourceType.backup ? "resource" : "storage space resource" , ownerUuid);
+        logger.warn(message);
+        alertManager.sendAlert(AlertManager.AlertType.ALERT_TYPE_UPDATE_RESOURCE_COUNT, 0L, 0L,
+                message, message + " Please, use the 'updateResourceLimit' API to increase the backup limit.");
+    }
+
+    /**
+     * Gets the backup schedule ID from the async job's payload.
+     *
+     * @param job The asynchronous job associated with the creation of the backup
+     * @return The backup schedule ID. Returns null if the backup has been manually created
+     */
+    protected Long getBackupScheduleId(Object job) {
+        if (!(job instanceof AsyncJobVO)) {
+            return null;
+        }
+
+        AsyncJobVO asyncJob = (AsyncJobVO) job;
+        logger.debug("Trying to retrieve [{}] parameter from the job [ID: {}] parameters.", ApiConstants.SCHEDULE_ID, asyncJob.getId());
+        String jobParamsRaw = asyncJob.getCmdInfo();
+
+        if (!jobParamsRaw.contains(ApiConstants.SCHEDULE_ID)) {
+            logger.info("Job [ID: {}] parameters do not include the [{}] parameter. Thus, the current backup is a manual backup.", asyncJob.getId(), ApiConstants.SCHEDULE_ID);
+            return null;
+        }
+
+        TypeToken<Map<String, String>> jobParamsType = new TypeToken<>(){};
+        Map<String, String> jobParams = GsonHelper.getGson().fromJson(jobParamsRaw, jobParamsType.getType());
+        long backupScheduleId = NumberUtils.toLong(jobParams.get(ApiConstants.SCHEDULE_ID));
+        logger.info("Job [ID: {}] parameters include the [{}] parameter, whose value is equal to [{}]. Thus, the current backup is a scheduled backup.", asyncJob.getId(), ApiConstants.SCHEDULE_ID, backupScheduleId);
+        return backupScheduleId == 0L ? null : backupScheduleId;
+    }
+
+    /**
+     * Deletes the oldest backups from the schedule. If the backup schedule is not active, the schedule's retention is equal to 0,
+     * or the number of backups to be deleted is lower than one, then no backups are deleted.
+     *
+     * @param vmId The ID of the VM associated with the backups
+     * @param backupScheduleId Backup schedule ID of the backups
+     */
+    protected void deleteOldestBackupFromScheduleIfRequired(Long vmId, long backupScheduleId) {
+        BackupScheduleVO backupScheduleVO = backupScheduleDao.findById(backupScheduleId);
+        if (backupScheduleVO == null || backupScheduleVO.getMaxBackups() == 0) {
+            logger.info("The schedule does not have a retention specified and, hence, not deleting any backups from it.", vmId);
+            return;
+        }
+
+        logger.debug("Checking if it is required to delete the oldest backups from the schedule with ID [{}], to meet its retention requirement of [{}] backups.", backupScheduleId, backupScheduleVO.getMaxBackups());
+        List<BackupVO> backups = backupDao.listBySchedule(backupScheduleId);
+        int amountOfBackupsToDelete = backups.size() - backupScheduleVO.getMaxBackups();
+        if (amountOfBackupsToDelete > 0) {
+            deleteExcessBackups(backups, amountOfBackupsToDelete, backupScheduleId);
+        } else {
+            logger.debug("Not required to delete any backups from the schedule [ID: {}]: [backups size: {}] and [retention: {}].", backupScheduleId, backups.size(), backupScheduleVO.getMaxBackups());
+        }
+    }
+
+    /**
+     * Deletes a certain number of backups associated with a schedule.
+     *
+     * @param backups List of backups associated with a schedule
+     * @param amountOfBackupsToDelete Number of backups to be deleted from the list of backups
+     * @param backupScheduleId ID of the backup schedule associated with the backups
+     */
+    protected void deleteExcessBackups(List<BackupVO> backups, int amountOfBackupsToDelete, long backupScheduleId) {
+        logger.debug("Deleting the [{}] oldest backups from the schedule [ID: {}].", amountOfBackupsToDelete, backupScheduleId);
+
+        for (int i = 0; i < amountOfBackupsToDelete; i++) {
+            BackupVO backup = backups.get(i);
+            if (deleteBackup(backup.getId(), false)) {
+                String eventDescription = String.format("Successfully deleted backup for VM [ID: %s], suiting the retention specified in the backup schedule [ID: %s]", backup.getVmId(), backupScheduleId);
+                logger.info(eventDescription);
+                ActionEventUtils.onCompletedActionEvent(
+                        User.UID_SYSTEM, backup.getAccountId(), EventVO.LEVEL_INFO,
+                        EventTypes.EVENT_VM_BACKUP_DELETE, eventDescription, backup.getId(), ApiCommandResourceType.Backup.toString(), 0
+                );
+            }
+        }
     }
 
     @Override
@@ -988,29 +1060,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             updateVmState(vm, VirtualMachine.Event.RestoringFailed, VirtualMachine.State.Stopped);
             throw new CloudRuntimeException(String.format("Error restoring VM from backup [%s].", backupDetailsInMessage));
         }
-    }
-
-    private Backup.Type getBackupType(Long scheduleId) {
-        if (scheduleId.equals(Snapshot.MANUAL_POLICY_ID)) {
-            return Backup.Type.MANUAL;
-        } else {
-            BackupScheduleVO scheduleVO = backupScheduleDao.findById(scheduleId);
-            DateUtil.IntervalType intvType = scheduleVO.getScheduleType();
-            return getBackupType(intvType);
-        }
-    }
-
-    private Backup.Type getBackupType(DateUtil.IntervalType intvType) {
-        if (intvType.equals(DateUtil.IntervalType.HOURLY)) {
-            return Backup.Type.HOURLY;
-        } else if (intvType.equals(DateUtil.IntervalType.DAILY)) {
-            return Backup.Type.DAILY;
-        } else if (intvType.equals(DateUtil.IntervalType.WEEKLY)) {
-            return Backup.Type.WEEKLY;
-        } else if (intvType.equals(DateUtil.IntervalType.MONTHLY)) {
-            return Backup.Type.MONTHLY;
-        }
-        return null;
     }
 
     /**
@@ -1500,10 +1549,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
         backgroundPollManager.submitTask(new BackupSyncTask(this));
-        Backup.Type.HOURLY.setMax(BackupHourlyMax.value());
-        Backup.Type.DAILY.setMax(BackupDailyMax.value());
-        Backup.Type.WEEKLY.setMax(BackupWeeklyMax.value());
-        Backup.Type.MONTHLY.setMax(BackupMonthlyMax.value());
         return true;
     }
 
@@ -1587,10 +1632,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 BackupProviderPlugin,
                 BackupSyncPollingInterval,
                 BackupEnableAttachDetachVolumes,
-                BackupHourlyMax,
-                BackupDailyMax,
-                BackupWeeklyMax,
-                BackupMonthlyMax,
                 DefaultMaxAccountBackups,
                 DefaultMaxAccountBackupStorage,
                 DefaultMaxProjectBackups,
@@ -1731,7 +1772,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                         true, 0);
                 final Map<String, String> params = new HashMap<String, String>();
                 params.put(ApiConstants.VIRTUAL_MACHINE_ID, "" + vmId);
-                params.put(ApiConstants.SCHEDULE_ID, "" + backupScheduleId);
+                params.put(ApiConstants.SCHEDULE_ID, String.valueOf(backupScheduleId));
                 if (quiesceVm != null) {
                     params.put(ApiConstants.QUIESCE_VM, "" + quiesceVm.toString());
                 }
@@ -2091,8 +2132,12 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         response.setSize(backup.getSize());
         response.setProtectedSize(backup.getProtectedSize());
         response.setStatus(backup.getStatus());
-        if (backup.getBackupIntervalType() != null) {
-            response.setIntervalType(Backup.Type.values()[backup.getBackupIntervalType()].toString());
+        response.setIntervalType("MANUAL");
+        if (backup.getBackupScheduleId() != null) {
+            BackupScheduleVO scheduleVO = backupScheduleDao.findById(backup.getBackupScheduleId());
+            if (scheduleVO != null) {
+                response.setIntervalType(scheduleVO.getScheduleType().toString());
+            }
         }
         // ACS 4.20: For backups taken prior this release the backup.backed_volumes column would be empty hence use vm_instance.backup_volumes
         String backedUpVolumes;

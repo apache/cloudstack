@@ -19,6 +19,10 @@
 -- Schema upgrade from 4.20.1.0 to 4.21.0.0
 --;
 
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backup_schedule', 'max_backups', 'INT(8) UNSIGNED NOT NULL DEFAULT 0 COMMENT ''Maximum number of backups to be retained''');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'backup_schedule_id', 'BIGINT(20) UNSIGNED');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backup_schedule', 'quiescevm', 'tinyint(1) default NULL COMMENT "Quiesce VM before taking backup"');
+
 -- Update default value for the config 'vm.network.nic.max.secondary.ipaddresses' (and value to default value if value is null)
 UPDATE `cloud`.`configuration` SET default_value = '10' WHERE name = 'vm.network.nic.max.secondary.ipaddresses';
 UPDATE `cloud`.`configuration` SET value = '10' WHERE name = 'vm.network.nic.max.secondary.ipaddresses' AND value IS NULL;
@@ -660,10 +664,6 @@ ALTER TABLE `cloud`.`networks` MODIFY COLUMN `cidr` varchar(255) DEFAULT NULL CO
 ALTER TABLE `cloud`.`networks` MODIFY COLUMN `gateway` varchar(255) DEFAULT NULL COMMENT 'gateway(s) for this network configuration';
 ALTER TABLE `cloud`.`networks` MODIFY COLUMN `ip6_cidr` varchar(1024) DEFAULT NULL COMMENT 'IPv6 cidr(s) for this network';
 ALTER TABLE `cloud`.`networks` MODIFY COLUMN `ip6_gateway` varchar(1024) DEFAULT NULL COMMENT 'IPv6 gateway(s) for this network';
-
--- Add column max_backup to backup_schedule table
-CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backup_schedule', 'max_backups', 'int(8) default NULL COMMENT "maximum number of backups to maintain"');
-CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backup_schedule', 'quiescevm', 'tinyint(1) default NULL COMMENT "Quiesce VM before taking backup"');
 
 -- Add columns name, description and backup_interval_type to backup table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'name', 'VARCHAR(255) NULL COMMENT "name of the backup"');

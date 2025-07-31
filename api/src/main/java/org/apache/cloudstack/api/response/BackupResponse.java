@@ -116,7 +116,7 @@ public class BackupResponse extends BaseResponse {
     private Map<String, String> vmDetails;
 
     @SerializedName(ApiConstants.INTERVAL_TYPE)
-    @Param(description = "the interval type of the backup schedule", since = "4.21.0")
+    @Param(description = "Interval type of the backup", since = "4.21.0")
     private String intervalType;
 
     @SerializedName(ApiConstants.BACKUP_VM_OFFERING_REMOVED)

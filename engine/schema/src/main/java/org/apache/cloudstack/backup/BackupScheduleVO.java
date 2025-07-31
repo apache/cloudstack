@@ -63,7 +63,7 @@ public class BackupScheduleVO implements BackupSchedule {
     Long asyncJobId;
 
     @Column(name = "max_backups")
-    Integer maxBackups = 0;
+    private int maxBackups = 0;
 
     @Column(name = "quiescevm")
     Boolean quiesceVM = false;
@@ -71,7 +71,7 @@ public class BackupScheduleVO implements BackupSchedule {
     public BackupScheduleVO() {
     }
 
-    public BackupScheduleVO(Long vmId, DateUtil.IntervalType scheduleType, String schedule, String timezone, Date scheduledTimestamp, Integer maxBackups, Boolean quiesceVM) {
+    public BackupScheduleVO(Long vmId, DateUtil.IntervalType scheduleType, String schedule, String timezone, Date scheduledTimestamp, int maxBackups, Boolean quiesceVM) {
         this.vmId = vmId;
         this.scheduleType = (short) scheduleType.ordinal();
         this.schedule = schedule;
@@ -146,11 +146,11 @@ public class BackupScheduleVO implements BackupSchedule {
         this.asyncJobId = asyncJobId;
     }
 
-    public Integer getMaxBackups() {
+    public int getMaxBackups() {
         return maxBackups;
     }
 
-    public void setMaxBackups(Integer maxBackups) {
+    public void setMaxBackups(int maxBackups) {
         this.maxBackups = maxBackups;
     }
 

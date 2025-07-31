@@ -34,28 +34,6 @@ public interface Backup extends ControlledEntity, InternalIdentity, Identity {
         Allocated, Queued, BackingUp, BackedUp, Error, Failed, Restoring, Removed, Expunged
     }
 
-    public enum Type {
-        MANUAL, HOURLY, DAILY, WEEKLY, MONTHLY;
-        private int max = 8;
-
-        public void setMax(int max) {
-            this.max = max;
-        }
-
-        public int getMax() {
-            return max;
-        }
-
-        @Override
-        public String toString() {
-            return this.name();
-        }
-
-        public boolean equals(String snapshotType) {
-            return this.toString().equalsIgnoreCase(snapshotType);
-        }
-    }
-
     class Metric {
         private Long backupSize = 0L;
         private Long dataSize = 0L;
@@ -216,9 +194,9 @@ public interface Backup extends ControlledEntity, InternalIdentity, Identity {
     void setName(String name);
     String getDescription();
     void setDescription(String description);
-    Short getBackupIntervalType();
     List<VolumeInfo> getBackedUpVolumes();
     long getZoneId();
     Map<String, String> getDetails();
     String getDetail(String name);
+    Long getBackupScheduleId();
 }

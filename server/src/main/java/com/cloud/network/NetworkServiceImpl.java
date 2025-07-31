@@ -5703,7 +5703,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
 
             addProviderToPhysicalNetwork(physicalNetworkId, Provider.Nsx.getName(), null, null);
-            enableProvider(Provider.Nsx.getName());
         }
         return null;
     }
