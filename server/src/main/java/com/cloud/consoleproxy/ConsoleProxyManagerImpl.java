@@ -146,7 +146,7 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.ConsoleProxyDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -208,7 +208,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     @Inject
     private PrimaryDataStoreDao primaryDataStoreDao;
     @Inject
-    private UserVmDetailsDao userVmDetailsDao;
+    private VMInstanceDetailsDao vmInstanceDetailsDao;
     @Inject
     private ResourceManager resourceManager;
     @Inject
@@ -725,7 +725,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             proxy = createOrUpdateConsoleProxy(proxy, dataCenterId, id, name, serviceOffering, template, systemAcct);
             try {
                 virtualMachineManager.allocate(name, template, serviceOffering, networks, plan,
-                        template.getHypervisorType());
+                        template.getHypervisorType(), null, null);
                 proxy = consoleProxyDao.findById(proxy.getId());
                 virtualMachineManager.checkDeploymentPlan(proxy, template, serviceOffering, systemAcct, plan);
                 break;
@@ -1244,7 +1244,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         final Certificate certificate = caManager.issueCertificate(null, Arrays.asList(profile.getHostName(), profile.getInstanceName()),
                 new ArrayList<>(ipAddressDetails.values()), CAManager.CertValidityPeriod.value(), null);
         ConsoleProxyVO vm = consoleProxyDao.findById(profile.getId());
-        Map<String, String> details = userVmDetailsDao.listDetailsKeyPairs(vm.getId());
+        Map<String, String> details = vmInstanceDetailsDao.listDetailsKeyPairs(vm.getId());
         vm.setDetails(details);
 
         StringBuilder buf = profile.getBootArgsBuilder();
@@ -1274,6 +1274,10 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
         if (Boolean.valueOf(configurationDao.getValue("system.vm.random.password"))) {
             buf.append(" vmpassword=").append(configurationDao.getValue("system.vm.password"));
+        }
+
+        if (StringUtils.isNotEmpty(NTPServerConfig.value())) {
+            buf.append(" ntpserverlist=").append(NTPServerConfig.value().replaceAll("\\s+",""));
         }
 
         for (NicProfile nic : profile.getNics()) {
@@ -1506,7 +1510,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     public Long[] getScannablePools() {
         List<Long> zoneIds = dataCenterDao.listEnabledNonEdgeZoneIds();
         if (logger.isDebugEnabled()) {
-            logger.debug(String.format("Enabled non-edge zones available for scan: %s", org.apache.commons.lang3.StringUtils.join(zoneIds, ",")));
+            logger.debug(String.format("Enabled non-edge zones available for scan: %s", StringUtils.join(zoneIds, ",")));
         }
         return zoneIds.toArray(Long[]::new);
     }

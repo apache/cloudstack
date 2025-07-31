@@ -150,6 +150,9 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
     }
 
     public static String getVolumeNameFromPath(final String volumeUuid, boolean tildeNeeded) {
+        if (volumeUuid == null) {
+            return null;
+        }
         if (volumeUuid.startsWith("/dev/storpool/")) {
             return volumeUuid.split("/")[3];
         } else if (volumeUuid.startsWith("/dev/storpool-byid/")) {

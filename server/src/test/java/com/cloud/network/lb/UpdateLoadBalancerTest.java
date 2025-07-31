@@ -33,6 +33,7 @@ import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.LoadBalancingServiceProvider;
+import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.MockAccountManagerImpl;
@@ -52,6 +53,7 @@ import java.util.UUID;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -63,6 +65,7 @@ public class UpdateLoadBalancerTest {
     private LoadBalancerDao lbDao = Mockito.mock(LoadBalancerDao.class);
     private NetworkDao netDao = Mockito.mock(NetworkDao.class);
     private NetworkModel netModel = Mockito.mock(NetworkModel.class);
+    private NetworkOfferingServiceMapDao ntwkOffServiceMapDao = Mockito.mock(NetworkOfferingServiceMapDao.class);
     private LoadBalancingServiceProvider lbServiceProvider= Mockito.mock(LoadBalancingServiceProvider.class);
 
     private static long domainId = 5L;
@@ -73,6 +76,7 @@ public class UpdateLoadBalancerTest {
         _lbMgr._accountMgr = new MockAccountManagerImpl();
         _lbMgr._autoScaleVmGroupDao = Mockito.mock(AutoScaleVmGroupDao.class);
         _lbMgr._networkDao = netDao;
+        _lbMgr._networkOfferingServiceDao = ntwkOffServiceMapDao;
         _lbMgr._networkModel = netModel;
         _lbMgr._lb2healthcheckDao = Mockito.mock(LBHealthCheckPolicyDao.class);
         _lbMgr._lb2stickinesspoliciesDao = Mockito.mock(LBStickinessPolicyDao.class);
@@ -99,7 +103,8 @@ public class UpdateLoadBalancerTest {
         when(netDao.findById(anyLong())).thenReturn(Mockito.mock(NetworkVO.class));
         when(lbServiceProvider.validateLBRule(any(Network.class), any(LoadBalancingRule.class))).thenReturn(true);
         when(lbDao.update(isNull(), eq(lb))).thenReturn(true);
-
+        when(netDao.findById(nullable(Long.class))).thenReturn(Mockito.mock(NetworkVO.class));
+        when(ntwkOffServiceMapDao.canProviderSupportServiceInNetworkOffering(nullable(Long.class), any(Network.Service.class), any(Network.Provider.class))).thenReturn(false);
         _lbMgr.updateLoadBalancerRule(updateLbRuleCmd);
 
         InOrder inOrder = Mockito.inOrder(lbServiceProvider, lbDao);

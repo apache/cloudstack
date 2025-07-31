@@ -22,7 +22,6 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtDomainXMLParser;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
-import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtUtilitiesHelper;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -67,8 +66,8 @@ public class KVMStorageProcessorTest {
 
     @Mock
     KVMStoragePoolManager storagePoolManager;
-    @Mock
-    LibvirtComputingResource resource;
+
+    LibvirtComputingResource resource = Mockito.mock(LibvirtComputingResource.class);
 
     @InjectMocks
     private KVMStorageProcessor storageProcessor;
@@ -162,16 +161,6 @@ public class KVMStorageProcessorTest {
     }
 
     @Test
-    public void validateGetSnapshotTemporaryPath(){
-        String path = "/path/to/disk";
-        String snapshotName = "snapshot";
-        String expectedResult = "/path/to/snapshot";
-
-        String result = storageProcessor.getSnapshotTemporaryPath(path, snapshotName);
-        Assert.assertEquals(expectedResult, result);
-    }
-
-    @Test
     public void validateGetSnapshotPathInPrimaryStorage(){
         String path = "/path/to/disk";
         String snapshotName = "snapshot";
@@ -245,6 +234,7 @@ public class KVMStorageProcessorTest {
     public void validateTakeVolumeSnapshotFailToCreateSnapshotThrowLibvirtException() throws LibvirtException{
         Mockito.doReturn(diskToSnapshotAndDisksToAvoidMock).when(storageProcessorSpy).getDiskToSnapshotAndDisksToAvoid(Mockito.any(), Mockito.anyString(), Mockito.any());
         Mockito.doReturn(new HashSet<>()).when(diskToSnapshotAndDisksToAvoidMock).second();
+        Mockito.doReturn("").when(resource).getSnapshotTemporaryPath(Mockito.anyString(), Mockito.anyString());
         Mockito.doThrow(LibvirtException.class).when(domainMock).snapshotCreateXML(Mockito.anyString(), Mockito.anyInt());
 
         storageProcessorSpy.takeVolumeSnapshot(new ArrayList<>(), "", "", domainMock);
@@ -257,6 +247,7 @@ public class KVMStorageProcessorTest {
         Mockito.doReturn(diskToSnapshotAndDisksToAvoidMock).when(storageProcessorSpy).getDiskToSnapshotAndDisksToAvoid(Mockito.any(), Mockito.anyString(), Mockito.any());
         Mockito.doReturn(expectedResult).when(diskToSnapshotAndDisksToAvoidMock).first();
         Mockito.doReturn(new HashSet<>()).when(diskToSnapshotAndDisksToAvoidMock).second();
+        Mockito.doReturn("").when(resource).getSnapshotTemporaryPath(Mockito.anyString(), Mockito.anyString());
         Mockito.doReturn(null).when(domainMock).snapshotCreateXML(Mockito.anyString(), Mockito.anyInt());
 
         String result = storageProcessorSpy.takeVolumeSnapshot(new ArrayList<>(), "", "", domainMock);
@@ -310,46 +301,6 @@ public class KVMStorageProcessorTest {
         })) {
             String result = storageProcessorSpy.convertBaseFileToSnapshotFileInStorageDir(kvmStoragePoolMock, baseFile, snapshotPath, TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR, volumeObjectToMock, 1);
             Assert.assertNull(result);
-        }
-    }
-
-    @Test (expected = CloudRuntimeException.class)
-    public void validateMergeSnapshotIntoBaseFileErrorOnMergeThrowCloudRuntimeException() throws Exception {
-        try (MockedStatic<Script> ignored = Mockito.mockStatic(
-                Script.class); MockedStatic<LibvirtUtilitiesHelper> ignored2 = Mockito.mockStatic(
-                LibvirtUtilitiesHelper.class)) {
-            Mockito.when(Script.runSimpleBashScript(Mockito.anyString())).thenReturn("");
-            Mockito.when(LibvirtUtilitiesHelper.isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit(Mockito.any()))
-                   .thenReturn(true);
-
-            storageProcessorSpy.mergeSnapshotIntoBaseFile(domainMock, "", "", "", volumeObjectToMock, connectMock);
-        }
-    }
-
-    @Test
-    public void validateMergeSnapshotIntoBaseFileMergeSuccessDoNothing() throws Exception {
-        try (MockedStatic<Script> scriptMockedStatic = Mockito.mockStatic(
-                Script.class); MockedStatic<LibvirtUtilitiesHelper> libvirtUtilitiesHelperMockedStatic = Mockito.mockStatic(
-                LibvirtUtilitiesHelper.class)) {
-            Mockito.when(Script.runSimpleBashScript(Mockito.anyString())).thenReturn(null);
-            Mockito.when(LibvirtUtilitiesHelper.isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit(Mockito.any()))
-                        .thenReturn(true);
-            Mockito.doNothing().when(storageProcessorSpy).manuallyDeleteUnusedSnapshotFile(Mockito.anyBoolean(),
-                    Mockito.any());
-
-            storageProcessorSpy.mergeSnapshotIntoBaseFile(domainMock, "", "", "", volumeObjectToMock, connectMock);
-            libvirtUtilitiesHelperMockedStatic.verify(() -> LibvirtUtilitiesHelper.isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit(Mockito.any()), Mockito.times(1));
-            scriptMockedStatic.verify(() -> Script.runSimpleBashScript(Mockito.anyString()), Mockito.times(1));
-
-        }
-    }
-
-    @Test (expected = CloudRuntimeException.class)
-    public void validateManuallyDeleteUnusedSnapshotFileLibvirtDoesNotSupportsFlagDeleteExceptionOnFileDeletionThrowsException() throws IOException {
-        try (MockedStatic<Files> ignored = Mockito.mockStatic(Files.class)) {
-            Mockito.when(Files.deleteIfExists(Mockito.any(Path.class))).thenThrow(IOException.class);
-
-            storageProcessorSpy.manuallyDeleteUnusedSnapshotFile(false, "");
         }
     }
 

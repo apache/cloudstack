@@ -210,14 +210,14 @@
       </chart-card>
     </a-col>
     <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }">
-      <chart-card :loading="capacityLoading" class="dashboard-card">
+      <chart-card :loading="capacityLoading" class="dashboard-storage">
         <template #title>
           <div class="center">
             <h3><hdd-outlined /> {{ $t('label.storage') }}</h3>
           </div>
         </template>
         <div>
-          <div v-for="ctype in ['STORAGE', 'STORAGE_ALLOCATED', 'LOCAL_STORAGE', 'SECONDARY_STORAGE']" :key="ctype" >
+          <div v-for="ctype in ['STORAGE', 'STORAGE_ALLOCATED', 'LOCAL_STORAGE', 'SECONDARY_STORAGE', 'BACKUP_STORAGE', 'OBJECT_STORAGE']" :key="ctype" >
             <div v-if="statsMap[ctype]">
               <div>
                 <strong>{{ $t(ts[ctype]) }}</strong>
@@ -377,6 +377,8 @@ export default {
         MEMORY: 'label.memory',
         PRIVATE_IP: 'label.management.ips',
         SECONDARY_STORAGE: 'label.secondary.storage',
+        BACKUP_STORAGE: 'label.backup.storage',
+        OBJECT_STORAGE: 'label.object.storage',
         STORAGE: 'label.primary.storage.used',
         STORAGE_ALLOCATED: 'label.primary.storage.allocated',
         VIRTUAL_NETWORK_PUBLIC_IP: 'label.public.ips',
@@ -438,6 +440,8 @@ export default {
         case 'STORAGE':
         case 'STORAGE_ALLOCATED':
         case 'SECONDARY_STORAGE':
+        case 'BACKUP_STORAGE':
+        case 'OBJECT_STORAGE':
         case 'LOCAL_STORAGE':
           value = parseFloat(value / (1024 * 1024 * 1024.0), 10).toFixed(2)
           if (value >= 1024.0) {
@@ -665,6 +669,13 @@ export default {
 .dashboard-card {
   width: 100%;
   min-height: 370px;
+}
+
+.dashboard-storage {
+  width: 100%;
+  overflow-x:hidden;
+  overflow-y: scroll;
+  max-height: 370px;
 }
 
 .dashboard-event {

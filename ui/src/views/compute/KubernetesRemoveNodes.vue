@@ -54,7 +54,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
@@ -137,7 +137,7 @@ export default {
     },
     removeNodesFromKubernetesCluster (params) {
       return new Promise((resolve, reject) => {
-        api('removeNodesFromKubernetesCluster', params).then(json => {
+        postAPI('removeNodesFromKubernetesCluster', params).then(json => {
           const jobId = json.removenodesfromkubernetesclusterresponse.jobid
           return resolve(jobId)
         }).catch(error => {

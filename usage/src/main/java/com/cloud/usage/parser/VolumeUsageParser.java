@@ -22,46 +22,32 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import com.cloud.usage.UsageManagerImpl;
 import com.cloud.utils.DateUtil;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.usage.UsageTypes;
 
 import com.cloud.usage.UsageVO;
 import com.cloud.usage.UsageVolumeVO;
-import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageVolumeDao;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
 
 @Component
-public class VolumeUsageParser {
-    protected static Logger LOGGER = LogManager.getLogger(VolumeUsageParser.class);
-
-    private static UsageDao s_usageDao;
-    private static UsageVolumeDao s_usageVolumeDao;
-
+public class VolumeUsageParser extends UsageParser {
     @Inject
-    private UsageDao _usageDao;
-    @Inject
-    private UsageVolumeDao _usageVolumeDao;
+    private UsageVolumeDao usageVolumeDao;
 
-    @PostConstruct
-    void init() {
-        s_usageDao = _usageDao;
-        s_usageVolumeDao = _usageVolumeDao;
+    @Override
+    public String getParserName() {
+        return "Volume";
     }
 
-    public static boolean parse(AccountVO account, Date startDate, Date endDate) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Parsing all Volume usage events for account: " + account.getId());
-        }
+    @Override
+    protected boolean parse(AccountVO account, Date startDate, Date endDate) {
         if ((endDate == null) || endDate.after(new Date())) {
             endDate = new Date();
         }
@@ -71,10 +57,10 @@ public class VolumeUsageParser {
         //     - look for an entry for accountId with end date in the given range
         //     - look for an entry for accountId with end date null (currently running vm or owned IP)
         //     - look for an entry for accountId with start date before given range *and* end date after given range
-        List<UsageVolumeVO> usageUsageVols = s_usageVolumeDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate, false, 0);
+        List<UsageVolumeVO> usageUsageVols = usageVolumeDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate, false, 0);
 
         if (usageUsageVols.isEmpty()) {
-            LOGGER.debug("No volume usage events for this period");
+            logger.debug("No volume usage events for this period");
             return true;
         }
 
@@ -131,7 +117,7 @@ public class VolumeUsageParser {
         return true;
     }
 
-    private static void updateVolUsageData(Map<String, Pair<Long, Long>> usageDataMap, String key, long volId, long duration) {
+    private void updateVolUsageData(Map<String, Pair<Long, Long>> usageDataMap, String key, long volId, long duration) {
         Pair<Long, Long> volUsageInfo = usageDataMap.get(key);
         if (volUsageInfo == null) {
             volUsageInfo = new Pair<Long, Long>(new Long(volId), new Long(duration));
@@ -143,19 +129,17 @@ public class VolumeUsageParser {
         usageDataMap.put(key, volUsageInfo);
     }
 
-    private static void createUsageRecord(int type, long runningTime, Date startDate, Date endDate, AccountVO account, long volId, long zoneId, Long doId,
+    private void createUsageRecord(int type, long runningTime, Date startDate, Date endDate, AccountVO account, long volId, long zoneId, Long doId,
         Long templateId, long size) {
         // Our smallest increment is hourly for now
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Total running time " + runningTime + "ms");
-        }
+        logger.debug("Total running time {} ms", runningTime);
 
         float usage = runningTime / 1000f / 60f / 60f;
 
         DecimalFormat dFormat = new DecimalFormat("#.######");
         String usageDisplay = dFormat.format(usage);
 
-        LOGGER.debug("Creating Volume usage record for vol [{}], usage [{}], startDate [{}], and endDate [{}], for account [{}].",
+        logger.debug("Creating Volume usage record for vol [{}], usage [{}], startDate [{}], and endDate [{}], for account [{}].",
                 volId, usageDisplay, DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), startDate),
                 DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), endDate), account.getId());
 
@@ -170,7 +154,7 @@ public class VolumeUsageParser {
 
         UsageVO usageRecord = new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type, new Double(usage), null, null, doId, templateId, volId,
                 size, startDate, endDate);
-        s_usageDao.persist(usageRecord);
+        usageDao.persist(usageRecord);
     }
 
     private static class VolInfo {
