@@ -1881,6 +1881,7 @@ export default {
           apiName = 'listTemplates'
           params.listall = true
           params.templatefilter = this.isNormalAndDomainUser ? 'executable' : 'all'
+          params.isready = true
           params.id = this.queryTemplateId
           this.dataPreFill.templateid = this.queryTemplateId
         } else if (this.queryNetworkId) {
@@ -2989,6 +2990,7 @@ export default {
         args.arch = this.selectedArchitecture
       }
       args.templatefilter = templateFilter
+      args.isready = true
       args.details = 'all'
       args.showicon = 'true'
       args.id = this.queryTemplateId
