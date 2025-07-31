@@ -20,6 +20,7 @@ package org.apache.cloudstack.api.command.admin.user;
 
 import com.cloud.user.Account;
 import com.cloud.user.User;
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -54,11 +55,13 @@ public class GetUserKeysCmd extends BaseCmd{
         else return Account.ACCOUNT_ID_SYSTEM;
     }
     public void execute(){
-        Map<String, String> keys = _accountService.getKeys(this);
+        Pair<Boolean, Map<String, String>> keys = _accountService.getKeys(this);
+
         RegisterResponse response = new RegisterResponse();
         if(keys != null){
-            response.setApiKey(keys.get("apikey"));
-            response.setSecretKey(keys.get("secretkey"));
+            response.setApiKeyAccess(keys.first());
+            response.setApiKey(keys.second().get("apikey"));
+            response.setSecretKey(keys.second().get("secretkey"));
         }
 
         response.setObjectName("userkeys");

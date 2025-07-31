@@ -5,9 +5,9 @@
 -- to you under the Apache License, Version 2.0 (the
 -- "License"); you may not use this file except in compliance
 -- with the License.  You may obtain a copy of the License at
--- 
+--
 --   http://www.apache.org/licenses/LICENSE-2.0
--- 
+--
 -- Unless required by applicable law or agreed to in writing,
 -- software distributed under the License is distributed on an
 -- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,7 +18,7 @@
 --step 1
 -- drop all constraints for user_ip_address
 ALTER TABLE firewall_rules DROP foreign key fk_firewall_rules__ip_address ;
-ALTER TABLE remote_access_vpn DROP foreign key fk_remote_access_vpn__server_addr ; 
+ALTER TABLE remote_access_vpn DROP foreign key fk_remote_access_vpn__server_addr ;
 ALTER TABLE user_ip_address DROP primary key;
 
 
@@ -56,7 +56,7 @@ ALTER TABLE `cloud`.`remote_access_vpn` DROP COLUMN vpn_server_addr;
 --step 2C
 DROP VIEW if exists user_ip_address_view;
 ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN `public_ip_address1` char(40) NOT NULL COMMENT 'the public ip address';
-UPDATE user_ip_address SET public_ip_address1 = INET_NTOA(public_ip_address); 
+UPDATE user_ip_address SET public_ip_address1 = INET_NTOA(public_ip_address);
 ALTER TABLE `cloud`.`user_ip_address` DROP COLUMN public_ip_address;
 ALTER TABLE `cloud`.`user_ip_address` CHANGE public_ip_address1 public_ip_address char(40) NOT NULL COMMENT 'the public ip address';
 

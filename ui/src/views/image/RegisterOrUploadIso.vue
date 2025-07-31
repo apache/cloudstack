@@ -88,6 +88,15 @@
           <a-switch v-model:checked="form.directdownload"/>
         </a-form-item>
 
+        <a-form-item ref="checksum" name="checksum">
+          <template #label>
+            <tooltip-label :title="$t('label.checksum')" :tooltip="apiParams.checksum.description"/>
+          </template>
+          <a-input
+            v-model:value="form.checksum"
+            :placeholder="apiParams.checksum.description" />
+        </a-form-item>
+
         <a-form-item ref="zoneid" name="zoneid">
           <template #label>
             <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
@@ -183,13 +192,33 @@
           </a-select>
         </a-form-item>
 
+        <a-form-item
+          name="arch"
+          ref="arch">
+          <template #label>
+            <tooltip-label :title="$t('label.arch')" :tooltip="apiParams.arch.description"/>
+          </template>
+          <a-select
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            v-model:value="form.arch"
+            :placeholder="apiParams.arch.description">
+            <a-select-option v-for="opt in architectureTypes.opts" :key="opt.id">
+              {{ opt.name || opt.description }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+
         <a-row :gutter="12">
           <a-col :md="24" :lg="12">
             <a-form-item
               name="userdataid"
               ref="userdataid">
               <template #label>
-                <tooltip-label :title="$t('label.userdata')" :tooltip="linkUserDataParams.userdataid.description"/>
+                <tooltip-label :title="$t('label.user.data')" :tooltip="linkUserDataParams.userdataid.description"/>
               </template>
               <a-select
                 showSearch
@@ -209,7 +238,7 @@
           <a-col :md="24" :lg="12">
             <a-form-item ref="userdatapolicy" name="userdatapolicy">
               <template #label>
-                <tooltip-label :title="$t('label.userdatapolicy')" :tooltip="linkUserDataParams.userdatapolicy.description"/>
+                <tooltip-label :title="$t('label.user.data.policy')" :tooltip="linkUserDataParams.userdatapolicy.description"/>
               </template>
               <a-select
                 showSearch
@@ -227,29 +256,45 @@
           </a-col>
         </a-row>
 
-        <a-form-item ref="isextractable" name="isextractable">
-          <template #label>
-            <tooltip-label :title="$t('label.isextractable')" :tooltip="apiParams.isextractable.description"/>
-          </template>
-          <a-switch v-model:checked="form.isextractable" />
-        </a-form-item>
-
-        <a-form-item
-          ref="ispublic"
-          name="ispublic"
-          v-if="$store.getters.userInfo.roletype === 'Admin' || $store.getters.features.userpublictemplateenabled" >
-          <template #label>
-            <tooltip-label :title="$t('label.ispublic')" :tooltip="apiParams.ispublic.description"/>
-          </template>
-          <a-switch v-model:checked="form.ispublic" />
-        </a-form-item>
-
-        <a-form-item ref="isfeatured" name="isfeatured" v-if="$store.getters.userInfo.roletype === 'Admin'">
-          <template #label>
-            <tooltip-label :title="$t('label.isfeatured')" :tooltip="apiParams.isfeatured.description"/>
-          </template>
-          <a-switch v-model:checked="form.isfeatured" />
-        </a-form-item>
+        <a-row :gutter="12">
+          <a-col :md="24" :lg="12">
+            <a-form-item ref="isdynamicallyscalable" name="isdynamicallyscalable">
+              <template #label>
+                <tooltip-label :title="$t('label.isdynamicallyscalable')" :tooltip="apiParams.isdynamicallyscalable.description"/>
+              </template>
+              <a-switch v-model:checked="form.isdynamicallyscalable" />
+            </a-form-item>
+            <a-form-item
+              ref="ispublic"
+              name="ispublic"
+              v-if="$store.getters.userInfo.roletype === 'Admin' || $store.getters.features.userpublictemplateenabled" >
+              <template #label>
+                <tooltip-label :title="$t('label.ispublic')" :tooltip="apiParams.ispublic.description"/>
+              </template>
+              <a-switch v-model:checked="form.ispublic" />
+            </a-form-item>
+            <a-form-item ref="passwordenabled" name="passwordenabled" v-if="currentForm === 'Create'">
+              <template #label>
+                <tooltip-label :title="$t('label.passwordenabled')" :tooltip="apiParams.passwordenabled.description"/>
+              </template>
+              <a-switch v-model:checked="form.passwordenabled" />
+            </a-form-item>
+          </a-col>
+          <a-col :md="24" :lg="12">
+            <a-form-item ref="isextractable" name="isextractable">
+              <template #label>
+                <tooltip-label :title="$t('label.isextractable')" :tooltip="apiParams.isextractable.description"/>
+              </template>
+              <a-switch v-model:checked="form.isextractable" />
+            </a-form-item>
+            <a-form-item ref="isfeatured" name="isfeatured" v-if="$store.getters.userInfo.roletype === 'Admin'">
+              <template #label>
+                <tooltip-label :title="$t('label.isfeatured')" :tooltip="apiParams.isfeatured.description"/>
+              </template>
+              <a-switch v-model:checked="form.isfeatured" />
+            </a-form-item>
+          </a-col>
+        </a-row>
 
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
@@ -262,7 +307,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import store from '@/store'
 import { axios } from '../../utils/request'
 import { mixinForm } from '@/utils/mixin'
@@ -306,7 +351,8 @@ export default {
       accounts: [],
       domainLoading: false,
       domainid: null,
-      account: null
+      account: null,
+      architectureTypes: {}
     }
   },
   beforeCreate () {
@@ -332,7 +378,9 @@ export default {
       this.form = reactive({
         bootable: true,
         isextractable: false,
-        ispublic: false
+        ispublic: false,
+        passwordenabled: false,
+        isdynamicallyscalable: false
       })
       this.rules = reactive({
         url: [{ required: true, message: this.$t('label.upload.iso.from.local') }],
@@ -345,6 +393,7 @@ export default {
     fetchData () {
       this.fetchZoneData()
       this.fetchOsType()
+      this.architectureTypes.opts = this.$fetchCpuArchitectureTypes()
       this.fetchUserData()
       this.fetchUserdataPolicy()
       if ('listDomains' in this.$store.getters.apis) {
@@ -359,7 +408,7 @@ export default {
       if (store.getters.userInfo.roletype === 'Admin') {
         this.allowed = true
       }
-      api('listZones', params).then(json => {
+      getAPI('listZones', params).then(json => {
         const listZones = json.listzonesresponse.zone
         if (listZones) {
           this.zones = this.zones.concat(listZones)
@@ -373,7 +422,7 @@ export default {
     fetchOsType () {
       this.osTypeLoading = true
 
-      api('listOsTypes').then(json => {
+      getAPI('listOsTypes').then(json => {
         const listOsTypes = json.listostypesresponse.ostype
         this.osTypes = this.osTypes.concat(listOsTypes)
       }).finally(() => {
@@ -388,7 +437,7 @@ export default {
       this.userdata.opts = []
       this.userdata.loading = true
 
-      api('listUserData', params).then(json => {
+      getAPI('listUserData', params).then(json => {
         const listUserdata = json.listuserdataresponse.userdata
         this.userdata.opts = listUserdata
       }).finally(() => {
@@ -496,7 +545,7 @@ export default {
 
         if (this.currentForm === 'Create') {
           this.loading = true
-          api('registerIso', params).then(json => {
+          postAPI('registerIso', params).then(json => {
             if (this.userdataid !== null) {
               this.linkUserdataToTemplate(this.userdataid, json.registerisoresponse.iso[0].id, this.userdatapolicy)
             }
@@ -517,7 +566,7 @@ export default {
           }
           params.format = 'ISO'
           this.loading = true
-          api('getUploadParamsForIso', params).then(json => {
+          getAPI('getUploadParamsForIso', params).then(json => {
             this.uploadParams = (json.postuploadisoresponse && json.postuploadisoresponse.getuploadparams) ? json.postuploadisoresponse.getuploadparams : ''
             const response = this.handleUpload()
             if (this.userdataid !== null) {
@@ -551,7 +600,7 @@ export default {
       if (userdatapolicy) {
         params.userdatapolicy = userdatapolicy
       }
-      api('linkUserDataToTemplate', params).then(json => {
+      postAPI('linkUserDataToTemplate', params).then(json => {
         this.closeAction()
       }).catch(error => {
         this.$notifyError(error)
@@ -565,7 +614,7 @@ export default {
       params.showicon = true
       params.details = 'min'
       this.domainLoading = true
-      api('listDomains', params).then(json => {
+      getAPI('listDomains', params).then(json => {
         this.domains = json.listdomainsresponse.domain
       }).finally(() => {
         this.domainLoading = false
@@ -581,7 +630,7 @@ export default {
       }
     },
     fetchAccounts () {
-      api('listAccounts', {
+      getAPI('listAccounts', {
         domainid: this.domainid
       }).then(response => {
         this.accounts = response.listaccountsresponse.account || []

@@ -79,6 +79,11 @@ class TestData():
     diskOfferingEncrypted2 = "diskOfferingEncrypted2"
     cephDiskOffering = "cephDiskOffering"
     nfsDiskOffering = "nfsDiskOffering"
+    diskOfferingTier1Tag = "diskOfferingTier1Tag"
+    diskOfferingTier2Tag = "diskOfferingTier2Tag"
+    diskOfferingTier1Template = "diskOfferingTier1Template"
+    diskOfferingTier2Template = "diskOfferingTier2Template"
+    diskOfferingWithTagsAndTempl = "diskOfferingWithTagsAndTempl"
     domainId = "domainId"
     hypervisor = "hypervisor"
     login = "login"
@@ -278,6 +283,46 @@ class TestData():
                 TestData.tags: "nfs",
                 "storagetype": "shared"
             },
+            TestData.diskOfferingTier1Template: {
+                "name": "tier1-template",
+                "displaytext": "Tier1 using different StorPool template",
+                "custom": True,
+                "hypervisorsnapshotreserve": 200,
+                TestData.tags: sp_template_1,
+                "storagetype": "shared"
+            },
+            TestData.diskOfferingTier2Template: {
+                "name": "tier2-template",
+                "displaytext": "Tier2 using different StorPool template",
+                "custom": True,
+                "hypervisorsnapshotreserve": 200,
+                TestData.tags: sp_template_1,
+                "storagetype": "shared"
+            },
+            TestData.diskOfferingTier1Tag: {
+                "name": "tier1-tag",
+                "displaytext": "Tier1 using QOS tags",
+                "custom": True,
+                "hypervisorsnapshotreserve": 200,
+                TestData.tags: sp_template_1,
+                "storagetype": "shared"
+            },
+            TestData.diskOfferingTier2Tag: {
+                "name": "tier2-tag",
+                "displaytext": "Tier2 using QOS tags",
+                "custom": True,
+                "hypervisorsnapshotreserve": 200,
+                TestData.tags: sp_template_1,
+                "storagetype": "shared"
+            },
+            TestData.diskOfferingWithTagsAndTempl: {
+                "name": "tier2-tag-template",
+                "displaytext": "Tier2 using QOS tags and template",
+                "custom": True,
+                "hypervisorsnapshotreserve": 200,
+                TestData.tags: sp_template_1,
+                "storagetype": "shared"
+            },
             TestData.volume_1: {
                 TestData.diskName: "test-volume-1",
             },
@@ -384,7 +429,7 @@ class StorPoolHelper():
                clusterid = c.id
                )
            for conf in configuration:
-               if conf.name == 'sp.cluster.id'  and (conf.value in clusterid[1]):
+               if conf.name == 'sp.cluster.id' and (conf.value in clusterid[1]):
                    return c
 
     @classmethod
@@ -399,7 +444,7 @@ class StorPoolHelper():
                clusterid = c.id
                )
            for conf in configuration:
-               if conf.name == 'sp.cluster.id'  and (conf.value not in clusterid[1]):
+               if conf.name == 'sp.cluster.id' and (conf.value not in clusterid[1]):
                    return c
 
     @classmethod

@@ -43,11 +43,11 @@ from marvin.codes import (
                           FAILED)
 
 def _configure_ssh_credentials(hypervisor):
-    ssh_command = "ssh -i ~/.ssh/id_rsa.cloud -ostricthostkeychecking=no "
+    ssh_command = "ssh -q -i ~/.ssh/id_rsa.cloud -ostricthostkeychecking=no "
 
     if (str(hypervisor).lower() == 'vmware'
         or str(hypervisor).lower() == 'hyperv'):
-        ssh_command = "ssh -i ~cloud/.ssh/id_rsa -ostricthostkeychecking=no "
+        ssh_command = "ssh -q -i ~cloud/.ssh/id_rsa -ostricthostkeychecking=no "
 
     return ssh_command
 

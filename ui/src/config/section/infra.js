@@ -64,6 +64,27 @@ export default {
       component: () => import('@/views/infra/CpuSockets.vue')
     },
     {
+      name: 'gpudevices',
+      title: 'label.gpu.devices',
+      icon: 'BoxPlotOutlined',
+      hidden: true,
+      permission: ['listGpuDevices'],
+      columns: ['busaddress', 'gpucardname', 'vgpuprofilename', 'hostname', 'virtualmachinename'],
+      details: ['id', 'busaddress', 'gpucardname', 'vgpuprofilename', 'hostname', 'virtualmachinename'],
+      searchFilters: ['gpucardid', 'vgpuprofileid'],
+      actions: [
+        {
+          api: 'deleteGpuDevice',
+          icon: 'delete-outlined',
+          label: 'label.delete.gpu.device',
+          dataView: true,
+          popup: true,
+          groupAction: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x.id } }) }
+        }
+      ]
+    },
+    {
       name: 'metric',
       title: 'label.db.usage.metrics',
       icon: 'bar-chart-outlined',
@@ -79,7 +100,7 @@ export default {
       permission: ['listAlerts'],
       columns: ['name', 'description', 'type', 'sent'],
       details: ['name', 'id', 'type', 'sent', 'description'],
-      searchFilters: ['type'],
+      searchFilters: ['name', 'type'],
       actions: [
         {
           api: 'archiveAlerts',

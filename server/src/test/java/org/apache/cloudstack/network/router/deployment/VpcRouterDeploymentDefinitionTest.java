@@ -24,6 +24,7 @@ import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.network.addr.PublicIp;
+import com.cloud.network.dao.NetrisProviderDao;
 import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
@@ -64,6 +65,8 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
     protected VpcDao mockVpcDao;
     @Mock
     protected NsxProviderDao nsxProviderDao;
+    @Mock
+    protected NetrisProviderDao netrisProviderDao;
     @Mock
     protected PhysicalNetworkDao mockPhNwDao;
     protected PhysicalNetworkServiceProviderDao mockPhProviderDao;
@@ -269,7 +272,7 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
     public void testFindSourceNatIP() throws InsufficientAddressCapacityException, ConcurrentOperationException {
         // Prepare
         final PublicIp publicIp = mock(PublicIp.class);
-        when(vpcMgr.assignSourceNatIpAddressToVpc(mockOwner, mockVpc)).thenReturn(publicIp);
+        when(vpcMgr.assignSourceNatIpAddressToVpc(mockOwner, mockVpc, null)).thenReturn(publicIp);
         deployment.isPublicNetwork = true;
 
         // Execute

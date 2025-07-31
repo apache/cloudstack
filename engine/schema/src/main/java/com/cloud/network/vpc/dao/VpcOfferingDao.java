@@ -33,4 +33,6 @@ public interface VpcOfferingDao extends GenericDao<VpcOfferingVO, Long> {
     NetUtils.InternetProtocol getVpcOfferingInternetProtocol(long offeringId);
 
     boolean isIpv6Supported(long offeringId);
+
+    boolean isRoutedVpc(long offeringId);
 }

@@ -84,9 +84,9 @@
           }"
           :options="groups.opts" />
       </a-form-item>
-      <a-form-item>
+      <a-form-item v-if="userDataEnabled">
         <template #label>
-          <tooltip-label :title="$t('label.userdata')" :tooltip="apiParams.userdata.description"/>
+          <tooltip-label :title="$t('label.user.data')" :tooltip="apiParams.userdata.description"/>
         </template>
         <a-textarea v-model:value="form.userdata">
         </a-textarea>
@@ -111,6 +111,41 @@
         </a-select>
       </a-form-item>
 
+      <a-form-item name="deleteprotection" ref="deleteprotection">
+        <template #label>
+          <tooltip-label :title="$t('label.deleteprotection')" :tooltip="apiParams.deleteprotection.description"/>
+        </template>
+        <a-switch v-model:checked="form.deleteprotection" />
+      </a-form-item>
+      <a-form-item name="showLeaseOptions" ref="showLeaseOptions" v-if="isLeaseEditable">
+        <template #label>
+          <tooltip-label :title="$t('label.lease.enable')" :tooltip="$t('label.lease.enable.tooltip')" />
+        </template>
+        <a-switch v-model:checked="showLeaseOptions" @change="onToggleLeaseData"/>
+      </a-form-item>
+      <a-row :gutter="12" v-if="showLeaseOptions">
+        <a-col :md="12" :lg="12">
+          <a-form-item name="leaseduration" ref="leaseduration">
+            <template #label>
+              <tooltip-label :title="$t('label.leaseduration')" />
+            </template>
+            <a-input
+              v-model:value="form.leaseduration"
+              :placeholder="$t('label.instance.lease.placeholder')"/>
+          </a-form-item>
+        </a-col>
+        <a-col :md="12" :lg="12">
+          <a-form-item name="leaseexpiryaction" ref="leaseexpiryaction">
+            <template #label>
+              <tooltip-label :title="$t('label.leaseexpiryaction')"  />
+            </template>
+            <a-select v-model:value="form.leaseexpiryaction" :defaultValue="expiryActions">
+              <a-select-option v-for="action in expiryActions" :key="action" :label="action" />
+            </a-select>
+          </a-form-item>
+        </a-col>
+      </a-row>
+
       <div :span="24" class="action-button">
         <a-button :loading="loading" @click="onCloseAction">{{ $t('label.cancel') }}</a-button>
         <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -121,7 +156,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
@@ -143,8 +178,8 @@ export default {
     return {
       serviceOffering: {},
       template: {},
+      userDataEnabled: false,
       securityGroupsEnabled: false,
-      dynamicScalingVmConfig: false,
       loading: false,
       securitygroups: {
         loading: false,
@@ -157,6 +192,15 @@ export default {
       groups: {
         loading: false,
         opts: []
+      },
+      isLeaseEditable: this.$store.getters.features.instanceleaseenabled && this.resource.leaseduration > -1,
+      showLeaseOptions: false,
+      leaseduration: this.resource.leaseduration === undefined ? 90 : this.resource.leaseduration,
+      leaseexpiryaction: this.resource.leaseexpiryaction === undefined ? 'STOP' : this.resource.leaseexpiryaction,
+      expiryActions: ['STOP', 'DESTROY'],
+      naturalNumberRule: {
+        type: 'number',
+        validator: this.validateNumber
       }
     }
   },
@@ -175,11 +219,17 @@ export default {
         displayname: this.resource.displayname,
         ostypeid: this.resource.ostypeid,
         isdynamicallyscalable: this.resource.isdynamicallyscalable,
+        deleteprotection: this.resource.deleteprotection,
         group: this.resource.group,
-        securitygroupids: this.resource.securitygroup.map(x => x.id),
-        userdata: ''
+        userdata: '',
+        haenable: this.resource.haenable,
+        leaseduration: this.resource.leaseduration,
+        leaseexpiryaction: this.resource.leaseexpiryaction
       })
-      this.rules = reactive({})
+      this.rules = reactive({
+        leaseduration: [this.naturalNumberRule]
+      })
+      this.showLeaseOptions = this.isLeaseEditable
     },
     fetchData () {
       this.fetchZoneDetails()
@@ -188,20 +238,19 @@ export default {
       this.fetchInstaceGroups()
       this.fetchServiceOfferingData()
       this.fetchTemplateData()
-      this.fetchDynamicScalingVmConfig()
       this.fetchUserData()
     },
     fetchZoneDetails () {
-      api('listZones', {
-        zoneid: this.resource.zoneid
+      getAPI('listZones', {
+        id: this.resource.zoneid
       }).then(response => {
         const zone = response?.listzonesresponse?.zone || []
-        this.securityGroupsEnabled = zone?.[0]?.securitygroupsenabled
+        this.securityGroupsEnabled = zone?.[0]?.securitygroupsenabled || this.$store.getters.showSecurityGroups
       })
     },
     fetchSecurityGroups () {
       this.securitygroups.loading = true
-      api('listSecurityGroups', {
+      getAPI('listSecurityGroups', {
         zoneid: this.resource.zoneid
       }).then(json => {
         const items = json.listsecuritygroupsresponse.securitygroup || []
@@ -224,7 +273,7 @@ export default {
       params.id = this.resource.serviceofferingid
       params.isrecursive = true
       var apiName = 'listServiceOfferings'
-      api(apiName, params).then(json => {
+      getAPI(apiName, params).then(json => {
         const offerings = json?.listserviceofferingsresponse?.serviceoffering || []
         this.serviceOffering = offerings[0] || {}
       })
@@ -234,8 +283,9 @@ export default {
       params.id = this.resource.templateid
       params.isrecursive = true
       params.templatefilter = 'all'
+      params.isready = true
       var apiName = 'listTemplates'
-      api(apiName, params).then(json => {
+      getAPI(apiName, params).then(json => {
         const templateResponses = json.listtemplatesresponse.template
         this.template = templateResponses[0]
       })
@@ -245,7 +295,7 @@ export default {
       params.name = 'enable.dynamic.scale.vm'
       params.zoneid = this.resource.zoneid
       var apiName = 'listConfigurations'
-      api(apiName, params).then(json => {
+      getAPI(apiName, params).then(json => {
         const configResponse = json.listconfigurationsresponse.configuration
         this.dynamicScalingVmConfig = configResponse[0]?.value === 'true'
       })
@@ -253,10 +303,13 @@ export default {
     canDynamicScalingEnabled () {
       return this.template.isdynamicallyscalable && this.serviceOffering.dynamicscalingenabled && this.dynamicScalingVmConfig
     },
+    isDynamicScalingEnabled () {
+      return this.template.isdynamicallyscalable && this.serviceOffering.dynamicscalingenabled && this.$store.getters.features.dynamicscalingenabled
+    },
     fetchOsTypes () {
       this.osTypes.loading = true
       this.osTypes.opts = []
-      api('listOsTypes').then(json => {
+      getAPI('listOsTypes').then(json => {
         this.osTypes.opts = json.listostypesresponse.ostype || []
       }).catch(error => {
         this.$notifyError(error)
@@ -274,7 +327,7 @@ export default {
       } else {
         params.account = this.$store.getters.userInfo.account
       }
-      api('listInstanceGroups', params).then(json => {
+      getAPI('listInstanceGroups', params).then(json => {
         const groups = json.listinstancegroupsresponse.instancegroup || []
         groups.forEach(x => {
           this.groups.opts.push({ id: x.name, value: x.name })
@@ -288,13 +341,34 @@ export default {
       return decodedData.toString('utf-8')
     },
     fetchUserData () {
-      const params = {
-        id: this.resource.id,
-        userdata: true
+      let networkId
+      this.resource.nic.forEach(nic => {
+        if (nic.isdefault) {
+          networkId = nic.networkid
+        }
+      })
+      if (!networkId) {
+        return
       }
+      const listNetworkParams = {
+        id: networkId,
+        listall: true
+      }
+      getAPI(`listNetworks`, listNetworkParams).then(json => {
+        json.listnetworksresponse.network[0].service.forEach(service => {
+          if (service.name === 'UserData') {
+            this.userDataEnabled = true
 
-      api('listVirtualMachines', params).then(json => {
-        this.form.userdata = this.decodeUserData(json.listvirtualmachinesresponse.virtualmachine[0].userdata || '')
+            const listVmParams = {
+              id: this.resource.id,
+              userdata: true,
+              listall: true
+            }
+            getAPI('listVirtualMachines', listVmParams).then(json => {
+              this.form.userdata = atob(json.listvirtualmachinesresponse.virtualmachine[0].userdata || '')
+            })
+          }
+        })
       })
     },
     handleSubmit () {
@@ -305,13 +379,14 @@ export default {
         params.name = values.name
         params.displayname = values.displayname
         params.ostypeid = values.ostypeid
-        if (this.securityGroupsEnabled) {
-          if (values.securitygroupids) {
-            params.securitygroupids = values.securitygroupids
-          }
+        if (this.securityGroupsEnabled && Array.isArray(values.securitygroupids) && values.securitygroupids.length > 0) {
+          params.securitygroupids = values.securitygroupids
         }
         if (values.isdynamicallyscalable !== undefined) {
           params.isdynamicallyscalable = values.isdynamicallyscalable
+        }
+        if (values.deleteprotection !== undefined) {
+          params.deleteprotection = values.deleteprotection
         }
         if (values.haenable !== undefined) {
           params.haenable = values.haenable
@@ -322,9 +397,15 @@ export default {
         if (values.userdata && values.userdata.length > 0) {
           params.userdata = this.$toBase64AndURIEncoded(values.userdata)
         }
+        if (values.leaseduration !== undefined && (values.leaseduration === -1 || values.leaseduration > 0)) {
+          params.leaseduration = values.leaseduration
+          if (values.leaseexpiryaction !== undefined) {
+            params.leaseexpiryaction = values.leaseexpiryaction
+          }
+        }
         this.loading = true
 
-        api('updateVirtualMachine', {}, 'POST', params).then(json => {
+        postAPI('updateVirtualMachine', params).then(json => {
           this.$message.success({
             content: `${this.$t('label.action.edit.instance')} - ${values.name}`,
             duration: 2
@@ -340,6 +421,21 @@ export default {
     },
     onCloseAction () {
       this.$emit('close-action')
+    },
+    onToggleLeaseData () {
+      if (this.showLeaseOptions === false) {
+        this.form.leaseduration = -1
+        this.form.leaseexpiryaction = undefined
+      } else {
+        this.form.leaseduration = this.leaseduration
+        this.form.leaseexpiryaction = this.leaseexpiryaction
+      }
+    },
+    async validateNumber (rule, value) {
+      if (value && (isNaN(value) || value <= 0)) {
+        return Promise.reject(this.$t('message.error.number'))
+      }
+      return Promise.resolve()
     }
   }
 }

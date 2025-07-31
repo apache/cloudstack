@@ -21,7 +21,7 @@
       size="small"
       :columns="columns"
       :dataSource="dataSchedules"
-      :rowKey="record => record.virtualmachineid"
+      :rowKey="record => record.intervaltype"
       :pagination="false"
       :loading="loading">
       <template #bodyCell="{ column, text, record }">
@@ -58,6 +58,12 @@
             {{ `${$t('label.day')} ${record.schedule.split(':')[2]} ${$t('label.of.month')}` }}
           </span>
         </template>
+        <template v-if="column.key === 'quiescevm'" :name="text">
+          <label>
+            <check-outlined v-if="record.quiescevm" />
+            <close-outlined v-else />
+          </label>
+        </template>
         <template v-if="column.key === 'timezone'" :name="text">
           <label>{{ getTimeZone(record.timezone) }}</label>
         </template>
@@ -78,7 +84,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import { timeZoneName } from '@/utils/timezone'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
@@ -110,7 +116,7 @@ export default {
   },
   computed: {
     columns () {
-      return [
+      const cols = [
         {
           key: 'icon',
           title: '',
@@ -131,6 +137,21 @@ export default {
           dataIndex: 'interval'
         },
         {
+          key: 'keep',
+          title: this.$t('label.keep'),
+          dataIndex: 'maxbackups'
+        }
+      ]
+      const hasQuiesce = this.dataSource.some(item => 'quiescevm' in item)
+      if (hasQuiesce) {
+        cols.push({
+          key: 'quiescevm',
+          title: this.$t('label.quiescevm'),
+          dataIndex: 'quiescevm'
+        })
+      }
+      cols.push(
+        {
           key: 'timezone',
           title: this.$t('label.timezone'),
           dataIndex: 'timezone'
@@ -141,13 +162,14 @@ export default {
           dataIndex: 'actions',
           width: 80
         }
-      ]
+      )
+      return cols
     }
   },
   mounted () {
     this.dataSchedules = []
     if (this.dataSource && Object.keys(this.dataSource).length > 0) {
-      this.dataSchedules.push(this.dataSource)
+      this.dataSchedules = this.dataSource
     }
   },
   inject: ['refreshSchedule'],
@@ -155,19 +177,16 @@ export default {
     dataSource: {
       deep: true,
       handler (newData) {
-        this.dataSchedules = []
-        if (newData && Object.keys(newData).length > 0) {
-          this.dataSchedules.push(newData)
-        }
+        this.dataSchedules = newData
       }
     }
   },
   methods: {
     handleClickDelete (record) {
       const params = {}
-      params.virtualmachineid = record.virtualmachineid
+      params.id = record.id
       this.actionLoading = true
-      api('deleteBackupSchedule', params).then(json => {
+      postAPI('deleteBackupSchedule', params).then(json => {
         if (json.deletebackupscheduleresponse.success) {
           this.$notification.success({
             message: this.$t('label.scheduled.backups'),

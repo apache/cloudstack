@@ -63,12 +63,12 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.ConsoleSessionVO;
-import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.ConsoleSessionDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.logging.log4j.LogManager;
@@ -92,7 +92,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     @Inject
     private EntityManager entityManager;
     @Inject
-    private UserVmDetailsDao userVmDetailsDao;
+    private VMInstanceDetailsDao vmInstanceDetailsDao;
     @Inject
     private KeysManager keysManager;
     @Inject
@@ -112,7 +112,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     protected Logger logger = LogManager.getLogger(ConsoleAccessManagerImpl.class);
 
     private static final List<VirtualMachine.State> unsupportedConsoleVMState = Arrays.asList(
-            VirtualMachine.State.Stopped, VirtualMachine.State.Error, VirtualMachine.State.Destroyed
+            VirtualMachine.State.Stopped, VirtualMachine.State.Restoring, VirtualMachine.State.Error, VirtualMachine.State.Destroyed
     );
 
     @Override
@@ -208,6 +208,12 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
                 return new ConsoleEndpoint(false, null, "Cannot find VM with ID " + vmId);
             }
 
+            if (Hypervisor.HypervisorType.External.equals(vm.getHypervisorType())) {
+                logger.error("Console access for {} cannot be provided it is {} hypervisor instance", vm,
+                        Hypervisor.HypervisorType.External);
+                return new ConsoleEndpoint(false, null, "Console access to this instance cannot be provided");
+            }
+
             if (!checkSessionPermission(vm, account)) {
                 return new ConsoleEndpoint(false, null, "Permission denied");
             }
@@ -222,8 +228,8 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
             String sessionUuid = UUID.randomUUID().toString();
             return generateAccessEndpoint(vmId, sessionUuid, extraSecurityToken, clientAddress);
         } catch (Exception e) {
-            String errorMsg = String.format("Unexepected exception in ConsoleAccessManager - vmId: %s, clientAddress: %s",
-                    vmId, clientAddress);
+            String errorMsg = String.format("Unexpected exception in ConsoleAccessManager - vmId: %s (%s), clientAddress: %s",
+                    vmId, entityManager.findById(VirtualMachine.class, vmId), clientAddress);
             logger.error(errorMsg, e);
             return new ConsoleEndpoint(false, null, "Server Internal Error: " + e.getMessage());
         }
@@ -248,8 +254,8 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     }
 
     @Override
-    public void acquireSession(String sessionUuid) {
-        consoleSessionDao.acquireSession(sessionUuid);
+    public void acquireSession(String sessionUuid, String clientAddress) {
+        consoleSessionDao.acquireSession(sessionUuid, clientAddress);
     }
 
     protected boolean checkSessionPermission(VirtualMachine vm, Account account) {
@@ -264,15 +270,17 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
                 } catch (PermissionDeniedException ex) {
                     if (accountManager.isNormalUser(account.getId())) {
                         if (logger.isDebugEnabled()) {
-                            logger.debug("VM access is denied for VM ID " + vm.getUuid() + ". VM owner account " +
-                                    vm.getAccountId() + " does not match the account id in session " +
-                                    account.getId() + " and caller is a normal user");
+                            logger.debug("VM access is denied for VM {}. VM owner " +
+                                    "account {} does not match the account id in session {} and " +
+                                    "caller is a normal user", vm,
+                                    accountManager.getAccount(vm.getAccountId()), account);
                         }
                     } else if ((accountManager.isDomainAdmin(account.getId())
                             || account.getType() == Account.Type.READ_ONLY_ADMIN) && logger.isDebugEnabled()) {
-                        logger.debug("VM access is denied for VM ID " + vm.getUuid() + ". VM owner account " +
-                                vm.getAccountId() + " does not match the account id in session " +
-                                account.getId() + " and the domain-admin caller does not manage the target domain");
+                        logger.debug("VM access is denied for VM {}. VM owner account {}" +
+                                " does not match the account id in session {} and the " +
+                                "domain-admin caller does not manage the target domain",
+                                vm, accountManager.getAccount(vm.getAccountId()), account);
                     }
                     return false;
                 }
@@ -300,23 +308,22 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
             throw new CloudRuntimeException(msg);
         }
 
-        String vmUuid = vm.getUuid();
         if (unsupportedConsoleVMState.contains(vm.getState())) {
-            msg = "VM " + vmUuid + " must be running to connect console, sending blank response for console access request";
+            msg = String.format("VM %s must be running to connect console, sending blank response for console access request", vm);
             logger.warn(msg);
             throw new CloudRuntimeException(msg);
         }
 
         Long hostId = vm.getState() != VirtualMachine.State.Migrating ? vm.getHostId() : vm.getLastHostId();
         if (hostId == null) {
-            msg = "VM " + vmUuid + " lost host info, sending blank response for console access request";
+            msg = String.format("VM %s lost host info, sending blank response for console access request", vm);
             logger.warn(msg);
             throw new CloudRuntimeException(msg);
         }
 
         HostVO host = managementServer.getHostBy(hostId);
         if (host == null) {
-            msg = "VM " + vmUuid + "'s host does not exist, sending blank response for console access request";
+            msg = String.format("Host for VM %s does not exist, sending blank response for console access request", vm);
             logger.warn(msg);
             throw new CloudRuntimeException(msg);
         }
@@ -343,8 +350,8 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         if (hostVo.getHypervisorType() == Hypervisor.HypervisorType.KVM &&
                 (hostVo.getResourceState().equals(ResourceState.ErrorInMaintenance) ||
                         hostVo.getResourceState().equals(ResourceState.ErrorInPrepareForMaintenance))) {
-            UserVmDetailVO detailAddress = userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.KVM_VNC_ADDRESS);
-            UserVmDetailVO detailPort = userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.KVM_VNC_PORT);
+            VMInstanceDetailVO detailAddress = vmInstanceDetailsDao.findDetail(vm.getId(), VmDetailConstants.KVM_VNC_ADDRESS);
+            VMInstanceDetailVO detailPort = vmInstanceDetailsDao.findDetail(vm.getId(), VmDetailConstants.KVM_VNC_PORT);
             if (detailAddress != null && detailPort != null) {
                 portInfo = new Pair<>(detailAddress.getValue(), Integer.valueOf(detailPort.getValue()));
             } else {
@@ -371,7 +378,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         }
 
         String sid = vm.getVncPassword();
-        UserVmDetailVO details = userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.KEYBOARD);
+        VMInstanceDetailVO details = vmInstanceDetailsDao.findDetail(vm.getId(), VmDetailConstants.KEYBOARD);
 
         String tag = vm.getUuid();
         String displayName = vm.getHostName();
@@ -389,7 +396,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         String url = generateConsoleAccessUrl(rootUrl, param, token, vncPort, vm, hostVo, details);
 
         logger.debug("Adding allowed session: " + sessionUuid);
-        persistConsoleSession(sessionUuid, vm.getId(), hostVo.getId());
+        persistConsoleSession(sessionUuid, vm.getId(), hostVo.getId(), addr);
         managementServer.setConsoleAccessForVm(vm.getId(), sessionUuid);
 
         ConsoleEndpoint consoleEndpoint = new ConsoleEndpoint(true, url);
@@ -403,18 +410,19 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         return consoleEndpoint;
     }
 
-    protected void persistConsoleSession(String sessionUuid, long instanceId, long hostId) {
+    protected void persistConsoleSession(String sessionUuid, long instanceId, long hostId, String consoleEndpointCreatorAddress) {
         ConsoleSessionVO consoleSessionVo = new ConsoleSessionVO();
         consoleSessionVo.setUuid(sessionUuid);
         consoleSessionVo.setAccountId(CallContext.current().getCallingAccountId());
         consoleSessionVo.setUserId(CallContext.current().getCallingUserId());
         consoleSessionVo.setInstanceId(instanceId);
         consoleSessionVo.setHostId(hostId);
+        consoleSessionVo.setConsoleEndpointCreatorAddress(consoleEndpointCreatorAddress);
         consoleSessionDao.persist(consoleSessionVo);
     }
 
     private String generateConsoleAccessUrl(String rootUrl, ConsoleProxyClientParam param, String token, int vncPort,
-                                            VirtualMachine vm, HostVO hostVo, UserVmDetailVO details) {
+                                            VirtualMachine vm, HostVO hostVo, VMInstanceDetailVO details) {
         StringBuilder sb = new StringBuilder(rootUrl);
         if (param.getHypervHost() != null || !ConsoleProxyManager.NoVncConsoleDefault.value()) {
             sb.append("/ajax?token=" + token);
@@ -448,7 +456,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
                                                                     int port, String sid, String tag, String ticket,
                                                                     String sessionUuid, String addr,
                                                                     String extraSecurityToken, VirtualMachine vm,
-                                                                    HostVO hostVo, UserVmDetailVO details,
+                                                                    HostVO hostVo, VMInstanceDetailVO details,
                                                                     Pair<String, Integer> portInfo, String host,
                                                                     String displayName) {
         ConsoleProxyClientParam param = new ConsoleProxyClientParam();
@@ -569,7 +577,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     private void setWebsocketUrl(VirtualMachine vm, ConsoleProxyClientParam param) {
         String ticket = acquireVncTicketForVmwareVm(vm);
         if (StringUtils.isBlank(ticket)) {
-            logger.error("Could not obtain VNC ticket for VM " + vm.getInstanceName());
+            logger.error(String.format("Could not obtain VNC ticket for VM %s", vm));
             return;
         }
         String wsUrl = composeWebsocketUrlForVmwareVm(ticket, param);
@@ -590,7 +598,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
      */
     private String acquireVncTicketForVmwareVm(VirtualMachine vm) {
         try {
-            logger.info("Acquiring VNC ticket for VM = " + vm.getHostName());
+            logger.info("Acquiring VNC ticket for VM = {}", vm);
             GetVmVncTicketCommand cmd = new GetVmVncTicketCommand(vm.getInstanceName());
             Answer answer = agentManager.send(vm.getHostId(), cmd);
             GetVmVncTicketAnswer ans = (GetVmVncTicketAnswer) answer;

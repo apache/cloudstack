@@ -40,7 +40,7 @@ public class VirtualMachineProfileImpl implements VirtualMachineProfile {
     VirtualMachine _vm;
     ServiceOffering _offering;
     VirtualMachineTemplate _template;
-    UserVmDetailVO _userVmDetails;
+    VMInstanceDetailVO _userVmDetails;
     Map<Param, Object> _params;
     List<NicProfile> _nics = new ArrayList<NicProfile>();
     List<DiskTO> _disks = new ArrayList<DiskTO>();
@@ -264,11 +264,13 @@ public class VirtualMachineProfileImpl implements VirtualMachineProfile {
         _offering = offering;
     }
 
+    @Override
     public void setCpuOvercommitRatio(Float cpuOvercommitRatio) {
         this.cpuOvercommitRatio = cpuOvercommitRatio;
 
     }
 
+    @Override
     public void setMemoryOvercommitRatio(Float memoryOvercommitRatio) {
         this.memoryOvercommitRatio = memoryOvercommitRatio;
 

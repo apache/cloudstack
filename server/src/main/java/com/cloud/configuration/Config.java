@@ -19,7 +19,6 @@ package com.cloud.configuration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.StringTokenizer;
 
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
@@ -78,7 +77,6 @@ public enum Config {
             "30000",
             "Socket I/O timeout value in milliseconds. -1 for infinite timeout.",
             null),
-    AlertSMTPUseAuth("Alert", ManagementServer.class, String.class, "alert.smtp.useAuth", null, "If true, use SMTP authentication when sending emails.", null),
     AlertSMTPUsername(
             "Alert",
             ManagementServer.class,
@@ -397,7 +395,7 @@ public enum Config {
             null),
     MaxNumberOfSecondaryIPsPerNIC(
             "Network", ManagementServer.class, Integer.class,
-            "vm.network.nic.max.secondary.ipaddresses", "256",
+            "vm.network.nic.max.secondary.ipaddresses", "10",
             "Specify the number of secondary ip addresses per nic per vm. Default value 10 is used, if not specified.", null),
 
     EnableServiceMonitoring(
@@ -506,8 +504,7 @@ public enum Config {
             "300",
             "The time interval in seconds when the management server polls for snapshots to be scheduled.",
             null),
-    SnapshotDeltaMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.delta.max", "16", "max delta snapshots between two full snapshots.", null),
-    KVMSnapshotEnabled("Hidden", SnapshotManager.class, Boolean.class, "kvm.snapshot.enabled", "false", "whether snapshot is enabled for KVM hosts", null),
+    KVMSnapshotEnabled("Hidden", SnapshotManager.class, Boolean.class, "kvm.snapshot.enabled", "false", "Whether volume snapshot is enabled on running instances on a KVM host", null),
 
     // Advanced
     EventPurgeInterval(
@@ -558,7 +555,7 @@ public enum Config {
             Boolean.class,
             "disable.extraction",
             "false",
-            "Flag for disabling extraction of template, isos and volumes",
+            "Flag for disabling extraction of templates, isos, snapshots and volumes",
             null),
     ExtractURLExpirationInterval(
             "Advanced",
@@ -666,8 +663,8 @@ public enum Config {
             ManagementServer.class,
             String.class,
             "hypervisor.list",
-            HypervisorType.Hyperv + "," + HypervisorType.KVM + "," + HypervisorType.XenServer + "," + HypervisorType.VMware + "," + HypervisorType.BareMetal + "," +
-                    HypervisorType.Ovm + "," + HypervisorType.LXC + "," + HypervisorType.Ovm3,
+            HypervisorType.KVM + "," + HypervisorType.VMware + "," + HypervisorType.XenServer + "," + HypervisorType.Hyperv + "," +
+                    HypervisorType.BareMetal + "," + HypervisorType.Ovm + "," + HypervisorType.LXC + "," + HypervisorType.Ovm3 + "," + HypervisorType.External,
                     "The list of hypervisors that this deployment will use.",
             "hypervisorList",
             ConfigKey.Kind.CSV,
@@ -900,8 +897,9 @@ public enum Config {
             String.class,
             "host.capacityType.to.order.clusters",
             "CPU",
-            "The host capacity type (CPU or RAM) is used by deployment planner to order clusters during VM resource allocation",
-            "CPU,RAM"),
+            "The host capacity type (CPU, RAM, COMBINED) is used by deployment planner to order clusters during VM resource allocation",
+            "CPU,RAM,COMBINED"),
+
     ApplyAllocationAlgorithmToPods(
             "Advanced",
             ManagementServer.class,
@@ -1366,6 +1364,14 @@ public enum Config {
             "200",
             "The default maximum primary storage space (in GiB) that can be used for an account",
             null),
+    DefaultMaxAccountProjects(
+                "Account Defaults",
+                ManagementServer.class,
+                Long.class,
+                "max.account.projects",
+                "10",
+                "The default maximum number of projects that can be created for an account",
+                null),
 
     //disabling lb as cluster sync does not work with distributed cluster
     SubDomainNetworkAccess(
@@ -1415,6 +1421,7 @@ public enum Config {
     DefaultMaxDomainMemory("Domain Defaults", ManagementServer.class, Long.class, "max.domain.memory", "81920", "The default maximum memory (in MB) that can be used for a domain", null),
     DefaultMaxDomainPrimaryStorage("Domain Defaults", ManagementServer.class, Long.class, "max.domain.primary.storage", "400", "The default maximum primary storage space (in GiB) that can be used for a domain", null),
     DefaultMaxDomainSecondaryStorage("Domain Defaults", ManagementServer.class, Long.class, "max.domain.secondary.storage", "800", "The default maximum secondary storage space (in GiB) that can be used for a domain", null),
+    DefaultMaxDomainProjects("Domain Defaults",ManagementServer.class,Long.class,"max.domain.projects","50","The default maximum number of projects that can be created for a domain",null),
 
     DefaultMaxProjectUserVms(
             "Project Defaults",
@@ -1547,14 +1554,6 @@ public enum Config {
             "Password for SMTP authentication (applies only if project.smtp.useAuth is true)",
             null),
     ProjectSMTPPort("Project Defaults", ManagementServer.class, Integer.class, "project.smtp.port", "465", "Port the SMTP server is listening on", null),
-    ProjectSMTPUseAuth(
-            "Project Defaults",
-            ManagementServer.class,
-            String.class,
-            "project.smtp.useAuth",
-            null,
-            "If true, use SMTP authentication when sending emails",
-            null),
     ProjectSMTPUsername(
             "Project Defaults",
             ManagementServer.class,
@@ -1740,7 +1739,6 @@ public enum Config {
                     null),
 
     // VMSnapshots
-    VMSnapshotMax("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.max", "10", "Maximum vm snapshots for a vm", null),
     VMSnapshotCreateWait("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.create.wait", "1800", "In second, timeout for create vm snapshot", null),
 
     CloudDnsName("Advanced", ManagementServer.class, String.class, "cloud.dns.name", null, "DNS name of the cloud for the GSLB service", null),
@@ -1808,26 +1806,25 @@ public enum Config {
     private final String _defaultValue;
     private final String _description;
     private final String _range;
-    private final String _scope; // Parameter can be at different levels (Zone/cluster/pool/account), by default every parameter is at global
+    private final int _scope; // Parameter can be at different levels (Zone/cluster/pool/account), by default every parameter is at global
     private final ConfigKey.Kind _kind;
     private final String _options;
 
-    private static final HashMap<String, List<Config>> s_scopeLevelConfigsMap = new HashMap<String, List<Config>>();
+    private static final HashMap<Integer, List<Config>> s_scopeLevelConfigsMap = new HashMap<>();
     static {
-        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Zone.toString(), new ArrayList<Config>());
-        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Cluster.toString(), new ArrayList<Config>());
-        s_scopeLevelConfigsMap.put(ConfigKey.Scope.StoragePool.toString(), new ArrayList<Config>());
-        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Account.toString(), new ArrayList<Config>());
-        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Global.toString(), new ArrayList<Config>());
+        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Zone.getBitValue(), new ArrayList<Config>());
+        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Cluster.getBitValue(), new ArrayList<Config>());
+        s_scopeLevelConfigsMap.put(ConfigKey.Scope.StoragePool.getBitValue(), new ArrayList<Config>());
+        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Account.getBitValue(), new ArrayList<Config>());
+        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Global.getBitValue(), new ArrayList<Config>());
 
         for (Config c : Config.values()) {
             //Creating group of parameters per each level (zone/cluster/pool/account)
-            StringTokenizer tokens = new StringTokenizer(c.getScope(), ",");
-            while (tokens.hasMoreTokens()) {
-                String scope = tokens.nextToken().trim();
-                List<Config> currentConfigs = s_scopeLevelConfigsMap.get(scope);
+            List<ConfigKey.Scope> scopes = ConfigKey.Scope.decode(c.getScope());
+            for (ConfigKey.Scope scope : scopes) {
+                List<Config> currentConfigs = s_scopeLevelConfigsMap.get(scope.getBitValue());
                 currentConfigs.add(c);
-                s_scopeLevelConfigsMap.put(scope, currentConfigs);
+                s_scopeLevelConfigsMap.put(scope.getBitValue(), currentConfigs);
             }
         }
     }
@@ -1871,7 +1868,7 @@ public enum Config {
         _defaultValue = defaultValue;
         _description = description;
         _range = range;
-        _scope = ConfigKey.Scope.Global.toString();
+        _scope = ConfigKey.Scope.Global.getBitValue();
         _kind = kind;
         _options = options;
     }
@@ -1896,7 +1893,7 @@ public enum Config {
         return _type;
     }
 
-    public String getScope() {
+    public int getScope() {
         return _scope;
     }
 

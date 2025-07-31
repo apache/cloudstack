@@ -17,9 +17,12 @@
 package com.cloud.vm;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
@@ -38,6 +41,8 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 
+import static com.cloud.user.ResourceLimitService.ResourceLimitHostTags;
+
 /**
  *
  *
@@ -46,12 +51,15 @@ public interface UserVmManager extends UserVmService {
     String EnableDynamicallyScaleVmCK = "enable.dynamic.scale.vm";
     String AllowDiskOfferingChangeDuringScaleVmCK = "allow.diskoffering.change.during.scale.vm";
     String AllowUserExpungeRecoverVmCK ="allow.user.expunge.recover.vm";
+    String AllowUserForceStopVmCK = "allow.user.force.stop.vm";
     ConfigKey<Boolean> EnableDynamicallyScaleVm = new ConfigKey<Boolean>("Advanced", Boolean.class, EnableDynamicallyScaleVmCK, "false",
         "Enables/Disables dynamically scaling a vm", true, ConfigKey.Scope.Zone);
     ConfigKey<Boolean> AllowDiskOfferingChangeDuringScaleVm = new ConfigKey<Boolean>("Advanced", Boolean.class, AllowDiskOfferingChangeDuringScaleVmCK, "false",
             "Determines whether to allow or disallow disk offering change for root volume during scaling of a stopped or running vm", true, ConfigKey.Scope.Zone);
     ConfigKey<Boolean> AllowUserExpungeRecoverVm = new ConfigKey<Boolean>("Advanced", Boolean.class, AllowUserExpungeRecoverVmCK, "false",
         "Determines whether users can expunge or recover their vm", true, ConfigKey.Scope.Account);
+    ConfigKey<Boolean> AllowUserForceStopVm = new ConfigKey<Boolean>("Advanced", Boolean.class, AllowUserForceStopVmCK, "true",
+            "Determines whether users are allowed to force stop a vm", true, ConfigKey.Scope.Account);
     ConfigKey<Boolean> DisplayVMOVFProperties = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.display.ovf.properties", "false",
             "Set display of VMs OVF properties as part of VM details", true);
 
@@ -59,9 +67,26 @@ public interface UserVmManager extends UserVmService {
             "Destroys the VM's root volume when the VM is destroyed.",
             true, ConfigKey.Scope.Domain);
 
+    ConfigKey<String> StrictHostTags = new ConfigKey<>(
+            "Advanced",
+            String.class,
+            "vm.strict.host.tags",
+            "",
+            "A comma-separated list of tags which must match during operations like modifying the compute" +
+                    "offering for an instance, and starting or live migrating an instance to a specific host.",
+            true);
+    ConfigKey<Boolean> EnforceStrictResourceLimitHostTagCheck = new ConfigKey<Boolean>(
+            "Advanced",
+            Boolean.class,
+            "vm.strict.resource.limit.host.tag.check",
+            "true",
+            "If set to true, tags specified in `resource.limit.host.tags` are also included in vm.strict.host.tags.",
+            true);
+
     static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
 
     public  static  final String CKS_NODE = "cksnode";
+    public  static  final String SHAREDFSVM = "sharedfsvm";
 
     /**
      * @param hostId get all of the virtual machines that belong to one host.
@@ -95,8 +120,6 @@ public interface UserVmManager extends UserVmService {
 
     String finalizeUserData(String userData, Long userDataId, VirtualMachineTemplate template);
 
-    String validateUserData(String userData, HTTPMethod httpmethod);
-
     void validateExtraConfig(long accountId, HypervisorType hypervisorType, String extraConfig);
 
     boolean isVMUsingLocalStorage(VMInstanceVO vm);
@@ -118,14 +141,32 @@ public interface UserVmManager extends UserVmService {
 
     boolean setupVmForPvlan(boolean add, Long hostId, NicProfile nic);
 
-    UserVm updateVirtualMachine(long id, String displayName, String group, Boolean ha, Boolean isDisplayVmEnabled, Long osTypeId, String userData,
-                                Long userDataId, String userDataDetails, Boolean isDynamicallyScalable, HTTPMethod httpMethod, String customId, String hostName, String instanceName, List<Long> securityGroupIdList, Map<String, Map<Integer, String>> extraDhcpOptionsMap) throws ResourceUnavailableException, InsufficientCapacityException;
+    UserVm updateVirtualMachine(long id, String displayName, String group, Boolean ha,
+                                Boolean isDisplayVmEnabled, Boolean deleteProtection,
+                                Long osTypeId, String userData, Long userDataId,
+                                String userDataDetails, Boolean isDynamicallyScalable,
+                                HTTPMethod httpMethod, String customId, String hostName,
+                                String instanceName, List<Long> securityGroupIdList,
+                                Map<String, Map<Integer, String>> extraDhcpOptionsMap
+    ) throws ResourceUnavailableException, InsufficientCapacityException;
 
     //the validateCustomParameters, save and remove CustomOfferingDetils functions can be removed from the interface once we can
     //find a common place for all the scaling and upgrading code of both user and systemvms.
     void validateCustomParameters(ServiceOfferingVO serviceOffering, Map<String, String> customParameters);
 
     void generateUsageEvent(VirtualMachine vm, boolean isDisplay, String eventType);
+
+    static Set<String> getStrictHostTags() {
+        String strictHostTags = StrictHostTags.value();
+        Set<String> strictHostTagsSet = new HashSet<>();
+        if (StringUtils.isNotEmpty(strictHostTags)) {
+            strictHostTagsSet.addAll(List.of(strictHostTags.split(",")));
+        }
+        if (EnforceStrictResourceLimitHostTagCheck.value() && StringUtils.isNotEmpty(ResourceLimitHostTags.value())) {
+            strictHostTagsSet.addAll(List.of(ResourceLimitHostTags.value().split(",")));
+        }
+        return strictHostTagsSet;
+    }
 
     void persistDeviceBusInfo(UserVmVO paramUserVmVO, String paramString);
 

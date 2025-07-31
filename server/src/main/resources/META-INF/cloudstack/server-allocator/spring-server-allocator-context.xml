@@ -44,5 +44,5 @@
 
     <bean id="testingAllocator"
         class="com.cloud.agent.manager.allocator.impl.TestingAllocator" />
-    
+
 </beans>

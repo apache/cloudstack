@@ -20,6 +20,7 @@
 package org.apache.cloudstack.storage.datastore.util;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.gson.Gson;
@@ -47,7 +48,6 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriBuilder;
 import java.net.ConnectException;
-import java.security.InvalidParameterException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -196,8 +196,8 @@ public class ElastistorUtil {
 
         } catch (InvalidCredentialsException e) {
             throw new CloudRuntimeException("InvalidCredentialsException:" + e.getMessage(), e);
-        } catch (InvalidParameterException e) {
-            throw new CloudRuntimeException("InvalidParameterException:" + e.getMessage(), e);
+        } catch (InvalidParameterValueException e) {
+            throw new CloudRuntimeException("InvalidParameterValueException:" + e.getMessage(), e);
         } catch (SSLHandshakeException e) {
             throw new CloudRuntimeException("SSLHandshakeException:" + e.getMessage(), e);
         } catch (ServiceUnavailableException e) {
@@ -1050,22 +1050,22 @@ public class ElastistorUtil {
         private String queryparamapikey = "apikey";
         private String queryparamresponse = "response";
 
-        public ElastiCenterClient(String address, String key) throws InvalidCredentialsException, InvalidParameterException, SSLHandshakeException, ServiceUnavailableException {
+        public ElastiCenterClient(String address, String key) throws InvalidCredentialsException, InvalidParameterValueException, SSLHandshakeException, ServiceUnavailableException {
             elastiCenterAddress = address;
             apiKey = key;
             initialize();
         }
 
-        public void initialize() throws InvalidParameterException, SSLHandshakeException, InvalidCredentialsException, ServiceUnavailableException {
+        public void initialize() throws InvalidParameterValueException, SSLHandshakeException, InvalidCredentialsException, ServiceUnavailableException {
 
             if (apiKey == null || apiKey.trim().isEmpty()) {
-                throw new InvalidParameterException("Unable to initialize. Please specify a valid API Key.");
+                throw new InvalidParameterValueException("Unable to initialize. Please specify a valid API Key.");
             }
 
             if (elastiCenterAddress == null || elastiCenterAddress.trim().isEmpty()) {
                 // TODO : Validate the format, like valid IP address or
                 // hostname.
-                throw new InvalidParameterException("Unable to initialize. Please specify a valid ElastiCenter IP Address or Hostname.");
+                throw new InvalidParameterValueException("Unable to initialize. Please specify a valid ElastiCenter IP Address or Hostname.");
             }
 
             if (ignoreSSLCertificate) {
@@ -1143,7 +1143,7 @@ public class ElastistorUtil {
             }
 
             if (command == null || command.trim().isEmpty()) {
-                throw new InvalidParameterException("No command to execute.");
+                throw new InvalidParameterValueException("No command to execute.");
             }
 
             try {
@@ -1175,9 +1175,9 @@ public class ElastistorUtil {
                     if (401 == response.getStatus()) {
                         throw new InvalidCredentialsException("Please specify a valid API Key.");
                     } else if (431 == response.getStatus()) {
-                        throw new InvalidParameterException(response.getHeaders().getFirst("X-Description"));
+                        throw new InvalidParameterValueException(response.getHeaders().getFirst("X-Description"));
                     } else if (432 == response.getStatus()) {
-                        throw new InvalidParameterException(command + " does not exist on the ElastiCenter server.  Please specify a valid command or contact your ElastiCenter Administrator.");
+                        throw new InvalidParameterValueException(command + " does not exist on the ElastiCenter server.  Please specify a valid command or contact your ElastiCenter Administrator.");
                     } else {
                         throw new ServiceUnavailableException("Internal Error. Please contact your ElastiCenter Administrator.");
                     }

@@ -21,9 +21,13 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.io.File;
 import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.utils.FileUtil;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.libvirt.Connect;
 import org.libvirt.DomainInfo.DomainState;
 import org.libvirt.LibvirtException;
@@ -75,7 +79,7 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
 
             libvirtComputingResource.createVbd(conn, vmSpec, vmName, vm);
 
-            if (!storagePoolMgr.connectPhysicalDisksViaVmSpec(vmSpec)) {
+            if (!storagePoolMgr.connectPhysicalDisksViaVmSpec(vmSpec, false)) {
                 return new StartAnswer(command, "Failed to connect physical disks to host");
             }
 
@@ -89,8 +93,14 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
 
             libvirtComputingResource.applyDefaultNetworkRules(conn, vmSpec, false);
 
+            if (vmSpec.getType() == VirtualMachine.Type.User) {
+                List<VolumeObjectTO> volumes = Arrays.stream(vmSpec.getDisks()).filter(diskTO -> diskTO.getData() instanceof VolumeObjectTO).
+                        map(diskTO -> (VolumeObjectTO) diskTO.getData()).collect(Collectors.toList());
+                libvirtComputingResource.recreateCheckpointsOnVm(volumes, vmName, conn);
+            }
+
             // pass cmdline info to system vms
-            if (vmSpec.getType() != VirtualMachine.Type.User || (vmSpec.getBootArgs() != null && vmSpec.getBootArgs().contains(UserVmManager.CKS_NODE))) {
+            if (vmSpec.getType() != VirtualMachine.Type.User || (vmSpec.getBootArgs() != null && (vmSpec.getBootArgs().contains(UserVmManager.CKS_NODE) || vmSpec.getBootArgs().contains(UserVmManager.SHAREDFSVM)))) {
                 // try to patch and SSH into the systemvm for up to 5 minutes
                 for (int count = 0; count < 10; count++) {
                     // wait and try passCmdLine for 30 seconds at most for CLOUDSTACK-2823

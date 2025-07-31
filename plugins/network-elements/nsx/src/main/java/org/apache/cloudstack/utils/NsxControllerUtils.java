@@ -124,6 +124,9 @@ public class NsxControllerUtils {
     }
 
     public static String getActiveMonitorProfileName(String lbServerPoolName, String port, String protocol) {
+        if (protocol.equalsIgnoreCase("udp")) {
+            protocol =  "ICMP";
+        }
         return lbServerPoolName + "-" + protocol + "-" + port + "-AM";
     }
 

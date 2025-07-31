@@ -28,7 +28,5 @@ public interface ClusterServiceAdapter extends Adapter {
 
     public ClusterService getPeerService(String strPeer) throws RemoteException;
 
-    public String getServiceEndpointName(String strPeer);
-
     public int getServicePort();
 }

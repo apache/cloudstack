@@ -19,10 +19,11 @@ package com.cloud.consoleproxy;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.cloud.consoleproxy.util.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class ConsoleProxyHttpHandlerHelper {
-    protected static Logger LOGGER = Logger.getLogger(ConsoleProxyHttpHandlerHelper.class);
+    protected static Logger LOGGER = LogManager.getLogger(ConsoleProxyHttpHandlerHelper.class);
 
     public static Map<String, String> getQueryMap(String query) {
         String[] params = query.split("&");

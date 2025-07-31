@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.engine.datacenter.entity.api.db;
 
+import com.cloud.cpu.CPU;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
@@ -26,7 +27,9 @@ import com.cloud.utils.db.StateMachine;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
+import org.apache.cloudstack.util.CPUArchConverter;
 import org.apache.cloudstack.util.HypervisorTypeConverter;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import javax.persistence.Column;
 import javax.persistence.Convert;
@@ -75,6 +78,10 @@ public class EngineClusterVO implements EngineCluster, Identity {
     @Enumerated(value = EnumType.STRING)
     AllocationState allocationState;
 
+    @Column(name = "arch")
+    @Convert(converter = CPUArchConverter.class)
+    private CPU.CPUArch arch;
+
     @Column(name = "managed_state")
     @Enumerated(value = EnumType.STRING)
     ManagedState managedState;
@@ -106,6 +113,9 @@ public class EngineClusterVO implements EngineCluster, Identity {
     @StateMachine(state = State.class, event = Event.class)
     @Column(name = "engine_state", updatable = true, nullable = false, length = 32)
     protected State state = null;
+
+    @Column(name = "storage_access_groups")
+    String storageAccessGroups;
 
     public EngineClusterVO() {
         clusterType = Cluster.ClusterType.CloudManaged;
@@ -167,6 +177,11 @@ public class EngineClusterVO implements EngineCluster, Identity {
     @Override
     public ManagedState getManagedState() {
         return managedState;
+    }
+
+    @Override
+    public String getStorageAccessGroups() {
+        return storageAccessGroups;
     }
 
     public void setManagedState(ManagedState managedState) {
@@ -246,7 +261,23 @@ public class EngineClusterVO implements EngineCluster, Identity {
     }
 
     @Override
+    public CPU.CPUArch getArch() {
+        return arch;
+    }
+
+    public void setArch(CPU.CPUArch arch) {
+        this.arch = arch;
+    }
+
+    @Override
     public PartitionType partitionType() {
         return PartitionType.Cluster;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("EngineCluster %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "name"));
     }
 }

@@ -26,14 +26,19 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.dao.ClusterDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreParameters;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -43,17 +48,20 @@ import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.crypt.DBEncryptionUtil;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -70,7 +78,11 @@ public class PrimaryDataStoreHelper {
     @Inject
     protected StoragePoolHostDao storagePoolHostDao;
     @Inject
+    protected ClusterDao clusterDao;
+    @Inject
     private AnnotationDao annotationDao;
+    @Inject
+    DataStoreProviderManager dataStoreProviderMgr;
 
     public DataStore createPrimaryDataStore(PrimaryDataStoreParameters params) {
         if(params == null)
@@ -137,7 +149,33 @@ public class PrimaryDataStoreHelper {
                 storageTags.add(tag);
             }
         }
-        dataStoreVO = dataStoreDao.persist(dataStoreVO, details, storageTags, params.isTagARule());
+
+        boolean displayDetails = true;
+        DataStoreProvider storeProvider = dataStoreProviderMgr.getDataStoreProvider(params.getProviderName());
+        if (storeProvider != null) {
+            DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
+            if (storeDriver != null) {
+                displayDetails = storeDriver.canDisplayDetails();
+            }
+        }
+
+        String storageAccessGroupsParams = params.getStorageAccessGroups();
+        List<String> storageAccessGroupsList = new ArrayList<String>();
+
+        if (storageAccessGroupsParams != null) {
+            String[] storageAccessGroups = storageAccessGroupsParams.split(",");
+
+            for (String storageAccessGroup : storageAccessGroups) {
+                storageAccessGroup = storageAccessGroup.trim();
+                if (storageAccessGroup.length() == 0) {
+                    continue;
+                }
+                storageAccessGroupsList.add(storageAccessGroup);
+            }
+        }
+
+        dataStoreVO = dataStoreDao.persist(dataStoreVO, details, storageTags, params.isTagARule(), displayDetails, storageAccessGroupsList);
+
         return dataStoreMgr.getDataStore(dataStoreVO.getId(), DataStoreRole.Primary);
     }
 
@@ -256,14 +294,59 @@ public class PrimaryDataStoreHelper {
         this.dataStoreDao.update(poolVO.getId(), poolVO);
         dataStoreDao.remove(poolVO.getId());
         dataStoreDao.deletePoolTags(poolVO.getId());
+        dataStoreDao.deleteStoragePoolAccessGroups(poolVO.getId());
         annotationDao.removeByEntityType(AnnotationService.EntityType.PRIMARY_STORAGE.name(), poolVO.getUuid());
         deletePoolStats(poolVO.getId());
         // Delete op_host_capacity entries
         this._capacityDao.removeBy(Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED, null, null, null, poolVO.getId());
         txn.commit();
 
-        logger.debug("Storage pool id=" + poolVO.getId() + " is removed successfully");
+        logger.debug("Storage pool {} is removed successfully", poolVO);
         return true;
     }
 
+    public void switchToZone(DataStore store, HypervisorType hypervisorType) {
+        StoragePoolVO pool = dataStoreDao.findById(store.getId());
+        CapacityVO capacity = _capacityDao.findByHostIdType(store.getId(), Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED);
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                pool.setScope(ScopeType.ZONE);
+                pool.setPodId(null);
+                pool.setClusterId(null);
+                pool.setHypervisor(hypervisorType);
+                dataStoreDao.update(pool.getId(), pool);
+
+                capacity.setPodId(null);
+                capacity.setClusterId(null);
+                _capacityDao.update(capacity.getId(), capacity);
+            }
+        });
+        logger.debug("Scope of storage pool {} is changed to zone", pool);
+    }
+
+    public void switchToCluster(DataStore store, ClusterScope clusterScope) {
+        List<StoragePoolHostVO> hostPoolRecords = storagePoolHostDao.listByPoolIdNotInCluster(clusterScope.getScopeId(), store.getId()).first();
+        StoragePoolVO pool = dataStoreDao.findById(store.getId());
+        CapacityVO capacity = _capacityDao.findByHostIdType(store.getId(), Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED);
+
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                if (hostPoolRecords != null) {
+                    for (StoragePoolHostVO host : hostPoolRecords) {
+                        storagePoolHostDao.deleteStoragePoolHostDetails(host.getHostId(), host.getPoolId());
+                    }
+                }
+                pool.setScope(ScopeType.CLUSTER);
+                pool.setPodId(clusterScope.getPodId());
+                pool.setClusterId(clusterScope.getScopeId());
+                dataStoreDao.update(pool.getId(), pool);
+
+                capacity.setPodId(clusterScope.getPodId());
+                capacity.setClusterId(clusterScope.getScopeId());
+                _capacityDao.update(capacity.getId(), capacity);
+            }
+        });
+        logger.debug("Scope of storage pool {} is changed to cluster {}", pool::toString, () -> clusterDao.findById(clusterScope.getScopeId()));
+    }
 }

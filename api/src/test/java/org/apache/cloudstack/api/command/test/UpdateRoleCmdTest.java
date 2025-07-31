@@ -62,6 +62,7 @@ public class UpdateRoleCmdTest extends TestCase{
         when(role.getId()).thenReturn(1L);
         when(role.getDescription()).thenReturn("Description Initial");
         when(role.getName()).thenReturn("User");
+        when(role.getState()).thenReturn(Role.State.ENABLED);
         updateRoleCmd.execute();
         RoleResponse response = (RoleResponse) updateRoleCmd.getResponseObject();
         assertEquals((String)ReflectionTestUtils.getField(response, "roleName"),role.getName());

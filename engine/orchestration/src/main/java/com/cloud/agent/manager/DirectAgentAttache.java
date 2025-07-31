@@ -23,6 +23,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.cloud.utils.ThreadUtil;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
@@ -35,6 +36,7 @@ import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Response;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.Status;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ServerResource;
 import org.apache.logging.log4j.ThreadContext;
 
@@ -51,8 +53,8 @@ public class DirectAgentAttache extends AgentAttache {
     AtomicInteger _outstandingTaskCount;
     AtomicInteger _outstandingCronTaskCount;
 
-    public DirectAgentAttache(AgentManagerImpl agentMgr, long id, String name, ServerResource resource, boolean maintenance) {
-        super(agentMgr, id, name, maintenance);
+    public DirectAgentAttache(AgentManagerImpl agentMgr, long id, String uuid, String name, final Hypervisor.HypervisorType hypervisorType, ServerResource resource, boolean maintenance) {
+        super(agentMgr, id, uuid, name, hypervisorType, maintenance);
         _resource = resource;
         _outstandingTaskCount = new AtomicInteger(0);
         _outstandingCronTaskCount = new AtomicInteger(0);
@@ -60,9 +62,7 @@ public class DirectAgentAttache extends AgentAttache {
 
     @Override
     public void disconnect(Status state) {
-        if (logger.isDebugEnabled()) {
-            logger.debug("Processing disconnect " + _id + "(" + _name + ")");
-        }
+        logger.debug("Processing disconnect [id: {}, uuid: {}, name: {}]", _id, _uuid, _name);
 
         for (ScheduledFuture<?> future : _futures) {
             future.cancel(false);
@@ -117,7 +117,7 @@ public class DirectAgentAttache extends AgentAttache {
         if (answers != null && answers[0] instanceof StartupAnswer) {
             StartupAnswer startup = (StartupAnswer)answers[0];
             int interval = startup.getPingInterval();
-            logger.info("StartupAnswer received " + startup.getHostId() + " Interval = " + interval);
+            logger.info("StartupAnswer received [id: {}, uuid: {}, name: {}, interval: {}]", startup.getHostId(), startup.getHostUuid(), startup.getHostName(), interval);
             _futures.add(_agentMgr.getCronJobPool().scheduleAtFixedRate(new PingTask(), interval, interval, TimeUnit.SECONDS));
         }
     }
@@ -128,7 +128,7 @@ public class DirectAgentAttache extends AgentAttache {
             assert _resource == null : "Come on now....If you're going to dabble in agent code, you better know how to close out our resources. Ever considered why there's a method called disconnect()?";
             synchronized (this) {
                 if (_resource != null) {
-                    logger.warn("Lost attache for " + _id + "(" + _name + ")");
+                    logger.warn("Lost attache for [id: {}, uuid: {}, name: {}]", _id, _uuid, _name);
                     disconnect(Status.Alert);
                 }
             }
@@ -142,9 +142,8 @@ public class DirectAgentAttache extends AgentAttache {
     }
 
     private synchronized void scheduleFromQueue() {
-        if (logger.isTraceEnabled()) {
-            logger.trace("Agent attache=" + _id + ", task queue size=" + tasks.size() + ", outstanding tasks=" + _outstandingTaskCount.get());
-        }
+        logger.trace("Agent attache [id: {}, uuid: {}, name: {}], task queue size={}, outstanding tasks={}",
+                _id, _uuid, _name, tasks.size(), _outstandingTaskCount.get());
         while (!tasks.isEmpty() && _outstandingTaskCount.get() < _agentMgr.getDirectAgentThreadCap()) {
             _outstandingTaskCount.incrementAndGet();
             _agentMgr.getDirectAgentPool().execute(tasks.remove());
@@ -156,7 +155,9 @@ public class DirectAgentAttache extends AgentAttache {
         protected synchronized void runInContext() {
             try {
                 if (_outstandingCronTaskCount.incrementAndGet() >= _agentMgr.getDirectAgentThreadCap()) {
-                    logger.warn("PingTask execution for direct attache(" + _id + ") has reached maximum outstanding limit(" + _agentMgr.getDirectAgentThreadCap() + "), bailing out");
+                    logger.warn(
+                            "PingTask execution for direct attache [id: {}, uuid: {}, name: {}] has reached maximum outstanding limit({}), bailing out",
+                            _id, _uuid, _name, _agentMgr.getDirectAgentThreadCap());
                     return;
                 }
 
@@ -166,30 +167,26 @@ public class DirectAgentAttache extends AgentAttache {
                     PingCommand cmd = resource.getCurrentStatus(_id);
                     int retried = 0;
                     while (cmd == null && ++retried <= _HostPingRetryCount.value()) {
-                        Thread.sleep(1000*_HostPingRetryTimer.value());
+                        ThreadUtil.wait(this, 1000L *_HostPingRetryTimer.value(), _id, _uuid, _name);
                         cmd = resource.getCurrentStatus(_id);
                     }
 
                     if (cmd == null) {
-                        logger.warn("Unable to get current status on " + _id + "(" + _name + ")");
+                        logger.warn("Unable to get current status on [id: {}, uuid: {}, name: {}]", _id, _uuid, _name);
                         return;
                     }
 
                     if (cmd.getContextParam("logid") != null) {
                         ThreadContext.put("logcontextid", cmd.getContextParam("logid"));
                     }
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Ping from " + _id + "(" + _name + ")");
-                    }
+                    logger.debug("Ping from [id: {}, uuid: {}, name: {}]", _id, _uuid, _name);
                     long seq = _seq++;
 
-                    if (logger.isTraceEnabled()) {
-                        logger.trace("SeqA " + _id + "-" + seq + ": " + new Request(_id, -1, cmd, false).toString());
-                    }
+                    logger.trace("SeqA {}-{}: {}", _id, seq, new Request(_id, -1, cmd, false).toString());
 
                     _agentMgr.handleCommands(DirectAgentAttache.this, seq, new Command[] {cmd});
                 } else {
-                    logger.debug("Unable to send ping because agent is disconnected " + _id + "(" + _name + ")");
+                    logger.debug("Unable to send ping because agent is disconnected [id: {}, uuid: {}, name: {}]", _id, _uuid, _name);
                 }
             } catch (Exception e) {
                 logger.warn("Unable to complete the ping task", e);
@@ -218,7 +215,7 @@ public class DirectAgentAttache extends AgentAttache {
                 Response resp = new Response(_req, answers.toArray(new Answer[answers.size()]));
                 processAnswers(seq, resp);
             } catch (Exception e) {
-                logger.warn(log(seq, "Exception caught in bailout "), e);
+                logger.warn(LOG_SEQ_FORMATTED_STRING, seq, "Exception caught in bailout ", e);
             }
         }
 
@@ -227,7 +224,9 @@ public class DirectAgentAttache extends AgentAttache {
             long seq = _req.getSequence();
             try {
                 if (_outstandingCronTaskCount.incrementAndGet() >= _agentMgr.getDirectAgentThreadCap()) {
-                    logger.warn("CronTask execution for direct attache(" + _id + ") has reached maximum outstanding limit(" + _agentMgr.getDirectAgentThreadCap() + "), bailing out");
+                    logger.warn(
+                            "CronTask execution for direct attache [id: {}, uuid: {}, name: {}] has reached maximum outstanding limit({}), bailing out",
+                            _id, _uuid, _name, _agentMgr.getDirectAgentThreadCap());
                     bailout();
                     return;
                 }
@@ -236,9 +235,7 @@ public class DirectAgentAttache extends AgentAttache {
                 Command[] cmds = _req.getCommands();
                 boolean stopOnError = _req.stopOnError();
 
-                if (logger.isDebugEnabled()) {
-                    logger.debug(log(seq, "Executing request"));
-                }
+                logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Executing request");
                 ArrayList<Answer> answers = new ArrayList<Answer>(cmds.length);
                 for (int i = 0; i < cmds.length; i++) {
                     Answer answer = null;
@@ -257,26 +254,24 @@ public class DirectAgentAttache extends AgentAttache {
                             answer = new Answer(cmds[i], false, "Agent is disconnected");
                         }
                     } catch (Exception e) {
-                        logger.warn(log(seq, "Exception Caught while executing command"), e);
+                        logger.warn(LOG_SEQ_FORMATTED_STRING, seq, "Exception Caught while executing command", e);
                         answer = new Answer(cmds[i], false, e.toString());
                     }
                     answers.add(answer);
                     if (!answer.getResult() && stopOnError) {
                         if (i < cmds.length - 1 && logger.isDebugEnabled()) {
-                            logger.debug(log(seq, "Cancelling because one of the answers is false and it is stop on error."));
+                            logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Cancelling because one of the answers is false and it is stop on error.");
                         }
                         break;
                     }
                 }
 
                 Response resp = new Response(_req, answers.toArray(new Answer[answers.size()]));
-                if (logger.isDebugEnabled()) {
-                    logger.debug(log(seq, "Response Received: "));
-                }
+                logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Response Received: ");
 
                 processAnswers(seq, resp);
             } catch (Exception e) {
-                logger.warn(log(seq, "Exception caught "), e);
+                logger.warn(LOG_SEQ_FORMATTED_STRING, seq, "Exception caught ", e);
             } finally {
                 _outstandingCronTaskCount.decrementAndGet();
             }
@@ -298,9 +293,7 @@ public class DirectAgentAttache extends AgentAttache {
                 Command[] cmds = _req.getCommands();
                 boolean stopOnError = _req.stopOnError();
 
-                if (logger.isDebugEnabled()) {
-                    logger.debug(log(seq, "Executing request"));
-                }
+                logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Executing request");
                 ArrayList<Answer> answers = new ArrayList<Answer>(cmds.length);
                 for (int i = 0; i < cmds.length; i++) {
                     Answer answer = null;
@@ -320,27 +313,25 @@ public class DirectAgentAttache extends AgentAttache {
                         }
                     } catch (Throwable t) {
                         // Catch Throwable as all exceptions will otherwise be eaten by the executor framework
-                        logger.warn(log(seq, "Throwable caught while executing command"), t);
+                        logger.warn(LOG_SEQ_FORMATTED_STRING, seq, "Throwable caught while executing command", t);
                         answer = new Answer(cmds[i], false, t.toString());
                     }
                     answers.add(answer);
                     if (!answer.getResult() && stopOnError) {
                         if (i < cmds.length - 1 && logger.isDebugEnabled()) {
-                            logger.debug(log(seq, "Cancelling because one of the answers is false and it is stop on error."));
+                            logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Cancelling because one of the answers is false and it is stop on error.");
                         }
                         break;
                     }
                 }
 
                 Response resp = new Response(_req, answers.toArray(new Answer[answers.size()]));
-                if (logger.isDebugEnabled()) {
-                    logger.debug(log(seq, "Response Received: "));
-                }
+                logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Response Received: ");
 
                 processAnswers(seq, resp);
             } catch (Throwable t) {
                 // This is pretty serious as processAnswers might not be called and the calling process is stuck waiting for the full timeout
-                logger.error(log(seq, "Throwable caught in runInContext, this will cause the management to become unpredictable"), t);
+                logger.error(LOG_SEQ_FORMATTED_STRING, seq, "Throwable caught in runInContext, this will cause the management to become unpredictable", t);
             } finally {
                 _outstandingTaskCount.decrementAndGet();
                 scheduleFromQueue();

@@ -163,11 +163,12 @@ public class StorPoolHelper {
         return null;
     }
 
-    public static Map<String, String> addStorPoolTags(String name, String vmUuid, String csTag, String vcPolicy) {
+    public static Map<String, String> addStorPoolTags(String name, String vmUuid, String csTag, String vcPolicy, String qcTier) {
         Map<String, String> tags = new HashMap<>();
         tags.put("uuid", name);
         tags.put("cvm", vmUuid);
         tags.put(StorPoolUtil.SP_VC_POLICY, vcPolicy);
+        tags.put("qc", qcTier);
         if (csTag != null) {
             tags.put("cs", csTag);
         }
@@ -218,17 +219,17 @@ public class StorPoolHelper {
     }
 
     public static Long findClusterIdByGlobalId(String globalId, ClusterDao clusterDao) {
-        List<ClusterVO> clusterVo = clusterDao.listAll();
-        if (clusterVo.size() == 1) {
+        List<Long> clusterIds = clusterDao.listAllIds();
+        if (clusterIds.size() == 1) {
             StorPoolUtil.spLog("There is only one cluster, sending backup to secondary command");
             return null;
         }
-        for (ClusterVO clusterVO2 : clusterVo) {
-            if (globalId != null && StorPoolConfigurationManager.StorPoolClusterId.valueIn(clusterVO2.getId()) != null
-                    && globalId.contains(StorPoolConfigurationManager.StorPoolClusterId.valueIn(clusterVO2.getId()).toString())) {
-                StorPoolUtil.spLog("Found cluster with id=%s for object with globalId=%s", clusterVO2.getId(),
+        for (Long clusterId : clusterIds) {
+            if (globalId != null && StorPoolConfigurationManager.StorPoolClusterId.valueIn(clusterId) != null
+                    && globalId.contains(StorPoolConfigurationManager.StorPoolClusterId.valueIn(clusterId))) {
+                StorPoolUtil.spLog("Found cluster with id=%s for object with globalId=%s", clusterId,
                         globalId);
-                return clusterVO2.getId();
+                return clusterId;
             }
         }
         throw new CloudRuntimeException(

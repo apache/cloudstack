@@ -28,6 +28,7 @@ public class CreateSnapshotPayload {
     private Snapshot.LocationType locationType;
     private boolean asyncBackup;
     private List<Long> zoneIds;
+    private boolean kvmIncrementalSnapshot = false;
 
     public Long getSnapshotPolicyId() {
         return snapshotPolicyId;
@@ -77,5 +78,13 @@ public class CreateSnapshotPayload {
 
     public void setZoneIds(List<Long> zoneIds) {
         this.zoneIds = zoneIds;
+    }
+
+    public boolean isKvmIncrementalSnapshot() {
+        return kvmIncrementalSnapshot;
+    }
+
+    public void setKvmIncrementalSnapshot(boolean kvmIncrementalSnapshot) {
+        this.kvmIncrementalSnapshot = kvmIncrementalSnapshot;
     }
 }

@@ -17,6 +17,7 @@
 package com.cloud.api.query.dao;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -50,6 +51,9 @@ import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import org.apache.commons.collections.MapUtils;
+
+import java.util.Map;
 
 @Component
 public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Long> implements StoragePoolJoinDao {
@@ -100,7 +104,17 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
     }
 
     @Override
-    public StoragePoolResponse newStoragePoolResponse(StoragePoolJoinVO pool) {
+    public StoragePoolResponse newMinimalStoragePoolResponse(StoragePoolJoinVO pool) {
+        StoragePool storagePool = storagePoolDao.findById(pool.getId());
+        StoragePoolResponse poolResponse = new StoragePoolResponse();
+        poolResponse.setId(pool.getUuid());
+        poolResponse.setName(pool.getName());
+        poolResponse.setObjectName("storagepool");
+        return poolResponse;
+    }
+
+    @Override
+    public StoragePoolResponse newStoragePoolResponse(StoragePoolJoinVO pool, boolean customStats) {
         StoragePool storagePool = storagePoolDao.findById(pool.getId());
         StoragePoolResponse poolResponse = new StoragePoolResponse();
         poolResponse.setId(pool.getUuid());
@@ -140,28 +154,32 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         }
         poolResponse.setDiskSizeTotal(pool.getCapacityBytes());
         poolResponse.setDiskSizeAllocated(allocatedSize);
+        poolResponse.setDiskSizeUsed(pool.getUsedBytes());
         poolResponse.setCapacityIops(pool.getCapacityIops());
+        poolResponse.setUsedIops(pool.getUsedIops());
 
         if (storagePool.isManaged()) {
             DataStore store = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
             PrimaryDataStoreDriver driver = (PrimaryDataStoreDriver) store.getDriver();
             long usedIops = driver.getUsedIops(storagePool);
             poolResponse.setAllocatedIops(usedIops);
-        }
 
-        // TODO: StatsCollector does not persist data
-        StorageStats stats = ApiDBUtils.getStoragePoolStatistics(pool.getId());
-        if (stats != null) {
-            Long used = stats.getByteUsed();
-            poolResponse.setDiskSizeUsed(used);
+            if (customStats && driver.poolProvidesCustomStorageStats()) {
+                Map<String, String> storageCustomStats = driver.getCustomStorageStats(storagePool);
+                if (MapUtils.isNotEmpty(storageCustomStats)) {
+                    poolResponse.setCustomStats(storageCustomStats);
+                }
+            }
         }
 
         poolResponse.setClusterId(pool.getClusterUuid());
         poolResponse.setClusterName(pool.getClusterName());
         poolResponse.setProvider(pool.getStorageProviderName());
         poolResponse.setTags(pool.getTag());
+        poolResponse.setStorageAccessGroups(pool.getStorageAccessGroup());
         poolResponse.setIsTagARule(pool.getIsTagARule());
         poolResponse.setOverProvisionFactor(Double.toString(CapacityManager.StorageOverprovisioningFactor.valueIn(pool.getId())));
+        poolResponse.setManaged(storagePool.isManaged());
 
         // set async job
         if (pool.getJobId() != null) {
@@ -179,10 +197,26 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
     public StoragePoolResponse setStoragePoolResponse(StoragePoolResponse response, StoragePoolJoinVO sp) {
         String tag = sp.getTag();
         if (tag != null) {
-            if (response.getTags() != null && response.getTags().length() > 0) {
-                response.setTags(response.getTags() + "," + tag);
+            if (response.getTags() != null && !response.getTags().isEmpty()) {
+                List<String> tagsList = new ArrayList<>(Arrays.asList(response.getTags().split(",")));
+                if (!tagsList.contains(tag)) {
+                    tagsList.add(tag);
+                }
+                response.setTags(String.join(",", tagsList));
             } else {
                 response.setTags(tag);
+            }
+        }
+        String storageAccessGroup = sp.getStorageAccessGroup();
+        if (storageAccessGroup != null) {
+            if (response.getStorageAccessGroups() != null && !response.getStorageAccessGroups().isEmpty()) {
+                List<String> groupList = new ArrayList<>(Arrays.asList(response.getStorageAccessGroups().split(",")));
+                if (!groupList.contains(storageAccessGroup)) {
+                    groupList.add(storageAccessGroup);
+                }
+                response.setStorageAccessGroups(String.join(",", groupList));
+            } else {
+                response.setStorageAccessGroups(storageAccessGroup);
             }
         }
         if (response.hasAnnotation() == null) {
@@ -194,6 +228,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
 
     @Override
     public StoragePoolResponse newStoragePoolForMigrationResponse(StoragePoolJoinVO pool) {
+        StoragePool storagePool = storagePoolDao.findById(pool.getId());
         StoragePoolResponse poolResponse = new StoragePoolResponse();
         poolResponse.setId(pool.getUuid());
         poolResponse.setName(pool.getName());
@@ -220,6 +255,17 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         poolResponse.setDiskSizeTotal(pool.getCapacityBytes());
         poolResponse.setDiskSizeAllocated(allocatedSize);
         poolResponse.setCapacityIops(pool.getCapacityIops());
+
+        if (storagePool != null) {
+            poolResponse.setManaged(storagePool.isManaged());
+            if (storagePool.isManaged()) {
+                DataStore store = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
+                PrimaryDataStoreDriver driver = (PrimaryDataStoreDriver) store.getDriver();
+                long usedIops = driver.getUsedIops(storagePool);
+                poolResponse.setAllocatedIops(usedIops);
+            }
+        }
+
         poolResponse.setOverProvisionFactor(Double.toString(CapacityManager.StorageOverprovisioningFactor.valueIn(pool.getId())));
 
         // TODO: StatsCollector does not persist data
@@ -233,6 +279,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         poolResponse.setClusterName(pool.getClusterName());
         poolResponse.setProvider(pool.getStorageProviderName());
         poolResponse.setTags(pool.getTag());
+        poolResponse.setStorageAccessGroups(pool.getStorageAccessGroup());
         poolResponse.setIsTagARule(pool.getIsTagARule());
 
         // set async job
@@ -251,6 +298,14 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
                 response.setTags(response.getTags() + "," + tag);
             } else {
                 response.setTags(tag);
+            }
+        }
+        String storageAccessGroup = sp.getStorageAccessGroup();
+        if (storageAccessGroup != null) {
+            if (response.getStorageAccessGroups() != null && response.getStorageAccessGroups().length() > 0) {
+                response.setStorageAccessGroups(response.getStorageAccessGroups() + "," + storageAccessGroup);
+            } else {
+                response.setStorageAccessGroups(storageAccessGroup);
             }
         }
         return response;

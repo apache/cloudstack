@@ -87,6 +87,36 @@ public class DatabaseAccessObject {
         return columnExists;
     }
 
+    public String getColumnType(Connection conn, String tableName, String columnName) {
+        try (PreparedStatement pstmt = conn.prepareStatement(String.format("DESCRIBE %s %s", tableName, columnName));){
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getString("Type");
+            }
+        } catch (SQLException e) {
+            logger.warn("Type for column {} can not be retrieved in {} ignoring exception: {}", columnName, tableName, e.getMessage());
+        }
+        return null;
+    }
+
+    public void addColumn(Connection conn, String tableName, String columnName, String columnDefinition) {
+        try (PreparedStatement pstmt = conn.prepareStatement(String.format("ALTER TABLE %s ADD COLUMN %s %s", tableName, columnName, columnDefinition));){
+            pstmt.executeUpdate();
+            logger.debug("Column {} is added successfully from the table {}", columnName, tableName);
+        } catch (SQLException e) {
+            logger.warn("Unable to add column {} to table {} due to exception", columnName, tableName, e);
+        }
+    }
+
+    public void changeColumn(Connection conn, String tableName, String oldColumnName, String newColumnName, String columnDefinition) {
+        try (PreparedStatement pstmt = conn.prepareStatement(String.format("ALTER TABLE %s CHANGE COLUMN %s %s %s", tableName, oldColumnName, newColumnName, columnDefinition));){
+            pstmt.executeUpdate();
+            logger.debug("Column {} is changed successfully to {} from the table {}", oldColumnName, newColumnName, tableName);
+        } catch (SQLException e) {
+            logger.warn("Unable to add column {} to {} from the table {} due to exception", oldColumnName, newColumnName, tableName, e);
+        }
+    }
+
     public String generateIndexName(String tableName, String... columnName) {
         return String.format("i_%s__%s", tableName, StringUtils.join(columnName, "__"));
     }
@@ -111,6 +141,17 @@ public class DatabaseAccessObject {
             logger.debug(String.format("Created index %s", indexName));
         } catch (SQLException e) {
             logger.warn(String.format("Unable to create index %s", indexName), e);
+        }
+    }
+
+    public void renameIndex(Connection conn, String tableName, String oldName, String newName) {
+        String stmt = String.format("ALTER TABLE %s RENAME INDEX %s TO %s", tableName, oldName, newName);
+        logger.debug("Statement: {}", stmt);
+        try (PreparedStatement pstmt = conn.prepareStatement(stmt)) {
+            pstmt.execute();
+            logger.debug("Renamed index {} to {}", oldName, newName);
+        } catch (SQLException e) {
+            logger.warn("Unable to rename index {} to {}", oldName, newName, e);
         }
     }
 

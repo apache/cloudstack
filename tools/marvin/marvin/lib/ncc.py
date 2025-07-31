@@ -93,7 +93,7 @@ class NCC:
         elif isolation_policy.lower() == "dedicated":
             srv_pkg = self.createServicePackageDedicated(name, tnt_group_id, dv_group_id, isolation_policy )
         else:
-            raise  Exception("NS device must be either in shared or dedicated mode")
+            raise Exception("NS device must be either in shared or dedicated mode")
         if srv_pkg.status_code != 201:
             raise Exception("Error:  %s" % self.__lastError)
         dev_add_res =self.addDevicetoServicePackage(dv_group_id, device_ip)

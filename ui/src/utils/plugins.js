@@ -17,11 +17,12 @@
 
 import _ from 'lodash'
 import { i18n } from '@/locales'
-import { api } from '@/api'
-import { message, notification } from 'ant-design-vue'
+import { getAPI } from '@/api'
+import { message, notification, Modal } from 'ant-design-vue'
 import eventBus from '@/config/eventBus'
 import store from '@/store'
 import { sourceToken } from '@/utils/request'
+import { toLocalDate, toLocaleDate } from '@/utils/date'
 
 export const pollJobPlugin = {
   install (app) {
@@ -31,6 +32,7 @@ export const pollJobPlugin = {
        * @param {String} [name='']
        * @param {String} [title='']
        * @param {String} [description='']
+       * @param {Boolean} [showSuccessMessage=true]
        * @param {String} [successMessage=Success]
        * @param {Function} [successMethod=() => {}]
        * @param {String} [errorMessage=Error]
@@ -48,6 +50,7 @@ export const pollJobPlugin = {
         name = '',
         title = '',
         description = '',
+        showSuccessMessage = true,
         successMessage = i18n.global.t('label.success'),
         successMethod = () => {},
         errorMessage = i18n.global.t('label.error'),
@@ -87,22 +90,26 @@ export const pollJobPlugin = {
       })
 
       options.originalPage = options.originalPage || this.$router.currentRoute.value.path
-      api('queryAsyncJobResult', { jobId }).then(json => {
+      getAPI('queryAsyncJobResult', { jobId }).then(json => {
         const result = json.queryasyncjobresultresponse
         eventBus.emit('update-job-details', { jobId, resourceId })
         if (result.jobstatus === 1) {
-          var content = successMessage
-          if (successMessage === 'Success' && action && action.label) {
-            content = i18n.global.t(action.label)
+          if (showSuccessMessage) {
+            var content = successMessage
+            if (successMessage === 'Success' && action && action.label) {
+              content = i18n.global.t(action.label)
+            }
+            if (name) {
+              content = content + ' - ' + name
+            }
+            message.success({
+              content,
+              key: jobId,
+              duration: 2
+            })
+          } else {
+            message.destroy(jobId)
           }
-          if (name) {
-            content = content + ' - ' + name
-          }
-          message.success({
-            content,
-            key: jobId,
-            duration: 2
-          })
           store.dispatch('AddHeaderNotice', {
             key: jobId,
             title,
@@ -288,37 +295,26 @@ export const notifierPlugin = {
       close: (key) => notification.close(key),
       destroy: () => notification.destroy()
     }
+
+    app.config.globalProperties.$messageConfigSuccess = function (msg, configrecord) {
+      if (configrecord.isdynamic) {
+        msg += `. ${this.$t('message.setting.update.delay')}`
+      }
+      message.success(msg)
+    }
   }
 }
 
 export const toLocaleDatePlugin = {
   install (app) {
     app.config.globalProperties.$toLocaleDate = function (date) {
-      var timezoneOffset = this.$store.getters.timezoneoffset
-      if (this.$store.getters.usebrowsertimezone) {
-        // Since GMT+530 is returned as -330 (mins to GMT)
-        timezoneOffset = new Date().getTimezoneOffset() / -60
-      }
-      var milliseconds = Date.parse(date)
-      // e.g. "Tue, 08 Jun 2010 19:13:49 GMT", "Tue, 25 May 2010 12:07:01 UTC"
-      var dateWithOffset = new Date(milliseconds + (timezoneOffset * 60 * 60 * 1000)).toUTCString()
-      // e.g. "08 Jun 2010 19:13:49 GMT", "25 May 2010 12:07:01 UTC"
-      dateWithOffset = dateWithOffset.substring(dateWithOffset.indexOf(', ') + 2)
-      // e.g. "08 Jun 2010 19:13:49", "25 May 2010 12:10:16"
-      dateWithOffset = dateWithOffset.substring(0, dateWithOffset.length - 4)
-      return dateWithOffset
+      const { timezoneoffset, usebrowsertimezone } = this.$store.getters
+      return toLocaleDate({ date, timezoneoffset, usebrowsertimezone })
     }
 
     app.config.globalProperties.$toLocalDate = function (date) {
-      var timezoneOffset = this.$store.getters.timezoneoffset
-      if (this.$store.getters.usebrowsertimezone) {
-        // Since GMT+530 is returned as -330 (mins to GMT)
-        timezoneOffset = new Date().getTimezoneOffset() / -60
-      }
-      var milliseconds = Date.parse(date)
-      // e.g. "Tue, 08 Jun 2010 19:13:49 GMT", "Tue, 25 May 2010 12:07:01 UTC"
-      var dateWithOffset = new Date(milliseconds + (timezoneOffset * 60 * 60 * 1000))
-      return dateWithOffset.toISOString()
+      const { timezoneoffset, usebrowsertimezone } = this.$store.getters
+      return toLocalDate({ date, timezoneoffset, usebrowsertimezone }).toISOString()
     }
   }
 }
@@ -348,7 +344,7 @@ export const showIconPlugin = {
       if (resource) {
         resourceType = resource
       }
-      if (['zone', 'zones', 'template', 'iso', 'account', 'accountuser', 'vm', 'domain', 'project', 'vpc', 'guestnetwork'].includes(resourceType)) {
+      if (['zone', 'zones', 'template', 'iso', 'account', 'accountuser', 'vm', 'domain', 'project', 'vpc', 'guestnetwork', 'guestoscategory'].includes(resourceType)) {
         return true
       } else {
         return false
@@ -390,6 +386,12 @@ export const resourceTypePlugin = {
           return 'publicip'
         case 'NetworkAcl':
           return 'acllist'
+        case 'KubernetesCluster':
+          return 'kubernetes'
+        case 'KubernetesSupportedVersion':
+          return 'kubernetesiso'
+        case 'ExtensionCustomAction':
+          return 'customaction'
         case 'SystemVm':
         case 'PhysicalNetwork':
         case 'Backup':
@@ -418,6 +420,8 @@ export const resourceTypePlugin = {
         case 'VpnCustomerGateway':
         case 'AutoScaleVmGroup':
         case 'QuotaTariff':
+        case 'GuestOsCategory':
+        case 'Extension':
           return resourceType.toLowerCase()
       }
       return ''
@@ -427,6 +431,9 @@ export const resourceTypePlugin = {
       var routePath = this.$getRouteFromResourceType(resourceType)
       if (!routePath) return ''
       var route = this.$router.resolve('/' + routePath)
+      if (routePath === 'kubernetes') {
+        return route?.meta?.icon[0]
+      }
       return route?.meta?.icon || ''
     }
   }
@@ -488,6 +495,15 @@ export const fileSizeUtilPlugin = {
   }
 }
 
+function isBase64 (str) {
+  try {
+    const decoded = new TextDecoder().decode(Uint8Array.from(atob(str), c => c.charCodeAt(0)))
+    return btoa(decoded) === str
+  } catch (err) {
+    return false
+  }
+}
+
 export const genericUtilPlugin = {
   install (app) {
     app.config.globalProperties.$isValidUuid = function (uuid) {
@@ -496,11 +512,10 @@ export const genericUtilPlugin = {
     }
 
     app.config.globalProperties.$toBase64AndURIEncoded = function (text) {
-      const base64regex = /^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/
-      if (base64regex.test(text)) {
+      if (isBase64(text)) {
         return text
       }
-      return encodeURIComponent(btoa(unescape(encodeURIComponent(text))))
+      return encodeURI(btoa(unescape(encodeURIComponent(text))))
     }
   }
 }
@@ -520,4 +535,65 @@ export function createPathBasedOnVmType (vmtype, virtualmachineid) {
   }
 
   return path + virtualmachineid
+}
+
+export const dialogUtilPlugin = {
+  install (app) {
+    app.config.globalProperties.$resetConfigurationValueConfirm = function (configRecord, callback) {
+      Modal.confirm({
+        title: i18n.global.t('label.reset.config.value'),
+        content: `${i18n.global.t('message.confirm.reset.configuration.value').replace('%x', configRecord.name)}`,
+        okText: i18n.global.t('label.yes'),
+        cancelText: i18n.global.t('label.no'),
+        okType: 'primary',
+        onOk: () => callback(configRecord)
+      })
+    }
+  }
+}
+
+export const cpuArchitectureUtilPlugin = {
+  install (app) {
+    app.config.globalProperties.$fetchCpuArchitectureTypes = function () {
+      const architectures = [
+        { id: 'x86_64', name: 'Intel/AMD 64 bits (x86_64)' },
+        { id: 'aarch64', name: 'ARM 64 bits (aarch64)' }
+      ]
+      return architectures.map(item => ({ ...item, description: item.name }))
+    }
+  }
+}
+
+export const imagesUtilPlugin = {
+  install (app) {
+    app.config.globalProperties.$fetchTemplateTypes = function (hypervisor) {
+      const baseTypes = ['USER']
+      if (hypervisor === 'External') {
+        return baseTypes.map(type => ({ id: type, name: type, description: type }))
+      }
+      baseTypes.push('VNF')
+      const adminTypes = ['SYSTEM', 'BUILTIN', 'ROUTING']
+      const types = [...baseTypes]
+      if (store.getters.userInfo?.roletype === 'Admin') {
+        types.push(...adminTypes)
+      }
+      return types.map(type => ({ id: type, name: type, description: type }))
+    }
+  }
+}
+
+export const extensionsUtilPlugin = {
+  install (app) {
+    app.config.globalProperties.$fetchCustomActionRoleTypes = function () {
+      const roleTypes = []
+      const roleTypesList = ['Admin', 'Resource Admin', 'Domain Admin', 'User']
+      roleTypesList.forEach((item) => {
+        roleTypes.push({
+          id: item.replace(' ', ''),
+          description: item
+        })
+      })
+      return roleTypes
+    }
+  }
 }

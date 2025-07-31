@@ -67,7 +67,7 @@ def getServicesConfig( config_file_path = "/etc/monitor.conf" ):
             process_dict[section][name] = value
             printd (" %s = %r" % (name, value))
 
-    return  process_dict
+    return process_dict
 
 def printd (msg):
     """

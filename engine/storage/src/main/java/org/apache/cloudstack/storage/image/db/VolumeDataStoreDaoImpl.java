@@ -407,4 +407,16 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
         }
         return true;
     }
+
+    @Override
+    public int expungeByVolumeList(List<Long> volumeIds, Long batchSize) {
+        if (CollectionUtils.isEmpty(volumeIds)) {
+            return 0;
+        }
+        SearchBuilder<VolumeDataStoreVO> sb = createSearchBuilder();
+        sb.and("volumeIds", sb.entity().getVolumeId(), SearchCriteria.Op.IN);
+        SearchCriteria<VolumeDataStoreVO> sc = sb.create();
+        sc.setParameters("volumeIds", volumeIds.toArray());
+        return batchExpunge(sc, batchSize);
+    }
 }

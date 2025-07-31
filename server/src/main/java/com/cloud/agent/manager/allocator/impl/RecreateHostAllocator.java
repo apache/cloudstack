@@ -26,6 +26,7 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -73,7 +74,7 @@ public class RecreateHostAllocator extends FirstFitRoutingAllocator {
     public List<Host> allocateTo(VirtualMachineProfile vm, DeploymentPlan plan, Type type, ExcludeList avoid, int returnUpTo) {
 
         List<Host> hosts = super.allocateTo(vm, plan, type, avoid, returnUpTo);
-        if (hosts != null && !hosts.isEmpty()) {
+        if (CollectionUtils.isNotEmpty(hosts)) {
             return hosts;
         }
 
@@ -93,7 +94,7 @@ public class RecreateHostAllocator extends FirstFitRoutingAllocator {
             List<VolumeVO> vols = _volsDao.findByInstance(vm.getId());
             VolumeVO vol = vols.get(0);
             long podId = vol.getPodId();
-            logger.debug("Pod id determined from volume " + vol.getId() + " is " + podId);
+            logger.debug("Pod id determined from volume {} is {}", vol, podId);
             Iterator<PodCluster> it = pcs.iterator();
             while (it.hasNext()) {
                 PodCluster pc = it.next();

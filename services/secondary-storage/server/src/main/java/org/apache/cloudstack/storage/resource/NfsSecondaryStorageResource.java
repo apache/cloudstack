@@ -54,6 +54,7 @@ import java.util.stream.Stream;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.ConvertSnapshotCommand;
 import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
 import org.apache.cloudstack.storage.NfsMountManagerImpl.PathParser;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
@@ -71,6 +72,7 @@ import org.apache.cloudstack.storage.command.UploadStatusCommand;
 import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsCommand;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.configdrive.ConfigDriveBuilder;
+import org.apache.cloudstack.storage.formatinspector.Qcow2Inspector;
 import org.apache.cloudstack.storage.template.DownloadManager;
 import org.apache.cloudstack.storage.template.DownloadManagerImpl;
 import org.apache.cloudstack.storage.template.UploadEntity;
@@ -86,7 +88,6 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -169,6 +170,7 @@ import com.cloud.utils.EncryptionUtil;
 import com.cloud.utils.LogUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.SwiftUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -204,6 +206,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     private static final String ORIGINAL_FILE_EXTENSION = ".orig";
 
     private static final String USE_HTTPS_TO_UPLOAD = "useHttpsToUpload";
+
+    private static final String CHECKPOINT_ROOT_DIR = "checkpoints";
 
     private static final Map<String, String> updatableConfigData = Maps.newHashMap();
     static {
@@ -247,11 +251,11 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     private String _storageNetmask;
     private String _storageGateway;
     private String _nfsVersion;
-    private final List<String> nfsIps = new ArrayList<String>();
+    private final List<String> nfsIps = new ArrayList<>();
     protected String _parent = "/mnt/SecStorage";
     final private String _tmpltpp = "template.properties";
     protected String createTemplateFromSnapshotXenScript;
-    private HashMap<String, UploadEntity> uploadEntityStateMap = new HashMap<String, UploadEntity>();
+    private HashMap<String, UploadEntity> uploadEntityStateMap = new HashMap<>();
     private String _ssvmPSK = null;
     private long processTimeout;
 
@@ -976,6 +980,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             String destFileFullPath = destFile.getAbsolutePath() + File.separator + fileName;
             logger.debug("copy snapshot " + srcFile.getAbsolutePath() + " to template " + destFileFullPath);
             Script.runSimpleBashScript("cp " + srcFile.getAbsolutePath() + " " + destFileFullPath);
+            removeConvertedSnapshotIfNeeded(srcFile.getAbsolutePath());
             String metaFileName = destFile.getAbsolutePath() + File.separator + _tmpltpp;
             File metaFile = new File(metaFileName);
             try {
@@ -1036,6 +1041,12 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
 
         return new CopyCmdAnswer("");
+    }
+
+    protected void removeConvertedSnapshotIfNeeded(String path) {
+        if (path.contains(ConvertSnapshotCommand.TEMP_SNAPSHOT_NAME)) {
+            Script.runSimpleBashScript(String.format("rm %s", path));
+        }
     }
 
     protected File getFile(String path, String nfsPath, String nfsVersion) {
@@ -2067,29 +2078,30 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             // snapshot file name. If so, since backupSnapshot process has already deleted snapshot in cache, so we just do nothing
             // and return true.
             String fullSnapPath = parent + snapshotPath;
-            File snapDir = new File(fullSnapPath);
-            if (snapDir.exists() && snapDir.isDirectory()) {
+            File snapshotFile = new File(fullSnapPath);
+            if (snapshotFile.exists() && snapshotFile.isDirectory()) {
                 logger.debug("snapshot path " + snapshotPath + " is a directory, already deleted during backup snapshot, so no need to delete");
                 return new Answer(cmd, true, null);
             }
-            // passed snapshot path is a snapshot file path, then get snapshot directory first
-            int index = snapshotPath.lastIndexOf("/");
-            String snapshotName = snapshotPath.substring(index + 1);
-            snapshotPath = snapshotPath.substring(0, index);
-            String absoluteSnapshotPath = parent + snapshotPath;
             // check if snapshot directory exists
-            File snapshotDir = new File(absoluteSnapshotPath);
-            String details = null;
+            String absoluteSnapshotDirPath = snapshotFile.getParent();
+            File snapshotDir = new File(absoluteSnapshotDirPath);
+            String details;
             if (!snapshotDir.exists()) {
                 details = "snapshot directory " + snapshotDir.getName() + " doesn't exist";
                 logger.debug(details);
                 return new Answer(cmd, true, details);
             }
             // delete snapshot in the directory if exists
-            String lPath = getSnapshotFilepathForDelete(absoluteSnapshotPath, snapshotName);
-            String result = deleteLocalFile(lPath);
-            if (result != null) {
-                details = "failed to delete snapshot " + lPath + " , err=" + result;
+            String lPath = absoluteSnapshotDirPath + "/*" + snapshotFile.getName() + "*";
+            String snapshotDeleteResult = deleteLocalFile(lPath);
+            String checkpointDeleteResult = null;
+            if (obj instanceof SnapshotObjectTO) {
+                checkpointDeleteResult = deleteCheckpointIfExists(obj, parent);
+            }
+
+            if (snapshotDeleteResult != null || checkpointDeleteResult != null) {
+                details = String.format("Failed to delete snapshot [%s]. Snapshot delete result = [%s], Checkpoint delete result = [%s].", lPath, snapshotDeleteResult, checkpointDeleteResult);
                 logger.warn(details);
                 return new Answer(cmd, false, details);
             }
@@ -2125,7 +2137,20 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     }
 
-    Map<String, TemplateProp> swiftListTemplate(SwiftTO swift) {
+    private String deleteCheckpointIfExists(DataTO obj, String parent) {
+        SnapshotObjectTO snapshotObjectTO = (SnapshotObjectTO) obj;
+        String checkpointPath = snapshotObjectTO.getCheckpointPath();
+
+        if (checkpointPath == null) {
+            return null;
+        }
+
+        checkpointPath = checkpointPath.substring(checkpointPath.indexOf(CHECKPOINT_ROOT_DIR));
+
+        return deleteLocalFile(parent + checkpointPath);
+    }
+
+    private Map<String, TemplateProp> swiftListTemplate(SwiftTO swift) {
         String[] containers = SwiftUtil.list(swift, "", null);
         if (containers == null) {
             return null;
@@ -2330,15 +2355,14 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (!_inSystemVM) {
             return null;
         }
-        Script command = new Script("/bin/bash", logger);
         String intf = "eth1";
-        command.add("-c");
-        command.add("iptables -I OUTPUT -o " + intf + " -d " + destCidr + " -p tcp -m state --state NEW -m tcp  -j ACCEPT");
+        String rule =  String.format("-o %s -d %s -p tcp -m state --state NEW -m tcp -j ACCEPT", intf, destCidr);
+        String errMsg = String.format("Error in allowing outgoing to %s", destCidr);
 
-        String result = command.execute();
+        logger.info("Adding rule if required: {}", rule);
+        String result = IpTablesHelper.addConditionally(IpTablesHelper.OUTPUT_CHAIN, true, rule, errMsg);
         if (result != null) {
-            logger.warn("Error in allowing outgoing to " + destCidr + ", err=" + result);
-            return "Error in allowing outgoing to " + destCidr + ", err=" + result;
+            return result;
         }
 
         addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, destCidr);
@@ -2875,13 +2899,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (result != null) {
             logger.warn("Error in starting sshd service err=" + result);
         }
-        command = new Script("/bin/bash", logger);
-        command.add("-c");
-        command.add("iptables -I INPUT -i eth1 -p tcp -m state --state NEW -m tcp --dport 3922 -j ACCEPT");
-        result = command.execute();
-        if (result != null) {
-            logger.warn("Error in opening up ssh port err=" + result);
-        }
+        String rule = "-i eth1 -p tcp -m state --state NEW -m tcp --dport 3922 -j ACCEPT";
+        IpTablesHelper.addConditionally(IpTablesHelper.INPUT_CHAIN, true, rule, "Error in opening up ssh port");
     }
 
     private void addRouteToInternalIpOrCidr(String localgw, String eth1ip, String eth1mask, String destIpOrCidr) {
@@ -3106,9 +3125,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             extraOpts.append(name + "=" + nvp.getValue() + ",");
         }
 
-        if (logger.isDebugEnabled()) {
-            logger.error("extraOpts now " + extraOpts);
-        }
+        String extraOptions = extraOpts.toString();
+        logger.debug("extraOpts now {}", ()->StringUtils.cleanString(extraOptions));
 
         if (!foundUser || !foundPswd) {
             String errMsg = "Missing user and password from URI. Make sure they" + "are in the query string and separated by '&'.  E.g. "
@@ -3116,7 +3134,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             logger.error(errMsg);
             throw new CloudRuntimeException(errMsg);
         }
-        return extraOpts.toString();
+        return extraOptions;
     }
 
     protected boolean mountExists(String localRootPath, URI uri) {
@@ -3489,8 +3507,19 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return result;
         }
 
+        String finalFilename = resourcePath + "/" + templateFilename;
+
+        if (ImageStoreUtil.isCorrectExtension(finalFilename, "qcow2")) {
+            try {
+                Qcow2Inspector.validateQcow2File(finalFilename);
+            } catch (RuntimeException e) {
+                logger.error(String.format("Uploaded file [%s] is not a valid QCOW2.", finalFilename), e);
+                return "The uploaded file is not a valid QCOW2. Ask the administrator to check the logs for more details.";
+            }
+        }
+
         // Set permissions for the downloaded template
-        File downloadedTemplate = new File(resourcePath + "/" + templateFilename);
+        File downloadedTemplate = new File(finalFilename);
         _storage.setWorldReadableAndWriteable(downloadedTemplate);
 
         // Set permissions for template/volume.properties

@@ -55,6 +55,7 @@ public class RemoteHostEndPoint implements EndPoint {
     protected Logger logger = LogManager.getLogger(getClass());
 
     private long hostId;
+    private String hostUuid;
     private String hostAddress;
     private String publicAddress;
 
@@ -74,6 +75,7 @@ public class RemoteHostEndPoint implements EndPoint {
 
     private void configure(Host host) {
         hostId = host.getId();
+        hostUuid = host.getUuid();
         hostAddress = host.getPrivateIpAddress();
         publicAddress = host.getPublicIpAddress();
         if (Host.Type.SecondaryStorageVM == host.getType()) {
@@ -104,6 +106,11 @@ public class RemoteHostEndPoint implements EndPoint {
     @Override
     public long getId() {
         return hostId;
+    }
+
+    @Override
+    public String getUuid() {
+        return hostUuid;
     }
 
     // used when HypervisorGuruManager choose a different host to send command

@@ -31,4 +31,6 @@ public interface MockVolumeDao extends GenericDao<MockVolumeVO, Long> {
     public MockVolumeVO findByName(String volumeName);
 
     Long findTotalStorageId(long id);
+
+    int countForStorageId(long id);
 }

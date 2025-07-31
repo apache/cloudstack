@@ -19,6 +19,7 @@ package com.cloud.secstorage;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.GenericDaoBase;
@@ -54,7 +55,18 @@ public class CommandExecLogDaoImpl extends GenericDaoBase<CommandExecLogVO, Long
         SearchCriteria<CommandExecLogVO> sc = CommandSearch.create();
         sc.setParameters("host_id", id);
         sc.setParameters("command_name", "CopyCommand");
-        List<CommandExecLogVO> copyCmds = customSearch(sc, null);
-        return copyCmds.size();
+        return getCount(sc);
+    }
+
+    @Override
+    public int expungeByVmList(List<Long> vmIds, Long batchSize) {
+        if (CollectionUtils.isEmpty(vmIds)) {
+            return 0;
+        }
+        SearchBuilder<CommandExecLogVO> sb = createSearchBuilder();
+        sb.and("vmIds", sb.entity().getInstanceId(), SearchCriteria.Op.IN);
+        SearchCriteria<CommandExecLogVO> sc = sb.create();
+        sc.setParameters("vmIds", vmIds.toArray());
+        return batchExpunge(sc, batchSize);
     }
 }

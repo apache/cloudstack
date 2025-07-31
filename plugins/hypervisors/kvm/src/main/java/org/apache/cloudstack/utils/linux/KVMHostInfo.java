@@ -53,12 +53,13 @@ public class KVMHostInfo {
     private int allocatableCpus;
     private int cpusockets;
     private long cpuSpeed;
+    private String cpuArch;
     private long totalMemory;
     private long reservedMemory;
     private long overCommitMemory;
     private List<String> capabilities = new ArrayList<>();
-
-    private static String cpuInfoFreqFileName = "/sys/devices/system/cpu/cpu0/cpufreq/base_frequency";
+    private static String cpuArchCommand = "/usr/bin/arch";
+    private static List<String> cpuInfoFreqFileNames = List.of("/sys/devices/system/cpu/cpu0/cpufreq/base_frequency","/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq");
 
     public KVMHostInfo(long reservedMemory, long overCommitMemory, long manualSpeed, int reservedCpus) {
         this.cpuSpeed = manualSpeed;
@@ -105,6 +106,14 @@ public class KVMHostInfo {
         return this.capabilities;
     }
 
+    public String getCpuArch() {
+        return cpuArch;
+    }
+
+    public static boolean isHostS390x() {
+       return "s390x".equals(System.getProperty("os.arch"));
+    }
+
     protected static long getCpuSpeed(final String cpabilities, final NodeInfo nodeInfo) {
         long speed = 0L;
         speed = getCpuSpeedFromCommandLscpu();
@@ -128,29 +137,44 @@ public class KVMHostInfo {
     }
 
     private static long getCpuSpeedFromCommandLscpu() {
+        long speed = 0L;
+        LOGGER.info("Fetching CPU speed from command \"lscpu\".");
         try {
-            LOGGER.info("Fetching CPU speed from command \"lscpu\".");
             String command = "lscpu | grep -i 'Model name' | head -n 1 | egrep -o '[[:digit:]].[[:digit:]]+GHz' | sed 's/GHz//g'";
+            if(isHostS390x()) {
+                command = "lscpu | grep 'CPU dynamic MHz' | cut -d ':' -f 2 | tr -d ' ' | awk '{printf \"%.1f\\n\", $1 / 1000}'";
+            }
             String result = Script.runSimpleBashScript(command);
-            long speed = (long) (Float.parseFloat(result) * 1000);
+            speed = (long) (Float.parseFloat(result) * 1000);
             LOGGER.info(String.format("Command [%s] resulted in the value [%s] for CPU speed.", command, speed));
             return speed;
         } catch (NullPointerException | NumberFormatException e) {
             LOGGER.error(String.format("Unable to retrieve the CPU speed from lscpu."), e);
-            return 0L;
         }
+        try {
+            String command = "lscpu | grep -i 'CPU max MHz' | head -n 1 | sed 's/^.*: //' | xargs";
+            String result = Script.runSimpleBashScript(command);
+            speed = (long) (Float.parseFloat(result));
+            LOGGER.info(String.format("Command [%s] resulted in the value [%s] for CPU speed.", command, speed));
+            return speed;
+        } catch (NullPointerException | NumberFormatException e) {
+            LOGGER.error(String.format("Unable to retrieve the CPU speed from lscpu."), e);
+        }
+        return speed;
     }
 
     private static long getCpuSpeedFromFile() {
-        LOGGER.info(String.format("Fetching CPU speed from file [%s].", cpuInfoFreqFileName));
-        try (Reader reader = new FileReader(cpuInfoFreqFileName)) {
-            Long cpuInfoFreq = Long.parseLong(IOUtils.toString(reader).trim());
-            LOGGER.info(String.format("Retrieved value [%s] from file [%s]. This corresponds to a CPU speed of [%s] MHz.", cpuInfoFreq, cpuInfoFreqFileName, cpuInfoFreq / 1000));
-            return cpuInfoFreq / 1000;
-        } catch (IOException | NumberFormatException e) {
-            LOGGER.error(String.format("Unable to retrieve the CPU speed from file [%s]", cpuInfoFreqFileName), e);
-            return 0L;
+        for (final String cpuInfoFreqFileName:  cpuInfoFreqFileNames) {
+            LOGGER.info(String.format("Fetching CPU speed from file [%s].", cpuInfoFreqFileName));
+            try (Reader reader = new FileReader(cpuInfoFreqFileName)) {
+                Long cpuInfoFreq = Long.parseLong(IOUtils.toString(reader).trim());
+                LOGGER.info(String.format("Retrieved value [%s] from file [%s]. This corresponds to a CPU speed of [%s] MHz.", cpuInfoFreq, cpuInfoFreqFileName, cpuInfoFreq / 1000));
+                return cpuInfoFreq / 1000;
+            } catch (IOException | NumberFormatException e) {
+                LOGGER.error(String.format("Unable to retrieve the CPU speed from file [%s]", cpuInfoFreqFileName), e);
+            }
         }
+        return 0L;
     }
 
     protected static long getCpuSpeedFromHostCapabilities(final String capabilities) {
@@ -201,6 +225,7 @@ public class KVMHostInfo {
                 this.cpusockets = hosts.sockets * hosts.nodes;
             }
             this.totalCpus = hosts.cpus;
+            this.cpuArch = getCPUArchFromCommand();
 
             final LibvirtCapXMLParser parser = new LibvirtCapXMLParser();
             parser.parseCapabilitiesXML(capabilities);
@@ -226,5 +251,10 @@ public class KVMHostInfo {
         } catch (final LibvirtException e) {
             LOGGER.error("Caught libvirt exception while fetching host information", e);
         }
+    }
+
+    private String getCPUArchFromCommand() {
+        LOGGER.info("Fetching host CPU arch");
+        return Script.runSimpleBashScript(cpuArchCommand);
     }
 }

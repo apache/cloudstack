@@ -97,15 +97,15 @@ public class DataMigrationUtility {
         boolean isReady = true;
         for (TemplateDataStoreVO template : templates) {
             isReady &= (Arrays.asList(validStates).contains(template.getState()));
-            logger.trace(String.format("template state: %s", template.getState()));
+            logger.trace("template state: {}", template.getState());
         }
         for (SnapshotDataStoreVO snapshot : snapshots) {
             isReady &= (Arrays.asList(validStates).contains(snapshot.getState()));
-            logger.trace(String.format("snapshot state: %s", snapshot.getState()));
+            logger.trace("snapshot state: {}", snapshot.getState());
         }
         for (VolumeDataStoreVO volume : volumes) {
             isReady &= (Arrays.asList(validStates).contains(volume.getState()));
-            logger.trace(String.format("volume state: %s", volume.getState()));
+            logger.trace("volume state: {}", volume.getState());
         }
         return isReady;
     }
@@ -208,9 +208,7 @@ public class DataMigrationUtility {
         List<TemplateInfo> files = new LinkedList<>();
         for (TemplateDataStoreVO template : templates) {
             VMTemplateVO templateVO = templateDao.findById(template.getTemplateId());
-            if (template.getState() == ObjectInDataStoreStateMachine.State.Ready && templateVO != null &&
-                    (!templateVO.isPublicTemplate() || (templateVO.isPublicTemplate() && templateVO.getUrl() == null)) &&
-                    templateVO.getHypervisorType() != Hypervisor.HypervisorType.Simulator && templateVO.getParentTemplateId() == null) {
+            if (shouldMigrateTemplate(template, templateVO)) {
                 files.add(templateFactory.getTemplate(template.getTemplateId(), srcDataStore));
             }
         }
@@ -229,6 +227,34 @@ public class DataMigrationUtility {
     protected List<DataObject> getAllReadyTemplates(DataStore srcDataStore, Map<DataObject, Pair<List<TemplateInfo>, Long>> childTemplates) {
         List<TemplateDataStoreVO> templates = templateDataStoreDao.listByStoreId(srcDataStore.getId());
         return getAllReadyTemplates(srcDataStore, childTemplates, templates);
+    }
+
+    /**
+     * Returns whether a template should be migrated. A template should be migrated if:
+     * <ol>
+     * <li>its state is ready, and</li>
+     * <li>its hypervisor type is not simulator, and</li>
+     * <li>it is not a child template.</li>
+     * </ol>
+     */
+    protected boolean shouldMigrateTemplate(TemplateDataStoreVO template, VMTemplateVO templateVO) {
+        if (template.getState() != State.Ready) {
+            logger.debug("Template [{}] should not be migrated as it is not ready.", template);
+            return false;
+        }
+
+        if (templateVO.getHypervisorType() == Hypervisor.HypervisorType.Simulator) {
+            logger.debug("Template [{}] should not be migrated as its hypervisor type is simulator.", template);
+            return false;
+        }
+
+        if (templateVO.getParentTemplateId() != null) {
+            logger.debug("Template [{}] should not be migrated as it has a parent template.", template);
+            return false;
+        }
+
+        logger.debug("Template [{}] should be migrated.", template);
+        return true;
     }
 
     /** Returns parent snapshots and snapshots that do not have any children; snapshotChains comprises of the snapshot chain info

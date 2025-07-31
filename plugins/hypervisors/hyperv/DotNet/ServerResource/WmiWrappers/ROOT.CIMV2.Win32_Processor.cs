@@ -1,4 +1,4 @@
-﻿// Licensed to the Apache Software Foundation (ASF) under one
+// Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -24,8 +24,8 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.CIMV2
     using System.Globalization;
     using System.ComponentModel.Design.Serialization;
     using System.Reflection;
-    
-    
+
+
     // Functions ShouldSerialize<PropertyName> are functions used by VS property browser to check if a particular property has to be serialized. These functions are added for all ValueType properties ( properties of type Int32, BOOL etc.. which cannot be set to null). These functions use Is<PropertyName>Null function. These functions are also used in the TypeConverter implementation for the properties to check for NULL value of property so that an empty value can be shown in Property browser in case of Drag and Drop in Visual studio.
     // Functions Is<PropertyName>Null() are used to check if a property is NULL.
     // Functions Reset<PropertyName> are added for Nullable Read/Write properties. These functions are used by VS designer in property browser to set a property to NULL.
@@ -33,62 +33,62 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.CIMV2
     // Datetime conversion functions ToDateTime and ToDmtfDateTime are added to the class to convert DMTF datetime to System.DateTime and vice-versa.
     // An Early Bound class generated for the WMI class.Win32_Processor
     public class Processor : System.ComponentModel.Component {
-        
+
         // Private property to hold the WMI namespace in which the class resides.
         private static string CreatedWmiNamespace = "ROOT\\CIMV2";
-        
+
         // Private property to hold the name of WMI class which created this class.
         private static string CreatedClassName = "Win32_Processor";
-        
+
         // Private member variable to hold the ManagementScope which is used by the various methods.
         private static System.Management.ManagementScope statMgmtScope = null;
-        
+
         private ManagementSystemProperties PrivateSystemProperties;
-        
+
         // Underlying lateBound WMI object.
         private System.Management.ManagementObject PrivateLateBoundObject;
-        
+
         // Member variable to store the 'automatic commit' behavior for the class.
         private bool AutoCommitProp;
-        
+
         // Private variable to hold the embedded property representing the instance.
         private System.Management.ManagementBaseObject embeddedObj;
-        
+
         // The current WMI object used
         private System.Management.ManagementBaseObject curObj;
-        
+
         // Flag to indicate if the instance is an embedded object.
         private bool isEmbedded;
-        
+
         // Below are different overloads of constructors to initialize an instance of the class with a WMI object.
         public Processor() {
             this.InitializeObject(null, null, null);
         }
-        
+
         public Processor(string keyDeviceID) {
             this.InitializeObject(null, new System.Management.ManagementPath(Processor.ConstructPath(keyDeviceID)), null);
         }
-        
+
         public Processor(System.Management.ManagementScope mgmtScope, string keyDeviceID) {
             this.InitializeObject(((System.Management.ManagementScope)(mgmtScope)), new System.Management.ManagementPath(Processor.ConstructPath(keyDeviceID)), null);
         }
-        
+
         public Processor(System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
             this.InitializeObject(null, path, getOptions);
         }
-        
+
         public Processor(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path) {
             this.InitializeObject(mgmtScope, path, null);
         }
-        
+
         public Processor(System.Management.ManagementPath path) {
             this.InitializeObject(null, path, null);
         }
-        
+
         public Processor(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
             this.InitializeObject(mgmtScope, path, getOptions);
         }
-        
+
         public Processor(System.Management.ManagementObject theObject) {
             Initialize();
             if ((CheckIfProperClass(theObject) == true)) {
@@ -100,7 +100,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.CIMV2
                 throw new System.ArgumentException("Class name does not match.");
             }
         }
-        
+
         public Processor(System.Management.ManagementBaseObject theObject) {
             Initialize();
             if ((CheckIfProperClass(theObject) == true)) {
@@ -113,7 +113,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.CIMV2
                 throw new System.ArgumentException("Class name does not match.");
             }
         }
-        
+
         // Property returns the namespace of the WMI class.
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -122,7 +122,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.CIMV2
                 return "ROOT\\CIMV2";
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string ManagementClassName {
@@ -131,7 +131,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.CIMV2
                 if ((curObj != null)) {
                     if ((curObj.ClassPath != null)) {
                         strRet = ((string)(curObj["__CLASS"]));
-                        if (((strRet == null) 
+                        if (((strRet == null)
                                     || (strRet == string.Empty))) {
                             strRet = CreatedClassName;
                         }
@@ -140,7 +140,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.CIMV2
                 return strRet;
             }
         }
-        
+
         // Property pointing to an embedded object to get System properties of the WMI object.
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -149,7 +149,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.CIMV2
                 return PrivateSystemProperties;
             }
         }
-        
+
         // Property returning the underlying lateBound object.
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -158,7 +158,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.CIMV2
                 return curObj;
             }
         }
-        
+
         // ManagementScope of the object.
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -177,7 +177,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.CIMV2
                 }
             }
         }
-        
+
         // Property to show the commit behavior for the WMI object. If true, WMI object will be automatically saved after each property modification.(ie. Put() is called after modification of a property).
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -189,7 +189,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.CIMV2
                 AutoCommitProp = value;
             }
         }
-        
+
         // The ManagementPath of the underlying WMI object.
         [Browsable(true)]
         public System.Management.ManagementPath Path {
@@ -210,7 +210,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.CIMV2
                 }
             }
         }
-        
+
         // Public static scope property which is used by the various methods.
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -222,7 +222,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.CIMV2
                 statMgmtScope = value;
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsAddressWidthNull {
@@ -235,7 +235,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.CIMV2
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("Processor address width in bits.")]
@@ -248,7 +248,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.CIMV2
                 return ((ushort)(curObj["AddressWidth"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsArchitectureNull {
@@ -261,7 +261,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.CIMV2
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The Architecture property specifies the processor architecture used by this platf" +
@@ -276,7 +276,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.CIMV2
                 return ((ArchitectureValues)(System.Convert.ToInt32(curObj["Architecture"])));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsAvailabilityNull {
@@ -289,7 +289,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.CIMV2
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description(@"The availability and status of the device.  For example, the Availability property indicates that the device is running and has full power (value=3), or is in a warning (4), test (5), degraded (10) or power save state (values 13-15 and 17). Regarding the power saving states, these are defined as follows: Value 13 (""Power Save - Unknown"") indicates that the device is known to be in a power save mode, but its exact status in this mode is unknown; 14 (""Power Save - Low Power Mode"") indicates that the device is in a power save state but still functioning, and may exhibit degraded performance; 15 (""Power Save - Standby"") describes that the device is not functioning but could be brought to full power 'quickly'; and value 17 (""Power Save - Warning"") indicates that the device is in a warning state, though also in a power save mode.")]
@@ -302,7 +302,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.CIMV2
                 return ((AvailabilityValues)(System.Convert.ToInt32(curObj["Availability"])));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The Caption property is a short textual description (one-line string) of the obje" +
@@ -312,7 +312,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.CIMV2
                 return ((string)(curObj["Caption"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsConfigManagerErrorCodeNull {
@@ -325,7 +325,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.CIMV2
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("Indicates the Win32 Configuration Manager error code.  The following values may b" +
@@ -367,7 +367,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.CIMV2
                 return ((ConfigManagerErrorCodeValues)(System.Convert.ToInt32(curObj["ConfigManagerErrorCode"])));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsConfigManagerUserConfigNull {
@@ -380,7 +380,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.CIMV2
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("Indicates whether the device is using a user-defined configuration.")]
@@ -393,7 +393,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.CIMV2
                 return ((bool)(curObj["ConfigManagerUserConfig"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsCpuStatusNull {
@@ -406,7 +406,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.CIMV2
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The CpuStatus property specifies the current status of the processor. Changes in " +
@@ -420,7 +420,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.CIMV2
                 return ((CpuStatusValues)(System.Convert.ToInt32(curObj["CpuStatus"])));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("CreationClassName indicates the name of the class or the subclass used in the cre" +
@@ -432,7 +432,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.CIMV2
                 return ((string)(curObj["CreationClassName"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsCurrentClockSpeedNull {
@@ -445,7 +445,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.CIMV2
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The current speed (in MHz) of this processor.")]
@@ -458,7 +458,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.CIMV2
                 return ((uint)(curObj["CurrentClockSpeed"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsCurrentVoltageNull {
@@ -471,7 +471,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.CIMV2
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description(@"The CurrentVoltage specifies the voltage of the processor. bits 0-6 of the field contain the processor's current voltage times 10. This value is only set when SMBIOS designates a voltage value. For specific values, see VoltageCaps.
@@ -485,7 +485,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((ushort)(curObj["CurrentVoltage"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsDataWidthNull {
@@ -498,7 +498,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("Processor data width in bits.")]
@@ -511,7 +511,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((ushort)(curObj["DataWidth"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The Description property provides a textual description of the object. ")]
@@ -520,7 +520,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((string)(curObj["Description"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The DeviceID property contains a string uniquely identifying the processor with o" +
@@ -530,7 +530,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((string)(curObj["DeviceID"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsErrorClearedNull {
@@ -543,7 +543,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("ErrorCleared is a boolean property indicating that the error reported in LastErro" +
@@ -557,7 +557,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((bool)(curObj["ErrorCleared"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("ErrorDescription is a free-form string supplying more information about the error" +
@@ -568,7 +568,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((string)(curObj["ErrorDescription"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsExtClockNull {
@@ -581,7 +581,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The ExtClock property specifies the external clock frequency. If the frequency is" +
@@ -595,7 +595,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((uint)(curObj["ExtClock"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsFamilyNull {
@@ -608,7 +608,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The processor family type. For example, values include \"Pentium(R) processor with" +
@@ -622,7 +622,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((FamilyValues)(System.Convert.ToInt32(curObj["Family"])));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsInstallDateNull {
@@ -635,7 +635,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The InstallDate property is datetime value indicating when the object was install" +
@@ -651,7 +651,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 }
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsL2CacheSizeNull {
@@ -664,7 +664,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The L2CacheSize property specifies the size of the processor\'s Level 2 cache. A L" +
@@ -679,7 +679,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((uint)(curObj["L2CacheSize"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsL2CacheSpeedNull {
@@ -692,7 +692,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The L2CacheSpeed property specifies the clockspeed of the processor\'s Level 2 cac" +
@@ -707,7 +707,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((uint)(curObj["L2CacheSpeed"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsL3CacheSizeNull {
@@ -720,7 +720,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The L3CacheSize property specifies the size of the processor\'s Level 3 cache. A L" +
@@ -735,7 +735,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((uint)(curObj["L3CacheSize"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsL3CacheSpeedNull {
@@ -748,7 +748,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The L3CacheSpeed property specifies the clockspeed of the processor\'s Level 3 cac" +
@@ -763,7 +763,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((uint)(curObj["L3CacheSpeed"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsLastErrorCodeNull {
@@ -776,7 +776,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("LastErrorCode captures the last error code reported by the logical device.")]
@@ -789,7 +789,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((uint)(curObj["LastErrorCode"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsLevelNull {
@@ -802,7 +802,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The Level property further defines the processor type. The value  depends on the " +
@@ -816,7 +816,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((ushort)(curObj["Level"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsLoadPercentageNull {
@@ -829,7 +829,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The LoadPercentage property specifies each processor\'s load capacity averaged ove" +
@@ -844,7 +844,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((ushort)(curObj["LoadPercentage"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The Manufacturer property specifies the name of the processor\'s manufacturer.\nExa" +
@@ -854,7 +854,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((string)(curObj["Manufacturer"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsMaxClockSpeedNull {
@@ -867,7 +867,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The maximum speed (in MHz) of this processor.")]
@@ -880,7 +880,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((uint)(curObj["MaxClockSpeed"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The Name property defines the label by which the object is known. When subclassed" +
@@ -890,7 +890,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((string)(curObj["Name"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsNumberOfCoresNull {
@@ -903,7 +903,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The NumberOfCores property contains a Processor\'s total number of cores. e.g dual" +
@@ -917,7 +917,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((uint)(curObj["NumberOfCores"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsNumberOfLogicalProcessorsNull {
@@ -930,7 +930,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The NumberOfLogicalProcessors property specifies the total number of logical proc" +
@@ -944,7 +944,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((uint)(curObj["NumberOfLogicalProcessors"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("A string describing the processor family type - used when the family property is " +
@@ -955,7 +955,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((string)(curObj["OtherFamilyDescription"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("Indicates the Win32 Plug and Play device ID of the logical device.  Example: *PNP" +
@@ -965,7 +965,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((string)(curObj["PNPDeviceID"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description(@"Indicates the specific power-related capabilities of the logical device. The array values, 0=""Unknown"", 1=""Not Supported"" and 2=""Disabled"" are self-explanatory. The value, 3=""Enabled"" indicates that the power management features are currently enabled but the exact feature set is unknown or the information is unavailable. ""Power Saving Modes Entered Automatically"" (4) describes that a device can change its power state based on usage or other criteria. ""Power State Settable"" (5) indicates that the SetPowerState method is supported. ""Power Cycling Supported"" (6) indicates that the SetPowerState method can be invoked with the PowerState input variable set to 5 (""Power Cycle""). ""Timed Power On Supported"" (7) indicates that the SetPowerState method can be invoked with the PowerState input variable set to 5 (""Power Cycle"") and the Time parameter set to a specific date and time, or interval, for power-on.")]
@@ -980,7 +980,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return enumToRet;
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsPowerManagementSupportedNull {
@@ -993,7 +993,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description(@"Boolean indicating that the Device can be power managed - ie, put into a power save state. This boolean does not indicate that power management features are currently enabled, or if enabled, what features are supported. Refer to the PowerManagementCapabilities array for this information. If this boolean is false, the integer value 1, for the string, ""Not Supported"", should be the only entry in the PowerManagementCapabilities array.")]
@@ -1006,7 +1006,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((bool)(curObj["PowerManagementSupported"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description(@"The ProcessorId property contains processor-specific information that describes the processor's features. For x86 class CPUs, the field's format depends on the processor's support of the CPUID instruction. If the instruction is supported, the ProcessorId property contains two DWORD-formatted values. The first (offsets 08h-0Bh) is the EAX value returned by a CPUID instruction with input EAX set to 1. The second (offsets 0Ch-0Fh) is the EDX value returned by that instruction. Only the first two bytes of the ProcessorID property are significant (all others are set to 0) and contain (in WORD-format) the contents of the DX register at CPU reset.")]
@@ -1015,7 +1015,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((string)(curObj["ProcessorId"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsProcessorTypeNull {
@@ -1028,7 +1028,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The ProcessorType property specifies the processor\'s primary function.")]
@@ -1041,7 +1041,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((ProcessorTypeValues)(System.Convert.ToInt32(curObj["ProcessorType"])));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsRevisionNull {
@@ -1054,7 +1054,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The Revision property specifies the system\'s architecture-dependent revision leve" +
@@ -1069,7 +1069,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((ushort)(curObj["Revision"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("A free form string describing the role of the processor - for example, \"Central P" +
@@ -1079,7 +1079,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((string)(curObj["Role"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsSecondLevelAddressTranslationExtensionsNull {
@@ -1092,7 +1092,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The SecondLevelAddressTranslationExtensions property determines whether the proce" +
@@ -1106,7 +1106,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((bool)(curObj["SecondLevelAddressTranslationExtensions"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The SocketDesignation property contains the type of chip socket used on the circu" +
@@ -1116,7 +1116,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((string)(curObj["SocketDesignation"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description(@"The Status property is a string indicating the current status of the object. Various operational and non-operational statuses can be defined. Operational statuses are ""OK"", ""Degraded"" and ""Pred Fail"". ""Pred Fail"" indicates that an element may be functioning properly but predicting a failure in the near future. An example is a SMART-enabled hard drive. Non-operational statuses can also be specified. These are ""Error"", ""Starting"", ""Stopping"" and ""Service"". The latter, ""Service"", could apply during mirror-resilvering of a disk, reload of a user permissions list, or other administrative work. Not all such work is on-line, yet the managed element is neither ""OK"" nor in one of the other states.")]
@@ -1125,7 +1125,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((string)(curObj["Status"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsStatusInfoNull {
@@ -1138,7 +1138,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("StatusInfo is a string indicating whether the logical device is in an enabled (va" +
@@ -1154,7 +1154,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((StatusInfoValues)(System.Convert.ToInt32(curObj["StatusInfo"])));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("Stepping is a free-form string indicating the revision level of the processor wit" +
@@ -1164,7 +1164,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((string)(curObj["Stepping"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The scoping System\'s CreationClassName.")]
@@ -1173,7 +1173,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((string)(curObj["SystemCreationClassName"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The scoping System\'s Name.")]
@@ -1182,7 +1182,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((string)(curObj["SystemName"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("A globally unique identifier for the processor.  This identifier may only be uniq" +
@@ -1192,7 +1192,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((string)(curObj["UniqueId"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsUpgradeMethodNull {
@@ -1205,7 +1205,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("CPU socket information including data on how this Processor can be upgraded (if u" +
@@ -1219,7 +1219,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((UpgradeMethodValues)(System.Convert.ToInt32(curObj["UpgradeMethod"])));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The Version property specifies an architecture-dependent processor revision numbe" +
@@ -1229,7 +1229,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((string)(curObj["Version"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsVirtualizationFirmwareEnabledNull {
@@ -1242,7 +1242,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The VirtualizationFirmwareEnabled property determines whether the Firmware has en" +
@@ -1256,7 +1256,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((bool)(curObj["VirtualizationFirmwareEnabled"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsVMMonitorModeExtensionsNull {
@@ -1269,7 +1269,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The VMMonitorModeExtensions property determines whether the processor supports In" +
@@ -1283,7 +1283,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((bool)(curObj["VMMonitorModeExtensions"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsVoltageCapsNull {
@@ -1296,7 +1296,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description(@"The VoltageCaps property specifies the voltage capabilities of the processor. Bits 0-3 of the field represent specific voltages that the processor socket can accept. All other bits should be set to zero. The socket is configurable if multiple bits are being set. For a range of voltages see CurrentVoltage. If the property is NULL, then the voltage capabilities are unknown.")]
@@ -1309,9 +1309,9 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return ((VoltageCapsValues)(System.Convert.ToInt32(curObj["VoltageCaps"])));
             }
         }
-        
+
         private bool CheckIfProperClass(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path, System.Management.ObjectGetOptions OptionsParam) {
-            if (((path != null) 
+            if (((path != null)
                         && (string.Compare(path.ClassName, this.ManagementClassName, true, System.Globalization.CultureInfo.InvariantCulture) == 0))) {
                 return true;
             }
@@ -1319,9 +1319,9 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return CheckIfProperClass(new System.Management.ManagementObject(mgmtScope, path, OptionsParam));
             }
         }
-        
+
         private bool CheckIfProperClass(System.Management.ManagementBaseObject theObj) {
-            if (((theObj != null) 
+            if (((theObj != null)
                         && (string.Compare(((string)(theObj["__CLASS"])), this.ManagementClassName, true, System.Globalization.CultureInfo.InvariantCulture) == 0))) {
                 return true;
             }
@@ -1338,91 +1338,91 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
             }
             return false;
         }
-        
+
         private bool ShouldSerializeAddressWidth() {
             if ((this.IsAddressWidthNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeArchitecture() {
             if ((this.IsArchitectureNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeAvailability() {
             if ((this.IsAvailabilityNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeConfigManagerErrorCode() {
             if ((this.IsConfigManagerErrorCodeNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeConfigManagerUserConfig() {
             if ((this.IsConfigManagerUserConfigNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeCpuStatus() {
             if ((this.IsCpuStatusNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeCurrentClockSpeed() {
             if ((this.IsCurrentClockSpeedNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeCurrentVoltage() {
             if ((this.IsCurrentVoltageNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeDataWidth() {
             if ((this.IsDataWidthNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeErrorCleared() {
             if ((this.IsErrorClearedNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeExtClock() {
             if ((this.IsExtClockNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeFamily() {
             if ((this.IsFamilyNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         // Converts a given datetime in DMTF format to System.DateTime object.
         static System.DateTime ToDateTime(string dmtfDate) {
             System.DateTime initializer = System.DateTime.MinValue;
@@ -1474,13 +1474,13 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 if (("******" != tempString)) {
                     ticks = (long.Parse(tempString) * ((long)((System.TimeSpan.TicksPerMillisecond / 1000))));
                 }
-                if (((((((((year < 0) 
-                            || (month < 0)) 
-                            || (day < 0)) 
-                            || (hour < 0)) 
-                            || (minute < 0)) 
-                            || (minute < 0)) 
-                            || (second < 0)) 
+                if (((((((((year < 0)
+                            || (month < 0))
+                            || (day < 0))
+                            || (hour < 0))
+                            || (minute < 0))
+                            || (minute < 0))
+                            || (second < 0))
                             || (ticks < 0))) {
                     throw new System.ArgumentOutOfRangeException();
                 }
@@ -1508,7 +1508,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
             }
             return datetime;
         }
-        
+
         // Converts a given System.DateTime object to DMTF datetime format.
         static string ToDmtfDateTime(System.DateTime date) {
             string utcString = string.Empty;
@@ -1535,8 +1535,8 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
             dmtfDateTime = string.Concat(dmtfDateTime, ((int)(date.Second)).ToString().PadLeft(2, '0'));
             dmtfDateTime = string.Concat(dmtfDateTime, ".");
             System.DateTime dtTemp = new System.DateTime(date.Year, date.Month, date.Day, date.Hour, date.Minute, date.Second, 0);
-            long microsec = ((long)((((date.Ticks - dtTemp.Ticks) 
-                        * 1000) 
+            long microsec = ((long)((((date.Ticks - dtTemp.Ticks)
+                        * 1000)
                         / System.TimeSpan.TicksPerMillisecond)));
             string strMicrosec = ((long)(microsec)).ToString();
             if ((strMicrosec.Length > 6)) {
@@ -1546,172 +1546,172 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
             dmtfDateTime = string.Concat(dmtfDateTime, utcString);
             return dmtfDateTime;
         }
-        
+
         private bool ShouldSerializeInstallDate() {
             if ((this.IsInstallDateNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeL2CacheSize() {
             if ((this.IsL2CacheSizeNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeL2CacheSpeed() {
             if ((this.IsL2CacheSpeedNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeL3CacheSize() {
             if ((this.IsL3CacheSizeNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeL3CacheSpeed() {
             if ((this.IsL3CacheSpeedNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeLastErrorCode() {
             if ((this.IsLastErrorCodeNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeLevel() {
             if ((this.IsLevelNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeLoadPercentage() {
             if ((this.IsLoadPercentageNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeMaxClockSpeed() {
             if ((this.IsMaxClockSpeedNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeNumberOfCores() {
             if ((this.IsNumberOfCoresNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeNumberOfLogicalProcessors() {
             if ((this.IsNumberOfLogicalProcessorsNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializePowerManagementSupported() {
             if ((this.IsPowerManagementSupportedNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeProcessorType() {
             if ((this.IsProcessorTypeNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeRevision() {
             if ((this.IsRevisionNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeSecondLevelAddressTranslationExtensions() {
             if ((this.IsSecondLevelAddressTranslationExtensionsNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeStatusInfo() {
             if ((this.IsStatusInfoNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeUpgradeMethod() {
             if ((this.IsUpgradeMethodNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeVirtualizationFirmwareEnabled() {
             if ((this.IsVirtualizationFirmwareEnabledNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeVMMonitorModeExtensions() {
             if ((this.IsVMMonitorModeExtensionsNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeVoltageCaps() {
             if ((this.IsVoltageCapsNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         [Browsable(true)]
         public void CommitObject() {
             if ((isEmbedded == false)) {
                 PrivateLateBoundObject.Put();
             }
         }
-        
+
         [Browsable(true)]
         public void CommitObject(System.Management.PutOptions putOptions) {
             if ((isEmbedded == false)) {
                 PrivateLateBoundObject.Put(putOptions);
             }
         }
-        
+
         private void Initialize() {
             AutoCommitProp = true;
             isEmbedded = false;
         }
-        
+
         private static string ConstructPath(string keyDeviceID) {
             string strPath = "ROOT\\CIMV2:Win32_Processor";
             strPath = string.Concat(strPath, string.Concat(".DeviceID=", string.Concat("\"", string.Concat(keyDeviceID, "\""))));
             return strPath;
         }
-        
+
         private void InitializeObject(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
             Initialize();
             if ((path != null)) {
@@ -1723,24 +1723,24 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
             PrivateSystemProperties = new ManagementSystemProperties(PrivateLateBoundObject);
             curObj = PrivateLateBoundObject;
         }
-        
+
         // Different overloads of GetInstances() help in enumerating instances of the WMI class.
         public static ProcessorCollection GetInstances() {
             return GetInstances(null, null, null);
         }
-        
+
         public static ProcessorCollection GetInstances(string condition) {
             return GetInstances(null, condition, null);
         }
-        
+
         public static ProcessorCollection GetInstances(string[] selectedProperties) {
             return GetInstances(null, null, selectedProperties);
         }
-        
+
         public static ProcessorCollection GetInstances(string condition, string[] selectedProperties) {
             return GetInstances(null, condition, selectedProperties);
         }
-        
+
         public static ProcessorCollection GetInstances(System.Management.ManagementScope mgmtScope, System.Management.EnumerationOptions enumOptions) {
             if ((mgmtScope == null)) {
                 if ((statMgmtScope == null)) {
@@ -1761,15 +1761,15 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
             }
             return new ProcessorCollection(clsObject.GetInstances(enumOptions));
         }
-        
+
         public static ProcessorCollection GetInstances(System.Management.ManagementScope mgmtScope, string condition) {
             return GetInstances(mgmtScope, condition, null);
         }
-        
+
         public static ProcessorCollection GetInstances(System.Management.ManagementScope mgmtScope, string[] selectedProperties) {
             return GetInstances(mgmtScope, null, selectedProperties);
         }
-        
+
         public static ProcessorCollection GetInstances(System.Management.ManagementScope mgmtScope, string condition, string[] selectedProperties) {
             if ((mgmtScope == null)) {
                 if ((statMgmtScope == null)) {
@@ -1786,7 +1786,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
             ObjectSearcher.Options = enumOptions;
             return new ProcessorCollection(ObjectSearcher.Get());
         }
-        
+
         [Browsable(true)]
         public static Processor CreateInstance() {
             System.Management.ManagementScope mgmtScope = null;
@@ -1801,12 +1801,12 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
             System.Management.ManagementClass tmpMgmtClass = new System.Management.ManagementClass(mgmtScope, mgmtPath, null);
             return new Processor(tmpMgmtClass.CreateInstance());
         }
-        
+
         [Browsable(true)]
         public void Delete() {
             PrivateLateBoundObject.Delete();
         }
-        
+
         public uint Reset() {
             if ((isEmbedded == false)) {
                 System.Management.ManagementBaseObject inParams = null;
@@ -1817,7 +1817,7 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return System.Convert.ToUInt32(0);
             }
         }
-        
+
         public uint SetPowerState(ushort PowerState, System.DateTime Time) {
             if ((isEmbedded == false)) {
                 System.Management.ManagementBaseObject inParams = null;
@@ -1831,514 +1831,514 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                 return System.Convert.ToUInt32(0);
             }
         }
-        
+
         public enum ArchitectureValues {
-            
+
             X86 = 0,
-            
+
             MIPS = 1,
-            
+
             Alpha = 2,
-            
+
             PowerPC = 3,
-            
+
             Ia64 = 6,
-            
+
             X64 = 9,
-            
+
             NULL_ENUM_VALUE = 10,
         }
-        
+
         public enum AvailabilityValues {
-            
+
             Other0 = 1,
-            
+
             Unknown0 = 2,
-            
+
             Running_Full_Power = 3,
-            
+
             Warning = 4,
-            
+
             In_Test = 5,
-            
+
             Not_Applicable = 6,
-            
+
             Power_Off = 7,
-            
+
             Off_Line = 8,
-            
+
             Off_Duty = 9,
-            
+
             Degraded = 10,
-            
+
             Not_Installed = 11,
-            
+
             Install_Error = 12,
-            
+
             Power_Save_Unknown = 13,
-            
+
             Power_Save_Low_Power_Mode = 14,
-            
+
             Power_Save_Standby = 15,
-            
+
             Power_Cycle = 16,
-            
+
             Power_Save_Warning = 17,
-            
+
             Paused = 18,
-            
+
             Not_Ready = 19,
-            
+
             Not_Configured = 20,
-            
+
             Quiesced = 21,
-            
+
             NULL_ENUM_VALUE = 0,
         }
-        
+
         public enum ConfigManagerErrorCodeValues {
-            
+
             This_device_is_working_properly_ = 0,
-            
+
             This_device_is_not_configured_correctly_ = 1,
-            
+
             Windows_cannot_load_the_driver_for_this_device_ = 2,
-            
+
             The_driver_for_this_device_might_be_corrupted_or_your_system_may_be_running_low_on_memory_or_other_resources_ = 3,
-            
+
             This_device_is_not_working_properly_One_of_its_drivers_or_your_registry_might_be_corrupted_ = 4,
-            
+
             The_driver_for_this_device_needs_a_resource_that_Windows_cannot_manage_ = 5,
-            
+
             The_boot_configuration_for_this_device_conflicts_with_other_devices_ = 6,
-            
+
             Cannot_filter_ = 7,
-            
+
             The_driver_loader_for_the_device_is_missing_ = 8,
-            
+
             This_device_is_not_working_properly_because_the_controlling_firmware_is_reporting_the_resources_for_the_device_incorrectly_ = 9,
-            
+
             This_device_cannot_start_ = 10,
-            
+
             This_device_failed_ = 11,
-            
+
             This_device_cannot_find_enough_free_resources_that_it_can_use_ = 12,
-            
+
             Windows_cannot_verify_this_device_s_resources_ = 13,
-            
+
             This_device_cannot_work_properly_until_you_restart_your_computer_ = 14,
-            
+
             This_device_is_not_working_properly_because_there_is_probably_a_re_enumeration_problem_ = 15,
-            
+
             Windows_cannot_identify_all_the_resources_this_device_uses_ = 16,
-            
+
             This_device_is_asking_for_an_unknown_resource_type_ = 17,
-            
+
             Reinstall_the_drivers_for_this_device_ = 18,
-            
+
             Failure_using_the_VxD_loader_ = 19,
-            
+
             Your_registry_might_be_corrupted_ = 20,
-            
+
             System_failure_Try_changing_the_driver_for_this_device_If_that_does_not_work_see_your_hardware_documentation_Windows_is_removing_this_device_ = 21,
-            
+
             This_device_is_disabled_ = 22,
-            
+
             System_failure_Try_changing_the_driver_for_this_device_If_that_doesn_t_work_see_your_hardware_documentation_ = 23,
-            
+
             This_device_is_not_present_is_not_working_properly_or_does_not_have_all_its_drivers_installed_ = 24,
-            
+
             Windows_is_still_setting_up_this_device_ = 25,
-            
+
             Windows_is_still_setting_up_this_device_0 = 26,
-            
+
             This_device_does_not_have_valid_log_configuration_ = 27,
-            
+
             The_drivers_for_this_device_are_not_installed_ = 28,
-            
+
             This_device_is_disabled_because_the_firmware_of_the_device_did_not_give_it_the_required_resources_ = 29,
-            
+
             This_device_is_using_an_Interrupt_Request_IRQ_resource_that_another_device_is_using_ = 30,
-            
+
             This_device_is_not_working_properly_because_Windows_cannot_load_the_drivers_required_for_this_device_ = 31,
-            
+
             NULL_ENUM_VALUE = 32,
         }
-        
+
         public enum CpuStatusValues {
-            
+
             Unknown0 = 0,
-            
+
             CPU_Enabled = 1,
-            
+
             CPU_Disabled_by_User_via_BIOS_Setup = 2,
-            
+
             CPU_Disabled_By_BIOS_POST_Error_ = 3,
-            
+
             CPU_is_Idle = 4,
-            
+
             Reserved = 5,
-            
+
             Reserved0 = 6,
-            
+
             Other0 = 7,
-            
+
             NULL_ENUM_VALUE = 8,
         }
-        
+
         public enum FamilyValues {
-            
+
             Other0 = 1,
-            
+
             Unknown0 = 2,
-            
+
             Val_8086 = 3,
-            
+
             Val_80286 = 4,
-            
+
             Val_80386 = 5,
-            
+
             Val_80486 = 6,
-            
+
             Val_8087 = 7,
-            
+
             Val_80287 = 8,
-            
+
             Val_80387 = 9,
-            
+
             Val_80487 = 10,
-            
+
             Pentium_R_brand = 11,
-            
+
             Pentium_R_Pro = 12,
-            
+
             Pentium_R_II = 13,
-            
+
             Pentium_R_processor_with_MMX_TM_technology = 14,
-            
+
             Celeron_TM_ = 15,
-            
+
             Pentium_R_II_Xeon_TM_ = 16,
-            
+
             Pentium_R_III = 17,
-            
+
             M1_Family = 18,
-            
+
             M2_Family = 19,
-            
+
             K5_Family = 24,
-            
+
             K6_Family = 25,
-            
+
             K6_2 = 26,
-            
+
             K6_3 = 27,
-            
+
             AMD_Athlon_TM_Processor_Family = 28,
-            
+
             AMD_R_Duron_TM_Processor = 29,
-            
+
             AMD29000_Family = 30,
-            
+
             K6_2_ = 31,
-            
+
             Power_PC_Family = 32,
-            
+
             Power_PC_601 = 33,
-            
+
             Power_PC_603 = 34,
-            
+
             Power_PC_603_ = 35,
-            
+
             Power_PC_604 = 36,
-            
+
             Power_PC_620 = 37,
-            
+
             Power_PC_X704 = 38,
-            
+
             Power_PC_750 = 39,
-            
+
             Alpha_Family = 48,
-            
+
             Alpha_21064 = 49,
-            
+
             Alpha_21066 = 50,
-            
+
             Alpha_21164 = 51,
-            
+
             Alpha_21164PC = 52,
-            
+
             Alpha_21164a = 53,
-            
+
             Alpha_21264 = 54,
-            
+
             Alpha_21364 = 55,
-            
+
             MIPS_Family = 64,
-            
+
             MIPS_R4000 = 65,
-            
+
             MIPS_R4200 = 66,
-            
+
             MIPS_R4400 = 67,
-            
+
             MIPS_R4600 = 68,
-            
+
             MIPS_R10000 = 69,
-            
+
             SPARC_Family = 80,
-            
+
             SuperSPARC = 81,
-            
+
             MicroSPARC_II = 82,
-            
+
             MicroSPARC_IIep = 83,
-            
+
             UltraSPARC = 84,
-            
+
             UltraSPARC_II = 85,
-            
+
             UltraSPARC_IIi = 86,
-            
+
             UltraSPARC_III0 = 87,
-            
+
             UltraSPARC_IIIi = 88,
-            
+
             Val_68040 = 96,
-            
+
             Val_68xxx_Family = 97,
-            
+
             Val_68000 = 98,
-            
+
             Val_68010 = 99,
-            
+
             Val_68020 = 100,
-            
+
             Val_68030 = 101,
-            
+
             Hobbit_Family = 112,
-            
+
             Crusoe_TM_TM5000_Family = 120,
-            
+
             Crusoe_TM_TM3000_Family = 121,
-            
+
             Efficeon_TM_TM8000_Family = 122,
-            
+
             Weitek = 128,
-            
+
             Itanium_TM_Processor = 130,
-            
+
             AMD_Athlon_TM_64_Processor_Family = 131,
-            
+
             AMD_Opteron_TM_Family = 132,
-            
+
             PA_RISC_Family = 144,
-            
+
             PA_RISC_8500 = 145,
-            
+
             PA_RISC_8000 = 146,
-            
+
             PA_RISC_7300LC = 147,
-            
+
             PA_RISC_7200 = 148,
-            
+
             PA_RISC_7100LC = 149,
-            
+
             PA_RISC_7100 = 150,
-            
+
             V30_Family = 160,
-            
+
             Pentium_R_III_Xeon_TM_ = 176,
-            
+
             Pentium_R_III_Processor_with_Intel_R_SpeedStep_TM_Technology = 177,
-            
+
             Pentium_R_4 = 178,
-            
+
             Intel_R_Xeon_TM_ = 179,
-            
+
             AS400_Family = 180,
-            
+
             Intel_R_Xeon_TM_processor_MP = 181,
-            
+
             AMD_AthlonXP_TM_Family = 182,
-            
+
             AMD_AthlonMP_TM_Family = 183,
-            
+
             Intel_R_Itanium_R_2 = 184,
-            
+
             Intel_Pentium_M_Processor = 185,
-            
+
             K7 = 190,
-            
+
             IBM390_Family = 200,
-            
+
             G4 = 201,
-            
+
             G5 = 202,
-            
+
             G6 = 203,
-            
+
             Z_Architecture_base = 204,
-            
+
             I860 = 250,
-            
+
             I960 = 251,
-            
+
             SH_3 = 260,
-            
+
             SH_4 = 261,
-            
+
             ARM = 280,
-            
+
             StrongARM = 281,
-            
+
             Val_6x86 = 300,
-            
+
             MediaGX = 301,
-            
+
             MII = 302,
-            
+
             WinChip = 320,
-            
+
             DSP = 350,
-            
+
             Video_Processor = 500,
-            
+
             NULL_ENUM_VALUE = 0,
         }
-        
+
         public enum PowerManagementCapabilitiesValues {
-            
+
             Unknown0 = 0,
-            
+
             Not_Supported = 1,
-            
+
             Disabled = 2,
-            
+
             Enabled = 3,
-            
+
             Power_Saving_Modes_Entered_Automatically = 4,
-            
+
             Power_State_Settable = 5,
-            
+
             Power_Cycling_Supported = 6,
-            
+
             Timed_Power_On_Supported = 7,
-            
+
             NULL_ENUM_VALUE = 8,
         }
-        
+
         public enum ProcessorTypeValues {
-            
+
             Other0 = 1,
-            
+
             Unknown0 = 2,
-            
+
             Central_Processor = 3,
-            
+
             Math_Processor = 4,
-            
+
             DSP_Processor = 5,
-            
+
             Video_Processor = 6,
-            
+
             NULL_ENUM_VALUE = 0,
         }
-        
+
         public enum StatusInfoValues {
-            
+
             Other0 = 1,
-            
+
             Unknown0 = 2,
-            
+
             Enabled = 3,
-            
+
             Disabled = 4,
-            
+
             Not_Applicable = 5,
-            
+
             NULL_ENUM_VALUE = 0,
         }
-        
+
         public enum UpgradeMethodValues {
-            
+
             Other0 = 1,
-            
+
             Unknown0 = 2,
-            
+
             Daughter_Board = 3,
-            
+
             ZIF_Socket = 4,
-            
+
             Replacement_Piggy_Back = 5,
-            
+
             None = 6,
-            
+
             LIF_Socket = 7,
-            
+
             Slot_1 = 8,
-            
+
             Slot_2 = 9,
-            
+
             Val_370_Pin_Socket = 10,
-            
+
             Slot_A = 11,
-            
+
             Slot_M = 12,
-            
+
             Socket_423 = 13,
-            
+
             Socket_A_Socket_462_ = 14,
-            
+
             Socket_478 = 15,
-            
+
             Socket_754 = 16,
-            
+
             Socket_940 = 17,
-            
+
             Socket_939 = 18,
-            
+
             NULL_ENUM_VALUE = 0,
         }
-        
+
         public enum VoltageCapsValues {
-            
+
             Val_5 = 1,
-            
+
             Val_3_3 = 2,
-            
+
             Val_2_9 = 4,
-            
+
             NULL_ENUM_VALUE = 8,
         }
-        
+
         // Enumerator implementation for enumerating instances of the class.
         public class ProcessorCollection : object, ICollection {
-            
+
             private ManagementObjectCollection privColObj;
-            
+
             public ProcessorCollection(ManagementObjectCollection objCollection) {
                 privColObj = objCollection;
             }
-            
+
             public virtual int Count {
                 get {
                     return privColObj.Count;
                 }
             }
-            
+
             public virtual bool IsSynchronized {
                 get {
                     return privColObj.IsSynchronized;
                 }
             }
-            
+
             public virtual object SyncRoot {
                 get {
                     return this;
                 }
             }
-            
+
             public virtual void CopyTo(System.Array array, int index) {
                 privColObj.CopyTo(array, index);
                 int nCtr;
@@ -2346,189 +2346,189 @@ Example: field value for a processor voltage of 1.8 volts would be 92h = 80h + (
                     array.SetValue(new Processor(((System.Management.ManagementObject)(array.GetValue(nCtr)))), nCtr);
                 }
             }
-            
+
             public virtual System.Collections.IEnumerator GetEnumerator() {
                 return new ProcessorEnumerator(privColObj.GetEnumerator());
             }
-            
+
             public class ProcessorEnumerator : object, System.Collections.IEnumerator {
-                
+
                 private ManagementObjectCollection.ManagementObjectEnumerator privObjEnum;
-                
+
                 public ProcessorEnumerator(ManagementObjectCollection.ManagementObjectEnumerator objEnum) {
                     privObjEnum = objEnum;
                 }
-                
+
                 public virtual object Current {
                     get {
                         return new Processor(((System.Management.ManagementObject)(privObjEnum.Current)));
                     }
                 }
-                
+
                 public virtual bool MoveNext() {
                     return privObjEnum.MoveNext();
                 }
-                
+
                 public virtual void Reset() {
                     privObjEnum.Reset();
                 }
             }
         }
-        
+
         // TypeConverter to handle null values for ValueType properties
         public class WMIValueTypeConverter : TypeConverter {
-            
+
             private TypeConverter baseConverter;
-            
+
             private System.Type baseType;
-            
+
             public WMIValueTypeConverter(System.Type inBaseType) {
                 baseConverter = TypeDescriptor.GetConverter(inBaseType);
                 baseType = inBaseType;
             }
-            
+
             public override bool CanConvertFrom(System.ComponentModel.ITypeDescriptorContext context, System.Type srcType) {
                 return baseConverter.CanConvertFrom(context, srcType);
             }
-            
+
             public override bool CanConvertTo(System.ComponentModel.ITypeDescriptorContext context, System.Type destinationType) {
                 return baseConverter.CanConvertTo(context, destinationType);
             }
-            
+
             public override object ConvertFrom(System.ComponentModel.ITypeDescriptorContext context, System.Globalization.CultureInfo culture, object value) {
                 return baseConverter.ConvertFrom(context, culture, value);
             }
-            
+
             public override object CreateInstance(System.ComponentModel.ITypeDescriptorContext context, System.Collections.IDictionary dictionary) {
                 return baseConverter.CreateInstance(context, dictionary);
             }
-            
+
             public override bool GetCreateInstanceSupported(System.ComponentModel.ITypeDescriptorContext context) {
                 return baseConverter.GetCreateInstanceSupported(context);
             }
-            
+
             public override PropertyDescriptorCollection GetProperties(System.ComponentModel.ITypeDescriptorContext context, object value, System.Attribute[] attributeVar) {
                 return baseConverter.GetProperties(context, value, attributeVar);
             }
-            
+
             public override bool GetPropertiesSupported(System.ComponentModel.ITypeDescriptorContext context) {
                 return baseConverter.GetPropertiesSupported(context);
             }
-            
+
             public override System.ComponentModel.TypeConverter.StandardValuesCollection GetStandardValues(System.ComponentModel.ITypeDescriptorContext context) {
                 return baseConverter.GetStandardValues(context);
             }
-            
+
             public override bool GetStandardValuesExclusive(System.ComponentModel.ITypeDescriptorContext context) {
                 return baseConverter.GetStandardValuesExclusive(context);
             }
-            
+
             public override bool GetStandardValuesSupported(System.ComponentModel.ITypeDescriptorContext context) {
                 return baseConverter.GetStandardValuesSupported(context);
             }
-            
+
             public override object ConvertTo(System.ComponentModel.ITypeDescriptorContext context, System.Globalization.CultureInfo culture, object value, System.Type destinationType) {
                 if ((baseType.BaseType == typeof(System.Enum))) {
                     if ((value.GetType() == destinationType)) {
                         return value;
                     }
-                    if ((((value == null) 
-                                && (context != null)) 
+                    if ((((value == null)
+                                && (context != null))
                                 && (context.PropertyDescriptor.ShouldSerializeValue(context.Instance) == false))) {
                         return  "NULL_ENUM_VALUE" ;
                     }
                     return baseConverter.ConvertTo(context, culture, value, destinationType);
                 }
-                if (((baseType == typeof(bool)) 
+                if (((baseType == typeof(bool))
                             && (baseType.BaseType == typeof(System.ValueType)))) {
-                    if ((((value == null) 
-                                && (context != null)) 
+                    if ((((value == null)
+                                && (context != null))
                                 && (context.PropertyDescriptor.ShouldSerializeValue(context.Instance) == false))) {
                         return "";
                     }
                     return baseConverter.ConvertTo(context, culture, value, destinationType);
                 }
-                if (((context != null) 
+                if (((context != null)
                             && (context.PropertyDescriptor.ShouldSerializeValue(context.Instance) == false))) {
                     return "";
                 }
                 return baseConverter.ConvertTo(context, culture, value, destinationType);
             }
         }
-        
+
         // Embedded class to represent WMI system Properties.
         [TypeConverter(typeof(System.ComponentModel.ExpandableObjectConverter))]
         public class ManagementSystemProperties {
-            
+
             private System.Management.ManagementBaseObject PrivateLateBoundObject;
-            
+
             public ManagementSystemProperties(System.Management.ManagementBaseObject ManagedObject) {
                 PrivateLateBoundObject = ManagedObject;
             }
-            
+
             [Browsable(true)]
             public int GENUS {
                 get {
                     return ((int)(PrivateLateBoundObject["__GENUS"]));
                 }
             }
-            
+
             [Browsable(true)]
             public string CLASS {
                 get {
                     return ((string)(PrivateLateBoundObject["__CLASS"]));
                 }
             }
-            
+
             [Browsable(true)]
             public string SUPERCLASS {
                 get {
                     return ((string)(PrivateLateBoundObject["__SUPERCLASS"]));
                 }
             }
-            
+
             [Browsable(true)]
             public string DYNASTY {
                 get {
                     return ((string)(PrivateLateBoundObject["__DYNASTY"]));
                 }
             }
-            
+
             [Browsable(true)]
             public string RELPATH {
                 get {
                     return ((string)(PrivateLateBoundObject["__RELPATH"]));
                 }
             }
-            
+
             [Browsable(true)]
             public int PROPERTY_COUNT {
                 get {
                     return ((int)(PrivateLateBoundObject["__PROPERTY_COUNT"]));
                 }
             }
-            
+
             [Browsable(true)]
             public string[] DERIVATION {
                 get {
                     return ((string[])(PrivateLateBoundObject["__DERIVATION"]));
                 }
             }
-            
+
             [Browsable(true)]
             public string SERVER {
                 get {
                     return ((string)(PrivateLateBoundObject["__SERVER"]));
                 }
             }
-            
+
             [Browsable(true)]
             public string NAMESPACE {
                 get {
                     return ((string)(PrivateLateBoundObject["__NAMESPACE"]));
                 }
             }
-            
+
             [Browsable(true)]
             public string PATH {
                 get {

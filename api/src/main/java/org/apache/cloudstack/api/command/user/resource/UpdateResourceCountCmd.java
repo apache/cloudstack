@@ -34,8 +34,11 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.configuration.ResourceCount;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateResourceCount", description = "Recalculate and update resource count for an account or domain.", responseObject = ResourceCountResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "updateResourceCount",
+            description = "Recalculate and update resource count for an account or domain. " +
+                    "This also executes some cleanup tasks before calculating resource counts.",
+            responseObject = ResourceCountResponse.class,
+            requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateResourceCountCmd extends BaseCmd {
 
 

@@ -242,7 +242,6 @@ Bug ID | Description
 [CLOUDSTACK-7722](https://issues.apache.org/jira/browse/CLOUDSTACK-7722) | add.label: Add button for tags show the label not "Add" text...
 [CLOUDSTACK-7246](https://issues.apache.org/jira/browse/CLOUDSTACK-7246) | VM deployment failed due to wrong in  script name createipalias.sh...
 
-
 Version 4.4.1
 -------------
 
@@ -275,7 +274,6 @@ Bug ID | Description
 [CLOUDSTACK-3822](https://issues.apache.org/jira/browse/CLOUDSTACK-3822) | Document all types of resource limits...
 [CLOUDSTACK-1632](https://issues.apache.org/jira/browse/CLOUDSTACK-1632) | Mistakes in authorizeSecurityGroup* API docs...
 [CLOUDSTACK-401](https://issues.apache.org/jira/browse/CLOUDSTACK-401)   | Storage options missing from table...
-
 
 Version 4.4.0
 -------------
@@ -430,11 +428,11 @@ Bug ID | Description
 [CLOUDSTACK-6099](https://issues.apache.org/jira/browse/CLOUDSTACK-6099) | live migration is failing for vm deployed using dynamic compute offerings with NPE
 [CLOUDSTACK-7528](https://issues.apache.org/jira/browse/CLOUDSTACK-7528) | More verbose logging when sending alert fails
 [CLOUDSTACK-6624](https://issues.apache.org/jira/browse/CLOUDSTACK-6624) | set specifyIpRanges to true if specifyVlan is set to true
-[CLOUDSTACK-7404](https://issues.apache.org/jira/browse/CLOUDSTACK-7404) | Failed to start an instance when originating template has been deleted 
+[CLOUDSTACK-7404](https://issues.apache.org/jira/browse/CLOUDSTACK-7404) | Failed to start an instance when originating template has been deleted
 [CLOUDSTACK-6531](https://issues.apache.org/jira/browse/CLOUDSTACK-6531) | Stopping the router in case of command failures
 [CLOUDSTACK-6115](https://issues.apache.org/jira/browse/CLOUDSTACK-6115) | TravisCI configuration
 [CLOUDSTACK-7405](https://issues.apache.org/jira/browse/CLOUDSTACK-7405) | allowing VR meta-data to be accessed without trailing slash
-[CLOUDSTACK-7260](https://issues.apache.org/jira/browse/CLOUDSTACK-7260) | Management server not responding after some time for Vmware due to Oom 
+[CLOUDSTACK-7260](https://issues.apache.org/jira/browse/CLOUDSTACK-7260) | Management server not responding after some time for Vmware due to Oom
 [CLOUDSTACK-7038](https://issues.apache.org/jira/browse/CLOUDSTACK-7038) | Add mysql client dependency for mgmt server pkg for debian
 [CLOUDSTACK-6892](https://issues.apache.org/jira/browse/CLOUDSTACK-6892) | Create separate package for the mysql HA component
 [CLOUDSTACK-7038](https://issues.apache.org/jira/browse/CLOUDSTACK-7038) | Add mysql client dependency for mgmt server/rpms
@@ -449,12 +447,12 @@ Bug ID | Description
 [CLOUDSTACK-7006](https://issues.apache.org/jira/browse/CLOUDSTACK-7006) | Restore template ID in ROOT volume usages
 [CLOUDSTACK-6747](https://issues.apache.org/jira/browse/CLOUDSTACK-6747) | test to allow all cidrs on other end of vpc
 [CLOUDSTACK-6272](https://issues.apache.org/jira/browse/CLOUDSTACK-6272) | Fix recover/restore VM actions
-[CLOUDSTACK-6927](https://issues.apache.org/jira/browse/CLOUDSTACK-6927) | store virsh list in list instead of querying libvirt 
+[CLOUDSTACK-6927](https://issues.apache.org/jira/browse/CLOUDSTACK-6927) | store virsh list in list instead of querying libvirt
 [CLOUDSTACK-6317](https://issues.apache.org/jira/browse/CLOUDSTACK-6317) | [VMware] Tagged VLAN support broken for Management/Control/Storage traffic
 [CLOUDSTACK-5891](https://issues.apache.org/jira/browse/CLOUDSTACK-5891) | [VMware] If a template has been registered and "cpu.corespersocket=X" ,
 [CLOUDSTACK-6478](https://issues.apache.org/jira/browse/CLOUDSTACK-6478) | Failed to download Template when having 3 SSVM's in one
 [CLOUDSTACK-6464](https://issues.apache.org/jira/browse/CLOUDSTACK-6464) | if guest network type is vlan://untagged, and traffic label is used
-[CLOUDSTACK-6816](https://issues.apache.org/jira/browse/CLOUDSTACK-6816) | bugfix: cloudstack-setup-management make /root directory's permission 0777 
+[CLOUDSTACK-6816](https://issues.apache.org/jira/browse/CLOUDSTACK-6816) | bugfix: cloudstack-setup-management make /root directory's permission 0777
 [CLOUDSTACK-6204](https://issues.apache.org/jira/browse/CLOUDSTACK-6204) | applying missed patch
 [CLOUDSTACK-6472](https://issues.apache.org/jira/browse/CLOUDSTACK-6472) | (4.3 specific) listUsageRecords: Pull information from removed items as well
 [CLOUDSTACK-5976](https://issues.apache.org/jira/browse/CLOUDSTACK-5976) | Typo in "ssh_keypairs" table's foreign key constraints on the Upgraded Setup
@@ -657,11 +655,11 @@ Version 4.1.0
 -------------
 
 This is the second major release of CloudStack from within the Apache Software Foundation, and the
-first major release as a Top-Level Project (TLP). 
+first major release as a Top-Level Project (TLP).
 
 Build Tool Changes:
 
- * The project now uses Maven 3 exclusively to build. 
+ * The project now uses Maven 3 exclusively to build.
 
 New Features:
 * CLOUDSTACK-101: OVS support in KVM
@@ -930,7 +928,6 @@ Security Fixes:
 
  * CVE-2012-4501: Apache CloudStack configuration vulnerability
 
-
 Version 4.0.2
 ------------------------
 
@@ -976,14 +973,13 @@ Issues fixed in this release:
 * CLOUDSTACK-1845: KVM - storage migration often fails
 * CLOUDSTACK-1846: KVM - storage pools can silently fail to be unregistered, leading to failure to register later
 * CLOUDSTACK-2003: Deleting domain while deleted account is cleaning up leaves VMs expunging forever due to 'Failed to update resource count'
-* CLOUDSTACK-2090: Upgrade from version 4.0.1 to version 4.0.2 triggers the 4.0.0 to 4.0.1. 
+* CLOUDSTACK-2090: Upgrade from version 4.0.1 to version 4.0.2 triggers the 4.0.0 to 4.0.1.
 * CLOUDSTACK-2091: Error in API documentation for 4.0.x.
-
 
 Version 4.0.1-incubating
 ------------------------
 
-This is a bugfix release for Apache CloudStack 4.0.0-incubating, with no new features. 
+This is a bugfix release for Apache CloudStack 4.0.0-incubating, with no new features.
 
 Security Fixes:
 
@@ -1023,7 +1019,6 @@ Bugs fixed in this release:
 * CLOUDSTACK-961: Installation docs don't detail dependencies for building RPMs
 * CLOUDSTACK-995: Not able to add the KVM host
 
-
 Version 4.0.0-incubating
 ------------------------
 
@@ -1055,7 +1050,6 @@ New Features:
 Security Fixes:
 
  * CVE-2012-4501: Apache CloudStack configuration vulnerability
-
 
 Updating this file
 ------------------

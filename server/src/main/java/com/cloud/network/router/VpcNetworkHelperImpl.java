@@ -134,6 +134,7 @@ public class VpcNetworkHelperImpl extends NetworkHelperImpl {
                 final PublicIp publicIp = PublicIp.createFromAddrAndVlan(ip, _vlanDao.findById(ip.getVlanId()));
                 if ((ip.getState() == IpAddress.State.Allocated  || ip.getState() == IpAddress.State.Allocating)
                         && vpcMgr.isIpAllocatedToVpc(ip)
+                        && Objects.nonNull(publicIp.getVlanTag())
                         && !publicVlans.contains(publicIp.getVlanTag())) {
                     logger.debug("Allocating nic for router in vlan " + publicIp.getVlanTag());
                     final NicProfile publicNic = new NicProfile();
@@ -168,7 +169,7 @@ public class VpcNetworkHelperImpl extends NetworkHelperImpl {
             }
         }
 
-        _itMgr.allocate(router.getInstanceName(), template, routerOffering, networks, vpcRouterDeploymentDefinition.getPlan(), hType);
+        _itMgr.allocate(router.getInstanceName(), template, routerOffering, networks, vpcRouterDeploymentDefinition.getPlan(), hType, null, null);
     }
 
     @Override

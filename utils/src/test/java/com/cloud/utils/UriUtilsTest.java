@@ -273,4 +273,13 @@ public class UriUtilsTest {
         Assert.assertTrue(UriUtils.isUrlForCompressedFile("https://abc.com/xyz.gz"));
         Assert.assertFalse(UriUtils.isUrlForCompressedFile("http://abc.com/xyz.qcow2"));
     }
+
+    @Test
+    public void validateUrl() {
+        Pair<String, Integer> url1 = UriUtils.validateUrl("https://cloudstack.apache.org/");
+        Assert.assertEquals(url1.first(), "cloudstack.apache.org");
+
+        Pair<String, Integer> url2 = UriUtils.validateUrl("https://www.apache.org");
+        Assert.assertEquals(url2.first(), "www.apache.org");
+    }
 }

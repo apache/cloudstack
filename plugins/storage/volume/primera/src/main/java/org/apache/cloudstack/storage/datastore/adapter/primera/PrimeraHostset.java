@@ -34,53 +34,79 @@ public class PrimeraHostset {
     private String uuid;
     private Map<String, Object> additionalProperties = new LinkedHashMap<String, Object>();
 
+
+
     public String getComment() {
         return comment;
     }
+
+
 
     public void setComment(String comment) {
         this.comment = comment;
     }
 
+
+
     public Integer getId() {
         return id;
     }
+
+
 
     public void setId(Integer id) {
         this.id = id;
     }
 
+
+
     public String getName() {
         return name;
     }
+
+
 
     public void setName(String name) {
         this.name = name;
     }
 
+
+
     public List<String> getSetmembers() {
         return setmembers;
     }
+
+
 
     public void setSetmembers(List<String> setmembers) {
         this.setmembers = setmembers;
     }
 
+
+
     public String getUuid() {
         return uuid;
     }
+
+
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
 
+
+
     public Map<String, Object> getAdditionalProperties() {
         return additionalProperties;
     }
 
+
+
     public void setAdditionalProperties(Map<String, Object> additionalProperties) {
         this.additionalProperties = additionalProperties;
     }
+
+
 
     // adds members to a hostset
     public static class PrimeraHostsetVLUNRequest {
@@ -88,51 +114,35 @@ public class PrimeraHostset {
         private Boolean autoLun = true;
         private Integer lun = 0;
         private Integer maxAutoLun = 0;
-        /**
-         * This can be a single hostname OR the set of hosts in the format
-         * "set:<hostset>".
-         * For the purposes of this driver, its expected that the predominate usecase is
-         * to use
-         * a hostset that is aligned with a CloudStack Cluster.
-         */
+        // hostset format: "set:<hostset>"
         private String hostname;
-
         public String getVolumeName() {
             return volumeName;
         }
-
         public void setVolumeName(String volumeName) {
             this.volumeName = volumeName;
         }
-
         public Boolean getAutoLun() {
             return autoLun;
         }
-
         public void setAutoLun(Boolean autoLun) {
             this.autoLun = autoLun;
         }
-
         public Integer getLun() {
             return lun;
         }
-
         public void setLun(Integer lun) {
             this.lun = lun;
         }
-
         public Integer getMaxAutoLun() {
             return maxAutoLun;
         }
-
         public void setMaxAutoLun(Integer maxAutoLun) {
             this.maxAutoLun = maxAutoLun;
         }
-
         public String getHostname() {
             return hostname;
         }
-
         public void setHostname(String hostname) {
             this.hostname = hostname;
         }

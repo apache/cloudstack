@@ -19,6 +19,7 @@
 
 package org.apache.cloudstack.kvm.ha;
 
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor;
 
@@ -36,7 +37,6 @@ import org.apache.cloudstack.outofbandmanagement.OutOfBandManagementService;
 import org.joda.time.DateTime;
 
 import javax.inject.Inject;
-import java.security.InvalidParameterException;
 
 public final class KVMHAProvider extends HAAbstractHostProvider implements HAProvider<Host>, Configurable {
 
@@ -73,12 +73,12 @@ public final class KVMHAProvider extends HAAbstractHostProvider implements HAPro
                 final OutOfBandManagementResponse resp = outOfBandManagementService.executePowerOperation(r, PowerOperation.RESET, null);
                 return resp.getSuccess();
             } else {
-                logger.warn("OOBM recover operation failed for the host " + r.getName());
+                logger.warn("OOBM recover operation failed for the host {}", r);
                 return false;
             }
         } catch (Exception e){
-            logger.warn("OOBM service is not configured or enabled for this host " + r.getName() + " error is " + e.getMessage());
-            throw new HARecoveryException(" OOBM service is not configured or enabled for this host " + r.getName(), e);
+            logger.warn("OOBM service is not configured or enabled for this host {} error is {}", r, e.getMessage());
+            throw new HARecoveryException(String.format(" OOBM service is not configured or enabled for this host %s", r), e);
         }
     }
 
@@ -90,12 +90,12 @@ public final class KVMHAProvider extends HAAbstractHostProvider implements HAPro
                 final OutOfBandManagementResponse resp = outOfBandManagementService.executePowerOperation(r, PowerOperation.OFF, null);
                 return resp.getSuccess();
             } else {
-                logger.warn("OOBM fence operation failed for this host " + r.getName());
+                logger.warn("OOBM fence operation failed for this host {}", r);
                 return false;
             }
         } catch (Exception e){
-            logger.warn("OOBM service is not configured or enabled for this host " + r.getName() + " error is " + e.getMessage());
-            throw new HAFenceException("OBM service is not configured or enabled for this host " + r.getName() , e);
+            logger.warn("OOBM service is not configured or enabled for this host {} error is {}", r, e.getMessage());
+            throw new HAFenceException(String.format("OBM service is not configured or enabled for this host %s", r.getName()), e);
         }
     }
 
@@ -129,7 +129,7 @@ public final class KVMHAProvider extends HAAbstractHostProvider implements HAPro
             case MaxDegradedWaitTimeout:
                 return KVMHAConfig.KvmHADegradedMaxPeriod.valueIn(clusterId);
             default:
-                throw new InvalidParameterException("Unknown HAProviderConfig " + name.toString());
+                throw new InvalidParameterValueException("Unknown HAProviderConfig " + name.toString());
         }
     }
 

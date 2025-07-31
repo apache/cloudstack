@@ -37,10 +37,10 @@
       </div>
       <div class="form">
         <div class="form__item" ref="newCidrList">
-          <tooltip-label :title="$t('label.cidrlist')" bold :tooltip="createLoadBalancerRuleParams.cidrlist.description" :tooltip-placement="'right'"/>
+          <tooltip-label :title="$t('label.sourcecidrlist')" bold :tooltip="createLoadBalancerRuleParams.cidrlist.description" :tooltip-placement="'right'"/>
           <a-input v-model:value="newRule.cidrlist"></a-input>
         </div>
-        <div class="form__item">
+        <div class="form__item" v-if="lbProvider !== 'Netris'">
           <div class="form__label">{{ $t('label.algorithm') }}</div>
           <a-select
             v-model:value="newRule.algorithm"
@@ -64,7 +64,7 @@
             :filterOption="(input, option) => {
               return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option value="tcp-proxy" :label="$t('label.tcp.proxy')">{{ $t('label.tcp.proxy') }}</a-select-option>
+            <a-select-option v-if="lbProvider !== 'Netris'" value="tcp-proxy" :label="$t('label.tcp.proxy')">{{ $t('label.tcp.proxy') }}</a-select-option>
             <a-select-option value="tcp" :label="$t('label.tcp')">{{ $t('label.tcp') }}</a-select-option>
             <a-select-option value="udp" :label="$t('label.udp')">{{ $t('label.udp') }}</a-select-option>
           </a-select>
@@ -126,7 +126,7 @@
       :rowKey="record => record.id">
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'cidrlist'">
-          <span style="white-space: pre-line"> {{ record.cidrlist?.replaceAll(" ", "\n") }}</span>
+          <span style="white-space: pre-line"> {{ record.cidrlist?.replaceAll(",", "\n") }}</span>
         </template>
         <template v-if="column.key === 'algorithm'">
           {{ returnAlgorithmName(record.algorithm) }}
@@ -134,7 +134,7 @@
         <template v-if="column.key === 'protocol'">
           {{ getCapitalise(record.protocol) }}
         </template>
-        <template v-if="column.key === 'stickiness'">
+        <template v-if="column.key === 'stickiness' && !this.isNetrisZone">
           <a-button @click="() => openStickinessModal(record.id)">
             {{ returnStickinessLabel(record.id) }}
           </a-button>
@@ -409,7 +409,7 @@
           <p class="edit-rule__label">{{ $t('label.name') }}</p>
           <a-input v-focus="true" v-model:value="editRuleDetails.name" />
         </div>
-        <div class="edit-rule__item">
+        <div v-if="lbProvider !== 'Netris'" class="edit-rule__item">
           <p class="edit-rule__label">{{ $t('label.algorithm') }}</p>
           <a-select
             v-model:value="editRuleDetails.algorithm"
@@ -423,7 +423,7 @@
             <a-select-option value="source" :label="$t('label.lb.algorithm.source')">{{ $t('label.lb.algorithm.source') }}</a-select-option>
           </a-select>
         </div>
-        <div class="edit-rule__item">
+        <div v-if="lbProvider !== 'Netris'" class="edit-rule__item">
           <p class="edit-rule__label">{{ $t('label.protocol') }}</p>
           <a-select
             v-model:value="editRuleDetails.protocol"
@@ -716,7 +716,7 @@
 
 <script>
 import { ref, reactive, toRaw, nextTick } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
@@ -781,9 +781,11 @@ export default {
         vmguestip: [],
         cidrlist: ''
       },
+      lbProvider: null,
       addVmModalVisible: false,
       addVmModalLoading: false,
       addVmModalNicLoading: false,
+      zoneloading: false,
       vms: [],
       nics: [],
       totalCount: 0,
@@ -803,12 +805,8 @@ export default {
           dataIndex: 'privateport'
         },
         {
-          key: 'algorithm',
-          title: this.$t('label.algorithm')
-        },
-        {
           key: 'cidrlist',
-          title: this.$t('label.cidrlist')
+          title: this.$t('label.sourcecidrlist')
         },
         {
           key: 'protocol',
@@ -920,7 +918,8 @@ export default {
         expectedcode: undefined,
         urlpath: '/'
       },
-      healthMonitorLoading: false
+      healthMonitorLoading: false,
+      isNetrisZone: false
     }
   },
   computed: {
@@ -979,11 +978,12 @@ export default {
     fetchData () {
       this.fetchListTiers()
       this.fetchLBRules()
+      this.fetchZone()
     },
     fetchListTiers () {
       this.tiers.loading = true
 
-      api('listNetworks', {
+      getAPI('listNetworks', {
         supportedservices: 'Lb',
         isrecursive: true,
         vpcid: this.resource.vpcid
@@ -1005,7 +1005,7 @@ export default {
       this.lbRules = []
       this.stickinessPolicies = []
 
-      api('listLoadBalancerRules', {
+      getAPI('listLoadBalancerRules', {
         listAll: true,
         publicipid: this.resource.id,
         page: this.page,
@@ -1032,7 +1032,7 @@ export default {
     fetchLBRuleInstances () {
       for (const rule of this.lbRules) {
         this.loading = true
-        api('listLoadBalancerRuleInstances', {
+        getAPI('listLoadBalancerRuleInstances', {
           listAll: true,
           lbvmips: true,
           id: rule.id
@@ -1048,7 +1048,7 @@ export default {
     fetchLBStickinessPolicies () {
       this.loading = true
       this.lbRules.forEach(rule => {
-        api('listLBStickinessPolicies', {
+        getAPI('listLBStickinessPolicies', {
           listAll: true,
           lbruleid: rule.id
         }).then(response => {
@@ -1063,7 +1063,7 @@ export default {
     fetchAutoScaleVMgroups () {
       this.loading = true
       this.lbRules.forEach(rule => {
-        api('listAutoScaleVmGroups', {
+        getAPI('listAutoScaleVmGroups', {
           listAll: true,
           lbruleid: rule.id
         }).then(response => {
@@ -1071,6 +1071,25 @@ export default {
         }).finally(() => {
           this.loading = false
         })
+      })
+    },
+    fetchZone () {
+      this.zoneloading = true
+      getAPI('listZones', {
+        id: this.resource.zoneid
+      }).then(response => {
+        this.lbProvider = response?.listzonesresponse?.zone?.[0]?.provider || null
+        if (this.lbProvider != null) {
+          this.isNetrisZone = this.lbProvider === 'Netris'
+        }
+      }).finally(() => {
+        this.zoneloading = false
+        if (this.lbProvider !== 'Netris') {
+          this.column.push({
+            key: 'algorithm',
+            title: this.$t('label.algorithm')
+          })
+        }
       })
     },
     returnAlgorithmName (name) {
@@ -1109,7 +1128,7 @@ export default {
       this.tagsModalVisible = true
       this.tags = []
       this.selectedRule = id
-      api('listTags', {
+      getAPI('listTags', {
         resourceId: id,
         resourceType: 'LoadBalancer',
         listAll: true
@@ -1130,7 +1149,7 @@ export default {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
 
-        api('createTags', {
+        postAPI('createTags', {
           'tags[0].key': values.key,
           'tags[0].value': values.value,
           resourceIds: this.selectedRule,
@@ -1167,7 +1186,7 @@ export default {
     },
     handleDeleteTag (tag) {
       this.tagsModalLoading = true
-      api('deleteTags', {
+      postAPI('deleteTags', {
         'tags[0].key': tag.key,
         'tags[0].value': tag.value,
         resourceIds: tag.resourceid,
@@ -1226,7 +1245,7 @@ export default {
       }
     },
     handleAddStickinessPolicy (data, values) {
-      api('createLBStickinessPolicy', {
+      postAPI('createLBStickinessPolicy', {
         ...data,
         lbruleid: this.selectedRule,
         name: values.name,
@@ -1263,7 +1282,7 @@ export default {
     },
     handleDeleteStickinessPolicy () {
       this.stickinessModalLoading = true
-      api('deleteLBStickinessPolicy', { id: this.selectedStickinessPolicy.id }).then(response => {
+      postAPI('deleteLBStickinessPolicy', { id: this.selectedStickinessPolicy.id }).then(response => {
         this.$pollJob({
           jobId: response.deleteLBstickinessrruleresponse.jobid,
           successMessage: this.$t('message.success.remove.sticky.policy'),
@@ -1347,7 +1366,7 @@ export default {
     },
     handleDeleteInstanceFromRule (instance, rule, ip) {
       this.loading = true
-      api('removeFromLoadBalancerRule', {
+      postAPI('removeFromLoadBalancerRule', {
         id: rule.id,
         'vmidipmap[0].vmid': instance.loadbalancerruleinstance.id,
         'vmidipmap[0].vmip': ip
@@ -1377,14 +1396,14 @@ export default {
       this.selectedRule = rule
       this.editRuleModalVisible = true
       this.editRuleDetails.name = this.selectedRule.name
-      this.editRuleDetails.algorithm = this.selectedRule.algorithm
+      this.editRuleDetails.algorithm = this.lbProvider !== 'Netris' ? this.selectedRule.algorithm : undefined
       this.editRuleDetails.protocol = this.selectedRule.protocol
     },
     handleSubmitEditForm () {
       if (this.editRuleModalLoading) return
       this.loading = true
       this.editRuleModalLoading = true
-      api('updateLoadBalancerRule', {
+      postAPI('updateLoadBalancerRule', {
         ...this.editRuleDetails,
         id: this.selectedRule.id
       }).then(response => {
@@ -1465,7 +1484,7 @@ export default {
     },
     handleDeleteRule (rule) {
       this.loading = true
-      api('deleteLoadBalancerRule', {
+      postAPI('deleteLoadBalancerRule', {
         id: rule.id
       }).then(response => {
         const jobId = response.deleteloadbalancerruleresponse.jobid
@@ -1551,7 +1570,7 @@ export default {
       this.newRule.virtualmachineid[index] = e.target.value
       this.addVmModalNicLoading = true
 
-      api('listNics', {
+      getAPI('listNics', {
         virtualmachineid: e.target.value,
         networkid: ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.selectedTier : this.resource.associatednetworkid
       }).then(response => {
@@ -1578,7 +1597,7 @@ export default {
         this.addVmModalLoading = false
         return
       }
-      api('listVirtualMachines', {
+      getAPI('listVirtualMachines', {
         listAll: true,
         keyword: this.searchQuery,
         page: this.vmPage,
@@ -1615,7 +1634,7 @@ export default {
         this.addNetworkModalLoading = false
         return
       }
-      api('listNetworks', {
+      getAPI('listNetworks', {
         listAll: true,
         keyword: this.searchQuery,
         page: this.networkPage,
@@ -1677,7 +1696,7 @@ export default {
       }
 
       this.loading = true
-      api('assignToLoadBalancerRule', {
+      postAPI('assignToLoadBalancerRule', {
         id: data,
         ...vmIDIpMap
       }).then(response => {
@@ -1720,7 +1739,7 @@ export default {
 
       const networkId = this.selectedTierForAutoScaling != null ? this.selectedTierForAutoScaling
         : ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.selectedTier : this.resource.associatednetworkid
-      api('createLoadBalancerRule', {
+      postAPI('createLoadBalancerRule', {
         openfirewall: false,
         networkid: networkId,
         publicipid: this.resource.id,
@@ -1793,7 +1812,7 @@ export default {
       this.tungstenHealthMonitors = []
       this.loading = true
       this.lbRules.forEach(rule => {
-        api('listTungstenFabricLBHealthMonitor', {
+        getAPI('listTungstenFabricLBHealthMonitor', {
           listAll: true,
           lbruleid: rule.id
         }).then(response => {
@@ -1860,7 +1879,7 @@ export default {
         }
 
         this.healthMonitorLoading = true
-        api('updateTungstenFabricLBHealthMonitor', this.healthMonitorParams).then(json => {
+        postAPI('updateTungstenFabricLBHealthMonitor', this.healthMonitorParams).then(json => {
           const jobId = json?.updatetungstenfabriclbhealthmonitorresponse?.jobid
           this.$pollJob({
             jobId: jobId,

@@ -23,6 +23,11 @@
       </div>
     </template>
   </a-alert>
+  <a-alert v-if="ip4routes" type="info" :showIcon="true" :message="$t('label.add.upstream.ipv4.routes')">
+    <template #description>
+      <p v-html="ip4routes" />
+    </template>
+  </a-alert>
   <a-alert v-if="ip6routes" type="info" :showIcon="true" :message="$t('label.add.upstream.ipv6.routes')">
     <template #description>
       <p v-html="ip6routes" />
@@ -38,8 +43,10 @@
     :dataSource="fetchDetails()">
     <template #renderItem="{item}">
       <a-list-item v-if="(item in dataResource && !customDisplayItems.includes(item)) || (offeringDetails.includes(item) && dataResource.serviceofferingdetails)">
-        <div>
-          <strong>{{ item === 'service' ? $t('label.supportedservices') : $t('label.' + String(item).toLowerCase()) }}</strong>
+        <div style="width: 100%">
+          <strong>{{ item === 'service' ? $t('label.supportedservices') :
+           $route.meta.name === 'cniconfiguration' && item === 'userdata' ? $t('label.' + String($route.meta.name).toLowerCase()) :
+           $t(getDetailTitle(item)) }}</strong>
           <br/>
           <div v-if="Array.isArray(dataResource[item]) && item === 'service'">
             <div v-for="(service, idx) in dataResource[item]" :key="idx">
@@ -57,7 +64,8 @@
           </div>
           <div v-else-if="$route.meta.name === 'backup' && item === 'volumes'">
             <div v-for="(volume, idx) in JSON.parse(dataResource[item])" :key="idx">
-              <router-link :to="{ path: '/volume/' + volume.uuid }">{{ volume.type }} - {{ volume.path }}</router-link> ({{ parseFloat(volume.size / (1024.0 * 1024.0 * 1024.0)).toFixed(1) }} GB)
+              <router-link v-if="!dataResource['vmbackupofferingremoved']" :to="{ path: '/volume/' + volume.uuid }">{{ volume.type }} - {{ volume.path }}</router-link>
+              <span v-else>{{ volume.type }} - {{ volume.path }}</span> ({{ parseFloat(volume.size / (1024.0 * 1024.0 * 1024.0)).toFixed(1) }} GB)
             </div>
           </div>
           <div v-else-if="$route.meta.name === 'computeoffering' && item === 'rootdisksize'">
@@ -84,11 +92,15 @@
             <span v-if="['USER.LOGIN', 'USER.LOGOUT', 'ROUTER.HEALTH.CHECKS', 'FIREWALL.CLOSE', 'ALERT.SERVICE.DOMAINROUTER'].includes(dataResource[item])">{{ $t(dataResource[item].toLowerCase()) }}</span>
             <span v-else>{{ dataResource[item] }}</span>
           </div>
-          <div v-else-if="['created', 'sent', 'lastannotated', 'collectiontime', 'lastboottime', 'lastserverstart', 'lastserverstop'].includes(item)">
+          <div v-else-if="['created', 'sent', 'lastannotated', 'collectiontime', 'lastboottime', 'lastserverstart', 'lastserverstop', 'removed', 'effectiveDate', 'endDate'].includes(item)">
             {{ $toLocaleDate(dataResource[item]) }}
           </div>
+          <div style="white-space: pre-wrap;" v-else-if="$route.meta.name === 'quotatariff' && item === 'description'">{{ dataResource[item] }}</div>
           <div v-else-if="$route.meta.name === 'userdata' && item === 'userdata'">
             <div style="white-space: pre-wrap;"> {{ decodeUserData(dataResource.userdata)}} </div>
+          </div>
+          <div v-else-if="$route.meta.name === 'cniconfiguration' && item === 'userdata'">
+            <div style="white-space: pre-wrap;"> {{ dataResource.userdata}} </div>
           </div>
           <div v-else-if="$route.meta.name === 'guestnetwork' && item === 'egressdefaultpolicy'">
             {{ dataResource[item]? $t('message.egress.rules.allow') : $t('message.egress.rules.deny') }}
@@ -102,6 +114,30 @@
           </div>
           <div v-else-if="$route.meta.name === 'computeoffering' && offeringDetails.includes(item)">
             {{ dataResource.serviceofferingdetails[item] }}
+          </div>
+          <div v-else-if="item === 'headers'" style="white-space: pre-line;">
+            {{ dataResource[item] }}
+          </div>
+          <div v-else-if="item === 'payload'" style="white-space: pre-wrap;">
+            {{ JSON.stringify(JSON.parse(dataResource[item]), null, 4) || dataResource[item] }}
+          </div>
+          <div v-else-if="item === 'dedicatedresources'">
+            <div v-for="(resource, idx) in sortDedicatedResourcesByName(dataResource[item])" :key="idx">
+              <div>
+                <router-link :to="getResourceLink(resource.resourcetype, resource.resourceid)">
+                  {{ resource.resourcename }}
+                </router-link>
+              </div>
+            </div>
+          </div>
+          <div v-else-if="item === 'usersource'">
+            {{ $t(getUserSourceLabel(dataResource[item])) }}
+          </div>
+          <div v-else-if="$route.meta.name === 'kubernetes' && item === 'cniconfigname'">
+              <router-link :to="{ path: '/cniconfiguration/' + dataResource.cniconfigurationid }">{{ dataResource.cniconfigname }}</router-link>
+          </div>
+          <div v-else-if="item === 'allowedroletypes' && Array.isArray(dataResource[item])">
+            {{ dataResource[item].join(', ') }}
           </div>
           <div v-else>{{ dataResource[item] }}</div>
         </div>
@@ -120,6 +156,48 @@
           <div>{{ dataResource[item] }}</div>
         </div>
       </a-list-item>
+      <a-list-item v-else-if="['startdate', 'enddate'].includes(item)">
+        <div>
+          <strong>{{ $t('label.' + item.replace('date', '.date.and.time'))}}</strong>
+          <br/>
+          <div>{{ $toLocaleDate(dataResource[item]) }}</div>
+        </div>
+      </a-list-item>
+      <a-list-item v-else-if="item === 'leaseexpirydate' && dataResource[item]">
+        <div>
+          <strong>{{ $t('label.' + item.replace('date', '.date.and.time'))}}</strong>
+          <br/>
+          <div>{{ $toLocaleDate(dataResource[item]) }}</div>
+        </div>
+      </a-list-item>
+      <a-list-item v-else-if="item === 'details' && $route.meta.name === 'storagepool' && dataResource[item].rbd_default_data_pool">
+        <div>
+          <strong>{{ $t('label.data.pool') }}</strong>
+          <br/>
+          <div>{{ dataResource[item].rbd_default_data_pool }}</div>
+        </div>
+      </a-list-item>
+      <a-list-item v-else-if="item === 'details' && ['extension', 'customaction'].includes($route.meta.name) && dataResource[item] && Object.keys(dataResource[item]).length > 0">
+        <div>
+          <strong>{{ $t('label.configuration.details') }}</strong>
+          <br/>
+          <div>
+            <object-list-table :data-map="dataResource[item]" />
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-else-if="item === 'parameters' && ['customaction'].includes($route.meta.name) && Array.isArray(dataResource[item]) && dataResource[item].length > 0">
+        <div>
+          <strong>{{ $t('label.' + String(item).toLowerCase()) }}</strong>
+          <br/>
+          <div>
+            <object-list-table :showHeader="true" :data-array="dataResource[item]" />
+          </div>
+        </div>
+      </a-list-item>
+      <external-configuration-details
+        v-else-if="item === 'externaldetails' && (['host', 'computeoffering'].includes($route.meta.name) || (['cluster'].includes($route.meta.name) && dataResource.extensionid))"
+        :resource="dataResource" />
     </template>
     <HostInfo :resource="dataResource" v-if="$route.meta.name === 'host' && 'listHosts' in $store.getters.apis" />
     <DedicateData :resource="dataResource" v-if="dedicatedSectionActive" />
@@ -131,13 +209,18 @@
 import DedicateData from './DedicateData'
 import HostInfo from '@/views/infra/HostInfo'
 import VmwareData from './VmwareData'
+import ObjectListTable from '@/components/view/ObjectListTable'
+import ExternalConfigurationDetails from '@/views/extension/ExternalConfigurationDetails'
+import { genericCompare } from '@/utils/sort'
 
 export default {
   name: 'DetailsTab',
   components: {
     DedicateData,
     HostInfo,
-    VmwareData
+    VmwareData,
+    ObjectListTable,
+    ExternalConfigurationDetails
   },
   props: {
     resource: {
@@ -166,7 +249,8 @@ export default {
       dedicatedRoutes: ['zone', 'pod', 'cluster', 'host'],
       dedicatedSectionActive: false,
       projectname: '',
-      dataResource: {}
+      dataResource: {},
+      detailsTitles: []
     }
   },
   mounted () {
@@ -174,7 +258,16 @@ export default {
   },
   computed: {
     customDisplayItems () {
-      return ['ip6routes', 'privatemtu', 'publicmtu', 'provider']
+      var items = ['ip4routes', 'ip6routes', 'privatemtu', 'publicmtu', 'provider', 'details', 'parameters']
+      if (this.$route.meta.name === 'webhookdeliveries') {
+        items.push('startdate')
+        items.push('enddate')
+      } else if (this.$route.meta.name === 'vm') {
+        items.push('leaseexpirydate')
+      } else if (['cluster', 'host', 'computeoffering'].includes(this.$route.meta.name)) {
+        items.push('externaldetails')
+      }
+      return items
     },
     vnfAccessMethods () {
       if (this.resource.templatetype === 'VNF' && ['vm', 'vnfapp'].includes(this.$route.meta.name)) {
@@ -276,6 +369,16 @@ export default {
       }
       return null
     },
+    ip4routes () {
+      if (this.resource.ip4routes && this.resource.ip4routes.length > 0) {
+        var routes = []
+        for (var route of this.resource.ip4routes) {
+          routes.push(route.subnet + ' via ' + route.gateway)
+        }
+        return routes.join('<br>')
+      }
+      return null
+    },
     ip6routes () {
       if (this.resource.ip6routes && this.resource.ip6routes.length > 0) {
         var routes = []
@@ -324,12 +427,52 @@ export default {
       this.dataResource.account = projectAdmins.join()
     },
     fetchDetails () {
-      var details = this.$route.meta.details
+      let details = this.$route.meta.details
+
+      if (!details) {
+        return
+      }
+
       if (typeof details === 'function') {
         details = details()
       }
-      details = this.projectname ? [...details.filter(x => x !== 'account'), 'projectname'] : details
-      return details
+
+      let detailsKeys = []
+      for (const detail of details) {
+        if (typeof detail === 'object') {
+          const field = detail.field
+          detailsKeys.push(field)
+          this.detailsTitles[field] = detail.customTitle
+        } else {
+          detailsKeys.push(detail)
+          this.detailsTitles[detail] = detail
+        }
+      }
+
+      detailsKeys = this.projectname ? [...detailsKeys.filter(x => x !== 'account'), 'projectname'] : detailsKeys
+      return detailsKeys
+    },
+    getDetailTitle (detail) {
+      return `label.${String(this.detailsTitles[detail]).toLowerCase()}`
+    },
+    getResourceLink (type, id) {
+      return `/${type.toLowerCase()}/${id}`
+    },
+    sortDedicatedResourcesByName (resources) {
+      resources.sort((resource, otherResource) => {
+        return genericCompare(resource.resourcename, otherResource.resourcename)
+      })
+
+      return resources
+    },
+    getUserSourceLabel (source) {
+      if (source === 'saml2') {
+        source = 'saml'
+      } else if (source === 'saml2disabled') {
+        source = 'saml.disabled'
+      }
+
+      return `label.${source}`
     }
   }
 }

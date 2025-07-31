@@ -28,6 +28,7 @@ from marvin.lib.base import (Host,
                              Domain,
                              Zone,
                              ServiceOffering,
+                             Template,
                              DiskOffering,
                              VirtualMachine,
                              Volume,
@@ -56,6 +57,7 @@ class TestResourceLimitTags(cloudstackTestCase):
     def setUpClass(cls):
         testClient = super(TestResourceLimitTags, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
+        cls.hypervisor = testClient.getHypervisorInfo()
         cls.services = testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
@@ -644,5 +646,47 @@ class TestResourceLimitTags(cloudstackTestCase):
             expected_usage_total = account_usage_before[idx].total
             if usage.resourcetype in [10]:
                 expected_usage_total = 2 * expected_usage_total
+            self.assertTrue(usage.total == expected_usage_total, "Usage for %s with tag %s is not matching for target account" % (usage.resourcetypename, usage.tag))
+        return
+
+    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    def test_13_verify_restore_vm_limit(self):
+        """Test to verify limits are updated on restoring VM
+        """
+        hypervisor = self.hypervisor.lower()
+        restore_template_service = self.services["test_templates"][
+            hypervisor if hypervisor != 'simulator' else 'xenserver'].copy()
+        restore_template = Template.register(self.apiclient, restore_template_service, zoneid=self.zone.id, hypervisor=hypervisor, templatetag=self.host_tags[1])
+        restore_template.download(self.apiclient)
+        self.cleanup.append(restore_template)
+
+        self.vm = VirtualMachine.create(
+            self.userapiclient,
+            self.services["virtual_machine"],
+            templateid=restore_template.id,
+            serviceofferingid=self.host_storage_tagged_compute_offering.id,
+            mode=self.services["mode"]
+        )
+        self.cleanup.append(self.vm)
+        old_root_vol = Volume.list(self.userapiclient, virtualmachineid=self.vm.id)[0]
+
+        acc = Account.list(
+            self.userapiclient,
+            id=self.account.id
+        )[0]
+        tags = [self.host_storage_tagged_compute_offering.hosttags, self.host_storage_tagged_compute_offering.storagetags]
+        account_usage_before = list(filter(lambda x: x.tag in tags, acc['taggedresources']))
+
+        self.vm.restore(self.userapiclient, restore_template.id, rootdisksize=16, expunge=True)
+        acc = Account.list(
+            self.userapiclient,
+            id=self.account.id
+        )[0]
+
+        account_usage_after = list(filter(lambda x: x.tag in tags, acc['taggedresources']))
+        for idx, usage in enumerate(account_usage_after):
+            expected_usage_total = account_usage_before[idx].total
+            if usage.resourcetype in [10]:
+                expected_usage_total = expected_usage_total - old_root_vol.size + 16 * 1024 * 1024 * 1024
             self.assertTrue(usage.total == expected_usage_total, "Usage for %s with tag %s is not matching for target account" % (usage.resourcetypename, usage.tag))
         return

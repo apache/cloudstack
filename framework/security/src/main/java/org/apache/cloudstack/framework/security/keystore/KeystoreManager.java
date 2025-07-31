@@ -18,6 +18,7 @@ package org.apache.cloudstack.framework.security.keystore;
 
 import com.cloud.agent.api.LogLevel;
 import com.cloud.agent.api.LogLevel.Log4jLevel;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 
 public interface KeystoreManager extends Manager {
@@ -59,7 +60,7 @@ public interface KeystoreManager extends Manager {
         }
     }
 
-    boolean validateCertificate(String certificate, String key, String domainSuffix);
+    Pair<Boolean, String> validateCertificate(String certificate, String key, String domainSuffix);
 
     void saveCertificate(String name, String certificate, String key, String domainSuffix);
 

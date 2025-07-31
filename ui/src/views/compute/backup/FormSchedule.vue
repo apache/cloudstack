@@ -104,6 +104,18 @@
                 </a-select>
               </a-form-item>
             </a-col>
+            <a-col :md="24" :lg="12">
+              <a-form-item :label="$t('label.keep')" name="maxbackups" ref="maxbackups">
+                <a-tooltip
+                  placement="right"
+                  :title="$t('label.maxbackups.to.retain')">
+                  <a-input-number
+                    style="width: 100%"
+                    v-model:value="form.maxbackups"
+                    :min="0" />
+                </a-tooltip>
+              </a-form-item>
+            </a-col>
             <a-col :md="24" :lg="24">
               <a-form-item :label="$t('label.timezone')" ref="timezone" name="timezone">
                 <a-select
@@ -118,6 +130,14 @@
                     {{ opt.name || opt.description }}
                   </a-select-option>
                 </a-select>
+              </a-form-item>
+            </a-col>
+            <a-col :md="24" :lg="12">
+              <a-form-item v-if="backupProvider === 'nas'" name="quiescevm" ref="quiescevm">
+                <a-switch v-model:checked="form.quiescevm"/>
+                <template #label>
+                  <tooltip-label :title="$t('label.quiescevm')" :tooltip="apiParams.quiescevm.description"/>
+                </template>
               </a-form-item>
             </a-col>
           </a-row>
@@ -143,14 +163,18 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { timeZone } from '@/utils/timezone'
 import { mixinForm } from '@/utils/mixin'
 import debounce from 'lodash/debounce'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'FormSchedule',
   mixins: [mixinForm],
+  components: {
+    TooltipLabel
+  },
   props: {
     loading: {
       type: Boolean,
@@ -173,13 +197,18 @@ export default {
       dayOfMonth: [],
       timeZoneMap: [],
       fetching: false,
+      backupProvider: null,
       actionLoading: false,
       listDayOfWeek: ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
     }
   },
+  beforeCreate () {
+    this.apiParams = this.$getApiParams('createBackupSchedule')
+  },
   created () {
     this.initForm()
     this.fetchTimeZone()
+    this.fetchBackupOffering()
   },
   inject: ['refreshSchedule', 'closeSchedule'],
   methods: {
@@ -194,6 +223,16 @@ export default {
         'day-of-week': [{ type: 'number', required: true, message: `${this.$t('message.error.select')}` }],
         'day-of-month': [{ required: true, message: `${this.$t('message.error.select')}` }],
         timezone: [{ required: true, message: `${this.$t('message.error.select')}` }]
+      })
+    },
+    fetchBackupOffering () {
+      getAPI('listBackupOfferings', { id: this.resource.backupofferingid }).then(json => {
+        if (json.listbackupofferingsresponse && json.listbackupofferingsresponse.backupoffering) {
+          const backupoffering = json.listbackupofferingsresponse.backupoffering[0]
+          this.backupProvider = backupoffering.provider
+        }
+      }).catch(error => {
+        this.$notifyError(error)
       })
     },
     fetchTimeZone (value) {
@@ -247,7 +286,11 @@ export default {
         const params = {}
         params.virtualmachineid = this.resource.id
         params.intervaltype = values.intervaltype
+        params.maxbackups = values.maxbackups
         params.timezone = values.timezone
+        if (values.quiescevm) {
+          params.quiescevm = values.quiescevm
+        }
         switch (values.intervaltype) {
           case 'hourly':
             params.schedule = values.time
@@ -263,7 +306,7 @@ export default {
             break
         }
         this.actionLoading = true
-        api('createBackupSchedule', params).then(json => {
+        postAPI('createBackupSchedule', params).then(json => {
           this.$notification.success({
             message: this.$t('label.scheduled.backups'),
             description: this.$t('message.success.config.backup.schedule')

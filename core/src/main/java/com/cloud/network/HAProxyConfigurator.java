@@ -485,7 +485,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         sb.append("\tbind ").append(publicIP).append(":").append(publicPort);
         result.add(sb.toString());
         sb = new StringBuilder();
-        sb.append("\t").append("balance ").append(algorithm);
+        sb.append("\t").append("balance ").append(algorithm.toLowerCase());
         result.add(sb.toString());
 
         int i = 0;

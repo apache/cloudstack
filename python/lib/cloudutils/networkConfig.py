@@ -41,7 +41,7 @@ class networkConfig:
         return devs
     @staticmethod
     def getDefaultNetwork():
-        cmd = bash("route -n|awk \'/^0.0.0.0/ {print $2,$8}\'")
+        cmd = bash("ip route show default | awk \'{print $3,$5}\'")
         if not cmd.isSuccess():
             logging.debug("Failed to get default route")
             raise CloudRuntimeException("Failed to get default route")

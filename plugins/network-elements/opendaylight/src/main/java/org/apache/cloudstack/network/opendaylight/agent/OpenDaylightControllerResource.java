@@ -21,7 +21,6 @@ package org.apache.cloudstack.network.opendaylight.agent;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.InvalidParameterException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -69,6 +68,7 @@ import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.resource.ServerResource;
 
 public class OpenDaylightControllerResource implements ServerResource {
@@ -332,11 +332,11 @@ public class OpenDaylightControllerResource implements ServerResource {
 
     private void updateConfiguration() {
         if (!configuration.containsKey("url") || !configuration.containsKey("username") || !configuration.containsKey("password"))
-            throw new InvalidParameterException("OpenDaylightControllerResource needs a url, username and password.");
+            throw new InvalidParameterValueException("OpenDaylightControllerResource needs a url, username and password.");
         try {
             controllerUrl = new URL((String)configuration.get("url"));
         } catch (MalformedURLException e) {
-            throw new InvalidParameterException("OpenDaylightControllerResource found an invalid controller url");
+            throw new InvalidParameterValueException("OpenDaylightControllerResource found an invalid controller url");
         }
         controllerUsername = (String)configuration.get("username");
         controllerPassword = (String)configuration.get("password");

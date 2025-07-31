@@ -20,6 +20,8 @@ import java.util.Date;
 import java.util.List;
 
 
+import javax.inject.Inject;
+
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.ResponseObject;
@@ -29,12 +31,17 @@ import org.apache.cloudstack.framework.jobs.AsyncJob;
 import com.cloud.api.ApiSerializerHelper;
 import com.cloud.api.SerializationContext;
 import com.cloud.api.query.vo.AsyncJobJoinVO;
+import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
 public class AsyncJobJoinDaoImpl extends GenericDaoBase<AsyncJobJoinVO, Long> implements AsyncJobJoinDao {
+
+    @Inject
+    private ManagementServerHostDao managementServerHostDao;
 
     private final SearchBuilder<AsyncJobJoinVO> jobIdSearch;
 
@@ -63,7 +70,13 @@ public class AsyncJobJoinDaoImpl extends GenericDaoBase<AsyncJobJoinVO, Long> im
         jobResponse.setJobId(job.getUuid());
         jobResponse.setJobStatus(job.getStatus());
         jobResponse.setJobProcStatus(job.getProcessStatus());
-        jobResponse.setMsid(job.getExecutingMsid());
+        if (job.getExecutingMsid() != null) {
+            ManagementServerHostVO managementServer = managementServerHostDao.findByMsid(job.getExecutingMsid());
+            if (managementServer != null) {
+                jobResponse.setManagementServerId(managementServer.getUuid());
+                jobResponse.setManagementServerName(managementServer.getName());
+            }
+        }
 
         if (job.getInstanceType() != null && job.getInstanceId() != null) {
             jobResponse.setJobInstanceType(job.getInstanceType().toString());

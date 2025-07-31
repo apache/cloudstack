@@ -15,19 +15,34 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import Cookies from 'js-cookie'
 import { axios, sourceToken } from '@/utils/request'
 import { message, notification } from 'ant-design-vue'
+import { vueProps } from '@/vue-app'
+import {
+  ACCESS_TOKEN
+} from '@/store/mutation-types'
 
-export function api (command, args = {}, method = 'GET', data = {}) {
-  let params = {}
+const getAPICommandsRegex = /^(get|list|query|find)\w+$/i
+const additionalGetAPICommandsList = [
+  'isaccountallowedtocreateofferingswithtags',
+  'readyforshutdown',
+  'cloudianisenabled',
+  'quotabalance',
+  'quotasummary',
+  'quotatarifflist',
+  'quotaisenabled',
+  'quotastatement',
+  'verifyoauthcodeandgetuser'
+]
+
+export function getAPI (command, args = {}) {
   args.command = command
   args.response = 'json'
 
-  if (data) {
-    params = new URLSearchParams()
-    Object.entries(data).forEach(([key, value]) => {
-      params.append(key, value)
-    })
+  const sessionkey = vueProps.$localStorage.get(ACCESS_TOKEN) || Cookies.get('sessionkey')
+  if (sessionkey) {
+    args.sessionkey = sessionkey
   }
 
   return axios({
@@ -35,9 +50,37 @@ export function api (command, args = {}, method = 'GET', data = {}) {
       ...args
     },
     url: '/',
-    method,
-    data: params || {}
+    method: 'GET'
   })
+}
+
+export function postAPI (command, data = {}) {
+  const params = new URLSearchParams()
+  params.append('command', command)
+  params.append('response', 'json')
+  if (data) {
+    Object.entries(data).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        params.append(key, value)
+      }
+    })
+  }
+
+  const sessionkey = vueProps.$localStorage.get(ACCESS_TOKEN) || Cookies.get('sessionkey')
+  if (sessionkey) {
+    params.append('sessionkey', sessionkey)
+  }
+  return axios({
+    url: '/',
+    method: 'POST',
+    data: params
+  })
+}
+
+export function callAPI (command, args = {}) {
+  const isGetAPICommand = getAPICommandsRegex.test(command) || additionalGetAPICommandsList.includes(command.toLowerCase())
+  const call = isGetAPICommand ? getAPI : postAPI
+  return call(command, args)
 }
 
 export function login (arg) {
@@ -46,7 +89,7 @@ export function login (arg) {
   }
 
   // Logout before login is called to purge any duplicate sessionkey cookies
-  api('logout')
+  postAPI('logout')
 
   const params = new URLSearchParams()
   params.append('command', 'login')
@@ -56,7 +99,7 @@ export function login (arg) {
   params.append('response', 'json')
   return axios({
     url: '/',
-    method: 'post',
+    method: 'POST',
     data: params,
     headers: {
       'content-type': 'application/x-www-form-urlencoded'
@@ -64,11 +107,13 @@ export function login (arg) {
   })
 }
 
-export function logout () {
-  sourceToken.cancel()
-  message.destroy()
-  notification.destroy()
-  return api('logout')
+export async function logout () {
+  const result = await postAPI('logout').finally(() => {
+    sourceToken.cancel()
+    message.destroy()
+    notification.destroy()
+  })
+  return result
 }
 
 export function oauthlogin (arg) {
@@ -77,7 +122,7 @@ export function oauthlogin (arg) {
   }
 
   // Logout before login is called to purge any duplicate sessionkey cookies
-  api('logout')
+  postAPI('logout')
 
   const params = new URLSearchParams()
   params.append('command', 'oauthlogin')

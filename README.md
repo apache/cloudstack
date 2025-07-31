@@ -142,7 +142,7 @@ This distribution includes cryptographic software. The country in which you curr
 reside may have restrictions on the import, possession, use, and/or re-export to another
 country, of encryption software. BEFORE using any encryption software, please check your
 country's laws, regulations and policies concerning the import, possession, or use, and
-re-export of encryption software, to see if this is permitted. See [The Wassenaar Arrangement](http://www.wassenaar.org/) 
+re-export of encryption software, to see if this is permitted. See [The Wassenaar Arrangement](http://www.wassenaar.org/)
 for more information.
 
 The U.S. Government Department of Commerce, Bureau of Industry and Security (BIS), has
@@ -160,3 +160,11 @@ The following provides more details on the included cryptographic software:
 * CloudStack makes use of the Bouncy Castle general-purpose encryption library.
 * CloudStack can optionally interact with and control OpenSwan-based VPNs.
 * CloudStack has a dependency on and makes use of JSch - a java SSH2 implementation.
+
+## Star History
+
+[![Apache CloudStack Star History](https://api.star-history.com/svg?repos=apache/cloudstack&type=Date)](https://www.star-history.com/#apache/cloudstack&Date)
+
+## Contributors
+
+[![Apache CloudStack Contributors](https://contrib.rocks/image?repo=apache/cloudstack&anon=0&max=500)](https://github.com/apache/cloudstack/graphs/contributors)

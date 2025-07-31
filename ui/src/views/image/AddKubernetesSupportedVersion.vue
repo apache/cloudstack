@@ -106,6 +106,25 @@
             v-model:checked="form.directdownload"
             :placeholder="apiParams.directdownload.description"/>
         </a-form-item>
+        <a-form-item
+          name="arch"
+          ref="arch">
+          <template #label>
+            <tooltip-label :title="$t('label.arch')" :tooltip="apiParams.arch.description"/>
+          </template>
+          <a-select
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            v-model:value="form.arch"
+            :placeholder="apiParams.arch.description">
+            <a-select-option v-for="opt in architectureTypes.opts" :key="opt.id">
+              {{ opt.name || opt.description }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
 
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
@@ -118,7 +137,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -135,7 +154,8 @@ export default {
       loading: false,
       selectedZone: {},
       directDownloadDisabled: false,
-      lastNonEdgeDirectDownloadUserSelection: false
+      lastNonEdgeDirectDownloadUserSelection: false,
+      architectureTypes: {}
     }
   },
   beforeCreate () {
@@ -196,6 +216,7 @@ export default {
       })
     },
     fetchData () {
+      this.architectureTypes.opts = this.$fetchCpuArchitectureTypes()
       this.fetchZoneData()
     },
     isValidValueForKey (obj, key) {
@@ -208,7 +229,7 @@ export default {
       const params = {}
       params.showicon = true
       this.zoneLoading = true
-      api('listZones', params).then(json => {
+      getAPI('listZones', params).then(json => {
         const listZones = json.listzonesresponse.zone
         if (listZones) {
           this.zones = this.zones.concat(listZones)
@@ -260,7 +281,7 @@ export default {
         if (this.isValidValueForKey(values, 'minmemory') && values.minmemory > 0) {
           params.minmemory = values.minmemory
         }
-        api('addKubernetesSupportedVersion', params).then(json => {
+        postAPI('addKubernetesSupportedVersion', params).then(json => {
           this.$message.success(`${this.$t('message.success.add.kuberversion')}: ${values.semanticversion}`)
           this.$emit('refresh-data')
           this.closeAction()
