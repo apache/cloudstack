@@ -49,7 +49,7 @@ public class LibvirtGpuDef {
         String mdevUuid = vgpuType.getBusAddress(); // For MDEV devices, busAddress contains the UUID
         String displayAttribute = vgpuType.isDisplay() ? "on" : "off";
 
-        gpuBuilder.append("<hostdev mode='subsystem' type='mdev' managed='no' display='").append(displayAttribute).append("'>\n");
+        gpuBuilder.append("<hostdev mode='subsystem' type='mdev' model='vfio-pci' display='").append(displayAttribute).append("'>\n");
         gpuBuilder.append("  <source>\n");
         gpuBuilder.append("    <address uuid='").append(mdevUuid).append("'/>\n");
         gpuBuilder.append("  </source>\n");
