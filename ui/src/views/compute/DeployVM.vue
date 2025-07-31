@@ -2672,9 +2672,6 @@ export default {
     },
     fetchUnattachedVolumes (volumeFilter, params) {
       const args = Object.assign({}, params)
-      if (this.isModernImageSelection && this.form.guestoscategoryid) {
-        args.oscategoryid = this.form.guestoscategoryid
-      }
       if (args.keyword || (args.category && args.category !== volumeFilter)) {
         args.page = 1
         args.pageSize = args.pageSize || 10
@@ -2686,11 +2683,7 @@ export default {
       args.account = store.getters.project?.id ? null : this.owner.account
       args.domainid = store.getters.project?.id ? null : this.owner.domainid
       args.projectid = store.getters.project?.id || this.owner.projectid
-      args.volumefilter = volumeFilter
-      args.details = 'all'
-      args.showicon = 'true'
       args.id = this.queryVolumeId
-      args.isvnf = false
       args.state = 'Ready'
       const pageSize = args.pageSize ? args.pageSize : 10
       const pageStart = (args.page ? args.page - 1 : 0) * pageSize
@@ -2721,9 +2714,6 @@ export default {
     },
     fetchRootSnapshots (snapshotFilter, params) {
       const args = Object.assign({}, params)
-      if (this.isModernImageSelection && this.form.guestoscategoryid) {
-        args.oscategoryid = this.form.guestoscategoryid
-      }
       if (args.keyword || (args.category && args.category !== snapshotFilter)) {
         args.page = 1
         args.pageSize = args.pageSize || 10
@@ -2735,10 +2725,6 @@ export default {
       args.account = store.getters.project?.id ? null : this.owner.account
       args.domainid = store.getters.project?.id ? null : this.owner.domainid
       args.projectid = store.getters.project?.id || this.owner.projectid
-      args.snapshotfilter = snapshotFilter
-      args.details = 'all'
-      args.showicon = 'true'
-      args.isvnf = false
       const pageSize = args.pageSize ? args.pageSize : 10
       const pageStart = (args.page ? args.page - 1 : 0) * pageSize
       const pageEnd = pageSize * (pageStart + 1)
