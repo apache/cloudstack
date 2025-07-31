@@ -18,6 +18,7 @@ package com.cloud.storage.resource;
 
 import java.util.List;
 
+import com.cloud.agent.api.SecStorageVMSetupCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.resource.SecondaryStorageResourceHandler;
 import org.apache.logging.log4j.Logger;
@@ -114,6 +115,8 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
                 answer = storageSubsystemHandler.handleStorageCommands((StorageSubSystemCommand)cmd);
             } else if (cmd instanceof CreateEntityDownloadURLCommand) {
                 answer = execute((CreateEntityDownloadURLCommand)cmd);
+            } else if (cmd instanceof SecStorageVMSetupCommand) {
+                answer = execute((SecStorageVMSetupCommand) cmd);
             } else {
                 answer = _resource.defaultAction(cmd);
             }
@@ -181,6 +184,11 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
 
     private Answer execute(CreateVolumeFromSnapshotCommand cmd) {
         return _storageMgr.execute(this, cmd);
+    }
+
+    private Answer execute(SecStorageVMSetupCommand cmd) {
+        VmwareHelper.configureDiskControllerMappingsInVmwareBaseModule(cmd.getSupportedDiskControllers());
+        return _resource.defaultAction(cmd);
     }
 
     @Override
