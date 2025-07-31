@@ -1538,8 +1538,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                         hostCanAccessPool = true;
                         if (potentialHost.getHypervisorType() == HypervisorType.VMware) {
                             try {
-                                boolean isStoragePoolStoragepolicyComplaince = _storageMgr.isStoragePoolCompliantWithStoragePolicy(volumeDiskProfilePair, storagePool);
-                                if (!isStoragePoolStoragepolicyComplaince) {
+                                boolean isStoragePoolStoragepolicyCompliance = _storageMgr.isStoragePoolCompliantWithStoragePolicy(volumeDiskProfilePair, storagePool);
+                                if (!isStoragePoolStoragepolicyCompliance) {
                                     continue;
                                 }
                             } catch (StorageUnavailableException e) {
@@ -1577,8 +1577,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                                 List<Pair<Volume, DiskProfile>> volumeDiskProfilePair = getVolumeDiskProfilePairs(requestVolumes);
                                 if (potentialHost.getHypervisorType() == HypervisorType.VMware) {
                                     try {
-                                        boolean isStoragePoolStoragepolicyComplaince = _storageMgr.isStoragePoolCompliantWithStoragePolicy(volumeDiskProfilePair, potentialSPool);
-                                        if (!isStoragePoolStoragepolicyComplaince) {
+                                        boolean isStoragePoolStoragepolicyCompliance = _storageMgr.isStoragePoolCompliantWithStoragePolicy(volumeDiskProfilePair, potentialSPool);
+                                        if (!isStoragePoolStoragepolicyCompliance) {
                                             continue;
                                         }
                                     } catch (StorageUnavailableException e) {
