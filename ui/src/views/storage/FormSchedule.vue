@@ -170,7 +170,7 @@
               </a-form-item>
             </a-col>
             <a-col :md="24" :lg="24" v-if="resourceType === 'Volume'">
-              <a-form-item :label="$t('label.useStorageReplication')" name="useStorageReplication" ref="useStorageReplication">
+              <a-form-item :label="$t('label.usestoragereplication')" name="useStorageReplication" ref="useStorageReplication">
                 <a-switch v-model:checked="form.useStorageReplication" />
               </a-form-item>
               <a-form-item v-if="isAdmin && form.useStorageReplication" ref="storageids" name="storageids">

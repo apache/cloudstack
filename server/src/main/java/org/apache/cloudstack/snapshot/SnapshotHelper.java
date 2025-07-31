@@ -344,6 +344,8 @@ public class SnapshotHelper {
         if (useStorageReplication) {
             if (volume == null) {
                 throw new InvalidParameterValueException("Could not find volume of a snapshot");
+            } else if (!doesStorageSupportCopyBetweenZones(volume.getPoolId())){
+                throw new InvalidParameterValueException("The storage pool does not support copy between zones");
             }
             if (CollectionUtils.isEmpty(destZoneIds)) {
                 throw new InvalidParameterValueException("There is no destination zone provided");
@@ -364,5 +366,14 @@ public class SnapshotHelper {
             destZoneIds.clear();
         }
         return storagePoolIds;
+    }
+
+    public boolean doesStorageSupportCopyBetweenZones(Long poolId) {
+        DataStore dataStore = dataStorageManager.getDataStore(poolId, DataStoreRole.Primary);
+        if (dataStore != null
+                && dataStore.getDriver().getCapabilities().containsKey(DataStoreCapabilities.CAN_COPY_SNAPSHOT_BETWEEN_ZONES_AND_SAME_POOL_TYPE.toString())) {
+            return true;
+        }
+        return false;
     }
 }

@@ -116,7 +116,7 @@ public interface VolumeApiService {
     Snapshot takeSnapshot(Long volumeId, Long policyId, Long snapshotId, Account account, boolean quiescevm, Snapshot.LocationType locationType, boolean asyncBackup, Map<String, String> tags, List<Long> zoneIds, List<Long> poolIds, Boolean useStorageReplication)
             throws ResourceAllocationException;
 
-    Snapshot allocSnapshot(Long volumeId, Long policyId, String snapshotName, Snapshot.LocationType locationType, List<Long> zoneIds, Boolean useStorageReplication) throws ResourceAllocationException;
+    Snapshot allocSnapshot(Long volumeId, Long policyId, String snapshotName, Snapshot.LocationType locationType, List<Long> zoneIds, List<Long> storagePoolIds, Boolean useStorageReplication) throws ResourceAllocationException;
 
     Volume updateVolume(long volumeId, String path, String state, Long storageId,
                         Boolean displayVolume, Boolean deleteProtection,
