@@ -110,13 +110,14 @@ docker-compose up
 ```
  
 
+
 ### Full Setup
- 
 
-For production-ready deployments and detailed configurations, refer to our:
+For production-ready deployments and detailed configurations, refer to:
 
-Installation Guide
-Ansible Deployment Guide
+- [Installation Guide](https://docs.cloudstack.apache.org/en/latest/installguide/)
+- [Ansible Deployment Guide](https://github.com/apache/cloudstack-ansible)
+
 
  
 
