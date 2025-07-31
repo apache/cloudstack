@@ -1143,6 +1143,7 @@ public class ApiConstants {
     public static final String NETWORK_SPANNED_ZONES = "zonesnetworkspans";
     public static final String METADATA = "metadata";
     public static final String PHYSICAL_SIZE = "physicalsize";
+    public static final String CHAIN_SIZE = "chainsize";
     public static final String OVM3_POOL = "ovm3pool";
     public static final String OVM3_CLUSTER = "ovm3cluster";
     public static final String OVM3_VIP = "ovm3vip";

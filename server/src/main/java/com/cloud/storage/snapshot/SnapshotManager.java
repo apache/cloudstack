@@ -61,6 +61,10 @@ public interface SnapshotManager extends Configurable {
     ConfigKey<Integer> snapshotDeltaMax = new ConfigKey<>(Integer.class, "snapshot.delta.max", "Snapshots", "16", "Max delta snapshots between two full snapshots. " +
             "Only valid for KVM and XenServer.", true, ConfigKey.Scope.Global, null);
 
+    ConfigKey<Boolean> snapshotShowChainSize = new ConfigKey<>(Boolean.class, "snapshot.show.chain.size", "Snapshots", "false",
+            "Whether to show chain size (sum of physical size of snapshot and all its parents) for incremental snapshots in the snapshot response",
+            true, ConfigKey.Scope.Global, null);
+
     void deletePoliciesForVolume(Long volumeId);
 
     /**
