@@ -632,11 +632,13 @@ public class EventTypes {
     public static final String EVENT_VM_BACKUP_CREATE = "BACKUP.CREATE";
     public static final String EVENT_VM_BACKUP_RESTORE = "BACKUP.RESTORE";
     public static final String EVENT_VM_BACKUP_DELETE = "BACKUP.DELETE";
+    public static final String EVENT_VM_BACKUP_OFFERING_REMOVED_AND_BACKUPS_DELETED = "BACKUP.OFFERING.BACKUPS.DEL";
     public static final String EVENT_VM_BACKUP_RESTORE_VOLUME_TO_VM = "BACKUP.RESTORE.VOLUME.TO.VM";
     public static final String EVENT_VM_BACKUP_SCHEDULE_CONFIGURE = "BACKUP.SCHEDULE.CONFIGURE";
     public static final String EVENT_VM_BACKUP_SCHEDULE_DELETE = "BACKUP.SCHEDULE.DELETE";
     public static final String EVENT_VM_BACKUP_USAGE_METRIC = "BACKUP.USAGE.METRIC";
     public static final String EVENT_VM_BACKUP_EDIT = "BACKUP.OFFERING.EDIT";
+    public static final String EVENT_VM_CREATE_FROM_BACKUP = "VM.CREATE.FROM.BACKUP";
 
     // external network device events
     public static final String EVENT_EXTERNAL_NVP_CONTROLLER_ADD = "PHYSICAL.NVPCONTROLLER.ADD";

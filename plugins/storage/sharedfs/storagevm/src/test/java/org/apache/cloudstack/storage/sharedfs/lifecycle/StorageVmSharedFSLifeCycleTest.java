@@ -254,7 +254,7 @@ public class StorageVmSharedFSLifeCycleTest {
         when(vm.getId()).thenReturn(s_vmId);
         when(userVmService.createAdvancedVirtualMachine(
                 any(DataCenter.class), any(ServiceOffering.class), any(VirtualMachineTemplate.class), anyList(), any(Account.class), anyString(),
-                anyString(), anyLong(), anyLong(), isNull(), any(Hypervisor.HypervisorType.class), any(BaseCmd.HTTPMethod.class), anyString(),
+                anyString(), anyLong(), anyLong(), any(), isNull(), any(Hypervisor.HypervisorType.class), any(BaseCmd.HTTPMethod.class), anyString(),
                 isNull(), isNull(), anyList(), isNull(), any(Network.IpAddresses.class), isNull(), isNull(), isNull(),
                 anyMap(), isNull(), isNull(), isNull(), isNull(),
                 anyBoolean(), anyString(), isNull(), isNull(), isNull())).thenReturn(vm);

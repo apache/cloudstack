@@ -37,11 +37,17 @@ import javax.inject.Inject;
 import javax.mail.MessagingException;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.Pod;
+import com.cloud.org.Cluster;
+
+import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.mailing.MailAddress;
@@ -64,11 +70,9 @@ import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.ClusterVO;
-import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -82,7 +86,6 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.Ipv6Service;
 import com.cloud.network.dao.IPAddressDao;
-import com.cloud.org.Cluster;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.StorageManager;
@@ -143,7 +146,11 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     @Inject
     ConfigurationManager _configMgr;
     @Inject
+    protected BackupManager backupManager;
+    @Inject
     protected ConfigDepot _configDepot;
+    @Inject
+    private ObjectStoreDao _objectStoreDao;
     @Inject
     Ipv6Service ipv6Service;
     @Inject
@@ -157,6 +164,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     private double _vlanCapacityThreshold = 0.75;
     private double _directNetworkPublicIpCapacityThreshold = 0.75;
     private double _localStorageCapacityThreshold = 0.75;
+    private double _backupStorageCapacityThreshold = 0.75;
+    private double _objectStorageCapacityThreshold = 0.75;
     Map<Short, Double> _capacityTypeThresholdMap = new HashMap<>();
 
     private final ExecutorService _executor;
@@ -199,6 +208,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         String vlanCapacityThreshold = _configDao.getValue(Config.VlanCapacityThreshold.key());
         String directNetworkPublicIpCapacityThreshold = _configDao.getValue(Config.DirectNetworkPublicIpCapacityThreshold.key());
         String localStorageCapacityThreshold = _configDao.getValue(Config.LocalStorageCapacityThreshold.key());
+        String backupStorageCapacityThreshold = _configDao.getValue(BackupManager.BackupStorageCapacityThreshold.key());
+        String objectStorageCapacityThreshold = _configDao.getValue(_storageMgr.ObjectStorageCapacityThreshold.key());
 
         if (publicIPCapacityThreshold != null) {
             _publicIPCapacityThreshold = Double.parseDouble(publicIPCapacityThreshold);
@@ -218,6 +229,12 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         if (localStorageCapacityThreshold != null) {
             _localStorageCapacityThreshold = Double.parseDouble(localStorageCapacityThreshold);
         }
+        if (backupStorageCapacityThreshold != null) {
+            _backupStorageCapacityThreshold = Double.parseDouble(backupStorageCapacityThreshold);
+        }
+        if (objectStorageCapacityThreshold != null) {
+            _objectStorageCapacityThreshold = Double.parseDouble(objectStorageCapacityThreshold);
+        }
 
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP, _publicIPCapacityThreshold);
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_PRIVATE_IP, _privateIPCapacityThreshold);
@@ -226,6 +243,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_DIRECT_ATTACHED_PUBLIC_IP, _directNetworkPublicIpCapacityThreshold);
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_LOCAL_STORAGE, _localStorageCapacityThreshold);
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET, Ipv6SubnetCapacityThreshold.value());
+        _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_BACKUP_STORAGE, _backupStorageCapacityThreshold);
+        _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_OBJECT_STORAGE, _objectStorageCapacityThreshold);
 
         String capacityCheckPeriodStr = configs.get("capacity.check.period");
         if (capacityCheckPeriodStr != null) {
@@ -549,7 +568,9 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             for (Short capacityType : dataCenterCapacityTypes) {
                 List<SummedCapacity> capacity = _capacityDao.findCapacityBy(capacityType.intValue(), dc.getId(), null, null);
 
-                if (capacityType == Capacity.CAPACITY_TYPE_SECONDARY_STORAGE) {
+                if (capacityType == Capacity.CAPACITY_TYPE_SECONDARY_STORAGE ||
+                    capacityType == Capacity.CAPACITY_TYPE_OBJECT_STORAGE ||
+                    capacityType == Capacity.CAPACITY_TYPE_BACKUP_STORAGE) {
                     capacity.add(getUsedStats(capacityType, dc.getId(), null, null));
                 }
                 if (capacity == null || capacity.isEmpty()) {
@@ -618,18 +639,22 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     }
 
     private SummedCapacity getUsedStats(short capacityType, long zoneId, Long podId, Long clusterId) {
-        CapacityVO capacity;
+        CapacityVO capacity = null;
+
         if (capacityType == Capacity.CAPACITY_TYPE_SECONDARY_STORAGE) {
             capacity = _storageMgr.getSecondaryStorageUsedStats(null, zoneId);
-        } else {
+        } else if (capacityType == Capacity.CAPACITY_TYPE_STORAGE) {
             capacity = _storageMgr.getStoragePoolUsedStats(null, clusterId, podId, zoneId);
+        } else if (capacityType == Capacity.CAPACITY_TYPE_OBJECT_STORAGE) {
+            capacity = _storageMgr.getObjectStorageUsedStats(zoneId);
+        } else if (capacityType == Capacity.CAPACITY_TYPE_BACKUP_STORAGE) {
+            capacity = (CapacityVO) backupManager.getBackupStorageUsedStats(zoneId);
         }
         if (capacity != null) {
             return new SummedCapacity(capacity.getUsedCapacity(), 0, capacity.getTotalCapacity(), capacityType, clusterId, podId);
         } else {
             return null;
         }
-
     }
 
     private void generateEmailAlert(DataCenterVO dc, HostPodVO pod, ClusterVO cluster, double totalCapacity, double usedCapacity, short capacityType) {
@@ -706,6 +731,16 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 msgContent = String.format("Number of unallocated virtual network guest IPv6 subnets is low, total: [%s], allocated: [%s] (%s%%).", totalInString, usedInString, percentual);
                 alertType = AlertManager.AlertType.ALERT_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET;
                 break;
+            case Capacity.CAPACITY_TYPE_BACKUP_STORAGE:
+                msgSubject = "System Alert: Low Available Backup Storage in availability zone " + dc.getName();
+                msgContent = "Available backup storage space is low, total: " + totalInString + " MB, used: " + usedInString + " MB (" + percentual + "%)";
+                alertType = AlertManager.AlertType.ALERT_TYPE_BACKUP_STORAGE;
+                break;
+            case Capacity.CAPACITY_TYPE_OBJECT_STORAGE:
+                msgSubject = "System Alert: Low Available Object Storage in availability zone " + dc.getName();
+                msgContent = "Available object storage space is low, total: " + totalInString + " MB, used: " + usedInString + " MB (" + percentual + "%)";
+                alertType = AlertManager.AlertType.ALERT_TYPE_OBJECT_STORAGE;
+                break;
         }
 
         try {
@@ -724,6 +759,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         dataCenterCapacityTypes.add(Capacity.CAPACITY_TYPE_SECONDARY_STORAGE);
         dataCenterCapacityTypes.add(Capacity.CAPACITY_TYPE_VLAN);
         dataCenterCapacityTypes.add(Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET);
+        dataCenterCapacityTypes.add(Capacity.CAPACITY_TYPE_BACKUP_STORAGE);
+        dataCenterCapacityTypes.add(Capacity.CAPACITY_TYPE_OBJECT_STORAGE);
         return dataCenterCapacityTypes;
 
     }

@@ -1129,6 +1129,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
+    public IpAddresses getIpAddressesFromIps(String ipAddress, String ip6Address, String macAddress) {
+        return null;
+    }
+
+    @Override
     public void expungeLbVmRefs(List<Long> vmIds, Long batchSize) {
     }
 

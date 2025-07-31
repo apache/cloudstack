@@ -19,30 +19,31 @@ package org.apache.cloudstack.backup.dao;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericSearchBuilder;
-import org.apache.cloudstack.api.response.BackupResponse;
-import org.apache.cloudstack.backup.Backup;
-import org.apache.cloudstack.backup.BackupOffering;
-import org.apache.cloudstack.backup.BackupVO;
 
-import com.cloud.dc.DataCenterVO;
+import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.backup.BackupDetailVO;
+import org.apache.cloudstack.backup.BackupVO;
+import org.apache.commons.collections.CollectionUtils;
+
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
-import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.vm.VMInstanceVO;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.google.gson.Gson;
+import com.cloud.network.dao.NetworkDao;
 
 public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements BackupDao {
 
@@ -59,12 +60,25 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
     VMInstanceDao vmInstanceDao;
 
     @Inject
+    private VMTemplateDao templateDao;
+
+    @Inject
     BackupOfferingDao backupOfferingDao;
+
+    @Inject
+    BackupDetailsDao backupDetailsDao;
+
+    @Inject
+    ServiceOfferingDao serviceOfferingDao;
+
+    @Inject
+    NetworkDao networkDao;
 
     private SearchBuilder<BackupVO> backupSearch;
     private GenericSearchBuilder<BackupVO, Long> CountBackupsByAccount;
     private GenericSearchBuilder<BackupVO, SumCount> CalculateBackupStorageByAccount;
     private SearchBuilder<BackupVO> listBackupsBySchedule;
+    private GenericSearchBuilder<BackupVO, Long> backupVmSearchInZone;
 
     public BackupDaoImpl() {
     }
@@ -77,6 +91,11 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
         backupSearch.and("backup_offering_id", backupSearch.entity().getBackupOfferingId(), SearchCriteria.Op.EQ);
         backupSearch.and("zone_id", backupSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
         backupSearch.done();
+
+        backupVmSearchInZone = createSearchBuilder(Long.class);
+        backupVmSearchInZone.select(null, SearchCriteria.Func.DISTINCT, backupVmSearchInZone.entity().getVmId());
+        backupVmSearchInZone.and("zone_id", backupVmSearchInZone.entity().getZoneId(), SearchCriteria.Op.EQ);
+        backupVmSearchInZone.done();
 
         CountBackupsByAccount = createSearchBuilder(Long.class);
         CountBackupsByAccount.select(null, SearchCriteria.Func.COUNT, null);
@@ -130,11 +149,34 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
         return new ArrayList<>(listBy(sc));
     }
 
+    @Override
+    public List<Backup> listByVmIdAndOffering(Long zoneId, Long vmId, Long offeringId) {
+        SearchCriteria<BackupVO> sc = backupSearch.create();
+        sc.setParameters("vm_id", vmId);
+        if (zoneId != null) {
+            sc.setParameters("zone_id", zoneId);
+        }
+        sc.setParameters("backup_offering_id", offeringId);
+        return new ArrayList<>(listBy(sc));
+    }
+
     private Backup findByExternalId(Long zoneId, String externalId) {
         SearchCriteria<BackupVO> sc = backupSearch.create();
         sc.setParameters("external_id", externalId);
         sc.setParameters("zone_id", zoneId);
         return findOneBy(sc);
+    }
+
+    @Override
+    public List<BackupVO> searchByVmIds(List<Long> vmIds) {
+        if (CollectionUtils.isEmpty(vmIds)) {
+            return new ArrayList<>();
+        }
+        SearchBuilder<BackupVO> sb = createSearchBuilder();
+        sb.and("vmIds", sb.entity().getVmId(), SearchCriteria.Op.IN);
+        SearchCriteria<BackupVO> sc = sb.create();
+        sc.setParameters("vmIds", vmIds.toArray());
+        return search(sc, null);
     }
 
     public BackupVO getBackupVO(Backup backup) {
@@ -159,6 +201,27 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
     }
 
     @Override
+    public BackupVO persist(BackupVO backup) {
+        return Transaction.execute((TransactionCallback<BackupVO>) status -> {
+            BackupVO backupDb = super.persist(backup);
+            saveDetails(backup);
+            loadDetails(backupDb);
+            return backupDb;
+        });
+    }
+
+    @Override
+    public boolean update(Long id, BackupVO backup) {
+        return Transaction.execute((TransactionCallback<Boolean>) status -> {
+            boolean result = super.update(id, backup);
+            if (result) {
+                saveDetails(backup);
+            }
+            return result;
+        });
+    }
+
+    @Override
     public List<Backup> syncBackups(Long zoneId, Long vmId, List<Backup> externalBackups) {
         for (Backup backup : externalBackups) {
             BackupVO backupVO = getBackupVO(backup);
@@ -171,7 +234,7 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
     public Long countBackupsForAccount(long accountId) {
         SearchCriteria<Long> sc = CountBackupsByAccount.create();
         sc.setParameters("account", accountId);
-        sc.setParameters("status", Backup.Status.Error, Backup.Status.Failed, Backup.Status.Removed, Backup.Status.Expunged);
+        sc.setParameters("status", Backup.Status.Failed, Backup.Status.Removed, Backup.Status.Expunged);
         return customSearch(sc, null).get(0);
     }
 
@@ -179,7 +242,7 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
     public Long calculateBackupStorageForAccount(long accountId) {
         SearchCriteria<SumCount> sc = CalculateBackupStorageByAccount.create();
         sc.setParameters("account", accountId);
-        sc.setParameters("status", Backup.Status.Error, Backup.Status.Failed, Backup.Status.Removed, Backup.Status.Expunged);
+        sc.setParameters("status", Backup.Status.Failed, Backup.Status.Removed, Backup.Status.Expunged);
         return customSearch(sc, null).get(0).sum;
     }
 
@@ -192,44 +255,29 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
     }
 
     @Override
-    public BackupResponse newBackupResponse(Backup backup) {
-        VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
-        AccountVO account = accountDao.findByIdIncludingRemoved(vm.getAccountId());
-        DomainVO domain = domainDao.findByIdIncludingRemoved(vm.getDomainId());
-        DataCenterVO zone = dataCenterDao.findByIdIncludingRemoved(vm.getDataCenterId());
-        Long offeringId = backup.getBackupOfferingId();
-        if (offeringId == null) {
-            offeringId = vm.getBackupOfferingId();
-        }
-        BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(offeringId);
+    public void loadDetails(BackupVO backup) {
+        Map<String, String> details = backupDetailsDao.listDetailsKeyPairs(backup.getId());
+        backup.setDetails(details);
+    }
 
-        BackupResponse response = new BackupResponse();
-        response.setId(backup.getUuid());
-        response.setVmId(vm.getUuid());
-        response.setVmName(vm.getHostName());
-        response.setExternalId(backup.getExternalId());
-        response.setType(backup.getType());
-        response.setDate(backup.getDate());
-        response.setSize(backup.getSize());
-        response.setProtectedSize(backup.getProtectedSize());
-        response.setStatus(backup.getStatus());
-        // ACS 4.20: For backups taken prior this release the backup.backed_volumes column would be empty hence use vm_instance.backup_volumes
-        String backedUpVolumes;
-        if (Objects.isNull(backup.getBackedUpVolumes())) {
-            backedUpVolumes = new Gson().toJson(vm.getBackupVolumeList().toArray(), Backup.VolumeInfo[].class);
-        } else {
-            backedUpVolumes = new Gson().toJson(backup.getBackedUpVolumes().toArray(), Backup.VolumeInfo[].class);
+    @Override
+    public void saveDetails(BackupVO backup) {
+        Map<String, String> detailsStr = backup.getDetails();
+        if (detailsStr == null) {
+            return;
         }
-        response.setVolumes(backedUpVolumes);
-        response.setBackupOfferingId(offering.getUuid());
-        response.setBackupOffering(offering.getName());
-        response.setAccountId(account.getUuid());
-        response.setAccount(account.getAccountName());
-        response.setDomainId(domain.getUuid());
-        response.setDomain(domain.getName());
-        response.setZoneId(zone.getUuid());
-        response.setZone(zone.getName());
-        response.setObjectName("backup");
-        return response;
+        List<BackupDetailVO> details = new ArrayList<BackupDetailVO>();
+        for (String key : detailsStr.keySet()) {
+            BackupDetailVO detail = new BackupDetailVO(backup.getId(), key, detailsStr.get(key), true);
+            details.add(detail);
+        }
+        backupDetailsDao.saveDetails(details);
+    }
+
+    @Override
+    public List<Long> listVmIdsWithBackupsInZone(Long zoneId) {
+        SearchCriteria<Long> sc = backupVmSearchInZone.create();
+        sc.setParameters("zone_id", zoneId);
+        return customSearchIncludingRemoved(sc, null);
     }
 }

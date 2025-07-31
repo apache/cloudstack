@@ -65,16 +65,20 @@ public class BackupScheduleVO implements BackupSchedule {
     @Column(name = "max_backups")
     private int maxBackups = 0;
 
+    @Column(name = "quiescevm")
+    Boolean quiesceVM = false;
+
     public BackupScheduleVO() {
     }
 
-    public BackupScheduleVO(Long vmId, DateUtil.IntervalType scheduleType, String schedule, String timezone, Date scheduledTimestamp, int maxBackups) {
+    public BackupScheduleVO(Long vmId, DateUtil.IntervalType scheduleType, String schedule, String timezone, Date scheduledTimestamp, int maxBackups, Boolean quiesceVM) {
         this.vmId = vmId;
         this.scheduleType = (short) scheduleType.ordinal();
         this.schedule = schedule;
         this.timezone = timezone;
         this.scheduledTimestamp = scheduledTimestamp;
         this.maxBackups = maxBackups;
+        this.quiesceVM = quiesceVM;
     }
 
     @Override
@@ -148,5 +152,13 @@ public class BackupScheduleVO implements BackupSchedule {
 
     public void setMaxBackups(int maxBackups) {
         this.maxBackups = maxBackups;
+    }
+
+    public void setQuiesceVM(Boolean quiesceVM) {
+        this.quiesceVM = quiesceVM;
+    }
+
+    public Boolean getQuiesceVM() {
+        return quiesceVM;
     }
 }

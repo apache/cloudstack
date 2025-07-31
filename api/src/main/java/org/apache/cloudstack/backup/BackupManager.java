@@ -18,20 +18,29 @@
 package org.apache.cloudstack.backup;
 
 import java.util.List;
+import java.util.Map;
 
+import com.cloud.capacity.Capacity;
 import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.api.command.admin.backup.ImportBackupOfferingCmd;
 import org.apache.cloudstack.api.command.admin.backup.UpdateBackupOfferingCmd;
+import org.apache.cloudstack.api.command.user.backup.CreateBackupCmd;
 import org.apache.cloudstack.api.command.user.backup.CreateBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.DeleteBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupOfferingsCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupsCmd;
+import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.Network;
+import com.cloud.storage.Volume;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.PluggableService;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VmDiskInfo;
 
 /**
  * Backup and Recover Manager Interface
@@ -106,6 +115,14 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
             ConfigKey.Scope.Global,
             null);
 
+    ConfigKey<Float> BackupStorageCapacityThreshold = new ConfigKey<>("Alert", Float.class,
+            "zone.backupStorage.capacity.notificationthreshold",
+            "0.75",
+            "Percentage (as a value between 0 and 1) of backup storage utilization above which alerts will be sent about low storage available.",
+            true,
+            ConfigKey.Scope.Zone,
+            null);
+
     /**
      * List backup provider offerings
      * @param zoneId zone id
@@ -168,11 +185,11 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
 
     /**
      * Creates backup of a VM
-     * @param vmId Virtual Machine ID
+     * @param cmd CreateBackupCmd
      * @param job The async job associated with the backup retention
      * @return returns operation success
      */
-    boolean createBackup(final Long vmId, Object job) throws ResourceAllocationException;
+    boolean createBackup(CreateBackupCmd cmd, Object job) throws ResourceAllocationException;
 
     /**
      * List existing backups for a VM
@@ -183,6 +200,15 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
      * Restore a full VM from backup
      */
     boolean restoreBackup(final Long backupId);
+
+    Map<Long, Network.IpAddresses> getIpToNetworkMapFromBackup(Backup backup, boolean preserveIps, List<Long> networkIds);
+
+    Boolean canCreateInstanceFromBackup(Long backupId);
+
+    /**
+     * Restore a backup to a new Instance
+     */
+    boolean restoreBackupToVM(Long backupId, Long vmId) throws ResourceUnavailableException;
 
     /**
      * Restore a backed up volume and attach it to a VM
@@ -197,5 +223,25 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
      */
     boolean deleteBackup(final Long backupId, final Boolean forced);
 
+    void validateBackupForZone(Long zoneId);
+
     BackupOffering updateBackupOffering(UpdateBackupOfferingCmd updateBackupOfferingCmd);
+
+    VmDiskInfo getRootDiskInfoFromBackup(Backup backup);
+
+    List<VmDiskInfo> getDataDiskInfoListFromBackup(Backup backup);
+
+    void checkVmDisksSizeAgainstBackup(List<VmDiskInfo> vmDiskInfoList, Backup backup);
+
+    Map<String, String> getBackupDetailsFromVM(VirtualMachine vm);
+
+    String createVolumeInfoFromVolumes(List<Volume> vmVolumes);
+
+    String getBackupNameFromVM(VirtualMachine vm);
+
+    BackupResponse createBackupResponse(Backup backup, Boolean listVmDetails);
+
+    Capacity getBackupStorageUsedStats(Long zoneId);
+
+    void checkAndRemoveBackupOfferingBeforeExpunge(VirtualMachine vm);
 }

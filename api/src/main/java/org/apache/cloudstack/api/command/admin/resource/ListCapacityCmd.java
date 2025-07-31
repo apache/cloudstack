@@ -141,7 +141,6 @@ public class ListCapacityCmd extends BaseListCmd {
             }
         });
 
-
         response.setResponses(capacityResponses);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
