@@ -158,4 +158,6 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
     List<VolumeVO> listByIds(List<Long> ids);
 
     VolumeVO findOneByIScsiName(String iScsiName);
+
+    Long getInstanceIdByVolumeId(long volumeId);
 }
