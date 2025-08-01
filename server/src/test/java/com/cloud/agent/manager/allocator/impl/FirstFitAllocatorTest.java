@@ -43,10 +43,8 @@ import com.cloud.vm.dao.VMInstanceDetailsDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -125,7 +123,7 @@ public class FirstFitAllocatorTest {
 
   @Test
   public void testConfigure() throws Exception {
-    when(configDao.getConfiguration(ArgumentMatchers.anyMap())).thenReturn(new HashMap<>());
+    when(configDao.getConfiguration(Mockito.anyMap())).thenReturn(new HashMap<>());
     Assert.assertTrue(firstFitAllocatorSpy._checkHvm);
     Assert.assertTrue(firstFitAllocatorSpy.configure("test", new HashMap<>()));
   }
@@ -139,12 +137,10 @@ public class FirstFitAllocatorTest {
     when(avoid.shouldAvoid(host2)).thenReturn(false);
 
     // CPU capability and capacity is met
-    when(capacityMgr.checkIfHostReachMaxGuestLimit(ArgumentMatchers.any())).thenReturn(false);
-    when(capacityMgr.checkIfHostHasCpuCapabilityAndCapacity(ArgumentMatchers.eq(host1), ArgumentMatchers.eq(offering),
-        ArgumentMatchers.eq(true)))
+    when(capacityMgr.checkIfHostReachMaxGuestLimit(Mockito.any(Host.class))).thenReturn(false);
+    when(capacityMgr.checkIfHostHasCpuCapabilityAndCapacity(host1, offering, true))
         .thenReturn(new Pair<>(true, true));
-    when(capacityMgr.checkIfHostHasCpuCapabilityAndCapacity(ArgumentMatchers.eq(host2), ArgumentMatchers.eq(offering),
-        ArgumentMatchers.eq(true)))
+    when(capacityMgr.checkIfHostHasCpuCapabilityAndCapacity(host2, offering,true))
         .thenReturn(new Pair<>(true, false));
 
     when(resourceManagerMock.isGPUDeviceAvailable(offering, host1, virtualMachineProfile.getId())).thenReturn(true);
