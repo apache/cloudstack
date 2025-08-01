@@ -1610,6 +1610,7 @@
 "label.netmask": "Netmask",
 "label.netris": "Netris",
 "label.netristag": "Netris tag",
+"label.netrisurl": "Netris URL",
 "label.netris.provider": "Netris Provider",
 "label.netris.provider.name": "Netris provider name",
 "label.netris.provider.username": "Netris provider username",
