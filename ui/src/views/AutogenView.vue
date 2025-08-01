@@ -1528,6 +1528,9 @@ export default {
             if ('successMethod' in action) {
               action.successMethod(this, result)
             }
+            if (['createProject', 'updateProject', 'deleteProject'].includes(action.api)) {
+              eventBus.emit('projects-updated', { action: action.api, project: this.resource })
+            }
             resolve(true)
           },
           errorMethod: () => {
