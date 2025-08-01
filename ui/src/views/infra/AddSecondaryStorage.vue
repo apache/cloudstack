@@ -295,8 +295,10 @@ export default {
           const swiftParams = {
             account: values.account,
             username: values.username,
-            key: values.key,
-            storagepolicy: values.storagepolicy
+            key: values.key
+          }
+          if (values.storagepolicy) {
+            swiftParams.storagepolicy = values.storagepolicy
           }
           Object.keys(swiftParams).forEach((key, index) => {
             data['details[' + index.toString() + '].key'] = key
