@@ -1370,7 +1370,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
             logger.debug("Acquired lock on host {}, to process agent connection", host);
             try {
-                if (!indirectAgentLB.compareManagementServerListAndLBAlorithm(host.getId(), host.getDataCenterId(), agentMSHostList, lbAlgorithm)) {
+                if (!indirectAgentLB.compareManagementServerListAndLBAlgorithm(host.getId(), host.getDataCenterId(), agentMSHostList, lbAlgorithm)) {
                     final List<String> newMSList = indirectAgentLB.getManagementServerList(host.getId(), host.getDataCenterId(), null);
                     ready.setMsHostList(newMSList);
                     String newLBAlgorithm = indirectAgentLB.getLBAlgorithmName();
