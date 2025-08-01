@@ -16,9 +16,7 @@
 // under the License.
 package org.apache.cloudstack.alert;
 
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 import com.cloud.capacity.Capacity;
@@ -26,8 +24,7 @@ import com.cloud.exception.InvalidParameterValueException;
 
 public interface AlertService {
     public static class AlertType {
-        private static Set<AlertType> defaultAlertTypes = new HashSet<AlertType>();
-        private static Map<String, AlertType> allAlertTypesMap = new HashMap<>();
+        private static final Set<AlertType> defaultAlertTypes = new HashSet<>();
         private final String name;
         private final short type;
         private final boolean repetitionAllowed;
@@ -39,7 +36,6 @@ public interface AlertService {
             if (isDefault) {
                 defaultAlertTypes.add(this);
             }
-            allAlertTypesMap.put(name, this);
         }
 
         public static final AlertType ALERT_TYPE_MEMORY = new AlertType(Capacity.CAPACITY_TYPE_MEMORY, "ALERT.MEMORY", true, false);
@@ -119,10 +115,6 @@ public interface AlertService {
             } else {
                 return new AlertType(type, name, false, false);
             }
-        }
-
-        public static AlertType getAlertTypeByName(String name) {
-            return allAlertTypesMap.get(name);
         }
     }
 

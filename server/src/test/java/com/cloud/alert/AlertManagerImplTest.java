@@ -30,7 +30,6 @@ import java.util.Optional;
 import javax.mail.MessagingException;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -317,39 +316,41 @@ public class AlertManagerImplTest {
 
     @Test
     public void setupRepetitiveAlertTypesParsesValidAlertTypesCorrectly() {
-        mockAllowedRepetitiveAlertTypesConfigKey("ALERT.CPU,ALERT.MEMORY");
+        mockAllowedRepetitiveAlertTypesConfigKey(AlertManager.AlertType.ALERT_TYPE_CPU.getName() + "," + AlertManager.AlertType.ALERT_TYPE_MEMORY.getName());
         alertManagerImplMock.setupRepetitiveAlertTypes();
-        List<AlertService.AlertType> expectedTypes = (List<AlertService.AlertType>)ReflectionTestUtils.getField(alertManagerImplMock, "allowedRepetitiveAlertTypes");
+        List<String> expectedTypes = (List<String>)ReflectionTestUtils.getField(alertManagerImplMock, "allowedRepetitiveAlertTypeNames");
         Assert.assertNotNull(expectedTypes);
         Assert.assertEquals(2, expectedTypes.size());
-        Assert.assertTrue(expectedTypes.contains(AlertManager.AlertType.ALERT_TYPE_CPU));
-        Assert.assertTrue(expectedTypes.contains(AlertManager.AlertType.ALERT_TYPE_MEMORY));
+        Assert.assertTrue(expectedTypes.contains(AlertManager.AlertType.ALERT_TYPE_CPU.getName().toLowerCase()));
+        Assert.assertTrue(expectedTypes.contains(AlertManager.AlertType.ALERT_TYPE_MEMORY.getName().toLowerCase()));
     }
 
     @Test
     public void setupRepetitiveAlertTypesHandlesEmptyConfigValue() {
         mockAllowedRepetitiveAlertTypesConfigKey("");
         alertManagerImplMock.setupRepetitiveAlertTypes();
-        List<AlertService.AlertType> expectedTypes = (List<AlertService.AlertType>)ReflectionTestUtils.getField(alertManagerImplMock, "allowedRepetitiveAlertTypes");
+        List<String> expectedTypes = (List<String>)ReflectionTestUtils.getField(alertManagerImplMock, "allowedRepetitiveAlertTypeNames");
         Assert.assertNotNull(expectedTypes);
         Assert.assertTrue(expectedTypes.isEmpty());
     }
 
     @Test
-    public void setupRepetitiveAlertTypesIgnoresUnknownAlertTypes() {
-        mockAllowedRepetitiveAlertTypesConfigKey("ALERT.CPU,UNKNOWN_ALERT_TYPE");
+    public void setupRepetitiveAlertTypesIgnoresCustomAlertTypes() {
+        String customAlertTypeName = "CUSTOM_ALERT_TYPE";
+        mockAllowedRepetitiveAlertTypesConfigKey(AlertManager.AlertType.ALERT_TYPE_CPU.getName() + "," + customAlertTypeName);
         alertManagerImplMock.setupRepetitiveAlertTypes();
-        List<AlertService.AlertType> expectedTypes = (List<AlertService.AlertType>)ReflectionTestUtils.getField(alertManagerImplMock, "allowedRepetitiveAlertTypes");
+        List<String> expectedTypes = (List<String>)ReflectionTestUtils.getField(alertManagerImplMock, "allowedRepetitiveAlertTypeNames");
         Assert.assertNotNull(expectedTypes);
-        Assert.assertEquals(1, expectedTypes.size());
-        Assert.assertTrue(expectedTypes.contains(AlertManager.AlertType.ALERT_TYPE_CPU));
+        Assert.assertEquals(2, expectedTypes.size());
+        Assert.assertTrue(expectedTypes.contains(AlertManager.AlertType.ALERT_TYPE_CPU.getName().toLowerCase()));
+        Assert.assertTrue(expectedTypes.contains(customAlertTypeName.toLowerCase()));
     }
 
     @Test
     public void setupRepetitiveAlertTypesHandlesNullConfigValue() {
         mockAllowedRepetitiveAlertTypesConfigKey(null);
         alertManagerImplMock.setupRepetitiveAlertTypes();
-        List<AlertService.AlertType> expectedTypes = (List<AlertService.AlertType>)ReflectionTestUtils.getField(alertManagerImplMock, "allowedRepetitiveAlertTypes");
+        List<String> expectedTypes = (List<String>)ReflectionTestUtils.getField(alertManagerImplMock, "allowedRepetitiveAlertTypeNames");
         Assert.assertNotNull(expectedTypes);
         Assert.assertTrue(expectedTypes.isEmpty());
     }

@@ -36,10 +36,6 @@ import javax.inject.Inject;
 import javax.mail.MessagingException;
 import javax.naming.ConfigurationException;
 
-import com.cloud.dc.DataCenter;
-import com.cloud.dc.Pod;
-import com.cloud.org.Cluster;
-
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -71,9 +67,11 @@ import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -87,6 +85,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.Ipv6Service;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.org.Cluster;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.StorageManager;
@@ -164,7 +163,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     protected String[] recipients = null;
     protected String senderAddress = null;
 
-    private final List<AlertType> allowedRepetitiveAlertTypes = new ArrayList<>();
+    private final List<String> allowedRepetitiveAlertTypeNames = new ArrayList<>();
 
     public AlertManagerImpl() {
         _executor = Executors.newCachedThreadPool(new NamedThreadFactory("Email-Alerts-Sender"));
@@ -254,7 +253,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     }
 
     protected void setupRepetitiveAlertTypes() {
-        allowedRepetitiveAlertTypes.clear();
+        allowedRepetitiveAlertTypeNames.clear();
         String allowedRepetitiveAlertsStr = AllowedRepetitiveAlertTypes.value();
         logger.trace("Allowed repetitive alert types specified by {}: {} ", AllowedRepetitiveAlertTypes.key(),
                 allowedRepetitiveAlertsStr);
@@ -262,15 +261,13 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             return;
         }
         String[] allowedRepetitiveAlertTypesArray = allowedRepetitiveAlertsStr.split(",");
-        for (String alertTypeName : allowedRepetitiveAlertTypesArray) {
-            AlertType type = AlertType.getAlertTypeByName(alertTypeName.trim());
-            if (type == null) {
-                logger.warn("Unknown alert type name: {}, skipping it.", alertTypeName);
+        for (String allowedTypeName : allowedRepetitiveAlertTypesArray) {
+            if (StringUtils.isBlank(allowedTypeName)) {
                 continue;
             }
-            allowedRepetitiveAlertTypes.add(type);
+            allowedRepetitiveAlertTypeNames.add(allowedTypeName.toLowerCase());
         }
-        logger.trace("{} alert types specified for repetitive alerts", allowedRepetitiveAlertTypes.size());
+        logger.trace("{} alert types specified for repetitive alerts", allowedRepetitiveAlertTypeNames.size());
     }
 
     @Override
@@ -868,7 +865,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
 
     @Nullable
     private AlertVO getAlertForTrivialAlertType(AlertType alertType, long dataCenterId, Long podId, Long clusterId) {
-        if (alertType.isRepetitionAllowed() || allowedRepetitiveAlertTypes.contains(alertType)) {
+        if (alertType.isRepetitionAllowed() || (StringUtils.isNotBlank(alertType.getName()) &&
+                allowedRepetitiveAlertTypeNames.contains(alertType.getName().toLowerCase()))) {
             return null;
         }
         return _alertDao.getLastAlert(alertType.getType(), dataCenterId, podId, clusterId);
