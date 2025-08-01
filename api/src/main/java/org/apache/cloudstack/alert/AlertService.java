@@ -46,8 +46,7 @@ public interface AlertService {
         public static final AlertType ALERT_TYPE_CPU = new AlertType(Capacity.CAPACITY_TYPE_CPU, "ALERT.CPU", true, false);
         public static final AlertType ALERT_TYPE_STORAGE = new AlertType(Capacity.CAPACITY_TYPE_STORAGE, "ALERT.STORAGE", true, false);
         public static final AlertType ALERT_TYPE_STORAGE_ALLOCATED = new AlertType(Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED, "ALERT.STORAGE.ALLOCATED", true, false);
-        public static final AlertType ALERT_TYPE_VIRTUAL_NETWORK_PUBLIC_IP = new AlertType(Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP, "ALERT.NETWORK.PUBLICIP",
-            true, false);
+        public static final AlertType ALERT_TYPE_VIRTUAL_NETWORK_PUBLIC_IP = new AlertType(Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP, "ALERT.NETWORK.PUBLICIP", true, false);
         public static final AlertType ALERT_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET = new AlertType(Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET, "ALERT.NETWORK.IPV6SUBNET", true, false);
         public static final AlertType ALERT_TYPE_PRIVATE_IP = new AlertType(Capacity.CAPACITY_TYPE_PRIVATE_IP, "ALERT.NETWORK.PRIVATEIP", true, false);
         public static final AlertType ALERT_TYPE_SECONDARY_STORAGE = new AlertType(Capacity.CAPACITY_TYPE_SECONDARY_STORAGE, "ALERT.STORAGE.SECONDARY", true, false);
@@ -80,6 +79,8 @@ public interface AlertService {
         public static final AlertType ALERT_TYPE_VR_PUBLIC_IFACE_MTU = new AlertType((short)32, "ALERT.VR.PUBLIC.IFACE.MTU", true, false);
         public static final AlertType ALERT_TYPE_VR_PRIVATE_IFACE_MTU = new AlertType((short)32, "ALERT.VR.PRIVATE.IFACE.MTU", true, false);
         public static final AlertType ALERT_TYPE_EXTENSION_PATH_NOT_READY = new AlertType((short)33, "ALERT.TYPE.EXTENSION.PATH.NOT.READY", true, true);
+        public static final AlertType ALERT_TYPE_BACKUP_STORAGE = new AlertType(Capacity.CAPACITY_TYPE_BACKUP_STORAGE, "ALERT.STORAGE.BACKUP", true, false);
+        public static final AlertType ALERT_TYPE_OBJECT_STORAGE = new AlertType(Capacity.CAPACITY_TYPE_OBJECT_STORAGE, "ALERT.STORAGE.OBJECT", true, false);
 
         public short getType() {
             return type;

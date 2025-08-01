@@ -587,7 +587,7 @@
 <script>
 import { ref, reactive, toRaw, h } from 'vue'
 import { Button } from 'ant-design-vue'
-import { getAPI, postAPI } from '@/api'
+import { getAPI, postAPI, callAPI } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import { genericCompare } from '@/utils/sort.js'
 import { sourceToken } from '@/utils/request'
@@ -686,6 +686,10 @@ export default {
     this.rules = reactive({})
     eventBus.on('vm-refresh-data', () => {
       if (this.$route.path === '/vm' || this.$route.path.includes('/vm/')) {
+        this.fetchData()
+      }
+      if (this.$route.path === '/backup') {
+        this.$router.push('/vm')
         this.fetchData()
       }
     })
@@ -1119,7 +1123,7 @@ export default {
         delete params.listall
       }
 
-      postAPI(this.apiName, params).then(json => {
+      callAPI(this.apiName, params).then(json => {
         var responseName
         var objectName
         for (const key in json) {
@@ -1449,7 +1453,7 @@ export default {
       if (showIcon) {
         params.showicon = true
       }
-      postAPI(possibleApi, params).then(json => {
+      callAPI(possibleApi, params).then(json => {
         param.loading = false
         for (const obj in json) {
           if (obj.includes('response')) {

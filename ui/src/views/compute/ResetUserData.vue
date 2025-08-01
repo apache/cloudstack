@@ -245,6 +245,7 @@ export default {
       params.id = this.resource.templateid
       params.isrecursive = true
       params.templatefilter = 'all'
+      params.isready = true
       var apiName = 'listTemplates'
       getAPI(apiName, params).then(json => {
         const templateResponses = json.listtemplatesresponse.template

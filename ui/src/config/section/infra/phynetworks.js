@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { shallowRef, defineAsyncComponent } from 'vue'
+import { shallowRef, defineAsyncComponent, reactive } from 'vue'
 export default {
   name: 'physicalnetwork',
   title: 'label.physical.network',
@@ -131,3 +131,6 @@ export default {
     }
   ]
 }
+export const trafficTypeTab = reactive({
+  index: 0
+})

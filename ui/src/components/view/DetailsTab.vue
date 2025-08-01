@@ -64,7 +64,8 @@
           </div>
           <div v-else-if="$route.meta.name === 'backup' && item === 'volumes'">
             <div v-for="(volume, idx) in JSON.parse(dataResource[item])" :key="idx">
-              <router-link :to="{ path: '/volume/' + volume.uuid }">{{ volume.type }} - {{ volume.path }}</router-link> ({{ parseFloat(volume.size / (1024.0 * 1024.0 * 1024.0)).toFixed(1) }} GB)
+              <router-link v-if="!dataResource['vmbackupofferingremoved']" :to="{ path: '/volume/' + volume.uuid }">{{ volume.type }} - {{ volume.path }}</router-link>
+              <span v-else>{{ volume.type }} - {{ volume.path }}</span> ({{ parseFloat(volume.size / (1024.0 * 1024.0 * 1024.0)).toFixed(1) }} GB)
             </div>
           </div>
           <div v-else-if="$route.meta.name === 'computeoffering' && item === 'rootdisksize'">
@@ -74,17 +75,22 @@
           </div>
           <div v-else-if="['template', 'iso'].includes($route.meta.name) && item === 'size'">
             <div>
-              {{ parseFloat(dataResource.size / (1024.0 * 1024.0 * 1024.0)).toFixed(2) }} GiB
+              {{ sizeInGiB(dataResource.size) }} GiB
             </div>
           </div>
           <div v-else-if="['volume', 'snapshot', 'template', 'iso'].includes($route.meta.name) && item === 'physicalsize'">
             <div>
-              {{ parseFloat(dataResource.physicalsize / (1024.0 * 1024.0 * 1024.0)).toFixed(2) }} GiB
+              {{ sizeInGiB(dataResource.physicalsize) }} GiB
             </div>
           </div>
           <div v-else-if="['volume', 'snapshot', 'template', 'iso'].includes($route.meta.name) && item === 'virtualsize'">
             <div>
-              {{ parseFloat(dataResource.virtualsize / (1024.0 * 1024.0 * 1024.0)).toFixed(2) }} GiB
+              {{ sizeInGiB(dataResource.virtualsize) }} GiB
+            </div>
+          </div>
+          <div v-else-if="$route.meta.name === 'snapshot' && item === 'chainsize'">
+            <div>
+              {{ sizeInGiB(dataResource.chainsize) }} GiB
             </div>
           </div>
           <div v-else-if="['name', 'type'].includes(item)">
@@ -472,6 +478,12 @@ export default {
       }
 
       return `label.${source}`
+    },
+    sizeInGiB (sizeInBytes) {
+      if (!sizeInBytes || sizeInBytes === 0) {
+        return '0.00'
+      }
+      return parseFloat(sizeInBytes / (1024.0 * 1024.0 * 1024.0)).toFixed(2)
     }
   }
 }

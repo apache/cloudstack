@@ -272,5 +272,7 @@ public interface NetworkService {
 
     boolean handleCksIsoOnNetworkVirtualRouter(Long virtualRouterId, boolean mount) throws ResourceUnavailableException;
 
+    IpAddresses getIpAddressesFromIps(String ipAddress, String ip6Address, String macAddress);
+
     String getNicVlanValueForExternalVm(NicTO nic);
 }

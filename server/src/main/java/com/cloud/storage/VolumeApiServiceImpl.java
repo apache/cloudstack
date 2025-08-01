@@ -954,7 +954,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         String userSpecifiedName = getVolumeNameFromCommand(cmd);
 
-        return commitVolume(cmd, caller, owner, displayVolume, zoneId, diskOfferingId, provisioningType, size, minIops, maxIops, parentVolume, userSpecifiedName,
+        return commitVolume(cmd.getSnapshotId(), caller, owner, displayVolume, zoneId, diskOfferingId, provisioningType, size, minIops, maxIops, parentVolume, userSpecifiedName,
                 _uuidMgr.generateUuid(Volume.class, cmd.getCustomId()), details);
     }
 
@@ -968,7 +968,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
     }
 
-    private VolumeVO commitVolume(final CreateVolumeCmd cmd, final Account caller, final Account owner, final Boolean displayVolume, final Long zoneId, final Long diskOfferingId,
+    private VolumeVO commitVolume(final Long snapshotId, final Account caller, final Account owner, final Boolean displayVolume, final Long zoneId, final Long diskOfferingId,
                                   final Storage.ProvisioningType provisioningType, final Long size, final Long minIops, final Long maxIops, final VolumeVO parentVolume, final String userSpecifiedName, final String uuid, final Map<String, String> details) {
         return Transaction.execute(new TransactionCallback<VolumeVO>() {
             @Override
@@ -996,7 +996,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                 volume = _volsDao.persist(volume);
 
-                if (cmd.getSnapshotId() == null && displayVolume) {
+                if (snapshotId == null && displayVolume) {
                     // for volume created from snapshot, create usage event after volume creation
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOfferingId, null, size,
                             Volume.class.getName(), volume.getUuid(), displayVolume);
@@ -2867,7 +2867,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         try {
             List<Backup.VolumeInfo> list = new ArrayList<>();
             for (VolumeVO vol : vmVolumes) {
-                list.add(new Backup.VolumeInfo(vol.getUuid(), vol.getPath(), vol.getVolumeType(), vol.getSize()));
+                DiskOfferingVO diskOffering = _diskOfferingDao.findById(vol.getDiskOfferingId());
+                String diskOfferingUuid = diskOffering != null ? diskOffering.getUuid() : null;
+                list.add(new Backup.VolumeInfo(vol.getUuid(), vol.getPath(), vol.getVolumeType(), vol.getSize(),
+                    vol.getDeviceId(), diskOfferingUuid, vol.getMinIops(), vol.getMaxIops()));
             }
             return GsonHelper.getGson().toJson(list.toArray(), Backup.VolumeInfo[].class);
         } catch (Exception e) {

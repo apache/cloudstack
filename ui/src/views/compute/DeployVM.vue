@@ -133,9 +133,9 @@
                       :guestOsCategories="options.guestOsCategories"
                       :guestOsCategoriesLoading="loading.guestOsCategories"
                       :selectedGuestOsCategoryId="form.guestoscategoryid"
-                      :imageItems="imageType === 'isoid' ? options.isos : options.templates"
-                      :imagesLoading="imageType === 'isoid' ? loading.isos : loading.templates"
-                      :diskSizeSelectionAllowed="imageType !== 'isoid'"
+                      :imageItems="imageType === 'isoid' ? options.isos : imageType === 'volumeid' ? options.volumes : imageType === 'snapshotid' ? options.snapshots : options.templates"
+                      :imagesLoading="imageType === 'isoid' ? loading.isos : imageType === 'volumeid' ? loading.volumes : imageType === 'snapshotid' ? loading.snapshots : loading.templates"
+                      :diskSizeSelectionAllowed="imageType !== 'isoid' && imageType !== 'volumeid' && imageType !== 'snapshotid'"
                       :diskSizeSelectionDeployAsIsMessageVisible="template && template.deployasis"
                       :rootDiskOverrideDisabled="rootDiskSizeFixed > 0 || (template && template.deployasis) || showOverrideDiskOfferingOption"
                       :rootDiskOverrideChecked="form.rootdisksizeitem"
@@ -210,6 +210,12 @@
                     </a-form-item>
                     <a-form-item class="form-item-hidden">
                       <a-input v-model:value="form.isoid" />
+                    </a-form-item>
+                    <a-form-item class="form-item-hidden">
+                      <a-input v-model:value="form.volumeid" />
+                    </a-form-item>
+                    <a-form-item class="form-item-hidden">
+                      <a-input v-model:value="form.snapshotid" />
                     </a-form-item>
                     <a-form-item class="form-item-hidden">
                       <a-input v-model:value="form.rootdisksize" />
@@ -997,6 +1003,8 @@ export default {
       },
       options: {
         guestOsCategories: [],
+        volumes: {},
+        snapshots: {},
         templates: {},
         isos: {},
         hypervisors: [],
@@ -1020,6 +1028,8 @@ export default {
       loading: {
         deploy: false,
         guestOsCategories: false,
+        volumes: false,
+        snapshots: false,
         templates: false,
         isos: false,
         hypervisors: false,
@@ -1400,6 +1410,12 @@ export default {
     queryArchId () {
       return this.$route.query.arch || null
     },
+    querySnapshotId () {
+      return this.$route.query.snapshotid || null
+    },
+    queryVolumeId () {
+      return this.$route.query.volumeid || null
+    },
     queryTemplateId () {
       return this.$route.query.templateid || null
     },
@@ -1492,6 +1508,9 @@ export default {
       return this.$config.showAllCategoryForModernImageSelection
     },
     guestOsCategoriesSelectionDisallowed () {
+      if (this.imageType === 'volumeid' || this.imageType === 'snapshotid') {
+        return true
+      }
       return (!this.queryGuestOsCategoryId || this.options.guestOsCategories.length === 0) && (!!this.queryTemplateId || !!this.queryIsoId)
     },
     isTemplateHypervisorExternal () {
@@ -1796,12 +1815,14 @@ export default {
           apiName = 'listTemplates'
           params.listall = true
           params.templatefilter = this.isNormalAndDomainUser ? 'executable' : 'all'
+          params.isready = true
           params.id = this.queryTemplateId
           this.dataPreFill.templateid = this.queryTemplateId
         } else if (this.queryIsoId) {
           apiName = 'listIsos'
           params.listall = true
           params.isofilter = this.isNormalAndDomainUser ? 'executable' : 'all'
+          params.isready = true
           params.id = this.queryIsoId
           this.dataPreFill.isoid = this.queryIsoId
         } else if (this.queryNetworkId) {
@@ -1811,7 +1832,7 @@ export default {
         }
         if (!apiName) return resolve(zones)
 
-        postAPI(apiName, params).then(json => {
+        getAPI(apiName, params).then(json => {
           let objectName
           const responseName = [apiName.toLowerCase(), 'response'].join('')
           for (const key in json[responseName]) {
@@ -1953,6 +1974,8 @@ export default {
         this.imageType = 'templateid'
         this.form.templateid = value
         this.form.isoid = null
+        this.form.volumeid = null
+        this.form.snapshotid = null
         this.resetFromTemplateConfiguration()
         let template = ''
         for (const entry of Object.values(this.options.templates)) {
@@ -1989,6 +2012,8 @@ export default {
         this.resetFromTemplateConfiguration()
         this.form.isoid = value
         this.form.templateid = null
+        this.form.volumeid = null
+        this.form.snapshotid = null
         let iso = null
         for (const entry of Object.values(this.options.isos)) {
           iso = entry?.iso.find(option => option.id === value)
@@ -2001,11 +2026,57 @@ export default {
           this.updateTemplateLinkedUserData(this.iso.userdataid)
           this.userdataDefaultOverridePolicy = this.iso.userdatapolicy
         }
+      } else if (name === 'volumeid') {
+        this.updateFieldValueForVolume(value)
+      } else if (name === 'snapshotid') {
+        this.updateFieldValueForSnapshot(value)
       } else if (['cpuspeed', 'cpunumber', 'memory'].includes(name)) {
         this.vm[name] = value
         this.form[name] = value
       } else {
         this.form[name] = value
+      }
+    },
+    updateFieldValueForVolume (value) {
+      this.imageType = 'volumeid'
+      this.resetTemplateAssociatedResources()
+      this.resetFromTemplateConfiguration()
+      this.form.templateid = null
+      this.form.isoid = null
+      this.form.volumeid = value
+      this.form.snapshotid = null
+      let volume = null
+      for (const entry of Object.values(this.options.volumes)) {
+        volume = entry?.volume.find(option => option.id === value)
+        if (volume) {
+          this.volume = volume
+          break
+        }
+      }
+      if (volume) {
+        this.updateTemplateLinkedUserData(this.volume.userdataid)
+        this.userdataDefaultOverridePolicy = this.volume.userdatapolicy
+      }
+    },
+    updateFieldValueForSnapshot (value) {
+      this.imageType = 'snapshotid'
+      this.resetTemplateAssociatedResources()
+      this.resetFromTemplateConfiguration()
+      this.form.templateid = null
+      this.form.isoid = null
+      this.form.volumeid = null
+      this.form.snapshotid = value
+      let snapshot = null
+      for (const entry of Object.values(this.options.snapshots)) {
+        snapshot = entry?.snapshot.find(option => option.id === value)
+        if (snapshot) {
+          this.snapshot = snapshot
+          break
+        }
+      }
+      if (snapshot) {
+        this.updateTemplateLinkedUserData(this.snapshot.userdataid)
+        this.userdataDefaultOverridePolicy = this.snapshot.userdatapolicy
       }
     },
     updateComputeOffering (id) {
@@ -2169,7 +2240,7 @@ export default {
       if (this.loading.deploy) return
       this.formRef.value.validate().then(async () => {
         const values = toRaw(this.form)
-        if (!values.templateid && !values.isoid) {
+        if (!values.templateid && !values.isoid && !values.volumeid && !values.snapshotid) {
           this.$notification.error({
             message: this.$t('message.request.failed'),
             description: this.$t('message.template.iso')
@@ -2225,6 +2296,10 @@ export default {
         if (this.imageType === 'templateid') {
           deployVmData.templateid = values.templateid
           values.hypervisor = null
+        } else if (this.imageType === 'volumeid') {
+          deployVmData.volumeid = values.volumeid
+        } else if (this.imageType === 'snapshotid') {
+          deployVmData.snapshotid = values.snapshotid
         } else {
           deployVmData.templateid = values.isoid
         }
@@ -2503,7 +2578,7 @@ export default {
         const param = this.params.zones
         const args = { showicon: true }
         if (zoneId) args.id = zoneId
-        postAPI(param.list, args).then(json => {
+        getAPI(param.list, args).then(json => {
           const zoneResponse = json.listzonesresponse.zone || []
           if (listZoneAllow && listZoneAllow.length > 0) {
             zoneResponse.map(zone => {
@@ -2535,7 +2610,7 @@ export default {
         if (!('listall' in options) && !['zones', 'pods', 'clusters', 'hosts', 'hypervisors'].includes(name)) {
           options.listall = true
         }
-        postAPI(param.list, options).then((response) => {
+        getAPI(param.list, options).then((response) => {
           param.loading = false
           _.map(response, (responseItem, responseKey) => {
             if (Object.keys(responseItem).length === 0) {
@@ -2597,6 +2672,88 @@ export default {
         })
       })
     },
+    fetchUnattachedVolumes (volumeFilter, params) {
+      const args = Object.assign({}, params)
+      if (args.keyword || (args.category && args.category !== volumeFilter)) {
+        args.page = 1
+        args.pageSize = args.pageSize || 10
+      }
+      args.zoneid = _.get(this.zone, 'id')
+      if (this.isZoneSelectedMultiArch) {
+        args.arch = this.selectedArchitecture
+      }
+      args.account = store.getters.project?.id ? null : this.owner.account
+      args.domainid = store.getters.project?.id ? null : this.owner.domainid
+      args.projectid = store.getters.project?.id || this.owner.projectid
+      args.id = this.queryVolumeId
+      args.state = 'Ready'
+      const pageSize = args.pageSize ? args.pageSize : 10
+      const pageStart = (args.page ? args.page - 1 : 0) * pageSize
+      const pageEnd = pageSize * (pageStart + 1)
+
+      delete args.category
+      delete args.public
+      delete args.featured
+      delete args.page
+      delete args.pageSize
+
+      return new Promise((resolve, reject) => {
+        getAPI('listVolumes', args).then((response) => {
+          let count = 0
+          const volumes = []
+          response.listvolumesresponse.volume.forEach(volume => {
+            if (!volume.virtualmachineid) {
+              count += 1
+              volumes.push({ ...volume, displaytext: volume.name })
+            }
+          })
+          resolve({ listvolumesresponse: { count, volume: volumes.slice(pageStart, pageEnd) } })
+        }).catch((reason) => {
+          // ToDo: Handle errors
+          reject(reason)
+        })
+      })
+    },
+    fetchRootSnapshots (snapshotFilter, params) {
+      const args = Object.assign({}, params)
+      if (args.keyword || (args.category && args.category !== snapshotFilter)) {
+        args.page = 1
+        args.pageSize = args.pageSize || 10
+      }
+      args.zoneid = _.get(this.zone, 'id')
+      if (this.isZoneSelectedMultiArch) {
+        args.arch = this.selectedArchitecture
+      }
+      args.account = store.getters.project?.id ? null : this.owner.account
+      args.domainid = store.getters.project?.id ? null : this.owner.domainid
+      args.projectid = store.getters.project?.id || this.owner.projectid
+      const pageSize = args.pageSize ? args.pageSize : 10
+      const pageStart = (args.page ? args.page - 1 : 0) * pageSize
+      const pageEnd = pageSize * (pageStart + 1)
+
+      delete args.category
+      delete args.public
+      delete args.featured
+      delete args.page
+      delete args.pageSize
+
+      return new Promise((resolve, reject) => {
+        getAPI('listSnapshots', args).then((response) => {
+          let count = 0
+          const snapshots = []
+          response.listsnapshotsresponse.snapshot.forEach(snapshot => {
+            if (snapshot.volumetype === 'ROOT') {
+              count += 1
+              snapshots.push({ ...snapshot, displaytext: snapshot.name })
+            }
+          })
+          resolve({ listsnapshotsresponse: { count, snapshot: snapshots.slice(pageStart, pageEnd) } })
+        }).catch((reason) => {
+          // ToDo: Handle errors
+          reject(reason)
+        })
+      })
+    },
     fetchTemplates (templateFilter, params) {
       const args = Object.assign({}, params)
       if (this.isModernImageSelection && this.form.guestoscategoryid && !['-1', '0'].includes(this.form.guestoscategoryid)) {
@@ -2617,6 +2774,7 @@ export default {
       args.domainid = store.getters.project?.id ? null : this.owner.domainid
       args.projectid = store.getters.project?.id || this.owner.projectid
       args.templatefilter = templateFilter
+      args.isready = true
       args.details = 'all'
       args.showicon = 'true'
       args.id = this.queryTemplateId
@@ -2652,6 +2810,7 @@ export default {
       args.domainid = store.getters.project?.id ? null : this.owner.domainid
       args.projectid = store.getters.project?.id || this.owner.projectid
       args.isoFilter = isoFilter
+      args.isready = true
       args.bootable = true
       args.showicon = 'true'
       args.id = this.queryIsoId
@@ -2672,6 +2831,14 @@ export default {
     fetchImages (params) {
       if (this.imageType === 'isoid') {
         this.fetchAllIsos(params)
+        return
+      }
+      if (this.imageType === 'volumeid') {
+        this.fetchAllVolumes(params)
+        return
+      }
+      if (this.imageType === 'snapshotid') {
+        this.fetchAllSnapshots(params)
         return
       }
       this.fetchAllTemplates(params)
@@ -2718,6 +2885,50 @@ export default {
         console.log(reason)
       }).finally(() => {
         this.loading.isos = false
+      })
+    },
+    fetchAllVolumes (params) {
+      const promises = []
+      const volumes = {}
+      this.loading.volumes = true
+      this.imageSearchFilters = params
+      const volumeFilters = this.getImageFilters(params)
+      volumeFilters.forEach((filter) => {
+        volumes[filter] = { count: 0, volume: [] }
+        promises.push(this.fetchUnattachedVolumes(filter, params))
+      })
+      this.options.volumes = volumes
+      Promise.all(promises).then((response) => {
+        response.forEach((resItem, idx) => {
+          volumes[volumeFilters[idx]] = _.isEmpty(resItem.listvolumesresponse) ? { count: 0, volume: [] } : resItem.listvolumesresponse
+          this.options.volumes = { ...volumes }
+        })
+      }).catch((reason) => {
+        console.log(reason)
+      }).finally(() => {
+        this.loading.volumes = false
+      })
+    },
+    fetchAllSnapshots (params) {
+      const promises = []
+      const snapshots = {}
+      this.loading.snapshots = true
+      this.imageSearchFilters = params
+      const snapshotFilters = this.getImageFilters(params)
+      snapshotFilters.forEach((filter) => {
+        snapshots[filter] = { count: 0, snapshot: [] }
+        promises.push(this.fetchRootSnapshots(filter, params))
+      })
+      this.options.snapshots = snapshots
+      Promise.all(promises).then((response) => {
+        response.forEach((resItem, idx) => {
+          snapshots[snapshotFilters[idx]] = _.isEmpty(resItem.listsnapshotsresponse) ? { count: 0, snapshot: [] } : resItem.listsnapshotsresponse
+          this.options.snapshots = { ...snapshots }
+        })
+      }).catch((reason) => {
+        console.log(reason)
+      }).finally(() => {
+        this.loading.snapshots = false
       })
     },
     filterOption (input, option) {
@@ -2826,7 +3037,7 @@ export default {
       }
     },
     updateImages () {
-      if (this.isModernImageSelection) {
+      if (this.isModernImageSelection && this.imageType !== 'snapshotid' && this.imageType !== 'volumeid') {
         this.fetchGuestOsCategories()
         return
       }

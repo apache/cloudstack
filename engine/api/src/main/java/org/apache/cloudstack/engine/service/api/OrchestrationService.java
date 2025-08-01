@@ -40,6 +40,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.offering.DiskOffering;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.VmDiskInfo;
 
 @Path("orchestration")
 @Produces({"application/json", "application/xml"})
@@ -69,15 +70,17 @@ public interface OrchestrationService {
                                               @QueryParam("compute-tags") List<String> computeTags, @QueryParam("root-disk-tags") List<String> rootDiskTags,
                                               @QueryParam("network-nic-map") Map<String, List<NicProfile>> networkNicMap, @QueryParam("deploymentplan") DeploymentPlan plan,
                                               @QueryParam("root-disk-size") Long rootDiskSize, @QueryParam("extra-dhcp-option-map") Map<String, Map<Integer, String>> extraDhcpOptionMap,
-                                              @QueryParam("datadisktemplate-diskoffering-map") Map<Long, DiskOffering> datadiskTemplateToDiskOfferingMap, @QueryParam("disk-offering-id") Long diskOfferingId, @QueryParam("root-disk-offering-id") Long rootDiskOfferingId, Volume volume, Snapshot snapshot) throws InsufficientCapacityException;
+                                              @QueryParam("datadisktemplate-diskoffering-map") Map<Long, DiskOffering> datadiskTemplateToDiskOfferingMap, @QueryParam("disk-offering-id") Long diskOfferingId,
+                                              @QueryParam("root-disk-offering-id") Long rootDiskOfferingId, List<VmDiskInfo> dataDiskInfoList, Volume volume, Snapshot snapshot) throws InsufficientCapacityException;
 
     @POST
     VirtualMachineEntity createVirtualMachineFromScratch(@QueryParam("id") String id, @QueryParam("owner") String owner, @QueryParam("iso-id") String isoId,
-        @QueryParam("host-name") String hostName, @QueryParam("display-name") String displayName, @QueryParam("hypervisor") String hypervisor,
-        @QueryParam("os") String os, @QueryParam("cpu") int cpu, @QueryParam("speed") int speed, @QueryParam("ram") long memory, @QueryParam("disk-size") Long diskSize,
-        @QueryParam("compute-tags") List<String> computeTags, @QueryParam("root-disk-tags") List<String> rootDiskTags,
-        @QueryParam("network-nic-map") Map<String, List<NicProfile>> networkNicMap, @QueryParam("deploymentplan") DeploymentPlan plan,
-        @QueryParam("extra-dhcp-option-map") Map<String,  Map<Integer, String>> extraDhcpOptionMap, @QueryParam("disk-offering-id") Long diskOfferingId, Volume volume, Snapshot snapshot) throws InsufficientCapacityException;
+                                                         @QueryParam("host-name") String hostName, @QueryParam("display-name") String displayName, @QueryParam("hypervisor") String hypervisor,
+                                                         @QueryParam("os") String os, @QueryParam("cpu") int cpu, @QueryParam("speed") int speed, @QueryParam("ram") long memory, @QueryParam("disk-size") Long diskSize,
+                                                         @QueryParam("compute-tags") List<String> computeTags, @QueryParam("root-disk-tags") List<String> rootDiskTags,
+                                                         @QueryParam("network-nic-map") Map<String, List<NicProfile>> networkNicMap, @QueryParam("deploymentplan") DeploymentPlan plan,
+                                                         @QueryParam("extra-dhcp-option-map") Map<String,  Map<Integer, String>> extraDhcpOptionMap, @QueryParam("disk-offering-id") Long diskOfferingId,
+                                                         @QueryParam("data-disks-offering-info") List<VmDiskInfo> dataDiskInfoList, Volume volume, Snapshot snapshot) throws InsufficientCapacityException;
 
     @POST
     NetworkEntity createNetwork(String id, String name, String domainName, String cidr, String gateway);

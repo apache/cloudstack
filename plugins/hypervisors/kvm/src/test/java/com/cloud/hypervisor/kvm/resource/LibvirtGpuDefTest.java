@@ -64,10 +64,9 @@ public class LibvirtGpuDefTest extends TestCase {
 
         String gpuXml = gpuDef.toString();
 
-        assertTrue(gpuXml.contains("<hostdev mode='subsystem' type='mdev' managed='no' display='off'>"));
+        assertTrue(gpuXml.contains("<hostdev mode='subsystem' type='mdev' model='vfio-pci' display='off'>"));
         assertTrue(gpuXml.contains("<address uuid='4b20d080-1b54-4048-85b3-a6a62d165c01'/>"));
         assertTrue(gpuXml.contains("</hostdev>"));
-        assertFalse(gpuXml.contains("vfio")); // MDEV should not contain vfio driver element
     }
 
     @Test
