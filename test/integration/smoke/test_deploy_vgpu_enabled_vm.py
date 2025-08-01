@@ -58,7 +58,8 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
             cls.unsupportedHypervisor = True
             cls.skipTest("Skipping test because suitable hypervisor/host not present")
         hosts = list_hosts(
-            cls.apiclient
+            cls.apiclient,
+            type='routing'
         )
         if hosts is None:
              cls.unsupportedHypervisor = True
