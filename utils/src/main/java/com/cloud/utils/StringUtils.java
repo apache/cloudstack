@@ -150,7 +150,7 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
 
     private static final Pattern REGEX_PASSWORD_DETAILS_INDEX = Pattern.compile("details(\\[|%5B)\\d*(\\]|%5D)");
 
-    private static final Pattern REGEX_SESSION_KEY = Pattern.compile("sessionkey=(\\p{Alnum}*)");
+    private static final Pattern REGEX_SESSION_KEY = Pattern.compile("sessionkey=[A-Za-z0-9_-]+");
 
     private static final Pattern REGEX_REDUNDANT_AND = Pattern.compile("(&|%26)(&|%26)+");
 
