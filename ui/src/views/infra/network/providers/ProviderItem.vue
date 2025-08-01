@@ -51,7 +51,7 @@
 </template>
 
 <script>
-import { postAPI } from '@/api'
+import { getAPI } from '@/api'
 import ActionButton from '@/components/view/ActionButton'
 import ProviderDetail from '@/views/infra/network/providers/ProviderDetail'
 import ProviderListView from '@/views/infra/network/providers/ProviderListView'
@@ -199,7 +199,7 @@ export default {
     },
     executeApi (apiName, params) {
       return new Promise((resolve, reject) => {
-        postAPI(apiName, params).then(json => {
+        getAPI(apiName, params).then(json => {
           let responseName
           let objectName
           let itemCount = 0

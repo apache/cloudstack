@@ -175,28 +175,38 @@ public class NioSocketInputStream extends NioSocketStream {
         return ArrayUtils.addAll(ret, (byte) 0, (byte) 0, (byte) 0);
     }
 
-    protected int getNextBytes() {
-        int size = 200;
-        while (size > 0) {
-            if (checkForSizeWithoutWait(size)) {
-                break;
-            }
-            size--;
+    /**
+     * This method checks what data is immediately available and returns a reasonable amount.
+     *
+     * @param maxSize Maximum number of bytes to attempt to read
+     * @return Number of bytes available to read (0 if none available)
+     */
+    protected int getAvailableBytes(int maxSize) {
+        // First check if we have data already in our buffer
+        int bufferedData = endPosition - currentPosition;
+        if (bufferedData > 0) {
+            return Math.min(bufferedData, maxSize);
         }
-        return size;
+
+        // Try to read more data with non-blocking call
+        // This determines how much data is available
+        return getReadBytesAvailableToFitSize(1, maxSize, false);
     }
 
-    protected void readNextByteArrayFromReadBuffer(byte[] arr, int len) {
-        copyBytesFromReadBuffer(len, arr);
-    }
-
-    protected void copyBytesFromReadBuffer(int length, byte[] arr) {
-        int ptr = 0;
-        while (length > 0) {
-            int n = getReadBytesAvailableToFitSize(1, length, true);
-            readBytes(ByteBuffer.wrap(arr, ptr, n), n);
-            ptr += n;
-            length -= n;
+    /**
+     * Read available data directly into a ByteBuffer.
+     *
+     * @param buffer ByteBuffer to read data into
+     * @param maxSize Maximum number of bytes to read
+     * @return Number of bytes actually read (0 if none available)
+     */
+    protected int readAvailableDataIntoBuffer(ByteBuffer buffer, int maxSize) {
+        // Get the amount of data available to read
+        int available = getAvailableBytes(maxSize);
+        if (available > 0) {
+            // Read directly into the ByteBuffer
+            readBytes(buffer, available);
         }
+        return available;
     }
 }

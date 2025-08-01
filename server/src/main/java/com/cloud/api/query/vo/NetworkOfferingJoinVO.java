@@ -155,12 +155,6 @@ public class NetworkOfferingJoinVO extends BaseViewVO implements NetworkOffering
     @Column(name = "for_vpc")
     private boolean forVpc;
 
-    @Column(name = "for_tungsten")
-    boolean forTungsten;
-
-    @Column(name = "for_nsx")
-    boolean forNsx;
-
     @Column(name = "network_mode")
     NetworkMode networkMode;
 
@@ -362,21 +356,7 @@ public class NetworkOfferingJoinVO extends BaseViewVO implements NetworkOffering
         return forVpc;
     }
 
-    @Override
-    public boolean isForTungsten() {
-        return forTungsten;
-    }
-
     public void setForVpc(boolean forVpc) { this.forVpc = forVpc; }
-
-    @Override
-    public boolean isForNsx() {
-        return forNsx;
-    }
-
-    public void setForNsx(boolean forNsx) {
-        this.forNsx = forNsx;
-    }
 
     @Override
     public NetworkMode getNetworkMode() {

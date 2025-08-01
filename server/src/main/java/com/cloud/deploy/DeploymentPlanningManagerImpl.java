@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.gpu.dao.VgpuProfileDao;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -93,7 +94,6 @@ import com.cloud.exception.AffinityConflictException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.StorageUnavailableException;
-import com.cloud.gpu.GPU;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -105,7 +105,6 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.resource.ResourceManager;
-import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
@@ -189,6 +188,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
     private static final long ADMIN_ACCOUNT_ROLE_ID = 1l;
     private static final long INITIAL_RESERVATION_RELEASE_CHECKER_DELAY = 30L * 1000L; // thirty seconds expressed in milliseconds
     protected long _nodeId = -1;
+    protected static final List<HypervisorType> DEPLOYMENT_PLANNING_SKIP_HYPERVISORS = Arrays.asList(
+            HypervisorType.BareMetal, HypervisorType.External);
 
     protected List<StoragePoolAllocator> _storagePoolAllocators;
 
@@ -247,6 +248,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
     protected ClusterDetailsDao _clusterDetailsDao;
     @Inject
     protected ResourceManager _resourceMgr;
+    @Inject
+    protected VgpuProfileDao vgpuProfileDao;
     @Inject
     protected ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
 
@@ -370,6 +373,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             if (plannerName == null) {
                 if (vm.getHypervisorType() == HypervisorType.BareMetal) {
                     plannerName = "BareMetalPlanner";
+                } else if (vm.getHypervisorType() == HypervisorType.External) {
+                    plannerName = "ExternalServerPlanner";
                 } else {
                     plannerName = _configDao.getValue(Config.VmDeploymentPlanner.key());
                 }
@@ -513,7 +518,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 logger.debug("Last host [{}] of VM [{}] is UP and has enough capacity. Checking for suitable pools for this host under zone [{}], pod [{}] and cluster [{}].",
                         host, vm, dc, pod, cluster);
 
-                if (vm.getHypervisorType() == HypervisorType.BareMetal) {
+                if (DEPLOYMENT_PLANNING_SKIP_HYPERVISORS.contains(vm.getHypervisorType())) {
                     DeployDestination dest = new DeployDestination(dc, pod, cluster, host, new HashMap<>(), displayStorage);
                     logger.debug("Returning Deployment Destination: {}.", dest);
                     return dest;
@@ -581,10 +586,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             return false;
         }
 
-        ServiceOfferingDetailsVO offeringDetails = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString());
-        ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.pciDevice.toString());
-        if (offeringDetails != null && !_resourceMgr.isGPUDeviceAvailable(host, groupName.getValue(), offeringDetails.getValue())) {
-            logger.debug("Cannot deploy VM [{}] in the last host [{}] because this host does not have the required GPU devices available. Skipping this and trying other available hosts.",
+        if (!_resourceMgr.isGPUDeviceAvailable(offering, host, vm.getId())) {
+            logger.debug("Cannot deploy VM [{}] in the last host [{}] because this host does not have GPU devices available. Skipping this and trying other available hosts.",
                     vm, host);
             return false;
         }
@@ -626,7 +629,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 host, dc, pod, cluster, vm);
 
         boolean displayStorage = getDisplayStorageFromVmProfile(vmProfile);
-        if (vm.getHypervisorType() == HypervisorType.BareMetal) {
+        if (DEPLOYMENT_PLANNING_SKIP_HYPERVISORS.contains(vm.getHypervisorType())) {
             DeployDestination dest = new DeployDestination(dc, pod, cluster, host, new HashMap<>(),
                     displayStorage);
             logger.debug("Returning Deployment Destination: {}.", dest);
@@ -1323,7 +1326,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 // if found suitable hosts in this cluster, find suitable storage
                 // pools for each volume of the VM
                 if (CollectionUtils.isNotEmpty(suitableHosts)) {
-                    if (vmProfile.getHypervisorType() == HypervisorType.BareMetal) {
+                    if (DEPLOYMENT_PLANNING_SKIP_HYPERVISORS.contains(vmProfile.getHypervisorType())) {
                         DeployDestination dest = new DeployDestination(dc, pod, clusterVO, suitableHosts.get(0));
                         return dest;
                     }
@@ -2005,7 +2008,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                     }
                     Map<Long, Long> volumeReservationMap = new HashMap<>();
 
-                    if (vm.getHypervisorType() != HypervisorType.BareMetal) {
+                    if (!DEPLOYMENT_PLANNING_SKIP_HYPERVISORS.contains(vm.getHypervisorType())) {
                         for (Volume vo : plannedDestination.getStorageForDisks().keySet()) {
                             volumeReservationMap.put(vo.getId(), plannedDestination.getStorageForDisks().get(vo).getId());
                         }
@@ -2042,7 +2045,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
     }
 
     public static String logDeploymentWithoutException(VirtualMachine vm, DeploymentPlan plan, ExcludeList avoids, DeploymentPlanner planner) {
-        return LogUtils.logGsonWithoutException("Trying to deploy VM [%s] and details: Plan [%s]; avoid list [%s] and planner: [%s].", vm, plan, avoids, planner);
+        return LogUtils.logGsonWithoutException("Trying to deploy VM [%s] and details: Plan [%s]; avoid list [%s] and planner: [%s].", vm, plan, avoids, planner != null ? planner.getName() : null);
     }
     @Override
     public ConfigKey<?>[] getConfigKeys() {

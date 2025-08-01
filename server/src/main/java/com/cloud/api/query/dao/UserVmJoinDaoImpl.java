@@ -17,13 +17,14 @@
 package com.cloud.api.query.dao;
 
 import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
+
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
@@ -33,6 +34,8 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.gpu.dao.VgpuProfileDao;
+import com.cloud.service.dao.ServiceOfferingDao;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -89,6 +92,7 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.NicExtraDhcpOptionDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
+
 import com.cloud.vm.dao.VMInstanceDetailsDao;
 
 @Component
@@ -116,6 +120,10 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     VnfTemplateNicDao vnfTemplateNicDao;
     @Inject
     ConfigurationDao configurationDao;
+    @Inject
+    private ServiceOfferingDao serviceOfferingDao;
+    @Inject
+    private VgpuProfileDao vgpuProfileDao;
 
     private final SearchBuilder<UserVmJoinVO> VmDetailSearch;
     private final SearchBuilder<UserVmJoinVO> activeVmByIsoSearch;
@@ -245,12 +253,13 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             userVmResponse.setServiceOfferingName(userVm.getServiceOfferingName());
         }
         if (details.contains(VMDetails.all) || details.contains(VMDetails.diskoff)) {
-            DiskOfferingVO diskOfferingVO = ApiDBUtils.findDiskOfferingById(userVm.getDiskOfferingId());
+            DiskOfferingVO diskOfferingVO = ApiDBUtils.findNonComputeDiskOfferingById(userVm.getDiskOfferingId());
             if (diskOfferingVO != null) {
                 userVmResponse.setDiskOfferingId(userVm.getDiskOfferingUuid());
                 userVmResponse.setDiskOfferingName(userVm.getDiskOfferingName());
             }
         }
+
         if (details.contains(VMDetails.all) || details.contains(VMDetails.backoff)) {
             userVmResponse.setBackupOfferingId(userVm.getBackupOfferingUuid());
             userVmResponse.setBackupOfferingName(userVm.getBackupOfferingName());
@@ -259,6 +268,19 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             userVmResponse.setCpuNumber(userVm.getCpu());
             userVmResponse.setCpuSpeed(userVm.getSpeed());
             userVmResponse.setMemory(userVm.getRamSize());
+            userVmResponse.setGpuCount(userVm.getGpuCount());
+            userVmResponse.setGpuCardName(userVm.getGpuCardName());
+            if (caller.getType() == Account.Type.ADMIN) {
+                userVmResponse.setGpuCardId(userVm.getGpuCardUuid());
+                userVmResponse.setVgpuProfileId(userVm.getVgpuProfileUuid());
+            }
+            userVmResponse.setVgpuProfileName(userVm.getVgpuProfileName());
+            userVmResponse.setVideoRam(userVm.getVideoRam());
+            userVmResponse.setMaxHeads(userVm.getMaxHeads());
+            userVmResponse.setMaxResolutionX(userVm.getMaxResolutionX());
+            userVmResponse.setMaxResolutionY(userVm.getMaxResolutionY());
+            userVmResponse.setVgpu(userVm.getVgpuProfileName());
+
             ServiceOfferingDetailsVO serviceOfferingDetail = ApiDBUtils.findServiceOfferingDetail(userVm.getServiceOfferingId(), GPU.Keys.vgpuType.toString());
             if (serviceOfferingDetail != null) {
                 userVmResponse.setVgpu(serviceOfferingDetail.getValue());
@@ -743,8 +765,10 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     public List<UserVmJoinVO> listByAccountServiceOfferingTemplateAndNotInState(long accountId, List<State> states,
             List<Long> offeringIds, List<Long> templateIds) {
         SearchBuilder<UserVmJoinVO> userVmSearch = createSearchBuilder();
+
         userVmSearch.selectFields(userVmSearch.entity().getId(), userVmSearch.entity().getCpu(),
-                userVmSearch.entity().getRamSize());
+                userVmSearch.entity().getRamSize(), userVmSearch.entity().getGpuCount());
+
         userVmSearch.and("accountId", userVmSearch.entity().getAccountId(), Op.EQ);
         userVmSearch.and("serviceOfferingId", userVmSearch.entity().getServiceOfferingId(), Op.IN);
         userVmSearch.and("templateId", userVmSearch.entity().getTemplateId(), Op.IN);

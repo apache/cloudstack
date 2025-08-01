@@ -86,7 +86,7 @@
       </a-form-item>
       <a-form-item v-if="userDataEnabled">
         <template #label>
-          <tooltip-label :title="$t('label.userdata')" :tooltip="apiParams.userdata.description"/>
+          <tooltip-label :title="$t('label.user.data')" :tooltip="apiParams.userdata.description"/>
         </template>
         <a-textarea v-model:value="form.userdata">
         </a-textarea>
@@ -180,7 +180,6 @@ export default {
       template: {},
       userDataEnabled: false,
       securityGroupsEnabled: false,
-      dynamicScalingVmConfig: false,
       loading: false,
       securitygroups: {
         loading: false,
@@ -239,7 +238,6 @@ export default {
       this.fetchInstaceGroups()
       this.fetchServiceOfferingData()
       this.fetchTemplateData()
-      this.fetchDynamicScalingVmConfig()
       this.fetchUserData()
     },
     fetchZoneDetails () {
@@ -285,6 +283,7 @@ export default {
       params.id = this.resource.templateid
       params.isrecursive = true
       params.templatefilter = 'all'
+      params.isready = true
       var apiName = 'listTemplates'
       getAPI(apiName, params).then(json => {
         const templateResponses = json.listtemplatesresponse.template
@@ -303,6 +302,9 @@ export default {
     },
     canDynamicScalingEnabled () {
       return this.template.isdynamicallyscalable && this.serviceOffering.dynamicscalingenabled && this.dynamicScalingVmConfig
+    },
+    isDynamicScalingEnabled () {
+      return this.template.isdynamicallyscalable && this.serviceOffering.dynamicscalingenabled && this.$store.getters.features.dynamicscalingenabled
     },
     fetchOsTypes () {
       this.osTypes.loading = true

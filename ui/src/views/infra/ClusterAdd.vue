@@ -16,14 +16,23 @@
 // under the License.
 
 <template>
-  <a-spin :spinning="loading">
-    <div class="form" v-ctrl-enter="handleSubmitForm">
-      <div class="form__item">
-        <div class="form__label"><span class="required">* </span>{{ $t('label.zonenamelabel') }}</div>
+  <div class="form-layout" v-ctrl-enter="handleSubmitForm">
+    <a-form
+      :ref="formRef"
+      :model="form"
+      :loading="loading"
+      :rules="rules"
+      layout="vertical"
+      @submit="handleSubmitForm">
+      <a-form-item name="zoneid" ref="zoneid">
+        <template #label>
+          <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+        </template>
         <a-select
-          v-model:value="zoneId"
+          v-model:value="form.zoneid"
           @change="fetchPods"
           v-focus="true"
+          :placeholder="apiParams.zoneid.description"
           showSearch
           optionFilterProp="label"
           :filterOption="(input, option) => {
@@ -41,46 +50,13 @@
             </span>
           </a-select-option>
         </a-select>
-      </div>
-
-      <div class="form__item">
-        <div class="form__label">{{ $t('label.hypervisor') }}</div>
+      </a-form-item>
+      <a-form-item name="podid" ref="podid">
+        <template #label>
+          <tooltip-label :title="$t('label.podid')" :tooltip="apiParams.podid.description"/>
+        </template>
         <a-select
-          v-model:value="hypervisor"
-          @change="hypervisor => onChangeHypervisor(hypervisor)"
-          showSearch
-          optionFilterProp="value"
-          :filterOption="(input, option) => {
-            return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }" >
-          <a-select-option
-            v-for="hv in hypervisorsList"
-            :value="hv.name"
-            :key="hv.name">
-            {{ hv.name }}
-          </a-select-option>
-        </a-select>
-      </div>
-
-      <div class="form__item">
-        <div class="form__label">{{ $t('label.arch') }}</div>
-        <a-select
-          showSearch
-          optionFilterProp="label"
-          :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }"
-          v-model:value="selectedArchitecture">
-          <a-select-option v-for="opt in architectureTypes.opts" :key="opt.id">
-            {{ opt.name || opt.description }}
-          </a-select-option>
-        </a-select>
-      </div>
-
-      <div class="form__item">
-        <div class="form__label">{{ $t('label.podname') }}</div>
-        <a-select
-          v-model:value="podId"
+          v-model:value="form.podid"
           showSearch
           optionFilterProp="label"
           :filterOption="(input, option) => {
@@ -94,55 +70,115 @@
             {{ pod.name }}
           </a-select-option>
         </a-select>
-      </div>
-
-      <div class="form__item">
-        <div class="form__label"><span class="required">* </span>{{ $t('label.clusternamelabel') }}</div>
-        <span class="required required-label" ref="requiredCluster">{{ $t('label.required') }}</span>
-        <a-input :placeholder="placeholder.clustername" v-model:value="clustername"></a-input>
-      </div>
-
-      <template v-if="hypervisor === 'VMware'">
-        <div class="form__item">
-          <div class="form__label">{{ $t('label.vcenter.host') }}</div>
-          <a-input v-model:value="host"></a-input>
-        </div>
-
-        <div class="form__item">
-          <div class="form__label">{{ $t('label.vcenterdatacenter') }}</div>
-          <a-input v-model:value="dataCenter"></a-input>
-        </div>
-
-        <div class="form__item" name="useDefaultVMwareCred">
-          <div class="form__label">{{ $t('label.use.existing.vcenter.credentials.from.zone') }}</div>
-          <a-switch v-model="useDefaultVMwareCred" :checked="useDefaultVMwareCred" @change="onChangeUseDefaultVMwareCred()" />
-        </div>
-
-        <template v-if="useDefaultVMwareCred === false">
-          <div class="form__item">
-            <div class="form__label"><span class="required">* </span>{{ $t('label.vcenterusername') }}</div>
-            <span class="required required-label" ref="requiredUsername">{{ $t('label.required') }}</span>
-            <a-input v-model:value="username"></a-input>
-          </div>
-
-          <div class="form__item">
-            <div class="form__label"><span class="required">* </span>{{ $t('label.vcenterpassword') }}</div>
-            <span class="required required-label" ref="requiredPassword">{{ $t('label.required') }}</span>
-            <a-input type="password" v-model:value="password"></a-input>
-          </div>
+      </a-form-item>
+      <a-form-item name="clustername" ref="clustername">
+        <template #label>
+          <tooltip-label :title="$t('label.clustername')" :tooltip="apiParams.clustername.description"/>
         </template>
-      </template>
-
-      <div class="form__item">
-        <div class="form__label">{{ $t('label.isdedicated') }}</div>
-        <a-checkbox @change="toggleDedicated" />
+        <a-input :placeholder="apiParams.clustername.description" v-model:value="form.clustername"></a-input>
+      </a-form-item>
+      <a-row :gutter="12">
+        <a-col :md="24" :lg="form.hypervisor === 'External' ? 12 : 24">
+          <a-form-item name="hypervisor" ref="hypervisor">
+            <template #label>
+              <tooltip-label :title="$t('label.hypervisor')" :tooltip="apiParams.hypervisor.description"/>
+            </template>
+            <a-select
+              v-model:value="form.hypervisor"
+              @change="hypervisor => onChangeHypervisor(hypervisor)"
+              showSearch
+              optionFilterProp="value"
+              :filterOption="(input, option) => {
+                return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
+              <a-select-option
+                v-for="hv in hypervisorsList"
+                :value="hv.name"
+                :key="hv.name">
+                {{ hv.name }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
+        </a-col>
+        <a-col :md="24" :lg="12" v-if="form.hypervisor === 'External'">
+          <a-form-item name="extensionid" ref="extensionid">
+            <template #label>
+              <tooltip-label :title="$t('label.extensionid')" :tooltip="apiParams.extensionid.description"/>
+            </template>
+            <a-select
+              v-model:value="form.extensionid"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
+              <a-select-option
+                v-for="extension in extensionsList"
+                :value="extension.id"
+                :key="extension.id"
+                :label="extension.name">
+                {{ extension.name }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
+        </a-col>
+      </a-row>
+      <a-form-item name="externaldetails" ref="externaldetails" v-if="form.hypervisor === 'External' && !!form.extensionid">
+        <template #label>
+          <tooltip-label :title="$t('label.configuration.details')" :tooltip="apiParams.externaldetails.description"/>
+        </template>
+        <a-switch v-model:checked="externalDetailsEnabled" @change="onExternalDetailsEnabledChange"/>
+        <a-card v-if="externalDetailsEnabled" style="margin-top: 10px">
+          <div style="margin-bottom: 10px">{{ $t('message.add.extension.resource.details') }}</div>
+          <details-input
+            v-model:value="form.externaldetails" />
+        </a-card>
+      </a-form-item>
+      <a-form-item name="arch" ref="arch">
+        <template #label>
+          <tooltip-label :title="$t('label.arch')" :tooltip="apiParams.arch.description"/>
+        </template>
+        <a-select
+          showSearch
+          optionFilterProp="label"
+          :filterOption="(input, option) => {
+            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }"
+          v-model:value="form.arch">
+          <a-select-option v-for="opt in architectureTypes.opts" :key="opt.id">
+            {{ opt.name || opt.description }}
+          </a-select-option>
+        </a-select>
+      </a-form-item>
+      <div v-if="form.hypervisor === 'VMware'">
+        <a-form-item name="host" ref="host" :label="$t('label.vcenter.host')">
+          <a-input v-model:value="form.host"></a-input>
+        </a-form-item>
+        <a-form-item name="datacenter" ref="datacenter" :label="$t('label.vcenterdatacenter')">
+          <a-input v-model:value="form.dataCenter"></a-input>
+        </a-form-item>
+        <a-form-item name="usedefaultvmwarecred" ref="usedefaultvmwarecred" :label="$t('label.use.existing.vcenter.credentials.from.zone')">
+          <a-switch v-model:checked="form.usedefaultvmwarecred" @change="onChangeUseDefaultVMwareCred()" />
+        </a-form-item>
+        <div v-if="form.usedefaultvmwarecred === false">
+          <a-form-item name="username" ref="username" :label="$t('label.vcenterusername')">
+            <a-input v-model:value="form.username"></a-input>
+          </a-form-item>
+          <a-form-item name="password" ref="password" :label="$t('label.vcenterpassword')">
+            <a-input type="password" v-model:value="form.password" />
+          </a-form-item>
+        </div>
       </div>
+
+      <a-form-item name="isdedicated" ref="isdedicated" :label="$t('label.isdedicated')">
+        <a-switch v-model:checked="showDedicated" @change="toggleDedicated" />
+      </a-form-item>
 
       <template v-if="showDedicated">
         <DedicateDomain
           @domainChange="id => dedicatedDomainId = id"
           @accountChange="id => dedicatedAccount = id"
-          :error="domainError" />
+          :error="false" />
       </template>
 
       <a-divider />
@@ -151,21 +187,27 @@
         <a-button @click="() => $emit('close-action')">{{ $t('label.cancel') }}</a-button>
         <a-button @click="handleSubmitForm" ref="submit" type="primary">{{ $t('label.ok') }}</a-button>
       </div>
-
-    </div>
-  </a-spin>
+    </a-form>
+  </div>
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { getAPI, postAPI } from '@/api'
+import { mixinForm } from '@/utils/mixin'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 import DedicateDomain from '../../components/view/DedicateDomain'
 import ResourceIcon from '@/components/view/ResourceIcon'
+import DetailsInput from '@/components/widgets/DetailsInput'
 
 export default {
   name: 'ClusterAdd',
+  mixins: [mixinForm],
   components: {
+    TooltipLabel,
     DedicateDomain,
-    ResourceIcon
+    ResourceIcon,
+    DetailsInput
   },
   props: {
     resource: {
@@ -177,56 +219,58 @@ export default {
   data () {
     return {
       loading: false,
-      zoneId: null,
-      hypervisor: null,
-      podId: null,
-      clustername: null,
       clustertype: 'CloudManaged',
-      username: null,
-      password: null,
-      url: null,
-      useDefaultVMwareCred: true,
-      host: null,
-      dataCenter: null,
-      ovm3pool: null,
-      ovm3cluster: null,
-      ovm3vip: null,
       zonesList: [],
       hypervisorsList: [],
+      extensionsList: [],
       podsList: [],
       showDedicated: false,
       dedicatedDomainId: null,
       dedicatedAccount: null,
-      domainError: false,
-      params: [],
       architectureTypes: {},
-      selectedArchitecture: null,
-      placeholder: {
-        clustername: null
-      }
+      externalDetailsEnabled: false
     }
   },
+  beforeCreate () {
+    this.apiParams = this.$getApiParams('addCluster')
+  },
   created () {
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({
+        usedefaultvmwarecred: false
+      })
+      this.rules = reactive({
+        zoneid: [{ required: true, message: this.$t('message.error.select') }],
+        podid: [{ required: true, message: this.$t('message.error.select') }],
+        clustername: [{ required: true, message: this.$t('message.error.required.input') }],
+        hypervisor: [{ required: true, message: this.$t('message.error.select') }],
+        host: [{ required: true, message: this.$t('message.error.required.input') }],
+        datacenter: [{ required: true, message: this.$t('message.error.required.input') }],
+        username: [{ required: true, message: this.$t('message.error.required.input') }],
+        password: [{ required: true, message: this.$t('message.error.required.input') }]
+      })
+    },
     fetchData () {
       this.fetchZones()
       this.fetchHypervisors()
+      this.fetchExtensionsList()
       this.architectureTypes.opts = this.$fetchCpuArchitectureTypes()
-      this.selectedArchitecture = this.architectureTypes?.opts?.[0]?.id || null
-      this.params = this.$store.getters.apis.addCluster.params
-      Object.keys(this.placeholder).forEach(item => { this.returnPlaceholder(item) })
+      this.form.arch = this.architectureTypes?.opts?.[0]?.id || null
     },
     fetchZones () {
       this.loading = true
       getAPI('listZones', { showicon: true }).then(response => {
         this.zonesList = response.listzonesresponse.zone || []
-        this.zoneId = this.zonesList[0].id || null
         this.fetchPods()
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
+        this.form.zoneid = this.zonesList?.[0]?.id || null
         this.loading = false
       })
     },
@@ -234,10 +278,10 @@ export default {
       this.loading = true
       getAPI('listHypervisors').then(response => {
         this.hypervisorsList = response.listhypervisorsresponse.hypervisor || []
-        this.hypervisor = this.hypervisorsList[0].name || null
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
+        this.form.hypervisor = this.hypervisorsList?.[0]?.name || null
         this.loading = false
       })
     },
@@ -247,10 +291,22 @@ export default {
         zoneid: this.zoneId
       }).then(response => {
         this.podsList = response.listpodsresponse.pod || []
-        this.podId = this.podsList[0].id || null
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
+        this.form.podid = this.podsList?.[0]?.id || null
+        this.loading = false
+      })
+    },
+    fetchExtensionsList () {
+      this.loading = true
+      getAPI('listExtensions', {
+      }).then(response => {
+        this.extensionsList = response.listextensionsresponse.extension || []
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.extensionsList.unshift({ id: null, name: '' })
         this.loading = false
       })
     },
@@ -258,12 +314,12 @@ export default {
       this.loading = true
       this.clustertype = 'ExternalManaged'
       getAPI('listVmwareDcs', {
-        zoneid: this.zoneId
+        zoneid: this.form.zoneId
       }).then(response => {
         var vmwaredcs = response.listvmwaredcsresponse.VMwareDC
         if (vmwaredcs !== null) {
-          this.host = vmwaredcs[0].vcenter
-          this.dataCenter = vmwaredcs[0].name
+          this.form.host = vmwaredcs[0].vcenter
+          this.form.dataCenter = vmwaredcs[0].name
         }
       }).catch(error => {
         this.$notification.error({
@@ -278,69 +334,62 @@ export default {
     toggleDedicated () {
       this.dedicatedDomainId = null
       this.dedicatedAccount = null
-      this.showDedicated = !this.showDedicated
     },
     handleSubmitForm () {
       if (this.loading) return
-      if (!this.clustername) {
-        this.$refs.requiredCluster.classList.add('required-label--visible')
-        return
-      }
-      this.$refs.requiredCluster.classList.remove('required-label--visible')
-
-      if (this.hypervisor === 'VMware' && this.useDefaultVMwareCred === false) {
-        if (!this.username) {
-          this.$refs.requiredUsername.classList.add('required-label--visible')
-          return
+      this.formRef.value.validate().then(() => {
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
+        if (values.hypervisor === 'Ovm3') {
+          values.ovm3pool = 'on'
+          values.ovm3cluster = 'undefined'
+          values.ovm3vip = ''
         }
-        if (!this.password) {
-          this.$refs.requiredPassword.classList.add('required-label--visible')
-          return
-        }
-        this.$refs.requiredUsername.classList.remove('required-label--visible')
-        this.$refs.requiredPassword.classList.remove('required-label--visible')
-      }
-
-      if (this.hypervisor === 'Ovm3') {
-        this.ovm3pool = 'on'
-        this.ovm3cluster = 'undefined'
-        this.ovm3vip = ''
-      }
-      this.addCluster()
+        this.addCluster(values)
+      })
     },
-    addCluster () {
-      let clustername = this.clustername
-
-      if (this.hypervisor === 'VMware') {
-        const clusternameVal = this.clustername
-        this.url = `http://${this.host}/${this.dataCenter}/${clusternameVal}`
-        clustername = `${this.host}/${this.dataCenter}/${clusternameVal}`
+    addCluster (values) {
+      var clustername = values.clustername
+      var url = ''
+      if (values.hypervisor === 'VMware') {
+        clustername = `${this.host}/${this.dataCenter}/${clustername}`
+        url = `http://${clustername}`
       }
       this.loading = true
       this.parentToggleLoading()
       var data = {
-        zoneId: this.zoneId,
-        hypervisor: this.hypervisor,
+        zoneid: values.zoneid,
+        hypervisor: values.hypervisor,
         clustertype: this.clustertype,
-        podId: this.podId,
+        podid: values.podid,
         clustername: clustername,
-        arch: this.selectedArchitecture,
-        url: this.url
+        arch: values.arch,
+        url: url
       }
-      if (this.ovm3pool) {
-        data.ovm3pool = this.ovm3pool
+      if (values.ovm3pool) {
+        data.ovm3pool = values.ovm3pool
       }
-      if (this.ovm3cluster) {
-        data.ovm3cluster = this.ovm3cluster
+      if (values.ovm3cluster) {
+        data.ovm3cluster = values.ovm3cluster
       }
-      if (this.ovm3vip) {
-        data.ovm3vip = this.ovm3vip
+      if (values.ovm3vip) {
+        data.ovm3vip = values.ovm3vip
       }
-      if (this.username) {
-        data.username = this.username
+      if (values.username) {
+        data.username = values.username
       }
-      if (this.password) {
-        data.password = this.password
+      if (values.password) {
+        data.password = values.password
+      }
+      if (values.hypervisor === 'External') {
+        if (values.extensionid) {
+          data.extensionid = values.extensionid
+        }
+        if (values.externaldetails) {
+          Object.entries(values.externaldetails).forEach(([k, v]) => {
+            data['externaldetails[0].' + k] = v
+          })
+        }
       }
       postAPI('addCluster', data).then(response => {
         const cluster = response.addclusterresponse.cluster[0] || {}
@@ -396,11 +445,13 @@ export default {
     },
     onChangeHypervisor (hypervisor) {
       this.clustertype = 'CloudManaged'
-      this.username = null
-      this.password = null
-      this.url = null
-      this.host = null
-      this.dataCenter = null
+      this.form.username = null
+      this.form.password = null
+      this.form.url = null
+      this.form.host = null
+      this.form.datacenter = null
+      this.form.extensionid = null
+      this.form.externaldetails = null
       this.ovm3pool = null
       this.ovm3cluster = null
       this.ovm3vip = null
@@ -409,38 +460,26 @@ export default {
       }
     },
     onChangeUseDefaultVMwareCred () {
-      this.useDefaultVMwareCred = !this.useDefaultVMwareCred
-      if (this.useDefaultVMwareCred) {
-        this.username = null
-        this.password = null
+      if (this.form.usedefaultvmwarecred) {
+        this.form.username = null
+        this.form.password = null
       }
     },
-    returnPlaceholder (field) {
-      this.params.find(i => {
-        if (i.name === field) this.placeholder[field] = i.description
-      })
+    onExternalDetailsEnabledChange (val) {
+      if (val || !this.form.externaldetails) {
+        return
+      }
+      this.form.externaldetails = undefined
     }
   }
 }
 </script>
 
 <style scoped lang="scss">
-  .form {
-
-    &__label {
-      margin-bottom: 5px;
-    }
-
-    &__item {
-      margin-bottom: 20px;
-    }
-
-    .ant-select {
-      width: 85vw;
-
-      @media (min-width: 760px) {
-        width: 400px;
-      }
+  .form-layout {
+    width: 60vw;
+    @media (min-width: 600px) {
+      width: 550px;
     }
   }
 

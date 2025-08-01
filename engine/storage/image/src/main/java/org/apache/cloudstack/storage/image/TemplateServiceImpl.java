@@ -236,6 +236,7 @@ public class TemplateServiceImpl implements TemplateService {
         }
         /* Baremetal need not to download any template */
         availHypers.remove(HypervisorType.BareMetal);
+        availHypers.remove(HypervisorType.External);
         availHypers.add(HypervisorType.None); // bug 9809: resume ISO
         // download.
 
@@ -526,6 +527,7 @@ public class TemplateServiceImpl implements TemplateService {
                         }
                         /* Baremetal need not to download any template */
                         availHypers.remove(HypervisorType.BareMetal);
+                        availHypers.remove(HypervisorType.External);
                         availHypers.add(HypervisorType.None); // bug 9809: resume ISO
                         // download.
                         for (VMTemplateVO tmplt : toBeDownloaded) {
@@ -817,7 +819,7 @@ public class TemplateServiceImpl implements TemplateService {
         String templateName = dataDiskTemplate.isIso() ? dataDiskTemplate.getPath().substring(dataDiskTemplate.getPath().lastIndexOf(File.separator) + 1) : template.getName() + suffix + diskCount;
         VMTemplateVO templateVO = new VMTemplateVO(templateId, templateName, format, false, false, false, ttype, template.getUrl(),
                 template.requiresHvm(), template.getBits(), template.getAccountId(), null, templateName, false, guestOsId, false, template.getHypervisorType(), null,
-                null, false, false, false, false, template.getArch());
+                null, false, false, false, false, template.getArch(), template.getExtensionId());
         if (dataDiskTemplate.isIso()){
             templateVO.setUniqueName(templateName);
         }

@@ -240,6 +240,40 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "service_offering_name")
     private String serviceOfferingName;
 
+
+    @Column(name = "gpu_card_id")
+    private Long gpuCardId;
+
+    @Column(name = "gpu_card_uuid")
+    private String gpuCardUuid;
+
+    @Column(name = "gpu_card_name")
+    private String gpuCardName;
+
+    @Column(name = "vgpu_profile_id")
+    private Long vgpuProfileId;
+
+    @Column(name = "vgpu_profile_uuid")
+    private String vgpuProfileUuid;
+
+    @Column(name = "vgpu_profile_name")
+    private String vgpuProfileName;
+
+    @Column(name = "vgpu_profile_video_ram")
+    private Long videoRam;
+
+    @Column(name = "vgpu_profile_max_heads")
+    private Long maxHeads;
+
+    @Column(name = "vgpu_profile_max_resolution_x")
+    private Long maxResolutionX;
+
+    @Column(name = "vgpu_profile_max_resolution_y")
+    private Long maxResolutionY;
+
+    @Column(name = "gpu_count")
+    private Integer gpuCount;
+
     @Column(name = "backup_offering_id")
     private Long backupOfferingId;
 
@@ -701,6 +735,50 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public String getServiceOfferingName() {
         return serviceOfferingName;
+    }
+
+    public Long getGpuCardId() {
+        return gpuCardId;
+    }
+
+    public String getGpuCardUuid() {
+        return gpuCardUuid;
+    }
+
+    public String getGpuCardName() {
+        return gpuCardName;
+    }
+
+    public Long getVgpuProfileId() {
+        return vgpuProfileId;
+    }
+
+    public String getVgpuProfileUuid() {
+        return vgpuProfileUuid;
+    }
+
+    public String getVgpuProfileName() {
+        return vgpuProfileName;
+    }
+
+    public Long getVideoRam() {
+        return videoRam;
+    }
+
+    public Long getMaxHeads() {
+        return maxHeads;
+    }
+
+    public Long getMaxResolutionX() {
+        return maxResolutionX;
+    }
+
+    public Long getMaxResolutionY() {
+        return maxResolutionY;
+    }
+
+    public Integer getGpuCount() {
+        return gpuCount;
     }
 
     public String getBackupOfferingUuid() {

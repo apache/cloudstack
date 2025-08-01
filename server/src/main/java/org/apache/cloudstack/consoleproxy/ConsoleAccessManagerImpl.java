@@ -112,7 +112,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     protected Logger logger = LogManager.getLogger(ConsoleAccessManagerImpl.class);
 
     private static final List<VirtualMachine.State> unsupportedConsoleVMState = Arrays.asList(
-            VirtualMachine.State.Stopped, VirtualMachine.State.Error, VirtualMachine.State.Destroyed
+            VirtualMachine.State.Stopped, VirtualMachine.State.Restoring, VirtualMachine.State.Error, VirtualMachine.State.Destroyed
     );
 
     @Override
@@ -206,6 +206,12 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
             if (vm == null) {
                 logger.info("Invalid console servlet command parameter: " + vmId);
                 return new ConsoleEndpoint(false, null, "Cannot find VM with ID " + vmId);
+            }
+
+            if (Hypervisor.HypervisorType.External.equals(vm.getHypervisorType())) {
+                logger.error("Console access for {} cannot be provided it is {} hypervisor instance", vm,
+                        Hypervisor.HypervisorType.External);
+                return new ConsoleEndpoint(false, null, "Console access to this instance cannot be provided");
             }
 
             if (!checkSessionPermission(vm, account)) {

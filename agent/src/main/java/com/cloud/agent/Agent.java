@@ -968,9 +968,11 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
             if (CollectionUtils.isNotEmpty(cmd.getMsList())) {
                 processManagementServerList(cmd.getMsList(), cmd.getAvoidMsList(), cmd.getLbAlgorithm(), cmd.getLbCheckInterval(), false);
             }
-            Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("MigrateAgentConnection-Job")).schedule(() -> {
+            ScheduledExecutorService migrateAgentConnectionService = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("MigrateAgentConnection-Job"));
+            migrateAgentConnectionService.schedule(() -> {
                 migrateAgentConnection(cmd.getAvoidMsList());
             }, 3, TimeUnit.SECONDS);
+            migrateAgentConnectionService.shutdown();
         } catch (Exception e) {
             String errMsg = "Migrate agent connection failed, due to " + e.getMessage();
             logger.debug(errMsg, e);

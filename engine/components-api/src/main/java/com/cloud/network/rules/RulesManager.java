@@ -54,6 +54,8 @@ public interface RulesManager extends RulesService {
 
     boolean disableStaticNat(long ipAddressId, Account caller, long callerUserId, boolean releaseIpIfElastic) throws ResourceUnavailableException;
 
+    boolean applyStaticNatForIp(long sourceIpId, boolean continueOnError, Account caller, boolean forRevoke);
+
     /**
      * @param networkId
      * @param continueOnError

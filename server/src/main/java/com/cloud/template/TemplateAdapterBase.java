@@ -18,42 +18,52 @@ package com.cloud.template;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import javax.inject.Inject;
 
-import com.cloud.cpu.CPU;
-import com.cloud.deployasis.DeployAsIsConstants;
-import com.cloud.storage.upload.params.IsoUploadParams;
-import com.cloud.storage.upload.params.TemplateUploadParams;
-import com.cloud.storage.upload.params.UploadParams;
-import com.cloud.vm.VmDetailConstants;
-import org.apache.cloudstack.api.command.user.iso.GetUploadParamsForIsoCmd;
-import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang3.BooleanUtils;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
+import org.apache.cloudstack.api.command.user.iso.GetUploadParamsForIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
+import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.heuristics.HeuristicRuleHelper;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource.ResourceType;
+import com.cloud.cpu.CPU;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.deployasis.DeployAsIsConstants;
+import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.InvalidParameterValueException;
@@ -65,6 +75,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Grouping;
 import com.cloud.projects.ProjectManager;
 import com.cloud.server.ConfigurationServer;
+import com.cloud.server.StatsCollector;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
@@ -73,6 +84,9 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.GuestOSHypervisorDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
+import com.cloud.storage.upload.params.IsoUploadParams;
+import com.cloud.storage.upload.params.TemplateUploadParams;
+import com.cloud.storage.upload.params.UploadParams;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
@@ -83,8 +97,8 @@ import com.cloud.utils.EnumUtils;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
-import org.apache.commons.lang3.StringUtils;
 
 public abstract class TemplateAdapterBase extends AdapterBase implements TemplateAdapter {
     protected @Inject
@@ -118,13 +132,134 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
     protected @Inject
     ImageStoreDao _imgStoreDao;
     @Inject
-    TemplateManager templateMgr;
+    protected TemplateManager templateMgr;
     @Inject
     ConfigurationServer _configServer;
     @Inject
     ProjectManager _projectMgr;
     @Inject
     private TemplateDataStoreDao templateDataStoreDao;
+    @Inject
+    DataStoreManager storeMgr;
+    @Inject
+    HeuristicRuleHelper heuristicRuleHelper;
+    @Inject
+    TemplateDataFactory imageFactory;
+    @Inject
+    EndPointSelector _epSelector;
+    @Inject
+    StatsCollector _statsCollector;
+
+    protected List<DataStore> getImageStoresThrowsExceptionIfNotFound(long zoneId, TemplateProfile profile) {
+        List<DataStore> imageStores = storeMgr.getImageStoresByZoneIds(zoneId);
+        if (CollectionUtils.isEmpty(imageStores)) {
+            throw new CloudRuntimeException(String.format("Unable to find image store to download the template [%s].", profile.getTemplate()));
+        }
+        return imageStores;
+    }
+
+    protected DataStore verifyHeuristicRulesForZone(VMTemplateVO template, Long zoneId) {
+        HeuristicType heuristicType;
+        if (ImageFormat.ISO.equals(template.getFormat())) {
+            heuristicType = HeuristicType.ISO;
+        } else {
+            heuristicType = HeuristicType.TEMPLATE;
+        }
+        return heuristicRuleHelper.getImageStoreIfThereIsHeuristicRule(zoneId, heuristicType, template);
+    }
+
+    protected boolean isZoneAndImageStoreAvailable(DataStore imageStore, Long zoneId, Set<Long> zoneSet, boolean isTemplatePrivate) {
+        if (zoneId == null) {
+            logger.warn(String.format("Zone ID is null, cannot allocate ISO/template in image store [%s].", imageStore));
+            return false;
+        }
+
+        DataCenterVO zone = _dcDao.findById(zoneId);
+        if (zone == null) {
+            logger.warn("Unable to find zone by id [{}], so skip downloading template to its image store [{}].", zoneId, imageStore);
+            return false;
+        }
+
+        if (Grouping.AllocationState.Disabled == zone.getAllocationState()) {
+            logger.info("Zone [{}] is disabled. Skip downloading template to its image store [{}].", zone, imageStore);
+            return false;
+        }
+
+        if (!_statsCollector.imageStoreHasEnoughCapacity(imageStore)) {
+            logger.info("Image store doesn't have enough capacity. Skip downloading template to this image store [{}].", imageStore);
+            return false;
+        }
+
+        if (zoneSet == null) {
+            logger.info(String.format("Zone set is null; therefore, the ISO/template should be allocated in every secondary storage of zone [%s].", zone));
+            return true;
+        }
+
+        if (isTemplatePrivate && zoneSet.contains(zoneId)) {
+            logger.info(String.format("The template is private and it is already allocated in a secondary storage in zone [%s]; therefore, image store [%s] will be skipped.",
+                    zone, imageStore));
+            return false;
+        }
+
+        logger.info(String.format("Private template will be allocated in image store [%s] in zone [%s].", imageStore, zone));
+        zoneSet.add(zoneId);
+        return true;
+    }
+
+    /**
+     * If the template/ISO is marked as private, then it is allocated to a random secondary storage; otherwise, allocates to every storage pool in every zone given by the
+     * {@link TemplateProfile#getZoneIdList()}.
+     */
+    protected void postUploadAllocation(List<DataStore> imageStores, VMTemplateVO template, List<TemplateOrVolumePostUploadCommand> payloads) {
+        Set<Long> zoneSet = new HashSet<>();
+        Collections.shuffle(imageStores);
+        for (DataStore imageStore : imageStores) {
+            Long zoneId_is = imageStore.getScope().getScopeId();
+
+            if (!isZoneAndImageStoreAvailable(imageStore, zoneId_is, zoneSet, isPrivateTemplate(template))) {
+                continue;
+            }
+
+            TemplateInfo tmpl = imageFactory.getTemplate(template.getId(), imageStore);
+
+            // persist template_store_ref entry
+            DataObject templateOnStore = imageStore.create(tmpl);
+
+            // update template_store_ref and template state
+            EndPoint ep = _epSelector.select(templateOnStore);
+            if (ep == null) {
+                String errMsg = String.format("There is no secondary storage VM for downloading template to image store %s", imageStore);
+                logger.warn(errMsg);
+                throw new CloudRuntimeException(errMsg);
+            }
+
+            TemplateOrVolumePostUploadCommand payload = new TemplateOrVolumePostUploadCommand(template.getId(), template.getUuid(), tmpl.getInstallPath(), tmpl
+                    .getChecksum(), tmpl.getType().toString(), template.getUniqueName(), template.getFormat().toString(), templateOnStore.getDataStore().getUri(),
+                    templateOnStore.getDataStore().getRole().toString());
+            //using the existing max template size configuration
+            payload.setMaxUploadSize(_configDao.getValue(Config.MaxTemplateAndIsoSize.key()));
+
+            Long accountId = template.getAccountId();
+            Account account = _accountDao.findById(accountId);
+            Domain domain = _domainDao.findById(account.getDomainId());
+
+            payload.setDefaultMaxSecondaryStorageInGB(_resourceLimitMgr.findCorrectResourceLimitForAccountAndDomain(account, domain, ResourceType.secondary_storage, null));
+            payload.setAccountId(accountId);
+            payload.setRemoteEndPoint(ep.getPublicAddr());
+            payload.setRequiresHvm(template.requiresHvm());
+            payload.setDescription(template.getDisplayText());
+            payloads.add(payload);
+        }
+    }
+
+    protected boolean isPrivateTemplate(VMTemplateVO template){
+        // if public OR featured OR system template
+        if (template.isPublicTemplate() || template.isFeatured() || template.getTemplateType() == TemplateType.SYSTEM) {
+            return false;
+        } else {
+            return true;
+        }
+    }
 
     @Override
     public boolean stop() {
@@ -134,16 +269,16 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
     @Override
     public TemplateProfile prepare(boolean isIso, Long userId, String name, String displayText, CPU.CPUArch arch, Integer bits, Boolean passwordEnabled, Boolean requiresHVM, String url,
                                    Boolean isPublic, Boolean featured, Boolean isExtractable, String format, Long guestOSId, List<Long> zoneId, HypervisorType hypervisorType, String accountName,
-                                   Long domainId, String chksum, Boolean bootable, Map details, boolean directDownload, boolean deployAsIs) throws ResourceAllocationException {
+                                   Long domainId, String chksum, Boolean bootable, Map details, boolean directDownload, boolean deployAsIs, Long extensionId) throws ResourceAllocationException {
         return prepare(isIso, userId, name, displayText, arch, bits, passwordEnabled, requiresHVM, url, isPublic, featured, isExtractable, format, guestOSId, zoneId,
-            hypervisorType, chksum, bootable, null, null, details, false, null, false, TemplateType.USER, directDownload, deployAsIs, false);
+            hypervisorType, chksum, bootable, null, null, details, false, null, false, TemplateType.USER, directDownload, deployAsIs, false, extensionId);
     }
 
     @Override
     public TemplateProfile prepare(boolean isIso, long userId, String name, String displayText, CPU.CPUArch arch, Integer bits, Boolean passwordEnabled, Boolean requiresHVM, String url,
                                    Boolean isPublic, Boolean featured, Boolean isExtractable, String format, Long guestOSId, List<Long> zoneIdList, HypervisorType hypervisorType, String chksum,
                                    Boolean bootable, String templateTag, Account templateOwner, Map details, Boolean sshkeyEnabled, String imageStoreUuid, Boolean isDynamicallyScalable,
-                                   TemplateType templateType, boolean directDownload, boolean deployAsIs, boolean forCks) throws ResourceAllocationException {
+                                   TemplateType templateType, boolean directDownload, boolean deployAsIs, boolean forCks, Long extensionId) throws ResourceAllocationException {
         //Long accountId = null;
         // parameters verification
 
@@ -271,7 +406,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         CallContext.current().setEventDetails("Id: " + id + " name: " + name);
         TemplateProfile profile = new TemplateProfile(id, userId, name, displayText, arch, bits, passwordEnabled, requiresHVM, url, isPublic, featured, isExtractable, imgfmt, guestOSId, zoneIdList,
             hypervisorType, templateOwner.getAccountName(), templateOwner.getDomainId(), templateOwner.getAccountId(), chksum, bootable, templateTag, details,
-            sshkeyEnabled, null, isDynamicallyScalable, templateType, directDownload, deployAsIs);
+            sshkeyEnabled, null, isDynamicallyScalable, templateType, directDownload, deployAsIs, extensionId);
         profile.setForCks(forCks);
         return profile;
 
@@ -284,22 +419,22 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
         _accountMgr.checkAccess(caller, null, true, owner);
 
-        TemplateType templateType = templateMgr.validateTemplateType(cmd, _accountMgr.isAdmin(caller.getAccountId()),
-                CollectionUtils.isEmpty(cmd.getZoneIds()));
-
-        List<Long> zoneId = cmd.getZoneIds();
-        // ignore passed zoneId if we are using region wide image store
-        List<ImageStoreVO> stores = _imgStoreDao.findRegionImageStores();
-        if (stores != null && stores.size() > 0) {
-            zoneId = null;
-        }
-
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
         if(hypervisorType == HypervisorType.None) {
             throw new InvalidParameterValueException(String.format(
                     "Hypervisor Type: %s is invalid. Supported Hypervisor types are: %s",
                     cmd.getHypervisor(),
                     StringUtils.join(Arrays.stream(HypervisorType.values()).filter(h -> h != HypervisorType.None).map(HypervisorType::name).toArray(), ", ")));
+        }
+
+        TemplateType templateType = templateMgr.validateTemplateType(cmd, _accountMgr.isAdmin(caller.getAccountId()),
+                CollectionUtils.isEmpty(cmd.getZoneIds()), hypervisorType);
+
+        List<Long> zoneId = cmd.getZoneIds();
+        // ignore passed zoneId if we are using region wide image store
+        List<ImageStoreVO> stores = _imgStoreDao.findRegionImageStores();
+        if (stores != null && stores.size() > 0) {
+            zoneId = null;
         }
 
         Map details = cmd.getDetails();
@@ -315,10 +450,19 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                 }
             }
         }
+
+        if (HypervisorType.External.equals(hypervisorType) && MapUtils.isNotEmpty(cmd.getExternalDetails())) {
+            if (details != null) {
+                details.putAll(cmd.getExternalDetails());
+            } else {
+                details = cmd.getExternalDetails();
+            }
+        }
+
         return prepare(false, CallContext.current().getCallingUserId(), cmd.getTemplateName(), cmd.getDisplayText(), cmd.getArch(), cmd.getBits(), cmd.isPasswordEnabled(), cmd.getRequiresHvm(),
                 cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), cmd.getFormat(), cmd.getOsTypeId(), zoneId, hypervisorType, cmd.getChecksum(), true,
                 cmd.getTemplateTag(), owner, details, cmd.isSshKeyEnabled(), null, cmd.isDynamicallyScalable(), templateType,
-                cmd.isDirectDownload(), cmd.isDeployAsIs(), cmd.isForCks());
+                cmd.isDirectDownload(), cmd.isDeployAsIs(), cmd.isForCks(), cmd.getExtensionId());
 
     }
 
@@ -351,7 +495,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                 params.isExtractable(), params.getFormat(), params.getGuestOSId(), zoneList,
                 params.getHypervisorType(), params.getChecksum(), params.isBootable(), params.getTemplateTag(), owner,
                 params.getDetails(), params.isSshKeyEnabled(), params.getImageStoreUuid(),
-                params.isDynamicallyScalable(), params.isRoutingType() ? TemplateType.ROUTING : TemplateType.USER, params.isDirectDownload(), params.isDeployAsIs(), false);
+                params.isDynamicallyScalable(), params.isRoutingType() ? TemplateType.ROUTING : TemplateType.USER, params.isDirectDownload(), params.isDeployAsIs(), false, null);
     }
 
     private Long getDefaultDeployAsIsGuestOsId() {
@@ -403,7 +547,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 
         return prepare(true, CallContext.current().getCallingUserId(), cmd.getIsoName(), cmd.getDisplayText(), cmd.getArch(), 64, cmd.isPasswordEnabled(), true, cmd.getUrl(), cmd.isPublic(),
             cmd.isFeatured(), cmd.isExtractable(), ImageFormat.ISO.toString(), cmd.getOsTypeId(), zoneList, HypervisorType.None, cmd.getChecksum(), cmd.isBootable(), null,
-            owner, null, false, cmd.getImageStoreUuid(), cmd.isDynamicallyScalable(), TemplateType.USER, cmd.isDirectDownload(), false, false);
+            owner, null, false, cmd.getImageStoreUuid(), cmd.isDynamicallyScalable(), TemplateType.USER, cmd.isDirectDownload(), false, false, null);
     }
 
     protected VMTemplateVO persistTemplate(TemplateProfile profile, VirtualMachineTemplate.State initialState) {
@@ -412,7 +556,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             new VMTemplateVO(profile.getTemplateId(), profile.getName(), profile.getFormat(), profile.isPublic(), profile.isFeatured(), profile.isExtractable(),
                 profile.getTemplateType(), profile.getUrl(), profile.isRequiresHVM(), profile.getBits(), profile.getAccountId(), profile.getCheckSum(),
                 profile.getDisplayText(), profile.isPasswordEnabled(), profile.getGuestOsId(), profile.isBootable(), profile.getHypervisorType(),
-                profile.getTemplateTag(), profile.getDetails(), profile.isSshKeyEnabled(), profile.IsDynamicallyScalable(), profile.isDirectDownload(), profile.isDeployAsIs(), profile.getArch());
+                profile.getTemplateTag(), profile.getDetails(), profile.isSshKeyEnabled(), profile.IsDynamicallyScalable(), profile.isDirectDownload(), profile.isDeployAsIs(), profile.getArch(), profile.getExtensionId());
         template.setState(initialState);
         template.setForCks(profile.isForCks());
 

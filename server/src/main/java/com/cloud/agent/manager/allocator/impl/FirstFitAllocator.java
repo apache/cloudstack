@@ -16,6 +16,43 @@
 // under the License.
 package com.cloud.agent.manager.allocator.impl;
 
+import static com.cloud.deploy.DeploymentPlanner.AllocationAlgorithm.firstfitleastconsumed;
+import static com.cloud.deploy.DeploymentPlanner.AllocationAlgorithm.random;
+import static com.cloud.deploy.DeploymentPlanner.AllocationAlgorithm.userconcentratedpod_random;
+import static com.cloud.deploy.DeploymentPlanner.AllocationAlgorithm.userdispersing;
+
+import com.cloud.capacity.Capacity;
+import com.cloud.capacity.CapacityVO;
+import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.configuration.Config;
+import com.cloud.configuration.ConfigurationManager;
+import com.cloud.deploy.DeploymentClusterPlanner;
+import com.cloud.deploy.DeploymentPlan;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
+import com.cloud.deploy.FirstFitPlanner;
+import com.cloud.gpu.GPU;
+import com.cloud.gpu.dao.VgpuProfileDao;
+import com.cloud.host.DetailVO;
+import com.cloud.host.Host;
+import com.cloud.host.Host.Type;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDetailsDao;
+import com.cloud.offering.ServiceOffering;
+import com.cloud.resource.ResourceManager;
+import com.cloud.service.dao.ServiceOfferingDetailsDao;
+import com.cloud.storage.GuestOSCategoryVO;
+import com.cloud.storage.GuestOSVO;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.GuestOSCategoryDao;
+import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.user.Account;
+import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
+import com.cloud.vm.VMInstanceDetailVO;
+import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
+
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,51 +66,13 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.capacity.Capacity;
-import com.cloud.capacity.CapacityVO;
-import com.cloud.capacity.dao.CapacityDao;
-import com.cloud.configuration.Config;
-import com.cloud.configuration.ConfigurationManager;
-import com.cloud.deploy.DeploymentPlan;
-import com.cloud.deploy.DeploymentClusterPlanner;
-import com.cloud.deploy.DeploymentPlanner.ExcludeList;
-import com.cloud.deploy.FirstFitPlanner;
-import com.cloud.gpu.GPU;
-import com.cloud.host.DetailVO;
-import com.cloud.host.Host;
-import com.cloud.host.Host.Type;
-import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDetailsDao;
-import com.cloud.offering.ServiceOffering;
-import com.cloud.resource.ResourceManager;
-import com.cloud.service.ServiceOfferingDetailsVO;
-import com.cloud.service.dao.ServiceOfferingDetailsDao;
-import com.cloud.storage.GuestOSCategoryVO;
-import com.cloud.storage.GuestOSVO;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.dao.GuestOSCategoryDao;
-import com.cloud.storage.dao.GuestOSDao;
-import com.cloud.user.Account;
-import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
-import com.cloud.vm.VMInstanceDetailVO;
-import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.dao.VMInstanceDetailsDao;
-import com.cloud.vm.dao.VMInstanceDao;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
-
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
-
-import static com.cloud.deploy.DeploymentPlanner.AllocationAlgorithm.firstfitleastconsumed;
-import static com.cloud.deploy.DeploymentPlanner.AllocationAlgorithm.random;
-import static com.cloud.deploy.DeploymentPlanner.AllocationAlgorithm.userconcentratedpod_random;
-import static com.cloud.deploy.DeploymentPlanner.AllocationAlgorithm.userdispersing;
 
 /**
  * An allocator that tries to find a fit on a computing host.  This allocator does not care whether or not the host supports routing.
@@ -98,6 +97,8 @@ public class FirstFitAllocator extends BaseAllocator {
     CapacityDao _capacityDao;
     @Inject
     VMInstanceDetailsDao vmInstanceDetailsDao;
+    @Inject
+    private VgpuProfileDao vgpuProfileDao;
 
     boolean _checkHvm = true;
 
@@ -137,7 +138,7 @@ public class FirstFitAllocator extends BaseAllocator {
             addHostsToAvoidSet(type, avoid, clusterId, podId, dcId, suitableHosts);
         }
 
-        return allocateTo(plan, offering, template, avoid, suitableHosts, returnUpTo, considerReservedCapacity, account);
+        return allocateTo(vmProfile, plan, offering, template, avoid, suitableHosts, returnUpTo, considerReservedCapacity, account);
     }
 
     protected List<HostVO> retrieveHosts(VirtualMachineProfile vmProfile, Type type, List<HostVO> hostsToFilter, Long clusterId, Long podId, long dcId, String hostTagOnOffering,
@@ -202,9 +203,8 @@ public class FirstFitAllocator extends BaseAllocator {
         clusterHosts.retainAll(hostsMatchingUefiTag);
     }
 
-    protected List<Host> allocateTo(DeploymentPlan plan, ServiceOffering offering, VMTemplateVO template, ExcludeList avoid, List<? extends Host> hosts, int returnUpTo,
+    protected List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, ServiceOffering offering, VMTemplateVO template, ExcludeList avoid, List<? extends Host> hosts, int returnUpTo,
                                     boolean considerReservedCapacity, Account account) {
-
         String vmAllocationAlgorithm = DeploymentClusterPlanner.VmAllocationAlgorithm.value();
         if (List.of(random.toString(), userconcentratedpod_random.toString()).contains(vmAllocationAlgorithm)) {
             Collections.shuffle(hosts);
@@ -218,13 +218,13 @@ public class FirstFitAllocator extends BaseAllocator {
         hosts = prioritizeHosts(template, offering, hosts);
         logger.debug("Found {} hosts for allocation after prioritization: {}.", hosts.size(), hosts);
 
-        List<Host> suitableHosts = checkHostsCompatibilities(offering, avoid, hosts, returnUpTo, considerReservedCapacity);
+        List<Host> suitableHosts = checkHostsCompatibilities(offering, vmProfile, avoid, hosts, returnUpTo, considerReservedCapacity);
         logger.debug("Host Allocator returning {} suitable hosts.", suitableHosts.size());
 
         return suitableHosts;
     }
 
-    protected List<Host> checkHostsCompatibilities(ServiceOffering offering, ExcludeList avoid, List<? extends Host> hosts, int returnUpTo, boolean considerReservedCapacity) {
+    protected List<Host> checkHostsCompatibilities(ServiceOffering offering, VirtualMachineProfile vmProfile, ExcludeList avoid, List<? extends Host> hosts, int returnUpTo, boolean considerReservedCapacity) {
         List<Host> suitableHosts = new ArrayList<>();
         logger.debug("Checking compatibility for the following hosts {}.", suitableHosts);
 
@@ -244,7 +244,7 @@ public class FirstFitAllocator extends BaseAllocator {
                 continue;
             }
 
-            if (offeringRequestedVGpuAndHostDoesNotHaveIt(offering, avoid, host)) {
+            if (offeringRequestedVGpuAndHostDoesNotHaveIt(offering, vmProfile, avoid, host)) {
                 continue;
             }
 
@@ -257,21 +257,15 @@ public class FirstFitAllocator extends BaseAllocator {
         return suitableHosts;
     }
 
-    protected boolean offeringRequestedVGpuAndHostDoesNotHaveIt(ServiceOffering offering, ExcludeList avoid, Host host) {
-        long serviceOfferingId = offering.getId();
-        ServiceOfferingDetailsVO requestedVGpuType = _serviceOfferingDetailsDao.findDetail(serviceOfferingId, GPU.Keys.vgpuType.toString());
-
-        if (requestedVGpuType == null) {
-            return false;
-        }
-
-        ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(serviceOfferingId, GPU.Keys.pciDevice.toString());
-        if (!_resourceMgr.isGPUDeviceAvailable(host, groupName.getValue(), requestedVGpuType.getValue())) {
-            logger.debug("Adding host [{}] to avoid set, because this host does not have required GPU devices available.", () -> host);
-            avoid.addHost(host.getId());
-            return true;
-        }
+    protected boolean offeringRequestedVGpuAndHostDoesNotHaveIt(ServiceOffering offering, VirtualMachineProfile vmProfile, ExcludeList avoid, Host host) {
+      if (_resourceMgr.isGPUDeviceAvailable(offering, host, vmProfile.getId())) {
+        logger.debug("Host [{}] has required GPU devices available.", () -> host);
         return false;
+      }
+
+      logger.debug("Adding host [{}] to avoid set, because this host does not have required GPU devices available.", () -> host);
+      avoid.addHost(host.getId());
+      return true;
     }
 
     /**
@@ -421,7 +415,7 @@ public class FirstFitAllocator extends BaseAllocator {
      * If service offering did not request for vGPU, then move all host with GPU to the end of the host priority list.
      */
     protected void prioritizeHostsByGpuEnabled(ServiceOffering offering, List<Host> prioritizedHosts) {
-        boolean serviceOfferingRequestedVGpu = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString()) != null;
+        boolean serviceOfferingRequestedVGpu = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString()) != null  && offering.getVgpuProfileId() == null;
 
         if (serviceOfferingRequestedVGpu) {
             return;
