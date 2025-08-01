@@ -745,3 +745,12 @@ JOIN (
     GROUP BY object_store_id
 ) buckets_quota_sum_view ON `object_store`.id = buckets_quota_sum_view.object_store_id
 SET `object_store`.allocated_size = buckets_quota_sum_view.total_quota;
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.console_session', 'domain_id', 'bigint(20) unsigned NOT NULL');
+
+UPDATE `cloud`.`console_session` `cs`
+SET `cs`.`domain_id` = (
+    SELECT `acc`.`domain_id`
+    FROM `cloud`.`account` `acc`
+    WHERE `acc`.`id` = `cs`.`account_id`
+);

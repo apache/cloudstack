@@ -23,6 +23,7 @@ public class ApiConstants {
     public static final String ACCOUNT_ID = "accountid";
     public static final String ACCOUNT_IDS = "accountids";
     public static final String ACCUMULATE = "accumulate";
+    public static final String ACQUIRED = "acquired";
     public static final String ACTIVATION_RULE = "activationrule";
     public static final String ACTIVITY = "activity";
     public static final String ADAPTER_TYPE = "adaptertype";
@@ -94,9 +95,11 @@ public class ApiConstants {
     public static final String CONVERT_INSTANCE_HOST_ID = "convertinstancehostid";
     public static final String CONVERT_INSTANCE_STORAGE_POOL_ID = "convertinstancepoolid";
     public static final String ENABLED_REVOCATION_CHECK = "enabledrevocationcheck";
+    public static final String CLIENT_ADDRESS = "clientaddress";
     public static final String COMBINED_CAPACITY_ORDERING = "COMBINED";
     public static final String CONTROLLER = "controller";
     public static final String CONTROLLER_UNIT = "controllerunit";
+    public static final String CONSOLE_ENDPOINT_CREATOR_ADDRESS = "consoleendpointcreatoraddress";
     public static final String COPY_IMAGE_TAGS = "copyimagetags";
     public static final String CPU_OVERCOMMIT_RATIO = "cpuOvercommitRatio";
     public static final String CSR = "csr";

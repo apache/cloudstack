@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.consoleproxy;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -27,7 +28,15 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.domain.Domain;
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.exception.InvalidParameterValueException;
+import org.apache.cloudstack.api.ResponseGenerator;
+import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.command.user.consoleproxy.ConsoleEndpoint;
+import org.apache.cloudstack.api.command.user.consoleproxy.ListConsoleSessionsCmd;
+import org.apache.cloudstack.api.response.ConsoleSessionResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.security.keys.KeysManager;
 import org.apache.commons.codec.binary.Base64;
@@ -86,6 +95,8 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     @Inject
     private AccountManager accountManager;
     @Inject
+    private DomainDao domainDao;
+    @Inject
     private VirtualMachineManager virtualMachineManager;
     @Inject
     private ManagementServer managementServer;
@@ -103,6 +114,8 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     DataCenterDao dataCenterDao;
     @Inject
     private ConsoleSessionDao consoleSessionDao;
+    @Inject
+    private ResponseGenerator responseGenerator;
 
     private ScheduledExecutorService executorService = null;
 
@@ -179,6 +192,78 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
                         "No removed console session records expunged on this cleanup task run");
             }
         }
+    }
+
+    @Override
+    public ListResponse<ConsoleSessionResponse> listConsoleSessions(ListConsoleSessionsCmd cmd) {
+        Pair<List<ConsoleSessionVO>, Integer> consoleSessions = listConsoleSessionsInternal(cmd);
+        ListResponse<ConsoleSessionResponse> response = new ListResponse<>();
+
+        ResponseObject.ResponseView responseView = ResponseObject.ResponseView.Restricted;
+        Long callerId = CallContext.current().getCallingAccountId();
+        if (accountManager.isRootAdmin(callerId)) {
+            responseView = ResponseObject.ResponseView.Full;
+        }
+
+        List<ConsoleSessionResponse> consoleSessionResponses = new ArrayList<>();
+        for (ConsoleSessionVO consoleSession : consoleSessions.first()) {
+            ConsoleSessionResponse consoleSessionResponse = responseGenerator.createConsoleSessionResponse(consoleSession, responseView);
+            consoleSessionResponses.add(consoleSessionResponse);
+        }
+
+        response.setResponses(consoleSessionResponses, consoleSessions.second());
+        return response;
+    }
+
+    protected Pair<List<ConsoleSessionVO>, Integer> listConsoleSessionsInternal(ListConsoleSessionsCmd cmd) {
+        CallContext caller = CallContext.current();
+        long domainId = getBaseDomainIdToListConsoleSessions(cmd.getDomainId());
+        Long accountId = cmd.getAccountId();
+        Long userId = cmd.getUserId();
+        boolean isRecursive = cmd.isRecursive();
+
+        boolean isCallerNormalUser = accountManager.isNormalUser(caller.getCallingAccountId());
+        if (isCallerNormalUser) {
+            accountId = caller.getCallingAccountId();
+            userId = caller.getCallingUserId();
+        }
+
+        List<Long> domainIds = isRecursive ? domainDao.getDomainAndChildrenIds(domainId) : List.of(domainId);
+
+        return consoleSessionDao.listConsoleSessions(cmd.getId(), domainIds, accountId, userId,
+                cmd.getHostId(), cmd.getStartDate(), cmd.getEndDate(), cmd.getVmId(),
+                cmd.getConsoleEndpointCreatorAddress(), cmd.getClientAddress(), cmd.isActiveOnly(),
+                cmd.getAcquired(), cmd.getPageSizeVal(), cmd.getStartIndex());
+    }
+
+    /**
+     * Determines the base domain ID for listing console sessions.
+     *
+     * If no domain ID is provided, returns the caller's domain ID. Otherwise,
+     * checks if the caller has access to that domain and returns the provided domain ID.
+     *
+     * @param domainId The domain ID to check, can be null
+     * @return The base domain ID to use for listing console sessions
+     * @throws PermissionDeniedException if the caller does not have access to the specified domain
+     */
+    protected long getBaseDomainIdToListConsoleSessions(Long domainId) {
+        Account caller = CallContext.current().getCallingAccount();
+        if (domainId == null) {
+            return caller.getDomainId();
+        }
+
+        Domain domain = domainDao.findById(domainId);
+        if (domain == null) {
+            throw new InvalidParameterValueException(String.format("Unable to find domain with ID [%s]. Verify the informed domain and try again.", domainId));
+        }
+
+        accountManager.checkAccess(caller, domain);
+        return domainId;
+    }
+
+    @Override
+    public ConsoleSession listConsoleSessionById(long id) {
+        return consoleSessionDao.findByIdIncludingRemoved(id);
     }
 
     @Override
@@ -411,10 +496,13 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     }
 
     protected void persistConsoleSession(String sessionUuid, long instanceId, long hostId, String consoleEndpointCreatorAddress) {
+        CallContext caller = CallContext.current();
+
         ConsoleSessionVO consoleSessionVo = new ConsoleSessionVO();
         consoleSessionVo.setUuid(sessionUuid);
-        consoleSessionVo.setAccountId(CallContext.current().getCallingAccountId());
-        consoleSessionVo.setUserId(CallContext.current().getCallingUserId());
+        consoleSessionVo.setDomainId(caller.getCallingAccount().getDomainId());
+        consoleSessionVo.setAccountId(caller.getCallingAccountId());
+        consoleSessionVo.setUserId(caller.getCallingUserId());
         consoleSessionVo.setInstanceId(instanceId);
         consoleSessionVo.setHostId(hostId);
         consoleSessionVo.setConsoleEndpointCreatorAddress(consoleEndpointCreatorAddress);
