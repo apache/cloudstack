@@ -485,7 +485,7 @@ export default {
         },
         {
           title: 'label.netris.provider.url',
-          key: 'url',
+          key: 'netrisurl',
           placeHolder: 'message.installwizard.tooltip.netris.provider.url',
           required: true
         },

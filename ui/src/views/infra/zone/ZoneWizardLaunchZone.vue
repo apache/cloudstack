@@ -1120,7 +1120,7 @@ export default {
         if (!this.stepData.stepMove.includes('addNetrisProvider')) {
           const providerParams = {}
           providerParams.name = this.prefillContent?.netrisName || ''
-          providerParams.url = this.prefillContent?.url || ''
+          providerParams.netrisurl = this.prefillContent?.netrisurl || ''
           providerParams.username = this.prefillContent?.username || ''
           providerParams.password = this.prefillContent?.password || ''
           providerParams.zoneid = this.stepData.zoneReturned.id

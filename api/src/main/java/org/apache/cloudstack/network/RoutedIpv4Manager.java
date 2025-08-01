@@ -151,7 +151,7 @@ public interface RoutedIpv4Manager extends PluggableService, Configurable {
 
     boolean isRoutedVpc(Vpc vpc);
 
-    boolean isVpcVirtualRouterGateway(VpcOffering vpcOffering);
+    boolean isValidGateway(VpcOffering vpcOffering);
 
     BgpPeer createBgpPeer(CreateBgpPeerCmd createBgpPeerCmd);
 
