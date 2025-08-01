@@ -174,8 +174,8 @@ public class UserPasswordResetManagerImpl extends ManagerBase implements UserPas
         final String username = userAccount.getUsername();
         final String subject = "Password Reset Request";
 
-        String resetLink = String.format("%s/client/#/user/resetPassword?username=%s&token=%s",
-                ManagementServerAddresses.value().split(",")[0], username, resetToken);
+        String resetLink = String.format("/client/#/user/resetPassword?username=%s&token=%s",
+                username, resetToken);
         String content = getMessageBody(userAccount, resetToken, resetLink);
 
         SMTPMailProperties mailProperties = new SMTPMailProperties();
