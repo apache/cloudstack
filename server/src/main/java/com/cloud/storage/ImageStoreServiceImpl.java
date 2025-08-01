@@ -32,7 +32,6 @@ import org.apache.cloudstack.api.response.MigrationResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.StorageOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
-import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.storage.ImageStoreService;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
@@ -58,18 +57,6 @@ public class ImageStoreServiceImpl extends ManagerBase implements ImageStoreServ
 
     @Inject
     public UUIDManager uuidMgr;
-
-    ConfigKey<Double> ImageStoreImbalanceThreshold = new ConfigKey<>("Advanced", Double.class,
-            "image.store.imbalance.threshold",
-            "0.3",
-            "The storage imbalance threshold that is compared with the standard deviation percentage for a storage utilization metric. " +
-                    "The value is a percentage in decimal format.",
-            true, ConfigKey.Scope.Global);
-
-
-    public Integer numConcurrentCopyTasksPerSSVM = null;
-
-
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
