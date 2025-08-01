@@ -119,6 +119,9 @@ public class AlertManagerImplTest {
     @Mock
     ConfigurationDao configDao;
 
+    @Mock
+    MessageBus messageBus;
+
     private final String[] recipients = new String[]{"test@test.com"};
     private final String senderAddress = "sender@test.com";
 
