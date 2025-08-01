@@ -1040,15 +1040,19 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
     protected boolean handleDisconnectWithoutInvestigation(final AgentAttache attache, final Status.Event event, final boolean transitState, final boolean removeAgent) {
         final long hostId = attache.getId();
-
+        final HostVO host = _hostDao.findById(hostId);
         boolean result = false;
         GlobalLock joinLock = getHostJoinLock(hostId);
-        if (joinLock.lock(60)) {
+        try {
+            if (!joinLock.lock(60)) {
+                logger.debug("Unable to acquire lock on host {} to process agent disconnection", host != null? host : hostId);
+                return result;
+            }
+
+            logger.debug("Acquired lock on host {}, to process agent disconnection", host != null? host : hostId);
             try {
-                logger.info("Host {} is disconnecting with event {}",
-                        attache, event);
+                logger.info("Host {} is disconnecting with event {}", attache, event);
                 Status nextStatus;
-                final HostVO host = _hostDao.findById(hostId);
                 if (host == null) {
                     logger.warn("Can't find host with {} ({})", hostId, attache);
                     nextStatus = Status.Removed;
@@ -1068,8 +1072,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 joinLock.unlock();
             }
             result = true;
+        } finally {
+            joinLock.releaseRef();
         }
-        joinLock.releaseRef();
+
         return result;
     }
 
@@ -1357,29 +1363,34 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         ready.setArch(host.getArch().getType());
         AgentAttache attache;
         GlobalLock joinLock = getHostJoinLock(host.getId());
-        if (joinLock.lock(60)) {
-            try {
+        try {
+            if (!joinLock.lock(60)) {
+                throw new ConnectionException(true, String.format("Unable to acquire lock on host %s, to process agent connection", host));
+            }
 
-                if (!indirectAgentLB.compareManagementServerList(host.getId(), host.getDataCenterId(), agentMSHostList, lbAlgorithm)) {
+            logger.debug("Acquired lock on host {}, to process agent connection", host);
+            try {
+                if (!indirectAgentLB.compareManagementServerListAndLBAlorithm(host.getId(), host.getDataCenterId(), agentMSHostList, lbAlgorithm)) {
                     final List<String> newMSList = indirectAgentLB.getManagementServerList(host.getId(), host.getDataCenterId(), null);
                     ready.setMsHostList(newMSList);
-                    final List<String> avoidMsList = _mshostDao.listNonUpStateMsIPs();
-                    ready.setAvoidMsHostList(avoidMsList);
-                    ready.setLbAlgorithm(indirectAgentLB.getLBAlgorithmName());
-                    ready.setLbCheckInterval(indirectAgentLB.getLBPreferredHostCheckInterval(host.getClusterId()));
-                    logger.debug("Agent's management server host list is not up to date, sending list update: {}", newMSList);
+                    String newLBAlgorithm = indirectAgentLB.getLBAlgorithmName();
+                    ready.setLbAlgorithm(newLBAlgorithm);
+                    logger.debug("Agent's management server host list or lb algorithm is not up to date, sending list and algorithm update: {}, {}", newMSList, newLBAlgorithm);
                 }
+
+                final List<String> avoidMsList = _mshostDao.listNonUpStateMsIPs();
+                ready.setAvoidMsHostList(avoidMsList);
+                ready.setLbCheckInterval(indirectAgentLB.getLBPreferredHostCheckInterval(host.getClusterId()));
 
                 attache = createAttacheForConnect(host, link);
                 attache = notifyMonitorsOfConnection(attache, startup, false);
             } finally {
                 joinLock.unlock();
             }
-        } else {
-            throw new ConnectionException(true,
-                    String.format("Unable to acquire lock on host %s", host));
+        } finally {
+            joinLock.releaseRef();
         }
-        joinLock.releaseRef();
+
         return attache;
     }
 
@@ -1821,11 +1832,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         return false;
     }
 
-    private void disconnectInternal(final long hostId, final Status.Event event, final boolean invstigate) {
+    private void disconnectInternal(final long hostId, final Status.Event event, final boolean investigate) {
         final AgentAttache attache = findAttache(hostId);
 
         if (attache != null) {
-            if (!invstigate) {
+            if (!investigate) {
                 disconnectWithoutInvestigation(attache, event);
             } else {
                 disconnectWithInvestigation(attache, event);
