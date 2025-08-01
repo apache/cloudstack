@@ -147,7 +147,10 @@ public class EventUtils {
         @Override
         public void interceptComplete(Method method, Object target, Object event) {
             ActionEvent actionEvent = method.getAnnotation(ActionEvent.class);
-            boolean sameModule = target.getClass().getPackage().getName().startsWith(MODULE_TOP_LEVEL_PACKAGE);
+            boolean sameModule = false;
+            if (target != null && target.getClass().getPackage() != null) {
+                sameModule = target.getClass().getPackage().getName().startsWith(MODULE_TOP_LEVEL_PACKAGE);
+            }
             if (!sameModule) {
                 return;
             }
