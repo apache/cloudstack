@@ -22,6 +22,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.cloud.storage.dao.VMTemplateDao;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -37,6 +38,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.dao.ConsoleProxyDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ConsoleProxyManagerImplTest {
@@ -45,7 +47,10 @@ public class ConsoleProxyManagerImplTest {
 
     @Mock
     private ConsoleProxyDao consoleProxyDao;
-
+    @Mock
+    private VMTemplateDao templateDao;
+    @Mock
+    private UserVmDetailsDao userVmDetailsDao;
     @Mock
     private AccountManager accountManager;
 
