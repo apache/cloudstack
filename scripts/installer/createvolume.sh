@@ -271,9 +271,4 @@ echo "volume.size=$volsize" >> /$volfs/volume.properties
 zfs snapshot -r $volfs@vmops_ss
 rollback_if_needed $volfs $? "Failed to snapshot filesystem"
 
-#if [ "$cleanup" == "true" ]
-#then
-  #rm -f $volimg
-#fi
-
 exit 0
