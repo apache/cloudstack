@@ -86,6 +86,7 @@ public class VirtualMachineTO {
     DeployAsIsInfoTO deployAsIsInfo;
     String metadataManufacturer;
     String metadataProductName;
+    VirtualMachineMetadataTO metadata;
 
     public VirtualMachineTO(long id, String instanceName, VirtualMachine.Type type, int cpus, Integer speed, long minRam, long maxRam, BootloaderType bootloader,
             String os, boolean enableHA, boolean limitCpuUse, String vncPassword) {
@@ -445,6 +446,14 @@ public class VirtualMachineTO {
 
     public void setMetadataProductName(String metadataProductName) {
         this.metadataProductName = metadataProductName;
+    }
+
+    public VirtualMachineMetadataTO getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(VirtualMachineMetadataTO metadata) {
+        this.metadata = metadata;
     }
 
     @Override
