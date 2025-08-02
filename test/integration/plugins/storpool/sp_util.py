@@ -925,3 +925,59 @@ class StorPoolHelper():
             cls.debug("Cannot perform the tests because there aren't the required count of StorPool storage pools %s" % sp_pools)
             return
         return sp_pools
+
+    @classmethod
+    def create_snapshot_template(cls, apiclient, services, snapshot_id, zone_id):
+        cmd = createTemplate.createTemplateCmd()
+        cmd.displaytext = "TemplateFromSnap"
+        name = "-".join([cmd.displaytext, random_gen()])
+        cmd.name = name
+        if "ostypeid" in services:
+            cmd.ostypeid = services["ostypeid"]
+        elif "ostype" in services:
+            sub_cmd = listOsTypes.listOsTypesCmd()
+            sub_cmd.description = services["ostype"]
+            ostypes = apiclient.listOsTypes(sub_cmd)
+
+            if not isinstance(ostypes, list):
+                cls.fail("Unable to find Ostype id with desc: %s" %
+                         services["ostype"])
+            cmd.ostypeid = ostypes[0].id
+        else:
+            cls.fail("Unable to find Ostype is required for creating template")
+
+        cmd.isfeatured = True
+        cmd.ispublic = True
+        cmd.isextractable =  False
+
+        cmd.snapshotid = snapshot_id
+        cmd.zoneid = zone_id
+        apiclient.createTemplate(cmd)
+        templates = Template.list(apiclient, name=name, templatefilter="self")
+        if not isinstance(templates, list) and len(templates) < 0:
+            cls.fail("Unable to find created template with name %s" % name)
+        template = Template(templates[0].__dict__)
+        return template
+
+    @classmethod
+    def verify_snapshot_copies(cls, userapiclient, snapshot_id, zone_ids):
+        snapshot_entries = Snapshot.list(userapiclient, id=snapshot_id, showunique=False)
+        if not isinstance(snapshot_entries, list):
+            cls.fail("Unable to list snapshot for multiple zones")
+        snapshots = set()
+        new_list = []
+        for obj in snapshot_entries:
+            if obj.zoneid not in snapshots:
+                new_list.append(obj)
+                snapshots.add(obj.zoneid)
+
+        if len(new_list) != len(zone_ids):
+            cls.fail("Undesired list snapshot size for multiple zones")
+        for zone_id in zone_ids:
+            zone_found = False
+            for entry in new_list:
+                if entry.zoneid == zone_id:
+                    zone_found = True
+                    break
+            if zone_found == False:
+                cls.fail("Unable to find snapshot entry for the zone ID: %s" % zone_id)

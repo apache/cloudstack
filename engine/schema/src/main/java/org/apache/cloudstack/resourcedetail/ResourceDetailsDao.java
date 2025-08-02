@@ -34,6 +34,13 @@ public interface ResourceDetailsDao<R extends ResourceDetail> extends GenericDao
     R findDetail(long resourceId, String name);
 
     /**
+     * Find details by key
+     * @param key
+     * @return
+     */
+    List<R> findDetails(String key);
+
+    /**
      * Find details by resourceId and key
      * @param resourceId
      * @param key
