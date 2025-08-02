@@ -63,7 +63,7 @@ github:
   protected_branches: ~
 
 notifications:
-  commits:      commits@cloudstack.apache.org
-  issues:       commits@cloudstack.apache.org
+  commits: commits@cloudstack.apache.org
+  issues: commits@cloudstack.apache.org
   pullrequests: commits@cloudstack.apache.org
-  discussions:  users@cloudstack.apache.org
+  discussions: users@cloudstack.apache.org
