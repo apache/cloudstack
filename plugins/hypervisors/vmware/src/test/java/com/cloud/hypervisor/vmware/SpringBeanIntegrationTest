@@ -1,0 +1,37 @@
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import static org.mockito.Mockito.*;
+
+@SpringBootTest
+class ConfigurationServerTest {
+
+    @Mock
+    private ManagementServerHostPeerDao managementServerHostPeerDao;
+
+    @Mock
+    private ConfigurationDao configurationDao;
+
+    @Mock
+    private ConfigurationServer configurationServer;
+
+    @InjectMocks
+    private SomeService service; // The service you're testing, which interacts with the beans
+
+    @Test
+    void testGetConfiguration() {
+        // Arrange (setup mocks)
+        when(configurationDao.getConfiguration()).thenReturn(new Configuration());
+
+        // Act (execute method)
+        Configuration result = configurationServer.getConfiguration();
+
+        // Assert (verify results)
+        verify(configurationDao).getConfiguration(); // Verify that the method was called
+        assertNotNull(result); // Assert that the result is not null
+    }
+}
