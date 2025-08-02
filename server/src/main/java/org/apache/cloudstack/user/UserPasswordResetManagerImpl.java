@@ -48,7 +48,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import static org.apache.cloudstack.config.ApiServiceConfiguration.ManagementServerAddresses;
 import static org.apache.cloudstack.resourcedetail.UserDetailVO.PasswordResetToken;
 import static org.apache.cloudstack.resourcedetail.UserDetailVO.PasswordResetTokenExpiryDate;
 
