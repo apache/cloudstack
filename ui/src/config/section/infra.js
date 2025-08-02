@@ -23,6 +23,7 @@ import clusters from '@/config/section/infra/clusters'
 import hosts from '@/config/section/infra/hosts'
 import primaryStorages from '@/config/section/infra/primaryStorages'
 import secondaryStorages from '@/config/section/infra/secondaryStorages'
+import secondaryStagingStorages from '@/config/section/infra/secondaryStagingStorages'
 import objectStorages from '@/config/section/infra/objectStorages'
 import systemVms from '@/config/section/infra/systemVms'
 import routers from '@/config/section/infra/routers'
@@ -50,6 +51,7 @@ export default {
     hosts,
     primaryStorages,
     secondaryStorages,
+    secondaryStagingStorages,
     objectStorages,
     systemVms,
     routers,

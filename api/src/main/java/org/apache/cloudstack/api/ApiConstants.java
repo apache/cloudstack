@@ -290,6 +290,7 @@ public class ApiConstants {
     public static final String NEXT_ACL_RULE_ID = "nextaclruleid";
     public static final String NEXT_HOP = "nexthop";
     public static final String MOVE_ACL_CONSISTENCY_HASH = "aclconsistencyhash";
+    public static final String IMAGE_CACHE_STORES = "imagecachestores";
     public static final String IMAGE_PATH = "imagepath";
     public static final String INSTANCE_CONVERSION_SUPPORTED = "instanceconversionsupported";
     public static final String INTERNAL_DNS1 = "internaldns1";
