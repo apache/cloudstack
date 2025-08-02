@@ -28,6 +28,7 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.network.rules.PortForwardingRuleVO;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -384,7 +385,7 @@ public class CommandSetupHelper {
         final NetworkOffering offering = _networkOfferingDao.findById(guestNetwork.getNetworkOfferingId());
         String maxconn = null;
         if (offering.getConcurrentConnections() == null) {
-            maxconn = _configDao.getValue(Config.NetworkLBHaproxyMaxConn.key());
+            maxconn = ConfigurationManagerImpl.NETWORK_LB_HAPROXY_MAX_CONN.value().toString();
         } else {
             maxconn = offering.getConcurrentConnections().toString();
         }
