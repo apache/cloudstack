@@ -7126,4 +7126,20 @@ public class LibvirtComputingResourceTest {
         assertEquals("2g.10gb", vfInstance2.getModelName());
         assertNull(vfInstance2.getVmName());
     }
+
+    @Test
+    public void parseCpuFeaturesTestReturnEmptyListWhenFeaturesIsNull() {
+        List<String> cpuFeatures = libvirtComputingResourceSpy.parseCpuFeatures(null);
+        Assert.assertEquals(0, cpuFeatures.size());
+    }
+
+    @Test
+    public void parseCpuFeaturesTestReturnListOfCpuFeaturesAndIgnoreMultipleWhitespacesAlongsideEachOther() {
+        List<String> cpuFeatures = libvirtComputingResourceSpy.parseCpuFeatures("  -mca    mce   -mmx  hle ");
+        Assert.assertEquals(4, cpuFeatures.size());
+        Assert.assertEquals("-mca", cpuFeatures.get(0));
+        Assert.assertEquals("mce", cpuFeatures.get(1));
+        Assert.assertEquals("-mmx", cpuFeatures.get(2));
+        Assert.assertEquals("hle", cpuFeatures.get(3));
+    }
 }
