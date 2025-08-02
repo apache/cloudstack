@@ -556,7 +556,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
             VMSnapshot vmSnapshot = vmSnapshotDao.persist(vmSnapshotVO);
 
             if (vmSnapshot == null) {
-                throw new CloudRuntimeException("Unable to allocate a VM snapshot object");
+                throw new CloudRuntimeException("Unable to allocate an Instance Snapshot object");
             }
 
             vmSnapshot = vmSnapshotService.createVMSnapshot(virtualMachine.getId(), vmSnapshot.getId(), true);

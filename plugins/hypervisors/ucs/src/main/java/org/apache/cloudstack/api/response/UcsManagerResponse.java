@@ -29,19 +29,19 @@ import com.cloud.ucs.database.UcsManagerVO;
 @EntityReference(value = UcsManagerVO.class)
 public class UcsManagerResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the ucs manager")
+    @Param(description = "The ID of the ucs manager")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of ucs manager")
+    @Param(description = "The name of ucs manager")
     private String name;
 
     @SerializedName(ApiConstants.URL)
-    @Param(description = "the url of ucs manager")
+    @Param(description = "The url of ucs manager")
     private String url;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "the zone ID of ucs manager")
+    @Param(description = "The zone ID of ucs manager")
     private String zoneId;
 
     public String getName() {

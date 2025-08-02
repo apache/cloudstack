@@ -2583,7 +2583,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         // The active nics count (nics_count in op_networks table) might be wrong due to some reasons, should check the state of vms as well.
         // (nics for Starting VMs might not be allocated yet as Starting state also used when vm is being Created)
         if (_nicDao.countNicsForNonStoppedVms(networkId) > 0 || _nicDao.countNicsForNonStoppedRunningVrs(networkId) > 0) {
-            logger.debug("Network {} is not ready for GC as it has vms that are not Stopped at the moment", network);
+            logger.debug("Network {} is not ready for GC as it has Instances that are not Stopped at the moment", network);
             return false;
         }
 

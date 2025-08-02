@@ -31,7 +31,7 @@ import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import javax.inject.Inject;
 import java.util.List;
 
-@APICommand(name = "listBaremetalPxeServers", description = "list baremetal pxe server", responseObject = BaremetalPxeResponse.class,
+@APICommand(name = "listBaremetalPxeServers", description = "List baremetal pxe server", responseObject = BaremetalPxeResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListBaremetalPxeServersCmd extends BaseListCmd {
 
@@ -48,7 +48,7 @@ public class ListBaremetalPxeServersCmd extends BaseListCmd {
             type = CommandType.UUID,
             entityType = PhysicalNetworkResponse.class,
             required = true,
-            description = "the Physical Network ID")
+            description = "The Physical Network ID")
     private Long physicalNetworkId;
 
     public Long getId() {

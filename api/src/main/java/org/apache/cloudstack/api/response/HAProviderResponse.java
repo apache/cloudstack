@@ -29,11 +29,11 @@ import java.util.List;
 @EntityReference(value = HAConfig.class)
 public final class HAProviderResponse extends BaseResponse {
     @SerializedName(ApiConstants.HA_PROVIDER)
-    @Param(description = "the HA provider")
+    @Param(description = "The HA provider")
     private String provider;
 
     @SerializedName(ApiConstants.TYPE)
-    @Param(description = "the HA provider resource type detail")
+    @Param(description = "The HA provider resource type detail")
     private List<String> supportedResourceTypes;
 
     public HAProviderResponse() {

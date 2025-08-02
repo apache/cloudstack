@@ -41,7 +41,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "deleteBackup",
-        description = "Delete VM backup",
+        description = "Delete Instance backup",
         responseObject = SuccessResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class DeleteBackupCmd  extends BaseAsyncCmd {
@@ -57,13 +57,13 @@ public class DeleteBackupCmd  extends BaseAsyncCmd {
             type = CommandType.UUID,
             entityType = BackupResponse.class,
             required = true,
-            description = "id of the VM backup")
+            description = "ID of the Instance backup")
     private Long backupId;
 
     @Parameter(name = ApiConstants.FORCED,
             type = CommandType.BOOLEAN,
             required = false,
-            description = "force the deletion of backup which removes the entire backup chain but keep VM in Backup Offering",
+            description = "Force the deletion of backup which removes the entire backup chain but keep Instance in Backup Offering",
             since = "4.18.0.0")
     private Boolean forced;
 
@@ -92,7 +92,7 @@ public class DeleteBackupCmd  extends BaseAsyncCmd {
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {
-                throw new CloudRuntimeException("Error while deleting backup of VM");
+                throw new CloudRuntimeException("Error while deleting backup of Instance");
             }
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());

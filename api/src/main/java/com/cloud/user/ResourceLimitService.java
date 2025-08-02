@@ -34,7 +34,7 @@ import com.cloud.template.VirtualMachineTemplate;
 public interface ResourceLimitService {
 
     static final ConfigKey<Long> MaxAccountSecondaryStorage = new ConfigKey<>("Account Defaults", Long.class, "max.account.secondary.storage", "400",
-            "The default maximum secondary storage space (in GiB) that can be used for an account", false);
+            "The default maximum secondary storage space (in GiB) that can be used for an Account", false);
     static final ConfigKey<Long> MaxProjectSecondaryStorage = new ConfigKey<>("Project Defaults", Long.class, "max.project.secondary.storage", "400",
             "The default maximum secondary storage space (in GiB) that can be used for a project", false);
     static final ConfigKey<Long> ResourceCountCheckInterval = new ConfigKey<>("Advanced", Long.class, "resourcecount.check.interval", "300",

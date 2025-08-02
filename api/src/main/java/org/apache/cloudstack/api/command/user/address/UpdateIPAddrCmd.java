@@ -46,14 +46,14 @@ public class UpdateIPAddrCmd extends BaseAsyncCustomIdCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = IPAddressResponse.class, required = true, description = "the ID of the public IP address"
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = IPAddressResponse.class, required = true, description = "The ID of the public IP address"
             + " to update")
     private Long id;
     // unexposed parameter needed for events logging
     @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, expose = false)
     private Long ownerId;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the IP to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the IP to the end User or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
     /////////////////////////////////////////////////////
