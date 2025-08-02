@@ -288,15 +288,22 @@ public class PrimeraAdapter implements ProviderAdapter {
 
     @Override
     public ProviderVolume copy(ProviderAdapterContext context, ProviderAdapterDataObject sourceVolumeInfo,
-            ProviderAdapterDataObject targetVolumeInfo) {
+            ProviderAdapterDataObject targetVolumeInfo, Long newSize) {
+        // Log the start of the copy operation with source volume details
+        logger.debug("PrimeraAdapter: Starting volume copy operation - source volume: '{}', target volume: '{}', requested new size: {} bytes ({} MiB)",
+                sourceVolumeInfo.getExternalName(), targetVolumeInfo.getName(), newSize, newSize / PrimeraAdapter.BYTES_IN_MiB);
+
+        // Flag to determine copy method: online copy (direct clone) vs offline copy (with resize)
+        boolean onlineCopy = true;
         PrimeraVolumeCopyRequest request = new PrimeraVolumeCopyRequest();
         PrimeraVolumeCopyRequestParameters parms = new PrimeraVolumeCopyRequestParameters();
 
         assert sourceVolumeInfo.getExternalName() != null: "External provider name not provided on copy request to Primera volume provider";
 
-        // if we have no external name, treat it as a new volume
+        // Generate external name for target volume if not already set
         if (targetVolumeInfo.getExternalName() == null) {
             targetVolumeInfo.setExternalName(ProviderVolumeNamer.generateObjectName(context, targetVolumeInfo));
+            logger.debug("PrimeraAdapter: Generated external name '{}' for target volume", targetVolumeInfo.getExternalName());
         }
 
         ProviderVolume sourceVolume = this.getVolume(context, sourceVolumeInfo);
@@ -304,23 +311,71 @@ public class PrimeraAdapter implements ProviderAdapter {
             throw new RuntimeException("Source volume " + sourceVolumeInfo.getExternalUuid() + " with provider name " + sourceVolumeInfo.getExternalName() + " not found on storage provider");
         }
 
+        // Determine copy method based on size difference
+        // Online copy: Direct clone without size change (faster, immediate)
+        // Offline copy: Copy with potential resize (slower, requires task completion wait)
+        Long sourceSize = sourceVolume.getAllocatedSizeInBytes();
+        if (newSize == null || sourceSize == null || !newSize.equals(sourceSize)) {
+            logger.debug("PrimeraAdapter: Volume size change detected (source: {} bytes, target: {} bytes) - using offline copy method",
+                    sourceSize, newSize);
+            onlineCopy = false;
+        } else {
+            logger.debug("PrimeraAdapter: No size change required (both {} bytes) - using online copy method for faster cloning", newSize);
+        }
+
+        // Check if target volume already exists on the storage provider
         ProviderVolume targetVolume = this.getVolume(context, targetVolumeInfo);
         if (targetVolume == null) {
-            this.create(context, targetVolumeInfo, null, sourceVolume.getAllocatedSizeInBytes());
+            if (!onlineCopy) {
+                // For offline copy, pre-create the target volume with the desired size
+                logger.debug("PrimeraAdapter: Offline copy mode - pre-creating target volume '{}' with size {} bytes",
+                        targetVolumeInfo.getName(), sourceVolume.getAllocatedSizeInBytes());
+                this.create(context, targetVolumeInfo, null, sourceVolume.getAllocatedSizeInBytes());
+            } else {
+                // For online copy, the target volume will be created automatically during the clone operation
+                logger.debug("PrimeraAdapter: Online copy mode - target volume '{}' will be created automatically during clone operation",
+                        targetVolumeInfo.getName());
+            }
+        } else {
+            logger.warn("PrimeraAdapter: Target volume '{}' already exists on storage provider - proceeding with copy operation",
+                    targetVolumeInfo.getExternalName());
         }
 
         parms.setDestVolume(targetVolumeInfo.getExternalName());
-        parms.setOnline(false);
-        parms.setPriority(1);
+        if (onlineCopy) {
+            // Online copy configuration: immediate clone with deduplication and compression
+            parms.setOnline(true);
+            parms.setDestCPG(cpg);
+            parms.setTpvv(false);
+            parms.setReduce(true);
+            logger.debug("PrimeraAdapter: Configuring online copy - destination CPG: '{}', deduplication enabled, thin provisioning disabled", cpg);
+        } else {
+            // Offline copy configuration: background task with high priority
+            parms.setOnline(false);
+            parms.setPriority(1); // Set high priority for faster completion
+            logger.debug("PrimeraAdapter: Configuring offline copy with high priority for target volume '{}'", targetVolumeInfo.getName());
+        }
+
+        // Set request parameters and initiate the copy operation
         request.setParameters(parms);
 
         PrimeraTaskReference taskref = POST("/volumes/" + sourceVolumeInfo.getExternalName(), request, new TypeReference<PrimeraTaskReference>() {});
         if (taskref == null) {
+            logger.error("PrimeraAdapter: Failed to initiate copy operation - no task reference returned from storage provider");
             throw new RuntimeException("Unable to retrieve task used to copy to newly created volume");
         }
 
-        waitForTaskToComplete(taskref.getTaskid(), "copy volume " + sourceVolumeInfo.getExternalName() + " to " +
-            targetVolumeInfo.getExternalName(), taskWaitTimeoutMs);
+        // Handle task completion based on copy method
+        if (!onlineCopy) {
+            // Offline copy requires waiting for task completion
+            logger.debug("PrimeraAdapter: Offline copy initiated - waiting for task completion (TaskID: {})", taskref.getTaskid());
+            waitForTaskToComplete(taskref.getTaskid(), "copy volume " + sourceVolumeInfo.getExternalName() + " to " +
+                targetVolumeInfo.getExternalName(), taskWaitTimeoutMs);
+            logger.debug("PrimeraAdapter: Offline copy operation completed successfully");
+        } else {
+            // Online copy completes immediately
+            logger.debug("PrimeraAdapter: Online copy operation completed successfully (TaskID: {})", taskref.getTaskid());
+        }
 
         return this.getVolume(context, targetVolumeInfo);
     }
