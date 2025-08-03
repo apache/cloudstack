@@ -167,6 +167,8 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
@@ -1524,7 +1526,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         HypervisorGuru guru = hypervisorGuruManager.getGuru(vm.getHypervisorType());
         backupVolumeInfo.setType(Volume.Type.DATADISK);
 
-        logger.debug("Attaching the restored volume to VM {}", vm);
+        logger.info("Attaching the restored volume {} to VM {}.", () -> ReflectionToStringBuilder.toString(backupVolumeInfo, ToStringStyle.JSON_STYLE), () -> vm);
         StoragePoolVO pool = primaryDataStoreDao.findByUuid(datastoreUuid);
         try {
             return guru.attachRestoredVolumeToVirtualMachine(zoneId, restoredVolumeLocation, backupVolumeInfo, vm, pool.getId(), backup);
