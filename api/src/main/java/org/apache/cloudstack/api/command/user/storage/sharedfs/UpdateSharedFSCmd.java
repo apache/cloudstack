@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.storage.sharedfs;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -29,10 +31,6 @@ import org.apache.cloudstack.api.response.SharedFSResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.sharedfs.SharedFS;
 import org.apache.cloudstack.storage.sharedfs.SharedFSService;
-
-import javax.inject.Inject;
-
-import com.cloud.user.Account;
 
 @APICommand(name = "updateSharedFileSystem",
         responseObject= SharedFSResponse.class,
@@ -98,8 +96,7 @@ public class UpdateSharedFSCmd extends BaseCmd implements UserCmd {
         SharedFS sharedFS = sharedFSService.updateSharedFS(this);
         if (sharedFS != null) {
             ResponseObject.ResponseView respView = getResponseView();
-            Account caller = CallContext.current().getCallingAccount();
-            if (_accountService.isRootAdmin(caller.getId())) {
+            if (CallContext.current().isCallingAccountRootAdmin()) {
                 respView = ResponseObject.ResponseView.Full;
             }
             SharedFSResponse response = _responseGenerator.createSharedFSResponse(respView, sharedFS);

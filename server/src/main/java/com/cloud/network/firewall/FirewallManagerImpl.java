@@ -842,7 +842,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
             throw new InvalidParameterValueException("Unable to find " + ruleId + " having purpose " + Arrays.asList(Purpose.Firewall, Purpose.Ipv6Firewall));
         }
 
-        if (rule.getType() == FirewallRuleType.System && !_accountMgr.isRootAdmin(caller.getId())) {
+        if (rule.getType() == FirewallRuleType.System && !_accountMgr.isRootAdmin(caller)) {
             throw new InvalidParameterValueException("Only root admin can delete the system wide firewall rule");
         }
 

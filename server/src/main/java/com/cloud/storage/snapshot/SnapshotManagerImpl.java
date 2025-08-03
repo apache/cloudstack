@@ -529,7 +529,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         Long snapshotId = cmd.getId();
         Long zoneId = cmd.getZoneId();
 
-        if (!_accountMgr.isRootAdmin(caller.getId()) && ApiDBUtils.isExtractionDisabled()) {
+        if (!_accountMgr.isRootAdmin(caller) && ApiDBUtils.isExtractionDisabled()) {
             logger.error("Extraction is disabled through [{}].", Config.DisableExtraction);
             throw new PermissionDeniedException("Extraction could not be completed.");
         }
@@ -1125,7 +1125,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         if (DataCenter.Type.Edge.equals(zone.getType())) {
             throw new InvalidParameterValueException("Backing up of snapshot is not supported by the zone of the volume. Snapshots can not be taken for multiple zones");
         }
-        boolean isRootAdminCaller = _accountMgr.isRootAdmin(caller.getId());
+        boolean isRootAdminCaller = _accountMgr.isRootAdmin(caller);
         for (Long zoneId : zoneIds) {
             getCheckedDestinationZoneForSnapshotCopy(zoneId, isRootAdminCaller);
         }
@@ -1219,7 +1219,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         if (display) {
             long accountLimit = _resourceLimitMgr.findCorrectResourceLimitForAccount(owner, ResourceType.snapshot, null);
             long domainLimit = _resourceLimitMgr.findCorrectResourceLimitForDomain(_domainMgr.getDomain(owner.getDomainId()), ResourceType.snapshot, null);
-            if (!_accountMgr.isRootAdmin(owner.getId()) && ((accountLimit != -1 && maxSnaps > accountLimit) || (domainLimit != -1 && maxSnaps > domainLimit))) {
+            if (!_accountMgr.isRootAdmin(owner) && ((accountLimit != -1 && maxSnaps > accountLimit) || (domainLimit != -1 && maxSnaps > domainLimit))) {
                 String message = "domain/account";
                 if (owner.getType() == Account.Type.PROJECT) {
                     message = "domain/project";
@@ -2135,7 +2135,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         SnapshotVO snapshot = snapshotZonePair.first();
         sourceZoneId = snapshotZonePair.second();
         Map<Long, DataCenterVO> dataCenterVOs = new HashMap<>();
-        boolean isRootAdminCaller = _accountMgr.isRootAdmin(caller.getId());
+        boolean isRootAdminCaller = _accountMgr.isRootAdmin(caller);
         for (Long destZoneId: destZoneIds) {
             DataCenterVO dstZone = getCheckedDestinationZoneForSnapshotCopy(destZoneId, isRootAdminCaller);
             dataCenterVOs.put(destZoneId, dstZone);

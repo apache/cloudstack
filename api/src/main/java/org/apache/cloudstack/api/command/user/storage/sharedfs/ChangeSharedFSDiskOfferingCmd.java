@@ -35,7 +35,6 @@ import org.apache.cloudstack.storage.sharedfs.SharedFSService;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
-import com.cloud.user.Account;
 
 @APICommand(name = "changeSharedFileSystemDiskOffering",
         responseObject= SharedFSResponse.class,
@@ -130,8 +129,7 @@ public class ChangeSharedFSDiskOfferingCmd extends BaseAsyncCmd implements UserC
         SharedFS sharedFS = sharedFSService.changeSharedFSDiskOffering(this);
         if (sharedFS != null) {
             ResponseObject.ResponseView respView = getResponseView();
-            Account caller = CallContext.current().getCallingAccount();
-            if (_accountService.isRootAdmin(caller.getId())) {
+            if (CallContext.current().isCallingAccountRootAdmin()) {
                 respView = ResponseObject.ResponseView.Full;
             }
             SharedFSResponse response = _responseGenerator.createSharedFSResponse(respView, sharedFS);

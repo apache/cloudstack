@@ -85,6 +85,8 @@ public interface AccountService {
 
     boolean isRootAdmin(Long accountId);
 
+    boolean isRootAdmin(Account account);
+
     boolean isDomainAdmin(Long accountId);
 
     boolean isResourceDomainAdmin(Long accountId);

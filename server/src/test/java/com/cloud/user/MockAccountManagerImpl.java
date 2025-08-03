@@ -214,6 +214,12 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
+    public boolean isRootAdmin(Account account) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
     public User getActiveUserByRegistrationToken(String registrationToken) {
         // TODO Auto-generated method stub
         return null;

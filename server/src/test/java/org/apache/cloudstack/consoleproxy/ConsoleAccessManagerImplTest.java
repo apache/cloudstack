@@ -16,20 +16,9 @@
 // under the License.
 package org.apache.cloudstack.consoleproxy;
 
-import com.cloud.agent.AgentManager;
-import com.cloud.domain.DomainVO;
-import com.cloud.domain.dao.DomainDao;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.server.ManagementServer;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.utils.Pair;
-import com.cloud.utils.db.EntityManager;
-import com.cloud.vm.ConsoleSessionVO;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.dao.ConsoleSessionDao;
-import com.cloud.vm.dao.VMInstanceDetailsDao;
+import java.util.Arrays;
+import java.util.List;
+
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ResponseObject;
@@ -47,8 +36,20 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import java.util.Arrays;
-import java.util.List;
+import com.cloud.agent.AgentManager;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.server.ManagementServer;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.EntityManager;
+import com.cloud.vm.ConsoleSessionVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.dao.ConsoleSessionDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ConsoleAccessManagerImplTest {
@@ -96,15 +97,13 @@ public class ConsoleAccessManagerImplTest {
 
     @Test
     public void testCheckSessionPermissionAdminAccount() {
-        Mockito.when(account.getId()).thenReturn(1L);
-        Mockito.when(accountManager.isRootAdmin(1L)).thenReturn(true);
+        Mockito.when(accountManager.isRootAdmin(account)).thenReturn(true);
         Assert.assertTrue(consoleAccessManager.checkSessionPermission(virtualMachine, account));
     }
 
     @Test
     public void testCheckSessionPermissionUserOwnedVm() {
-        Mockito.when(account.getId()).thenReturn(1L);
-        Mockito.when(accountManager.isRootAdmin(1L)).thenReturn(false);
+        Mockito.when(accountManager.isRootAdmin(account)).thenReturn(false);
         Mockito.when(virtualMachine.getType()).thenReturn(VirtualMachine.Type.User);
         Mockito.doNothing().when(accountManager).checkAccess(
                 Mockito.eq(account), Mockito.nullable(SecurityChecker.AccessType.class),
@@ -115,7 +114,7 @@ public class ConsoleAccessManagerImplTest {
     @Test
     public void testCheckSessionPermissionDifferentUserOwnedVm() {
         Mockito.when(account.getId()).thenReturn(1L);
-        Mockito.when(accountManager.isRootAdmin(1L)).thenReturn(false);
+        Mockito.when(accountManager.isRootAdmin(account)).thenReturn(false);
         Mockito.when(virtualMachine.getType()).thenReturn(VirtualMachine.Type.User);
         Mockito.doThrow(PermissionDeniedException.class).when(accountManager).checkAccess(
                 Mockito.eq(account), Mockito.nullable(SecurityChecker.AccessType.class),
@@ -125,8 +124,6 @@ public class ConsoleAccessManagerImplTest {
 
     @Test
     public void testCheckSessionPermissionForUsersOnSystemVms() {
-        Mockito.when(account.getId()).thenReturn(1L);
-        Mockito.when(accountManager.isRootAdmin(1L)).thenReturn(false);
         List<VirtualMachine.Type> systemVmTypes = Arrays.asList(VirtualMachine.Type.DomainRouter,
                 VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
         for (VirtualMachine.Type type : systemVmTypes) {
@@ -254,8 +251,7 @@ public class ConsoleAccessManagerImplTest {
 
         try (MockedStatic<CallContext> callContextStaticMock = Mockito.mockStatic(CallContext.class)) {
             callContextStaticMock.when(CallContext::current).thenReturn(callContextMock);
-            Mockito.when(callContextMock.getCallingAccountId()).thenReturn(2L);
-            Mockito.when(accountManager.isRootAdmin(2L)).thenReturn(true);
+            Mockito.when(callContextMock.isCallingAccountRootAdmin()).thenReturn(true);
             Mockito.when(responseGeneratorMock.createConsoleSessionResponse(consoleSessionMock, ResponseObject.ResponseView.Full)).thenReturn(consoleSessionResponseMock);
 
             consoleAccessManager.listConsoleSessions(listConsoleSessionsCmdMock);
@@ -271,8 +267,7 @@ public class ConsoleAccessManagerImplTest {
 
         try (MockedStatic<CallContext> callContextStaticMock = Mockito.mockStatic(CallContext.class)) {
             callContextStaticMock.when(CallContext::current).thenReturn(callContextMock);
-            Mockito.when(callContextMock.getCallingAccountId()).thenReturn(2L);
-            Mockito.when(accountManager.isRootAdmin(2L)).thenReturn(false);
+            Mockito.when(callContextMock.isCallingAccountRootAdmin()).thenReturn(false);
             Mockito.when(responseGeneratorMock.createConsoleSessionResponse(consoleSessionMock, ResponseObject.ResponseView.Restricted)).thenReturn(consoleSessionResponseMock);
 
             consoleAccessManager.listConsoleSessions(listConsoleSessionsCmdMock);

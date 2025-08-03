@@ -420,9 +420,8 @@ public class ResourceLimitManagerImplTest {
         limits.add(Mockito.mock(ResourceLimitVO.class));
         int size = limits.size();
         AccountVO account = Mockito.mock(AccountVO.class);
-        Mockito.when(account.getId()).thenReturn(1L);
         Mockito.when(accountDao.findById(1L)).thenReturn(account);
-        Mockito.when(accountManager.isRootAdmin(1L)).thenReturn(true);
+        Mockito.when(accountManager.isRootAdmin(Mockito.any(Account.class))).thenReturn(true);
         resourceLimitManager.addTaggedResourceLimits(limits, List.of(Resource.ResourceType.cpu), hostTags, Resource.ResourceOwnerType.Account, 1L);
         Assert.assertEquals(size + hostTags.size(), limits.size());
     }
@@ -431,11 +430,11 @@ public class ResourceLimitManagerImplTest {
     public void testFindCorrectResourceLimitForAccount() {
         AccountVO account = Mockito.mock(AccountVO.class);
         Mockito.when(account.getId()).thenReturn(1L);
-        Mockito.when(accountManager.isRootAdmin(1L)).thenReturn(true);
+        Mockito.when(accountManager.isRootAdmin(account)).thenReturn(true);
         long result = resourceLimitManager.findCorrectResourceLimitForAccount(account, Resource.ResourceType.cpu, hostTags.get(0));
         Assert.assertEquals(Resource.RESOURCE_UNLIMITED, result);
 
-        Mockito.when(accountManager.isRootAdmin(1L)).thenReturn(false);
+        Mockito.when(accountManager.isRootAdmin(account)).thenReturn(false);
         ResourceLimitVO limit = new ResourceLimitVO();
         limit.setMax(10L);
         Mockito.when(resourceLimitDao.findByOwnerIdAndTypeAndTag(1L, Resource.ResourceOwnerType.Account, Resource.ResourceType.cpu, hostTags.get(0))).thenReturn(limit);
@@ -456,32 +455,32 @@ public class ResourceLimitManagerImplTest {
 
     @Test
     public void testFindCorrectResourceLimitForAccountProjects() {
-            AccountVO account = Mockito.mock(AccountVO.class);
-            Mockito.when(account.getId()).thenReturn(1L);
-            Mockito.when(accountManager.isRootAdmin(1L)).thenReturn(true);
+        AccountVO account = Mockito.mock(AccountVO.class);
+        Mockito.when(account.getId()).thenReturn(1L);
+        Mockito.when(accountManager.isRootAdmin(account)).thenReturn(true);
 
-            long result = resourceLimitManager.findCorrectResourceLimitForAccount(account,
-                            Resource.ResourceType.project, hostTags.get(0));
-            Assert.assertEquals(Resource.RESOURCE_UNLIMITED, result);
+        long result = resourceLimitManager.findCorrectResourceLimitForAccount(account,
+                        Resource.ResourceType.project, hostTags.get(0));
+        Assert.assertEquals(Resource.RESOURCE_UNLIMITED, result);
 
-            Mockito.when(accountManager.isRootAdmin(1L)).thenReturn(false);
-            ResourceLimitVO limit = new ResourceLimitVO();
-            limit.setMax(10L);
-            Mockito.when(resourceLimitDao.findByOwnerIdAndTypeAndTag(1L, Resource.ResourceOwnerType.Account,
-                            Resource.ResourceType.project, hostTags.get(0))).thenReturn(limit);
-            result = resourceLimitManager.findCorrectResourceLimitForAccount(account, Resource.ResourceType.project,
-                            hostTags.get(0));
-            Assert.assertEquals(10L, result);
+        Mockito.when(accountManager.isRootAdmin(account)).thenReturn(false);
+        ResourceLimitVO limit = new ResourceLimitVO();
+        limit.setMax(10L);
+        Mockito.when(resourceLimitDao.findByOwnerIdAndTypeAndTag(1L, Resource.ResourceOwnerType.Account,
+                        Resource.ResourceType.project, hostTags.get(0))).thenReturn(limit);
+        result = resourceLimitManager.findCorrectResourceLimitForAccount(account, Resource.ResourceType.project,
+                        hostTags.get(0));
+        Assert.assertEquals(10L, result);
 
-            long defaultAccountProjectsMax = 15L;
-            Map<String, Long> accountResourceLimitMap = new HashMap<>();
-            accountResourceLimitMap.put(Resource.ResourceType.project.name(), defaultAccountProjectsMax);
-            resourceLimitManager.accountResourceLimitMap = accountResourceLimitMap;
-            Mockito.when(resourceLimitDao.findByOwnerIdAndTypeAndTag(1L, Resource.ResourceOwnerType.Account,
-                            Resource.ResourceType.project, hostTags.get(0))).thenReturn(null);
-            result = resourceLimitManager.findCorrectResourceLimitForAccount(account, Resource.ResourceType.project,
-                            hostTags.get(0));
-            Assert.assertEquals(defaultAccountProjectsMax, result);
+        long defaultAccountProjectsMax = 15L;
+        Map<String, Long> accountResourceLimitMap = new HashMap<>();
+        accountResourceLimitMap.put(Resource.ResourceType.project.name(), defaultAccountProjectsMax);
+        resourceLimitManager.accountResourceLimitMap = accountResourceLimitMap;
+        Mockito.when(resourceLimitDao.findByOwnerIdAndTypeAndTag(1L, Resource.ResourceOwnerType.Account,
+                        Resource.ResourceType.project, hostTags.get(0))).thenReturn(null);
+        result = resourceLimitManager.findCorrectResourceLimitForAccount(account, Resource.ResourceType.project,
+                        hostTags.get(0));
+        Assert.assertEquals(defaultAccountProjectsMax, result);
     }
 
     @Test
@@ -610,8 +609,7 @@ public class ResourceLimitManagerImplTest {
     @Test
     public void testCheckResourceLimitWithTag() {
         AccountVO account = Mockito.mock(AccountVO.class);
-        Mockito.when(account.getId()).thenReturn(1L);
-        Mockito.when(accountManager.isRootAdmin(1L)).thenReturn(true);
+        Mockito.when(accountManager.isRootAdmin(account)).thenReturn(true);
         try {
             resourceLimitManager.checkResourceLimitWithTag(account, Resource.ResourceType.cpu, hostTags.get(0), 1);
         } catch (ResourceAllocationException e) {
@@ -622,8 +620,7 @@ public class ResourceLimitManagerImplTest {
     @Test
     public void testCheckResourceLimitWithTagNonAdmin() throws ResourceAllocationException {
         AccountVO account = Mockito.mock(AccountVO.class);
-        Mockito.when(account.getId()).thenReturn(1L);
-        Mockito.when(accountManager.isRootAdmin(1L)).thenReturn(false);
+        Mockito.when(accountManager.isRootAdmin(account)).thenReturn(false);
         Mockito.doReturn(new ArrayList<ResourceLimitVO>()).when(resourceLimitManager).lockAccountAndOwnerDomainRows(Mockito.anyLong(), Mockito.any(Resource.ResourceType.class), Mockito.anyString());
         Mockito.doNothing().when(resourceLimitManager).checkAccountResourceLimit(account, null, Resource.ResourceType.cpu, hostTags.get(0), 1);
         Mockito.doNothing().when(resourceLimitManager).checkDomainResourceLimit(account, null, Resource.ResourceType.cpu, hostTags.get(0), 1);
@@ -639,7 +636,7 @@ public class ResourceLimitManagerImplTest {
         AccountVO account = Mockito.mock(AccountVO.class);
         Mockito.when(account.getId()).thenReturn(1L);
         Mockito.when(account.getType()).thenReturn(Account.Type.PROJECT);
-        Mockito.when(accountManager.isRootAdmin(1L)).thenReturn(false);
+        Mockito.when(accountManager.isRootAdmin(account)).thenReturn(false);
         ProjectVO projectVO = Mockito.mock(ProjectVO.class);
         Mockito.when(projectDao.findByProjectAccountId(Mockito.anyLong())).thenReturn(projectVO);
         Mockito.doReturn(new ArrayList<ResourceLimitVO>()).when(resourceLimitManager).lockAccountAndOwnerDomainRows(Mockito.anyLong(), Mockito.any(Resource.ResourceType.class), Mockito.anyString());

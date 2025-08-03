@@ -320,7 +320,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             sshkeyEnabled = Boolean.FALSE;
         }
 
-        boolean isAdmin = _accountMgr.isRootAdmin(templateOwner.getId());
+        boolean isAdmin = _accountMgr.isRootAdmin(templateOwner);
         boolean isRegionStore = false;
         List<ImageStoreVO> stores = _imgStoreDao.findRegionImageStores();
         if (stores != null && stores.size() > 0) {
@@ -372,7 +372,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                     throw new IllegalArgumentException("Please specify a valid zone.");
                 }
                 Account caller = CallContext.current().getCallingAccount();
-                if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())) {
+                if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller)) {
                     throw new PermissionDeniedException(String.format("Cannot perform this operation, Zone %s is currently disabled", zone));
                 }
             }

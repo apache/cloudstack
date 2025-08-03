@@ -16,9 +16,9 @@
 // under the License.
 package com.cloud.storage.snapshot;
 
-import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -34,9 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.cloud.api.ApiDBUtils;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.storage.Storage;
 import org.apache.cloudstack.api.command.user.snapshot.ExtractSnapshotCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -70,11 +67,13 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -86,6 +85,7 @@ import com.cloud.storage.ScopeType;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
@@ -561,7 +561,7 @@ public class SnapshotManagerTest {
     private void mockForExtractSnapshotTests() {
         Mockito.doReturn(TEST_SNAPSHOT_ID).when(extractSnapshotCmdMock).getId();
         Mockito.doReturn(TEST_ZONE_ID).when(extractSnapshotCmdMock).getZoneId();
-        Mockito.doReturn(false).when(_accountMgr).isRootAdmin(Mockito.anyLong());
+        Mockito.doReturn(false).when(_accountMgr).isRootAdmin(any(Account.class));
         Mockito.when(ApiDBUtils.isExtractionDisabled()).thenReturn(false);
 
         Mockito.doReturn(dataCenterVOMock).when(dataCenterDao).findById(TEST_ZONE_ID);
@@ -654,7 +654,7 @@ public class SnapshotManagerTest {
     @Test()
     public void extractSnapshotTestRootAdminDisabledExtractionCreateExtractUrlReturnUrl() {
         mockForExtractSnapshotTests();
-        Mockito.doReturn(true).when(_accountMgr).isRootAdmin(Mockito.anyLong());
+        Mockito.doReturn(true).when(_accountMgr).isRootAdmin(any(Account.class));
         Mockito.when(ApiDBUtils.isExtractionDisabled()).thenReturn(true);
 
         Assert.assertEquals(TEST_EXTRACT_URL, _snapshotMgr.extractSnapshot(extractSnapshotCmdMock));

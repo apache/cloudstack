@@ -173,7 +173,7 @@ public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, 
     @Override
     public boolean checkAccess(Account account, String commandName) {
         Long accountId = account.getAccountId();
-        if (_accountService.isRootAdmin(accountId)) {
+        if (_accountService.isRootAdmin(account)) {
             logger.info(String.format("Account [%s] is Root Admin, in this case, API limit does not apply.",
                     ReflectionToStringBuilderUtils.reflectOnlySelectedFields(account, "accountName", "uuid")));
             return true;

@@ -21,8 +21,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -617,8 +617,6 @@ public class SharedFSServiceImplTest {
         SharedFSJoinVO sharedFSJoinVO = mock(SharedFSJoinVO.class);
         when(sharedFSJoinDao.searchByIds(List.of(s_sharedFSId).toArray(new Long[0]))).thenReturn(List.of(sharedFSJoinVO));
 
-        when(owner.getId()).thenReturn(s_ownerId);
-        when(accountMgr.isRootAdmin(any())).thenReturn(true);
         when(sharedFSJoinDao.createSharedFSResponses(any(), any())).thenReturn(null);
 
         ListSharedFSCmd cmd = getMockListSharedFSCmd();

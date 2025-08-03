@@ -209,7 +209,7 @@ public class SnapshotJoinDaoImpl extends GenericDaoBaseWithTagInformation<Snapsh
 
         if (snapshotResponse.hasAnnotation() == null) {
             snapshotResponse.setHasAnnotation(annotationDao.hasAnnotations(snapshot.getUuid(), AnnotationService.EntityType.SNAPSHOT.name(),
-                    accountService.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+                    CallContext.current().isCallingAccountRootAdmin()));
         }
         return snapshotResponse;
     }

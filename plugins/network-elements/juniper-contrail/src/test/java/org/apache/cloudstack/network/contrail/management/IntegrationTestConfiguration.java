@@ -21,22 +21,6 @@ import java.io.IOException;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.framework.config.dao.ConfigurationGroupDaoImpl;
-import org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDaoImpl;
-import org.eclipse.jetty.security.IdentityService;
-import org.mockito.ArgumentMatchers;
-import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.ComponentScan.Filter;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.FilterType;
-import org.springframework.core.type.classreading.MetadataReader;
-import org.springframework.core.type.classreading.MetadataReaderFactory;
-import org.springframework.core.type.filter.TypeFilter;
-
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -62,6 +46,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigDepotAdmin;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDaoImpl;
+import org.apache.cloudstack.framework.config.dao.ConfigurationGroupDaoImpl;
+import org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDaoImpl;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobDaoImpl;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDaoImpl;
@@ -82,11 +68,24 @@ import org.apache.cloudstack.region.RegionManager;
 import org.apache.cloudstack.region.dao.RegionDaoImpl;
 import org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
-import org.apache.cloudstack.storage.image.datastore.ImageStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDaoImpl;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl;
+import org.apache.cloudstack.storage.image.datastore.ImageStoreProviderManager;
 import org.apache.cloudstack.storage.image.db.TemplateDataStoreDaoImpl;
 import org.apache.cloudstack.usage.UsageService;
+import org.eclipse.jetty.security.IdentityService;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.ComponentScan.Filter;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.core.type.classreading.MetadataReader;
+import org.springframework.core.type.classreading.MetadataReaderFactory;
+import org.springframework.core.type.filter.TypeFilter;
 
 import com.cloud.acl.DomainChecker;
 import com.cloud.agent.AgentManager;
@@ -268,6 +267,7 @@ import com.cloud.template.TemplateApiService;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountDetailsDaoImpl;
+import com.cloud.user.AccountService;
 import com.cloud.user.DomainManagerImpl;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
@@ -296,8 +296,8 @@ import com.cloud.vm.dao.NicSecondaryIpDaoImpl;
 import com.cloud.vm.dao.SecondaryStorageVmDaoImpl;
 import com.cloud.vm.dao.UserVmCloneSettingDaoImpl;
 import com.cloud.vm.dao.UserVmDaoImpl;
-import com.cloud.vm.dao.VMInstanceDetailsDaoImpl;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
+import com.cloud.vm.dao.VMInstanceDetailsDaoImpl;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.dao.VMSnapshotDaoImpl;
 
@@ -497,6 +497,7 @@ public class IntegrationTestConfiguration {
     @Bean
     public EntityManager entityManager() {
         EntityManager mock = Mockito.mock(EntityManager.class);
+        AccountService accountServiceMock = Mockito.mock(AccountService.class);
         try {
             Mockito.when(mock.findById(ArgumentMatchers.same(Account.class), ArgumentMatchers.anyLong())).thenReturn(_accountDao.findById(Account.ACCOUNT_ID_SYSTEM));
             Mockito.when(mock.findById(ArgumentMatchers.same(User.class), ArgumentMatchers.anyLong())).thenReturn(_userDao.findById(User.UID_SYSTEM));
@@ -524,7 +525,7 @@ public class IntegrationTestConfiguration {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        CallContext.init(mock);
+        CallContext.init(mock, accountServiceMock);
         return mock;
     }
 

@@ -29,6 +29,7 @@ import org.apache.logging.log4j.LogManager;
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.projects.Project;
 import com.cloud.user.Account;
+import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.utils.UuidUtils;
 import com.cloud.utils.db.EntityManager;
@@ -53,6 +54,7 @@ public class CallContext {
     private String contextId;
     private Account account;
     private long accountId;
+    private Boolean isAccountRootAdmin = null;
     private long startEventId = 0;
     private String eventDescription;
     private String eventDetails;
@@ -67,9 +69,11 @@ public class CallContext {
     private String apiName;
 
     static EntityManager s_entityMgr;
+    static AccountService accountService;
 
-    public static void init(EntityManager entityMgr) {
+    public static void init(EntityManager entityMgr, AccountService accountService) {
         s_entityMgr = entityMgr;
+        CallContext.accountService = accountService;
     }
 
     protected CallContext() {
@@ -132,6 +136,13 @@ public class CallContext {
             account = s_entityMgr.findById(Account.class, accountId);
         }
         return account;
+    }
+
+    public boolean isCallingAccountRootAdmin() {
+        if (isAccountRootAdmin == null) {
+            accountService.isRootAdmin(getCallingAccount());
+        }
+        return Boolean.TRUE.equals(isAccountRootAdmin);
     }
 
     public static CallContext current() {

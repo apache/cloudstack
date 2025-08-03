@@ -23,12 +23,16 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.managed.context.ManagedContextListener;
 
+import com.cloud.user.AccountService;
 import com.cloud.utils.db.EntityManager;
 
 public class CallContextListener implements ManagedContextListener<Object> {
 
     @Inject
     EntityManager entityMgr;
+
+    @Inject
+    AccountService accountService;
 
     @Override
     public Object onEnterContext(boolean reentry) {
@@ -47,6 +51,6 @@ public class CallContextListener implements ManagedContextListener<Object> {
 
     @PostConstruct
     public void init() {
-        CallContext.init(entityMgr);
+        CallContext.init(entityMgr, accountService);
     }
 }

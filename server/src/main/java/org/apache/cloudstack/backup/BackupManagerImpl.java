@@ -254,8 +254,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException("Invalid zone ID passed");
         }
         validateBackupForZone(zoneId);
-        final Account account = CallContext.current().getCallingAccount();
-        if (!accountService.isRootAdmin(account.getId())) {
+        if (!CallContext.current().isCallingAccountRootAdmin()) {
             throw new PermissionDeniedException("Parameter external can only be specified by a Root Admin, permission denied");
         }
         final BackupProvider backupProvider = getBackupProvider(zoneId);
@@ -629,7 +628,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         long domainLimit = resourceLimitMgr.findCorrectResourceLimitForDomain(domainManager.getDomain(owner.getDomainId()), Resource.ResourceType.backup, null);
         boolean exceededDomainLimit = domainLimit != -1 && maxBackups > domainLimit;
 
-        if (!accountManager.isRootAdmin(owner.getId()) && (exceededAccountLimit || exceededDomainLimit)) {
+        if (!accountManager.isRootAdmin(owner) && (exceededAccountLimit || exceededDomainLimit)) {
             throw new InvalidParameterValueException(
                     String.format("'maxbackups' should not exceed the domain/%s backup limit.", owner.getType() == Account.Type.PROJECT ? "project" : "account")
             );

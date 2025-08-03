@@ -210,7 +210,7 @@ public class SnapshotManagerImplTest {
         DataCenterVO zone1 = Mockito.mock(DataCenterVO.class);
         Mockito.when(zone1.getAllocationState()).thenReturn(Grouping.AllocationState.Disabled);
         Mockito.when(dataCenterDao.findById(2L)).thenReturn(zone1);
-        Mockito.when(accountManager.isRootAdmin(Mockito.any())).thenReturn(false);
+        Mockito.when(accountManager.isRootAdmin(Mockito.any(Account.class))).thenReturn(false);
         snapshotManager.validatePolicyZones(List.of(2L), volumeVO, Mockito.mock(Account.class));
     }
 

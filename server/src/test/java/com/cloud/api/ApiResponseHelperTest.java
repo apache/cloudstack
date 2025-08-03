@@ -38,8 +38,10 @@ import java.util.TimeZone;
 import java.util.UUID;
 
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
+import org.apache.cloudstack.api.response.ConsoleSessionResponse;
 import org.apache.cloudstack.api.response.DirectDownloadCertificateResponse;
 import org.apache.cloudstack.api.response.GuestOSCategoryResponse;
 import org.apache.cloudstack.api.response.IpQuarantineResponse;
@@ -97,8 +99,6 @@ import com.cloud.utils.net.Ip;
 import com.cloud.vm.ConsoleSessionVO;
 import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.VMInstanceVO;
-import org.apache.cloudstack.api.ResponseObject;
-import org.apache.cloudstack.api.response.ConsoleSessionResponse;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ApiResponseHelperTest {
@@ -309,7 +309,9 @@ public class ApiResponseHelperTest {
     public void testAutoScaleVmGroupResponse() {
         AutoScaleVmGroupVO vmGroup = new AutoScaleVmGroupVO(1L, 2L, 3L, 4L, "test", 5, 6, 7, 8, new Date(), 9L, AutoScaleVmGroup.State.ENABLED);
 
-        try (MockedStatic<ApiDBUtils> ignored = Mockito.mockStatic(ApiDBUtils.class)) {
+        try (MockedStatic<ApiDBUtils> ignored = Mockito.mockStatic(ApiDBUtils.class);
+             MockedStatic<CallContext> callContextMockedStatic = Mockito.mockStatic(CallContext.class)) {
+            callContextMockedStatic.when(CallContext::current).thenReturn(Mockito.mock(CallContext.class));
             when(ApiDBUtils.findAutoScaleVmProfileById(anyLong())).thenReturn(null);
             when(ApiDBUtils.findLoadBalancerById(anyLong())).thenReturn(null);
             when(ApiDBUtils.findAccountById(anyLong())).thenReturn(new AccountVO());
@@ -341,7 +343,9 @@ public class ApiResponseHelperTest {
                 "testnetwork", "displaytext", "networkdomain", null, 1L, null, null, false, null, false);
         IPAddressVO ipAddressVO = new IPAddressVO(new Ip("10.10.10.10"), 1L, 1L, 1L,false);
 
-        try (MockedStatic<ApiDBUtils> ignored = Mockito.mockStatic(ApiDBUtils.class)) {
+        try (MockedStatic<ApiDBUtils> ignored = Mockito.mockStatic(ApiDBUtils.class);
+            MockedStatic<CallContext> callContextMockedStatic = Mockito.mockStatic(CallContext.class)) {
+            callContextMockedStatic.when(CallContext::current).thenReturn(Mockito.mock(CallContext.class));
             when(ApiDBUtils.findAutoScaleVmProfileById(anyLong())).thenReturn(null);
             when(ApiDBUtils.findAccountById(anyLong())).thenReturn(new AccountVO());
             when(ApiDBUtils.findDomainById(anyLong())).thenReturn(new DomainVO());

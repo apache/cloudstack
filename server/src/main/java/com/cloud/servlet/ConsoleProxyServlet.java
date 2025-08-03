@@ -424,7 +424,7 @@ public class ConsoleProxyServlet extends HttpServlet {
         }
 
         // root admin can access anything
-        if (_accountMgr.isRootAdmin(accountObj.getId()))
+        if (_accountMgr.isRootAdmin(accountObj))
             return true;
 
         switch (vm.getType()) {

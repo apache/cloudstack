@@ -23,9 +23,9 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
 import org.apache.cloudstack.acl.dao.ProjectRoleDao;
 import org.apache.cloudstack.acl.dao.ProjectRolePermissionsDao;
-import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
 import org.apache.cloudstack.api.command.admin.acl.project.CreateProjectRoleCmd;
 import org.apache.cloudstack.api.command.admin.acl.project.CreateProjectRolePermissionCmd;
 import org.apache.cloudstack.api.command.admin.acl.project.DeleteProjectRoleCmd;
@@ -46,7 +46,6 @@ import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
-import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.ListUtils;
 import com.cloud.utils.component.ManagerBase;
@@ -87,18 +86,18 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
             throw new PermissionDeniedException("Dynamic api checker is not enabled, aborting role operation");
         }
 
-        User user = getCurrentUser();
-        Account callerAcc = accountDao.findById(user.getAccountId());
+        Account callerAcc = CallContext.current().getCallingAccount();
 
         if (callerAcc == null || callerAcc.getRoleId() == null) {
             throw new PermissionDeniedException("Restricted API called by an invalid user account");
         }
 
-        if (accountService.isRootAdmin(callerAcc.getId()) || accountService.isDomainAdmin(callerAcc.getAccountId())) {
+        if (accountService.isRootAdmin(callerAcc) || accountService.isDomainAdmin(callerAcc.getAccountId())) {
             return;
         }
 
-        ProjectAccount projectAccount = projAccDao.findByProjectIdUserId(projectId, callerAcc.getAccountId(), user.getId());
+        ProjectAccount projectAccount = projAccDao.findByProjectIdUserId(projectId, callerAcc.getAccountId(),
+                CallContext.current().getCallingUserId());
         if (projectAccount == null) {
             projectAccount = projAccDao.findByProjectIdAccountId(projectId, callerAcc.getAccountId());
             if (projectAccount == null) {
@@ -278,22 +277,6 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
                 return false;
             }
         });
-    }
-
-    protected Account getCurrentAccount() {
-        return CallContext.current().getCallingAccount();
-    }
-
-    private Long getProjectIdOfAccount() {
-        Project project = projectDao.findByProjectAccountId(getCurrentAccount().getAccountId());
-        if (project != null) {
-            return project.getId();
-        }
-        return null;
-    }
-
-    protected User getCurrentUser() {
-        return CallContext.current().getCallingUser();
     }
 
     @Override

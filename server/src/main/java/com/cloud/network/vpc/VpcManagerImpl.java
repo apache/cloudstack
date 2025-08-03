@@ -1267,7 +1267,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             throw new InvalidParameterValueException("Network domain must be specified for region level VPC");
         }
 
-        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())) {
+        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller)) {
             // See DataCenterVO.java
             final PermissionDeniedException ex = new PermissionDeniedException("Cannot perform this operation since specified Zone is currently disabled");
             ex.addProxyObject(zone.getUuid(), "zoneId");
@@ -1347,7 +1347,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
         if (routedIpv4Manager.isValidGateway(vpcOffering)) {
             if (cidr != null) {
-                if (!_accountMgr.isRootAdmin(caller.getId())) {
+                if (!_accountMgr.isRootAdmin(caller)) {
                     throw new InvalidParameterValueException("Only root admin can set the gateway/netmask of VPC with ROUTED mode");
                 }
                 return;
@@ -2644,7 +2644,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             throw new InvalidParameterValueException("vlanId and associatedNetworkId are mutually exclusive");
         }
         Account caller = CallContext.current().getCallingAccount();
-        if (!_accountMgr.isRootAdmin(caller.getId()) && (ntwkOff.isSpecifyVlan() || broadcastUri != null || bypassVlanOverlapCheck)) {
+        if (!_accountMgr.isRootAdmin(caller) && (ntwkOff.isSpecifyVlan() || broadcastUri != null || bypassVlanOverlapCheck)) {
             throw new InvalidParameterValueException("Only ROOT admin is allowed to specify vlanId or bypass vlan overlap check");
         }
         if (ntwkOff.isSpecifyVlan() && broadcastUri == null) {
@@ -2767,7 +2767,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         final Account caller = CallContext.current().getCallingAccount();
-        if (!_accountMgr.isRootAdmin(caller.getId())) {
+        if (!_accountMgr.isRootAdmin(caller)) {
             _accountMgr.checkAccess(caller, null, false, gatewayVO);
             final NetworkVO networkVO = _ntwkDao.findById(gatewayVO.getNetworkId());
             if (networkVO != null) {
