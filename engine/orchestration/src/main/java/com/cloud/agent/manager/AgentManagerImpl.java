@@ -1050,33 +1050,40 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             }
 
             logger.debug("Acquired lock on host {}, to process agent disconnection", host != null? host : hostId);
-            try {
-                logger.info("Host {} is disconnecting with event {}", attache, event);
-                Status nextStatus;
-                if (host == null) {
-                    logger.warn("Can't find host with {} ({})", hostId, attache);
-                    nextStatus = Status.Removed;
-                } else {
-                    nextStatus = getNextStatusOnDisconnection(host, event);
-                    caService.purgeHostCertificate(host);
-                }
-                logger.debug("Deregistering link for {} with state {}", attache, nextStatus);
-
-                removeAgent(attache, nextStatus);
-
-                if (host != null && transitState) {
-                    // update the state for host in DB as per the event
-                    disconnectAgent(host, event, _nodeId);
-                }
-            } finally {
-                joinLock.unlock();
-            }
+            disconnectHostAgent(attache, event, host, transitState, joinLock);
             result = true;
         } finally {
             joinLock.releaseRef();
         }
 
         return result;
+    }
+
+    private void disconnectHostAgent(final AgentAttache attache, final Status.Event event, final HostVO host, final boolean transitState, final GlobalLock joinLock) {
+        try {
+            logger.info("Host {} is disconnecting with event {}", attache, event);
+            final long hostId = attache.getId();
+            Status nextStatus;
+            if (host == null) {
+                logger.warn("Can't find host with {} ({})", hostId, attache);
+                nextStatus = Status.Removed;
+            } else {
+                nextStatus = getNextStatusOnDisconnection(host, event);
+                caService.purgeHostCertificate(host);
+            }
+            logger.debug("Deregistering link for {} with state {}", attache, nextStatus);
+
+            removeAgent(attache, nextStatus);
+
+            if (host != null && transitState) {
+                // update the state for host in DB as per the event
+                disconnectAgent(host, event, _nodeId);
+            }
+        } finally {
+            if (joinLock != null) {
+                joinLock.unlock();
+            }
+        }
     }
 
     protected boolean handleDisconnectWithInvestigation(final AgentAttache attache, Status.Event event) {
@@ -1347,20 +1354,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         return attache;
     }
 
-    private AgentAttache sendReadyAndGetAttache(HostVO host, ReadyCommand ready, Link link, StartupCommand[] startup) throws ConnectionException {
-        final List<String> agentMSHostList = new ArrayList<>();
-        String lbAlgorithm = null;
-        if (startup != null && startup.length > 0) {
-            final String agentMSHosts = startup[0].getMsHostList();
-            if (StringUtils.isNotEmpty(agentMSHosts)) {
-                String[] msHosts = agentMSHosts.split("@");
-                if (msHosts.length > 1) {
-                    lbAlgorithm = msHosts[1];
-                }
-                agentMSHostList.addAll(Arrays.asList(msHosts[0].split(",")));
-            }
-        }
-        ready.setArch(host.getArch().getType());
+    private AgentAttache sendReadyAndGetAttache(HostVO host, ReadyCommand ready, Link link, StartupCommand[] startupCmds) throws ConnectionException {
         AgentAttache attache;
         GlobalLock joinLock = getHostJoinLock(host.getId());
         try {
@@ -1369,26 +1363,49 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             }
 
             logger.debug("Acquired lock on host {}, to process agent connection", host);
-            try {
-                if (!indirectAgentLB.compareManagementServerListAndLBAlgorithm(host.getId(), host.getDataCenterId(), agentMSHostList, lbAlgorithm)) {
-                    final List<String> newMSList = indirectAgentLB.getManagementServerList(host.getId(), host.getDataCenterId(), null);
-                    ready.setMsHostList(newMSList);
-                    String newLBAlgorithm = indirectAgentLB.getLBAlgorithmName();
-                    ready.setLbAlgorithm(newLBAlgorithm);
-                    logger.debug("Agent's management server host list or lb algorithm is not up to date, sending list and algorithm update: {}, {}", newMSList, newLBAlgorithm);
-                }
-
-                final List<String> avoidMsList = _mshostDao.listNonUpStateMsIPs();
-                ready.setAvoidMsHostList(avoidMsList);
-                ready.setLbCheckInterval(indirectAgentLB.getLBPreferredHostCheckInterval(host.getClusterId()));
-
-                attache = createAttacheForConnect(host, link);
-                attache = notifyMonitorsOfConnection(attache, startup, false);
-            } finally {
-                joinLock.unlock();
-            }
+            attache = connectHostAgent(host, ready, link, startupCmds, joinLock);
         } finally {
             joinLock.releaseRef();
+        }
+
+        return attache;
+    }
+
+    private AgentAttache connectHostAgent(HostVO host, ReadyCommand ready, Link link, StartupCommand[] startupCmds, GlobalLock joinLock) throws ConnectionException {
+        AgentAttache attache;
+        try {
+            final List<String> agentMSHostList = new ArrayList<>();
+            String lbAlgorithm = null;
+            if (startupCmds != null && startupCmds.length > 0) {
+                final String agentMSHosts = startupCmds[0].getMsHostList();
+                if (StringUtils.isNotEmpty(agentMSHosts)) {
+                    String[] msHosts = agentMSHosts.split("@");
+                    if (msHosts.length > 1) {
+                        lbAlgorithm = msHosts[1];
+                    }
+                    agentMSHostList.addAll(Arrays.asList(msHosts[0].split(",")));
+                }
+            }
+
+            if (!indirectAgentLB.compareManagementServerListAndLBAlgorithm(host.getId(), host.getDataCenterId(), agentMSHostList, lbAlgorithm)) {
+                final List<String> newMSList = indirectAgentLB.getManagementServerList(host.getId(), host.getDataCenterId(), null);
+                ready.setMsHostList(newMSList);
+                String newLBAlgorithm = indirectAgentLB.getLBAlgorithmName();
+                ready.setLbAlgorithm(newLBAlgorithm);
+                logger.debug("Agent's management server host list or lb algorithm is not up to date, sending list and algorithm update: {}, {}", newMSList, newLBAlgorithm);
+            }
+
+            final List<String> avoidMsList = _mshostDao.listNonUpStateMsIPs();
+            ready.setAvoidMsHostList(avoidMsList);
+            ready.setLbCheckInterval(indirectAgentLB.getLBPreferredHostCheckInterval(host.getClusterId()));
+            ready.setArch(host.getArch().getType());
+
+            attache = createAttacheForConnect(host, link);
+            attache = notifyMonitorsOfConnection(attache, startupCmds, false);
+        } finally {
+            if (joinLock != null) {
+                joinLock.unlock();
+            }
         }
 
         return attache;
