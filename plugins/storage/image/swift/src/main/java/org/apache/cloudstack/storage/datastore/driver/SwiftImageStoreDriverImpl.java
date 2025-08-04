@@ -24,9 +24,6 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import com.cloud.configuration.Config;
-import com.cloud.utils.SwiftUtil;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
@@ -42,7 +39,6 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.storage.image.BaseImageStoreDriverImpl;
 import org.apache.cloudstack.storage.image.store.ImageStoreImpl;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.to.DataObjectType;
