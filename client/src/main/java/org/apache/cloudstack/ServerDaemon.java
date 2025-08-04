@@ -188,7 +188,7 @@ public class ServerDaemon implements Daemon {
         httpConfig.setResponseHeaderSize(8192);
         httpConfig.setSendServerVersion(false);
         httpConfig.setSendDateHeader(false);
-        addForwordingCustomiser(httpConfig);
+        addForwardingCustomiser(httpConfig);
 
         // HTTP Connector
         createHttpConnector(httpConfig);
@@ -214,10 +214,10 @@ public class ServerDaemon implements Daemon {
     /**
      * Adds a ForwardedRequestCustomizer to the HTTP configuration to handle forwarded headers.
      * The header used for forwarding is determined by the ApiServer.listOfForwardHeaders property.
-     * Only non empty headers are considdered and only the first of the comma-separated list is used.
+     * Only non empty headers are considered and only the first of the comma-separated list is used.
      * @param httpConfig the HTTP configuration to which the customizer will be added
      */
-    private static void addForwordingCustomiser(HttpConfiguration httpConfig) {
+    private static void addForwardingCustomiser(HttpConfiguration httpConfig) {
         ForwardedRequestCustomizer customiser = new ForwardedRequestCustomizer();
         String header = Arrays.stream(ApiServer.listOfForwardHeaders.value().split(",")).findFirst().orElse(null);
         if (com.cloud.utils.StringUtils.isNotEmpty(header)) {
