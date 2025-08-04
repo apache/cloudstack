@@ -27,6 +27,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -1045,11 +1046,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         GlobalLock joinLock = getHostJoinLock(hostId);
         try {
             if (!joinLock.lock(60)) {
-                logger.debug("Unable to acquire lock on host {} to process agent disconnection", host != null? host : hostId);
+                logger.debug("Unable to acquire lock on host {} to process agent disconnection", Objects.toString(host, String.valueOf(hostId)));
                 return result;
             }
 
-            logger.debug("Acquired lock on host {}, to process agent disconnection", host != null? host : hostId);
+            logger.debug("Acquired lock on host {}, to process agent disconnection", Objects.toString(host, String.valueOf(hostId)));
             disconnectHostAgent(attache, event, host, transitState, joinLock);
             result = true;
         } finally {
@@ -1080,9 +1081,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 disconnectAgent(host, event, _nodeId);
             }
         } finally {
-            if (joinLock != null) {
-                joinLock.unlock();
-            }
+            joinLock.unlock();
         }
     }
 
@@ -1403,9 +1402,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             attache = createAttacheForConnect(host, link);
             attache = notifyMonitorsOfConnection(attache, startupCmds, false);
         } finally {
-            if (joinLock != null) {
-                joinLock.unlock();
-            }
+            joinLock.unlock();
         }
 
         return attache;
