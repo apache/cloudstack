@@ -1149,7 +1149,7 @@ class Volume:
 
     @classmethod
     def create(cls, apiclient, services, zoneid=None, account=None,
-               domainid=None, diskofferingid=None, projectid=None, size=None):
+               domainid=None, diskofferingid=None, projectid=None, size=None, snapshotid=None):
         """Create Volume"""
         cmd = createVolume.createVolumeCmd()
         cmd.name = "-".join([services["diskname"], random_gen()])
@@ -1179,6 +1179,9 @@ class Volume:
 
         if size:
             cmd.size = size
+
+        if snapshotid:
+            cmd.snapshotid = snapshotid
 
         return Volume(apiclient.createVolume(cmd).__dict__)
 
@@ -1395,7 +1398,7 @@ class Snapshot:
 
     @classmethod
     def create(cls, apiclient, volume_id, account=None,
-               domainid=None, projectid=None, locationtype=None, asyncbackup=None):
+               domainid=None, projectid=None, locationtype=None, asyncbackup=None, zoneids=None, pool_ids=None, usestoragereplication=None):
         """Create Snapshot"""
         cmd = createSnapshot.createSnapshotCmd()
         cmd.volumeid = volume_id
@@ -1409,12 +1412,20 @@ class Snapshot:
             cmd.locationtype = locationtype
         if asyncbackup:
             cmd.asyncbackup = asyncbackup
+        if zoneids:
+            cmd.zoneids = zoneids
+        if pool_ids:
+            cmd.storageids = pool_ids
+        if usestoragereplication:
+            cmd.usestoragereplication = usestoragereplication
         return Snapshot(apiclient.createSnapshot(cmd).__dict__)
 
-    def delete(self, apiclient):
+    def delete(self, apiclient, zone_id=None):
         """Delete Snapshot"""
         cmd = deleteSnapshot.deleteSnapshotCmd()
         cmd.id = self.id
+        if zone_id:
+            cmd.zoneid = zone_id
         apiclient.deleteSnapshot(cmd)
 
     @classmethod
@@ -1426,6 +1437,22 @@ class Snapshot:
         if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
             cmd.listall = True
         return (apiclient.listSnapshots(cmd))
+
+    @classmethod
+    def copy(cls, apiclient, snapshotid, zone_ids=None, source_zone_id=None, pool_ids=None, usestoragereplication=None):
+        """ Copy snapshot to another zone or a primary storage in another zone"""
+        cmd = copySnapshot.copySnapshotCmd()
+        cmd.id = snapshotid
+        if source_zone_id:
+            cmd.sourcezoneid = source_zone_id
+        if zone_ids:
+            cmd.destzoneids = zone_ids
+        if pool_ids:
+            cmd.storageids = pool_ids
+        if usestoragereplication:
+            cmd.usestoragereplication = usestoragereplication
+        return Snapshot(apiclient.copySnapshot(cmd).__dict__)
+
 
     def validateState(self, apiclient, snapshotstate, timeout=600):
         """Check if snapshot is in required state
@@ -1462,7 +1489,7 @@ class Template:
 
     @classmethod
     def create(cls, apiclient, services, volumeid=None,
-               account=None, domainid=None, projectid=None, randomise=True):
+               account=None, domainid=None, projectid=None, randomise=True, snapshotid=None, zoneid=None):
         """Create template from Volume"""
         # Create template from Virtual machine and Volume ID
         cmd = createTemplate.createTemplateCmd()
@@ -1508,6 +1535,12 @@ class Template:
 
         if projectid:
             cmd.projectid = projectid
+
+        if snapshotid:
+            cmd.snapshotid = snapshotid
+
+        if zoneid:
+            cmd.zoneid = zoneid
         return Template(apiclient.createTemplate(cmd).__dict__)
 
     @classmethod

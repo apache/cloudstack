@@ -360,7 +360,11 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class ApiDBUtils {
+    private static final Logger log = LogManager.getLogger(ApiDBUtils.class);
     private static ManagementServer s_ms;
     static AsyncJobManager s_asyncMgr;
     static SecurityGroupManager s_securityGroupMgr;
@@ -1717,6 +1721,21 @@ public class ApiDBUtils {
         return s_zoneDao.listByIds(zoneIds);
     }
 
+    public static List<StoragePoolVO> findSnapshotPolicyPools(SnapshotPolicy policy, Volume volume) {
+        List<SnapshotPolicyDetailVO> poolDetails = s_snapshotPolicyDetailsDao.findDetails(policy.getId(), ApiConstants.STORAGE_ID);
+        List<Long> poolIds = new ArrayList<>();
+        for (SnapshotPolicyDetailVO detail : poolDetails) {
+            try {
+                poolIds.add(Long.valueOf(detail.getValue()));
+            } catch (NumberFormatException ignored) {
+                log.debug(String.format("Could not parse the storage ID value of %s", detail.getValue()), ignored);
+            }
+        }
+        if (volume != null && !poolIds.contains(volume.getPoolId())) {
+            poolIds.add(0, volume.getPoolId());
+        }
+        return s_storagePoolDao.listByIds(poolIds);
+    }
     public static VpcOffering findVpcOfferingById(long offeringId) {
         return s_vpcOfferingDao.findById(offeringId);
     }
