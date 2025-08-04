@@ -26,7 +26,6 @@ import javax.inject.Inject;
 
 import com.cloud.configuration.Config;
 import com.cloud.utils.SwiftUtil;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -37,18 +36,21 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.storage.image.BaseImageStoreDriverImpl;
 import org.apache.cloudstack.storage.image.store.ImageStoreImpl;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.SwiftTO;
+import com.cloud.configuration.Config;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.utils.SwiftUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class SwiftImageStoreDriverImpl extends BaseImageStoreDriverImpl {
@@ -99,8 +101,13 @@ public class SwiftImageStoreDriverImpl extends BaseImageStoreDriverImpl {
     @Override
     public void createAsync(DataStore dataStore, DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
         Long maxTemplateSizeInBytes = getMaxTemplateSizeInBytes();
-        VirtualMachineTemplate tmpl = _templateDao.findById(data.getId());
         DataStore cacheStore = cacheManager.getCacheStorage(dataStore.getScope());
+        if (cacheStore == null) {
+            String errMsg = String.format("No cache store found for scope: %s",
+                    dataStore.getScope().getScopeType().name());
+            logger.error(errMsg);
+            throw new CloudRuntimeException(errMsg);
+        }
         DownloadCommand dcmd = new DownloadCommand((TemplateObjectTO)(data.getTO()), maxTemplateSizeInBytes);
         dcmd.setCacheStore(cacheStore.getTO());
         dcmd.setProxy(getHttpProxy());

@@ -20,6 +20,7 @@ package com.cloud.template;
 
 
 import com.cloud.agent.AgentManager;
+import com.cloud.api.query.dao.SnapshotJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.configuration.Resource;
 import com.cloud.dc.dao.DataCenterDao;
@@ -204,6 +205,8 @@ public class TemplateManagerImplTest {
     AccountManager _accountMgr;
     @Inject
     VnfTemplateManager vnfTemplateManager;
+    @Inject
+    SnapshotJoinDao snapshotJoinDao;
 
     @Inject
     HeuristicRuleHelper heuristicRuleHelperMock;
@@ -975,6 +978,11 @@ public class TemplateManagerImplTest {
         public HeuristicRuleHelper heuristicRuleHelper() {
             return Mockito.mock(HeuristicRuleHelper.class);
         }
+        @Bean
+        public SnapshotJoinDao snapshotJoinDao() {
+            return Mockito.mock(SnapshotJoinDao.class);
+        }
+
 
         public static class Library implements TypeFilter {
             @Override
