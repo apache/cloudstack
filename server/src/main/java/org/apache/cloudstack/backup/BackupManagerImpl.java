@@ -1284,17 +1284,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException("Unable to create Instance from backup as the backup has a different number of disks than the Instance");
         }
 
-        int index = 0;
-        for (VolumeVO vmVolume: vmVolumes) {
-            Backup.VolumeInfo backupVolume = backupVolumes.get(index);
-            if (vmVolume.getSize() < backupVolume.getSize()) {
-                throw new CloudRuntimeException(String.format(
-                    "Instance volume size %d[GiB] for volume (%s) is less than the backed-up volume size %d[GiB] for backed-up volume (%s).",
-                    vmVolume.getSize(), vmVolume.getUuid(), backupVolume.getSize(), backupVolume.getUuid()));
-            }
-            index++;
-        }
-
         BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(backup.getBackupOfferingId());
         if (offering == null) {
             throw new CloudRuntimeException("Failed to find backup offering");
