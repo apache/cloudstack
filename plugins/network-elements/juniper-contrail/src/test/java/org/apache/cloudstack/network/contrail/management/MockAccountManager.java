@@ -231,6 +231,12 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
+    public boolean isRootAdmin(Account account) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
     public boolean isDomainAdmin(Long accountId) {
         // TODO Auto-generated method stub
         return false;
