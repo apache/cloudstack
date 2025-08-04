@@ -658,7 +658,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             "Wait Interval (in seconds) for shared network vm dhcp ip addr fetch for next iteration ", true);
 
     private static final ConfigKey<Integer> VmIpFetchTrialMax = new ConfigKey<Integer>("Advanced", Integer.class, "externaldhcp.vmip.max.retry", "10",
-            "The max number of retrieval times for shared entwork vm dhcp ip fetch, in case of failures", true);
+            "The max number of retrieval times for shared network vm dhcp ip fetch, in case of failures", true);
 
     private static final ConfigKey<Integer> VmIpFetchThreadPoolMax = new ConfigKey<Integer>("Advanced", Integer.class, "externaldhcp.vmipFetch.threadPool.max", "10",
             "number of threads for fetching vms ip address", true);
@@ -2674,7 +2674,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                             if (vmIdAndCount.getRetrievalCount() <= 0) {
                                 vmIdCountMap.remove(nicId);
-                                logger.debug("Vm " + vmId +" nic "+nicId + " count is zero .. removing vm nic from map ");
+                                logger.debug("Vm {} nic {} count is zero .. removing vm nic from map ", vmId, nicId);
 
                                 ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
                                         Domain.ROOT_DOMAIN, EventTypes.EVENT_NETWORK_EXTERNAL_DHCP_VM_IPFETCH,
@@ -2683,12 +2683,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                                 continue;
                             }
 
-
                             UserVm userVm = _vmDao.findById(vmId);
                             VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
                             NicVO nicVo = _nicDao.findById(nicId);
-                            NetworkVO network = _networkDao.findById(nicVo.getNetworkId());
+                            if (ObjectUtils.anyNull(userVm, vmInstance, nicVo)) {
+                                logger.warn("Couldn't fetch ip addr, Vm {} or nic {} doesn't exists", vmId, nicId);
+                                continue;
+                            }
 
+                            NetworkVO network = _networkDao.findById(nicVo.getNetworkId());
                             VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(userVm);
                             VirtualMachine vm = vmProfile.getVirtualMachine();
                             boolean isWindows = _guestOSCategoryDao.findById(_guestOSDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
