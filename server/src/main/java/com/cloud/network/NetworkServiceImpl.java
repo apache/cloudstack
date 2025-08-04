@@ -41,8 +41,6 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.component.AdapterBase;
-import com.cloud.dc.dao.ASNumberDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.alert.AlertService;
@@ -86,12 +84,14 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.IpAddressTO;
+import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
@@ -110,6 +110,7 @@ import com.cloud.dc.DomainVlanMapVO;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanDetailsVO;
 import com.cloud.dc.VlanVO;
+import com.cloud.dc.dao.ASNumberDao;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterVnetDao;
@@ -179,6 +180,7 @@ import com.cloud.network.element.VirtualRouterProviderVO;
 import com.cloud.network.element.VpcVirtualRouterElement;
 import com.cloud.network.guru.GuestNetworkGuru;
 import com.cloud.network.guru.NetworkGuru;
+import com.cloud.network.nsx.NsxService;
 import com.cloud.network.router.CommandSetupHelper;
 import com.cloud.network.router.NetworkHelper;
 import com.cloud.network.router.VirtualRouter;
@@ -225,6 +227,8 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Journal;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
@@ -5699,7 +5703,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
 
             addProviderToPhysicalNetwork(physicalNetworkId, Provider.Nsx.getName(), null, null);
-            enableProvider(Provider.Nsx.getName());
         }
         return null;
     }
@@ -6378,5 +6381,39 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         DomainVO domainOfThePreviousOwner = _domainDao.findById(_accountDao.findById(publicIpQuarantine.getPreviousOwnerId()).getDomainId());
 
         _accountMgr.checkAccess(callingAccount, domainOfThePreviousOwner);
+    }
+
+    @Override
+    public String getNicVlanValueForExternalVm(NicTO nic) {
+        Networks.BroadcastDomainType broadcastDomainType = Networks.BroadcastDomainType.getSchemeValue(nic.getBroadcastUri());
+        if (Networks.BroadcastDomainType.NSX.equals(broadcastDomainType)) {
+            NetworkVO networkVO = _networksDao.findById(nic.getNetworkId());
+            try {
+                NsxService nsxService = ComponentContext.getDelegateComponentOfType(NsxService.class);
+                return nsxService.getSegmentId(networkVO.getDomainId(), networkVO.getDataCenterId(),
+                        networkVO.getAccountId(), networkVO.getVpcId(), networkVO.getId());
+            } catch (NoSuchBeanDefinitionException e) {
+                logger.error("NSX service is not available, unable to retrieve segment ID for NIC: {}", nic, e);
+                throw new CloudRuntimeException(
+                        String.format("Unable to retrieve segment ID for NIC with NSX broadcast domain: %s", nic));
+            }
+        }
+        return Networks.BroadcastDomainType.getValue(nic.getBroadcastUri());
+    }
+
+    @Override
+    public Network.IpAddresses getIpAddressesFromIps(String ipAddress, String ip6Address, String macAddress) {
+        if (ip6Address != null) {
+            ip6Address = NetUtils.standardizeIp6Address(ip6Address);
+        }
+        if (macAddress != null) {
+            if (!NetUtils.isValidMac(macAddress)) {
+                throw new InvalidParameterValueException("Mac address is not valid: " + macAddress);
+            } else if (!NetUtils.isUnicastMac(macAddress)) {
+                throw new InvalidParameterValueException("Mac address is not unicast: " + macAddress);
+            }
+            macAddress = NetUtils.standardizeMacAddress(macAddress);
+        }
+        return new Network.IpAddresses(ipAddress, ip6Address, macAddress);
     }
 }

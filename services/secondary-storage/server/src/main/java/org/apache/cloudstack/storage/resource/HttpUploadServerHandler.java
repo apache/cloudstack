@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import io.netty.util.IllegalReferenceCountException;
 import org.apache.cloudstack.storage.template.UploadEntity;
 import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -230,8 +231,15 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
     private void reset() {
         request = null;
         // destroy the decoder to release all resources
-        decoder.destroy();
-        decoder = null;
+        if (decoder != null) {
+            try {
+                decoder.destroy();
+            } catch (IllegalReferenceCountException e) {
+                logger.warn("Decoder already destroyed", e);
+            }
+
+            decoder = null;
+        }
     }
 
     private HttpResponseStatus readFileUploadData() throws IOException {

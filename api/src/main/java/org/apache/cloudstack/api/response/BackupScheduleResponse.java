@@ -60,6 +60,10 @@ public class BackupScheduleResponse extends BaseResponse {
         this.id = id;
     }
 
+    @SerializedName(ApiConstants.QUIESCE_VM)
+    @Param(description = "quiesce the instance before checkpointing the disks for backup")
+    private Boolean quiesceVM;
+
     public String getVmName() {
         return vmName;
     }
@@ -102,5 +106,9 @@ public class BackupScheduleResponse extends BaseResponse {
 
     public void setMaxBackups(Integer maxBackups) {
         this.maxBackups = maxBackups;
+    }
+
+    public void setQuiesceVM(Boolean quiesceVM) {
+        this.quiesceVM = quiesceVM;
     }
 }

@@ -1118,7 +1118,7 @@ export default {
           ],
           lists: [
             {
-              title: 'label.nsx.controller',
+              title: 'label.nsx.provider',
               api: 'listNsxControllers',
               mapping: {
                 zoneid: {
@@ -1169,7 +1169,7 @@ export default {
                   value: (record) => { return record.zoneid }
                 }
               },
-              columns: ['name', 'hostname', 'port', 'site', 'tenantname', 'netristag']
+              columns: ['name', 'netrisurl', 'site', 'tenantname', 'netristag']
             }
           ]
         }

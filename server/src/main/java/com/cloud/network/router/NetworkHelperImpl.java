@@ -180,6 +180,9 @@ public class NetworkHelperImpl implements NetworkHelper {
     @Inject
     VpcManager vpcManager;
 
+    protected static final List<HypervisorType> HYPERVISOR_TYPES_NOT_SUPPORTING_DOMAIN_ROUTER = Arrays.asList(
+            HypervisorType.Ovm, HypervisorType.BareMetal, HypervisorType.External);
+
     protected final Map<HypervisorType, ConfigKey<String>> hypervisorsMap = new HashMap<>();
 
     @PostConstruct
@@ -666,8 +669,9 @@ public class NetworkHelperImpl implements NetworkHelper {
             hypervisors.add(defaults);
         }
         if (dest.getCluster() != null) {
-            if (dest.getCluster().getHypervisorType() == HypervisorType.Ovm) {
-                hypervisors.add(getClusterToStartDomainRouterForOvm(dest.getCluster().getPodId()));
+            HypervisorType destClusterHypType = dest.getCluster().getHypervisorType();
+            if (HYPERVISOR_TYPES_NOT_SUPPORTING_DOMAIN_ROUTER.contains(destClusterHypType)) {
+                hypervisors.add(getClusterToStartDomainRouterOtherThanProvidedType(dest.getCluster().getPodId()));
             } else {
                 hypervisors.add(dest.getCluster().getHypervisorType());
             }
@@ -692,10 +696,10 @@ public class NetworkHelperImpl implements NetworkHelper {
      * Ovm won't support any system. So we have to choose a partner cluster in
      * the same pod to start domain router for us
      */
-    protected HypervisorType getClusterToStartDomainRouterForOvm(final long podId) {
+    protected HypervisorType getClusterToStartDomainRouterOtherThanProvidedType(final long podId) {
         final List<ClusterVO> clusters = _clusterDao.listByPodId(podId);
         for (final ClusterVO cv : clusters) {
-            if (cv.getHypervisorType() == HypervisorType.Ovm || cv.getHypervisorType() == HypervisorType.BareMetal) {
+            if (HYPERVISOR_TYPES_NOT_SUPPORTING_DOMAIN_ROUTER.contains(cv.getHypervisorType())) {
                 continue;
             }
 

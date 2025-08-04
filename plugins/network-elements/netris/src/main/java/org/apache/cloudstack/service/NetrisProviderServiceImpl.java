@@ -184,7 +184,7 @@ public class NetrisProviderServiceImpl implements NetrisProviderService {
         NetrisProviderResponse response = new NetrisProviderResponse();
         response.setName(provider.getName());
         response.setUuid(provider.getUuid());
-        response.setHostname(provider.getUrl());
+        response.setNetrisUrl(provider.getUrl());
         response.setZoneId(zone.getUuid());
         response.setZoneName(zone.getName());
         response.setSiteName(provider.getSiteName());

@@ -584,6 +584,7 @@ export default {
           isLoad: true,
           options: {
             templatefilter: 'all',
+            isready: true,
             hypervisor: this.cluster.hypervisortype,
             showicon: true
           },

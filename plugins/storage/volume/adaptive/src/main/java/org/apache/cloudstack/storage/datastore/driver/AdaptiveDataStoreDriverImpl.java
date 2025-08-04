@@ -337,7 +337,8 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
                 ProviderAdapterDataObject sourceIn = newManagedDataObject(srcdata, storagePool);
                 ProviderAdapterDataObject destIn = newManagedDataObject(destdata, storagePool);
 
-                outVolume = api.copy(context, sourceIn, destIn);
+                // Call provider adapter copy method with destination size parameter for resize-during-copy support
+                outVolume = api.copy(context, sourceIn, destIn, destdata.getSize());
 
                 // populate this data - it may be needed later
                 destIn.setExternalName(outVolume.getExternalName());

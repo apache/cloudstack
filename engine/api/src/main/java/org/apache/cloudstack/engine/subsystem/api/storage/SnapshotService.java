@@ -46,4 +46,6 @@ public interface SnapshotService {
     AsyncCallFuture<SnapshotResult> copySnapshot(SnapshotInfo snapshot, String copyUrl, DataStore dataStore) throws ResourceUnavailableException;
 
     AsyncCallFuture<CreateCmdResult> queryCopySnapshot(SnapshotInfo snapshot) throws ResourceUnavailableException;
+
+    AsyncCallFuture<SnapshotResult> copySnapshot(SnapshotInfo sourceSnapshot, SnapshotInfo destSnapshot, SnapshotStrategy strategy);
 }

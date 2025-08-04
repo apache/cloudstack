@@ -117,7 +117,7 @@
             <a-form-item
               name="userdataid"
               ref="userdataid"
-              :label="$t('label.userdata')">
+              :label="$t('label.user.data')">
               <a-select
                 showSearch
                 optionFilterProp="label"
@@ -136,7 +136,7 @@
           <a-col :md="24" :lg="12">
             <a-form-item ref="userdatapolicy" name="userdatapolicy">
               <template #label>
-                <tooltip-label :title="$t('label.userdatapolicy')" :tooltip="$t('label.userdatapolicy.tooltip')"/>
+                <tooltip-label :title="$t('label.user.data.policy')" :tooltip="$t('label.user.data.policy.tooltip')"/>
               </template>
               <a-select
                 showSearch
@@ -186,8 +186,8 @@
             v-model:value="form.templatetype"
             :placeholder="apiParams.templatetype.description"
             @change="val => { selectedTemplateType = val }">
-            <a-select-option v-for="opt in templatetypes" :key="opt">
-              {{ opt }}
+            <a-select-option v-for="opt in templatetypes" :key="opt.id">
+              {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -247,7 +247,7 @@ export default {
   },
   data () {
     return {
-      templatetypes: ['BUILTIN', 'USER', 'SYSTEM', 'ROUTING', 'VNF'],
+      templatetypes: [],
       emptyAllowedFields: ['templatetag'],
       rootDisk: {},
       nicAdapterType: {},
@@ -270,6 +270,7 @@ export default {
   },
   created () {
     this.initForm()
+    this.templatetypes = this.$fetchTemplateTypes(this.resource.hypervisor)
     this.rootDisk.loading = false
     this.rootDisk.opts = []
     this.nicAdapterType.loading = false

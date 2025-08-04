@@ -235,7 +235,7 @@ public class StorageVmSharedFSLifeCycleTest {
         when(serviceOfferingDao.findById(s_serviceOfferingId)).thenReturn(serviceOffering);
 
         VMTemplateVO template = mock(VMTemplateVO.class);
-        when(templateDao.findSystemVMReadyTemplate(s_zoneId, Hypervisor.HypervisorType.KVM)).thenReturn(template);
+        when(templateDao.findSystemVMReadyTemplate(s_zoneId, Hypervisor.HypervisorType.KVM, ResourceManager.SystemVmPreferredArchitecture.defaultValue())).thenReturn(template);
         when(template.getId()).thenReturn(s_templateId);
 
         return sharedFS;
@@ -254,14 +254,19 @@ public class StorageVmSharedFSLifeCycleTest {
         when(vm.getId()).thenReturn(s_vmId);
         when(userVmService.createAdvancedVirtualMachine(
                 any(DataCenter.class), any(ServiceOffering.class), any(VirtualMachineTemplate.class), anyList(), any(Account.class), anyString(),
-                anyString(), anyLong(), anyLong(), isNull(), any(Hypervisor.HypervisorType.class), any(BaseCmd.HTTPMethod.class), anyString(),
+                anyString(), anyLong(), anyLong(), any(), isNull(), any(Hypervisor.HypervisorType.class), any(BaseCmd.HTTPMethod.class), anyString(),
                 isNull(), isNull(), anyList(), isNull(), any(Network.IpAddresses.class), isNull(), isNull(), isNull(),
                 anyMap(), isNull(), isNull(), isNull(), isNull(),
                 anyBoolean(), anyString(), isNull(), isNull(), isNull())).thenReturn(vm);
 
-        VolumeVO volume = mock(VolumeVO.class);
-        when(volume.getId()).thenReturn(s_volumeId);
-        when(volumeDao.findByInstanceAndType(s_vmId, Volume.Type.DATADISK)).thenReturn(List.of(volume));
+        VolumeVO rootVol = mock(VolumeVO.class);
+        when(rootVol.getVolumeType()).thenReturn(Volume.Type.ROOT);
+        when(rootVol.getName()).thenReturn("ROOT-1");
+        VolumeVO dataVol = mock(VolumeVO.class);
+        when(dataVol.getId()).thenReturn(s_volumeId);
+        when(dataVol.getName()).thenReturn("DATA-1");
+        when(dataVol.getVolumeType()).thenReturn(Volume.Type.DATADISK);
+        when(volumeDao.findByInstance(s_vmId)).thenReturn(List.of(rootVol, dataVol));
 
          Pair<Long, Long> result = lifeCycle.deploySharedFS(sharedFS, s_networkId, s_diskOfferingId, s_size, s_minIops, s_maxIops);
          Assert.assertEquals(Optional.ofNullable(result.first()), Optional.ofNullable(s_volumeId));
@@ -297,7 +302,6 @@ public class StorageVmSharedFSLifeCycleTest {
         when(dataCenterDao.findById(s_zoneId)).thenReturn(zone);
         when(resourceMgr.getSupportedHypervisorTypes(s_zoneId, false, null)).thenReturn(List.of(Hypervisor.HypervisorType.KVM));
 
-        when(templateDao.findSystemVMReadyTemplate(s_zoneId, Hypervisor.HypervisorType.KVM)).thenReturn(null);
         lifeCycle.deploySharedFS(sharedFS, s_networkId, s_diskOfferingId, s_size, s_minIops, s_maxIops);
     }
 

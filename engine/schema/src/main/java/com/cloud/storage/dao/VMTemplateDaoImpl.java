@@ -24,6 +24,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -614,10 +615,18 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     }
 
     @Override
-    public VMTemplateVO findSystemVMReadyTemplate(long zoneId, HypervisorType hypervisorType) {
+    public VMTemplateVO findSystemVMReadyTemplate(long zoneId, HypervisorType hypervisorType, String preferredArch) {
         List<VMTemplateVO> templates = listAllReadySystemVMTemplates(zoneId);
         if (CollectionUtils.isEmpty(templates)) {
             return null;
+        }
+        if (StringUtils.isNotBlank(preferredArch)) {
+            // Sort the templates by preferred architecture first
+            templates = templates.stream()
+                    .sorted(Comparator.comparing(
+                            x -> !x.getArch().getType().equalsIgnoreCase(preferredArch)
+                    ))
+                    .collect(Collectors.toList());
         }
         if (hypervisorType == HypervisorType.Any) {
             return templates.get(0);
@@ -828,6 +837,17 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         SearchCriteria<Long> sc = sb.create();
         sc.setParameters("tag", tag);
         return customSearchIncludingRemoved(sc, null);
+    }
+
+    @Override
+    public List<Long> listIdsByExtensionId(long extensionId) {
+        GenericSearchBuilder<VMTemplateVO, Long> sb = createSearchBuilder(Long.class);
+        sb.selectFields(sb.entity().getId());
+        sb.and("extensionId", sb.entity().getExtensionId(), SearchCriteria.Op.EQ);
+        sb.done();
+        SearchCriteria<Long> sc = sb.create();
+        sc.setParameters("extensionId", extensionId);
+        return customSearch(sc, null);
     }
 
     @Override
