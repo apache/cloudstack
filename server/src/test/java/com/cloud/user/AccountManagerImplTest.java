@@ -23,6 +23,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,7 @@ import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
@@ -1590,5 +1592,72 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
             Mockito.doReturn(false).when(callContextMock).isCallingAccountRootAdmin();
             accountManagerImpl.checkCallerApiPermissionsForUserOrAccountOperations(accountMock);
         }
+    }
+
+    @Test
+    public void isRootAdminReturnsTrueWhenCheckerGrantsAccess() {
+        Account account = Mockito.mock(Account.class);
+        SecurityChecker checker = Mockito.mock(SecurityChecker.class);
+        Mockito.when(checker.checkAccess(account, null, null, "SystemCapability")).thenReturn(true);
+        List<SecurityChecker> securityCheckers = List.of(checker);
+        accountManagerImpl.setSecurityCheckers(securityCheckers);
+        boolean result = accountManagerImpl.isRootAdmin(account);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void isRootAdminReturnsFalseWhenCheckerDeniesAccess() {
+        Account account = Mockito.mock(Account.class);
+        SecurityChecker checker = Mockito.mock(SecurityChecker.class);
+        Mockito.when(checker.checkAccess(account, null, null, "SystemCapability")).thenThrow(PermissionDeniedException.class);
+        List<SecurityChecker> securityCheckers = List.of(checker);
+        accountManagerImpl.setSecurityCheckers(securityCheckers);
+        boolean result = accountManagerImpl.isRootAdmin(account);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void isRootAdminReturnsFalseWhenAccountIsNull() {
+        Account account = null;
+        boolean result = accountManagerImpl.isRootAdmin(account);
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void isRootAdminReturnsFalseWhenNoCheckersExist() {
+        Account account = Mockito.mock(Account.class);
+        accountManagerImpl.setSecurityCheckers(Collections.emptyList());
+        boolean result = accountManagerImpl.isRootAdmin(account);
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void isRootAdminReturnsTrueWhenMultipleCheckersGrantAccess() {
+        Account account = Mockito.mock(Account.class);
+        SecurityChecker checker1 = Mockito.mock(SecurityChecker.class);
+        SecurityChecker checker2 = Mockito.mock(SecurityChecker.class);
+        Mockito.when(checker1.checkAccess(account, null, null, "SystemCapability")).thenReturn(false);
+        Mockito.when(checker2.checkAccess(account, null, null, "SystemCapability")).thenReturn(true);
+        List<SecurityChecker> securityCheckers = List.of(checker1, checker2);
+        accountManagerImpl.setSecurityCheckers(securityCheckers);
+        boolean result = accountManagerImpl.isRootAdmin(account);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void isRootAdminReturnsFalseWhenSecondCheckerDenyAccess() {
+        Account account = Mockito.mock(Account.class);
+        SecurityChecker checker1 = Mockito.mock(SecurityChecker.class);
+        SecurityChecker checker2 = Mockito.mock(SecurityChecker.class);
+        Mockito.when(checker1.checkAccess(account, null, null, "SystemCapability")).thenReturn(false);
+        Mockito.when(checker2.checkAccess(account, null, null, "SystemCapability")).thenThrow(PermissionDeniedException.class);
+        List<SecurityChecker> securityCheckers = List.of(checker1, checker2);
+        accountManagerImpl.setSecurityCheckers(securityCheckers);
+        boolean result = accountManagerImpl.isRootAdmin(account);
+
+        Assert.assertFalse(result);
     }
 }
