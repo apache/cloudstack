@@ -23,8 +23,10 @@ import java.util.UUID;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.managed.threadlocal.ManagedThreadLocal;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.ThreadContext;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.projects.Project;
@@ -32,9 +34,9 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.utils.UuidUtils;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.logging.log4j.ThreadContext;
 
 /**
  * CallContext records information about the environment the call is made.  This
@@ -69,11 +71,9 @@ public class CallContext {
     private String apiName;
 
     static EntityManager s_entityMgr;
-    static AccountService accountService;
 
-    public static void init(EntityManager entityMgr, AccountService accountService) {
+    public static void init(EntityManager entityMgr) {
         s_entityMgr = entityMgr;
-        CallContext.accountService = accountService;
     }
 
     protected CallContext() {
@@ -140,7 +140,15 @@ public class CallContext {
 
     public boolean isCallingAccountRootAdmin() {
         if (isAccountRootAdmin == null) {
-            accountService.isRootAdmin(getCallingAccount());
+            AccountService accountService;
+            try {
+                accountService = ComponentContext.getDelegateComponentOfType(AccountService.class);
+            } catch (NoSuchBeanDefinitionException e) {
+                LOGGER.warn("Falling back to account type check for isRootAdmin for account ID: {} as no AccountService bean found: {}", accountId, e.getMessage());
+                Account caller = getCallingAccount();
+                return caller != null && caller.getType() == Account.Type.ADMIN;
+            }
+            isAccountRootAdmin = accountService.isRootAdmin(getCallingAccount());
         }
         return Boolean.TRUE.equals(isAccountRootAdmin);
     }

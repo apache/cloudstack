@@ -31,7 +31,6 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.user.Account;
-import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.utils.db.EntityManager;
 
@@ -41,12 +40,9 @@ public class CallContextTest {
     @Mock
     EntityManager entityMgr;
 
-    @Mock
-    AccountService accountService;
-
     @Before
     public void setUp() {
-        CallContext.init(entityMgr, accountService);
+        CallContext.init(entityMgr);
         CallContext.register(Mockito.mock(User.class), Mockito.mock(Account.class));
     }
 
