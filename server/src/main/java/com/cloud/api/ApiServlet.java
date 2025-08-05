@@ -482,7 +482,7 @@ public class ApiServlet extends HttpServlet {
         return verify2FA;
     }
 
-    private boolean isStateChangingCommandNotUsingPOST(String command, String method, Map<String, Object[]> params) {
+    protected boolean isStateChangingCommandNotUsingPOST(String command, String method, Map<String, Object[]> params) {
         if (BaseCmd.HTTPMethod.POST.toString().equalsIgnoreCase(method)) {
             return false;
         }
@@ -503,8 +503,9 @@ public class ApiServlet extends HttpServlet {
                 GET_REQUEST_COMMANDS.matcher(command.toLowerCase()).matches()) {
             return false;
         }
-        return !params.containsKey("name")
-                || !ApiServer.EnforcePostRequestsAndTimestamps.key().equalsIgnoreCase(params.get("name")[0].toString());
+        return !command.equalsIgnoreCase("updateConfiguration") ||
+                !params.containsKey("name") ||
+                !ApiServer.EnforcePostRequestsAndTimestamps.key().equalsIgnoreCase(params.get("name")[0].toString());
     }
 
     protected boolean skip2FAcheckForAPIs(String command) {
