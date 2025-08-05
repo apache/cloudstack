@@ -105,7 +105,7 @@ public final class StorPoolDownloadTemplateCommandWrapper extends CommandWrapper
             final QemuImg qemu = new QemuImg(cmd.getWaitInMillSeconds());
 
             if (dst instanceof TemplateObjectTO) {
-                StorPoolStorageAdaptor.resize( Long.toString(srcDisk.getVirtualSize()), dst.getPath());
+                StorPoolStorageAdaptor.resize(Long.toString(srcDisk.getVirtualSize()), dst.getPath());
 
                 ((TemplateObjectTO) dst).setSize(srcDisk.getVirtualSize());
             }
