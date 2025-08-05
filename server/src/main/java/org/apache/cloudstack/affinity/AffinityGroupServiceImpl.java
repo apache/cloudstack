@@ -133,7 +133,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
         }
 
         Account caller = CallContext.current().getCallingAccount();
-        if (processor.isAdminControlledGroup() && !_accountMgr.isRootAdmin(caller)) {
+        if (processor.isAdminControlledGroup() && !CallContext.current().isCallingAccountRootAdmin()) {
             throw new PermissionDeniedException("Cannot create the affinity group");
         }
 
@@ -464,7 +464,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
                 if (ag.getAclType() == ACLType.Domain) {
                     _accountMgr.checkAccess(caller, null, false, owner, ag);
                     // make sure the affinity group is available in that domain
-                    if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller)) {
+                    if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || CallContext.current().isCallingAccountRootAdmin()) {
                         if (!isAffinityGroupAvailableInDomain(ag.getId(), owner.getDomainId())) {
                             throw new PermissionDeniedException("Affinity Group " + ag + " does not belong to the VM's domain");
                         }
@@ -474,7 +474,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
                     // Root admin has access to both VM and AG by default,
                     // but
                     // make sure the owner of these entities is same
-                    if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller)) {
+                    if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || CallContext.current().isCallingAccountRootAdmin()) {
                         if (ag.getAccountId() != owner.getAccountId()) {
                             throw new PermissionDeniedException("Affinity Group " + ag + " does not belong to the VM's account");
                         }

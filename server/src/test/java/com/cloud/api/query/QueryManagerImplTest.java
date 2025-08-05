@@ -196,7 +196,6 @@ public class QueryManagerImplTest {
         user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone",
                 UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
-        Mockito.when(accountManager.isRootAdmin(account)).thenReturn(false);
         final SearchBuilder<EventVO> eventSearchBuilder = mock(SearchBuilder.class);
         final SearchCriteria<EventVO> eventSearchCriteria = mock(SearchCriteria.class);
         final EventVO eventVO = mock(EventVO.class);

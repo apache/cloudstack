@@ -1267,7 +1267,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             throw new InvalidParameterValueException("Network domain must be specified for region level VPC");
         }
 
-        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller)) {
+        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !CallContext.current().isCallingAccountRootAdmin()) {
             // See DataCenterVO.java
             final PermissionDeniedException ex = new PermissionDeniedException("Cannot perform this operation since specified Zone is currently disabled");
             ex.addProxyObject(zone.getUuid(), "zoneId");
@@ -2643,8 +2643,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         if (broadcastUri != null && associatedNetworkId != null) {
             throw new InvalidParameterValueException("vlanId and associatedNetworkId are mutually exclusive");
         }
-        Account caller = CallContext.current().getCallingAccount();
-        if (!_accountMgr.isRootAdmin(caller) && (ntwkOff.isSpecifyVlan() || broadcastUri != null || bypassVlanOverlapCheck)) {
+        if (!CallContext.current().isCallingAccountRootAdmin() && (ntwkOff.isSpecifyVlan() || broadcastUri != null || bypassVlanOverlapCheck)) {
             throw new InvalidParameterValueException("Only ROOT admin is allowed to specify vlanId or bypass vlan overlap check");
         }
         if (ntwkOff.isSpecifyVlan() && broadcastUri == null) {
@@ -2767,7 +2766,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         final Account caller = CallContext.current().getCallingAccount();
-        if (!_accountMgr.isRootAdmin(caller)) {
+        if (!CallContext.current().isCallingAccountRootAdmin()) {
             _accountMgr.checkAccess(caller, null, false, gatewayVO);
             final NetworkVO networkVO = _ntwkDao.findById(gatewayVO.getNetworkId());
             if (networkVO != null) {

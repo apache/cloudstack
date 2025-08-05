@@ -946,7 +946,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         // Check if zone is disabled
-        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller)) {
+        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !CallContext.current().isCallingAccountRootAdmin()) {
             throw new PermissionDeniedException(String.format("Cannot perform this operation, Zone: %s is currently disabled", zone));
         }
 
@@ -3989,8 +3989,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_SNAPSHOT_CREATE, eventDescription = "allocating snapshot", create = true)
     public Snapshot allocSnapshot(Long volumeId, Long policyId, String snapshotName, Snapshot.LocationType locationType, List<Long> zoneIds, List<Long> poolIds, Boolean useStorageReplication) throws ResourceAllocationException {
-        Account caller = CallContext.current().getCallingAccount();
-
         VolumeInfo volume = volFactory.getVolume(volumeId);
         if (volume == null) {
             throw new InvalidParameterValueException("Creating snapshot failed due to volume:" + volumeId + " doesn't exist");
@@ -4059,7 +4057,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 if (dataCenter == null) {
                     throw new InvalidParameterValueException("Unable to find the specified zone");
                 }
-                if (Grouping.AllocationState.Disabled.equals(dataCenter.getAllocationState()) && !_accountMgr.isRootAdmin(caller)) {
+                if (Grouping.AllocationState.Disabled.equals(dataCenter.getAllocationState()) && !CallContext.current().isCallingAccountRootAdmin()) {
                     throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + dataCenter.getName());
                 }
                 if (DataCenter.Type.Edge.equals(dataCenter.getType())) {
@@ -4115,7 +4113,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Can't find zone by id " + volume.getDataCenterId());
         }
 
-        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller)) {
+        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !CallContext.current().isCallingAccountRootAdmin()) {
             throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zone.getName());
         }
 

@@ -32,7 +32,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import org.apache.cloudstack.api.command.user.snapshot.ExtractSnapshotCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -95,8 +94,6 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
-import com.cloud.user.User;
-import com.cloud.user.UserVO;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.db.GlobalLock;
@@ -193,6 +190,8 @@ public class SnapshotManagerTest {
     ImageStoreEntity imageStoreEntityMock;
     @Mock
     DataStoreManager dataStoreManagerMock;
+    @Mock
+    private CallContext callContextMock;
 
     SnapshotPolicyVO snapshotPolicyVoInstance;
 
@@ -215,9 +214,12 @@ public class SnapshotManagerTest {
     private static final String TEST_SNAPSHOT_PATH = "path";
     private static final Storage.ImageFormat TEST_VOLUME_FORMAT = Storage.ImageFormat.RAW;
 
+    MockedStatic<CallContext> callContextMockedStatic;
+
     @Before
     public void setup() throws ResourceAllocationException {
-
+        callContextMockedStatic = Mockito.mockStatic(CallContext.class);
+        callContextMockedStatic.when(CallContext::current).thenReturn(callContextMock);
         when(_snapshotDao.findById(anyLong())).thenReturn(snapshotMock);
         when(snapshotMock.getVolumeId()).thenReturn(TEST_VOLUME_ID);
 
@@ -239,8 +241,7 @@ public class SnapshotManagerTest {
         doNothing().when(_resourceLimitMgr).incrementResourceCount(anyLong(), any(ResourceType.class), anyLong());
 
         Account account = new AccountVO("testaccount", 1L, "networkdomain", Account.Type.NORMAL, "uuid");
-        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
-        CallContext.register(user, account);
+        when(callContextMock.getCallingAccount()).thenReturn(account);
         when(_accountMgr.getAccount(anyLong())).thenReturn(account);
 
         when(_storagePoolDao.findById(anyLong())).thenReturn(poolMock);
@@ -257,7 +258,7 @@ public class SnapshotManagerTest {
     @After
     public void tearDown() throws Exception {
         apiDBUtilsMock.close();
-        CallContext.unregister();
+        callContextMockedStatic.close();
     }
 
     // vm is destroyed
@@ -561,7 +562,7 @@ public class SnapshotManagerTest {
     private void mockForExtractSnapshotTests() {
         Mockito.doReturn(TEST_SNAPSHOT_ID).when(extractSnapshotCmdMock).getId();
         Mockito.doReturn(TEST_ZONE_ID).when(extractSnapshotCmdMock).getZoneId();
-        Mockito.doReturn(false).when(_accountMgr).isRootAdmin(any(Account.class));
+        Mockito.doReturn(false).when(callContextMock).isCallingAccountRootAdmin();
         Mockito.when(ApiDBUtils.isExtractionDisabled()).thenReturn(false);
 
         Mockito.doReturn(dataCenterVOMock).when(dataCenterDao).findById(TEST_ZONE_ID);
@@ -654,7 +655,7 @@ public class SnapshotManagerTest {
     @Test()
     public void extractSnapshotTestRootAdminDisabledExtractionCreateExtractUrlReturnUrl() {
         mockForExtractSnapshotTests();
-        Mockito.doReturn(true).when(_accountMgr).isRootAdmin(any(Account.class));
+        Mockito.doReturn(true).when(callContextMock).isCallingAccountRootAdmin();
         Mockito.when(ApiDBUtils.isExtractionDisabled()).thenReturn(true);
 
         Assert.assertEquals(TEST_EXTRACT_URL, _snapshotMgr.extractSnapshot(extractSnapshotCmdMock));

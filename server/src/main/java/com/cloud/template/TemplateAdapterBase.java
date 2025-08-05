@@ -371,8 +371,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                 if (zone == null) {
                     throw new IllegalArgumentException("Please specify a valid zone.");
                 }
-                Account caller = CallContext.current().getCallingAccount();
-                if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller)) {
+                if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !CallContext.current().isCallingAccountRootAdmin()) {
                     throw new PermissionDeniedException(String.format("Cannot perform this operation, Zone %s is currently disabled", zone));
                 }
             }

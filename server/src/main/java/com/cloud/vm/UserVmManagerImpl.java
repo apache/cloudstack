@@ -6930,8 +6930,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     private VMInstanceVO preVmStorageMigrationCheck(Long vmId) {
         // access check - only root admin can migrate VM
-        Account caller = CallContext.current().getCallingAccount();
-        if (!_accountMgr.isRootAdmin(caller)) {
+        if (!CallContext.current().isCallingAccountRootAdmin()) {
             if (logger.isDebugEnabled()) {
                 logger.debug("Caller is not a root admin, permission denied to migrate the VM");
             }
@@ -7072,8 +7071,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     public VirtualMachine migrateVirtualMachine(Long vmId, Host destinationHost) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
     VirtualMachineMigrationException {
         // access check - only root admin can migrate VM
-        Account caller = CallContext.current().getCallingAccount();
-        if (!_accountMgr.isRootAdmin(caller)) {
+        if (!CallContext.current().isCallingAccountRootAdmin()) {
             if (logger.isDebugEnabled()) {
                 logger.debug("Caller is not a root admin, permission denied to migrate the VM");
             }

@@ -533,7 +533,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         Long snapshotId = cmd.getId();
         Long zoneId = cmd.getZoneId();
 
-        if (!_accountMgr.isRootAdmin(caller) && ApiDBUtils.isExtractionDisabled()) {
+        if (!CallContext.current().isCallingAccountRootAdmin() && ApiDBUtils.isExtractionDisabled()) {
             logger.error("Extraction is disabled through [{}].", Config.DisableExtraction);
             throw new PermissionDeniedException("Extraction could not be completed.");
         }
@@ -2264,9 +2264,9 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         storagePoolIds = snapshotHelper.addStoragePoolsForCopyToPrimary(volume, destZoneIds, storagePoolIds, useStorageReplication);
         boolean canCopyBetweenStoragePools = CollectionUtils.isNotEmpty(storagePoolIds) && canCopyOnPrimary(storagePoolIds, snapshotVO);
         Map<Long, DataCenterVO> dataCenterVOs = new HashMap<>();
-        boolean isRootAdminCaller = _accountMgr.isRootAdmin(caller);
         for (Long destZoneId: destZoneIds) {
-            DataCenterVO dstZone = getCheckedDestinationZoneForSnapshotCopy(destZoneId, isRootAdminCaller);
+            DataCenterVO dstZone = getCheckedDestinationZoneForSnapshotCopy(destZoneId,
+                    CallContext.current().isCallingAccountRootAdmin());
             dataCenterVOs.put(destZoneId, dstZone);
         }
         _accountMgr.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, true, snapshot);
