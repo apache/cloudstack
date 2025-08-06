@@ -144,6 +144,7 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
+import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
@@ -3206,6 +3207,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             try {
                 answer = _agentMgr.send(hostId, cmd);
+            } catch (AgentUnavailableException e) {
+                  throw new CloudRuntimeException(String.format("%s. Please contact your system administrator.", errorMsg));
             } catch (Exception e) {
                 throw new CloudRuntimeException(errorMsg + " due to: " + e.getMessage());
             }
@@ -4767,6 +4770,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                 try {
                     answer = (AttachAnswer)_agentMgr.send(hostId, cmd);
+                } catch (AgentUnavailableException e) {
+                    if (host != null) {
+                        volService.revokeAccess(volFactory.getVolume(volumeToAttach.getId()), host, dataStore);
+                    }
+                    throw new CloudRuntimeException(String.format("%s. Please contact your system administrator.", errorMsg));
                 } catch (Exception e) {
                     if (host != null) {
                         volService.revokeAccess(volFactory.getVolume(volumeToAttach.getId()), host, dataStore);
