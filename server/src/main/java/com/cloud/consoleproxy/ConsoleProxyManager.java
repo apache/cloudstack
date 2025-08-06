@@ -16,7 +16,9 @@
 // under the License.
 package com.cloud.consoleproxy;
 
+import java.util.Arrays;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
 
@@ -46,13 +48,47 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
     String CERTIFICATE_NAME = "CPVMCertificate";
 
     ConfigKey<Boolean> ConsoleProxySslEnabled = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class, "consoleproxy.sslEnabled", "false",
-            "Enable SSL for console proxy", false);
+            "Enable SSL for console proxy", ConfigKey.Scope.Zone, false);
 
     ConfigKey<Boolean> NoVncConsoleDefault = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class, "novnc.console.default", "true",
-        "If true, noVNC console will be default console for virtual machines", true);
+        "If true, noVNC console will be default console for virtual machines", ConfigKey.Scope.Zone, true);
 
     ConfigKey<Boolean> NoVncConsoleSourceIpCheckEnabled = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class, "novnc.console.sourceip.check.enabled", "false",
         "If true, The source IP to access novnc console must be same as the IP in request to management server for console URL. Needs to reconnect CPVM to management server when this changes (via restart CPVM, or management server, or cloud service in CPVM)", false);
+
+    ConfigKey<String> ConsoleProxyCapacityStandby = new ConfigKey<>(String.class, "consoleproxy.capacity.standby", "Console Proxy", "10",
+            "The minimal number of console proxy viewer sessions that system is able to serve immediately(standby capacity)", false, ConfigKey.Scope.Zone, null);
+
+    ConfigKey<String> ConsoleProxyCapacityScanInterval = new ConfigKey<>(String.class, "consoleproxy.capacityscan.interval", "Console Proxy", "30000",
+            "The time interval(in millisecond) to scan whether or not system needs more console proxy to ensure minimal standby capacity", false, ConfigKey.Scope.Zone, null);
+
+    ConfigKey<Integer> ConsoleProxyCmdPort = new ConfigKey<>(Integer.class, "consoleproxy.cmd.port", "Console Proxy", String.valueOf(DEFAULT_PROXY_CMD_PORT),
+            "Console proxy command port that is used to communicate with management server", false, ConfigKey.Scope.Zone, null);
+
+    ConfigKey<Boolean> ConsoleProxyRestart = new ConfigKey<>(Boolean.class, "consoleproxy.restart", "Console Proxy", "true",
+            "Console proxy restart flag, defaults to true", false, ConfigKey.Scope.Zone, null);
+
+    ConfigKey<String> ConsoleProxyUrlDomain = new ConfigKey<>(String.class, "consoleproxy.url.domain", "Console Proxy", "",
+            "Console proxy url domain - domainName,privateip", false, ConfigKey.Scope.Zone, null);
+
+    ConfigKey<Integer> ConsoleProxySessionMax = new ConfigKey<>(Integer.class, "consoleproxy.session.max", "Console Proxy", String.valueOf(DEFAULT_PROXY_CAPACITY),
+            "The max number of viewer sessions console proxy is configured to serve for", false, ConfigKey.Scope.Zone, null);
+
+    ConfigKey<Integer> ConsoleProxySessionTimeout = new ConfigKey<>(Integer.class, "consoleproxy.session.timeout", "Console Proxy", "300000",
+            "Timeout(in milliseconds) that console proxy tries to maintain a viewer session before it times out the session for no activity", false, ConfigKey.Scope.Zone, null);
+
+    ConfigKey<Boolean> ConsoleProxyDisableRpFilter = new ConfigKey<>(Boolean.class, "consoleproxy.disable.rpfilter", "Console Proxy", "true",
+            "disable rp_filter on console proxy VM public interface", false, ConfigKey.Scope.Zone, null);
+
+    ConfigKey<Integer> ConsoleProxyLaunchMax = new ConfigKey<>(Integer.class, "consoleproxy.launch.max", "Console Proxy", "10",
+            "maximum number of console proxy instances per zone can be launched", false, ConfigKey.Scope.Zone, null);
+
+    String consoleProxyManagementStates = Arrays.stream(com.cloud.consoleproxy.ConsoleProxyManagementState.values()).map(Enum::name).collect(Collectors.joining(","));
+    ConfigKey<String> ConsoleProxyServiceManagementState = new ConfigKey<String>(ConfigKey.CATEGORY_ADVANCED, String.class, "consoleproxy.management.state", com.cloud.consoleproxy.ConsoleProxyManagementState.Auto.toString(),
+            "console proxy service management state", false, ConfigKey.Kind.Select, consoleProxyManagementStates);
+
+    ConfigKey<String> ConsoleProxyManagementLastState = new ConfigKey<String>(ConfigKey.CATEGORY_ADVANCED, String.class, "consoleproxy.management.state.last", com.cloud.consoleproxy.ConsoleProxyManagementState.Auto.toString(),
+            "last console proxy service management state", false, ConfigKey.Kind.Select, consoleProxyManagementStates);
 
     void setManagementState(ConsoleProxyManagementState state);
 

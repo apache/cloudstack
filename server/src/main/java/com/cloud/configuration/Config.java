@@ -25,7 +25,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
@@ -405,94 +404,7 @@ public enum Config {
 
 
     // Console Proxy
-    ConsoleProxyCapacityStandby(
-            "Console Proxy",
-            AgentManager.class,
-            String.class,
-            "consoleproxy.capacity.standby",
-            "10",
-            "The minimal number of console proxy viewer sessions that system is able to serve immediately(standby capacity)",
-            null),
-    ConsoleProxyCapacityScanInterval(
-            "Console Proxy",
-            AgentManager.class,
-            String.class,
-            "consoleproxy.capacityscan.interval",
-            "30000",
-            "The time interval(in millisecond) to scan whether or not system needs more console proxy to ensure minimal standby capacity",
-            null),
-    ConsoleProxyCmdPort(
-            "Console Proxy",
-            AgentManager.class,
-            Integer.class,
-            "consoleproxy.cmd.port",
-            "8001",
-            "Console proxy command port that is used to communicate with management server",
-            null),
-    ConsoleProxyRestart(
-        "Console Proxy",
-        AgentManager.class,
-        Boolean.class,
-        "consoleproxy.restart",
-        "true",
-        "Console proxy restart flag, defaulted to true",
-        null),
-    ConsoleProxyUrlDomain(
-        "Console Proxy",
-        AgentManager.class,
-        String.class,
-        "consoleproxy.url.domain",
-        "",
-        "Console proxy url domain",
-        "domainName,privateip"),
-    ConsoleProxySessionMax(
-            "Console Proxy",
-            AgentManager.class,
-            Integer.class,
-            "consoleproxy.session.max",
-            String.valueOf(ConsoleProxyManager.DEFAULT_PROXY_CAPACITY),
-            "The max number of viewer sessions console proxy is configured to serve for",
-            null),
-    ConsoleProxySessionTimeout(
-            "Console Proxy",
-            AgentManager.class,
-            Integer.class,
-            "consoleproxy.session.timeout",
-            "300000",
-            "Timeout(in milliseconds) that console proxy tries to maintain a viewer session before it times out the session for no activity",
-            null),
-    ConsoleProxyDisableRpFilter(
-            "Console Proxy",
-            AgentManager.class,
-            Boolean.class,
-            "consoleproxy.disable.rpfilter",
-            "true",
-            "disable rp_filter on console proxy VM public interface",
-            null),
-    ConsoleProxyLaunchMax(
-            "Console Proxy",
-            AgentManager.class,
-            Integer.class,
-            "consoleproxy.launch.max",
-            "10",
-            "maximum number of console proxy instances per zone can be launched",
-            null),
-    ConsoleProxyManagementState(
-            "Console Proxy",
-            AgentManager.class,
-            String.class,
-            "consoleproxy.management.state",
-            com.cloud.consoleproxy.ConsoleProxyManagementState.Auto.toString(),
-            "console proxy service management state",
-            null),
-    ConsoleProxyManagementLastState(
-            "Console Proxy",
-            AgentManager.class,
-            String.class,
-            "consoleproxy.management.state.last",
-            com.cloud.consoleproxy.ConsoleProxyManagementState.Auto.toString(),
-            "last console proxy service management state",
-            null),
+
 
     // Snapshots
 
@@ -1798,6 +1710,7 @@ public enum Config {
     StatsOutPutGraphiteHost("Advanced", ManagementServer.class, String.class, "stats.output.uri", "", "URI to additionally send StatsCollector statistics to", null),
 
     SSVMPSK("Hidden", ManagementServer.class, String.class, "upload.post.secret.key", "", "PSK with SSVM", null);
+
 
     private final String _category;
     private final Class<?> _componentClass;

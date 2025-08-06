@@ -342,6 +342,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             logger.warn(String.format("SSL is enabled for console proxy [%s] but no server certificate found in database.", proxy.toString()));
         }
 
+        consoleProxyUrlDomain = ConsoleProxyUrlDomain.valueIn(dataCenterId);
         ConsoleProxyInfo info;
         if (staticPublicIp == null) {
             info = new ConsoleProxyInfo(proxy.isSslEnabled(), proxy.getPublicIpAddress(), consoleProxyPort, proxy.getPort(), consoleProxyUrlDomain);
@@ -466,8 +467,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                 return proxy;
             }
 
-            String restart = configurationDao.getValue(Config.ConsoleProxyRestart.key());
-            if (!ignoreRestartSetting && restart != null && restart.equalsIgnoreCase("false")) {
+            Boolean restart = ConsoleProxyRestart.valueIn(proxy.getDataCenterId());
+            if (!ignoreRestartSetting && Boolean.FALSE.equals(restart)) {
                 return null;
             }
 
@@ -566,8 +567,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         }
 
         if (!allowToLaunchNew(dataCenterId)) {
-            String configKey = Config.ConsoleProxyLaunchMax.key();
-            logger.warn(String.format("The number of launched console proxys on zone [%s] has reached the limit [%s]. Limit set in [%s].", dataCenterId, configurationDao.getValue(configKey), configKey));
+            String configKey = ConsoleProxyLaunchMax.key();
+            Integer configValue = ConsoleProxyLaunchMax.valueIn(dataCenterId);
+            logger.warn(String.format("The number of launched console proxys on zone [%s] has reached the limit [%s]. Limit set in [%s].", dataCenterId, configValue, configKey));
             return null;
         }
 
@@ -814,8 +816,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             consoleProxyDao.getProxyListInStates(dcId, State.Starting, State.Running, State.Stopping,
                 State.Stopped, State.Migrating, State.Shutdown, State.Unknown);
 
-        String value = configurationDao.getValue(Config.ConsoleProxyLaunchMax.key());
-        int launchLimit = NumbersUtil.parseInt(value, 10);
+        int launchLimit = ConsoleProxyLaunchMax.valueIn(dcId);
         return l.size() < launchLimit;
     }
 
@@ -997,8 +998,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                 Transaction.execute(new TransactionCallbackNoReturn() {
                     @Override
                     public void doInTransactionWithoutResult(TransactionStatus status) {
-                        configurationDao.update(Config.ConsoleProxyManagementLastState.key(), Config.ConsoleProxyManagementLastState.getCategory(), lastState.toString());
-                        configurationDao.update(Config.ConsoleProxyManagementState.key(), Config.ConsoleProxyManagementState.getCategory(), state.toString());
+                        configurationDao.update(ConsoleProxyManagementLastState.key(), ConsoleProxyManagementLastState.category(), lastState.toString());
+                        configurationDao.update(ConsoleProxyServiceManagementState.key(), ConsoleProxyServiceManagementState.category(), state.toString());
                     }
                 });
             }
@@ -1009,8 +1010,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     @Override
     public ConsoleProxyManagementState getManagementState() {
-        String configKey = Config.ConsoleProxyManagementState.key();
-        String value = configurationDao.getValue(configKey);
+        String configKey = ConsoleProxyServiceManagementState.key();
+        String value = ConsoleProxyServiceManagementState.value();
 
         if (value != null) {
             ConsoleProxyManagementState state = ConsoleProxyManagementState.valueOf(value);
@@ -1035,7 +1036,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             }
 
             if (lastState != state) {
-                configurationDao.update(Config.ConsoleProxyManagementState.key(), Config.ConsoleProxyManagementState.getCategory(), lastState.toString());
+                configurationDao.update(ConsoleProxyServiceManagementState.key(), ConsoleProxyServiceManagementState.category(), lastState.toString());
             }
         } catch (Exception e) {
             logger.error(String.format("Unable to resume last management state due to [%s].", e.getMessage()), e);
@@ -1043,8 +1044,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     }
 
     private ConsoleProxyManagementState getLastManagementState() {
-        String configKey = Config.ConsoleProxyManagementLastState.key();
-        String value = configurationDao.getValue(configKey);
+        String configKey = ConsoleProxyManagementLastState.key();
+        String value = ConsoleProxyManagementLastState.value();
 
         if (value != null) {
             ConsoleProxyManagementState state = ConsoleProxyManagementState.valueOf(value);
@@ -1132,23 +1133,25 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         }
 
         Map<String, String> configs = configurationDao.getConfiguration("management-server", params);
-
+        for (Map.Entry<String, String> entry : configs.entrySet()) {
+            logger.info("PEARL - Configure console proxy manager : " + entry.getKey() + " = " + entry.getValue());
+        }
         String value = configs.get(ConsoleProxySslEnabled.key());
         if (value != null && value.equalsIgnoreCase("true")) {
             sslEnabled = true;
         }
 
-        consoleProxyUrlDomain = configs.get(Config.ConsoleProxyUrlDomain.key());
+        consoleProxyUrlDomain = ConsoleProxyUrlDomain.value();
         if( sslEnabled && (consoleProxyUrlDomain == null || consoleProxyUrlDomain.isEmpty())) {
             logger.warn("Empty console proxy domain, explicitly disabling SSL");
             sslEnabled = false;
         }
 
-        value = configs.get(Config.ConsoleProxyCapacityScanInterval.key());
+        value = ConsoleProxyCapacityScanInterval.value();
         capacityScanInterval = NumbersUtil.parseLong(value, DEFAULT_CAPACITY_SCAN_INTERVAL_IN_MILLISECONDS);
 
         capacityPerProxy = NumbersUtil.parseInt(configs.get("consoleproxy.session.max"), DEFAULT_PROXY_CAPACITY);
-        standbyCapacity = NumbersUtil.parseInt(configs.get("consoleproxy.capacity.standby"), DEFAULT_STANDBY_CAPACITY);
+        standbyCapacity = NumbersUtil.parseInt(ConsoleProxyCapacityStandby.value(), DEFAULT_STANDBY_CAPACITY);
         proxySessionTimeoutValue = NumbersUtil.parseInt(configs.get("consoleproxy.session.timeout"), DEFAULT_PROXY_SESSION_TIMEOUT);
 
         value = configs.get("consoleproxy.port");
@@ -1156,8 +1159,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             consoleProxyPort = NumbersUtil.parseInt(value, ConsoleProxyManager.DEFAULT_PROXY_VNC_PORT);
         }
 
-        value = configs.get(Config.ConsoleProxyDisableRpFilter.key());
-        if (value != null && value.equalsIgnoreCase("true")) {
+        Boolean rpFilterDisabled = ConsoleProxyDisableRpFilter.value();
+        if (Boolean.TRUE.equals(rpFilterDisabled)) {
             disableRpFilter = true;
         }
 
@@ -1255,10 +1258,12 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         if (sslEnabled) {
             buf.append(" premium=true");
         }
-        buf.append(" zone=").append(dest.getDataCenter().getId());
+        Long datacenterId = dest.getDataCenter().getId();
+        buf.append(" zone=").append(datacenterId);
         buf.append(" pod=").append(dest.getPod().getId());
         buf.append(" guid=Proxy.").append(profile.getId());
         buf.append(" proxy_vm=").append(profile.getId());
+        disableRpFilter = ConsoleProxyDisableRpFilter.valueIn(datacenterId);
         if (disableRpFilter) {
             buf.append(" disable_rp_filter=true");
         }
