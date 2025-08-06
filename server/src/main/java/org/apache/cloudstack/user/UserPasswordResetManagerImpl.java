@@ -68,7 +68,7 @@ public class UserPasswordResetManagerImpl extends ManagerBase implements UserPas
             new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, String.class,
             "user.password.reset.mail.template", "Hello {{username}}!\n" +
             "You have requested to reset your password. Please click the following link to reset your password:\n" +
-            "http://{{{resetLink}}}\n" +
+            "https://your_domain_here{{{resetLink}}}\n" +
             "If you did not request a password reset, please ignore this email.\n" +
             "\n" +
             "Regards,\n" +
