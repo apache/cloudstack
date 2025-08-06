@@ -997,6 +997,16 @@ export default {
             await this.stepConfigurePublicTraffic('message.configuring.nsx.public.traffic', 'nsxPublicTraffic', 1)
           } else if (isolationMethods.includes('netris')) {
             await this.stepConfigurePublicTraffic('message.configuring.netris.public.traffic', 'netrisPublicTraffic', 1)
+          } else {
+            if (this.stepData.isTungstenZone) {
+              await this.stepCreateTungstenFabricPublicNetwork()
+            } else if (this.stepData.isNsxZone) {
+              await this.stepAddNsxController()
+            } else if (this.stepData.isNetrisZone) {
+              await this.stepAddNetrisProvider()
+            } else {
+              await this.stepConfigureStorageTraffic()
+            }
           }
         } else {
           if (this.stepData.isTungstenZone) {
