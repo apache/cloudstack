@@ -26,6 +26,8 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import com.cloud.network.Network;
+
+import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.collections.MapUtils;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
@@ -214,7 +216,9 @@ public class UsageEventUtils {
             return; // no provider is configured to provide events distributor, so just return
         }
 
-        Account account = s_accountDao.findById(accountId);
+        Account account = (accountId == CallContext.current().getCallingAccountId())
+                ? CallContext.current().getCallingAccount()
+                : s_accountDao.findById(accountId);
         DataCenterVO dc = s_dcDao.findById(zoneId);
 
         // if account has been deleted, this might be called during cleanup of resources and results in null pointer
