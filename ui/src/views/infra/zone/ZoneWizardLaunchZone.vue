@@ -903,6 +903,17 @@ export default {
         this.setStepStatus(STATUS_FAILED)
       }
     },
+    async stepNetworkingProviderOrStorageTraffic () {
+      if (this.stepData.isTungstenZone) {
+        await this.stepCreateTungstenFabricPublicNetwork()
+      } else if (this.stepData.isNsxZone) {
+        await this.stepAddNsxController()
+      } else if (this.stepData.isNetrisZone) {
+        await this.stepAddNetrisProvider()
+      } else {
+        await this.stepConfigureStorageTraffic()
+      }
+    },
     async stepConfigurePublicTraffic (message, trafficType, idx) {
       if (
         (this.isBasicZone &&
@@ -998,26 +1009,10 @@ export default {
           } else if (isolationMethods.includes('netris')) {
             await this.stepConfigurePublicTraffic('message.configuring.netris.public.traffic', 'netrisPublicTraffic', 1)
           } else {
-            if (this.stepData.isTungstenZone) {
-              await this.stepCreateTungstenFabricPublicNetwork()
-            } else if (this.stepData.isNsxZone) {
-              await this.stepAddNsxController()
-            } else if (this.stepData.isNetrisZone) {
-              await this.stepAddNetrisProvider()
-            } else {
-              await this.stepConfigureStorageTraffic()
-            }
+            await this.stepNetworkingProviderOrStorageTraffic()
           }
         } else {
-          if (this.stepData.isTungstenZone) {
-            await this.stepCreateTungstenFabricPublicNetwork()
-          } else if (this.stepData.isNsxZone) {
-            await this.stepAddNsxController()
-          } else if (this.stepData.isNetrisZone) {
-            await this.stepAddNetrisProvider()
-          } else {
-            await this.stepConfigureStorageTraffic()
-          }
+          await this.stepNetworkingProviderOrStorageTraffic()
         }
       } else if (this.isAdvancedZone && this.sgEnabled) {
         if (this.stepData.isTungstenZone) {
