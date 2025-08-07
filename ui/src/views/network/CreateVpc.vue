@@ -72,7 +72,7 @@
             :placeholder="apiParams.cidr.description"/>
         </a-form-item>
         <a-form-item
-          v-if="selectedVpcOffering && selectedVpcOffering.networkmode === 'ROUTED'"
+          v-if="selectedVpcOfferingHavingRoutedNetworkMode"
           ref="cidrsize"
           name="cidrsize">
           <template #label>
@@ -267,6 +267,9 @@ export default {
         return sourcenatService && sourcenatService.length === 1
       }
       return false
+    },
+    selectedVpcOfferingHavingRoutedNetworkMode () {
+      return this.selectedVpcOffering && this.selectedVpcOffering.networkmode === 'ROUTED'
     }
   },
   methods: {
@@ -388,6 +391,7 @@ export default {
     handleVpcOfferingChange (value) {
       this.selectedVpcOffering = {}
       if (!value) {
+        this.updateCidrRule()
         return
       }
       for (var offering of this.vpcOfferings) {
@@ -397,8 +401,16 @@ export default {
           if (this.isASNumberRequired()) {
             this.fetchZoneASNumbers()
           }
-          return
+          break
         }
+      }
+      this.updateCidrRule()
+    },
+    updateCidrRule () {
+      if (!this.selectedVpcOfferingHavingRoutedNetworkMode) {
+        this.rules.cidr = [{ required: true, message: this.$t('message.error.required.input') }]
+      } else {
+        delete this.rules.cidr
       }
     },
     handleASNumberChange (selectedIndex) {
