@@ -48,6 +48,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef.RngBackendModel;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogAction;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogModel;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.GuestDef;
 
 public class LibvirtDomainXMLParser {
     protected Logger logger = LogManager.getLogger(getClass());
@@ -63,6 +64,8 @@ public class LibvirtDomainXMLParser {
     private LibvirtVMDef.CpuTuneDef cpuTuneDef;
     private LibvirtVMDef.CpuModeDef cpuModeDef;
     private String name;
+    private GuestDef.BootType bootType;
+    private GuestDef.BootMode bootMode;
 
     public boolean parseDomainXML(String domXML) {
         DocumentBuilder builder;
@@ -388,6 +391,7 @@ public class LibvirtDomainXMLParser {
             }
             extractCpuTuneDef(rootElement);
             extractCpuModeDef(rootElement);
+            extractBootDef(rootElement);
             return true;
         } catch (ParserConfigurationException e) {
             logger.debug(e.toString());
@@ -516,6 +520,14 @@ public class LibvirtDomainXMLParser {
         return cpuModeDef;
     }
 
+    public GuestDef.BootType getBootType() {
+        return bootType;
+    }
+
+    public GuestDef.BootMode getBootMode() {
+        return bootMode;
+    }
+
     private void extractCpuTuneDef(final Element rootElement) {
         NodeList cpuTunesList = rootElement.getElementsByTagName("cputune");
         if (cpuTunesList.getLength() > 0) {
@@ -567,6 +579,28 @@ public class LibvirtDomainXMLParser {
             if (StringUtils.isNotBlank(sockets) && StringUtils.isNotBlank(cores) && StringUtils.isNotBlank(threads)) {
                 cpuModeDef.setTopology(Integer.parseInt(cores), Integer.parseInt(threads), Integer.parseInt(sockets));
             }
+        }
+    }
+
+    protected void extractBootDef(final Element rootElement) {
+        bootType = GuestDef.BootType.BIOS;
+        bootMode = GuestDef.BootMode.LEGACY;
+        Element osElement = (Element) rootElement.getElementsByTagName("os").item(0);
+        if (osElement == null) {
+            return;
+        }
+        NodeList loaderList = osElement.getElementsByTagName("loader");
+        if (loaderList.getLength() == 0) {
+            return;
+        }
+        Element loader = (Element) loaderList.item(0);
+        String type = loader.getAttribute("type");
+        String secure = loader.getAttribute("secure");
+        if ("pflash".equalsIgnoreCase(type) || loader.getTextContent().toLowerCase().contains("uefi")) {
+            bootType = GuestDef.BootType.UEFI;
+        }
+        if ("yes".equalsIgnoreCase(secure)) {
+            bootMode = GuestDef.BootMode.SECURE;
         }
     }
 }
