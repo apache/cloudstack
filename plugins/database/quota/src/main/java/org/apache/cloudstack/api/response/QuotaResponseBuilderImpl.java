@@ -188,7 +188,15 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     public Pair<List<QuotaSummaryResponse>, Integer> createQuotaSummaryResponse(QuotaSummaryCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
 
-        if (!accountTypesThatCanListAllQuotaSummaries.contains(caller.getType()) || !cmd.isListAll()) {
+        if (cmd.getAccountId() != null && !cmd.isListAll() && accountTypesThatCanListAllQuotaSummaries.contains(caller.getType())) {
+            return getQuotaSummaryResponse(cmd.getAccountId(), null, null, null, cmd);
+        }
+
+        else if (cmd.getDomainId() != null && caller.getType() == Account.Type.DOMAIN_ADMIN && !cmd.isListAll()) {
+            return getQuotaSummaryResponse(null, null, cmd.getDomainId(), null, cmd);
+        }
+
+        else if (!accountTypesThatCanListAllQuotaSummaries.contains(caller.getType()) || !cmd.isListAll()) {
             return getQuotaSummaryResponse(caller.getAccountId(), null, null, null, cmd);
         }
 

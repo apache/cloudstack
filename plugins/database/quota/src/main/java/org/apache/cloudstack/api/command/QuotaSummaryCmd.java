@@ -51,7 +51,7 @@ public class QuotaSummaryCmd extends BaseListCmd {
     QuotaService quotaService;
 
     @ACL
-    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "ID of the account for which balance will be listed. Can not be specified with projectId.")
+    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "ID of the account for which balance will be listed. Can not be specified with projectId.", since = "4.21.0")
     private Long accountId;
 
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required = false, description = "Optional, Account Id for which statement needs to be generated")
@@ -70,7 +70,7 @@ public class QuotaSummaryCmd extends BaseListCmd {
     private String accountStateToShow;
 
     @ACL
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Project Id for which balance will be listed. Can not be specified with accountId.")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Project Id for which balance will be listed. Can not be specified with accountId.", since = "4.21.0")
     private Long projectId;
 
     @Override
