@@ -195,7 +195,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                     if (!_accountService.isRootAdmin(caller.getId()) && owner.getId() != caller.getId()) {
                         // For projects check if the caller account can access the project account
                         if (owner.getType() != Account.Type.PROJECT || !(_projectMgr.canAccessProjectAccount(caller, owner.getId()))) {
-                            throw new PermissionDeniedException("Domain Admin and regular users can modify only their own Public templates");
+                            throw new PermissionDeniedException("Domain Admin and regular users can modify only their own Public Templates");
                         }
                     }
                 } else if (caller.getType() != Account.Type.ADMIN) {

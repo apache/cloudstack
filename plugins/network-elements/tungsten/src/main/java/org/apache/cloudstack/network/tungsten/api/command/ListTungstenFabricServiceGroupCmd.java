@@ -42,7 +42,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-@APICommand(name = ListTungstenFabricServiceGroupCmd.APINAME, description = "list Tungsten-Fabric service group",
+@APICommand(name = ListTungstenFabricServiceGroupCmd.APINAME, description = "List Tungsten-Fabric service group",
     responseObject = TungstenFabricServiceGroupResponse.class, requestHasSensitiveInfo = false,
     responseHasSensitiveInfo = false)
 public class ListTungstenFabricServiceGroupCmd extends BaseListCmd {
@@ -51,10 +51,10 @@ public class ListTungstenFabricServiceGroupCmd extends BaseListCmd {
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the ID of zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The ID of zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.SERVICE_GROUP_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric service group")
+    @Parameter(name = ApiConstants.SERVICE_GROUP_UUID, type = CommandType.STRING, description = "The uuid of Tungsten-Fabric service group")
     private String serviceGroupUuid;
 
     @Override

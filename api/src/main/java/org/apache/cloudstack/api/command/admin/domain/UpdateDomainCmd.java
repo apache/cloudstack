@@ -44,7 +44,7 @@ public class UpdateDomainCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DomainResponse.class, required = true, description = "ID of domain to update")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "updates domain with this name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Updates domain with this name")
     private String domainName;
 
     @Parameter(name = ApiConstants.NETWORK_DOMAIN,

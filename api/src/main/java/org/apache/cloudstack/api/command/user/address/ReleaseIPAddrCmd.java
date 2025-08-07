@@ -33,7 +33,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.IpAddress;
 
 @APICommand(name = "releaseIpAddress",
-        description = "Releases an IP address from the account.",
+        description = "Releases an IP address from the Account.",
         since = "4.17",
         responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false,
@@ -46,7 +46,7 @@ public class ReleaseIPAddrCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = IPAddressResponse.class, required = true, description = "the ID of the public IP address"
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = IPAddressResponse.class, required = true, description = "The ID of the public IP address"
         + " to release")
     private Long id;
 

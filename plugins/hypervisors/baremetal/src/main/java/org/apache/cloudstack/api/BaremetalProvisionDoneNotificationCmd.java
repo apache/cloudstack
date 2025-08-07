@@ -40,7 +40,7 @@ public class BaremetalProvisionDoneNotificationCmd extends BaseAsyncCmd {
     @Inject
     private BaremetalManager bmMgr;
 
-    @Parameter(name="mac", required = true, description = "mac of the nic used for provision")
+    @Parameter(name="mac", required = true, description = "MAC of the nic used for provision")
     private String mac;
 
     @Override

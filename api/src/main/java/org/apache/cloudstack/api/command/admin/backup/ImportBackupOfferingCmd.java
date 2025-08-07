@@ -55,11 +55,11 @@ public class ImportBackupOfferingCmd extends BaseAsyncCmd {
     ////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true,
-            description = "the name of the backup offering")
+            description = "The name of the backup offering")
     private String name;
 
     @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, required = true,
-            description = "the description of the backup offering")
+            description = "The description of the backup offering")
     private String description;
 
     @Parameter(name = ApiConstants.EXTERNAL_ID,

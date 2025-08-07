@@ -259,11 +259,11 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 client.unmapVolumeFromSdc(ScaleIOUtil.getVolumePath(volume.getPath()), sdcId);
             } else if (DataObjectType.TEMPLATE.equals(dataObject.getType())) {
                 final VMTemplateStoragePoolVO templatePoolRef = vmTemplatePoolDao.findByPoolTemplate(dataStore.getId(), dataObject.getId(), null);
-                logger.debug("Revoking access for PowerFlex template volume: {}", templatePoolRef.getInstallPath());
+                logger.debug("Revoking access for PowerFlex Template volume: {}", templatePoolRef.getInstallPath());
                 client.unmapVolumeFromSdc(ScaleIOUtil.getVolumePath(templatePoolRef.getInstallPath()), sdcId);
             } else if (DataObjectType.SNAPSHOT.equals(dataObject.getType())) {
                 SnapshotInfo snapshot = (SnapshotInfo) dataObject;
-                logger.debug("Revoking access for PowerFlex volume snapshot: {} at path {}", snapshot, snapshot.getPath());
+                logger.debug("Revoking access for PowerFlex volume Snapshot: {} at path {}", snapshot, snapshot.getPath());
                 client.unmapVolumeFromSdc(ScaleIOUtil.getVolumePath(snapshot.getPath()), sdcId);
             }
             if (client.listVolumesMappedToSdc(sdcId).isEmpty()) {
@@ -287,7 +287,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             final String sdcId = getConnectedSdc(dataStore, host);
             if (StringUtils.isBlank(sdcId)) {
                 logger.warn("Unable to revoke access for volume: {}, " +
-                        "no Sdc connected with host [id: {}, uuid: {}, ip: {}]",
+                        "no Sdc connected with host [id: {}, uuid: {}, IP: {}]",
                         volumePath, host.getId(), host.getUuid(), host.getPrivateIpAddress());
                 return;
             }
