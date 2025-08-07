@@ -233,16 +233,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     private ServiceOfferingVO serviceOfferingVO;
 
     private long capacityScanInterval = DEFAULT_CAPACITY_SCAN_INTERVAL_IN_MILLISECONDS;
-    private int capacityPerProxy = ConsoleProxyManager.DEFAULT_PROXY_CAPACITY;
-    private int standbyCapacity = ConsoleProxyManager.DEFAULT_STANDBY_CAPACITY;
 
     private boolean useStorageVm;
-    private boolean disableRpFilter = false;
     private String instance;
-
-    private int proxySessionTimeoutValue = DEFAULT_PROXY_SESSION_TIMEOUT;
-    private boolean sslEnabled = false;
-    private String consoleProxyUrlDomain;
 
     private SystemVmLoadScanner<Long> loadScanner;
     private Map<Long, ZoneHostInfo> zoneHostInfoMap;
@@ -342,7 +335,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             logger.warn(String.format("SSL is enabled for console proxy [%s] but no server certificate found in database.", proxy.toString()));
         }
 
-        consoleProxyUrlDomain = ConsoleProxyUrlDomain.valueIn(dataCenterId);
+        String consoleProxyUrlDomain = ConsoleProxyUrlDomain.valueIn(dataCenterId);
         ConsoleProxyInfo info;
         if (staticPublicIp == null) {
             info = new ConsoleProxyInfo(proxy.isSslEnabled(), proxy.getPublicIpAddress(), consoleProxyPort, proxy.getPort(), consoleProxyUrlDomain);
@@ -375,6 +368,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                             }
                             proxy = null;
                         } else {
+                            long capacityPerProxy = ConsoleProxySessionMax.valueIn(dataCenterId);
                             if (consoleProxyDao.getProxyActiveLoad(proxy.getId()) < capacityPerProxy || hasPreviousSession(proxy, vm)) {
                                 if (logger.isDebugEnabled()) {
                                     logger.debug("Assign previous allocated console proxy for user vm: {}", vm);
@@ -409,7 +403,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         if (vm.getProxyId() == null || vm.getProxyId() != proxy.getId()) {
             vmInstanceDao.updateProxyId(vm.getId(), proxy.getId(), DateUtil.currentGMTTime());
         }
-
+        boolean sslEnabled = isSslEnabled(dataCenterId);
         proxy.setSslEnabled(sslEnabled);
         if (sslEnabled) {
             proxy.setPort(443);
@@ -452,6 +446,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                 }
             }
 
+            Integer proxySessionTimeoutValue = ConsoleProxySessionTimeout.valueIn(proxy.getDataCenterId());
             return DateUtil.currentGMTTime().getTime() - vm.getProxyAssignTime().getTime() < proxySessionTimeoutValue;
         } else {
             logger.warn(String.format("Unable to retrieve load info from proxy [%s] on an overloaded proxy.", proxy.toString()));
@@ -500,6 +495,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         if (logger.isDebugEnabled()) {
             logger.debug("Assign console proxy from running pool for request from data center: {}", zone);
         }
+
+        long capacityPerProxy = ConsoleProxySessionMax.valueIn(dataCenterId);
 
         ConsoleProxyAllocator allocator = getCurrentAllocator();
         assert (allocator != null);
@@ -820,8 +817,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         return l.size() < launchLimit;
     }
 
-    private boolean checkCapacity(ConsoleProxyLoadInfo proxyCountInfo, ConsoleProxyLoadInfo vmCountInfo) {
-        return proxyCountInfo.getCount() * capacityPerProxy - vmCountInfo.getCount() > standbyCapacity;
+    private boolean checkCapacity(ConsoleProxyLoadInfo proxyCountInfo, ConsoleProxyLoadInfo vmCountInfo, long dataCenterId) {
+        long capacityPerProxy = ConsoleProxySessionMax.valueIn(dataCenterId);
+        return proxyCountInfo.getCount() * capacityPerProxy - vmCountInfo.getCount() > getStandbyCapacity(dataCenterId);
     }
 
     private void allocCapacity(long dataCenterId) {
@@ -1118,8 +1116,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     }
 
     @Override
-    public int getVncPort() {
-        return sslEnabled && _ksDao.findByName(ConsoleProxyManager.CERTIFICATE_NAME) != null ? 8443 : 8080;
+    public int getVncPort(Long dataCenterId) {
+        return isSslEnabled(dataCenterId) && _ksDao.findByName(ConsoleProxyManager.CERTIFICATE_NAME) != null ? 8443 : 8080;
     }
 
     private String getAllocProxyLockName() {
@@ -1136,42 +1134,18 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         for (Map.Entry<String, String> entry : configs.entrySet()) {
             logger.info("PEARL - Configure console proxy manager : " + entry.getKey() + " = " + entry.getValue());
         }
-        String value = configs.get(ConsoleProxySslEnabled.key());
-        if (value != null && value.equalsIgnoreCase("true")) {
-            sslEnabled = true;
-        }
 
-        consoleProxyUrlDomain = ConsoleProxyUrlDomain.value();
-        if( sslEnabled && (consoleProxyUrlDomain == null || consoleProxyUrlDomain.isEmpty())) {
-            logger.warn("Empty console proxy domain, explicitly disabling SSL");
-            sslEnabled = false;
-        }
-
-        value = ConsoleProxyCapacityScanInterval.value();
+        String value = ConsoleProxyCapacityScanInterval.value();
         capacityScanInterval = NumbersUtil.parseLong(value, DEFAULT_CAPACITY_SCAN_INTERVAL_IN_MILLISECONDS);
-
-        capacityPerProxy = NumbersUtil.parseInt(configs.get("consoleproxy.session.max"), DEFAULT_PROXY_CAPACITY);
-        standbyCapacity = NumbersUtil.parseInt(ConsoleProxyCapacityStandby.value(), DEFAULT_STANDBY_CAPACITY);
-        proxySessionTimeoutValue = NumbersUtil.parseInt(configs.get("consoleproxy.session.timeout"), DEFAULT_PROXY_SESSION_TIMEOUT);
 
         value = configs.get("consoleproxy.port");
         if (value != null) {
             consoleProxyPort = NumbersUtil.parseInt(value, ConsoleProxyManager.DEFAULT_PROXY_VNC_PORT);
         }
 
-        Boolean rpFilterDisabled = ConsoleProxyDisableRpFilter.value();
-        if (Boolean.TRUE.equals(rpFilterDisabled)) {
-            disableRpFilter = true;
-        }
-
         value = configs.get("secondary.storage.vm");
         if (value != null && value.equalsIgnoreCase("true")) {
             useStorageVm = true;
-        }
-
-        if (logger.isInfoEnabled()) {
-            logger.info("Console proxy max session soft limit : " + capacityPerProxy);
-            logger.info("Console proxy standby capacity : " + standbyCapacity);
         }
 
         instance = configs.get("instance.name");
@@ -1255,7 +1229,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         buf.append(" host=").append(StringUtils.toCSVList(indirectAgentLB.getManagementServerList(dest.getHost().getId(), dest.getDataCenter().getId(), null)));
         buf.append(" port=").append(managementPort);
         buf.append(" name=").append(profile.getVirtualMachine().getHostName());
-        if (sslEnabled) {
+        if (isSslEnabled(dest.getDataCenter().getId())) {
             buf.append(" premium=true");
         }
         Long datacenterId = dest.getDataCenter().getId();
@@ -1263,8 +1237,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         buf.append(" pod=").append(dest.getPod().getId());
         buf.append(" guid=Proxy.").append(profile.getId());
         buf.append(" proxy_vm=").append(profile.getId());
-        disableRpFilter = ConsoleProxyDisableRpFilter.valueIn(datacenterId);
-        if (disableRpFilter) {
+        Boolean disableRpFilter = ConsoleProxyDisableRpFilter.valueIn(datacenterId);
+        if (Boolean.TRUE.equals(disableRpFilter)) {
             buf.append(" disable_rp_filter=true");
         }
 
@@ -1324,7 +1298,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             buf.append(" dns2=").append(dc.getDns2());
         }
         if (VirtualMachine.Type.ConsoleProxy == profile.getVirtualMachine().getType()) {
-            buf.append(" vncport=").append(getVncPort());
+            buf.append(" vncport=").append(getVncPort(datacenterId));
         }
         buf.append(" keystore_password=").append(VirtualMachineGuru.getEncodedString(PasswordGenerator.generateRandomPassword(16)));
         String bootArgs = buf.toString();
@@ -1557,7 +1531,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             vmInfo = new ConsoleProxyLoadInfo();
         }
 
-        if (!checkCapacity(proxyInfo, vmInfo)) {
+        if (!checkCapacity(proxyInfo, vmInfo, dataCenterId)) {
             if (logger.isDebugEnabled()) {
                 logger.debug("Expand console proxy standby capacity for zone " + proxyInfo.getName());
             }
@@ -1632,7 +1606,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] { ConsoleProxySslEnabled, NoVncConsoleDefault, NoVncConsoleSourceIpCheckEnabled };
+        return new ConfigKey<?>[] { ConsoleProxySslEnabled, NoVncConsoleDefault, NoVncConsoleSourceIpCheckEnabled,
+                ConsoleProxyCapacityStandby, ConsoleProxyCapacityScanInterval, ConsoleProxyCmdPort, ConsoleProxyRestart, ConsoleProxyUrlDomain, ConsoleProxySessionMax, ConsoleProxySessionTimeout, ConsoleProxyDisableRpFilter, ConsoleProxyLaunchMax,
+                ConsoleProxyManagementLastState, ConsoleProxyServiceManagementState };
     }
 
     protected ConsoleProxyStatus parseJsonToConsoleProxyStatus(String json) throws JsonParseException {
@@ -1665,5 +1641,19 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         }
 
         consoleProxyDao.update(proxyVmId, count, DateUtil.currentGMTTime(), details);
+    }
+
+    private boolean isSslEnabled(Long dataCenterId) {
+        boolean sslEnabled = ConsoleProxySslEnabled.valueIn(dataCenterId);
+        String consoleProxyUrlDomain = ConsoleProxyUrlDomain.valueIn(dataCenterId);
+        if( sslEnabled && (consoleProxyUrlDomain == null || consoleProxyUrlDomain.isEmpty())) {
+            logger.warn("Empty console proxy domain, explicitly disabling SSL");
+            sslEnabled = false;
+        }
+        return sslEnabled;
+    }
+
+    private Integer getStandbyCapacity(Long datacenterId) {
+        return Integer.parseInt(ConsoleProxyCapacityStandby.valueIn(datacenterId));
     }
 }

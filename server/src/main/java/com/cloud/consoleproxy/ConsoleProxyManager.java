@@ -56,11 +56,11 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
     ConfigKey<Boolean> NoVncConsoleSourceIpCheckEnabled = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class, "novnc.console.sourceip.check.enabled", "false",
         "If true, The source IP to access novnc console must be same as the IP in request to management server for console URL. Needs to reconnect CPVM to management server when this changes (via restart CPVM, or management server, or cloud service in CPVM)", false);
 
-    ConfigKey<String> ConsoleProxyCapacityStandby = new ConfigKey<>(String.class, "consoleproxy.capacity.standby", "Console Proxy", "10",
+    ConfigKey<String> ConsoleProxyCapacityStandby = new ConfigKey<>(String.class, "consoleproxy.capacity.standby", "Console Proxy", String.valueOf(DEFAULT_STANDBY_CAPACITY),
             "The minimal number of console proxy viewer sessions that system is able to serve immediately(standby capacity)", false, ConfigKey.Scope.Zone, null);
 
     ConfigKey<String> ConsoleProxyCapacityScanInterval = new ConfigKey<>(String.class, "consoleproxy.capacityscan.interval", "Console Proxy", "30000",
-            "The time interval(in millisecond) to scan whether or not system needs more console proxy to ensure minimal standby capacity", false, ConfigKey.Scope.Zone, null);
+            "The time interval(in millisecond) to scan whether or not system needs more console proxy to ensure minimal standby capacity", false, null);
 
     ConfigKey<Integer> ConsoleProxyCmdPort = new ConfigKey<>(Integer.class, "consoleproxy.cmd.port", "Console Proxy", String.valueOf(DEFAULT_PROXY_CMD_PORT),
             "Console proxy command port that is used to communicate with management server", false, ConfigKey.Scope.Zone, null);
@@ -74,7 +74,7 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
     ConfigKey<Integer> ConsoleProxySessionMax = new ConfigKey<>(Integer.class, "consoleproxy.session.max", "Console Proxy", String.valueOf(DEFAULT_PROXY_CAPACITY),
             "The max number of viewer sessions console proxy is configured to serve for", false, ConfigKey.Scope.Zone, null);
 
-    ConfigKey<Integer> ConsoleProxySessionTimeout = new ConfigKey<>(Integer.class, "consoleproxy.session.timeout", "Console Proxy", "300000",
+    ConfigKey<Integer> ConsoleProxySessionTimeout = new ConfigKey<>(Integer.class, "consoleproxy.session.timeout", "Console Proxy", String.valueOf(DEFAULT_PROXY_SESSION_TIMEOUT),
             "Timeout(in milliseconds) that console proxy tries to maintain a viewer session before it times out the session for no activity", false, ConfigKey.Scope.Zone, null);
 
     ConfigKey<Boolean> ConsoleProxyDisableRpFilter = new ConfigKey<>(Boolean.class, "consoleproxy.disable.rpfilter", "Console Proxy", "true",
@@ -108,6 +108,6 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
 
     boolean destroyProxy(long proxyVmId);
 
-    int getVncPort();
+    int getVncPort(Long dataCenterId);
 
 }
