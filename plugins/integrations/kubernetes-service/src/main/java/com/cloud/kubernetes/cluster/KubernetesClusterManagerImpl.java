@@ -830,7 +830,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         List<KubernetesClusterVmMapVO> vmList = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
         ResponseView respView = ResponseView.Restricted;
         Account caller = CallContext.current().getCallingAccount();
-        if (accountService.isRootAdmin(caller.getId())) {
+        if (CallContext.current().isCallingAccountRootAdmin()) {
             respView = ResponseView.Full;
         }
         final String responseName = "virtualmachine";
@@ -867,7 +867,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             response.setEtcdIps(etcdIps);
         }
         response.setHasAnnotation(annotationDao.hasAnnotations(kubernetesCluster.getUuid(),
-                AnnotationService.EntityType.KUBERNETES_CLUSTER.name(), accountService.isRootAdmin(caller.getId())));
+                AnnotationService.EntityType.KUBERNETES_CLUSTER.name(), CallContext.current().isCallingAccountRootAdmin()));
         response.setVirtualMachines(vmResponses);
         response.setAutoscalingEnabled(kubernetesCluster.getAutoscalingEnabled());
         response.setMinSize(kubernetesCluster.getMinSize());

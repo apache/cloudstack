@@ -417,7 +417,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         }
 
         userVmResponse.setHasAnnotation(annotationDao.hasAnnotations(userVm.getUuid(),
-                AnnotationService.EntityType.VM.name(), _accountMgr.isRootAdmin(caller.getId())));
+                AnnotationService.EntityType.VM.name(), _accountMgr.isRootAdmin(caller)));
 
         if (details.contains(VMDetails.all) || details.contains(VMDetails.affgrp)) {
             Long affinityGroupId = userVm.getAffinityGroupId();
@@ -659,7 +659,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
 
         if (userVmData.hasAnnotation() == null) {
             userVmData.setHasAnnotation(annotationDao.hasAnnotations(uvo.getUuid(),
-                    AnnotationService.EntityType.VM.name(), _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+                    AnnotationService.EntityType.VM.name(), CallContext.current().isCallingAccountRootAdmin()));
         }
 
         Long affinityGroupId = uvo.getAffinityGroupId();
