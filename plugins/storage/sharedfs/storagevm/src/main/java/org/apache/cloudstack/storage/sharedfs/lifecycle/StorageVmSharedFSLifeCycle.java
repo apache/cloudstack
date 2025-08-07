@@ -175,10 +175,11 @@ public class StorageVmSharedFSLifeCycle implements SharedFSLifeCycle {
             customParameterMap.put("maxIopsDo", maxIops.toString());
         }
         List<String> keypairs = new ArrayList<String>();
+        String preferredArchitecture = ResourceManager.SystemVmPreferredArchitecture.valueIn(zoneId);
 
         for (final Iterator<Hypervisor.HypervisorType> iter = hypervisors.iterator(); iter.hasNext();) {
             final Hypervisor.HypervisorType hypervisor = iter.next();
-            VMTemplateVO template = templateDao.findSystemVMReadyTemplate(zoneId, hypervisor);
+            VMTemplateVO template = templateDao.findSystemVMReadyTemplate(zoneId, hypervisor, preferredArchitecture);
             if (template == null && !iter.hasNext()) {
                 throw new CloudRuntimeException(String.format("Unable to find the systemvm template for %s or it was not downloaded in %s.", hypervisor.toString(), zone.toString()));
             }
@@ -195,7 +196,7 @@ public class StorageVmSharedFSLifeCycle implements SharedFSLifeCycle {
             CallContext vmContext = CallContext.register(CallContext.current(), ApiCommandResourceType.VirtualMachine);
             try {
                 vm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner, hostName, hostName,
-                        diskOfferingId, size, null, Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData,
+                        diskOfferingId, size, null, null, Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData,
                         null, null, keypairs, null, addrs, null, null, null,
                         customParameterMap, null, null, null, null,
                         true, UserVmManager.SHAREDFSVM, null, null, null);

@@ -26,6 +26,7 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.Date;
+import java.util.Map;
 
 @EntityReference(value = Backup.class)
 public class BackupResponse extends BaseResponse {
@@ -33,6 +34,14 @@ public class BackupResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "ID of the VM backup")
     private String id;
+
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "name of the backup", since = "4.21.0")
+    private String name;
+
+    @SerializedName(ApiConstants.DESCRIPTION)
+    @Param(description = "description for the backup", since = "4.21.0")
+    private String description;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
     @Param(description = "ID of the VM")
@@ -102,12 +111,40 @@ public class BackupResponse extends BaseResponse {
     @Param(description = "zone name")
     private String zone;
 
+    @SerializedName(ApiConstants.VM_DETAILS)
+    @Param(description = "Lists the vm specific details for the backup", since = "4.21.0")
+    private Map<String, String> vmDetails;
+
+    @SerializedName(ApiConstants.INTERVAL_TYPE)
+    @Param(description = "Interval type of the backup", since = "4.21.0")
+    private String intervalType;
+
+    @SerializedName(ApiConstants.BACKUP_VM_OFFERING_REMOVED)
+    @Param(description = "The backup offering corresponding to this backup was removed from the VM", since = "4.21.0")
+    private Boolean vmOfferingRemoved;
+
     public String getId() {
         return id;
     }
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public String getVmId() {
@@ -244,5 +281,29 @@ public class BackupResponse extends BaseResponse {
 
     public void setZone(String zone) {
         this.zone = zone;
+    }
+
+    public Map<String, String> getVmDetails() {
+        return vmDetails;
+    }
+
+    public void setVmDetails(Map<String, String> vmDetails) {
+        this.vmDetails = vmDetails;
+    }
+
+    public String getIntervalType() {
+        return this.intervalType;
+    }
+
+    public void setIntervalType(String intervalType) {
+        this.intervalType = intervalType;
+    }
+
+    public Boolean getVmOfferingRemoved() {
+        return this.vmOfferingRemoved;
+    }
+
+    public void setVmOfferingRemoved(Boolean vmOfferingRemoved) {
+        this.vmOfferingRemoved = vmOfferingRemoved;
     }
 }

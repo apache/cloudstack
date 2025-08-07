@@ -189,6 +189,7 @@ export default {
       return new Promise((resolve, reject) => {
         getAPI('listTemplates', {
           templatefilter: 'all',
+          isready: true,
           id: this.resource.templateid
         }).then(response => {
           var template = response?.listtemplatesresponse?.template?.[0] || null

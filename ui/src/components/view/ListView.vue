@@ -342,7 +342,8 @@
           }}</router-link>
       </template>
       <template v-if="column.key === 'virtualmachinename'">
-        <router-link :to="{ path: getVmRouteUsingType(record) + record.virtualmachineid }">{{ text }}</router-link>
+        <router-link v-if="record.virtualmachineid" :to="{ path: getVmRouteUsingType(record) + record.virtualmachineid }">{{ text }}</router-link>
+        <span v-else>{{ text }}</span>
       </template>
       <template v-if="column.key === 'volumename'">
         <router-link
@@ -478,12 +479,12 @@
       <template v-if="column.key === 'availability' && $route.path.startsWith('/extension')">
         <status :text="text ? text : ''" displayText />
       </template>
-      <template v-if="column.key === 'cpunumber'">
+      <template v-if="column.key === 'cpunumber' && $route.path.split('/')[1] !== 'kubernetes'">
         <span>{{ record.serviceofferingdetails?.mincpunumber && record.serviceofferingdetails?.maxcpunumber ?
           `${record.serviceofferingdetails.mincpunumber} - ${record.serviceofferingdetails.maxcpunumber}` :
           record.cpunumber }}</span>
       </template>
-      <template v-if="column.key === 'memory'">
+      <template v-if="column.key === 'memory' && $route.path.split('/')[1] !== 'kubernetes'">
         <span>{{ record.serviceofferingdetails?.minmemory && record.serviceofferingdetails?.maxmemory ?
           `${record.serviceofferingdetails.minmemory} - ${record.serviceofferingdetails.maxmemory}` : record.memory
           }}</span>
@@ -1230,45 +1231,45 @@ export default {
       this.editableValue = record.value
     },
     getUpdateApi () {
-      let apiString = ''
+      let apiCommand = ''
       switch (this.$route.name) {
         case 'template':
-          apiString = 'updateTemplate'
+          apiCommand = 'updateTemplate'
           break
         case 'iso':
-          apiString = 'updateIso'
+          apiCommand = 'updateIso'
           break
         case 'zone':
-          apiString = 'updateZone'
+          apiCommand = 'updateZone'
           break
         case 'computeoffering':
         case 'systemoffering':
-          apiString = 'updateServiceOffering'
+          apiCommand = 'updateServiceOffering'
           break
         case 'diskoffering':
-          apiString = 'updateDiskOffering'
+          apiCommand = 'updateDiskOffering'
           break
         case 'networkoffering':
-          apiString = 'updateNetworkOffering'
+          apiCommand = 'updateNetworkOffering'
           break
         case 'vpcoffering':
-          apiString = 'updateVPCOffering'
+          apiCommand = 'updateVPCOffering'
           break
         case 'guestoscategory':
-          apiString = 'updateOsCategory'
+          apiCommand = 'updateOsCategory'
           break
       }
-      return apiString
+      return apiCommand
     },
     isOrderUpdatable () {
       return this.getUpdateApi() in this.$store.getters.apis
     },
     handleUpdateOrder (id, index) {
       this.parentToggleLoading()
-      const apiString = this.getUpdateApi()
+      const apiCommand = this.getUpdateApi()
 
       return new Promise((resolve, reject) => {
-        postAPI(apiString, {
+        postAPI(apiCommand, {
           id,
           sortKey: index
         }).then((response) => {

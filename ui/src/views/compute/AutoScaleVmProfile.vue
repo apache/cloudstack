@@ -424,6 +424,7 @@ export default {
       }
       if (isAdmin()) {
         params.templatefilter = 'all'
+        params.isready = true
       } else {
         params.templatefilter = 'executable'
       }

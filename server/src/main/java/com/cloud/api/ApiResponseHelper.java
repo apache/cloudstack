@@ -77,7 +77,6 @@ import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.cloudstack.api.response.BackupOfferingResponse;
 import org.apache.cloudstack.api.response.BackupRepositoryResponse;
-import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.BackupScheduleResponse;
 import org.apache.cloudstack.api.response.BgpPeerResponse;
 import org.apache.cloudstack.api.response.BucketResponse;
@@ -88,6 +87,7 @@ import org.apache.cloudstack.api.response.ConditionResponse;
 import org.apache.cloudstack.api.response.ConfigurationGroupResponse;
 import org.apache.cloudstack.api.response.ConfigurationResponse;
 import org.apache.cloudstack.api.response.ConfigurationSubGroupResponse;
+import org.apache.cloudstack.api.response.ConsoleSessionResponse;
 import org.apache.cloudstack.api.response.ControlledEntityResponse;
 import org.apache.cloudstack.api.response.ControlledViewEntityResponse;
 import org.apache.cloudstack.api.response.CounterResponse;
@@ -198,7 +198,6 @@ import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.backup.BackupRepository;
 import org.apache.cloudstack.backup.BackupSchedule;
@@ -207,6 +206,7 @@ import org.apache.cloudstack.backup.dao.BackupRepositoryDao;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.config.ConfigurationGroup;
 import org.apache.cloudstack.config.ConfigurationSubGroup;
+import org.apache.cloudstack.consoleproxy.ConsoleSession;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.direct.download.DirectDownloadCertificate;
 import org.apache.cloudstack.direct.download.DirectDownloadCertificateHostMap;
@@ -886,6 +886,15 @@ public class ApiResponseHelper implements ResponseGenerator {
             zoneResponses.add(zoneResponse);
         }
         policyResponse.setZones(new HashSet<>(zoneResponses));
+        List<StoragePoolResponse> poolResponses = new ArrayList<>();
+        List<StoragePoolVO> pools = ApiDBUtils.findSnapshotPolicyPools(policy, vol);
+        for (StoragePoolVO pool : pools) {
+            StoragePoolResponse storagePoolResponse = new StoragePoolResponse();
+            storagePoolResponse.setId(pool.getUuid());
+            storagePoolResponse.setName(pool.getName());
+            poolResponses.add(storagePoolResponse);
+        }
+        policyResponse.setStoragePools(new HashSet<>(poolResponses));
 
         return policyResponse;
     }
@@ -1483,6 +1492,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         capacities.add(ApiDBUtils.getStoragePoolUsedStats(poolId, clusterId, podId, zoneId));
         if (clusterId == null && podId == null) {
             capacities.add(ApiDBUtils.getSecondaryStorageUsedStats(poolId, zoneId));
+            capacities.add(ApiDBUtils.getObjectStorageUsedStats(zoneId));
         }
 
         List<CapacityResponse> capacityResponses = new ArrayList<CapacityResponse>();
@@ -2140,6 +2150,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<CapacityResponse> capacityResponses = new ArrayList<CapacityResponse>();
 
         for (Capacity summedCapacity : result) {
+            if (summedCapacity.getTotalCapacity() == 0 &&
+                    (summedCapacity.getCapacityType() == Capacity.CAPACITY_TYPE_BACKUP_STORAGE ||
+                     summedCapacity.getCapacityType() == Capacity.CAPACITY_TYPE_OBJECT_STORAGE)) {
+                continue;
+            }
             CapacityResponse capacityResponse = new CapacityResponse();
             capacityResponse.setCapacityTotal(summedCapacity.getTotalCapacity());
             if (summedCapacity.getAllocatedCapacity() != null) {
@@ -5059,11 +5074,6 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public BackupResponse createBackupResponse(Backup backup) {
-        return ApiDBUtils.newBackupResponse(backup);
-    }
-
-    @Override
     public BackupScheduleResponse createBackupScheduleResponse(BackupSchedule schedule) {
         return ApiDBUtils.newBackupScheduleResponse(schedule);
     }
@@ -5614,5 +5624,72 @@ protected Map<String, ResourceIcon> getResourceIconsUsingOsCategory(List<Templat
         guiThemeResponse.setResponseName("guithemes");
 
         return guiThemeResponse;
+    }
+
+    private void populateDomainFieldsOnConsoleSessionResponse(ConsoleSession consoleSession, ConsoleSessionResponse consoleSessionResponse) {
+        Domain domain = ApiDBUtils.findDomainById(consoleSession.getDomainId());
+        if (domain != null) {
+            consoleSessionResponse.setDomain(domain.getName());
+            consoleSessionResponse.setDomainPath(domain.getPath());
+            consoleSessionResponse.setDomainId(domain.getUuid());
+        }
+    }
+
+    private void populateUserFieldsOnConsoleSessionResponse(ConsoleSession consoleSession, ConsoleSessionResponse consoleSessionResponse) {
+        User user = findUserById(consoleSession.getUserId());
+        if (user != null) {
+            consoleSessionResponse.setUser(user.getUsername());
+            consoleSessionResponse.setUserId(user.getUuid());
+        }
+    }
+
+    private void populateAccountFieldsOnConsoleSessionResponse(ConsoleSession consoleSession, ConsoleSessionResponse consoleSessionResponse) {
+        Account account = ApiDBUtils.findAccountById(consoleSession.getAccountId());
+        if (account != null) {
+            consoleSessionResponse.setAccount(account.getAccountName());
+            consoleSessionResponse.setAccountId(account.getUuid());
+        }
+    }
+
+    private void populateHostFieldsOnConsoleSessionResponse(ConsoleSession consoleSession, ConsoleSessionResponse consoleSessionResponse) {
+        Host host = findHostById(consoleSession.getHostId());
+        if (host != null) {
+            consoleSessionResponse.setHostId(host.getUuid());
+            consoleSessionResponse.setHostName(host.getName());
+        }
+    }
+
+    private void populateInstanceFieldsOnConsoleSessionResponse(ConsoleSession consoleSession, ConsoleSessionResponse consoleSessionResponse) {
+        VMInstanceVO instance = ApiDBUtils.findVMInstanceById(consoleSession.getInstanceId());
+        if (instance != null) {
+            consoleSessionResponse.setVmId(instance.getUuid());
+            consoleSessionResponse.setVmName(instance.getInstanceName());
+        }
+    }
+
+    @Override
+    public ConsoleSessionResponse createConsoleSessionResponse(ConsoleSession consoleSession, ResponseView responseView) {
+        ConsoleSessionResponse consoleSessionResponse = new ConsoleSessionResponse();
+        if (consoleSession == null) {
+            return consoleSessionResponse;
+        }
+
+        consoleSessionResponse.setId(consoleSession.getUuid());
+        consoleSessionResponse.setCreated(consoleSession.getCreated());
+        consoleSessionResponse.setAcquired(consoleSession.getAcquired());
+        consoleSessionResponse.setRemoved(consoleSession.getRemoved());
+        consoleSessionResponse.setConsoleEndpointCreatorAddress(consoleSession.getConsoleEndpointCreatorAddress());
+        consoleSessionResponse.setClientAddress(consoleSession.getClientAddress());
+
+        populateDomainFieldsOnConsoleSessionResponse(consoleSession, consoleSessionResponse);
+        populateUserFieldsOnConsoleSessionResponse(consoleSession, consoleSessionResponse);
+        populateAccountFieldsOnConsoleSessionResponse(consoleSession, consoleSessionResponse);
+        populateInstanceFieldsOnConsoleSessionResponse(consoleSession, consoleSessionResponse);
+        if (responseView == ResponseView.Full) {
+            populateHostFieldsOnConsoleSessionResponse(consoleSession, consoleSessionResponse);
+        }
+
+        consoleSessionResponse.setObjectName("consolesession");
+        return consoleSessionResponse;
     }
 }

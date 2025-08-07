@@ -482,8 +482,14 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         return null;
     }
 
-    public VMTemplateVO getKubernetesServiceTemplate(DataCenter dataCenter, Hypervisor.HypervisorType hypervisorType, Map<String, Long> templateNodeTypeMap, KubernetesClusterNodeType nodeType) {
-        VMTemplateVO template = templateDao.findSystemVMReadyTemplate(dataCenter.getId(), hypervisorType);
+    public VMTemplateVO getKubernetesServiceTemplate(DataCenter dataCenter, Hypervisor.HypervisorType hypervisorType, Map<String, Long> templateNodeTypeMap, KubernetesClusterNodeType nodeType,
+                                                     KubernetesSupportedVersion clusterKubernetesVersion) {
+        String systemVMPreferredArchitecture = ResourceManager.SystemVmPreferredArchitecture.valueIn(dataCenter.getId());
+        VMTemplateVO cksIso = clusterKubernetesVersion != null ?
+                templateDao.findById(clusterKubernetesVersion.getIsoId()) :
+                null;
+        String preferredArchitecture = getCksClusterPreferredArch(systemVMPreferredArchitecture, cksIso);
+        VMTemplateVO template = templateDao.findSystemVMReadyTemplate(dataCenter.getId(), hypervisorType, preferredArchitecture);
         if (DataCenter.Type.Edge.equals(dataCenter.getType()) && template != null && !template.isDirectDownload()) {
             logger.debug(String.format("Template %s can not be used for edge zone %s", template, dataCenter));
             template = templateDao.findRoutingTemplate(hypervisorType, networkHelper.getHypervisorRouterTemplateConfigMap().get(hypervisorType).valueIn(dataCenter.getId()));
@@ -508,6 +514,14 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
     public void throwDefaultCksTemplateNotFound(String datacenterId) {
         throw new CloudRuntimeException("Not able to find the System or Routing template in ready state for the zone " + datacenterId);
+    }
+
+    protected String getCksClusterPreferredArch(String systemVMPreferredArchitecture, VMTemplateVO cksIso) {
+        if (cksIso == null) {
+            return systemVMPreferredArchitecture;
+        }
+        String cksIsoArchName = cksIso.getArch().name();
+        return cksIsoArchName.equals(systemVMPreferredArchitecture) ? systemVMPreferredArchitecture : cksIsoArchName;
     }
 
     protected void validateIsolatedNetworkIpRules(long ipId, FirewallRule.Purpose purpose, Network network, int clusterTotalNodeCount) {
@@ -1541,11 +1555,12 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
 
         Map<String, Long> templateNodeTypeMap = cmd.getTemplateNodeTypeMap();
-        final VMTemplateVO finalTemplate = getKubernetesServiceTemplate(zone, hypervisorType, templateNodeTypeMap, DEFAULT);
-        final VMTemplateVO controlNodeTemplate = getKubernetesServiceTemplate(zone, hypervisorType, templateNodeTypeMap, CONTROL);
-        final VMTemplateVO workerNodeTemplate = getKubernetesServiceTemplate(zone, hypervisorType, templateNodeTypeMap, WORKER);
-        final VMTemplateVO etcdNodeTemplate = getKubernetesServiceTemplate(zone, hypervisorType, templateNodeTypeMap, ETCD);
+        final VMTemplateVO finalTemplate = getKubernetesServiceTemplate(zone, hypervisorType, templateNodeTypeMap, DEFAULT, clusterKubernetesVersion);
+        final VMTemplateVO controlNodeTemplate = getKubernetesServiceTemplate(zone, hypervisorType, templateNodeTypeMap, CONTROL, clusterKubernetesVersion);
+        final VMTemplateVO workerNodeTemplate = getKubernetesServiceTemplate(zone, hypervisorType, templateNodeTypeMap, WORKER, clusterKubernetesVersion);
+        final VMTemplateVO etcdNodeTemplate = getKubernetesServiceTemplate(zone, hypervisorType, templateNodeTypeMap, ETCD, clusterKubernetesVersion);
         final Network defaultNetwork = getKubernetesClusterNetworkIfMissing(cmd.getName(), zone, owner, (int)controlNodeCount, (int)clusterSize, cmd.getExternalLoadBalancerIpAddress(), cmd.getNetworkId(), asNumber);
+
         final SecurityGroup finalSecurityGroup = securityGroup;
         final KubernetesClusterVO cluster = Transaction.execute(new TransactionCallback<KubernetesClusterVO>() {
             @Override

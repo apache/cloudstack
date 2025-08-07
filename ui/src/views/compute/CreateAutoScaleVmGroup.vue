@@ -737,7 +737,7 @@
                     {{ $t('label.isadvanced') }}
                     <a-switch v-model:checked="showDetails" style="margin-left: 10px"/>
                   </span>
-                  <div style="margin-top: 15px" v-show="showDetails">
+                  <div style="margin-top: 15px" v-if="showDetails">
                     <a-form-item :label="$t('label.sshkeypairs')">
                       <ssh-key-pair-selection
                         :items="options.sshKeyPairs"
@@ -1881,6 +1881,7 @@ export default {
           apiName = 'listTemplates'
           params.listall = true
           params.templatefilter = this.isNormalAndDomainUser ? 'executable' : 'all'
+          params.isready = true
           params.id = this.queryTemplateId
           this.dataPreFill.templateid = this.queryTemplateId
         } else if (this.queryNetworkId) {
@@ -2896,7 +2897,7 @@ export default {
         const param = this.params.zones
         const args = { showicon: true }
         if (zoneId) args.id = zoneId
-        postAPI(param.list, args).then(json => {
+        getAPI(param.list, args).then(json => {
           const zoneResponse = (json.listzonesresponse.zone || []).filter(item => item.securitygroupsenabled === false)
           if (listZoneAllow && listZoneAllow.length > 0) {
             zoneResponse.map(zone => {
@@ -2928,7 +2929,7 @@ export default {
         if (!('listall' in options) && !['zones', 'pods', 'clusters', 'hosts', 'dynamicScalingVmConfig', 'hypervisors'].includes(name)) {
           options.listall = true
         }
-        postAPI(param.list, options).then((response) => {
+        getAPI(param.list, options).then((response) => {
           param.loading = false
           _.map(response, (responseItem, responseKey) => {
             if (Object.keys(responseItem).length === 0) {
@@ -2980,15 +2981,16 @@ export default {
       if (this.isModernImageSelection && this.form.guestoscategoryid && !['-1', '0'].includes(this.form.guestoscategoryid)) {
         args.oscategoryid = this.form.guestoscategoryid
       }
-      if (args.keyword || (args.category && args.category !== templateFilter)) {
+      if (!args.page || args.keyword || (args.category && args.category !== templateFilter)) {
         args.page = 1
-        args.pageSize = args.pageSize || 10
       }
+      args.pageSize = args.pageSize || 10
       args.zoneid = _.get(this.zone, 'id')
       if (this.isZoneSelectedMultiArch) {
         args.arch = this.selectedArchitecture
       }
       args.templatefilter = templateFilter
+      args.isready = true
       args.details = 'all'
       args.showicon = 'true'
       args.id = this.queryTemplateId
