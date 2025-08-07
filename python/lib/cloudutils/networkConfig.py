@@ -45,8 +45,11 @@ class networkConfig:
         if not cmd.isSuccess():
             logging.debug("Failed to get default route")
             raise CloudRuntimeException("Failed to get default route")
-
-        result = cmd.getStdout().split(" ")
+        output = cmd.getStdout().strip()
+        result = output.split(" ")
+        if len(result) < 2:
+            logging.debug("Output for the default route incomplete: %s. It should have been '<GATEWAY> <DEVICE>'" % output)
+            raise CloudRuntimeException("Output for the default route incomplete")
         gateway = result[0]
         dev = result[1]
 
