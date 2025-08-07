@@ -175,9 +175,6 @@ public class ElastistorPrimaryDataStoreDriver extends CloudStackPrimaryDataStore
 
             _volumeDao.update(volume.getId(), volume);
 
-            // create new volume details for the volume
-            //updateVolumeDetails(volume, esvolume);
-
             long capacityBytes = storagePool.getCapacityBytes();
             long usedBytes = storagePool.getUsedBytes();
 
