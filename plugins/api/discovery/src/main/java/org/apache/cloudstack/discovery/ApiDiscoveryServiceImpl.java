@@ -190,7 +190,7 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
         return responseResponse;
     }
 
-    private ApiDiscoveryResponse getCmdRequestMap(Class<?> cmdClass, APICommand apiCmdAnnotation) {
+    protected ApiDiscoveryResponse getCmdRequestMap(Class<?> cmdClass, APICommand apiCmdAnnotation) {
         String apiName = apiCmdAnnotation.name();
         ApiDiscoveryResponse response = new ApiDiscoveryResponse();
         response.setName(apiName);
