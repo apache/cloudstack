@@ -28,6 +28,8 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+
+import com.cloud.vm.dao.UserVmDetailsDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -176,6 +178,8 @@ public class NetworkHelperImpl implements NetworkHelper {
     CapacityManager capacityMgr;
     @Inject
     VpcDao vpcDao;
+    @Inject
+    private UserVmDetailsDao userVmDetailsDao;
 
     protected final Map<HypervisorType, ConfigKey<String>> hypervisorsMap = new HashMap<>();
 
@@ -502,6 +506,7 @@ public class NetworkHelperImpl implements NetworkHelper {
             final RouterDeploymentDefinition routerDeploymentDefinition, final Account owner, final long userId,
             final ServiceOfferingVO routerOffering, final boolean offerHA, final Long vpcId,
             final VMTemplateVO template) {
+        _templateDao.loadDetails(template);
         if (router == null) {
             router = new DomainRouterVO(id, routerOffering.getId(),
                     routerDeploymentDefinition.getVirtualProvider().getId(),
@@ -516,6 +521,8 @@ public class NetworkHelperImpl implements NetworkHelper {
         }
         router.setTemplateId(template.getId());
         router.setDynamicallyScalable(template.isDynamicallyScalable());
+        router.setDetails(template.getDetails());
+        userVmDetailsDao.saveDetails(router);
         _routerDao.update(router.getId(), router);
         return router;
     }
