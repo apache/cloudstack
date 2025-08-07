@@ -229,6 +229,10 @@ public class ConfigKey<T> {
         this(type, name, category, defaultValue, description, isDynamic, Scope.Global, null);
     }
 
+    public ConfigKey(String category, Class<T> type, String name, String defaultValue, String description, Scope scope, boolean isDynamic) {
+        this(type, name, category, defaultValue, description, isDynamic, scope, null);
+    }
+
     public ConfigKey(String category, Class<T> type, String name, String defaultValue, String description, boolean isDynamic, Kind kind, String options) {
         this(type, name, category, defaultValue, description, isDynamic, Scope.Global, null, null, null, null, null, kind, options);
     }
