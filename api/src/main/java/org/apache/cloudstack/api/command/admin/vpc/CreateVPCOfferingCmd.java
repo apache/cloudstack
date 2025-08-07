@@ -194,7 +194,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
             if (NetworkOffering.NetworkMode.ROUTED.name().equalsIgnoreCase(getNetworkMode())) {
                 supportedServices.add(Gateway.getName());
             }
-            if (getNsxSupportsLbService()) {
+            if (getNsxSupportsLbService() || (provider != null && provider.equalsIgnoreCase("Netris"))) {
                 supportedServices.add(Lb.getName());
             }
         }
@@ -259,7 +259,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
                 serviceProviderMap.put(service, List.of(provider));
             }
         }
-        if (!getNsxSupportsLbService()) {
+        if ("Nsx".equalsIgnoreCase(provider) && !getNsxSupportsLbService()) {
             serviceProviderMap.remove(Lb.getName());
         }
     }

@@ -297,7 +297,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
                         SourceNat.getName(),
                         PortForwarding.getName()));
             }
-            if (getNsxSupportsLbService()) {
+            if (getNsxSupportsLbService() || (provider != null && provider.equalsIgnoreCase("Netris"))) {
                 services.add(Lb.getName());
             }
             if (Boolean.TRUE.equals(forVpc)) {
@@ -410,7 +410,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             else if (NetworkOffering.NetworkMode.NATTED.name().equalsIgnoreCase(getNetworkMode()) || NetworkACL.getName().equalsIgnoreCase(service)) {
                     serviceProviderMap.put(service, List.of(provider));
                 }
-            if (!getNsxSupportsLbService()) {
+            if ("Nsx".equalsIgnoreCase(provider) && !getNsxSupportsLbService()) {
                 serviceProviderMap.remove(Lb.getName());
             }
         }
