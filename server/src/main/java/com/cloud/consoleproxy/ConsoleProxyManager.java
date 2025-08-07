@@ -56,6 +56,9 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
     ConfigKey<Boolean> NoVncConsoleSourceIpCheckEnabled = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class, "novnc.console.sourceip.check.enabled", "false",
         "If true, The source IP to access novnc console must be same as the IP in request to management server for console URL. Needs to reconnect CPVM to management server when this changes (via restart CPVM, or management server, or cloud service in CPVM)", false);
 
+    ConfigKey<String> ConsoleProxyServiceOffering = new ConfigKey<>(String.class, "consoleproxy.service.offering", "Console Proxy", null,
+            "Uuid of the service offering used by console proxy; if NULL - system offering will be used", false, ConfigKey.Scope.Zone, null);
+
     ConfigKey<String> ConsoleProxyCapacityStandby = new ConfigKey<>(String.class, "consoleproxy.capacity.standby", "Console Proxy", String.valueOf(DEFAULT_STANDBY_CAPACITY),
             "The minimal number of console proxy viewer sessions that system is able to serve immediately(standby capacity)", false, ConfigKey.Scope.Zone, null);
 

@@ -403,9 +403,6 @@ public enum Config {
             "service monitoring in router enable/disable option, default false", null),
 
 
-    // Console Proxy
-
-
     // Snapshots
 
     SnapshotPollInterval(
@@ -1498,14 +1495,6 @@ public enum Config {
             "eip.use.multiple.netscalers",
             "false",
             "Should be set to true, if there will be multiple NetScaler devices providing EIP service in a zone",
-            null),
-    ConsoleProxyServiceOffering(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "consoleproxy.service.offering",
-            null,
-            "Uuid of the service offering used by console proxy; if NULL - system offering will be used",
             null),
     SecondaryStorageServiceOffering(
             "Advanced",
