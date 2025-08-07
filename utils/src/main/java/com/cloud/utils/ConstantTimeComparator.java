@@ -19,8 +19,6 @@
 
 package com.cloud.utils;
 
-import java.nio.charset.Charset;
-
 public class ConstantTimeComparator {
 
     public static boolean compareBytes(byte[] b1, byte[] b2) {
