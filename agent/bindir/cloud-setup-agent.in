@@ -35,7 +35,7 @@ for pythonpath in (
 
 from cloudutils.cloudException import CloudRuntimeException, CloudInternalException
 from cloudutils.utilities import initLoging, bash
-from cloudutils.configFileOps import  configFileOps
+from cloudutils.configFileOps import configFileOps
 from cloudutils.globalEnv import globalEnv
 from cloudutils.networkConfig import networkConfig
 from cloudutils.syscfg import sysConfigFactory
@@ -43,35 +43,41 @@ from cloudutils.serviceConfig import configureLibvirtConfig, configure_libvirt_t
 
 from optparse import OptionParser
 
+
 def getUserInputs():
     print("Welcome to the CloudStack Agent Setup:")
 
     cfo = configFileOps("@AGENTSYSCONFDIR@/agent.properties")
     oldMgt = cfo.getEntry("host")
 
-    mgtSvr = input("Please input the Management Server Hostname/IP-Address:[%s]"%oldMgt)
+    mgtSvr = input(
+        "Please input the Management Server Hostname/IP-Address:[%s]" % oldMgt
+    )
     if mgtSvr == "":
         mgtSvr = oldMgt
     try:
         socket.getaddrinfo(mgtSvr, 443)
     except:
-        print("Failed to resolve %s. Please input a valid hostname or IP-Address."%mgtSvr)
+        print(
+            "Failed to resolve %s. Please input a valid hostname or IP-Address."
+            % mgtSvr
+        )
         exit(1)
 
     oldToken = cfo.getEntry("zone")
-    zoneToken = input("Please input the Zone Id:[%s]"%oldToken)
+    zoneToken = input("Please input the Zone Id:[%s]" % oldToken)
 
     if zoneToken == "":
         zoneToken = oldToken
 
     oldPod = cfo.getEntry("pod")
-    podId = input("Please input the Pod Id:[%s]"%oldPod)
+    podId = input("Please input the Pod Id:[%s]" % oldPod)
 
     if podId == "":
-       podId  = oldToken
+        podId = oldToken
 
     oldCluster = cfo.getEntry("cluster")
-    clusterId = input("Please input the Cluster Id:[%s]"%oldCluster)
+    clusterId = input("Please input the Cluster Id:[%s]" % oldCluster)
     if clusterId == "":
         clusterId = oldCluster
 
@@ -79,18 +85,20 @@ def getUserInputs():
     if oldHypervisor == "":
         oldHypervisor = "kvm"
 
-    hypervisor = input("Please input the Hypervisor type kvm/lxc:[%s]"%oldHypervisor)
+    hypervisor = input("Please input the Hypervisor type kvm/lxc:[%s]" % oldHypervisor)
     if hypervisor == "":
         hypervisor = oldHypervisor
 
     try:
         defaultNic = networkConfig.getDefaultNetwork()
     except:
-        print("Failed to get default route. Please configure your network to have a default route")
+        print(
+            "Failed to get default route. Please configure your network to have a default route"
+        )
         exit(1)
 
     defNic = defaultNic.name
-    network = input("Please choose which network used to create VM:[%s]"%defNic)
+    network = input("Please choose which network used to create VM:[%s]" % defNic)
     if network == "":
         if defNic == "":
             print("You need to specify one of Nic or bridge on your system")
@@ -100,7 +108,8 @@ def getUserInputs():
 
     return [mgtSvr, zoneToken, network, podId, clusterId, hypervisor]
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     initLoging("@AGENTLOGDIR@/setup.log")
     glbEnv = globalEnv()
 
@@ -108,13 +117,23 @@ if __name__ == '__main__':
     glbEnv.agentMode = "Agent"
     parser = OptionParser()
     parser.add_option("-a", action="store_true", dest="auto", help="auto mode")
-    parser.add_option("-m", "--host", dest="mgt", help="Management server hostname or IP-Address")
+    parser.add_option(
+        "-m", "--host", dest="mgt", help="Management server hostname or IP-Address"
+    )
     parser.add_option("-z", "--zone", dest="zone", help="zone id")
     parser.add_option("-p", "--pod", dest="pod", help="pod id")
     parser.add_option("-c", "--cluster", dest="cluster", help="cluster id")
-    parser.add_option("-t", "--hypervisor", default="kvm", dest="hypervisor", help="hypervisor type")
+    parser.add_option(
+        "-t", "--hypervisor", default="kvm", dest="hypervisor", help="hypervisor type"
+    )
     parser.add_option("-g", "--guid", dest="guid", help="guid")
-    parser.add_option("-s", action="store_true", default=False, dest="secure", help="Secure and enable TLS for libvirtd")
+    parser.add_option(
+        "-s",
+        action="store_true",
+        default=False,
+        dest="secure",
+        help="Secure and enable TLS for libvirtd",
+    )
     parser.add_option("--pubNic", dest="pubNic", help="Public traffic interface")
     parser.add_option("--prvNic", dest="prvNic", help="Private traffic interface")
     parser.add_option("--guestNic", dest="guestNic", help="Guest traffic interface")
@@ -140,15 +159,15 @@ if __name__ == '__main__':
         glbEnv.pod = userInputs[3]
         glbEnv.cluster = userInputs[4]
         glbEnv.hypervisor = userInputs[5]
-        #generate UUID
+        # generate UUID
         glbEnv.uuid = old_config.getEntry("guid")
         if glbEnv.uuid == "":
             glbEnv.uuid = bash("uuidgen").getStdout()
     else:
         for para, value in list(options.__dict__.items()):
             if value is None:
-                print("Missing operand:%s"%para)
-                print("Try %s --help for more information"%sys.argv[0])
+                print("Missing operand:%s" % para)
+                print("Try %s --help for more information" % sys.argv[0])
                 sys.exit(1)
 
         glbEnv.uuid = options.guid
@@ -168,7 +187,7 @@ if __name__ == '__main__':
     try:
         syscfg.config()
         print("CloudStack Agent setup is done!")
-    except (CloudRuntimeException,CloudInternalException) as e:
+    except (CloudRuntimeException, CloudInternalException) as e:
         print(e)
         print("Try to restore your system:")
         try:
