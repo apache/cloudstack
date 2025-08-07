@@ -4195,15 +4195,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         DiskOfferingVO rootDiskOffering = _diskOfferingDao.findById(rootDiskOfferingId);
-        long volumesSize = 0;
-        if (volume != null) {
-            volumesSize = volume.getSize();
-        } else if (snapshot != null) {
-            VolumeVO volumeVO = _volsDao.findById(snapshot.getVolumeId());
-            volumesSize = volumeVO != null ? volumeVO.getSize() : 0;
-        } else {
-            volumesSize = configureCustomRootDiskSize(customParameters, template, hypervisorType, rootDiskOffering);
-        }
+        long volumesSize = configureCustomRootDiskSize(customParameters, template, hypervisorType, rootDiskOffering);
 
         if (rootDiskOffering.getEncrypt() && hypervisorType != HypervisorType.KVM) {
             throw new InvalidParameterValueException("Root volume encryption is not supported for hypervisor type " + hypervisorType);
@@ -6292,7 +6284,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
             _accountMgr.checkAccess(caller, null, true, volume);
             templateId = volume.getTemplateId();
-            overrideDiskOfferingId = volume.getDiskOfferingId();
         } else if (cmd.getSnapshotId() != null) {
             snapshot = _snapshotDao.findById(cmd.getSnapshotId());
             if (snapshot == null) {
@@ -6301,7 +6292,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             _accountMgr.checkAccess(caller, null, true, snapshot);
             VolumeInfo volumeOfSnapshot = getVolume(snapshot.getVolumeId(), templateId, true);
             templateId = volumeOfSnapshot.getTemplateId();
-            overrideDiskOfferingId = volumeOfSnapshot.getDiskOfferingId();
         }
 
         VirtualMachineTemplate template = null;
