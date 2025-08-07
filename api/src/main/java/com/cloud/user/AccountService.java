@@ -85,6 +85,12 @@ public interface AccountService {
 
     boolean isRootAdmin(Long accountId);
 
+    /**
+     * Checks if the given account has ROOT admin privileges.
+     *
+     * @param account the account to check
+     * @return true if the account is a ROOT admin, false otherwise
+     */
     boolean isRootAdmin(Account account);
 
     boolean isDomainAdmin(Long accountId);

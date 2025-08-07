@@ -606,7 +606,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     public boolean isRootAdmin(Account account) {
         if (account == null) {
-            return false;  //account is deleted or does not exist
+            return false;
         }
         for (SecurityChecker checker : _securityCheckers) {
             try {
