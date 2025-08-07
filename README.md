@@ -1,27 +1,62 @@
-# Apache CloudStack [![Build Status](https://github.com/apache/cloudstack/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/apache/cloudstack/actions/workflows/build.yml) [![UI Build](https://github.com/apache/cloudstack/actions/workflows/ui.yml/badge.svg)](https://github.com/apache/cloudstack/actions/workflows/ui.yml) [![License Check](https://github.com/apache/cloudstack/actions/workflows/rat.yml/badge.svg?branch=main)](https://github.com/apache/cloudstack/actions/workflows/rat.yml) [![Simulator CI](https://github.com/apache/cloudstack/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/apache/cloudstack/actions/workflows/ci.yml) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=apache_cloudstack&metric=alert_status)](https://sonarcloud.io/dashboard?id=apache_cloudstack) [![codecov](https://codecov.io/gh/apache/cloudstack/branch/main/graph/badge.svg)](https://codecov.io/gh/apache/cloudstack)
+
+# Apache CloudStack: Effortless Cloud Management at Scale
+
+[![Build Status](https://github.com/apache/cloudstack/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/apache/cloudstack/actions/workflows/build.yml) [![UI Build](https://github.com/apache/cloudstack/actions/workflows/ui.yml/badge.svg)](https://github.com/apache/cloudstack/actions/workflows/ui.yml) [![License Check](https://github.com/apache/cloudstack/actions/workflows/rat.yml/badge.svg?branch=main)](https://github.com/apache/cloudstack/actions/workflows/rat.yml) [![Simulator CI](https://github.com/apache/cloudstack/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/apache/cloudstack/actions/workflows/ci.yml) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=apache_cloudstack&metric=alert_status)](https://sonarcloud.io/dashboard?id=apache_cloudstack) [![codecov](https://codecov.io/gh/apache/cloudstack/branch/main/graph/badge.svg)](https://codecov.io/gh/apache/cloudstack)
 
 [![Apache CloudStack](tools/logo/apache_cloudstack.png)](https://cloudstack.apache.org/)
 
-Apache CloudStack is open source software designed to deploy and manage large
-networks of virtual machines, as a highly available, highly scalable
-Infrastructure as a Service (IaaS) cloud computing platform. CloudStack is used
-by a number of service providers to offer public cloud services, and by many
-companies to provide an on-premises (private) cloud offering, or as part of a
-hybrid cloud solution.
+**Apache CloudStack is an open-source, production-ready platform to build, deploy, and manage highly available, scalable, and secure private, public, or hybrid cloud infrastructure.**
 
-CloudStack is a turnkey solution that includes the entire "stack" of features
-most organizations want with an IaaS cloud: compute orchestration,
-Network-as-a-Service, user and account management, a full and open native API,
-resource accounting, and a first-class User Interface (UI).
+Designed for simplicity without sacrificing power, CloudStack delivers a comprehensive Infrastructure-as-a-Service (IaaS) solution. Its intuitive UI, rich API, and seamless multi-hypervisor support put complete cloud control in your hands.
 
-CloudStack currently supports the most popular hypervisors:
-VMware vSphere, KVM, XenServer, XenProject and Hyper-V as well as
-OVM and LXC containers.
-
-Users can manage their cloud with an easy to use Web interface, command line
-tools, and/or a full-featured query based API.
+Whether you're a cloud service provider or an enterprise modernizing infrastructure, CloudStack empowers you to run your cloud your way—faster, safer, and smarter.
 
 For more information on Apache CloudStack, please visit the [website](http://cloudstack.apache.org)
+---
+
+
+## Table of Contents
+
+1. [Key Features at a Glance](#key-features-at-a-glance)
+2. [Who Uses CloudStack?](#who-uses-cloudstack)
+3. [Demo](#demo)
+4. [Try CloudStack in Minutes](#try-cloudstack-in-minutes)
+  
+5. [Source Code](#source-code)
+6. [Getting Source Repository](#getting-source-repository)
+7. [Documentation](#documentation)
+8. [Ecosystem & Integrations](#ecosystem--integrations)
+9. [Project Status & Release Cycle](#project-status--release-cycle)
+10. [News and Events](#news-and-events)
+11. [Getting Involved & Contributing](#getting-involved--contributing)
+    - [How to Contribute](#how-to-contribute)
+    - [Mailing Lists](#mailing-lists)
+    - [Issue Tracker](#issue-tracker)
+12. [License & Security Policy](#license--security-policy)
+    
+13. [Notice of Cryptographic Software](#notice-of-cryptographic-software)
+14. [Star History](#star-history)
+15. [Contributors](#contributors)
+
+
+---
+
+##  Key Features at a Glance
+
+* **Multi-Hypervisor Management**
+Control VMs across KVM, VMware vSphere, XenServer, and Hyper-V — all from one UI.
+* **Built-in Network-as-a-Service (NaaS)**
+Automate virtual networks, firewalls, VPNs, and load balancers without vendor lock-in.
+* **Powerful API & Intuitive UI**
+Seamlessly integrate via RESTful API or manage everything visually through a clean web interface.
+* **Flexible Storage Architecture**
+Supports primary/secondary storage, snapshots, volume management, and disaster recovery.
+* **Granular User & Account Controls**
+Fine-tuned multi-tenant access control for service providers and enterprise clouds.
+* **Real-Time Resource Usage & Accounting**
+Built-in metering for chargeback, quota management, and capacity planning.
+
+---
 
 ## Who Uses CloudStack?
 
@@ -40,10 +75,62 @@ For more information on Apache CloudStack, please visit the [website](http://clo
 See the project user-interface QA website that runs CloudStack against simulator hypervisor:
 https://qa.cloudstack.cloud/simulator/ (admin:password)
 
-## Getting Started
+---
 
-* Download a released [version](https://cloudstack.apache.org/downloads.html)
-* Build from source with the instructions in the [INSTALL.md](INSTALL.md) file.
+##  Try CloudStack in Minutes
+
+Spin up a working CloudStack instance with zero hassle. Perfect for demos, dev, or quick evaluations.
+
+### Quick Install (All-in-One)
+
+Get a full CloudStack environment running fast:
+
+```bash
+git clone [https://github.com/apache/cloudstack-installer.git](https://github.com/apache/cloudstack-installer.git)
+cd cloudstack-installer
+sudo ./cloudstack-installer.sh -i
+
+```
+
+Access UI: http://<your-ip>:8080/client
+
+This setup is for testing only — not production-ready.
+
+ 
+
+### Docker Sandbox (Community)
+ 
+
+Explore the UI and APIs in a lightweight, local Docker environment:
+
+```Bash 
+git clone [https://github.com/apache/cloudstack-docker.git](https://github.com/apache/cloudstack-docker.git)
+cd cloudstack-docker
+docker-compose up
+```
+ 
+
+
+### Full Setup
+
+For production-ready deployments and detailed configurations, refer to:
+
+- [Installation Guide](https://docs.cloudstack.apache.org/en/latest/installguide/)
+- [Ansible Deployment Guide](https://github.com/apache/cloudstack-ansible)
+
+
+ 
+
+## Source Code
+ 
+
+Join our open-source journey! Apache CloudStack's official Git repository:
+
+    https://gitbox.apache.org/repos/asf/cloudstack.git
+
+A convenient, read-only mirror on GitHub, perfect for exploring code and submitting contributions:
+
+    https://github.com/apache/cloudstack
 
 ## Getting Source Repository
 
@@ -59,6 +146,7 @@ The GitHub mirror is strictly read only and provides convenience to users and
 developers to explore the code and for the community to accept contributions
 via GitHub pull requests.
 
+
 ## Documentation
 
 * [Project Documentation](https://docs.cloudstack.apache.org)
@@ -68,6 +156,32 @@ via GitHub pull requests.
 * API [documentation](https://cloudstack.apache.org/api.html)
 * How to [contribute](CONTRIBUTING.md)
 
+
+## Ecosystem & Integrations
+
+Apache CloudStack is built to fit into your existing infrastructure — not replace it. Its modular architecture ensures seamless integration across your IT ecosystem:
+
+- **Hypervisors**: Native support for KVM, VMware vSphere, and XenServer.  
+- **Authentication**: Integrates with LDAP, Active Directory, and SAML-based SSO providers.  
+- **Storage**: Supports NFS, iSCSI, Ceph, and S3-compatible object storage for secondary storage.  
+- **Networking**: Compatible with industry-leading appliances like Cisco, Juniper, and Open vSwitch.  
+- **Monitoring & Observability**: Works with Prometheus, Nagios, Zabbix, and other external tools.  
+- **Billing & Usage**: Rich APIs and metering to connect with billing, CRM, and provisioning systems.  
+- **DevOps-Ready**: Exposes REST APIs, Python bindings, and CLI tools to support CI/CD pipelines and automation frameworks.
+
+> **Why it matters**: CloudStack doesn’t require you to rip and replace. It works with the technologies you already use, helping you build a future-ready, fully interoperable cloud.
+
+## Project Status & Release Cycle
+
+Apache CloudStack is a **mature and actively maintained open-source project** governed by the Apache Software Foundation. With over a decade of development, it powers mission-critical cloud infrastructure for service providers, enterprises, and governments worldwide.
+
+- **Actively Maintained**: Backed by a global community of developers and users.
+- **Predictable Releases**: CloudStack follows a regular release cadence — typically **every 4–6 months**, delivering new features, enhancements, and bug fixes.
+- **Production-Grade Stability**: Battle-tested in diverse environments, from private enterprise clouds to large-scale public cloud deployments.
+
+> **Why it matters**: CloudStack’s proven track record, transparent development process, and consistent release cycle provide long-term confidence for operators and developers alike.
+
+
 ## News and Events
 
 * [Blog](https://blogs.apache.org/cloudstack)
@@ -75,66 +189,57 @@ via GitHub pull requests.
 * [Events and meetup](http://cloudstackcollab.org/)
 * [YouTube channel](https://www.youtube.com/ApacheCloudStack)
 
-## Getting Involved and Contributing
+## Getting Involved & Contributing
 
-Interested in helping out with Apache CloudStack? Great! We welcome
-participation from anybody willing to work [The Apache Way](http://theapacheway.com) and make a
-contribution. Note that you do not have to be a developer in order to contribute
-to Apache CloudStack. We need folks to help with documentation, translation,
-promotion etc. See our contribution [page](http://cloudstack.apache.org/contribute.html).
+Apache CloudStack thrives on community collaboration — and we welcome contributions of all kinds!
 
-If you are a frequent contributors, you can request to be added as collaborators
-(see https://cwiki.apache.org/confluence/display/INFRA/Git+-+.asf.yaml+features#Git.asf.yamlfeatures-AssigningexternalcollaboratorswiththetriageroleonGitHub)
-to our GitHub repos. This allows you to use project GitHub with ability to report
-issue with tags, and be assigned to issues and PRs. This is done via the .asf.yaml
-file in this repo.
-You may do so by sharing your GitHub users ID or raise a GitHub issue.
+### How to Contribute
 
-If you're interested in learning more or participating in the Apache CloudStack
-project, the mailing lists are the best way to do that. While the project has
-several communications channels, the [mailing lists](http://cloudstack.apache.org/mailing-lists.html) are the most active and the
-official channels for making decisions about the project itself.
+Want to help improve CloudStack? Whether you're writing code, fixing bugs, improving documentation, or translating content — we’d love your support.
 
-Mailing lists:
-- [Development Mailing List](mailto:dev-subscribe@cloudstack.apache.org)
-- [Users Mailing List](mailto:users-subscribe@cloudstack.apache.org)
-- [Commits Mailing List](mailto:commits-subscribe@cloudstack.apache.org)
-- [Issues Mailing List](mailto:issues-subscribe@cloudstack.apache.org)
-- [Marketing Mailing List](mailto:marketing-subscribe@cloudstack.apache.org)
+-  [Read our CONTRIBUTING.md](https://github.com/apache/cloudstack/blob/main/CONTRIBUTING.md) for guidelines and best practices.
+- Fork the repo, make your changes, and open a pull request. All contributions go through community review.
 
-Report and/or check bugs on [GitHub](https://github.com/apache/cloudstack/issues) and check our
-developer [page](https://cloudstack.apache.org/developers.html) for contributing code.
+### Mailing Lists
 
-## Reporting Security Vulnerabilities
+Stay connected with the community and get involved in discussions:
 
-If you've found an issue that you believe is a security vulnerability in a
-released version of CloudStack, please report it to `security@apache.org` with
-details about the vulnerability, how it might be exploited, and any additional
-information that might be useful.
+- **Development Discussions**: [dev@cloudstack.apache.org](mailto:dev@cloudstack.apache.org)
+- **User Support**: [users@cloudstack.apache.org](mailto:users@cloudstack.apache.org)
+- **Commits & Updates**: [commits@cloudstack.apache.org](mailto:commits@cloudstack.apache.org)
 
-For more details, please visit our security [page](http://cloudstack.apache.org/security.html).
+###  Issue Tracker
 
-## License
+Report bugs, suggest features, or track project progress through the official issue tracker:
 
-Licensed to the Apache Software Foundation (ASF) under one
-or more contributor license agreements.  See the NOTICE file
-distributed with this work for additional information
-regarding copyright ownership.  The ASF licenses this file
-to you under the Apache License, Version 2.0 (the
-"License"); you may not use this file except in compliance
-with the License.  You may obtain a copy of the License at
+- [CloudStack Jira Tracker](https://issues.apache.org/jira/projects/CLOUDSTACK)
 
-  http://www.apache.org/licenses/LICENSE-2.0
+> **Note**: If you're unsure where to start, check the mailing lists or open issues — there's always something to help with!
 
-Unless required by applicable law or agreed to in writing,
-software distributed under the License is distributed on an
-"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-KIND, either express or implied.  See the License for the
-specific language governing permissions and limitations
-under the License.
 
-Please see the [LICENSE](LICENSE) file included in the root directory
-of the source tree for extended license details.
+## License & Security Policy
+
+### License
+
+Apache CloudStack is released under the **[Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0)**.
+
+For full details, see the [LICENSE](./LICENSE) file in the repository.
+
+---
+
+### Security
+
+We take security seriously. If you discover a potential vulnerability in a released version of CloudStack:
+
+- **Report it confidentially** by emailing: [security@apache.org](mailto:security@apache.org)
+- Include details of the issue, how it might be exploited, and any relevant supporting information.
+
+Please review our full [Security Policy](https://cloudstack.apache.org/security.html) for responsible disclosure guidelines.
+
+---
+
+Your feedback and cooperation help us keep CloudStack safe and reliable for everyone.
+
 
 ## Notice of Cryptographic Software
 
