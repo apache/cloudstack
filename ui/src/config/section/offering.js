@@ -96,7 +96,7 @@ export default {
         label: 'label.edit',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
-        args: ['name', 'displaytext', 'storageatags', 'hosttags', 'externaldetails'],
+        args: ['name', 'displaytext', 'storagetags', 'hosttags', 'externaldetails'],
         mapping: {
           externaldetails: {
             transformedvalue: (record) => { return getFilteredExternalDetails(record.serviceofferingdetails) }
