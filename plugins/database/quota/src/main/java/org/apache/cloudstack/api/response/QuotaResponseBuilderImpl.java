@@ -44,6 +44,8 @@ import javax.inject.Inject;
 
 import com.cloud.domain.Domain;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.projects.ProjectVO;
+import com.cloud.projects.dao.ProjectDao;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import com.cloud.utils.DateUtil;
@@ -139,6 +141,8 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     @Inject
     private AccountDao _accountDao;
     @Inject
+    private ProjectDao projectDao;
+    @Inject
     private QuotaAccountDao quotaAccountDao;
     @Inject
     private DomainDao domainDao;
@@ -188,7 +192,13 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     public Pair<List<QuotaSummaryResponse>, Integer> createQuotaSummaryResponse(QuotaSummaryCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
 
-        if (cmd.getAccountId() != null && !cmd.isListAll() && accountTypesThatCanListAllQuotaSummaries.contains(caller.getType())) {
+        if (cmd.getProjectId() != null && !cmd.isListAll() && accountTypesThatCanListAllQuotaSummaries.contains(caller.getType())) {
+            ProjectVO projectVO = projectDao.findById(cmd.getProjectId());
+            Long projectAccountId = projectVO.getProjectAccountId();
+            return getQuotaSummaryResponse(projectAccountId, null, null, null, cmd);
+        }
+
+        else if (cmd.getAccountId() != null && !cmd.isListAll() && accountTypesThatCanListAllQuotaSummaries.contains(caller.getType())) {
             return getQuotaSummaryResponse(cmd.getAccountId(), null, null, null, cmd);
         }
 
