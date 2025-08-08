@@ -1516,6 +1516,11 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
     @Override
     public boolean start() {
+        //remove snapshots in allocated state
+        List<SnapshotVO> allocatedSnapshots = _snapshotDao.listAllByStatus(Snapshot.State.Allocated);
+        for (SnapshotVO snapshot : allocatedSnapshots) {
+            _snapshotDao.remove(snapshot.getId());
+        }
         //destroy snapshots in destroying state
         List<SnapshotVO> snapshots = _snapshotDao.listAllByStatus(Snapshot.State.Destroying);
         for (SnapshotVO snapshotVO : snapshots) {
