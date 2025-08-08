@@ -70,7 +70,7 @@ public class UpgradeSystemVMCmd extends BaseCmd {
     }
 
     public Map<String, String> getDetails() {
-        return details;
+        return convertDetailsToMap(details);
     }
 
     /////////////////////////////////////////////////////
