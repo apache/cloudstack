@@ -516,7 +516,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
             sb.append("/ajax?token=" + token);
         } else {
             sb.append("/resource/noVNC/vnc.html")
-                    .append("?autoconnect=true")
+                    .append("?autoconnect=true&show_dot=true")
                     .append("&port=" + vncPort)
                     .append("&token=" + token);
             if (requiresVncOverWebSocketConnection(vm, hostVo) && details != null && details.getValue() != null) {
