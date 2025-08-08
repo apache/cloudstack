@@ -37,6 +37,7 @@ public class SetMonitorServiceCommand extends NetworkElementCommand {
     public static final String ROUTER_HEALTH_CHECKS_BASIC_INTERVAL = "router.health.checks.basic.interval";
     public static final String ROUTER_HEALTH_CHECKS_ADVANCED_INTERVAL = "router.health.checks.advanced.interval";
     public static final String ROUTER_HEALTH_CHECKS_EXCLUDED = "router.health.checks.excluded";
+    public static final String ROUTER_HEALTH_CHECKS_INCLUDED_SERVICES = "router.health.checks.included.services";
 
     private MonitorServiceTO[] services;
     private Map<String, String> healthChecksConfig;
