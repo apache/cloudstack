@@ -75,6 +75,9 @@ public class UsageEventVO implements UsageEvent {
     @Column(name = "virtual_size")
     private Long virtualSize;
 
+    @Column(name = "vm_instance_id")
+    private long vmInstanceId;
+
     public UsageEventVO() {
     }
 
@@ -246,6 +249,14 @@ public class UsageEventVO implements UsageEvent {
 
     public void setVirtualSize(Long virtualSize) {
         this.virtualSize = virtualSize;
+    }
+
+    public long getVmInstanceId() {
+        return vmInstanceId;
+    }
+
+    public void setVmInstanceId(long vmInstanceId) {
+        this.vmInstanceId = vmInstanceId;
     }
 
 }
