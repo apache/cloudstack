@@ -85,8 +85,6 @@ public abstract class VifDriverBase implements VifDriver {
         if (nic.getNetworkRateMbps() != null && nic.getNetworkRateMbps().intValue() != -1) {
             return nic.getNetworkRateMbps().intValue() * bitsPerMbpsToKbps;
         }
-        else {
-          return 0;
-        }
+        return 0;
     }
 }
