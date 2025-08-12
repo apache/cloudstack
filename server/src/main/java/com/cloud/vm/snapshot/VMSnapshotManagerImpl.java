@@ -1025,7 +1025,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             } catch (InterruptedException e) {
                 throw new RuntimeException("Operation is interrupted", e);
             } catch (java.util.concurrent.ExecutionException e) {
-                throw new RuntimeException("Execution exception", e);
+                throw new CloudRuntimeException("Execution exception getting the outcome of the asynchronous delete snapshots job", e);
             }
 
             Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
