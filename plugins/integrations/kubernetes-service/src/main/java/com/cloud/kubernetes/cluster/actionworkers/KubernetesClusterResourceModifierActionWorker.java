@@ -212,7 +212,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             for (Map.Entry<String, Pair<HostVO, Integer>> hostEntry : hosts_with_resevered_capacity.entrySet()) {
                 Pair<HostVO, Integer> hp = hostEntry.getValue();
                 HostVO h = hp.first();
-                if (!h.getHypervisorType().equals(clusterTemplate.getHypervisorType())) {
+                if (!h.getHypervisorType().equals(clusterTemplate.getHypervisorType()) || !h.getArch().equals(clusterTemplate.getArch())) {
                     continue;
                 }
                 hostDao.loadHostTags(h);
@@ -421,13 +421,13 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             List<Long> securityGroupIds = new ArrayList<>();
             securityGroupIds.add(kubernetesCluster.getSecurityGroupId());
             nodeVm = userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, workerNodeTemplate, networkIds, securityGroupIds, owner,
-                    hostName, hostName, null, null, null, Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST,base64UserData, null, null, keypairs,
+                    hostName, hostName, null, null, null, null, Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST,base64UserData, null, null, keypairs,
                     null, addrs, null, null, Objects.nonNull(affinityGroupId) ?
                             Collections.singletonList(affinityGroupId) : null, customParameterMap, null, null, null,
                     null, true, null, UserVmManager.CKS_NODE, null, null);
         } else {
             nodeVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, workerNodeTemplate, networkIds, owner,
-                    hostName, hostName, null, null, null,
+                    hostName, hostName, null, null, null, null,
                     Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, null, null, keypairs,
                     null, addrs, null, null, Objects.nonNull(affinityGroupId) ?
                             Collections.singletonList(affinityGroupId) : null, customParameterMap, null, null, null, null, true, UserVmManager.CKS_NODE, null, null, null);

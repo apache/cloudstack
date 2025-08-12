@@ -947,7 +947,6 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         return true;
     }
 
-
     @Override
     public boolean configDhcpSupportForSubnet(final Network network, final NicProfile nic, final VirtualMachineProfile vm, final DeployDestination dest,
                                               final ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {

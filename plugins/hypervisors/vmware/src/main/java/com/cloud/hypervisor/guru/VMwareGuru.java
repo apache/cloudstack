@@ -651,7 +651,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     private VMTemplateVO createVMTemplateRecord(String vmInternalName, long guestOsId, long accountId) {
         Long nextTemplateId = vmTemplateDao.getNextInSequence(Long.class, "id");
         VMTemplateVO templateVO = new VMTemplateVO(nextTemplateId, "Imported-from-" + vmInternalName, Storage.ImageFormat.OVA, false, false, false, Storage.TemplateType.USER, null,
-                false, 64, accountId, null, "Template imported from VM " + vmInternalName, false, guestOsId, false, HypervisorType.VMware, null, null, false, false, false, false, CPU.CPUArch.amd64);
+                false, 64, accountId, null, "Template imported from VM " + vmInternalName, false, guestOsId, false, HypervisorType.VMware, null, null, false, false, false, false, CPU.CPUArch.amd64, null);
         return vmTemplateDao.persist(templateVO);
     }
 
@@ -870,7 +870,9 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         try {
             List<Backup.VolumeInfo> list = new ArrayList<>();
             for (VolumeVO vol : vmVolumes) {
-                list.add(new Backup.VolumeInfo(vol.getUuid(), vol.getPath(), vol.getVolumeType(), vol.getSize()));
+                DiskOfferingVO diskOffering = diskOfferingDao.findById(vol.getDiskOfferingId());
+                list.add(new Backup.VolumeInfo(vol.getUuid(), vol.getPath(), vol.getVolumeType(), vol.getSize(),
+                vol.getDeviceId(), diskOffering.getUuid(), vol.getMinIops(), vol.getMaxIops()));
             }
             return GSON.toJson(list.toArray(), Backup.VolumeInfo[].class);
         } catch (Exception e) {

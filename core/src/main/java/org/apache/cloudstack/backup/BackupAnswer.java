@@ -28,6 +28,7 @@ public class BackupAnswer extends Answer {
     private Long size;
     private Long virtualSize;
     private Map<String, String> volumes;
+    Boolean needsCleanup;
 
     public BackupAnswer(final Command command, final boolean success, final String details) {
         super(command, success, details);
@@ -55,5 +56,16 @@ public class BackupAnswer extends Answer {
 
     public void setVolumes(Map<String, String> volumes) {
         this.volumes = volumes;
+    }
+
+    public Boolean getNeedsCleanup() {
+        if (needsCleanup == null) {
+            return false;
+        }
+        return needsCleanup;
+    }
+
+    public void setNeedsCleanup(Boolean needsCleanup) {
+        this.needsCleanup = needsCleanup;
     }
 }

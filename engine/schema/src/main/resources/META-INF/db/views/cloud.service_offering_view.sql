@@ -73,6 +73,18 @@ SELECT
     `vsphere_storage_policy`.`value` AS `vsphere_storage_policy`,
     `lease_duration_details`.`value` AS `lease_duration`,
     `lease_expiry_action_details`.`value` AS `lease_expiry_action`,
+    `gpu_card`.`id` AS `gpu_card_id`,
+    `gpu_card`.`uuid` AS `gpu_card_uuid`,
+    `gpu_card`.`name` AS `gpu_card_name`,
+    `vgpu_profile`.`id` AS `vgpu_profile_id`,
+    `vgpu_profile`.`uuid` AS `vgpu_profile_uuid`,
+    `vgpu_profile`.`name` AS `vgpu_profile_name`,
+    `vgpu_profile`.`video_ram` AS `vgpu_profile_video_ram`,
+    `vgpu_profile`.`max_heads` AS `vgpu_profile_max_heads`,
+    `vgpu_profile`.`max_resolution_x` AS `vgpu_profile_max_resolution_x`,
+    `vgpu_profile`.`max_resolution_y` AS `vgpu_profile_max_resolution_y`,
+    `service_offering`.`gpu_count` AS `gpu_count`,
+    `service_offering`.`gpu_display` AS `gpu_display`,
     GROUP_CONCAT(DISTINCT(domain.id)) AS domain_id,
     GROUP_CONCAT(DISTINCT(domain.uuid)) AS domain_uuid,
     GROUP_CONCAT(DISTINCT(domain.name)) AS domain_name,
@@ -88,6 +100,10 @@ FROM
     `cloud`.`service_offering`
         INNER JOIN
     `cloud`.`disk_offering` ON service_offering.disk_offering_id = disk_offering.id
+        LEFT JOIN
+    `cloud`.`vgpu_profile` ON service_offering.vgpu_profile_id = vgpu_profile.id
+        LEFT JOIN
+    `cloud`.`gpu_card` ON vgpu_profile.card_id = gpu_card.id
         LEFT JOIN
     `cloud`.`service_offering_details` AS `domain_details` ON `domain_details`.`service_offering_id` = `service_offering`.`id` AND `domain_details`.`name`='domainid'
         LEFT JOIN

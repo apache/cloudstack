@@ -17,11 +17,15 @@
 package com.cloud.network.guru;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
 import javax.inject.Inject;
 
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
+import com.cloud.user.dao.AccountDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -123,6 +127,12 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     Ipv6AddressManager ipv6AddressManager;
     @Inject
     DomainRouterDao domainRouterDao;
+    @Inject
+    public NetworkOfferingServiceMapDao networkOfferingServiceMapDao;
+    @Inject
+    public AccountDao accountDao;
+    @Inject
+    public DomainDao domainDao;
     @Inject
     RoutedIpv4Manager routedIpv4Manager;
 
@@ -519,12 +529,16 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
             return; // Nothing to do here if the uri is null already
         }
 
-        if ((profile.getBroadcastDomainType() == BroadcastDomainType.Vlan || profile.getBroadcastDomainType() == BroadcastDomainType.Vxlan) && !offering.isSpecifyVlan()) {
+        if ((profile.getBroadcastDomainType() == BroadcastDomainType.Vlan || profile.getBroadcastDomainType() == BroadcastDomainType.Vxlan || profile.getBroadcastDomainType() == BroadcastDomainType.Netris) && !offering.isSpecifyVlan()) {
             logger.debug("Releasing vnet for the network: {}", profile);
             _dcDao.releaseVnet(BroadcastDomainType.getValue(profile.getBroadcastUri()), profile.getDataCenterId(), profile.getPhysicalNetworkId(), profile.getAccountId(),
                     profile.getReservationId());
-            ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), profile.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_RELEASE,
-                    String.format("Released Zone Vnet: %s for Network: %s", BroadcastDomainType.getValue(profile.getBroadcastUri()), profile),
+            String eventType = EventTypes.EVENT_ZONE_VLAN_RELEASE;
+            if (Arrays.asList(BroadcastDomainType.Vxlan, BroadcastDomainType.Netris).contains(profile.getBroadcastDomainType())) {
+                eventType = EventTypes.EVENT_ZONE_VXLAN_RELEASE;
+            }
+            ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), profile.getAccountId(), EventVO.LEVEL_INFO, eventType,
+                    "Released Zone Vnet: " + BroadcastDomainType.getValue(profile.getBroadcastUri()) + " for Network: " + profile.getId(),
                     profile.getDataCenterId(), ApiCommandResourceType.Zone.toString(), 0);
         }
 

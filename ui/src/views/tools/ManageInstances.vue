@@ -1001,7 +1001,7 @@ export default {
       if (!('listall' in options) && !['zones', 'pods', 'clusters', 'hosts', 'pools'].includes(name)) {
         options.listall = true
       }
-      postAPI(param.list, options).then((response) => {
+      getAPI(param.list, options).then((response) => {
         param.loading = false
         _.map(response, (responseItem, responseKey) => {
           if (Object.keys(responseItem).length === 0) {
@@ -1200,7 +1200,7 @@ export default {
         }
       }
 
-      postAPI(apiName, params).then(json => {
+      getAPI(apiName, params).then(json => {
         const response = this.isMigrateFromVmware ? json.listvmwaredcvmsresponse : json.listunmanagedinstancesresponse
         const listUnmanagedInstances = response.unmanagedinstance
         if (this.arrayHasItems(listUnmanagedInstances)) {

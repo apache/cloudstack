@@ -87,6 +87,7 @@
         <module>host-allocators/random</module>
 
         <module>hypervisors/baremetal</module>
+        <module>hypervisors/external</module>
         <module>hypervisors/hyperv</module>
         <module>hypervisors/kvm</module>
         <module>hypervisors/ucs</module>
@@ -232,6 +233,7 @@
                 <module>hypervisors/vmware</module>
                 <module>network-elements/cisco-vnmc</module>
                 <module>network-elements/nsx</module>
+                <module>network-elements/netris</module>
                 <module>network-elements/juniper-contrail</module>
                 <module>network-elements/tungsten</module>
             </modules>

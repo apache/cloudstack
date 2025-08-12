@@ -204,9 +204,9 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
                 "(CASE WHEN ISNULL(service_offering.speed) THEN custom_speed.value ELSE service_offering.speed end) AS speed, " +
                 "(CASE WHEN ISNULL(service_offering.ram_size) THEN custom_ram_size.value ELSE service_offering.ram_size end) AS ram_size " +
                 "FROM vm_instance vi LEFT JOIN service_offering ON(((vi.service_offering_id = service_offering.id))) " +
-                "LEFT JOIN user_vm_details custom_cpu ON(((custom_cpu.vm_id = vi.id) AND (custom_cpu.name = 'CpuNumber'))) " +
-                "LEFT JOIN user_vm_details custom_speed ON(((custom_speed.vm_id = vi.id) AND (custom_speed.name = 'CpuSpeed'))) " +
-                "LEFT JOIN user_vm_details custom_ram_size ON(((custom_ram_size.vm_id = vi.id) AND (custom_ram_size.name = 'memory'))) ";
+                "LEFT JOIN vm_instance_details custom_cpu ON(((custom_cpu.vm_id = vi.id) AND (custom_cpu.name = 'CpuNumber'))) " +
+                "LEFT JOIN vm_instance_details custom_speed ON(((custom_speed.vm_id = vi.id) AND (custom_speed.name = 'CpuSpeed'))) " +
+                "LEFT JOIN vm_instance_details custom_ram_size ON(((custom_ram_size.vm_id = vi.id) AND (custom_ram_size.name = 'memory'))) ";
 
     private static final String WHERE_STATE_IS_NOT_DESTRUCTIVE =
             "WHERE ISNULL(vi.removed) AND vi.state NOT IN ('Destroyed', 'Error', 'Expunging')";

@@ -38,4 +38,8 @@ public interface DbUpgrade {
     void performDataMigration(Connection conn);
 
     InputStream[] getCleanupScripts();
+
+    default boolean refreshPoolConnectionsAfterUpgrade() {
+        return false;
+    }
 }

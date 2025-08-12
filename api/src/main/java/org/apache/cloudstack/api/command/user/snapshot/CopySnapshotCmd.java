@@ -17,9 +17,13 @@
 
 package org.apache.cloudstack.api.command.user.snapshot;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import com.cloud.dc.DataCenter;
+import com.cloud.event.EventTypes;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.StorageUnavailableException;
+import com.cloud.storage.Snapshot;
+import com.cloud.user.Account;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -31,19 +35,16 @@ import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.SnapshotResponse;
+import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.collections.CollectionUtils;
-
-import com.cloud.dc.DataCenter;
-import com.cloud.event.EventTypes;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.exception.StorageUnavailableException;
-import com.cloud.storage.Snapshot;
-import com.cloud.user.Account;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @APICommand(name = "copySnapshot", description = "Copies a snapshot from one zone to another.",
         responseObject = SnapshotResponse.class, responseView = ResponseObject.ResponseView.Restricted,
@@ -51,6 +52,7 @@ import org.apache.logging.log4j.Logger;
         authorized = {RoleType.Admin,  RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class CopySnapshotCmd extends BaseAsyncCmd implements UserCmd {
     public static final Logger logger = LogManager.getLogger(CopySnapshotCmd.class.getName());
+    private Snapshot snapshot;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -84,6 +86,20 @@ public class CopySnapshotCmd extends BaseAsyncCmd implements UserCmd {
                     "Do not specify destzoneid and destzoneids together, however one of them is required.")
     protected List<Long> destZoneIds;
 
+    @Parameter(name = ApiConstants.STORAGE_ID_LIST,
+            type=CommandType.LIST,
+            collectionType = CommandType.UUID,
+            entityType = StoragePoolResponse.class,
+            required = false,
+            authorized = RoleType.Admin,
+            since = "4.21.0",
+            description = "A comma-separated list of IDs of the storage pools in other zones in which the snapshot will be made available. " +
+                    "The snapshot will always be made available in the zone in which the volume is present. Currently supported for StorPool only")
+    protected List<Long> storagePoolIds;
+
+    @Parameter (name = ApiConstants.USE_STORAGE_REPLICATION, type=CommandType.BOOLEAN, required = false, since = "4.21.0", description = "This parameter enables the option the snapshot to be copied to supported primary storage")
+    protected Boolean useStorageReplication;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -106,7 +122,15 @@ public class CopySnapshotCmd extends BaseAsyncCmd implements UserCmd {
             destIds.add(destZoneId);
             return destIds;
         }
-        return null;
+        return new ArrayList<>();
+    }
+
+    public List<Long> getStoragePoolIds() {
+        return storagePoolIds;
+    }
+
+    public Boolean useStorageReplication() {
+        return BooleanUtils.toBoolean(useStorageReplication);
     }
 
     @Override
@@ -152,7 +176,7 @@ public class CopySnapshotCmd extends BaseAsyncCmd implements UserCmd {
     @Override
     public void execute() throws ResourceUnavailableException {
         try {
-            if (destZoneId == null && CollectionUtils.isEmpty(destZoneIds))
+            if (destZoneId == null && CollectionUtils.isEmpty(destZoneIds) && useStorageReplication())
                 throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
                         "Either destzoneid or destzoneids parameters have to be specified.");
 
@@ -161,7 +185,7 @@ public class CopySnapshotCmd extends BaseAsyncCmd implements UserCmd {
                         "Both destzoneid and destzoneids cannot be specified at the same time.");
 
             CallContext.current().setEventDetails(getEventDescription());
-            Snapshot snapshot = _snapshotService.copySnapshot(this);
+            snapshot = _snapshotService.copySnapshot(this);
 
             if (snapshot != null) {
                 SnapshotResponse response = _queryService.listSnapshot(this);
@@ -177,6 +201,13 @@ public class CopySnapshotCmd extends BaseAsyncCmd implements UserCmd {
             logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
         }
+    }
 
+    public Snapshot getSnapshot() {
+        return snapshot;
+    }
+
+    public void setSnapshot(Snapshot snapshot) {
+        this.snapshot = snapshot;
     }
 }

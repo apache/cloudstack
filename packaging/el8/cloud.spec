@@ -102,7 +102,7 @@ The Apache CloudStack files shared between agent and management server
 Summary: CloudStack Agent for KVM hypervisors
 Requires: (openssh-clients or openssh)
 Requires: java-17-openjdk
-Requires: tzdata-java
+Requires: (tzdata-java or timezone-java)
 Requires: %{name}-common = %{_ver}
 Requires: libvirt
 Requires: libvirt-daemon-driver-storage-rbd
@@ -143,7 +143,7 @@ The CloudStack baremetal agent
 %package usage
 Summary: CloudStack Usage calculation server
 Requires: java-17-openjdk
-Requires: tzdata-java
+Requires: (tzdata-java or timezone-java)
 Group: System Environment/Libraries
 %description usage
 The CloudStack usage calculation service
@@ -318,6 +318,11 @@ install -D plugins/integrations/kubernetes-service/src/main/resources/conf/k8s-n
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/templates/systemvm
 cp -r engine/schema/dist/systemvm-templates/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/templates/systemvm
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/templates/systemvm/md5sum.txt
+
+# Sample Extensions
+mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/extensions
+cp -r extensions/* ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/extensions
+ln -sf %{_sysconfdir}/%{name}/extensions ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/extensions
 
 # UI
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/ui
@@ -607,6 +612,7 @@ pip3 install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %{_datadir}/%{name}-management/lib/*.jar
 %{_datadir}/%{name}-management/logs
 %{_datadir}/%{name}-management/templates
+%{_datadir}/%{name}-management/extensions
 %attr(0755,root,root) %{_bindir}/%{name}-setup-databases
 %attr(0755,root,root) %{_bindir}/%{name}-migrate-databases
 %attr(0755,root,root) %{_bindir}/%{name}-set-guest-password
@@ -628,6 +634,8 @@ pip3 install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %{_defaultdocdir}/%{name}-management-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-management-%{version}/NOTICE
 %{_datadir}/%{name}-management/setup/wheel/*.whl
+%dir %attr(0755,cloud,cloud) %{_sysconfdir}/%{name}/extensions
+%attr(0755,cloud,cloud) %{_sysconfdir}/%{name}/extensions/*
 
 %files agent
 %attr(0755,root,root) %{_bindir}/%{name}-setup-agent

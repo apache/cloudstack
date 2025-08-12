@@ -93,7 +93,7 @@
         <template #label>
           <tooltip-label :title="$t('label.localstorageenabled')" :tooltip="apiParams.localstorageenabled.description"/>
         </template>
-        <a-switch v-model:value="form.localstorageenabled" />
+        <a-switch v-model:checked="form.localstorageenabled" />
       </a-form-item>
 
       <a-form-item name="storageaccessgroups" ref="storageaccessgroups">

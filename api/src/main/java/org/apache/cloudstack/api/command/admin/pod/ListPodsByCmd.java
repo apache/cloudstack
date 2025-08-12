@@ -103,8 +103,8 @@ public class ListPodsByCmd extends BaseListCmd {
     @Override
     public void execute() {
         Pair<List<? extends Pod>, Integer> result = _mgr.searchForPods(this);
-        ListResponse<PodResponse> response = new ListResponse<PodResponse>();
-        List<PodResponse> podResponses = new ArrayList<PodResponse>();
+        ListResponse<PodResponse> response = new ListResponse<>();
+        List<PodResponse> podResponses = new ArrayList<>();
         for (Pod pod : result.first()) {
             PodResponse podResponse = _responseGenerator.createPodResponse(pod, showCapacities);
             podResponse.setObjectName("pod");
