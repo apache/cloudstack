@@ -39,7 +39,7 @@ public class ADLdapUserManagerImpl extends OpenLdapUserManagerImpl implements Ld
             throw new IllegalArgumentException("ldap group name cannot be blank");
         }
 
-        String basedn = _ldapConfiguration.getBaseDn(domainId);
+        String basedn = LdapConfiguration.getBaseDn(domainId);
         if (StringUtils.isBlank(basedn)) {
             throw new IllegalArgumentException("ldap basedn is not configured");
         }
@@ -62,7 +62,7 @@ public class ADLdapUserManagerImpl extends OpenLdapUserManagerImpl implements Ld
         final StringBuilder userObjectFilter = getUserObjectFilter(domainId);
 
         final StringBuilder memberOfFilter = new StringBuilder();
-        String groupCnName =  _ldapConfiguration.getCommonNameAttribute() + "=" +groupName + "," +  _ldapConfiguration.getBaseDn(domainId);
+        String groupCnName =  LdapConfiguration.getCommonNameAttribute() + "=" +groupName + "," +  LdapConfiguration.getBaseDn(domainId);
         memberOfFilter.append("(").append(getMemberOfAttribute(domainId)).append("=");
         memberOfFilter.append(groupCnName);
         memberOfFilter.append(")");
@@ -100,7 +100,7 @@ public class ADLdapUserManagerImpl extends OpenLdapUserManagerImpl implements Ld
 
     protected String getMemberOfAttribute(final Long domainId) {
         String rc;
-        if(_ldapConfiguration.isNestedGroupsEnabled(domainId)) {
+        if(LdapConfiguration.isNestedGroupsEnabled(domainId)) {
             rc = MICROSOFT_AD_NESTED_MEMBERS_FILTER;
         } else {
             rc = MICROSOFT_AD_MEMBERS_FILTER;
