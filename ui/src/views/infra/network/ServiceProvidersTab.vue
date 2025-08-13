@@ -140,7 +140,7 @@
 <script>
 import { ref, reactive, toRaw, shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import Status from '@/components/widgets/Status'
 import ProviderItem from '@/views/infra/network/providers/ProviderItem'
@@ -1118,7 +1118,7 @@ export default {
           ],
           lists: [
             {
-              title: 'label.nsx.controller',
+              title: 'label.nsx.provider',
               api: 'listNsxControllers',
               mapping: {
                 zoneid: {
@@ -1126,6 +1126,50 @@ export default {
                 }
               },
               columns: ['name', 'hostname', 'port', 'tier0gateway', 'edgecluster', 'transportzone']
+            }
+          ]
+        },
+        {
+          title: 'Netris',
+          details: ['name', 'state', 'id', 'physicalnetworkid', 'servicelist'],
+          actions: [
+            {
+              api: 'updateNetworkServiceProvider',
+              icon: 'stop-outlined',
+              listView: true,
+              label: 'label.disable.provider',
+              confirm: 'message.confirm.disable.provider',
+              show: (record) => { return (record && record.id && record.state === 'Enabled') },
+              mapping: {
+                state: {
+                  value: (record) => { return 'Disabled' }
+                }
+              }
+            },
+            {
+              api: 'updateNetworkServiceProvider',
+              icon: 'play-circle-outlined',
+              listView: true,
+              label: 'label.enable.provider',
+              confirm: 'message.confirm.enable.provider',
+              show: (record) => { return (record && record.id && record.state === 'Disabled') },
+              mapping: {
+                state: {
+                  value: (record) => { return 'Enabled' }
+                }
+              }
+            }
+          ],
+          lists: [
+            {
+              title: 'label.netris.provider',
+              api: 'listNetrisProviders',
+              mapping: {
+                zoneid: {
+                  value: (record) => { return record.zoneid }
+                }
+              },
+              columns: ['name', 'netrisurl', 'site', 'tenantname', 'netristag']
             }
           ]
         }
@@ -1166,9 +1210,8 @@ export default {
     },
     fetchServiceProvider (name) {
       this.fetchLoading = true
-      api('listNetworkServiceProviders', { physicalnetworkid: this.resource.id, name: name }).then(json => {
+      getAPI('listNetworkServiceProviders', { physicalnetworkid: this.resource.id, name: name }).then(json => {
         const sps = json.listnetworkserviceprovidersresponse.networkserviceprovider || []
-        console.log(sps)
         if (sps.length > 0) {
           for (const sp of sps) {
             this.nsps[sp.name] = sp
@@ -1255,7 +1298,7 @@ export default {
     addNetworkServiceProvider (args) {
       return new Promise((resolve, reject) => {
         let message = ''
-        api('addNetworkServiceProvider', args).then(async json => {
+        postAPI('addNetworkServiceProvider', args).then(async json => {
           const jobId = json.addnetworkserviceproviderresponse.jobid
           if (jobId) {
             const result = await this.pollJob(jobId)
@@ -1275,7 +1318,7 @@ export default {
     async pollJob (jobId) {
       return new Promise(resolve => {
         const asyncJobInterval = setInterval(() => {
-          api('queryAsyncJobResult', { jobId }).then(async json => {
+          getAPI('queryAsyncJobResult', { jobId }).then(async json => {
             const result = json.queryasyncjobresultresponse
             if (result.jobstatus === 0) {
               return
@@ -1351,7 +1394,7 @@ export default {
       }
       field.loading = true
       field.opts = []
-      api(possibleApi, params).then(json => {
+      postAPI(possibleApi, params).then(json => {
         field.loading = false
         for (const obj in json) {
           if (obj.includes('response')) {
@@ -1402,7 +1445,7 @@ export default {
       return new Promise((resolve, reject) => {
         let hasJobId = false
         let message = ''
-        const promise = (method === 'POST') ? api(apiName, {}, method, args) : api(apiName, args)
+        const promise = postAPI(apiName, args)
         promise.then(json => {
           for (const obj in json) {
             if (obj.includes('response') || obj.includes(apiName)) {

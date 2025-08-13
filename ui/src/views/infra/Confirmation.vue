@@ -78,7 +78,7 @@
 
 <script>
 
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import { ref, reactive } from 'vue'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -142,7 +142,7 @@ export default {
           params.algorithm = this.form.algorithm
         }
         params.forced = this.form.forced
-        api(this.action.currentAction.api, params).then(() => {
+        postAPI(this.action.currentAction.api, params).then(() => {
           this.$message.success(this.$t(this.action.currentAction.label) + ' : ' + this.resource.name)
           this.closeAction()
           this.parentFetchData()

@@ -131,12 +131,22 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
 
     private static final String ORDER_HOSTS_NUMBER_OF_VMS_FOR_ACCOUNT_PART2 = " GROUP BY host.id ORDER BY 2 ASC ";
 
-    private static final String COUNT_VMS_BASED_ON_VGPU_TYPES1 =
+    private static final String COUNT_VMS_BASED_ON_VGPU_TYPES1_LEGACY =
             "SELECT pci, type, SUM(vmcount) FROM (SELECT MAX(IF(offering.name = 'pciDevice',value,'')) AS pci, MAX(IF(offering.name = 'vgpuType', value,'')) " +
             "AS type, COUNT(DISTINCT vm.id) AS vmcount FROM service_offering_details offering INNER JOIN vm_instance vm ON offering.service_offering_id = vm.service_offering_id " +
             "INNER JOIN `cloud`.`host` ON vm.host_id = host.id WHERE vm.state = 'Running' AND host.data_center_id = ? ";
+    private static final String COUNT_VMS_BASED_ON_VGPU_TYPES2_LEGACY =
+            "GROUP BY vm.service_offering_id) results GROUP BY pci, type";
+
+    private static final String COUNT_VMS_BASED_ON_VGPU_TYPES1 =
+            "SELECT CONCAT(gpu_card.vendor_name,  ' ',  gpu_card.device_name), vgpu_profile.name, COUNT(gpu_device.vm_id) "
+            + "FROM `cloud`.`gpu_device` "
+            + "INNER JOIN `cloud`.`host` ON gpu_device.host_id = host.id "
+            + "INNER JOIN `cloud`.`gpu_card` ON gpu_device.card_id = gpu_card.id "
+            + "INNER JOIN `cloud`.`vgpu_profile` ON vgpu_profile.id = gpu_device.vgpu_profile_id "
+            + "WHERE vm_id IS NOT NULL AND host.data_center_id = ? ";
     private static final String COUNT_VMS_BASED_ON_VGPU_TYPES2 =
-            "GROUP BY offering.service_offering_id) results GROUP BY pci, type";
+            "GROUP BY gpu_card.name, vgpu_profile.name";
 
     private static final String UPDATE_SYSTEM_VM_TEMPLATE_ID_FOR_HYPERVISOR = "UPDATE `cloud`.`vm_instance` SET vm_template_id = ? WHERE type <> 'User' AND hypervisor_type = ? AND removed is NULL";
 
@@ -651,7 +661,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     }
 
     @Override
-    public List<VMInstanceVO> listByZoneWithBackups(Long zoneId, Long backupOfferingId) {
+    public List<VMInstanceVO> listByZoneAndBackupOffering(Long zoneId, Long backupOfferingId) {
         SearchCriteria<VMInstanceVO> sc = BackupSearch.create();
         sc.setParameters("zone_id", zoneId);
         if (backupOfferingId != null) {
@@ -794,40 +804,52 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
 
     @Override
     public HashMap<String, Long> countVgpuVMs(Long dcId, Long podId, Long clusterId) {
+        StringBuilder finalQueryLegacy = new StringBuilder();
         StringBuilder finalQuery = new StringBuilder();
         TransactionLegacy txn = TransactionLegacy.currentTxn();
+        PreparedStatement pstmtLegacy = null;
         PreparedStatement pstmt = null;
         List<Long> resourceIdList = new ArrayList<Long>();
         HashMap<String, Long> result = new HashMap<String, Long>();
 
         resourceIdList.add(dcId);
+        finalQueryLegacy.append(COUNT_VMS_BASED_ON_VGPU_TYPES1_LEGACY);
         finalQuery.append(COUNT_VMS_BASED_ON_VGPU_TYPES1);
 
         if (podId != null) {
+            finalQueryLegacy.append("AND host.pod_id = ? ");
             finalQuery.append("AND host.pod_id = ? ");
             resourceIdList.add(podId);
         }
 
         if (clusterId != null) {
+            finalQueryLegacy.append("AND host.cluster_id = ? ");
             finalQuery.append("AND host.cluster_id = ? ");
             resourceIdList.add(clusterId);
         }
+        finalQueryLegacy.append(COUNT_VMS_BASED_ON_VGPU_TYPES2_LEGACY);
         finalQuery.append(COUNT_VMS_BASED_ON_VGPU_TYPES2);
 
         try {
+            pstmtLegacy = txn.prepareAutoCloseStatement(finalQueryLegacy.toString());
             pstmt = txn.prepareAutoCloseStatement(finalQuery.toString());
             for (int i = 0; i < resourceIdList.size(); i++) {
+                pstmtLegacy.setLong(1 + i, resourceIdList.get(i));
                 pstmt.setLong(1 + i, resourceIdList.get(i));
             }
-            ResultSet rs = pstmt.executeQuery();
+            ResultSet rs = pstmtLegacy.executeQuery();
+            while (rs.next()) {
+                result.put(rs.getString(1).concat(rs.getString(2)), rs.getLong(3));
+            }
+            rs = pstmt.executeQuery();
             while (rs.next()) {
                 result.put(rs.getString(1).concat(rs.getString(2)), rs.getLong(3));
             }
             return result;
         } catch (SQLException e) {
-            throw new CloudRuntimeException("DB Exception on: " + finalQuery, e);
+            throw new CloudRuntimeException("DB Exception on: " + finalQueryLegacy, e);
         } catch (Throwable e) {
-            throw new CloudRuntimeException("Caught: " + finalQuery, e);
+            throw new CloudRuntimeException("Caught: " + finalQueryLegacy, e);
         }
     }
 
@@ -1223,5 +1245,15 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         List<VMInstanceVO> vms = customSearch(sc, null);
         return vms.stream()
                 .collect(Collectors.toMap(VMInstanceVO::getInstanceName, VMInstanceVO::getId));
+    }
+
+    @Override
+    public List<VMInstanceVO> listByIdsIncludingRemoved(List<Long> ids) {
+        SearchBuilder<VMInstanceVO> idsSearch = createSearchBuilder();
+        idsSearch.and("ids", idsSearch.entity().getId(), SearchCriteria.Op.IN);
+        idsSearch.done();
+        SearchCriteria<VMInstanceVO> sc = idsSearch.create();
+        sc.setParameters("ids", ids.toArray());
+        return listIncludingRemovedBy(sc);
     }
 }

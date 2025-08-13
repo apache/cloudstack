@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.configuration;
 
+import com.cloud.alert.AlertManager;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.VlanVO;
@@ -33,6 +34,7 @@ import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkService;
 import com.cloud.network.Networks;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.NetrisProviderDao;
 import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.element.NsxProviderVO;
@@ -53,6 +55,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.command.admin.config.ResetCfgCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
@@ -86,6 +89,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -132,6 +136,8 @@ public class ConfigurationManagerImplTest {
     UpdateDiskOfferingCmd updateDiskOfferingCmdMock;
     @Mock
     NsxProviderDao nsxProviderDao;
+    @Mock
+    NetrisProviderDao netrisProviderDao;
     @Mock
     DataCenterDao zoneDao;
     @Mock
@@ -416,6 +422,7 @@ public class ConfigurationManagerImplTest {
         DataCenterVO dataCenterVO = Mockito.mock(DataCenterVO.class);
 
         when(nsxProviderDao.findByZoneId(anyLong())).thenReturn(nsxProviderVO);
+        when(netrisProviderDao.findByZoneId(anyLong())).thenReturn(null);
         when(zoneDao.findById(anyLong())).thenReturn(dataCenterVO);
         lenient().when(hostDao.findByDataCenterId(anyLong())).thenReturn(Collections.emptyList());
         when(podDao.listByDataCenterId(anyLong())).thenReturn(Collections.emptyList());
@@ -929,5 +936,164 @@ public class ConfigurationManagerImplTest {
             String invalidValue = "Admin, SuperUser";
             configurationManagerImplSpy.validateConfigurationAllowedOnlyForDefaultAdmin(AccountManagerImpl.listOfRoleTypesAllowedForOperationsOfSameRoleType.key(), invalidValue);
         }
+    }
+
+
+    @Test
+    public void getConfigurationTypeWrapperClassTestReturnsConfigType() {
+        Config configuration = Config.AlertEmailAddresses;
+
+        Assert.assertEquals(configuration.getType(), configurationManagerImplSpy.getConfigurationTypeWrapperClass(configuration.key()));
+    }
+
+    @Test
+    public void getConfigurationTypeWrapperClassTestReturnsConfigKeyType() {
+        String configurationName = "configuration.name";
+
+        Mockito.when(configDepot.get(configurationName)).thenReturn(configKeyMock);
+        Mockito.when(configKeyMock.type()).thenReturn(Integer.class);
+
+        Assert.assertEquals(Integer.class, configurationManagerImplSpy.getConfigurationTypeWrapperClass(configurationName));
+    }
+
+    @Test
+    public void getConfigurationTypeWrapperClassTestReturnsNullWhenConfigurationDoesNotExist() {
+        String configurationName = "configuration.name";
+
+        Mockito.when(configDepot.get(configurationName)).thenReturn(null);
+        Assert.assertNull(configurationManagerImplSpy.getConfigurationTypeWrapperClass(configurationName));
+    }
+
+    @Test
+    public void parseConfigurationTypeIntoStringTestReturnsStringWhenTypeIsNull() {
+        Assert.assertEquals(Configuration.ValueType.String.name(), configurationManagerImplSpy.parseConfigurationTypeIntoString(null, null));
+    }
+
+    @Test
+    public void parseConfigurationTypeIntoStringTestReturnsStringWhenTypeIsStringAndConfigurationKindIsNull() {
+        Mockito.when(configurationVOMock.getKind()).thenReturn(null);
+        Assert.assertEquals(Configuration.ValueType.String.name(), configurationManagerImplSpy.parseConfigurationTypeIntoString(String.class, configurationVOMock));
+    }
+
+    @Test
+    public void parseConfigurationTypeIntoStringTestReturnsKindWhenTypeIsStringAndKindIsNotNull() {
+        Mockito.when(configurationVOMock.getKind()).thenReturn(ConfigKey.Kind.CSV.name());
+        Assert.assertEquals(ConfigKey.Kind.CSV.name(), configurationManagerImplSpy.parseConfigurationTypeIntoString(String.class, configurationVOMock));
+    }
+
+    @Test
+    public void parseConfigurationTypeIntoStringTestReturnsKindWhenTypeIsCharacterAndKindIsNotNull() {
+        Mockito.when(configurationVOMock.getKind()).thenReturn(ConfigKey.Kind.CSV.name());
+        Assert.assertEquals(ConfigKey.Kind.CSV.name(), configurationManagerImplSpy.parseConfigurationTypeIntoString(Character.class, configurationVOMock));
+    }
+
+    @Test
+    public void parseConfigurationTypeIntoStringTestReturnsNumberWhenTypeIsInteger() {
+        Assert.assertEquals(Configuration.ValueType.Number.name(), configurationManagerImplSpy.parseConfigurationTypeIntoString(Integer.class, configurationVOMock));
+    }
+
+    @Test
+    public void parseConfigurationTypeIntoStringTestReturnsNumberWhenTypeIsLong() {
+        Assert.assertEquals(Configuration.ValueType.Number.name(), configurationManagerImplSpy.parseConfigurationTypeIntoString(Long.class, configurationVOMock));
+    }
+
+    @Test
+    public void parseConfigurationTypeIntoStringTestReturnsNumberWhenTypeIsShort() {
+        Assert.assertEquals(Configuration.ValueType.Number.name(), configurationManagerImplSpy.parseConfigurationTypeIntoString(Short.class, configurationVOMock));
+    }
+
+    @Test
+    public void parseConfigurationTypeIntoStringTestReturnsDecimalWhenTypeIsFloat() {
+        Assert.assertEquals(Configuration.ValueType.Decimal.name(), configurationManagerImplSpy.parseConfigurationTypeIntoString(Float.class, configurationVOMock));
+    }
+
+    @Test
+    public void parseConfigurationTypeIntoStringTestReturnsDecimalWhenTypeIsDouble() {
+        Assert.assertEquals(Configuration.ValueType.Decimal.name(), configurationManagerImplSpy.parseConfigurationTypeIntoString(Double.class, configurationVOMock));
+    }
+
+    @Test
+    public void parseConfigurationTypeIntoStringTestReturnsBooleanWhenTypeIsBoolean() {
+        Assert.assertEquals(Configuration.ValueType.Boolean.name(), configurationManagerImplSpy.parseConfigurationTypeIntoString(Boolean.class, configurationVOMock));
+    }
+
+    @Test
+    public void parseConfigurationTypeIntoStringTestReturnsStringWhenTypeDoesNotMatchAnyAvailableType() {
+        Assert.assertEquals(Configuration.ValueType.String.name(), configurationManagerImplSpy.parseConfigurationTypeIntoString(Object.class, configurationVOMock));
+    }
+
+    @Test
+    public void getConfigurationTypeTestReturnsStringWhenConfigurationDoesNotExist() {
+        Mockito.when(configDao.findByName(Mockito.anyString())).thenReturn(null);
+        Assert.assertEquals(Configuration.ValueType.String.name(), configurationManagerImplSpy.getConfigurationType(Mockito.anyString()));
+    }
+
+    @Test
+    public void getConfigurationTypeTestReturnsRangeForConfigurationsThatAcceptIntervals() {
+        String configurationName = AlertManager.CPUCapacityThreshold.key();
+
+        Mockito.when(configDao.findByName(configurationName)).thenReturn(configurationVOMock);
+        Assert.assertEquals(Configuration.ValueType.Range.name(), configurationManagerImplSpy.getConfigurationType(configurationName));
+    }
+
+    @Test
+    public void getConfigurationTypeTestReturnsStringRepresentingConfigurationType() {
+        ConfigKey<Boolean> configuration = RoleService.EnableDynamicApiChecker;
+
+        Mockito.when(configDao.findByName(configuration.key())).thenReturn(configurationVOMock);
+        Mockito.doReturn(configuration.type()).when(configurationManagerImplSpy).getConfigurationTypeWrapperClass(configuration.key());
+
+        configurationManagerImplSpy.getConfigurationType(configuration.key());
+        Mockito.verify(configurationManagerImplSpy).parseConfigurationTypeIntoString(configuration.type(), configurationVOMock);
+    }
+
+    @Test
+    public void serviceOfferingExternalDetailsNeedUpdateReturnsFalseWhenExternalDetailsIsEmpty() {
+        Map<String, String> offeringDetails = Map.of("key1", "value1");
+        Map<String, String> externalDetails = Collections.emptyMap();
+
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void serviceOfferingExternalDetailsNeedUpdateReturnsTrueWhenExistingExternalDetailsIsEmpty() {
+        Map<String, String> offeringDetails = Map.of("key1", "value1");
+        Map<String, String> externalDetails = Map.of("External:key1", "value1");
+
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void serviceOfferingExternalDetailsNeedUpdateReturnsTrueWhenSizesDiffer() {
+        Map<String, String> offeringDetails = Map.of("External:key1", "value1");
+        Map<String, String> externalDetails = Map.of("External:key1", "value1", "External:key2", "value2");
+
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void serviceOfferingExternalDetailsNeedUpdateReturnsTrueWhenValuesDiffer() {
+        Map<String, String> offeringDetails = Map.of("External:key1", "value1");
+        Map<String, String> externalDetails = Map.of("External:key1", "differentValue");
+
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void serviceOfferingExternalDetailsNeedUpdateReturnsFalseWhenDetailsMatch() {
+        Map<String, String> offeringDetails = Map.of("External:key1", "value1", "External:key2", "value2");
+        Map<String, String> externalDetails = Map.of("External:key1", "value1", "External:key2", "value2");
+
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails);
+
+        Assert.assertFalse(result);
     }
 }

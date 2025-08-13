@@ -64,6 +64,7 @@ override_dh_auto_install:
 	# cloudstack-management
 	mkdir $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/server
 	mkdir $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management
+	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/extensions
 	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/security/limits.d/
 	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/sudoers.d/
 	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-management
@@ -81,6 +82,7 @@ override_dh_auto_install:
 	cp -r client/target/classes/META-INF/webapp $(DESTDIR)/usr/share/$(PACKAGE)-management/webapp
 	cp server/target/conf/* $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/server/
 	cp client/target/conf/* $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management/
+	cp -r extensions/* $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/extensions/
 	cp client/target/cloud-client-ui-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-management/lib/cloudstack-$(VERSION).jar
 	cp client/target/lib/*jar $(DESTDIR)/usr/share/$(PACKAGE)-management/lib/
 	cp -r engine/schema/dist/systemvm-templates/* $(DESTDIR)/usr/share/$(PACKAGE)-management/templates/systemvm/
@@ -106,6 +108,7 @@ override_dh_auto_install:
 	# Remove configuration in /ur/share/cloudstack-management/webapps/client/WEB-INF
 	# This should all be in /etc/cloudstack/management
 	ln -s ../../..$(SYSCONFDIR)/$(PACKAGE)/management $(DESTDIR)/usr/share/$(PACKAGE)-management/conf
+	ln -s ../../..$(SYSCONFDIR)/$(PACKAGE)/extensions $(DESTDIR)/usr/share/$(PACKAGE)-management/extensions
 	ln -s ../../../var/log/$(PACKAGE)/management $(DESTDIR)/usr/share/$(PACKAGE)-management/logs
 
 	install -d -m0755 debian/$(PACKAGE)-management/lib/systemd/system

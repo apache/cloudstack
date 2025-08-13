@@ -50,8 +50,14 @@ public interface ResourceLimitService {
                 "The default maximum number of projects that can be created for an account",false);
     static final ConfigKey<Long> DefaultMaxDomainProjects = new ConfigKey<>("Domain Defaults",Long.class,"max.domain.projects","50",
                         "The default maximum number of projects that can be created for a domain",false);
+    static final ConfigKey<Long> DefaultMaxAccountGpus = new ConfigKey<>("Account Defaults",Long.class,"max.account.gpus","20",
+            "The default maximum number of GPU devices that can be used for an account", false);
+    static final ConfigKey<Long> DefaultMaxDomainGpus = new ConfigKey<>("Domain Defaults",Long.class,"max.domain.gpus","20",
+            "The default maximum number of GPU devices that can be used for a domain", false);
+    static final ConfigKey<Long> DefaultMaxProjectGpus = new ConfigKey<>("Project Defaults",Long.class,"max.project.gpus","20",
+            "The default maximum number of GPU devices that can be used for a project", false);
 
-    static final List<ResourceType> HostTagsSupportingTypes = List.of(ResourceType.user_vm, ResourceType.cpu, ResourceType.memory);
+    static final List<ResourceType> HostTagsSupportingTypes = List.of(ResourceType.user_vm, ResourceType.cpu, ResourceType.memory, ResourceType.gpu);
     static final List<ResourceType> StorageTagsSupportingTypes = List.of(ResourceType.volume, ResourceType.primary_storage);
 
     /**
@@ -283,5 +289,9 @@ public interface ResourceLimitService {
     void checkVmMemoryResourceLimit(Account owner, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long memory) throws ResourceAllocationException;
     void incrementVmMemoryResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long memory);
     void decrementVmMemoryResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long memory);
+
+    void checkVmGpuResourceLimit(Account owner, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long gpu) throws ResourceAllocationException;
+    void incrementVmGpuResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long gpu);
+    void decrementVmGpuResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long gpu);
 
 }

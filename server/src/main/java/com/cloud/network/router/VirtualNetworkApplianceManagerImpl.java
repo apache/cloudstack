@@ -203,6 +203,7 @@ import com.cloud.network.rules.StaticNatImpl;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcService;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpn.Site2SiteVpnManager;
@@ -262,7 +263,7 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.NicIpAliasVO;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 
@@ -310,7 +311,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     @Inject protected RemoteAccessVpnDao _vpnDao;
     @Inject protected NicDao _nicDao;
     @Inject private NicIpAliasDao _nicIpAliasDao;
-    @Inject private UserVmDetailsDao _vmDetailsDao;
+    @Inject private VMInstanceDetailsDao _vmDetailsDao;
     @Inject protected VirtualRouterProviderDao _vrProviderDao;
     @Inject private ManagementServerHostDao _msHostDao;
     @Inject private Site2SiteCustomerGatewayDao _s2sCustomerGatewayDao;
@@ -335,6 +336,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
     @Inject private NetworkService networkService;
     @Inject private VpcService vpcService;
+    @Inject private VpcManager vpcManager;
 
     @Autowired
     @Qualifier("networkHelper")
@@ -2042,6 +2044,12 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             type = "vpcrouter";
             if (_disableRpFilter) {
                 rpFilter = " disable_rp_filter=true";
+            }
+            Vpc vpc = vpcManager.getActiveVpc(router.getVpcId());
+            if (vpcManager.isSrcNatIpRequiredForVpcVr(vpc.getVpcOfferingId())) {
+                buf.append(" has_public_network=true");
+            } else {
+                buf.append(" has_public_network=false");
             }
         } else if (!publicNetwork) {
             type = "dhcpsrvr";

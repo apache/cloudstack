@@ -57,7 +57,7 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
     @Parameter(name = ApiConstants.IS_PUBLIC, type = CommandType.BOOLEAN, description = "true if the ISO is publicly available to all users, false otherwise.")
     private Boolean publicIso;
 
-    @Parameter(name = ApiConstants.IS_READY, type = CommandType.BOOLEAN, description = "true if this ISO is ready to be deployed")
+    @Parameter(name = ApiConstants.IS_READY, type = CommandType.BOOLEAN, description = "list ISOs that are ready to be deployed")
     private Boolean ready;
 
     @Parameter(name = ApiConstants.ISO_FILTER,

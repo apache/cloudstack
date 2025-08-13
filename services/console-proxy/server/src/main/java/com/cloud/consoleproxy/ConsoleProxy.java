@@ -76,6 +76,7 @@ public class ConsoleProxy {
     static int httpCmdListenPort = 8001;
     static int reconnectMaxRetry = 5;
     static int readTimeoutSeconds = 90;
+    public static int defaultBufferSize = 64 * 1024;
     static int keyboardType = KEYBOARD_RAW;
     static String factoryClzName;
     static boolean standaloneStart = false;
@@ -159,6 +160,12 @@ public class ConsoleProxy {
         if (s != null) {
             readTimeoutSeconds = Integer.parseInt(s);
             LOGGER.info("Setting readTimeoutSeconds=" + readTimeoutSeconds);
+        }
+
+        s = conf.getProperty("consoleproxy.defaultBufferSize");
+        if (s != null) {
+            defaultBufferSize = Integer.parseInt(s);
+            LOGGER.info("Setting defaultBufferSize=" + defaultBufferSize);
         }
     }
 
