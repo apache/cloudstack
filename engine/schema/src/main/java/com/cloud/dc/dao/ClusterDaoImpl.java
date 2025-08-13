@@ -176,7 +176,7 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
      * @return list of unique hypervisor type and CPU architecture pairs
      */
     @Override
-    public List<Pair<HypervisorType, CPU.CPUArch>> listDistinctHypervisorsArchAcrossClusters(Long zoneId) {
+    public List<Pair<HypervisorType, CPU.CPUArch>> listDistinctHypervisorsAndArchExcludingExternalType(Long zoneId) {
         SearchBuilder<ClusterVO> sb = createSearchBuilder();
         sb.select(null, Func.DISTINCT_PAIR, sb.entity().getHypervisorType(), sb.entity().getArch());
         sb.and("zoneId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
