@@ -81,6 +81,14 @@
           </a-select-option>
         </a-select>
       </a-form-item>
+      <a-form-item name="externaldetails" ref="externaldetails" v-if="resource.hypervisor === 'External'">
+        <template #label>
+          <tooltip-label :title="$t('label.configuration.details')" :tooltip="apiParams.externaldetails.description"/>
+        </template>
+        <div style="margin-bottom: 10px">{{ $t('message.add.extension.resource.details') }}</div>
+        <details-input
+          v-model:value="form.externaldetails" />
+      </a-form-item>
 
       <div :span="24" class="action-button">
         <a-button :loading="loading" @click="onCloseAction">{{ $t('label.cancel') }}</a-button>
@@ -92,13 +100,16 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import DetailsInput from '@/components/widgets/DetailsInput'
+import { getFilteredExternalDetails } from '@/utils/extension'
 
 export default {
-  name: 'EditVM',
+  name: 'HostUpdate',
   components: {
-    TooltipLabel
+    TooltipLabel,
+    DetailsInput
   },
   props: {
     action: {
@@ -130,6 +141,11 @@ export default {
     this.fetchOsCategories()
     this.fetchStorageAccessGroupsData()
   },
+  computed: {
+    resourceExternalDetails () {
+      return getFilteredExternalDetails(this.resource.details)
+    }
+  },
   methods: {
     initForm () {
       this.formRef = ref()
@@ -140,14 +156,15 @@ export default {
         storageaccessgroups: this.resource.storageaccessgroups
           ? this.resource.storageaccessgroups.split(',')
           : [],
-        oscategoryid: this.resource.oscategoryid
+        oscategoryid: this.resource.oscategoryid,
+        externaldetails: this.resourceExternalDetails
       })
       this.rules = reactive({})
     },
     fetchStorageAccessGroupsData () {
       const params = {}
       this.storageAccessGroupsLoading = true
-      api('listStorageAccessGroups', params).then(json => {
+      getAPI('listStorageAccessGroups', params).then(json => {
         const sags = json.liststorageaccessgroupsresponse.storageaccessgroup || []
         for (const sag of sags) {
           if (!this.storageAccessGroups.includes(sag.name)) {
@@ -162,7 +179,7 @@ export default {
     fetchOsCategories () {
       this.osCategories.loading = true
       this.osCategories.opts = []
-      api('listOsCategories').then(json => {
+      getAPI('listOsCategories').then(json => {
         this.osCategories.opts = json.listoscategoriesresponse.oscategory || []
       }).catch(error => {
         this.$notifyError(error)
@@ -173,7 +190,6 @@ export default {
     handleSubmit () {
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
-        console.log(values)
         const params = {}
         params.id = this.resource.id
         params.name = values.name
@@ -182,9 +198,14 @@ export default {
         if (values.istagarule !== undefined) {
           params.istagarule = values.istagarule
         }
+        if (values.externaldetails) {
+          Object.entries(values.externaldetails).forEach(([key, value]) => {
+            params['externaldetails[0].' + key] = value
+          })
+        }
         this.loading = true
 
-        api('updateHost', params).then(json => {
+        postAPI('updateHost', params).then(json => {
           this.$message.success({
             content: `${this.$t('label.action.update.host')} - ${values.name}`,
             duration: 2
@@ -196,7 +217,7 @@ export default {
           }
 
           if (params.storageaccessgroups !== undefined && (this.resource.storageaccessgroups ? this.resource.storageaccessgroups.split(',').join(',') : '') !== params.storageaccessgroups) {
-            api('configureStorageAccess', {
+            postAPI('configureStorageAccess', {
               hostid: params.id,
               storageaccessgroups: params.storageaccessgroups
             }).then(response => {
@@ -232,10 +253,9 @@ export default {
 
 <style scoped lang="less">
 .form-layout {
-  width: 80vw;
-
+  width: 60vw;
   @media (min-width: 600px) {
-    width: 450px;
+    width: 550px;
   }
 
   .action-button {

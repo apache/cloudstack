@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.apache.cloudstack.api.ResourceDetail;
 
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 
 public interface ResourceDetailsDao<R extends ResourceDetail> extends GenericDao<R, Long> {
@@ -31,6 +32,13 @@ public interface ResourceDetailsDao<R extends ResourceDetail> extends GenericDao
      * @return
      */
     R findDetail(long resourceId, String name);
+
+    /**
+     * Find details by key
+     * @param key
+     * @return
+     */
+    List<R> findDetails(String key);
 
     /**
      * Find details by resourceId and key
@@ -93,6 +101,8 @@ public interface ResourceDetailsDao<R extends ResourceDetail> extends GenericDao
     Map<String, String> listDetailsKeyPairs(long resourceId, boolean forDisplay);
 
     Map<String, Boolean> listDetailsVisibility(long resourceId);
+
+    Pair<Map<String, String>, Map<String, String>> listDetailsKeyPairsWithVisibility(long resourceId);
 
     void saveDetails(List<R> details);
 

@@ -265,6 +265,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -1834,22 +1835,27 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 if (exceptionOccurred.get()) {
                     return null;
                 }
-                HostVO host = _hostDao.findById(hostId);
-                try {
-                    connectHostToSharedPool(host, primaryStore.getId());
-                    poolHostIds.add(hostId);
-                } catch (Exception e) {
-                    if (handleExceptionsPartially && e.getCause() instanceof StorageConflictException) {
-                        exceptionOccurred.set(true);
-                        throw e;
+                Transaction.execute(new TransactionCallbackWithExceptionNoReturn<Exception>() {
+                    @Override
+                    public void doInTransactionWithoutResult(TransactionStatus status) throws Exception {
+                        HostVO host = _hostDao.findById(hostId);
+                        try {
+                            connectHostToSharedPool(host, primaryStore.getId());
+                            poolHostIds.add(hostId);
+                        } catch (Exception e) {
+                            if (handleExceptionsPartially && e.getCause() instanceof StorageConflictException) {
+                                exceptionOccurred.set(true);
+                                throw e;
+                            }
+                            logger.warn("Unable to establish a connection between {} and {}", host, primaryStore, e);
+                            String reason = getStoragePoolMountFailureReason(e.getMessage());
+                            if (handleExceptionsPartially && reason != null) {
+                                exceptionOccurred.set(true);
+                                throw new CloudRuntimeException(reason);
+                            }
+                        }
                     }
-                    logger.warn("Unable to establish a connection between {} and {}", host, primaryStore, e);
-                    String reason = getStoragePoolMountFailureReason(e.getMessage());
-                    if (handleExceptionsPartially && reason != null) {
-                        exceptionOccurred.set(true);
-                        throw new CloudRuntimeException(reason);
-                    }
-                }
+                });
                 return null;
             }));
         }
@@ -1952,7 +1958,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         logger.debug("Total over provisioned capacity of the pool {} is {}", storagePool, toHumanReadableSize(totalOverProvCapacity));
         CapacityState capacityState = CapacityState.Enabled;
         if (storagePool.getScope() == ScopeType.ZONE) {
-            DataCenterVO dc = ApiDBUtils.findZoneById(storagePool.getDataCenterId());
+            DataCenterVO dc = _dcDao.findById(storagePool.getDataCenterId());
             AllocationState allocationState = dc.getAllocationState();
             capacityState = (allocationState == AllocationState.Disabled) ? CapacityState.Disabled : CapacityState.Enabled;
         } else {
@@ -4582,7 +4588,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 VmwareAllowParallelExecution,
                 DataStoreDownloadFollowRedirects,
                 AllowVolumeReSizeBeyondAllocation,
-                StoragePoolHostConnectWorkers
+                StoragePoolHostConnectWorkers,
+                ObjectStorageCapacityThreshold
         };
     }
 
@@ -4631,7 +4638,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_OBJECT_STORE_CREATE, eventDescription = "creating object storage")
-    public ObjectStore discoverObjectStore(String name, String url, String providerName, Map details)
+    public ObjectStore discoverObjectStore(String name, String url, Long size, String providerName, Map details)
             throws IllegalArgumentException, InvalidParameterValueException {
         DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(providerName);
 
@@ -4661,6 +4668,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         Map<String, Object> params = new HashMap<>();
         params.put("url", url);
         params.put("name", name);
+        if (size == null) {
+            params.put("size", 0L);
+        } else {
+            params.put("size", size);
+        }
         params.put("providerName", storeProvider.getName());
         params.put("role", DataStoreRole.Object);
         params.put("details", details);
@@ -4744,8 +4756,28 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if(cmd.getName() != null ) {
             objectStoreVO.setName(cmd.getName());
         }
+        if (cmd.getSize() != null) {
+            objectStoreVO.setTotalSize(cmd.getSize() * ResourceType.bytesToGiB);
+        }
         _objectStoreDao.update(id, objectStoreVO);
         logger.debug("Successfully updated object store: {}", objectStoreVO);
         return objectStoreVO;
+    }
+
+    @Override
+    public CapacityVO getObjectStorageUsedStats(Long zoneId) {
+        List<ObjectStoreVO> objectStores = _objectStoreDao.listObjectStores();
+        Long allocated = 0L;
+        Long total = 0L;
+        for (ObjectStoreVO objectStore: objectStores) {
+            if (objectStore.getAllocatedSize() != null) {
+                allocated += objectStore.getAllocatedSize();
+            }
+            if (objectStore.getTotalSize() != null) {
+                total += objectStore.getTotalSize();
+            }
+        }
+        CapacityVO capacity = new CapacityVO(null, zoneId, null, null, allocated, total, Capacity.CAPACITY_TYPE_OBJECT_STORAGE);
+        return capacity;
     }
 }

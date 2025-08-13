@@ -54,7 +54,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import StoragePoolSelectView from '@/components/view/StoragePoolSelectView'
 import InstanceVolumesStoragePoolSelectListView from '@/components/view/InstanceVolumesStoragePoolSelectListView'
@@ -158,7 +158,7 @@ export default {
       } else {
         params.storageid = storageId
       }
-      api(migrateApi, params).then(response => {
+      postAPI(migrateApi, params).then(response => {
         const jobId = response[migrateApi.toLowerCase() + 'response'].jobid
         this.$pollJob({
           title: `${this.$t('label.migrating')} ${this.resource.name}`,

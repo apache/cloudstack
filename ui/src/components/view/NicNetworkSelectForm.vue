@@ -70,7 +70,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 
 export default {
   name: 'NicNetworkSelectForm',
@@ -151,7 +151,7 @@ export default {
         domainid: this.$store.getters.project && this.$store.getters.project.id ? null : this.$store.getters.userInfo.domainid,
         account: this.$store.getters.project && this.$store.getters.project.id ? null : this.$store.getters.userInfo.account
       }
-      api('listNetworks', params).then(response => {
+      getAPI('listNetworks', params).then(response => {
         this.networks = response.listnetworksresponse.network || []
         this.totalCount = response.listnetworksresponse.count
       }).catch(error => {

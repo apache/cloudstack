@@ -33,7 +33,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.UserData;
 
 @APICommand(name = "registerUserData",
-        description = "Register a new userdata.",
+        description = "Register a new User Data.",
         since = "4.18",
         responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false,
@@ -48,7 +48,6 @@ public class RegisterUserDataCmd extends BaseRegisterUserDataCmd {
 
     @Parameter(name = ApiConstants.USER_DATA, type = CommandType.STRING, required = true, description = "User data content", length = 1048576)
     protected String userData;
-
 
     public String getUserData() {
         return userData;

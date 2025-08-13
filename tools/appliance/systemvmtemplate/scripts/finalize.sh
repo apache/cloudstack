@@ -68,6 +68,7 @@ function zero_disk() {
 }
 
 function finalize() {
+  depmod -a
   configure_misc
   configure_rundisk_size
   configure_sudoers
