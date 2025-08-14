@@ -1701,9 +1701,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 snapInfo = _snapshotFactory.getSnapshotWithRoleAndZone(snapshotId, dataStoreRole, zoneId);
                 boolean kvmIncrementalSnapshot = SnapshotManager.kvmIncrementalSnapshot.valueIn(_hostDao.findClusterIdByVolumeInfo(snapInfo.getBaseVolume()));
 
-                boolean skipCopyToSecondary = false;
-                boolean keepOnPrimary = snapshotHelper.isStorageSupportSnapshotToTemplate(snapInfo);
-                if (keepOnPrimary) {
+                boolean storageSupportsSnapshotToTemplate = snapshotHelper.isStorageSupportSnapshotToTemplate(snapInfo);
+                if (storageSupportsSnapshotToTemplate) {
                     ImageStoreVO imageStore = _imgStoreDao.findOneByZoneAndProtocol(zoneId, "nfs");
                     if (imageStore == null) {
                         throw new CloudRuntimeException(String.format("Could not find an NFS secondary storage pool on zone %s to use as a temporary location " +
@@ -1713,7 +1712,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                     if (dataStore != null) {
                         store = dataStore;
                     }
-                } else if (dataStoreRole == DataStoreRole.Image) {
+                } else if (dataStoreRole == DataStoreRole.Image || kvmSnapshotOnlyInPrimaryStorage) {
                     snapInfo = snapshotHelper.backupSnapshotToSecondaryStorageIfNotExists(snapInfo, dataStoreRole, snapshot, kvmSnapshotOnlyInPrimaryStorage);
                     _accountMgr.checkAccess(caller, null, true, snapInfo);
                     DataStore snapStore = snapInfo.getDataStore();
