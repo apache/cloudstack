@@ -504,7 +504,7 @@ public enum Config {
             "300",
             "The time interval in seconds when the management server polls for snapshots to be scheduled.",
             null),
-    KVMSnapshotEnabled("Hidden", SnapshotManager.class, Boolean.class, "kvm.snapshot.enabled", "false", "Whether volume snapshot is enabled on running instances on a KVM host", null),
+    KVMSnapshotEnabled("Hidden", SnapshotManager.class, Boolean.class, "kvm.snapshot.enabled", "true", "Whether volume snapshot is enabled on running instances on a KVM host", null),
 
     // Advanced
     EventPurgeInterval(
