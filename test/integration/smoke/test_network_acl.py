@@ -145,7 +145,7 @@ class TestNetworkACL(cloudstackTestCase):
         # 7) Add Port Forwarding Rule with same Public IP to test conserve mode
         NATRule.create(
             self.apiclient,
-            self.virtual_machine,
+            vm,
             self.services["natrule"],
             ipaddressid=public_ip.ipaddress.id,
             vpcid=vpc.id,
