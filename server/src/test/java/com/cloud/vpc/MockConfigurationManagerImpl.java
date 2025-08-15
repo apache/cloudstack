@@ -82,6 +82,7 @@ import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
 import org.apache.cloudstack.config.Configuration;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.impl.ConfigurationSubGroupVO;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
@@ -95,6 +96,14 @@ import java.util.Set;
 
 @Component
 public class MockConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService {
+    public static final ConfigKey<Integer> NETWORK_LB_HAPROXY_MAX_CONN = new ConfigKey<>(
+            "Network",
+            Integer.class,
+            "network.loadbalancer.haproxy.max.conn",
+            "4096",
+            "Load Balancer(haproxy) maximum number of concurrent connections(global max)",
+            true,
+            ConfigKey.Scope.Global);
     @Inject
     NetworkOfferingDaoImpl _ntwkOffDao;
 
