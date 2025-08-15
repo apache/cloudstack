@@ -21,7 +21,7 @@
     :loading="loading"
     :columns="isOrderUpdatable() ? columns : columns.filter(x => x.dataIndex !== 'order')"
     :dataSource="items"
-    :rowKey="(record, idx) => record.id || record.name || record.usageType || idx + '-' + Math.random()"
+    :rowKey="(record, idx) => hasNoUniqueKey() ? (idx + '-' + Math.random()) : (record.id || record.name || record.usageType || idx + '-' + Math.random())"
     :pagination="false"
     :rowSelection="explicitlyAllowRowSelection || enableGroupAction() || $route.name === 'event' ? {selectedRowKeys: selectedRowKeys, onChange: onSelectChange, columnWidth: 30} : null"
     :rowClassName="getRowClassName"
@@ -741,6 +741,9 @@ export default {
         'diskoffering', 'backupoffering', 'networkoffering', 'vpcoffering', 'ilbvm', 'kubernetes', 'comment', 'buckets',
         'webhook', 'webhookdeliveries', 'sharedfs', 'ipv4subnets', 'asnumbers'
       ].includes(this.$route.name)
+    },
+    hasNoUniqueKey () {
+      return ['/ldapsetting'].some(prefix => this.$route.path.startsWith(prefix))
     },
     getDateAtTimeZone (date, timezone) {
       return date ? moment(date).tz(timezone).format('YYYY-MM-DD HH:mm:ss') : null
