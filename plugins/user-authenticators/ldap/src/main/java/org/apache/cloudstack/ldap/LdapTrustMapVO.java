@@ -55,10 +55,6 @@ public class LdapTrustMapVO implements InternalIdentity {
     @Enumerated(value = EnumType.ORDINAL)
     private Account.Type accountType;
 
-
-    public LdapTrustMapVO() {
-    }
-
     public LdapTrustMapVO(long domainId, LdapManager.LinkType type, String name, Account.Type accountType, long accountId) {
         this.domainId = domainId;
         this.type = type;
@@ -123,8 +119,8 @@ public class LdapTrustMapVO implements InternalIdentity {
     public int hashCode() {
         int result = type.hashCode();
         result = 31 * result + name.hashCode();
-        result = 31 * result + (int) (domainId ^ (domainId >>> 32));
-        result = 31 * result + (int) (accountId ^ (accountId >>> 32));
+        result = 31 * result + Long.hashCode(domainId);
+        result = 31 * result + Long.hashCode(accountId);
         result = 31 * result + accountType.ordinal();
         return result;
     }
