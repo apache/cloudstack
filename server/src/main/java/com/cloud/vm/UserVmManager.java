@@ -59,6 +59,12 @@ public interface UserVmManager extends UserVmService {
             "Destroys the VM's root volume when the VM is destroyed.",
             true, ConfigKey.Scope.Domain);
 
+    ConfigKey<String> VmDistinctHostNameScope = new ConfigKey<>(String.class, "vm.distinct.hostname.scope", ConfigKey.CATEGORY_ADVANCED,
+            "network",
+            "Scope of resources to check while checking if the hostname is unique. Possible values are global, domain, subdomain, account, network.",
+            true, ConfigKey.Scope.Global, null, "VM distinct hostname scope", null, null, null, ConfigKey.Kind.Select,
+            "global,domain,subdomain,account,network");
+
     static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
 
     public  static  final String CKS_NODE = "cksnode";
