@@ -47,7 +47,7 @@ public class DeleteServicePackageOfferingCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.STRING, entityType = NetScalerServicePackageResponse.class, required = true, description = "the service offering ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.STRING, entityType = NetScalerServicePackageResponse.class, required = true, description = "The service offering ID")
     private String ID;
 
     @Override

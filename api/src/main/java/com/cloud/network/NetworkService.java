@@ -81,7 +81,7 @@ public interface NetworkService {
             true, ConfigKey.Scope.Zone);
 
     public static final ConfigKey<Boolean> AllowUsersToSpecifyVRMtu = new ConfigKey<>("Advanced", Boolean.class,
-            "allow.end.users.to.specify.vr.mtu", "false", "Allow end users to specify VR MTU",
+            "allow.end.users.to.specify.vr.mtu", "false", "Allow end Users to specify VR MTU",
             true, ConfigKey.Scope.Zone);
 
     List<? extends Network> getIsolatedNetworksOwnedByAccountInZone(long zoneId, Account owner);

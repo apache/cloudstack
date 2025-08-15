@@ -45,27 +45,27 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ProjectResponse.class, required = true, description = "id of the project to be modified")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ProjectResponse.class, required = true, description = "ID of the project to be modified")
     private Long id;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "new Admin account for the project")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "New Admin Account for the project")
     private String accountName;
 
-    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "display text of the project")
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "Display text of the project")
     private String displayText;
 
-    @Parameter(name = ApiConstants.USER_ID, type = CommandType.UUID, entityType = UserResponse.class, description = "ID of the user to be promoted/demoted")
+    @Parameter(name = ApiConstants.USER_ID, type = CommandType.UUID, entityType = UserResponse.class, description = "ID of the User to be promoted/demoted")
     private Long userId;
 
-    @Parameter(name = ApiConstants.ROLE_TYPE, type = CommandType.STRING, description = "Account level role to be assigned to the user/account : Admin/Regular")
+    @Parameter(name = ApiConstants.ROLE_TYPE, type = CommandType.STRING, description = "Account level role to be assigned to the User/Account : Admin/Regular")
     private String roleType;
 
-    @Parameter(name = ApiConstants.SWAP_OWNER, type = CommandType.BOOLEAN, description = "when true, it swaps ownership with the account/ user provided. " +
+    @Parameter(name = ApiConstants.SWAP_OWNER, type = CommandType.BOOLEAN, description = "When true, it swaps ownership with the Account/User provided. " +
             "Ideally to be used when a single project administrator is present. In case of multiple project admins, swapowner is to be set to false," +
             "to promote or demote the user/account based on the roleType (Regular or Admin) provided. Defaults to true")
     private Boolean swapOwner;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "name of the project", since = "4.19.0")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Name of the project", since = "4.19.0")
     private String name;
 
     /////////////////////////////////////////////////////
@@ -135,8 +135,8 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
     public void execute() throws ResourceAllocationException {
         CallContext.current().setEventDetails("Project id: " + getId());
         if (getAccountName() != null && getUserId() != null) {
-            throw new InvalidParameterValueException("Account name and user ID are mutually exclusive. Provide either account name" +
-                    "to update account or user ID to update the user of the project");
+            throw new InvalidParameterValueException("Account name and User ID are mutually exclusive. Provide either Account name" +
+                    "to update Account or user ID to update the user of the project");
         }
 
         Project project = null;
