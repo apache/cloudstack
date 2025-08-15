@@ -33,6 +33,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
+import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.PluggableService;
@@ -200,4 +201,13 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
         this.commandPropertyFiles = commandPropertyFiles;
     }
 
+    @Override
+    public Pair<Role, List<RolePermission>> getRolePermissions(long roleId) {
+        return null;
+    }
+
+    @Override
+    public boolean checkAccess(Account account, String commandName, Role accountRole, List<RolePermission> allPermissions) {
+        return false;
+    }
 }
