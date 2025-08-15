@@ -101,7 +101,7 @@ public class DeleteEventsCmd extends BaseCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Unable to delete any events. One or more parameters have invalid values.");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Unable to delete any events. No events found matching the specified criteria.");
         }
     }
 }
