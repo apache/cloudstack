@@ -94,6 +94,7 @@ public class UserPasswordResetManagerImpl extends ManagerBase implements UserPas
                 UserPasswordResetSMTPUseAuth,
                 UserPasswordResetSMTPUsername,
                 UserPasswordResetSMTPPassword,
+                UserPasswordResetDomainURL,
                 PasswordResetMailTemplate
         };
     }
@@ -172,6 +173,7 @@ public class UserPasswordResetManagerImpl extends ManagerBase implements UserPas
         final String email = userAccount.getEmail();
         final String username = userAccount.getUsername();
         final String subject = "Password Reset Request";
+        final String domainUrl = UserPasswordResetDomainURL.value();
 
         String resetLink = String.format("/client/#/user/resetPassword?username=%s&token=%s",
                 username, resetToken);
