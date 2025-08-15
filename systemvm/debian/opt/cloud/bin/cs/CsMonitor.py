@@ -69,6 +69,12 @@ class CsMonitor(CsDataBag):
         else:
             hc_data["excluded_health_checks"] = []
 
+        if "included_services" in self.dbag:
+            included_services = self.dbag["included_services"]
+            hc_data["included_services"] = [ch.strip() for ch in included_services.split(",")] if len(included_services) > 0 else []
+        else:
+            hc_data["included_services"] = []
+
         if "health_checks_config" in self.dbag:
             hc_data["health_checks_config"] = self.dbag["health_checks_config"]
         else:
