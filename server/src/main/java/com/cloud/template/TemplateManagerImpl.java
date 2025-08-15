@@ -1692,17 +1692,21 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             if (store == null) {
                 throw new CloudRuntimeException("cannot find an image store for zone " + zoneId);
             }
-            AsyncCallFuture<TemplateApiResult> future = null;
+            AsyncCallFuture<TemplateApiResult> future;
 
             if (snapshotId != null) {
-                DataStoreRole dataStoreRole = snapshotHelper.getDataStoreRole(snapshot, zoneId);
-                kvmSnapshotOnlyInPrimaryStorage = snapshotHelper.isKvmSnapshotOnlyInPrimaryStorage(snapshot, dataStoreRole, zoneId);
-
+                DataStoreRole dataStoreRole = snapshotHelper.getDataStoreRole(snapshot);
+                kvmSnapshotOnlyInPrimaryStorage = snapshotHelper.isKvmSnapshotOnlyInPrimaryStorage(snapshot, dataStoreRole);
                 snapInfo = _snapshotFactory.getSnapshotWithRoleAndZone(snapshotId, dataStoreRole, zoneId);
-                boolean kvmIncrementalSnapshot = SnapshotManager.kvmIncrementalSnapshot.valueIn(_hostDao.findClusterIdByVolumeInfo(snapInfo.getBaseVolume()));
+                logger.debug("Creating template for snapshot, with dataStore role {} and on primary storage: {}", dataStoreRole, kvmSnapshotOnlyInPrimaryStorage);
 
                 boolean storageSupportsSnapshotToTemplate = snapshotHelper.isStorageSupportSnapshotToTemplate(snapInfo);
                 if (storageSupportsSnapshotToTemplate) {
+                    dataStoreRole = snapshotHelper.getDataStoreRole(snapshot, zoneId);
+                    kvmSnapshotOnlyInPrimaryStorage = snapshotHelper.isKvmSnapshotOnlyInPrimaryStorage(snapshot, dataStoreRole, zoneId);
+                    snapInfo = _snapshotFactory.getSnapshotWithRoleAndZone(snapshotId, dataStoreRole, zoneId);
+                    logger.debug("Creating template for snapshot for storage supporting snapshot to template, with dataStore role {} and on primary storage: {}", dataStoreRole, kvmSnapshotOnlyInPrimaryStorage);
+
                     ImageStoreVO imageStore = _imgStoreDao.findOneByZoneAndProtocol(zoneId, "nfs");
                     if (imageStore == null) {
                         throw new CloudRuntimeException(String.format("Could not find an NFS secondary storage pool on zone %s to use as a temporary location " +
@@ -1721,6 +1725,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                         store = snapStore; // pick snapshot image store to create template
                     }
                 }
+
+                boolean kvmIncrementalSnapshot = SnapshotManager.kvmIncrementalSnapshot.valueIn(_hostDao.findClusterIdByVolumeInfo(snapInfo.getBaseVolume()));
                 if (kvmIncrementalSnapshot && DataStoreRole.Image.equals(dataStoreRole)) {
                     snapInfo = snapshotHelper.convertSnapshotIfNeeded(snapInfo);
                 }
