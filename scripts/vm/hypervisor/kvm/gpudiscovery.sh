@@ -349,6 +349,130 @@ json_escape() {
 # Cache for nodedev XML data to avoid repeated virsh calls
 declare -A nodedev_cache
 
+# Cache for nvidia-smi vgpu profile data
+declare -A nvidia_vgpu_profiles
+
+# Parse nvidia-smi vgpu -s -v output and populate profile cache
+parse_nvidia_vgpu_profiles() {
+	local gpu_address=""
+	local profile_id=""
+	local profile_name=""
+	local max_instances=""
+	local fb_memory=""
+	local max_heads=""
+	local max_x_res=""
+	local max_y_res=""
+
+	# Function to store current profile data
+	store_profile_data() {
+		if [[ -n "$gpu_address" && -n "$profile_id" && -n "$profile_name" ]]; then
+			local key="${gpu_address}:${profile_id}"
+			nvidia_vgpu_profiles["$key"]="$profile_name|${max_instances:-0}|${fb_memory:-0}|${max_heads:-0}|${max_x_res:-0}|${max_y_res:-0}"
+		fi
+	}
+
+	# Skip if nvidia-smi is not available
+	if ! command -v nvidia-smi >/dev/null 2>&1; then
+		return
+	fi
+
+	while IFS= read -r line; do
+		# Match GPU address line
+		if [[ $line =~ ^GPU[[:space:]]+([0-9A-Fa-f:]+\.[0-9A-Fa-f]+) ]]; then
+			# Store previous profile data before starting new GPU
+			store_profile_data
+
+			gpu_address="${BASH_REMATCH[1]}"
+			# Convert from format like 00000000:AF:00.0 to AF:00.0 and normalize to lowercase
+			if [[ $gpu_address =~ [0-9A-Fa-f]+:([0-9A-Fa-f]+:[0-9A-Fa-f]+\.[0-9A-Fa-f]+) ]]; then
+				gpu_address="${BASH_REMATCH[1],,}"
+			else
+				gpu_address="${gpu_address,,}"
+			fi
+			# Reset profile variables for new GPU
+			profile_id=""
+			profile_name=""
+			max_instances=""
+			fb_memory=""
+			max_heads=""
+			max_x_res=""
+			max_y_res=""
+		elif [[ $line =~ ^[[:space:]]*vGPU[[:space:]]+Type[[:space:]]+ID[[:space:]]*:[[:space:]]*0x([0-9A-Fa-f]+) ]]; then
+			# Store previous profile data before starting new profile
+			store_profile_data
+
+			# Normalize to lowercase hex without 0x prefix
+			profile_id="${BASH_REMATCH[1],,}"
+			# Reset profile-specific variables
+			profile_name=""
+			max_instances=""
+			fb_memory=""
+			max_heads=""
+			max_x_res=""
+			max_y_res=""
+		elif [[ $line =~ ^[[:space:]]*Name[[:space:]]*:[[:space:]]*(.+)$ ]]; then
+			profile_name="${BASH_REMATCH[1]}"
+		elif [[ $line =~ ^[[:space:]]*Max[[:space:]]+Instances[[:space:]]*:[[:space:]]*([0-9]+) ]]; then
+			max_instances="${BASH_REMATCH[1]}"
+		elif [[ $line =~ ^[[:space:]]*FB[[:space:]]+Memory[[:space:]]*:[[:space:]]*([0-9]+)[[:space:]]*MiB ]]; then
+			fb_memory="${BASH_REMATCH[1]}"
+		elif [[ $line =~ ^[[:space:]]*Display[[:space:]]+Heads[[:space:]]*:[[:space:]]*([0-9]+) ]]; then
+			max_heads="${BASH_REMATCH[1]}"
+		elif [[ $line =~ ^[[:space:]]*Maximum[[:space:]]+X[[:space:]]+Resolution[[:space:]]*:[[:space:]]*([0-9]+) ]]; then
+			max_x_res="${BASH_REMATCH[1]}"
+		elif [[ $line =~ ^[[:space:]]*Maximum[[:space:]]+Y[[:space:]]+Resolution[[:space:]]*:[[:space:]]*([0-9]+) ]]; then
+			max_y_res="${BASH_REMATCH[1]}"
+		fi
+	done < <(nvidia-smi vgpu -s -v 2>/dev/null || true)
+
+	# Store the last profile data after processing all lines
+	store_profile_data
+}
+
+# Get current vGPU type ID for a VF from sysfs
+get_current_vgpu_type() {
+	local vf_path="$1"
+	local current_type_file="$vf_path/nvidia/current_vgpu_type"
+
+	if [[ -f "$current_type_file" ]]; then
+		local type_id
+		type_id=$(<"$current_type_file")
+
+		# Remove any whitespace
+		type_id="${type_id// /}"
+
+		# Handle different input formats and normalize to lowercase hex without 0x
+		if [[ $type_id =~ ^0x([0-9A-Fa-f]+)$ ]]; then
+			# Input is hex with 0x prefix (e.g., "0x252")
+			echo "${BASH_REMATCH[1],,}"
+		elif [[ $type_id =~ ^[0-9]+$ ]]; then
+			# Input is decimal (e.g., "594")
+			printf "%x" "$type_id"
+		elif [[ $type_id =~ ^[0-9A-Fa-f]+$ ]]; then
+			# Input is hex without 0x prefix (e.g., "252")
+			echo "${type_id,,}"
+		else
+			# Fallback for unknown format
+			echo "0"
+		fi
+	else
+		echo "0"
+	fi
+}
+
+# Get profile information from nvidia-smi cache
+get_nvidia_profile_info() {
+	local gpu_address="$1"
+	local profile_id="$2"
+	local key="${gpu_address}:${profile_id}"
+
+	if [[ -n "${nvidia_vgpu_profiles[$key]:-}" ]]; then
+		echo "${nvidia_vgpu_profiles[$key]}"
+	else
+		echo "|0|0|0|0|0"  # Default empty values
+	fi
+}
+
 # Get nodedev name for a PCI address (e.g. "00:02.0" -> "pci_0000_00_02_0")
 get_nodedev_name() {
 	local addr="$1"
@@ -567,6 +691,9 @@ process_mdev_instances() {
 
 # === GPU Discovery ===
 
+# Parse nvidia-smi vgpu profiles once at the beginning
+parse_nvidia_vgpu_profiles
+
 mapfile -t LINES < <(lspci -nnm)
 
 echo '{ "gpus": ['
@@ -575,7 +702,7 @@ first_gpu=true
 for LINE in "${LINES[@]}"; do
 	# Parse lspci -nnm fields: SLOT "CLASS [CODE]" "VENDOR [VID]" "DEVICE [DID]" ...
 	if [[ $LINE =~ ^([^[:space:]]+)[[:space:]]\"([^\"]+)\"[[:space:]]\"([^\"]+)\"[[:space:]]\"([^\"]+)\" ]]; then
-		PCI_ADDR="${BASH_REMATCH[1]}"
+		PCI_ADDR="${BASH_REMATCH[1],,}"  # Normalize to lowercase
 		PCI_CLASS="${BASH_REMATCH[2]}"
 		VENDOR_FIELD="${BASH_REMATCH[3]}"
 		DEVICE_FIELD="${BASH_REMATCH[4]}"
@@ -662,12 +789,33 @@ for LINE in "${LINES[@]}"; do
 			SLOT="0x${VF_BDF:3:2}"
 			FUNC="0x${VF_BDF:6:1}"
 
-			# Determine vf_profile
+			# Determine vf_profile using nvidia-smi information
 			VF_PROFILE=""
-			if VF_LINE=$(lspci -nnm -s "$VF_BDF" 2>/dev/null); then
-				if [[ $VF_LINE =~ \"([^\"]+)\"[[:space:]]\"([^\"]+)\"[[:space:]]\"([^\"]+)\"[[:space:]]\"([^\"]+)\" ]]; then
-					VF_DEVICE_FIELD="${BASH_REMATCH[4]}"
-					VF_PROFILE=$(sed -E 's/ \[[0-9A-Fa-f]{4}\]$//' <<<"$VF_DEVICE_FIELD")
+			VF_PROFILE_NAME=""
+			VF_MAX_INSTANCES="null"
+			VF_VIDEO_RAM="null"
+			VF_MAX_HEADS="null"
+			VF_MAX_RESOLUTION_X="null"
+			VF_MAX_RESOLUTION_Y="null"
+
+			if [[ "$VENDOR_ID" == "10de" ]]; then
+				# For NVIDIA GPUs, check current vGPU type
+				current_vgpu_type=$(get_current_vgpu_type "$VF_PATH")
+				if [[ "$current_vgpu_type" != "0" ]]; then
+					# Get profile info from nvidia-smi cache
+					profile_info=$(get_nvidia_profile_info "$PCI_ADDR" "$current_vgpu_type")
+					IFS='|' read -r VF_PROFILE_NAME VF_MAX_INSTANCES VF_VIDEO_RAM VF_MAX_HEADS VF_MAX_RESOLUTION_X VF_MAX_RESOLUTION_Y <<< "$profile_info"
+					VF_PROFILE="$VF_PROFILE_NAME"
+				fi
+			fi
+
+			# Fallback to lspci parsing if no nvidia-smi profile found
+			if [[ -z "$VF_PROFILE" ]]; then
+				if VF_LINE=$(lspci -nnm -s "$VF_BDF" 2>/dev/null); then
+					if [[ $VF_LINE =~ \"([^\"]+)\"[[:space:]]\"([^\"]+)\"[[:space:]]\"([^\"]+)\"[[:space:]]\"([^\"]+)\" ]]; then
+						VF_DEVICE_FIELD="${BASH_REMATCH[4]}"
+						VF_PROFILE=$(sed -E 's/ \[[0-9A-Fa-f]{4}\]$//' <<<"$VF_DEVICE_FIELD")
+					fi
 				fi
 			fi
 			VF_PROFILE_JSON=$(json_escape "$VF_PROFILE")
@@ -677,7 +825,7 @@ for LINE in "${LINES[@]}"; do
 			USED_JSON=$(to_json_vm "$raw")
 
 			flist+=(
-				"{\"vf_pci_address\":\"$VF_BDF\",\"vf_profile\":$VF_PROFILE_JSON,\"libvirt_address\":{\"domain\":\"$DOMAIN\",\"bus\":\"$BUS\",\"slot\":\"$SLOT\",\"function\":\"$FUNC\"},\"used_by_vm\":$USED_JSON}")
+				"{\"vf_pci_address\":\"$VF_BDF\",\"vf_profile\":$VF_PROFILE_JSON,\"max_instances\":$VF_MAX_INSTANCES,\"video_ram\":$VF_VIDEO_RAM,\"max_heads\":$VF_MAX_HEADS,\"max_resolution_x\":$VF_MAX_RESOLUTION_X,\"max_resolution_y\":$VF_MAX_RESOLUTION_Y,\"libvirt_address\":{\"domain\":\"$DOMAIN\",\"bus\":\"$BUS\",\"slot\":\"$SLOT\",\"function\":\"$FUNC\"},\"used_by_vm\":$USED_JSON}")
 		done
 		if [ ${#flist[@]} -gt 0 ]; then
 			VF_ARRAY="[$(

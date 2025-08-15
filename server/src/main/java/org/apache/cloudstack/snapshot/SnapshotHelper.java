@@ -156,7 +156,8 @@ public class SnapshotHelper {
     public boolean isStorageSupportSnapshotToTemplate(SnapshotInfo snapInfo) {
         if (DataStoreRole.Primary.equals(snapInfo.getDataStore().getRole())) {
             Map<String, String> capabilities = snapInfo.getDataStore().getDriver().getCapabilities();
-            return org.apache.commons.collections4.MapUtils.isNotEmpty(capabilities) && capabilities.containsKey(DataStoreCapabilities.CAN_CREATE_TEMPLATE_FROM_SNAPSHOT.toString());
+            return org.apache.commons.collections4.MapUtils.isNotEmpty(capabilities)
+                    && Boolean.parseBoolean(capabilities.get(DataStoreCapabilities.CAN_CREATE_TEMPLATE_FROM_SNAPSHOT.toString()));
         }
         return false;
     }
@@ -214,22 +215,24 @@ public class SnapshotHelper {
      * @return true if hypervisor is {@link  HypervisorType#KVM} and data store role is {@link  DataStoreRole#Primary} and global setting "snapshot.backup.to.secondary" is false,
      * else false.
      */
+    public boolean isKvmSnapshotOnlyInPrimaryStorage(Snapshot snapshot, DataStoreRole dataStoreRole) {
+        return snapshot.getHypervisorType() == Hypervisor.HypervisorType.KVM && dataStoreRole == DataStoreRole.Primary && !backupSnapshotAfterTakingSnapshot;
+    }
+
     public boolean isKvmSnapshotOnlyInPrimaryStorage(Snapshot snapshot, DataStoreRole dataStoreRole, Long zoneId){
         List<SnapshotJoinVO> snapshots = snapshotJoinDao.listBySnapshotIdAndZoneId(zoneId, snapshot.getSnapshotId());
-        boolean isKvmSnapshotOnlyInPrimaryStorage = snapshots.stream().filter(s -> s.getStoreRole().equals(DataStoreRole.Image)).count() == 0;
+        boolean isKvmSnapshotOnlyInPrimaryStorage = snapshots.stream().noneMatch(s -> s.getStoreRole().equals(DataStoreRole.Image));
 
         return snapshot.getHypervisorType() == Hypervisor.HypervisorType.KVM && dataStoreRole == DataStoreRole.Primary && isKvmSnapshotOnlyInPrimaryStorage;
     }
 
     public DataStoreRole getDataStoreRole(Snapshot snapshot) {
         SnapshotDataStoreVO snapshotStore = snapshotDataStoreDao.findOneBySnapshotAndDatastoreRole(snapshot.getId(), DataStoreRole.Primary);
-
         if (snapshotStore == null) {
             return DataStoreRole.Image;
         }
 
         long storagePoolId = snapshotStore.getDataStoreId();
-
         StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(storagePoolId);
         if ((storagePoolTypesToValidateWithBackupSnapshotAfterTakingSnapshot.contains(storagePoolVO.getPoolType()) || snapshot.getHypervisorType() == HypervisorType.KVM)
                 && !backupSnapshotAfterTakingSnapshot) {
@@ -237,13 +240,11 @@ public class SnapshotHelper {
         }
 
         DataStore dataStore = dataStorageManager.getDataStore(storagePoolId, DataStoreRole.Primary);
-
         if (dataStore == null) {
             return DataStoreRole.Image;
         }
 
         Map<String, String> mapCapabilities = dataStore.getDriver().getCapabilities();
-
         if (MapUtils.isNotEmpty(mapCapabilities) && BooleanUtils.toBoolean(mapCapabilities.get(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString()))) {
             return DataStoreRole.Primary;
         }
@@ -255,11 +256,13 @@ public class SnapshotHelper {
         if (zoneId == null) {
             getDataStoreRole(snapshot);
         }
+
         List<SnapshotJoinVO> snapshots = snapshotJoinDao.listBySnapshotIdAndZoneId(zoneId, snapshot.getId());
         boolean snapshotOnPrimary = snapshots.stream().anyMatch(s -> s.getStoreRole().equals(DataStoreRole.Primary));
         if (snapshotOnPrimary) {
             return DataStoreRole.Primary;
         }
+
         return DataStoreRole.Image;
     }
         /**
