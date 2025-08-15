@@ -19,6 +19,7 @@ package com.cloud.storage.dao;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
@@ -56,6 +57,17 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     private static final String GET_LAST_SNAPSHOT =
         "SELECT snapshots.id FROM snapshot_store_ref, snapshots where snapshots.id = snapshot_store_ref.snapshot_id AND snapshosts.volume_id = ? AND snapshot_store_ref.role = ? ORDER BY created DESC";
 
+    private static final String VOLUME_ID = "volumeId";
+    private static final String REMOVED = "removed";
+    private static final String ID = "id";
+    private static final String INSTANCE_ID = "instanceId";
+    private static final String STATE = "state";
+    private static final String INSTANCE_VOLUMES = "instanceVolumes";
+    private static final String INSTANCE_SNAPSHOTS = "instanceSnapshots";
+    private static final String VERSION = "version";
+    private static final String ACCOUNT_ID = "accountId";
+    private static final String NOT_TYPE = "notType";
+
     private SearchBuilder<SnapshotVO> snapshotIdsSearch;
     private SearchBuilder<SnapshotVO> VolumeIdSearch;
     private SearchBuilder<SnapshotVO> VolumeIdTypeSearch;
@@ -66,6 +78,8 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     private SearchBuilder<SnapshotVO> StatusSearch;
     private SearchBuilder<SnapshotVO> notInStatusSearch;
     private GenericSearchBuilder<SnapshotVO, Long> CountSnapshotsByAccount;
+
+    private SearchBuilder<SnapshotVO> volumeIdAndTypeNotInSearch;
     @Inject
     ResourceTagDao _tagsDao;
     @Inject
@@ -76,9 +90,9 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     @Override
     public List<SnapshotVO> listByVolumeIdTypeNotDestroyed(long volumeId, Type type) {
         SearchCriteria<SnapshotVO> sc = VolumeIdTypeNotDestroyedSearch.create();
-        sc.setParameters("volumeId", volumeId);
+        sc.setParameters(VOLUME_ID, volumeId);
         sc.setParameters("type", type.ordinal());
-        sc.setParameters("status", State.Destroyed);
+        sc.setParameters(STATE, State.Destroyed);
         return listBy(sc, null);
     }
 
@@ -95,28 +109,28 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     @Override
     public List<SnapshotVO> listByVolumeId(Filter filter, long volumeId) {
         SearchCriteria<SnapshotVO> sc = VolumeIdSearch.create();
-        sc.setParameters("volumeId", volumeId);
+        sc.setParameters(VOLUME_ID, volumeId);
         return listBy(sc, filter);
     }
 
     @Override
     public List<SnapshotVO> listByVolumeIdIncludingRemoved(long volumeId) {
         SearchCriteria<SnapshotVO> sc = VolumeIdSearch.create();
-        sc.setParameters("volumeId", volumeId);
+        sc.setParameters(VOLUME_ID, volumeId);
         return listIncludingRemovedBy(sc, null);
     }
 
     public List<SnapshotVO> listByVolumeIdType(Filter filter, long volumeId, Type type) {
         SearchCriteria<SnapshotVO> sc = VolumeIdTypeSearch.create();
-        sc.setParameters("volumeId", volumeId);
+        sc.setParameters(VOLUME_ID, volumeId);
         sc.setParameters("type", type.ordinal());
         return listBy(sc, filter);
     }
 
     public List<SnapshotVO> listByVolumeIdVersion(Filter filter, long volumeId, String version) {
         SearchCriteria<SnapshotVO> sc = VolumeIdVersionSearch.create();
-        sc.setParameters("volumeId", volumeId);
-        sc.setParameters("version", version);
+        sc.setParameters(VOLUME_ID, volumeId);
+        sc.setParameters(VERSION, version);
         return listBy(sc, filter);
     }
 
@@ -126,61 +140,67 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     @PostConstruct
     protected void init() {
         VolumeIdSearch = createSearchBuilder();
-        VolumeIdSearch.and("volumeId", VolumeIdSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        VolumeIdSearch.and(VOLUME_ID, VolumeIdSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
         VolumeIdSearch.done();
 
         VolumeIdTypeSearch = createSearchBuilder();
-        VolumeIdTypeSearch.and("volumeId", VolumeIdTypeSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        VolumeIdTypeSearch.and(VOLUME_ID, VolumeIdTypeSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
         VolumeIdTypeSearch.and("type", VolumeIdTypeSearch.entity().getSnapshotType(), SearchCriteria.Op.EQ);
         VolumeIdTypeSearch.done();
 
         VolumeIdTypeNotDestroyedSearch = createSearchBuilder();
-        VolumeIdTypeNotDestroyedSearch.and("volumeId", VolumeIdTypeNotDestroyedSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        VolumeIdTypeNotDestroyedSearch.and(VOLUME_ID, VolumeIdTypeNotDestroyedSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
         VolumeIdTypeNotDestroyedSearch.and("type", VolumeIdTypeNotDestroyedSearch.entity().getSnapshotType(), SearchCriteria.Op.EQ);
-        VolumeIdTypeNotDestroyedSearch.and("status", VolumeIdTypeNotDestroyedSearch.entity().getState(), SearchCriteria.Op.NEQ);
+        VolumeIdTypeNotDestroyedSearch.and(STATE, VolumeIdTypeNotDestroyedSearch.entity().getState(), SearchCriteria.Op.NEQ);
         VolumeIdTypeNotDestroyedSearch.done();
 
         VolumeIdVersionSearch = createSearchBuilder();
-        VolumeIdVersionSearch.and("volumeId", VolumeIdVersionSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
-        VolumeIdVersionSearch.and("version", VolumeIdVersionSearch.entity().getVersion(), SearchCriteria.Op.EQ);
+        VolumeIdVersionSearch.and(VOLUME_ID, VolumeIdVersionSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        VolumeIdVersionSearch.and(VERSION, VolumeIdVersionSearch.entity().getVersion(), SearchCriteria.Op.EQ);
         VolumeIdVersionSearch.done();
 
         AccountIdSearch = createSearchBuilder();
-        AccountIdSearch.and("accountId", AccountIdSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        AccountIdSearch.and(ACCOUNT_ID, AccountIdSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AccountIdSearch.done();
 
         StatusSearch = createSearchBuilder();
-        StatusSearch.and("volumeId", StatusSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
-        StatusSearch.and("status", StatusSearch.entity().getState(), SearchCriteria.Op.IN);
+        StatusSearch.and(VOLUME_ID, StatusSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        StatusSearch.and(STATE, StatusSearch.entity().getState(), SearchCriteria.Op.IN);
         StatusSearch.done();
 
         notInStatusSearch  = createSearchBuilder();
-        notInStatusSearch.and("volumeId", notInStatusSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
-        notInStatusSearch.and("status", notInStatusSearch.entity().getState(), SearchCriteria.Op.NOTIN);
+        notInStatusSearch.and(VOLUME_ID, notInStatusSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        notInStatusSearch.and(STATE, notInStatusSearch.entity().getState(), SearchCriteria.Op.NOTIN);
         notInStatusSearch.done();
 
         CountSnapshotsByAccount = createSearchBuilder(Long.class);
         CountSnapshotsByAccount.select(null, Func.COUNT, null);
-        CountSnapshotsByAccount.and("account", CountSnapshotsByAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
-        CountSnapshotsByAccount.and("status", CountSnapshotsByAccount.entity().getState(), SearchCriteria.Op.NIN);
-        CountSnapshotsByAccount.and("removed", CountSnapshotsByAccount.entity().getRemoved(), SearchCriteria.Op.NULL);
+        CountSnapshotsByAccount.and(ACCOUNT_ID, CountSnapshotsByAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
+        CountSnapshotsByAccount.and(STATE, CountSnapshotsByAccount.entity().getState(), SearchCriteria.Op.NIN);
+        CountSnapshotsByAccount.and(REMOVED, CountSnapshotsByAccount.entity().getRemoved(), SearchCriteria.Op.NULL);
         CountSnapshotsByAccount.done();
 
         InstanceIdSearch = createSearchBuilder();
-        InstanceIdSearch.and("status", InstanceIdSearch.entity().getState(), SearchCriteria.Op.IN);
+        InstanceIdSearch.and(STATE, InstanceIdSearch.entity().getState(), SearchCriteria.Op.IN);
 
         snapshotIdsSearch = createSearchBuilder();
-        snapshotIdsSearch.and("id", snapshotIdsSearch.entity().getId(), SearchCriteria.Op.IN);
+        snapshotIdsSearch.and(ID, snapshotIdsSearch.entity().getId(), SearchCriteria.Op.IN);
 
         SearchBuilder<VMInstanceVO> instanceSearch = _instanceDao.createSearchBuilder();
-        instanceSearch.and("instanceId", instanceSearch.entity().getId(), SearchCriteria.Op.EQ);
+        instanceSearch.and(INSTANCE_ID, instanceSearch.entity().getId(), SearchCriteria.Op.EQ);
 
         SearchBuilder<VolumeVO> volumeSearch = _volumeDao.createSearchBuilder();
-        volumeSearch.and("state", volumeSearch.entity().getState(), SearchCriteria.Op.EQ);
-        volumeSearch.join("instanceVolumes", instanceSearch, instanceSearch.entity().getId(), volumeSearch.entity().getInstanceId(), JoinType.INNER);
+        volumeSearch.and(STATE, volumeSearch.entity().getState(), SearchCriteria.Op.EQ);
+        volumeSearch.join(INSTANCE_VOLUMES, instanceSearch, instanceSearch.entity().getId(), volumeSearch.entity().getInstanceId(), JoinType.INNER);
 
-        InstanceIdSearch.join("instanceSnapshots", volumeSearch, volumeSearch.entity().getId(), InstanceIdSearch.entity().getVolumeId(), JoinType.INNER);
+        InstanceIdSearch.join(INSTANCE_SNAPSHOTS, volumeSearch, volumeSearch.entity().getId(), InstanceIdSearch.entity().getVolumeId(), JoinType.INNER);
         InstanceIdSearch.done();
+
+        volumeIdAndTypeNotInSearch = createSearchBuilder();
+        volumeIdAndTypeNotInSearch.and(VOLUME_ID, volumeIdAndTypeNotInSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        volumeIdAndTypeNotInSearch.and(STATE, volumeIdAndTypeNotInSearch.entity().getState(), SearchCriteria.Op.NEQ);
+        volumeIdAndTypeNotInSearch.and(NOT_TYPE, volumeIdAndTypeNotInSearch.entity().getTypeDescription(), SearchCriteria.Op.NOTIN);
+        volumeIdAndTypeNotInSearch.done();
     }
 
     @Override
@@ -205,8 +225,8 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     @Override
     public Long countSnapshotsForAccount(long accountId) {
         SearchCriteria<Long> sc = CountSnapshotsByAccount.create();
-        sc.setParameters("account", accountId);
-        sc.setParameters("status", State.Error, State.Destroyed);
+        sc.setParameters(ACCOUNT_ID, accountId);
+        sc.setParameters(STATE, State.Error, State.Destroyed);
         return customSearch(sc, null).get(0);
     }
 
@@ -215,19 +235,19 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         SearchCriteria<SnapshotVO> sc = InstanceIdSearch.create();
 
         if (status != null && status.length != 0) {
-            sc.setParameters("status", (Object[])status);
+            sc.setParameters(STATE, (Object[])status);
         }
 
-        sc.setJoinParameters("instanceSnapshots", "state", Volume.State.Ready);
-        sc.setJoinParameters("instanceVolumes", "instanceId", instanceId);
+        sc.setJoinParameters(INSTANCE_SNAPSHOTS, STATE, Volume.State.Ready);
+        sc.setJoinParameters(INSTANCE_VOLUMES, INSTANCE_ID, instanceId);
         return listBy(sc, null);
     }
 
     @Override
     public List<SnapshotVO> listByStatus(long volumeId, Snapshot.State... status) {
         SearchCriteria<SnapshotVO> sc = StatusSearch.create();
-        sc.setParameters("volumeId", volumeId);
-        sc.setParameters("status", (Object[])status);
+        sc.setParameters(VOLUME_ID, volumeId);
+        sc.setParameters(STATE, (Object[])status);
         return listBy(sc, null);
     }
 
@@ -248,14 +268,14 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     @Override
     public List<SnapshotVO> listAllByStatus(Snapshot.State... status) {
         SearchCriteria<SnapshotVO> sc = StatusSearch.create();
-        sc.setParameters("status", (Object[])status);
+        sc.setParameters(STATE, (Object[])status);
         return listBy(sc, null);
     }
 
     @Override
     public List<SnapshotVO> listByIds(Object... ids) {
         SearchCriteria<SnapshotVO> sc = snapshotIdsSearch.create();
-        sc.setParameters("id", ids);
+        sc.setParameters(ID, ids);
         return listBy(sc, null);
     }
 
@@ -273,7 +293,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     @Override
     public void updateVolumeIds(long oldVolId, long newVolId) {
         SearchCriteria<SnapshotVO> sc = VolumeIdSearch.create();
-        sc.setParameters("volumeId", oldVolId);
+        sc.setParameters(VOLUME_ID, oldVolId);
         SnapshotVO snapshot = createForUpdate();
         snapshot.setVolumeId(newVolId);
         UpdateBuilder ub = getUpdateBuilder(snapshot);
@@ -283,8 +303,8 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     @Override
     public List<SnapshotVO> listByStatusNotIn(long volumeId, Snapshot.State... status) {
         SearchCriteria<SnapshotVO> sc = this.notInStatusSearch.create();
-        sc.setParameters("volumeId", volumeId);
-        sc.setParameters("status", (Object[]) status);
+        sc.setParameters(VOLUME_ID, volumeId);
+        sc.setParameters(STATE, (Object[]) status);
         return listBy(sc, null);
     }
 
@@ -298,5 +318,15 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         SearchCriteria<SnapshotVO> sc = sb.create();
         sc.setParameters("volumeIds", volumeIds.toArray());
         return search(sc, null);
+    }
+
+    @Override
+    public List<SnapshotVO> listByVolumeIdAndTypeNotInAndStateNotRemoved(long volumeId, Type... types) {
+        SearchCriteria<SnapshotVO> sc =  volumeIdAndTypeNotInSearch.create();
+        sc.setParameters(VOLUME_ID, volumeId);
+        sc.setParameters(NOT_TYPE, Arrays.stream(types).map(Type::toString).toArray());
+        sc.setParameters(STATE, State.Destroyed);
+
+        return listBy(sc);
     }
 }
