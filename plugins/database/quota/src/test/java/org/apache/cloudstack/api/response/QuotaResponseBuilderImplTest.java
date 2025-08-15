@@ -18,6 +18,8 @@ package org.apache.cloudstack.api.response;
 
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -68,6 +70,7 @@ import org.apache.cloudstack.quota.vo.QuotaCreditsVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailConfigurationVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
+import org.apache.cloudstack.quota.vo.QuotaUsageJoinVO;
 import org.apache.cloudstack.utils.jsinterpreter.JsInterpreter;
 
 import org.apache.commons.lang3.time.DateUtils;
@@ -891,5 +894,98 @@ public class QuotaResponseBuilderImplTest extends TestCase {
 
         Assert.assertTrue(formattedVariables.containsValue("accountname"));
         Assert.assertTrue(formattedVariables.containsValue("zonename"));
+    }
+
+    @Test
+    public void createDummyRecordForEachQuotaTypeIfUsageTypeIsNotInformedTestUsageTypeDifferentFromNullDoNothing() {
+        List<QuotaUsageJoinVO> listUsage = new ArrayList<>();
+
+        quotaResponseBuilderSpy.createDummyRecordForEachQuotaTypeIfUsageTypeIsNotInformed(listUsage, 1);
+
+        Assert.assertTrue(listUsage.isEmpty());
+    }
+
+    @Test
+    public void createDummyRecordForEachQuotaTypeIfUsageTypeIsNotInformedTestUsageTypeIsNullAddDummyForAllQuotaTypes() {
+        List<QuotaUsageJoinVO> listUsage = new ArrayList<>();
+        listUsage.add(new QuotaUsageJoinVO());
+
+        quotaResponseBuilderSpy.createDummyRecordForEachQuotaTypeIfUsageTypeIsNotInformed(listUsage, null);
+
+        Assert.assertEquals(QuotaTypes.listQuotaTypes().size() + 1, listUsage.size());
+
+        QuotaTypes.listQuotaTypes().entrySet().forEach(entry -> {
+            Assert.assertTrue(listUsage.stream().anyMatch(usage -> usage.getUsageType() == entry.getKey() && usage.getQuotaUsed().equals(BigDecimal.ZERO)));
+        });
+    }
+
+    private List<QuotaUsageJoinVO> getQuotaUsagesForTest() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+
+        List<QuotaUsageJoinVO> quotaUsages = new ArrayList<>();
+
+        QuotaUsageJoinVO quotaUsage = new QuotaUsageJoinVO();
+        quotaUsage.setAccountId(1l);
+        quotaUsage.setDomainId(2l);
+        quotaUsage.setUsageType(3);
+        quotaUsage.setQuotaUsed(BigDecimal.valueOf(10));
+        try {
+            quotaUsage.setStartDate(sdf.parse("2022-01-01"));
+            quotaUsage.setEndDate(sdf.parse("2022-01-02"));
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        quotaUsages.add(quotaUsage);
+
+        quotaUsage = new QuotaUsageJoinVO();
+        quotaUsage.setAccountId(4l);
+        quotaUsage.setDomainId(5l);
+        quotaUsage.setUsageType(3);
+        quotaUsage.setQuotaUsed(null);
+        try {
+            quotaUsage.setStartDate(sdf.parse("2022-01-03"));
+            quotaUsage.setEndDate(sdf.parse("2022-01-04"));
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        quotaUsages.add(quotaUsage);
+
+        quotaUsage = new QuotaUsageJoinVO();
+        quotaUsage.setAccountId(6l);
+        quotaUsage.setDomainId(7l);
+        quotaUsage.setUsageType(3);
+        quotaUsage.setQuotaUsed(BigDecimal.valueOf(5));
+        try {
+            quotaUsage.setStartDate(sdf.parse("2022-01-05"));
+            quotaUsage.setEndDate(sdf.parse("2022-01-06"));
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        quotaUsages.add(quotaUsage);
+
+        return quotaUsages;
+    }
+
+    @Test
+    public void createStatementItemTestReturnItem() {
+        List<QuotaUsageJoinVO> quotaUsages = getQuotaUsagesForTest();
+        Mockito.doNothing().when(quotaResponseBuilderSpy).setStatementItemResources(Mockito.any(), Mockito.anyInt(), Mockito.any(), Mockito.anyBoolean());
+
+        QuotaStatementItemResponse result = quotaResponseBuilderSpy.createStatementItem(0, quotaUsages, false);
+
+        QuotaUsageJoinVO expected = quotaUsages.get(0);
+        QuotaTypes quotaTypeExpected = QuotaTypes.listQuotaTypes().get(expected.getUsageType());
+        Assert.assertEquals(BigDecimal.valueOf(15), result.getQuotaUsed());
+        Assert.assertEquals(quotaTypeExpected.getQuotaUnit(), result.getUsageUnit());
+        Assert.assertEquals(quotaTypeExpected.getQuotaName(), result.getUsageName());
+    }
+
+    @Test
+    public void setStatementItemResourcesTestDoNotShowResourcesDoNothing() {
+        QuotaStatementItemResponse item = new QuotaStatementItemResponse(1);
+
+        quotaResponseBuilderSpy.setStatementItemResources(item, 0, getQuotaUsagesForTest(), false);
+
+        Assert.assertNull(item.getResources());
     }
 }

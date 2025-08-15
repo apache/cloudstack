@@ -17,10 +17,11 @@
 package org.apache.cloudstack.api.response;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
+import java.util.List;
 
 import com.google.gson.annotations.SerializedName;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
@@ -30,18 +31,6 @@ public class QuotaStatementItemResponse extends BaseResponse {
     @SerializedName("type")
     @Param(description = "usage type")
     private int usageType;
-
-    @SerializedName("accountid")
-    @Param(description = "account id")
-    private Long accountId;
-
-    @SerializedName("account")
-    @Param(description = "account name")
-    private String accountName;
-
-    @SerializedName("domain")
-    @Param(description = "domain id")
-    private Long domainId;
 
     @SerializedName("name")
     @Param(description = "usage type name")
@@ -55,32 +44,12 @@ public class QuotaStatementItemResponse extends BaseResponse {
     @Param(description = "quota consumed")
     private BigDecimal quotaUsed;
 
+    @SerializedName(ApiConstants.RESOURCES)
+    @Param(description = "Item's resources.")
+    private List<QuotaStatementItemResourceResponse> resources;
+
     public QuotaStatementItemResponse(final int usageType) {
         this.usageType = usageType;
-    }
-
-    public Long getAccountId() {
-        return accountId;
-    }
-
-    public void setAccountId(Long accountId) {
-        this.accountId = accountId;
-    }
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public void setAccountName(String accountName) {
-        this.accountName = accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
-
-    public void setDomainId(Long domainId) {
-        this.domainId = domainId;
     }
 
     public String getUsageName() {
@@ -112,7 +81,15 @@ public class QuotaStatementItemResponse extends BaseResponse {
     }
 
     public void setQuotaUsed(BigDecimal quotaUsed) {
-        this.quotaUsed = quotaUsed.setScale(2, RoundingMode.HALF_EVEN);
+        this.quotaUsed = quotaUsed;
+    }
+
+    public List<QuotaStatementItemResourceResponse> getResources() {
+        return resources;
+    }
+
+    public void setResources(List<QuotaStatementItemResourceResponse> resources) {
+        this.resources = resources;
     }
 
 }
