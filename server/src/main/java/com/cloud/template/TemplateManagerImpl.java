@@ -1698,14 +1698,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 DataStoreRole dataStoreRole = snapshotHelper.getDataStoreRole(snapshot);
                 kvmSnapshotOnlyInPrimaryStorage = snapshotHelper.isKvmSnapshotOnlyInPrimaryStorage(snapshot, dataStoreRole);
                 snapInfo = _snapshotFactory.getSnapshotWithRoleAndZone(snapshotId, dataStoreRole, zoneId);
-                logger.debug("Creating template for snapshot, with dataStore role {} and on primary storage: {}", dataStoreRole, kvmSnapshotOnlyInPrimaryStorage);
+                logger.debug("Creating template from snapshot, with dataStore role {} and on primary storage: {}", dataStoreRole, kvmSnapshotOnlyInPrimaryStorage);
 
                 boolean storageSupportsSnapshotToTemplate = snapshotHelper.isStorageSupportSnapshotToTemplate(snapInfo);
                 if (storageSupportsSnapshotToTemplate) {
                     dataStoreRole = snapshotHelper.getDataStoreRole(snapshot, zoneId);
                     kvmSnapshotOnlyInPrimaryStorage = snapshotHelper.isKvmSnapshotOnlyInPrimaryStorage(snapshot, dataStoreRole, zoneId);
                     snapInfo = _snapshotFactory.getSnapshotWithRoleAndZone(snapshotId, dataStoreRole, zoneId);
-                    logger.debug("Creating template for snapshot for storage supporting snapshot to template, with dataStore role {} and on primary storage: {}", dataStoreRole, kvmSnapshotOnlyInPrimaryStorage);
+                    logger.debug("Creating template from snapshot for storage supporting snapshot to template, with dataStore role {} and on primary storage: {}", dataStoreRole, kvmSnapshotOnlyInPrimaryStorage);
 
                     ImageStoreVO imageStore = _imgStoreDao.findOneByZoneAndProtocol(zoneId, "nfs");
                     if (imageStore == null) {
