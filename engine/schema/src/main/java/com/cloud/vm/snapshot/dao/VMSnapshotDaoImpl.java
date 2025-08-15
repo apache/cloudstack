@@ -20,7 +20,6 @@ package com.cloud.vm.snapshot.dao;
 import java.util.Date;
 import java.util.List;
 
-
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -122,6 +121,13 @@ public class VMSnapshotDaoImpl extends GenericDaoBase<VMSnapshotVO, Long> implem
     public List<VMSnapshotVO> listByAccountId(Long accountId) {
         SearchCriteria sc = this.AllFieldsSearch.create();
         sc.setParameters("accountId", new Object[] { accountId });
+        return listBy(sc, null);
+    }
+
+    @Override
+    public List<VMSnapshotVO> listAllByStatus(VMSnapshot.State... status) {
+        SearchCriteria<VMSnapshotVO> sc = SnapshotStatusSearch.create();
+        sc.setParameters("status", (Object[])status);
         return listBy(sc, null);
     }
 
