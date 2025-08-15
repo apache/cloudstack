@@ -1621,7 +1621,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             if (snapshotStrategy == null) {
                 _snapshotDao.remove(snapshotId);
                 logger.debug("No strategy found for creation of snapshot [{}], removing its record from the database.", snapshot);
-                throw new CloudRuntimeException(String.format("Can't find snapshot strategy to deal with snapshot:%s", snapshot.getSnapshotVO()));
+                throw new UnsupportedOperationException(String.format("Unable to find a snapshot strategy to create snapshot [%s] of volume [%s]. Please check the logs.",
+                        snapshot.getSnapshotVO(), volume.getUuid()));
             }
 
             SnapshotInfo snapshotOnPrimary = snapshotStrategy.takeSnapshot(snapshot);
@@ -1672,7 +1673,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             } catch (Exception e) {
                 logger.debug("post process snapshot failed", e);
             }
-        } catch (CloudRuntimeException cre) {
+        } catch (CloudRuntimeException | UnsupportedOperationException cre) {
             if (logger.isDebugEnabled()) {
                 logger.debug("Failed to create snapshot" + cre.getLocalizedMessage());
             }
