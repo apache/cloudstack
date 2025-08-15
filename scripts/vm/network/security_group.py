@@ -1382,15 +1382,6 @@ def verify_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, sec
         print("Cannot find vif")
         sys.exit(1)
 
-    #vm_name = "i-2-55-VM"
-    #vm_id = 55
-    #vm_ip = "10.11.118.128"
-    #vm_ip6 = "fe80::1c00:b4ff:fe00:5"
-    #vm_mac = "1e:00:b4:00:00:05"
-    #vif = "vnet11"
-    #brname = "cloudbr0"
-    #sec_ips = "10.11.118.133;10.11.118.135;10.11.118.138;" # end with ";" and separated by ";"
-
     vm_ips = []
     if sec_ips is not None:
         vm_ips = sec_ips.split(';')
