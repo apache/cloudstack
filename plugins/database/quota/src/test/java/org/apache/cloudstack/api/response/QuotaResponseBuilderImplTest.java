@@ -545,7 +545,6 @@ public class QuotaResponseBuilderImplTest extends TestCase {
     @Test
     public void createQuotaSummaryResponseTestNotListAllAndAllAccountTypesReturnsSingleRecord() {
         QuotaSummaryCmd cmd = new QuotaSummaryCmd();
-        cmd.setListAll(false);
 
         try(MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
             callContextMocked.when(CallContext::current).thenReturn(callContextMock);
@@ -556,6 +555,7 @@ public class QuotaResponseBuilderImplTest extends TestCase {
 
             for (Account.Type type : Account.Type.values()) {
                 Mockito.doReturn(type).when(accountMock).getType();
+                Mockito.doReturn("ROOT").when(quotaResponseBuilderSpy).getDomainPathByDomainIdForDomainAdmin(accountMock);
 
                 Pair<List<QuotaSummaryResponse>, Integer> result = quotaResponseBuilderSpy.createQuotaSummaryResponse(cmd);
                 Assert.assertEquals(quotaSummaryResponseMock1, result);
@@ -564,40 +564,6 @@ public class QuotaResponseBuilderImplTest extends TestCase {
             Mockito.verify(quotaResponseBuilderSpy, Mockito.times(Account.Type.values().length)).getQuotaSummaryResponse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
                     Mockito.any());
         };
-    }
-
-    @Test
-    public void createQuotaSummaryResponseTestListAllAndAccountTypesAdminReturnsAllAndTheRestReturnsSingleRecord() {
-        QuotaSummaryCmd cmd = new QuotaSummaryCmd();
-        cmd.setListAll(true);
-
-        try(MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
-            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
-
-            Mockito.doReturn(accountMock).when(callContextMock).getCallingAccount();
-
-            Mockito.doReturn(quotaSummaryResponseMock1).when(quotaResponseBuilderSpy).getQuotaSummaryResponse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
-            Mockito.doReturn(quotaSummaryResponseMock2).when(quotaResponseBuilderSpy).getQuotaSummaryResponseWithListAll(Mockito.any(), Mockito.any());
-
-            Set<Account.Type> accountTypesThatCanListAllQuotaSummaries = Sets.newHashSet(Account.Type.ADMIN, Account.Type.DOMAIN_ADMIN);
-
-            for (Account.Type type : Account.Type.values()) {
-                Mockito.doReturn(type).when(accountMock).getType();
-
-                Pair<List<QuotaSummaryResponse>, Integer> result = quotaResponseBuilderSpy.createQuotaSummaryResponse(cmd);
-
-                if (accountTypesThatCanListAllQuotaSummaries.contains(type)) {
-                    Assert.assertEquals(quotaSummaryResponseMock2, result);
-                } else {
-                    Assert.assertEquals(quotaSummaryResponseMock1, result);
-                }
-            }
-
-            Mockito.verify(quotaResponseBuilderSpy, Mockito.times(Account.Type.values().length - accountTypesThatCanListAllQuotaSummaries.size()))
-                    .getQuotaSummaryResponse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
-
-            Mockito.verify(quotaResponseBuilderSpy, Mockito.times(accountTypesThatCanListAllQuotaSummaries.size())).getQuotaSummaryResponseWithListAll(Mockito.any(), Mockito.any());
-        }
     }
 
     @Test
@@ -714,71 +680,6 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         Long result = quotaResponseBuilderSpy.getAccountIdByAccountName("test", 1l, accountMock);
 
         Assert.assertEquals(expected, result);
-    }
-
-    @Test
-    public void getQuotaSummaryResponseWithListAllTestAccountNameAndDomainIdAreNullPassDomainIdAsNull() {
-        Long expectedDomainId = null;
-
-        QuotaSummaryCmd cmd = new QuotaSummaryCmd();
-        cmd.setAccountName(null);
-        cmd.setDomainId(null);
-
-        Mockito.doReturn(null).when(quotaResponseBuilderSpy).getDomainPathByDomainIdForDomainAdmin(Mockito.any());
-        Mockito.doReturn(quotaSummaryResponseMock1).when(quotaResponseBuilderSpy).getQuotaSummaryResponse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
-
-        Pair<List<QuotaSummaryResponse>, Integer> result = quotaResponseBuilderSpy.getQuotaSummaryResponseWithListAll(cmd, accountMock);
-
-        Assert.assertEquals(quotaSummaryResponseMock1, result);
-        Mockito.verify(quotaResponseBuilderSpy).getQuotaSummaryResponse(Mockito.any(), Mockito.any(), Mockito.eq(expectedDomainId), Mockito.any(), Mockito.any());
-    }
-
-    @Test
-    public void getQuotaSummaryResponseWithListAllTestAccountNameIsNullAndDomainIdIsNotNullPassDomainId() {
-        Long expectedDomainId = 26l;
-
-        QuotaSummaryCmd cmd = new QuotaSummaryCmd();
-        cmd.setAccountName(null);
-        cmd.setDomainId(expectedDomainId);
-
-        Mockito.doReturn(domainVoMock).when(domainDaoMock).findByIdIncludingRemoved(Mockito.anyLong());
-
-        Mockito.doReturn(null).when(quotaResponseBuilderSpy).getDomainPathByDomainIdForDomainAdmin(Mockito.any());
-        Mockito.doReturn(quotaSummaryResponseMock1).when(quotaResponseBuilderSpy).getQuotaSummaryResponse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
-
-        Pair<List<QuotaSummaryResponse>, Integer> result = quotaResponseBuilderSpy.getQuotaSummaryResponseWithListAll(cmd, accountMock);
-
-        Assert.assertEquals(quotaSummaryResponseMock1, result);
-        Mockito.verify(quotaResponseBuilderSpy).getQuotaSummaryResponse(Mockito.any(), Mockito.any(), Mockito.eq(expectedDomainId), Mockito.any(), Mockito.any());
-    }
-
-    @Test(expected = InvalidParameterValueException.class)
-    public void getQuotaSummaryResponseWithListAllTestAccountNameIsNullAndDomainIdIsNotNullButDomainDoesNotExistThrowInvalidParameterValueException() {
-        QuotaSummaryCmd cmd = new QuotaSummaryCmd();
-        cmd.setAccountName(null);
-        cmd.setDomainId(1L);
-
-        Mockito.doReturn(null).when(domainDaoMock).findByIdIncludingRemoved(Mockito.anyLong());
-        quotaResponseBuilderSpy.getQuotaSummaryResponseWithListAll(cmd, accountMock);
-    }
-
-    @Test
-    public void getQuotaSummaryResponseWithListAllTestAccountNameAndDomainIdAreNotNullPassDomainId() {
-        Long expectedDomainId = 9837l;
-
-        QuotaSummaryCmd cmd = Mockito.mock(QuotaSummaryCmd.class);
-        Mockito.lenient().doReturn("test").when(cmd).getAccountName();
-        Mockito.doReturn(expectedDomainId).when(cmd).getDomainId();
-
-        Mockito.doReturn(domainVoMock).when(domainDaoMock).findByIdIncludingRemoved(Mockito.anyLong());
-
-        Mockito.doReturn(null).when(quotaResponseBuilderSpy).getDomainPathByDomainIdForDomainAdmin(Mockito.any());
-        Mockito.doReturn(quotaSummaryResponseMock1).when(quotaResponseBuilderSpy).getQuotaSummaryResponse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
-
-        Pair<List<QuotaSummaryResponse>, Integer> result = quotaResponseBuilderSpy.getQuotaSummaryResponseWithListAll(cmd, accountMock);
-
-        Assert.assertEquals(quotaSummaryResponseMock1, result);
-        Mockito.verify(quotaResponseBuilderSpy).getQuotaSummaryResponse(Mockito.any(), Mockito.any(), Mockito.eq(expectedDomainId), Mockito.any(), Mockito.any());
     }
 
     @Test

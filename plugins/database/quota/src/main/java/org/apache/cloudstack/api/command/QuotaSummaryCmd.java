@@ -60,6 +60,7 @@ public class QuotaSummaryCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = false, entityType = DomainResponse.class, description = "Optional, If domain Id is given and the caller is domain admin then the statement is generated for domain.")
     private Long domainId;
 
+    @Deprecated
     @Parameter(name = ApiConstants.LIST_ALL, type = CommandType.BOOLEAN, description = "False (default) lists balance summary for account. True lists balance summary for " +
             "accounts which the caller has access.")
     private Boolean listAll;
