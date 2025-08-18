@@ -27,7 +27,6 @@ import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 
 import org.apache.cloudstack.acl.Role;
-import org.apache.cloudstack.acl.RolePermission;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.springframework.stereotype.Component;
 
@@ -43,7 +42,6 @@ import com.cloud.exception.RequestLimitException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
-import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 
 @Component
@@ -257,15 +255,5 @@ public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
 
-    }
-
-    @Override
-    public Pair<Role, List<RolePermission>> getRolePermissions(long roleId) {
-        return null;
-    }
-
-    @Override
-    public boolean checkAccess(Account account, String commandName, Role accountRole, List<RolePermission> allPermissions) {
-        return false;
     }
 }

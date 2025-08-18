@@ -45,6 +45,6 @@ public interface APIChecker extends Adapter {
     List<String> getApisAllowedToUser(Role role, User user, List<String> apiNames) throws PermissionDeniedException;
     boolean isEnabled();
 
-    Pair<Role, List<RolePermission>> getRolePermissions(long roleId);
-    boolean checkAccess(Account account, String commandName, Role accountRole, List<RolePermission> allPermissions);
+    default Pair<Role, List<RolePermission>> getRolePermissions(long roleId) { return null; }
+    default boolean checkAccess(Account account, String commandName, Role accountRole, List<RolePermission> allPermissions) { return false; }
 }
