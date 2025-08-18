@@ -240,7 +240,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
                 domainUuid = domain.getUuid();
             }
         }
-        return new LdapConfigurationResponse(configuration.getHostname(), configuration.getPort(), domainUuid);
+        return new LdapConfigurationResponse(configuration.getHostname(), configuration.getPort(), domainUuid, configuration.getUuid());
     }
 
     @Override
