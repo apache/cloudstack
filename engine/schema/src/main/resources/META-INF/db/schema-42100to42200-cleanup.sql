@@ -18,4 +18,3 @@
 --;
 -- Schema upgrade cleanup from 4.21.0.0 to 4.22.0.0
 --;
-
