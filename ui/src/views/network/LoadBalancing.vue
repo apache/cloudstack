@@ -1166,7 +1166,7 @@ export default {
     fetchSslCerts () {
       this.sslcerts.loading = true
       this.sslcerts.data = []
-      // Firt get the account id
+      // First get the account id
       api('listAccounts', {
         name: this.resource.account,
         domainid: this.resource.domainid
