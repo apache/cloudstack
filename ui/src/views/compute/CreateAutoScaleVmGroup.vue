@@ -166,6 +166,7 @@
                       :value="serviceOffering ? serviceOffering.id : ''"
                       :loading="loading.serviceOfferings"
                       :preFillContent="dataPreFill"
+                      :show-gpu-filter="zone.gputotal && zone.gputotal > 0"
                       :minimum-cpunumber="templateConfigurationExists && selectedTemplateConfiguration && selectedTemplateConfiguration.cpunumber ? selectedTemplateConfiguration.cpunumber : 0"
                       :minimum-cpuspeed="templateConfigurationExists && selectedTemplateConfiguration && selectedTemplateConfiguration.cpuspeed ? selectedTemplateConfiguration.cpuspeed : 0"
                       :minimum-memory="templateConfigurationExists && selectedTemplateConfiguration && selectedTemplateConfiguration.memory ? selectedTemplateConfiguration.memory : 0"
@@ -736,7 +737,7 @@
                     {{ $t('label.isadvanced') }}
                     <a-switch v-model:checked="showDetails" style="margin-left: 10px"/>
                   </span>
-                  <div style="margin-top: 15px" v-show="showDetails">
+                  <div style="margin-top: 15px" v-if="showDetails">
                     <a-form-item :label="$t('label.sshkeypairs')">
                       <ssh-key-pair-selection
                         :items="options.sshKeyPairs"
@@ -762,7 +763,7 @@
                     </a-form-item>
                     <a-form-item>
                       <template #label>
-                        <tooltip-label :title="$t('label.userdata')" :tooltip="createAutoScaleVmProfileApiParams.userdata.description"/>
+                        <tooltip-label :title="$t('label.user.data')" :tooltip="createAutoScaleVmProfileApiParams.userdata.description"/>
                       </template>
                       <a-card>
                         <div v-if="this.template && this.template.userdataid">
@@ -790,11 +791,11 @@
                         </div><br/><br/>
                         <div v-if="userdataDefaultOverridePolicy === 'ALLOWOVERRIDE' || userdataDefaultOverridePolicy === 'APPEND' || !userdataDefaultOverridePolicy">
                           <span v-if="userdataDefaultOverridePolicy === 'ALLOWOVERRIDE'" >
-                            {{ $t('label.userdata.do.override') }}
+                            {{ $t('label.user.data.do.override') }}
                             <a-switch v-model:checked="doUserdataOverride" style="margin-left: 10px"/>
                           </span>
                           <span v-if="userdataDefaultOverridePolicy === 'APPEND'">
-                            {{ $t('label.userdata.do.append') }}
+                            {{ $t('label.user.data.do.append') }}
                             <a-switch v-model:checked="doUserdataAppend" style="margin-left: 10px"/>
                           </span>
                           <a-step
@@ -1030,7 +1031,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import _ from 'lodash'
 import { mixin, mixinDevice } from '@/utils/mixin.js'
 import store from '@/store'
@@ -1257,11 +1258,11 @@ export default {
       userDataValues: {},
       templateUserDataCols: [
         {
-          title: this.$t('label.userdata'),
+          title: this.$t('label.user.data'),
           dataIndex: 'userdata'
         },
         {
-          title: this.$t('label.userdatapolicy'),
+          title: this.$t('label.user.data.policy'),
           dataIndex: 'userdataoverridepolicy'
         }
       ],
@@ -1458,11 +1459,11 @@ export default {
       let tabList = []
       tabList = [{
         key: 'userdataregistered',
-        tab: this.$t('label.userdata.registered')
+        tab: this.$t('label.user.data.registered')
       },
       {
         key: 'userdatatext',
-        tab: this.$t('label.userdata.text')
+        tab: this.$t('label.user.data.text')
       }]
       return tabList
     },
@@ -1880,6 +1881,7 @@ export default {
           apiName = 'listTemplates'
           params.listall = true
           params.templatefilter = this.isNormalAndDomainUser ? 'executable' : 'all'
+          params.isready = true
           params.id = this.queryTemplateId
           this.dataPreFill.templateid = this.queryTemplateId
         } else if (this.queryNetworkId) {
@@ -1893,7 +1895,7 @@ export default {
         }
         if (!apiName) return resolve(zones)
 
-        api(apiName, params).then(json => {
+        postAPI(apiName, params).then(json => {
           let objectName
           const responseName = [apiName.toLowerCase(), 'response'].join('')
           for (const key in json[responseName]) {
@@ -1961,7 +1963,7 @@ export default {
       this.fetchOptions(param, 'loadbalancers')
     },
     fetchCountersList () {
-      api('listNetworks', {
+      getAPI('listNetworks', {
         listAll: true,
         id: this.defaultNetworkId
       }).then(response => {
@@ -1973,7 +1975,7 @@ export default {
           return
         }
         this.selectedLbProdiver = services[index].provider[0].name
-        api('listCounters', {
+        getAPI('listCounters', {
           listAll: true,
           provider: this.selectedLbProdiver
         }).then(response => {
@@ -1982,7 +1984,7 @@ export default {
       })
     },
     fetchUserData () {
-      api('listUsers', {
+      getAPI('listUsers', {
         domainid: store.getters.project && store.getters.project.id ? null : store.getters.userInfo.domainid,
         account: store.getters.project && store.getters.project.id ? null : store.getters.userInfo.account
       }).then(json => {
@@ -2249,7 +2251,7 @@ export default {
       }
       this.form.userdataid = id
       this.userDataParams = []
-      api('listUserData', { id: id }).then(json => {
+      getAPI('listUserData', { id: id }).then(json => {
         const resp = json?.listuserdataresponse?.userdata || []
         if (resp) {
           var params = resp[0].params
@@ -2272,7 +2274,7 @@ export default {
       }
       this.templateUserDataParams = []
 
-      api('listUserData', { id: id }).then(json => {
+      getAPI('listUserData', { id: id }).then(json => {
         const resp = json?.listuserdataresponse?.userdata || []
         if (resp) {
           var params = resp[0].params
@@ -2298,7 +2300,7 @@ export default {
     async pollJob (jobId) {
       return new Promise(resolve => {
         const asyncJobInterval = setInterval(() => {
-          api('queryAsyncJobResult', { jobId }).then(async json => {
+          getAPI('queryAsyncJobResult', { jobId }).then(async json => {
             const result = json.queryasyncjobresultresponse
             if (result.jobstatus === 0) {
               return
@@ -2381,11 +2383,7 @@ export default {
           j++
         }
 
-        const httpMethod = createVmGroupData.userdata ? 'POST' : 'GET'
-        const args = httpMethod === 'POST' ? {} : params
-        const data = httpMethod === 'POST' ? params : {}
-
-        api('createAutoScaleVmProfile', args, httpMethod, data).then(async json => {
+        postAPI('createAutoScaleVmProfile', params).then(async json => {
           const jobId = json.autoscalevmprofileresponse.jobid
           if (jobId) {
             const result = await this.pollJob(jobId)
@@ -2411,7 +2409,7 @@ export default {
           relationaloperator: relationaloperator,
           threshold: threshold
         }
-        api('createCondition', params).then(async json => {
+        postAPI('createCondition', params).then(async json => {
           const jobId = json.conditionresponse.jobid
           if (jobId) {
             const result = await this.pollJob(jobId)
@@ -2439,7 +2437,7 @@ export default {
           quiettime: quiettime,
           conditionids: conditionIds
         }
-        api('createAutoScalePolicy', params).then(async json => {
+        postAPI('createAutoScalePolicy', params).then(async json => {
           const jobId = json.autoscalepolicyresponse.jobid
           if (jobId) {
             const result = await this.pollJob(jobId)
@@ -2843,7 +2841,7 @@ export default {
           minmembers: values.minmembers,
           interval: values.interval
         }
-        api('createAutoScaleVmGroup', params).then(async response => {
+        postAPI('createAutoScaleVmGroup', params).then(async response => {
           const jobId = response.autoscalevmgroupresponse.jobid
           const result = await this.pollJob(jobId)
           if (result.jobstatus === 2) {
@@ -2899,7 +2897,7 @@ export default {
         const param = this.params.zones
         const args = { showicon: true }
         if (zoneId) args.id = zoneId
-        api(param.list, args).then(json => {
+        getAPI(param.list, args).then(json => {
           const zoneResponse = (json.listzonesresponse.zone || []).filter(item => item.securitygroupsenabled === false)
           if (listZoneAllow && listZoneAllow.length > 0) {
             zoneResponse.map(zone => {
@@ -2931,7 +2929,7 @@ export default {
         if (!('listall' in options) && !['zones', 'pods', 'clusters', 'hosts', 'dynamicScalingVmConfig', 'hypervisors'].includes(name)) {
           options.listall = true
         }
-        api(param.list, options).then((response) => {
+        getAPI(param.list, options).then((response) => {
           param.loading = false
           _.map(response, (responseItem, responseKey) => {
             if (Object.keys(responseItem).length === 0) {
@@ -2983,15 +2981,16 @@ export default {
       if (this.isModernImageSelection && this.form.guestoscategoryid && !['-1', '0'].includes(this.form.guestoscategoryid)) {
         args.oscategoryid = this.form.guestoscategoryid
       }
-      if (args.keyword || (args.category && args.category !== templateFilter)) {
+      if (!args.page || args.keyword || (args.category && args.category !== templateFilter)) {
         args.page = 1
-        args.pageSize = args.pageSize || 10
       }
+      args.pageSize = args.pageSize || 10
       args.zoneid = _.get(this.zone, 'id')
       if (this.isZoneSelectedMultiArch) {
         args.arch = this.selectedArchitecture
       }
       args.templatefilter = templateFilter
+      args.isready = true
       args.details = 'all'
       args.showicon = 'true'
       args.id = this.queryTemplateId
@@ -3002,7 +3001,7 @@ export default {
       delete args.featured
 
       return new Promise((resolve, reject) => {
-        api('listTemplates', args).then((response) => {
+        getAPI('listTemplates', args).then((response) => {
           resolve(response)
         }).catch((reason) => {
           // ToDo: Handle errors

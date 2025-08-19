@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.consoleproxy;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -27,7 +28,15 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.domain.Domain;
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.exception.InvalidParameterValueException;
+import org.apache.cloudstack.api.ResponseGenerator;
+import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.command.user.consoleproxy.ConsoleEndpoint;
+import org.apache.cloudstack.api.command.user.consoleproxy.ListConsoleSessionsCmd;
+import org.apache.cloudstack.api.response.ConsoleSessionResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.security.keys.KeysManager;
 import org.apache.commons.codec.binary.Base64;
@@ -63,12 +72,12 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.ConsoleSessionVO;
-import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.ConsoleSessionDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.logging.log4j.LogManager;
@@ -86,13 +95,15 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     @Inject
     private AccountManager accountManager;
     @Inject
+    private DomainDao domainDao;
+    @Inject
     private VirtualMachineManager virtualMachineManager;
     @Inject
     private ManagementServer managementServer;
     @Inject
     private EntityManager entityManager;
     @Inject
-    private UserVmDetailsDao userVmDetailsDao;
+    private VMInstanceDetailsDao vmInstanceDetailsDao;
     @Inject
     private KeysManager keysManager;
     @Inject
@@ -103,6 +114,8 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     DataCenterDao dataCenterDao;
     @Inject
     private ConsoleSessionDao consoleSessionDao;
+    @Inject
+    private ResponseGenerator responseGenerator;
 
     private ScheduledExecutorService executorService = null;
 
@@ -112,7 +125,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     protected Logger logger = LogManager.getLogger(ConsoleAccessManagerImpl.class);
 
     private static final List<VirtualMachine.State> unsupportedConsoleVMState = Arrays.asList(
-            VirtualMachine.State.Stopped, VirtualMachine.State.Error, VirtualMachine.State.Destroyed
+            VirtualMachine.State.Stopped, VirtualMachine.State.Restoring, VirtualMachine.State.Error, VirtualMachine.State.Destroyed
     );
 
     @Override
@@ -182,6 +195,78 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     }
 
     @Override
+    public ListResponse<ConsoleSessionResponse> listConsoleSessions(ListConsoleSessionsCmd cmd) {
+        Pair<List<ConsoleSessionVO>, Integer> consoleSessions = listConsoleSessionsInternal(cmd);
+        ListResponse<ConsoleSessionResponse> response = new ListResponse<>();
+
+        ResponseObject.ResponseView responseView = ResponseObject.ResponseView.Restricted;
+        Long callerId = CallContext.current().getCallingAccountId();
+        if (accountManager.isRootAdmin(callerId)) {
+            responseView = ResponseObject.ResponseView.Full;
+        }
+
+        List<ConsoleSessionResponse> consoleSessionResponses = new ArrayList<>();
+        for (ConsoleSessionVO consoleSession : consoleSessions.first()) {
+            ConsoleSessionResponse consoleSessionResponse = responseGenerator.createConsoleSessionResponse(consoleSession, responseView);
+            consoleSessionResponses.add(consoleSessionResponse);
+        }
+
+        response.setResponses(consoleSessionResponses, consoleSessions.second());
+        return response;
+    }
+
+    protected Pair<List<ConsoleSessionVO>, Integer> listConsoleSessionsInternal(ListConsoleSessionsCmd cmd) {
+        CallContext caller = CallContext.current();
+        long domainId = getBaseDomainIdToListConsoleSessions(cmd.getDomainId());
+        Long accountId = cmd.getAccountId();
+        Long userId = cmd.getUserId();
+        boolean isRecursive = cmd.isRecursive();
+
+        boolean isCallerNormalUser = accountManager.isNormalUser(caller.getCallingAccountId());
+        if (isCallerNormalUser) {
+            accountId = caller.getCallingAccountId();
+            userId = caller.getCallingUserId();
+        }
+
+        List<Long> domainIds = isRecursive ? domainDao.getDomainAndChildrenIds(domainId) : List.of(domainId);
+
+        return consoleSessionDao.listConsoleSessions(cmd.getId(), domainIds, accountId, userId,
+                cmd.getHostId(), cmd.getStartDate(), cmd.getEndDate(), cmd.getVmId(),
+                cmd.getConsoleEndpointCreatorAddress(), cmd.getClientAddress(), cmd.isActiveOnly(),
+                cmd.getAcquired(), cmd.getPageSizeVal(), cmd.getStartIndex());
+    }
+
+    /**
+     * Determines the base domain ID for listing console sessions.
+     *
+     * If no domain ID is provided, returns the caller's domain ID. Otherwise,
+     * checks if the caller has access to that domain and returns the provided domain ID.
+     *
+     * @param domainId The domain ID to check, can be null
+     * @return The base domain ID to use for listing console sessions
+     * @throws PermissionDeniedException if the caller does not have access to the specified domain
+     */
+    protected long getBaseDomainIdToListConsoleSessions(Long domainId) {
+        Account caller = CallContext.current().getCallingAccount();
+        if (domainId == null) {
+            return caller.getDomainId();
+        }
+
+        Domain domain = domainDao.findById(domainId);
+        if (domain == null) {
+            throw new InvalidParameterValueException(String.format("Unable to find domain with ID [%s]. Verify the informed domain and try again.", domainId));
+        }
+
+        accountManager.checkAccess(caller, domain);
+        return domainId;
+    }
+
+    @Override
+    public ConsoleSession listConsoleSessionById(long id) {
+        return consoleSessionDao.findByIdIncludingRemoved(id);
+    }
+
+    @Override
     public ConsoleEndpoint generateConsoleEndpoint(Long vmId, String extraSecurityToken, String clientAddress) {
         try {
             if (ObjectUtils.anyNull(accountManager, virtualMachineManager, managementServer)) {
@@ -206,6 +291,12 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
             if (vm == null) {
                 logger.info("Invalid console servlet command parameter: " + vmId);
                 return new ConsoleEndpoint(false, null, "Cannot find VM with ID " + vmId);
+            }
+
+            if (Hypervisor.HypervisorType.External.equals(vm.getHypervisorType())) {
+                logger.error("Console access for {} cannot be provided it is {} hypervisor instance", vm,
+                        Hypervisor.HypervisorType.External);
+                return new ConsoleEndpoint(false, null, "Console access to this instance cannot be provided");
             }
 
             if (!checkSessionPermission(vm, account)) {
@@ -344,8 +435,8 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         if (hostVo.getHypervisorType() == Hypervisor.HypervisorType.KVM &&
                 (hostVo.getResourceState().equals(ResourceState.ErrorInMaintenance) ||
                         hostVo.getResourceState().equals(ResourceState.ErrorInPrepareForMaintenance))) {
-            UserVmDetailVO detailAddress = userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.KVM_VNC_ADDRESS);
-            UserVmDetailVO detailPort = userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.KVM_VNC_PORT);
+            VMInstanceDetailVO detailAddress = vmInstanceDetailsDao.findDetail(vm.getId(), VmDetailConstants.KVM_VNC_ADDRESS);
+            VMInstanceDetailVO detailPort = vmInstanceDetailsDao.findDetail(vm.getId(), VmDetailConstants.KVM_VNC_PORT);
             if (detailAddress != null && detailPort != null) {
                 portInfo = new Pair<>(detailAddress.getValue(), Integer.valueOf(detailPort.getValue()));
             } else {
@@ -372,7 +463,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         }
 
         String sid = vm.getVncPassword();
-        UserVmDetailVO details = userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.KEYBOARD);
+        VMInstanceDetailVO details = vmInstanceDetailsDao.findDetail(vm.getId(), VmDetailConstants.KEYBOARD);
 
         String tag = vm.getUuid();
         String displayName = vm.getHostName();
@@ -405,10 +496,13 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     }
 
     protected void persistConsoleSession(String sessionUuid, long instanceId, long hostId, String consoleEndpointCreatorAddress) {
+        CallContext caller = CallContext.current();
+
         ConsoleSessionVO consoleSessionVo = new ConsoleSessionVO();
         consoleSessionVo.setUuid(sessionUuid);
-        consoleSessionVo.setAccountId(CallContext.current().getCallingAccountId());
-        consoleSessionVo.setUserId(CallContext.current().getCallingUserId());
+        consoleSessionVo.setDomainId(caller.getCallingAccount().getDomainId());
+        consoleSessionVo.setAccountId(caller.getCallingAccountId());
+        consoleSessionVo.setUserId(caller.getCallingUserId());
         consoleSessionVo.setInstanceId(instanceId);
         consoleSessionVo.setHostId(hostId);
         consoleSessionVo.setConsoleEndpointCreatorAddress(consoleEndpointCreatorAddress);
@@ -416,13 +510,13 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     }
 
     private String generateConsoleAccessUrl(String rootUrl, ConsoleProxyClientParam param, String token, int vncPort,
-                                            VirtualMachine vm, HostVO hostVo, UserVmDetailVO details) {
+                                            VirtualMachine vm, HostVO hostVo, VMInstanceDetailVO details) {
         StringBuilder sb = new StringBuilder(rootUrl);
         if (param.getHypervHost() != null || !ConsoleProxyManager.NoVncConsoleDefault.value()) {
             sb.append("/ajax?token=" + token);
         } else {
             sb.append("/resource/noVNC/vnc.html")
-                    .append("?autoconnect=true")
+                    .append("?autoconnect=true&show_dot=true")
                     .append("&port=" + vncPort)
                     .append("&token=" + token);
             if (requiresVncOverWebSocketConnection(vm, hostVo) && details != null && details.getValue() != null) {
@@ -450,7 +544,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
                                                                     int port, String sid, String tag, String ticket,
                                                                     String sessionUuid, String addr,
                                                                     String extraSecurityToken, VirtualMachine vm,
-                                                                    HostVO hostVo, UserVmDetailVO details,
+                                                                    HostVO hostVo, VMInstanceDetailVO details,
                                                                     Pair<String, Integer> portInfo, String host,
                                                                     String displayName) {
         ConsoleProxyClientParam param = new ConsoleProxyClientParam();

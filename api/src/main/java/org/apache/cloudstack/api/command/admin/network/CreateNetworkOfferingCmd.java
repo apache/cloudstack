@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.admin.network;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -140,11 +141,18 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             description = "true if network offering is meant to be used for VPC, false otherwise.")
     private Boolean forVpc;
 
+    @Deprecated
     @Parameter(name = ApiConstants.FOR_NSX,
             type = CommandType.BOOLEAN,
             description = "true if network offering is meant to be used for NSX, false otherwise.",
             since = "4.20.0")
     private Boolean forNsx;
+
+    @Parameter(name = ApiConstants.PROVIDER,
+            type = CommandType.STRING,
+            description = "Name of the provider providing the service",
+            since = "4.21.0")
+    private String provider;
 
     @Parameter(name = ApiConstants.NSX_SUPPORT_LB,
             type = CommandType.BOOLEAN,
@@ -257,18 +265,38 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
         return serviceOfferingId;
     }
 
+    public boolean isExternalNetworkProvider() {
+        return Arrays.asList("NSX", "Netris").stream()
+                .anyMatch(s -> provider != null && s.equalsIgnoreCase(provider));
+    }
+
+    public boolean isForNsx() {
+        return provider != null && provider.equalsIgnoreCase("NSX");
+    }
+
+    public boolean isForNetris() {
+        return provider != null && provider.equalsIgnoreCase("Netris");
+    }
+
+    public String getProvider() {
+        return provider;
+    }
+
     public List<String> getSupportedServices() {
-        if (!isForNsx()) {
+        if (!isExternalNetworkProvider()) {
             return supportedServices == null ? new ArrayList<String>() : supportedServices;
         } else {
             List<String> services = new ArrayList<>(List.of(
                     Dhcp.getName(),
                     Dns.getName(),
-                    StaticNat.getName(),
-                    SourceNat.getName(),
-                    PortForwarding.getName(),
                     UserData.getName()
             ));
+            if (NetworkOffering.NetworkMode.NATTED.name().equalsIgnoreCase(getNetworkMode())) {
+                services.addAll(Arrays.asList(
+                        StaticNat.getName(),
+                        SourceNat.getName(),
+                        PortForwarding.getName()));
+            }
             if (getNsxSupportsLbService()) {
                 services.add(Lb.getName());
             }
@@ -308,10 +336,6 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
         return forVpc;
     }
 
-    public boolean isForNsx() {
-        return BooleanUtils.isTrue(forNsx);
-    }
-
     public String getNetworkMode() {
         return networkMode;
     }
@@ -345,7 +369,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 
     public Map<String, List<String>> getServiceProviders() {
         Map<String, List<String>> serviceProviderMap = new HashMap<>();
-        if (serviceProviderList != null && !serviceProviderList.isEmpty() && !isForNsx()) {
+        if (serviceProviderList != null && !serviceProviderList.isEmpty() && !isExternalNetworkProvider()) {
             Collection servicesCollection = serviceProviderList.values();
             Iterator iter = servicesCollection.iterator();
             while (iter.hasNext()) {
@@ -361,17 +385,16 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
                 providerList.add(provider);
                 serviceProviderMap.put(service, providerList);
             }
-        } else if (Boolean.TRUE.equals(forNsx)) {
-            getServiceProviderMapForNsx(serviceProviderMap);
+        } else if (isExternalNetworkProvider()) {
+            getServiceProviderMapForExternalProvider(serviceProviderMap, Network.Provider.getProvider(provider).getName());
         }
         return serviceProviderMap;
     }
 
-    private void getServiceProviderMapForNsx(Map<String, List<String>> serviceProviderMap) {
+    private void getServiceProviderMapForExternalProvider(Map<String, List<String>> serviceProviderMap, String provider) {
         String routerProvider = Boolean.TRUE.equals(getForVpc()) ? VirtualRouterProvider.Type.VPCVirtualRouter.name() :
                 VirtualRouterProvider.Type.VirtualRouter.name();
-        List<String> unsupportedServices = new ArrayList<>(List.of("Vpn", "SecurityGroup", "Connectivity",
-                "Gateway", "BaremetalPxeService"));
+        List<String> unsupportedServices = new ArrayList<>(List.of("Vpn", "Gateway", "SecurityGroup", "Connectivity", "BaremetalPxeService"));
         List<String> routerSupported = List.of("Dhcp", "Dns", "UserData");
         List<String> allServices = Service.listAllServices().stream().map(Service::getName).collect(Collectors.toList());
         if (routerProvider.equals(VirtualRouterProvider.Type.VPCVirtualRouter.name())) {
@@ -384,8 +407,9 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
                 continue;
             if (routerSupported.contains(service))
                 serviceProviderMap.put(service, List.of(routerProvider));
-            else
-                serviceProviderMap.put(service, List.of(Network.Provider.Nsx.getName()));
+            else if (NetworkOffering.NetworkMode.NATTED.name().equalsIgnoreCase(getNetworkMode()) || NetworkACL.getName().equalsIgnoreCase(service)) {
+                    serviceProviderMap.put(service, List.of(provider));
+                }
             if (!getNsxSupportsLbService()) {
                 serviceProviderMap.remove(Lb.getName());
             }

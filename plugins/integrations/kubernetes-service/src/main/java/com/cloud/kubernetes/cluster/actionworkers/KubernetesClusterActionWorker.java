@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.kubernetes.version.KubernetesSupportedVersionVO;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -122,12 +123,12 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.ssh.SshHelper;
-import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.UserVmService;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 
 import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.CONTROL;
 import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.ETCD;
@@ -185,7 +186,7 @@ public class KubernetesClusterActionWorker {
     @Inject
     protected UserVmDao userVmDao;
     @Inject
-    protected UserVmDetailsDao userVmDetailsDao;
+    protected VMInstanceDetailsDao vmInstanceDetailsDao;
     @Inject
     protected UserVmService userVmService;
     @Inject
@@ -259,7 +260,8 @@ public class KubernetesClusterActionWorker {
         DataCenterVO dataCenterVO = dataCenterDao.findById(zoneId);
         VMTemplateVO template = templateDao.findById(templateId);
         Hypervisor.HypervisorType type = template.getHypervisorType();
-        this.clusterTemplate = manager.getKubernetesServiceTemplate(dataCenterVO, type, null, KubernetesClusterNodeType.DEFAULT);
+        KubernetesSupportedVersionVO kubernetesSupportedVersion = kubernetesSupportedVersionDao.findById(this.kubernetesCluster.getKubernetesVersionId());
+        this.clusterTemplate = manager.getKubernetesServiceTemplate(dataCenterVO, type, null, KubernetesClusterNodeType.DEFAULT, kubernetesSupportedVersion);
         this.controlNodeTemplate = templateDao.findById(this.kubernetesCluster.getControlNodeTemplateId());
         this.workerNodeTemplate = templateDao.findById(this.kubernetesCluster.getWorkerNodeTemplateId());
         this.etcdTemplate = templateDao.findById(this.kubernetesCluster.getEtcdNodeTemplateId());
@@ -283,7 +285,7 @@ public class KubernetesClusterActionWorker {
             if (userVM == null) {
                 throw new CloudRuntimeException("Failed to find login user, Unable to log in to node to fetch details");
             }
-            UserVmDetailVO vmDetail = userVmDetailsDao.findDetail(vmId, VmDetailConstants.CKS_CONTROL_NODE_LOGIN_USER);
+            VMInstanceDetailVO vmDetail = vmInstanceDetailsDao.findDetail(vmId, VmDetailConstants.CKS_CONTROL_NODE_LOGIN_USER);
             if (vmDetail != null && !org.apache.commons.lang3.StringUtils.isEmpty(vmDetail.getValue())) {
                 return vmDetail.getValue();
             } else {
@@ -656,7 +658,7 @@ public class KubernetesClusterActionWorker {
             for (Long vmId : clusterVMs) {
                 UserVm controlNode = userVmDao.findById(vmId);
                 if (controlNode != null) {
-                    userVmDetailsDao.addDetail(vmId, VmDetailConstants.CKS_CONTROL_NODE_LOGIN_USER, CLUSTER_NODE_VM_USER, true);
+                    vmInstanceDetailsDao.addDetail(vmId, VmDetailConstants.CKS_CONTROL_NODE_LOGIN_USER, CLUSTER_NODE_VM_USER, true);
                 }
             }
         }

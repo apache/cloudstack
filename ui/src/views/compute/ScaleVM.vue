@@ -80,7 +80,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import ComputeOfferingSelection from '@views/compute/wizard/ComputeOfferingSelection'
 import ComputeSelection from '@views/compute/wizard/ComputeSelection'
 import DiskSizeSelection from '@views/compute/wizard/DiskSizeSelection'
@@ -137,11 +137,12 @@ export default {
       this.total = 0
       this.offerings = []
       this.offeringsMap = []
-      api('listServiceOfferings', {
+      getAPI('listServiceOfferings', {
         virtualmachineid: this.resource.id,
         keyword: options.keyword,
         page: options.page,
         pageSize: options.pageSize,
+        gpuenabled: options.gpuenabled,
         details: 'min',
         response: 'json'
       }).then(response => {
@@ -186,8 +187,9 @@ export default {
     },
     getTemplate () {
       return new Promise((resolve, reject) => {
-        api('listTemplates', {
+        getAPI('listTemplates', {
           templatefilter: 'all',
+          isready: true,
           id: this.resource.templateid
         }).then(response => {
           var template = response?.listtemplatesresponse?.template?.[0] || null
@@ -223,7 +225,7 @@ export default {
       this.selectedOffering = this.offeringsMap[id]
       this.selectedDiskOffering = null
       if (this.selectedOffering.diskofferingid) {
-        api('listDiskOfferings', {
+        getAPI('listDiskOfferings', {
           id: this.selectedOffering.diskofferingid
         }).then(response => {
           const diskOfferings = response.listdiskofferingsresponse.diskoffering || []
@@ -253,7 +255,7 @@ export default {
         delete this.params[this.cpuSpeedKey]
       }
 
-      api('scaleVirtualMachine', this.params).then(response => {
+      postAPI('scaleVirtualMachine', this.params).then(response => {
         const jobId = response.scalevirtualmachineresponse.jobid
         if (jobId) {
           this.$pollJob({

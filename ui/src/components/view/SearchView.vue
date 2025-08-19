@@ -72,7 +72,7 @@
                       v-for="(opt, idx) in field.opts"
                       :key="idx"
                       :value="['account'].includes(field.name) ? opt.name : opt.id"
-                      :label="$t((['storageid'].includes(field.name) || !opt.path) ? opt.name : opt.path)">
+                      :label="field.name === 'vgpuprofileid' ? `${opt.gpucardname} - ${opt.name}` : $t((field.name.startsWith('domain') && opt.path) ? opt.path : opt.name)">
                       <div>
                         <span v-if="(field.name.startsWith('zone'))">
                           <span v-if="opt.icon">
@@ -89,7 +89,12 @@
                         <span v-if="(field.name.startsWith('managementserver'))">
                           <status :text="opt.state" />
                         </span>
-                        {{ $t((['storageid'].includes(field.name) || !opt.path) ? opt.name : opt.path) }}
+                        <span v-if="field.name === 'vgpuprofileid'">
+                          {{ opt.gpucardname }} - {{ opt.name }}
+                        </span>
+                        <span v-else>
+                          {{ $t((field.name.startsWith('domain') && opt.path) ? opt.path : opt.name) }}
+                        </span>
                       </div>
                     </a-select-option>
                   </a-select>
@@ -161,7 +166,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import { isAdmin } from '@/role'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
@@ -253,6 +258,13 @@ export default {
       if (fetchAccountOptions) {
         this.fetchDynamicFieldData('account')
       }
+
+      const fetchVgpuProfileOptions = fieldname === 'gpucardid' && this.fields.some((field) => field.name === 'vgpuprofileid')
+      if (fetchVgpuProfileOptions) {
+        // Clear the currently selected vGPU profile when GPU card changes
+        this.form.vgpuprofileid = null
+        this.fetchDynamicFieldData('vgpuprofileid')
+      }
     },
     onVisibleForm () {
       this.visibleFilter = !this.visibleFilter
@@ -305,11 +317,15 @@ export default {
         if (item === 'isencrypted' && !('listVolumes' in this.$store.getters.apis)) {
           return true
         }
+        if (item === 'backupofferingid' && !('listBackupOfferings' in this.$store.getters.apis)) {
+          return true
+        }
         if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'account', 'hypervisor', 'level',
           'clusterid', 'podid', 'groupid', 'entitytype', 'accounttype', 'systemvmtype', 'scope', 'provider',
           'type', 'scope', 'managementserverid', 'serviceofferingid',
-          'diskofferingid', 'networkid', 'usagetype', 'restartrequired',
-          'displaynetwork', 'guestiptype', 'usersource', 'arch', 'oscategoryid', 'templatetype'].includes(item)
+          'diskofferingid', 'networkid', 'usagetype', 'restartrequired', 'gpuenabled',
+          'displaynetwork', 'guestiptype', 'usersource', 'arch', 'oscategoryid', 'templatetype', 'gpucardid', 'vgpuprofileid',
+          'extensionid', 'backupoffering'].includes(item)
         ) {
           type = 'list'
         } else if (item === 'tags') {
@@ -417,6 +433,16 @@ export default {
         this.fields[restartRequiredIndex].loading = false
       }
 
+      if (arrayField.includes('gpuenabled')) {
+        const gpuEnabledIndex = this.fields.findIndex(item => item.name === 'gpuenabled')
+        this.fields[gpuEnabledIndex].loading = true
+        this.fields[gpuEnabledIndex].opts = [
+          { id: 'true', name: 'label.yes' },
+          { id: 'false', name: 'label.no' }
+        ]
+        this.fields[gpuEnabledIndex].loading = false
+      }
+
       if (arrayField.includes('resourcetype')) {
         const resourceTypeIndex = this.fields.findIndex(item => item.name === 'resourcetype')
         this.fields[resourceTypeIndex].loading = true
@@ -484,7 +510,11 @@ export default {
       let networkIndex = -1
       let usageTypeIndex = -1
       let volumeIndex = -1
+      let backupOfferingIndex = -1
       let osCategoryIndex = -1
+      let gpuCardIndex = -1
+      let vgpuProfileIndex = -1
+      let extensionIndex = -1
 
       if (arrayField.includes('type')) {
         if (this.$route.path === '/alert') {
@@ -502,6 +532,12 @@ export default {
         zoneIndex = this.fields.findIndex(item => item.name === 'zoneid')
         this.fields[zoneIndex].loading = true
         promises.push(await this.fetchZones(searchKeyword))
+      }
+
+      if (arrayField.includes('extensionid')) {
+        extensionIndex = this.fields.findIndex(item => item.name === 'extensionid')
+        this.fields[extensionIndex].loading = true
+        promises.push(await this.fetchExtensions(searchKeyword))
       }
 
       if (arrayField.includes('domainid')) {
@@ -594,6 +630,24 @@ export default {
         promises.push(await this.fetchOsCategories(searchKeyword))
       }
 
+      if (arrayField.includes('backupofferingid')) {
+        backupOfferingIndex = this.fields.findIndex(item => item.name === 'backupofferingid')
+        this.fields[backupOfferingIndex].loading = true
+        promises.push(await this.fetchBackupOfferings(searchKeyword))
+      }
+
+      if (arrayField.includes('gpucardid')) {
+        gpuCardIndex = this.fields.findIndex(item => item.name === 'gpucardid')
+        this.fields[gpuCardIndex].loading = true
+        promises.push(await this.fetchGpuCards(searchKeyword))
+      }
+
+      if (arrayField.includes('vgpuprofileid')) {
+        vgpuProfileIndex = this.fields.findIndex(item => item.name === 'vgpuprofileid')
+        this.fields[vgpuProfileIndex].loading = true
+        promises.push(await this.fetchVgpuProfiles(searchKeyword))
+      }
+
       Promise.all(promises).then(response => {
         if (typeIndex > -1) {
           const types = response.filter(item => item.type === 'type')
@@ -605,6 +659,12 @@ export default {
           const zones = response.filter(item => item.type === 'zoneid')
           if (zones && zones.length > 0) {
             this.fields[zoneIndex].opts = this.sortArray(zones[0].data)
+          }
+        }
+        if (extensionIndex > -1) {
+          const extensions = response.filter(item => item.type === 'extensionid')
+          if (extensions && extensions.length > 0) {
+            this.fields[extensionIndex].opts = this.sortArray(extensions[0].data)
           }
         }
         if (domainIndex > -1) {
@@ -697,12 +757,36 @@ export default {
             this.fields[osCategoryIndex].opts = this.sortArray(osCategories[0].data)
           }
         }
+
+        if (backupOfferingIndex > -1) {
+          const backupOfferings = response.filter(item => item.type === 'backupofferingid')
+          if (backupOfferings?.length > 0) {
+            this.fields[backupOfferingIndex].opts = this.sortArray(backupOfferings[0].data)
+          }
+        }
+
+        if (gpuCardIndex > -1) {
+          const gpuCards = response.filter(item => item.type === 'gpucardid')
+          if (gpuCards && gpuCards.length > 0) {
+            this.fields[gpuCardIndex].opts = this.sortArray(gpuCards[0].data)
+          }
+        }
+
+        if (vgpuProfileIndex > -1) {
+          const vgpuProfiles = response.filter(item => item.type === 'vgpuprofileid')
+          if (vgpuProfiles && vgpuProfiles.length > 0) {
+            this.fields[vgpuProfileIndex].opts = this.sortArray(vgpuProfiles[0].data)
+          }
+        }
       }).finally(() => {
         if (typeIndex > -1) {
           this.fields[typeIndex].loading = false
         }
         if (zoneIndex > -1) {
           this.fields[zoneIndex].loading = false
+        }
+        if (extensionIndex > -1) {
+          this.fields[extensionIndex].loading = false
         }
         if (domainIndex > -1) {
           this.fields[domainIndex].loading = false
@@ -746,6 +830,15 @@ export default {
         if (osCategoryIndex > -1) {
           this.fields[osCategoryIndex].loading = false
         }
+        if (backupOfferingIndex > -1) {
+          this.fields[backupOfferingIndex].loading = false
+        }
+        if (gpuCardIndex > -1) {
+          this.fields[gpuCardIndex].loading = false
+        }
+        if (vgpuProfileIndex > -1) {
+          this.fields[vgpuProfileIndex].loading = false
+        }
         if (Array.isArray(arrayField)) {
           this.fillFormFieldValues()
         }
@@ -785,7 +878,7 @@ export default {
     },
     fetchZones (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listZones', { showicon: true, keyword: searchKeyword }).then(json => {
+        getAPI('listZones', { showicon: true, keyword: searchKeyword }).then(json => {
           const zones = json.listzonesresponse.zone
           resolve({
             type: 'zoneid',
@@ -796,9 +889,22 @@ export default {
         })
       })
     },
+    fetchExtensions (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        getAPI('listExtensions', { details: 'min', showicon: true, keyword: searchKeyword }).then(json => {
+          const extensions = json.listextensionsresponse.extension
+          resolve({
+            type: 'extensionid',
+            data: extensions
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
     fetchDomains (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listDomains', { listAll: true, details: 'min', showicon: true, keyword: searchKeyword }).then(json => {
+        getAPI('listDomains', { listAll: true, details: 'min', showicon: true, keyword: searchKeyword }).then(json => {
           const domain = json.listdomainsresponse.domain
           resolve({
             type: 'domainid',
@@ -815,7 +921,7 @@ export default {
         if (this.form.domainid) {
           params.domainid = this.form.domainid
         }
-        api('listAccounts', params).then(json => {
+        getAPI('listAccounts', params).then(json => {
           let account = json?.listaccountsresponse?.account || []
           if (this.form.domainid) {
             account = account.filter(a => a.domainid === this.form.domainid)
@@ -831,7 +937,7 @@ export default {
     },
     fetchHypervisors () {
       return new Promise((resolve, reject) => {
-        api('listHypervisors').then(json => {
+        getAPI('listHypervisors').then(json => {
           const hypervisor = json.listhypervisorsresponse.hypervisor.map(a => { return { id: a.name, name: a.name } })
           resolve({
             type: 'hypervisor',
@@ -844,7 +950,7 @@ export default {
     },
     fetchImageStores (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listImageStores', { listAll: true, showicon: true, keyword: searchKeyword }).then(json => {
+        getAPI('listImageStores', { listAll: true, showicon: true, keyword: searchKeyword }).then(json => {
           const imageStore = json.listimagestoresresponse.imagestore
           resolve({
             type: 'imagestoreid',
@@ -857,7 +963,7 @@ export default {
     },
     fetchStoragePools (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listStoragePools', { listAll: true, showicon: true, keyword: searchKeyword }).then(json => {
+        getAPI('listStoragePools', { listAll: true, showicon: true, keyword: searchKeyword }).then(json => {
           const storagePool = json.liststoragepoolsresponse.storagepool
           resolve({
             type: 'storageid',
@@ -870,7 +976,7 @@ export default {
     },
     fetchPods (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listPods', { keyword: searchKeyword }).then(json => {
+        getAPI('listPods', { keyword: searchKeyword }).then(json => {
           const pods = json.listpodsresponse.pod
           resolve({
             type: 'podid',
@@ -883,7 +989,7 @@ export default {
     },
     fetchClusters (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listClusters', { keyword: searchKeyword }).then(json => {
+        getAPI('listClusters', { keyword: searchKeyword }).then(json => {
           const clusters = json.listclustersresponse.cluster
           resolve({
             type: 'clusterid',
@@ -896,7 +1002,7 @@ export default {
     },
     fetchInstanceGroups (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listInstanceGroups', { listAll: true, keyword: searchKeyword }).then(json => {
+        getAPI('listInstanceGroups', { listAll: true, keyword: searchKeyword }).then(json => {
           const instancegroups = json.listinstancegroupsresponse.instancegroup
           resolve({
             type: 'groupid',
@@ -909,7 +1015,7 @@ export default {
     },
     fetchServiceOfferings (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listServiceOfferings', { listAll: true, keyword: searchKeyword }).then(json => {
+        getAPI('listServiceOfferings', { listAll: true, keyword: searchKeyword }).then(json => {
           const serviceOfferings = json.listserviceofferingsresponse.serviceoffering
           resolve({
             type: 'serviceofferingid',
@@ -922,7 +1028,7 @@ export default {
     },
     fetchDiskOfferings (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listDiskOfferings', { listAll: true, keyword: searchKeyword }).then(json => {
+        getAPI('listDiskOfferings', { listAll: true, keyword: searchKeyword }).then(json => {
           const diskOfferings = json.listdiskofferingsresponse.diskoffering
           resolve({
             type: 'diskofferingid',
@@ -935,7 +1041,7 @@ export default {
     },
     fetchNetworks (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listNetworks', { listAll: true, keyword: searchKeyword }).then(json => {
+        getAPI('listNetworks', { listAll: true, keyword: searchKeyword }).then(json => {
           const networks = json.listnetworksresponse.network
           resolve({
             type: 'networkid',
@@ -956,7 +1062,7 @@ export default {
         })
       } else {
         return new Promise((resolve, reject) => {
-          api('listAlertTypes').then(json => {
+          getAPI('listAlertTypes').then(json => {
             const alerttypes = json.listalerttypesresponse.alerttype.map(a => { return { id: a.alerttypeid, name: a.name } })
             this.alertTypes = alerttypes
             resolve({
@@ -979,7 +1085,7 @@ export default {
         })
       } else {
         return new Promise((resolve, reject) => {
-          api('listAffinityGroupTypes').then(json => {
+          getAPI('listAffinityGroupTypes').then(json => {
             const alerttypes = json.listaffinitygrouptypesresponse.affinityGroupType.map(a => {
               let name = a.type
               if (a.type === 'host anti-affinity') {
@@ -1006,7 +1112,7 @@ export default {
     },
     fetchVolumes (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listvolumes', { listAll: true, isencrypted: searchKeyword }).then(json => {
+        getAPI('listVolumes', { listAll: true, isencrypted: searchKeyword }).then(json => {
           const volumes = json.listvolumesresponse.volume
           resolve({
             type: 'isencrypted',
@@ -1019,7 +1125,7 @@ export default {
     },
     fetchManagementServers (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listManagementServers', { listAll: true, keyword: searchKeyword }).then(json => {
+        getAPI('listManagementServers', { listAll: true, keyword: searchKeyword }).then(json => {
           const managementservers = json.listmanagementserversresponse.managementserver
           resolve({
             type: 'managementserverid',
@@ -1032,7 +1138,7 @@ export default {
     },
     fetchOsCategories (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listOsCategories', { showicon: true, keyword: searchKeyword }).then(json => {
+        getAPI('listOsCategories', { showicon: true, keyword: searchKeyword }).then(json => {
           const osCategories = json.listoscategoriesresponse.oscategory
           resolve({
             type: 'oscategoryid',
@@ -1274,6 +1380,25 @@ export default {
             name: 'label.disabled'
           }
         ]
+      } else if (this.apiName.indexOf('listEvents') > -1) {
+        state = [
+          {
+            id: 'Created',
+            name: 'label.created'
+          },
+          {
+            id: 'Scheduled',
+            name: 'label.scheduled'
+          },
+          {
+            id: 'Started',
+            name: 'label.started'
+          },
+          {
+            id: 'Completed',
+            name: 'label.completed'
+          }
+        ]
       }
       return state
     },
@@ -1334,7 +1459,7 @@ export default {
     },
     fetchUsageTypes () {
       return new Promise((resolve, reject) => {
-        api('listUsageTypes')
+        getAPI('listUsageTypes')
           .then(json => {
             const usageTypes = json.listusagetypesresponse.usagetype.map(entry => {
               return {
@@ -1351,6 +1476,19 @@ export default {
           .catch(error => {
             reject(error.response.headers['x-description'])
           })
+      })
+    },
+    fetchBackupOfferings (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        getAPI('listBackupOfferings').then(json => {
+          const backupOfferings = json.listbackupofferingsresponse.backupoffering
+          resolve({
+            type: 'backupofferingid',
+            data: backupOfferings
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
       })
     },
     fetchAvailableUserSourceTypes () {
@@ -1373,6 +1511,39 @@ export default {
         }
       ]
     },
+    fetchGpuCards (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        getAPI('listGpuCards', { keyword: searchKeyword }).then(json => {
+          const gpuCards = json.listgpucardsresponse.gpucard
+          resolve({
+            type: 'gpucardid',
+            data: gpuCards
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
+    fetchVgpuProfiles (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        const params = { keyword: searchKeyword }
+
+        // If a GPU card is selected, filter vGPU profiles by that GPU card
+        if (this.form.gpucardid) {
+          params.gpucardid = this.form.gpucardid
+        }
+
+        getAPI('listVgpuProfiles', params).then(json => {
+          const vgpuProfiles = json.listvgpuprofilesresponse.vgpuprofile
+          resolve({
+            type: 'vgpuprofileid',
+            data: vgpuProfiles
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
     onSearch (value) {
       this.paramsFilter = {}
       this.searchQuery = value
@@ -1392,6 +1563,13 @@ export default {
       })
       if (refreshAccountOptions) {
         await this.fetchDynamicFieldData('account')
+      }
+
+      const refreshVgpuProfileOptions = ['gpucardid', 'vgpuprofileid'].every((field) => {
+        return this.fields.some((searchViewField) => searchViewField.name === field)
+      })
+      if (refreshVgpuProfileOptions) {
+        await this.fetchDynamicFieldData('vgpuprofileid')
       }
 
       this.$emit('search', this.paramsFilter)

@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.inject.Inject;
@@ -1007,6 +1008,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             return false;
         }
         if (provider.get(0) == Provider.Netscaler || provider.get(0) == Provider.F5BigIp ||
+            provider.get(0) == Provider.Netris ||
             provider.get(0) == Provider.VirtualRouter || provider.get(0) == Provider.VPCVirtualRouter) {
             return true;
         }
@@ -2245,6 +2247,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             lb.setLbProtocol(lbProtocol);
         }
 
+        validateInputsForExternalNetworkProvider(lb, algorithm, lbProtocol);
         // Validate rule in LB provider
         LoadBalancingRule rule = getLoadBalancerRuleToApply(lb);
         if (!validateLbRule(rule)) {
@@ -2292,6 +2295,18 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         }
 
         return lb;
+    }
+
+    private void validateInputsForExternalNetworkProvider(LoadBalancerVO lb, String algorithm, String protocol) {
+        Network network = _networkDao.findById(lb.getNetworkId());
+        if (_networkOfferingServiceDao.canProviderSupportServiceInNetworkOffering(network.getNetworkOfferingId(), Service.Lb, Provider.Netris)) {
+            if (Objects.nonNull(algorithm)) {
+                throw new InvalidParameterValueException(String.format("Algorithm: %s specified for Netris Provider is not supported.", algorithm));
+            }
+            if (Objects.nonNull(protocol) && "tcp-proxy".equalsIgnoreCase(protocol)) {
+                throw new InvalidParameterValueException("TCP Proxy protocol is not supported for Netris Provider.");
+            }
+        }
     }
 
     @Override

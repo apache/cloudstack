@@ -19,7 +19,7 @@
   <a
     v-if="['vm', 'systemvm', 'router', 'ilbvm', 'vnfapp'].includes($route.meta.name) && 'listVirtualMachines' in $store.getters.apis && 'createConsoleEndpoint' in $store.getters.apis"
     @click="consoleUrl">
-    <a-button style="margin-left: 5px" shape="circle" type="dashed" :size="size" :disabled="['Stopped', 'Error', 'Destroyed'].includes(resource.state) || resource.hostcontrolstate === 'Offline'" >
+    <a-button style="margin-left: 5px" shape="circle" type="dashed" :size="size" :disabled="['Stopped', 'Restoring', 'Error', 'Destroyed'].includes(resource.state) || resource.hostcontrolstate === 'Offline'" >
       <code-outlined v-if="!copyUrlToClipboard"/>
       <copy-outlined v-else />
     </a-button>
@@ -28,7 +28,7 @@
 
 <script>
 import { SERVER_MANAGER } from '@/store/mutation-types'
-import { api } from '@/api'
+import { postAPI } from '@/api'
 
 export default {
   name: 'Console',
@@ -52,7 +52,7 @@ export default {
     consoleUrl () {
       const params = {}
       params.virtualmachineid = this.resource.id
-      api('createConsoleEndpoint', params).then(json => {
+      postAPI('createConsoleEndpoint', params).then(json => {
         this.url = (json && json.createconsoleendpointresponse) ? json.createconsoleendpointresponse.consoleendpoint.url : '#/exception/404'
         if (json.createconsoleendpointresponse.consoleendpoint.success) {
           if (this.copyUrlToClipboard) {

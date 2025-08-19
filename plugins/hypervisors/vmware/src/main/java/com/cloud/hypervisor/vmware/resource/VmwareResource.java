@@ -3203,7 +3203,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
     }
 
     /**
-     * Modifies vm vram size if it was set to a different size to the one provided in svga.vramSize (user_vm_details or template_vm_details) on {@code vmConfigSpec}
+     * Modifies vm vram size if it was set to a different size to the one provided in svga.vramSize (vm_instance_details or template_vm_details) on {@code vmConfigSpec}
      *
      * @param videoCard     vm's video card device
      * @param vmMo          virtual machine mo

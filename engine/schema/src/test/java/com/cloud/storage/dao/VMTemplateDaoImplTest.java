@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
@@ -35,6 +36,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -298,5 +300,41 @@ public class VMTemplateDaoImplTest {
         verify(searchBuilder, never()).and(eq("isIso"), any(), eq(SearchCriteria.Op.EQ));
         verify(searchBuilder, times(1)).join(eq("templateZoneSearch"), any(), any(), any(), eq(JoinBuilder.JoinType.INNER));
         verify(templateDao, times(1)).customSearch(searchCriteria, null);
+    }
+
+    @Test
+    public void testListIdsByExtensionId_ReturnsIds() {
+        long extensionId = 42L;
+        List<Long> expectedIds = Arrays.asList(1L, 2L, 3L);
+        GenericSearchBuilder<VMTemplateVO, Long> searchBuilder = mock(GenericSearchBuilder.class);
+        SearchCriteria<Long> searchCriteria = mock(SearchCriteria.class);
+        when(templateDao.createSearchBuilder(Long.class)).thenReturn(searchBuilder);
+        when(searchBuilder.entity()).thenReturn(mock(VMTemplateVO.class));
+        when(searchBuilder.create()).thenReturn(searchCriteria);
+        doReturn(expectedIds).when(templateDao).customSearchIncludingRemoved(eq(searchCriteria), isNull());
+        List<Long> result = templateDao.listIdsByExtensionId(extensionId);
+        assertEquals(expectedIds, result);
+        verify(searchCriteria).setParameters("extensionId", extensionId);
+        verify(templateDao).customSearchIncludingRemoved(eq(searchCriteria), isNull());
+    }
+
+    @Test
+    public void testFindSystemVMReadyTemplate() {
+        Long zoneId = 1L;
+        VMTemplateVO systemVmTemplate1 = mock(VMTemplateVO.class);
+        Mockito.when(systemVmTemplate1.getArch()).thenReturn(CPU.CPUArch.x86);
+        VMTemplateVO systemVmTemplate2 = mock(VMTemplateVO.class);
+        Mockito.when(systemVmTemplate2.getArch()).thenReturn(CPU.CPUArch.x86);
+        VMTemplateVO systemVmTemplate3 = mock(VMTemplateVO.class);
+        Mockito.when(systemVmTemplate3.getArch()).thenReturn(CPU.CPUArch.arm64);
+        Mockito.when(systemVmTemplate3.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        List<VMTemplateVO> templates = Arrays.asList(systemVmTemplate1, systemVmTemplate2, systemVmTemplate3);
+        Mockito.when(hostDao.listDistinctHypervisorTypes(zoneId)).thenReturn(Arrays.asList(Hypervisor.HypervisorType.KVM));
+        SearchBuilder<VMTemplateVO> sb = mock(SearchBuilder.class);
+        templateDao.readySystemTemplateSearch = sb;
+        when(sb.create()).thenReturn(mock(SearchCriteria.class));
+        doReturn(templates).when(templateDao).listBy(any(SearchCriteria.class), any(Filter.class));
+        VMTemplateVO readyTemplate = templateDao.findSystemVMReadyTemplate(zoneId, Hypervisor.HypervisorType.KVM, CPU.CPUArch.arm64.getType());
+        Assert.assertEquals(CPU.CPUArch.arm64, readyTemplate.getArch());
     }
 }

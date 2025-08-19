@@ -85,4 +85,7 @@ mvn install:install-file -Dfile=juniper-contrail-api-1.0-SNAPSHOT.jar -DgroupId=
 # From https://github.com/radu-todirica/tungsten-api/raw/master/net/juniper/tungsten/juniper-tungsten-api/2.0/juniper-tungsten-api-2.0.jar
 mvn install:install-file -Dfile=juniper-tungsten-api-2.0.jar -DgroupId=net.juniper.tungsten -DartifactId=juniper-tungsten-api -Dversion=2.0 -Dpackaging=jar
 
+# Netris Integration
+mvn install:install-file -Dfile=netris-java-sdk-1.0.0.jar -DgroupId=io.netris -DartifactId=netris-java-sdk -Dversion=1.0.0 -Dpackaging=jar
+
 exit 0

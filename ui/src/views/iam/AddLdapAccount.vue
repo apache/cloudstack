@@ -164,7 +164,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { timeZone } from '@/utils/timezone'
 import store from '@/store'
 
@@ -313,7 +313,7 @@ export default {
           params.domainid = result[0].id
         }
       }
-      api('listLdapUsers', params).then(json => {
+      getAPI('listLdapUsers', params).then(json => {
         const listLdapUsers = json.ldapuserresponse.LdapUser
         if (listLdapUsers) {
           const ldapUserLength = listLdapUsers.length
@@ -332,7 +332,7 @@ export default {
     fetchListDomains () {
       return new Promise((resolve, reject) => {
         const params = {}
-        api('listDomains', params).then(json => {
+        getAPI('listDomains', params).then(json => {
           const listDomains = json.listdomainsresponse.domain
           resolve(listDomains)
         }).catch(error => {
@@ -343,7 +343,7 @@ export default {
     fetchListRoles () {
       return new Promise((resolve, reject) => {
         const params = {}
-        api('listRoles', params).then(json => {
+        getAPI('listRoles', params).then(json => {
           const listRoles = json.listrolesresponse.role
           resolve(listRoles)
         }).catch(error => {
@@ -353,7 +353,7 @@ export default {
     },
     fetchIdps () {
       return new Promise((resolve, reject) => {
-        api('listIdps').then(json => {
+        getAPI('listIdps').then(json => {
           const listIdps = json.listidpsresponse.idp || []
           if (listIdps.length !== 0) {
             this.form.samlEntity = listIdps[0].id
@@ -384,7 +384,7 @@ export default {
           params.group = values.group
           apiName = 'importLdapUsers'
           promises.push(new Promise((resolve, reject) => {
-            api(apiName, params).then(json => {
+            postAPI(apiName, params).then(json => {
               resolve(json)
             }).catch(error => {
               reject(error)
@@ -394,7 +394,7 @@ export default {
           this.selectedRowKeys.forEach(username => {
             params.username = username
             promises.push(new Promise((resolve, reject) => {
-              api(apiName, params).then(json => {
+              postAPI(apiName, params).then(json => {
                 resolve(json)
               }).catch(error => {
                 reject(error)
@@ -467,7 +467,7 @@ export default {
         params.userid = users[i].id
         params.entityid = entityId
         promises.push(new Promise((resolve, reject) => {
-          api('authorizeSamlSso', params).catch(error => {
+          postAPI('authorizeSamlSso', params).catch(error => {
             reject(error)
           })
         }))

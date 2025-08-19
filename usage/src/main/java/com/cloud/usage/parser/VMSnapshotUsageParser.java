@@ -22,55 +22,41 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import com.cloud.usage.UsageManagerImpl;
 import com.cloud.utils.DateUtil;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.usage.UsageTypes;
 
 import com.cloud.usage.UsageVMSnapshotVO;
 import com.cloud.usage.UsageVO;
-import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageVMSnapshotDao;
 import com.cloud.user.AccountVO;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 @Component
-public class VMSnapshotUsageParser {
-    protected static Logger LOGGER = LogManager.getLogger(VMSnapshotUsageParser.class);
-
-    private static UsageDao s_usageDao;
-    private static UsageVMSnapshotDao s_usageVMSnapshotDao;
-
+public class VMSnapshotUsageParser extends UsageParser {
     @Inject
-    private UsageDao _usageDao;
-    @Inject
-    private UsageVMSnapshotDao _usageVMSnapshotDao;
+    private UsageVMSnapshotDao usageVMSnapshotDao;
 
-    @PostConstruct
-    void init() {
-        s_usageDao = _usageDao;
-        s_usageVMSnapshotDao = _usageVMSnapshotDao;
+    @Override
+    public String getParserName() {
+        return "VM Snapshot";
     }
 
-    public static boolean parse(AccountVO account, Date startDate, Date endDate) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Parsing all VmSnapshot volume usage events for account: " + account.getId());
-        }
+    @Override
+    protected boolean parse(AccountVO account, Date startDate, Date endDate) {
         if ((endDate == null) || endDate.after(new Date())) {
             endDate = new Date();
         }
 
-        List<UsageVMSnapshotVO> usageUsageVMSnapshots = s_usageVMSnapshotDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate);
+        List<UsageVMSnapshotVO> usageUsageVMSnapshots = usageVMSnapshotDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate);
 
         if (usageUsageVMSnapshots.isEmpty()) {
-            LOGGER.debug("No VM snapshot usage events for this period");
+            logger.debug("No VM snapshot usage events for this period");
             return true;
         }
 
@@ -84,7 +70,7 @@ public class VMSnapshotUsageParser {
                 unprocessedUsage.put(key, usageRec);
                 continue;
             }
-            UsageVMSnapshotVO previousEvent = s_usageVMSnapshotDao.getPreviousUsageRecord(usageRec);
+            UsageVMSnapshotVO previousEvent = usageVMSnapshotDao.getPreviousUsageRecord(usageRec);
             if (previousEvent == null || previousEvent.getSize() == 0) {
                 unprocessedUsage.put(key, usageRec);
                 continue;
@@ -101,11 +87,11 @@ public class VMSnapshotUsageParser {
             createUsageRecord(UsageTypes.VM_SNAPSHOT, duration, previousCreated, createDate, account, volId, zoneId, previousEvent.getDiskOfferingId(), vmId,
                 previousEvent.getSize(), usageRec.getVmSnapshotId());
             previousEvent.setProcessed(new Date());
-            s_usageVMSnapshotDao.update(previousEvent);
+            usageVMSnapshotDao.update(previousEvent);
 
             if (usageRec.getSize() == 0) {
                 usageRec.setProcessed(new Date());
-                s_usageVMSnapshotDao.update(usageRec);
+                usageVMSnapshotDao.update(usageRec);
             } else
                 unprocessedUsage.put(key, usageRec);
         }
@@ -124,19 +110,17 @@ public class VMSnapshotUsageParser {
         return true;
     }
 
-    private static void createUsageRecord(int type, long runningTime, Date startDate, Date endDate, AccountVO account, long volId, long zoneId, Long doId, Long vmId,
+    private void createUsageRecord(int type, long runningTime, Date startDate, Date endDate, AccountVO account, long volId, long zoneId, Long doId, Long vmId,
                                           long size, Long vmSnapshotId) {
         // Our smallest increment is hourly for now
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Total running time " + runningTime + "ms");
-        }
+        logger.debug("Total running time {} ms", runningTime);
 
         float usage = runningTime / 1000f / 60f / 60f;
 
         DecimalFormat dFormat = new DecimalFormat("#.######");
         String usageDisplay = dFormat.format(usage);
 
-        LOGGER.debug("Creating usage record for VMSnapshot with id [{}], vol [{}], usage [{}], startDate [{}], and endDate [{}], for account [{}].",
+        logger.debug("Creating usage record for VMSnapshot with id [{}], vol [{}], usage [{}], startDate [{}], and endDate [{}], for account [{}].",
                 vmSnapshotId, volId, usageDisplay, DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), startDate),
                 DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), endDate), account.getId());
 
@@ -152,7 +136,7 @@ public class VMSnapshotUsageParser {
         UsageVO usageRecord =
             new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type, new Double(usage), vmId, null, doId, null, vmSnapshotId, size,
                 startDate, endDate);
-        s_usageDao.persist(usageRecord);
+        usageDao.persist(usageRecord);
     }
 
 }

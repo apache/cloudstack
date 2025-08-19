@@ -41,6 +41,8 @@ public class NioSocket {
             socketChannel = SocketChannel.open();
             socketChannel.configureBlocking(false);
             socketChannel.socket().setSoTimeout(5000);
+            socketChannel.socket().setKeepAlive(true);
+            socketChannel.socket().setTcpNoDelay(true);
             writeSelector = Selector.open();
             readSelector = Selector.open();
             socketChannel.register(writeSelector, SelectionKey.OP_WRITE);
@@ -77,7 +79,6 @@ public class NioSocket {
             socketChannel.register(selector, SelectionKey.OP_CONNECT);
 
             waitForSocketSelectorConnected(selector);
-            socketChannel.socket().setTcpNoDelay(false);
         } catch (IOException e) {
             logger.error(String.format("Error creating NioSocket to %s:%s: %s", host, port, e.getMessage()), e);
         }

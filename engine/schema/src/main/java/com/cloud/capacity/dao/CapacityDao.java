@@ -30,7 +30,7 @@ public interface CapacityDao extends GenericDao<CapacityVO, Long> {
 
     List<CapacityVO> listByHostIdTypes(Long hostId, List<Short> capacityTypes);
 
-    List<Long> listClustersInZoneOrPodByHostCapacities(long id, long vmId, int requiredCpu, long requiredRam, short capacityTypeForOrdering, boolean isZone);
+    List<Long> listClustersInZoneOrPodByHostCapacities(long id, long vmId, int requiredCpu, long requiredRam, boolean isZone);
 
     List<Long> listHostsWithEnoughCapacity(int requiredCpu, long requiredRam, Long clusterId, String hostType);
 
@@ -48,7 +48,7 @@ public interface CapacityDao extends GenericDao<CapacityVO, Long> {
 
     List<SummedCapacity> findFilteredCapacityBy(Integer capacityType, Long zoneId, Long podId, Long clusterId, List<Long> hostIds, List<Long> poolIds);
 
-    List<Long> listPodsByHostCapacities(long zoneId, int requiredCpu, long requiredRam, short capacityType);
+    List<Long> listPodsByHostCapacities(long zoneId, int requiredCpu, long requiredRam);
 
     Pair<List<Long>, Map<Long, Double>> orderPodsByAggregateCapacity(long zoneId, short capacityType);
 
@@ -65,4 +65,10 @@ public interface CapacityDao extends GenericDao<CapacityVO, Long> {
     float findClusterConsumption(Long clusterId, short capacityType, long computeRequested);
 
     Pair<List<Long>, Map<Long, Double>> orderHostsByFreeCapacity(Long zoneId, Long clusterId, short capacityType);
+
+    List<CapacityVO> listHostCapacityByCapacityTypes(Long zoneId, Long clusterId, List<Short> capacityTypes);
+
+    List<CapacityVO> listPodCapacityByCapacityTypes(Long zoneId, List<Short> capacityTypes);
+
+    List<CapacityVO> listClusterCapacityByCapacityTypes(Long zoneId, Long podId, List<Short> capacityTypes);
 }
