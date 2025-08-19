@@ -2376,6 +2376,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     @Override
     public Pair<List<? extends Network>, Integer> searchForNetworks(ListNetworksCmd cmd) {
         Long id = cmd.getId();
+        String name = cmd.getName();
         String keyword = cmd.getKeyword();
         Long zoneId = cmd.getZoneId();
         Account caller = CallContext.current().getCallingAccount();
@@ -2554,7 +2555,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         Pair<List<NetworkVO>, Integer> result = new Pair<>(new ArrayList<>(), 0);
         if (BooleanUtils.isTrue(isSystem)) {
-            SearchCriteria<NetworkVO> sc = createNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType,
+            SearchCriteria<NetworkVO> sc = createNetworkSearchCriteria(sb, name, keyword, id, isSystem, zoneId, guestIpType, trafficType,
                     physicalNetworkId, networkOfferingId, null, restartRequired, specifyIpRanges,
                     vpcId, tags, display, vlanId, associatedNetworkId);
             addProjectNetworksConditionToSearch(sc, true);
@@ -2567,7 +2568,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             addSharedNetworksToSearch(additionalSC, sb, networkFilter, permittedAccounts, path, isRecursive);
 
             if (CollectionUtils.isNotEmpty(additionalSC.getValues())) {
-                SearchCriteria<NetworkVO> sc = createNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType,
+                SearchCriteria<NetworkVO> sc = createNetworkSearchCriteria(sb, name, keyword, id, isSystem, zoneId, guestIpType,
                         trafficType, physicalNetworkId, networkOfferingId, aclType, restartRequired, specifyIpRanges, vpcId,
                         tags, display, vlanId, associatedNetworkId);
                 sc.addAnd("id", SearchCriteria.Op.SC, additionalSC);
@@ -2680,7 +2681,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
     }
 
-    private SearchCriteria<NetworkVO> createNetworkSearchCriteria(SearchBuilder<NetworkVO> sb, String keyword, Long id,
+    private SearchCriteria<NetworkVO> createNetworkSearchCriteria(SearchBuilder<NetworkVO> sb, String name, String keyword, Long id,
                                                                  Boolean isSystem, Long zoneId, String guestIpType, String trafficType, Long physicalNetworkId,
                                                                  Long networkOfferingId, String aclType, Boolean restartRequired,
                                                                  Boolean specifyIpRanges, Long vpcId, Map<String, String> tags, Boolean display, String vlanId, Long associatedNetworkId) {
@@ -2689,6 +2690,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         if (isSystem != null) {
             sc.setJoinParameters("networkOfferingSearch", "systemOnly", isSystem);
+        }
+
+        if (name != null) {
+            sc.addAnd("name", SearchCriteria.Op.EQ, name);
         }
 
         if (keyword != null) {
