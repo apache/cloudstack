@@ -26,13 +26,9 @@ if [ -e /opt/csi/snapshot-crds.yaml ]; then
 else
     TARGET_DIR="/opt/csi"
     mkdir -p "$TARGET_DIR"
-#    CSI_URLS=(
-#      "https://github.com/shapeblue/cloudstack-csi-driver/releases/download/v3.0.0/snapshot-crds.yaml"
-#      "https://github.com/shapeblue/cloudstack-csi-driver/releases/download/v3.0.0/manifest.yaml"
-#    )
     CSI_URLS=(
-       "http://10.0.3.130/cks/csi/snapshot-crds.yaml"
-       "http://10.0.3.130/cks/csi/manifest.yaml"
+      "https://github.com/shapeblue/cloudstack-csi-driver/releases/download/v3.0.0/snapshot-crds.yaml"
+      "https://github.com/shapeblue/cloudstack-csi-driver/releases/download/v3.0.0/manifest.yaml"
     )
     for url in "${URLS[@]}"; do
         filename=$(basename "$url")

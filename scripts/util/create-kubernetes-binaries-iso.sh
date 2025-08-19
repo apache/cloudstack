@@ -173,11 +173,8 @@ if [ -n "${9}" ]; then
 fi
 
 echo "Including CloudStack CSI Driver manifest"
-# TODO: remove the below 2 lines and uncomment the ones below once csi-driver is officially released, this is for testing purposes only
-wget http://10.0.3.130/cks/csi/snapshot-crds.yaml -O ${working_dir}/snapshot-crds.yaml
-wget http://10.0.3.130/cks/csi/manifest.yaml -O ${working_dir}/manifest.yaml
-#wget https://github.com/shapeblue/cloudstack-csi-driver/releases/download/v3.0.0/snapshot-crds.yaml -O ${working_dir}/snapshot-crds.yaml
-#wget https://github.com/shapeblue/cloudstack-csi-driver/releases/download/v3.0.0/manifest.yaml -O ${working_dir}/manifest.yaml
+wget https://github.com/shapeblue/cloudstack-csi-driver/releases/download/v3.0.0/snapshot-crds.yaml -O ${working_dir}/snapshot-crds.yaml
+wget https://github.com/shapeblue/cloudstack-csi-driver/releases/download/v3.0.0/manifest.yaml -O ${working_dir}/manifest.yaml
 
 mkisofs -o "${output_dir}/${build_name}" -J -R -l "${iso_dir}"
 
