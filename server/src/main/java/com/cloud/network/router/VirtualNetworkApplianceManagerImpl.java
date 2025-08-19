@@ -1737,11 +1737,19 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                         .append(",sourcePortEnd=").append(firewallRuleVO.getSourcePortEnd());
                 if (firewallRuleVO instanceof LoadBalancerVO) {
                     LoadBalancerVO loadBalancerVO = (LoadBalancerVO) firewallRuleVO;
-                    loadBalancingData.append(",sourceIp=").append(_ipAddressDao.findById(loadBalancerVO.getSourceIpAddressId()).getAddress().toString())
+                    String sourceIp = _ipAddressDao.findById(loadBalancerVO.getSourceIpAddressId()).getAddress().toString();
+                    loadBalancingData.append(",sourceIp=").append(sourceIp)
                             .append(",destPortStart=").append(loadBalancerVO.getDefaultPortStart())
                             .append(",destPortEnd=").append(loadBalancerVO.getDefaultPortEnd())
                             .append(",algorithm=").append(loadBalancerVO.getAlgorithm())
                             .append(",protocol=").append(loadBalancerVO.getLbProtocol());
+                    if (loadBalancerVO.getLbProtocol() != null && loadBalancerVO.getLbProtocol().equals(NetUtils.SSL_PROTO)) {
+                        final LbSslCert sslCert = _lbMgr.getLbSslCert(firewallRuleVO.getId());
+                        if (sslCert != null && ! sslCert.isRevoked()) {
+                            loadBalancingData.append(",sslcert=").append(sourceIp.replace(".", "_")).append('-')
+                                    .append(loadBalancerVO.getSourcePortStart()).append(".pem");
+                        }
+                    }
                 } else if (firewallRuleVO instanceof ApplicationLoadBalancerRuleVO) {
                     ApplicationLoadBalancerRuleVO appLoadBalancerVO = (ApplicationLoadBalancerRuleVO) firewallRuleVO;
                     loadBalancingData.append(",sourceIp=").append(appLoadBalancerVO.getSourceIp())
