@@ -382,7 +382,7 @@ export default {
         if (formValues.certchain) {
           params.certchain = formValues.certchain
         }
-        api('uploadSslCert', {}, 'POST', params).then(json => {
+        postAPI('uploadSslCert', params).then(json => {
           this.$notification.success({
             message: this.$t('message.success.upload.ssl.cert')
           })

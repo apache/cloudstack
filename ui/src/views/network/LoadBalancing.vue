@@ -1167,7 +1167,7 @@ export default {
       this.sslcerts.loading = true
       this.sslcerts.data = []
       // First get the account id
-      api('listAccounts', {
+      getAPI('listAccounts', {
         name: this.resource.account,
         domainid: this.resource.domainid
       }).then(json => {
@@ -1175,7 +1175,7 @@ export default {
         if (accounts.length > 0) {
           // Now fetch all the ssl certs for this account
           this.currentAccountId = accounts[0].id
-          api('listSslCerts', {
+          getAPI('listSslCerts', {
             accountid: this.currentAccountId
           }).then(json => {
             if (json.listsslcertsresponse.sslcert && json.listsslcertsresponse.sslcert.length > 0) {
@@ -1197,7 +1197,7 @@ export default {
       }
     },
     getCurrentlyAssignedSslCert () {
-      api('listSslCerts', {
+      getAPI('listSslCerts', {
         accountid: this.currentAccountId,
         lbruleid: this.selectedRule.id
       }).then(json => {
@@ -1224,7 +1224,7 @@ export default {
     },
     addSslCert (lbRuleId, certId) {
       this.disableSslAddDeleteButtons()
-      api('assignCertToLoadBalancer', {
+      getAPI('assignCertToLoadBalancer', {
         lbruleid: lbRuleId,
         certid: certId,
         forced: true
@@ -1254,7 +1254,7 @@ export default {
     },
     removeSslFromLbRule () {
       this.disableSslAddDeleteButtons()
-      api('removeCertFromLoadBalancer', {
+      getAPI('removeCertFromLoadBalancer', {
         lbruleid: this.selectedRule.id
       }).then(response => {
         this.$pollJob({
