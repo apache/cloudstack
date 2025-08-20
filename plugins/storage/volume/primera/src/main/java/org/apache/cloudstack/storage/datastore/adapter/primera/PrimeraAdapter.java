@@ -121,6 +121,10 @@ public class PrimeraAdapter implements ProviderAdapter {
     public void disconnect() {
         logger.info("PrimeraAdapter:disconnect(): closing session");
         try {
+            //Delete session safely without triggering refreshSession
+            if (key != null && _client != null) {
+                logout();
+            }
             _client.close();
         } catch (IOException e) {
             logger.warn("PrimeraAdapter:refreshSession(): Error closing client connection", e);
@@ -129,6 +133,40 @@ public class PrimeraAdapter implements ProviderAdapter {
             keyExpiration = -1;
         }
         return;
+    }
+    /**
+     * Delete session directly without going through refreshSession to avoid infinite recursion
+     */
+    private void logout() {
+        CloseableHttpResponse response = null;
+        try {
+            logger.debug("PrimeraAdapter:logout(): Delete session directly");
+            HttpDelete request = new HttpDelete(url + "/credentials/" + key);
+            request.addHeader("Content-Type", "application/json");
+            request.addHeader("Accept", "application/json");
+            request.addHeader("X-HP3PAR-WSAPI-SessionKey", key);
+
+            response = (CloseableHttpResponse) _client.execute(request);
+            final int statusCode = response.getStatusLine().getStatusCode();
+
+            if (statusCode == 200 || statusCode == 404) {
+                logger.debug("PrimeraAdapter:logout(): Session deleted successfully or was already expired");
+            } else if (statusCode == 401 || statusCode == 403) {
+                logger.warn("PrimeraAdapter:logout(): Session already invalid or expired during deletion");
+            } else {
+                logger.warn("PrimeraAdapter:logout(): Unexpected response when deleting session: {}", statusCode);
+            }
+        } catch (IOException e) {
+            logger.warn("PrimeraAdapter:logout(): Error deleting session: {}", e.getMessage());
+        } finally {
+            if (response != null) {
+                try {
+                    response.close();
+                } catch (IOException e) {
+                    logger.debug("PrimeraAdapter:logout(): Error closing response from session deletion", e);
+                }
+            }
+        }
     }
 
     @Override
