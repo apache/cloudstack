@@ -1131,16 +1131,17 @@ public class NetrisApiClientImpl implements NetrisApiClient {
     public boolean deleteVpc(DeleteNetrisVpcCommand cmd) {
         String suffix = String.valueOf(cmd.getId());
         String vpcName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VPC);
-        VPCListing vpcResource = getVpcByNameAndTenant(vpcName);
-        if (vpcResource == null) {
-            logger.error("Could not find the Netris VPC resource with name {} and tenant ID {}", vpcName, tenantId);
-            return false;
-        }
         String snatRuleName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.SNAT, suffix);
         NatGetBody existingNatRule = netrisNatRuleExists(snatRuleName);
         boolean ruleExists = Objects.nonNull(existingNatRule);
         if (ruleExists) {
-            deleteNatRule(snatRuleName, existingNatRule.getId(), vpcResource.getName());
+            deleteNatRule(snatRuleName, existingNatRule.getId(), vpcName);
+        }
+
+        VPCListing vpcResource = getVpcByNameAndTenant(vpcName);
+        if (vpcResource == null) {
+            logger.warn("The Netris VPC resource with name {} and tenant ID {} does not exist, cannot be removed", vpcName, tenantId);
+            return true;
         }
 
         String vpcAllocationName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_ALLOCATION, cmd.getCidr());
