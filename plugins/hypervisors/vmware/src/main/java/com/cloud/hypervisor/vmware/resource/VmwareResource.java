@@ -5837,11 +5837,19 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 if (toolsStatus == VirtualMachineToolsStatus.TOOLS_NOT_INSTALLED) {
                     details += "Vmware tools not installed.";
                 } else {
-                    ip = guestInfo.getIpAddress();
-                    if (ip != null) {
-                        result = true;
+                    var normalizedMac = cmd.getMacAddress().replaceAll("-", ":");
+                    for(var guestInfoNic : guestInfo.getNet()) {
+                        var normalizedNicMac = guestInfoNic.getMacAddress().replaceAll("-", ":");
+                        if (!result && normalizedNicMac.equalsIgnoreCase(normalizedMac)) {
+                            result = true;
+                            details = null;
+                            for (var ipAddr : guestInfoNic.getIpAddress()) {
+                                if(NetUtils.isIpWithInCidrRange(ipAddr, cmd.getVmNetworkCidr())) {
+                                    details = ipAddr;
+                                }
+                            }
+                        }
                     }
-                    details = ip;
                 }
             } else {
                 details += "VM " + vmName + " no longer exists on vSphere host: " + hyperHost.getHyperHostName();
