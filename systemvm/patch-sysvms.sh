@@ -21,7 +21,7 @@ backupfolder=/var/cache/cloud/bkpup_live_patch
 logfile="/var/log/livepatchsystemvm.log"
 newpath="/var/cache/cloud/"
 CMDLINE=/var/cache/cloud/cmdline
-md5file=/var/cache/cloud/cloud-scripts-signature
+checksumfile=/var/cache/cloud/cloud-scripts-signature
 svcfile=/var/cache/cloud/enabled_svcs
 TYPE=$(grep -Po 'type=\K[a-zA-Z]*' $CMDLINE)
 patchfailed=0
@@ -40,7 +40,7 @@ backup_old_package() {
     zip -r $backupfolder/agent.zip * >> $logfile 2>&1 2>&1
     cd -
   fi
-  cp $md5file $backupfolder
+  cp $checksumfile $backupfolder
   echo "Backing up cloud-scripts file" >> $logfile 2>&1
   tar -zcvf $backupfolder/cloud-scripts.tgz /etc/ /var/ /opt/ /root/  >> $logfile 2>&1
 }
@@ -57,13 +57,13 @@ restore_backup() {
   fi
   backuprestored=1
   restart_services
-  cp $backupfolder/cloud-scripts-signature $md5file
+  cp $backupfolder/cloud-scripts-signature $checksumfile
 }
 
 update_checksum() {
-  newmd5=$(md5sum $1 | awk '{print $1}')
-  echo "checksum: " ${newmd5} >> $logfile 2>&1
-  echo ${newmd5} > ${md5file}
+  newchecksum=$(sha512sum $1 | awk '{print $1}')
+  echo "checksum: " ${newchecksum} >> $logfile 2>&1
+  echo ${newchecksum} > ${checksumfile}
 }
 
 restart_services() {
@@ -144,7 +144,7 @@ patch_systemvm
 cleanup_systemVM
 
 if [ $patchfailed == 0 ]; then
-  echo "version:$(cat ${md5file}) "
+  echo "version:$(cat ${checksumfile}) "
 fi
 
 exit $patchfailed
