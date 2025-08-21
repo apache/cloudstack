@@ -102,3 +102,25 @@ export function toCsv ({ keys = null, data = null, columnDelimiter = ',', lineDe
 
   return result
 }
+
+export function isValidIPv4Cidr (rule, value) {
+  console.log('here')
+  return new Promise((resolve, reject) => {
+    if (!value) {
+      reject(new Error('Required input'))
+      return
+    }
+    const cidrRegex = /^(\d{1,3}\.){3}\d{1,3}\/([0-9]|[1-2][0-9]|3[0-2])$/
+    if (!cidrRegex.test(value)) {
+      reject(new Error('Invalid CIDR format'))
+      return
+    }
+    const ip = value.split('/')[0]
+    const octets = ip.split('.').map(Number)
+    if (octets.some(octet => octet < 0 || octet > 255)) {
+      reject(new Error('Invalid CIDR format'))
+      return
+    }
+    resolve()
+  })
+}
