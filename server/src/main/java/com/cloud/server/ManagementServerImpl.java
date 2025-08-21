@@ -4716,7 +4716,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         final long diskOffMinSize = VolumeOrchestrationService.CustomDiskOfferingMinSize.value();
         final long diskOffMaxSize = VolumeOrchestrationService.CustomDiskOfferingMaxSize.value();
-        KVMSnapshotEnabled = Boolean.parseBoolean(_configDao.getValue("KVM.snapshot.enabled"));
+        KVMSnapshotEnabled = Boolean.parseBoolean(_configDao.getValue("kvm.snapshot.enabled"));
 
         final boolean userPublicTemplateEnabled = TemplateManager.AllowPublicUserTemplates.valueIn(caller.getId());
 
