@@ -17,10 +17,9 @@
 
 from marvin.codes import FAILED
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.cloudstackAPI import (uploadSslCert,
-                                  deleteSslCert)
 from marvin.lib.utils import wait_until
 from marvin.lib.base import (Account,
+                             Project,
                              UserData,
                              SslCertificate,
                              Template,
@@ -28,6 +27,8 @@ from marvin.lib.base import (Account,
                              ServiceOffering,
                              VirtualMachine,
                              Network,
+                             VPC,
+                             VpcOffering,
                              PublicIPAddress,
                              LoadBalancerRule)
 from marvin.lib.common import (get_domain, get_zone, get_test_template)
@@ -199,21 +200,10 @@ class TestSslOffloading(cloudstackTestCase):
                             admin=True,
                             domainid=cls.domain.id
                             )
-        # Register Userdata
-        cls.userdata = UserData.register(cls.apiclient,
-                                         name="test-userdata",
-                                         userdata=USER_DATA,
-                                         account=cls.account.name,
-                                         domainid=cls.account.domainid
-                                         )
+        cls.user = cls.account.user[0]
+        cls.userapiclient = cls.testClient.getUserApiClient(cls.user.username, cls.domain.name)
 
-        # Upload SSL Certificate, save chain as a file
-        cls.sslcert = SslCertificate.create(cls.apiclient,
-                                     CERT,
-                                     name="test-ssl-certificate",
-                                     account=cls.account.name,
-                                     domainid=cls.account.domainid)
-
+        # Save full chain as a file
         with open(FULL_CHAIN, "w", encoding="utf-8") as f:
             f.write(CERT["certchain"])
 
@@ -259,12 +249,12 @@ class TestSslOffloading(cloudstackTestCase):
 
     def tearDown(self):
         super(TestSslOffloading, self).tearDown()
-        if os.path.exists(FULL_CHAIN):
-            os.remove(FULL_CHAIN)
 
     @classmethod
     def tearDownClass(cls):
         super(TestSslOffloading, cls).tearDownClass()
+        if os.path.exists(FULL_CHAIN):
+            os.remove(FULL_CHAIN)
 
     def wait_for_service_ready(self, command, expected, retries=60):
         output = None
@@ -289,7 +279,7 @@ class TestSslOffloading(cloudstackTestCase):
         return res
 
     @attr(tags = ["advanced", "advancedns", "smoke"], required_hardware="true")
-    def test_01_ssl_offloading(self):
+    def test_01_ssl_offloading_isolated_network(self):
         """Test to create Load balancing rule with SSL offloading"""
 
         # Validate:
@@ -301,6 +291,21 @@ class TestSslOffloading(cloudstackTestCase):
         # 6. remove cert from LB with port 443
         # 7. delete SSL certificate
 
+        # Register Userdata
+        self.userdata = UserData.register(self.apiclient,
+                                         name="test-userdata",
+                                         userdata=USER_DATA,
+                                         account=self.account.name,
+                                         domainid=self.account.domainid
+                                         )
+
+        # Upload SSL Certificate
+        self.sslcert = SslCertificate.create(self.apiclient,
+                                            CERT,
+                                            name="test-ssl-certificate",
+                                            account=self.account.name,
+                                            domainid=self.account.domainid)
+
         # 1. Create network
         self.network = Network.create(self.apiclient,
                                       zoneid=self.zone.id,
@@ -308,6 +313,7 @@ class TestSslOffloading(cloudstackTestCase):
                                       domainid=self.domain.id,
                                       account=self.account.name,
                                       networkofferingid=self.network_offering.id)
+        self.cleanup.append(self.network)
 
         self.services["virtual_machine"]["networkids"] = [str(self.network.id)]
 
@@ -321,6 +327,8 @@ class TestSslOffloading(cloudstackTestCase):
             userdataid=self.userdata.userdata.id,
             serviceofferingid=self.service_offering.id
         )
+        self.cleanup.append(self.vm_1)
+
         self.public_ip = PublicIPAddress.create(
             self.apiclient,
             self.account.name,
@@ -394,3 +402,152 @@ class TestSslOffloading(cloudstackTestCase):
 
         # 7. delete SSL certificate
         self.sslcert.delete(self.apiclient)
+
+    @attr(tags = ["advanced", "advancedns", "smoke"], required_hardware="true")
+    def test_02_ssl_offloading_project_vpc(self):
+        """Test to create Load balancing rule with SSL offloading in VPC in user project"""
+
+        # Validate:
+        # 1. Create VPC, VPC tier and vm instance
+        # 2. create LB with port 80 -> 80, verify the website (should get expected content)
+        # 3. create LB with port 443 -> 80, verify the website (should not work)
+        # 4. add cert to LB with port 443
+        # 5. verify the website (should get expected content)
+        # 6. remove cert from LB with port 443
+        # 7. delete SSL certificate
+
+        # Create project by user
+        self.project = Project.create(
+            self.userapiclient,
+            self.services["project"]
+        )
+        self.cleanup.append(self.project)
+
+        # Register Userdata by user
+        self.userdata = UserData.register(self.userapiclient,
+                                          name="test-user-userdata",
+                                          userdata=USER_DATA,
+                                          projectid=self.project.id
+                                          )
+
+        # Upload SSL Certificate by user
+        self.sslcert = SslCertificate.create(self.userapiclient,
+                                             CERT,
+                                             name="test-user-ssl-certificate",
+                                             projectid=self.project.id
+                                             )
+
+        # 1. Create VPC and VPC tier
+        vpcOffering = VpcOffering.list(self.userapiclient, name="Default VPC offering")
+        self.assertTrue(vpcOffering is not None and len(
+            vpcOffering) > 0, "No VPC offerings found")
+
+        self.vpc = VPC.create(
+            apiclient=self.userapiclient,
+            services=self.services["vpc_vpn"]["vpc"],
+            vpcofferingid=vpcOffering[0].id,
+            zoneid=self.zone.id,
+            projectid=self.project.id
+        )
+        self.cleanup.append(self.vpc)
+
+        networkOffering = NetworkOffering.list(
+            self.userapiclient, name="DefaultIsolatedNetworkOfferingForVpcNetworks")
+        self.assertTrue(networkOffering is not None and len(
+            networkOffering) > 0, "No VPC based network offering")
+
+        self.network = Network.create(
+            apiclient=self.userapiclient,
+            services=self.services["vpc_vpn"]["network_1"],
+            networkofferingid=networkOffering[0].id,
+            zoneid=self.zone.id,
+            vpcid=self.vpc.id,
+            projectid=self.project.id
+        )
+        self.cleanup.append(self.network)
+
+        self.services["virtual_machine"]["networkids"] = [str(self.network.id)]
+
+        # Create vm instance
+        self.vm_2 = VirtualMachine.create(
+            self.userapiclient,
+            self.services["virtual_machine"],
+            templateid=self.template.id,
+            userdataid=self.userdata.userdata.id,
+            serviceofferingid=self.service_offering.id,
+            projectid=self.project.id
+        )
+        self.cleanup.append(self.vm_2)
+
+        self.public_ip = PublicIPAddress.create(
+            self.userapiclient,
+            zoneid=self.zone.id,
+            services=self.services["virtual_machine"],
+            networkid=self.network.id,
+            vpcid=self.vpc.id,
+            projectid=self.project.id
+        )
+
+        # 2. create LB with port 80 -> 80, verify the website (should get expected content).
+        # firewall is open by default
+        lb_http = {
+            "name": "http",
+            "alg": "roundrobin",
+            "privateport": 80,
+            "publicport": 80,
+            "protocol": "tcp"
+        }
+        lb_rule_http = LoadBalancerRule.create(
+            self.userapiclient,
+            lb_http,
+            self.public_ip.ipaddress.id,
+            networkid=self.network.id,
+            projectid=self.project.id
+        )
+        lb_rule_http.assign(self.userapiclient, [self.vm_2])
+        command = "curl -L --connect-timeout 3 http://%s/" % self.public_ip.ipaddress.ipaddress
+        # wait 10 minutes until the webpage is available. it returns "503 Service Unavailable" if not available
+        self.wait_for_service_ready(command, CONTENT, 60)
+
+        # 3. create LB with port 443 -> 80, verify the website (should not work)
+        # firewall is open by default
+        lb_https = {
+            "name": "https",
+            "alg": "roundrobin",
+            "privateport": 80,
+            "publicport": 443,
+            "protocol": "ssl"
+        }
+        lb_rule_https = LoadBalancerRule.create(
+            self.userapiclient,
+            lb_https,
+            self.public_ip.ipaddress.id,
+            networkid=self.network.id,
+            projectid=self.project.id
+        )
+        lb_rule_https.assign(self.userapiclient, [self.vm_2])
+
+        command = "curl -L --connect-timeout 3 -k --resolve %s:443:%s https://%s/" % (DOMAIN, self.public_ip.ipaddress.ipaddress, DOMAIN)
+        self.wait_for_service_ready(command, None, 1)
+
+        command = "curl -L --connect-timeout 3 --resolve %s:443:%s https://%s/" % (DOMAIN, self.public_ip.ipaddress.ipaddress, DOMAIN)
+        self.wait_for_service_ready(command, None, 1)
+
+        # 4. add cert to LB with port 443
+        lb_rule_https.assignCert(self.userapiclient, self.sslcert.id)
+
+        # 5. verify the website (should get expected content)
+        command = "curl -L --connect-timeout 3 --resolve %s:443:%s https://%s/" % (DOMAIN, self.public_ip.ipaddress.ipaddress, DOMAIN)
+        self.wait_for_service_ready(command, "SSL certificate problem", 1)
+
+        command = "curl -L --connect-timeout 3 -k --resolve %s:443:%s https://%s/" % (DOMAIN, self.public_ip.ipaddress.ipaddress, DOMAIN)
+        self.wait_for_service_ready(command, CONTENT, 1)
+
+        command = "curl -L --connect-timeout 3 --cacert %s --resolve %s:443:%s https://%s/" % (FULL_CHAIN, DOMAIN, self.public_ip.ipaddress.ipaddress, DOMAIN)
+        self.wait_for_service_ready(command, CONTENT, 1)
+
+        # 6. remove cert from LB with port 443
+        lb_rule_https.removeCert(self.userapiclient)
+
+        # 7. delete SSL certificate
+        self.sslcert.delete(self.userapiclient)
