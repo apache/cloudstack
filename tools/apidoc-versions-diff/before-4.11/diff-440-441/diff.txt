@@ -1,0 +1,52 @@
+Added commands:
+
+    updateSnapshotPolicy (Updates the snapshot policy.)
+
+Removed commands:
+
+Changes in command type (sync versus async)
+
+
+Changes in commands arguments:
+
+	listSnapshotPolicies
+
+		Request:
+
+			New parameters: fordisplay (optional), id (optional) 
+
+			Changed parameters: volumeid (old version - required, new version - optional) 
+
+		Response:
+
+			New parameters: fordisplay 
+
+	getUser
+
+		Request:
+
+			New parameters: userapikey (required) 
+
+			Removed parameters: apikey 
+
+	listResourceDetails
+
+		Request:
+
+			New parameters: value (optional) 
+
+	createSnapshotPolicy
+
+		Request:
+
+			New parameters: fordisplay (optional) 
+
+		Response:
+
+			New parameters: fordisplay 
+
+	uploadVolume
+
+		Request:
+
+			New parameters: diskofferingid (optional) 
