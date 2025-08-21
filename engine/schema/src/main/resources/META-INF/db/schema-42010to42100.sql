@@ -757,3 +757,6 @@ SET `cs`.`domain_id` = (
 
 -- Re-apply VPC: update default network offering for vpc tier to conserve_mode=1 (#8309)
 UPDATE `cloud`.`network_offerings` SET conserve_mode = 1 WHERE name = 'DefaultIsolatedNetworkOfferingForVpcNetworks';
+
+-- Add csi_enabled column to kubernetes_cluster table - Move to 4.22
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.kubernetes_cluster', 'csi_enabled', 'TINYINT(1) unsigned NOT NULL DEFAULT 0 COMMENT "true if kubernetes cluster is using csi, false otherwise" ');

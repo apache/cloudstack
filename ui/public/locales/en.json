@@ -961,6 +961,7 @@
 "label.elastic": "Elastic",
 "label.email": "Email",
 "label.enable.autoscale.vmgroup": "Enable AutoScaling Group",
+"label.enable.csi": "Enable CloudStack CSI Driver",
 "label.enable.custom.action": "Enable Custom Action",
 "label.enable.extension": "Enable Extension",
 "label.enable.host": "Enable Host",
