@@ -29,35 +29,35 @@ import com.cloud.serializer.Param;
 public class CiscoNexusVSMResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.EXTERNAL_SWITCH_MGMT_DEVICE_ID)
-    @Param(description = "device id of the Cisco N1KV VSM device")
+    @Param(description = "Device id of the Cisco N1KV VSM device")
     private String id;
 
     @SerializedName(ApiConstants.EXTERNAL_SWITCH_MGMT_DEVICE_NAME)
-    @Param(description = "device name")
+    @Param(description = "Device name")
     private String deviceName;
 
     @SerializedName(ApiConstants.IP_ADDRESS)
-    @Param(description = "the management IP address of the external Cisco Nexus 1000v Virtual Supervisor Module")
+    @Param(description = "The management IP address of the external Cisco Nexus 1000v Virtual Supervisor Module")
     private String vsmmgmtIpAddress;
 
     @SerializedName(ApiConstants.EXTERNAL_SWITCH_MGMT_DEVICE_STATE)
-    @Param(description = "device state")
+    @Param(description = "Device state")
     private String deviceState;
 
     @SerializedName(ApiConstants.VSM_MGMT_VLAN_ID)
-    @Param(description = "management vlan id of the VSM")
+    @Param(description = "Management VLAN id of the VSM")
     private String vsmmgmtvlanid;
 
     @SerializedName(ApiConstants.VSM_CTRL_VLAN_ID)
-    @Param(description = "control vlan id of the VSM")
+    @Param(description = "Control VLAN id of the VSM")
     private int vsmctrlvlanid;
 
     @SerializedName(ApiConstants.VSM_PKT_VLAN_ID)
-    @Param(description = "packet vlan id of the VSM")
+    @Param(description = "Packet VLAN id of the VSM")
     private int vsmpktvlanid;
 
     @SerializedName(ApiConstants.VSM_STORAGE_VLAN_ID)
-    @Param(description = "storage vlan id of the VSM")
+    @Param(description = "Storage VLAN id of the VSM")
     private int vsmstoragevlanid;
 
     @SerializedName(ApiConstants.VSM_DOMAIN_ID)

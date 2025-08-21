@@ -37,7 +37,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 
 @APICommand(name = "restartNetwork",
-            description = "Restarts the network; includes 1) restarting network elements - virtual routers, DHCP servers 2) reapplying all public IPs 3) reapplying loadBalancing/portForwarding rules",
+            description = "Restarts the Network; includes 1) restarting network elements - virtual routers, DHCP servers 2) reapplying all public IPs 3) reapplying loadBalancing/portForwarding rules",
         responseObject = SuccessResponse.class, entityType = {Network.class},
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)

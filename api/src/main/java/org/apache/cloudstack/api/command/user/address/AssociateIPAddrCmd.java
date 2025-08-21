@@ -58,7 +58,7 @@ import com.cloud.projects.Project;
 import com.cloud.user.Account;
 
 @APICommand(name = "associateIpAddress",
-        description = "Acquires and associates a public IP to an account. Either of the parameters are required, i.e. either zoneId, or networkId, or vpcId  ",
+        description = "Acquires and associates a public IP to an Account. Either of the parameters are required, i.e. either zoneId, or networkId, or vpcId  ",
         responseObject = IPAddressResponse.class,
         responseView = ResponseView.Restricted,
         requestHasSensitiveInfo = false,
@@ -72,58 +72,58 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.ACCOUNT,
             type = CommandType.STRING,
-            description = "the account to associate with this IP address")
+            description = "The Account to associate with this IP address")
     private String accountName;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
             type = CommandType.UUID,
             entityType = DomainResponse.class,
-            description = "the ID of the domain to associate with this IP address")
+            description = "The ID of the domain to associate with this IP address")
     private Long domainId;
 
     @Parameter(name = ApiConstants.ZONE_ID,
             type = CommandType.UUID,
             entityType = ZoneResponse.class,
-            description = "the ID of the availability zone you want to acquire an public IP address from")
+            description = "The ID of the availability zone you want to acquire an public IP address from")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.NETWORK_ID,
             type = CommandType.UUID,
             entityType = NetworkResponse.class,
-            description = "The network this IP address should be associated to.")
+            description = "The Network this IP address should be associated to.")
     private Long networkId;
 
     @Parameter(name = ApiConstants.PROJECT_ID,
             type = CommandType.UUID,
             entityType = ProjectResponse.class,
-            description = "Deploy VM for the project")
+            description = "Deploy Instance for the project")
     private Long projectId;
 
     @Parameter(name = ApiConstants.VPC_ID,
             type = CommandType.UUID,
             entityType = VpcResponse.class,
-            description = "the VPC you want the IP address to be associated with")
+            description = "The VPC you want the IP address to be associated with")
     private Long vpcId;
 
     @Parameter(name = ApiConstants.IS_PORTABLE,
             type = BaseCmd.CommandType.BOOLEAN,
-            description = "should be set to true if public IP is required to be transferable across zones, if not specified defaults to false")
+            description = "Should be set to true if public IP is required to be transferable across zones, if not specified defaults to false")
     private Boolean isPortable;
 
     @Parameter(name = ApiConstants.REGION_ID,
             type = CommandType.INTEGER,
             entityType = RegionResponse.class,
             required = false,
-            description = "region ID from where portable IP is to be associated.")
+            description = "Region ID from where portable IP is to be associated.")
     private Integer regionId;
 
     @Parameter(name = ApiConstants.FOR_DISPLAY,
             type = CommandType.BOOLEAN,
-            description = "an optional field, whether to the display the IP to the end user or not", since = "4.4",
+            description = "An optional field, whether to the display the IP to the end User or not", since = "4.4",
             authorized = {RoleType.Admin})
     private Boolean display;
 
-    @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, description="IP Address to be associated")
+    @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, description = "IP Address to be associated")
     private String ipAddress;
 
     /////////////////////////////////////////////////////
@@ -198,21 +198,21 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd implements UserCmd {
             List<? extends Network> networks = _networkService.getIsolatedNetworksOwnedByAccountInZone(getZoneId(), _accountService.getAccount(getEntityOwnerId()));
             if (networks.size() == 0) {
                 String domain = _domainService.getDomain(getDomainId()).getName();
-                throw new InvalidParameterValueException("Account name=" + getAccountName() + " domain=" + domain + " doesn't have virtual networks in zone=" +
+                throw new InvalidParameterValueException("Account name=" + getAccountName() + " domain=" + domain + " doesn't have virtual Networks in zone=" +
                         zone.getName());
             }
 
             if (networks.size() < 1) {
-                throw new InvalidParameterValueException("Account doesn't have any isolated networks in the zone");
+                throw new InvalidParameterValueException("Account doesn't have any isolated Networks in the zone");
             } else if (networks.size() > 1) {
-                throw new InvalidParameterValueException("Account has more than one isolated network in the zone");
+                throw new InvalidParameterValueException("Account has more than one isolated Network in the zone");
             }
 
             return networks.get(0).getId();
         } else {
             Network defaultGuestNetwork = _networkService.getExclusiveGuestNetwork(zoneId);
             if (defaultGuestNetwork == null) {
-                throw new InvalidParameterValueException("Unable to find a default guest network for account " + getAccountName() + " in domain ID=" + getDomainId());
+                throw new InvalidParameterValueException("Unable to find a default guest Network for Account " + getAccountName() + " in domain ID=" + getDomainId());
             } else {
                 return defaultGuestNetwork.getId();
             }
@@ -253,7 +253,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd implements UserCmd {
         } else if (networkId != null) {
             Network network = _networkService.getNetwork(networkId);
             if (network == null) {
-                throw new InvalidParameterValueException("Unable to find network by network id specified");
+                throw new InvalidParameterValueException("Unable to find Network by network id specified");
             }
 
             NetworkOffering offering = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());

@@ -37,7 +37,7 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "createBackupSchedule",
-        description = "Creates a user-defined VM backup schedule",
+        description = "Creates a User-defined Instance backup schedule",
         responseObject = BackupResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class CreateBackupScheduleCmd extends BaseCmd {
@@ -53,19 +53,19 @@ public class CreateBackupScheduleCmd extends BaseCmd {
             type = CommandType.UUID,
             entityType = UserVmResponse.class,
             required = true,
-            description = "ID of the VM for which schedule is to be defined")
+            description = "ID of the Instance for which schedule is to be defined")
     private Long vmId;
 
     @Parameter(name = ApiConstants.INTERVAL_TYPE,
             type = CommandType.STRING,
             required = true,
-            description = "valid values are HOURLY, DAILY, WEEKLY, and MONTHLY")
+            description = "Valid values are HOURLY, DAILY, WEEKLY, and MONTHLY")
     private String intervalType;
 
     @Parameter(name = ApiConstants.SCHEDULE,
             type = CommandType.STRING,
             required = true,
-            description = "custom backup schedule, the format is:"
+            description = "Custom backup schedule, the format is:"
             + "for HOURLY MM*, for DAILY MM:HH*, for WEEKLY MM:HH:DD (1-7)*, for MONTHLY MM:HH:DD (1-28)")
     private String schedule;
 
@@ -129,7 +129,7 @@ public class CreateBackupScheduleCmd extends BaseCmd {
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {
-                throw new CloudRuntimeException("Error while creating backup schedule of VM");
+                throw new CloudRuntimeException("Error while creating backup schedule of Instance");
             }
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());

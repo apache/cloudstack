@@ -1143,8 +1143,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                         continue;
                     }
                     if(_nicSecondaryIpDao.findByIp4AddressAndNicId(ip,nicInSameNetwork.getId()) == null) {
-                        throw new InvalidParameterValueException("VM ip "+ ip + " specified does not belong to " +
-                                "nic in network " + nicInSameNetwork.getNetworkId());
+                        throw new InvalidParameterValueException("Instance IP "+ ip + " specified does not belong to " +
+                                "NIC in Network " + nicInSameNetwork.getNetworkId());
                     }
                 }
             } else {
@@ -1217,11 +1217,11 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 });
                 if (!vmInstanceIds.isEmpty()) {
                     _lb2VmMapDao.remove(loadBalancer.getId(), vmInstanceIds, null);
-                    logger.debug("LB Rollback rule: {} while attaching VM: {}", loadBalancer, vmInstanceIds);
+                    logger.debug("LB Rollback rule: {} while attaching Instance: {}", loadBalancer, vmInstanceIds);
                 }
                 loadBalancer.setState(backupState);
                 _lbDao.persist(loadBalancer);
-                CloudRuntimeException ex = new CloudRuntimeException("Failed to add specified loadbalancerruleid for vms "
+                CloudRuntimeException ex = new CloudRuntimeException("Failed to add specified loadbalancerruleid for Instances "
                     + vmInstanceIds);
                 ex.addProxyObject(loadBalancer.getUuid(), "loadBalancerId");
                 // TBD: Also pack in the instanceIds in the exception using the
@@ -1284,7 +1284,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         // check if LB and Cert belong to the same account
         if (loadBalancer.getAccountId() != certVO.getAccountId()) {
-            throw new InvalidParameterValueException("Access denied for account " + certVO.getAccountId());
+            throw new InvalidParameterValueException("Access denied for Account " + certVO.getAccountId());
         }
 
         String capability = getLBCapability(loadBalancer.getNetworkId(), Capability.SslTermination.getName());
@@ -1456,8 +1456,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             }
 
             if (!applyLoadBalancerConfig(loadBalancerId)) {
-                logger.warn("Failed to remove load balancer rule {} for vms {}", loadBalancer, instanceIds);
-                CloudRuntimeException ex = new CloudRuntimeException("Failed to remove specified load balancer rule id for vms " + instanceIds);
+                logger.warn("Failed to remove load balancer rule {} for Instances {}", loadBalancer, instanceIds);
+                CloudRuntimeException ex = new CloudRuntimeException("Failed to remove specified load balancer rule id for Instances " + instanceIds);
                 ex.addProxyObject(loadBalancer.getUuid(), "loadBalancerId");
                 throw ex;
             }
@@ -1494,12 +1494,12 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
                 loadBalancer.setState(backupState);
                 _lbDao.persist(loadBalancer);
-                logger.debug("LB Rollback rule: {} while removing vm instances", loadBalancer);
+                logger.debug("LB Rollback rule: {} while removing Instances", loadBalancer);
             }
             logger.warn("Unable to apply the load balancer config because resource is unavailable.", e);
         }
         if (!success) {
-            CloudRuntimeException ex = new CloudRuntimeException("Failed to remove specified load balancer rule id for vms " + vmIds);
+            CloudRuntimeException ex = new CloudRuntimeException("Failed to remove specified load balancer rule id for Instances " + vmIds);
             ex.addProxyObject(loadBalancer.getUuid(), "loadBalancerId");
             throw ex;
         }
@@ -1728,7 +1728,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         if (ipVO == null) {
             throw new InvalidParameterValueException("Unable to create load balance rule; can't find/allocate source IP");
         } else if (ipVO.isOneToOneNat()) {
-            throw new NetworkRuleConflictException("Can't do load balance on ip address: " + ipVO.getAddress());
+            throw new NetworkRuleConflictException("Can't do load balance on IP address: " + ipVO.getAddress());
         }
 
         String cidrString = generateCidrString(cidrList);
@@ -1741,7 +1741,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     // set networkId just for verification purposes
                     _networkModel.checkIpForService(ipVO, Service.Lb, networkId);
 
-                    logger.debug("The ip is not associated with the VPC network={} so assigning", network);
+                    logger.debug("The IP is not associated with the VPC Network={} so assigning", network);
                     ipVO = _ipAddrMgr.associateIPToGuestNetwork(ipAddrId, networkId, false);
                     performedIpAssoc = true;
                 }
@@ -1750,7 +1750,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             }
 
             if (ipVO.getAssociatedWithNetworkId() == null) {
-                throw new InvalidParameterValueException("Ip address " + ipVO + " is not assigned to the network " + network);
+                throw new InvalidParameterValueException("IP address " + ipVO + " is not assigned to the network " + network);
             }
 
             result = createPublicLoadBalancer(xId, name, description, srcPortStart, defPortStart, ipVO.getId(), protocol, algorithm, openFirewall, CallContext.current(),
@@ -1899,7 +1899,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     if (e instanceof NetworkRuleConflictException) {
                         throw (NetworkRuleConflictException)e;
                     }
-                    throw new CloudRuntimeException("Unable to add rule for ip address id=" + newRule.getSourceIpAddressId(), e);
+                    throw new CloudRuntimeException("Unable to add rule for IP address id=" + newRule.getSourceIpAddressId(), e);
                 } finally {
                     if (!success && newRule != null) {
                         _firewallMgr.revokeRelatedFirewallRule(newRule.getId(), false);
@@ -2045,7 +2045,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                         for (LoadBalancerVMMapVO lbVmMap : lbVmMaps) {
                             instanceIds.add(lbVmMap.getInstanceId());
                             _lb2VmMapDao.remove(lb.getId(), lbVmMap.getInstanceId(), lbVmMap.getInstanceIp(), null);
-                            logger.debug("Load balancer rule {} is removed for vm {} instance ip {}",
+                            logger.debug("Load balancer rule {} is removed for Instance {} instance IP {}",
                                     lb, lbVmMap.getInstanceId(), lbVmMap.getInstanceIp());;
                         }
 
@@ -2088,11 +2088,11 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                         try {
                             success = handleSystemLBIpRelease(lb);
                         } catch (Exception ex) {
-                            logger.warn("Failed to release system ip as a part of lb rule " + lb + " deletion due to exception ", ex);
+                            logger.warn("Failed to release system IP as a part of lb rule " + lb + " deletion due to exception ", ex);
                             success = false;
                         } finally {
                             if (!success) {
-                                logger.warn("Failed to release system ip as a part of lb rule " + lb + " deletion");
+                                logger.warn("Failed to release system IP as a part of lb rule " + lb + " deletion");
                             }
                         }
                     }
@@ -2112,12 +2112,12 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         IpAddress ip = _ipAddressDao.findById(lb.getSourceIpAddressId());
         boolean success = true;
         if (ip.getSystem()) {
-            logger.debug("Releasing system ip address {} as a part of delete lb rule", ip);
+            logger.debug("Releasing system IP address {} as a part of delete lb rule", ip);
             if (!_ipAddrMgr.disassociatePublicIpAddress(ip, CallContext.current().getCallingUserId(), CallContext.current().getCallingAccount())) {
-                logger.warn("Unable to release system ip address={} as a part of delete lb rule", ip);
+                logger.warn("Unable to release system IP address={} as a part of delete lb rule", ip);
                 success = false;
             } else {
-                logger.warn("Successfully released system ip address={} as a part of delete lb rule", ip);
+                logger.warn("Successfully released system IP address={} as a part of delete lb rule", ip);
             }
         }
         return success;

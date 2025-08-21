@@ -339,7 +339,7 @@ public class KubernetesClusterActionWorker {
 
     protected void deleteTemplateLaunchPermission() {
         if (isDefaultTemplateUsed() && owner != null) {
-            logger.info("Revoking launch permission for systemVM template");
+            logger.info("Revoking launch permission for systemVM Template");
             launchPermissionDao.removePermissions(clusterTemplate.getId(), Collections.singletonList(owner.getId()));
         }
     }
