@@ -584,9 +584,9 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         boolean kvmSnapshotOnlyInPrimaryStorage = snapshotHelper.isKvmSnapshotOnlyInPrimaryStorage(snapshot, dataStoreRole, zoneId);
         logger.debug("Creating volume from snapshot, with dataStore role {} and on primary storage: {}", dataStoreRole, kvmSnapshotOnlyInPrimaryStorage);
 
-        boolean storageSupportSnapshotToTemplateEnabled = snapshotHelper.isStorageSupportSnapshotToTemplate(snapInfo);
+        boolean storageSupportSnapshotToTemplateEnabled = snapshotHelper.isStorageSupportSnapshotToTemplate(snapInfo); // storageSupportSnapshotToTemplateEnabled is true only for StorPool now [TODO: Update to check storage supports snapshot to volume (DataStoreCapabilities.CAN_CREATE_VOLUME_FROM_SNAPSHOT) - may impact other storages, or StorPool storage type only]
         try {
-            if (!storageSupportSnapshotToTemplateEnabled) { // true only for StorPool now [TODO: Update to check storage supports snapshot to volume (DataStoreCapabilities.CAN_CREATE_VOLUME_FROM_SNAPSHOT) - may impact other storages, or StorPool storage type only]
+            if (!storageSupportSnapshotToTemplateEnabled) {
                 dataStoreRole = snapshotHelper.getDataStoreRole(snapshot);
                 snapInfo = snapshotFactory.getSnapshotWithRoleAndZone(snapshot.getId(), dataStoreRole, zoneId);
                 kvmSnapshotOnlyInPrimaryStorage = snapshotHelper.isKvmSnapshotOnlyInPrimaryStorage(snapshot, dataStoreRole);
