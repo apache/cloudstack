@@ -193,16 +193,6 @@ class TestSslOffloading(cloudstackTestCase):
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
 
-        #Create an account, network, VM and IP addresses
-        cls.account = Account.create(
-                            cls.apiclient,
-                            cls.services["account"],
-                            admin=True,
-                            domainid=cls.domain.id
-                            )
-        cls.user = cls.account.user[0]
-        cls.userapiclient = cls.testClient.getUserApiClient(cls.user.username, cls.domain.name)
-
         # Save full chain as a file
         with open(FULL_CHAIN, "w", encoding="utf-8") as f:
             f.write(CERT["certchain"])
@@ -231,6 +221,7 @@ class TestSslOffloading(cloudstackTestCase):
                                         cls.apiclient,
                                         cls.services["service_offerings"]["big"]    # 512MB memory
                                         )
+        cls._cleanup.append(cls.service_offering)
 
         # Create network offering
         cls.services["isolated_network_offering"]["egress_policy"] = "true"
@@ -240,8 +231,17 @@ class TestSslOffloading(cloudstackTestCase):
         cls.network_offering.update(cls.apiclient, state='Enabled')
 
         cls._cleanup.append(cls.network_offering)
-        cls._cleanup.append(cls.service_offering)
+
+        #Create an account, network, VM and IP addresses
+        cls.account = Account.create(
+            cls.apiclient,
+            cls.services["account"],
+            admin=True,
+            domainid=cls.domain.id
+        )
         cls._cleanup.append(cls.account)
+        cls.user = cls.account.user[0]
+        cls.userapiclient = cls.testClient.getUserApiClient(cls.user.username, cls.domain.name)
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()

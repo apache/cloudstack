@@ -1743,13 +1743,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                             .append(",destPortEnd=").append(loadBalancerVO.getDefaultPortEnd())
                             .append(",algorithm=").append(loadBalancerVO.getAlgorithm())
                             .append(",protocol=").append(loadBalancerVO.getLbProtocol());
-                    if (loadBalancerVO.getLbProtocol() != null && loadBalancerVO.getLbProtocol().equals(NetUtils.SSL_PROTO)) {
-                        final LbSslCert sslCert = _lbMgr.getLbSslCert(firewallRuleVO.getId());
-                        if (sslCert != null && ! sslCert.isRevoked()) {
-                            loadBalancingData.append(",sslcert=").append(sourceIp.replace(".", "_")).append('-')
-                                    .append(loadBalancerVO.getSourcePortStart()).append(".pem");
-                        }
-                    }
+                    updateWithLbRuleSslCertificates(loadBalancingData, loadBalancerVO, sourceIp);
                 } else if (firewallRuleVO instanceof ApplicationLoadBalancerRuleVO) {
                     ApplicationLoadBalancerRuleVO appLoadBalancerVO = (ApplicationLoadBalancerRuleVO) firewallRuleVO;
                     loadBalancingData.append(",sourceIp=").append(appLoadBalancerVO.getSourceIp())
@@ -1764,6 +1758,16 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                     loadBalancingData.append(vmMapVO.getInstanceIp()).append(" ");
                 }
                 loadBalancingData.setCharAt(loadBalancingData.length() - 1, ';');
+            }
+        }
+    }
+
+    private void updateWithLbRuleSslCertificates(final StringBuilder loadBalancingData, LoadBalancerVO loadBalancerVO, String sourceIp) {
+        if (NetUtils.SSL_PROTO.equals(loadBalancerVO.getLbProtocol())) {
+            final LbSslCert sslCert = _lbMgr.getLbSslCert(loadBalancerVO.getId());
+            if (sslCert != null && ! sslCert.isRevoked()) {
+                loadBalancingData.append(",sslcert=").append(sourceIp.replace(".", "_")).append('-')
+                        .append(loadBalancerVO.getSourcePortStart()).append(".pem");
             }
         }
     }

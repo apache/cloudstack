@@ -734,20 +734,24 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         final Set<SslCertEntry> sslCertEntries = new HashSet<SslCertEntry>();
         for (final LoadBalancerTO lbTO : lbCmd.getLoadBalancers()) {
             if (lbTO.getSslCert() != null) {
-                final LbSslCert cert = lbTO.getSslCert();
-                if (cert.isRevoked()) {
-                    continue;
-                }
-                if (lbTO.getLbProtocol() == null || ! lbTO.getLbProtocol().equals(NetUtils.SSL_PROTO)) {
-                    continue;
-                }
-                StringBuilder sb = new StringBuilder();
-                final String name = sb.append(lbTO.getSrcIp().replace(".", "_")).append('-').append(lbTO.getSrcPort()).toString();
-                final SslCertEntry sslCertEntry = new SslCertEntry(name, cert.getCert(), cert.getKey(), cert.getChain(), cert.getPassword());
-                sslCertEntries.add(sslCertEntry);
+                addSslCertEntry(sslCertEntries, lbTO);
             }
         }
         final SslCertEntry[] result = sslCertEntries.toArray(new SslCertEntry[sslCertEntries.size()]);
         return result;
+    }
+
+    private void addSslCertEntry(Set<SslCertEntry> sslCertEntries, LoadBalancerTO lbTO) {
+        final LbSslCert cert = lbTO.getSslCert();
+        if (cert.isRevoked()) {
+            return;
+        }
+        if (lbTO.getLbProtocol() == null || ! lbTO.getLbProtocol().equals(NetUtils.SSL_PROTO)) {
+            return;
+        }
+        StringBuilder sb = new StringBuilder();
+        final String name = sb.append(lbTO.getSrcIp().replace(".", "_")).append('-').append(lbTO.getSrcPort()).toString();
+        final SslCertEntry sslCertEntry = new SslCertEntry(name, cert.getCert(), cert.getKey(), cert.getChain(), cert.getPassword());
+        sslCertEntries.add(sslCertEntry);
     }
 }

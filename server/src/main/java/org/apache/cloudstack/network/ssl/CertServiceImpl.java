@@ -441,25 +441,9 @@ public class CertServiceImpl implements CertService {
         }
         PrivateKey privateKey;
         if (privateKeyObj instanceof PKCS8EncryptedPrivateKeyInfo) {
-            if (password == null) {
-                throw new CloudRuntimeException("Key is encrypted by PKCS#8 but password is null");
-            }
-            PKCS8EncryptedPrivateKeyInfo encryptedPrivateKeyInfo = (PKCS8EncryptedPrivateKeyInfo)privateKeyObj;
-            JceOpenSSLPKCS8DecryptorProviderBuilder builder = new JceOpenSSLPKCS8DecryptorProviderBuilder();
-            InputDecryptorProvider decryptor = builder.build(password.toCharArray());
-
-            PrivateKeyInfo privateKeyInfo = encryptedPrivateKeyInfo.decryptPrivateKeyInfo(decryptor);
-            String algorithm = privateKeyInfo.getPrivateKeyAlgorithm().getAlgorithm().getId();
-            KeyFactory keyFactory = KeyFactory.getInstance(algorithm);
-            PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privateKeyInfo.getEncoded());
-            return keyFactory.generatePrivate(keySpec);
+            privateKey = parsePKCS8EncryptedPrivateKeyInfo((PKCS8EncryptedPrivateKeyInfo)privateKeyObj, password);
         } else if (privateKeyObj instanceof PEMEncryptedKeyPair) {
-            if (password == null) {
-                throw new CloudRuntimeException("Key is encrypted but password is null");
-            }
-            PEMEncryptedKeyPair encryptedKeyPair = (PEMEncryptedKeyPair)privateKeyObj;
-            privateKey = new JcaPEMKeyConverter().getKeyPair(
-                    encryptedKeyPair.decryptKeyPair(new JcePEMDecryptorProviderBuilder().build(password.toCharArray()))).getPrivate();
+            privateKey = parsePEMEncryptedKeyPair((PEMEncryptedKeyPair)privateKeyObj, password);
         } else if (privateKeyObj instanceof PEMKeyPair) {
             // Key pair
             PEMKeyPair pemKeyPair = (PEMKeyPair) privateKeyObj;
@@ -473,6 +457,30 @@ public class CertServiceImpl implements CertService {
         }
         pemParser.close();
         return privateKey;
+    }
+
+    private PrivateKey parsePKCS8EncryptedPrivateKeyInfo(PKCS8EncryptedPrivateKeyInfo privateKeyObj, String password)
+            throws IOException, OperatorCreationException, PKCSException, NoSuchAlgorithmException, InvalidKeySpecException {
+        if (password == null) {
+            throw new CloudRuntimeException("Key is encrypted by PKCS#8 but password is null");
+        }
+        PKCS8EncryptedPrivateKeyInfo encryptedPrivateKeyInfo = (PKCS8EncryptedPrivateKeyInfo)privateKeyObj;
+        JceOpenSSLPKCS8DecryptorProviderBuilder builder = new JceOpenSSLPKCS8DecryptorProviderBuilder();
+        InputDecryptorProvider decryptor = builder.build(password.toCharArray());
+
+        PrivateKeyInfo privateKeyInfo = encryptedPrivateKeyInfo.decryptPrivateKeyInfo(decryptor);
+        String algorithm = privateKeyInfo.getPrivateKeyAlgorithm().getAlgorithm().getId();
+        KeyFactory keyFactory = KeyFactory.getInstance(algorithm);
+        PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privateKeyInfo.getEncoded());
+        return keyFactory.generatePrivate(keySpec);
+    }
+
+    private PrivateKey parsePEMEncryptedKeyPair(PEMEncryptedKeyPair encryptedKeyPair, String password) throws IOException {
+        if (password == null) {
+            throw new CloudRuntimeException("Key is encrypted but password is null");
+        }
+        return new JcaPEMKeyConverter().getKeyPair(
+                encryptedKeyPair.decryptKeyPair(new JcePEMDecryptorProviderBuilder().build(password.toCharArray()))).getPrivate();
     }
 
     @Override

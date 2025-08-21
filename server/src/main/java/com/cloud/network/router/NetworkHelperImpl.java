@@ -929,10 +929,7 @@ public class NetworkHelperImpl implements NetworkHelper {
             return false;
         }
 
-        List<String> lbProtocols = Arrays.asList("tcp", "udp", "tcp-proxy", "ssl");
-        if (rule.getLbProtocol() != null && !lbProtocols.contains(rule.getLbProtocol())) {
-            throw new InvalidParameterValueException("protocol " + rule.getLbProtocol() + " is not in valid protocols " + lbProtocols);
-        }
+        validateHAproxyLbProtocol(rule.getLbProtocol());
 
         for (final LoadBalancingRule.LbStickinessPolicy stickinessPolicy : rule.getStickinessPolicies()) {
             final List<Pair<String, String>> paramsList = stickinessPolicy.getParams();
@@ -985,6 +982,13 @@ public class NetworkHelperImpl implements NetworkHelper {
             }
         }
         return true;
+    }
+
+    private void validateHAproxyLbProtocol(String lbProtocol) {
+        List<String> lbProtocols = Arrays.asList("tcp", "udp", "tcp-proxy", "ssl");
+        if (lbProtocol != null && !lbProtocols.contains(lbProtocol)) {
+            throw new InvalidParameterValueException(String.format("protocol %s is not in valid protocols %s", lbProtocol, lbProtocols));
+        }
     }
 
     /*
