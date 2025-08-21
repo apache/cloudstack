@@ -1714,7 +1714,7 @@
   "label.primera.username.tooltip": "సవరణ అధికారాలతో వినియోగదారు పేరు",
   "label.primera.url.tooltip": "ప్రైమెరా స్టోరేజ్ అర్రే ఎండ్‌పాయింట్‌ని నిర్దేశించే URL, ఇలా ఫార్మాట్ చేయబడింది: http[s]://HOSTNAME:PORT?cpg=NAME&hostset=NAME[&skipTlsValidation=true][&snapCPG=NAME][&taskWaitTimeoutMs=#][&keyttl=#][&connectTimeoutMs= ",
   "label.flashArray.username.tooltip": "సవరణ అధికారాలతో వినియోగదారు పేరు",
-  "label.flashArray.url.tooltip": "Flash Array ముగింపు బిందువును నిర్దేశించే URL, ఇలా ఫార్మాట్ చేయబడింది: http[s]://HOSTNAME:PORT?pod=NAME&hostgroup=NAME[&skipTlsValidation=true][&postCopyWaitMs=#][&keyttl=#][&connectTimeoutMs=#][&apiLoginVers ",
+  "label.flashArray.url.tooltip": "FlashArray ముగింపు బిందువును నిర్దేశించే URL, ఇలా ఫార్మాట్ చేయబడింది: http[s]://HOSTNAME:PORT?pod=NAME&hostgroup=NAME[&skipTlsValidation=true][&postCopyWaitMs=#][&keyttl=#][&connectTimeoutMs=#][&apiLoginVers ",
   "label.primary": "ప్రాథమిక",
   "label.primary.storage": "ప్రాథమిక నిల్వ",
   "label.primary.storage.allocated": "ప్రాథమిక నిల్వ కేటాయించబడింది",
