@@ -36,6 +36,7 @@ from nose.plugins.attrib import attr
 
 import os
 import subprocess
+import logging
 
 
 _multiprocess_shared_ = True
@@ -170,11 +171,18 @@ dwa9
     "enabledrevocationcheck": False
 }
 
-USER_DATA="""I2Nsb3VkLWNvbmZpZwoKcnVuY21kOgogIC0gc3VkbyBhcHQtZ2V0IHVwZGF0Z
-QogIC0gc3VkbyBhcHQtZ2V0IGluc3RhbGwgLXkgYXBhY2hlMgogIC0gc3Vkby
-BzeXN0ZW1jdGwgZW5hYmxlIGFwYWNoZTIKICAtIHN1ZG8gc3lzdGVtY3RsIHN0
-YXJ0IGFwYWNoZTIKICAtIGVjaG8gIlRlc3QgcGFnZSIgfHN1ZG8gdGVlIC92YX
-Ivd3d3L2h0bWwvaW5kZXguaHRtbAoKCg=="""
+# Install apache2 via userdata
+USER_DATA="""I2Nsb3VkLWNvbmZpZwpydW5jbWQ6CiAgLSBzdWRvIGFwdC1nZXQgdXBkYXRlCiAgLSBzdWRvIGFw
+dC1nZXQgaW5zdGFsbCAteSBhcGFjaGUyCiAgLSBzdWRvIHN5c3RlbWN0bCBlbmFibGUgYXBhY2hl
+MgogIC0gc3VkbyBzeXN0ZW1jdGwgc3RhcnQgYXBhY2hlMgogIC0gZWNobyAiVGVzdCBwYWdlIiB8
+c3VkbyB0ZWUgL3Zhci93d3cvaHRtbC90ZXN0Lmh0bWwK"""
+#   #cloud-config
+#   runcmd:
+#   - sudo apt-get update
+#   - sudo apt-get install -y apache2
+#   - sudo systemctl enable apache2
+#   - sudo systemctl start apache2
+#   - echo "Test page" |sudo tee /var/www/html/test.html
 
 class TestSslOffloading(cloudstackTestCase):
 
@@ -243,6 +251,11 @@ class TestSslOffloading(cloudstackTestCase):
         cls.user = cls.account.user[0]
         cls.userapiclient = cls.testClient.getUserApiClient(cls.user.username, cls.domain.name)
 
+        cls.logger = logging.getLogger("TestSslOffloading")
+        cls.stream_handler = logging.StreamHandler()
+        cls.logger.setLevel(logging.DEBUG)
+        cls.logger.addHandler(cls.stream_handler)
+
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.cleanup = []
@@ -253,30 +266,32 @@ class TestSslOffloading(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         super(TestSslOffloading, cls).tearDownClass()
+        # Remove full chain file
         if os.path.exists(FULL_CHAIN):
             os.remove(FULL_CHAIN)
 
     def wait_for_service_ready(self, command, expected, retries=60):
         output = None
+        self.logger.debug("======================================")
+        self.logger.debug("Checking output of command '%s', expected result: '%s'" % (command, expected))
         def check_output():
             try:
-                output = subprocess.check_output(command, shell=True).strip().decode('utf-8')
+                output = subprocess.check_output(command + ' 2>&1', shell=True).strip().decode('utf-8')
             except Exception as e:
-                print("Failed to get output of command %s: %s" % (command, e))
+                self.logger.debug("Failed to get output of command '%s': '%s'" % (command, e))
                 if expected is None:
-                    print("But it is expected")
+                    self.logger.debug("But it is expected")
                     return True, None
                 return False, None
-            print("Output of command %s: \n %s" %(command, output))
+            self.logger.debug("Output of command '%s' is '%s'" % (command, output))
             if expected is None:
-                print("But it is expected to be None")
+                self.logger.debug("But it is expected to be None")
                 return False, None
             return (expected in output), None
 
-        res = wait_until(10, retries, check_output)
+        res, _ = wait_until(10, retries, check_output)
         if not res:
             self.fail("Failed to wait for http server to show content '%s'. The output is '%s'" % (expected, output))
-        return res
 
     @attr(tags = ["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_01_ssl_offloading_isolated_network(self):
@@ -355,7 +370,7 @@ class TestSslOffloading(cloudstackTestCase):
             networkid=self.network.id
         )
         lb_rule_http.assign(self.apiclient, [self.vm_1])
-        command = "curl -L --connect-timeout 3 http://%s/" % self.public_ip.ipaddress.ipaddress
+        command = "curl -sL --connect-timeout 3 http://%s/test.html" % self.public_ip.ipaddress.ipaddress
         # wait 10 minutes until the webpage is available. it returns "503 Service Unavailable" if not available
         self.wait_for_service_ready(command, CONTENT, 60)
 
@@ -378,23 +393,23 @@ class TestSslOffloading(cloudstackTestCase):
         )
         lb_rule_https.assign(self.apiclient, [self.vm_1])
 
-        command = "curl -L --connect-timeout 3 -k --resolve %s:443:%s https://%s/" % (DOMAIN, self.public_ip.ipaddress.ipaddress, DOMAIN)
+        command = "curl -L --connect-timeout 3 -k --resolve %s:443:%s https://%s/test.html" % (DOMAIN, self.public_ip.ipaddress.ipaddress, DOMAIN)
         self.wait_for_service_ready(command, None, 1)
 
-        command = "curl -L --connect-timeout 3 --resolve %s:443:%s https://%s/" % (DOMAIN, self.public_ip.ipaddress.ipaddress, DOMAIN)
+        command = "curl -L --connect-timeout 3 --resolve %s:443:%s https://%s/test.html" % (DOMAIN, self.public_ip.ipaddress.ipaddress, DOMAIN)
         self.wait_for_service_ready(command, None, 1)
 
         # 4. add cert to LB with port 443
         lb_rule_https.assignCert(self.apiclient, self.sslcert.id)
 
         # 5. verify the website (should get expected content)
-        command = "curl -L --connect-timeout 3 --resolve %s:443:%s https://%s/" % (DOMAIN, self.public_ip.ipaddress.ipaddress, DOMAIN)
-        self.wait_for_service_ready(command, "SSL certificate problem", 1)
+        command = "curl -L --connect-timeout 3 --resolve %s:443:%s https://%s/test.html" % (DOMAIN, self.public_ip.ipaddress.ipaddress, DOMAIN)
+        self.wait_for_service_ready(command, None, 1)
 
-        command = "curl -L --connect-timeout 3 -k --resolve %s:443:%s https://%s/" % (DOMAIN, self.public_ip.ipaddress.ipaddress, DOMAIN)
+        command = "curl -sL --connect-timeout 3 -k --resolve %s:443:%s https://%s/test.html" % (DOMAIN, self.public_ip.ipaddress.ipaddress, DOMAIN)
         self.wait_for_service_ready(command, CONTENT, 1)
 
-        command = "curl -L --connect-timeout 3 --cacert %s --resolve %s:443:%s https://%s/" % (FULL_CHAIN, DOMAIN, self.public_ip.ipaddress.ipaddress, DOMAIN)
+        command = "curl -sL --connect-timeout 3 --cacert %s --resolve %s:443:%s https://%s/test.html" % (FULL_CHAIN, DOMAIN, self.public_ip.ipaddress.ipaddress, DOMAIN)
         self.wait_for_service_ready(command, CONTENT, 1)
 
         # 6. remove cert from LB with port 443
@@ -505,7 +520,7 @@ class TestSslOffloading(cloudstackTestCase):
             projectid=self.project.id
         )
         lb_rule_http.assign(self.userapiclient, [self.vm_2])
-        command = "curl -L --connect-timeout 3 http://%s/" % self.public_ip.ipaddress.ipaddress
+        command = "curl -sL --connect-timeout 3 http://%s/test.html" % self.public_ip.ipaddress.ipaddress
         # wait 10 minutes until the webpage is available. it returns "503 Service Unavailable" if not available
         self.wait_for_service_ready(command, CONTENT, 60)
 
@@ -527,23 +542,23 @@ class TestSslOffloading(cloudstackTestCase):
         )
         lb_rule_https.assign(self.userapiclient, [self.vm_2])
 
-        command = "curl -L --connect-timeout 3 -k --resolve %s:443:%s https://%s/" % (DOMAIN, self.public_ip.ipaddress.ipaddress, DOMAIN)
+        command = "curl -L --connect-timeout 3 -k --resolve %s:443:%s https://%s/test.html" % (DOMAIN, self.public_ip.ipaddress.ipaddress, DOMAIN)
         self.wait_for_service_ready(command, None, 1)
 
-        command = "curl -L --connect-timeout 3 --resolve %s:443:%s https://%s/" % (DOMAIN, self.public_ip.ipaddress.ipaddress, DOMAIN)
+        command = "curl -L --connect-timeout 3 --resolve %s:443:%s https://%s/test.html" % (DOMAIN, self.public_ip.ipaddress.ipaddress, DOMAIN)
         self.wait_for_service_ready(command, None, 1)
 
         # 4. add cert to LB with port 443
         lb_rule_https.assignCert(self.userapiclient, self.sslcert.id)
 
         # 5. verify the website (should get expected content)
-        command = "curl -L --connect-timeout 3 --resolve %s:443:%s https://%s/" % (DOMAIN, self.public_ip.ipaddress.ipaddress, DOMAIN)
-        self.wait_for_service_ready(command, "SSL certificate problem", 1)
+        command = "curl -L --connect-timeout 3 --resolve %s:443:%s https://%s/test.html" % (DOMAIN, self.public_ip.ipaddress.ipaddress, DOMAIN)
+        self.wait_for_service_ready(command, None, 1)
 
-        command = "curl -L --connect-timeout 3 -k --resolve %s:443:%s https://%s/" % (DOMAIN, self.public_ip.ipaddress.ipaddress, DOMAIN)
+        command = "curl -sL --connect-timeout 3 -k --resolve %s:443:%s https://%s/test.html" % (DOMAIN, self.public_ip.ipaddress.ipaddress, DOMAIN)
         self.wait_for_service_ready(command, CONTENT, 1)
 
-        command = "curl -L --connect-timeout 3 --cacert %s --resolve %s:443:%s https://%s/" % (FULL_CHAIN, DOMAIN, self.public_ip.ipaddress.ipaddress, DOMAIN)
+        command = "curl -sL --connect-timeout 3 --cacert %s --resolve %s:443:%s https://%s/test.html" % (FULL_CHAIN, DOMAIN, self.public_ip.ipaddress.ipaddress, DOMAIN)
         self.wait_for_service_ready(command, CONTENT, 1)
 
         # 6. remove cert from LB with port 443
