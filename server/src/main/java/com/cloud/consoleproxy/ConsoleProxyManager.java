@@ -75,10 +75,10 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
             "Console proxy url domain - domainName,privateip", false, ConfigKey.Scope.Zone, null);
 
     ConfigKey<Integer> ConsoleProxySessionMax = new ConfigKey<>(Integer.class, "consoleproxy.session.max", "Console Proxy", String.valueOf(DEFAULT_PROXY_CAPACITY),
-            "The max number of viewer sessions console proxy is configured to serve for", false, ConfigKey.Scope.Zone, null);
+            "The max number of viewer sessions console proxy is configured to serve for", true, ConfigKey.Scope.Zone, null);
 
     ConfigKey<Integer> ConsoleProxySessionTimeout = new ConfigKey<>(Integer.class, "consoleproxy.session.timeout", "Console Proxy", String.valueOf(DEFAULT_PROXY_SESSION_TIMEOUT),
-            "Timeout(in milliseconds) that console proxy tries to maintain a viewer session before it times out the session for no activity", false, ConfigKey.Scope.Zone, null);
+            "Timeout(in milliseconds) that console proxy tries to maintain a viewer session before it times out the session for no activity", true, ConfigKey.Scope.Zone, null);
 
     ConfigKey<Boolean> ConsoleProxyDisableRpFilter = new ConfigKey<>(Boolean.class, "consoleproxy.disable.rpfilter", "Console Proxy", "true",
             "disable rp_filter on console proxy VM public interface", true, ConfigKey.Scope.Zone, null);
