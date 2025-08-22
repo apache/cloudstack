@@ -3080,6 +3080,9 @@ class LoadBalancerRule:
         if "openfirewall" in services:
             cmd.openfirewall = services["openfirewall"]
 
+        if "protocol" in services:
+            cmd.protocol = services["protocol"]
+
         if projectid:
             cmd.projectid = projectid
 
@@ -3187,6 +3190,22 @@ class LoadBalancerRule:
 
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return apiclient.listLoadBalancerRuleInstances(cmd)
+
+    def assignCert(self, apiclient, certId, forced=None):
+        """"""
+        cmd = assignCertToLoadBalancer.assignCertToLoadBalancerCmd()
+        cmd.lbruleid = self.id
+        cmd.certid = certId
+        if forced is not None:
+            cmd.forced = forced
+        return apiclient.assignCertToLoadBalancer(cmd)
+
+    def removeCert(self, apiclient):
+        """Removes a certificate from a load balancer rule"""
+
+        cmd = removeCertFromLoadBalancer.removeCertFromLoadBalancerCmd()
+        cmd.lbruleid = self.id
+        return apiclient.removeCertFromLoadBalancer(cmd)
 
 
 class Cluster:
@@ -8016,3 +8035,60 @@ class GpuDevice:
         cmd.id = self.id
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return (apiclient.updateGpuDevice(cmd))
+
+
+class SslCertificate:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, services, name, certificate=None, privatekey=None,
+               certchain=None, password=None, enabledrevocationcheck=None,
+               account=None, domainid=None, projectid=None):
+        """Upload SSL certificate"""
+        cmd = uploadSslCert.uploadSslCertCmd()
+        cmd.name = name
+
+        if certificate:
+            cmd.certificate = certificate
+        elif "certificate" in services:
+            cmd.certificate = services["certificate"]
+
+        if privatekey:
+            cmd.privatekey = privatekey
+        elif "privatekey" in services:
+            cmd.privatekey = services["privatekey"]
+
+        if certchain:
+            cmd.certchain = certchain
+        elif "certchain" in services:
+            cmd.certchain = services["certchain"]
+
+        if password:
+            cmd.password = password
+        elif "password" in services:
+            cmd.password = services["password"]
+
+        if enabledrevocationcheck is not None:
+            cmd.enabledrevocationcheck = enabledrevocationcheck
+        elif "enabledrevocationcheck" in services:
+            cmd.enabledrevocationcheck = services["enabledrevocationcheck"]
+
+        if account:
+            cmd.account = account
+
+        if projectid:
+            cmd.projectid = projectid
+
+        if domainid:
+            cmd.domainid = domainid
+
+        return SslCertificate(apiclient.uploadSslCert(cmd, method='POST').__dict__)
+
+    def delete(self, apiclient):
+        """Delete SSL Certificate"""
+
+        cmd = deleteSslCert.deleteSslCertCmd()
+        cmd.id = self.id
+        apiclient.deleteSslCert(cmd)
