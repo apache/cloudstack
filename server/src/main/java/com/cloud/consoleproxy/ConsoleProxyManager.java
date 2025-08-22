@@ -47,11 +47,11 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
     String ALERT_SUBJECT = "proxy-alert";
     String CERTIFICATE_NAME = "CPVMCertificate";
 
-    ConfigKey<Boolean> ConsoleProxySslEnabled = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class, "consoleproxy.sslEnabled", "false",
-            "Enable SSL for console proxy", ConfigKey.Scope.Zone, false);
+    ConfigKey<Boolean> ConsoleProxySslEnabled = new ConfigKey<>(Boolean.class, "consoleproxy.sslEnabled",  ConfigKey.CATEGORY_ADVANCED, "false",
+            "Enable SSL for console proxy", false, ConfigKey.Scope.Zone, null);
 
-    ConfigKey<Boolean> NoVncConsoleDefault = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class, "novnc.console.default", "true",
-        "If true, noVNC console will be default console for virtual machines", ConfigKey.Scope.Zone, true);
+    ConfigKey<Boolean> NoVncConsoleDefault = new ConfigKey<>(Boolean.class, "novnc.console.default", ConfigKey.CATEGORY_ADVANCED, "true",
+        "If true, noVNC console will be default console for virtual machines", false, ConfigKey.Scope.Zone, null);
 
     ConfigKey<Boolean> NoVncConsoleSourceIpCheckEnabled = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class, "novnc.console.sourceip.check.enabled", "false",
         "If true, The source IP to access novnc console must be same as the IP in request to management server for console URL. Needs to reconnect CPVM to management server when this changes (via restart CPVM, or management server, or cloud service in CPVM)", false);
