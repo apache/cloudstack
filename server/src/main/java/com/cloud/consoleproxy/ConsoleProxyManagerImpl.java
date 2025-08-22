@@ -1627,33 +1627,44 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         String warningMessage = String.format("Unable to find a service offering by the UUID or ID for console proxy VM with the value [%s] set in the configuration [%s]", cpvmSrvcOffIdStr, configKey);
         ServiceOfferingVO serviceOfferingVO = null;
         if (cpvmSrvcOffIdStr != null) {
-            serviceOfferingVO = serviceOfferingDao.findByUuid(cpvmSrvcOffIdStr);
-            if (serviceOfferingVO == null) {
-                try {
-                    logger.debug(warningMessage);
-                    serviceOfferingVO = serviceOfferingDao.findById(Long.parseLong(cpvmSrvcOffIdStr));
-                } catch (NumberFormatException ex) {
-                    logger.warn(String.format("Unable to find a service offering by the ID for console proxy VM with the value [%s] set in the configuration [%s]. The value is not a valid integer number. Error: [%s].", cpvmSrvcOffIdStr, configKey, ex.getMessage()), ex);
-                }
-            }
-            if (serviceOfferingVO == null) {
-                logger.warn(warningMessage);
-            }
+            serviceOfferingVO = getServiceOfferingByUuidOrId(cpvmSrvcOffIdStr, warningMessage, configKey);
         }
 
         if (serviceOfferingVO == null || !serviceOfferingVO.isSystemUse()) {
-            int ramSize = NumbersUtil.parseInt(configurationDao.getValue("console.ram.size"), DEFAULT_PROXY_VM_RAMSIZE);
-            int cpuFreq = NumbersUtil.parseInt(configurationDao.getValue("console.cpu.mhz"), DEFAULT_PROXY_VM_CPUMHZ);
-            List<ServiceOfferingVO> offerings = serviceOfferingDao.createSystemServiceOfferings("System Offering For Console Proxy",
-                    ServiceOffering.consoleProxyDefaultOffUniqueName, 1, ramSize, cpuFreq, 0, 0, false, null,
-                    Storage.ProvisioningType.THIN, true, null, true, VirtualMachine.Type.ConsoleProxy, true);
-
-            if (offerings == null || offerings.size() < 2) {
-                String msg = "Data integrity problem : System Offering For Console Proxy has been removed?";
-                logger.error(msg);
-                throw new ConfigurationException(msg);
-            }
+            logger.debug("Service offering for console proxy VM is not set or not a system service offering. Creating a default service offering.");
+            createServiceOfferingForConsoleProxy();
         }
         return serviceOfferingVO;
+    }
+
+    private ServiceOfferingVO getServiceOfferingByUuidOrId(String cpvmSrvcOffIdStr, String warningMessage, String configKey) {
+        ServiceOfferingVO serviceOfferingVO = serviceOfferingDao.findByUuid(cpvmSrvcOffIdStr);
+        if (serviceOfferingVO == null) {
+            try {
+                logger.debug(warningMessage);
+                serviceOfferingVO = serviceOfferingDao.findById(Long.parseLong(cpvmSrvcOffIdStr));
+            } catch (NumberFormatException ex) {
+                logger.warn(String.format("Unable to find a service offering by the ID for console proxy VM with the value [%s] set in the configuration [%s]. The value is not a valid integer number. Error: [%s].", cpvmSrvcOffIdStr, configKey, ex.getMessage()), ex);
+            }
+        }
+        if (serviceOfferingVO == null) {
+            logger.warn(warningMessage);
+        }
+
+        return serviceOfferingVO;
+    }
+
+    private void createServiceOfferingForConsoleProxy() throws ConfigurationException {
+        int ramSize = NumbersUtil.parseInt(configurationDao.getValue("console.ram.size"), DEFAULT_PROXY_VM_RAMSIZE);
+        int cpuFreq = NumbersUtil.parseInt(configurationDao.getValue("console.cpu.mhz"), DEFAULT_PROXY_VM_CPUMHZ);
+        List<ServiceOfferingVO> offerings = serviceOfferingDao.createSystemServiceOfferings("System Offering For Console Proxy",
+                ServiceOffering.consoleProxyDefaultOffUniqueName, 1, ramSize, cpuFreq, 0, 0, false, null,
+                Storage.ProvisioningType.THIN, true, null, true, VirtualMachine.Type.ConsoleProxy, true);
+
+        if (offerings == null || offerings.size() < 2) {
+            String msg = "Data integrity problem : System Offering For Console Proxy has been removed?";
+            logger.error(msg);
+            throw new ConfigurationException(msg);
+        }
     }
 }

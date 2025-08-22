@@ -57,7 +57,7 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
         "If true, The source IP to access novnc console must be same as the IP in request to management server for console URL. Needs to reconnect CPVM to management server when this changes (via restart CPVM, or management server, or cloud service in CPVM)", false);
 
     ConfigKey<String> ConsoleProxyServiceOffering = new ConfigKey<>(String.class, "consoleproxy.service.offering", "Console Proxy", null,
-            "Uuid of the service offering used by console proxy; if NULL - system offering will be used", false, ConfigKey.Scope.Zone, null);
+            "Uuid of the service offering used by console proxy; if NULL - system offering will be used", true, ConfigKey.Scope.Zone, null);
 
     ConfigKey<String> ConsoleProxyCapacityStandby = new ConfigKey<>(String.class, "consoleproxy.capacity.standby", "Console Proxy", String.valueOf(DEFAULT_STANDBY_CAPACITY),
             "The minimal number of console proxy viewer sessions that system is able to serve immediately(standby capacity)", false, ConfigKey.Scope.Zone, null);
@@ -69,7 +69,7 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
             "Console proxy command port that is used to communicate with management server", false, ConfigKey.Scope.Zone, null);
 
     ConfigKey<Boolean> ConsoleProxyRestart = new ConfigKey<>(Boolean.class, "consoleproxy.restart", "Console Proxy", "true",
-            "Console proxy restart flag, defaults to true", false, ConfigKey.Scope.Zone, null);
+            "Console proxy restart flag, defaults to true", true, ConfigKey.Scope.Zone, null);
 
     ConfigKey<String> ConsoleProxyUrlDomain = new ConfigKey<>(String.class, "consoleproxy.url.domain", "Console Proxy", "",
             "Console proxy url domain - domainName,privateip", false, ConfigKey.Scope.Zone, null);
@@ -81,7 +81,7 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
             "Timeout(in milliseconds) that console proxy tries to maintain a viewer session before it times out the session for no activity", false, ConfigKey.Scope.Zone, null);
 
     ConfigKey<Boolean> ConsoleProxyDisableRpFilter = new ConfigKey<>(Boolean.class, "consoleproxy.disable.rpfilter", "Console Proxy", "true",
-            "disable rp_filter on console proxy VM public interface", false, ConfigKey.Scope.Zone, null);
+            "disable rp_filter on console proxy VM public interface", true, ConfigKey.Scope.Zone, null);
 
     ConfigKey<Integer> ConsoleProxyLaunchMax = new ConfigKey<>(Integer.class, "consoleproxy.launch.max", "Console Proxy", "10",
             "maximum number of console proxy instances per zone can be launched", false, ConfigKey.Scope.Zone, null);

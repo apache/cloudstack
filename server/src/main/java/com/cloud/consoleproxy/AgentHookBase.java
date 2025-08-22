@@ -20,6 +20,7 @@ package com.cloud.consoleproxy;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Date;
+import java.util.Objects;
 
 import org.apache.cloudstack.consoleproxy.ConsoleAccessManager;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -214,7 +215,9 @@ public abstract class AgentHookBase implements AgentHook {
 
             HostVO consoleProxyHost = findConsoleProxyHost(startupCmd);
 
-            assert (consoleProxyHost != null);
+            if (Objects.isNull(consoleProxyHost)) {
+                throw new IllegalStateException("Console proxy host is null");
+            }
 
             Long datacenterId = consoleProxyHost.getDataCenterId();
             String consoleProxyUrlDomain = ConsoleProxyManager.ConsoleProxyUrlDomain.valueIn(datacenterId);
