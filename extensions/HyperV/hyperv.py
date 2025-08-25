@@ -16,6 +16,9 @@
 # specific language governing permissions and limitations
 # under the License.
 
+import warnings
+warnings.filterwarnings('ignore')
+
 import json
 import sys
 import winrm
