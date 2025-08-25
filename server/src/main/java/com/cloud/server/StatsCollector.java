@@ -170,10 +170,10 @@ import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
 import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
 import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
-import com.google.gson.reflect.TypeToken;
 import com.sun.management.OperatingSystemMXBean;
 
 /**
@@ -293,7 +293,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
     private static StatsCollector s_instance = null;
 
-    private static Gson gson = new Gson();
+    private static Gson gson = new GsonBuilder()
+            .setDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
+            .create();
 
     private ScheduledExecutorService _executor = null;
     @Inject
@@ -1158,9 +1160,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 logger.debug(String.format("StatusUpdate from %s, json: %s", pdu.getSourcePeer(), pdu.getJsonPackage()));
             }
 
-            ManagementServerHostStatsEntry hostStatsEntry = null;
+            ManagementServerHostStatsEntry hostStatsEntry;
             try {
-                hostStatsEntry = gson.fromJson(pdu.getJsonPackage(),new TypeToken<ManagementServerHostStatsEntry>(){}.getType());
+                hostStatsEntry = gson.fromJson(pdu.getJsonPackage(), ManagementServerHostStatsEntry.class);
                 managementServerHostStats.put(hostStatsEntry.getManagementServerHostUuid(), hostStatsEntry);
 
                 // Update peer state to Up in mshost_peer
