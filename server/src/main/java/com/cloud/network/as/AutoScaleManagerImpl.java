@@ -1979,12 +1979,19 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                 RandomStringUtils.random(VM_HOSTNAME_RANDOM_SUFFIX_LENGTH, 0, 0, true, false, (char[])null, new SecureRandom()).toLowerCase();
         // Truncate vm group name because max length of vm name is 63
         int subStringLength = Math.min(asGroup.getName().length(), 63 - VM_HOSTNAME_PREFIX.length() - vmHostNameSuffix.length());
-        String displayName = VM_HOSTNAME_PREFIX + asGroup.getName().substring(0, subStringLength) + vmHostNameSuffix;
-        String hostName = displayName;
-        if (isWindows) {
-            hostName = displayName.substring(Math.max(0, displayName.length() - 15));
+        String name = VM_HOSTNAME_PREFIX + asGroup.getName().substring(0, subStringLength) + vmHostNameSuffix;
+        if (!isWindows) {
+            return new Pair<>(name, name);
         }
-        return new Pair<>(hostName, displayName);
+        String hostName = name.substring(Math.max(0, name.length() - 15));
+        if (Character.isLetterOrDigit(hostName.charAt(0))) {
+            return new Pair<>(hostName, name);
+        }
+        String temp = name.substring(0, Math.max(0, name.length() - 15)).replaceAll("[^a-zA-Z0-9]", "");
+        if (!temp.isEmpty()) {
+            return new Pair<>(temp.charAt(temp.length() - 1) + hostName.substring(1), name);
+        }
+        return new Pair<>('a' + hostName.substring(1), name);
     }
 
     @Override
