@@ -281,10 +281,8 @@ export default {
       this.sendValuesTimed()
     },
     getDefaultNetwork (record) {
-      console.log('getDefaultNetwork', record, this.values, this.validNetworks)
-      if (record.vlanid) {
+      if (record.vlanid && record.vlanid !== -1) {
         const matched = this.validNetworks[record.id].filter(x => Number(x.vlan) === record.vlanid)
-        console.log('matched', matched)
         if (matched.length > 0) {
           this.handleNetworkChange(record, matched[0].id)
           return matched[0].id
