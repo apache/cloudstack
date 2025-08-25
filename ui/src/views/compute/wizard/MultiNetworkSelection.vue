@@ -47,7 +47,7 @@
           <a-select
             style="width: 100%"
             v-if="validNetworks[record.id] && validNetworks[record.id].length > 0"
-            :defaultValue="validNetworks[record.id][0].id"
+            :defaultValue="getDefaultNetwork(record)"
             @change="val => handleNetworkChange(record, val)"
             showSearch
             optionFilterProp="label"
@@ -279,6 +279,18 @@ export default {
         this.setIpAddressEnabled(nic, _.find(this.validNetworks[nic.id], (option) => option.id === networkId))
       }
       this.sendValuesTimed()
+    },
+    getDefaultNetwork (record) {
+      console.log('getDefaultNetwork', record, this.values, this.validNetworks)
+      if (record.vlanid) {
+        const matched = this.validNetworks[record.id].filter(x => Number(x.vlan) === record.vlanid)
+        console.log('matched', matched)
+        if (matched.length > 0) {
+          this.handleNetworkChange(record, matched[0].id)
+          return matched[0].id
+        }
+      }
+      return this.validNetworks[record.id][0].id
     },
     sendValuesTimed () {
       clearTimeout(this.sendValuesTimer)
