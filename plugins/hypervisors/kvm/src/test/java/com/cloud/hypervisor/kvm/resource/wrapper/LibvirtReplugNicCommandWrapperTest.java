@@ -252,9 +252,6 @@ public class LibvirtReplugNicCommandWrapperTest {
                         + "<inbound average='25600' peak='25600'/>\n"
                         + "<outbound average='25600' peak='25600'/>\n"
                         + "</bandwidth>\n"
-                        + "<vlan trunk='no'>\n"
-                        + "<tag id='234'/>\n"
-                        + "</vlan>"
                         + "<link state='up'/>\n"
                         + "</interface>\n";
         final String expectedAttachXml =
