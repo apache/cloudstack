@@ -240,6 +240,12 @@ public class LibvirtDomainXMLParser {
                 } else if (type.equalsIgnoreCase("bridge")) {
                     String bridge = getAttrValue("source", "bridge", nic);
                     def.defBridgeNet(bridge, dev, mac, NicModel.valueOf(model.toUpperCase()), networkRateKBps);
+                    if (StringUtils.isNotBlank(bridge)) {
+                        Integer vlanId = extractVlanFromBridgeName(bridge);
+                        if (vlanId != null) {
+                            def.setVlanTag(vlanId);
+                        }
+                    }
                 } else if (type.equalsIgnoreCase("ethernet")) {
                     String scriptPath = getAttrValue("script", "path", nic);
                     def.defEthernet(dev, mac, NicModel.valueOf(model.toUpperCase()), scriptPath, networkRateKBps);
@@ -566,5 +572,23 @@ public class LibvirtDomainXMLParser {
                 cpuModeDef.setTopology(Integer.parseInt(cores), Integer.parseInt(sockets));
             }
         }
+    }
+
+    private Integer extractVlanFromBridgeName(String bridge) {
+        if (!bridge.startsWith("br")) {
+            return null;
+        }
+        String[] splitByDash = bridge.split("-");
+        if (splitByDash.length < 2) {
+            return null;
+        }
+        try {
+            Integer vlanId = Integer.parseInt(splitByDash[splitByDash.length - 1]);
+            if (vlanId >=1 && vlanId <= 4094) {
+                return vlanId;
+            }
+        } catch (NumberFormatException e) {
+        }
+        return null;
     }
 }
