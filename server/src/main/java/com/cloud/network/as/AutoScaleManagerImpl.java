@@ -1980,7 +1980,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         // Truncate vm group name because max length of vm name is 63
         int subStringLength = Math.min(asGroup.getName().length(), 63 - VM_HOSTNAME_PREFIX.length() - vmHostNameSuffix.length());
         String name = VM_HOSTNAME_PREFIX + asGroup.getName().substring(0, subStringLength) + vmHostNameSuffix;
-        if (!isWindows) {
+        if (!isWindows || name.length() <= 15) {
             return new Pair<>(name, name);
         }
         String hostName = name.substring(Math.max(0, name.length() - 15));
