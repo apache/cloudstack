@@ -294,7 +294,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private static StatsCollector s_instance = null;
 
     private static Gson gson = new GsonBuilder()
-            .setDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
+            .setDateFormat(GsonHelper.DATE_FORMAT)
             .create();
 
     private ScheduledExecutorService _executor = null;
