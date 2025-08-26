@@ -23,9 +23,12 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.Snapshot;
+import com.cloud.utils.fsm.NoTransitionException;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
@@ -73,7 +76,7 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
         for (SnapshotDataStoreVO snapshotDataStoreVO : allSnapshotsFromVolumeAndDataStore) {
             DataStore store = storeMgr.getDataStore(snapshotDataStoreVO.getDataStoreId(), role);
             SnapshotVO snapshot = snapshotDao.findById(snapshotDataStoreVO.getSnapshotId());
-            if (snapshot == null){ //snapshot may have been removed;
+            if (snapshot == null) { //snapshot may have been removed;
                 continue;
             }
             SnapshotObject info = SnapshotObject.getSnapshotObject(snapshot, store);
@@ -106,8 +109,6 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
         }
         return infos;
     }
-
-
 
     @Override
     public SnapshotInfo getSnapshot(long snapshotId, long storeId, DataStoreRole role) {
@@ -202,4 +203,15 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
         return snapObjs;
     }
 
+    @Override
+    public void updateOperationFailed(long snapshotId) throws NoTransitionException {
+        List<SnapshotDataStoreVO> snapshotStoreRefs = snapshotStoreDao.findBySnapshotId(snapshotId);
+        for (SnapshotDataStoreVO snapshotStoreRef : snapshotStoreRefs) {
+            SnapshotInfo snapshotInfo = getSnapshot(snapshotStoreRef.getSnapshotId(), snapshotStoreRef.getDataStoreId(), snapshotStoreRef.getRole());
+            if (snapshotInfo != null) {
+                ((SnapshotObject)snapshotInfo).processEvent(Snapshot.Event.OperationFailed);
+                snapshotInfo.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
+            }
+        }
+    }
 }

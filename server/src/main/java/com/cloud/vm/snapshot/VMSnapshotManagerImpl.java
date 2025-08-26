@@ -28,6 +28,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.utils.fsm.NoTransitionException;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
@@ -196,11 +197,6 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
 
     @Override
     public boolean start() {
-        //Remove VM Snapshots in allocated state
-        List<VMSnapshotVO> allocatedVMSnapshots = _vmSnapshotDao.listAllByStatus(VMSnapshot.State.Allocated);
-        for (VMSnapshotVO vmSnapshot : allocatedVMSnapshots) {
-            _vmSnapshotDao.remove(vmSnapshot.getId());
-        }
         return true;
     }
 
@@ -1390,6 +1386,12 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             }
         }
         return true;
+    }
+
+    @Override
+    public void updateOperationFailed(VMSnapshot vmSnapshot) throws NoTransitionException {
+        VMSnapshotStrategy strategy = findVMSnapshotStrategy(vmSnapshot);
+        strategy.updateOperationFailed(vmSnapshot);
     }
 
     @Override
