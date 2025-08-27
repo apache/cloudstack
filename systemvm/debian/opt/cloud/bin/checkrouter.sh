@@ -18,17 +18,21 @@
 
 STATUS=UNKNOWN
 
-ROUTER_TYPE=$(cat /etc/cloudstack/cmdline.json | grep type | awk '{print $2;}' | sed -e 's/[,\"]//g')
-if [ "$ROUTER_TYPE" = "vpcrouter" ];then
-    GUEST_NICS=$(python3 -c "
+get_guest_nics() {
+  python3 -c "
 import json
 data = json.load(open('/etc/cloudstack/ips.json'))
 for nic, objs in data.items():
-   if isinstance(objs, list):
-       for obj in objs:
-           if obj.get('nw_type') == 'guest' and obj.get('add'):
-               print(nic)
-                     ")
+  if isinstance(objs, list):
+      for obj in objs:
+          if obj.get('nw_type') == 'guest' and obj.get('add'):
+              print(nic)
+                    "
+}
+
+ROUTER_TYPE=$(cat /etc/cloudstack/cmdline.json | grep type | awk '{print $2;}' | sed -e 's/[,\"]//g')
+if [ "$ROUTER_TYPE" = "vpcrouter" ];then
+    GUEST_NICS=$(get_guest_nics)
     if [ "$GUEST_NICS" = "" ];then
         echo "Status: ${STATUS}"
         exit
