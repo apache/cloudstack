@@ -34,6 +34,13 @@ class StatusCodes:
     STOPPED      = 4
     STARTING     = 5
 
+# see com.cloud.network.VirtualNetworkApplianceService.RouterHealthStatus and make sure to keep it alligned
+class RouterHealthStatus:
+    SUCCESS = "SUCCESS"
+    FAILED  = "FAILED"
+    WARNING = "WARNING"
+    UNKNOWN = "UNKNOWN"
+
 class Log:
     INFO = 'INFO'
     ALERT = 'ALERT'
@@ -299,24 +306,25 @@ def execute(script, checkType = "basic"):
     output = pout.communicate()[0].decode().strip()
     checkEndTime = time.time()
 
-    if exitStatus == 0:
-        if len(output) > 0:
-            printd("Successful execution of " + script)
-            return {
-                "success": "true",
-                "lastUpdate": str(int(checkStartTime * 1000)),
-                "lastRunDuration": str((checkEndTime - checkStartTime) * 1000),
-                "message": output
-            }
-        return {} #Skip script if no output is received
-    else:
-        printd("Script execution failed " + script)
-        return {
-            "success": "false",
-            "lastUpdate": str(int(checkStartTime * 1000)),
-            "lastRunDuration": str((checkEndTime - checkStartTime) * 1000),
-            "message": output
-        }
+    if not len(output) > 0:
+        output = ""
+
+    routerHealth = RouterHealthStatus.SUCCESS
+    match exitStatus:
+        case 1:
+            routerHealth = RouterHealthStatus.FAILED
+        case 2:
+            routerHealth = RouterHealthStatus.WARNING
+        case 3:
+            routerHealth = RouterHealthStatus.UNKNOWN
+
+    printd("Ended execution of " + script)
+    return {
+        "success": routerHealth,
+        "lastUpdate": str(int(checkStartTime * 1000)),
+        "lastRunDuration": str((checkEndTime - checkStartTime) * 1000),
+        "message": output
+    }
 
 def main(checkType = "basic"):
     startTime = time.time()
@@ -349,7 +357,7 @@ def main(checkType = "basic"):
                 ret = execute(fpath, checkType)
                 if len(ret) == 0:
                     continue
-                if "success" in ret and ret["success"].lower() == "false":
+                if "success" in ret and ret["success"].upper() == RouterHealthStatus.FAILED:
                     failingChecks.append(f)
                 monitResult[f] = ret
 
