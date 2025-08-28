@@ -204,7 +204,7 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
     @Param(description = "Maximum size of the cluster")
     private Long maxSize;
 
-    @SerializedName(ApiConstants.IS_CSI_ENABLED)
+    @SerializedName(ApiConstants.CSI_ENABLED)
     @Param(description = "Indicates if the CloudStack CSI driver has been setup in the cluster")
     private Boolean isCsiEnabled;
 

@@ -132,6 +132,7 @@ public class ApiConstants {
     public static final String CNI_CONFIG_ID = "cniconfigurationid";
     public static final String CNI_CONFIG_DETAILS = "cniconfigdetails";
     public static final String CNI_CONFIG_NAME = "cniconfigname";
+    public static final String CSI_ENABLED = "csienabled";
     public static final String COMPONENT = "component";
     public static final String CPU = "CPU";
     public static final String CPU_CORE_PER_SOCKET = "cpucorepersocket";
@@ -325,7 +326,6 @@ public class ApiConstants {
     public static final String IP_TOTAL = "iptotal";
     public static final String IS_CONTROL_NODE = "iscontrolnode";
     public static final String IS_CLEANUP_REQUIRED = "iscleanuprequired";
-    public static final String IS_CSI_ENABLED = "iscsienabled";
     public static final String IS_DYNAMIC = "isdynamic";
     public static final String IS_EDGE = "isedge";
     public static final String IS_ENCRYPTED = "isencrypted";

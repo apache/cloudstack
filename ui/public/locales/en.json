@@ -687,6 +687,7 @@
 "label.cron": "Cron expression",
 "label.cron.mode": "Cron mode",
 "label.crosszones": "Cross Zones",
+"label.csienabled": "CSI Enabled",
 "label.currency": "Currency",
 "label.current": "Current",
 "label.current.storage": "Current storage",
