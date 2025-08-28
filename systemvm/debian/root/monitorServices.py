@@ -306,8 +306,9 @@ def execute(script, checkType = "basic"):
     output = pout.communicate()[0].decode().strip()
     checkEndTime = time.time()
 
-    if not len(output) > 0:
-        output = ""
+    # we run all scripts and have to ignore the ones that do nothing
+    if not len(output) > 0 and exitStatus == 0:
+        return {}
 
     routerHealth = RouterHealthStatus.SUCCESS
     match exitStatus:
