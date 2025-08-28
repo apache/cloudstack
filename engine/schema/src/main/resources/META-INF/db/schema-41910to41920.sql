@@ -43,7 +43,3 @@ CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Read-Only Admin - Default', 'va
 
 CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Support Admin - Default', 'setupUserTwoFactorAuthentication', 'ALLOW');
 CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Support Admin - Default', 'validateUserTwoFactorAuthenticationCode', 'ALLOW');
-
--- add status warn and unknown to router health checks
-
-CALL `cloud`.`IDEMPOTENT_CHANGE_COLUMN`('cloud.router_health_check', 'check_result', 'check_result', 'VACHAR(16) NOT NULL COMMENT "check executions for success or (fatal) failure"')
