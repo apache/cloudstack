@@ -367,16 +367,26 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         logTransitStateAndThrow(logLevel, message, null, null, ex);
     }
 
-    private boolean isKubernetesServiceNetworkOfferingConfigured(DataCenter zone) {
+    private boolean isKubernetesServiceNetworkOfferingConfigured(DataCenter zone, Long networkId) {
         // Check network offering
         String networkOfferingName = KubernetesClusterNetworkOffering.value();
-        if (networkOfferingName == null || networkOfferingName.isEmpty()) {
-            logger.warn(String.format("Global setting %s is empty. Admin has not yet specified the network offering to be used for provisioning isolated network for the cluster", KubernetesClusterNetworkOffering.key()));
+        if (StringUtils.isEmpty(networkOfferingName) && networkId == null) {
+            logger.warn("Global setting: {} is empty. Admin has not yet specified the network offering to be used for provisioning isolated network for the cluster nor has a pre-created network been passed", KubernetesClusterNetworkOffering.key());
             return false;
         }
-        NetworkOfferingVO networkOffering = networkOfferingDao.findByUniqueName(networkOfferingName);
+        NetworkOfferingVO networkOffering = null;
+        if (networkId != null) {
+            NetworkVO network = networkDao.findById(networkId);
+            if (network == null) {
+                logger.warn("Unable to find the network with ID: {} passed for the Kubernetes cluster", networkId);
+                return false;
+            }
+            networkOffering = networkOfferingDao.findById(network.getNetworkOfferingId());
+        } else if (StringUtils.isNotEmpty(networkOfferingName)) {
+            networkOffering = networkOfferingDao.findByUniqueName(networkOfferingName);
+        }
         if (networkOffering == null) {
-            logger.warn(String.format("Unable to find the network offering %s to be used for provisioning Kubernetes cluster", networkOfferingName));
+            logger.warn("Unable to find the network offering: {} to be used for provisioning Kubernetes cluster", networkOfferingName);
             return false;
         }
         if (networkOffering.getState() == NetworkOffering.State.Disabled) {
@@ -413,8 +423,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         return true;
     }
 
-    private boolean isKubernetesServiceConfigured(DataCenter zone) {
-        if (!isKubernetesServiceNetworkOfferingConfigured(zone)) {
+    private boolean isKubernetesServiceConfigured(DataCenter zone, Long networkId) {
+        if (!isKubernetesServiceNetworkOfferingConfigured(zone, networkId)) {
             return false;
         }
         return true;
@@ -852,7 +862,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
         DataCenter zone = validateAndGetZoneForKubernetesCreateParameters(zoneId, networkId);
 
-        if (!isKubernetesServiceConfigured(zone)) {
+        if (!isKubernetesServiceConfigured(zone, networkId)) {
             throw new CloudRuntimeException("Kubernetes service has not been configured properly to provision Kubernetes clusters");
         }
 
