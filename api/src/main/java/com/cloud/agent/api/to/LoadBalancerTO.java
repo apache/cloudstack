@@ -71,7 +71,7 @@ public class LoadBalancerTO {
         this.destinations = new DestinationTO[destinations.size()];
         this.stickinessPolicies = null;
         this.sslCert = null;
-        this.lbProtocol = null;
+        this.lbProtocol = protocol;
         int i = 0;
         for (LbDestination destination : destinations) {
             this.destinations[i++] = new DestinationTO(destination.getIpAddress(), destination.getDestinationPortStart(), destination.isRevoked(), false);
