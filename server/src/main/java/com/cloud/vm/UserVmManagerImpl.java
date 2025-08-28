@@ -2319,6 +2319,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (Volume.State.Destroy.equals(volume.getState())) {
             _volumeService.recoverVolume(volume.getId());
             _volsDao.attachVolume(volume.getId(), vmId, ROOT_DEVICE_ID);
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_ATTACH, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+                    volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid(), vmId, volume.isDisplay());
         } else {
             _volumeService.publishVolumeCreationUsageEvent(volume);
         }
@@ -7283,7 +7285,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.primary_storage, new Long(volume.getSize()));
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
                             volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(),
-                            volume.getUuid(), volume.isDisplayVolume());
+                            volume.getUuid(), volume.getInstanceId(), volume.isDisplayVolume());
                 }
 
                 //update resource count of new account
@@ -7901,6 +7903,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 handleManagedStorage(vm, root);
 
                 _volsDao.attachVolume(newVol.getId(), vmId, newVol.getDeviceId());
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_ATTACH, newVol.getAccountId(), newVol.getDataCenterId(), newVol.getId(), newVol.getName(),
+                        newVol.getDiskOfferingId(), newVol.getTemplateId(), newVol.getSize(), Volume.class.getName(), newVol.getUuid(), vmId, newVol.isDisplay());
 
                 // Detach, destroy and create the usage event for the old root volume.
                 _volsDao.detachVolume(root.getId());
