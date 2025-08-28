@@ -44,6 +44,7 @@ import javax.inject.Inject;
 
 import com.cloud.domain.Domain;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.projects.ProjectVO;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
@@ -162,6 +163,8 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
     private final Class<?>[] assignableClasses = {GenericPresetVariable.class, ComputingResources.class};
 
+    private Set<Account.Type> accountTypesThatCanListAllQuotaSummaries = Sets.newHashSet(Account.Type.ADMIN, Account.Type.DOMAIN_ADMIN);
+
     @Override
     public QuotaTariffResponse createQuotaTariffResponse(QuotaTariffVO tariff, boolean returnActivationRule) {
         final QuotaTariffResponse response = new QuotaTariffResponse();
@@ -189,12 +192,31 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     public Pair<List<QuotaSummaryResponse>, Integer> createQuotaSummaryResponse(QuotaSummaryCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
 
-        Long accountId = caller.getId();
-        if (caller.getType() != Account.Type.NORMAL) {
-            accountId = cmd.getEntityOwnerId();
-            if (accountId == -1) {
-                accountId = null;
-            }
+        if (cmd.getProjectId() != null && !cmd.isListAll() && accountTypesThatCanListAllQuotaSummaries.contains(caller.getType())) {
+            ProjectVO projectVO = projectDao.findById(cmd.getProjectId());
+            Long projectAccountId = projectVO.getProjectAccountId();
+            return getQuotaSummaryResponse(projectAccountId, null, null, null, cmd);
+        }
+
+        else if (cmd.getAccountId() != null && !cmd.isListAll() && accountTypesThatCanListAllQuotaSummaries.contains(caller.getType())) {
+            return getQuotaSummaryResponse(cmd.getAccountId(), null, null, null, cmd);
+        }
+
+        else if (cmd.getDomainId() != null && !cmd.isListAll() && accountTypesThatCanListAllQuotaSummaries.contains(caller.getType())) {
+            return getQuotaSummaryResponse(null, null, cmd.getDomainId(), null, cmd);
+        }
+
+        else if (!accountTypesThatCanListAllQuotaSummaries.contains(caller.getType()) || !cmd.isListAll()) {
+            return getQuotaSummaryResponse(caller.getAccountId(), null, null, null, cmd);
+        }
+
+        return getQuotaSummaryResponseWithListAll(cmd, caller);
+    }
+
+    protected Pair<List<QuotaSummaryResponse>, Integer> getQuotaSummaryResponseWithListAll(QuotaSummaryCmd cmd, Account caller) {
+        Long accountId = cmd.getEntityOwnerId();
+        if (accountId == -1) {
+            accountId = null;
         }
 
         Long domainId = cmd.getDomainId();
@@ -214,6 +236,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
         return getQuotaSummaryResponse(accountId, keyword, domainId, domainPath, cmd);
     }
+
 
     protected Long getAccountIdByAccountName(String accountName, Long domainId, Account caller) {
         if (ObjectUtils.anyNull(accountName, domainId)) {
