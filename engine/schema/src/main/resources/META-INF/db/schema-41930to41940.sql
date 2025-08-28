@@ -20,8 +20,8 @@
 --;
 
 -- Add vm_id column to usage_event table for volume usage events
-ALTER TABLE `cloud`.`usage_event` ADD COLUMN `vm_id` bigint unsigned NULL COMMENT 'VM ID associated with volume usage events';
-ALTER TABLE `cloud_usage`.`usage_event` ADD COLUMN `vm_id` bigint unsigned NULL COMMENT 'VM ID associated with volume usage events';
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.usage_event','vm_id', 'bigint UNSIGNED NULL COMMENT "VM ID associated with volume usage events"');
+CALL `cloud_usage`.`IDEMPOTENT_ADD_COLUMN`('cloud_usage.usage_event','vm_id', 'bigint UNSIGNED NULL COMMENT "VM ID associated with volume usage events"');
 
 -- Add vm_id column to cloud_usage.usage_volume table
-ALTER TABLE `cloud_usage`.`usage_volume` ADD COLUMN `vm_id` bigint unsigned NULL COMMENT 'VM ID associated with the volume usage';
+CALL `cloud_usage`.`IDEMPOTENT_ADD_COLUMN`('cloud_usage.usage_volume','vm_id', 'bigint UNSIGNED NULL COMMENT "VM ID associated with the volume usage"');
