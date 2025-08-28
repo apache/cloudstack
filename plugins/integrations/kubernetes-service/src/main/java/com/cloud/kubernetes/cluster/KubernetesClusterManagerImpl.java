@@ -382,13 +382,18 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 return false;
             }
             networkOffering = networkOfferingDao.findById(network.getNetworkOfferingId());
+            if (networkOffering == null) {
+                logger.warn("Unable to find the network offering of the network: {} ({}) to be used for provisioning Kubernetes cluster", network.getName(), network.getUuid());
+                return false;
+            }
         } else if (StringUtils.isNotEmpty(networkOfferingName)) {
             networkOffering = networkOfferingDao.findByUniqueName(networkOfferingName);
+            if (networkOffering == null) {
+                logger.warn("Unable to find the network offering: {} to be used for provisioning Kubernetes cluster", networkOfferingName);
+                return false;
+            }
         }
-        if (networkOffering == null) {
-            logger.warn("Unable to find the network offering: {} to be used for provisioning Kubernetes cluster", networkOfferingName);
-            return false;
-        }
+
         if (networkOffering.getState() == NetworkOffering.State.Disabled) {
             logger.warn("Network offering: {} is not enabled", networkOffering);
             return false;
