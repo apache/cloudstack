@@ -362,7 +362,7 @@ public class Link {
     }
 
     public static SSLEngine initServerSSLEngine(final CAService caService, final String clientAddress) throws GeneralSecurityException, IOException {
-        final SSLContext sslContext = SSLUtils.getSSLContextWithLatestVersion();
+        final SSLContext sslContext = SSLUtils.getSSLContextWithLatestProtocolVersion();
         if (caService != null) {
             return caService.createSSLEngine(sslContext, clientAddress);
         }
@@ -391,7 +391,7 @@ public class Link {
         final KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
         kmf.init(ks, passphrase);
 
-        final SSLContext sslContext = SSLUtils.getSSLContextWithLatestVersion();
+        final SSLContext sslContext = SSLUtils.getSSLContextWithLatestProtocolVersion();
         sslContext.init(kmf.getKeyManagers(), tms, new SecureRandom());
         return sslContext;
     }
@@ -435,7 +435,7 @@ public class Link {
         final KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
         kmf.init(ks, passphrase);
 
-        final SSLContext sslContext = SSLUtils.getSSLContextWithLatestVersion();
+        final SSLContext sslContext = SSLUtils.getSSLContextWithLatestProtocolVersion();
         sslContext.init(kmf.getKeyManagers(), tms, new SecureRandom());
         return sslContext;
     }

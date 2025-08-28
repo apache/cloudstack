@@ -70,7 +70,7 @@ public class SSLUtils {
         return SSLContext.getInstance("TLSv1.2");
     }
 
-    public static SSLContext getSSLContextWithLatestVersion() throws NoSuchAlgorithmException {
+    public static SSLContext getSSLContextWithLatestProtocolVersion() throws NoSuchAlgorithmException {
         return SSLContext.getInstance("TLSv1.3");
     }
 
