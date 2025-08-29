@@ -21,7 +21,7 @@
       <a-tab-pane v-for="(item, index) in traffictypes" :tab="item.traffictype" :key="index">
         <a-popconfirm
           :title="$t('message.confirm.delete.traffic.type')"
-          @confirm="deleteTrafficType(itemd)"
+          @confirm="deleteTrafficType(item)"
           :okText="$t('label.yes')"
           :cancelText="$t('label.no')" >
           <a-button

@@ -192,7 +192,7 @@ public class SystemVmTemplateRegistrationTest {
     public void testValidateTemplateFile_fileNotFound() {
         SystemVmTemplateRegistration.MetadataTemplateDetails details =
                 new SystemVmTemplateRegistration.MetadataTemplateDetails(Hypervisor.HypervisorType.KVM,
-                        "name", "file", "url", "checksum", CPU.CPUArch.amd64);
+                        "name", "file", "url", "checksum", CPU.CPUArch.amd64, "guestos");
         SystemVmTemplateRegistration.NewTemplateMap.put(SystemVmTemplateRegistration.getHypervisorArchKey(
                 details.getHypervisorType(), details.getArch()), details);
         doReturn(null).when(systemVmTemplateRegistration).getTemplateFile(details);
@@ -209,7 +209,7 @@ public class SystemVmTemplateRegistrationTest {
     public void testValidateTemplateFile_checksumMismatch() {
         SystemVmTemplateRegistration.MetadataTemplateDetails details =
                 new SystemVmTemplateRegistration.MetadataTemplateDetails(Hypervisor.HypervisorType.KVM,
-                        "name", "file", "url", "checksum", CPU.CPUArch.amd64);
+                        "name", "file", "url", "checksum", CPU.CPUArch.amd64, "guestos");
         File dummyFile = new File("dummy.txt");
         SystemVmTemplateRegistration.NewTemplateMap.put(SystemVmTemplateRegistration.getHypervisorArchKey(
                 details.getHypervisorType(), details.getArch()), details);
@@ -228,7 +228,7 @@ public class SystemVmTemplateRegistrationTest {
     public void testValidateTemplateFile_success() {
         SystemVmTemplateRegistration.MetadataTemplateDetails details =
                 new SystemVmTemplateRegistration.MetadataTemplateDetails(Hypervisor.HypervisorType.KVM,
-                        "name", "file", "url", "checksum", CPU.CPUArch.amd64);
+                        "name", "file", "url", "checksum", CPU.CPUArch.amd64, "guestos");
         File dummyFile = new File("dummy.txt");
         SystemVmTemplateRegistration.NewTemplateMap.put(SystemVmTemplateRegistration.getHypervisorArchKey(
                 details.getHypervisorType(), details.getArch()), details);
@@ -285,7 +285,7 @@ public class SystemVmTemplateRegistrationTest {
         SystemVmTemplateRegistration.MetadataTemplateDetails details =
                 new SystemVmTemplateRegistration.MetadataTemplateDetails(Hypervisor.HypervisorType.KVM,
                         "name", "nonexistent.qcow2", "http://example.com/file.qcow2",
-                        "", CPU.CPUArch.arm64);
+                        "", CPU.CPUArch.arm64, "guestos");
         try (MockedStatic<Files> filesMock = Mockito.mockStatic(Files.class);
              MockedStatic<HttpUtils> httpMock = Mockito.mockStatic(HttpUtils.class)) {
             filesMock.when(() -> Files.isWritable(any(Path.class))).thenReturn(true);
@@ -301,7 +301,7 @@ public class SystemVmTemplateRegistrationTest {
         SystemVmTemplateRegistration.MetadataTemplateDetails details =
                 new SystemVmTemplateRegistration.MetadataTemplateDetails(Hypervisor.HypervisorType.KVM,
                         "name", "file.qcow2", "http://example.com/file.qcow2",
-                        "", CPU.CPUArch.arm64);
+                        "", CPU.CPUArch.arm64, "guestos");
         try (MockedStatic<Files> filesMock = Mockito.mockStatic(Files.class);
              MockedStatic<HttpUtils> httpMock = Mockito.mockStatic(HttpUtils.class)) {
             filesMock.when(() -> Files.isWritable(any(Path.class))).thenReturn(false);
