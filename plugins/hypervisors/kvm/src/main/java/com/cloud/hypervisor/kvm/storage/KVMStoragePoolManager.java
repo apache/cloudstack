@@ -331,7 +331,6 @@ public class KVMStoragePoolManager {
         sourcePath = storageUri.getPath();
         sourcePath = sourcePath.replace("//", "/");
         sourceHost = storageUri.getHost();
-        uuid = UUID.nameUUIDFromBytes(new String(sourceHost + sourcePath).getBytes()).toString();
         uuid = UuidUtils.nameUUIDFromBytes(new String(sourceHost + sourcePath).getBytes()).toString();
         protocol = scheme.equals("filesystem") ? StoragePoolType.Filesystem: StoragePoolType.NetworkFilesystem;
 
