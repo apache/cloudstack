@@ -2306,9 +2306,6 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     if (lbBackup.getAlgorithm() != null) {
                         lb.setAlgorithm(lbBackup.getAlgorithm());
                     }
-                    if (lbBackup.getLbProtocol() != null) {
-                        lb.setLbProtocol(lbBackup.getLbProtocol());
-                    }
 
                     lb.setCidrList(lbBackup.getCidrList());
                     lb.setState(lbBackup.getState());
