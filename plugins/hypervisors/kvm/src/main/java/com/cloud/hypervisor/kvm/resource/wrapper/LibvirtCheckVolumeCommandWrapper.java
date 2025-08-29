@@ -31,15 +31,23 @@ import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.Storage;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.libvirt.LibvirtException;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @ResourceWrapper(handles = CheckVolumeCommand.class)
 public final class LibvirtCheckVolumeCommandWrapper extends CommandWrapper<CheckVolumeCommand, Answer, LibvirtComputingResource> {
+
+    private static final List<Storage.StoragePoolType> STORAGE_POOL_TYPES_SUPPORTED = Arrays.asList(Storage.StoragePoolType.Filesystem, Storage.StoragePoolType.NetworkFilesystem);
 
     @Override
     public Answer execute(final CheckVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -50,34 +58,76 @@ public final class LibvirtCheckVolumeCommandWrapper extends CommandWrapper<Check
         KVMStoragePool pool = poolMgr.getStoragePool(storageFilerTO.getType(), storageFilerTO.getUuid());
 
         try {
-            if (storageFilerTO.getType() == Storage.StoragePoolType.Filesystem ||
-                    storageFilerTO.getType() == Storage.StoragePoolType.NetworkFilesystem) {
+            if (STORAGE_POOL_TYPES_SUPPORTED.contains(storageFilerTO.getType())) {
                 final KVMPhysicalDisk vol = pool.getPhysicalDisk(srcFile);
                 final String path = vol.getPath();
-                long size = getVirtualSizeFromFile(path);
-                return  new CheckVolumeAnswer(command, "", size);
+                try {
+                    KVMPhysicalDisk.checkQcow2File(path);
+                } catch (final CloudRuntimeException e) {
+                    return new CheckVolumeAnswer(command, false, "", 0, getVolumeDetails(pool, vol));
+                }
+
+                long size = KVMPhysicalDisk.getVirtualSizeFromFile(path);
+                return new CheckVolumeAnswer(command, true, "", size, getVolumeDetails(pool, vol));
             } else {
                 return new Answer(command, false, "Unsupported Storage Pool");
             }
-
         } catch (final Exception e) {
-            logger.error("Error while locating disk: "+ e.getMessage());
+            logger.error("Error while checking the disk: {}", e.getMessage());
             return new Answer(command, false, result);
         }
     }
 
-    private long getVirtualSizeFromFile(String path) {
+    private Map<VolumeOnStorageTO.Detail, String> getVolumeDetails(KVMStoragePool pool, KVMPhysicalDisk disk) {
+        Map<String, String> info = getDiskFileInfo(pool, disk, true);
+        if (MapUtils.isEmpty(info)) {
+            return null;
+        }
+
+        Map<VolumeOnStorageTO.Detail, String> volumeDetails = new HashMap<>();
+
+        String backingFilePath = info.get(QemuImg.BACKING_FILE);
+        if (StringUtils.isNotBlank(backingFilePath)) {
+            volumeDetails.put(VolumeOnStorageTO.Detail.BACKING_FILE, backingFilePath);
+        }
+        String backingFileFormat = info.get(QemuImg.BACKING_FILE_FORMAT);
+        if (StringUtils.isNotBlank(backingFileFormat)) {
+            volumeDetails.put(VolumeOnStorageTO.Detail.BACKING_FILE_FORMAT, backingFileFormat);
+        }
+        String clusterSize = info.get(QemuImg.CLUSTER_SIZE);
+        if (StringUtils.isNotBlank(clusterSize)) {
+            volumeDetails.put(VolumeOnStorageTO.Detail.CLUSTER_SIZE, clusterSize);
+        }
+        String fileFormat = info.get(QemuImg.FILE_FORMAT);
+        if (StringUtils.isNotBlank(fileFormat)) {
+            volumeDetails.put(VolumeOnStorageTO.Detail.FILE_FORMAT, fileFormat);
+        }
+        String encrypted = info.get(QemuImg.ENCRYPTED);
+        if (StringUtils.isNotBlank(encrypted) && encrypted.equalsIgnoreCase("yes")) {
+            volumeDetails.put(VolumeOnStorageTO.Detail.IS_ENCRYPTED, String.valueOf(Boolean.TRUE));
+        }
+        Boolean isLocked = isDiskFileLocked(pool, disk);
+        volumeDetails.put(VolumeOnStorageTO.Detail.IS_LOCKED, String.valueOf(isLocked));
+
+        return volumeDetails;
+    }
+
+    private Map<String, String> getDiskFileInfo(KVMStoragePool pool, KVMPhysicalDisk disk, boolean secure) {
+        if (!STORAGE_POOL_TYPES_SUPPORTED.contains(pool.getType())) {
+            return new HashMap<>(); // unknown
+        }
         try {
             QemuImg qemu = new QemuImg(0);
-            QemuImgFile qemuFile = new QemuImgFile(path);
-            Map<String, String> info = qemu.info(qemuFile);
-            if (info.containsKey(QemuImg.VIRTUAL_SIZE)) {
-                return Long.parseLong(info.get(QemuImg.VIRTUAL_SIZE));
-            } else {
-                throw new CloudRuntimeException("Unable to determine virtual size of volume at path " + path);
-            }
+            QemuImgFile qemuFile = new QemuImgFile(disk.getPath(), disk.getFormat());
+            return qemu.info(qemuFile, secure);
         } catch (QemuImgException | LibvirtException ex) {
-            throw new CloudRuntimeException("Error when inspecting volume at path " + path, ex);
+            logger.error("Failed to get info of disk file: " + ex.getMessage());
+            return null;
         }
+    }
+
+    private boolean isDiskFileLocked(KVMStoragePool pool, KVMPhysicalDisk disk) {
+        Map<String, String> info = getDiskFileInfo(pool, disk, false);
+        return info == null;
     }
 }

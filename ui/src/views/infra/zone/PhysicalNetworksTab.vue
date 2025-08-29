@@ -152,7 +152,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import Status from '@/components/widgets/Status'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -200,13 +200,13 @@ export default {
   },
   computed: {
     isolationMethods () {
-      return ['VLAN', 'VXLAN', 'GRE', 'STT', 'BCF_SEGMENT', 'SSP', 'ODL', 'L3VPN', 'VCS']
+      return ['VLAN', 'VXLAN', 'GRE', 'STT', 'BCF_SEGMENT', 'SSP', 'ODL', 'L3VPN', 'VCS', 'NSX', 'NETRIS']
     }
   },
   methods: {
     fetchData () {
       this.fetchLoading = true
-      api('listPhysicalNetworks', { zoneid: this.resource.id }).then(json => {
+      getAPI('listPhysicalNetworks', { zoneid: this.resource.id }).then(json => {
         this.networks = json.listphysicalnetworksresponse.physicalnetwork || []
         this.fetchTrafficLabels()
       }).catch(error => {
@@ -217,7 +217,7 @@ export default {
       const promises = []
       for (const network of this.networks) {
         promises.push(new Promise((resolve, reject) => {
-          api('listTrafficTypes', { physicalnetworkid: network.id }).then(json => {
+          getAPI('listTrafficTypes', { physicalnetworkid: network.id }).then(json => {
             if (json.listtraffictypesresponse.traffictype) {
               network.traffictype = json.listtraffictypesresponse.traffictype.filter(e => { return e.traffictype }).map(e => { return e.traffictype }).join(', ')
             }
@@ -249,7 +249,7 @@ export default {
         if (values.tags) {
           values.tags = values.tags.join()
         }
-        api('createPhysicalNetwork', values).then(response => {
+        postAPI('createPhysicalNetwork', values).then(response => {
           this.$pollJob({
             jobId: response.createphysicalnetworkresponse.jobid,
             successMessage: this.$t('message.success.add.physical.network'),

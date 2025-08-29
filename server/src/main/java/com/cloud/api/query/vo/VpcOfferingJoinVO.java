@@ -78,9 +78,6 @@ public class VpcOfferingJoinVO implements VpcOffering {
     @Column(name = "sort_key")
     int sortKey;
 
-    @Column(name = "for_nsx")
-    boolean forNsx = false;
-
     @Column(name = "network_mode")
     NetworkOffering.NetworkMode networkMode;
 
@@ -150,11 +147,6 @@ public class VpcOfferingJoinVO implements VpcOffering {
     @Override
     public boolean isDefault() {
         return isDefault;
-    }
-
-    @Override
-    public boolean isForNsx() {
-        return forNsx;
     }
 
     @Override

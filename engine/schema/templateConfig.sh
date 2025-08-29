@@ -42,6 +42,15 @@ function getGenericName() {
   fi
 }
 
+function getGuestOS() {
+  hypervisor=$(echo "$1" | tr "[:upper:]" "[:lower:]")
+  if [[ "$hypervisor" == "vmware" || "$hypervisor" == "xenserver" ]]; then
+    echo "Other Linux (64-bit)"
+  else
+    echo "Debian GNU/Linux 12 (64-bit)"
+  fi
+}
+
 function getChecksum() {
   local fileData="$1"
   local hvName=$2
@@ -60,13 +69,14 @@ function createMetadataFile() {
     section="${template%%:*}"
     sectionHv="${section%%-*}"
     hvName=$(getGenericName $sectionHv)
+    guestos=$(getGuestOS $sectionHv)
 
     downloadurl="${template#*:}"
     arch=$(echo ${downloadurl#*"/systemvmtemplate-$VERSION-"} | cut -d'-' -f 1)
     templatename="systemvm-${sectionHv%.*}-${VERSION}-${arch}"
     checksum=$(getChecksum "$fileData" "$VERSION-${arch}-$hvName")
     filename=$(echo ${downloadurl##*'/'})
-    echo -e "["$section"]\ntemplatename = $templatename\nchecksum = $checksum\ndownloadurl = $downloadurl\nfilename = $filename\narch = $arch\n" >> $METADATAFILE
+    echo -e "["$section"]\ntemplatename = $templatename\nchecksum = $checksum\ndownloadurl = $downloadurl\nfilename = $filename\narch = $arch\nguestos = $guestos\n" >> $METADATAFILE
   done
 }
 

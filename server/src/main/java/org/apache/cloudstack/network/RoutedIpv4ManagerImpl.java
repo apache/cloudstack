@@ -1021,9 +1021,10 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     @Override
-    public boolean isVpcVirtualRouterGateway(VpcOffering vpcOffering) {
+    public boolean isValidGateway(VpcOffering vpcOffering) {
         return NetworkOffering.NetworkMode.ROUTED.equals(vpcOffering.getNetworkMode())
-                && vpcOfferingServiceMapDao.findByServiceProviderAndOfferingId(Service.Gateway.getName(), Provider.VPCVirtualRouter.getName(), vpcOffering.getId()) != null;
+                && (vpcOfferingServiceMapDao.findByServiceProviderAndOfferingId(Service.Gateway.getName(), Provider.VPCVirtualRouter.getName(), vpcOffering.getId()) != null
+                || vpcOfferingServiceMapDao.findByServiceProviderAndOfferingId(Service.Gateway.getName(), Provider.Netris.getName(), vpcOffering.getId()) != null);
     }
 
     @Override

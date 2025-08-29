@@ -89,7 +89,10 @@ jobs:
                   smoke/test_nested_virtualization
                   smoke/test_set_sourcenat
                   smoke/test_webhook_lifecycle
-                  smoke/test_purge_expunged_vms",
+                  smoke/test_purge_expunged_vms
+                  smoke/test_extension_lifecycle
+                  smoke/test_extension_custom_action_lifecycle
+                  smoke/test_extension_custom",
                 "smoke/test_network
                   smoke/test_network_acl
                   smoke/test_network_ipv6
@@ -137,6 +140,7 @@ jobs:
                   smoke/test_vm_deployment_planner
                   smoke/test_vm_strict_host_tags
                   smoke/test_vm_schedule
+                  smoke/test_deploy_vgpu_enabled_vm
                   smoke/test_vm_life_cycle
                   smoke/test_vm_lifecycle_unmanage_import
                   smoke/test_vm_snapshot_kvm
