@@ -19,7 +19,7 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 
-import com.cloud.network.VirtualNetworkApplianceService;
+import com.cloud.network.VirtualNetworkApplianceService.RouterHealthStatus;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
@@ -37,7 +37,7 @@ public class RouterHealthCheckResultResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.SUCCESS)
     @Param(description = "result of the health check")
-    private VirtualNetworkApplianceService.RouterHealthStatus result;
+    private RouterHealthStatus result;
 
     @SerializedName(ApiConstants.LAST_UPDATED)
     @Param(description = "the date this VPC was created")
@@ -55,7 +55,7 @@ public class RouterHealthCheckResultResponse extends BaseResponse {
         return checkType;
     }
 
-    public VirtualNetworkApplianceService.RouterHealthStatus getResult() {
+    public RouterHealthStatus getResult() {
         return result;
     }
 
@@ -75,7 +75,7 @@ public class RouterHealthCheckResultResponse extends BaseResponse {
         this.checkType = checkType;
     }
 
-    public void setResult(VirtualNetworkApplianceService.RouterHealthStatus result) {
+    public void setResult(RouterHealthStatus result) {
         this.result = result;
     }
 
