@@ -34,7 +34,7 @@ class StatusCodes:
     STOPPED      = 4
     STARTING     = 5
 
-# see com.cloud.network.VirtualNetworkApplianceService.RouterHealthStatus and make sure to keep it alligned
+# see com.cloud.network.VirtualNetworkApplianceService.RouterHealthStatus and make sure to keep it aligned
 class RouterHealthStatus:
     SUCCESS = "SUCCESS"
     FAILED  = "FAILED"

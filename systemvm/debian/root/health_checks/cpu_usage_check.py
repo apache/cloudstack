@@ -29,7 +29,7 @@ def main():
 
     if "maxCpuUsage" not in data:
         print("Missing maxCpuUsage in health_checks_data systemThresholds, skipping")
-        exit(2)
+        exit(3)
 
     maxCpuUsage = float(data["maxCpuUsage"])
     cmd = "top -b -n2 -p 1 | fgrep \"Cpu(s)\" | tail -1 | " \
