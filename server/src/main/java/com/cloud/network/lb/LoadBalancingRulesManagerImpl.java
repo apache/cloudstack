@@ -2272,10 +2272,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         // Check if algorithm or cidrlist has changed, and reapply the lb config if needed
         boolean algorithmChanged = (algorithm != null) && (tmplbVo.getAlgorithm().compareTo(algorithm) != 0);
-        boolean cidrListChanged = (tmplbVo.getCidrList() == null && lb.getCidrList() != null) ||
-                                  (tmplbVo.getCidrList() != null && lb.getCidrList() == null) ||
-                                  (tmplbVo.getCidrList() != null && lb.getCidrList() != null &&
-                                   !tmplbVo.getCidrList().equals(lb.getCidrList()));
+        boolean cidrListChanged = !Objects.equals(tmplbVo.getCidrList(), lb.getCidrList());
 
         if (algorithmChanged || cidrListChanged) {
             try {
@@ -2298,9 +2295,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     if (lbBackup.getAlgorithm() != null) {
                         lb.setAlgorithm(lbBackup.getAlgorithm());
                     }
-                    if (lbBackup.getCidrList() != null || lb.getCidrList() != null) { // Added for cidrlist rollback
-                        lb.setCidrList(lbBackup.getCidrList());
-                    }
+                    lb.setCidrList(lbBackup.getCidrList());
                     lb.setState(lbBackup.getState());
                     _lbDao.update(lb.getId(), lb);
                     _lbDao.persist(lb);
