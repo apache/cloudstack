@@ -117,7 +117,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
 
         if (podId == null) {
             if (logger.isInfoEnabled())
-                logger.info("No pod is assigned, assuming that it is not for vmware and skip it to next discoverer");
+                logger.info("No pod is assigned, assuming that it is not for VMWare and skip it to next discoverer");
             return null;
         }
         boolean failureInClusterDiscovery = true;
@@ -125,7 +125,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
         ClusterVO cluster = _clusterDao.findById(clusterId);
         if (cluster == null || cluster.getHypervisorType() != HypervisorType.VMware) {
             if (logger.isInfoEnabled())
-                logger.info("invalid cluster id or cluster is not for VMware hypervisors");
+                logger.info("Invalid cluster id or cluster is not for VMWare hypervisors");
             return null;
         }
 

@@ -39,7 +39,7 @@ import com.cloud.network.element.NetscalerLoadBalancerElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.network.NetScalerServicePackageVO;
 
-@APICommand(name = "listRegisteredServicePackages", responseObject = NetScalerServicePackageResponse.class, description = "lists registered service packages", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "listRegisteredServicePackages", responseObject = NetScalerServicePackageResponse.class, description = "Lists registered service packages", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListRegisteredServicePackageCmd extends BaseListCmd {
 
     private static final String s_name = "listregisteredservicepackage";

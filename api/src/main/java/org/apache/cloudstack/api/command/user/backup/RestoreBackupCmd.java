@@ -40,7 +40,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "restoreBackup",
-        description = "Restores an existing stopped or deleted VM using a VM backup",
+        description = "Restores an existing stopped or deleted Instance using an Instance backup",
         responseObject = SuccessResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class RestoreBackupCmd extends BaseAsyncCmd {
@@ -80,7 +80,7 @@ public class RestoreBackupCmd extends BaseAsyncCmd {
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {
-                throw new CloudRuntimeException("Error while restoring VM from backup");
+                throw new CloudRuntimeException("Error while restoring Instance from backup");
             }
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
@@ -99,6 +99,6 @@ public class RestoreBackupCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Restoring VM from backup: " + backupId;
+        return "Restoring Instance from backup: " + backupId;
     }
 }

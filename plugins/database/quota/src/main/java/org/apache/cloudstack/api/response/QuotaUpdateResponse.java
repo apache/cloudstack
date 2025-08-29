@@ -27,7 +27,7 @@ import java.util.Date;
 public class QuotaUpdateResponse extends BaseResponse {
 
     @SerializedName("updated_on")
-    @Param(description = "timestamp when the run got over")
+    @Param(description = "Timestamp when the run got over")
     private Date updatedOn;
 
     public QuotaUpdateResponse(Calendar now) {

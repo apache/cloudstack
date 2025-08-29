@@ -29,24 +29,24 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 public abstract class AbstractGetUploadParamsCmd extends BaseCmd {
 
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the volume/template/iso")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "The name of the volume/template/iso")
     private String name;
 
-    @Parameter(name = ApiConstants.FORMAT, type = CommandType.STRING, required = true, description = "the format for the volume/template/iso. Possible values include QCOW2, OVA, "
+    @Parameter(name = ApiConstants.FORMAT, type = CommandType.STRING, required = true, description = "The format for the volume/template/iso. Possible values include QCOW2, OVA, "
             + "and VHD.")
     private String format;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the ID of the zone the volume/template/iso is "
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "The ID of the zone the volume/template/iso is "
             + "to be hosted on")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.CHECKSUM, type = CommandType.STRING, description = "the checksum value of this volume/template/iso " + ApiConstants.CHECKSUM_PARAMETER_PREFIX_DESCRIPTION)
+    @Parameter(name = ApiConstants.CHECKSUM, type = CommandType.STRING, description = "The checksum value of this volume/template/iso " + ApiConstants.CHECKSUM_PARAMETER_PREFIX_DESCRIPTION)
     private String checksum;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional accountName. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "An optional AccountName. Must be used with domainId.")
     private String accountName;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "an optional domainId. If the account parameter is used, "
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "An optional domainId. If the Account parameter is used, "
             + "domainId must also be used.")
     private Long domainId;
 

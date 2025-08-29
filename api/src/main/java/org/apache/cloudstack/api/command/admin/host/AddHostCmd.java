@@ -45,34 +45,34 @@ public class AddHostCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, description = "the cluster ID for the host")
+    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, description = "The cluster ID for the host")
     private Long clusterId;
 
-    @Parameter(name = ApiConstants.CLUSTER_NAME, type = CommandType.STRING, description = "the cluster name for the host")
+    @Parameter(name = ApiConstants.CLUSTER_NAME, type = CommandType.STRING, description = "The cluster name for the host")
     private String clusterName;
 
-    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, description = "the username for the host; required to be passed for hypervisors other than VMWare")
+    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, description = "The username for the host; required to be passed for hypervisors other than VMWare")
     private String username;
 
-    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, description = "the password for the host; required to be passed for hypervisors other than VMWare")
+    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, description = "The password for the host; required to be passed for hypervisors other than VMWare")
     private String password;
 
-    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, required = true, description = "the Pod ID for the host")
+    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, required = true, description = "The Pod ID for the host")
     private Long podId;
 
-    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "the host URL")
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "The host URL")
     private String url;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the Zone ID for the host")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "The Zone ID for the host")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, required = true, description = "hypervisor type of the host")
+    @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, required = true, description = "Hypervisor type of the host")
     private String hypervisor;
 
     @Parameter(name = ApiConstants.ALLOCATION_STATE, type = CommandType.STRING, description = "Allocation state of this Host for allocation of new resources")
     private String allocationState;
 
-    @Parameter(name = ApiConstants.HOST_TAGS, type = CommandType.LIST, collectionType = CommandType.STRING, description = "list of tags to be added to the host")
+    @Parameter(name = ApiConstants.HOST_TAGS, type = CommandType.LIST, collectionType = CommandType.STRING, description = "List of tags to be added to the host")
     private List<String> hostTags;
 
     @Parameter(name = ApiConstants.STORAGE_ACCESS_GROUPS,
