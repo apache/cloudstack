@@ -96,14 +96,6 @@ import java.util.Set;
 
 @Component
 public class MockConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService {
-    public static final ConfigKey<Integer> NETWORK_LB_HAPROXY_MAX_CONN = new ConfigKey<>(
-            "Network",
-            Integer.class,
-            "network.loadbalancer.haproxy.max.conn",
-            "4096",
-            "Load Balancer(haproxy) maximum number of concurrent connections(global max)",
-            true,
-            ConfigKey.Scope.Global);
     @Inject
     NetworkOfferingDaoImpl _ntwkOffDao;
 

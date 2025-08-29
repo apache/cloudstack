@@ -547,10 +547,9 @@ public class CommandSetupHelper {
         String systemRule = null;
         Boolean defaultEgressPolicy = false;
         if (rules != null) {
-            if (!rules.isEmpty()) {
-                if (rules.get(0).getTrafficType() == FirewallRule.TrafficType.Egress && rules.get(0).getType() == FirewallRule.FirewallRuleType.System) {
-                    systemRule = String.valueOf(FirewallRule.FirewallRuleType.System);
-                }
+            boolean isSystemFirewallEgressRule = !rules.isEmpty() && rules.get(0).getTrafficType() == FirewallRule.TrafficType.Egress && rules.get(0).getType() == FirewallRule.FirewallRuleType.System;
+            if (isSystemFirewallEgressRule) {
+                systemRule = String.valueOf(FirewallRule.FirewallRuleType.System);
             }
             for (final FirewallRule rule : rules) {
                 _rulesDao.loadSourceCidrs((FirewallRuleVO) rule);

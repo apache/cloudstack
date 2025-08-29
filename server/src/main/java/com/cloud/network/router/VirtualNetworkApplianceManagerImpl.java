@@ -74,6 +74,7 @@ import org.apache.cloudstack.network.topology.NetworkTopologyContext;
 import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.usage.UsageUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -811,9 +812,10 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             }
             final String privateIP = router.getPrivateIpAddress();
             final HostVO host = _hostDao.findById(router.getHostId());
-            if ( !(host == null || host.getState() != Status.Up)
+            boolean hostAvailable =  !(host == null || host.getState() != Status.Up)
                     && (host.getManagementServerId() == ManagementServerNode.getManagementServerId())
-                    && (privateIP != null)) {
+                    && (privateIP != null);
+            if (hostAvailable) {
                 final CheckS2SVpnConnectionsCommand command = new CheckS2SVpnConnectionsCommand(ipList);
                 command.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
                 command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
@@ -1041,12 +1043,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                         continue;
                     }
 
-                    DomainRouterVO router;
-                    if (router0.getId() < router1.getId()) {
-                        router = router0;
-                    } else {
-                        router = router1;
-                    }
+                    DomainRouterVO router = (router0.getId() < router1.getId()) ? router0 : router1;
                     // && router.getState() == VirtualMachine.State.Stopped
                     if (router.getHostId() == null && router.getState() == VirtualMachine.State.Running) {
                         logger.debug("Skip router pair (" + router0.getInstanceName() + "," + router1.getInstanceName() + ") due to can't find host");
@@ -1156,7 +1153,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     }
 
     private void handleFailingChecks(DomainRouterVO router, List<String> failingChecks) {
-        if (failingChecks == null || failingChecks.isEmpty()) {
+        if (CollectionUtils.isEmpty(failingChecks)) {
             return;
         }
 
@@ -1404,7 +1401,6 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         } catch (JsonSyntaxException ex) {
             logger.error("Unable to parse the result of health checks due to " + ex.getLocalizedMessage(), ex);
         }
-        return;
     }
 
     private GetRouterMonitorResultsAnswer fetchAndUpdateRouterHealthChecks(DomainRouterVO router, boolean performFreshChecks) {
@@ -1420,7 +1416,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             try {
                 final Answer answer = _agentMgr.easySend(router.getHostId(), command);
 
-                logger.info("Got health check results from router {}: {}", router.getHostName(), answer != null ? answer.getDetails() : "null answer");
+                logger.debug("Got health check results from router {}: {}", router.getHostName(), answer != null ? answer.getDetails() : "null answer");
                 if (answer == null) {
                     logger.warn("Unable to fetch monitoring results data from router {}", router.getHostName());
                     return null;
@@ -1484,7 +1480,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             throw new CloudRuntimeException("Router health checks are not enabled for router: " + router);
         }
 
-        logger.info("Running health check results for router " + router.getUuid());
+        logger.debug("Running health check results for router " + router.getUuid());
 
         GetRouterMonitorResultsAnswer answer;
         String resultDetails = "";
@@ -1493,11 +1489,11 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         // Step 1: Perform basic tests to check the connectivity and file system on router
         answer = performBasicTestsOnRouter(router);
         if (answer == null) {
-            logger.debug("No results received for the basic tests on router: " + router);
+            logger.info("No results received for the basic tests on router: " + router);
             resultDetails = "Basic tests results unavailable";
             success = false;
         } else if (!answer.getResult()) {
-            logger.debug("Basic tests failed on router: " + router);
+            logger.warn("Basic tests failed on router: " + router);
             resultDetails = "Basic tests failed - " + answer.getMonitoringResults();
             success = false;
         } else {
@@ -1624,15 +1620,16 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     }
 
     private String getSystemThresholdsHealthChecksData(final DomainRouterVO router) {
-        return "minDiskNeeded=" + RouterHealthChecksFreeDiskSpaceThreshold.valueIn(router.getDataCenterId()) +
-                ",maxCpuUsage=" + RouterHealthChecksMaxCpuUsageThreshold.valueIn(router.getDataCenterId()) +
-                ",maxMemoryUsage=" + RouterHealthChecksMaxMemoryUsageThreshold.valueIn(router.getDataCenterId()) + ";";
+        return String.format("minDiskNeeded=%s,maxCpuUsage=%s,maxMemoryUsage=%s;",
+                RouterHealthChecksFreeDiskSpaceThreshold.valueIn(router.getDataCenterId()),
+                RouterHealthChecksMaxCpuUsageThreshold.valueIn(router.getDataCenterId()),
+                RouterHealthChecksMaxMemoryUsageThreshold.valueIn(router.getDataCenterId()));
     }
 
     private String getRouterVersionHealthChecksData(final DomainRouterVO router) {
         if (router.getTemplateVersion() != null && router.getScriptsVersion() != null) {
-            return "templateVersion=" + router.getTemplateVersion() +
-                    ",scriptsVersion=" + router.getScriptsVersion();
+            return String.format("templateVersion=%s,scriptsVersion=%s", router.getTemplateVersion(),
+                    router.getScriptsVersion());
         }
         return null;
     }
