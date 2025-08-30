@@ -18,3 +18,8 @@
 --;
 -- Schema upgrade from 4.21.0.0 to 4.22.0.0
 --;
+
+-- Change scope for configuration - 'use.https.to.upload from' from StoragePool to Zone
+UPDATE `cloud`.`configuration` SET `scope` = 2 WHERE `name` = 'use.https.to.upload';
+-- Delete the configuration for 'use.https.to.upload' from StoragePool
+DELETE FROM `cloud`.`storage_pool_details` WHERE `name` = 'use.https.to.upload';

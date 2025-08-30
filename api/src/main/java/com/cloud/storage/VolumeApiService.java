@@ -56,9 +56,9 @@ public interface VolumeApiService {
             Boolean.class,
             "use.https.to.upload",
             "true",
-            "Determines the protocol (HTTPS or HTTP) ACS will use to generate links to upload ISOs, volumes, and templates. When set as 'true', ACS will use protocol HTTPS, otherwise, it will use protocol HTTP. Default value is 'true'.",
+            "Controls whether upload links for ISOs, volumes, and templates use HTTPS (true, default) or HTTP (false). After changing this setting, the Secondary Storage VM (SSVM) must be recreated",
             true,
-            ConfigKey.Scope.StoragePool);
+            ConfigKey.Scope.Zone);
 
     /**
      * Creates the database object for a volume based on the given criteria
