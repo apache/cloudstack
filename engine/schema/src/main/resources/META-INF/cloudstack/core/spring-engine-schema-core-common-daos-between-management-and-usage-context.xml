@@ -28,6 +28,9 @@
                       >
 
 	<bean id="accountGuestVlanMapDaoImpl" class="com.cloud.network.dao.AccountGuestVlanMapDaoImpl" />
+	<bean id="accountDetailsDaoImpl" class="com.cloud.user.AccountDetailsDaoImpl" />
+	<bean id="domainDaoImpl" class="com.cloud.domain.dao.DomainDaoImpl" />
+	<bean id="domainDetailsDaoImpl" class="com.cloud.domain.dao.DomainDetailsDaoImpl" />
 	<bean id="clusterDaoImpl" class="com.cloud.dc.dao.ClusterDaoImpl" />
 	<bean id="clusterDetailsDaoImpl" class="com.cloud.dc.ClusterDetailsDaoImpl" />
 	<bean id="dataCenterDaoImpl" class="com.cloud.dc.dao.DataCenterDaoImpl" />
