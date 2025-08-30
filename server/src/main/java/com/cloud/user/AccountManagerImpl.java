@@ -136,6 +136,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.RemoteAccessVpnVO;
+import com.cloud.network.dao.SslCertDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.security.SecurityGroupManager;
@@ -308,6 +309,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private UserDataDao userDataDao;
     @Inject
     private NetworkPermissionDao networkPermissionDao;
+    @Inject
+    private SslCertDao sslCertDao;
 
     private List<QuerySelector> _querySelectors;
 
@@ -1201,6 +1204,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
             // Delete registered UserData
             userDataDao.removeByAccountId(accountId);
+
+            // Delete SSL certificates
+            sslCertDao.removeByAccountId(accountId);
 
             // Delete Webhooks
             deleteWebhooksForAccount(accountId);
