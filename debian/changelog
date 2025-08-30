@@ -208,7 +208,7 @@ cloud (4.0.0-rc2) unstable; urgency=low
   * Bumping the version to 4.0 RC2
 
  -- Wido den Hollander <wido@widodh.nl>  Mon, 24 Sep 2012 11:30:29 +0200
- 
+
 cloud (4.0.0-rc1) unstable; urgency=low
 
   * Bumping the version to 4.0 RC1
