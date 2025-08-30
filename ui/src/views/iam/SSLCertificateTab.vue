@@ -72,7 +72,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
@@ -160,7 +160,7 @@ export default {
 
       this.loading = true
 
-      api('listSslCerts', params).then(json => {
+      getAPI('listSslCerts', params).then(json => {
         const listSslResponse = json.listsslcertsresponse.sslcert
 
         // check exists json response
@@ -191,7 +191,7 @@ export default {
       const message = `${this.$t('label.delete.certificate')} ${this.$t('label.in.progress.for')} ${row.name}`
       const loading = this.$message.loading(message, 0)
 
-      api('deleteSslCert', params).then(json => {
+      postAPI('deleteSslCert', params).then(json => {
         const jsonResponse = json.deletesslcertresponse
 
         // hide loading

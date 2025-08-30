@@ -36,6 +36,7 @@ import java.util.Objects;
 
 @ResourceWrapper(handles = TakeBackupCommand.class)
 public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCommand, Answer, LibvirtComputingResource> {
+    private static final Integer EXIT_CLEANUP_FAILED = 20;
     @Override
     public Answer execute(TakeBackupCommand command, LibvirtComputingResource libvirtComputingResource) {
         final String vmName = command.getVmName();
@@ -54,6 +55,7 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
                 "-s", backupRepoAddress,
                 "-m", Objects.nonNull(mountOptions) ? mountOptions : "",
                 "-p", backupPath,
+                "-q", command.getQuiesce() != null && command.getQuiesce() ? "true" : "false",
                 "-d", (Objects.nonNull(diskPaths) && !diskPaths.isEmpty()) ? String.join(",", diskPaths) : ""
         });
 
@@ -61,7 +63,12 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
 
         if (result.first() != 0) {
             logger.debug("Failed to take VM backup: " + result.second());
-            return new BackupAnswer(command, false, result.second().trim());
+            BackupAnswer answer = new BackupAnswer(command, false, result.second().trim());
+            if (result.first() == EXIT_CLEANUP_FAILED) {
+                logger.debug("Backup cleanup failed");
+                answer.setNeedsCleanup(true);
+            }
+            return answer;
         }
 
         long backupSize = 0L;

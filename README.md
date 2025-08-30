@@ -160,3 +160,11 @@ The following provides more details on the included cryptographic software:
 * CloudStack makes use of the Bouncy Castle general-purpose encryption library.
 * CloudStack can optionally interact with and control OpenSwan-based VPNs.
 * CloudStack has a dependency on and makes use of JSch - a java SSH2 implementation.
+
+## Star History
+
+[![Apache CloudStack Star History](https://api.star-history.com/svg?repos=apache/cloudstack&type=Date)](https://www.star-history.com/#apache/cloudstack&Date)
+
+## Contributors
+
+[![Apache CloudStack Contributors](https://contrib.rocks/image?repo=apache/cloudstack&anon=0&max=500)](https://github.com/apache/cloudstack/graphs/contributors)

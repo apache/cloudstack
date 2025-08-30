@@ -183,6 +183,15 @@ public class DomainResponse extends BaseResponseWithAnnotations implements Resou
     @SerializedName("memoryavailable") @Param(description="the total memory (in MB) available to be created for this domain", since="4.2.0")
     private String memoryAvailable;
 
+    @SerializedName("gpulimit") @Param(description="the total number of gpus the domain can own", since="4.21.0")
+    private String gpuLimit;
+
+    @SerializedName("gputotal") @Param(description="the total number of gpus owned by domain", since="4.21.0")
+    private Long gpuTotal;
+
+    @SerializedName("gpuavailable") @Param(description="the total number of gpus available to be created for this domain", since="4.21.0")
+    private String gpuAvailable;
+
     @SerializedName("primarystoragelimit") @Param(description="the total primary storage space (in GiB) the domain can own", since="4.2.0")
     private String primaryStorageLimit;
 
@@ -476,6 +485,21 @@ public class DomainResponse extends BaseResponseWithAnnotations implements Resou
     @Override
     public void setMemoryAvailable(String memoryAvailable) {
         this.memoryAvailable = memoryAvailable;
+    }
+
+    @Override
+    public void setGpuLimit(String gpuLimit) {
+        this.gpuLimit = gpuLimit;
+    }
+
+    @Override
+    public void setGpuTotal(Long gpuTotal) {
+        this.gpuTotal = gpuTotal;
+    }
+
+    @Override
+    public void setGpuAvailable(String gpuAvailable) {
+        this.gpuAvailable = gpuAvailable;
     }
 
     @Override
