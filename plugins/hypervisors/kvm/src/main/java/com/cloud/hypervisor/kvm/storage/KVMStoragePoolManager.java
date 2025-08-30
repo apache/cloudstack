@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
@@ -47,6 +46,7 @@ import com.cloud.storage.StorageLayer;
 import com.cloud.storage.Volume;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 
@@ -331,7 +331,7 @@ public class KVMStoragePoolManager {
         sourcePath = storageUri.getPath();
         sourcePath = sourcePath.replace("//", "/");
         sourceHost = storageUri.getHost();
-        uuid = UUID.nameUUIDFromBytes(new String(sourceHost + sourcePath).getBytes()).toString();
+        uuid = UuidUtils.nameUUIDFromBytes(new String(sourceHost + sourcePath).getBytes()).toString();
         protocol = scheme.equals("filesystem") ? StoragePoolType.Filesystem: StoragePoolType.NetworkFilesystem;
 
         // storage registers itself through here

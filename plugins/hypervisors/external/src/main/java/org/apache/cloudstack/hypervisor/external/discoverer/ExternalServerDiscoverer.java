@@ -54,6 +54,7 @@ import com.cloud.resource.DiscovererBase;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.utils.UuidUtils;
 
 public class ExternalServerDiscoverer extends DiscovererBase implements Discoverer, Listener, ResourceStateAdapter {
 
@@ -133,7 +134,7 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
     }
 
     protected String getResourceGuidFromName(String name) {
-        return "External:" + UUID.nameUUIDFromBytes(name.getBytes());
+        return "External:" + UuidUtils.nameUUIDFromBytes(name.getBytes());
     }
 
     protected void addExtensionDataToResourceParams(ExtensionVO extension, Map<String, Object> params) {
