@@ -14,26 +14,17 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 package com.cloud.upgrade.dao;
 
-import com.cloud.upgrade.SystemVmTemplateRegistration;
-import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+public class Upgrade42100to42200 extends DbUpgradeAbstractImpl implements DbUpgrade, DbUpgradeSystemVmTemplate {
 
-import java.sql.Connection;
+    @Override
+    public String[] getUpgradableVersionRange() {
+        return new String[]{"4.21.0.0", "4.22.0.0"};
+    }
 
-public interface DbUpgradeSystemVmTemplate {
-
-    default void updateSystemVmTemplates(Connection conn) {
-        Logger logger = LogManager.getLogger(getClass());
-        logger.debug("Updating System Vm template IDs");
-        try {
-            SystemVmTemplateRegistration systemVmTemplateRegistration = new SystemVmTemplateRegistration("");
-            systemVmTemplateRegistration.updateSystemVmTemplates(conn);
-        } catch (Exception e) {
-            throw new CloudRuntimeException("Failed to find / register SystemVM template(s)");
-        }
+    @Override
+    public String getUpgradedVersion() {
+        return "4.22.0.0";
     }
 }
