@@ -313,7 +313,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
             hostResponse.setJobStatus(host.getJobStatus());
         }
         hostResponse.setHasAnnotation(annotationDao.hasAnnotations(host.getUuid(), AnnotationService.EntityType.HOST.name(),
-                accountManager.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+                CallContext.current().isCallingAccountRootAdmin()));
         hostResponse.setAnnotation(host.getAnnotation());
         hostResponse.setLastAnnotated(host.getLastAnnotated ());
         hostResponse.setUsername(host.getUsername());
