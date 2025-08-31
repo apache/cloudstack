@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
@@ -197,7 +198,8 @@ public class ClusterDetailsDaoImpl extends ResourceDetailsDaoBase<ClusterDetails
 
     @Override
     public Pair<Scope, Long> getParentScope(long id) {
-        Cluster cluster = clusterDao.findById(id);
+        Cluster cluster = CallContext.current().getRequestEntityCache().get(ClusterVO.class, id,
+                () -> clusterDao.findById(id));
         if (cluster == null) {
             return null;
         }

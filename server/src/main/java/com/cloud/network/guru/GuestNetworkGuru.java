@@ -23,9 +23,6 @@ import java.util.Random;
 
 import javax.inject.Inject;
 
-import com.cloud.domain.dao.DomainDao;
-import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
-import com.cloud.user.dao.AccountDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -39,10 +36,12 @@ import org.apache.commons.lang3.StringUtils;
 import com.cloud.configuration.Config;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
@@ -75,8 +74,10 @@ import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.user.Account;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.DB;
@@ -154,6 +155,11 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
 
     String _defaultGateway;
     String _defaultCidr;
+
+    protected DataCenterVO findDataCenter(final long dataCenterId) {
+        return CallContext.current().getRequestEntityCache().get(DataCenterVO.class, dataCenterId,
+                () -> _dcDao.findById(dataCenterId));
+    }
 
     protected GuestNetworkGuru() {
         super();
@@ -237,7 +243,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
 
     @Override
     public Network design(final NetworkOffering offering, final DeploymentPlan plan, final Network userSpecified, String name, Long vpcId, final Account owner) {
-        final DataCenter dc = _dcDao.findById(plan.getDataCenterId());
+        final DataCenter dc = findDataCenter(plan.getDataCenterId());
         final PhysicalNetworkVO physnet = _physicalNetworkDao.findById(plan.getPhysicalNetworkId());
 
         if (!canHandle(offering, dc.getNetworkType(), physnet)) {
@@ -417,7 +423,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
             nic = new NicProfile(ReservationStrategy.Start, null, null, null, null);
         }
 
-        final DataCenter dc = _dcDao.findById(network.getDataCenterId());
+        final DataCenter dc = findDataCenter(network.getDataCenterId());
 
         boolean isGateway = false;
         //if Vm is router vm and source nat is enabled in the network, set ip4 to the network gateway
@@ -496,7 +502,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
 
     @Override
     public void updateNicProfile(final NicProfile profile, final Network network) {
-        final DataCenter dc = _dcDao.findById(network.getDataCenterId());
+        final DataCenter dc = findDataCenter(network.getDataCenterId());
         Pair<String, String> dns = _networkModel.getNetworkIp4Dns(network, dc);
         Pair<String, String> ip6Dns = _networkModel.getNetworkIp6Dns(network, dc);
         if (profile != null) {
@@ -552,7 +558,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
 
     @Override
     public void updateNetworkProfile(final NetworkProfile networkProfile) {
-        final DataCenter dc = _dcDao.findById(networkProfile.getDataCenterId());
+        final DataCenter dc = findDataCenter(networkProfile.getDataCenterId());
         Network network = _networkModel.getNetwork(networkProfile.getId());
         Pair<String, String> dns = _networkModel.getNetworkIp4Dns(network, dc);
         networkProfile.setDns1(dns.first());

@@ -31,8 +31,10 @@ import javax.naming.ConfigurationException;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.ClusterDetailsVO;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -133,7 +135,8 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
     @Override
     public List<Long> orderClusters(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid) throws InsufficientServerCapacityException {
         VirtualMachine vm = vmProfile.getVirtualMachine();
-        DataCenter dc = dcDao.findById(vm.getDataCenterId());
+        DataCenter dc = CallContext.current().getRequestEntityCache().get(DataCenterVO.class, vm.getDataCenterId(),
+                () -> dcDao.findById(vm.getDataCenterId()));
 
         //check if datacenter is in avoid set
         if (avoid.shouldAvoid(dc)) {
@@ -181,7 +184,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
                 return null;
             }
         } else {
-            logger.debug("Searching all possible resources under this Zone: {}", dcDao.findById(plan.getDataCenterId()));
+            logger.debug("Searching all possible resources under this Zone: {}", dc);
 
             boolean applyAllocationAtPods = Boolean.parseBoolean(configDao.getValue(Config.ApplyAllocationAlgorithmToPods.key()));
             if (applyAllocationAtPods) {
@@ -392,10 +395,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
     }
 
     private List<Long> scanClustersForDestinationInZoneOrPod(long id, boolean isZone, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid) {
-
-        VirtualMachine vm = vmProfile.getVirtualMachine();
         ServiceOffering offering = vmProfile.getServiceOffering();
-        DataCenter dc = dcDao.findById(vm.getDataCenterId());
         int requiredCpu = offering.getCpu() * offering.getSpeed();
         long requiredRam = offering.getRamSize() * 1024L * 1024L;
 
