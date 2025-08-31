@@ -108,8 +108,8 @@ public class ServerDaemon implements Daemon {
     private String keystoreFile;
     private String keystorePassword;
     private String webAppLocation;
-    private int minThreads = 10;
-    private int maxThreads = 500;
+    private int minThreads;
+    private int maxThreads;
 
     //////////////////////////////////////////////////
     /////////////// Public methods ///////////////////
