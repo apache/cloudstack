@@ -122,7 +122,7 @@ export default {
         show: (record) => { return record.state !== 'Active' },
         groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Active' } }) }
       }, {
-        api: 'deleteServiceOffering',
+        api: 'updateServiceOffering',
         icon: 'pause-circle-outlined',
         label: 'label.action.disable.service.offering',
         message: 'message.action.disable.service.offering',
@@ -130,6 +130,11 @@ export default {
         dataView: true,
         groupAction: true,
         popup: true,
+        mapping: {
+          state: {
+            value: (record) => { return 'Inactive' }
+          }
+        },
         show: (record) => { return record.state === 'Active' },
         groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
       }]
@@ -198,7 +203,7 @@ export default {
         show: (record) => { return record.state !== 'Active' },
         groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Active' } }) }
       }, {
-        api: 'deleteServiceOffering',
+        api: 'updateServiceOffering',
         icon: 'pause-circle-outlined',
         label: 'label.action.disable.system.service.offering',
         message: 'message.action.disable.system.service.offering',
@@ -207,6 +212,11 @@ export default {
         params: { issystem: 'true' },
         groupAction: true,
         popup: true,
+        mapping: {
+          state: {
+            value: (record) => { return 'Inactive' }
+          }
+        },
         show: (record) => { return record.state === 'Active' },
         groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
       }]
@@ -301,7 +311,7 @@ export default {
         show: (record) => { return record.state !== 'Active' },
         groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Active' } }) }
       }, {
-        api: 'deleteDiskOffering',
+        api: 'updateDiskOffering',
         icon: 'pause-circle-outlined',
         label: 'label.action.disable.disk.offering',
         message: 'message.action.disable.disk.offering',
@@ -309,6 +319,11 @@ export default {
         dataView: true,
         groupAction: true,
         popup: true,
+        mapping: {
+          state: {
+            value: (record) => { return 'Inactive' }
+          }
+        },
         show: (record) => { return record.state === 'Active' },
         groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
       }]
