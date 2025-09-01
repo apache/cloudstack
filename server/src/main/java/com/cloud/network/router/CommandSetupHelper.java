@@ -386,7 +386,7 @@ public class CommandSetupHelper {
         final NetworkOffering offering = _networkOfferingDao.findById(guestNetwork.getNetworkOfferingId());
         String maxconn;
         if (offering.getConcurrentConnections() == null) {
-            maxconn = ConfigurationManager.NETWORK_LB_HAPROXY_MAX_CONN.value().toString();
+            maxconn = NetworkOrchestrationService.NETWORK_LB_HAPROXY_MAX_CONN.value().toString();
         } else {
             maxconn = offering.getConcurrentConnections().toString();
         }

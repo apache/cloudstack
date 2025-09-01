@@ -70,14 +70,6 @@ public interface ConfigurationManager {
             "0.5",
             "Weight for CPU (as a value between 0 and 1) applied to compute capacity for Pods, Clusters and Hosts for COMBINED capacityType for ordering. Weight for RAM will be (1 - weight of CPU)",
             true, ConfigKey.Scope.Global);
-    ConfigKey<Integer> NETWORK_LB_HAPROXY_MAX_CONN = new ConfigKey<>(
-                    "Network",
-                    Integer.class,
-                    "network.loadbalancer.haproxy.max.conn",
-                    "4096",
-                    "Load Balancer(haproxy) maximum number of concurrent connections(global max)",
-                    true,
-                    ConfigKey.Scope.Global);
 
     /**
      * Is this for a VPC

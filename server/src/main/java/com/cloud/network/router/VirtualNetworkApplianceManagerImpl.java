@@ -120,7 +120,6 @@ import com.cloud.bgp.BGPService;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ZoneConfig;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -1672,7 +1671,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
                 final NetworkOffering offering = _networkOfferingDao.findById(_networkDao.findById(routerJoinVO.getNetworkId()).getNetworkOfferingId());
                 if (offering.getConcurrentConnections() == null) {
-                    loadBalancingData.append("maxconn=").append(ConfigurationManager.NETWORK_LB_HAPROXY_MAX_CONN.value());
+                    loadBalancingData.append("maxconn=").append(NetworkOrchestrationService.NETWORK_LB_HAPROXY_MAX_CONN.value());
                 } else {
                     loadBalancingData.append("maxconn=").append(offering.getConcurrentConnections());
                 }

@@ -2129,32 +2129,33 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         //Included revoked rules to remove the rules of ips which are in revoke state
         List<FirewallRuleVO> rules = _firewallDao.listByIpAndPurpose(ipId, Purpose.LoadBalancing);
 
+        if (deleteRulesFails(caller, callerUserId, rules)) return false;
+        return true;
+    }
+
+    private boolean deleteRulesFails(Account caller, long callerUserId, List<FirewallRuleVO> rules) {
         if (rules != null) {
-            logger.debug("Found " + rules.size() + " lb rules to cleanup");
+            logger.debug("Found {} lb rules to cleanup", rules.size());
             for (FirewallRule rule : rules) {
-                boolean result = deleteLoadBalancerRule(rule.getId(), true, caller, callerUserId, false);
-                if (result == false) {
-                    logger.warn("Unable to remove load balancer rule {}", rule);
-                    return false;
-                }
+                if (deleteRuleFails(caller, callerUserId, rule)) return true;
             }
         }
-        return true;
+        return false;
+    }
+
+    private boolean deleteRuleFails(Account caller, long callerUserId, FirewallRule rule) {
+        boolean result = deleteLoadBalancerRule(rule.getId(), true, caller, callerUserId, false);
+        if (result == false) {
+            logger.warn("Unable to remove load balancer rule {}", rule);
+            return true;
+        }
+        return false;
     }
 
     @Override
     public boolean removeAllLoadBalanacersForNetwork(long networkId, Account caller, long callerUserId) {
         List<FirewallRuleVO> rules = _firewallDao.listByNetworkAndPurposeAndNotRevoked(networkId, Purpose.LoadBalancing);
-        if (rules != null) {
-            logger.debug("Found " + rules.size() + " lb rules to cleanup");
-            for (FirewallRule rule : rules) {
-                boolean result = deleteLoadBalancerRule(rule.getId(), true, caller, callerUserId, false);
-                if (result == false) {
-                    logger.warn("Unable to remove load balancer rule {}", rule);
-                    return false;
-                }
-            }
-        }
+        if (deleteRulesFails(caller, callerUserId, rules)) return false;
         return true;
     }
 
@@ -2755,5 +2756,4 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         }
         return null;
     }
-
 }
