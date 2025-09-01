@@ -4511,6 +4511,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         annotationDao.removeByEntityType(AnnotationService.EntityType.DISK_OFFERING.name(), offering.getUuid());
         offering.setState(DiskOffering.State.Inactive);
+        offering.setRemoved(new java.util.Date());
         if (_diskOfferingDao.update(offering.getId(), offering)) {
             CallContext.current().setEventDetails("Disk offering id=" + diskOfferingId);
             return true;
@@ -4591,6 +4592,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
         offering.setState(ServiceOffering.State.Inactive);
+        offering.setRemoved(new java.util.Date());
         if (_serviceOfferingDao.update(offeringId, offering)) {
             CallContext.current().setEventDetails("Service offering id=" + offeringId);
             return true;
