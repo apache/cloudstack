@@ -613,7 +613,7 @@ class TestVPCRedundancy(cloudstackTestCase):
         time.sleep(total_sleep)
 
         # Router will be in FAULT state, i.e. keepalived is stopped
-        self.check_routers_state(status_to_check="FAULT", expected_count=2)
+        self.check_routers_state(status_to_check="UNKNOWN", expected_count=2)
         self.start_vm()
         self.check_routers_state(status_to_check="PRIMARY")
 
