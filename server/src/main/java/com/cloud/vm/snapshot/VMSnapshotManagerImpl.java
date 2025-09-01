@@ -134,6 +134,8 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
 
     public static final String VM_WORK_JOB_HANDLER = VMSnapshotManagerImpl.class.getSimpleName();
 
+    private static final String ERROR_STRATEGY_NOT_FOUND = "can't find vm snapshot strategy for instance snapshot";
+
     @Inject
     VMInstanceDao _vmInstanceDao;
     @Inject ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
@@ -500,7 +502,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         VMSnapshotStrategy snapshotStrategy = storageStrategyFactory.getVmSnapshotStrategy(vmSnapshot);
 
         if (snapshotStrategy == null) {
-            throw new CloudRuntimeException(String.format("can't find vm snapshot strategy for vmsnapshot: %s", vmSnapshot));
+            throw new CloudRuntimeException(String.format("%s: %s", ERROR_STRATEGY_NOT_FOUND, vmSnapshot));
         }
 
         return snapshotStrategy;
@@ -595,6 +597,13 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         } catch (Exception e) {
             String errMsg = String.format("Failed to create vm snapshot: [%s] due to: %s", vmSnapshot, e.getMessage());
             logger.debug(errMsg, e);
+            if (e instanceof CloudRuntimeException) {
+                CloudRuntimeException cre = (CloudRuntimeException)e;
+                if (cre.getMessage().startsWith(ERROR_STRATEGY_NOT_FOUND) && VMSnapshot.State.Error.equals(vmSnapshot.getState())) {
+                    logger.debug("No instance snapshot strategy found for {}, remove it from DB", vmSnapshot);
+                    _vmSnapshotDao.remove(vmSnapshot.getId());
+                }
+            }
             throw new CloudRuntimeException(errMsg, e);
         }
     }
