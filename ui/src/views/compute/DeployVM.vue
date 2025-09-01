@@ -133,9 +133,9 @@
                       :guestOsCategories="options.guestOsCategories"
                       :guestOsCategoriesLoading="loading.guestOsCategories"
                       :selectedGuestOsCategoryId="form.guestoscategoryid"
-                      :imageItems="imageType === 'isoid' ? options.isos : options.templates"
-                      :imagesLoading="imageType === 'isoid' ? loading.isos : loading.templates"
-                      :diskSizeSelectionAllowed="imageType !== 'isoid'"
+                      :imageItems="imageType === 'isoid' ? options.isos : imageType === 'volumeid' ? options.volumes : imageType === 'snapshotid' ? options.snapshots : options.templates"
+                      :imagesLoading="imageType === 'isoid' ? loading.isos : imageType === 'volumeid' ? loading.volumes : imageType === 'snapshotid' ? loading.snapshots : loading.templates"
+                      :diskSizeSelectionAllowed="imageType !== 'isoid' && imageType !== 'volumeid' && imageType !== 'snapshotid'"
                       :diskSizeSelectionDeployAsIsMessageVisible="template && template.deployasis"
                       :rootDiskOverrideDisabled="rootDiskSizeFixed > 0 || (template && template.deployasis) || showOverrideDiskOfferingOption"
                       :rootDiskOverrideChecked="form.rootdisksizeitem"
@@ -148,7 +148,7 @@
                       @handle-image-search-filter="filters => fetchImages(filters)"
                       @update-image="updateFieldValue"
                       @update-disk-size="updateFieldValue"
-                      @change-iso-hypervisor="value => hypervisor = value" />
+                      @change-iso-hypervisor="value => form.hypervisor = value" />
                     <a-card
                       v-else
                       :tabList="imageTypeList"
@@ -165,7 +165,7 @@
                           :key="templateKey"
                           @handle-search-filter="filters => fetchAllTemplates(filters)"
                           @update-template-iso="updateFieldValue" />
-                        <div>
+                        <div v-if="!isTemplateHypervisorExternal">
                           {{ $t('label.override.rootdisk.size') }}
                           <a-switch
                             v-model:checked="form.rootdisksizeitem"
@@ -212,6 +212,12 @@
                       <a-input v-model:value="form.isoid" />
                     </a-form-item>
                     <a-form-item class="form-item-hidden">
+                      <a-input v-model:value="form.volumeid" />
+                    </a-form-item>
+                    <a-form-item class="form-item-hidden">
+                      <a-input v-model:value="form.snapshotid" />
+                    </a-form-item>
+                    <a-form-item class="form-item-hidden">
                       <a-input v-model:value="form.rootdisksize" />
                     </a-form-item>
                   </div>
@@ -251,6 +257,7 @@
                       :value="serviceOffering ? serviceOffering.id : ''"
                       :loading="loading.serviceOfferings"
                       :preFillContent="dataPreFill"
+                      :show-gpu-filter="zone.gputotal && zone.gputotal > 0"
                       :minimum-cpunumber="templateConfigurationExists && selectedTemplateConfiguration && selectedTemplateConfiguration.cpunumber ? selectedTemplateConfiguration.cpunumber : 0"
                       :minimum-cpuspeed="templateConfigurationExists && selectedTemplateConfiguration && selectedTemplateConfiguration.cpuspeed ? selectedTemplateConfiguration.cpuspeed : 0"
                       :minimum-memory="templateConfigurationExists && selectedTemplateConfiguration && selectedTemplateConfiguration.memory ? selectedTemplateConfiguration.memory : 0"
@@ -291,7 +298,7 @@
                         <a-input v-model:value="form.memory"/>
                       </a-form-item>
                     </span>
-                    <span v-if="imageType!=='isoid'">
+                    <span v-if="imageType!=='isoid' && !isTemplateHypervisorExternal">
                       {{ $t('label.override.root.diskoffering') }}
                       <a-switch
                         v-model:checked="showOverrideDiskOfferingOption"
@@ -370,9 +377,10 @@
               <a-step
                 v-else
                 :title="imageType === 'templateid' ? $t('label.data.disk') : $t('label.disk.size')"
+                :disabled="isTemplateHypervisorExternal ? true : false"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description>
-                  <div v-if="zoneSelected">
+                  <div v-if="zoneSelected && !isTemplateHypervisorExternal">
                     <disk-offering-selection
                       :items="options.diskOfferings"
                       :row-count="rowCount.diskOfferings"
@@ -397,6 +405,9 @@
                     <a-form-item class="form-item-hidden">
                       <a-input v-model:value="form.size"/>
                     </a-form-item>
+                  </div>
+                  <div v-else-if="isTemplateHypervisorExternal" style="margin-bottom: 20px; margin-top: 7px">
+                    {{ $t('message.host.external.datadisk') }}
                   </div>
                 </template>
               </a-step>
@@ -571,7 +582,7 @@
                       ref="bootintosetup">
                       <a-switch v-model:checked="form.bootintosetup" />
                     </a-form-item>
-                    <a-form-item name="dynamicscalingenabled" ref="dynamicscalingenabled">
+                    <a-form-item name="dynamicscalingenabled" ref="dynamicscalingenabled" v-if="!!template && !isTemplateHypervisorExternal">
                       <template #label>
                         <tooltip-label :title="$t('label.dynamicscalingenabled')" :tooltip="$t('label.dynamicscalingenabled.tooltip')"/>
                       </template>
@@ -611,7 +622,7 @@
                         </a-form-item>
                       </a-col>
                     </a-row>
-                    <a-form-item :label="$t('label.userdata')">
+                    <a-form-item :label="$t('label.user.data')">
                       <a-card>
                         <div v-if="this.template && this.template.userdataid">
                           <a-typography-text>
@@ -665,11 +676,11 @@
                         </div><br/><br/>
                         <div v-if="userdataDefaultOverridePolicy === 'ALLOWOVERRIDE' || userdataDefaultOverridePolicy === 'APPEND' || !userdataDefaultOverridePolicy">
                           <span v-if="userdataDefaultOverridePolicy === 'ALLOWOVERRIDE'" >
-                            {{ $t('label.userdata.do.override') }}
+                            {{ $t('label.user.data.do.override') }}
                             <a-switch v-model:checked="doUserdataOverride" style="margin-left: 10px"/>
                           </span>
                           <span v-if="userdataDefaultOverridePolicy === 'APPEND'">
-                            {{ $t('label.userdata.do.append') }}
+                            {{ $t('label.user.data.do.append') }}
                             <a-switch v-model:checked="doUserdataAppend" style="margin-left: 10px"/>
                           </span>
                           <a-step
@@ -811,6 +822,17 @@
                         :filterOption="filterOption"
                       ></a-select>
                     </a-form-item>
+                    <a-form-item name="externaldetails" ref="externaldetails" v-if="imageType === 'templateid' && isTemplateHypervisorExternal">
+                      <template #label>
+                        <tooltip-label :title="$t('label.externaldetails')" :tooltip="apiParams.externaldetails.description" />
+                      </template>
+                      <a-switch v-model:checked="externalDetailsEnabled" @change="onExternalDetailsEnabledChange"/>
+                      <a-card v-if="externalDetailsEnabled" style="margin-top: 10px">
+                        <div style="margin-bottom: 10px">{{ $t('message.add.orchestrator.resource.details') }}</div>
+                        <details-input
+                          v-model:value="form.externaldetails" />
+                      </a-card>
+                    </a-form-item>
                     <a-form-item :label="$t('label.action.start.instance')" name="startvm" ref="startvm">
                       <a-switch v-model:checked="form.startvm" />
                     </a-form-item>
@@ -907,6 +929,7 @@ import UserDataSelection from '@views/compute/wizard/UserDataSelection'
 import SecurityGroupSelection from '@views/compute/wizard/SecurityGroupSelection'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import InstanceNicsNetworkSelectListView from '@/components/view/InstanceNicsNetworkSelectListView'
+import DetailsInput from '@/components/widgets/DetailsInput'
 
 export default {
   name: 'Wizard',
@@ -931,7 +954,8 @@ export default {
     ComputeSelection,
     SecurityGroupSelection,
     TooltipLabel,
-    InstanceNicsNetworkSelectListView
+    InstanceNicsNetworkSelectListView,
+    DetailsInput
   },
   props: {
     visible: {
@@ -979,6 +1003,8 @@ export default {
       },
       options: {
         guestOsCategories: [],
+        volumes: {},
+        snapshots: {},
         templates: {},
         isos: {},
         hypervisors: [],
@@ -996,13 +1022,14 @@ export default {
         keyboards: [],
         bootTypes: [],
         bootModes: [],
-        ioPolicyTypes: [],
-        dynamicScalingVmConfig: false
+        ioPolicyTypes: []
       },
       rowCount: {},
       loading: {
         deploy: false,
         guestOsCategories: false,
+        volumes: false,
+        snapshots: false,
         templates: false,
         isos: false,
         hypervisors: false,
@@ -1058,11 +1085,11 @@ export default {
       userDataValues: {},
       templateUserDataCols: [
         {
-          title: this.$t('label.userdata'),
+          title: this.$t('label.user.data'),
           dataIndex: 'userdata'
         },
         {
-          title: this.$t('label.userdatapolicy'),
+          title: this.$t('label.user.data.policy'),
           dataIndex: 'userdataoverridepolicy'
         }
       ],
@@ -1106,7 +1133,9 @@ export default {
       },
       architectureTypes: {
         opts: []
-      }
+      },
+      externalDetailsEnabled: false,
+      selectedExtensionId: null
     }
   },
   computed: {
@@ -1381,6 +1410,12 @@ export default {
     queryArchId () {
       return this.$route.query.arch || null
     },
+    querySnapshotId () {
+      return this.$route.query.snapshotid || null
+    },
+    queryVolumeId () {
+      return this.$route.query.volumeid || null
+    },
     queryTemplateId () {
       return this.$route.query.templateid || null
     },
@@ -1418,11 +1453,11 @@ export default {
       let tabList = []
       tabList = [{
         key: 'userdataregistered',
-        tab: this.$t('label.userdata.registered')
+        tab: this.$t('label.user.data.registered')
       },
       {
         key: 'userdatatext',
-        tab: this.$t('label.userdata.text')
+        tab: this.$t('label.user.data.text')
       }]
 
       return tabList
@@ -1449,7 +1484,7 @@ export default {
       return Boolean('listUserData' in this.$store.getters.apis)
     },
     dynamicScalingVmConfigValue () {
-      return this.options.dynamicScalingVmConfig?.[0]?.value === 'true'
+      return this.$store.getters.features.dynamicscalingenabled
     },
     isCustomizedDiskIOPS () {
       return this.diskSelected?.iscustomizediops || false
@@ -1473,7 +1508,13 @@ export default {
       return this.$config.showAllCategoryForModernImageSelection
     },
     guestOsCategoriesSelectionDisallowed () {
+      if (this.imageType === 'volumeid' || this.imageType === 'snapshotid') {
+        return true
+      }
       return (!this.queryGuestOsCategoryId || this.options.guestOsCategories.length === 0) && (!!this.queryTemplateId || !!this.queryIsoId)
+    },
+    isTemplateHypervisorExternal () {
+      return !!this.template && this.template.hypervisor === 'External'
     }
   },
   watch: {
@@ -1598,6 +1639,11 @@ export default {
           if (this.serviceOffering.memory) {
             this.vm.memory = this.serviceOffering.memory
           }
+          this.vm.gpucardid = this.serviceOffering.gpucardid ? this.serviceOffering.gpucardid : ''
+          this.vm.gpucardname = this.serviceOffering.gpucardname ? this.serviceOffering.gpucardname : ''
+          this.vm.gpucount = this.serviceOffering.gpucount ? this.serviceOffering.gpucount : 0
+          this.vm.vgpuprofileid = this.serviceOffering.vgpuprofileid ? this.serviceOffering.vgpuprofileid : ''
+          this.vm.vgpuprofilename = this.serviceOffering.vgpuprofilename ? this.serviceOffering.vgpuprofilename : ''
         }
 
         if (this.template && !this.template.deployasis && this.template.childtemplates && this.template.childtemplates.length > 0) {
@@ -1640,6 +1686,9 @@ export default {
       this.doUserdataOverride = false
       this.doUserdataAppend = false
     }
+  },
+  beforeCreate () {
+    this.apiParams = this.$getApiParams('deployVirtualMachine')
   },
   created () {
     this.initForm()
@@ -1766,12 +1815,14 @@ export default {
           apiName = 'listTemplates'
           params.listall = true
           params.templatefilter = this.isNormalAndDomainUser ? 'executable' : 'all'
+          params.isready = true
           params.id = this.queryTemplateId
           this.dataPreFill.templateid = this.queryTemplateId
         } else if (this.queryIsoId) {
           apiName = 'listIsos'
           params.listall = true
           params.isofilter = this.isNormalAndDomainUser ? 'executable' : 'all'
+          params.isready = true
           params.id = this.queryIsoId
           this.dataPreFill.isoid = this.queryIsoId
         } else if (this.queryNetworkId) {
@@ -1781,7 +1832,7 @@ export default {
         }
         if (!apiName) return resolve(zones)
 
-        postAPI(apiName, params).then(json => {
+        getAPI(apiName, params).then(json => {
           let objectName
           const responseName = [apiName.toLowerCase(), 'response'].join('')
           for (const key in json[responseName]) {
@@ -1923,6 +1974,8 @@ export default {
         this.imageType = 'templateid'
         this.form.templateid = value
         this.form.isoid = null
+        this.form.volumeid = null
+        this.form.snapshotid = null
         this.resetFromTemplateConfiguration()
         let template = ''
         for (const entry of Object.values(this.options.templates)) {
@@ -1951,6 +2004,7 @@ export default {
           if (template.details['vmware-to-kvm-mac-addresses']) {
             this.dataPreFill.macAddressArray = JSON.parse(template.details['vmware-to-kvm-mac-addresses'])
           }
+          this.dataPreFill.hypervisorType = template.hypervisor
         }
       } else if (name === 'isoid') {
         this.imageType = 'isoid'
@@ -1958,6 +2012,8 @@ export default {
         this.resetFromTemplateConfiguration()
         this.form.isoid = value
         this.form.templateid = null
+        this.form.volumeid = null
+        this.form.snapshotid = null
         let iso = null
         for (const entry of Object.values(this.options.isos)) {
           iso = entry?.iso.find(option => option.id === value)
@@ -1970,11 +2026,57 @@ export default {
           this.updateTemplateLinkedUserData(this.iso.userdataid)
           this.userdataDefaultOverridePolicy = this.iso.userdatapolicy
         }
+      } else if (name === 'volumeid') {
+        this.updateFieldValueForVolume(value)
+      } else if (name === 'snapshotid') {
+        this.updateFieldValueForSnapshot(value)
       } else if (['cpuspeed', 'cpunumber', 'memory'].includes(name)) {
         this.vm[name] = value
         this.form[name] = value
       } else {
         this.form[name] = value
+      }
+    },
+    updateFieldValueForVolume (value) {
+      this.imageType = 'volumeid'
+      this.resetTemplateAssociatedResources()
+      this.resetFromTemplateConfiguration()
+      this.form.templateid = null
+      this.form.isoid = null
+      this.form.volumeid = value
+      this.form.snapshotid = null
+      let volume = null
+      for (const entry of Object.values(this.options.volumes)) {
+        volume = entry?.volume.find(option => option.id === value)
+        if (volume) {
+          this.volume = volume
+          break
+        }
+      }
+      if (volume) {
+        this.updateTemplateLinkedUserData(this.volume.userdataid)
+        this.userdataDefaultOverridePolicy = this.volume.userdatapolicy
+      }
+    },
+    updateFieldValueForSnapshot (value) {
+      this.imageType = 'snapshotid'
+      this.resetTemplateAssociatedResources()
+      this.resetFromTemplateConfiguration()
+      this.form.templateid = null
+      this.form.isoid = null
+      this.form.volumeid = null
+      this.form.snapshotid = value
+      let snapshot = null
+      for (const entry of Object.values(this.options.snapshots)) {
+        snapshot = entry?.snapshot.find(option => option.id === value)
+        if (snapshot) {
+          this.snapshot = snapshot
+          break
+        }
+      }
+      if (snapshot) {
+        this.updateTemplateLinkedUserData(this.snapshot.userdataid)
+        this.userdataDefaultOverridePolicy = this.snapshot.userdatapolicy
       }
     },
     updateComputeOffering (id) {
@@ -2123,19 +2225,11 @@ export default {
     },
     changeArchitecture (arch) {
       this.selectedArchitecture = arch
-      if (this.isModernImageSelection) {
-        this.fetchGuestOsCategories()
-        return
-      }
-      this.fetchImages()
+      this.updateImages()
     },
     changeImageType (imageType) {
       this.imageType = imageType
-      if (this.isModernImageSelection) {
-        this.fetchGuestOsCategories()
-      } else {
-        this.fetchImages()
-      }
+      this.updateImages()
     },
     handleSubmitAndStay (e) {
       this.form.stayonpage = true
@@ -2143,11 +2237,10 @@ export default {
     },
     handleSubmit (e) {
       console.log('wizard submit')
-      e.preventDefault()
       if (this.loading.deploy) return
       this.formRef.value.validate().then(async () => {
         const values = toRaw(this.form)
-        if (!values.templateid && !values.isoid) {
+        if (!values.templateid && !values.isoid && !values.volumeid && !values.snapshotid) {
           this.$notification.error({
             message: this.$t('message.request.failed'),
             description: this.$t('message.template.iso')
@@ -2203,6 +2296,10 @@ export default {
         if (this.imageType === 'templateid') {
           deployVmData.templateid = values.templateid
           values.hypervisor = null
+        } else if (this.imageType === 'volumeid') {
+          deployVmData.volumeid = values.volumeid
+        } else if (this.imageType === 'snapshotid') {
+          deployVmData.snapshotid = values.snapshotid
         } else {
           deployVmData.templateid = values.isoid
         }
@@ -2357,6 +2454,12 @@ export default {
           deployVmData.projectid = this.owner.projectid
         }
 
+        if (this.imageType === 'templateid' && this.template && this.template.hypervisor === 'External' && values.externaldetails) {
+          Object.entries(values.externaldetails).forEach(([key, value]) => {
+            deployVmData['externaldetails[0].' + key] = value
+          })
+        }
+
         const title = this.$t('label.launch.vm')
         const description = values.name || ''
         const password = this.$t('label.password')
@@ -2475,7 +2578,7 @@ export default {
         const param = this.params.zones
         const args = { showicon: true }
         if (zoneId) args.id = zoneId
-        postAPI(param.list, args).then(json => {
+        getAPI(param.list, args).then(json => {
           const zoneResponse = json.listzonesresponse.zone || []
           if (listZoneAllow && listZoneAllow.length > 0) {
             zoneResponse.map(zone => {
@@ -2504,51 +2607,60 @@ export default {
         param.loading = true
         param.opts = []
         const options = param.options || {}
-        if (!('listall' in options) && !['zones', 'pods', 'clusters', 'hosts', 'dynamicScalingVmConfig', 'hypervisors'].includes(name)) {
+        if (!('listall' in options) && !['zones', 'pods', 'clusters', 'hosts', 'hypervisors'].includes(name)) {
           options.listall = true
         }
-        postAPI(param.list, options).then((response) => {
+        getAPI(param.list, options).then((response) => {
           param.loading = false
           _.map(response, (responseItem, responseKey) => {
             if (Object.keys(responseItem).length === 0) {
               this.rowCount[name] = 0
               this.options[name] = []
-              return resolve(null)
+              return
             }
             if (!responseKey.includes('response')) {
-              return resolve(null)
+              return
             }
             _.map(responseItem, (response, key) => {
               if (key === 'count') {
                 this.rowCount[name] = response
                 return
               }
-              param.opts = response
-              this.options[name] = response
-
-              if (name === 'hypervisors') {
-                const hypervisorFromResponse = response[0] && response[0].name ? response[0].name : null
-                this.dataPreFill.hypervisor = hypervisorFromResponse
-                this.form.hypervisor = hypervisorFromResponse
+              if (!responseKey.includes('response')) {
+                return resolve(null)
               }
+              _.map(responseItem, (response, key) => {
+                if (key === 'count') {
+                  this.rowCount[name] = response
+                  return
+                }
+                param.opts = response
+                this.options[name] = response
 
-              if (param.field) {
-                this.fillValue(param.field)
+                if (name === 'hypervisors') {
+                  const hypervisorFromResponse = response[0] && response[0].name ? response[0].name : null
+                  this.dataPreFill.hypervisor = hypervisorFromResponse
+                  this.form.hypervisor = hypervisorFromResponse
+                }
+
+                if (param.field) {
+                  this.fillValue(param.field)
+                }
+              })
+
+              if (name === 'zones') {
+                let zoneid = ''
+                if (this.$route.query.zoneid) {
+                  zoneid = this.$route.query.zoneid
+                } else if (this.options.zones.length === 1) {
+                  zoneid = this.options.zones[0].id
+                }
+                if (zoneid) {
+                  this.form.zoneid = zoneid
+                  this.onSelectZoneId(zoneid)
+                }
               }
             })
-
-            if (name === 'zones') {
-              let zoneid = ''
-              if (this.$route.query.zoneid) {
-                zoneid = this.$route.query.zoneid
-              } else if (this.options.zones.length === 1) {
-                zoneid = this.options.zones[0].id
-              }
-              if (zoneid) {
-                this.form.zoneid = zoneid
-                this.onSelectZoneId(zoneid)
-              }
-            }
           })
           resolve(response)
         }).catch(function (error) {
@@ -2560,12 +2672,9 @@ export default {
         })
       })
     },
-    fetchTemplates (templateFilter, params) {
+    fetchUnattachedVolumes (volumeFilter, params) {
       const args = Object.assign({}, params)
-      if (this.isModernImageSelection && this.form.guestoscategoryid && !['-1', '0'].includes(this.form.guestoscategoryid)) {
-        args.oscategoryid = this.form.guestoscategoryid
-      }
-      if (args.keyword || (args.category && args.category !== templateFilter)) {
+      if (args.keyword || (args.category && args.category !== volumeFilter)) {
         args.page = 1
         args.pageSize = args.pageSize || 10
       }
@@ -2576,7 +2685,96 @@ export default {
       args.account = store.getters.project?.id ? null : this.owner.account
       args.domainid = store.getters.project?.id ? null : this.owner.domainid
       args.projectid = store.getters.project?.id || this.owner.projectid
+      args.id = this.queryVolumeId
+      args.state = 'Ready'
+      const pageSize = args.pageSize ? args.pageSize : 10
+      const pageStart = (args.page ? args.page - 1 : 0) * pageSize
+      const pageEnd = pageSize * (pageStart + 1)
+
+      delete args.category
+      delete args.public
+      delete args.featured
+      delete args.page
+      delete args.pageSize
+
+      return new Promise((resolve, reject) => {
+        getAPI('listVolumes', args).then((response) => {
+          let count = 0
+          const volumes = []
+          response.listvolumesresponse.volume.forEach(volume => {
+            if (!volume.virtualmachineid) {
+              count += 1
+              volumes.push({ ...volume, displaytext: volume.name })
+            }
+          })
+          resolve({ listvolumesresponse: { count, volume: volumes.slice(pageStart, pageEnd) } })
+        }).catch((reason) => {
+          // ToDo: Handle errors
+          reject(reason)
+        })
+      })
+    },
+    fetchRootSnapshots (snapshotFilter, params) {
+      const args = Object.assign({}, params)
+      if (args.keyword || (args.category && args.category !== snapshotFilter)) {
+        args.page = 1
+        args.pageSize = args.pageSize || 10
+      }
+      args.zoneid = _.get(this.zone, 'id')
+      if (this.isZoneSelectedMultiArch) {
+        args.arch = this.selectedArchitecture
+      }
+      args.account = store.getters.project?.id ? null : this.owner.account
+      args.domainid = store.getters.project?.id ? null : this.owner.domainid
+      args.projectid = store.getters.project?.id || this.owner.projectid
+      const pageSize = args.pageSize ? args.pageSize : 10
+      const pageStart = (args.page ? args.page - 1 : 0) * pageSize
+      const pageEnd = pageSize * (pageStart + 1)
+
+      delete args.category
+      delete args.public
+      delete args.featured
+      delete args.page
+      delete args.pageSize
+
+      return new Promise((resolve, reject) => {
+        getAPI('listSnapshots', args).then((response) => {
+          let count = 0
+          const snapshots = []
+          response.listsnapshotsresponse.snapshot.forEach(snapshot => {
+            if (snapshot.volumetype === 'ROOT') {
+              count += 1
+              snapshots.push({ ...snapshot, displaytext: snapshot.name })
+            }
+          })
+          resolve({ listsnapshotsresponse: { count, snapshot: snapshots.slice(pageStart, pageEnd) } })
+        }).catch((reason) => {
+          // ToDo: Handle errors
+          reject(reason)
+        })
+      })
+    },
+    fetchTemplates (templateFilter, params) {
+      const args = Object.assign({}, params)
+      if (this.isModernImageSelection && this.form.guestoscategoryid && !['-1', '0'].includes(this.form.guestoscategoryid)) {
+        args.oscategoryid = this.form.guestoscategoryid
+      }
+      if (!args.page || args.keyword || (args.category && args.category !== templateFilter)) {
+        args.page = 1
+      }
+      args.pageSize = args.pageSize || 10
+      args.zoneid = _.get(this.zone, 'id')
+      if (this.isZoneSelectedMultiArch) {
+        args.arch = this.selectedArchitecture
+      }
+      if (this.selectedExtensionId) {
+        args.extensionid = this.selectedExtensionId
+      }
+      args.account = store.getters.project?.id ? null : this.owner.account
+      args.domainid = store.getters.project?.id ? null : this.owner.domainid
+      args.projectid = store.getters.project?.id || this.owner.projectid
       args.templatefilter = templateFilter
+      args.isready = true
       args.details = 'all'
       args.showicon = 'true'
       args.id = this.queryTemplateId
@@ -2600,10 +2798,10 @@ export default {
       if (this.isModernImageSelection && this.form.guestoscategoryid) {
         args.oscategoryid = this.form.guestoscategoryid
       }
-      if (args.keyword || args.category !== isoFilter) {
+      if (!args.page || args.keyword || (args.category && args.category !== isoFilter)) {
         args.page = 1
-        args.pageSize = args.pageSize || 10
       }
+      args.pageSize = args.pageSize || 10
       args.zoneid = _.get(this.zone, 'id')
       if (this.isZoneSelectedMultiArch) {
         args.arch = this.selectedArchitecture
@@ -2612,6 +2810,7 @@ export default {
       args.domainid = store.getters.project?.id ? null : this.owner.domainid
       args.projectid = store.getters.project?.id || this.owner.projectid
       args.isoFilter = isoFilter
+      args.isready = true
       args.bootable = true
       args.showicon = 'true'
       args.id = this.queryIsoId
@@ -2632,6 +2831,14 @@ export default {
     fetchImages (params) {
       if (this.imageType === 'isoid') {
         this.fetchAllIsos(params)
+        return
+      }
+      if (this.imageType === 'volumeid') {
+        this.fetchAllVolumes(params)
+        return
+      }
+      if (this.imageType === 'snapshotid') {
+        this.fetchAllSnapshots(params)
         return
       }
       this.fetchAllTemplates(params)
@@ -2678,6 +2885,50 @@ export default {
         console.log(reason)
       }).finally(() => {
         this.loading.isos = false
+      })
+    },
+    fetchAllVolumes (params) {
+      const promises = []
+      const volumes = {}
+      this.loading.volumes = true
+      this.imageSearchFilters = params
+      const volumeFilters = this.getImageFilters(params)
+      volumeFilters.forEach((filter) => {
+        volumes[filter] = { count: 0, volume: [] }
+        promises.push(this.fetchUnattachedVolumes(filter, params))
+      })
+      this.options.volumes = volumes
+      Promise.all(promises).then((response) => {
+        response.forEach((resItem, idx) => {
+          volumes[volumeFilters[idx]] = _.isEmpty(resItem.listvolumesresponse) ? { count: 0, volume: [] } : resItem.listvolumesresponse
+          this.options.volumes = { ...volumes }
+        })
+      }).catch((reason) => {
+        console.log(reason)
+      }).finally(() => {
+        this.loading.volumes = false
+      })
+    },
+    fetchAllSnapshots (params) {
+      const promises = []
+      const snapshots = {}
+      this.loading.snapshots = true
+      this.imageSearchFilters = params
+      const snapshotFilters = this.getImageFilters(params)
+      snapshotFilters.forEach((filter) => {
+        snapshots[filter] = { count: 0, snapshot: [] }
+        promises.push(this.fetchRootSnapshots(filter, params))
+      })
+      this.options.snapshots = snapshots
+      Promise.all(promises).then((response) => {
+        response.forEach((resItem, idx) => {
+          snapshots[snapshotFilters[idx]] = _.isEmpty(resItem.listsnapshotsresponse) ? { count: 0, snapshot: [] } : resItem.listsnapshotsresponse
+          this.options.snapshots = { ...snapshots }
+        })
+      }).catch((reason) => {
+        console.log(reason)
+      }).finally(() => {
+        this.loading.snapshots = false
       })
     },
     filterOption (input, option) {
@@ -2772,7 +3023,7 @@ export default {
       this.fetchOptions(this.params.hosts, 'hosts')
       if (this.clusterId && Array.isArray(this.options.clusters)) {
         const cluster = this.options.clusters.find(c => c.id === this.clusterId)
-        this.handleArchResourceSelected(cluster.arch)
+        this.handleComputeResourceSelected(cluster)
       }
     },
     onSelectHostId (value) {
@@ -2782,15 +3033,40 @@ export default {
       }
       if (this.hostId && Array.isArray(this.options.hosts)) {
         const host = this.options.hosts.find(h => h.id === this.hostId)
-        this.handleArchResourceSelected(host.arch)
+        this.handleComputeResourceSelected(host)
       }
     },
-    handleArchResourceSelected (resourceArch) {
-      if (!resourceArch || !this.isZoneSelectedMultiArch || this.selectedArchitecture === resourceArch) {
+    updateImages () {
+      if (this.isModernImageSelection && this.imageType !== 'snapshotid' && this.imageType !== 'volumeid') {
+        this.fetchGuestOsCategories()
         return
       }
-      this.selectedArchitecture = resourceArch
-      this.changeArchitecture(resourceArch, this.tabKey === 'templateid')
+      this.fetchImages()
+    },
+    handleComputeResourceSelected (computeResource) {
+      if (!computeResource) {
+        this.selectedExtensionId = null
+        return
+      }
+      const resourceArch = computeResource.arch
+      const needArchChange = resourceArch &&
+        this.isZoneSelectedMultiArch &&
+        this.selectedArchitecture !== resourceArch
+      const resourceHypervisor = computeResource.hypervisor || computeResource.hypervisortype
+      const resourceExtensionId = resourceHypervisor === 'External' ? computeResource.extensionid : null
+      const needExtensionIdChange = this.selectedExtensionId !== resourceExtensionId
+      if (!needArchChange && !needExtensionIdChange) {
+        return
+      }
+      if (needArchChange && !needExtensionIdChange) {
+        this.changeArchitecture(resourceArch, this.imageType === 'templateid')
+        return
+      }
+      this.selectedExtensionId = resourceExtensionId
+      if (needArchChange) {
+        this.selectedArchitecture = resourceArch
+      }
+      this.updateImages()
     },
     onSelectGuestOsCategory (value) {
       this.form.guestoscategoryid = value
@@ -3113,6 +3389,12 @@ export default {
         return Promise.reject(this.$t('message.error.number'))
       }
       return Promise.resolve()
+    },
+    onExternalDetailsEnabledChange (val) {
+      if (val || !this.form.externaldetails) {
+        return
+      }
+      this.form.externaldetails = undefined
     }
   }
 }
@@ -3153,8 +3435,18 @@ export default {
     .ant-card-body {
       min-height: 250px;
       max-height: calc(100vh - 140px);
+      overflow: hidden; // Prevent the entire card from scrolling
+    }
+
+    .card-content {
+      max-height: calc(100vh - 240px); // Reserve space for footer and card header/padding
       overflow-y: auto;
       scroll-behavior: smooth;
+    }
+
+    .card-footer {
+      border-top: 1px solid #f0f0f0;
+      flex-shrink: 0; // Ensure footer doesn't shrink
     }
 
     .resource-detail-item__label {

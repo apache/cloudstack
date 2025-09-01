@@ -80,7 +80,8 @@ mocks = {
         }
         break
     }
-  })
+  }),
+  $notifyError: jest.fn()
 }
 
 const factory = (opts = {}) => {
@@ -295,17 +296,16 @@ describe('Views > compute > MigrateWizard.vue', () => {
         done()
       })
 
-      it('check $message.error should be called when api is called with throw error', async (done) => {
+      it('check $notifyError should be called when api is called with throw error', async (done) => {
         const mockError = 'Error: throw error message'
 
         await mockAxios.mockRejectedValue(mockError)
         await wrapper.setProps({ resource: {} })
         await wrapper.vm.fetchData()
         await flushPromises()
-        await flushPromises()
 
-        expect(mocks.$message.error).toHaveBeenCalled()
-        expect(mocks.$message.error).toHaveBeenLastCalledWith(`${i18n.global.t('message.load.host.failed')}: ${mockError}`)
+        expect(mocks.$notifyError).toHaveBeenCalled()
+        expect(mocks.$notifyError).toHaveBeenLastCalledWith(mockError)
         done()
       })
     })

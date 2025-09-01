@@ -23,12 +23,13 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
@@ -46,7 +47,7 @@ public class DpdkHelperImpl implements DpdkHelper {
     @Inject
     private VMInstanceDao vmInstanceDao;
     @Inject
-    private UserVmDetailsDao userVmDetailsDao;
+    private VMInstanceDetailsDao vmInstanceDetailsDao;
 
     protected Logger logger = LogManager.getLogger(getClass());
 
@@ -93,7 +94,7 @@ public class DpdkHelperImpl implements DpdkHelper {
             return false;
         }
 
-        List<UserVmDetailVO> details = userVmDetailsDao.listDetails(vm.getId());
+        List<VMInstanceDetailVO> details = vmInstanceDetailsDao.listDetails(vm.getId());
         List<ServiceOfferingDetailsVO> offeringDetails = serviceOfferingDetailsDao.listDetails(vm.getServiceOfferingId());
 
         if (!hasRequiredDPDKConfigurations(details, offeringDetails)) {
@@ -106,13 +107,13 @@ public class DpdkHelperImpl implements DpdkHelper {
     /**
      * True if VM is DPDK enabled. NUMA and HUGEPAGES configurations must be present on VM or service offering details
      */
-    private boolean hasRequiredDPDKConfigurations(List<UserVmDetailVO> details, List<ServiceOfferingDetailsVO> offeringDetails) {
+    private boolean hasRequiredDPDKConfigurations(List<VMInstanceDetailVO> details, List<ServiceOfferingDetailsVO> offeringDetails) {
         if (CollectionUtils.isEmpty(details)) {
             return hasValidDPDKConfigurationsOnServiceOffering(false, false, offeringDetails);
         } else {
             boolean isNumaSet = false;
             boolean isHugePagesSet = false;
-            for (UserVmDetailVO detail : details) {
+            for (VMInstanceDetailVO detail : details) {
                 if (detail.getName().equals(DPDK_NUMA)) {
                     isNumaSet = true;
                 } else if (detail.getName().equals(DPDK_HUGE_PAGES)) {

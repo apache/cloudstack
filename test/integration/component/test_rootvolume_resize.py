@@ -308,7 +308,7 @@ class TestResizeVolume(cloudstackTestCase):
                 vmid = int(qresultvmuuid[0][0])
                 qresult = self.dbclient.execute(
                     "select rootDiskController from"
-                    " user_vm_details where id = '%s';" % vmid
+                    " vm_instance_details where id = '%s';" % vmid
                 )
                 self.debug("Query result: %s" % qresult)
                 diskcontroller = qresult[0][0]

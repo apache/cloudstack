@@ -142,6 +142,7 @@ export default {
         keyword: options.keyword,
         page: options.page,
         pageSize: options.pageSize,
+        gpuenabled: options.gpuenabled,
         details: 'min',
         response: 'json'
       }).then(response => {
@@ -188,6 +189,7 @@ export default {
       return new Promise((resolve, reject) => {
         getAPI('listTemplates', {
           templatefilter: 'all',
+          isready: true,
           id: this.resource.templateid
         }).then(response => {
           var template = response?.listtemplatesresponse?.template?.[0] || null

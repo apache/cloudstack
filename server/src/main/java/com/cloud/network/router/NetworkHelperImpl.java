@@ -28,6 +28,9 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.utils.validation.ChecksumUtil;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -84,7 +87,6 @@ import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.router.VirtualRouter.RedundantState;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.LbStickinessMethod;
-import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.resource.ResourceManager;
@@ -103,7 +105,6 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.utils.validation.ChecksumUtil;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
@@ -176,6 +177,11 @@ public class NetworkHelperImpl implements NetworkHelper {
     CapacityManager capacityMgr;
     @Inject
     VpcDao vpcDao;
+    @Inject
+    VpcManager vpcManager;
+
+    protected static final List<HypervisorType> HYPERVISOR_TYPES_NOT_SUPPORTING_DOMAIN_ROUTER = Arrays.asList(
+            HypervisorType.Ovm, HypervisorType.BareMetal, HypervisorType.External);
 
     protected final Map<HypervisorType, ConfigKey<String>> hypervisorsMap = new HashMap<>();
 
@@ -275,6 +281,10 @@ public class NetworkHelperImpl implements NetworkHelper {
         _itMgr.expunge(router.getUuid());
         _routerHealthCheckResultDao.expungeHealthChecks(router.getId());
         _routerDao.remove(router.getId());
+
+        if (router.getVpcId() != null) {
+            vpcManager.reconfigStaticNatForVpcVr(router.getVpcId());
+        }
         return router;
     }
 
@@ -659,8 +669,9 @@ public class NetworkHelperImpl implements NetworkHelper {
             hypervisors.add(defaults);
         }
         if (dest.getCluster() != null) {
-            if (dest.getCluster().getHypervisorType() == HypervisorType.Ovm) {
-                hypervisors.add(getClusterToStartDomainRouterForOvm(dest.getCluster().getPodId()));
+            HypervisorType destClusterHypType = dest.getCluster().getHypervisorType();
+            if (HYPERVISOR_TYPES_NOT_SUPPORTING_DOMAIN_ROUTER.contains(destClusterHypType)) {
+                hypervisors.add(getClusterToStartDomainRouterOtherThanProvidedType(dest.getCluster().getPodId()));
             } else {
                 hypervisors.add(dest.getCluster().getHypervisorType());
             }
@@ -685,10 +696,10 @@ public class NetworkHelperImpl implements NetworkHelper {
      * Ovm won't support any system. So we have to choose a partner cluster in
      * the same pod to start domain router for us
      */
-    protected HypervisorType getClusterToStartDomainRouterForOvm(final long podId) {
+    protected HypervisorType getClusterToStartDomainRouterOtherThanProvidedType(final long podId) {
         final List<ClusterVO> clusters = _clusterDao.listByPodId(podId);
         for (final ClusterVO cv : clusters) {
-            if (cv.getHypervisorType() == HypervisorType.Ovm || cv.getHypervisorType() == HypervisorType.BareMetal) {
+            if (HYPERVISOR_TYPES_NOT_SUPPORTING_DOMAIN_ROUTER.contains(cv.getHypervisorType())) {
                 continue;
             }
 
@@ -808,7 +819,8 @@ public class NetworkHelperImpl implements NetworkHelper {
             logger.debug("Adding nic for Virtual Router in Guest network " + guestNetwork);
             String defaultNetworkStartIp = null, defaultNetworkStartIpv6 = null;
             final Nic placeholder = _networkModel.getPlaceholderNicForRouter(guestNetwork, routerDeploymentDefinition.getPodId());
-            if (!routerDeploymentDefinition.isPublicNetwork()) {
+            if (!routerDeploymentDefinition.isPublicNetwork()
+                    || !_networkModel.isAnyServiceSupportedInNetwork(guestNetwork.getId(), Network.Provider.VPCVirtualRouter, Network.Service.SourceNat, Network.Service.Gateway)) {
                 if (guestNetwork.getCidr() != null) {
                     if (placeholder != null && placeholder.getIPv4Address() != null) {
                         logger.debug("Requesting ipv4 address " + placeholder.getIPv4Address() + " stored in placeholder nic for the network "
