@@ -53,7 +53,7 @@ public class ListNetworksCmd extends BaseListRetrieveOnlyResourceCountCmd implem
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "list networks by ID")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "list networks by name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "list networks by name", since = "4.22.0")
     private String name;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the zone ID of the network")
