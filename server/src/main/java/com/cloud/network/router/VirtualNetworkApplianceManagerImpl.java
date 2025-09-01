@@ -77,7 +77,6 @@ import org.apache.cloudstack.utils.usage.UsageUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
@@ -540,8 +539,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
 
-        int _routerRamSize = NumbersUtil.parseInt(configs.get("router.ram.size"), DEFAULT_ROUTER_VM_RAMSIZE);
-        int _routerCpuMHz = NumbersUtil.parseInt(configs.get("router.cpu.mhz"), DEFAULT_ROUTER_CPU_MHZ);
+        int routerRamSize = NumbersUtil.parseInt(configs.get("router.ram.size"), DEFAULT_ROUTER_VM_RAMSIZE);
+        int routerCpuMHz = NumbersUtil.parseInt(configs.get("router.cpu.mhz"), DEFAULT_ROUTER_CPU_MHZ);
 
         _routerExtraPublicNics = NumbersUtil.parseInt(_configDao.getValue(Config.RouterExtraPublicNics.key()), 2);
 
@@ -578,12 +577,12 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         _dnsBasicZoneUpdates = String.valueOf(_configDao.getValue(Config.DnsBasicZoneUpdates.key()));
 
-        logger.info("Router configurations: " + "ramsize=" + _routerRamSize);
+        logger.info("Router configurations: " + "ramsize=" + routerRamSize);
 
         _agentMgr.registerForHostEvents(new SshKeysDistriMonitor(_agentMgr, _hostDao, _configDao), true, false, false);
 
         final List<ServiceOfferingVO> offerings = _serviceOfferingDao.createSystemServiceOfferings("System Offering For Software Router",
-                ServiceOffering.routerDefaultOffUniqueName, 1, _routerRamSize, _routerCpuMHz, null,
+                ServiceOffering.routerDefaultOffUniqueName, 1, routerRamSize, routerCpuMHz, null,
                 null, true, null, ProvisioningType.THIN, true, null, true, VirtualMachine.Type.DomainRouter, true);
         // this can sometimes happen, if DB is manually or programmatically manipulated
         if (offerings == null || offerings.size() < 2) {
@@ -1312,7 +1311,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     private RouterHealthCheckResultVO parseHealthCheckVOFromJson(final long routerId,
                                                                  final String checkName, final String checkType, final Map<String, String> checkData,
                                                                  final Map<String, Map<String, RouterHealthCheckResultVO>> checksInDb) {
-        RouterHealthStatus success = RouterHealthStatus.valueOf(checkData.get("success"));
+        RouterHealthStatus success = getRouterHealthStatus(checkData.get("success"));
         Date lastUpdate = new Date(Long.parseLong(checkData.get("lastUpdate")));
         double lastRunDuration = Double.parseDouble(checkData.get("lastRunDuration"));
         String message = checkData.get("message");
@@ -1338,6 +1337,16 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         }
         logger.info("Found health check " + hcVo + " which took running duration (ms) " + lastRunDuration);
         return hcVo;
+    }
+
+    private static RouterHealthStatus getRouterHealthStatus(String status) {
+        RouterHealthStatus success;
+        try {
+            success = RouterHealthStatus.valueOf(status.trim());
+        } catch (IllegalArgumentException | NullPointerException e) {
+            success = RouterHealthStatus.UNKNOWN;
+        }
+        return success;
     }
 
     /**
@@ -1851,7 +1860,6 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         }
     }
 
-    @NotNull
     private static GetRouterAlertsCommand getGetRouterAlertsCommand(OpRouterMonitorServiceVO opRouterMonitorServiceVO, String controlIP) {
         GetRouterAlertsCommand command;
         if (opRouterMonitorServiceVO == null) {
@@ -2277,7 +2285,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         // restart network if restartNetwork = false is not specified in profile
         // parameters
-        boolean reprogramGuestNtwks = ! Boolean.FALSE.equals(profile.getParameter(Param.ReProgramGuestNetworks));
+        boolean reprogramGuestNtwks = !Boolean.FALSE.equals(profile.getParameter(Param.ReProgramGuestNetworks));
 
         final Provider provider = getVrProvider(router);
 
@@ -2624,7 +2632,6 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         }
     }
 
-    @NotNull
     private static FirewallRule getFirewallRule(String cidr, String allIp4Cidrs, long networkId, NetworkVO network, Purpose firewall) {
         final List<String> sourceCidr = new ArrayList<>();
         final List<String> destCidr = new ArrayList<>();
