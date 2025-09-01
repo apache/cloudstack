@@ -529,7 +529,7 @@ export default {
           icon: 'delete-outlined',
           label: 'label.action.vmsnapshot.delete',
           message: (record) => {
-            if (record.type === 'Disk') {
+            if (record.hypervisor !== 'KVM' || record.type === 'Disk') {
               return 'message.action.vmsnapshot.disk-only.delete'
             }
             return 'message.action.vmsnapshot.delete'
