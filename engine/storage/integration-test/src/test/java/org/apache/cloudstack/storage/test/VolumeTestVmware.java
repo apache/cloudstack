@@ -86,6 +86,7 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.component.ComponentContext;
 
 @ContextConfiguration(locations = {"classpath:/storageContext.xml"})
@@ -264,7 +265,7 @@ public class VolumeTestVmware extends CloudStackTestNGBase {
 
     public DataStore createPrimaryDataStore() {
         try {
-            String uuid = UUID.nameUUIDFromBytes(this.getPrimaryStorageUrl().getBytes()).toString();
+            String uuid = UuidUtils.nameUUIDFromBytes(this.getPrimaryStorageUrl().getBytes()).toString();
             List<StoragePoolVO> pools = primaryDataStoreDao.findPoolByName(this.primaryName);
             if (pools.size() > 0) {
                 return this.dataStoreMgr.getPrimaryDataStore(pools.get(0).getId());
