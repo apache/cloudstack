@@ -49,7 +49,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
-
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -150,6 +149,8 @@ import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.UnPlugNicAnswer;
 import com.cloud.agent.api.UnPlugNicCommand;
+import com.cloud.agent.api.UnmanageInstanceAnswer;
+import com.cloud.agent.api.UnmanageInstanceCommand;
 import com.cloud.agent.api.UnregisterVMCommand;
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmNetworkStatsEntry;
@@ -297,8 +298,8 @@ import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
@@ -2014,31 +2015,43 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             throw new ConcurrentOperationException(msg);
         }
 
-        Boolean result = Transaction.execute(new TransactionCallback<Boolean>() {
-            @Override
-            public Boolean doInTransaction(TransactionStatus status) {
-
-                logger.debug("Unmanaging VM {}", vm);
-
-                final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
-                final VirtualMachineGuru guru = getVmGuru(vm);
-
-                try {
-                    unmanageVMSnapshots(vm);
-                    unmanageVMNics(profile, vm);
-                    unmanageVMVolumes(vm);
-
-                    guru.finalizeUnmanage(vm);
-                } catch (Exception e) {
-                    logger.error("Error while unmanaging VM {}", vm, e);
-                    return false;
-                }
-
-                return true;
+        boolean isCmdAnswerSuccess = true;
+        // define domain for kvm host
+        if (HypervisorType.KVM.equals(vm.getHypervisorType())) {
+            final UnmanageInstanceCommand unmanageInstanceCommand = new UnmanageInstanceCommand(getVmTO(vm.getId()), false);
+            try {
+                Answer answer = _agentMgr.send(vm.getHostId(), unmanageInstanceCommand);
+                isCmdAnswerSuccess = (answer instanceof UnmanageInstanceAnswer && answer.getResult());
+            } catch (Exception ex) {
+                isCmdAnswerSuccess = false;
             }
-        });
+        }
 
-        return BooleanUtils.isTrue(result);
+        if (isCmdAnswerSuccess) {
+            logger.debug("Unmanaging VM {}", vm);
+            Boolean result = Transaction.execute(new TransactionCallback<Boolean>() {
+                @Override
+                public Boolean doInTransaction(TransactionStatus status) {
+                    final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
+                    final VirtualMachineGuru guru = getVmGuru(vm);
+
+                    try {
+                        unmanageVMSnapshots(vm);
+                        unmanageVMNics(profile, vm);
+                        unmanageVMVolumes(vm);
+
+                        guru.finalizeUnmanage(vm);
+                    } catch (Exception e) {
+                        logger.error("Error while unmanaging VM {}", vm, e);
+                        return false;
+                    }
+
+                    return true;
+                }
+            });
+            return BooleanUtils.isTrue(result);
+        }
+        return false;
     }
 
     /**

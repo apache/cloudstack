@@ -2205,6 +2205,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return null;
     }
 
+    public void defineVMDomain(final Connect conn, final String domainXML) throws LibvirtException {
+        try {
+            conn.domainDefineXML(domainXML);
+        } catch (final LibvirtException ex) {
+            throw ex;
+        }
+    }
+
     @Override
     public boolean stop() {
         try {
