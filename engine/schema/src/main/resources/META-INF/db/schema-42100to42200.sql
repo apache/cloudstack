@@ -18,3 +18,6 @@
 --;
 -- Schema upgrade from 4.21.0.0 to 4.22.0.0
 --;
+
+-- health check status as enum
+CALL `cloud`.`IDEMPOTENT_CHANGE_COLUMN`('router_health_check', 'check_result', 'check_result', 'varchar(16) NOT NULL COMMENT "check executions result: SUCCESS, FAILURE, WARNING, UNKNOWN"');
