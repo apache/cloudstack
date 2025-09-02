@@ -577,34 +577,47 @@
       @ok="addSslCertModalVisible = false"
       :cancelButtonProps="{ style: { display: 'none' } }"
     >
-      <div>
-        <div class="form">
+      <a-row v-show="showAssignedSsl && assignedSslCert !== 'None'">
+        <a-col :span="8">
+          <div class="form__label">{{ $t("label.current") + ' ' + $t('label.sslcertificate') }}</div>
+        </a-col>
+        <a-col :span="10">
+          <div>{{ assignedSslCert }}</div>
+        </a-col>
+        <a-col :span="6">
+          <a-button :disabled="!deleteSslButtonVisible" type="danger" @click="removeSslFromLbRule()">
+            <template #icon><delete-outlined /></template>
+            {{ $t('label.remove') }}
+          </a-button>
+        </a-col>
+      </a-row>
+      <a-row style="margin-top: 16px">
+        <a-col :span="8">
+          <div class="form__label">{{ $t("label.new") + ' ' + $t('label.sslcertificate') }}</div>
+        </a-col>
+        <a-col :span="10">
           <div class="form__item">
-            <div v-show="showAssignedSsl" class="form__item">
-              <div class="form__label">{{ $t("label.current") + ' ' + $t('label.sslcertificate') }}</div>
-              {{ assignedSslCert }}
-              <a-button :disabled="!deleteSslButtonVisible" type="danger" @click="removeSslFromLbRule()">
-                <template #icon><delete-outlined /></template>
-                {{ $t('label.remove') }}
-              </a-button>
-            </div>
-            <br>
-            <div class="form__label">{{ $t("label.new") + ' ' + $t('label.sslcertificate') }}</div>
-            <div class="form__item">
-              <a-select v-model:value="selectedSsl.name" style="width: 80%;" @change="selectssl">
-                <a-select-option
-                  v-for="sslcert in sslcerts.data"
-                  :key="sslcert.id">{{ sslcert.name }}
-                </a-select-option>
-              </a-select>
-              <a-button v-show="addSslButtonVisible" type="primary" @click="addSslTolbRule()">
-                <template #icon><plus-outlined /></template>
-                {{ $t('label.replace.ssl.cert') }}
-              </a-button>
-            </div>
+            <a-select v-model:value="selectedSsl.name" style="width: 80%;" @change="selectssl">
+              <a-select-option
+                v-for="sslcert in sslcerts.data"
+                :key="sslcert.id">{{ sslcert.name }}
+              </a-select-option>
+            </a-select>
           </div>
-        </div>
-      </div>
+        </a-col>
+        <a-col :span="6">
+          <div>
+            <a-button v-show="addSslButtonVisible && assignedSslCert !== 'None'" type="primary" @click="addSslTolbRule()">
+              <template #icon><swap-outlined /></template>
+              {{ $t('label.replace') }}
+            </a-button>
+            <a-button v-show="addSslButtonVisible && assignedSslCert === 'None'" type="primary" @click="addSslTolbRule()">
+              <template #icon><plus-outlined /></template>
+              {{ $t('label.assign') }}
+            </a-button>
+          </div>
+        </a-col>
+      </a-row>
     </a-modal>
 
     <a-modal
@@ -1195,10 +1208,10 @@ export default {
         this.sslcerts.loading = false
       })
       if (this.selectedRule !== null) {
-        this.getCurrentlyAssignedSslCert()
+        this.getCurrentAssignedSslCert()
       }
     },
-    getCurrentlyAssignedSslCert () {
+    getCurrentAssignedSslCert () {
       getAPI('listSslCerts', {
         accountid: this.currentAccountId,
         lbruleid: this.selectedRule.id
@@ -1240,7 +1253,7 @@ export default {
           successMessage: this.$t('message.success.assign.sslcert'),
           successMethod: () => {
             if (this.selectedRule !== null) {
-              this.getCurrentlyAssignedSslCert()
+              this.getCurrentAssignedSslCert()
             }
             this.enableSslAddDeleteButtons()
           },
@@ -1268,7 +1281,7 @@ export default {
           successMessage: this.$t('message.success.remove.sslcert'),
           successMethod: () => {
             this.visible = true
-            this.getCurrentlyAssignedSslCert()
+            this.getCurrentAssignedSslCert()
             this.enableSslAddDeleteButtons()
           },
           errorMessage: this.$t('message.remove.sslcert.failed'),
