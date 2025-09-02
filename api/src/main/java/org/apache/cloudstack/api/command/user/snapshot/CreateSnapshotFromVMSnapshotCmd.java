@@ -210,4 +210,9 @@ public class CreateSnapshotFromVMSnapshotCmd extends BaseAsyncCreateCmd {
         }
         return null;
     }
+
+    @Override
+    public Long getApiResourceId() {
+        return getEntityId();
+    }
 }
