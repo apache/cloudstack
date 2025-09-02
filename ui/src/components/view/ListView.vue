@@ -366,18 +366,11 @@
       </template>
       <template v-if="column.key === 'domain'">
         <span v-if="record.domainid && $store.getters.userInfo.roletype !== 'User'">
-          <template v-if="record.domainid.toString().includes(',')">
-            <template v-for="(id, idx) in record.domainid.toString().split(',')" :key="id">
-              <router-link :to="{ path: '/domain/' + id, query: { tab: 'details' } }">
-                {{ record.domain.split(',')[idx] || id }}
-              </router-link>
-              <span v-if="idx < record.domainid.split(',').length - 1">, </span>
-            </template>
-          </template>
-          <template v-else>
-            <router-link :to="{ path: '/domain/' + record.domainid, query: { tab: 'details' } }">
-              {{ record.domain || text }}
+          <template v-for="(id, idx) in record.domainid.split(',')" :key="id">
+            <router-link :to="{ path: '/domain/' + id, query: { tab: 'details' } }">
+              {{ record.domain.split(',')[idx] || id }}
             </router-link>
+            <span v-if="idx < record.domainid.split(',').length - 1">, </span>
           </template>
         </span>
         <span v-else>{{ text }}</span>
