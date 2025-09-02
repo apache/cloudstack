@@ -367,8 +367,12 @@ export default {
         const params = {
           name: formValues.name,
           certificate: formValues.certificate,
-          privatekey: formValues.privatekey,
-          enabledrevocationcheck: formValues.enabledrevocationcheck
+          privatekey: formValues.privatekey
+        }
+        if (formValues.enabledrevocationcheck != null && formValues.enabledrevocationcheck) {
+          params.enabledrevocationcheck = 'true'
+        } else {
+          params.enabledrevocationcheck = 'false'
         }
         if (this.$route.meta.name === 'account') {
           params.account = this.resource.name

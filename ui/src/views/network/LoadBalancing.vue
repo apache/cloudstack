@@ -88,7 +88,7 @@
         <div class="form__item" v-if="newRule.protocol === 'ssl'" >
           <div class="form__label">{{ $t('label.sslcertificate') }}</div>
           <a-button :disabled="!('createLoadBalancerRule' in $store.getters.apis)" type="primary" @click="handleOpenAddSslCertModal(null)">
-            {{ $t('label.add') }}
+            {{ this.selectedSsl.id != null ? this.selectedSsl.name : $t('label.add') }}
           </a-button>
         </div>
         <div class="form__item" v-if="!newRule.autoscale || newRule.autoscale === 'no'">
@@ -568,10 +568,12 @@
 
     <a-modal
       :title="$t('label.manage.ssl.cert')"
+      :maskClosable="false"
+      :closable="true"
       v-if="addSslCertModalVisible"
       :visible="addSslCertModalVisible"
-      class="vm-modal"
       width="30vw"
+      @cancel="addSslCertModalVisible = false"
       @ok="addSslCertModalVisible = false"
       :cancelButtonProps="{ style: { display: 'none' } }"
     >
@@ -1178,10 +1180,10 @@ export default {
           getAPI('listSslCerts', {
             accountid: this.currentAccountId
           }).then(json => {
-            if (json.listsslcertsresponse.sslcert && json.listsslcertsresponse.sslcert.length > 0) {
+            json.listsslcertsresponse.sslcert.forEach(entry => this.sslcerts.data.push(entry))
+            if (json.listsslcertsresponse.sslcert && json.listsslcertsresponse.sslcert.length > 0 && this.selectedSsl.id == null) {
               this.selectedSsl.name = json.listsslcertsresponse.sslcert[0].name
               this.selectedSsl.id = json.listsslcertsresponse.sslcert[0].id
-              json.listsslcertsresponse.sslcert.forEach(entry => this.sslcerts.data.push(entry))
             }
           }).catch(error => {
             this.$notifyError(error)
@@ -1214,6 +1216,10 @@ export default {
     },
     selectssl (e) {
       this.selectedSsl.id = e
+      const sslcert = this.sslcerts.data.find(entry => entry.id === this.selectedSsl.id)
+      if (sslcert) {
+        this.selectedSsl.name = sslcert.name
+      }
     },
     handleAddSslCert (data) {
       this.addSslCert(data, this.selectedSsl.id)
@@ -1293,6 +1299,7 @@ export default {
       if (record) {
         this.showAssignedSsl = true
         this.addSslButtonVisible = true
+        this.selectedSsl = {}
       } else {
         this.showAssignedSsl = false
         this.addSslButtonVisible = false
@@ -1990,6 +1997,7 @@ export default {
       this.addNetworkModalLoading = false
       this.addNetworkModalVisible = false
       this.selectedTierForAutoScaling = null
+      this.addSslCertModalVisible = null
     },
     handleChangePage (page, pageSize) {
       this.page = page
