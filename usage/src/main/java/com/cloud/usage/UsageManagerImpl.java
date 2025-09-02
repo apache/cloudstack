@@ -319,6 +319,9 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             s_logger.info("Starting Usage Manager");
         }
 
+        _usageJobDao.removeLastOpenJobsOwned(_hostname, 0);
+        Runtime.getRuntime().addShutdownHook(new AbandonJob());
+
         // use the configured exec time and aggregation duration for scheduling the job
         _scheduledFuture =
                 _executor.scheduleAtFixedRate(this, _jobExecTime.getTimeInMillis() - System.currentTimeMillis(), _aggregationDuration * 60 * 1000, TimeUnit.MILLISECONDS);
@@ -331,7 +334,6 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             _sanity = _sanityExecutor.scheduleAtFixedRate(new SanityCheck(), 1, _sanityCheckInterval, TimeUnit.DAYS);
         }
 
-        Runtime.getRuntime().addShutdownHook(new AbandonJob());
         TransactionLegacy usageTxn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
             if (_heartbeatLock.lock(3)) { // 3 second timeout
@@ -2255,17 +2257,17 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                         // the aggregation range away from executing the next job
                         long now = System.currentTimeMillis();
                         long timeToJob = _jobExecTime.getTimeInMillis() - now;
-                        long timeSinceJob = 0;
+                        long timeSinceLastSuccessJob = 0;
                         long aggregationDurationMillis = _aggregationDuration * 60L * 1000L;
                         long lastSuccess = _usageJobDao.getLastJobSuccessDateMillis();
                         if (lastSuccess > 0) {
-                            timeSinceJob = now - lastSuccess;
+                            timeSinceLastSuccessJob = now - lastSuccess;
                         }
 
-                        if ((timeSinceJob > 0) && (timeSinceJob > (aggregationDurationMillis - 100))) {
+                        if ((timeSinceLastSuccessJob > 0) && (timeSinceLastSuccessJob > (aggregationDurationMillis - 100))) {
                             if (timeToJob > (aggregationDurationMillis / 2)) {
                                 if (s_logger.isDebugEnabled()) {
-                                    s_logger.debug("it's been " + timeSinceJob + " ms since last usage job and " + timeToJob +
+                                    s_logger.debug("it's been " + timeSinceLastSuccessJob + " ms since last usage job and " + timeToJob +
                                             " ms until next job, scheduling an immediate job to catch up (aggregation duration is " + _aggregationDuration + " minutes)");
                                 }
                                 scheduleParse();
@@ -2352,17 +2354,12 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             }
         }
     }
+
     private class AbandonJob extends Thread {
         @Override
         public void run() {
-            s_logger.info("exitting Usage Manager");
-            deleteOpenjob();
-        }
-        private void deleteOpenjob() {
-            UsageJobVO job = _usageJobDao.isOwner(_hostname, _pid);
-            if (job != null) {
-                _usageJobDao.remove(job.getId());
-            }
+            s_logger.info("exiting Usage Manager");
+            _usageJobDao.removeLastOpenJobsOwned(_hostname, _pid);
         }
     }
 }
