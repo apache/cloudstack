@@ -472,6 +472,11 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     }
 
     @Override
+    public boolean supportsMemoryVmSnapshot() {
+        return false;
+    }
+
+    @Override
     public Pair<Long, Long> getBackupStorageStats(Long zoneId) {
         final List<BackupRepository> repositories = backupRepositoryDao.listByZoneAndProvider(zoneId, getName());
         Long totalSize = 0L;

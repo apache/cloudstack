@@ -30,7 +30,9 @@ import com.cloud.storage.Snapshot;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
+import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.backup.BackupOfferingVO;
+import org.apache.cloudstack.backup.BackupProvider;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotOptions;
@@ -109,7 +111,10 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
     PrimaryDataStoreDao primaryDataStoreDao;
 
     @Inject
-    VMSnapshotDetailsDao vmSnapshotDetailsDao;
+    private VMSnapshotDetailsDao vmSnapshotDetailsDao;
+
+    @Inject
+    private BackupManager backupManager;
 
     @Inject
     private BackupOfferingDao backupOfferingDao;
@@ -516,8 +521,14 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
             }
         }
 
-        BackupOfferingVO backupOffering = backupOfferingDao.findById(vm.getBackupOfferingId());
-        if (backupOffering != null && "nas".equals(backupOffering.getProvider())) {
+
+        BackupOfferingVO backupOfferingVO = backupOfferingDao.findById(vm.getBackupOfferingId());
+        if (backupOfferingVO == null) {
+            return StrategyPriority.DEFAULT;
+        }
+
+        BackupProvider provider = backupManager.getBackupProvider(backupOfferingVO.getProvider());
+        if (!provider.supportsMemoryVmSnapshot()) {
             logger.debug("{} as the VM has a backup offering for a provider that is not supported.", cantHandleLog);
             return StrategyPriority.CANT_HANDLE;
         }
