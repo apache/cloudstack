@@ -1022,7 +1022,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (offering == null) {
             throw new CloudRuntimeException(errorMessage);
         }
-        String backupDetailsInMessage = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backup, "uuid", "externalId", "vmId", "type", "status", "date");
+        String backupDetailsInMessage = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backup, "uuid", "externalId", "vmId", "name");
         tryRestoreVM(backup, vm, offering, backupDetailsInMessage);
         updateVolumeState(vm, Volume.Event.RestoreSucceeded, Volume.State.Ready);
         updateVmState(vm, VirtualMachine.Event.RestoringSuccess, VirtualMachine.State.Stopped);
@@ -1239,6 +1239,14 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         return ipToNetworkMap;
     }
 
+    private void processRestoreBackupToVMFailure(VMInstanceVO vm, Backup backup, Long eventId) {
+        updateVolumeState(vm, Volume.Event.RestoreFailed, Volume.State.Ready);
+        updateVmState(vm, VirtualMachine.Event.RestoringFailed, VirtualMachine.State.Stopped);
+        ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE_FROM_BACKUP,
+                String.format("Failed to create Instance %s from backup %s", vm.getInstanceName(), backup.getUuid()),
+                vm.getId(), ApiCommandResourceType.VirtualMachine.toString(), eventId);
+    }
+
     @Override
     public Boolean canCreateInstanceFromBackup(final Long backupId) {
         final BackupVO backup = backupDao.findById(backupId);
@@ -1293,7 +1301,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException("Create instance from backup is not supported by the " + offering.getProvider() + " provider.");
         }
 
-        String backupDetailsInMessage = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backup, "uuid", "externalId", "newVMId", "type", "status", "date");
+        String backupDetailsInMessage = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backup, "uuid", "externalId", "name");
+        Pair<Boolean, String> result = null;
         Long eventId = null;
         try {
             updateVmState(vm, VirtualMachine.Event.RestoringRequested, VirtualMachine.State.Restoring);
@@ -1310,18 +1319,21 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 host = restoreInfo.first().getPrivateIpAddress();
                 dataStore = restoreInfo.second().getUuid();
             }
-            if (!backupProvider.restoreBackupToVM(vm, backup, host, dataStore)) {
-                throw new CloudRuntimeException(String.format("Error restoring backup [%s] to VM %s.", backupDetailsInMessage, vm.getUuid()));
-            }
+            result = backupProvider.restoreBackupToVM(vm, backup, host, dataStore);
+
         } catch (Exception e) {
-            updateVolumeState(vm, Volume.Event.RestoreFailed, Volume.State.Ready);
-            updateVmState(vm, VirtualMachine.Event.RestoringFailed, VirtualMachine.State.Stopped);
-            logger.error(String.format("Failed to create Instance [%s] from backup [%s] due to: [%s].", vm.getInstanceName(), backupDetailsInMessage, e.getMessage()), e);
-            ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE_FROM_BACKUP,
-                    String.format("Failed to create Instance %s from backup %s", vm.getInstanceName(), backup.getUuid()),
-                    vm.getId(), ApiCommandResourceType.VirtualMachine.toString(), eventId);
+            logger.error(String.format("Failed to create Instance [%s] from backup [%s] due to: [%s]", vm.getInstanceName(), backupDetailsInMessage, e.getMessage()), e);
+            processRestoreBackupToVMFailure(vm, backup, eventId);
             throw new CloudRuntimeException(String.format("Error while creating Instance [%s] from backup [%s].", vm.getUuid(), backupDetailsInMessage));
         }
+
+        if (result != null && !result.first()) {
+            String error_msg = String.format("Failed to create Instance [%s] from backup [%s] due to: [%s].", vm.getInstanceName(), backupDetailsInMessage, result.second());
+            logger.error(error_msg);
+            processRestoreBackupToVMFailure(vm, backup, eventId);
+            throw new CloudRuntimeException(error_msg);
+        }
+
         updateVolumeState(vm, Volume.Event.RestoreSucceeded, Volume.State.Ready);
         updateVmState(vm, VirtualMachine.Event.RestoringSuccess, VirtualMachine.State.Stopped);
         ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_CREATE_FROM_BACKUP,

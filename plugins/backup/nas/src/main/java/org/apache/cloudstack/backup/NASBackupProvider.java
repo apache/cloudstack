@@ -104,6 +104,12 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     private VMSnapshotDao vmSnapshotDao;
 
     @Inject
+    private VolumeDao _volsDao;
+
+    @Inject
+    protected PrimaryDataStoreDao _storagePoolDao = null;
+
+    @Inject
     private VMSnapshotDetailsDao vmSnapshotDetailsDao;
 
     @Inject
@@ -115,27 +121,38 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     @Inject
     private DiskOfferingDao diskOfferingDao;
 
+    protected Long getClusterIdFromRootVolume(VirtualMachine vm) {
+        VolumeVO rootVolume = _volsDao.getInstanceRootVolume(vm.getId());
+        StoragePoolVO rootDiskPool = _storagePoolDao.findById(rootVolume.getPoolId());
+        return rootDiskPool.getClusterId();
+    }
+
     protected Host getLastVMHypervisorHost(VirtualMachine vm) {
         Long hostId = vm.getLastHostId();
-        if (hostId == null) {
-            LOG.debug("Cannot find last host for vm. This should never happen, please check your database.");
-            return null;
-        }
-        Host host = hostDao.findById(hostId);
+        Long clusterId = null;
 
-        if (host.getStatus() == Status.Up) {
-            return host;
+        if (hostId != null) {
+            Host host = hostDao.findById(hostId);
+            if (host.getStatus() == Status.Up) {
+                return host;
+            }
+            clusterId = host.getClusterId();
         } else {
+            clusterId = getClusterIdFromRootVolume(vm);
+        }
+
+        if (clusterId != null) {
             // Try to find any Up host in the same cluster
-            for (final Host hostInCluster : hostDao.findHypervisorHostInCluster(host.getClusterId())) {
+            for (final Host hostInCluster : hostDao.findHypervisorHostInCluster(clusterId)) {
                 if (hostInCluster.getStatus() == Status.Up) {
-                    LOG.debug("Found Host {} in cluster {}", hostInCluster, host.getClusterId());
+                    LOG.debug("Found Host {} in cluster {}", hostInCluster, clusterId);
                     return hostInCluster;
                 }
             }
         }
+
         // Try to find any Host in the zone
-        return resourceManager.findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, host.getDataCenterId());
+        return resourceManager.findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, vm.getDataCenterId());
     }
 
     protected Host getVMHypervisorHost(VirtualMachine vm) {
@@ -249,16 +266,16 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     }
 
     @Override
-    public boolean restoreBackupToVM(VirtualMachine vm, Backup backup, String hostIp, String dataStoreUuid) {
+    public Pair<Boolean, String> restoreBackupToVM(VirtualMachine vm, Backup backup, String hostIp, String dataStoreUuid) {
         return restoreVMBackup(vm, backup);
     }
 
     @Override
     public boolean restoreVMFromBackup(VirtualMachine vm, Backup backup) {
-        return restoreVMBackup(vm, backup);
+        return restoreVMBackup(vm, backup).first();
     }
 
-    private boolean restoreVMBackup(VirtualMachine vm, Backup backup) {
+    private Pair<Boolean, String> restoreVMBackup(VirtualMachine vm, Backup backup) {
         List<String> backedVolumesUUIDs = backup.getBackedUpVolumes().stream()
                 .sorted(Comparator.comparingLong(Backup.VolumeInfo::getDeviceId))
                 .map(Backup.VolumeInfo::getUuid)
@@ -291,7 +308,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         } catch (OperationTimedoutException e) {
             throw new CloudRuntimeException("Operation to restore backup timed out, please try again");
         }
-        return answer.getResult();
+        return new Pair<>(answer.getResult(), answer.getDetails());
     }
 
     private List<String> getVolumePaths(List<VolumeVO> volumes) {

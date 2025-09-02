@@ -9473,9 +9473,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (backup == null) {
             throw new InvalidParameterValueException("Backup " + cmd.getBackupId() + " does not exist");
         }
-        if (backup.getZoneId() != cmd.getZoneId()) {
-            throw new InvalidParameterValueException("Instance should be created in the same zone as the backup");
-        }
         backupManager.validateBackupForZone(backup.getZoneId());
         backupDao.loadDetails(backup);
 
@@ -9612,20 +9609,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     public UserVm restoreVMFromBackup(CreateVMFromBackupCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         long vmId = cmd.getEntityId();
+        UserVm vm;
         Map<Long, DiskOffering> diskOfferingMap = cmd.getDataDiskTemplateToDiskOfferingMap();
         Map<VirtualMachineProfile.Param, Object> additonalParams = new HashMap<>();
-        UserVm vm;
+        additonalParams.put(VirtualMachineProfile.Param.ReturnAfterVolumePrepare, true);
 
         try {
-            vm = startVirtualMachine(vmId, null, null, null, diskOfferingMap, additonalParams, null);
-
-            boolean status =  stopVirtualMachine(CallContext.current().getCallingUserId(), vm.getId()) ;
-            if (!status) {
-                UserVmVO vmVO = _vmDao.findById(vmId);
-                expunge(vmVO);
-                logger.debug("Successfully cleaned up Instance {} after create Instance from backup failed", vmId);
-                throw new CloudRuntimeException("Unable to stop the Instance before restore");
-            }
+            Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> vmParamPair = null;
+            vmParamPair = startVirtualMachine(vmId, null, null, null, additonalParams, null);
+            vm = vmParamPair.first();
 
             Long isoId = vm.getIsoId();
             if (isoId != null) {
@@ -9663,6 +9655,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 podId = adminCmd.getPodId();
                 clusterId = adminCmd.getClusterId();
             }
+            additonalParams.remove(VirtualMachineProfile.Param.ReturnAfterVolumePrepare);
             vm = startVirtualMachine(vmId, podId, clusterId, cmd.getHostId(), diskOfferingMap, additonalParams, cmd.getDeploymentPlanner());
         }
         return vm;
