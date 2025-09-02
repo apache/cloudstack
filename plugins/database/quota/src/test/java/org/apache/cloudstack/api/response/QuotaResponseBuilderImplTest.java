@@ -69,7 +69,6 @@ import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
 import org.apache.cloudstack.utils.jsinterpreter.JsInterpreter;
 
-import org.apache.commons.compress.utils.Sets;
 import org.apache.commons.lang3.time.DateUtils;
 
 import org.junit.Assert;
