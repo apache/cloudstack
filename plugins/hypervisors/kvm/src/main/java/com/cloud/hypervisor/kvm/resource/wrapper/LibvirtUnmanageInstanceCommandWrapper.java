@@ -20,19 +20,15 @@
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import org.libvirt.Connect;
+import org.libvirt.Domain;
 import org.libvirt.LibvirtException;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.UnmanageInstanceAnswer;
 import com.cloud.agent.api.UnmanageInstanceCommand;
-import com.cloud.agent.api.to.NicTO;
-import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
-import com.cloud.hypervisor.kvm.resource.LibvirtKvmAgentHook;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
-import com.cloud.vm.VirtualMachine;
 
 @ResourceWrapper(handles =  UnmanageInstanceCommand.class)
 public final class LibvirtUnmanageInstanceCommandWrapper extends CommandWrapper<UnmanageInstanceCommand, Answer, LibvirtComputingResource> {
@@ -40,48 +36,19 @@ public final class LibvirtUnmanageInstanceCommandWrapper extends CommandWrapper<
 
     @Override
     public Answer execute(final UnmanageInstanceCommand command, final LibvirtComputingResource libvirtComputingResource) {
-        final VirtualMachineTO vmSpec = command.getVirtualMachine();
-        LibvirtVMDef vm = null;
+        String instanceName = command.getInstanceName();
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
-        Connect conn = null;
+        logger.debug("Unmanaging KVM instance: {}", instanceName);
         try {
-
-            vm = libvirtComputingResource.createVMFromSpec(vmSpec);
-            conn = libvirtUtilitiesHelper.getConnectionByType(vm.getHvsType());
-
-            final NicTO[] nics = vmSpec.getNics();
-
-            for (final NicTO nic : nics) {
-                if (vmSpec.getType() != VirtualMachine.Type.User) {
-                    nic.setPxeDisable(true);
-                }
-            }
-
-            String vmInitialSpecification = vm.toString();
-            String vmFinalSpecification = performXmlTransformHook(vmInitialSpecification, libvirtComputingResource);
-            libvirtComputingResource.defineVMDomain(conn, vmFinalSpecification);
-
+            Connect conn = libvirtUtilitiesHelper.getConnectionByVmName(instanceName);
+            Domain dom = conn.domainLookupByName(instanceName);
+            String domainXML = dom.getXMLDesc(1);
+            conn.domainDefineXML(domainXML);
+            logger.debug("Successfully unmanaged KVM instance: {}", instanceName);
             return new UnmanageInstanceAnswer(command, true, "Successfully unmanaged");
         } catch (final LibvirtException ex) {
-            logger.warn("LibvirtException ", ex);
+            logger.warn("LibvirtException occurred during unmanaging instance: {} ", instanceName, ex);
             return new UnmanageInstanceAnswer(command, false, ex.getMessage());
         }
-    }
-
-    private String performXmlTransformHook(String vmInitialSpecification, final LibvirtComputingResource libvirtComputingResource) {
-        String vmFinalSpecification;
-        try {
-            // if transformer fails, everything must go as it's just skipped.
-            LibvirtKvmAgentHook t = libvirtComputingResource.getTransformer();
-            vmFinalSpecification = (String) t.handle(vmInitialSpecification);
-            if (null == vmFinalSpecification) {
-                logger.warn("Libvirt XML transformer returned NULL, will use XML specification unchanged.");
-                vmFinalSpecification = vmInitialSpecification;
-            }
-        } catch(Exception e) {
-            logger.warn("Exception occurred when handling LibVirt XML transformer hook: {}", e);
-            vmFinalSpecification = vmInitialSpecification;
-        }
-        return vmFinalSpecification;
     }
 }

@@ -1171,6 +1171,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         markVolumesInPool(vm, answer);
     }
 
+
+
     protected void updateVmMetadataManufacturerAndProduct(VirtualMachineTO vmTO, VMInstanceVO vm) {
         String metadataManufacturer = VmMetadataManufacturer.valueIn(vm.getDataCenterId());
         if (StringUtils.isBlank(metadataManufacturer)) {
@@ -2015,19 +2017,19 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             throw new ConcurrentOperationException(msg);
         }
 
-        boolean isCmdAnswerSuccess = true;
-        // define domain for kvm host
+        boolean isDomainXMLPreserved = true;
+        // persist domain for kvm host
         if (HypervisorType.KVM.equals(vm.getHypervisorType())) {
-            final UnmanageInstanceCommand unmanageInstanceCommand = new UnmanageInstanceCommand(getVmTO(vm.getId()), false);
+            final UnmanageInstanceCommand unmanageInstanceCommand = new UnmanageInstanceCommand(vm.getName(), false);
             try {
                 Answer answer = _agentMgr.send(vm.getHostId(), unmanageInstanceCommand);
-                isCmdAnswerSuccess = (answer instanceof UnmanageInstanceAnswer && answer.getResult());
+                isDomainXMLPreserved = (answer instanceof UnmanageInstanceAnswer && answer.getResult());
             } catch (Exception ex) {
-                isCmdAnswerSuccess = false;
+                isDomainXMLPreserved = false;
             }
         }
 
-        if (isCmdAnswerSuccess) {
+        if (isDomainXMLPreserved) {
             logger.debug("Unmanaging VM {}", vm);
             Boolean result = Transaction.execute(new TransactionCallback<Boolean>() {
                 @Override
@@ -2050,6 +2052,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
             });
             return BooleanUtils.isTrue(result);
+        } else {
+            logger.error("Error encountered persisting domainXML for vm: {}", vm.getName());
         }
         return false;
     }
@@ -4016,6 +4020,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         logger.debug("Orchestrating VM reboot for '{}' {} set to {}", vmTo.getName(), VirtualMachineProfile.Param.BootIntoSetup, enterSetup);
         vmTo.setEnterHardwareSetup(enterSetup == null ? false : enterSetup);
     }
+
+    protected VirtualMachineTO prepareVMTo(Long vmId) {
+        VMInstanceVO vm = _vmDao.findById(vmId);
+        VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vm);
+        HypervisorGuru vmGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
+        VirtualMachineTO vmTO = vmGuru.implement(vmProfile);
+        updateVmMetadataManufacturerAndProduct(vmTO, vm);
+        setVmNetworkDetails(vm, vmTO);
+        return vmTO;
+    }
+
 
     protected VirtualMachineTO getVmTO(Long vmId) {
         final VMInstanceVO vm = _vmDao.findById(vmId);

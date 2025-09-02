@@ -24,9 +24,4 @@ public class UnmanageInstanceAnswer extends Answer {
     public UnmanageInstanceAnswer(UnmanageInstanceCommand cmd, boolean success, String details) {
         super(cmd, success, details);
     }
-
-    public UnmanageInstanceAnswer(UnmanageInstanceCommand cmd, Exception e) {
-        super(cmd, e);
-    }
-
 }
