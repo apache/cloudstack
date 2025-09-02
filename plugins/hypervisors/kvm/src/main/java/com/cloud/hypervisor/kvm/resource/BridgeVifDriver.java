@@ -250,7 +250,7 @@ public class BridgeVifDriver extends VifDriverBase {
             intf.defBridgeNet(_bridges.get("private"), null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter));
         } else if (nic.getType() == Networks.TrafficType.Storage) {
             String storageBrName = nic.getName() == null ? _bridges.get("private") : nic.getName();
-            if (nic.getBroadcastType() == Networks.BroadcastDomainType.Storage) {
+            if (Networks.BroadcastDomainType.Storage.equals(nic.getBroadcastType()) && nic.getBroadcastUri() != null) {
                 vNetId = Networks.BroadcastDomainType.getValue(nic.getBroadcastUri());
                 protocol = Networks.BroadcastDomainType.Vlan.scheme();
             }
