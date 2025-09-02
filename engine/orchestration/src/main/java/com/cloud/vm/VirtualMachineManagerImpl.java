@@ -4021,17 +4021,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         vmTo.setEnterHardwareSetup(enterSetup == null ? false : enterSetup);
     }
 
-    protected VirtualMachineTO prepareVMTo(Long vmId) {
-        VMInstanceVO vm = _vmDao.findById(vmId);
-        VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vm);
-        HypervisorGuru vmGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
-        VirtualMachineTO vmTO = vmGuru.implement(vmProfile);
-        updateVmMetadataManufacturerAndProduct(vmTO, vm);
-        setVmNetworkDetails(vm, vmTO);
-        return vmTO;
-    }
-
-
     protected VirtualMachineTO getVmTO(Long vmId) {
         final VMInstanceVO vm = _vmDao.findById(vmId);
         final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
