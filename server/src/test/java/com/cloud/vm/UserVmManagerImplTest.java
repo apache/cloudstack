@@ -3595,7 +3595,6 @@ public class UserVmManagerImplTest {
         doReturn(vmPair).when(userVmManagerImpl).startVirtualMachine(anyLong(), isNull(), isNull(), anyLong(), anyMap(), isNull());
         when(userVmDao.findById(vmId)).thenReturn(vm);
         when(templateDao.findByIdIncludingRemoved(templateId)).thenReturn(mock(VMTemplateVO.class));
-        when(userVmManagerImpl.stopVirtualMachine(anyLong(), anyLong())).thenReturn(true);
 
         UserVm result = userVmManagerImpl.restoreVMFromBackup(cmd);
 
