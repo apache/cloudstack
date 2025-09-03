@@ -19,6 +19,9 @@
 -- Schema upgrade from 4.21.0.0 to 4.22.0.0
 --;
 
+-- Increase length of scripts_version column to 128 due to md5sum to sha512sum change
+CALL `cloud`.`IDEMPOTENT_CHANGE_COLUMN`('cloud.domain_router', 'scripts_version', 'scripts_version', 'VARCHAR(128)');
+
 -- Disk controller mappings
 CREATE TABLE IF NOT EXISTS `cloud`.`disk_controller_mapping` (
                                                                  `id` bigint(20) unsigned NOT NULL auto_increment,
