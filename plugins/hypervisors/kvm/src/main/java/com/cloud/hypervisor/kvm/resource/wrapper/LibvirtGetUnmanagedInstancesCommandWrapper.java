@@ -134,7 +134,7 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
             }
             instance.setPowerState(getPowerState(libvirtComputingResource.getVmState(conn,domain.getName())));
             instance.setMemory((int) LibvirtComputingResource.getDomainMemory(domain) / 1024);
-            instance.setNics(getUnmanagedInstanceNics(parser.getInterfaces()));
+            instance.setNics(getUnmanagedInstanceNics(libvirtComputingResource, parser.getInterfaces()));
             instance.setDisks(getUnmanagedInstanceDisks(parser.getDisks(),libvirtComputingResource, conn, domain.getName()));
             instance.setVncPassword(getFormattedVncPassword(parser.getVncPasswd()));
 
@@ -165,7 +165,7 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
         }
     }
 
-    private List<UnmanagedInstanceTO.Nic> getUnmanagedInstanceNics(List<LibvirtVMDef.InterfaceDef> interfaces) {
+    private List<UnmanagedInstanceTO.Nic> getUnmanagedInstanceNics(LibvirtComputingResource libvirtComputingResource, List<LibvirtVMDef.InterfaceDef> interfaces) {
         final ArrayList<UnmanagedInstanceTO.Nic> nics = new ArrayList<>(interfaces.size());
         int counter = 0;
         for (LibvirtVMDef.InterfaceDef interfaceDef : interfaces) {
@@ -176,6 +176,9 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
             nic.setNetwork(interfaceDef.getDevName());
             nic.setPciSlot(interfaceDef.getSlot().toString());
             nic.setVlan(interfaceDef.getVlanTag());
+            if (nic.getVlan() == -1 && interfaceDef.getNetType() == LibvirtVMDef.InterfaceDef.GuestNetType.BRIDGE) {
+                nic.setVlan(libvirtComputingResource.getVlanIdForBridge(interfaceDef.getBrName()));
+            }
             nics.add(nic);
         }
         return nics;
