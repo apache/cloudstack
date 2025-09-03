@@ -45,6 +45,12 @@ public interface AutoScaleManager extends AutoScaleService {
             "If true, the auto scale vm group name will be used as a prefix for the auto scale vm hostnames.",
             true);
 
+    ConfigKey<Integer> AutoScaleErroredInstanceThreshold = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Integer.class,
+            "autoscale.errored.instance.threshold",
+            "10",
+            "The number of Error Instances allowed in autoscale vm groups for scale up.",
+            true);
+
     void checkAutoScaleUser(Long autoscaleUserId, long accountId);
 
     boolean deleteAutoScaleVmGroupsByAccount(Account account);

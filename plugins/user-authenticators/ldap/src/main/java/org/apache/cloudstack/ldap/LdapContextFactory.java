@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.ldap;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Hashtable;
 
@@ -24,6 +25,7 @@ import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.naming.ldap.InitialLdapContext;
 import javax.naming.ldap.LdapContext;
+import java.security.KeyStore;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
@@ -52,14 +54,14 @@ public class LdapContextFactory {
         return createInitialDirContext(bindPrincipal, bindPassword, providerUrl, true, domainId);
     }
 
-    private LdapContext createInitialDirContext(final String principal, final String password, final boolean isSystemContext, Long domainId) throws NamingException, IOException {
+    private LdapContext createInitialDirContext(final String principal, final String password, final boolean isSystemContext, Long domainId) throws NamingException {
         return createInitialDirContext(principal, password, null, isSystemContext, domainId);
     }
 
     private LdapContext createInitialDirContext(final String principal, final String password, final String providerUrl, final boolean isSystemContext, Long domainId)
-        throws NamingException, IOException {
+        throws NamingException {
         Hashtable<String, String> environment = getEnvironment(principal, password, providerUrl, isSystemContext, domainId);
-        logger.debug("initializing ldap with provider url: " + environment.get(Context.PROVIDER_URL));
+        logger.debug("initializing ldap with provider url: {}", environment.get(Context.PROVIDER_URL));
         return new InitialLdapContext(environment, null);
     }
 
@@ -73,8 +75,36 @@ public class LdapContextFactory {
         if (sslStatus) {
             logger.info("LDAP SSL enabled.");
             environment.put(Context.SECURITY_PROTOCOL, "ssl");
-            System.setProperty("javax.net.ssl.trustStore", _ldapConfiguration.getTrustStore(domainId));
-            System.setProperty("javax.net.ssl.trustStorePassword", _ldapConfiguration.getTrustStorePassword(domainId));
+            String trustStore = _ldapConfiguration.getTrustStore(domainId);
+            String trustStorePassword = _ldapConfiguration.getTrustStorePassword(domainId);
+
+            if (!validateTrustStore(trustStore, trustStorePassword)) {
+                throw new RuntimeException("Invalid truststore or truststore password");
+            }
+
+            System.setProperty("javax.net.ssl.trustStore", trustStore);
+            System.setProperty("javax.net.ssl.trustStorePassword", trustStorePassword);
+        }
+    }
+
+    private boolean validateTrustStore(String trustStore, String trustStorePassword) {
+        if (trustStore == null) {
+            return true;
+        }
+
+        if (trustStorePassword == null) {
+            return false;
+        }
+
+        try {
+            KeyStore.getInstance("JKS").load(
+                new FileInputStream(trustStore),
+                trustStorePassword.toCharArray()
+            );
+            return true;
+        } catch (Exception e) {
+            logger.warn("Failed to validate truststore: {}", e.getMessage());
+            return false;
         }
     }
 

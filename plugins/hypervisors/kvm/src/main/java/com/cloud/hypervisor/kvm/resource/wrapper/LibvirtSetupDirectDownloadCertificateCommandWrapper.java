@@ -84,7 +84,7 @@ public class LibvirtSetupDirectDownloadCertificateCommandWrapper extends Command
     private void importCertificate(String tempCerFilePath, String keyStoreFile, String certificateName, String privatePassword) {
         logger.debug("Importing certificate from temporary file to keystore");
         String keyToolPath = Script.getExecutableAbsolutePath("keytool");
-        int result = Script.executeCommandForExitValue(keyToolPath, "-importcert", "file", tempCerFilePath,
+        int result = Script.executeCommandForExitValue(keyToolPath, "-importcert", "-file", tempCerFilePath,
                 "-keystore", keyStoreFile, "-alias", sanitizeBashCommandArgument(certificateName), "-storepass",
                 privatePassword, "-noprompt");
         if (result != 0) {
