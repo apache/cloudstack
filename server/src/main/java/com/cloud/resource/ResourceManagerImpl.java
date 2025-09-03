@@ -2793,12 +2793,15 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public Host updateHost(final UpdateHostCmd cmd) throws NoTransitionException {
-        return updateHost(cmd.getId(), cmd.getName(), cmd.getOsCategoryId(),
-                cmd.getAllocationState(), cmd.getUrl(), cmd.getHostTags(), cmd.getIsTagARule(), cmd.getAnnotation(), false, cmd.getExternalDetails());
+        return updateHost(cmd.getId(), cmd.getName(), cmd.getOsCategoryId(), cmd.getAllocationState(), cmd.getUrl(),
+                cmd.getHostTags(), cmd.getIsTagARule(), cmd.getAnnotation(), false, cmd.getExternalDetails(),
+                cmd.isCleanupExternalDetails());
     }
 
     private Host updateHost(Long hostId, String name, Long guestOSCategoryId, String allocationState,
-                            String url, List<String> hostTags, Boolean isTagARule, String annotation, boolean isUpdateFromHostHealthCheck, Map<String, String> externalDetails) throws NoTransitionException {
+            String url, List<String> hostTags, Boolean isTagARule, String annotation,
+            boolean isUpdateFromHostHealthCheck, Map<String, String> externalDetails,
+            boolean cleanupExternalDetails) throws NoTransitionException {
         // Verify that the host exists
         final HostVO host = _hostDao.findById(hostId);
         if (host == null) {
@@ -2822,8 +2825,12 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             updateHostTags(host, hostId, hostTags, isTagARule);
         }
 
-        if (MapUtils.isNotEmpty(externalDetails)) {
-            _hostDetailsDao.replaceExternalDetails(hostId, externalDetails);
+        if (cleanupExternalDetails) {
+            _hostDetailsDao.removeExternalDetails(hostId);
+        } else {
+            if (MapUtils.isNotEmpty(externalDetails)) {
+                _hostDetailsDao.replaceExternalDetails(hostId, externalDetails);
+            }
         }
 
         if (url != null) {
@@ -2882,7 +2889,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public Host autoUpdateHostAllocationState(Long hostId, ResourceState.Event resourceEvent) throws NoTransitionException {
-        return updateHost(hostId, null, null, resourceEvent.toString(), null, null, null, null, true, null);
+        return updateHost(hostId, null, null, resourceEvent.toString(), null, null, null, null, true, null, false);
     }
 
     @Override

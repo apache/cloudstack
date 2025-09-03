@@ -1772,9 +1772,22 @@ export default {
                 params[key] = param.opts[input].name
               }
             } else if (param.type === 'map' && typeof input === 'object') {
-              Object.entries(values.externaldetails).forEach(([key, value]) => {
-                params[param.name + '[0].' + key] = value
-              })
+              const details = values[key]
+              if (details && Object.keys(details).length > 0) {
+                Object.entries(details).forEach(([k, v]) => {
+                  params[key + '[0].' + k] = v
+                })
+              } else {
+                if (['details', 'externaldetails'].includes(key)) {
+                  const updateApiParams = this.$getApiParams(action.api)
+                  const cleanupKey = 'cleanup' + key
+                  if (cleanupKey in updateApiParams) {
+                    params[cleanupKey] = true
+                    break
+                  }
+                }
+                params[key] = {}
+              }
             } else {
               params[key] = input
             }
