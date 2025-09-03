@@ -159,6 +159,11 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
     }
 
     @Override
+    public Boolean isDraasEnabled(BackupOffering backupOffering) {
+        return false;
+    }
+
+    @Override
     public String getName() {
         return "networker";
     }

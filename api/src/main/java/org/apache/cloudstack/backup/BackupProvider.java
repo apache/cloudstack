@@ -23,6 +23,8 @@ import com.cloud.vm.VirtualMachine;
 
 public interface BackupProvider {
 
+    Boolean isDraasEnabled(BackupOffering backupOffering);
+
     /**
      * Returns the unique name of the provider
      * @return returns provider name

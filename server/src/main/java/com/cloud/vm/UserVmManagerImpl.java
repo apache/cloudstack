@@ -9461,21 +9461,27 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     public UserVm allocateVMFromBackup(CreateVMFromBackupCmd cmd) throws InsufficientCapacityException, ResourceAllocationException, ResourceUnavailableException {
-        if (!backupManager.canCreateInstanceFromBackup(cmd.getBackupId())) {
-            throw new CloudRuntimeException("Create instance from backup is not supported for this provider.");
-        }
-        DataCenter zone = _dcDao.findById(cmd.getZoneId());
-        if (zone == null) {
-            throw new InvalidParameterValueException("Unable to find zone by id=" + cmd.getZoneId());
-        }
-
         BackupVO backup = backupDao.findById(cmd.getBackupId());
         if (backup == null) {
             throw new InvalidParameterValueException("Backup " + cmd.getBackupId() + " does not exist");
         }
         backupManager.validateBackupForZone(backup.getZoneId());
-        backupDao.loadDetails(backup);
 
+        if (!backupManager.canCreateInstanceFromBackup(cmd.getBackupId())) {
+            throw new CloudRuntimeException("Create instance from backup is not supported for this provider.");
+        }
+
+        DataCenter targetZone = _dcDao.findById(cmd.getZoneId());
+        if (targetZone == null) {
+            throw new InvalidParameterValueException("Unable to find zone by id=" + cmd.getZoneId());
+        }
+
+        if (cmd.getZoneId() != backup.getZoneId() &&
+            !backupManager.canCreateInstanceFromBackupAcrossZones(cmd.getBackupId())) {
+            throw new CloudRuntimeException("Create Instance from Backup on another Zone is not supported by this provider or the Backup Repository.");
+        }
+
+        backupDao.loadDetails(backup);
         verifyDetails(cmd.getDetails());
 
         UserVmVO backupVm = _vmDao.findByIdIncludingRemoved(backup.getVmId());
@@ -9574,7 +9580,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         List<Long> networkIds = cmd.getNetworkIds();
         Account owner = _accountService.getActiveAccountById(cmd.getEntityOwnerId());
-        LinkedHashMap<Integer, Long> userVmNetworkMap = getVmOvfNetworkMapping(zone, owner, template, cmd.getVmNetworkMap());
+        LinkedHashMap<Integer, Long> userVmNetworkMap = getVmOvfNetworkMapping(targetZone, owner, template, cmd.getVmNetworkMap());
         if (MapUtils.isNotEmpty(userVmNetworkMap)) {
             networkIds = new ArrayList<>(userVmNetworkMap.values());
         }
@@ -9585,7 +9591,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             ipToNetworkMap = backupManager.getIpToNetworkMapFromBackup(backup, cmd.getPreserveIp(), networkIds);
         }
 
-        UserVm vm = createVirtualMachine(cmd, zone, owner, serviceOffering, template, hypervisorType, diskOfferingId, size, overrideDiskOfferingId, dataDiskInfoList, networkIds, ipToNetworkMap, null, null);
+        UserVm vm = createVirtualMachine(cmd, targetZone, owner, serviceOffering, template, hypervisorType, diskOfferingId, size, overrideDiskOfferingId, dataDiskInfoList, networkIds, ipToNetworkMap, null, null);
 
         String vmSettingsFromBackup = backup.getDetail(ApiConstants.VM_SETTINGS);
         if (vm != null && vmSettingsFromBackup != null) {

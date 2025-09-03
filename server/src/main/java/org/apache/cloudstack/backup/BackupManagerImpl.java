@@ -62,6 +62,7 @@ import org.apache.cloudstack.api.command.user.backup.UpdateBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.repository.AddBackupRepositoryCmd;
 import org.apache.cloudstack.api.command.user.backup.repository.DeleteBackupRepositoryCmd;
 import org.apache.cloudstack.api.command.user.backup.repository.ListBackupRepositoriesCmd;
+import org.apache.cloudstack.api.command.user.backup.repository.UpdateBackupRepositoryCmd;
 import org.apache.cloudstack.api.command.user.vm.CreateVMFromBackupCmd;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.backup.dao.BackupDao;
@@ -1259,6 +1260,17 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     @Override
+    public Boolean canCreateInstanceFromBackupAcrossZones(final Long backupId) {
+        final BackupVO backup = backupDao.findById(backupId);
+        BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(backup.getBackupOfferingId());
+        if (offering == null) {
+            throw new CloudRuntimeException("Failed to find backup offering");
+        }
+        final BackupProvider backupProvider = getBackupProvider(offering.getProvider());
+        return backupProvider.isDraasEnabled(offering);
+    }
+
+    @Override
     public boolean restoreBackupToVM(final Long backupId, final Long vmId) throws ResourceUnavailableException {
         final BackupVO backup = backupDao.findById(backupId);
         if (backup == null) {
@@ -1616,6 +1628,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         cmdList.add(DeleteBackupCmd.class);
         cmdList.add(RestoreVolumeFromBackupAndAttachToVMCmd.class);
         cmdList.add(AddBackupRepositoryCmd.class);
+        cmdList.add(UpdateBackupRepositoryCmd.class);
         cmdList.add(DeleteBackupRepositoryCmd.class);
         cmdList.add(ListBackupRepositoriesCmd.class);
         cmdList.add(CreateVMFromBackupCmd.class);

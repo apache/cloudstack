@@ -28,10 +28,12 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.command.user.backup.repository.AddBackupRepositoryCmd;
 import org.apache.cloudstack.api.command.user.backup.repository.DeleteBackupRepositoryCmd;
 import org.apache.cloudstack.api.command.user.backup.repository.ListBackupRepositoriesCmd;
+import org.apache.cloudstack.api.command.user.backup.repository.UpdateBackupRepositoryCmd;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.backup.dao.BackupRepositoryDao;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -52,8 +54,52 @@ public class BackupRepositoryServiceImpl extends ManagerBase implements BackupRe
     @Override
     public BackupRepository addBackupRepository(AddBackupRepositoryCmd cmd) {
         BackupRepositoryVO repository = new BackupRepositoryVO(cmd.getZoneId(), cmd.getProvider(), cmd.getName(),
-                cmd.getType(), cmd.getAddress(), cmd.getMountOptions(), cmd.getCapacityBytes());
+                cmd.getType(), cmd.getAddress(), cmd.getMountOptions(), cmd.getCapacityBytes(), cmd.isDraasEnabled());
         return repositoryDao.persist(repository);
+    }
+
+    @Override
+    public BackupRepository updateBackupRepository(UpdateBackupRepositoryCmd cmd) {
+        Long id = cmd.getId();
+        String name = cmd.getName();
+        String address = cmd.getAddress();
+        String mountOptions = cmd.getMountOptions();
+        Boolean draasEnabled = cmd.isDraasEnabled();
+
+        BackupRepositoryVO backupRepository = repositoryDao.findById(id);
+        if (Objects.isNull(backupRepository)) {
+            logger.debug("Backup repository appears to already be deleted");
+            return null;
+        }
+        BackupRepositoryVO backupRepositoryVO = repositoryDao.createForUpdate(id);
+        List<String> fields = new ArrayList<>();
+        if (name != null) {
+            backupRepositoryVO.setName(name);
+            fields.add("name: " + name);
+        }
+
+        if (address != null) {
+            backupRepositoryVO.setAddress(address);
+            fields.add("address: " + address);
+        }
+
+        if (mountOptions != null) {
+            backupRepositoryVO.setMountOptions(mountOptions);
+        }
+
+        if (draasEnabled != null){
+            backupRepositoryVO.setDraasEnabled(draasEnabled);
+            fields.add("draasEnabled: " + draasEnabled);
+        }
+
+        if (!repositoryDao.update(id, backupRepositoryVO)) {
+            logger.warn(String.format("Couldn't update Backup repository (%s) with [%s].", backupRepositoryVO, String.join(", ", fields)));
+        }
+
+        BackupRepositoryVO repositoryVO = repositoryDao.findById(id);
+        CallContext.current().setEventDetails(String.format("Backup Repository updated [%s].",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(repositoryVO, "id", "name", "description", "userDrivenBackupAllowed", "externalId")));
+        return repositoryVO;
     }
 
     @Override

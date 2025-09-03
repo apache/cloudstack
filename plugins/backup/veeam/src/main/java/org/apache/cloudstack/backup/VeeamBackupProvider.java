@@ -359,6 +359,11 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     }
 
     @Override
+    public Boolean isDraasEnabled(BackupOffering backupOffering) {
+        return false;
+    }
+
+    @Override
     public String getConfigComponentName() {
         return BackupService.class.getSimpleName();
     }

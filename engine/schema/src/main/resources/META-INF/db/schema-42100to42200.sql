@@ -18,3 +18,6 @@
 --;
 -- Schema upgrade from 4.21.0.0 to 4.22.0.0
 --;
+
+-- Add the column draas_enabled to cloud.backup_repository. if enabled it means that new Instance can be created on another Zones from Backups on this Repository.
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backup_repository', 'draas_enabled', 'TINYINT(1) DEFAULT NULL COMMENT ''Backup Repository can be used for disaster recovery on another zone''');

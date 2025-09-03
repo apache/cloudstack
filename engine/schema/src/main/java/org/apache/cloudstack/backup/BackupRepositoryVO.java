@@ -67,6 +67,9 @@ public class BackupRepositoryVO implements BackupRepository {
     @Column(name = "capacity_bytes", nullable = true)
     private Long capacityBytes;
 
+    @Column(name = "draas_enabled")
+    private Boolean draasEnabled;
+
     @Column(name = "created")
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date created;
@@ -79,7 +82,7 @@ public class BackupRepositoryVO implements BackupRepository {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public BackupRepositoryVO(final long zoneId, final String provider, final String name, final String type, final String address, final String mountOptions, final Long capacityBytes) {
+    public BackupRepositoryVO(final long zoneId, final String provider, final String name, final String type, final String address, final String mountOptions, final Long capacityBytes, final Boolean draasEnabled) {
         this();
         this.zoneId = zoneId;
         this.provider = provider;
@@ -88,6 +91,7 @@ public class BackupRepositoryVO implements BackupRepository {
         this.address = address;
         this.mountOptions = mountOptions;
         this.capacityBytes = capacityBytes;
+        this.draasEnabled = draasEnabled;
         this.created = new Date();
     }
 
@@ -140,6 +144,11 @@ public class BackupRepositoryVO implements BackupRepository {
     }
 
     @Override
+    public void setMountOptions(String mountOptions) {
+        this.mountOptions = mountOptions;
+    }
+
+    @Override
     public Long getUsedBytes() {
         return usedBytes;
     }
@@ -152,6 +161,16 @@ public class BackupRepositoryVO implements BackupRepository {
     @Override
     public Long getCapacityBytes() {
         return capacityBytes;
+    }
+
+    @Override
+    public Boolean isDraasEnabled() {
+        return draasEnabled;
+    }
+
+    @Override
+    public void setDraasEnabled(Boolean draasEnabled) {
+        this.draasEnabled = draasEnabled;
     }
 
     @Override
