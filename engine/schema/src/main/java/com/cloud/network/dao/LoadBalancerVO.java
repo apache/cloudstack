@@ -148,7 +148,7 @@ public class LoadBalancerVO extends FirewallRuleVO implements LoadBalancer {
     /**
      *  Sets the CIDR list associated with this load balancer rule.
      *
-     *  @param cidrList a comma-separated list of CIDR strings, e.g. "1.2.3.4/24,1.2.3.5/24" or and empty string e.g. "" to clear the restrictions
+     *  @param cidrList a comma-separated list of CIDR strings, e.g. "1.2.3.4/24,1.2.3.5/24" or an empty string e.g. "" to clear the restrictions
      */
     public void setCidrList(String cidrList) {
         this.cidrList = cidrList;
