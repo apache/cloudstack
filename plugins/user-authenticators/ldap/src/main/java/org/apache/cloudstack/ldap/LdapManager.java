@@ -34,7 +34,7 @@ import org.apache.cloudstack.api.response.LinkDomainToLdapResponse;
 
 public interface LdapManager extends PluggableService {
 
-    enum LinkType { GROUP, OU;}
+    enum LinkType { GROUP, OU }
 
     LdapConfigurationResponse addConfiguration(final LdapAddConfigurationCmd cmd) throws InvalidParameterValueException;
 
@@ -72,8 +72,6 @@ public interface LdapManager extends PluggableService {
     LdapTrustMapVO getDomainLinkedToLdap(long domainId);
 
     List<LdapTrustMapVO> getDomainLinkage(long domainId);
-
-    LdapTrustMapVO getAccountLinkedToLdap(long domainId, long accountId);
 
     LdapTrustMapVO getLinkedLdapGroup(long domainId, String group);
 
