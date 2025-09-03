@@ -28,8 +28,8 @@ if [ -z $JAVA_MAJOR_VERSION ];then
     exit 0
 fi
 
-if [ "$JAVA_MAJOR_VERSION" != "17" ] && [ "$JAVA_MAJOR_VERSION" != "11" ];then
-    echo "ERROR: JAVA $JAVA_MAJOR_VERSION is not supported. Currently only JAVA 17 and JAVA 11 are supported."
+if [ "$JAVA_MAJOR_VERSION" != "21" ] && [ "$JAVA_MAJOR_VERSION" != "17" ] && [ "$JAVA_MAJOR_VERSION" != "11" ];then
+    echo "ERROR: JAVA $JAVA_MAJOR_VERSION is not supported. Currently only JAVA versions 11, 17 and 21 are supported."
     exit 1
 fi
 
