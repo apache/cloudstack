@@ -298,7 +298,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {BackupRetryAttempts, BackupRetryInterval, SnapshotHourlyMax, SnapshotDailyMax, SnapshotMonthlyMax, SnapshotWeeklyMax, usageSnapshotSelection,
-                SnapshotInfo.BackupSnapshotAfterTakingSnapshot, VmStorageSnapshotKvm, kvmIncrementalSnapshot, snapshotDeltaMax, snapshotShowChainSize, UseStorageReplication};
+                SnapshotInfo.BackupSnapshotAfterTakingSnapshot, VmStorageSnapshotKvm, kvmIncrementalSnapshot, snapshotDeltaMax, snapshotShowChainSize, UseStorageReplication, KVMSnapshotEnabled};
     }
 
     @Override
@@ -1508,7 +1508,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         if (vmId != null) {
             VMInstanceVO vm = _vmDao.findById(vmId);
             if (vm.getState() != VirtualMachine.State.Stopped && vm.getState() != VirtualMachine.State.Destroyed) {
-                boolean snapshotEnabled = Boolean.parseBoolean(_configDao.getValue("kvm.snapshot.enabled"));
+                boolean snapshotEnabled = KVMSnapshotEnabled.value();
                 if (!snapshotEnabled && !isFromVmSnapshot) {
                     logger.debug("Snapshot is not supported on host " + host + " for the volume " + volume + " attached to the vm " + vm);
                     return false;
