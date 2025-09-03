@@ -172,6 +172,10 @@ if [ -n "${9}" ]; then
   wget -q --show-progress "https://github.com/etcd-io/etcd/releases/download/${ETCD_VERSION}/etcd-${ETCD_VERSION}-linux-amd64.tar.gz" -O ${etcd_dir}/etcd-linux-amd64.tar.gz
 fi
 
+echo "Including CloudStack CSI Driver manifest"
+wget https://github.com/shapeblue/cloudstack-csi-driver/releases/download/v3.0.0/snapshot-crds.yaml -O ${working_dir}/snapshot-crds.yaml
+wget https://github.com/shapeblue/cloudstack-csi-driver/releases/download/v3.0.0/manifest.yaml -O ${working_dir}/manifest.yaml
+
 mkisofs -o "${output_dir}/${build_name}" -J -R -l "${iso_dir}"
 
 rm -rf "${iso_dir}"
