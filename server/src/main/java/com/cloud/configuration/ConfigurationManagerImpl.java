@@ -1006,7 +1006,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         value = value.trim();
 
         if (value.isEmpty() || value.equals("null")) {
-            value = (id == null) ? null : "";
+            value = (id == null && !name.equals("user.vm.readonly.details")) ? null : "";
         }
 
         final String updatedValue = updateConfiguration(userId, name, category, value, scope, id);
