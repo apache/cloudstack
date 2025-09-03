@@ -3113,7 +3113,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             } catch (InterruptedException e) {
                 throw new RuntimeException("Operation is interrupted", e);
             } catch (ExecutionException e) {
-                throw new RuntimeException("Execution excetion", e);
+                throw new CloudRuntimeException("Execution exception getting the outcome of the asynchronous detach volume job", e);
             }
 
             Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
@@ -3548,7 +3548,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 } catch (InterruptedException e) {
                     throw new RuntimeException("Operation is interrupted", e);
                 } catch (ExecutionException e) {
-                    throw new RuntimeException("Execution excetion", e);
+                    throw new CloudRuntimeException("Execution exception getting the outcome of the asynchronous migrate volume job", e);
                 }
 
                 Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
@@ -3895,7 +3895,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 } catch (InterruptedException e) {
                     throw new RuntimeException("Operation is interrupted", e);
                 } catch (ExecutionException e) {
-                    throw new RuntimeException("Execution excetion", e);
+                    throw new CloudRuntimeException("Execution exception getting the outcome of the asynchronous take volume snapshot job", e);
                 }
 
                 Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
@@ -4259,7 +4259,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 } catch (InterruptedException e) {
                     throw new RuntimeException("Operation is interrupted", e);
                 } catch (ExecutionException e) {
-                    throw new RuntimeException("Execution excetion", e);
+                    throw new CloudRuntimeException("Execution exception getting the outcome of the asynchronous extract volume job", e);
                 }
 
                 Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
