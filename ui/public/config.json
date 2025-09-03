@@ -64,6 +64,7 @@
     "sc": "label.simplified.chinese.keyboard"
   },
   "userCard": {
+    "enabled": true,
     "title": "label.help",
     "icon": "question-circle-outlined",
     "links": [
