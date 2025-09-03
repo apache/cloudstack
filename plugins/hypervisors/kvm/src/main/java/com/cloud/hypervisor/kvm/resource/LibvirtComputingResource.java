@@ -3292,6 +3292,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
             }
             guest.setIothreads(customParams.containsKey(VmDetailConstants.IOTHREADS));
+            if (customParams.containsKey(VmDetailConstants.KVM_GUEST_OS_TYPE_MACHINE)) {
+                guest.setMachineType(customParams.get(VmDetailConstants.KVM_GUEST_OS_TYPE_MACHINE));
+            }
         }
         guest.setUuid(uuid);
         if(!isGuestS390x()) {
