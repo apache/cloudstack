@@ -480,6 +480,16 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
         return vmSnapshotDao.remove(vmSnapshot.getId());
     }
 
+    @Override
+    public void updateOperationFailed(VMSnapshot vmSnapshot) throws NoTransitionException {
+        try {
+            vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationFailed);
+        } catch (NoTransitionException e) {
+            LOGGER.debug("Failed to change vm snapshot state with event OperationFailed");
+            throw e;
+        }
+    }
+
     private void publishUsageEvent(String type, VMSnapshot vmSnapshot, UserVm userVm, VolumeObjectTO volumeTo) {
         VolumeVO volume = volumeDao.findById(volumeTo.getId());
         Long diskOfferingId = volume.getDiskOfferingId();

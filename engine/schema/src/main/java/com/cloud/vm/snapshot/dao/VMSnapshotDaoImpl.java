@@ -20,7 +20,6 @@ package com.cloud.vm.snapshot.dao;
 import java.util.Date;
 import java.util.List;
 
-
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
