@@ -175,8 +175,6 @@ public class ActionEventInterceptorTest {
         user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone",
                 UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
-
-        Mockito.when(accountDao.findById(ACCOUNT_ID)).thenReturn(account);
     }
 
     /**
