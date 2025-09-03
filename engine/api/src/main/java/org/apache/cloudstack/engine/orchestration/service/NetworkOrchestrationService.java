@@ -76,44 +76,52 @@ public interface NetworkOrchestrationService {
      */
     Long RVRHandoverTime = 10000L;
 
-    ConfigKey<String> MinVRVersion = new ConfigKey<String>(String.class, MinVRVersionCK, "Advanced", "4.10.0",
+    ConfigKey<String> MinVRVersion = new ConfigKey<>(String.class, MinVRVersionCK, "Advanced", "4.10.0",
             "What version should the Virtual Routers report", true, ConfigKey.Scope.Zone, null);
 
-    ConfigKey<Integer> NetworkLockTimeout = new ConfigKey<Integer>(Integer.class, NetworkLockTimeoutCK, "Network", "600",
-        "Lock wait timeout (seconds) while implementing network", true, Scope.Global, null);
+    ConfigKey<Integer> NetworkLockTimeout = new ConfigKey<>(Integer.class, NetworkLockTimeoutCK, "Network", "600",
+            "Lock wait timeout (seconds) while implementing network", true, Scope.Global, null);
 
-    ConfigKey<String> DeniedRoutes = new ConfigKey<String>(String.class, "denied.routes", "Network", "",
+    ConfigKey<String> DeniedRoutes = new ConfigKey<>(String.class, "denied.routes", "Network", "",
             "Routes that are denied, can not be used for Static Routes creation for the VPC Private Gateway", true, ConfigKey.Scope.Zone, null);
 
-    ConfigKey<String> GuestDomainSuffix = new ConfigKey<String>(String.class, GuestDomainSuffixCK, "Network", "cloud.internal",
-        "Default domain name for vms inside virtualized networks fronted by router", true, ConfigKey.Scope.Zone, null);
+    ConfigKey<String> GuestDomainSuffix = new ConfigKey<>(String.class, GuestDomainSuffixCK, "Network", "cloud.internal",
+            "Default domain name for vms inside virtualized networks fronted by router", true, ConfigKey.Scope.Zone, null);
 
-    ConfigKey<Integer> NetworkThrottlingRate = new ConfigKey<Integer>("Network", Integer.class, NetworkThrottlingRateCK, "200",
-        "Default data transfer rate in megabits per second allowed in network.", true, ConfigKey.Scope.Zone);
+    ConfigKey<Integer> NetworkThrottlingRate = new ConfigKey<>("Network", Integer.class, NetworkThrottlingRateCK, "200",
+            "Default data transfer rate in megabits per second allowed in network.", true, ConfigKey.Scope.Zone);
 
-    ConfigKey<Boolean> PromiscuousMode = new ConfigKey<Boolean>("Advanced", Boolean.class, "network.promiscuous.mode", "false",
+    ConfigKey<Boolean> PromiscuousMode = new ConfigKey<>("Advanced", Boolean.class, "network.promiscuous.mode", "false",
             "Whether to allow or deny promiscuous mode on nics for applicable network elements such as for vswitch/dvswitch portgroups.", true);
 
-    ConfigKey<Boolean> MacAddressChanges = new ConfigKey<Boolean>("Advanced", Boolean.class, "network.mac.address.changes", "true",
+    ConfigKey<Boolean> MacAddressChanges = new ConfigKey<>("Advanced", Boolean.class, "network.mac.address.changes", "true",
             "Whether to allow or deny mac address changes on nics for applicable network elements such as for vswitch/dvswitch porgroups.", true);
 
-    ConfigKey<Boolean> ForgedTransmits = new ConfigKey<Boolean>("Advanced", Boolean.class, "network.forged.transmits", "true",
+    ConfigKey<Boolean> ForgedTransmits = new ConfigKey<>("Advanced", Boolean.class, "network.forged.transmits", "true",
             "Whether to allow or deny forged transmits on nics for applicable network elements such as for vswitch/dvswitch portgroups.", true);
 
-    ConfigKey<Boolean> MacLearning = new ConfigKey<Boolean>("Advanced", Boolean.class, "network.mac.learning", "false",
+    ConfigKey<Boolean> MacLearning = new ConfigKey<>("Advanced", Boolean.class, "network.mac.learning", "false",
             "Whether to allow or deny MAC learning on nics for applicable network elements such as for dvswitch portgroups.", true);
 
-    ConfigKey<Boolean> RollingRestartEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "network.rolling.restart", "true",
+    ConfigKey<Boolean> RollingRestartEnabled = new ConfigKey<>("Advanced", Boolean.class, "network.rolling.restart", "true",
             "Whether to allow or deny rolling restart of network routers.", true);
 
-    static final ConfigKey<Boolean> TUNGSTEN_ENABLED = new ConfigKey<>(Boolean.class, "tungsten.plugin.enable", "Advanced", "false",
+    ConfigKey<Boolean> TUNGSTEN_ENABLED = new ConfigKey<>(Boolean.class, "tungsten.plugin.enable", "Advanced", "false",
             "Indicates whether to enable the Tungsten plugin", false, ConfigKey.Scope.Zone, null);
 
-    static final ConfigKey<Boolean> NSX_ENABLED = new ConfigKey<>(Boolean.class, "nsx.plugin.enable", "Advanced", "false",
+    ConfigKey<Boolean> NSX_ENABLED = new ConfigKey<>(Boolean.class, "nsx.plugin.enable", "Advanced", "false",
             "Indicates whether to enable the NSX plugin", false, ConfigKey.Scope.Zone, null);
 
     ConfigKey<Boolean> NETRIS_ENABLED = new ConfigKey<>(Boolean.class, "netris.plugin.enable", "Advanced", "false",
             "Indicates whether to enable the Netris plugin", false, ConfigKey.Scope.Zone, null);
+    ConfigKey<Integer> NETWORK_LB_HAPROXY_MAX_CONN = new ConfigKey<>(
+                    "Network",
+                    Integer.class,
+                    "network.loadbalancer.haproxy.max.conn",
+                    "4096",
+                    "Load Balancer(haproxy) maximum number of concurrent connections(global max)",
+                    true,
+                    Scope.Global);
 
     List<? extends Network> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
         throws ConcurrentOperationException;
@@ -129,7 +137,7 @@ public interface NetworkOrchestrationService {
      * configures the provided dhcp options on the given nic.
      * @param network of the nic
      * @param nicId
-     * @param extraDhcpOptions
+     * @param extraDhcpOptions a map of rank:value pairs
      */
     void configureExtraDhcpOptions(Network network, long nicId, Map<Integer, String> extraDhcpOptions);
 
@@ -158,16 +166,15 @@ public interface NetworkOrchestrationService {
     Pair<? extends NetworkGuru, ? extends Network> implementNetwork(long networkId, DeployDestination dest, ReservationContext context)
         throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
-    Map<Integer, String> getExtraDhcpOptions(long nicId);
-
     /**
      * Returns all extra dhcp options which are set on the provided nic
      * @param nicId
      * @return map which maps the dhcp value on it's option code
      */
+    Map<Integer, String> getExtraDhcpOptions(long nicId);
+
     /**
      * prepares vm nic change for migration
-     *
      * This method will be called in migration transaction before the vm migration.
      * @param vm
      * @param dest
@@ -176,7 +183,6 @@ public interface NetworkOrchestrationService {
 
     /**
      * commit vm nic change for migration
-     *
      * This method will be called in migration transaction after the successful
      * vm migration.
      * @param src
@@ -186,7 +192,6 @@ public interface NetworkOrchestrationService {
 
     /**
      * rollback vm nic change for migration
-     *
      * This method will be called in migaration transaction after vm migration
      * failure.
      * @param src
@@ -266,7 +271,7 @@ public interface NetworkOrchestrationService {
     void releaseNic(VirtualMachineProfile vmProfile, Nic nic) throws ConcurrentOperationException, ResourceUnavailableException;
 
     NicProfile createNicForVm(Network network, NicProfile requested, ReservationContext context, VirtualMachineProfile vmProfile, boolean prepare)
-        throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException,
+        throws ConcurrentOperationException, InsufficientCapacityException,
         ResourceUnavailableException;
 
     NetworkProfile convertNetworkToNetworkProfile(long networkId);
@@ -277,7 +282,7 @@ public interface NetworkOrchestrationService {
     boolean shutdownNetworkElementsAndResources(ReservationContext context, boolean b, Network network);
 
     void implementNetworkElementsAndResources(DeployDestination dest, ReservationContext context, Network network, NetworkOffering findById)
-        throws ConcurrentOperationException, InsufficientAddressCapacityException, ResourceUnavailableException, InsufficientCapacityException;
+        throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
     Map<String, String> finalizeServicesAndProvidersForNetwork(NetworkOffering offering, Long physicalNetworkId);
 
