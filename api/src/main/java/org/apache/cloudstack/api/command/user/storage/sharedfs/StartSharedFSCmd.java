@@ -38,7 +38,6 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "startSharedFileSystem",
@@ -120,8 +119,7 @@ public class StartSharedFSCmd extends BaseAsyncCmd implements UserCmd {
 
         if (sharedFS != null) {
             ResponseObject.ResponseView respView = getResponseView();
-            Account caller = CallContext.current().getCallingAccount();
-            if (_accountService.isRootAdmin(caller.getId())) {
+            if (CallContext.current().isCallingAccountRootAdmin()) {
                 respView = ResponseObject.ResponseView.Full;
             }
             SharedFSResponse response = _responseGenerator.createSharedFSResponse(respView, sharedFS);

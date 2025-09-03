@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.api;
 
+import static com.cloud.user.AccountManagerImpl.apiKeyAccess;
+import static org.apache.cloudstack.user.UserPasswordResetManager.UserPasswordResetEnabled;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InterruptedIOException;
@@ -57,15 +60,6 @@ import javax.naming.ConfigurationException;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import com.cloud.cluster.ManagementServerHostVO;
-import com.cloud.cluster.dao.ManagementServerHostDao;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.AccountManagerImpl;
-import com.cloud.user.DomainManager;
-import com.cloud.user.User;
-import com.cloud.user.UserAccount;
-import com.cloud.user.UserVO;
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -154,6 +148,8 @@ import org.springframework.stereotype.Component;
 import com.cloud.api.dispatch.DispatchChainFactory;
 import com.cloud.api.dispatch.DispatchTask;
 import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -172,11 +168,18 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnavailableCommandException;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.storage.VolumeApiService;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.AccountManagerImpl;
+import com.cloud.user.DomainManager;
+import com.cloud.user.User;
+import com.cloud.user.UserAccount;
+import com.cloud.user.UserVO;
 import com.cloud.utils.ConstantTimeComparator;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.HttpUtils;
-import com.cloud.utils.HttpUtils.ApiSessionKeySameSite;
 import com.cloud.utils.HttpUtils.ApiSessionKeyCheckOption;
+import com.cloud.utils.HttpUtils.ApiSessionKeySameSite;
 import com.cloud.utils.Pair;
 import com.cloud.utils.ReflectUtil;
 import com.cloud.utils.StringUtils;
@@ -191,9 +194,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionProxyObject;
 import com.cloud.utils.net.NetUtils;
 import com.google.gson.reflect.TypeToken;
-
-import static com.cloud.user.AccountManagerImpl.apiKeyAccess;
-import static org.apache.cloudstack.user.UserPasswordResetManager.UserPasswordResetEnabled;
 
 @Component
 public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiServerService, Configurable {
@@ -698,7 +698,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         } catch (final InsufficientCapacityException ex) {
             logger.info(ex.getMessage());
             String errorMsg = ex.getMessage();
-            if (!accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())) {
+            if (!CallContext.current().isCallingAccountRootAdmin()) {
                 // hide internal details to non-admin user for security reason
                 errorMsg = BaseCmd.USER_ERROR_MESSAGE;
             }
@@ -709,7 +709,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         } catch (final ResourceUnavailableException ex) {
             logger.info(ex.getMessage());
             String errorMsg = ex.getMessage();
-            if (!accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())) {
+            if (!CallContext.current().isCallingAccountRootAdmin()) {
                 // hide internal details to non-admin user for security reason
                 errorMsg = BaseCmd.USER_ERROR_MESSAGE;
             }
@@ -720,7 +720,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         } catch (final Exception ex) {
             logger.error("unhandled exception executing api command: " + ((command == null) ? "null" : command), ex);
             String errorMsg = ex.getMessage();
-            if (!accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())) {
+            if (!CallContext.current().isCallingAccountRootAdmin()) {
                 // hide internal details to non-admin user for security reason
                 errorMsg = BaseCmd.USER_ERROR_MESSAGE;
             }
@@ -878,7 +878,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             List<? extends AsyncJob> jobs;
 
             // list all jobs for ROOT admin
-            if (accountMgr.isRootAdmin(account.getId())) {
+            if (accountMgr.isRootAdmin(account)) {
                 jobs = asyncMgr.findInstancePendingAsyncJobs(command.getApiResourceType().toString(), null);
             } else {
                 jobs = asyncMgr.findInstancePendingAsyncJobs(command.getApiResourceType().toString(), account.getId());
@@ -1413,8 +1413,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         else {
             // determine the cmd class based on calling context
             ResponseView view = ResponseView.Restricted;
-            if (CallContext.current() != null
-                    && accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())) {
+            if (CallContext.current().isCallingAccountRootAdmin()) {
                 view = ResponseView.Full;
             }
             for (Class<?> cmdClass : cmdList) {
