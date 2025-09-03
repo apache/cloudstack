@@ -2248,6 +2248,17 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         }
 
         validateInputsForExternalNetworkProvider(lb, algorithm, lbProtocol);
+
+        List<String> cidrList = cmd.getCidrList();
+
+        if (cidrList != null) {
+            String cidrListStr = StringUtils.join(cidrList, ",");
+            if (!cidrListStr.isEmpty() && !NetUtils.isValidCidrList(cidrListStr)) {
+                throw new InvalidParameterValueException("Invalid CIDR list: " + cidrListStr);
+            }
+            lb.setCidrList(cidrListStr);
+        }
+
         // Validate rule in LB provider
         LoadBalancingRule rule = getLoadBalancerRuleToApply(lb);
         if (!validateLbRule(rule)) {
@@ -2257,8 +2268,11 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         LoadBalancerVO tmplbVo = _lbDao.findById(lbRuleId);
         boolean success = _lbDao.update(lbRuleId, lb);
 
-        // If algorithm is changed, have to reapply the lb config
-        if ((algorithm != null) && (tmplbVo.getAlgorithm().compareTo(algorithm) != 0)){
+        // Check if algorithm or cidrlist has changed, and reapply the lb config if needed
+        boolean algorithmChanged = (algorithm != null) && (tmplbVo.getAlgorithm().compareTo(algorithm) != 0);
+        boolean cidrListChanged = !Objects.equals(tmplbVo.getCidrList(), lb.getCidrList());
+
+        if (algorithmChanged || cidrListChanged) {
             try {
                 lb.setState(FirewallRule.State.Add);
                 _lbDao.persist(lb);
@@ -2279,6 +2293,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     if (lbBackup.getAlgorithm() != null) {
                         lb.setAlgorithm(lbBackup.getAlgorithm());
                     }
+                    lb.setCidrList(lbBackup.getCidrList());
                     lb.setState(lbBackup.getState());
                     _lbDao.update(lb.getId(), lb);
                     _lbDao.persist(lb);
