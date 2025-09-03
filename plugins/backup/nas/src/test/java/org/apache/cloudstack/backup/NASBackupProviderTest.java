@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupRepositoryDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
@@ -83,6 +84,9 @@ public class NASBackupProviderTest {
 
     @Mock
     private ResourceManager resourceManager;
+
+    @Mock
+    private VMSnapshotDao vmSnapshotDaoMock;
 
     @Test
     public void testDeleteBackup() throws OperationTimedoutException, AgentUnavailableException {
