@@ -125,6 +125,9 @@ class TestAddConfigtoDeployVM(cloudstackTestCase):
 
     # Ste Global Config value
     def add_global_config(self, name, value):
+        if len(value) == 0:
+            value = ' '
+
         self.apiclient = self.testClient.getApiClient()
         self.hypervisor = self.testClient.getHypervisorInfo()
         self.dbclient = self.testClient.getDbConnection()
