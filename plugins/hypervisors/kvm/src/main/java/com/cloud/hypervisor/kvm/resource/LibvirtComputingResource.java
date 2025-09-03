@@ -314,15 +314,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public static final String TUNGSTEN_PATH = "scripts/vm/network/tungsten";
 
-    public static final String INSTANCE_CONVERSION_SUPPORTED_CHECK_CMD = "virt-v2v --version";
+    public static final String INSTANCE_CONVERSION_SUPPORTED_CHECK_CMD = "\"virt-v2v --version\"";
     // virt-v2v --version => sample output: virt-v2v 1.42.0rhel=8,release=22.module+el8.10.0+1590+a67ab969
-    public static final String OVF_EXPORT_SUPPORTED_CHECK_CMD = "ovftool --version";
+    public static final String OVF_EXPORT_SUPPORTED_CHECK_CMD = "\"ovftool --version\"";
     // ovftool --version => sample output: VMware ovftool 4.6.0 (build-21452615)
-    public static final String OVF_EXPORT_TOOl_GET_VERSION_CMD = "ovftool --version | awk '{print $3}'";
+    public static final String OVF_EXPORT_TOOl_GET_VERSION_CMD = "\"ovftool --version | awk '{print $3}'\"";
 
-    public static final String WINDOWS_GUEST_CONVERSION_SUPPORTED_CHECK_CMD = "rpm -qa | grep -i virtio-win";
-    public static final String UBUNTU_WINDOWS_GUEST_CONVERSION_SUPPORTED_CHECK_CMD = "dpkg -l virtio-win";
-    public static final String UBUNTU_NBDKIT_PKG_CHECK_CMD = "dpkg -l nbdkit";
+    public static final String WINDOWS_GUEST_CONVERSION_SUPPORTED_CHECK_CMD = "\"rpm -qa | grep -i virtio-win\"";
+    public static final String UBUNTU_WINDOWS_GUEST_CONVERSION_SUPPORTED_CHECK_CMD = "\"dpkg -l virtio-win\"";
+    public static final String UBUNTU_NBDKIT_PKG_CHECK_CMD = "\"dpkg -l nbdkit\"";
 
     public static final int LIBVIRT_CGROUP_CPU_SHARES_MIN = 2;
     public static final int LIBVIRT_CGROUP_CPU_SHARES_MAX = 262144;
