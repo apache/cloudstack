@@ -65,7 +65,7 @@ public class UpdateLoadBalancerRuleCmd extends BaseAsyncCustomIdCmd {
     @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, description = "The protocol for the LB")
     private String lbProtocol;
 
-    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list to forward traffic from")
+    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list to forward traffic from", since = "4.22")
     private List<String> cidrList;
 
     /////////////////////////////////////////////////////
