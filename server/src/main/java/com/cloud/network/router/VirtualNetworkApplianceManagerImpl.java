@@ -1762,7 +1762,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         }
     }
 
-    private void updateWithLbRuleSslCertificates(final StringBuilder loadBalancingData, LoadBalancerVO loadBalancerVO, String sourceIp) {
+    protected void updateWithLbRuleSslCertificates(final StringBuilder loadBalancingData, LoadBalancerVO loadBalancerVO, String sourceIp) {
         if (NetUtils.SSL_PROTO.equals(loadBalancerVO.getLbProtocol())) {
             final LbSslCert sslCert = _lbMgr.getLbSslCert(loadBalancerVO.getId());
             if (sslCert != null && ! sslCert.isRevoked()) {
