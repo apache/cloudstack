@@ -1996,7 +1996,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         return handled;
     }
 
-    private LoadBalancingRule getLoadBalancerRuleToApply(LoadBalancerVO lb) {
+    protected LoadBalancingRule getLoadBalancerRuleToApply(LoadBalancerVO lb) {
 
         List<LbStickinessPolicy> policyList = getStickinessPolicies(lb.getId());
         Ip sourceIp = getSourceIp(lb);
@@ -2268,7 +2268,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         // If algorithm or lb protocol is changed, have to reapply the lb config
         boolean needToReApplyRule = (algorithm != null && algorithm.equals(tmplbVo.getAlgorithm()))
-                || (lbProtocol != null && lbProtocol.equals(tmplbVo.getLbProtocol()));
+                || (lbProtocol != null && !lbProtocol.equals(tmplbVo.getLbProtocol()));
         if (needToReApplyRule) {
             try {
                 lb.setState(FirewallRule.State.Add);

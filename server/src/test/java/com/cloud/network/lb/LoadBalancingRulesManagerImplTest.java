@@ -26,6 +26,7 @@ import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.SslCertVO;
+import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -35,7 +36,9 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.loadbalancer.UpdateLoadBalancerRuleCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.junit.Assert;
@@ -46,12 +49,16 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -77,6 +84,9 @@ public class LoadBalancingRulesManagerImplTest{
 
     @Mock
     LoadBalancerCertMapDao _lbCertMapDao;
+
+    @Mock
+    NetworkOfferingServiceMapDao _networkOfferingServiceDao;
 
     @Spy
     @InjectMocks
@@ -113,7 +123,7 @@ public class LoadBalancingRulesManagerImplTest{
         List<Network.Provider> providers = Arrays.asList(Network.Provider.VirtualRouter);
 
         when(loadBalancerMock.getNetworkId()).thenReturn(10L);
-        when(_networkDao.findById(Mockito.anyLong())).thenReturn(networkMock);
+        when(_networkDao.findById(anyLong())).thenReturn(networkMock);
         when(_networkMgr.getProvidersForServiceInNetwork(networkMock, Network.Service.Lb)).thenReturn(providers);
 
         Network.Provider provider = lbr.getLoadBalancerServiceProvider(loadBalancerMock);
@@ -133,7 +143,7 @@ public class LoadBalancingRulesManagerImplTest{
     }
 
     @Test
-    public void testAssignCertToLoadBalancer() throws Exception{
+    public void testAssignCertToLoadBalancer() throws Exception {
         long accountId = 10L;
         long lbRuleId = 2L;
         long certId = 3L;
@@ -166,5 +176,92 @@ public class LoadBalancingRulesManagerImplTest{
 
         lbr.assignCertToLoadBalancer(lbRuleId, certId, true);
 
+        Mockito.verify(lbr, times(2)).applyLoadBalancerConfig(lbRuleId);
+    }
+
+    @Test
+    public void testUpdateLoadBalancerRule1() throws Exception {
+        long accountId = 10L;
+        long lbRuleId = 2L;
+        long certMapRuleId = 3L;
+        long networkId = 4L;
+
+        AccountVO account = new AccountVO("testaccount", 1L, "networkdomain", Account.Type.NORMAL, "uuid");
+        account.setId(accountId);
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone",
+                UUID.randomUUID().toString(), User.Source.UNKNOWN);
+        CallContext.register(user, account);
+
+        LoadBalancerVO loadBalancerMock = Mockito.mock(LoadBalancerVO.class);
+        when(_lbDao.findById(lbRuleId)).thenReturn(loadBalancerMock);
+        when(loadBalancerMock.getNetworkId()).thenReturn(networkId);
+
+        NetworkVO network = Mockito.mock(NetworkVO.class);
+        when(_networkDao.findById(networkId)).thenReturn(network);
+
+        Mockito.doNothing().when(_accountMgr).checkAccess(Mockito.any(Account.class), Mockito.isNull(SecurityChecker.AccessType.class), Mockito.eq(true), Mockito.any(LoadBalancerVO.class));
+
+        LoadBalancingRule loadBalancingRule = Mockito.mock(LoadBalancingRule.class);
+        Mockito.doReturn(loadBalancingRule).when(lbr).getLoadBalancerRuleToApply(loadBalancerMock);
+        Mockito.doReturn(true).when(lbr).validateLbRule(loadBalancingRule);
+        Mockito.doReturn(true).when(lbr).applyLoadBalancerConfig(lbRuleId);
+
+        when(_lbDao.update(lbRuleId, loadBalancerMock)).thenReturn(true);
+
+        // Replace TCP with SSL
+        UpdateLoadBalancerRuleCmd cmd = new UpdateLoadBalancerRuleCmd();
+        ReflectionTestUtils.setField(cmd, ApiConstants.ID, lbRuleId);
+        ReflectionTestUtils.setField(cmd, "lbProtocol", NetUtils.SSL_PROTO);
+        when(loadBalancerMock.getLbProtocol()).thenReturn(NetUtils.TCP_PROTO).thenReturn(NetUtils.SSL_PROTO);
+
+        lbr.updateLoadBalancerRule(cmd);
+
+        Mockito.verify(lbr, times(1)).applyLoadBalancerConfig(lbRuleId);
+        Mockito.verify(_lbCertMapDao, never()).remove(anyLong());
+    }
+
+    @Test
+    public void testUpdateLoadBalancerRule2() throws Exception {
+        long accountId = 10L;
+        long lbRuleId = 2L;
+        long certMapRuleId = 3L;
+        long networkId = 4L;
+
+        AccountVO account = new AccountVO("testaccount", 1L, "networkdomain", Account.Type.NORMAL, "uuid");
+        account.setId(accountId);
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone",
+                UUID.randomUUID().toString(), User.Source.UNKNOWN);
+        CallContext.register(user, account);
+
+        LoadBalancerVO loadBalancerMock = Mockito.mock(LoadBalancerVO.class);
+        when(_lbDao.findById(lbRuleId)).thenReturn(loadBalancerMock);
+        when(loadBalancerMock.getId()).thenReturn(lbRuleId);
+        when(loadBalancerMock.getNetworkId()).thenReturn(networkId);
+
+        NetworkVO network = Mockito.mock(NetworkVO.class);
+        when(_networkDao.findById(networkId)).thenReturn(network);
+
+        Mockito.doNothing().when(_accountMgr).checkAccess(Mockito.any(Account.class), Mockito.isNull(SecurityChecker.AccessType.class), Mockito.eq(true), Mockito.any(LoadBalancerVO.class));
+
+        LoadBalancingRule loadBalancingRule = Mockito.mock(LoadBalancingRule.class);
+        Mockito.doReturn(loadBalancingRule).when(lbr).getLoadBalancerRuleToApply(loadBalancerMock);
+        Mockito.doReturn(true).when(lbr).validateLbRule(loadBalancingRule);
+        Mockito.doReturn(true).when(lbr).applyLoadBalancerConfig(lbRuleId);
+
+        when(_lbDao.update(lbRuleId, loadBalancerMock)).thenReturn(true);
+
+        // Replace SSL with TCP
+        UpdateLoadBalancerRuleCmd cmd = new UpdateLoadBalancerRuleCmd();
+        ReflectionTestUtils.setField(cmd, ApiConstants.ID, lbRuleId);
+        ReflectionTestUtils.setField(cmd, "lbProtocol", NetUtils.TCP_PROTO);
+        LoadBalancerCertMapVO certMapRule = Mockito.mock(LoadBalancerCertMapVO.class);
+        when(_lbCertMapDao.findByLbRuleId(lbRuleId)).thenReturn(certMapRule);
+        when(certMapRule.getId()).thenReturn(certMapRuleId);
+        when(loadBalancerMock.getLbProtocol()).thenReturn(NetUtils.SSL_PROTO).thenReturn(NetUtils.TCP_PROTO);
+
+        lbr.updateLoadBalancerRule(cmd);
+
+        Mockito.verify(_lbCertMapDao, times(1)).remove(anyLong());
+        Mockito.verify(lbr, times(1)).applyLoadBalancerConfig(lbRuleId);
     }
 }

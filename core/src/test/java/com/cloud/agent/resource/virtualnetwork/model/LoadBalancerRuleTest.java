@@ -36,6 +36,24 @@ public class LoadBalancerRuleTest {
         Assert.assertEquals(chain, sslCertEntry.getChain());
         Assert.assertEquals(password, sslCertEntry.getPassword());
 
+        String name2 = "name2";
+        String cert2 = "cert2";
+        String key2 = "key2";
+        String chain2 = "chain2";
+        String password2 = "password2";
+
+        sslCertEntry.setName(name2);
+        sslCertEntry.setCert(cert2);
+        sslCertEntry.setKey(key2);
+        sslCertEntry.setChain(chain2);
+        sslCertEntry.setPassword(password2);
+
+        Assert.assertEquals(name2, sslCertEntry.getName());
+        Assert.assertEquals(cert2, sslCertEntry.getCert());
+        Assert.assertEquals(key2, sslCertEntry.getKey());
+        Assert.assertEquals(chain2, sslCertEntry.getChain());
+        Assert.assertEquals(password2, sslCertEntry.getPassword());
+
         LoadBalancerRule loadBalancerRule = new LoadBalancerRule();
         loadBalancerRule.setSslCerts(new LoadBalancerRule.SslCertEntry[]{sslCertEntry});
 
