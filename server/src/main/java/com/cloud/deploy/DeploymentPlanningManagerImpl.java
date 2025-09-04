@@ -494,7 +494,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         return dest;
     }
 
-    private void avoidDifferentArchResources(VirtualMachineProfile vmProfile, DataCenter dc, ExcludeList avoids) {
+    protected void avoidDifferentArchResources(VirtualMachineProfile vmProfile, DataCenter dc, ExcludeList avoids) {
         VirtualMachineTemplate template = vmProfile.getTemplate();
         for (CPU.CPUArch arch : clusterArchTypes) {
             if (arch.equals(template.getArch())) {

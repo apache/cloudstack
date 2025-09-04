@@ -16,6 +16,22 @@
 // under the License.
 package com.cloud.network.guru;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+
+import java.time.Duration;
+
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.context.RequestEntityCache;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
+
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -30,16 +46,6 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.vm.NicProfile;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ExternalGuestNetworkGuruTest {
@@ -91,12 +97,18 @@ public class ExternalGuestNetworkGuruTest {
         Mockito.when(dataCenterDao.findById(Mockito.anyLong())).thenReturn(zone);
         Mockito.when(networkModel.getNetworkIp4Dns(network, zone)).thenReturn(new Pair<>(ip4Dns[0], ip4Dns[1]));
         Mockito.when(networkModel.getNetworkIp6Dns(network, zone)).thenReturn(new Pair<>(ip6Dns[0], ip6Dns[1]));
-        guru.updateNicProfile(nicProfile, network);
-        assertNotNull(nicProfile);
-        assertEquals(ip4Dns[0], nicProfile.getIPv4Dns1());
-        assertEquals(ip4Dns[1], nicProfile.getIPv4Dns2());
-        assertEquals(ip6Dns[0], nicProfile.getIPv6Dns1());
-        assertEquals(ip6Dns[1], nicProfile.getIPv6Dns2());
+
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+            Mockito.when(callContextMock.getRequestEntityCache()).thenReturn(new RequestEntityCache(Duration.ofSeconds(60)));
+            guru.updateNicProfile(nicProfile, network);
+            assertNotNull(nicProfile);
+            assertEquals(ip4Dns[0], nicProfile.getIPv4Dns1());
+            assertEquals(ip4Dns[1], nicProfile.getIPv4Dns2());
+            assertEquals(ip6Dns[0], nicProfile.getIPv6Dns1());
+            assertEquals(ip6Dns[1], nicProfile.getIPv6Dns2());
+        }
     }
 
     @Test
@@ -108,11 +120,17 @@ public class ExternalGuestNetworkGuruTest {
         Mockito.when(networkModel.getNetwork(Mockito.anyLong())).thenReturn(network);
         Mockito.when(networkModel.getNetworkIp4Dns(network, zone)).thenReturn(new Pair<>(ip4Dns[0], null));
         Mockito.when(networkModel.getNetworkIp6Dns(network, zone)).thenReturn(new Pair<>(ip6Dns[0], null));
-        guru.updateNetworkProfile(profile);
-        assertNotNull(profile);
-        assertEquals(ip4Dns[0], profile.getDns1());
-        assertNull(profile.getDns2());
-        assertEquals(ip6Dns[0], profile.getIp6Dns1());
-        assertNull(profile.getIp6Dns2());
+
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+            Mockito.when(callContextMock.getRequestEntityCache()).thenReturn(new RequestEntityCache(Duration.ofSeconds(60)));
+            guru.updateNetworkProfile(profile);
+            assertNotNull(profile);
+            assertEquals(ip4Dns[0], profile.getDns1());
+            assertNull(profile.getDns2());
+            assertEquals(ip6Dns[0], profile.getIp6Dns1());
+            assertNull(profile.getIp6Dns2());
+        }
     }
 }
