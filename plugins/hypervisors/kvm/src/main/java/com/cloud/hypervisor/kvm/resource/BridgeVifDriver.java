@@ -184,6 +184,21 @@ public class BridgeVifDriver extends VifDriverBase {
         return vNetId != null && protocol != null && !vNetId.equalsIgnoreCase("untagged");
     }
 
+    protected String createStorageVnetBridgeIfNeeded(NicTO nic, String trafficLabel,
+                 String storageBrName) throws InternalErrorException {
+        if (!Networks.BroadcastDomainType.Storage.equals(nic.getBroadcastType()) || nic.getBroadcastUri() == null) {
+            return storageBrName;
+        }
+        String vNetId = Networks.BroadcastDomainType.getValue(nic.getBroadcastUri());
+        String protocol = Networks.BroadcastDomainType.Vlan.scheme();
+        if (!isValidProtocolAndVnetId(vNetId, protocol))  {
+            return storageBrName;
+        }
+        logger.debug(String.format("creating a vNet dev and bridge for %s traffic per traffic label %s",
+                Networks.TrafficType.Storage.name(), trafficLabel));
+        return createVnetBr(vNetId, storageBrName, protocol);
+    }
+
     @Override
     public LibvirtVMDef.InterfaceDef plug(NicTO nic, String guestOsType, String nicAdapter, Map<String, String> extraConfig) throws InternalErrorException, LibvirtException {
 
@@ -250,15 +265,7 @@ public class BridgeVifDriver extends VifDriverBase {
             intf.defBridgeNet(_bridges.get("private"), null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter));
         } else if (nic.getType() == Networks.TrafficType.Storage) {
             String storageBrName = nic.getName() == null ? _bridges.get("private") : nic.getName();
-            if (Networks.BroadcastDomainType.Storage.equals(nic.getBroadcastType()) && nic.getBroadcastUri() != null) {
-                vNetId = Networks.BroadcastDomainType.getValue(nic.getBroadcastUri());
-                protocol = Networks.BroadcastDomainType.Vlan.scheme();
-            }
-            if (isValidProtocolAndVnetId(vNetId, protocol))  {
-                logger.debug(String.format("creating a vNet dev and bridge for %s traffic per traffic label %s",
-                        Networks.TrafficType.Storage.name(), trafficLabel));
-                storageBrName = createVnetBr(vNetId, storageBrName, protocol);
-            }
+            storageBrName = createStorageVnetBridgeIfNeeded(nic, trafficLabel, storageBrName);
             intf.defBridgeNet(storageBrName, null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter));
         }
         if (nic.getPxeDisable()) {
@@ -291,7 +298,7 @@ public class BridgeVifDriver extends VifDriverBase {
         return "brvx-" + vnetId;
     }
 
-    private String createVnetBr(String vNetId, String pifKey, String protocol) throws InternalErrorException {
+    protected String createVnetBr(String vNetId, String pifKey, String protocol) throws InternalErrorException {
         String nic = _pifs.get(pifKey);
         if (nic == null || protocol.equals(Networks.BroadcastDomainType.Vxlan.scheme())) {
             // if not found in bridge map, maybe traffic label refers to pif already?
