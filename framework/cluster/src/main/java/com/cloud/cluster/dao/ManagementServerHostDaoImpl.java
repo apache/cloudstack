@@ -273,7 +273,7 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
     }
 
     @Override
-    public ManagementServerHostVO findOneByLongestRuntime() {
+    public ManagementServerHostVO findOneInUpStateByLongestRuntime() {
         SearchCriteria<ManagementServerHostVO> sc = StateSearch.create();
         sc.setParameters("state", ManagementServerHost.State.Up);
         sc.setParameters("runid", 0);

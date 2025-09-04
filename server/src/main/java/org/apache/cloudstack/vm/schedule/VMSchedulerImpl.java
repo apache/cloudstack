@@ -196,7 +196,7 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler, Configu
         final TimerTask schedulerPollTask = new ManagedContextTimerTask() {
             @Override
             protected void runInContext() {
-                ManagementServerHostVO msHost = managementServerHostDao.findOneByLongestRuntime();
+                ManagementServerHostVO msHost = managementServerHostDao.findOneInUpStateByLongestRuntime();
                 if (msHost == null || (msHost.getMsid() != ManagementServerNode.getManagementServerId())) {
                     logger.debug("Skipping the vm scheduler poll task on this management server");
                     return;
