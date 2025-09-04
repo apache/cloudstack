@@ -87,7 +87,7 @@ override_dh_auto_install:
 	cp client/target/lib/*jar $(DESTDIR)/usr/share/$(PACKAGE)-management/lib/
 	cp -r engine/schema/dist/systemvm-templates/* $(DESTDIR)/usr/share/$(PACKAGE)-management/templates/systemvm/
 	cp -r plugins/integrations/kubernetes-service/src/main/resources/conf/* $(DESTDIR)/usr/share/$(PACKAGE)-management/cks/conf/
-	rm -rf $(DESTDIR)/usr/share/$(PACKAGE)-management/templates/systemvm/md5sum.txt
+	rm -rf $(DESTDIR)/usr/share/$(PACKAGE)-management/templates/systemvm/sha512sum.txt
 
 	# Bundle cmk in cloudstack-management
 	wget https://github.com/apache/cloudstack-cloudmonkey/releases/download/$(CMK_REL)/cmk.linux.x86-64 -O $(DESTDIR)/usr/bin/cmk
