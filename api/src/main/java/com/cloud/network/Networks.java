@@ -78,7 +78,7 @@ public class Networks {
             }
             @Override
             public String getValueFrom(URI uri) {
-                return uri.getAuthority();
+                return uri == null ? null : uri.getAuthority();
             }
         },
         Vswitch("vs", String.class), LinkLocal(null, null), Vnet("vnet", Long.class), Storage("storage", Integer.class), Lswitch("lswitch", String.class) {
@@ -96,7 +96,7 @@ public class Networks {
              */
             @Override
             public String getValueFrom(URI uri) {
-                return uri.getSchemeSpecificPart();
+                return uri == null ? null : uri.getSchemeSpecificPart();
             }
         },
         Mido("mido", String.class), Pvlan("pvlan", String.class),
