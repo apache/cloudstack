@@ -27,7 +27,6 @@ import com.cloud.user.User;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
@@ -197,7 +196,7 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler, Configu
         final TimerTask schedulerPollTask = new ManagedContextTimerTask() {
             @Override
             protected void runInContext() {
-                ManagementServerHostVO msHost = managementServerHostDao.findOneInUpState(new Filter(ManagementServerHostVO.class, "id", false, 0L, 1L));
+                ManagementServerHostVO msHost = managementServerHostDao.findOneByLongestRuntime();
                 if (msHost == null || (msHost.getMsid() != ManagementServerNode.getManagementServerId())) {
                     logger.debug("Skipping the vm scheduler poll task on this management server");
                     return;
