@@ -2287,10 +2287,11 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
         performUnmanageVMInstancePrechecks(vmVO);
 
-        Long hostId = findSuitableHostId(vmVO);
+        boolean isVMStopped = VirtualMachine.State.Stopped.equals(vmVO.getState());
+        Long hostId = isVMStopped ? vmVO.getLastHostId() : findSuitableHostId(vmVO);
         String instanceName = vmVO.getInstanceName();
 
-        if (!existsVMToUnmanage(instanceName, hostId)) {
+        if (!isVMStopped && !existsVMToUnmanage(instanceName, hostId)) {
             throw new CloudRuntimeException(String.format("VM %s is not found in the hypervisor", vmVO));
         }
 
