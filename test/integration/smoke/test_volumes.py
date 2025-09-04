@@ -1448,6 +1448,11 @@ class TestVolumeEncryption(cloudstackTestCase):
             self.apiclient,
             id=volume.id)
         vol_sz = str(list_volume_response[0].size)
+        list_volume_pool_response = list_storage_pools(self.apiclient, id=list_volume_response[0].storageid)
+        volume_pool = list_volume_pool_response[0]
+        if volume_pool.type.lower() == "powerflex":
+            vol_sz = int(vol_sz)
+            vol_sz = str(vol_sz - (128 << 20) - ((vol_sz >> 30) * 200704))
 
         volume_name = "/dev/vd" + chr(ord('a') + int(list_volume_response[0].deviceid))
         self.debug(" Using KVM volume_name: %s" % (volume_name))
@@ -1581,6 +1586,11 @@ class TestVolumeEncryption(cloudstackTestCase):
             self.apiclient,
             id=volume.id)
         vol_sz = str(list_volume_response[0].size)
+        list_volume_pool_response = list_storage_pools(self.apiclient, id=list_volume_response[0].storageid)
+        volume_pool = list_volume_pool_response[0]
+        if volume_pool.type.lower() == "powerflex":
+            vol_sz = int(vol_sz)
+            vol_sz = str(vol_sz - (128 << 20) - ((vol_sz >> 30) * 200704))
 
         volume_name = "/dev/vd" + chr(ord('a') + int(list_volume_response[0].deviceid))
         self.debug(" Using KVM volume_name: %s" % (volume_name))
