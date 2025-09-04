@@ -150,7 +150,6 @@ import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.UnPlugNicAnswer;
 import com.cloud.agent.api.UnPlugNicCommand;
-import com.cloud.agent.api.UnmanageInstanceAnswer;
 import com.cloud.agent.api.UnmanageInstanceCommand;
 import com.cloud.agent.api.UnregisterVMCommand;
 import com.cloud.agent.api.VmDiskStatsEntry;
@@ -1173,8 +1172,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         markVolumesInPool(vm, answer);
     }
 
-
-
     protected void updateVmMetadataManufacturerAndProduct(VirtualMachineTO vmTO, VMInstanceVO vm) {
         String metadataManufacturer = VmMetadataManufacturer.valueIn(vm.getDataCenterId());
         if (StringUtils.isBlank(metadataManufacturer)) {
@@ -2019,52 +2016,61 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             throw new ConcurrentOperationException(msg);
         }
 
-        boolean isDomainXMLPreserved = true;
-        // persist domain for kvm host
         if (HypervisorType.KVM.equals(vm.getHypervisorType())) {
-            long hostId = vm.getHostId();
-            UnmanageInstanceCommand unmanageInstanceCommand;
-            if (State.Stopped.equals(vm.getState())) {
-                hostId = vm.getLastHostId();
-                unmanageInstanceCommand = new UnmanageInstanceCommand(prepareVmTO(vm.getId(), hostId)); // reconstruct vmSpec
-            } else {
-                unmanageInstanceCommand = new UnmanageInstanceCommand(vm.getName());
-            }
-            try {
-                Answer answer = _agentMgr.send(hostId, unmanageInstanceCommand);
-                isDomainXMLPreserved = (answer instanceof UnmanageInstanceAnswer && answer.getResult());
-            } catch (Exception ex) {
-                isDomainXMLPreserved = false;
-            }
+            persistDomainForKVM(vm);
         }
+        Boolean result = Transaction.execute(new TransactionCallback<Boolean>() {
+            @Override
+            public Boolean doInTransaction(TransactionStatus status) {
 
-        if (isDomainXMLPreserved) {
-            logger.debug("Unmanaging VM {}", vm);
-            Boolean result = Transaction.execute(new TransactionCallback<Boolean>() {
-                @Override
-                public Boolean doInTransaction(TransactionStatus status) {
-                    final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
-                    final VirtualMachineGuru guru = getVmGuru(vm);
+                logger.debug("Unmanaging VM {}", vm);
 
-                    try {
-                        unmanageVMSnapshots(vm);
-                        unmanageVMNics(profile, vm);
-                        unmanageVMVolumes(vm);
+                final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
+                final VirtualMachineGuru guru = getVmGuru(vm);
 
-                        guru.finalizeUnmanage(vm);
-                    } catch (Exception e) {
-                        logger.error("Error while unmanaging VM {}", vm, e);
-                        return false;
-                    }
+                try {
+                    unmanageVMSnapshots(vm);
+                    unmanageVMNics(profile, vm);
+                    unmanageVMVolumes(vm);
 
-                    return true;
+                    guru.finalizeUnmanage(vm);
+                } catch (Exception e) {
+                    logger.error("Error while unmanaging VM {}", vm, e);
+                    return false;
                 }
-            });
-            return BooleanUtils.isTrue(result);
+
+                return true;
+            }
+        });
+
+        return BooleanUtils.isTrue(result);
+    }
+
+    void persistDomainForKVM(VMInstanceVO vm) {
+        long hostId = vm.getHostId();
+        UnmanageInstanceCommand unmanageInstanceCommand;
+        if (State.Stopped.equals(vm.getState())) {
+            hostId = vm.getLastHostId();
+            unmanageInstanceCommand = new UnmanageInstanceCommand(prepVmSpecForUnmanageCmd(vm.getId(), hostId)); // reconstruct vmSpec for stopped instance
         } else {
-            logger.error("Error encountered persisting domainXML for vm: {}", vm.getName());
+            unmanageInstanceCommand = new UnmanageInstanceCommand(vm.getName());
         }
-        return false;
+        try {
+            Answer answer = _agentMgr.send(hostId, unmanageInstanceCommand);
+            if (!answer.getResult()) {
+                String errorMsg = "Failed to persist domainXML for instance: " + vm.getName();
+                logger.debug(errorMsg);
+                throw new CloudRuntimeException(errorMsg);
+            }
+        } catch (AgentUnavailableException e) {
+            String errorMsg = "Failed to send command, agent unavailable";
+            logger.error(errorMsg, e);
+            throw new CloudRuntimeException(errorMsg);
+        } catch (OperationTimedoutException e) {
+            String errorMsg = "Failed to send command, operation timed out";
+            logger.error(errorMsg, e);
+            throw new CloudRuntimeException(errorMsg);
+        }
     }
 
     /**
@@ -4030,7 +4036,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         vmTo.setEnterHardwareSetup(enterSetup == null ? false : enterSetup);
     }
 
-    protected VirtualMachineTO prepareVmTO(Long vmId, Long hostId) {
+    /**
+     * This method helps constructing vmSpec for Unmanage operation for Stopped Instance
+     * @param vmId
+     * @param hostId
+     * @return VirtualMachineTO
+     */
+    protected VirtualMachineTO prepVmSpecForUnmanageCmd(Long vmId, Long hostId) {
         final VMInstanceVO vm = _vmDao.findById(vmId);
         final Account owner = _entityMgr.findById(Account.class, vm.getAccountId());
         final ServiceOfferingVO offering = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());

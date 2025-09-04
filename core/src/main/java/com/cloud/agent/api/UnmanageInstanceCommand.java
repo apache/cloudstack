@@ -30,10 +30,6 @@ public class UnmanageInstanceCommand extends Command {
 
     @Override
     public boolean executeInSequence() {
-        //VR start doesn't go through queue
-        if (instanceName != null && instanceName.startsWith("r-")) {
-            return false;
-        }
         return executeInSequence;
     }
 
