@@ -249,9 +249,7 @@ public class LibvirtVMDef {
                         guestDef.append("<boot dev='" + bo + "'/>\n");
                     }
                 }
-                if (_arch == null || !_arch.equals("aarch64")) {
-                    guestDef.append("<smbios mode='sysinfo'/>\n");
-                }
+                guestDef.append("<smbios mode='sysinfo'/>\n");
                 guestDef.append("</os>\n");
                 if (iothreads) {
                     guestDef.append(String.format("<iothreads>%s</iothreads>", NUMBER_OF_IOTHREADS));

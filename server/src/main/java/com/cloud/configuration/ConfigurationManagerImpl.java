@@ -50,6 +50,8 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+
+import com.cloud.network.as.AutoScaleManager;
 import com.cloud.user.AccountManagerImpl;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -582,6 +584,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         configValuesForValidation.add(UserDataManager.VM_USERDATA_MAX_LENGTH_STRING);
         configValuesForValidation.add(UnmanagedVMsManager.RemoteKvmInstanceDisksCopyTimeout.key());
         configValuesForValidation.add(UnmanagedVMsManager.ConvertVmwareInstanceToKvmTimeout.key());
+        configValuesForValidation.add(AutoScaleManager.AutoScaleErroredInstanceThreshold.key());
     }
 
     protected void weightBasedParametersForValidation() {

@@ -132,13 +132,15 @@ public class ListCapacityCmd extends BaseListCmd {
         Collections.sort(capacityResponses, new Comparator<CapacityResponse>() {
             public int compare(CapacityResponse resp1, CapacityResponse resp2) {
                 int res = resp1.getZoneName().compareTo(resp2.getZoneName());
+                // Group by zone
                 if (res != 0) {
                     return res;
-                } else {
-                    return resp1.getCapacityType().compareTo(resp2.getCapacityType());
                 }
+                // Sort by capacity type only if not already sorted by usage
+                return (getSortBy() != null) ? 0 : resp1.getCapacityType().compareTo(resp2.getCapacityType());
             }
         });
+
 
         response.setResponses(capacityResponses);
         response.setResponseName(getCommandName());
