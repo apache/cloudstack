@@ -70,8 +70,17 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static org.apache.cloudstack.backup.BackupManager.BackupFrameworkEnabled;
+
 public class NASBackupProvider extends AdapterBase implements BackupProvider, Configurable {
     private static final Logger LOG = LogManager.getLogger(NASBackupProvider.class);
+
+    ConfigKey<Integer> NASBackupRestoreMountTimeout = new ConfigKey<>("Advanced", Integer.class,
+            "nas.backup.restore.mount.timeout",
+            "30",
+            "Timeout in seconds after which backup repository mount for restore fails.",
+            true,
+            BackupFrameworkEnabled.key());
 
     @Inject
     private BackupDao backupDao;
@@ -299,6 +308,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoreCommand.setRestoreVolumePaths(getVolumePaths(restoreVolumes));
         restoreCommand.setVmExists(vm.getRemoved() == null);
         restoreCommand.setVmState(vm.getState());
+        restoreCommand.setMountTimeout(NASBackupRestoreMountTimeout.value());
 
         BackupAnswer answer;
         try {
@@ -542,6 +552,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey[]{
+                NASBackupRestoreMountTimeout
         };
     }
 

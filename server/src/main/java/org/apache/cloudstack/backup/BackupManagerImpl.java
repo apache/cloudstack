@@ -1340,7 +1340,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
 
         if (result != null && !result.first()) {
-            String error_msg = String.format("Failed to create Instance [%s] from backup [%s] due to: [%s].", vm.getInstanceName(), backupDetailsInMessage, result.second());
+            String error_msg = String.format("Failed to create Instance [%s] from backup [%s] due to: %s.", vm.getInstanceName(), backupDetailsInMessage, result.second());
             logger.error(error_msg);
             processRestoreBackupToVMFailure(vm, backup, eventId);
             throw new CloudRuntimeException(error_msg);
