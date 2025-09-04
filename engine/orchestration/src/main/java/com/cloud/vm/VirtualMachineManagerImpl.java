@@ -70,6 +70,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManag
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.ca.Certificate;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -156,6 +157,7 @@ import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmNetworkStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.DpdkTO;
 import com.cloud.agent.api.to.GPUDeviceTO;
@@ -2020,9 +2022,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         boolean isDomainXMLPreserved = true;
         // persist domain for kvm host
         if (HypervisorType.KVM.equals(vm.getHypervisorType())) {
-            final UnmanageInstanceCommand unmanageInstanceCommand = new UnmanageInstanceCommand(vm.getName(), false);
+            long hostId = vm.getHostId();
+            UnmanageInstanceCommand unmanageInstanceCommand;
+            if (State.Stopped.equals(vm.getState())) {
+                hostId = vm.getLastHostId();
+                unmanageInstanceCommand = new UnmanageInstanceCommand(prepareVmTO(vm.getId(), hostId)); // reconstruct vmSpec
+            } else {
+                unmanageInstanceCommand = new UnmanageInstanceCommand(vm.getName());
+            }
             try {
-                Answer answer = _agentMgr.send(vm.getHostId(), unmanageInstanceCommand);
+                Answer answer = _agentMgr.send(hostId, unmanageInstanceCommand);
                 isDomainXMLPreserved = (answer instanceof UnmanageInstanceAnswer && answer.getResult());
             } catch (Exception ex) {
                 isDomainXMLPreserved = false;
@@ -4019,6 +4028,39 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
         logger.debug("Orchestrating VM reboot for '{}' {} set to {}", vmTo.getName(), VirtualMachineProfile.Param.BootIntoSetup, enterSetup);
         vmTo.setEnterHardwareSetup(enterSetup == null ? false : enterSetup);
+    }
+
+    protected VirtualMachineTO prepareVmTO(Long vmId, Long hostId) {
+        final VMInstanceVO vm = _vmDao.findById(vmId);
+        final Account owner = _entityMgr.findById(Account.class, vm.getAccountId());
+        final ServiceOfferingVO offering = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
+        final VirtualMachineTemplate template = _entityMgr.findByIdIncludingRemoved(VirtualMachineTemplate.class, vm.getTemplateId());
+        Host host = _hostDao.findById(hostId);
+        VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm, template, offering, owner, null);
+        updateOverCommitRatioForVmProfile(vmProfile, host.getClusterId());
+        final List<NicVO> nics = _nicsDao.listByVmId(vmProfile.getId());
+        Collections.sort(nics, (nic1, nic2) -> {
+            Long nicId1 = Long.valueOf(nic1.getDeviceId());
+            Long nicId2 = Long.valueOf(nic2.getDeviceId());
+            return nicId1.compareTo(nicId2);
+        });
+
+        for (final NicVO nic : nics) {
+            final Network network = _networkModel.getNetwork(nic.getNetworkId());
+            final NicProfile nicProfile =
+                    new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), null, _networkModel.isSecurityGroupSupportedInNetwork(network),
+                            _networkModel.getNetworkTag(vmProfile.getHypervisorType(), network));
+            vmProfile.addNic(nicProfile);
+        }
+
+        List<VolumeVO> volumes = _volsDao.findUsableVolumesForInstance(vmId);
+        for (VolumeVO vol: volumes) {
+            VolumeInfo volumeInfo = volumeDataFactory.getVolume(vol.getId());
+            DataTO volTO = volumeInfo.getTO();
+            DiskTO disk = storageMgr.getDiskWithThrottling(volTO, vol.getVolumeType(), vol.getDeviceId(), vol.getPath(), vm.getServiceOfferingId(), vol.getDiskOfferingId());
+            vmProfile.addDisk(disk);
+        }
+        return toVmTO(vmProfile);
     }
 
     protected VirtualMachineTO getVmTO(Long vmId) {

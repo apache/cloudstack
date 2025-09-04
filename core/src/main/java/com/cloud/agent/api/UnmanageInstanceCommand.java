@@ -19,11 +19,14 @@
 
 package com.cloud.agent.api;
 
+import com.cloud.agent.api.to.VirtualMachineTO;
+
 /**
  */
 public class UnmanageInstanceCommand extends Command {
     String instanceName;
     boolean executeInSequence = false;
+    VirtualMachineTO vm;
 
     @Override
     public boolean executeInSequence() {
@@ -34,12 +37,20 @@ public class UnmanageInstanceCommand extends Command {
         return executeInSequence;
     }
 
-    public UnmanageInstanceCommand(String instanceName,  boolean executeInSequence) {
+    public UnmanageInstanceCommand(VirtualMachineTO vm) {
+        this.vm = vm;
+        this.instanceName = vm.getName();
+    }
+
+    public UnmanageInstanceCommand(String instanceName) {
         this.instanceName = instanceName;
-        this.executeInSequence = executeInSequence;
     }
 
     public String getInstanceName() {
         return instanceName;
+    }
+
+    public VirtualMachineTO getVm() {
+        return vm;
     }
 }
