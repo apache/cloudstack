@@ -94,7 +94,7 @@ public class NASBackupProviderTest {
         ReflectionTestUtils.setField(backup, "id", 1L);
 
         BackupRepositoryVO backupRepository = new BackupRepositoryVO(1L, "nas", "test-repo",
-                "nfs", "address", "sync", 1024L);
+                "nfs", "address", "sync", 1024L, null);
 
         VMInstanceVO vm = mock(VMInstanceVO.class);
         Mockito.when(vm.getLastHostId()).thenReturn(hostId);
@@ -113,7 +113,7 @@ public class NASBackupProviderTest {
     @Test
     public void testSyncBackupStorageStats() throws AgentUnavailableException, OperationTimedoutException {
         BackupRepositoryVO backupRepository = new BackupRepositoryVO(1L, "nas", "test-repo",
-                "nfs", "address", "sync", 1024L);
+                "nfs", "address", "sync", 1024L, null);
 
         HostVO host = mock(HostVO.class);
         Mockito.when(resourceManager.findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, 1L)).thenReturn(host);
@@ -132,7 +132,7 @@ public class NASBackupProviderTest {
     @Test
     public void testListBackupOfferings() {
         BackupRepositoryVO backupRepository = new BackupRepositoryVO(1L, "nas", "test-repo",
-                "nfs", "address", "sync", 1024L);
+                "nfs", "address", "sync", 1024L, null);
         ReflectionTestUtils.setField(backupRepository, "uuid", "uuid");
 
         Mockito.when(backupRepositoryDao.listByZoneAndProvider(1L, "nas")).thenReturn(Collections.singletonList(backupRepository));
@@ -146,11 +146,11 @@ public class NASBackupProviderTest {
     @Test
     public void testGetBackupStorageStats() {
         BackupRepositoryVO backupRepository1 = new BackupRepositoryVO(1L, "nas", "test-repo",
-                "nfs", "address", "sync", 1000L);
+                "nfs", "address", "sync", 1000L, null);
         backupRepository1.setUsedBytes(500L);
 
         BackupRepositoryVO backupRepository2 = new BackupRepositoryVO(1L, "nas", "test-repo",
-                "nfs", "address", "sync", 2000L);
+                "nfs", "address", "sync", 2000L, null);
         backupRepository2.setUsedBytes(600L);
 
         Mockito.when(backupRepositoryDao.listByZoneAndProvider(1L, "nas"))

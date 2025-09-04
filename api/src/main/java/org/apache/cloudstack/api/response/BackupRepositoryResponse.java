@@ -61,6 +61,10 @@ public class BackupRepositoryResponse extends BaseResponse {
     @Param(description = "capacity of the backup repository")
     private Long capacityBytes;
 
+    @SerializedName(ApiConstants.DRAAS_ENABLED)
+    @Param(description = "is the backup repository configured to be used for disaster recovery on other Zones")
+    private Boolean draasEnabled;
+
     @SerializedName("created")
     @Param(description = "the date and time the backup repository was added")
     private Date created;
@@ -130,6 +134,14 @@ public class BackupRepositoryResponse extends BaseResponse {
 
     public void setCapacityBytes(Long capacityBytes) {
         this.capacityBytes = capacityBytes;
+    }
+
+    public Boolean getDraasEnabled() {
+        return draasEnabled;
+    }
+
+    public void setDraasEnabled(Boolean draasEnabled) {
+        this.draasEnabled = draasEnabled;
     }
 
     public Date getCreated() {
