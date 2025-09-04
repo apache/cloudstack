@@ -1390,6 +1390,7 @@
 "label.kubernetes.version.add": "Add Kubernetes version",
 "label.kubernetes.version.delete": "Delete Kubernetes version",
 "label.kubernetes.version.update": "Manage Kubernetes version",
+"label.kubernetes.version.from.local": "Add Kubernetes version from local",
 "label.kubernetesversionid": "Kubernetes version",
 "label.kubernetesversionname": "Kubernetes version",
 "label.kvm": "KVM",
