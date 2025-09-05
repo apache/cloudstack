@@ -21,3 +21,6 @@
 
 -- Increase length of scripts_version column to 128 due to md5sum to sha512sum change
 CALL `cloud`.`IDEMPOTENT_CHANGE_COLUMN`('cloud.domain_router', 'scripts_version', 'scripts_version', 'VARCHAR(128)');
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.snapshot_policy','domain_id', 'BIGINT(20) DEFAULT NULL');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.snapshot_policy','account_id', 'BIGINT(20) DEFAULT NULL');

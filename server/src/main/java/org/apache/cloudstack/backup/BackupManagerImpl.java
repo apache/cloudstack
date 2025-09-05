@@ -588,7 +588,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         final BackupScheduleVO schedule = backupScheduleDao.findByVMAndIntervalType(vmId, intervalType);
         if (schedule == null) {
-            return backupScheduleDao.persist(new BackupScheduleVO(vmId, intervalType, scheduleString, timezoneId, nextDateTime, maxBackups, cmd.getQuiesceVM()));
+            return backupScheduleDao.persist(new BackupScheduleVO(vmId, intervalType, scheduleString, timezoneId, nextDateTime, maxBackups, cmd.getQuiesceVM(), vm.getAccountId(), vm.getDomainId()));
         }
 
         schedule.setScheduleType((short) intervalType.ordinal());
@@ -639,10 +639,13 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     @Override
-    public List<BackupSchedule> listBackupSchedule(final Long vmId) {
-        final VMInstanceVO vm = findVmById(vmId);
-        validateBackupForZone(vm.getDataCenterId());
-        accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
+    public List<BackupSchedule> listBackupSchedule(ListBackupScheduleCmd cmd) {
+        Long vmId = cmd.getVmId();
+        if (vmId != null) {
+            final VMInstanceVO vm = findVmById(vmId);
+            validateBackupForZone(vm.getDataCenterId());
+            accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
+        }
 
         return backupScheduleDao.listByVM(vmId).stream().map(BackupSchedule.class::cast).collect(Collectors.toList());
     }
