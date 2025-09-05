@@ -552,10 +552,16 @@ public class VirtualRouterElementTest {
         when(networkTopologyContext.retrieveNetworkTopology(dc)).thenReturn(networkTopology);
         doReturn(true).when(networkTopology).applyBgpPeers(any(), any(), any());
 
-        boolean result = virtualRouterElement.applyBgpPeers(vpc, null, bgpPeers);
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+            Mockito.when(callContextMock.getRequestEntityCache()).thenReturn(new RequestEntityCache(Duration.ofSeconds(60)));
 
-        Assert.assertTrue(result);
-        verify(networkTopology).applyBgpPeers(any(), any(), any());
+            boolean result = virtualRouterElement.applyBgpPeers(vpc, null, bgpPeers);
+
+            Assert.assertTrue(result);
+            verify(networkTopology).applyBgpPeers(any(), any(), any());
+        }
     }
 
     @Test
@@ -581,10 +587,10 @@ public class VirtualRouterElementTest {
             callContextMocked.when(CallContext::current).thenReturn(callContextMock);
             Mockito.when(callContextMock.getRequestEntityCache()).thenReturn(new RequestEntityCache(Duration.ofSeconds(60)));
 
-        boolean result = virtualRouterElement.applyBgpPeers(null, network, bgpPeers);
+            boolean result = virtualRouterElement.applyBgpPeers(null, network, bgpPeers);
 
-        Assert.assertTrue(result);
-        verify(networkTopology).applyBgpPeers(any(), any(), any());
+            Assert.assertTrue(result);
+            verify(networkTopology).applyBgpPeers(any(), any(), any());
         }
     }
 }
