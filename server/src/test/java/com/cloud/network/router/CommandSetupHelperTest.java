@@ -16,6 +16,31 @@
 // under the License.
 package com.cloud.network.router;
 
+import static org.mockito.Mockito.when;
+
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.context.RequestEntityCache;
+import org.apache.cloudstack.network.BgpPeerVO;
+import org.apache.cloudstack.network.dao.BgpPeerDetailsDao;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatchers;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
+
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.routing.SetBgpPeersCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
@@ -46,26 +71,6 @@ import com.cloud.utils.net.Ip;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.NicDao;
-import org.apache.cloudstack.network.BgpPeerVO;
-import org.apache.cloudstack.network.dao.BgpPeerDetailsDao;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentMatchers;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.test.util.ReflectionTestUtils;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class CommandSetupHelperTest {
@@ -226,12 +231,18 @@ public class CommandSetupHelperTest {
         when(dcDao.findById(zoneId)).thenReturn(dc);
         when(dc.getNetworkType()).thenReturn(DataCenter.NetworkType.Advanced);
 
-        commandSetupHelper.createBgpPeersCommands(bgpPeers, router, cmds, network);
 
-        Assert.assertEquals(1, cmds.size());
-        Command cmd = cmds.toCommands()[0];
-        Assert.assertTrue(cmd instanceof SetBgpPeersCommand);
-        Assert.assertEquals(2, ((SetBgpPeersCommand) cmd).getBpgPeers().length);
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+            Mockito.when(callContextMock.getRequestEntityCache()).thenReturn(new RequestEntityCache(Duration.ofSeconds(60)));
+            commandSetupHelper.createBgpPeersCommands(bgpPeers, router, cmds, network);
+
+            Assert.assertEquals(1, cmds.size());
+            Command cmd = cmds.toCommands()[0];
+            Assert.assertTrue(cmd instanceof SetBgpPeersCommand);
+            Assert.assertEquals(2, ((SetBgpPeersCommand) cmd).getBpgPeers().length);
+        }
     }
 
     @Test

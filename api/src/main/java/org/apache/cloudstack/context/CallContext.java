@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.context;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
@@ -65,6 +66,7 @@ public class CallContext {
     private final Map<Object, Object> context = new HashMap<Object, Object>();
     private Project project;
     private String apiName;
+    private final RequestEntityCache requestEntityCache = new RequestEntityCache(Duration.ofSeconds(60));
 
     static EntityManager s_entityMgr;
 
@@ -422,5 +424,9 @@ public class CallContext {
             .append(contextId)
             .append("]")
             .toString();
+    }
+
+    public RequestEntityCache getRequestEntityCache() {
+        return requestEntityCache;
     }
 }
