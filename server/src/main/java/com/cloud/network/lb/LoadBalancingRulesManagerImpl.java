@@ -2267,7 +2267,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         boolean success = _lbDao.update(lbRuleId, lb);
 
         // If algorithm or lb protocol is changed, have to reapply the lb config
-        boolean needToReApplyRule = (algorithm != null && algorithm.equals(tmplbVo.getAlgorithm()))
+        boolean needToReApplyRule = (algorithm != null && !algorithm.equals(tmplbVo.getAlgorithm()))
                 || (lbProtocol != null && !lbProtocol.equals(tmplbVo.getLbProtocol()));
         if (needToReApplyRule) {
             try {
