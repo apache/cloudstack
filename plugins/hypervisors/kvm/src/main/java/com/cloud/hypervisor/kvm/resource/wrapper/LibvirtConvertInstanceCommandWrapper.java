@@ -116,7 +116,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
 
         boolean cleanupSecondaryStorage = false;
         try {
-            boolean result = performInstanceConversion(sourceOVFDirPath, temporaryConvertPath, temporaryConvertUuid,
+            boolean result = performInstanceConversion(sourceInstanceName, sourceOVFDirPath, temporaryConvertPath, temporaryConvertUuid,
                     timeout, verboseModeEnabled);
             if (!result) {
                 String err = String.format(
@@ -217,7 +217,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         return exitValue == 0;
     }
 
-    protected boolean performInstanceConversion(String sourceOVFDirPath,
+    protected boolean performInstanceConversion(String sourceInstanceName, String sourceOVFDirPath,
                                                 String temporaryConvertFolder,
                                                 String temporaryConvertUuid,
                                                 long timeout, boolean verboseModeEnabled) {
@@ -233,7 +233,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             script.add("-v");
         }
 
-        String logPrefix = String.format("virt-v2v ovf source: %s progress", sourceOVFDirPath);
+        String logPrefix = String.format("(%s) virt-v2v ovf source: %s progress", sourceInstanceName, sourceOVFDirPath);
         OutputInterpreter.LineByLineOutputLogger outputLogger = new OutputInterpreter.LineByLineOutputLogger(logger, logPrefix);
         script.execute(outputLogger);
         int exitValue = script.getExitValue();
