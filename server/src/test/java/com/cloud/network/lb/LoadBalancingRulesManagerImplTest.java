@@ -17,6 +17,7 @@
 
 package com.cloud.network.lb;
 
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.LoadBalancerCertMapDao;
@@ -91,6 +92,9 @@ public class LoadBalancingRulesManagerImplTest{
     @Spy
     @InjectMocks
     LoadBalancingRulesManagerImpl lbr = new LoadBalancingRulesManagerImpl();
+
+    @Mock
+    NetworkVO networkMock;
 
     @Mock
     LoadBalancerVO loadBalancerMock;
@@ -198,8 +202,7 @@ public class LoadBalancingRulesManagerImplTest{
         when(loadBalancerMock.getId()).thenReturn(lbRuleId);
         when(loadBalancerMock.getNetworkId()).thenReturn(networkId);
 
-        NetworkVO network = Mockito.mock(NetworkVO.class);
-        when(_networkDao.findById(networkId)).thenReturn(network);
+        when(_networkDao.findById(networkId)).thenReturn(networkMock);
 
         Mockito.doNothing().when(_accountMgr).checkAccess(Mockito.any(Account.class), Mockito.isNull(SecurityChecker.AccessType.class), Mockito.eq(true), Mockito.any(LoadBalancerVO.class));
 
@@ -281,5 +284,28 @@ public class LoadBalancingRulesManagerImplTest{
 
         Mockito.verify(lbr, never()).applyLoadBalancerConfig(lbRuleId);
         Mockito.verify(_lbCertMapDao, never()).remove(anyLong());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testUpdateLoadBalancerRule5() throws Exception {
+        setupUpdateLoadBalancerRule();
+
+        // Update protocol from SSL to TCP, throws an exception
+        UpdateLoadBalancerRuleCmd cmd = new UpdateLoadBalancerRuleCmd();
+        ReflectionTestUtils.setField(cmd, ApiConstants.ID, lbRuleId);
+        ReflectionTestUtils.setField(cmd, "lbProtocol", NetUtils.TCP_PROTO);
+        when(loadBalancerMock.getLbProtocol()).thenReturn(NetUtils.SSL_PROTO).thenReturn(NetUtils.TCP_PROTO);
+        Mockito.doThrow(ResourceUnavailableException.class).when(lbr).applyLoadBalancerConfig(lbRuleId);
+
+        List<Network.Provider> providers = Arrays.asList(Network.Provider.VirtualRouter);
+        when(_networkDao.findById(anyLong())).thenReturn(networkMock);
+        when(_networkMgr.getProvidersForServiceInNetwork(networkMock, Network.Service.Lb)).thenReturn(providers);
+
+        lbr.updateLoadBalancerRule(cmd);
+
+        Mockito.verify(_lbCertMapDao, never()).remove(anyLong());
+        Mockito.verify(lbr, times(1)).applyLoadBalancerConfig(lbRuleId);
+        Mockito.verify(loadBalancerMock, times(1)).setLbProtocol(NetUtils.TCP_PROTO);
+        Mockito.verify(loadBalancerMock, times(1)).setLbProtocol(NetUtils.SSL_PROTO);
     }
 }
