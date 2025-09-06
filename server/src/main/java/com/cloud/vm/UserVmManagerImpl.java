@@ -5860,7 +5860,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                         for (VmDiskStatsEntry vmDiskStat : vmDiskStats) {
                             SearchCriteria<VolumeVO> sc_volume = _volsDao.createSearchCriteria();
-                            sc_volume.addAnd("path", SearchCriteria.Op.EQ, vmDiskStat.getPath());
+                            sc_volume.addAnd("path", SearchCriteria.Op.LIKE, vmDiskStat.getPath() + "%");
                             List<VolumeVO> volumes = _volsDao.search(sc_volume, null);
                             if ((volumes == null) || (volumes.size() == 0)) {
                                 break;

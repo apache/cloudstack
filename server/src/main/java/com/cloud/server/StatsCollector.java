@@ -1459,7 +1459,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                 for (VmDiskStats vmDiskStat : vmDiskStats) {
                                     VmDiskStatsEntry vmDiskStatEntry = (VmDiskStatsEntry)vmDiskStat;
                                     SearchCriteria<VolumeVO> sc_volume = _volsDao.createSearchCriteria();
-                                    sc_volume.addAnd("path", SearchCriteria.Op.EQ, vmDiskStatEntry.getPath());
+                                    sc_volume.addAnd("path", SearchCriteria.Op.LIKE, vmDiskStatEntry.getPath() + "%");
                                     List<VolumeVO> volumes = _volsDao.search(sc_volume, null);
 
                                     if (CollectionUtils.isEmpty(volumes))
