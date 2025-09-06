@@ -33,17 +33,17 @@
             :is="tabs[0].component"
             :resource="resource"
             :loading="loading"
-            :tab="tabs[0].name" />
+            :tab="tabName(tabs[0])" />
         </keep-alive>
         <a-tabs
           v-else
           style="width: 100%; margin-top: -12px"
           :animated="false"
-          :activeKey="activeTab || tabs[0].name"
+          :activeKey="activeTab || tabName(tabs[0])"
           @change="onTabChange" >
-          <template v-for="tab in tabs" :key="tab.name">
+          <template v-for="tab in tabs" :key="tabName(tab)">
             <a-tab-pane
-              :key="tab.name"
+              :key="tabName(tab)"
               :tab="$t('label.' + tabName(tab))"
               v-if="showTab(tab)">
               <keep-alive>
@@ -183,12 +183,12 @@ export default {
         return
       }
       if (!this.historyTab || !this.$route.meta.tabs || this.$route.meta.tabs.length === 0) {
-        this.activeTab = this.tabs[0].name
+        this.activeTab = this.tabName(this.tabs[0])
         return
       }
-      const tabIdx = this.$route.meta.tabs.findIndex(tab => tab.name === this.historyTab)
+      const tabIdx = this.$route.meta.tabs.findIndex(tab => this.tabName(tab) === this.historyTab)
       if (tabIdx === -1) {
-        this.activeTab = this.tabs[0].name
+        this.activeTab = this.tabName(this.tabs[0])
       } else {
         this.activeTab = this.historyTab
       }
