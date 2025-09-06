@@ -19,6 +19,8 @@
 package org.apache.cloudstack.vm.schedule;
 
 import com.cloud.api.ApiGsonHelper;
+import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
 import com.cloud.user.User;
@@ -40,6 +42,7 @@ import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.vm.schedule.dao.VMScheduleDao;
 import org.apache.cloudstack.vm.schedule.dao.VMScheduledJobDao;
 import org.apache.commons.lang.time.DateUtils;
@@ -68,6 +71,9 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler, Configu
     private UserVmManager userVmManager;
     @Inject
     private AsyncJobManager asyncJobManager;
+    @Inject
+    private ManagementServerHostDao managementServerHostDao;
+
     private AsyncJobDispatcher asyncJobDispatcher;
     private Timer vmSchedulerTimer;
     private Date currentTimestamp;
@@ -190,6 +196,11 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler, Configu
         final TimerTask schedulerPollTask = new ManagedContextTimerTask() {
             @Override
             protected void runInContext() {
+                ManagementServerHostVO msHost = managementServerHostDao.findOneInUpStateByLongestRuntime();
+                if (msHost == null || (msHost.getMsid() != ManagementServerNode.getManagementServerId())) {
+                    logger.debug("Skipping the vm scheduler poll task on this management server");
+                    return;
+                }
                 try {
                     poll(new Date());
                 } catch (final Throwable t) {

@@ -319,7 +319,7 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
 
         protected void runCleanupForLongestRunningManagementServer() {
             try {
-                ManagementServerHostVO msHost = managementServerHostDao.findOneByLongestRuntime();
+                ManagementServerHostVO msHost = managementServerHostDao.findOneInUpStateByLongestRuntime();
                 if (msHost == null || (msHost.getMsid() != ManagementServerNode.getManagementServerId())) {
                     logger.debug("Skipping the webhook delivery cleanup task on this management server");
                     return;

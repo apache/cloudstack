@@ -2152,7 +2152,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             try {
                 if (lock.lock(30)) {
                     try {
-                        ManagementServerHostVO msHost = managementServerHostDao.findOneByLongestRuntime();
+                        ManagementServerHostVO msHost = managementServerHostDao.findOneInUpStateByLongestRuntime();
                         if (msHost == null || (msHost.getMsid() != ManagementServerNode.getManagementServerId())) {
                             logger.trace("Skipping the resource counters recalculation task on this management server");
                             return;

@@ -629,7 +629,7 @@ public class ResourceCleanupServiceImpl extends ManagerBase implements ResourceC
         }
 
         protected void runCleanupForLongestRunningManagementServer() {
-            ManagementServerHostVO msHost = managementServerHostDao.findOneByLongestRuntime();
+            ManagementServerHostVO msHost = managementServerHostDao.findOneInUpStateByLongestRuntime();
             if (msHost == null || (msHost.getMsid() != ManagementServerNode.getManagementServerId())) {
                 logger.debug("Skipping the expunged resource cleanup task on this management server");
                 return;
