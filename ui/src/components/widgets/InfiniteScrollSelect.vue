@@ -43,6 +43,7 @@
   - defaultOption (Object, optional): Preselected object to include initially
   - showIcon (Boolean, optional): Whether to show icon for the options. Default is true
   - defaultIcon (String, optional): Icon to be shown when there is no resource icon for the option. Default is 'cloud-outlined'
+  - autoSelectFirstOption (Boolean, optional): Whether to automatically select the first option when options are loaded. Default is false
 
   Events:
   - @change-option-value (Function): Emits the selected option value(s) when value(s) changes. Do not use @change as it will give warnings and may not work
@@ -81,7 +82,7 @@
           <resource-icon v-if="option.icon && option.icon.base64image" :image="option.icon.base64image" size="1x" style="margin-right: 5px"/>
           <render-icon v-else :icon="defaultIcon" style="margin-right: 5px" />
         </span>
-        <span>{{ option[optionLabelKey] }}</span>
+        <span>{{ optionLabelFn ? optionLabelFn(option) : option[optionLabelKey] }}</span>
       </span>
     </a-select-option>
   </a-select>
@@ -120,6 +121,10 @@ export default {
       type: String,
       default: 'name'
     },
+    optionLabelFn: {
+      type: Function,
+      default: null
+    },
     defaultOption: {
       type: Object,
       default: null
@@ -135,6 +140,10 @@ export default {
     pageSize: {
       type: Number,
       default: null
+    },
+    autoSelectFirstOption: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
@@ -147,11 +156,12 @@ export default {
       searchTimer: null,
       scrollHandlerAttached: false,
       preselectedOptionValue: null,
-      successiveFetches: 0
+      successiveFetches: 0,
+      canSelectFirstOption: false
     }
   },
   created () {
-    this.addDefaultOptionIfNeeded(true)
+    this.addDefaultOptionIfNeeded()
   },
   mounted () {
     this.preselectedOptionValue = this.$attrs.value
@@ -208,6 +218,7 @@ export default {
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
+        this.canSelectFirstOption = true
         if (this.successiveFetches === 0) {
           this.loading = false
         }
@@ -218,6 +229,12 @@ export default {
         (Array.isArray(this.preselectedOptionValue) && this.preselectedOptionValue.length === 0) ||
         this.successiveFetches >= this.maxSuccessiveFetches) {
         this.resetPreselectedOptionValue()
+        if (!this.canSelectFirstOption && this.autoSelectFirstOption && this.options.length > 0) {
+          this.$nextTick(() => {
+            this.preselectedOptionValue = this.options[0][this.optionValueKey]
+            this.onChange(this.preselectedOptionValue)
+          })
+        }
         return
       }
       const matchValue = Array.isArray(this.preselectedOptionValue) ? this.preselectedOptionValue[0] : this.preselectedOptionValue
@@ -239,6 +256,7 @@ export default {
     },
     addDefaultOptionIfNeeded () {
       if (this.defaultOption) {
+        this.canSelectFirstOption = true
         this.options.push(this.defaultOption)
       }
     },
