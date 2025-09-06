@@ -84,6 +84,7 @@ import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -2739,7 +2740,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             _inSystemVM = true;
         }
 
-        _storageIp = (String)params.get("storageip");
+        _storageIp = MapUtils.getString(params, "storageip", _eth1ip);
         if (_storageIp == null && _inSystemVM) {
             logger.warn("There is no storageip in /proc/cmdline, something wrong!");
         }
