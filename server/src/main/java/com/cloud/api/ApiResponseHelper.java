@@ -4220,6 +4220,9 @@ public class ApiResponseHelper implements ResponseGenerator {
                 if (volume != null) {
                     builder.append("for ").append(volume.getName()).append(" (").append(volume.getUuid()).append(")");
                 }
+                if (vmInstance != null) {
+                    builder.append(" attached to VM ").append(vmInstance.getHostName()).append(" (").append(vmInstance.getUuid()).append(")");
+                }
                 if (diskOff != null) {
                     builder.append(" with disk offering ").append(diskOff.getName()).append(" (").append(diskOff.getUuid()).append(")");
                 }
