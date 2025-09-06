@@ -1819,9 +1819,8 @@ export default {
     },
     onSearch (opts) {
       const query = Object.assign({}, this.$route.query)
-      for (const key in this.searchParams) {
-        delete query[key]
-      }
+      const searchFilters = this.$route?.meta?.searchFilters || []
+      searchFilters.forEach(key => delete query[key])
       delete query.name
       delete query.templatetype
       delete query.keyword
