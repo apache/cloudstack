@@ -50,6 +50,8 @@ public class GsonHelper {
     protected static final Gson s_gson;
     protected static final Gson s_gogger;
 
+    public static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ";
+
     static {
         GsonBuilder gsonBuilder = new GsonBuilder();
         s_gson = setDefaultGsonConfig(gsonBuilder);
@@ -78,6 +80,7 @@ public class GsonHelper {
         }.getType(), new NwGroupsCommandTypeAdaptor());
         builder.registerTypeAdapter(Storage.StoragePoolType.class, new StoragePoolTypeAdaptor());
         builder.registerTypeAdapter(Hypervisor.HypervisorType.class, new HypervisorTypeAdaptor());
+        builder.setDateFormat(DATE_FORMAT);
         Gson gson = builder.create();
         dsAdaptor.initGson(gson);
         dtAdaptor.initGson(gson);
