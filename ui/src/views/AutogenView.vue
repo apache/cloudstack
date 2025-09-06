@@ -1723,8 +1723,10 @@ export default {
       const query = Object.assign({}, this.$route.query)
       delete query.templatefilter
       delete query.isofilter
-      delete query.account
-      delete query.domainid
+      if (!['publicip'].includes(this.$route.name)) {
+        delete query.account
+        delete query.domainid
+      }
       delete query.state
       delete query.annotationfilter
       if (this.$route.name === 'template') {
