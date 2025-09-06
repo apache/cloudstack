@@ -24,6 +24,7 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import com.cloud.vm.dao.UserVmDetailsDao;
 import org.apache.cloudstack.network.BgpPeer;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -175,6 +176,9 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
 
     @Inject
     NetworkDetailsDao _networkDetailsDao;
+
+    @Inject
+    private UserVmDetailsDao userVmDetailsDao;
 
     @Inject
     protected RouterDeploymentDefinitionBuilder routerDeploymentDefinitionBuilder;
@@ -736,7 +740,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
 
         _userVmDao.loadDetails(userVmVO);
         userVmVO.setDetail(VmDetailConstants.PASSWORD, password_encrypted);
-        _userVmDao.saveDetails(userVmVO);
+        userVmDetailsDao.saveDetails(userVmVO);
 
         userVmVO.setUpdateParameters(true);
         _userVmDao.update(userVmVO.getId(), userVmVO);
