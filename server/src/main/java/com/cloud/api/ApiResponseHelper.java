@@ -530,6 +530,15 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Inject
     ResourceIconManager resourceIconManager;
 
+    public static String getPrettyDomainPath(String path) {
+        if (path == null) {
+            return null;
+        }
+        StringBuilder domainPath = new StringBuilder("ROOT");
+        (domainPath.append(path)).deleteCharAt(domainPath.length() - 1);
+        return domainPath.toString();
+    }
+
     @Override
     public UserResponse createUserResponse(User user) {
         UserAccountJoinVO vUser = ApiDBUtils.newUserView(user);
@@ -567,9 +576,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (parentDomain != null) {
             domainResponse.setParentDomainId(parentDomain.getUuid());
         }
-        StringBuilder domainPath = new StringBuilder("ROOT");
-        (domainPath.append(domain.getPath())).deleteCharAt(domainPath.length() - 1);
-        domainResponse.setPath(domainPath.toString());
+        domainResponse.setPath(getPrettyDomainPath(domain.getPath()));
         if (domain.getParent() != null) {
             domainResponse.setParentDomainName(ApiDBUtils.findDomainById(domain.getParent()).getName());
         }
@@ -2761,10 +2768,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 Domain domain = ApiDBUtils.findDomainById(domainNetworkDetails.first());
                 if (domain != null) {
                     response.setDomainId(domain.getUuid());
-
-                    StringBuilder domainPath = new StringBuilder("ROOT");
-                    (domainPath.append(domain.getPath())).deleteCharAt(domainPath.length() - 1);
-                    response.setDomainPath(domainPath.toString());
+                    response.setDomainPath(getPrettyDomainPath(domain.getPath()));
                 }
             }
             response.setSubdomainAccess(domainNetworkDetails.second());
@@ -3049,7 +3053,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         Domain domain = ApiDBUtils.findDomainById(object.getDomainId());
         response.setDomainId(domain.getUuid());
         response.setDomainName(domain.getName());
-        response.setDomainPath(domain.getPath());
+        response.setDomainPath(getPrettyDomainPath(domain.getPath()));
     }
 
     private void populateOwner(ControlledViewEntityResponse response, ControlledEntity object) {
