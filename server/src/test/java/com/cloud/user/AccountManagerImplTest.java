@@ -200,7 +200,6 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         sshkeyList.add(sshkey);
         Mockito.when(_sshKeyPairDao.listKeyPairs(Mockito.anyLong(), Mockito.anyLong())).thenReturn(sshkeyList);
         Mockito.when(_sshKeyPairDao.remove(Mockito.anyLong())).thenReturn(true);
-        Mockito.when(userDataDao.removeByAccountId(Mockito.anyLong())).thenReturn(222);
         Mockito.doNothing().when(accountManagerImpl).deleteWebhooksForAccount(Mockito.anyLong());
         Mockito.doNothing().when(accountManagerImpl).verifyCallerPrivilegeForUserOrAccountOperations((Account) any());
 

@@ -917,4 +917,20 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         }
         return rows > 0;
     }
+
+    @Override
+    public void unlinkUserdataFromTemplate(List<Long> userdataIds) {
+        if (CollectionUtils.isEmpty(userdataIds)) {
+            return;
+        }
+        SearchBuilder<VMTemplateVO> sb = createSearchBuilder();
+        sb.and("userDataId", sb.entity().getUserDataId(), SearchCriteria.Op.IN);
+        sb.done();
+        SearchCriteria<VMTemplateVO> sc = sb.create();
+        sc.setParameters("userDataId", userdataIds.toArray());
+        VMTemplateVO vo = createForUpdate();
+        vo.setUserDataId(null);
+        vo.setUserDataLinkPolicy(null);
+        update(vo, sc);
+    }
 }

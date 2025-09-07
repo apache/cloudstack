@@ -193,6 +193,7 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.UserData;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.UserDataDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.EncryptionUtil;
@@ -301,6 +302,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     private VMTemplateDetailsDao _tmpltDetailsDao;
     @Inject
     private HypervisorGuruManager _hvGuruMgr;
+    @Inject
+    UserDataDao userDataDao;
 
     private List<TemplateAdapter> _adapters;
 
@@ -2494,5 +2497,15 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         _tmpltDao.update(template.getId(), template);
 
         return _tmpltDao.findById(template.getId());
+    }
+
+    @Override
+    public void unlinkAllAndCleanupUserDataFromAccount(long accountId) {
+        List<Long> userDataIds = userDataDao.listIdsByAccountId(accountId);
+        if (CollectionUtils.isEmpty(userDataIds)) {
+            return;
+        }
+        _tmpltDao.unlinkUserdataFromTemplate(userDataIds);
+        userDataDao.removeAllIds(userDataIds);
     }
 }

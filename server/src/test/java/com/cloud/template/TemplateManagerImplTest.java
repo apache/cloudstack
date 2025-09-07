@@ -63,6 +63,7 @@ import com.cloud.user.User;
 import com.cloud.user.UserData;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.UserDataDao;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -203,13 +204,18 @@ public class TemplateManagerImplTest {
 
     @Inject
     AccountManager _accountMgr;
+
     @Inject
     VnfTemplateManager vnfTemplateManager;
+
     @Inject
     SnapshotJoinDao snapshotJoinDao;
 
     @Inject
     HeuristicRuleHelper heuristicRuleHelperMock;
+
+    @Inject
+    UserDataDao userDataDao;
 
     public class CustomThreadPoolExecutor extends ThreadPoolExecutor {
         AtomicInteger ai = new AtomicInteger(0);
@@ -978,9 +984,15 @@ public class TemplateManagerImplTest {
         public HeuristicRuleHelper heuristicRuleHelper() {
             return Mockito.mock(HeuristicRuleHelper.class);
         }
+
         @Bean
         public SnapshotJoinDao snapshotJoinDao() {
             return Mockito.mock(SnapshotJoinDao.class);
+        }
+
+        @Bean
+        public UserDataDao userDataDao() {
+            return Mockito.mock(UserDataDao.class);
         }
 
 
