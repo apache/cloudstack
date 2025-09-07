@@ -21,3 +21,30 @@
 
 -- Increase length of scripts_version column to 128 due to md5sum to sha512sum change
 CALL `cloud`.`IDEMPOTENT_CHANGE_COLUMN`('cloud.domain_router', 'scripts_version', 'scripts_version', 'VARCHAR(128)');
+
+-- VMware to KVM migration improvements
+CREATE TABLE IF NOT EXISTS `cloud`.`import_vm_task`(
+    `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+    `uuid` varchar(40),
+    `zone_id` bigint unsigned NOT NULL COMMENT 'Zone ID',
+    `account_id` bigint unsigned NOT NULL COMMENT 'Account ID',
+    `user_id` bigint unsigned NOT NULL COMMENT 'User ID',
+    `display_name` varchar(255) COMMENT 'Display VM Name',
+    `vcenter` varchar(255) COMMENT 'VCenter',
+    `datacenter` varchar(255) COMMENT 'VCenter Datacenter name',
+    `source_vm_name` varchar(255) COMMENT 'Source VM name on vCenter',
+    `convert_host_id` bigint unsigned COMMENT 'Convert Host ID',
+    `import_host_id` bigint unsigned COMMENT 'Import Host ID',
+    `step` varchar(20) NOT NULL COMMENT 'Importing VM Task Step',
+    `description` varchar(255) COMMENT 'Importing VM Task Description',
+    `created` datetime NOT NULL COMMENT 'date created',
+    `updated` datetime COMMENT 'date updated if not null',
+    `removed` datetime COMMENT 'date removed if not null',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_import_vm_task__zone_id` FOREIGN KEY `fk_import_vm_task__zone_id` (`zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_import_vm_task__account_id` FOREIGN KEY `fk_import_vm_task__account_id` (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_import_vm_task__user_id` FOREIGN KEY `fk_import_vm_task__user_id` (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_import_vm_task__convert_host_id` FOREIGN KEY `fk_import_vm_task__convert_host_id` (`convert_host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_import_vm_task__import_host_id` FOREIGN KEY `fk_import_vm_task__import_host_id` (`import_host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
+    INDEX `i_import_vm_task__zone_id`(`zone_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
