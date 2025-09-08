@@ -34,6 +34,7 @@ import javax.persistence.Transient;
 
 import com.cloud.cpu.CPU;
 import com.cloud.user.UserData;
+import com.cloud.utils.UuidUtils;
 import org.apache.cloudstack.util.CPUArchConverter;
 import org.apache.cloudstack.util.HypervisorTypeConverter;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
@@ -344,7 +345,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
         name.append("-");
         name.append(userId);
         name.append("-");
-        name.append(UUID.nameUUIDFromBytes((displayName + System.currentTimeMillis()).getBytes()).toString());
+        name.append(UuidUtils.nameUUIDFromBytes((displayName + System.currentTimeMillis()).getBytes()).toString());
         return name.toString();
     }
 
