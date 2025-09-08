@@ -98,7 +98,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             ovfTemplateDirOnConversionLocation = UUID.randomUUID().toString();
             temporaryStoragePool.createFolder(ovfTemplateDirOnConversionLocation);
             sourceOVFDirPath = String.format("%s/%s/", temporaryConvertPath, ovfTemplateDirOnConversionLocation);
-            ovfExported = exportOVAFromVMOnVcenter(exportInstanceOVAUrl, sourceOVFDirPath, noOfThreads, timeout);
+            ovfExported = exportOVAFromVMOnVcenter(exportInstanceOVAUrl, sourceOVFDirPath, noOfThreads, sourceInstanceName, timeout);
             if (!ovfExported) {
                 String err = String.format("Export OVA for the VM %s failed", sourceInstanceName);
                 logger.error(err);
@@ -137,11 +137,11 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         } finally {
             if (ovfExported && StringUtils.isNotBlank(ovfTemplateDirOnConversionLocation)) {
                 String sourceOVFDir = String.format("%s/%s", temporaryConvertPath, ovfTemplateDirOnConversionLocation);
-                logger.debug("Cleaning up exported OVA at dir " + sourceOVFDir);
+                logger.debug("({}) Cleaning up exported OVA at dir: {}", sourceInstanceName, sourceOVFDir);
                 FileUtil.deletePath(sourceOVFDir);
             }
             if (cleanupSecondaryStorage && conversionTemporaryLocation instanceof NfsTO) {
-                logger.debug("Cleaning up secondary storage temporary location");
+                logger.debug("({}) Cleaning up secondary storage temporary location", sourceInstanceName);
                 storagePoolMgr.deleteStoragePool(temporaryStoragePool.getType(), temporaryStoragePool.getUuid());
             }
         }
@@ -201,7 +201,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
     private boolean exportOVAFromVMOnVcenter(String vmExportUrl,
                                              String targetOvfDir,
                                              int noOfThreads,
-                                             long timeout) {
+                                             String sourceInstanceName, long timeout) {
         Script script = new Script("ovftool", timeout, logger);
         script.add("--noSSLVerify");
         if (noOfThreads > 1) {
@@ -210,7 +210,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         script.add(vmExportUrl);
         script.add(targetOvfDir);
 
-        String logPrefix = "export ovf";
+        String logPrefix = String.format("(%s) export ovf", sourceInstanceName);
         OutputInterpreter.LineByLineOutputLogger outputLogger = new OutputInterpreter.LineByLineOutputLogger(logger, logPrefix);
         script.execute(outputLogger);
         int exitValue = script.getExitValue();
