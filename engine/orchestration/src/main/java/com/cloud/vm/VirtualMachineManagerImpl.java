@@ -4072,6 +4072,20 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             DiskTO disk = storageMgr.getDiskWithThrottling(volTO, vol.getVolumeType(), vol.getDeviceId(), vol.getPath(), vm.getServiceOfferingId(), vol.getDiskOfferingId());
             vmProfile.addDisk(disk);
         }
+
+        Map<String, String> details = vmInstanceDetailsDao.listDetailsKeyPairs(vmId);
+        if (details.containsKey(VirtualMachineProfile.Param.BootType.getName())) {
+            vmProfile.getParameters().put(VirtualMachineProfile.Param.BootType, details.get(VirtualMachineProfile.Param.BootType.getName()));
+        }
+
+        if (details.containsKey(VirtualMachineProfile.Param.BootMode.getName())) {
+            vmProfile.getParameters().put(VirtualMachineProfile.Param.BootMode, details.get(VirtualMachineProfile.Param.BootMode.getName()));
+        }
+
+        if (details.containsKey(VirtualMachineProfile.Param.UefiFlag.getName())) {
+            vmProfile.getParameters().put(VirtualMachineProfile.Param.UefiFlag, details.get(VirtualMachineProfile.Param.UefiFlag.getName()));
+        }
+
         return toVmTO(vmProfile);
     }
 
