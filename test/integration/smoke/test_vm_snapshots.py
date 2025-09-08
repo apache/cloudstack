@@ -167,8 +167,8 @@ class TestVmSnapshot(cloudstackTestCase):
             self.apiclient,
             self.virtual_machine.id,
             MemorySnapshot,
-            "TestSnapshot",
-            "Display Text"
+            "TestVmSnapshot",
+            "Test VM Snapshot"
         )
         self.assertEqual(
             vm_snapshot.state,
