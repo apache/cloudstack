@@ -88,6 +88,7 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -2723,11 +2724,12 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         _storageNetmask = (String) params.get("storagenetmask");
         _storageGateway = (String) params.get("storagegateway");
         if (_storageIp == null && _inSystemVM && _eth1ip != null) {
+            String eth1Gateway = ObjectUtils.firstNonNull(_localgw, MapUtils.getString(params, "localgw"));
             logger.info("Storage network not configured, using management network[ip: {}, netmask: {}, gateway: {}] for storage traffic",
-                    _eth1ip, _eth1mask, _localgw);
+                    _eth1ip, _eth1mask, eth1Gateway);
             _storageIp = _eth1ip;
             _storageNetmask = _eth1mask;
-            _storageGateway = _localgw;
+            _storageGateway = eth1Gateway;
         }
     }
 
