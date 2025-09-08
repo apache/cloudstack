@@ -2718,6 +2718,19 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return new PingStorageCommand(Host.Type.Storage, id, new HashMap<String, Boolean>());
     }
 
+    protected void configureStorageNetwork(Map<String, Object> params) {
+        _storageIp = MapUtils.getString(params, "storageip");
+        _storageNetmask = (String) params.get("storagenetmask");
+        _storageGateway = (String) params.get("storagegateway");
+        if (_storageIp == null && _inSystemVM && _eth1ip != null) {
+            logger.info("Storage network not configured, using management network[ip: {}, netmask: {}, gateway: {}] for storage traffic",
+                    _eth1ip, _eth1mask, _localgw);
+            _storageIp = _eth1ip;
+            _storageNetmask = _eth1mask;
+            _storageGateway = _localgw;
+        }
+    }
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _eth1ip = (String)params.get("eth1ip");
@@ -2740,12 +2753,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             _inSystemVM = true;
         }
 
-        _storageIp = MapUtils.getString(params, "storageip", _eth1ip);
+        configureStorageNetwork(params);
         if (_storageIp == null && _inSystemVM) {
-            logger.warn("There is no storageip in /proc/cmdline, something wrong!");
+            logger.warn("No storageip in /proc/cmdline, something wrong! Even fallback to management network did not resolve storage IP.");
         }
-        _storageNetmask = (String)params.get("storagenetmask");
-        _storageGateway = (String)params.get("storagegateway");
         super.configure(name, params);
 
         _params = params;
