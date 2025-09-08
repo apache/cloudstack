@@ -70,6 +70,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.agent.AgentManager;
@@ -167,6 +168,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 @RunWith(MockitoJUnitRunner.class)
 public class UnmanagedVMsManagerImplTest {
 
+    @Spy
     @InjectMocks
     private UnmanagedVMsManagerImpl unmanagedVMsManager = new UnmanagedVMsManagerImpl();
 
@@ -476,6 +478,17 @@ public class UnmanagedVMsManagerImplTest {
     @Test(expected = UnsupportedServiceException.class)
     public void unmanageVMInstanceExistingISOAttachedTest() {
         when(virtualMachine.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.None);
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId);
+    }
+
+    @Test
+    public void unmanageVMInstanceStoppedInstanceTest() {
+        when(virtualMachine.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        when(virtualMachine.getType()).thenReturn(VirtualMachine.Type.User);
+        when(virtualMachine.getState()).thenReturn(VirtualMachine.State.Stopped);
+        UserVmVO userVmVO = mock(UserVmVO.class);
+        when(userVmDao.findById(anyLong())).thenReturn(userVmVO);
+        Mockito.doNothing().when(unmanagedVMsManager).performUnmanageVMInstancePrechecks(any());
         unmanagedVMsManager.unmanageVMInstance(virtualMachineId);
     }
 

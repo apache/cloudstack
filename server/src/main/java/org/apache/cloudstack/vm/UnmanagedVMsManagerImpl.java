@@ -2205,7 +2205,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
      * - VM must not have any associated volume snapshot
      * - VM must not have an attached ISO
      */
-    private void performUnmanageVMInstancePrechecks(VMInstanceVO vmVO) {
+    void performUnmanageVMInstancePrechecks(VMInstanceVO vmVO) {
         if (hasVolumeSnapshotsPriorToUnmanageVM(vmVO)) {
             throw new UnsupportedServiceException("Cannot unmanage VM with id = " + vmVO.getUuid() +
                     " as there are volume snapshots for its volume(s). Please remove snapshots before unmanaging.");
