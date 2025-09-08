@@ -638,16 +638,51 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         return maxBackups;
     }
 
-    @Override
     public List<BackupSchedule> listBackupSchedule(ListBackupScheduleCmd cmd) {
+        Account caller = CallContext.current().getCallingAccount();
+        boolean isRootAdmin = accountManager.isRootAdmin(caller.getId());
+        Long id = cmd.getId();
         Long vmId = cmd.getVmId();
-        if (vmId != null) {
-            final VMInstanceVO vm = findVmById(vmId);
-            validateBackupForZone(vm.getDataCenterId());
-            accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
+        List<Long> permittedAccounts = new ArrayList<>();
+        Long domainId = null;
+        Boolean isRecursive = null;
+        Project.ListProjectResourcesCriteria listProjectResourcesCriteria = null;
+
+        if (!isRootAdmin) {
+            Ternary<Long, Boolean, Project.ListProjectResourcesCriteria> domainIdRecursiveListProject =
+                    new Ternary<>(cmd.getDomainId(), cmd.isRecursive(), null);
+            accountManager.buildACLSearchParameters(caller, id, null, null, permittedAccounts, domainIdRecursiveListProject, true, false);
+            domainId = domainIdRecursiveListProject.first();
+            isRecursive = domainIdRecursiveListProject.second();
+            listProjectResourcesCriteria = domainIdRecursiveListProject.third();
         }
 
-        return backupScheduleDao.listByVM(vmId).stream().map(BackupSchedule.class::cast).collect(Collectors.toList());
+        Filter searchFilter = new Filter(BackupScheduleVO.class, "id", false, null, null);
+        SearchBuilder<BackupScheduleVO> searchBuilder = backupScheduleDao.createSearchBuilder();
+
+        if (!isRootAdmin) {
+            accountManager.buildACLSearchBuilder(searchBuilder, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        }
+
+        searchBuilder.and("id", searchBuilder.entity().getId(), SearchCriteria.Op.EQ);
+        if (vmId != null) {
+            searchBuilder.and("vmId", searchBuilder.entity().getVmId(), SearchCriteria.Op.EQ);
+        }
+
+        SearchCriteria<BackupScheduleVO> sc = searchBuilder.create();
+        if (!isRootAdmin) {
+            accountManager.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        }
+
+        if (id != null) {
+            sc.setParameters("id", id);
+        }
+        if (vmId != null) {
+            sc.setParameters("vmId", vmId);
+        }
+
+        Pair<List<BackupScheduleVO>, Integer> result = backupScheduleDao.searchAndCount(sc, searchFilter);
+        return new ArrayList<>(result.first());
     }
 
     @Override

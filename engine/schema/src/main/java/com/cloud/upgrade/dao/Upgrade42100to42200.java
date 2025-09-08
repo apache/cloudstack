@@ -50,6 +50,7 @@ public class Upgrade42100to42200 extends DbUpgradeAbstractImpl implements DbUpgr
     @Override
     public void performDataMigration(Connection conn) {
         updateSnapshotPolicyOwnership(conn);
+        updateBackupScheduleOwnership(conn);
     }
 
     private void updateSnapshotPolicyOwnership(Connection conn) {
@@ -76,5 +77,27 @@ public class Upgrade42100to42200 extends DbUpgradeAbstractImpl implements DbUpgr
         }
     }
 
+    private void updateBackupScheduleOwnership(Connection conn) {
+        // Set account_id and domain_id in backup_schedule table from vm_instance table
+        String selectSql = "SELECT bs.id, vm.account_id, vm.domain_id FROM backup_schedule bs, vm_instance vm WHERE bs.vm_id = vm.id AND (bs.account_id IS NULL AND bs.domain_id IS NULL)";
+        String updateSql = "UPDATE backup_schedule SET account_id = ?, domain_id = ? WHERE id = ?";
 
+        try (PreparedStatement selectPstmt = conn.prepareStatement(selectSql);
+             ResultSet rs = selectPstmt.executeQuery();
+             PreparedStatement updatePstmt = conn.prepareStatement(updateSql)) {
+
+            while (rs.next()) {
+                long scheduleId = rs.getLong(1);
+                long accountId = rs.getLong(2);
+                long domainId = rs.getLong(3);
+
+                updatePstmt.setLong(1, accountId);
+                updatePstmt.setLong(2, domainId);
+                updatePstmt.setLong(3, scheduleId);
+                updatePstmt.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to update backup_schedule table with account_id and domain_id", e);
+        }
+    }
 }
