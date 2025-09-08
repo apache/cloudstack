@@ -57,7 +57,7 @@ public class AsyncSampleEventDrivenStyleCaller {
             String result = future.get();
             Assert.assertEquals(result, vol);
         } catch (InterruptedException | ExecutionException e) {
-            logger.error(e);
+            logger.info(e);
         }
     }
 
@@ -87,7 +87,7 @@ public class AsyncSampleEventDrivenStyleCaller {
                     try {
                         this.wait();
                     } catch (InterruptedException e) {
-                        logger.error(e);
+                        logger.info(e);
                     }
                 }
                 return this.result;
