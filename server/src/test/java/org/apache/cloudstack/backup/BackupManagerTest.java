@@ -31,7 +31,6 @@ import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
@@ -1284,7 +1283,7 @@ public class BackupManagerTest {
             verify(backupProvider, times(1)).restoreBackupToVM(vm, backup, null, null);
             verify(virtualMachineManager, times(1)).stateTransitTo(vm, VirtualMachine.Event.RestoringRequested, hostId);
             verify(virtualMachineManager, times(1)).stateTransitTo(vm, VirtualMachine.Event.RestoringSuccess, hostId);
-        } catch (ResourceUnavailableException e) {
+        } catch (CloudRuntimeException e) {
             fail("Test failed due to exception" + e);
         }
     }

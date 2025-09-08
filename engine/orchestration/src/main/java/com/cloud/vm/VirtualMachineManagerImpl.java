@@ -1476,6 +1476,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                     processPrepareExternalProvisioning(firstStart, dest.getHost(), vmProfile, dest.getDataCenter());
 
+                    _networkMgr.prepare(vmProfile, dest, ctx);
                     if (vm.getHypervisorType() != HypervisorType.BareMetal && vm.getHypervisorType() != HypervisorType.External) {
                         checkAndAttemptMigrateVmAcrossCluster(vm, clusterId, dest.getStorageForDisks());
                         volumeMgr.prepare(vmProfile, dest);
@@ -1498,7 +1499,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         reuseVolume = true;
                     }
 
-                    _networkMgr.prepare(vmProfile, dest, ctx);
                     vmGuru.finalizeVirtualMachineProfile(vmProfile, dest, ctx);
 
                     final VirtualMachineTO vmTO = hvGuru.implement(vmProfile);

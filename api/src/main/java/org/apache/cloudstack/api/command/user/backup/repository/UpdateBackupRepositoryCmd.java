@@ -101,7 +101,7 @@ public class UpdateBackupRepositoryCmd extends BaseCmd {
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add backup repository");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update the backup repository");
             }
         } catch (Exception ex4) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex4.getMessage());
