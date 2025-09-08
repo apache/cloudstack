@@ -58,6 +58,7 @@ public interface KubernetesCluster extends ControlledEntity, com.cloud.utils.fsm
         Stopping("Resources for the Kubernetes cluster are being destroyed"),
         Stopped("All resources for the Kubernetes cluster are destroyed, Kubernetes cluster may still have ephemeral resource like persistent volumes provisioned"),
         Scaling("Transient state in which resources are either getting scaled up/down"),
+        ScalingOfferingOfStoppedCluster("Transient state in which the service offerings of stopped clusters are getting scaled"),
         Upgrading("Transient state in which cluster is getting upgraded"),
         Alert("State to represent Kubernetes clusters which are not in expected desired state (operationally in active control place, stopped cluster VM's etc)."),
         Recovering("State in which Kubernetes cluster is recovering from alert state"),
@@ -89,8 +90,11 @@ public interface KubernetesCluster extends ControlledEntity, com.cloud.utils.fsm
             s_fsm.addTransition(State.Running, Event.AutoscaleRequested, State.Scaling);
             s_fsm.addTransition(State.Running, Event.ScaleUpRequested, State.Scaling);
             s_fsm.addTransition(State.Running, Event.ScaleDownRequested, State.Scaling);
+            s_fsm.addTransition(State.Stopped, Event.ScaleUpRequested, State.ScalingOfferingOfStoppedCluster);
             s_fsm.addTransition(State.Scaling, Event.OperationSucceeded, State.Running);
             s_fsm.addTransition(State.Scaling, Event.OperationFailed, State.Alert);
+            s_fsm.addTransition(State.ScalingOfferingOfStoppedCluster, Event.OperationSucceeded, State.Stopped);
+            s_fsm.addTransition(State.ScalingOfferingOfStoppedCluster, Event.OperationFailed, State.Alert);
 
             s_fsm.addTransition(State.Running, Event.UpgradeRequested, State.Upgrading);
             s_fsm.addTransition(State.Upgrading, Event.OperationSucceeded, State.Running);
