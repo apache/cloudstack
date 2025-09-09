@@ -284,7 +284,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
 
     private void scaleKubernetesClusterOffering() throws CloudRuntimeException {
         validateKubernetesClusterScaleOfferingParameters();
-        List<KubernetesCluster.State> scalingStates = List.of(KubernetesCluster.State.Scaling, KubernetesCluster.State.ScalingOfferingOfStoppedCluster);
+        List<KubernetesCluster.State> scalingStates = List.of(KubernetesCluster.State.Scaling, KubernetesCluster.State.ScalingStoppedCluster);
         if (!scalingStates.contains(kubernetesCluster.getState())) {
             stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.ScaleUpRequested);
         }
