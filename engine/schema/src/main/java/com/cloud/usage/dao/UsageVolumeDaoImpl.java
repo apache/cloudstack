@@ -26,7 +26,6 @@ import java.util.TimeZone;
 
 import javax.annotation.PostConstruct;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.usage.UsageVolumeVO;

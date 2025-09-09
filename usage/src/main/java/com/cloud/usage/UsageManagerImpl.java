@@ -1432,7 +1432,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     private void deleteExistingSecondaryStorageUsageForVolume(long volId, long accountId, Date deletedDate) {
         List<UsageStorageVO> storageVOs = _usageStorageDao.listById(accountId, volId, StorageTypes.VOLUME);
         for (UsageStorageVO storageVO : storageVOs) {
-            s_logger.debug(String.format("Setting the volume with id: {} to 'deleted' in the usage_storage table for account: {}.", volId, accountId));
+            logger.debug(String.format("Setting the volume with id: {} to 'deleted' in the usage_storage table for account: {}.", volId, accountId));
             storageVO.setDeleted(deletedDate);
             _usageStorageDao.update(storageVO);
         }
@@ -1442,7 +1442,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         List<UsageVolumeVO> volumesVOs = _usageVolumeDao.listByVolumeId(volId, accountId);
         for (UsageVolumeVO volumesVO : volumesVOs) {
             if (volumesVO.getVmId() != null) {
-                s_logger.debug(String.format("Setting the volume with id: {} for instance id: {} to 'deleted' in the usage_volume table for account {}.",
+                logger.debug(String.format("Setting the volume with id: {} for instance id: {} to 'deleted' in the usage_volume table for account {}.",
                         volumesVO.getVolumeId(), volumesVO.getVmId(), accountId));
                 volumesVO.setDeleted(deletedDate);
                 _usageVolumeDao.update(volumesVO.getId(), volumesVO);
@@ -1453,7 +1453,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     private void deleteExistingVolumeUsage(long volId, long accountId, Date deletedDate) {
         List<UsageVolumeVO> volumesVOs = _usageVolumeDao.listByVolumeId(volId, accountId);
         for (UsageVolumeVO volumesVO : volumesVOs) {
-            s_logger.debug(String.format("Setting the volume with id: {} to 'deleted' in the usage_storage table for account: {}.", volId, accountId));
+            logger.debug(String.format("Setting the volume with id: {} to 'deleted' in the usage_storage table for account: {}.", volId, accountId));
             volumesVO.setDeleted(deletedDate);
             _usageVolumeDao.update(volumesVO.getId(), volumesVO);
         }
