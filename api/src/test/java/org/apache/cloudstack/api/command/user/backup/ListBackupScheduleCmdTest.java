@@ -40,13 +40,13 @@ import java.util.List;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ListBackupScheduleCmdTest {
-    
+
     @Mock
     private BackupManager backupManager;
-    
+
     @Mock
     private ResponseGenerator responseGenerator;
-    
+
     private ListBackupScheduleCmd cmd;
 
     @Before
@@ -62,10 +62,10 @@ public class ListBackupScheduleCmdTest {
         BackupScheduleResponse scheduleResponse = Mockito.mock(BackupScheduleResponse.class);
         List<BackupSchedule> schedules = new ArrayList<>();
         schedules.add(schedule);
-        
+
         Mockito.when(backupManager.listBackupSchedules(cmd)).thenReturn(schedules);
         Mockito.when(responseGenerator.createBackupScheduleResponse(schedule)).thenReturn(scheduleResponse);
-        
+
         Account mockAccount = Mockito.mock(Account.class);
         CallContext callContext = Mockito.mock(CallContext.class);
         try (org.mockito.MockedStatic<CallContext> mocked = Mockito.mockStatic(CallContext.class)) {
