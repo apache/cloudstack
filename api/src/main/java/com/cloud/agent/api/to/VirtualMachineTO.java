@@ -19,12 +19,14 @@ package com.cloud.agent.api.to;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.stream.Collectors;
 
 import com.cloud.agent.api.LogLevel;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
+import com.cloud.vm.VmDetailConstants;
 
 public class VirtualMachineTO {
     private long id;
@@ -495,5 +497,17 @@ public class VirtualMachineTO {
     @Override
     public String toString() {
         return String.format("VM {id: \"%s\", name: \"%s\", uuid: \"%s\", type: \"%s\"}", id, name, uuid, type);
+    }
+
+    public Map<String, String> getExternalDetails() {
+        if (details == null) {
+            return new HashMap<>();
+        }
+        return details.entrySet().stream()
+                .filter(entry -> entry.getKey().startsWith(VmDetailConstants.EXTERNAL_DETAIL_PREFIX))
+                .collect(Collectors.toMap(
+                        entry -> entry.getKey().substring(VmDetailConstants.EXTERNAL_DETAIL_PREFIX.length()),
+                        Map.Entry::getValue
+                ));
     }
 }

@@ -25,7 +25,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.21.0.0-SNAPSHOT</version>
+        <version>4.22.0.0-SNAPSHOT</version>
     </parent>
     <build>
         <plugins>
@@ -51,6 +51,7 @@
         <module>db</module>
         <module>direct-download</module>
         <module>events</module>
+        <module>extensions</module>
         <module>ipc</module>
         <module>jobs</module>
         <module>managed-context</module>

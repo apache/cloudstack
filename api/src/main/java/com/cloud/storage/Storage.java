@@ -30,6 +30,7 @@ public class Storage {
         OVA(true, true, true, "ova"),
         VHDX(true, true, true, "vhdx"),
         BAREMETAL(false, false, false, "BAREMETAL"),
+        EXTERNAL(false, false, false, "EXTERNAL"),
         VMDK(true, true, false, "vmdk"),
         VDI(true, true, false, "vdi"),
         TAR(false, false, false, "tar"),

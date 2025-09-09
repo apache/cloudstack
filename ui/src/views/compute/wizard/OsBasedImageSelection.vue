@@ -25,6 +25,8 @@
         @change="emitChangeImageType()">
         <a-radio-button value="templateid">{{ $t('label.template') }}</a-radio-button>
         <a-radio-button value="isoid">{{ $t('label.iso') }}</a-radio-button>
+        <a-radio-button value="volumeid">{{ $t('label.volume') }}</a-radio-button>
+        <a-radio-button value="snapshotid">{{ $t('label.snapshot') }}</a-radio-button>
       </a-radio-group>
       <div style="margin-top: 5px; margin-bottom: 5px;">
         {{ $t('message.' + localSelectedImageType.replace('id', '') + '.desc') }}
