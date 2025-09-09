@@ -571,7 +571,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     }
                 }
             } else {
-                LOGGER.debug(String.format(
+                logger.debug(String.format(
                         "No encryption configured for volume [id: %d, uuid: %s, name: %s]",
                         volumeInfo.getId(), volumeInfo.getUuid(), volumeInfo.getName()));
             }
