@@ -638,7 +638,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         return maxBackups;
     }
 
-    public List<BackupSchedule> listBackupSchedule(ListBackupScheduleCmd cmd) {
+    public List<BackupSchedule> listBackupSchedules(ListBackupScheduleCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
         boolean isRootAdmin = accountManager.isRootAdmin(caller.getId());
         Long id = cmd.getId();

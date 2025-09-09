@@ -175,7 +175,7 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
      * @param vmId
      * @return
      */
-    List<BackupSchedule> listBackupSchedule(ListBackupScheduleCmd cmd);
+    List<BackupSchedule> listBackupSchedules(ListBackupScheduleCmd cmd);
 
     /**
      * Deletes VM backup schedule for a VM

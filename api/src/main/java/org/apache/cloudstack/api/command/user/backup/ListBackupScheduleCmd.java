@@ -50,7 +50,7 @@ import java.util.List;
 public class ListBackupScheduleCmd extends BaseListDomainResourcesCmd {
 
     @Inject
-    private BackupManager backupManager;
+    BackupManager backupManager;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -87,7 +87,7 @@ public class ListBackupScheduleCmd extends BaseListDomainResourcesCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try{
-            List<BackupSchedule> schedules = backupManager.listBackupSchedule(this);
+            List<BackupSchedule> schedules = backupManager.listBackupSchedules(this);
             ListResponse<BackupScheduleResponse> response = new ListResponse<>();
             List<BackupScheduleResponse> scheduleResponses = new ArrayList<>();
 
