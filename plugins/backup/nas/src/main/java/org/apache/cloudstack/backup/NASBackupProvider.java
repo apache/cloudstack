@@ -113,12 +113,6 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     private VMSnapshotDao vmSnapshotDao;
 
     @Inject
-    private VolumeDao _volsDao;
-
-    @Inject
-    protected PrimaryDataStoreDao _storagePoolDao = null;
-
-    @Inject
     private VMSnapshotDetailsDao vmSnapshotDetailsDao;
 
     @Inject
@@ -130,13 +124,16 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     @Inject
     private DiskOfferingDao diskOfferingDao;
 
-    protected Long getClusterIdFromRootVolume(VirtualMachine vm) {
-        VolumeVO rootVolume = _volsDao.getInstanceRootVolume(vm.getId());
-        StoragePoolVO rootDiskPool = _storagePoolDao.findById(rootVolume.getPoolId());
+    private Long getClusterIdFromRootVolume(VirtualMachine vm) {
+        VolumeVO rootVolume = volumeDao.getInstanceRootVolume(vm.getId());
+        StoragePoolVO rootDiskPool = primaryDataStoreDao.findById(rootVolume.getPoolId());
+        if (rootDiskPool == null) {
+            return null;
+        }
         return rootDiskPool.getClusterId();
     }
 
-    protected Host getLastVMHypervisorHost(VirtualMachine vm) {
+    protected Host getVMHypervisorHost(VirtualMachine vm) {
         Long hostId = vm.getLastHostId();
         Long clusterId = null;
 
@@ -145,13 +142,14 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             if (host.getStatus() == Status.Up) {
                 return host;
             }
+            // Try to find any Up host in the same cluster
             clusterId = host.getClusterId();
         } else {
+            // Try to find any Up host in the same cluster as the root volume
             clusterId = getClusterIdFromRootVolume(vm);
         }
 
         if (clusterId != null) {
-            // Try to find any Up host in the same cluster
             for (final Host hostInCluster : hostDao.findHypervisorHostInCluster(clusterId)) {
                 if (hostInCluster.getStatus() == Status.Up) {
                     LOG.debug("Found Host {} in cluster {}", hostInCluster, clusterId);
@@ -164,7 +162,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         return resourceManager.findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, vm.getDataCenterId());
     }
 
-    protected Host getVMHypervisorHost(VirtualMachine vm) {
+    protected Host getVMHypervisorHostForBackup(VirtualMachine vm) {
         Long hostId = vm.getHostId();
         if (hostId == null && VirtualMachine.State.Running.equals(vm.getState())) {
             throw new CloudRuntimeException(String.format("Unable to find the hypervisor host for %s. Make sure the virtual machine is running", vm.getName()));
@@ -184,7 +182,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
     @Override
     public Pair<Boolean, Backup> takeBackup(final VirtualMachine vm, Boolean quiesceVM) {
-        final Host host = getVMHypervisorHost(vm);
+        final Host host = getVMHypervisorHostForBackup(vm);
 
         final BackupRepository backupRepository = backupRepositoryDao.findByBackupOfferingId(vm.getBackupOfferingId());
         if (backupRepository == null) {
@@ -297,7 +295,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         LOG.debug("Restoring vm {} from backup {} on the NAS Backup Provider", vm, backup);
         BackupRepository backupRepository = getBackupRepository(backup);
 
-        final Host host = getLastVMHypervisorHost(vm);
+        final Host host = getVMHypervisorHost(vm);
         RestoreBackupCommand restoreCommand = new RestoreBackupCommand();
         restoreCommand.setBackupPath(backup.getExternalId());
         restoreCommand.setBackupRepoType(backupRepository.getType());
@@ -425,7 +423,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         final Host host;
         final VirtualMachine vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
         if (vm != null) {
-            host = getLastVMHypervisorHost(vm);
+            host = getVMHypervisorHost(vm);
         } else {
             host = resourceManager.findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, backup.getZoneId());
         }

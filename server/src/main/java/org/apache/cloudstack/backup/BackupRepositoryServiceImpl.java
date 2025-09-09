@@ -94,6 +94,7 @@ public class BackupRepositoryServiceImpl extends ManagerBase implements BackupRe
 
         if (!repositoryDao.update(id, backupRepositoryVO)) {
             logger.warn(String.format("Couldn't update Backup repository (%s) with [%s].", backupRepositoryVO, String.join(", ", fields)));
+            return null;
         }
 
         BackupRepositoryVO repositoryVO = repositoryDao.findById(id);

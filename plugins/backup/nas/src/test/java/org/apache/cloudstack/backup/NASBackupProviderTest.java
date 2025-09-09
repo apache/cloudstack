@@ -21,11 +21,9 @@ import static org.mockito.Mockito.mock;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
-import org.apache.cloudstack.backup.dao.BackupDao;
-import org.apache.cloudstack.backup.dao.BackupRepositoryDao;
-import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -39,6 +37,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import com.cloud.agent.AgentManager;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
@@ -50,6 +49,12 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Pair;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
+
+import org.apache.cloudstack.backup.dao.BackupDao;
+import org.apache.cloudstack.backup.dao.BackupRepositoryDao;
+import org.apache.cloudstack.backup.dao.BackupOfferingDao;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 @RunWith(MockitoJUnitRunner.class)
 public class NASBackupProviderTest {
@@ -83,6 +88,9 @@ public class NASBackupProviderTest {
 
     @Mock
     private ResourceManager resourceManager;
+
+    @Mock
+    private PrimaryDataStoreDao storagePoolDao;
 
     @Test
     public void testDeleteBackup() throws OperationTimedoutException, AgentUnavailableException {
@@ -226,5 +234,119 @@ public class NASBackupProviderTest {
         Mockito.verify(backupDao).persist(Mockito.any(BackupVO.class));
         Mockito.verify(backupDao).update(Mockito.anyLong(), Mockito.any(BackupVO.class));
         Mockito.verify(agentManager).send(anyLong(), Mockito.any(TakeBackupCommand.class));
+    }
+
+    @Test
+    public void testGetVMHypervisorHost() {
+        Long hostId = 1L;
+        Long vmId = 1L;
+        Long zoneId = 1L;
+
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        Mockito.when(vm.getLastHostId()).thenReturn(hostId);
+
+        HostVO host = mock(HostVO.class);
+        Mockito.when(host.getId()).thenReturn(hostId);
+        Mockito.when(host.getStatus()).thenReturn(Status.Up);
+        Mockito.when(hostDao.findById(hostId)).thenReturn(host);
+
+        Host result = nasBackupProvider.getVMHypervisorHost(vm);
+
+        Assert.assertNotNull(result);
+        Assert.assertTrue(Objects.equals(hostId, result.getId()));
+        Mockito.verify(hostDao).findById(hostId);
+    }
+
+    @Test
+    public void testGetVMHypervisorHostWithHostDown() {
+        Long hostId = 1L;
+        Long clusterId = 2L;
+        Long vmId = 1L;
+        Long zoneId = 1L;
+
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        Mockito.when(vm.getLastHostId()).thenReturn(hostId);
+
+        HostVO downHost = mock(HostVO.class);
+        Mockito.when(downHost.getStatus()).thenReturn(Status.Down);
+        Mockito.when(downHost.getClusterId()).thenReturn(clusterId);
+        Mockito.when(hostDao.findById(hostId)).thenReturn(downHost);
+
+        HostVO upHostInCluster = mock(HostVO.class);
+        Mockito.when(upHostInCluster.getId()).thenReturn(3L);
+        Mockito.when(upHostInCluster.getStatus()).thenReturn(Status.Up);
+        Mockito.when(hostDao.findHypervisorHostInCluster(clusterId)).thenReturn(List.of(upHostInCluster));
+
+        Host result = nasBackupProvider.getVMHypervisorHost(vm);
+
+        Assert.assertNotNull(result);
+        Assert.assertTrue(Objects.equals(Long.valueOf(3L), result.getId()));
+        Mockito.verify(hostDao).findById(hostId);
+        Mockito.verify(hostDao).findHypervisorHostInCluster(clusterId);
+    }
+
+    @Test
+    public void testGetVMHypervisorHostWithUpHostViaRootVolumeCluster() {
+        Long vmId = 1L;
+        Long zoneId = 1L;
+        Long clusterId = 2L;
+        Long poolId = 3L;
+
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        Mockito.when(vm.getLastHostId()).thenReturn(null);
+        Mockito.when(vm.getId()).thenReturn(vmId);
+
+        VolumeVO rootVolume = mock(VolumeVO.class);
+        Mockito.when(rootVolume.getPoolId()).thenReturn(poolId);
+        Mockito.when(volumeDao.getInstanceRootVolume(vmId)).thenReturn(rootVolume);
+
+        StoragePoolVO storagePool = mock(StoragePoolVO.class);
+        Mockito.when(storagePool.getClusterId()).thenReturn(clusterId);
+        Mockito.when(storagePoolDao.findById(poolId)).thenReturn(storagePool);
+
+        HostVO upHostInCluster = mock(HostVO.class);
+        Mockito.when(upHostInCluster.getId()).thenReturn(4L);
+        Mockito.when(upHostInCluster.getStatus()).thenReturn(Status.Up);
+        Mockito.when(hostDao.findHypervisorHostInCluster(clusterId)).thenReturn(List.of(upHostInCluster));
+
+        Host result = nasBackupProvider.getVMHypervisorHost(vm);
+
+        Assert.assertNotNull(result);
+        Assert.assertTrue(Objects.equals(Long.valueOf(4L), result.getId()));
+        Mockito.verify(volumeDao).getInstanceRootVolume(vmId);
+        Mockito.verify(storagePoolDao).findById(poolId);
+        Mockito.verify(hostDao).findHypervisorHostInCluster(clusterId);
+    }
+
+    @Test
+    public void testGetVMHypervisorHostFallbackToZoneWideKVMHost() {
+        Long hostId = 1L;
+        Long clusterId = 2L;
+        Long vmId = 1L;
+        Long zoneId = 1L;
+
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        Mockito.when(vm.getLastHostId()).thenReturn(hostId);
+        Mockito.when(vm.getDataCenterId()).thenReturn(zoneId);
+
+        HostVO downHost = mock(HostVO.class);
+        Mockito.when(downHost.getStatus()).thenReturn(Status.Down);
+        Mockito.when(downHost.getClusterId()).thenReturn(clusterId);
+        Mockito.when(hostDao.findById(hostId)).thenReturn(downHost);
+
+        Mockito.when(hostDao.findHypervisorHostInCluster(clusterId)).thenReturn(Collections.emptyList());
+
+        HostVO fallbackHost = mock(HostVO.class);
+        Mockito.when(fallbackHost.getId()).thenReturn(5L);
+        Mockito.when(resourceManager.findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, zoneId))
+                .thenReturn(fallbackHost);
+
+        Host result = nasBackupProvider.getVMHypervisorHost(vm);
+
+        Assert.assertNotNull(result);
+        Assert.assertTrue(Objects.equals(Long.valueOf(5L), result.getId()));
+        Mockito.verify(hostDao).findById(hostId);
+        Mockito.verify(hostDao).findHypervisorHostInCluster(clusterId);
+        Mockito.verify(resourceManager).findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, zoneId);
     }
 }
