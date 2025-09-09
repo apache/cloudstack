@@ -622,6 +622,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     }
 
     @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_SNAPSHOT_CREATE, eventDescription = "creating snapshot from VM snapshot", async = true)
     public Snapshot backupSnapshotFromVmSnapshot(Long snapshotId, Long vmId, Long volumeId, Long vmSnapshotId) {
         VMInstanceVO vm = _vmDao.findById(vmId);
         if (vm == null) {
