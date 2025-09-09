@@ -1316,15 +1316,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             params.put("guest.cpu.model", guestCpuModel);
         }
 
-        final String cpuFeatures = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.GUEST_CPU_FEATURES);
-        if (cpuFeatures != null) {
-            this.cpuFeatures = new ArrayList<String>();
-            for (final String feature: cpuFeatures.split(" ")) {
-                if (!feature.isEmpty()) {
-                    this.cpuFeatures.add(feature);
-                }
-            }
-        }
+        this.cpuFeatures = parseCpuFeatures(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.GUEST_CPU_FEATURES));
 
         final String[] info = NetUtils.getNetworkParams(privateNic);
 
@@ -1428,6 +1420,22 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         setupMemoryBalloonStatsPeriod(conn);
 
         return true;
+    }
+
+    /**
+     * Parses a string containing whitespace-separated CPU feature names and converts it into a list.
+     *
+     * @param features A string containing whitespace-separated CPU feature names to be parsed.
+     * @return A list of CPU feature strings. Returns an empty list if {@code features} is null.
+     */
+    protected List<String> parseCpuFeatures(String features) {
+        if (features == null) {
+            return new ArrayList<>();
+        }
+
+        return Arrays.stream(features.split(" "))
+                .filter(feature -> !feature.isEmpty())
+                .collect(Collectors.toList());
     }
 
     /**
@@ -3210,9 +3218,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         String cpuModel = MapUtils.isNotEmpty(details) && details.get(VmDetailConstants.GUEST_CPU_MODEL) != null ? details.get(VmDetailConstants.GUEST_CPU_MODEL) : guestCpuModel;
         cmd.setMode(cpuMode);
         cmd.setModel(cpuModel);
-        if (VirtualMachine.Type.User.equals(vmTO.getType())) {
-            cmd.setFeatures(cpuFeatures);
-        }
+        cmd.setFeatures(cpuFeatures);
         int vCpusInDef = vmTO.getVcpuMaxLimit() == null ? vcpus : vmTO.getVcpuMaxLimit();
         setCpuTopology(cmd, vCpusInDef, vmTO.getDetails());
         return cmd;
@@ -3869,10 +3875,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public synchronized String attachOrDetachISO(final Connect conn, final String vmName, String isoPath, final boolean isAttach, final Integer diskSeq) throws LibvirtException, URISyntaxException,
             InternalErrorException {
         final DiskDef iso = new DiskDef();
-        if (isAttach && StringUtils.isNotBlank(isoPath) && isoPath.lastIndexOf("/") > 0) {
-            if (isoPath.startsWith(getConfigPath() + "/" + ConfigDrive.CONFIGDRIVEDIR) && isoPath.contains(vmName)) {
+        if (isAttach && StringUtils.isNotBlank(isoPath)) {
+            if (isoPath.startsWith(getConfigPath() + "/" + ConfigDrive.CONFIGDRIVEDIR) || isoPath.contains(vmName)) {
                 iso.defISODisk(isoPath, diskSeq, DiskDef.DiskType.FILE);
-            } else {
+            } else if (isoPath.lastIndexOf("/") > 0) {
                 final int index = isoPath.lastIndexOf("/");
                 final String path = isoPath.substring(0, index);
                 final String name = isoPath.substring(index + 1);
@@ -3896,7 +3902,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     cleanupDisk(disk);
                 }
             }
-
         }
         return result;
     }
@@ -6091,7 +6096,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public static String generateSecretUUIDFromString(String seed) {
-        return UUID.nameUUIDFromBytes(seed.getBytes()).toString();
+        return UuidUtils.nameUUIDFromBytes(seed.getBytes()).toString();
     }
 
     /**

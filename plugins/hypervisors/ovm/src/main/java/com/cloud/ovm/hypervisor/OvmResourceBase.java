@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.naming.ConfigurationException;
@@ -127,6 +126,7 @@ import com.cloud.storage.template.TemplateProp;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SSHCmdHelper;
@@ -507,7 +507,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
         vm.name = spec.getName();
         vm.memory = spec.getMinRam();
         vm.cpuNum = spec.getCpus();
-        vm.uuid = UUID.nameUUIDFromBytes(spec.getName().getBytes()).toString();
+        vm.uuid = UuidUtils.nameUUIDFromBytes(spec.getName().getBytes()).toString();
         if (spec.getBootloader() == BootloaderType.CD) {
             vm.bootDev = OvmVm.CD;
             vm.type = OvmVm.HVM;
