@@ -4029,7 +4029,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                             DataStoreRole.Image, store.getId());
                     if (CollectionUtils.isEmpty(stores)) {
                         List<Pair<HypervisorType, CPU.CPUArch>> hypervisorTypes =
-                                _clusterDao.listDistinctHypervisorsArchAcrossClusters(zoneId);
+                                _clusterDao.listDistinctHypervisorsAndArchExcludingExternalType(zoneId);
                         TransactionLegacy txn = TransactionLegacy.open("AutomaticTemplateRegister");
                         SystemVmTemplateRegistration systemVmTemplateRegistration = new SystemVmTemplateRegistration();
                         String filePath = null;
@@ -4052,7 +4052,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                                 }
                             }
                         } catch (Exception e) {
-                            logger.error("Failed to register systemVM template(s)");
+                            logger.error("Failed to register systemVM template(s) due to: ", e);
                         } finally {
                             SystemVmTemplateRegistration.unmountStore(filePath);
                             txn.close();
