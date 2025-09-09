@@ -19,6 +19,8 @@
 
 package org.apache.cloudstack.backup;
 
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
@@ -52,6 +54,7 @@ public class BackupRepositoryServiceImpl extends ManagerBase implements BackupRe
     private AccountManager accountManager;
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_BACKUP_REPOSITORY_ADD, eventDescription = "add backup repository")
     public BackupRepository addBackupRepository(AddBackupRepositoryCmd cmd) {
         BackupRepositoryVO repository = new BackupRepositoryVO(cmd.getZoneId(), cmd.getProvider(), cmd.getName(),
                 cmd.getType(), cmd.getAddress(), cmd.getMountOptions(), cmd.getCapacityBytes(), cmd.isDraasEnabled());
@@ -59,6 +62,7 @@ public class BackupRepositoryServiceImpl extends ManagerBase implements BackupRe
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_BACKUP_REPOSITORY_UPDATE, eventDescription = "update backup repository")
     public BackupRepository updateBackupRepository(UpdateBackupRepositoryCmd cmd) {
         Long id = cmd.getId();
         String name = cmd.getName();
@@ -99,7 +103,7 @@ public class BackupRepositoryServiceImpl extends ManagerBase implements BackupRe
 
         BackupRepositoryVO repositoryVO = repositoryDao.findById(id);
         CallContext.current().setEventDetails(String.format("Backup Repository updated [%s].",
-                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(repositoryVO, "id", "name", "description", "userDrivenBackupAllowed", "externalId")));
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(repositoryVO, "id", "name", "description", "userDrivenBackupAllowed", "externalId", "draasEnabled")));
         return repositoryVO;
     }
 
