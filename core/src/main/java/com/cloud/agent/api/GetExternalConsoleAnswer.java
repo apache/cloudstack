@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,47 +14,41 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
 
 package com.cloud.agent.api;
 
-import java.util.Map;
+public class GetExternalConsoleAnswer extends Answer {
 
-import com.cloud.agent.api.to.VirtualMachineTO;
+    private String host;
+    private int port;
+    private String password;
+    private String protocol;
 
-public class RunCustomActionCommand extends Command {
-
-    String actionName;
-    VirtualMachineTO vmTO;
-    Map<String, Object> parameters;
-
-    public RunCustomActionCommand(String actionName) {
-        this.actionName = actionName;
-        this.setWait(5);
+    public GetExternalConsoleAnswer(Command command, String details) {
+        super(command, false, details);
     }
 
-    public String getActionName() {
-        return actionName;
+    public GetExternalConsoleAnswer(Command command, String host, int port, String password, String protocol) {
+        super(command, true, "");
+        this.host = host;
+        this.port = port;
+        this.password = password;
+        this.protocol = protocol;
     }
 
-    public VirtualMachineTO getVmTO() {
-        return vmTO;
+    public String getHost() {
+        return host;
     }
 
-    public void setVmTO(VirtualMachineTO vmTO) {
-        this.vmTO = vmTO;
+    public int getPort() {
+        return port;
     }
 
-    public Map<String, Object> getParameters() {
-        return parameters;
+    public String getPassword() {
+        return password;
     }
 
-    public void setParameters(Map<String, Object> parameters) {
-        this.parameters = parameters;
-    }
-
-    @Override
-    public boolean executeInSequence() {
-        return false;
+    public String getProtocol() {
+        return protocol;
     }
 }

@@ -54,8 +54,11 @@ import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.ObjectUtils;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.GetExternalConsoleAnswer;
+import com.cloud.agent.api.GetExternalConsoleCommand;
 import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.PrepareExternalProvisioningAnswer;
 import com.cloud.agent.api.PrepareExternalProvisioningCommand;
@@ -85,7 +88,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.json.JsonMergeUtil;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
@@ -206,6 +208,15 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
         }
         extensionsDataDirectory = dir.getAbsolutePath();
         logger.info("Extensions data directory path: {}", extensionsDataDirectory);
+    }
+
+    protected VirtualMachineTO getVirtualMachineTO(VirtualMachine vm) {
+        if (vm == null) {
+            return null;
+        }
+        final HypervisorGuru hvGuru = hypervisorGuruManager.getGuru(Hypervisor.HypervisorType.External);
+        VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
+        return hvGuru.implement(profile);
     }
 
     private String getServerProperty(String name) {
@@ -393,7 +404,6 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
         if (StringUtils.isEmpty(extensionPath)) {
             return new RebootAnswer(cmd, "Extension not configured", false);
         }
-        logger.debug("Executing reboot command using IPMI in the external provisioner");
         VirtualMachineTO virtualMachineTO = cmd.getVirtualMachine();
         String vmUUID = virtualMachineTO.getUuid();
         logger.debug("Executing reboot command in the external system for the VM {}", vmUUID);
@@ -456,6 +466,49 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
     }
 
     @Override
+    public GetExternalConsoleAnswer getInstanceConsole(String hostGuid, String extensionName,
+                           String extensionRelativePath, GetExternalConsoleCommand cmd) {
+        String extensionPath = getExtensionCheckedPath(extensionName, extensionRelativePath);
+        if (StringUtils.isEmpty(extensionPath)) {
+            return new GetExternalConsoleAnswer(cmd, "Extension not configured");
+        }
+        VirtualMachineTO virtualMachineTO = cmd.getVirtualMachine();
+        String vmUUID = virtualMachineTO.getUuid();
+        logger.debug("Executing getconsole command in the external system for the VM {}", vmUUID);
+        Map<String, Object> accessDetails = loadAccessDetails(cmd.getExternalDetails(), virtualMachineTO);
+        Pair<Boolean, String> result = getInstanceConsoleOnExternalSystem(extensionName, extensionPath, vmUUID,
+                accessDetails, cmd.getWait());
+        if (result == null) {
+            return new GetExternalConsoleAnswer(cmd, "No response from external system");
+        }
+        String output = result.second();
+        if (!result.first()) {
+            return new GetExternalConsoleAnswer(cmd, output);
+        }
+        logger.debug("Received console details from the external system: {}", output);
+        try {
+            JsonObject jsonObj = JsonParser.parseString(output).getAsJsonObject();
+            JsonObject consoleObj = jsonObj.has("console") ? jsonObj.getAsJsonObject("console") : null;
+            if (consoleObj == null) {
+                logger.error("Missing console object in external console output: {}", output);
+                return new GetExternalConsoleAnswer(cmd, "Missing console object in output");
+            }
+            String host = consoleObj.has("host") ? consoleObj.get("host").getAsString() : null;
+            Integer port = consoleObj.has("port") ? Integer.valueOf(consoleObj.get("port").getAsString()) : null;
+            String password = consoleObj.has("password") ? consoleObj.get("password").getAsString() : null;
+            String protocol = consoleObj.has("protocol") ? consoleObj.get("protocol").getAsString() : null;
+            if (ObjectUtils.anyNull(host, port, password)) {
+                logger.error("Missing required fields in external console output: {}", output);
+                return new GetExternalConsoleAnswer(cmd, "Missing required fields in output");
+            }
+            return new GetExternalConsoleAnswer(cmd, host, port, password, protocol);
+        } catch (RuntimeException e) {
+            logger.error("Failed to parse output for getInstanceConsole: {}", e.getMessage(), e);
+            return new GetExternalConsoleAnswer(cmd, "Failed to parse output");
+        }
+    }
+
+    @Override
     public RunCustomActionAnswer runCustomAction(String hostGuid, String extensionName,
                          String extensionRelativePath, RunCustomActionCommand cmd) {
         String extensionPath = getExtensionCheckedPath(extensionName, extensionRelativePath);
@@ -464,16 +517,8 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
         }
         final String actionName = cmd.getActionName();
         final Map<String, Object> parameters = cmd.getParameters();
-        logger.debug("Executing custom action '{}' in the external provisioner", actionName);
-        VirtualMachineTO virtualMachineTO = null;
-        if (cmd.getVmId() != null) {
-            VMInstanceVO vm = vmInstanceDao.findById(cmd.getVmId());
-            final HypervisorGuru hvGuru = hypervisorGuruManager.getGuru(Hypervisor.HypervisorType.External);
-            VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
-            virtualMachineTO = hvGuru.implement(profile);
-        }
         logger.debug("Executing custom action '{}' in the external system", actionName);
-        Map<String, Object> accessDetails = loadAccessDetails(cmd.getExternalDetails(), virtualMachineTO);
+        Map<String, Object> accessDetails = loadAccessDetails(cmd.getExternalDetails(), cmd.getVmTO());
         accessDetails.put(ApiConstants.ACTION, actionName);
         if (MapUtils.isNotEmpty(parameters)) {
             accessDetails.put(ApiConstants.PARAMETERS, parameters);
@@ -659,9 +704,7 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
 
     private VirtualMachine.PowerState getVmPowerState(UserVmVO userVmVO, Map<String, Map<String, String>> accessDetails,
                   String extensionName, String extensionPath) {
-        final HypervisorGuru hvGuru = hypervisorGuruManager.getGuru(Hypervisor.HypervisorType.External);
-        VirtualMachineProfile profile = new VirtualMachineProfileImpl(userVmVO);
-        VirtualMachineTO virtualMachineTO = hvGuru.implement(profile);
+        VirtualMachineTO virtualMachineTO = getVirtualMachineTO(userVmVO);
         accessDetails.put(ApiConstants.VIRTUAL_MACHINE, virtualMachineTO.getExternalDetails());
         Map<String, Object> modifiedDetails = loadAccessDetails(accessDetails, virtualMachineTO);
         String vmUUID = userVmVO.getUuid();
@@ -716,6 +759,12 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
                                Map<String, Object> accessDetails, int wait) {
         return executeExternalCommand(extensionName, "status", accessDetails, wait,
                 String.format("Failed to get the instance power status %s on external system", vmUUID), filename);
+    }
+
+    public Pair<Boolean, String> getInstanceConsoleOnExternalSystem(String extensionName, String filename,
+                            String vmUUID, Map<String, Object> accessDetails, int wait) {
+        return executeExternalCommand(extensionName, "getconsole", accessDetails, wait,
+                String.format("Failed to get the instance console %s on external system", vmUUID), filename);
     }
 
     public Pair<Boolean, String> executeExternalCommand(String extensionName, String action,

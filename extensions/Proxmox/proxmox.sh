@@ -285,6 +285,88 @@ status() {
     echo "{\"status\": \"success\", \"power_state\": \"$powerstate\"}"
 }
 
+get_node_host() {
+   check_required_fields node
+   local net_json host
+
+   if ! net_json="$(call_proxmox_api GET "/nodes/${node}/network")"; then
+     echo ""
+     return 1
+   fi
+
+   # Prefer a static non-bridge IP
+   host="$(echo "$net_json" | jq -r '
+     .data
+     | map(select(
+         (.type // "") != "bridge" and
+         (.type // "") != "bond" and
+         (.method // "") == "static" and
+         ((.address // .cidr // "") != "")
+       ))
+     | map(.address // (.cidr | split("/")[0]))
+     | .[0] // empty
+   ' 2>/dev/null)"
+
+   # Fallback: first interface with a CIDR
+   if [[ -z "$host" ]]; then
+     host="$(echo "$net_json" | jq -r '
+       .data
+       | map(select((.cidr // "") != ""))
+       | map(.cidr | split("/")[0])
+       | .[0] // empty
+     ' 2>/dev/null)"
+   fi
+
+   echo "$host"
+ }
+
+ get_console() {
+   check_required_fields node vmid
+
+   # Request VNC proxy from Proxmox
+   local api_resp port ticket
+   if ! api_resp="$(call_proxmox_api POST "/nodes/${node}/qemu/${vmid}/vncproxy")"; then
+     jq -n --arg msg "API call failed for node=$node vmid=$vmid" \
+       '{status:"error", message:$msg, code:"API_CALL_FAILED"}'
+     return 1
+   fi
+
+   port="$(echo "$api_resp"   | jq -re '.data.port // empty' 2>/dev/null || true)"
+   ticket="$(echo "$api_resp" | jq -re '.data.ticket // empty' 2>/dev/null || true)"
+
+   if [[ -z "$port" || -z "$ticket" ]]; then
+     jq -n --arg msg "Proxmox response missing port/ticket" \
+       --arg raw "$api_resp" \
+       '{status:"error", message:$msg, code:"BAD_UPSTREAM_RESPONSE", upstream:$raw}'
+     return 1
+   fi
+
+   # Derive host from node’s network info
+   local host
+   host="$(get_node_host)"
+   if [[ -z "$host" ]]; then
+     jq -n --arg msg "Could not determine host IP for node $node" \
+       '{status:"error", message:$msg, code:"HOST_RESOLUTION_ERROR"}'
+     return 1
+   fi
+
+   # Success JSON to stdout
+   jq -n \
+     --arg host "$host" \
+     --arg port "$port" \
+     --arg password "$ticket" \
+     '{
+        status: "success",
+        message: "Console retrieved",
+        console: {
+          host: $host,
+          port: $port,
+          password: $password,
+          protocol: "vnc"
+        }
+      }'
+ }
+
 list_snapshots() {
     snapshot_response=$(call_proxmox_api GET "/nodes/${node}/qemu/${vmid}/snapshot")
     echo "$snapshot_response" | jq '
@@ -395,6 +477,9 @@ case $action in
         ;;
     status)
         status
+        ;;
+    getconsole)
+        get_console "$parameters"
         ;;
     ListSnapshots)
         list_snapshots

@@ -99,6 +99,14 @@ status() {
     echo '{"status": "success", "power_state": "poweron"}'
 }
 
+get_console() {
+    parse_json "$1" || exit 1
+    local response
+    response=$(jq -n \
+        '{status: "success", message: "Console retrieved"}')
+    echo "$response"
+}
+
 action=$1
 parameters_file="$2"
 wait_time="$3"
@@ -137,6 +145,9 @@ case $action in
         ;;
     status)
         status "$parameters"
+        ;;
+    GetConsole)
+        get_console "$parameters"
         ;;
     *)
         echo '{"error":"Invalid action"}'

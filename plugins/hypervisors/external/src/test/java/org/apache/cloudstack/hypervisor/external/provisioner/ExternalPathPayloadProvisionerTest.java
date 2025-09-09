@@ -88,11 +88,9 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.VMInstanceDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ExternalPathPayloadProvisionerTest {
@@ -106,9 +104,6 @@ public class ExternalPathPayloadProvisionerTest {
 
     @Mock
     private HostDao hostDao;
-
-    @Mock
-    private VMInstanceDao vmInstanceDao;
 
     @Mock
     private HypervisorGuruManager hypervisorGuruManager;
@@ -489,14 +484,6 @@ public class ExternalPathPayloadProvisionerTest {
         when(cmd.getParameters()).thenReturn(new HashMap<>());
         when(cmd.getExternalDetails()).thenReturn(new HashMap<>());
         when(cmd.getWait()).thenReturn(30);
-        when(cmd.getVmId()).thenReturn(1L);
-
-        VMInstanceVO vm = mock(VMInstanceVO.class);
-        when(vmInstanceDao.findById(anyLong())).thenReturn(vm);
-
-        when(hypervisorGuruManager.getGuru(Hypervisor.HypervisorType.External)).thenReturn(hypervisorGuru);
-        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
-        when(hypervisorGuru.implement(any(VirtualMachineProfile.class))).thenReturn(vmTO);
 
         doReturn(new Pair<>(true, "success")).when(provisioner)
             .executeExternalCommand(anyString(), anyString(), anyMap(), anyInt(), anyString(), anyString());

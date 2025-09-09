@@ -104,8 +104,10 @@ import org.apache.commons.lang3.StringUtils;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.GetExternalConsoleCommand;
 import com.cloud.agent.api.RunCustomActionAnswer;
 import com.cloud.agent.api.RunCustomActionCommand;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ManagementServerHostVO;
@@ -141,6 +143,8 @@ import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -1323,11 +1327,13 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             clusterId = host.getClusterId();
         } else if (entity instanceof VirtualMachine) {
             VirtualMachine virtualMachine = (VirtualMachine)entity;
-            runCustomActionCommand.setVmId(virtualMachine.getId());
             if (!Hypervisor.HypervisorType.External.equals(virtualMachine.getHypervisorType())) {
                 logger.error("Invalid {} specified as VM resource for running {}", entity, customActionVO);
                 throw new InvalidParameterValueException(error);
             }
+            VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(virtualMachine);
+            VirtualMachineTO virtualMachineTO = virtualMachineManager.toVmTO(vmProfile);
+            runCustomActionCommand.setVmTO(virtualMachineTO);
             Pair<Long, Long> clusterAndHostId = virtualMachineManager.findClusterAndHostIdForVm(virtualMachine, false);
             clusterId = clusterAndHostId.first();
             hostId = clusterAndHostId.second();
@@ -1369,6 +1375,13 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                 actionResourceType, entity));
         Map<String, Map<String, String>> externalDetails =
                 getExternalAccessDetails(allDetails.first(), hostId, extensionResource);
+        Map<String, String> vmExternalDetails = null;
+        if (runCustomActionCommand.getVmTO() != null) {
+            vmExternalDetails = runCustomActionCommand.getVmTO().getExternalDetails();
+        }
+        if (MapUtils.isNotEmpty(vmExternalDetails)) {
+            externalDetails.put(ApiConstants.VIRTUAL_MACHINE, vmExternalDetails);
+        }
         runCustomActionCommand.setParameters(parameters);
         runCustomActionCommand.setExternalDetails(externalDetails);
         runCustomActionCommand.setWait(customActionVO.getTimeout());
@@ -1515,6 +1528,22 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                     entry.getValue()));
         }
         extensionResourceMapDetailsDao.saveDetails(detailsList);
+    }
+
+    @Override
+    public Answer getInstanceConsole(VirtualMachine vm, Host host) {
+        Extension extension = getExtensionForCluster(host.getClusterId());
+        if (extension == null || !Extension.Type.Orchestrator.equals(extension.getType()) ||
+                !Extension.State.Enabled.equals(extension.getState())) {
+            return new Answer(null, false, "No enabled orchestrator extension found for the host");
+        }
+        VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vm);
+        VirtualMachineTO virtualMachineTO = virtualMachineManager.toVmTO(vmProfile);
+        GetExternalConsoleCommand cmd = new GetExternalConsoleCommand(vm.getInstanceName(), virtualMachineTO);
+        Map<String, Map<String, String>> externalAccessDetails =
+                getExternalAccessDetails(host, virtualMachineTO.getExternalDetails());
+        cmd.setExternalDetails(externalAccessDetails);
+        return agentMgr.easySend(host.getId(), cmd);
     }
 
     @Override
