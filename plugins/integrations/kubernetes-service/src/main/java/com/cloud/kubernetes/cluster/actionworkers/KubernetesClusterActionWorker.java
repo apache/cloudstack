@@ -233,6 +233,7 @@ public class KubernetesClusterActionWorker {
     protected final String deploySecretsScriptFilename = "deploy-cloudstack-secret";
     protected final String deployProviderScriptFilename = "deploy-provider";
     protected final String deployCsiDriverScriptFilename = "deploy-csi-driver";
+    protected final String deletePvScriptFilename = "delete-pv-reclaimpolicy-delete";
     protected final String autoscaleScriptFilename = "autoscale-kube-cluster";
     protected final String validateNodeScript = "validate-cks-node";
     protected final String removeNodeFromClusterScript = "remove-node-from-cluster";
@@ -241,6 +242,7 @@ public class KubernetesClusterActionWorker {
     protected File deployProviderScriptFile;
     protected File deployCsiDriverScriptFile;
     protected File autoscaleScriptFile;
+    protected File deletePvScriptFile;
     protected KubernetesClusterManagerImpl manager;
     protected String[] keys;
 
@@ -718,6 +720,7 @@ public class KubernetesClusterActionWorker {
         deploySecretsScriptFile = retrieveScriptFile(deploySecretsScriptFilename);
         deployProviderScriptFile = retrieveScriptFile(deployProviderScriptFilename);
         deployCsiDriverScriptFile = retrieveScriptFile(deployCsiDriverScriptFilename);
+        deletePvScriptFile = retrieveScriptFile(deletePvScriptFilename);
         autoscaleScriptFile = retrieveScriptFile(autoscaleScriptFilename);
     }
 
@@ -725,6 +728,7 @@ public class KubernetesClusterActionWorker {
         copyScriptFile(nodeAddress, sshPort, deploySecretsScriptFile, deploySecretsScriptFilename);
         copyScriptFile(nodeAddress, sshPort, deployProviderScriptFile, deployProviderScriptFilename);
         copyScriptFile(nodeAddress, sshPort, deployCsiDriverScriptFile, deployCsiDriverScriptFilename);
+        copyScriptFile(nodeAddress, sshPort, deletePvScriptFile, deletePvScriptFilename);
         copyScriptFile(nodeAddress, sshPort, autoscaleScriptFile, autoscaleScriptFilename);
     }
 
