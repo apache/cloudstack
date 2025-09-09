@@ -1482,17 +1482,19 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         volumeMgr.prepare(vmProfile, dest);
                     }
 
-                    Boolean returnAfterVolumePrepare = (Boolean) params.get(VirtualMachineProfile.Param.ReturnAfterVolumePrepare);
-                    if (Boolean.TRUE.equals(returnAfterVolumePrepare)) {
-                        logger.info("Returning from VM start command execution for VM {} as requested. Volumes are prepared and ready.", vm.getUuid());
+                    if (params != null) {
+                        Boolean returnAfterVolumePrepare = (Boolean) params.get(VirtualMachineProfile.Param.ReturnAfterVolumePrepare);
+                        if (Boolean.TRUE.equals(returnAfterVolumePrepare)) {
+                            logger.info("Returning from VM start command execution for VM {} as requested. Volumes are prepared and ready.", vm.getUuid());
 
-                        if (!changeState(vm, Event.AgentReportStopped, destHostId, work, Step.Done)) {
-                            logger.error("Unable to transition to a new state. VM uuid: {}, VM oldstate: {}, Event: {}", vm, vm.getState(), Event.AgentReportStopped);
-                            throw new ConcurrentOperationException(String.format("Failed to deploy VM %s", vm));
+                            if (!changeState(vm, Event.AgentReportStopped, destHostId, work, Step.Done)) {
+                                logger.error("Unable to transition to a new state. VM uuid: {}, VM oldstate: {}, Event: {}", vm, vm.getState(), Event.AgentReportStopped);
+                                throw new ConcurrentOperationException(String.format("Failed to deploy VM %s", vm));
+                            }
+
+                            logger.debug("Volume preparation completed for VM {} (VM state set to Stopped)", vm);
+                            return;
                         }
-
-                        logger.debug("Volume and preparation completed for VM {} (VM state set to Stopped)", vm);
-                        return;
                     }
 
                     if (!reuseVolume) {
