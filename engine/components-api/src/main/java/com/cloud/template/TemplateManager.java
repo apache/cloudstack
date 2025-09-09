@@ -149,4 +149,6 @@ public interface TemplateManager {
     static Boolean getValidateUrlIsResolvableBeforeRegisteringTemplateValue() {
         return ValidateUrlIsResolvableBeforeRegisteringTemplate.value();
     }
+
+    void unlinkAllAndCleanupUserDataFromAccount(long accountId);
 }

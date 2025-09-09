@@ -1201,7 +1201,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
 
             // Delete registered UserData
-            userDataDao.removeByAccountId(accountId);
+            _tmpltMgr.unlinkAllAndCleanupUserDataFromAccount(accountId);
 
             // Delete Webhooks
             deleteWebhooksForAccount(accountId);
