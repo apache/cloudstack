@@ -253,7 +253,7 @@ public class KVMStoragePoolManager {
         return result;
     }
 
-        private long getDiskWaitTimeMillis(Map<String,String> details) {
+    private long getDiskWaitTimeMillis(Map<String,String> details) {
         int waitTimeInSec = 60; // default wait time in seconds
         if (details != null && details.containsKey(StorageManager.STORAGE_POOL_DISK_WAIT.toString())) {
             String waitTime = details.get(StorageManager.STORAGE_POOL_DISK_WAIT.toString());
