@@ -2552,4 +2552,53 @@ public class AutoScaleManagerImplTest {
         Assert.assertTrue(result.first().matches(vmHostNamePattern));
         Assert.assertEquals(result.first(), result.second());
     }
+
+    @Test
+    public void trimsValidWindowsHostName() {
+        AutoScaleManagerImpl manager = new AutoScaleManagerImpl();
+        String result = manager.getTrimmedHostNameForWindows("ValidVMName1234");
+        Assert.assertEquals("ValidVMName1234", result);
+    }
+
+    @Test
+    public void trimsInvalidCharactersFromHostName() {
+        AutoScaleManagerImpl manager = new AutoScaleManagerImpl();
+        String result = manager.getTrimmedHostNameForWindows("Invalid@Host#Name!");
+        Assert.assertEquals("InvalidHostName", result);
+    }
+
+    @Test
+    public void ensuresHostNameStartsWithLetter() {
+        AutoScaleManagerImpl manager = new AutoScaleManagerImpl();
+        String result = manager.getTrimmedHostNameForWindows("123456789012345");
+        Assert.assertTrue(Character.isLetter(result.charAt(0)));
+    }
+
+    @Test
+    public void prefixesWithLetterIfNoLetterExists() {
+        AutoScaleManagerImpl manager = new AutoScaleManagerImpl();
+        String result = manager.getTrimmedHostNameForWindows("1234567890-12345");
+        Assert.assertEquals("a34567890-12345", result);
+    }
+
+    @Test
+    public void trimsHostNameToLast15Characters() {
+        AutoScaleManagerImpl manager = new AutoScaleManagerImpl();
+        String result = manager.getTrimmedHostNameForWindows("ThisIsAReallyLongHost-Name_1234");
+        Assert.assertEquals("ngHost-Name1234", result);
+    }
+
+    @Test
+    public void handlesEmptyHostName() {
+        AutoScaleManagerImpl manager = new AutoScaleManagerImpl();
+        String result = manager.getTrimmedHostNameForWindows("");
+        Assert.assertEquals("", result);
+    }
+
+    @Test
+    public void handlesHostNameWithOnlyMostlyInvalidCharacters() {
+        AutoScaleManagerImpl manager = new AutoScaleManagerImpl();
+        String result = manager.getTrimmedHostNameForWindows("@#$%^&*()   1");
+        Assert.assertEquals("a1", result);
+    }
 }

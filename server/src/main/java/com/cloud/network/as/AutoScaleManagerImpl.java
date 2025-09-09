@@ -1971,6 +1971,23 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
     }
 
+    protected String getTrimmedHostNameForWindows(String name) {
+        String valid = name.replaceAll("[^a-zA-Z0-9-]", "");
+        String hostName = valid.length() > 15 ? valid.substring(valid.length() - 15) : valid;
+        if (!hostName.isEmpty() && !Character.isLetter(hostName.charAt(0))) {
+            for (int i = 0; i < hostName.length(); i++) {
+                if (Character.isLetter(hostName.charAt(i))) {
+                    hostName = hostName.charAt(i) + hostName.substring(i + 1);
+                    break;
+                }
+            }
+            if (!Character.isLetter(hostName.charAt(0))) {
+                hostName = hostName.length() < 15 ? "a" + hostName : "a" + hostName.substring(1);
+            }
+        }
+        return hostName;
+    }
+
     protected Pair<String, String> getNextVmHostAndDisplayName(AutoScaleVmGroupVO asGroup, VirtualMachineTemplate template) {
         template.getGuestOSId();
         GuestOSVO guestOSVO = guestOSDao.findById(template.getGuestOSId());
@@ -1983,15 +2000,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         if (!isWindows || name.length() <= 15) {
             return new Pair<>(name, name);
         }
-        String hostName = name.substring(Math.max(0, name.length() - 15));
-        if (Character.isLetterOrDigit(hostName.charAt(0))) {
-            return new Pair<>(hostName, name);
-        }
-        String temp = name.substring(0, Math.max(0, name.length() - 15)).replaceAll("[^a-zA-Z0-9]", "");
-        if (!temp.isEmpty()) {
-            return new Pair<>(temp.charAt(temp.length() - 1) + hostName.substring(1), name);
-        }
-        return new Pair<>('a' + hostName.substring(1), name);
+        return new Pair<>(getTrimmedHostNameForWindows(name), name);
     }
 
     @Override
