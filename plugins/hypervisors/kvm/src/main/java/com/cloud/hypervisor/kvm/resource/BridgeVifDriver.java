@@ -211,7 +211,7 @@ public class BridgeVifDriver extends VifDriverBase {
         String trafficLabel = nic.getName();
         Integer networkRateKBps = 0;
         if (libvirtVersion > ((10 * 1000 + 10))) {
-            networkRateKBps = (nic.getNetworkRateMbps() != null && nic.getNetworkRateMbps().intValue() != -1) ? nic.getNetworkRateMbps().intValue() * 128 : 0;
+            networkRateKBps = getNetworkRateKbps(nic);
         }
 
         if (nic.getType() == Networks.TrafficType.Guest) {
@@ -254,6 +254,15 @@ public class BridgeVifDriver extends VifDriverBase {
             intf.defBridgeNet(_bridges.get("private"), null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter));
         } else if (nic.getType() == Networks.TrafficType.Storage) {
             String storageBrName = nic.getName() == null ? _bridges.get("private") : nic.getName();
+            if (nic.getBroadcastType() == Networks.BroadcastDomainType.Storage) {
+                vNetId = Networks.BroadcastDomainType.getValue(nic.getBroadcastUri());
+                protocol = Networks.BroadcastDomainType.Vlan.scheme();
+            }
+            if (isValidProtocolAndVnetId(vNetId, protocol))  {
+                logger.debug(String.format("creating a vNet dev and bridge for %s traffic per traffic label %s",
+                        Networks.TrafficType.Storage.name(), trafficLabel));
+                storageBrName = createVnetBr(vNetId, storageBrName, protocol);
+            }
             intf.defBridgeNet(storageBrName, null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter));
         }
         if (nic.getPxeDisable()) {

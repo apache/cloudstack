@@ -145,6 +145,10 @@ public class CapabilitiesResponse extends BaseResponse {
     @Param(description = "The path of the extensions directory", since = "4.21.0", authorized = {RoleType.Admin})
     private String extensionsPath;
 
+    @SerializedName(ApiConstants.DYNAMIC_SCALING_ENABLED)
+    @Param(description = "true if dynamically scaling for instances is enabled", since = "4.21.0")
+    private Boolean dynamicScalingEnabled;
+
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
         this.securityGroupsEnabled = securityGroupsEnabled;
     }
@@ -263,5 +267,9 @@ public class CapabilitiesResponse extends BaseResponse {
 
     public void setExtensionsPath(String extensionsPath) {
         this.extensionsPath = extensionsPath;
+    }
+
+    public void setDynamicScalingEnabled(Boolean dynamicScalingEnabled) {
+        this.dynamicScalingEnabled = dynamicScalingEnabled;
     }
 }

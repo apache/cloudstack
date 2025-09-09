@@ -361,12 +361,13 @@ export default {
       if (this.isModernImageSelection && this.selectedGuestOsCategoryId && !['-1', '0'].includes(this.selectedGuestOsCategoryId)) {
         args.oscategoryid = this.selectedGuestOsCategoryId
       }
-      if (args.keyword || (args.category && args.category !== templateFilter)) {
+      if (!args.page || args.keyword || (args.category && args.category !== templateFilter)) {
         args.page = 1
-        args.pageSize = args.pageSize || 10
       }
+      args.pageSize = args.pageSize || 10
       args.zoneid = this.resource.zoneid
       args.templatefilter = templateFilter
+      args.isready = true
       if (this.resource.arch) {
         args.arch = this.resource.arch
       }

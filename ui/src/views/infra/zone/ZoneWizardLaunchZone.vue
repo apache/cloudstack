@@ -903,6 +903,17 @@ export default {
         this.setStepStatus(STATUS_FAILED)
       }
     },
+    async stepNetworkingProviderOrStorageTraffic () {
+      if (this.stepData.isTungstenZone) {
+        await this.stepCreateTungstenFabricPublicNetwork()
+      } else if (this.stepData.isNsxZone) {
+        await this.stepAddNsxController()
+      } else if (this.stepData.isNetrisZone) {
+        await this.stepAddNetrisProvider()
+      } else {
+        await this.stepConfigureStorageTraffic()
+      }
+    },
     async stepConfigurePublicTraffic (message, trafficType, idx) {
       if (
         (this.isBasicZone &&
@@ -997,17 +1008,11 @@ export default {
             await this.stepConfigurePublicTraffic('message.configuring.nsx.public.traffic', 'nsxPublicTraffic', 1)
           } else if (isolationMethods.includes('netris')) {
             await this.stepConfigurePublicTraffic('message.configuring.netris.public.traffic', 'netrisPublicTraffic', 1)
+          } else {
+            await this.stepNetworkingProviderOrStorageTraffic()
           }
         } else {
-          if (this.stepData.isTungstenZone) {
-            await this.stepCreateTungstenFabricPublicNetwork()
-          } else if (this.stepData.isNsxZone) {
-            await this.stepAddNsxController()
-          } else if (this.stepData.isNetrisZone) {
-            await this.stepAddNetrisProvider()
-          } else {
-            await this.stepConfigureStorageTraffic()
-          }
+          await this.stepNetworkingProviderOrStorageTraffic()
         }
       } else if (this.isAdvancedZone && this.sgEnabled) {
         if (this.stepData.isTungstenZone) {
@@ -1098,6 +1103,7 @@ export default {
           providerParams.transportzone = this.prefillContent?.transportZone || ''
 
           await this.addNsxController(providerParams)
+          await this.updateNsxServiceProviderStatus()
           this.stepData.stepMove.push('addNsxController')
         }
         this.stepData.stepMove.push('nsx')
@@ -1106,6 +1112,18 @@ export default {
         this.messageError = e
         this.processStatus = STATUS_FAILED
         this.setStepStatus(STATUS_FAILED)
+      }
+    },
+    async updateNsxServiceProviderStatus () {
+      const listParams = {}
+      listParams.name = 'Nsx'
+      const nsxPhysicalNetwork = this.stepData.physicalNetworksReturned.find(net => net.isolationmethods.trim().toUpperCase() === 'NSX')
+      const nsxPhysicalNetworkId = nsxPhysicalNetwork?.id || null
+      listParams.physicalNetworkId = nsxPhysicalNetworkId
+      const nsxProviderId = await this.listNetworkServiceProviders(listParams, 'nsxProvider')
+      console.log(nsxProviderId)
+      if (nsxProviderId !== null) {
+        await this.updateNetworkServiceProvider(nsxProviderId)
       }
     },
     async stepAddNetrisProvider () {
@@ -1120,7 +1138,7 @@ export default {
         if (!this.stepData.stepMove.includes('addNetrisProvider')) {
           const providerParams = {}
           providerParams.name = this.prefillContent?.netrisName || ''
-          providerParams.url = this.prefillContent?.url || ''
+          providerParams.netrisurl = this.prefillContent?.netrisurl || ''
           providerParams.username = this.prefillContent?.username || ''
           providerParams.password = this.prefillContent?.password || ''
           providerParams.zoneid = this.stepData.zoneReturned.id
@@ -2193,7 +2211,11 @@ export default {
           resolve(result)
         }).catch(error => {
           message = error.response.headers['x-description']
-          reject(message)
+          if (message.includes('is already in the database')) {
+            resolve()
+          } else {
+            reject(message)
+          }
         })
       })
     },
@@ -2205,11 +2227,7 @@ export default {
           resolve()
         }).catch(error => {
           message = error.response.headers['x-description']
-          if (message.includes('is already in the database')) {
-            resolve()
-          } else {
-            reject(message)
-          }
+          reject(message)
         })
       })
     },

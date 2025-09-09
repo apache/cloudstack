@@ -1722,6 +1722,11 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             logger.warn("number of VM will greater than the maximum in this group if scaling up, so do nothing more");
             return false;
         }
+        int erroredInstanceCount = autoScaleVmGroupVmMapDao.getErroredInstanceCount(asGroup.getId());
+        if (erroredInstanceCount > AutoScaleManager.AutoScaleErroredInstanceThreshold.value()) {
+            logger.warn("Number of Errored Instances are greater than the threshold in this group for scaling up, so do nothing more");
+            return false;
+        }
         return true;
     }
 
@@ -1811,7 +1816,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
             if (zone.getNetworkType() == NetworkType.Basic) {
                 vm = userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, null, owner, vmHostName,
-                        vmHostName, diskOfferingId, dataDiskSize, null,
+                        vmHostName, diskOfferingId, dataDiskSize, null, null,
                         hypervisorType, HTTPMethod.GET, userData, userDataId, userDataDetails, sshKeyPairs,
                         null, null, true, null, affinityGroupIdList, customParameters, null, null, null,
                         null, true, overrideDiskOfferingId, null, null);
@@ -1819,13 +1824,13 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                 if (networkModel.checkSecurityGroupSupportForNetwork(owner, zone, networkIds,
                         Collections.emptyList())) {
                     vm = userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, networkIds, null,
-                            owner, vmHostName,vmHostName, diskOfferingId, dataDiskSize, null,
+                            owner, vmHostName,vmHostName, diskOfferingId, dataDiskSize, null, null,
                             hypervisorType, HTTPMethod.GET, userData, userDataId, userDataDetails, sshKeyPairs,
                             null, null, true, null, affinityGroupIdList, customParameters, null, null, null,
                             null, true, overrideDiskOfferingId, null, null, null);
                 } else {
                     vm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner, vmHostName, vmHostName,
-                            diskOfferingId, dataDiskSize, null,
+                            diskOfferingId, dataDiskSize, null, null,
                             hypervisorType, HTTPMethod.GET, userData, userDataId, userDataDetails, sshKeyPairs,
                             null, addrs, true, null, affinityGroupIdList, customParameters, null, null, null,
                             null, true, null, overrideDiskOfferingId, null, null);
@@ -2202,7 +2207,8 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         return new ConfigKey<?>[] {
                 AutoScaleStatsInterval,
                 AutoScaleStatsCleanupDelay,
-                AutoScaleStatsWorker
+                AutoScaleStatsWorker,
+                AutoScaleErroredInstanceThreshold
         };
     }
 

@@ -30,7 +30,7 @@ export default {
       docHelp: 'adminguide/service_offerings.html#compute-and-disk-service-offerings',
       icon: 'cloud-outlined',
       permission: ['listServiceOfferings'],
-      searchFilters: ['name', 'zoneid', 'domainid', 'cpunumber', 'cpuspeed', 'memory'],
+      searchFilters: ['name', 'gpuenabled', 'zoneid', 'domainid', 'cpunumber', 'cpuspeed', 'memory'],
       params: () => {
         var params = {}
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
@@ -39,9 +39,9 @@ export default {
         return params
       },
       filters: ['active', 'inactive'],
-      columns: ['name', 'displaytext', 'state', 'cpunumber', 'cpuspeed', 'memory', 'domain', 'zone', 'order'],
+      columns: ['name', 'displaytext', 'state', 'cpunumber', 'cpuspeed', 'memory', 'gpu', 'domain', 'zone', 'order'],
       details: () => {
-        var fields = ['name', 'id', 'displaytext', 'offerha', 'provisioningtype', 'storagetype', 'iscustomized', 'iscustomizediops', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'hosttags', 'tags', 'storageaccessgroups', 'storagetags', 'domain', 'zone', 'created', 'dynamicscalingenabled', 'diskofferingstrictness', 'encryptroot', 'purgeresources', 'leaseduration', 'leaseexpiryaction', 'externaldetails']
+        var fields = ['name', 'id', 'displaytext', 'offerha', 'provisioningtype', 'storagetype', 'iscustomized', 'iscustomizediops', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'hosttags', 'tags', 'storageaccessgroups', 'storagetags', 'domain', 'zone', 'created', 'dynamicscalingenabled', 'diskofferingstrictness', 'encryptroot', 'purgeresources', 'leaseduration', 'gpucardid', 'gpucardname', 'vgpuprofileid', 'vgpuprofilename', 'gpucount', 'gpudisplay', 'leaseexpiryaction', 'externaldetails']
         if (store.getters.apis.createServiceOffering &&
           store.getters.apis.createServiceOffering.params.filter(x => x.name === 'storagepolicy').length > 0) {
           fields.splice(6, 0, 'vspherestoragepolicy')
@@ -96,7 +96,7 @@ export default {
         label: 'label.edit',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
-        args: ['name', 'displaytext', 'storageatags', 'hosttags', 'externaldetails'],
+        args: ['name', 'displaytext', 'storagetags', 'hosttags', 'externaldetails'],
         mapping: {
           externaldetails: {
             transformedvalue: (record) => { return getFilteredExternalDetails(record.serviceofferingdetails) }
@@ -128,7 +128,7 @@ export default {
         show: (record) => { return record.state !== 'Active' },
         groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Active' } }) }
       }, {
-        api: 'deleteServiceOffering',
+        api: 'updateServiceOffering',
         icon: 'pause-circle-outlined',
         label: 'label.action.disable.service.offering',
         message: 'message.action.disable.service.offering',
@@ -136,6 +136,11 @@ export default {
         dataView: true,
         groupAction: true,
         popup: true,
+        mapping: {
+          state: {
+            value: (record) => { return 'Inactive' }
+          }
+        },
         show: (record) => { return record.state === 'Active' },
         groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
       }]
@@ -204,7 +209,7 @@ export default {
         show: (record) => { return record.state !== 'Active' },
         groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Active' } }) }
       }, {
-        api: 'deleteServiceOffering',
+        api: 'updateServiceOffering',
         icon: 'pause-circle-outlined',
         label: 'label.action.disable.system.service.offering',
         message: 'message.action.disable.system.service.offering',
@@ -213,6 +218,11 @@ export default {
         params: { issystem: 'true' },
         groupAction: true,
         popup: true,
+        mapping: {
+          state: {
+            value: (record) => { return 'Inactive' }
+          }
+        },
         show: (record) => { return record.state === 'Active' },
         groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
       }]
@@ -307,7 +317,7 @@ export default {
         show: (record) => { return record.state !== 'Active' },
         groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Active' } }) }
       }, {
-        api: 'deleteDiskOffering',
+        api: 'updateDiskOffering',
         icon: 'pause-circle-outlined',
         label: 'label.action.disable.disk.offering',
         message: 'message.action.disable.disk.offering',
@@ -315,6 +325,11 @@ export default {
         dataView: true,
         groupAction: true,
         popup: true,
+        mapping: {
+          state: {
+            value: (record) => { return 'Inactive' }
+          }
+        },
         show: (record) => { return record.state === 'Active' },
         groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
       }]

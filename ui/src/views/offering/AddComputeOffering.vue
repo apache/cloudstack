@@ -47,6 +47,7 @@
             <tooltip-label :title="$t('label.systemvmtype')" :tooltip="apiParams.systemvmtype.description"/>
           </template>
           <a-select
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.systemvmtype"
             showSearch
             optionFilterProp="label"
@@ -214,6 +215,7 @@
             <tooltip-label :title="$t('label.deploymentplanner')" :tooltip="apiParams.deploymentplanner.description"/>
           </template>
           <a-select
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.deploymentplanner"
             showSearch
             optionFilterProp="label"
@@ -243,35 +245,60 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item name="pcidevice" ref="pcidevice" :label="$t('label.gpu')" v-if="!isSystem">
+        <a-form-item name="gpucardid" ref="gpucardid" :label="$t('label.gpu.card')" v-if="!isSystem">
           <a-select
-            v-model:value="form.pcidevice"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            :placeholder="$t('label.gpu')"
-            @change="handleGpuChange">
-            <a-select-option v-for="(opt, optIndex) in gpuTypes" :key="optIndex" :value="opt.value">
-              {{ opt.title }}
-            </a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item name="vgputype" ref="vgputype" :label="$t('label.vgputype')" v-if="vGpuVisible">
-          <a-select
-            v-model:value="form.vgputype"
+            v-model:value="form.gpucardid"
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
               return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
-            :placeholder="$t('label.vgputype')">
-            <a-select-option v-for="(opt, optIndex) in vGpuTypes" :key="optIndex" :label="opt">
-              {{ opt }}
+            :loading="gpuCardLoading"
+            :placeholder="$t('label.gpu.card')"
+            @change="handleGpuCardChange">
+            <a-select-option v-for="(opt, optIndex) in gpuCards" :key="optIndex" :value="opt.id" :label="opt.name || opt.description || ''">
+              {{ opt.description || opt.name || '' }}
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item name="vgpuprofile" ref="vgpuprofile" :label="$t('label.vgpu.profile')" v-if="!isSystem && form.gpucardid && vgpuProfiles.length > 0">
+          <a-select
+            v-model:value="form.vgpuprofile"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :loading="vgpuProfileLoading"
+            :placeholder="$t('label.vgpu.profile')">
+            <a-select-option v-for="(vgpu, vgpuIndex) in vgpuProfiles" :key="vgpuIndex" :value="vgpu.id" :label="vgpu.vgpuprofile || ''">
+              {{ vgpu.name }} {{ getVgpuProfileDetails(vgpu) }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-row :gutter="12" v-if="!isSystem && form.gpucardid">
+          <a-col :md="12" :lg="12">
+            <a-form-item name="gpucount" ref="gpucount">
+              <template #label>
+                <tooltip-label :title="$t('label.gpu.count')" :tooltip="apiParams.gpucount.description"/>
+              </template>
+              <a-input
+                v-model:value="form.gpucount"
+                type="number"
+                min="1"
+                max="16"
+                :placeholder="$t('label.gpu.count')"/>
+            </a-form-item>
+          </a-col>
+          <a-col :md="12" :lg="12">
+            <a-form-item name="gpudisplay" ref="gpudisplay">
+              <template #label>
+                <tooltip-label :title="$t('label.gpu.display')" :tooltip="apiParams.gpudisplay.description"/>
+              </template>
+              <a-switch v-model:checked="form.gpudisplay" />
+            </a-form-item>
+          </a-col>
+        </a-row>
         <a-form-item name="ispublic" ref="ispublic" :label="$t('label.ispublic')" v-show="isAdmin()">
           <a-switch v-model:checked="form.ispublic" />
         </a-form-item>
@@ -281,6 +308,7 @@
           </template>
           <a-select
             mode="multiple"
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.domainid"
             showSearch
             optionFilterProp="label"
@@ -305,6 +333,7 @@
           <a-select
             id="zone-selection"
             mode="multiple"
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.zoneid"
             showSearch
             optionFilterProp="label"
@@ -331,6 +360,7 @@
             <tooltip-label :title="$t('label.vmware.storage.policy')" :tooltip="apiParams.storagepolicy.description"/>
           </template>
           <a-select
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.storagepolicy"
             :placeholder="apiParams.storagepolicy.description"
             showSearch
@@ -553,6 +583,7 @@
                   </template>
                   <a-select
                     mode="tags"
+                    :getPopupContainer="(trigger) => trigger.parentNode"
                     v-model:value="form.storagetags"
                     showSearch
                     optionFilterProp="value"
@@ -592,6 +623,7 @@
               <br /><br />
               <a-form-item :label="$t('label.disk.offerings')" name="diskofferingid" ref="diskofferingid">
                 <a-select
+                  :getPopupContainer="(trigger) => trigger.parentNode"
                   v-model:value="form.diskofferingid"
                   :loading="loading"
                   :placeholder="$t('label.diskoffering')">
@@ -687,47 +719,10 @@ export default {
       deploymentPlannerLoading: false,
       plannerModeVisible: false,
       plannerMode: '',
-      selectedGpu: '',
+      selectedGpuCard: '',
       showDiskOfferingModal: false,
-      gpuTypes: [
-        {
-          value: '',
-          title: this.$t('label.none'),
-          vgpu: []
-        },
-        {
-          value: 'Group of NVIDIA Corporation GV100GL [TESLA V100] GPUs',
-          title: 'NVIDIA TESLA V100',
-          vgpu: ['', 'passthrough', 'GRID V100D-1A', 'GRID V100D-1B', 'GRID V100D-1Q', 'GRID V100D-2A', 'GRID V100D-2B', 'GRID V100D-2B4', 'GRID V100D-2Q', 'GRID V100D-4A', 'GRID V100D-4Q', 'GRID V100D-8A', 'GRID V100D-8Q', 'GRID V100D-16A', 'GRID V100D-16Q', 'GRID V100D-32A', 'GRID V100D-32Q']
-        },
-        {
-          value: 'Group of Nvidia Corporation TU104GL [Tesla T4] GPUs',
-          title: 'NVIDIA TESLA T4',
-          vgpu: ['', 'passthrough', 'GRID T4-1A', 'GRID T4-1B', 'GRID T4-1Q', 'GRID T4-2A', 'GRID T4-2B', 'GRID T4-2B4', 'GRID T4-2Q', 'GRID T4-4A', 'GRID T4-4Q', 'GRID T4-8A', 'GRID T4-8Q', 'GRID T4-16A', 'GRID T4-16Q']
-        },
-        {
-          value: 'Group of Nvidia Corporation GA102 [RTX A5500] GPUs',
-          title: 'NVIDIA RTX A5500',
-          vgpu: ['', 'passthrough', 'NVIDIA RTXA5500-1A', 'NVIDIA RTXA5500-1B', 'NVIDIA RTXA5500-1Q', 'NVIDIA RTXA5500-2A', 'NVIDIA RTXA5500-2B', 'NVIDIA RTXA5500-2Q', 'NVIDIA RTXA5500-3A', 'NVIDIA RTXA5500-3Q', 'NVIDIA RTXA5500-4A', 'NVIDIA RTXA5500-4Q', 'NVIDIA RTXA5500-6A', 'NVIDIA RTXA5500-6Q', 'NVIDIA RTXA5500-8A', 'NVIDIA RTXA5500-8Q', 'NVIDIA RTXA5500-12A', 'NVIDIA RTXA5500-12Q', 'NVIDIA RTXA5500-24A', 'NVIDIA RTXA5500-24Q']
-        },
-        {
-          value: 'Group of NVIDIA Corporation GA102GL [A40] GPUs',
-          title: 'NVIDIA RTX A40',
-          vgpu: ['', 'passthrough', 'NVIDIA A40-1A', 'NVIDIA A40-1B', 'NVIDIA A40-1Q', 'NVIDIA A40-2A', 'NVIDIA A40-2B', 'NVIDIA A40-2Q', 'NVIDIA A40-3A', 'NVIDIA A40-3Q', 'NVIDIA A40-4A', 'NVIDIA A40-4Q', 'NVIDIA A40-6A', 'NVIDIA A40-6Q', 'NVIDIA A40-8A', 'NVIDIA A40-8Q', 'NVIDIA A40-12A', 'NVIDIA A40-12Q', 'NVIDIA A40-16A', 'NVIDIA A40-16Q', 'NVIDIA A40-24A', 'NVIDIA A40-24Q', 'NVIDIA A40-48A', 'NVIDIA A40-48Q']
-        },
-        {
-          value: 'Group of NVIDIA Corporation GA107 [NVIDIA A16/NVIDIA A2] GPUs',
-          title: 'NVIDIA RTX A2',
-          vgpu: ['', 'passthrough', 'NVIDIA A2-1A', 'NVIDIA A2-1B', 'NVIDIA A2-1Q', 'NVIDIA A2-2A', 'NVIDIA A2-2B', 'NVIDIA A2-2Q', 'NVIDIA A2-4A', 'NVIDIA A2-4Q', 'NVIDIA A2-8A', 'NVIDIA A2-8Q', 'NVIDIA A2-16A', 'NVIDIA A2-16Q']
-        },
-        {
-          value: 'Group of NVIDIA Corporation GA102GL [A10] GPUs',
-          title: 'NVIDIA RTX A10',
-          vgpu: ['', 'passthrough', 'NVIDIA A10-1A', 'NVIDIA A10-1B', 'NVIDIA A10-1Q', 'NVIDIA A10-2A', 'NVIDIA A10-2B', 'NVIDIA A10-2Q', 'NVIDIA A10-3A', 'NVIDIA A10-3Q', 'NVIDIA A10-4A', 'NVIDIA A10-4Q', 'NVIDIA A10-6A', 'NVIDIA A10-6Q', 'NVIDIA A10-8A', 'NVIDIA A10-8Q', 'NVIDIA A10-12A', 'NVIDIA A10-12Q', 'NVIDIA A10-24A', 'NVIDIA A10-24Q']
-        }
-      ],
-      vGpuVisible: false,
-      vGpuTypes: [],
+      gpuCardLoading: false,
+      gpuCards: [],
       loading: false,
       dynamicscalingenabled: true,
       diskofferingstrictness: false,
@@ -745,6 +740,8 @@ export default {
       defaultLeaseExpiryAction: 'STOP',
       leaseduration: undefined,
       leaseexpiryaction: undefined,
+      vgpuProfiles: [],
+      vgpuProfileLoading: false,
       externalDetailsEnabled: false
     }
   },
@@ -775,7 +772,10 @@ export default {
         ispublic: this.isPublic,
         dynamicscalingenabled: true,
         plannermode: this.plannerMode,
-        pcidevice: this.selectedGpu,
+        gpucardid: this.selectedGpuCard,
+        vgpuprofile: '',
+        gpucount: '1',
+        gpudisplay: false,
         computeonly: this.computeonly,
         storagetype: this.storageType,
         provisioningtype: this.provisioningType,
@@ -829,6 +829,15 @@ export default {
         hypervisorsnapshotreserve: [this.naturalNumberRule],
         domainid: [{ type: 'array', required: true, message: this.$t('message.error.select') }],
         diskofferingid: [{ required: true, message: this.$t('message.error.select') }],
+        gpucount: [{
+          type: 'number',
+          validator: async (rule, value) => {
+            if (value && (isNaN(value) || value < 1)) {
+              return Promise.reject(this.$t('message.error.number.minimum.one'))
+            }
+            return Promise.resolve()
+          }
+        }],
         zoneid: [{
           type: 'array',
           validator: async (rule, value) => {
@@ -844,6 +853,7 @@ export default {
     fetchData () {
       this.fetchDomainData()
       this.fetchZoneData()
+      this.fetchGPUCards()
       if (isAdmin()) {
         this.fetchStorageTagData()
         this.fetchDeploymentPlannerData()
@@ -854,6 +864,20 @@ export default {
         }
       }
       this.fetchDiskOfferings()
+    },
+    fetchGPUCards () {
+      this.gpuCardLoading = true
+      getAPI('listGpuCards', {
+      }).then(json => {
+        this.gpuCards = json.listgpucardsresponse.gpucard || []
+        // Add a "None" option at the beginning
+        this.gpuCards.unshift({
+          id: '',
+          name: this.$t('label.none')
+        })
+      }).finally(() => {
+        this.gpuCardLoading = false
+      })
     },
     addDiskOffering () {
       this.showDiskOfferingModal = true
@@ -885,6 +909,23 @@ export default {
     },
     isDomainAdmin () {
       return ['DomainAdmin'].includes(this.$store.getters.userInfo.roletype)
+    },
+    getVgpuProfileDetails (vgpuProfile) {
+      let output = '('
+      if (vgpuProfile?.videoram) {
+        output += `${vgpuProfile.videoram} MB`
+      }
+      if (vgpuProfile?.maxresolutionx && vgpuProfile?.maxresolutiony) {
+        if (output !== '(') {
+          output += ', '
+        }
+        output += `${vgpuProfile.maxresolutionx}x${vgpuProfile.maxresolutiony}`
+      }
+      output += ')'
+      if (output === '()') {
+        return ''
+      }
+      return output
     },
     checkIfDomainAdminIsAllowedToInformTag () {
       const params = { id: store.getters.userInfo.accountid }
@@ -986,18 +1027,30 @@ export default {
     handlePlannerModeChange (val) {
       this.plannerMode = val
     },
-    handleGpuChange (val) {
-      this.vGpuTypes = []
-      for (var gpuType of this.gpuTypes) {
-        if (gpuType.value === val) {
-          this.vGpuTypes = gpuType.vgpu
-          break
-        }
+    handleGpuCardChange (cardId) {
+      this.selectedGpuCard = cardId
+      this.form.vgpuprofile = ''
+      if (cardId && cardId !== '') {
+        this.fetchVgpuProfiles(cardId)
+      } else {
+        this.vgpuProfiles = []
+        this.form.gpucount = '1'
       }
-      this.vGpuVisible = true
-      if (!this.arrayHasItems(this.vGpuTypes)) {
-        this.vGpuVisible = false
-      }
+    },
+    fetchVgpuProfiles (gpuCardId) {
+      this.vgpuProfileLoading = true
+      this.vgpuProfiles = []
+      getAPI('listVgpuProfiles', {
+        gpucardid: gpuCardId
+      }).then(json => {
+        this.vgpuProfiles = json.listvgpuprofilesresponse.vgpuprofile || []
+        this.form.vgpuprofile = this.vgpuProfiles.length > 0 ? this.vgpuProfiles[0].id : ''
+      }).catch(error => {
+        console.error('Error fetching vGPU profiles:', error)
+        this.vgpuProfiles = []
+      }).finally(() => {
+        this.vgpuProfileLoading = false
+      })
     },
     onExternalDetailsEnabledChange (val) {
       if (val || !this.form.externaldetails) {
@@ -1028,8 +1081,20 @@ export default {
           leaseduration: values.leaseduration,
           leaseexpiryaction: values.leaseexpiryaction
         }
+
         if (values.diskofferingid) {
           params.diskofferingid = values.diskofferingid
+        }
+
+        // Add GPU parameters
+        if (values.vgpuprofile) {
+          params.vgpuprofileid = values.vgpuprofile
+        }
+        if (values.gpucount && values.gpucount > 0) {
+          params.gpucount = values.gpucount
+        }
+        if (values.gpudisplay !== undefined) {
+          params.gpudisplay = values.gpudisplay
         }
 
         // custom fields (begin)
@@ -1106,15 +1171,6 @@ export default {
           values.plannermode !== '') {
           params['serviceofferingdetails[0].key'] = 'ImplicitDedicationMode'
           params['serviceofferingdetails[0].value'] = values.plannermode
-        }
-        if ('pcidevice' in values &&
-          values.pcidevice !== undefined && values.pcidevice !== '') {
-          params['serviceofferingdetails[1].key'] = 'pciDevice'
-          params['serviceofferingdetails[1].value'] = values.pcidevice
-        }
-        if ('vgputype' in values && this.arrayHasItems(this.vGpuTypes)) {
-          params['serviceofferingdetails[2].key'] = 'vgpuType'
-          params['serviceofferingdetails[2].value'] = this.vGpuTypes[values.vgputype]
         }
         if ('isvolatile' in values && values.isvolatile !== undefined) {
           params.isvolatile = values.isvolatile === true

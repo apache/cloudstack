@@ -41,13 +41,9 @@ public class NetrisProviderResponse extends BaseResponse {
     @Param(description = "Zone name to which the Netris Provider is associated with")
     private String zoneName;
 
-    @SerializedName(ApiConstants.HOST_NAME)
-    @Param(description = "Netris Provider hostname or IP address")
-    private String hostname;
-
-    @SerializedName(ApiConstants.PORT)
-    @Param(description = "Netris Provider port")
-    private String port;
+    @SerializedName(ApiConstants.NETRIS_URL)
+    @Param(description = "Netris Provider URL")
+    private String netrisUrl;
 
     @SerializedName(ApiConstants.SITE_NAME)
     @Param(description = "Netris Provider site")
@@ -93,20 +89,12 @@ public class NetrisProviderResponse extends BaseResponse {
         this.zoneName = zoneName;
     }
 
-    public String getHostname() {
-        return hostname;
+    public String getNetrisUrl() {
+        return netrisUrl;
     }
 
-    public void setHostname(String hostname) {
-        this.hostname = hostname;
-    }
-
-    public String getPort() {
-        return port;
-    }
-
-    public void setPort(String port) {
-        this.port = port;
+    public void setNetrisUrl(String netrisUrl) {
+        this.netrisUrl = netrisUrl;
     }
 
     public String getSiteName() {

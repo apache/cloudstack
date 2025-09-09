@@ -158,6 +158,8 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
         List<HostGpuGroupsVO> gpuGroups = ApiDBUtils.getGpuGroups(host.getId());
         if (gpuGroups != null && !gpuGroups.isEmpty()) {
             List<GpuResponse> gpus = new ArrayList<GpuResponse>();
+            long gpuRemaining = 0;
+            long gpuTotal = 0;
             for (HostGpuGroupsVO entry : gpuGroups) {
                 GpuResponse gpuResponse = new GpuResponse();
                 gpuResponse.setGpuGroupName(entry.getGroupName());
@@ -175,11 +177,15 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                         vgpuResponse.setRemainingCapacity(vgpuType.getRemainingCapacity());
                         vgpuResponse.setmaxCapacity(vgpuType.getMaxCapacity());
                         vgpus.add(vgpuResponse);
+                        gpuRemaining += vgpuType.getRemainingCapacity();
+                        gpuTotal += vgpuType.getMaxCapacity();
                     }
                     gpuResponse.setVgpu(vgpus);
                 }
                 gpus.add(gpuResponse);
             }
+            hostResponse.setGpuTotal(gpuTotal);
+            hostResponse.setGpuUsed(gpuTotal - gpuRemaining);
             hostResponse.setGpuGroup(gpus);
         }
         if (details.contains(HostDetails.all) || details.contains(HostDetails.capacity) || details.contains(HostDetails.stats) || details.contains(HostDetails.events)) {
@@ -207,8 +213,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                 hostResponse.setMemWithOverprovisioning(decimalFormat.format(memWithOverprovisioning));
                 hostResponse.setMemoryAllocated(mem);
                 hostResponse.setMemoryAllocatedBytes(mem);
-                String memoryAllocatedPercentage = decimalFormat.format((float) mem / memWithOverprovisioning * 100.0f) +"%";
-                hostResponse.setMemoryAllocatedPercentage(memoryAllocatedPercentage);
+                hostResponse.setMemoryAllocatedPercentage(calculateResourceAllocatedPercentage(mem, memWithOverprovisioning));
 
                 String hostTags = host.getTag();
                 hostResponse.setHostTags(hostTags);
@@ -401,6 +406,9 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
     }
 
     private String calculateResourceAllocatedPercentage(float resource, float resourceWithOverProvision) {
+        if (resource == 0 || resourceWithOverProvision == 0) {
+            return "0.00%";
+        }
         DecimalFormat decimalFormat = new DecimalFormat("#.##");
         return decimalFormat.format(((float)resource / resourceWithOverProvision * 100.0f)) + "%";
     }

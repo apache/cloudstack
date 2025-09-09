@@ -5703,7 +5703,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
 
             addProviderToPhysicalNetwork(physicalNetworkId, Provider.Nsx.getName(), null, null);
-            enableProvider(Provider.Nsx.getName());
         }
         return null;
     }
@@ -6400,5 +6399,21 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
         }
         return Networks.BroadcastDomainType.getValue(nic.getBroadcastUri());
+    }
+
+    @Override
+    public Network.IpAddresses getIpAddressesFromIps(String ipAddress, String ip6Address, String macAddress) {
+        if (ip6Address != null) {
+            ip6Address = NetUtils.standardizeIp6Address(ip6Address);
+        }
+        if (macAddress != null) {
+            if (!NetUtils.isValidMac(macAddress)) {
+                throw new InvalidParameterValueException("Mac address is not valid: " + macAddress);
+            } else if (!NetUtils.isUnicastMac(macAddress)) {
+                throw new InvalidParameterValueException("Mac address is not unicast: " + macAddress);
+            }
+            macAddress = NetUtils.standardizeMacAddress(macAddress);
+        }
+        return new Network.IpAddresses(ipAddress, ip6Address, macAddress);
     }
 }

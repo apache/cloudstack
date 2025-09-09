@@ -125,6 +125,32 @@ class TestNetworkACL(cloudstackTestCase):
         self.assertTrue(vm.state == 'Running', "VM is not running")
         self.debug("VM %s deployed in VPC %s" %(vm.id, vpc.id))
 
+        # 6) Acquire a Public IP, and add Load Balancing Rule
+        public_ip = PublicIPAddress.create(
+            self.apiclient,
+            zoneid=self.zone.id,
+            accountid=self.account.name,
+            domainid=self.domain.id,
+            vpcid=vpc.id
+        )
+        LoadBalancerRule.create(
+            self.apiclient,
+            self.services["lbrule"],
+            ipaddressid=public_ip.ipaddress.id,
+            accountid=self.account.name,
+            vpcid=vpc.id,
+            networkid=ntwk.id,
+            domainid=self.account.domainid)
+
+        # 7) Add Port Forwarding Rule with same Public IP to test conserve mode
+        NATRule.create(
+            self.apiclient,
+            vm,
+            self.services["natrule"],
+            ipaddressid=public_ip.ipaddress.id,
+            vpcid=vpc.id,
+            networkid=ntwk.id)
+
     @classmethod
     def tearDownClass(cls):
         try:

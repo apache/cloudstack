@@ -231,6 +231,18 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
     @Param(description = "the total memory (in MB) available to be created for this account", since = "4.2.0")
     private String memoryAvailable;
 
+    @SerializedName("gpulimit")
+    @Param(description = "the total number of gpus the account can own", since = "4.21.0")
+    private String gpuLimit;
+
+    @SerializedName("gputotal")
+    @Param(description = "the total number of gpus owned by account", since = "4.21.0")
+    private Long gpuTotal;
+
+    @SerializedName("gpuavailable")
+    @Param(description = "the total number of gpus available to be created for this account", since = "4.21.0")
+    private String gpuAvailable;
+
     @SerializedName("primarystoragelimit")
     @Param(description = "the total primary storage space (in GiB) the account can own", since = "4.2.0")
     private String primaryStorageLimit;
@@ -487,6 +499,21 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
     @Override
     public void setVmRunning(Integer vmRunning) {
         this.vmRunning = vmRunning;
+    }
+
+    @Override
+    public void setGpuLimit(String gpuLimit) {
+        this.gpuLimit = gpuLimit;
+    }
+
+    @Override
+    public void setGpuTotal(Long gpuTotal) {
+        this.gpuTotal = gpuTotal;
+    }
+
+    @Override
+    public void setGpuAvailable(String gpuAvailable) {
+        this.gpuAvailable = gpuAvailable;
     }
 
     public void setState(String state) {

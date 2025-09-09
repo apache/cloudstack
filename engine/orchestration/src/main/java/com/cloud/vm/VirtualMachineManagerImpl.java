@@ -58,6 +58,8 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
 import org.apache.cloudstack.api.command.admin.volume.MigrateVolumeCmdByAdmin;
 import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
+import org.apache.cloudstack.backup.BackupManager;
+import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -87,6 +89,7 @@ import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageDispatcher;
 import org.apache.cloudstack.framework.messagebus.MessageHandler;
+import org.apache.cloudstack.gpu.GpuService;
 import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
@@ -395,6 +398,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Inject
     private VolumeOrchestrationService volumeMgr;
     @Inject
+    private GpuService gpuService;
+    @Inject
     private DeploymentPlanningManager _dpMgr;
     @Inject
     private MessageBus _messageBus;
@@ -434,6 +439,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     VmWorkJobDao vmWorkJobDao;
     @Inject
     DataStoreProviderManager dataStoreProviderManager;
+    @Inject
+    BackupManager backupManager;
+    @Inject
+    BackupDao backupDao;
 
     private SingleCache<List<Long>> vmIdsInProgressCache;
 
@@ -522,8 +531,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     @DB
     public void allocate(final String vmInstanceName, final VirtualMachineTemplate template, final ServiceOffering serviceOffering,
-                         final DiskOfferingInfo rootDiskOfferingInfo, final List<DiskOfferingInfo> dataDiskOfferings,
-                         final LinkedHashMap<? extends Network, List<? extends NicProfile>> auxiliaryNetworks, final DeploymentPlan plan, final HypervisorType hyperType, final Map<String, Map<Integer, String>> extraDhcpOptions, final Map<Long, DiskOffering> datadiskTemplateToDiskOfferingMap, Volume volume, Snapshot snapshot)
+                         final DiskOfferingInfo rootDiskOfferingInfo, final List<DiskOfferingInfo> dataDiskOfferings, List<Long> dataDiskDeviceIds,
+                         final LinkedHashMap<? extends Network, List<? extends NicProfile>> auxiliaryNetworks,final DeploymentPlan plan, final HypervisorType hyperType,
+                         final Map<String, Map<Integer, String>> extraDhcpOptions, final Map<Long, DiskOffering> datadiskTemplateToDiskOfferingMap, Volume volume, Snapshot snapshot)
                     throws InsufficientCapacityException {
 
         logger.info("allocating virtual machine from template: {} with hostname: {} and {} networks", template, vmInstanceName, auxiliaryNetworks.size());
@@ -567,19 +577,22 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             CallContext volumeContext = CallContext.register(CallContext.current(), ApiCommandResourceType.Volume);
             try {
                 if (dataDiskOfferings != null) {
+                    int index = 0;
                     for (final DiskOfferingInfo dataDiskOfferingInfo : dataDiskOfferings) {
-                        volumeMgr.allocateRawVolume(Type.DATADISK, "DATA-" + persistedVm.getId(), dataDiskOfferingInfo.getDiskOffering(), dataDiskOfferingInfo.getSize(),
-                                dataDiskOfferingInfo.getMinIops(), dataDiskOfferingInfo.getMaxIops(), persistedVm, template, owner, null);
+                        Long deviceId = dataDiskDeviceIds.get(index++);
+                        String volumeName = deviceId == null ? "DATA-" + persistedVm.getId() : "DATA-" + persistedVm.getId() + "-" + String.valueOf(deviceId);
+                        volumeMgr.allocateRawVolume(Type.DATADISK, volumeName, dataDiskOfferingInfo.getDiskOffering(), dataDiskOfferingInfo.getSize(),
+                                dataDiskOfferingInfo.getMinIops(), dataDiskOfferingInfo.getMaxIops(), persistedVm, template, owner, deviceId);
                     }
                 }
                 if (datadiskTemplateToDiskOfferingMap != null && !datadiskTemplateToDiskOfferingMap.isEmpty()) {
-                    int diskNumber = 1;
+                    Long diskNumber = 1L;
                     for (Entry<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap : datadiskTemplateToDiskOfferingMap.entrySet()) {
                         DiskOffering diskOffering = dataDiskTemplateToDiskOfferingMap.getValue();
                         long diskOfferingSize = diskOffering.getDiskSize() / (1024 * 1024 * 1024);
                         VMTemplateVO dataDiskTemplate = _templateDao.findById(dataDiskTemplateToDiskOfferingMap.getKey());
-                        volumeMgr.allocateRawVolume(Type.DATADISK, "DATA-" + persistedVm.getId() + "-" + String.valueOf(diskNumber), diskOffering, diskOfferingSize, null, null,
-                                persistedVm, dataDiskTemplate, owner, Long.valueOf(diskNumber));
+                        volumeMgr.allocateRawVolume(Type.DATADISK, "DATA-" + persistedVm.getId() + "-" + String.valueOf( diskNumber), diskOffering, diskOfferingSize, null, null,
+                                persistedVm, dataDiskTemplate, owner, diskNumber);
                         diskNumber++;
                     }
                 }
@@ -626,7 +639,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     public void allocate(final String vmInstanceName, final VirtualMachineTemplate template, final ServiceOffering serviceOffering,
             final LinkedHashMap<? extends Network, List<? extends NicProfile>> networks, final DeploymentPlan plan, final HypervisorType hyperType, Volume volume, Snapshot snapshot) throws InsufficientCapacityException {
         DiskOffering diskOffering = _diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
-        allocate(vmInstanceName, template, serviceOffering, new DiskOfferingInfo(diskOffering), new ArrayList<>(), networks, plan, hyperType, null, null, volume, snapshot);
+        allocate(vmInstanceName, template, serviceOffering, new DiskOfferingInfo(diskOffering), new ArrayList<>(), new ArrayList<>(), networks, plan, hyperType, null, null, volume, snapshot);
     }
 
     VirtualMachineGuru getVmGuru(final VirtualMachine vm) {
@@ -1530,7 +1543,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                             final GPUDeviceTO gpuDevice = startAnswer.getVirtualMachine().getGpuDevice();
                             if (gpuDevice != null) {
-                                _resourceMgr.updateGPUDetails(destHostId, gpuDevice.getGroupDetails());
+                                _resourceMgr.updateGPUDetailsForVmStart(destHostId, vm.getId(), gpuDevice);
                             }
 
                             if (vmInstanceDetailsDao.findDetail(vm.getId(), VmDetailConstants.DEPLOY_VM) != null) {
@@ -2123,9 +2136,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
 
                 final GPUDeviceTO gpuDevice = stop.getGpuDevice();
-                if (gpuDevice != null) {
-                    _resourceMgr.updateGPUDetails(vm.getHostId(), gpuDevice.getGroupDetails());
-                }
+                _resourceMgr.updateGPUDetailsForVmStop(vm, gpuDevice);
                 if (!answer.getResult()) {
                     final String details = answer.getDetails();
                     logger.debug("Unable to stop VM due to {}", details);
@@ -2454,9 +2465,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
                 vmGuru.finalizeStop(profile, answer);
                 final GPUDeviceTO gpuDevice = stop.getGpuDevice();
-                if (gpuDevice != null) {
-                    _resourceMgr.updateGPUDetails(vm.getHostId(), gpuDevice.getGroupDetails());
-                }
+                _resourceMgr.updateGPUDetailsForVmStop(vm, gpuDevice);
             } else {
                 throw new CloudRuntimeException("Invalid answer received in response to a StopCommand on " + vm.instanceName);
             }
@@ -2559,6 +2568,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             _reservationDao.setResourceId(Resource.ResourceType.user_vm, null);
             _reservationDao.setResourceId(Resource.ResourceType.cpu, null);
             _reservationDao.setResourceId(Resource.ResourceType.memory, null);
+            _reservationDao.setResourceId(Resource.ResourceType.gpu, null);
         }
         return _stateMachine.transitTo(vm, e, new Pair<>(vm.getHostId(), hostId), _vmDao);
     }
@@ -2577,6 +2587,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         deleteVMSnapshots(vm, expunge);
 
+        gpuService.deallocateAllGpuDevicesForVm(vm.getId());
+
         Transaction.execute(new TransactionCallbackWithExceptionNoReturn<CloudRuntimeException>() {
             @Override
             public void doInTransactionWithoutResult(final TransactionStatus status) throws CloudRuntimeException {
@@ -2587,6 +2599,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         throw new CloudRuntimeException("Unable to destroy " + vm);
                     } else {
                         if (expunge) {
+                            backupManager.checkAndRemoveBackupOfferingBeforeExpunge(vm);
                             if (!stateTransitTo(vm, VirtualMachine.Event.ExpungeOperation, vm.getHostId())) {
                                 logger.debug("Unable to expunge the vm because it is not in the correct state: {}", vm);
                                 throw new CloudRuntimeException("Unable to expunge " + vm);
@@ -3147,6 +3160,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 logger.info("Migration was unsuccessful.  Cleaning up: {}", vm);
                 _networkMgr.rollbackNicForMigration(vmSrc, profile);
                 volumeMgr.release(vm.getId(), dstHostId);
+                // deallocate GPU devices for the VM on the destination host
+                gpuService.deallocateGpuDevicesForVmOnHost(vm.getId(), dstHostId);
 
                 _alertMgr.sendAlert(alertType, fromHost.getDataCenterId(), fromHost.getPodId(),
                         "Unable to migrate vm " + vm.getInstanceName() + " from host " + fromHost.getName() + " in zone " + dest.getDataCenter().getName() + " and pod " +
@@ -3165,6 +3180,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             } else {
                 _networkMgr.commitNicForMigration(vmSrc, profile);
                 volumeMgr.release(vm.getId(), srcHostId);
+                // deallocate GPU devices for the VM on the src host after migration is complete
+                gpuService.deallocateGpuDevicesForVmOnHost(vm.getId(), srcHostId);
                 _networkMgr.setHypervisorHostname(profile, dest, true);
                 recreateCheckpointsKvmOnVmAfterMigration(vm, dstHostId);
 
@@ -3962,6 +3979,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     List<Long> affectedVms = new ArrayList<>();
                     affectedVms.add(vm.getId());
                     _securityGroupManager.scheduleRulesetUpdateToHosts(affectedVms, true, null);
+                }
+                if (vmTo.getGpuDevice() != null) {
+                    _resourceMgr.updateGPUDetailsForVmStart(host.getId(), vm.getId(), vmTo.getGpuDevice());
                 }
                 return;
             }

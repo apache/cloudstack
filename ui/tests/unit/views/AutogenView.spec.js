@@ -1293,12 +1293,12 @@ describe('Views > AutogenView.vue', () => {
         expect(mockAxios).toHaveBeenCalled()
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
-          method: 'POST',
-          data: common.createDataParams({
+          method: 'GET',
+          params: {
             command: 'listTestApiNames',
             response: 'json',
             listall: true
-          })
+          }
         })
         expect(param).toEqual({
           name: 'testapiname',
@@ -1390,13 +1390,13 @@ describe('Views > AutogenView.vue', () => {
         expect(mockAxios).toHaveBeenCalled()
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
-          method: 'POST',
-          data: common.createDataParams({
+          method: 'GET',
+          params: {
             command: 'listTemplates',
             response: 'json',
             listall: true,
             templatefilter: 'executable'
-          })
+          }
         })
         expect(param).toEqual({
           name: 'id',
@@ -1429,13 +1429,13 @@ describe('Views > AutogenView.vue', () => {
         expect(mockAxios).toHaveBeenCalled()
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
-          method: 'POST',
-          data: common.createDataParams({
+          method: 'GET',
+          params: {
             command: 'listIsos',
             response: 'json',
             listall: true,
             isofilter: 'executable'
-          })
+          }
         })
         expect(param).toEqual({
           name: 'id',
@@ -1468,13 +1468,13 @@ describe('Views > AutogenView.vue', () => {
         expect(mockAxios).toHaveBeenCalled()
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
-          method: 'POST',
-          data: common.createDataParams({
+          method: 'GET',
+          params: {
             command: 'listHosts',
             response: 'json',
             listall: true,
             type: 'routing'
-          })
+          }
         })
         expect(param).toEqual({
           name: 'id',

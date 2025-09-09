@@ -140,6 +140,7 @@ jobs:
                   smoke/test_vm_deployment_planner
                   smoke/test_vm_strict_host_tags
                   smoke/test_vm_schedule
+                  smoke/test_deploy_vgpu_enabled_vm
                   smoke/test_vm_life_cycle
                   smoke/test_vm_lifecycle_unmanage_import
                   smoke/test_vm_snapshot_kvm
@@ -219,13 +220,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up JDK
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          java-version: '11'
-          distribution: 'adopt'
-          architecture: x64
-          cache: maven
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'maven'
 
       - name: Set up Python
         uses: actions/setup-python@v5

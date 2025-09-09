@@ -81,6 +81,7 @@ import com.cloud.storage.template.OVAProcessor;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.VirtualMachine;
@@ -277,7 +278,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         try {
             VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
 
-            String templateUuidName = UUID.nameUUIDFromBytes((templateName + "@" + cmd.getPoolUuid() + "-" + hyperHost.getMor().getValue()).getBytes("UTF-8")).toString();
+            String templateUuidName = UuidUtils.nameUUIDFromBytes((templateName + "@" + cmd.getPoolUuid() + "-" + hyperHost.getMor().getValue()).getBytes("UTF-8")).toString();
             // truncate template name to 32 chars to ensure they work well with vSphere API's.
             templateUuidName = templateUuidName.replace("-", "");
 
