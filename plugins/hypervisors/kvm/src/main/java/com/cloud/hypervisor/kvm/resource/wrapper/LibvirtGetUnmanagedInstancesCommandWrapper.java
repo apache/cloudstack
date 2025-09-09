@@ -174,7 +174,8 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
             nic.setNetwork(interfaceDef.getDevName());
             nic.setPciSlot(interfaceDef.getSlot().toString());
             nic.setVlan(interfaceDef.getVlanTag());
-            if (nic.getVlan() == -1 && interfaceDef.getNetType() == LibvirtVMDef.InterfaceDef.GuestNetType.BRIDGE) {
+            if (nic.getVlan() == -1
+                && LibvirtVMDef.InterfaceDef.GuestNetType.BRIDGE.equals(interfaceDef.getNetType())) {
                 nic.setVlan(libvirtComputingResource.getVlanIdForBridge(interfaceDef.getBrName()));
             }
             nics.add(nic);
