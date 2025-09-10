@@ -113,7 +113,7 @@ public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase imple
 
         DomainRouterVO vr = routers.get(0);
         if (!Hypervisor.HypervisorType.VMware.equals(vr.getHypervisorType())) {
-            throw new CloudRuntimeException(String.format("Baremetal only support VMWare virtual router, but get %s", vr.getHypervisorType()));
+            throw new CloudRuntimeException(String.format("Baremetal only support VMware virtual router, but get %s", vr.getHypervisorType()));
         }
 
         return vr;

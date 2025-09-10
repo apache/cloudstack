@@ -447,12 +447,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         for (int i = startVlan; i <= endVlan; i++) {
             List<DataCenterVnetVO> dataCenterVnet = _dcVnetDao.findVnet(physicalNetwork.getDataCenterId(), physicalNetwork.getId(), Integer.toString(i));
             if (CollectionUtils.isEmpty(dataCenterVnet)) {
-                throw new InvalidParameterValueException(String.format("Guest vlan %d from this range %d-%d is not present in the system for physical network ID: %s", i, startVlan, endVlan, physicalNetwork.getUuid()));
+                throw new InvalidParameterValueException(String.format("Guest VLAN %d from this range %d-%d is not present in the system for physical network ID: %s", i, startVlan, endVlan, physicalNetwork.getUuid()));
             }
             // Verify guest vlans in the range don't belong to a network of a different account
             if (dataCenterVnet.get(0).getAccountId() != null && dataCenterVnet.get(0).getAccountId() != vlanOwner.getAccountId()) {
-                throw new InvalidParameterValueException("Guest vlan from this range " + dataCenterVnet.get(0).getVnet() + " is allocated to a different Account."
-                        + " Can only dedicate a range which has no allocated vlans or has vlans allocated to the same Account ");
+                throw new InvalidParameterValueException("Guest VLAN from this range " + dataCenterVnet.get(0).getVnet() + " is allocated to a different Account."
+                        + " Can only dedicate a range which has no allocated VLANs or has VLANs allocated to the same Account ");
             }
         }
     }
@@ -3077,7 +3077,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 continue;
             }
             if (!Hypervisor.HypervisorType.VMware.equals(vm.getHypervisorType())) {
-                logger.debug(String.format("Cannot replug NIC: %s for Instance: %s as it is not on VMWare", nic, vm));
+                logger.debug(String.format("Cannot replug NIC: %s for Instance: %s as it is not on VMware", nic, vm));
                 continue;
             }
             if (!VirtualMachine.Type.User.equals(vm.getType())) {

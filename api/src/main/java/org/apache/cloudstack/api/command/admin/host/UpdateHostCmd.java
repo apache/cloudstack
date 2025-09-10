@@ -63,7 +63,7 @@ public class UpdateHostCmd extends BaseCmd {
     @Parameter(name = ApiConstants.IS_TAG_A_RULE, type = CommandType.BOOLEAN, description = ApiConstants.PARAMETER_DESCRIPTION_IS_TAG_A_RULE)
     private Boolean isTagARule;
 
-    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, description = "The new uri for the secondary storage: nfs://host/path")
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, description = "The new URI for the secondary storage: nfs://host/path")
     private String url;
 
     @Parameter(name = ApiConstants.ANNOTATION, type = CommandType.STRING, description = "Add an annotation to this host", since = "4.11", authorized = {RoleType.Admin})

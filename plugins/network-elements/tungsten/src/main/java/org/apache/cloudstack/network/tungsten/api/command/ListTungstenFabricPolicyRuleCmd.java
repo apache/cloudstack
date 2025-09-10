@@ -51,13 +51,13 @@ public class ListTungstenFabricPolicyRuleCmd extends BaseListCmd {
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The ID of zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The ID of Zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.POLICY_UUID, type = CommandType.STRING, required = true, description = "The uuid of Tungsten-Fabric policy")
+    @Parameter(name = ApiConstants.POLICY_UUID, type = CommandType.STRING, required = true, description = "The UUID of Tungsten-Fabric policy")
     private String policyUuid;
 
-    @Parameter(name = ApiConstants.RULE_UUID, type = CommandType.STRING, description = "The uuid of Tungsten-Fabric rule")
+    @Parameter(name = ApiConstants.RULE_UUID, type = CommandType.STRING, description = "The UUID of Tungsten-Fabric rule")
     private String ruleUuid;
 
     @Override

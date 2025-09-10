@@ -49,7 +49,7 @@ public class UpdateTungstenFabricLBHealthMonitorCmd extends BaseAsyncCreateCmd {
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "The ID of lb rule")
+    @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "The ID of LB rule")
     private Long lbId;
 
     @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, required = true, description = "Loadbalancer health monitor type")

@@ -43,7 +43,7 @@ public class OpenDaylightControllerResponse extends BaseResponse {
     private String name;
 
     @SerializedName(ApiConstants.URL)
-    @Param(description = "The url of the controller api")
+    @Param(description = "The URL of the controller API")
     private String url;
 
     @SerializedName(ApiConstants.USERNAME)

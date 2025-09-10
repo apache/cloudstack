@@ -2088,11 +2088,11 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                         try {
                             success = handleSystemLBIpRelease(lb);
                         } catch (Exception ex) {
-                            logger.warn("Failed to release system IP as a part of lb rule " + lb + " deletion due to exception ", ex);
+                            logger.warn("Failed to release system IP as a part of LB rule " + lb + " deletion due to exception ", ex);
                             success = false;
                         } finally {
                             if (!success) {
-                                logger.warn("Failed to release system IP as a part of lb rule " + lb + " deletion");
+                                logger.warn("Failed to release system IP as a part of LB rule " + lb + " deletion");
                             }
                         }
                     }
@@ -2112,12 +2112,12 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         IpAddress ip = _ipAddressDao.findById(lb.getSourceIpAddressId());
         boolean success = true;
         if (ip.getSystem()) {
-            logger.debug("Releasing system IP address {} as a part of delete lb rule", ip);
+            logger.debug("Releasing system IP address {} as a part of delete LB rule", ip);
             if (!_ipAddrMgr.disassociatePublicIpAddress(ip, CallContext.current().getCallingUserId(), CallContext.current().getCallingAccount())) {
-                logger.warn("Unable to release system IP address={} as a part of delete lb rule", ip);
+                logger.warn("Unable to release system IP address={} as a part of delete LB rule", ip);
                 success = false;
             } else {
-                logger.warn("Successfully released system IP address={} as a part of delete lb rule", ip);
+                logger.warn("Successfully released system IP address={} as a part of delete LB rule", ip);
             }
         }
         return success;
@@ -2130,7 +2130,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         List<FirewallRuleVO> rules = _firewallDao.listByIpAndPurpose(ipId, Purpose.LoadBalancing);
 
         if (rules != null) {
-            logger.debug("Found " + rules.size() + " lb rules to cleanup");
+            logger.debug("Found " + rules.size() + " LB rules to cleanup");
             for (FirewallRule rule : rules) {
                 boolean result = deleteLoadBalancerRule(rule.getId(), true, caller, callerUserId, false);
                 if (result == false) {
@@ -2146,7 +2146,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     public boolean removeAllLoadBalanacersForNetwork(long networkId, Account caller, long callerUserId) {
         List<FirewallRuleVO> rules = _firewallDao.listByNetworkAndPurposeAndNotRevoked(networkId, Purpose.LoadBalancing);
         if (rules != null) {
-            logger.debug("Found " + rules.size() + " lb rules to cleanup");
+            logger.debug("Found " + rules.size() + " LB rules to cleanup");
             for (FirewallRule rule : rules) {
                 boolean result = deleteLoadBalancerRule(rule.getId(), true, caller, callerUserId, false);
                 if (result == false) {
@@ -2217,7 +2217,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         String lbProtocol = cmd.getLbProtocol();
 
         if (lb == null) {
-            throw new InvalidParameterValueException("Unable to find lb rule by id=" + lbRuleId);
+            throw new InvalidParameterValueException("Unable to find LB rule by id=" + lbRuleId);
         }
 
         // check permissions
@@ -2251,7 +2251,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         // Validate rule in LB provider
         LoadBalancingRule rule = getLoadBalancerRuleToApply(lb);
         if (!validateLbRule(rule)) {
-            throw new InvalidParameterValueException(String.format("Modifications in lb rule %s are not supported.", lb));
+            throw new InvalidParameterValueException(String.format("Modifications in LB rule %s are not supported.", lb));
         }
 
         LoadBalancerVO tmplbVo = _lbDao.findById(lbRuleId);
@@ -2680,7 +2680,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         //3) Check if the provider supports the scheme
         LoadBalancingServiceProvider lbProvider = _networkMgr.getLoadBalancingProviderForNetwork(network, scheme);
         if (lbProvider == null) {
-            throw new InvalidParameterValueException("Lb rule with scheme " + scheme.toString() + " is not supported by lb providers in network " + network);
+            throw new InvalidParameterValueException("Lb rule with scheme " + scheme.toString() + " is not supported by LB providers in network " + network);
         }
     }
 
@@ -2694,7 +2694,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_LB_STICKINESSPOLICY_UPDATE, eventDescription = "updating lb stickiness policy", async = true)
+    @ActionEvent(eventType = EventTypes.EVENT_LB_STICKINESSPOLICY_UPDATE, eventDescription = "updating LB stickiness policy", async = true)
     public StickinessPolicy updateLBStickinessPolicy(long id, String customId, Boolean forDisplay) {
         LBStickinessPolicyVO policy = _lb2stickinesspoliciesDao.findById(id);
         if (policy == null) {
@@ -2721,7 +2721,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_LB_HEALTHCHECKPOLICY_UPDATE, eventDescription = "updating lb healthcheck policy", async = true)
+    @ActionEvent(eventType = EventTypes.EVENT_LB_HEALTHCHECKPOLICY_UPDATE, eventDescription = "updating LB healthcheck policy", async = true)
     public HealthCheckPolicy updateLBHealthCheckPolicy(long id, String customId, Boolean forDisplay) {
         LBHealthCheckPolicyVO policy = _lb2healthcheckDao.findById(id);
         if (policy == null) {

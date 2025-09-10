@@ -47,7 +47,7 @@ public class ListTungstenFabricLBHealthMonitorCmd extends BaseListCmd {
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "The ID of lb rule")
+    @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "The ID of LB rule")
     private Long lbID;
 
     @Override

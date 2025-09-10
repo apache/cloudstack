@@ -60,7 +60,7 @@ public class VmdkProcessor extends AdapterBase implements Processor {
         String templateFilePath = templatePath + File.separator + templateName + "." + ImageFormat.VMDK.getFileExtension();
         if (!_storage.exists(templateFilePath)) {
             if (logger.isInfoEnabled()) {
-                logger.info("Unable to find the VMWare Template file: " + templateFilePath);
+                logger.info("Unable to find the VMware Template file: " + templateFilePath);
             }
             return null;
         }

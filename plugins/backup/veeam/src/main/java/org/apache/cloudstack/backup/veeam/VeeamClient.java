@@ -272,7 +272,7 @@ public class VeeamClient {
     ///////////////////////////////////////////////////////////////////
 
     private String findDCHierarchy(final String vmwareDcName) {
-        logger.debug("Trying to find hierarchy ID for VMWare datacenter: " + vmwareDcName);
+        logger.debug("Trying to find hierarchy ID for VMware datacenter: " + vmwareDcName);
 
         try {
             final HttpResponse response = get("/hierarchyRoots");

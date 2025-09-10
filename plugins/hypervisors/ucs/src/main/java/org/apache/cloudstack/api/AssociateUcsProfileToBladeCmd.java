@@ -39,7 +39,7 @@ public class AssociateUcsProfileToBladeCmd extends BaseAsyncCmd {
     @Inject
     private UcsManager mgr;
 
-    @Parameter(name = ApiConstants.UCS_MANAGER_ID, type = CommandType.UUID, description = "Ucs manager id", entityType = UcsManagerResponse.class, required = true)
+    @Parameter(name = ApiConstants.UCS_MANAGER_ID, type = CommandType.UUID, description = "UCS manager id", entityType = UcsManagerResponse.class, required = true)
     private Long ucsManagerId;
     @Parameter(name = ApiConstants.UCS_PROFILE_DN, type = CommandType.STRING, description = "Profile dn", required = true)
     private String profileDn;

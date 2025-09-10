@@ -44,10 +44,10 @@ public class DeleteTungstenFabricFirewallRuleCmd extends BaseAsyncCmd {
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "The ID of zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "The ID of Zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.FIREWALL_RULE_UUID, type = CommandType.STRING, required = true, description = "The uuid of Tungsten-Fabric firewall rule")
+    @Parameter(name = ApiConstants.FIREWALL_RULE_UUID, type = CommandType.STRING, required = true, description = "The UUID of Tungsten-Fabric firewall rule")
     private String firewallRuleUuid;
 
     @Override

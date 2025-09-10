@@ -68,7 +68,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
         String templateFilePath = templatePath + File.separator + templateName + "." + ImageFormat.OVA.getFileExtension();
         if (!_storage.exists(templateFilePath)) {
             if (logger.isInfoEnabled()) {
-                logger.info("Unable to find the VMWare Template file: " + templateFilePath);
+                logger.info("Unable to find the VMware Template file: " + templateFilePath);
             }
             return null;
         }
@@ -129,7 +129,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
             logger.info("Found " + ovfProperties.size() + " configurable OVF properties");
             ovfInformationTO.setProperties(ovfProperties);
         } else if (logger.isTraceEnabled()) {
-            logger.trace(String.format("No ovf properties found in Template %s", ovfFilePath));
+            logger.trace(String.format("No OVF properties found in Template %s", ovfFilePath));
         }
         OVFVirtualHardwareSectionTO hardwareSection = ovfHelper.getVirtualHardwareSectionFromDocument(doc);
         List<OVFConfigurationTO> configurations = hardwareSection.getConfigurations();

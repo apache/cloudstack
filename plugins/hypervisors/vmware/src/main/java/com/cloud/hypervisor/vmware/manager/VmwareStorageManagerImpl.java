@@ -1366,7 +1366,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                     logger.debug("Can not find the Snapshot " + vmSnapshotName + ", assume it is already removed");
                 } else {
                     if (!vmMo.removeSnapshot(vmSnapshotName, false)) {
-                        String msg = "Delete Instance Snapshot " + vmSnapshotName + " due to error occurred in VMWare";
+                        String msg = "Delete Instance Snapshot " + vmSnapshotName + " due to error occurred in VMware";
                         logger.error(msg);
 
                         return new DeleteVMSnapshotAnswer(cmd, false, msg);

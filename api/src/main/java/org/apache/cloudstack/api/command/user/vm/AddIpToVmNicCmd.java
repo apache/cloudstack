@@ -89,7 +89,7 @@ public class AddIpToVmNicCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "Associating ip to NIC id=" + this._uuidMgr.getUuid(Nic.class, getNicId()) + " belonging to Network id=" + this._uuidMgr.getUuid(Network.class, getNetworkId());
+        return "Associating IP to NIC id=" + this._uuidMgr.getUuid(Nic.class, getNicId()) + " belonging to Network id=" + this._uuidMgr.getUuid(Network.class, getNetworkId());
     }
 
     /////////////////////////////////////////////////////
@@ -142,7 +142,7 @@ public class AddIpToVmNicCmd extends BaseAsyncCreateCmd {
     public long getEntityOwnerId() {
         Nic nic = _entityMgr.findById(Nic.class, nicId);
         if (nic == null) {
-            throw new InvalidParameterValueException("Can't find NIC for id specified");
+            throw new InvalidParameterValueException("Can't find NIC for specified id");
         }
         long vmId = nic.getInstanceId();
         VirtualMachine vm = _entityMgr.findById(VirtualMachine.class, vmId);
@@ -166,11 +166,11 @@ public class AddIpToVmNicCmd extends BaseAsyncCreateCmd {
                 setEntityUuid(result.getUuid());
             }
         } catch (InsufficientAddressCapacityException e) {
-            throw new InvalidParameterValueException("Allocating guest ip for NIC failed : " + e.getMessage());
+            throw new InvalidParameterValueException("Allocating guest IP for NIC failed : " + e.getMessage());
         }
 
         if (result == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to assign secondary ip to NIC");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to assign secondary IP to NIC");
         }
     }
 }

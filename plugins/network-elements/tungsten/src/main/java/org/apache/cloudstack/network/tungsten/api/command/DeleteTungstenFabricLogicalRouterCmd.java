@@ -46,10 +46,10 @@ public class DeleteTungstenFabricLogicalRouterCmd extends BaseAsyncCmd {
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "The ID of zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "The ID of Zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.LOGICAL_ROUTER_UUID, type = CommandType.STRING, required = true, description = "The uuid of Tungsten-Fabric logical router")
+    @Parameter(name = ApiConstants.LOGICAL_ROUTER_UUID, type = CommandType.STRING, required = true, description = "The UUID of Tungsten-Fabric logical router")
     private String logicalRouterUuid;
 
     @Override

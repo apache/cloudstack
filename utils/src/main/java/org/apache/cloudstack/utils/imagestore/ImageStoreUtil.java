@@ -55,7 +55,7 @@ public class ImageStoreUtil {
 
         // vmdk
         if ((output.contains("VMware") || output.contains("data")) && isCorrectExtension(uripath, "vmdk")) {
-            LOGGER.debug("File at path " + path + " looks like a VMWare image :" + output);
+            LOGGER.debug("File at path " + path + " looks like a VMware image :" + output);
             return "";
         }
         // raw

@@ -1288,7 +1288,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         final VmwareDatacenterZoneMap vdcMap = vmwareDatacenterZoneMapDao.findByZoneId(zoneId);
         final VmwareDatacenterVO vmwareDc = vmwareDcDao.findById(vdcMap.getVmwareDcId());
         if (vmwareDc == null) {
-            throw new CloudRuntimeException("VMWare datacenter does not exist by provided ID");
+            throw new CloudRuntimeException("VMware datacenter does not exist by provided ID");
         }
         final String oldVCenterHost = vmwareDc.getVcenterHost();
 
@@ -1509,11 +1509,11 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         String password = vmwareDatacenter.getPassword();
         List<PbmProfile> storageProfiles = null;
         try {
-            logger.debug(String.format("Importing vSphere Storage Policies for the VMWare DC %d in zone %d", vmwareDcId, zoneId));
+            logger.debug(String.format("Importing vSphere Storage Policies for the VMware DC %d in zone %d", vmwareDcId, zoneId));
             VmwareContext context = VmwareContextFactory.getContext(vCenterHost, userName, password);
             PbmProfileManagerMO profileManagerMO = new PbmProfileManagerMO(context);
             storageProfiles = profileManagerMO.getStorageProfiles();
-            logger.debug(String.format("Import vSphere Storage Policies for the VMWare DC %d in zone %d is successful", vmwareDcId, zoneId));
+            logger.debug(String.format("Import vSphere Storage Policies for the VMware DC %d in zone %d is successful", vmwareDcId, zoneId));
         } catch (Exception e) {
             String msg = String.format("Unable to list storage profiles from DC %s due to : %s", vmwareDcName, VmwareHelper.getExceptionMessage(e));
             logger.error(msg);

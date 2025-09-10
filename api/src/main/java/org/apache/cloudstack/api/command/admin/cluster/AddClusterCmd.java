@@ -85,7 +85,7 @@ public class AddClusterCmd extends BaseCmd {
     @Parameter(name = ApiConstants.VSM_PASSWORD, type = CommandType.STRING, required = false, description = "The password for the VSM associated with this cluster")
     private String vsmpassword;
 
-    @Parameter(name = ApiConstants.VSM_IPADDRESS, type = CommandType.STRING, required = false, description = "The ipaddress of the VSM associated with this cluster")
+    @Parameter(name = ApiConstants.VSM_IPADDRESS, type = CommandType.STRING, required = false, description = "The IP address of the VSM associated with this cluster")
     private String vsmipaddress;
 
     @Parameter(name = ApiConstants.VSWITCH_TYPE_GUEST_TRAFFIC,

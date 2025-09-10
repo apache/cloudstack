@@ -29,7 +29,7 @@ import com.cloud.serializer.Param;
 @SuppressWarnings("unused")
 public class VpnUsersResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "The VPN userID")
+    @Param(description = "The VPN user ID")
     private String id;
 
     @SerializedName(ApiConstants.USERNAME)

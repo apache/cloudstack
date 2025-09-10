@@ -48,7 +48,7 @@ public class BrocadeVcsDeviceResponse extends BaseResponse {
     private String deviceName;
 
     @SerializedName(ApiConstants.HOST_NAME)
-    @Param(description = "The principal switch Ip address")
+    @Param(description = "The principal switch IP address")
     private String hostName;
 
     public String getId() {

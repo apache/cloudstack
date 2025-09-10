@@ -32,7 +32,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.ucs.manager.UcsManager;
 import com.cloud.user.Account;
 
-@APICommand(name = "listUcsProfiles", description = "List profile in ucs manager", responseObject = UcsProfileResponse.class,
+@APICommand(name = "listUcsProfiles", description = "List profile in UCS manager", responseObject = UcsProfileResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListUcsProfileCmd extends BaseListCmd {
 
@@ -42,7 +42,7 @@ public class ListUcsProfileCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.UCS_MANAGER_ID,
                type = CommandType.UUID,
                entityType = UcsManagerResponse.class,
-               description = "The id for the ucs manager",
+               description = "The id for the UCS manager",
                required = true)
     private Long ucsManagerId;
 

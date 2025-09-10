@@ -172,7 +172,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
     @Override
     public String getEventDescription() {
         IpAddress ip = _networkService.getIp(ipAddressId);
-        return ("Applying an ipforwarding 1:1 NAT rule for IP: " + ip.getAddress() + " with Instance:" + getVirtualMachineId());
+        return ("Applying an IP forwarding 1:1 NAT rule for IP: " + ip.getAddress() + " with Instance:" + getVirtualMachineId());
     }
 
     private long getVirtualMachineId() {

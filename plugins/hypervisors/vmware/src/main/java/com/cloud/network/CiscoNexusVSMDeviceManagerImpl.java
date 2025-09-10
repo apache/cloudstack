@@ -81,7 +81,7 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
             throw new InvalidParameterValueException("Cluster with specified ID not found!");
         }
         if (cluster.getHypervisorType() != HypervisorType.VMware) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Cluster with specified id is not a VMWare hypervisor cluster");
+            InvalidParameterValueException ex = new InvalidParameterValueException("Cluster with specified id is not a VMware hypervisor cluster");
             throw ex;
         }
 

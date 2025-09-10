@@ -45,13 +45,13 @@ public class RemoveTungstenFabricPolicyRuleCmd extends BaseAsyncCmd {
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "The ID of zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "The ID of Zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.POLICY_UUID, type = CommandType.STRING, required = true, description = "The Uuid of Tungsten-Fabric policy")
+    @Parameter(name = ApiConstants.POLICY_UUID, type = CommandType.STRING, required = true, description = "The UUID of Tungsten-Fabric policy")
     private String policyUuid;
 
-    @Parameter(name = ApiConstants.RULE_UUID, type = CommandType.STRING, required = true, description = "The Uuid of Tungsten-Fabric policy rule")
+    @Parameter(name = ApiConstants.RULE_UUID, type = CommandType.STRING, required = true, description = "The UUID of Tungsten-Fabric policy rule")
     private String ruleUuid;
 
     @Override

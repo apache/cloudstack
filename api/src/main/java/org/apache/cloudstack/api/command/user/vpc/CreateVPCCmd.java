@@ -77,7 +77,7 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
     private String displayText;
 
     @Parameter(name = ApiConstants.CIDR, type = CommandType.STRING,
-            description = "The cidr of the VPC. All VPC Guest Network's CIDRs should be within this CIDR")
+            description = "The CIDR of the VPC. All VPC Guest Network's CIDRs should be within this CIDR")
     private String cidr;
 
     @Parameter(name = ApiConstants.CIDR_SIZE, type = CommandType.INTEGER,

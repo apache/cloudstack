@@ -64,11 +64,11 @@ public class FirewallResponse extends BaseResponse {
     private String cidrList;
 
     @SerializedName(ApiConstants.ICMP_TYPE)
-    @Param(description = "Type of the icmp message being sent")
+    @Param(description = "Type of the ICMP message being sent")
     private Integer icmpType;
 
     @SerializedName(ApiConstants.ICMP_CODE)
-    @Param(description = "Error code for this icmp message")
+    @Param(description = "Error code for this ICMP message")
     private Integer icmpCode;
 
     @SerializedName(ApiConstants.TAGS)

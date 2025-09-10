@@ -35,7 +35,7 @@ import com.cloud.network.GuestVlanRange;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listDedicatedGuestVlanRanges", description = "Lists dedicated guest vlan ranges", responseObject = GuestVlanRangeResponse.class,
+@APICommand(name = "listDedicatedGuestVlanRanges", description = "Lists dedicated guest VLAN ranges", responseObject = GuestVlanRangeResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListDedicatedGuestVlanRangesCmd extends BaseListCmd {
 
@@ -44,7 +44,7 @@ public class ListDedicatedGuestVlanRangesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = GuestVlanRangeResponse.class, description = "List dedicated guest vlan ranges by id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = GuestVlanRangeResponse.class, description = "List dedicated guest VLAN ranges by id")
     private Long id;
 
     @Parameter(name = ApiConstants.ACCOUNT,
@@ -61,7 +61,7 @@ public class ListDedicatedGuestVlanRangesCmd extends BaseListCmd {
                description = "The domain ID with which the guest VLAN range is associated.  If used with the account parameter, returns all guest VLAN ranges for that account in the specified domain.")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.GUEST_VLAN_RANGE, type = CommandType.STRING, description = "The dedicated guest vlan range")
+    @Parameter(name = ApiConstants.GUEST_VLAN_RANGE, type = CommandType.STRING, description = "The dedicated guest VLAN range")
     private String guestVlanRange;
 
     @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID,

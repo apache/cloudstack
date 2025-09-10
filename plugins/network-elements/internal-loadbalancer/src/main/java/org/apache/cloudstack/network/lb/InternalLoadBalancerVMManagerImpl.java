@@ -551,7 +551,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
     public VirtualRouter stopInternalLbVm(final long vmId, final boolean forced, final Account caller, final long callerUserId) throws ConcurrentOperationException, ResourceUnavailableException {
         final DomainRouterVO internalLbVm = _internalLbVmDao.findById(vmId);
         if (internalLbVm == null || internalLbVm.getRole() != Role.INTERNAL_LB_VM) {
-            throw new InvalidParameterValueException("Can't find internal lb Instance by id specified");
+            throw new InvalidParameterValueException("Can't find internal LB Instance by id specified");
         }
 
         //check permissions
@@ -562,7 +562,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
 
     protected VirtualRouter stopInternalLbVm(final DomainRouterVO internalLbVm, final boolean forced, final Account caller, final long callerUserId) throws ResourceUnavailableException,
     ConcurrentOperationException {
-        logger.debug("Stopping internal lb Instance " + internalLbVm);
+        logger.debug("Stopping internal LB Instance " + internalLbVm);
         try {
             _itMgr.advanceStop(internalLbVm.getUuid(), forced);
             return _internalLbVmDao.findById(internalLbVm.getId());
@@ -587,7 +587,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
         if (internalLbVms != null) {
             runningInternalLbVms = new ArrayList<DomainRouterVO>();
         } else {
-            logger.debug("Have no internal lb Instances to start");
+            logger.debug("Have no internal LB Instances to start");
             return null;
         }
 
@@ -614,7 +614,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
         }
 
         if (logger.isDebugEnabled()) {
-            logger.debug(String.format("Lock is acquired for Network %s as a part of internal lb startup in %s", lock, dest));
+            logger.debug(String.format("Lock is acquired for Network %s as a part of internal LB startup in %s", lock, dest));
         }
 
         final long internalLbProviderId = getInternalLbProviderId(guestNetwork);
@@ -651,7 +651,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
             if (lock != null) {
                 _networkDao.releaseFromLockTable(lock.getId());
                 if (logger.isDebugEnabled()) {
-                    logger.debug(String.format("Lock is released for Network id %s as a part of internal lb Instance startup in %s", lock, dest));
+                    logger.debug(String.format("Lock is released for Network id %s as a part of internal LB Instance startup in %s", lock, dest));
                 }
             }
         }
@@ -827,7 +827,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
             try {
                 final long id = _internalLbVmDao.getNextInSequence(Long.class, "id");
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Creating the internal lb Instance {} in datacenter {} with hypervisor type {}",
+                    logger.debug("Creating the internal LB Instance {} in datacenter {} with hypervisor type {}",
                             id, dest.getDataCenter(), hType);
                 }
                 final long zoneId = dest.getDataCenter().getId();
@@ -843,7 +843,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
                         userId, vpcId, routerOffering, networks, templates);
             } catch (final InsufficientCapacityException ex) {
                 if (allocateRetry < 2 && iter.hasNext()) {
-                    logger.debug("Failed to allocate the Internal lb Instance with hypervisor type {}, retrying one more time", hType);
+                    logger.debug("Failed to allocate the Internal LB Instance with hypervisor type {}, retrying one more time", hType);
                     continue;
                 } else {
                     throw ex;
@@ -858,7 +858,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
                     break;
                 } catch (final InsufficientCapacityException ex) {
                     if (startRetry < 2 && iter.hasNext()) {
-                        logger.debug("Failed to start the Internal lb Instance {} with hypervisor type {}, destroying it and recreating one more time", internalLbVm, hType);
+                        logger.debug("Failed to start the Internal LB Instance {} with hypervisor type {}, destroying it and recreating one more time", internalLbVm, hType);
                         // destroy the internal lb vm
                         destroyInternalLbVm(internalLbVm.getId(), _accountMgr.getSystemAccount(), User.UID_SYSTEM);
                         continue;
@@ -910,7 +910,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
         }
 
         if (hypervisors.isEmpty()) {
-            throw new InsufficientServerCapacityException("Unable to create internal lb Instance, " + "there are no clusters in the zone ", DataCenter.class,
+            throw new InsufficientServerCapacityException("Unable to create internal LB Instance, " + "there are no clusters in the zone ", DataCenter.class,
                     dest.getDataCenter().getId());
         }
         return hypervisors;

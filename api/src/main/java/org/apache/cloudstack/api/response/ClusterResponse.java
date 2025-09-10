@@ -70,7 +70,7 @@ public class ClusterResponse extends BaseResponseWithAnnotations {
     private String allocationState;
 
     @SerializedName("managedstate")
-    @Param(description = "Whether this cluster is managed by Cloudstack")
+    @Param(description = "Whether this cluster is managed by CloudStack")
     private String managedState;
 
     @SerializedName("capacity")

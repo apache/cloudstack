@@ -116,7 +116,7 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     private String related;
 
     @SerializedName("broadcasturi")
-    @Param(description = "Broadcast uri of the Network. This parameter is visible to ROOT admins only")
+    @Param(description = "Broadcast URI of the Network. This parameter is visible to ROOT admins only")
     private String broadcastUri;
 
     @SerializedName(ApiConstants.DNS1)

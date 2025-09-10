@@ -44,7 +44,7 @@ public class AddUcsManagerCmd extends BaseCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of UCS manager")
     private String name;
 
-    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, description = "The name of UCS url", required = true)
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, description = "The name of UCS URL", required = true)
     private String url;
 
     @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, description = "The username of UCS", required = true)

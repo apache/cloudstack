@@ -51,13 +51,13 @@ public class ListTungstenFabricFirewallRuleCmd extends BaseListCmd {
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The ID of zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The ID of Zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.FIREWALL_POLICY_UUID, type = CommandType.STRING, description = "The uuid of Tungsten-Fabric firewall policy")
+    @Parameter(name = ApiConstants.FIREWALL_POLICY_UUID, type = CommandType.STRING, description = "The UUID of Tungsten-Fabric firewall policy")
     private String firewallPolicyUuid;
 
-    @Parameter(name = ApiConstants.FIREWALL_RULE_UUID, type = CommandType.STRING, description = "The uuid of Tungsten-Fabric firewall rule")
+    @Parameter(name = ApiConstants.FIREWALL_RULE_UUID, type = CommandType.STRING, description = "The UUID of Tungsten-Fabric firewall rule")
     private String firewallRuleUuid;
 
     @Override

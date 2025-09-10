@@ -83,7 +83,7 @@ public class CreateApplicationLoadBalancerCmd extends BaseAsyncCreateCmd {
                type = CommandType.UUID,
                entityType = NetworkResponse.class,
                required = true,
-               description = "The network id of the source ip address")
+               description = "The Network id of the source IP address")
     private Long sourceIpNetworkId;
 
     @Parameter(name = ApiConstants.SCHEME,

@@ -33,7 +33,7 @@ import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.network.GuestVlan;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listGuestVlans", description = "Lists all guest vlans", responseObject = GuestVlanResponse.class,
+@APICommand(name = "listGuestVlans", description = "Lists all guest VLANs", responseObject = GuestVlanResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         since = "4.17.0",
         authorized = {RoleType.Admin})
@@ -44,10 +44,10 @@ public class ListGuestVlansCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required = false, description = "List guest vlan by id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required = false, description = "List guest VLAN by id")
     private Long id;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = false, description = "List guest vlan by zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = false, description = "List guest VLAN by zone")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, required = false, description = "List guest VLAN by physical network")

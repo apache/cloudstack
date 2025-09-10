@@ -342,9 +342,9 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
 
         // parameter length check
         if (vsDisplayName != null && vsDisplayName.length() > 255)
-            throw new InvalidParameterValueException("Creating Instance Snapshot failed due to length of Instance Snapshot vsDisplayName should not exceed 255");
+            throw new InvalidParameterValueException("Creating Instance Snapshot failed due to length of Instance Snapshot DisplayName should not exceed 255");
         if (vsDescription != null && vsDescription.length() > 255)
-            throw new InvalidParameterValueException("Creating Instance Snapshot failed due to length of Instance Snapshot vsDescription should not exceed 255");
+            throw new InvalidParameterValueException("Creating Instance Snapshot failed due to length of Instance Snapshot Description should not exceed 255");
 
         // VM snapshot display name must be unique for a VM
         String timeString = DateUtil.getDateDisplayString(DateUtil.GMT_TIMEZONE, new Date(), DateUtil.YYYYMMDD_FORMAT);

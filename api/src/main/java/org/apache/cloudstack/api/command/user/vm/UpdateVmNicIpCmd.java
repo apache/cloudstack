@@ -46,7 +46,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
 
-@APICommand(name = "updateVmNicIp", description = "Update the default Ip of an Instance NIC", responseObject = UserVmResponse.class)
+@APICommand(name = "updateVmNicIp", description = "Update the default IP address of an Instance NIC", responseObject = UserVmResponse.class)
 public class UpdateVmNicIpCmd extends BaseAsyncCmd {
 
     /////////////////////////////////////////////////////
@@ -123,7 +123,7 @@ public class UpdateVmNicIpCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "Associating IP to NIC id: " + this._uuidMgr.getUuid(Network.class, getNetworkId()) + " in zone " + this._uuidMgr.getUuid(DataCenter.class, getZoneId());
+        return  "Associating IP to NIC id: " + this._uuidMgr.getUuid(Network.class, getNetworkId()) + " in Zone " + this._uuidMgr.getUuid(DataCenter.class, getZoneId());
     }
 
     /////////////////////////////////////////////////////

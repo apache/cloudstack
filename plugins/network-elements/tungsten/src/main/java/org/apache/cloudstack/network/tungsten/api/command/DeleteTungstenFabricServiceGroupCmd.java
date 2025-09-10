@@ -44,10 +44,10 @@ public class DeleteTungstenFabricServiceGroupCmd extends BaseAsyncCmd {
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "The ID of zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "The ID of Zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.SERVICE_GROUP_UUID, type = CommandType.STRING, required = true, description = "The uuid of Tungsten-Fabric service group")
+    @Parameter(name = ApiConstants.SERVICE_GROUP_UUID, type = CommandType.STRING, required = true, description = "The UUID of Tungsten-Fabric service group")
     private String serviceGroupUuid;
 
     @Override

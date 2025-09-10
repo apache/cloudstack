@@ -45,7 +45,7 @@ public class GetLoadBalancerSslCertificateCmd extends BaseCmd {
     @Inject
     private LoadBalancingRulesManager lbMgr;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TlsDataResponse.class, required = true, description = "The ID of Lb")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TlsDataResponse.class, required = true, description = "The ID of LB")
     private Long id;
 
     @Override

@@ -40,14 +40,14 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.ucs.manager.UcsManager;
 import com.cloud.user.Account;
 
-@APICommand(name = "listUcsManagers", description = "List ucs manager", responseObject = UcsManagerResponse.class,
+@APICommand(name = "listUcsManagers", description = "List UCS manager", responseObject = UcsManagerResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListUcsManagerCmd extends BaseListCmd {
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, description = "The zone id", entityType = ZoneResponse.class)
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UcsManagerResponse.class, description = "The ID of the ucs manager")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UcsManagerResponse.class, description = "The ID of the UCS manager")
     private Long id;
 
     @Inject

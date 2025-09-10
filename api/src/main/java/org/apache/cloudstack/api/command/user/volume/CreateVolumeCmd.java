@@ -85,10 +85,10 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd implements UserC
     @Parameter(name = ApiConstants.SIZE, type = CommandType.LONG, description = "Arbitrary volume size")
     private Long size;
 
-    @Parameter(name = ApiConstants.MIN_IOPS, type = CommandType.LONG, description = "Min iops")
+    @Parameter(name = ApiConstants.MIN_IOPS, type = CommandType.LONG, description = "Min IOPS")
     private Long minIops;
 
-    @Parameter(name = ApiConstants.MAX_IOPS, type = CommandType.LONG, description = "Max iops")
+    @Parameter(name = ApiConstants.MAX_IOPS, type = CommandType.LONG, description = "Max IOPS")
     private Long maxIops;
 
     @Parameter(name = ApiConstants.SNAPSHOT_ID,

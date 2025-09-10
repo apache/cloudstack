@@ -58,10 +58,10 @@ public class ListTungstenFabricPolicyCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "The ID of network")
     private Long networkId;
 
-    @Parameter(name = ApiConstants.IP_ADDRESS_ID, type = CommandType.UUID, entityType = IPAddressResponse.class, description = "The ID of ip address")
+    @Parameter(name = ApiConstants.IP_ADDRESS_ID, type = CommandType.UUID, entityType = IPAddressResponse.class, description = "The ID of IP address")
     private Long addressId;
 
-    @Parameter(name = ApiConstants.POLICY_UUID, type = CommandType.STRING, description = "The uuid of Tungsten-Fabric policy")
+    @Parameter(name = ApiConstants.POLICY_UUID, type = CommandType.STRING, description = "The UUID of Tungsten-Fabric policy")
     private String policyUuid;
 
     @Override

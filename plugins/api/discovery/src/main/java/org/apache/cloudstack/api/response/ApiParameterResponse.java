@@ -27,11 +27,11 @@ import com.google.gson.annotations.SerializedName;
 
 public class ApiParameterResponse extends BaseResponse {
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "The name of the api parameter")
+    @Param(description = "The name of the API parameter")
     private String name;
 
     @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "Description of the api parameter")
+    @Param(description = "Description of the API parameter")
     private String description;
 
     @SerializedName(ApiConstants.TYPE)
@@ -43,15 +43,15 @@ public class ApiParameterResponse extends BaseResponse {
     private int length;
 
     @SerializedName(ApiConstants.REQUIRED)
-    @Param(description = "True if this parameter is required for the api request")
+    @Param(description = "True if this parameter is required for the API request")
     private Boolean required;
 
     @SerializedName(ApiConstants.SINCE)
-    @Param(description = "Version of CloudStack the api was introduced in")
+    @Param(description = "Version of CloudStack the API was introduced in")
     private String since;
 
     @SerializedName("related")
-    @Param(description = "Comma separated related apis to get the parameter")
+    @Param(description = "Comma separated related APIs to get the parameter")
     private String related;
 
     private transient List<RoleType> authorizedRoleTypes = null;

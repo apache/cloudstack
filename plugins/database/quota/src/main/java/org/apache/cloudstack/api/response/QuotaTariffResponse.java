@@ -64,7 +64,7 @@ public class QuotaTariffResponse extends BaseResponse {
     private Date endDate;
 
     @SerializedName("activationRule")
-    @Param(description = "Tctivation rule of the quota tariff")
+    @Param(description = "Activation rule of the quota tariff")
     private String activationRule;
 
     @SerializedName("name")

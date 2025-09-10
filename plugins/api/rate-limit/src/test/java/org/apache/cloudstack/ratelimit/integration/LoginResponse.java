@@ -41,7 +41,7 @@ public class LoginResponse extends BaseResponse {
     private String username;
 
     @SerializedName("userid")
-    @Param(description = "Login user internal uuid")
+    @Param(description = "Login user internal UUID")
     private String userid;
 
     @SerializedName("firstname")
@@ -57,7 +57,7 @@ public class LoginResponse extends BaseResponse {
     private String account;
 
     @SerializedName("domainid")
-    @Param(description = "Login user domain id")
+    @Param(description = "Login user domain ID")
     private String domainid;
 
     @SerializedName("type")

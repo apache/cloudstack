@@ -4166,7 +4166,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         if (!HypervisorType.VMware.equals(hypervisor)) {
             if (failOnChecks) {
-                throw new CloudRuntimeException("Storage capabilities update only supported on VMWare.");
+                throw new CloudRuntimeException("Storage capabilities update only supported on VMware.");
             }
             return;
         }

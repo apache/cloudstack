@@ -229,7 +229,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     private Long storagePolicy;
 
     @Parameter(name = ApiConstants.DYNAMIC_SCALING_ENABLED, type = CommandType.BOOLEAN, since = "4.16",
-            description = "True if Instance needs to be dynamically scalable of cpu or memory")
+            description = "True if the Instance should be dynamically scalable for CPU or memory.")
     protected Boolean isDynamicScalingEnabled;
 
     @Parameter(name = ApiConstants.DISK_OFFERING_ID,

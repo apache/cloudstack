@@ -26,7 +26,7 @@ import java.util.Set;
 
 public class ApiResponseResponse extends BaseResponse {
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "The name of the api response field")
+    @Param(description = "The name of the API response field")
     private String name;
 
     @SerializedName(ApiConstants.DESCRIPTION)

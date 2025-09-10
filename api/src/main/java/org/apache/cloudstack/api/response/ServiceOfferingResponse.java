@@ -165,7 +165,7 @@ public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
     private Long iopsReadRate;
 
     @SerializedName("diskIopsReadRateMax")
-    @Param(description = "Burst io requests read rate of the disk offering")
+    @Param(description = "Burst I/O requests read rate of the disk offering")
     private Long iopsReadRateMax;
 
     @SerializedName("diskIopsReadRateMaxLength")

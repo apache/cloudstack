@@ -32,7 +32,7 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
-@APICommand(name = "releaseDedicatedGuestVlanRange", description = "Releases a dedicated guest vlan range to the system", responseObject = SuccessResponse.class,
+@APICommand(name = "releaseDedicatedGuestVlanRange", description = "Releases a dedicated guest VLAN range to the system", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ReleaseDedicatedGuestVlanRangeCmd extends BaseAsyncCmd {
 
@@ -44,7 +44,7 @@ public class ReleaseDedicatedGuestVlanRangeCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = GuestVlanRangeResponse.class,
                required = true,
-               description = "The ID of the dedicated guest vlan range")
+               description = "The ID of the dedicated guest VLAN range")
     private Long id;
 
     // ///////////////////////////////////////////////////
@@ -72,7 +72,7 @@ public class ReleaseDedicatedGuestVlanRangeCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Releasing a dedicated guest vlan range.";
+        return "Releasing a dedicated guest VLAN range.";
     }
 
     // ///////////////////////////////////////////////////
@@ -81,13 +81,13 @@ public class ReleaseDedicatedGuestVlanRangeCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Dedicated guest vlan range Id: " + id);
+        CallContext.current().setEventDetails("Dedicated guest VLAN range Id: " + id);
         boolean result = _networkService.releaseDedicatedGuestVlanRange(getId());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to release dedicated guest vlan range");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to release dedicated guest VLAN range");
         }
     }
 

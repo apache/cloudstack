@@ -27,7 +27,7 @@ import com.google.gson.annotations.SerializedName;
 @EntityReference(value = HypervisorCapabilities.class)
 public class HypervisorCapabilitiesResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "The ID of the hypervisor capabilities row")
+    @Param(description = "The hypervisor capability ID")
     private String id;
 
     @SerializedName(ApiConstants.HYPERVISOR_VERSION)

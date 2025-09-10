@@ -692,7 +692,7 @@ public class Upgrade41720to41800 extends DbUpgradeAbstractImpl implements DbUpgr
         guestOsMapper.addGuestOsAndHypervisorMappings(7, "Solaris 11 (64 bit)", mappings);
         mappings.clear();
 
-        // Add  VMware Photon (64 bit) as support guest os, and VMWare guest os mappings
+        // Add  VMware Photon (64 bit) as support guest os, and VMware guest os mappings
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.5", "vmwarePhoton64Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7", "vmwarePhoton64Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7.1", "vmwarePhoton64Guest"));

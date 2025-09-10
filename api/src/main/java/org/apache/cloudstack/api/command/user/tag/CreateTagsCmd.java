@@ -56,7 +56,7 @@ public class CreateTagsCmd extends BaseAsyncCmd {
                description = "List of resources to create the tags for")
     private List<String> resourceIds;
 
-    @Parameter(name = ApiConstants.CUSTOMER, type = CommandType.STRING, description = "IDentifies client specific tag. "
+    @Parameter(name = ApiConstants.CUSTOMER, type = CommandType.STRING, description = "Identifies client specific tag. "
         + "When the value is not null, the tag can't be used by cloudStack code internally")
     private String customer;
 

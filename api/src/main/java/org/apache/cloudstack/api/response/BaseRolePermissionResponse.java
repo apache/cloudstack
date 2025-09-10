@@ -27,11 +27,11 @@ import com.google.gson.annotations.SerializedName;
 
 public class BaseRolePermissionResponse extends BaseResponse {
     @SerializedName(ApiConstants.RULE)
-    @Param(description = "The api name or wildcard rule")
+    @Param(description = "The API name or wildcard rule")
     private String rule;
 
     @SerializedName(ApiConstants.PERMISSION)
-    @Param(description = "The permission type of the api name or wildcard rule, allow/deny")
+    @Param(description = "The permission type of the API name or wildcard rule, allow/deny")
     private String rulePermission;
 
     @SerializedName(ApiConstants.DESCRIPTION)

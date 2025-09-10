@@ -38,7 +38,7 @@ public class ListVpnUsersCmd extends BaseListProjectAndAccountResourcesCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VpnUsersResponse.class, description = "The uuid of the VPN User")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VpnUsersResponse.class, description = "The UUID of the VPN User")
     private Long id;
 
     @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, description = "The username of the VPN User.")
