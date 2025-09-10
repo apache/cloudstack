@@ -136,7 +136,7 @@ export default {
           }
         },
         show: (record) => { return record.state === 'Active' },
-        groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Inactive' } }) }
       }]
     },
     {
