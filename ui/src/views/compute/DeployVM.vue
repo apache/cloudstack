@@ -541,6 +541,25 @@
                 </template>
               </a-step>
               <a-step
+                v-if="isUserAllowedToListBackupOfferings"
+                :title="$t('label.backup.offering')"
+                :status="zoneSelected ? 'process' : 'wait'">
+                <template #description>
+                  <div v-if="zoneSelected" style="margin-top: 15px">
+                    <div>{{ $t('message.backup.offering.select.assign.instance') }}</div>
+                    <infinite-scroll-select
+                      style="margin-top: 10px; width: 100%;"
+                      v-model:value="selectedBackupOfferingId"
+                      placeholder="Select backup offering"
+                      api="listBackupOfferings"
+                      :apiParams="listBackupOfferingApiParams"
+                      resourceType="backupoffering"
+                      defaultIcon="cloud-upload-outlined"
+                      :defaultOption="backupOfferingDefaultOption" />
+                  </div>
+                </template>
+              </a-step>
+              <a-step
                 :title="$t('label.advanced.mode')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description v-if="zoneSelected">
@@ -930,6 +949,7 @@ import SecurityGroupSelection from '@views/compute/wizard/SecurityGroupSelection
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import InstanceNicsNetworkSelectListView from '@/components/view/InstanceNicsNetworkSelectListView'
 import DetailsInput from '@/components/widgets/DetailsInput'
+import InfiniteScrollSelect from '@/components/widgets/InfiniteScrollSelect'
 
 export default {
   name: 'Wizard',
@@ -955,7 +975,8 @@ export default {
     SecurityGroupSelection,
     TooltipLabel,
     InstanceNicsNetworkSelectListView,
-    DetailsInput
+    DetailsInput,
+    InfiniteScrollSelect
   },
   props: {
     visible: {
@@ -1135,7 +1156,8 @@ export default {
         opts: []
       },
       externalDetailsEnabled: false,
-      selectedExtensionId: null
+      selectedExtensionId: null,
+      selectedBackupOfferingId: null
     }
   },
   computed: {
@@ -1515,6 +1537,17 @@ export default {
     },
     isTemplateHypervisorExternal () {
       return !!this.template && this.template.hypervisor === 'External'
+    },
+    isUserAllowedToListBackupOfferings () {
+      return Boolean('listBackupOfferings' in this.$store.getters.apis)
+    },
+    listBackupOfferingApiParams () {
+      return {
+        zoneid: this.zone?.id
+      }
+    },
+    backupOfferingDefaultOption () {
+      return { id: null, name: '', showicon: false }
     }
   },
   watch: {
@@ -2507,6 +2540,7 @@ export default {
                     duration: 0
                   })
                 }
+                this.assigneVirtualMachineToBackupOfferingIfNeeded(vm)
                 eventBus.emit('vm-refresh-data')
               },
               loadingMessage: `${title} ${this.$t('label.in.progress')}`,
@@ -3004,6 +3038,7 @@ export default {
       this.resetTemplatesList()
       this.resetIsosList()
       this.imageType = this.queryIsoId ? 'isoid' : 'templateid'
+      this.selectedBackupOfferingId = undefined
       this.fetchZoneOptions()
     },
     onSelectPodId (value) {
@@ -3395,6 +3430,20 @@ export default {
         return
       }
       this.form.externaldetails = undefined
+    },
+    assigneVirtualMachineToBackupOfferingIfNeeded (vm) {
+      if (!this.selectedBackupOfferingId || !vm || !vm.id) {
+        return
+      }
+      postAPI('assignVirtualMachineToBackupOffering', {
+        virtualmachineid: vm.id,
+        backupofferingid: this.selectedBackupOfferingId
+      }).catch(error => {
+        this.$notification.error({
+          message: this.$t('label.backup.offering.assign.failed'),
+          description: error.message || error
+        })
+      })
     }
   }
 }
