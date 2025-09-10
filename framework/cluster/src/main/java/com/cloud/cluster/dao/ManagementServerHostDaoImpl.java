@@ -282,4 +282,15 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
         return CollectionUtils.isNotEmpty(msHosts) ? msHosts.get(0) : null;
     }
 
+    @Override
+    public ManagementServerHostVO findOneInUpStateByClassName(String className) {
+        SearchCriteria<ManagementServerHostVO> sc = StateSearch.create();
+        sc.setParameters("state", ManagementServerHost.State.Up);
+        List<ManagementServerHostVO> mshosts = listBy(sc, null);
+        if (CollectionUtils.isEmpty(mshosts)) {
+            return null;
+        }
+        int offset = (className == null) ? 0 : (className.length() % mshosts.size());
+        return mshosts.get(offset);
+    }
 }

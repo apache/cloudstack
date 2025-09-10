@@ -57,4 +57,6 @@ public interface ManagementServerHostDao extends GenericDao<ManagementServerHost
     ManagementServerHostVO findOneInUpState(Filter filter);
 
     ManagementServerHostVO findOneInUpStateByLongestRuntime();
+
+    ManagementServerHostVO findOneInUpStateByClassName(String className);
 }
