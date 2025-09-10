@@ -37,7 +37,8 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import com.cloud.host.HostVO;
@@ -53,7 +54,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class TemplateDataFactoryImpl implements TemplateDataFactory {
-    private static final Logger s_logger = Logger.getLogger(TemplateDataFactoryImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     @Inject
     VMTemplateDao imageDataDao;
     @Inject
@@ -73,7 +74,7 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
     public TemplateInfo getTemplateOnPrimaryStorage(long templateId, DataStore store, String configuration) {
         VMTemplateVO templ = imageDataDao.findByIdIncludingRemoved(templateId);
         if (templ == null) {
-            s_logger.error("Could not find a template with id " + templateId);
+            logger.error("Could not find a template with id " + templateId);
             return null;
         }
         if (store.getRole() == DataStoreRole.Primary) {
@@ -120,11 +121,11 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
             }
         }
 
-        if (s_logger.isDebugEnabled()) {
+        if (logger.isDebugEnabled()) {
             if (!found) {
-                s_logger.debug("template " + templateId + " is not in store:" + store.getId() + ", type:" + store.getRole());
+                logger.debug("template {} with id {} is not in store: {}, type: {}", templ, templateId, store, store.getRole());
             } else {
-                s_logger.debug("template " + templateId + " is already in store:" + store.getId() + ", type:" + store.getRole());
+                logger.debug("template {} with id {} is already in store:{}, type: {}", templ, templateId, store, store.getRole());
             }
         }
 
@@ -241,7 +242,7 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
         HostVO host = hostDao.findById(hostId);
         List<StoragePoolVO> pools = getStoragePoolsForScope(host.getDataCenterId(), host.getClusterId(), hostId, host.getHypervisorType());
         if (CollectionUtils.isEmpty(pools)) {
-            throw new CloudRuntimeException(String.format("No storage pool found to download template: %s", templateVO.getName()));
+            throw new CloudRuntimeException(String.format("No storage pool found to download template: %s", templateVO));
         }
         List<VMTemplateStoragePoolVO> existingRefs = templatePoolDao.listByTemplateId(templateVO.getId());
         return getOneMatchingPoolIdFromRefs(existingRefs, pools);
@@ -273,7 +274,7 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
         }
 
         if (poolId == null) {
-            throw new CloudRuntimeException("No storage pool specified to download template: " + templateId);
+            throw new CloudRuntimeException(String.format("No storage pool specified to download template: %s", templateVO));
         }
 
         StoragePoolVO poolVO = primaryDataStoreDao.findById(poolId);
@@ -283,7 +284,7 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
 
         VMTemplateStoragePoolVO spoolRef = templatePoolDao.findByPoolTemplate(poolId, templateId, null);
         if (spoolRef == null) {
-            throw new CloudRuntimeException("Template not created on managed storage pool: " + poolId + " to copy the download template: " + templateId);
+            throw new CloudRuntimeException(String.format("Template not created on managed storage pool: %s to copy the download template: %s", poolVO, templateVO));
         } else if (spoolRef.getDownloadState() == VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED) {
             directDownloadManager.downloadTemplate(templateId, poolId, hostId);
         }

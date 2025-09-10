@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.command.admin.user;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -39,7 +38,6 @@ import com.cloud.user.UserAccount;
 @APICommand(name = "disableUser", description = "Disables a user account", responseObject = UserResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class DisableUserCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DisableUserCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

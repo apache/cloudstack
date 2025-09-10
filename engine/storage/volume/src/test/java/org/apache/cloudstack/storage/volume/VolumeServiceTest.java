@@ -28,24 +28,26 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.CheckAndRepairVolumePayload;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.utils.Pair;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import com.cloud.utils.Pair;
-import junit.framework.TestCase;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -54,6 +56,8 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
+
+import junit.framework.TestCase;
 
 @RunWith(MockitoJUnitRunner.class)
 public class VolumeServiceTest extends TestCase{
@@ -83,6 +87,9 @@ public class VolumeServiceTest extends TestCase{
     StorageManager storageManagerMock;
 
     @Mock
+    PrimaryDataStoreDao primaryDataStoreDao;
+
+    @Mock
     VolumeVO volumeVoMock;
 
     @Mock
@@ -102,6 +109,7 @@ public class VolumeServiceTest extends TestCase{
         volumeServiceImplSpy.snapshotMgr = snapshotManagerMock;
         volumeServiceImplSpy._storageMgr = storageManagerMock;
         volumeServiceImplSpy._hostDao = hostDaoMock;
+        volumeServiceImplSpy.storagePoolDao = primaryDataStoreDao;
         volumeServiceImplSpy.diskOfferingDao = diskOfferingDaoMock;
     }
 
@@ -214,7 +222,10 @@ public class VolumeServiceTest extends TestCase{
     public void validateDestroySourceVolumeAfterMigrationExpungeSourceVolumeAfterMigrationThrowExceptionReturnFalse() throws
       ExecutionException, InterruptedException{
         VolumeObject volumeObject = new VolumeObject();
-        volumeObject.configure(null, new VolumeVO() {});
+        VolumeVO vo = new VolumeVO() {};
+        vo.setPoolType(Storage.StoragePoolType.Filesystem);
+        volumeObject.configure(null, vo);
+        vo.setPoolId(1L);
 
         List<Exception> exceptions = new ArrayList<>(Arrays.asList(new InterruptedException(), new ExecutionException() {}));
 

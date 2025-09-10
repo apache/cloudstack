@@ -31,7 +31,8 @@ import org.apache.commons.httpclient.params.HttpConnectionParams;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
@@ -53,7 +54,7 @@ import java.security.cert.X509Certificate;
 
 public class NeutronRestApi {
 
-    private static final Logger s_logger = Logger.getLogger(NeutronRestApi.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private static final MultiThreadedHttpConnectionManager s_httpClientManager = new MultiThreadedHttpConnectionManager();
 
     private static final String PROTOCOL = "https";
@@ -77,7 +78,7 @@ public class NeutronRestApi {
             // with the SecureProtocolSocketFactory parameter
             Protocol.registerProtocol(protocol, new Protocol(protocol, (ProtocolSocketFactory) new TrustingProtocolSocketFactory(), HTTPS_PORT));
         } catch (IOException e) {
-            s_logger.warn("Failed to register the TrustingProtocolSocketFactory, falling back to default SSLSocketFactory", e);
+            logger.warn("Failed to register the TrustingProtocolSocketFactory, falling back to default SSLSocketFactory", e);
         }
     }
 
@@ -97,31 +98,31 @@ public class NeutronRestApi {
             return httpMethod;
         } catch (MalformedURLException e) {
             String error = "Unable to build Neutron API URL";
-            s_logger.error(error, e);
+            logger.error(error, e);
             throw new NeutronRestApiException(error, e);
         } catch (NoSuchMethodException e) {
             String error = "Unable to build Neutron API URL due to reflection error";
-            s_logger.error(error, e);
+            logger.error(error, e);
             throw new NeutronRestApiException(error, e);
         } catch (SecurityException e) {
             String error = "Unable to build Neutron API URL due to security violation";
-            s_logger.error(error, e);
+            logger.error(error, e);
             throw new NeutronRestApiException(error, e);
         } catch (InstantiationException e) {
             String error = "Unable to build Neutron API due to instantiation error";
-            s_logger.error(error, e);
+            logger.error(error, e);
             throw new NeutronRestApiException(error, e);
         } catch (IllegalAccessException e) {
             String error = "Unable to build Neutron API URL due to absence of access modifier";
-            s_logger.error(error, e);
+            logger.error(error, e);
             throw new NeutronRestApiException(error, e);
         } catch (IllegalArgumentException e) {
             String error = "Unable to build Neutron API URL due to wrong argument in constructor";
-            s_logger.error(error, e);
+            logger.error(error, e);
             throw new NeutronRestApiException(error, e);
         } catch (InvocationTargetException e) {
             String error = "Unable to build Neutron API URL due to target error";
-            s_logger.error(error, e);
+            logger.error(error, e);
             throw new NeutronRestApiException(error, e);
         }
     }
@@ -130,11 +131,11 @@ public class NeutronRestApi {
         try {
             client.executeMethod(method);
         } catch (HttpException e) {
-            s_logger.error("HttpException caught while trying to connect to the Neutron Controller", e);
+            logger.error("HttpException caught while trying to connect to the Neutron Controller", e);
             method.releaseConnection();
             throw new NeutronRestApiException("API call to Neutron Controller Failed", e);
         } catch (IOException e) {
-            s_logger.error("IOException caught while trying to connect to the Neutron Controller", e);
+            logger.error("IOException caught while trying to connect to the Neutron Controller", e);
             method.releaseConnection();
             throw new NeutronRestApiException("API call to Neutron Controller Failed", e);
         }

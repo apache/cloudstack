@@ -186,6 +186,10 @@ public class SystemVmResponse extends BaseResponseWithAnnotations {
     @Param(description = "the name of the service offering of the system virtual machine.")
     private String serviceOfferingName;
 
+    @SerializedName(ApiConstants.ARCH)
+    @Param(description = "CPU arch of the system VM", since = "4.20.1")
+    private String arch;
+
     @Override
     public String getObjectId() {
         return this.getId();
@@ -489,5 +493,9 @@ public class SystemVmResponse extends BaseResponseWithAnnotations {
 
     public void setServiceOfferingName(String serviceOfferingName) {
         this.serviceOfferingName = serviceOfferingName;
+    }
+
+    public void setArch(String arch) {
+        this.arch = arch;
     }
 }

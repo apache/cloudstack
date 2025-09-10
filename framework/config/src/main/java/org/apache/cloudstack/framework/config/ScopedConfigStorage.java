@@ -26,5 +26,9 @@ import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 public interface ScopedConfigStorage {
     Scope getScope();
 
-    String getConfigValue(long id, ConfigKey<?> key);
+    String getConfigValue(long id, String key);
+
+    default String getConfigValue(long id, ConfigKey<?> key) {
+        return getConfigValue(id, key.key());
+    }
 }

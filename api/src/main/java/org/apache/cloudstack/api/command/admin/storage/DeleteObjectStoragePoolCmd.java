@@ -25,12 +25,10 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ObjectStoreResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.log4j.Logger;
 
 @APICommand(name = "deleteObjectStoragePool", description = "Deletes an Object Storage Pool", responseObject = SuccessResponse.class, since = "4.19.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteObjectStoragePoolCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteObjectStoragePoolCmd.class.getName());
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////

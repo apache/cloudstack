@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -31,7 +30,6 @@ import com.cloud.server.ResourceTag;
 @APICommand(name = "removeResourceDetail", description = "Removes detail for the Resource.", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class RemoveResourceDetailCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(RemoveResourceDetailCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

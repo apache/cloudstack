@@ -23,7 +23,6 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.dc.DataCenter;
@@ -54,7 +53,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGuru {
-    private static final Logger s_logger = Logger.getLogger(ControlNetworkGuru.class);
     @Inject
     DataCenterDao _dcDao;
     @Inject
@@ -85,13 +83,13 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         if (offering.isSystemOnly() && isMyTrafficType(offering.getTrafficType())) {
             return true;
         } else {
-            s_logger.trace("We only care about System only Control network");
+            logger.trace("We only care about System only Control network");
             return false;
         }
     }
 
     @Override
-    public Network design(NetworkOffering offering, DeploymentPlan plan, Network specifiedConfig, Account owner) {
+    public Network design(NetworkOffering offering, DeploymentPlan plan, Network specifiedConfig, String name, Long vpcId, Account owner) {
         if (!canHandle(offering)) {
             return null;
         }
@@ -103,6 +101,11 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         config.setGateway(_gateway);
 
         return config;
+    }
+
+    @Override
+    public void setup(Network network, long networkId) {
+        // do nothing
     }
 
     protected ControlNetworkGuru() {
@@ -153,7 +156,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
 
         String netmask = NetUtils.cidr2Netmask(_cidr);
 
-        s_logger.debug(String.format("Reserved NIC for %s [ipv4:%s netmask:%s gateway:%s]", vm.getInstanceName(), ip, netmask, _gateway));
+        logger.debug(String.format("Reserved NIC for %s [ipv4:%s netmask:%s gateway:%s]", vm.getInstanceName(), ip, netmask, _gateway));
 
         nic.setIPv4Address(ip);
         nic.setMacAddress(NetUtils.long2Mac(NetUtils.ip2Long(ip) | (14l << 40)));
@@ -168,8 +171,8 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         HypervisorType hType = vm.getHypervisorType();
         if ( ( (hType == HypervisorType.VMware) || (hType == HypervisorType.Hyperv) )&& isRouterVm(vm)) {
             if (!VirtualNetworkApplianceManager.RemoveControlIpOnStop.valueIn(vm.getVirtualMachine().getDataCenterId())) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(String.format("not releasing %s from %s with reservationId %s, as systemvm.release.control.ip.on.stop is set to false for the data center.", nic, vm, reservationId));
+                if (logger.isDebugEnabled()) {
+                    logger.debug(String.format("not releasing %s from %s with reservationId %s, as systemvm.release.control.ip.on.stop is set to false for the data center.", nic, vm, reservationId));
                 }
                 return true;
             }
@@ -177,14 +180,14 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
             DataCenterVO dcVo = _dcDao.findById(dcId);
             if (dcVo.getNetworkType() != NetworkType.Basic) {
                 super.release(nic, vm, reservationId);
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(String.format("Released nic: %s for vm %s", nic, vm));
+                if (logger.isDebugEnabled()) {
+                    logger.debug(String.format("Released nic: %s for vm %s", nic, vm));
                 }
                 return true;
             } else {
                 nic.deallocate();
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(String.format("Released nic: %s for vm %s", nic, vm));
+                if (logger.isDebugEnabled()) {
+                    logger.debug(String.format("Released nic: %s for vm %s", nic, vm));
                 }
                 return true;
             }
@@ -193,8 +196,8 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         _dcDao.releaseLinkLocalIpAddress(nic.getId(), reservationId);
 
         nic.deallocate();
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug(String.format("Released nic: %s for vm %s", nic, vm));
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Released nic: %s for vm %s", nic, vm));
         }
 
         return true;
@@ -232,7 +235,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
             _gateway = NetUtils.getLinkLocalGateway();
         }
 
-        s_logger.info("Control network setup: cidr=" + _cidr + "; gateway = " + _gateway);
+        logger.info("Control network setup: cidr=" + _cidr + "; gateway = " + _gateway);
 
         return true;
     }

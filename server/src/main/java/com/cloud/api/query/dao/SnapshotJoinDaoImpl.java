@@ -35,8 +35,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
+
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
@@ -55,14 +55,12 @@ import com.cloud.vm.VMInstanceVO;
 
 public class SnapshotJoinDaoImpl extends GenericDaoBaseWithTagInformation<SnapshotJoinVO, SnapshotResponse> implements SnapshotJoinDao {
 
-    public static final Logger s_logger = Logger.getLogger(SnapshotJoinDaoImpl.class);
-
     @Inject
-    private AccountService accountService;
+    AccountService accountService;
     @Inject
-    private AnnotationDao annotationDao;
+    AnnotationDao annotationDao;
     @Inject
-    private ConfigurationDao configDao;
+    ConfigurationDao configDao;
     @Inject
     SnapshotDataFactory snapshotDataFactory;
 
@@ -90,10 +88,10 @@ public class SnapshotJoinDaoImpl extends GenericDaoBaseWithTagInformation<Snapsh
         if (snapshot.getDataCenterId() == null) {
             return;
         }
-        SnapshotInfo snapshotInfo = null;
+        SnapshotInfo snapshotInfo;
         snapshotInfo = snapshotDataFactory.getSnapshotWithRoleAndZone(snapshot.getId(), snapshot.getStoreRole(), snapshot.getDataCenterId());
         if (snapshotInfo == null) {
-            s_logger.debug("Unable to find info for image store snapshot with uuid " + snapshot.getUuid());
+            logger.debug("Unable to find info for image store snapshot {}", snapshot);
             snapshotResponse.setRevertable(false);
         } else {
             snapshotResponse.setRevertable(snapshotInfo.isRevertable());

@@ -36,7 +36,7 @@ under the License.
 				<param>secretkey</param>
 			</item>
 		</returnvalue>
-	</command>	
+	</command>
 
 <!--  VM RELATED COMMANDS -->
 	<command>
@@ -58,7 +58,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>		
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -67,8 +67,8 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	
+
+
 <!--  VOLUME RELATED COMMANDS -->
 	<command>
 		<name>createVolume</name>
@@ -84,7 +84,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -92,9 +92,9 @@ under the License.
 				<param>volumeid</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
-	
+	</command>
+
+
 <!--  TEMPLATE RELATED COMMANDS - REGISTER AND CREATETEMPLATE COMMANDS -->
 	<command>
 		<name>createTemplate</name>
@@ -123,8 +123,8 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	
+
+
 	<command>
 		<name>registerTemplate</name>
 		<testcase>Register template</testcase>
@@ -159,9 +159,9 @@ under the License.
 				<param>registeredtemplateid</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
-	
+	</command>
+
+
 <!--  ISO RELATED COMMANDS -->
 	<command>
 		<name>registerIso</name>
@@ -193,8 +193,8 @@ under the License.
 				<param>isoid</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 <!--  SNAPSHOT RELATED COMMANDS -->
 	<command>
 		<name>createSnapshot</name>
@@ -211,8 +211,8 @@ under the License.
 				<param>snapshotid</param>
 			</item>
 		</returnvalue>
-	</command>		
-	
+	</command>
+
 	<command>
 		<name>createSnapshotPolicy</name>
 		<usercommand>true</usercommand>
@@ -244,8 +244,8 @@ under the License.
 				<param>snapshotpolicyid</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 
 <!--  Ip address section -->
 	<command>
@@ -258,14 +258,14 @@ under the License.
 			<param>globalzoneid</param>
 		</item>
 		</parameters>
-		<returnvalue> 
+		<returnvalue>
 			<item setparam="true">
 				<name>ipaddress</name>
 				<param>ipaddress</param>
 			</item>
 		</returnvalue>
 	</command>
-	
+
 
 <!--  Port forwarding section -->
 	<command>
@@ -287,8 +287,8 @@ under the License.
 				<param>pfgroupid</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>createPortForwardingService</name>
 		<testcase>Create port forwarding service</testcase>
@@ -308,8 +308,8 @@ under the License.
 				<param>pfgroupid1</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>createPortForwardingServiceRule</name>
 		<testcase>Create port forwarding service rule</testcase>
@@ -334,7 +334,7 @@ under the License.
 				<param>pfruleid</param>
 			</item>
 		</returnvalue>
-	</command>		
+	</command>
 
 
 <!--  Load balancer section -->
@@ -367,9 +367,9 @@ under the License.
 				<param>lbid</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
-	
+	</command>
+
+
 	<command>
 		<name>createLoadBalancerRule</name>
 		<testcase>Create load balancer rule</testcase>
@@ -399,10 +399,10 @@ under the License.
 				<param>lbid1</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 	<command>
-		<name>assignToLoadBalancerRule</name> 
+		<name>assignToLoadBalancerRule</name>
 		<testcase>Assign to load balancer</testcase>
 		<usercommand>true</usercommand>
 		<parameters>
@@ -415,6 +415,6 @@ under the License.
 				<param>vmid</param>
 			</item>
 		</parameters>
-	</command>	
-	
-</delegatedadmin>	
+	</command>
+
+</delegatedadmin>

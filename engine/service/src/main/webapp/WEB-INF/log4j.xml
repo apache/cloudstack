@@ -16,24 +16,41 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<log4j:configuration debug="false">
+<Configuration monitorInterval="60">
+<Appenders>
 
-    <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
-        <param name="Threshold" value="DEBUG"/>
-        <param name="Target" value="System.out"/>
-        <layout class="org.apache.log4j.PatternLayout">
-            <param name="ConversionPattern" value="%d{ABSOLUTE} %-5p [%c{1}] %m%n"/>
-        </layout>
-    </appender>
+    <properties>
+        <property name="filters">net.sf.cglib.proxy</property>
+    </properties>
 
-    <!-- Spring -->
-    <logger name="org.springframework" additivity="false">
-        <level value="DEBUG"/>
-        <appender-ref ref="CONSOLE"/>
-    </logger>
+    <!-- ============================== -->
+    <!-- Append messages to the console -->
+    <!-- ============================== -->
 
-    <root>
-        <level value="DEBUG"/>
-        <appender-ref ref="CONSOLE"/>
-    </root>
-</log4j:configuration>
+    <Console name="CONSOLE" target="SYSTEM_OUT">
+        <ThresholdFilter level="DEBUG" onMatch="ACCEPT" onMismatch="DENY"/>
+        <PatternLayout pattern="%d{ABSOLUTE} %-5p [%c{1}] %m%ex{filters(${filters})}%n"/>
+    </Console>
+</Appenders>
+
+<Loggers>
+
+    <!-- ================ -->
+    <!-- Limit categories -->
+    <!-- ================ -->
+
+    <Logger name="org.springframework" level="DEBUG">
+        <AppenderRef ref="CONSOLE"/>
+    </Logger>
+
+
+    <!-- ======================= -->
+    <!-- Setup the Root category -->
+    <!-- ======================= -->
+
+    <Root level="DEBUG">
+        <AppenderRef ref="CONSOLE"/>
+    </Root>
+
+</Loggers>
+</Configuration>

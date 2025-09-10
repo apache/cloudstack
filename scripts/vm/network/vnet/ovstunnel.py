@@ -202,7 +202,7 @@ def create_tunnel(bridge, remote_ip, key, src_host, dst_host):
         key_validation = lib.do_cmd(verify_interface_key)
         ip_validation = lib.do_cmd(verify_interface_ip)
 
-        if not key in str(key_validation) or not remote_ip in str(ip_validation):
+        if key not in str(key_validation) or remote_ip not in str(ip_validation):
             logging.debug("WARNING: Unexpected output while verifying " +
                           "interface %s on bridge %s" % (name, bridge))
 #            return "FAILURE:VERIFY_INTERFACE_FAILED"

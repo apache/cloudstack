@@ -59,7 +59,6 @@ import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.math3.stat.descriptive.moment.Mean;
 import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
-import org.apache.log4j.Logger;
 
 import com.cloud.capacity.CapacityManager;
 import com.cloud.server.StatsCollector;
@@ -75,7 +74,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 public class StorageOrchestrator extends ManagerBase implements StorageOrchestrationService, Configurable {
 
-    private static final Logger s_logger = Logger.getLogger(StorageOrchestrator.class);
     @Inject
     SnapshotDataStoreDao snapshotDataStoreDao;
     @Inject
@@ -153,7 +151,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         files = migrationHelper.getSortedValidSourcesList(srcDatastore, snapshotChains, childTemplates);
 
         if (files.isEmpty()) {
-            return new MigrationResponse(String.format("No files in Image store: %s to migrate", srcDatastore.getId()), migrationPolicy.toString(), true);
+            return new MigrationResponse(String.format("No files in Image store: %s to migrate", srcDatastore), migrationPolicy.toString(), true);
         }
         Map<Long, Pair<Long, Long>> storageCapacities = new Hashtable<>();
         for (Long storeId : destDatastores) {
@@ -161,7 +159,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         }
         storageCapacities.put(srcDataStoreId, new Pair<>(null, null));
         if (migrationPolicy == MigrationPolicy.COMPLETE) {
-            s_logger.debug(String.format("Setting source image store: %s to read-only", srcDatastore.getId()));
+            logger.debug("Setting source image store: {} to read-only", srcDatastore);
             storageService.updateImageStoreStatus(srcDataStoreId, true);
         }
 
@@ -173,7 +171,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
                 TimeUnit.MINUTES, new MigrateBlockingQueue<>(numConcurrentCopyTasksPerSSVM));
         Date start = new Date();
         if (meanstddev < threshold && migrationPolicy == MigrationPolicy.BALANCE) {
-            s_logger.debug("mean std deviation of the image stores is below threshold, no migration required");
+            logger.debug("mean std deviation of the image stores is below threshold, no migration required");
             response = new MigrationResponse("Migration not required as system seems balanced", migrationPolicy.toString(), true);
             return response;
         }
@@ -202,7 +200,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             }
 
             if (chosenFileForMigration.getPhysicalSize() > storageCapacities.get(destDatastoreId).first()) {
-                s_logger.debug(String.format("%s: %s too large to be migrated to %s",  chosenFileForMigration.getType().name() , chosenFileForMigration.getUuid(), destDatastoreId));
+                logger.debug("{}: {} too large to be migrated to {}",  chosenFileForMigration.getType().name() , chosenFileForMigration.getUuid(), destDatastoreId);
                 skipped += 1;
                 continue;
             }
@@ -269,7 +267,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             }
 
             if (chosenFileForMigration.getPhysicalSize() > storageCapacities.get(destImgStoreId).first()) {
-                s_logger.debug(String.format("%s: %s too large to be migrated to %s", chosenFileForMigration.getType().name(), chosenFileForMigration.getUuid(), destImgStoreId));
+                logger.debug("{}: {} too large to be migrated to {}", chosenFileForMigration.getType().name(), chosenFileForMigration.getUuid(), destImgStoreId);
                 continue;
             }
 
@@ -304,15 +302,16 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         boolean success = true;
         if (destDatastoreId == srcDatastore.getId() && !files.isEmpty()) {
             if (migrationPolicy == MigrationPolicy.BALANCE) {
-                s_logger.debug("Migration completed : data stores have been balanced ");
+                logger.debug("Migration completed : data stores have been balanced");
                 if (destDatastoreId == srcDatastore.getId()) {
                     message = "Seems like source datastore has more free capacity than the destination(s)";
                 }
                 message += "Image stores have been attempted to be balanced";
                 success = true;
             } else {
-                message = "Files not completely migrated from "+ srcDatastore.getId() + ". Datastore (source): " + srcDatastore.getId() + "has equal or more free space than destination."+
-                        " If you want to continue using the Image Store, please change the read-only status using 'update imagestore' command";
+                message = String.format("Files not completely migrated from %s. Source datastore " +
+                        "has equal or more free space than destination. If you want to continue using the Image Store, " +
+                        "please change the read-only status using 'update imagestore' command", srcDatastore);
                 success = false;
             }
         } else {
@@ -355,7 +354,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             task.setTemplateChain(templateChains);
         }
         futures.add((executor.submit(task)));
-        s_logger.debug(String.format("Migration of %s: %s is initiated. ", chosenFileForMigration.getType().name(), chosenFileForMigration.getUuid()));
+        logger.debug("Migration of {}: {} is initiated.", chosenFileForMigration.getType().name(), chosenFileForMigration.getUuid());
         return storageCapacities;
     }
 
@@ -370,7 +369,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
                     successCount++;
                 }
             } catch ( InterruptedException | ExecutionException e) {
-                s_logger.warn("Failed to get result");
+                logger.warn("Failed to get result");
                 continue;
             }
         }
@@ -492,7 +491,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             double meanStdDevAfter = getStandardDeviation(proposedCapacities);
 
             if (meanStdDevAfter > meanStdDevCurrent) {
-                s_logger.debug("migrating the file doesn't prove to be beneficial, skipping migration");
+                logger.debug("migrating the file doesn't prove to be beneficial, skipping migration");
                 return false;
             }
 
@@ -512,10 +511,10 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         Pair<Long, Long> imageStoreCapacity = storageCapacities.get(destStoreId);
         long usedCapacity = imageStoreCapacity.second() - imageStoreCapacity.first();
         if (imageStoreCapacity != null && (usedCapacity / (imageStoreCapacity.second() * 1.0)) <= CapacityManager.SecondaryStorageCapacityThreshold.value()) {
-            s_logger.debug("image store: " + destStoreId + " has sufficient capacity to proceed with migration of file");
+            logger.debug("image store: {} has sufficient capacity to proceed with migration of file.", destStoreId);
             return true;
         }
-        s_logger.debug("Image store capacity threshold exceeded, migration not possible");
+        logger.debug("Image store capacity threshold exceeded, migration not possible.");
         return false;
     }
 

@@ -1613,7 +1613,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
         Valiate that Domain admin is NOT able to deploy a VM for user in the same domain but belonging to a different account in a shared network with scope=account
         """
 
-        # Deploy VM as user in a domain under the same domain but different account from the acount that has a shared network with scope=account
+        # Deploy VM as user in a domain under the same domain but different account from the account that has a shared network with scope=account
         self.apiclient.connection.apiKey = self.user_d1_apikey
         self.apiclient.connection.securityKey = self.user_d1_secretkey
         self.vmdata["name"] = self.acldata["vmD111B"]["name"] + "-shared-scope-domain-withsubdomainaccess-domain-admin"

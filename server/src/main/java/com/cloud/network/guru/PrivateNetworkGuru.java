@@ -18,7 +18,6 @@ package com.cloud.network.guru;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
@@ -55,7 +54,6 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
 
 public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
-    private static final Logger s_logger = Logger.getLogger(PrivateNetworkGuru.class);
     @Inject
     protected ConfigurationManager _configMgr;
     @Inject
@@ -92,13 +90,13 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
             offering.isSystemOnly()) {
             return true;
         } else {
-            s_logger.trace("We only take care of system Guest networks of type   " + GuestType.Isolated + " in zone of type " + NetworkType.Advanced);
+            logger.trace("We only take care of system Guest networks of type   " + GuestType.Isolated + " in zone of type " + NetworkType.Advanced);
             return false;
         }
     }
 
     @Override
-    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
+    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, String name, Long vpcId, Account owner) {
         DataCenter dc = _entityMgr.findById(DataCenter.class, plan.getDataCenterId());
         if (!canHandle(offering, dc)) {
             return null;
@@ -138,9 +136,14 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
+    public void setup(Network network, long networkId) {
+        // do nothing
+    }
+
+    @Override
     public void deallocate(Network network, NicProfile nic, VirtualMachineProfile vm) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIPv4Address());
+        if (logger.isDebugEnabled()) {
+            logger.debug("Deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIPv4Address());
         }
 
         PrivateIpVO ip = _privateIpDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIPv4Address());

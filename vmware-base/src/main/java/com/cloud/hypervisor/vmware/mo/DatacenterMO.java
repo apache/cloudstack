@@ -23,7 +23,6 @@ import java.util.List;
 
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
 
 import com.vmware.vim25.CustomFieldStringValue;
 import com.vmware.vim25.DatacenterConfigInfo;
@@ -43,7 +42,6 @@ import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.utils.Pair;
 
 public class DatacenterMO extends BaseMO {
-    private static final Logger s_logger = Logger.getLogger(DatacenterMO.class);
 
     public DatacenterMO(VmwareContext context, ManagedObjectReference morDc) {
         super(context, morDc);
@@ -58,7 +56,7 @@ public class DatacenterMO extends BaseMO {
 
         _mor = _context.getVimClient().getDecendentMoRef(_context.getRootFolder(), "Datacenter", dcName);
         if (_mor == null) {
-            s_logger.error("Unable to locate DC " + dcName);
+            logger.error("Unable to locate DC {}", dcName);
         }
     }
 
@@ -87,7 +85,7 @@ public class DatacenterMO extends BaseMO {
     public VirtualMachineMO findVm(String vmName) throws Exception {
         int key = getCustomFieldKey("VirtualMachine", CustomFieldConstants.CLOUD_VM_INTERNAL_NAME);
         if (key == 0) {
-            s_logger.warn("Custom field " + CustomFieldConstants.CLOUD_VM_INTERNAL_NAME + " is not registered ?!");
+            logger.warn("Custom field " + CustomFieldConstants.CLOUD_VM_INTERNAL_NAME + " is not registered ?!");
         }
         String instanceNameCustomField = "value[" + key + "]";
         List<ObjectContent> ocs = getVmPropertiesOnDatacenterVmFolder(new String[] {"name", instanceNameCustomField});
@@ -99,7 +97,7 @@ public class DatacenterMO extends BaseMO {
         int key = cfmMo.getCustomFieldKey("VirtualMachine", CustomFieldConstants.CLOUD_UUID);
         assert (key != 0);
 
-        List<VirtualMachineMO> list = new ArrayList<VirtualMachineMO>();
+        List<VirtualMachineMO> list = new ArrayList<>();
 
         List<ObjectContent> ocs = getVmPropertiesOnDatacenterVmFolder(new String[] {"name", String.format("value[%d]", key)});
         if (ocs != null && ocs.size() > 0) {
@@ -131,7 +129,7 @@ public class DatacenterMO extends BaseMO {
     public VirtualMachineMO checkIfVmAlreadyExistsInVcenter(String vmNameOnVcenter, String vmNameInCS) throws Exception {
         int key = getCustomFieldKey("VirtualMachine", CustomFieldConstants.CLOUD_VM_INTERNAL_NAME);
         if (key == 0) {
-            s_logger.warn("Custom field " + CustomFieldConstants.CLOUD_VM_INTERNAL_NAME + " is not registered ?!");
+            logger.warn("Custom field " + CustomFieldConstants.CLOUD_VM_INTERNAL_NAME + " is not registered ?!");
         }
 
         List<ObjectContent> ocs = getVmPropertiesOnDatacenterVmFolder(new String[] {"name", String.format("value[%d]", key)});
@@ -257,7 +255,7 @@ public class DatacenterMO extends BaseMO {
         PropertyFilterSpec pfSpec = new PropertyFilterSpec();
         pfSpec.getPropSet().add(pSpec);
         pfSpec.getObjectSet().add(oSpec);
-        List<PropertyFilterSpec> pfSpecArr = new ArrayList<PropertyFilterSpec>();
+        List<PropertyFilterSpec> pfSpecArr = new ArrayList<>();
         pfSpecArr.add(pfSpec);
 
         return _context.getService().retrieveProperties(_context.getPropertyCollector(), pfSpecArr);
@@ -283,7 +281,7 @@ public class DatacenterMO extends BaseMO {
         PropertyFilterSpec pfSpec = new PropertyFilterSpec();
         pfSpec.getPropSet().add(pSpec);
         pfSpec.getObjectSet().add(oSpec);
-        List<PropertyFilterSpec> pfSpecArr = new ArrayList<PropertyFilterSpec>();
+        List<PropertyFilterSpec> pfSpecArr = new ArrayList<>();
         pfSpecArr.add(pfSpec);
 
         return _context.getService().retrieveProperties(_context.getPropertyCollector(), pfSpecArr);
@@ -318,7 +316,7 @@ public class DatacenterMO extends BaseMO {
         PropertyFilterSpec pfSpec = new PropertyFilterSpec();
         pfSpec.getPropSet().add(pSpec);
         pfSpec.getObjectSet().add(oSpec);
-        List<PropertyFilterSpec> pfSpecArr = new ArrayList<PropertyFilterSpec>();
+        List<PropertyFilterSpec> pfSpecArr = new ArrayList<>();
         pfSpecArr.add(pfSpec);
 
         return _context.getService().retrieveProperties(_context.getPropertyCollector(), pfSpecArr);
@@ -346,7 +344,7 @@ public class DatacenterMO extends BaseMO {
         PropertyFilterSpec pfSpec = new PropertyFilterSpec();
         pfSpec.getPropSet().add(pSpec);
         pfSpec.getObjectSet().add(oSpec);
-        List<PropertyFilterSpec> pfSpecArr = new ArrayList<PropertyFilterSpec>();
+        List<PropertyFilterSpec> pfSpecArr = new ArrayList<>();
         pfSpecArr.add(pfSpec);
 
         List<ObjectContent> ocs = context.getService().retrieveProperties(context.getPropertyCollector(), pfSpecArr);
@@ -357,7 +355,7 @@ public class DatacenterMO extends BaseMO {
         assert (ocs.get(0).getPropSet().get(0).getVal() != null);
 
         String dcName = ocs.get(0).getPropSet().get(0).getVal().toString();
-        return new Pair<DatacenterMO, String>(new DatacenterMO(context, ocs.get(0).getObj()), dcName);
+        return new Pair<>(new DatacenterMO(context, ocs.get(0).getObj()), dcName);
     }
 
     public ManagedObjectReference getDvPortGroupMor(String dvPortGroupName) throws Exception {
@@ -378,7 +376,7 @@ public class DatacenterMO extends BaseMO {
         PropertyFilterSpec pfSpec = new PropertyFilterSpec();
         pfSpec.getPropSet().add(pSpec);
         pfSpec.getObjectSet().add(oSpec);
-        List<PropertyFilterSpec> pfSpecArr = new ArrayList<PropertyFilterSpec>();
+        List<PropertyFilterSpec> pfSpecArr = new ArrayList<>();
         pfSpecArr.add(pfSpec);
 
         List<ObjectContent> ocs = _context.getService().retrieveProperties(_context.getPropertyCollector(), pfSpecArr);
@@ -425,7 +423,7 @@ public class DatacenterMO extends BaseMO {
         PropertyFilterSpec pfSpec = new PropertyFilterSpec();
         pfSpec.getPropSet().add(pSpec);
         pfSpec.getObjectSet().add(oSpec);
-        List<PropertyFilterSpec> pfSpecArr = new ArrayList<PropertyFilterSpec>();
+        List<PropertyFilterSpec> pfSpecArr = new ArrayList<>();
         pfSpecArr.add(pfSpec);
 
         List<ObjectContent> ocs = _context.getService().retrieveProperties(_context.getPropertyCollector(), pfSpecArr);
@@ -472,7 +470,7 @@ public class DatacenterMO extends BaseMO {
         PropertyFilterSpec pfSpec = new PropertyFilterSpec();
         pfSpec.getPropSet().add(pSpec);
         pfSpec.getObjectSet().add(oSpec);
-        List<PropertyFilterSpec> pfSpecArr = new ArrayList<PropertyFilterSpec>();
+        List<PropertyFilterSpec> pfSpecArr = new ArrayList<>();
         pfSpecArr.add(pfSpec);
 
         List<ObjectContent> ocs = _context.getService().retrieveProperties(_context.getPropertyCollector(), pfSpecArr);

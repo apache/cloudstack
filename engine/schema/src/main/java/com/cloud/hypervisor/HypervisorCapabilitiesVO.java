@@ -19,9 +19,8 @@ package com.cloud.hypervisor;
 import java.util.UUID;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -29,6 +28,7 @@ import javax.persistence.Table;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.NumbersUtil;
+import org.apache.cloudstack.util.HypervisorTypeConverter;
 
 @Entity
 @Table(name = "hypervisor_capabilities")
@@ -39,7 +39,7 @@ public class HypervisorCapabilitiesVO implements HypervisorCapabilities {
     private long id;
 
     @Column(name = "hypervisor_type")
-    @Enumerated(value = EnumType.STRING)
+    @Convert(converter = HypervisorTypeConverter.class)
     private HypervisorType hypervisorType;
 
     @Column(name = "hypervisor_version")

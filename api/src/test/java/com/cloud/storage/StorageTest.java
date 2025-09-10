@@ -74,4 +74,13 @@ public class StorageTest {
         Assert.assertTrue(StoragePoolType.DatastoreCluster.supportsOverProvisioning());
         Assert.assertTrue(StoragePoolType.Linstor.supportsOverProvisioning());
     }
+
+    @Test
+    public void equalityTest() {
+        StoragePoolType t1 = StoragePoolType.NetworkFilesystem;
+        StoragePoolType t2 = StoragePoolType.NetworkFilesystem;
+        Assert.assertTrue(t1 == StoragePoolType.NetworkFilesystem);
+        Assert.assertTrue(t1.equals(StoragePoolType.NetworkFilesystem));
+        Assert.assertFalse(t1.equals(StoragePoolType.EXT));
+    }
 }

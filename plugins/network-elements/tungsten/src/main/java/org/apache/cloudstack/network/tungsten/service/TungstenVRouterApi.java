@@ -19,12 +19,13 @@ package org.apache.cloudstack.network.tungsten.service;
 import org.apache.cloudstack.network.tungsten.vrouter.Port;
 import org.apache.cloudstack.network.tungsten.vrouter.VRouterApiConnector;
 import org.apache.cloudstack.network.tungsten.vrouter.VRouterApiConnectorFactory;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 
 public class TungstenVRouterApi {
-    private static final Logger s_logger = Logger.getLogger(TungstenVRouterApi.class);
+    protected static Logger LOGGER = LogManager.getLogger(TungstenVRouterApi.class);
 
     private TungstenVRouterApi() {
     }
@@ -37,7 +38,7 @@ public class TungstenVRouterApi {
         try {
             return getvRouterApiConnector(host, vrouterPort).addPort(port);
         } catch (IOException ex) {
-            s_logger.error("Fail to add vrouter port : " + ex.getMessage());
+            LOGGER.error("Fail to add vrouter port : " + ex.getMessage());
             return false;
         }
     }

@@ -93,7 +93,7 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "display name of the virtual machine")
     private String virtualMachineDisplayName;
 
-    @SerializedName("vmstate")
+    @SerializedName(ApiConstants.VIRTUAL_MACHINE_STATE)
     @Param(description = "state of the virtual machine")
     private String virtualMachineState;
 
@@ -261,12 +261,16 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "true if storage snapshot is supported for the volume, false otherwise", since = "4.16")
     private boolean supportsStorageSnapshot;
 
+    @SerializedName(ApiConstants.DELETE_PROTECTION)
+    @Param(description = "true if volume has delete protection.", since = "4.20.0")
+    private boolean deleteProtection;
+
     @SerializedName(ApiConstants.PHYSICAL_SIZE)
-    @Param(description = "the bytes allocated")
+    @Param(description = "the bytes actually consumed on disk")
     private Long physicalsize;
 
     @SerializedName(ApiConstants.VIRTUAL_SIZE)
-    @Param(description = "the bytes actually consumed on disk")
+    @Param(description = "the bytes allocated")
     private Long virtualsize;
 
     @SerializedName(ApiConstants.UTILIZATION)
@@ -582,6 +586,14 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
 
     public boolean getSupportsStorageSnapshot() {
         return this.supportsStorageSnapshot;
+    }
+
+    public boolean isDeleteProtection() {
+        return deleteProtection;
+    }
+
+    public void setDeleteProtection(boolean deleteProtection) {
+        this.deleteProtection = deleteProtection;
     }
 
     public String getIsoId() {

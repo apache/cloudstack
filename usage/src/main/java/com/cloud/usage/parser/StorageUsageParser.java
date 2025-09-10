@@ -25,7 +25,10 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import com.cloud.usage.UsageManagerImpl;
+import com.cloud.utils.DateUtil;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.usage.UsageTypes;
@@ -42,7 +45,7 @@ import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 @Component
 public class StorageUsageParser {
-    public static final Logger s_logger = Logger.getLogger(StorageUsageParser.class.getName());
+    protected static Logger LOGGER = LogManager.getLogger(StorageUsageParser.class);
 
     private static UsageDao s_usageDao;
     private static UsageStorageDao s_usageStorageDao;
@@ -59,8 +62,8 @@ public class StorageUsageParser {
     }
 
     public static boolean parse(AccountVO account, Date startDate, Date endDate) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Parsing all Storage usage events for account: " + account.getId());
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Parsing all Storage usage events for account: " + account.getId());
         }
         if ((endDate == null) || endDate.after(new Date())) {
             endDate = new Date();
@@ -74,7 +77,7 @@ public class StorageUsageParser {
         List<UsageStorageVO> usageUsageStorages = s_usageStorageDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate, false, 0);
 
         if (usageUsageStorages.isEmpty()) {
-            s_logger.debug("No Storage usage events for this period");
+            LOGGER.debug("No Storage usage events for this period");
             return true;
         }
 
@@ -149,8 +152,8 @@ public class StorageUsageParser {
     private static void createUsageRecord(long zoneId, int type, long runningTime, Date startDate, Date endDate, AccountVO account, long storageId, Long sourceId,
         long size, Long virtualSize) {
         // Our smallest increment is hourly for now
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Total running time " + runningTime + "ms");
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Total running time " + runningTime + "ms");
         }
 
         float usage = runningTime / 1000f / 60f / 60f;
@@ -158,10 +161,9 @@ public class StorageUsageParser {
         DecimalFormat dFormat = new DecimalFormat("#.######");
         String usageDisplay = dFormat.format(usage);
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creating Storage usage record for type: " + type + " with id: " + storageId + ", usage: " + usageDisplay + ", startDate: " + startDate +
-                ", endDate: " + endDate + ", for account: " + account.getId());
-        }
+        LOGGER.debug("Creating Storage usage record for type [{}], with id [{}], usage [{}], startDate [{}], and endDate [{}], for account [{}].",
+                type, storageId, usageDisplay, DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), startDate),
+                DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), endDate), account.getId());
 
         String usageDesc = "";
         Long tmplSourceId = null;

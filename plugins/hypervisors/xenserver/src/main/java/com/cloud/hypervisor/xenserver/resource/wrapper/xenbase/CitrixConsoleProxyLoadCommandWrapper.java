@@ -26,7 +26,6 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -36,7 +35,6 @@ import com.cloud.resource.ServerResource;
 
 public abstract class CitrixConsoleProxyLoadCommandWrapper<T extends Command, A extends Answer, R extends ServerResource> extends CommandWrapper<Command, Answer, ServerResource> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixConsoleProxyLoadCommandWrapper.class);
 
     protected Answer executeProxyLoadScan(final Command cmd, final long proxyVmId, final String proxyVmName, final String proxyManagementIp, final int cmdPort) {
         String result = null;
@@ -68,12 +66,12 @@ public abstract class CitrixConsoleProxyLoadCommandWrapper<T extends Command, A 
                 try {
                     is.close();
                 } catch (final IOException e) {
-                    s_logger.warn("Exception when closing , console proxy address : " + proxyManagementIp);
+                    logger.warn("Exception when closing , console proxy address : " + proxyManagementIp);
                     success = false;
                 }
             }
         } catch (final IOException e) {
-            s_logger.warn("Unable to open console proxy command port url, console proxy address : " + proxyManagementIp);
+            logger.warn("Unable to open console proxy command port url, console proxy address : " + proxyManagementIp);
             success = false;
         }
 

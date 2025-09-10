@@ -26,8 +26,13 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.dao.ClusterDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -35,8 +40,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreParameters;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.capacity.Capacity;
@@ -60,7 +63,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class PrimaryDataStoreHelper {
-    private static final Logger s_logger = Logger.getLogger(PrimaryDataStoreHelper.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     @Inject
     private PrimaryDataStoreDao dataStoreDao;
     @Inject
@@ -71,6 +74,8 @@ public class PrimaryDataStoreHelper {
     protected CapacityDao _capacityDao;
     @Inject
     protected StoragePoolHostDao storagePoolHostDao;
+    @Inject
+    protected ClusterDao clusterDao;
     @Inject
     private AnnotationDao annotationDao;
 
@@ -111,7 +116,7 @@ public class PrimaryDataStoreHelper {
 
             if (user == null || password == null) {
                 String errMsg = "Missing cifs user and password details. Add them as details parameter.";
-                s_logger.warn(errMsg);
+                logger.warn(errMsg);
                 throw new InvalidParameterValueException(errMsg);
             } else {
                 try {
@@ -264,7 +269,7 @@ public class PrimaryDataStoreHelper {
         this._capacityDao.removeBy(Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED, null, null, null, poolVO.getId());
         txn.commit();
 
-        s_logger.debug("Storage pool id=" + poolVO.getId() + " is removed successfully");
+        logger.debug("Storage pool {} is removed successfully", poolVO);
         return true;
     }
 
@@ -284,7 +289,7 @@ public class PrimaryDataStoreHelper {
                 _capacityDao.update(capacity.getId(), capacity);
             }
         });
-        s_logger.debug("Scope of storage pool id=" + pool.getId() + " is changed to zone");
+        logger.debug("Scope of storage pool {} is changed to zone", pool);
     }
 
     public void switchToCluster(DataStore store, ClusterScope clusterScope) {
@@ -310,6 +315,6 @@ public class PrimaryDataStoreHelper {
                 _capacityDao.update(capacity.getId(), capacity);
             }
         });
-        s_logger.debug("Scope of storage pool id=" + pool.getId() + " is changed to cluster id=" + clusterScope.getScopeId());
+        logger.debug("Scope of storage pool {} is changed to cluster {}", pool::toString, () -> clusterDao.findById(clusterScope.getScopeId()));
     }
 }

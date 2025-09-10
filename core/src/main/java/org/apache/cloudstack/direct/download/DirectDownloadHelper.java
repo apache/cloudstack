@@ -24,11 +24,12 @@ import org.apache.cloudstack.agent.directdownload.HttpDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.HttpsDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.MetalinkDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.NfsDirectDownloadCommand;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class DirectDownloadHelper {
 
-    public static final Logger LOGGER = Logger.getLogger(DirectDownloadHelper.class.getName());
+    protected static Logger LOGGER = LogManager.getLogger(DirectDownloadHelper.class);
 
     /**
      * Get direct template downloader from direct download command and destination pool

@@ -22,10 +22,9 @@ import java.util.Date;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 public class NetworkProfile implements Network {
-    static final Logger s_logger = Logger.getLogger(NetworkProfile.class);
     private final long id;
     private final String uuid;
     private final long dataCenterId;
@@ -43,8 +42,8 @@ public class NetworkProfile implements Network {
     private final Mode mode;
     private final BroadcastDomainType broadcastDomainType;
     private TrafficType trafficType;
-    private final String gateway;
-    private final String cidr;
+    private String gateway;
+    private String cidr;
     private final String networkCidr;
     private final String ip6Gateway;
     private final String ip6Cidr;
@@ -64,6 +63,7 @@ public class NetworkProfile implements Network {
     private final String guruName;
     private boolean strechedL2Subnet;
     private String externalId;
+    private Integer networkCidrSize;
 
     public NetworkProfile(Network network) {
         id = network.getId();
@@ -100,6 +100,7 @@ public class NetworkProfile implements Network {
         isRedundant = network.isRedundant();
         isRollingRestart = network.isRollingRestart();
         externalId = network.getExternalId();
+        networkCidrSize = network.getNetworkCidrSize();
     }
 
     @Override
@@ -213,8 +214,18 @@ public class NetworkProfile implements Network {
     }
 
     @Override
+    public void setGateway(String gateway) {
+        this.gateway = gateway;
+    }
+
+    @Override
     public String getCidr() {
         return cidr;
+    }
+
+    @Override
+    public void setCidr(String cidr) {
+        this.cidr = cidr;
     }
 
     @Override
@@ -367,6 +378,18 @@ public class NetworkProfile implements Network {
     @Override
     public Integer getPrivateMtu() {
         return null;
+    }
+
+    @Override
+    public Integer getNetworkCidrSize() {
+        return networkCidrSize;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("NetworkProfile %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "name", "networkOfferingId"));
     }
 
 }

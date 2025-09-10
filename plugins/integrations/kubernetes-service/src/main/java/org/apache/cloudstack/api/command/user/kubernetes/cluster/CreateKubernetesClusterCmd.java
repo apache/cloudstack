@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.kubernetes.cluster;
 
-import java.security.InvalidParameterException;
-
 import javax.inject.Inject;
 
 import com.cloud.exception.InvalidParameterValueException;
@@ -41,7 +39,6 @@ import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterEventTypes;
@@ -57,7 +54,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
         responseHasSensitiveInfo = true,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
-    public static final Logger LOGGER = Logger.getLogger(CreateKubernetesClusterCmd.class.getName());
     private static final Long DEFAULT_NODE_ROOT_DISK_SIZE = 8L;
 
     @Inject
@@ -229,7 +225,7 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     public Long getNodeRootDiskSize() {
         if (nodeRootDiskSize != null) {
             if (nodeRootDiskSize < DEFAULT_NODE_ROOT_DISK_SIZE) {
-                throw new InvalidParameterException("Provided node root disk size is lesser than default size of " + DEFAULT_NODE_ROOT_DISK_SIZE +"GB");
+                throw new InvalidParameterValueException("Provided node root disk size is lesser than default size of " + DEFAULT_NODE_ROOT_DISK_SIZE +"GB");
             }
             return nodeRootDiskSize;
         } else {

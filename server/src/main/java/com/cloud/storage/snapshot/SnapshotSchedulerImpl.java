@@ -35,8 +35,8 @@ import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
+import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDispatcher;
@@ -48,7 +48,6 @@ import com.cloud.server.TaggedResourceService;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
-import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
@@ -65,7 +64,6 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.TestClock;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
-import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
@@ -73,7 +71,6 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 @Component
 public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotScheduler {
-    private static final Logger s_logger = Logger.getLogger(SnapshotSchedulerImpl.class);
 
     @Inject
     protected AsyncJobDao _asyncJobDao;
@@ -129,7 +126,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
             nextTimestamp = DateUtil.getNextRunTime(type, schedule, timezone, currentTimestamp);
             final String currentTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, currentTimestamp);
             final String nextScheduledTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, nextTimestamp);
-            s_logger.debug("Current time is " + currentTime + ". NextScheduledTime of policyId " + policyId + " is " + nextScheduledTime);
+            logger.debug("Current time is {}. NextScheduledTime of policy {} is {}", currentTime, policy, nextScheduledTime);
         }
         return nextTimestamp;
     }
@@ -146,7 +143,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
         try {
             if (scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
                 try {
-                    checkStatusOfCurrentlyExecutingSnapshots();
+                    scheduleNextSnapshotJobsIfNecessary();
                 } finally {
                     scanLock.unlock();
                 }
@@ -172,72 +169,41 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
             deleteExpiredVMSnapshots();
         }
         catch (Exception e) {
-            s_logger.warn("Error in expiring vm snapshots", e);
+            logger.warn("Error in expiring vm snapshots", e);
         }
     }
 
-    private void checkStatusOfCurrentlyExecutingSnapshots() {
-        final SearchCriteria<SnapshotScheduleVO> sc = _snapshotScheduleDao.createSearchCriteria();
-        sc.addAnd("asyncJobId", SearchCriteria.Op.NNULL);
-        final List<SnapshotScheduleVO> snapshotSchedules = _snapshotScheduleDao.search(sc, null);
-        for (final SnapshotScheduleVO snapshotSchedule : snapshotSchedules) {
-            final Long asyncJobId = snapshotSchedule.getAsyncJobId();
-            final AsyncJobVO asyncJob = _asyncJobDao.findByIdIncludingRemoved(asyncJobId);
-            switch (asyncJob.getStatus()) {
-                case SUCCEEDED:
-                    // The snapshot has been successfully backed up.
-                    // The snapshot state has also been cleaned up.
-                    // We can schedule the next job for this snapshot.
-                    // Remove the existing entry in the snapshot_schedule table.
-                    scheduleNextSnapshotJob(snapshotSchedule);
-                    break;
-                case FAILED:
-                    // Check the snapshot status.
-                    final Long snapshotId = snapshotSchedule.getSnapshotId();
-                    if (snapshotId == null) {
-                        // createSnapshotAsync exited, successfully or unsuccessfully,
-                        // even before creating a snapshot record
-                        // No cleanup needs to be done.
-                        // Schedule the next snapshot.
-                        scheduleNextSnapshotJob(snapshotSchedule);
-                    } else {
-                        final SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
-                        if (snapshot == null || snapshot.getRemoved() != null) {
-                            // This snapshot has been deleted successfully from the primary storage
-                            // Again no cleanup needs to be done.
-                            // Schedule the next snapshot.
-                            // There's very little probability that the code reaches this point.
-                            // The snapshotId is a foreign key for the snapshot_schedule table
-                            // set to ON DELETE CASCADE. So if the snapshot entry is deleted, the snapshot_schedule entry will be too.
-                            // But what if it has only been marked as removed?
-                            scheduleNextSnapshotJob(snapshotSchedule);
-                        } else {
-                            // The management server executing this snapshot job appears to have crashed
-                            // while creating the snapshot on primary storage/or backing it up.
-                            // We have no idea whether the snapshot was successfully taken on the primary or not.
-                            // Schedule the next snapshot job.
-                            // The ValidatePreviousSnapshotCommand will take appropriate action on this snapshot
-                            // If the snapshot was taken successfully on primary, it will retry backing it up.
-                            // and cleanup the previous snapshot
-                            // Set the userId to that of system.
-                            //_snapshotManager.validateSnapshot(1L, snapshot);
-                            // In all cases, schedule the next snapshot job
-                            scheduleNextSnapshotJob(snapshotSchedule);
-                        }
-                    }
-
-                    break;
-                case IN_PROGRESS:
-                    // There is no way of knowing from here whether
-                    // 1) Another management server is processing this snapshot job
-                    // 2) The management server has crashed and this snapshot is lying
-                    // around in an inconsistent state.
-                    // Hopefully, this can be resolved at the backend when the current snapshot gets executed.
-                    // But if it remains in this state, the current snapshot will not get executed.
-                    // And it will remain in stasis.
-                    break;
-            }
+    private void scheduleNextSnapshotJobsIfNecessary() {
+        List<SnapshotScheduleVO> snapshotSchedules = _snapshotScheduleDao.getSchedulesAssignedWithAsyncJob();
+        logger.info("Verifying the current state of [{}] snapshot schedules and scheduling next jobs, if necessary.", snapshotSchedules.size());
+        for (SnapshotScheduleVO snapshotSchedule : snapshotSchedules) {
+            scheduleNextSnapshotJobIfNecessary(snapshotSchedule);
         }
+    }
+
+    protected void scheduleNextSnapshotJobIfNecessary(SnapshotScheduleVO snapshotSchedule) {
+        Long asyncJobId = snapshotSchedule.getAsyncJobId();
+        AsyncJobVO asyncJob = _asyncJobDao.findByIdIncludingRemoved(asyncJobId);
+
+        if (asyncJob == null) {
+            logger.debug("The async job [{}] of snapshot schedule [{}] does not exist anymore. Considering it as finished and scheduling the next snapshot job.",
+                    asyncJobId, snapshotSchedule);
+            scheduleNextSnapshotJob(snapshotSchedule);
+            return;
+        }
+
+        JobInfo.Status status = asyncJob.getStatus();
+
+        if (JobInfo.Status.SUCCEEDED.equals(status)) {
+            logger.debug("Last job of schedule [{}] succeeded; scheduling the next snapshot job.", snapshotSchedule);
+        } else if (JobInfo.Status.FAILED.equals(status)) {
+            logger.debug("Last job of schedule [{}] failed with [{}]; scheduling a new snapshot job.", snapshotSchedule, asyncJob.getResult());
+        } else {
+            logger.debug("Schedule [{}] is still in progress, skipping next job scheduling.", snapshotSchedule);
+            return;
+        }
+
+        scheduleNextSnapshotJob(snapshotSchedule);
     }
 
     @DB
@@ -253,8 +219,8 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
             Date creationTime = vmSnapshot.getCreated();
             long diffInHours = TimeUnit.MILLISECONDS.toHours(now.getTime() - creationTime.getTime());
             if (diffInHours >= expiration_interval_hours) {
-                if (s_logger.isDebugEnabled()){
-                    s_logger.debug("Deleting expired VM snapshot id: " + vmSnapshot.getId());
+                if (logger.isDebugEnabled()){
+                    logger.debug("Deleting expired VM snapshot: {}", vmSnapshot);
                 }
                 _vmSnaphostManager.deleteVMSnapshot(vmSnapshot.getId());
             }
@@ -264,19 +230,18 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
     @DB
     protected void scheduleSnapshots() {
         String displayTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, _currentTimestamp);
-        s_logger.debug(String.format("Snapshot scheduler is being called at [%s].", displayTime));
+        logger.debug(String.format("Snapshot scheduler is being called at [%s].", displayTime));
 
         final List<SnapshotScheduleVO> snapshotsToBeExecuted = _snapshotScheduleDao.getSchedulesToExecute(_currentTimestamp);
-        s_logger.debug(String.format("There are [%s] scheduled snapshots to be executed at [%s].", snapshotsToBeExecuted.size(), displayTime));
+        logger.debug(String.format("There are [%s] scheduled snapshots to be executed at [%s].", snapshotsToBeExecuted.size(), displayTime));
 
         for (final SnapshotScheduleVO snapshotToBeExecuted : snapshotsToBeExecuted) {
             SnapshotScheduleVO tmpSnapshotScheduleVO = null;
             final long snapshotScheId = snapshotToBeExecuted.getId();
             final long policyId = snapshotToBeExecuted.getPolicyId();
             final long volumeId = snapshotToBeExecuted.getVolumeId();
+            final VolumeVO volume = _volsDao.findByIdIncludingRemoved(snapshotToBeExecuted.getVolumeId());
             try {
-                final VolumeVO volume = _volsDao.findByIdIncludingRemoved(snapshotToBeExecuted.getVolumeId());
-
                 if (!canSnapshotBeScheduled(snapshotToBeExecuted, volume)) {
                     continue;
                 }
@@ -286,7 +251,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                     ActionEventUtils.onScheduledActionEvent(User.UID_SYSTEM, volume.getAccountId(), EventTypes.EVENT_SNAPSHOT_CREATE, "creating snapshot for volume Id:" +
                         volume.getUuid(), volumeId, ApiCommandResourceType.Volume.toString(), true, 0);
 
-                s_logger.trace(String.format("Mapping parameters required to generate a CreateSnapshotCmd for snapshot [%s].", snapshotToBeExecuted.getUuid()));
+                logger.trace("Mapping parameters required to generate a CreateSnapshotCmd for snapshot [{}].", snapshotToBeExecuted);
                 final Map<String, String> params = new HashMap<String, String>();
                 params.put(ApiConstants.VOLUME_ID, "" + volumeId);
                 params.put(ApiConstants.POLICY_ID, "" + policyId);
@@ -303,7 +268,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                     }
                 }
 
-                s_logger.trace(String.format("Generating a CreateSnapshotCmd for snapshot [%s] with parameters: [%s].", snapshotToBeExecuted.getUuid(), params.toString()));
+                logger.trace("Generating a CreateSnapshotCmd for snapshot [{}] with parameters: [{}].", snapshotToBeExecuted, params.toString());
                 final CreateSnapshotCmd cmd = new CreateSnapshotCmd();
                 ComponentContext.inject(cmd);
                 _dispatcher.dispatchCreateCmd(cmd, params);
@@ -312,18 +277,18 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
 
                 final Date scheduledTimestamp = snapshotToBeExecuted.getScheduledTimestamp();
                 displayTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, scheduledTimestamp);
-                s_logger.debug(String.format("Scheduling snapshot [%s] for volume [%s] at [%s].", snapshotToBeExecuted.getUuid(), volume.getVolumeDescription(), displayTime));
+                logger.debug("Scheduling snapshot [{}] for volume [{}] at [{}].", snapshotToBeExecuted, volume, displayTime);
                 AsyncJobVO job = new AsyncJobVO("", User.UID_SYSTEM, volume.getAccountId(), CreateSnapshotCmd.class.getName(),
                         ApiGsonHelper.getBuilder().create().toJson(params), cmd.getEntityId(),
                         cmd.getApiResourceType() != null ? cmd.getApiResourceType().toString() : null, null);
                 job.setDispatcher(_asyncDispatcher.getName());
                 final long jobId = _asyncMgr.submitAsyncJob(job);
-                s_logger.debug(String.format("Scheduled snapshot [%s] for volume [%s] as job [%s].", snapshotToBeExecuted.getUuid(), volume.getVolumeDescription(), job.getUuid()));
+                logger.debug("Scheduled snapshot [{}] for volume [{}] as job [{}].", snapshotToBeExecuted, volume, job);
 
                 tmpSnapshotScheduleVO.setAsyncJobId(jobId);
                 _snapshotScheduleDao.update(snapshotScheId, tmpSnapshotScheduleVO);
             } catch (final Exception e) {
-                s_logger.error(String.format("The scheduling of snapshot [%s] for volume [%s] failed due to [%s].", snapshotToBeExecuted.getUuid(), volumeId, e.toString()), e);
+                logger.error("The scheduling of snapshot [{}] for volume [{}] failed due to [{}].", snapshotToBeExecuted, volume, e.toString(), e);
             } finally {
                 if (tmpSnapshotScheduleVO != null) {
                     _snapshotScheduleDao.releaseFromLockTable(snapshotScheId);
@@ -341,14 +306,13 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
      */
     protected boolean canSnapshotBeScheduled(final SnapshotScheduleVO snapshotToBeScheduled, final VolumeVO volume) {
         if (volume.getRemoved() != null) {
-            s_logger.warn(String.format("Skipping snapshot [%s] for volume [%s] because it has been removed. Having a snapshot scheduled for a volume that has been "
-                            + "removed is an inconsistency; please, check your database.", snapshotToBeScheduled.getUuid(), volume.getVolumeDescription()));
+            logger.warn("Skipping snapshot [{}] for volume [{}] because it has been removed. Having a snapshot scheduled for a volume that has been "
+                    + "removed is an inconsistency; please, check your database.", snapshotToBeScheduled, volume);
             return false;
         }
 
         if (volume.getPoolId() == null) {
-            s_logger.debug(String.format("Skipping snapshot [%s] for volume [%s] because it is not attached to any storage pool.", snapshotToBeScheduled.getUuid(),
-                    volume.getVolumeDescription()));
+            logger.debug("Skipping snapshot [{}] for volume [{}] because it is not attached to any storage pool.", snapshotToBeScheduled, volume);
             return false;
         }
 
@@ -357,12 +321,13 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
         }
 
         if (_snapshotPolicyDao.findById(snapshotToBeScheduled.getPolicyId()) == null) {
-            s_logger.debug(String.format("Snapshot's policy [%s] for volume [%s] has been removed; therefore, this snapshot will be removed from the snapshot scheduler.",
-                    snapshotToBeScheduled.getPolicyId(), volume.getVolumeDescription()));
+            logger.debug("Snapshot's policy [{}] for volume [{}] has been removed; " +
+                    "therefore, this snapshot will be removed from the snapshot scheduler.",
+                    snapshotToBeScheduled.getPolicyId(), volume);
             _snapshotScheduleDao.remove(snapshotToBeScheduled.getId());
         }
 
-        s_logger.debug(String.format("Snapshot [%s] for volume [%s] can be executed.", snapshotToBeScheduled.getUuid(), volume.getVolumeDescription()));
+        logger.debug("Snapshot [{}] for volume [{}] can be executed.", snapshotToBeScheduled, volume);
         return true;
     }
 
@@ -370,14 +335,13 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
         Account volAcct = _acctDao.findById(volume.getAccountId());
 
         if (volAcct == null) {
-            s_logger.debug(String.format("Skipping snapshot [%s] for volume [%s] because its account [%s] has been removed.", snapshotToBeExecuted.getUuid(),
-                    volume.getVolumeDescription(), volume.getAccountId()));
+            logger.debug(String.format("Skipping snapshot [%s] for volume [%s] because its account [%s] has been removed.",
+                    snapshotToBeExecuted, volume, volume.getAccountId()));
             return true;
         }
 
         if (volAcct.getState() == Account.State.DISABLED) {
-            s_logger.debug(String.format("Skipping snapshot [%s] for volume [%s] because its account [%s] is disabled.", snapshotToBeExecuted.getUuid(),
-                    volume.getVolumeDescription(), volAcct.getUuid()));
+            logger.debug("Skipping snapshot [{}] for volume [{}] because its account [{}] is disabled.", snapshotToBeExecuted, volume, volAcct);
             return true;
         }
 
@@ -419,7 +383,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
         }
 
         if (_volsDao.findById(policy.getVolumeId()) == null) {
-            s_logger.warn("Found snapshot policy ID: " + policyId + " for volume ID: " + policy.getVolumeId() + " that does not exist or has been removed");
+            logger.warn("Found snapshot policy: {} for volume ID: {} that does not exist or has been removed", policy, policy.getVolumeId());
             removeSchedule(policy.getVolumeId(), policy.getId());
             return null;
         }
@@ -474,7 +438,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
             success = _snapshotScheduleDao.remove(schedule.getId());
         }
         if (!success) {
-            s_logger.debug("Error while deleting Snapshot schedule with Id: " + schedule.getId());
+            logger.debug("Error while deleting Snapshot schedule: " + schedule);
         }
         return success;
     }
@@ -497,7 +461,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
         }
         _currentTimestamp = new Date();
 
-        s_logger.info("Snapshot Scheduler is configured.");
+        logger.info("Snapshot Scheduler is configured.");
 
         return true;
     }
@@ -525,7 +489,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                         final Date currentTimestamp = new Date();
                         poll(currentTimestamp);
                     } catch (final Throwable t) {
-                        s_logger.warn("Catch throwable in snapshot scheduler ", t);
+                        logger.warn("Catch throwable in snapshot scheduler ", t);
                     }
                 }
             };

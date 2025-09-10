@@ -127,6 +127,10 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
     @Param(description = "indicates whether VLAN IP range is dedicated to system vms or not")
     private Boolean forSystemVms;
 
+    @SerializedName(ApiConstants.FOR_NSX)
+    @Param(description = "indicates whether IP range is dedicated to NSX resources or not")
+    private Boolean forNsx;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -243,5 +247,9 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
 
     public void setIp6Cidr(String ip6Cidr) {
         this.ip6Cidr = ip6Cidr;
+    }
+
+    public void setForNsx(Boolean forNsx) {
+        this.forNsx = forNsx;
     }
 }

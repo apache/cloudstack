@@ -48,7 +48,6 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.security.DigestHelper;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
@@ -86,7 +85,6 @@ import com.cloud.utils.db.SearchCriteria;
 @Component
 public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<TemplateJoinVO, TemplateResponse> implements TemplateJoinDao {
 
-    public static final Logger s_logger = Logger.getLogger(TemplateJoinDaoImpl.class);
 
     @Inject
     private ConfigurationDao  _configDao;
@@ -153,11 +151,6 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         activeTmpltSearch.and("store_id", activeTmpltSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
         activeTmpltSearch.and("type", activeTmpltSearch.entity().getTemplateType(), SearchCriteria.Op.EQ);
         activeTmpltSearch.and("templateState", activeTmpltSearch.entity().getTemplateState(), SearchCriteria.Op.EQ);
-        activeTmpltSearch.and().op("public", activeTmpltSearch.entity().isPublicTemplate(), SearchCriteria.Op.EQ);
-        activeTmpltSearch.or().op("publicNoUrl", activeTmpltSearch.entity().isPublicTemplate(), SearchCriteria.Op.EQ);
-        activeTmpltSearch.and("url", activeTmpltSearch.entity().getUrl(), SearchCriteria.Op.NULL);
-        activeTmpltSearch.cp();
-        activeTmpltSearch.cp();
         activeTmpltSearch.done();
 
         publicTmpltSearch = createSearchBuilder();
@@ -180,10 +173,10 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
                 }
             } else if (template.getDownloadState() == Status.BYPASSED) {
                 templateStatus = "Bypassed Secondary Storage";
-            }else if (template.getErrorString()==null){
+            } else if (template.getErrorString() == null) {
                 templateStatus = template.getTemplateState().toString();
-            }else {
-                templateStatus = template.getErrorString();
+            } else {
+                templateStatus = template.getErrorString().trim();
             }
         } else if (template.getDownloadState() == Status.DOWNLOADED) {
             templateStatus = "Download Complete";
@@ -334,6 +327,9 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         templateResponse.setDirectDownload(template.isDirectDownload());
         templateResponse.setDeployAsIs(template.isDeployAsIs());
         templateResponse.setRequiresHvm(template.isRequiresHvm());
+        if (template.getArch() != null) {
+            templateResponse.setArch(template.getArch().getType());
+        }
 
         //set template children disks
         Set<ChildTemplateResponse> childTemplatesSet = new HashSet<ChildTemplateResponse>();
@@ -480,6 +476,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         isoResponse.setExtractable(iso.isExtractable() && !(iso.getTemplateType() == TemplateType.PERHOST));
         isoResponse.setCreated(iso.getCreatedOnStore());
         isoResponse.setDynamicallyScalable(iso.isDynamicallyScalable());
+        isoResponse.setFormat(iso.getFormat());
         if (iso.getTemplateType() == TemplateType.PERHOST) {
             // for TemplateManager.XS_TOOLS_ISO and TemplateManager.VMWARE_TOOLS_ISO, we didn't download, but is ready to use.
             isoResponse.setReady(true);
@@ -578,9 +575,13 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             isoResponse.setZoneName(iso.getDataCenterName());
         }
 
-        Long isoSize = iso.getSize();
+        long isoSize = iso.getSize();
         if (isoSize > 0) {
             isoResponse.setSize(isoSize);
+        }
+        long isoPhysicalSize = iso.getPhysicalSize();
+        if (isoPhysicalSize > 0) {
+            isoResponse.setPhysicalSize(isoPhysicalSize);
         }
 
         if (iso.getUserDataId() != null) {
@@ -602,6 +603,9 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
                 _accountService.isRootAdmin(CallContext.current().getCallingAccount().getId())));
 
         isoResponse.setDirectDownload(iso.isDirectDownload());
+        if (iso.getArch() != null) {
+            isoResponse.setArch(iso.getArch().getType());
+        }
 
         isoResponse.setObjectName("iso");
         return isoResponse;
@@ -683,8 +687,6 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         sc.setParameters("store_id", storeId);
         sc.setParameters("type", TemplateType.USER);
         sc.setParameters("templateState", VirtualMachineTemplate.State.Active);
-        sc.setParameters("public", Boolean.FALSE);
-        sc.setParameters("publicNoUrl",Boolean.TRUE);
         return searchIncludingRemoved(sc, null, null, false);
     }
 

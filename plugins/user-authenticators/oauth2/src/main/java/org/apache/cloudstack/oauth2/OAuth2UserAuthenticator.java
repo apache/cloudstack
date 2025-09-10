@@ -27,7 +27,6 @@ import com.cloud.utils.component.AdapterBase;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.auth.UserAuthenticator;
 import org.apache.cloudstack.auth.UserOAuth2Authenticator;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.Map;
@@ -35,7 +34,6 @@ import java.util.Map;
 import static org.apache.cloudstack.oauth2.OAuth2AuthManager.OAuth2IsPluginEnabled;
 
 public class OAuth2UserAuthenticator extends AdapterBase implements UserAuthenticator {
-    public static final Logger s_logger = Logger.getLogger(OAuth2UserAuthenticator.class);
 
     @Inject
     private UserAccountDao userAccountDao;
@@ -47,21 +45,21 @@ public class OAuth2UserAuthenticator extends AdapterBase implements UserAuthenti
 
     @Override
     public Pair<Boolean, ActionOnFailedAuthentication> authenticate(String username, String password, Long domainId, Map<String, Object[]> requestParameters) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Trying OAuth2 auth for user: " + username);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Trying OAuth2 auth for user: " + username);
         }
 
         if (!isOAuthPluginEnabled()) {
-            s_logger.debug("OAuth2 plugin is disabled");
+            logger.debug("OAuth2 plugin is disabled");
             return new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
         } else if (requestParameters == null) {
-            s_logger.debug("Request parameters are null");
+            logger.debug("Request parameters are null");
             return new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
         }
 
         final UserAccount userAccount = userAccountDao.getUserAccount(username, domainId);
         if (userAccount == null) {
-            s_logger.debug("Unable to find user with " + username + " in domain " + domainId + ", or user source is not OAUTH2");
+            logger.debug("Unable to find user with " + username + " in domain " + domainId + ", or user source is not OAUTH2");
             return new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
         } else {
             User user = userDao.getUser(userAccount.getId());

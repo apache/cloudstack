@@ -21,14 +21,12 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.joda.time.Duration;
 
 import java.io.File;
 
 public class RollingMaintenanceAgentExecutor extends RollingMaintenanceExecutorBase implements RollingMaintenanceExecutor {
 
-    private static final Logger s_logger = Logger.getLogger(RollingMaintenanceAgentExecutor.class);
 
     private String output;
     private boolean success;
@@ -41,17 +39,17 @@ public class RollingMaintenanceAgentExecutor extends RollingMaintenanceExecutorB
     public Pair<Boolean, String> startStageExecution(String stage, File scriptFile, int timeout, String payload) {
         checkHooksDirectory();
         Duration duration = Duration.standardSeconds(timeout);
-        final Script script = new Script(scriptFile.getAbsolutePath(), duration, s_logger);
+        final Script script = new Script(scriptFile.getAbsolutePath(), duration, logger);
         final OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
         if (StringUtils.isNotEmpty(payload)) {
             script.add(payload);
         }
-        s_logger.info("Executing stage: " + stage + " script: " + script);
+        logger.info("Executing stage: " + stage + " script: " + script);
         output = script.execute(parser) + " " + parser.getLines();
 
         if (script.isTimeout()) {
             String msg = "Script " + scriptFile + " timed out";
-            s_logger.error(msg);
+            logger.error(msg);
             success = false;
             return new Pair<>(false, msg);
         }
@@ -62,10 +60,10 @@ public class RollingMaintenanceAgentExecutor extends RollingMaintenanceExecutorB
         }
         success = exitValue == 0 || exitValue == exitValueAvoidMaintenance;
         setAvoidMaintenance(exitValue == exitValueAvoidMaintenance);
-        s_logger.info("Execution finished for stage: " + stage + " script: " + script + ": " + exitValue);
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug(output);
-            s_logger.debug("Stage " + stage + " execution finished: " + exitValue);
+        logger.info("Execution finished for stage: " + stage + " script: " + script + ": " + exitValue);
+        if (logger.isDebugEnabled()) {
+            logger.debug(output);
+            logger.debug("Stage " + stage + " execution finished: " + exitValue);
         }
         return new Pair<>(true, "Stage " + stage + " finished");
     }

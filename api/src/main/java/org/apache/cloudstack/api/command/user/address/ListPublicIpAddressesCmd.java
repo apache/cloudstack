@@ -19,7 +19,7 @@ package org.apache.cloudstack.api.command.user.address;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.lang.BooleanUtils;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -43,7 +43,6 @@ import com.cloud.utils.Pair;
 @APICommand(name = "listPublicIpAddresses", description = "Lists all public IP addresses", responseObject = IPAddressResponse.class, responseView = ResponseView.Restricted,
  requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, entityType = { IpAddress.class })
 public class ListPublicIpAddressesCmd extends BaseListRetrieveOnlyResourceCountCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(ListPublicIpAddressesCmd.class.getName());
 
     private static final String s_name = "listpublicipaddressesresponse";
 
@@ -105,6 +104,9 @@ public class ListPublicIpAddressesCmd extends BaseListRetrieveOnlyResourceCountC
 
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
+
+    @Parameter(name = ApiConstants.FOR_SYSTEM_VMS, type = CommandType.BOOLEAN, description = "true if range is dedicated for system VMs", since = "4.20.0")
+    private Boolean forSystemVMs;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -175,6 +177,10 @@ public class ListPublicIpAddressesCmd extends BaseListRetrieveOnlyResourceCountC
 
     public String getState() {
         return state;
+    }
+
+    public boolean getForSystemVMs() {
+        return BooleanUtils.isTrue(forSystemVMs);
     }
 
     /////////////////////////////////////////////////////

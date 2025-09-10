@@ -26,14 +26,12 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingDaoImpl;
 import com.cloud.utils.db.DB;
-import org.apache.log4j.Logger;
 
 import java.lang.reflect.Field;
 import java.util.List;
 
 @DB()
 public class MockNetworkOfferingDaoImpl extends NetworkOfferingDaoImpl implements NetworkOfferingDao {
-    private static final Logger s_logger = Logger.getLogger(MockNetworkOfferingDaoImpl.class);
 
     /* (non-Javadoc)
      * @see com.cloud.offerings.dao.NetworkOfferingDao#findByUniqueName(java.lang.String)
@@ -140,10 +138,10 @@ public class MockNetworkOfferingDaoImpl extends NetworkOfferingDaoImpl implement
             f.setAccessible(true);
             f.setLong(voToReturn, id);
         } catch (NoSuchFieldException ex) {
-            s_logger.warn(ex);
+            logger.warn(ex);
             return null;
         } catch (IllegalAccessException ex) {
-            s_logger.warn(ex);
+            logger.warn(ex);
             return null;
         }
 

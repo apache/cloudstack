@@ -29,6 +29,17 @@
             layout="vertical"
           >
             <a-steps direction="vertical" size="small">
+              <a-step
+                v-if="!isNormalUserOrProject"
+                :title="this.$t('label.assign.instance.another')">
+                <template #description>
+                  <div style="margin-top: 15px">
+                    {{ $t('label.assigning.vms') }}
+                    <ownership-selection
+                      @fetch-owner="fetchOwnerOptions"/>
+                  </div>
+                </template>
+              </a-step>
               <a-step :title="$t('label.select.deployment.infrastructure')" status="process">
                 <template #description>
                   <div style="margin-top: 15px">
@@ -141,6 +152,18 @@
                       @tabChange="key => onTabChange(key, 'tabKey')">
                       <div v-if="tabKey === 'templateid'">
                         {{ $t('message.template.desc') }}
+                        <div v-if="isZoneSelectedMultiArch" style="width: 100%; margin-top: 5px">
+                          {{ $t('message.template.arch') }}
+                          <a-select
+                            style="width: 100%"
+                            v-model:value="selectedArchitecture"
+                            :defaultValue="architectureTypes.opts[0].id"
+                            @change="arch => changeArchitecture(arch, true)">
+                            <a-select-option v-for="opt in architectureTypes.opts" :key="opt.id">
+                              {{ opt.name || opt.description }}
+                            </a-select-option>
+                          </a-select>
+                        </div>
                         <template-iso-selection
                           input-decorator="templateid"
                           :items="options.templates"
@@ -170,6 +193,18 @@
                       </div>
                       <div v-else>
                         {{ $t('message.iso.desc') }}
+                        <div v-if="isZoneSelectedMultiArch" style="width: 100%; margin-top: 5px">
+                          {{ $t('message.iso.arch') }}
+                          <a-select
+                            style="width: 100%"
+                            v-model:value="selectedArchitecture"
+                            :defaultValue="architectureTypes.opts[0].id"
+                            @change="arch => changeArchitecture(arch, false)">
+                            <a-select-option v-for="opt in architectureTypes.opts" :key="opt.id">
+                              {{ opt.name || opt.description }}
+                            </a-select-option>
+                          </a-select>
+                        </div>
                         <template-iso-selection
                           input-decorator="isoid"
                           :items="options.isos"
@@ -524,7 +559,7 @@
                   </span>
                   <div style="margin-top: 15px" v-if="showDetails">
                     <div
-                      v-if="vm.templateid && ['KVM', 'VMware', 'XenServer'].includes(hypervisor) && !template.deployasis">
+                      v-if="['KVM', 'VMware', 'XenServer'].includes(hypervisor) && ((vm.templateid && !template.deployasis) || vm.isoid)">
                       <a-form-item :label="$t('label.boottype')" name="boottype" ref="boottype">
                         <a-select
                           v-model:value="form.boottype"
@@ -568,7 +603,7 @@
                           @change="val => { dynamicscalingenabled = val }"/>
                       </a-form-item>
                     </a-form-item>
-                    <a-form-item :label="$t('label.userdata')">
+                    <a-form-item :label="$t('label.user.data')">
                       <a-card>
                         <div v-if="this.template && this.template.userdataid">
                           <a-text type="primary">
@@ -622,11 +657,11 @@
                         </div><br/><br/>
                         <div v-if="userdataDefaultOverridePolicy === 'ALLOWOVERRIDE' || userdataDefaultOverridePolicy === 'APPEND' || !userdataDefaultOverridePolicy">
                           <span v-if="userdataDefaultOverridePolicy === 'ALLOWOVERRIDE'" >
-                            {{ $t('label.userdata.do.override') }}
+                            {{ $t('label.user.data.do.override') }}
                             <a-switch v-model:checked="doUserdataOverride" style="margin-left: 10px"/>
                           </span>
                           <span v-if="userdataDefaultOverridePolicy === 'APPEND'">
-                            {{ $t('label.userdata.do.append') }}
+                            {{ $t('label.user.data.do.append') }}
                             <a-switch v-model:checked="doUserdataAppend" style="margin-left: 10px"/>
                           </span>
                           <a-step
@@ -803,36 +838,31 @@
                 </template>
               </a-step>
             </a-steps>
-            <div class="card-footer">
-              <a-form-item name="stayonpage" ref="stayonpage">
-                <a-switch
-                  class="form-item-hidden"
-                  v-model:checked="form.stayonpage" />
-              </a-form-item>
-              <!-- ToDo extract as component -->
-              <a-button @click="() => $router.back()" :disabled="loading.deploy">
-                {{ $t('label.cancel') }}
-              </a-button>
-              <a-dropdown-button style="margin-left: 10px" type="primary" ref="submit" @click="handleSubmit" :loading="loading.deploy">
-                <rocket-outlined />
-                {{ this.form.startvm ? $t('label.launch.vm') : $t('label.create.vm') }}
-                <template #icon><down-outlined /></template>
-                <template #overlay>
-                  <a-menu type="primary" @click="handleSubmitAndStay" theme="dark" class="btn-stay-on-page">
-                    <a-menu-item type="primary" key="1">
-                      <rocket-outlined />
-                      {{ this.form.startvm ? $t('label.launch.vm.and.stay') : $t('label.create.vm.and.stay') }}
-                    </a-menu-item>
-                  </a-menu>
-                </template>
-              </a-dropdown-button>
+            <div class="card-footer" v-if="isMobile()">
+              <deploy-buttons
+                :loading="loading.deploy"
+                :deployButtonText="form.startvm ? $t('label.launch.vm') : $t('label.create.vm')"
+                :deployButtonMenuOptions="deployMenuOptions"
+                @handle-cancel="() => $router.back()"
+                @handle-deploy="handleSubmit"
+                @handle-deploy-menu="(index, e) => handleSubmitAndStay(e)" />
             </div>
           </a-form>
         </a-card>
       </a-col>
       <a-col :md="24" :lg="7" v-if="!isMobile()">
         <a-affix :offsetTop="75" class="vm-info-card">
-          <info-card :resource="vm" :title="$t('label.yourinstance')" @change-resource="(data) => resource = data" />
+          <info-card :footerVisible="true" :resource="vm" :title="$t('label.yourinstance')" @change-resource="(data) => resource = data">
+            <template #footer-content>
+              <deploy-buttons
+                :loading="loading.deploy"
+                :deployButtonText="form.startvm ? $t('label.launch.vm') : $t('label.create.vm')"
+                :deployButtonMenuOptions="deployMenuOptions"
+                @handle-cancel="() => $router.back()"
+                @handle-deploy="handleSubmit"
+                @handle-deploy-menu="(index, e) => handleSubmitAndStay(e)" />
+            </template>
+          </info-card>
         </a-affix>
       </a-col>
     </a-row>
@@ -848,7 +878,9 @@ import { mixin, mixinDevice } from '@/utils/mixin.js'
 import store from '@/store'
 import eventBus from '@/config/eventBus'
 
+import OwnershipSelection from '@views/compute/wizard/OwnershipSelection'
 import InfoCard from '@/components/view/InfoCard'
+import DeployButtons from '@views/compute/wizard/DeployButtons'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import ComputeOfferingSelection from '@views/compute/wizard/ComputeOfferingSelection'
 import ComputeSelection from '@views/compute/wizard/ComputeSelection'
@@ -868,6 +900,10 @@ import InstanceNicsNetworkSelectListView from '@/components/view/InstanceNicsNet
 export default {
   name: 'Wizard',
   components: {
+    OwnershipSelection,
+    InfoCard,
+    DeployButtons,
+    ResourceIcon,
     SshKeyPairSelection,
     UserDataSelection,
     NetworkConfiguration,
@@ -877,11 +913,9 @@ export default {
     DiskSizeSelection,
     MultiDiskSelection,
     DiskOfferingSelection,
-    InfoCard,
     ComputeOfferingSelection,
     ComputeSelection,
     SecurityGroupSelection,
-    ResourceIcon,
     TooltipLabel,
     InstanceNicsNetworkSelectListView
   },
@@ -901,6 +935,7 @@ export default {
       podId: null,
       clusterId: null,
       zoneSelected: false,
+      isZoneSelectedMultiArch: false,
       dynamicscalingenabled: true,
       templateKey: 0,
       showRegisteredUserdata: true,
@@ -944,8 +979,7 @@ export default {
         keyboards: [],
         bootTypes: [],
         bootModes: [],
-        ioPolicyTypes: [],
-        dynamicScalingVmConfig: false
+        ioPolicyTypes: []
       },
       rowCount: {},
       loading: {
@@ -964,6 +998,11 @@ export default {
         clusters: false,
         hosts: false,
         groups: false
+      },
+      owner: {
+        projectid: store.getters.project?.id,
+        domainid: store.getters.project?.id ? null : store.getters.userInfo.domainid,
+        account: store.getters.project?.id ? null : store.getters.userInfo.account
       },
       instanceConfig: {},
       template: {},
@@ -1000,11 +1039,11 @@ export default {
       userDataValues: {},
       templateUserDataCols: [
         {
-          title: this.$t('label.userdata'),
+          title: this.$t('label.user.data'),
           dataIndex: 'userdata'
         },
         {
-          title: this.$t('label.userdatapolicy'),
+          title: this.$t('label.user.data.policy'),
           dataIndex: 'userdataoverridepolicy'
         }
       ],
@@ -1046,7 +1085,19 @@ export default {
       zones: [],
       selectedZone: '',
       formModel: {},
-      nicToNetworkSelection: []
+      nicToNetworkSelection: [],
+      selectedArchitecture: null,
+      architectureTypes: {
+        opts: [
+          {
+            id: 'x86_64',
+            description: 'AMD 64 bits (x86_64)'
+          }, {
+            id: 'aarch64',
+            description: 'ARM 64 bits (aarch64)'
+          }
+        ]
+      }
     }
   },
   computed: {
@@ -1056,19 +1107,58 @@ export default {
     isNormalAndDomainUser () {
       return ['DomainAdmin', 'User'].includes(this.$store.getters.userInfo.roletype)
     },
+    isNormalUserOrProject () {
+      return ['User'].includes(this.$store.getters.userInfo.roletype) || store.getters.project.id
+    },
     diskSize () {
-      const rootDiskSize = _.get(this.instanceConfig, 'rootdisksize', 0)
-      const customDiskSize = _.get(this.instanceConfig, 'size', 0)
-      const diskOfferingDiskSize = _.get(this.diskOffering, 'disksize', 0)
-      const dataDiskSize = diskOfferingDiskSize > 0 ? diskOfferingDiskSize : customDiskSize
+      const customRootDiskSize = _.get(this.instanceConfig, 'rootdisksize', null)
+      const customDataDiskSize = _.get(this.instanceConfig, 'size', null)
+      let computeOfferingDiskSize = _.get(this.serviceOffering, 'rootdisksize', null)
+      computeOfferingDiskSize = computeOfferingDiskSize > 0 ? computeOfferingDiskSize : null
+      const diskOfferingDiskSize = _.get(this.diskOffering, 'disksize', null)
+      const overrideDiskOfferingDiskSize = _.get(this.overrideDiskOffering, 'disksize', null)
+
+      let rootDiskSize
+      let dataDiskSize
+      if (this.vm.isoid != null) {
+        rootDiskSize = this.diskOffering?.iscustomized ? customDataDiskSize : diskOfferingDiskSize
+      } else {
+        rootDiskSize = this.overrideDiskOffering?.iscustomized ? customRootDiskSize : overrideDiskOfferingDiskSize || computeOfferingDiskSize || this.dataPreFill.minrootdisksize
+        dataDiskSize = this.diskOffering?.iscustomized ? customDataDiskSize : diskOfferingDiskSize
+      }
+
       const size = []
-      if (rootDiskSize > 0) {
+      if (rootDiskSize) {
         size.push(`${rootDiskSize} GB (Root)`)
       }
-      if (dataDiskSize > 0) {
+      if (dataDiskSize) {
         size.push(`${dataDiskSize} GB (Data)`)
       }
       return size.join(' | ')
+    },
+    rootDiskOffering () {
+      const rootDiskOffering = this.vm.isoid != null ? this.diskOffering : this.overrideDiskOffering
+
+      const id = _.get(rootDiskOffering, 'id', null)
+      const displayText = _.get(rootDiskOffering, 'displaytext', null)
+
+      return {
+        id: id,
+        displayText: `${displayText} (Root)`
+      }
+    },
+    dataDiskOffering () {
+      if (this.vm.isoid != null) {
+        return null
+      }
+
+      const id = _.get(this.diskOffering, 'id', null)
+      const displayText = _.get(this.diskOffering, 'displaytext', null)
+
+      return {
+        id: id,
+        displayText: `${displayText} (Data)`
+      }
     },
     affinityGroupIds () {
       return _.map(this.affinityGroups, 'id')
@@ -1079,6 +1169,9 @@ export default {
           list: 'listServiceOfferings',
           options: {
             zoneid: _.get(this.zone, 'id'),
+            projectid: this.owner.projectid,
+            domainid: this.owner.domainid,
+            account: this.owner.account,
             issystem: false,
             page: 1,
             pageSize: 10,
@@ -1089,6 +1182,9 @@ export default {
           list: 'listDiskOfferings',
           options: {
             zoneid: _.get(this.zone, 'id'),
+            projectid: this.owner.projectid,
+            domainid: this.owner.domainid,
+            account: this.owner.account,
             page: 1,
             pageSize: 10,
             keyword: undefined
@@ -1111,6 +1207,9 @@ export default {
           options: {
             page: 1,
             pageSize: 10,
+            account: this.owner.account,
+            domainid: this.owner.domainid,
+            projectid: this.owner.projectid,
             keyword: undefined,
             listall: false
           }
@@ -1138,9 +1237,9 @@ export default {
           options: {
             zoneid: _.get(this.zone, 'id'),
             canusefordeploy: true,
-            projectid: store.getters.project ? store.getters.project.id : null,
-            domainid: store.getters.project && store.getters.project.id ? null : store.getters.userInfo.domainid,
-            account: store.getters.project && store.getters.project.id ? null : store.getters.userInfo.account,
+            projectid: store.getters.project.id || this.owner.projectid,
+            domainid: store.getters.project.id ? null : this.owner.domainid,
+            account: store.getters.project.id ? null : this.owner.account,
             page: 1,
             pageSize: 10,
             keyword: undefined,
@@ -1175,13 +1274,6 @@ export default {
             type: 'Routing'
           },
           field: 'hostid'
-        },
-        dynamicScalingVmConfig: {
-          list: 'listConfigurations',
-          options: {
-            zoneid: _.get(this.zone, 'id'),
-            name: 'enable.dynamic.scale.vm'
-          }
         }
       }
     },
@@ -1293,17 +1385,29 @@ export default {
       let tabList = []
       tabList = [{
         key: 'userdataregistered',
-        tab: this.$t('label.userdata.registered')
+        tab: this.$t('label.user.data.registered')
       },
       {
         key: 'userdatatext',
-        tab: this.$t('label.userdata.text')
+        tab: this.$t('label.user.data.text')
       }]
 
       return tabList
     },
     showSecurityGroupSection () {
-      return (this.networks.length > 0 && this.zone.securitygroupsenabled) || (this.zone && this.zone.networktype === 'Basic')
+      if (this.networks.length < 1) {
+        return false
+      }
+      for (const network of this.options.networks) {
+        if (this.form.networkids && this.form.networkids.includes(network.id)) {
+          for (const service of network.service) {
+            if (service.name === 'SecurityGroup') {
+              return true
+            }
+          }
+        }
+      }
+      return false
     },
     isUserAllowedToListSshKeys () {
       return Boolean('listSSHKeyPairs' in this.$store.getters.apis)
@@ -1312,13 +1416,16 @@ export default {
       return Boolean('listUserData' in this.$store.getters.apis)
     },
     dynamicScalingVmConfigValue () {
-      return this.options.dynamicScalingVmConfig?.[0]?.value === 'true'
+      return this.$store.getters.features.dynamicscalingenabled
     },
     isCustomizedDiskIOPS () {
       return this.diskSelected?.iscustomizediops || false
     },
     isCustomizedIOPS () {
       return this.rootDiskSelected?.iscustomizediops || this.serviceOffering?.iscustomizediops || false
+    },
+    deployMenuOptions () {
+      return [this.form.startvm ? this.$t('label.launch.vm.and.stay') : this.$t('label.create.vm.and.stay')]
     }
   },
   watch: {
@@ -1372,7 +1479,7 @@ export default {
           this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.diskofferingid)
         }
 
-        this.zone = _.find(this.options.zones, (option) => option.id === instanceConfig.zoneid)
+        this.zone = _.find(this.options.zones, (option) => option.id === this.instanceConfig.zoneid)
         this.affinityGroups = _.filter(this.options.affinityGroups, (option) => _.includes(instanceConfig.affinitygroupids, option.id))
         this.networks = this.getSelectedNetworksWithExistingConfig(_.filter(this.options.networks, (option) => _.includes(instanceConfig.networkids, option.id)))
 
@@ -1402,16 +1509,10 @@ export default {
           this.vm.hostname = host.name
         }
 
-        if (this.serviceOffering?.rootdisksize) {
-          this.vm.disksizetotalgb = this.serviceOffering.rootdisksize
-        } else if (this.diskSize) {
+        if (this.diskSize) {
           this.vm.disksizetotalgb = this.diskSize
         } else {
           this.vm.disksizetotalgb = null
-        }
-
-        if (this.diskSize) {
-          this.vm.disksizetotalgb = this.diskSize
         }
 
         if (this.networks) {
@@ -1460,6 +1561,11 @@ export default {
           this.vm.diskofferingname = this.diskOffering.displaytext
           this.vm.diskofferingsize = this.diskOffering.disksize
         }
+
+        this.vm.rootdiskofferingid = this.rootDiskOffering?.id
+        this.vm.rootdiskofferingdisplaytext = this.rootDiskOffering?.displayText
+        this.vm.datadiskofferingid = this.dataDiskOffering?.id
+        this.vm.datadiskofferingdisplaytext = this.dataDiskOffering?.displayText
 
         if (this.affinityGroups) {
           this.vm.affinitygroup = this.affinityGroups
@@ -1685,8 +1791,8 @@ export default {
     fetchInstaceGroups () {
       this.options.instanceGroups = []
       api('listInstanceGroups', {
-        account: this.$store.getters.userInfo.account,
-        domainid: this.$store.getters.userInfo.domainid,
+        account: this.$store.getters.project?.id ? null : this.$store.getters.userInfo.account,
+        domainid: this.$store.getters.project?.id ? null : this.$store.getters.userInfo.domainid,
         listall: true
       }).then(response => {
         const groups = response.listinstancegroupsresponse.instancegroup || []
@@ -1826,18 +1932,16 @@ export default {
         this.form.userdataid = undefined
         return
       }
+
       this.form.userdataid = id
       this.userDataParams = []
       api('listUserData', { id: id }).then(json => {
         const resp = json?.listuserdataresponse?.userdata || []
-        if (resp) {
-          var params = resp[0].params
-          if (params) {
-            var dataParams = params.split(',')
-          }
-          var that = this
-          dataParams.forEach(function (val, index) {
-            that.userDataParams.push({
+        if (resp[0]) {
+          const params = resp[0].params
+          const dataParams = params ? params.split(',') : []
+          dataParams.forEach((val, index) => {
+            this.userDataParams.push({
               id: index,
               key: val
             })
@@ -1879,6 +1983,14 @@ export default {
     },
     getText (option) {
       return _.get(option, 'displaytext', _.get(option, 'name'))
+    },
+    changeArchitecture (arch, isTemplate) {
+      this.selectedArchitecture = arch
+      if (isTemplate) {
+        this.fetchAllTemplates()
+      } else {
+        this.fetchAllIsos()
+      }
     },
     handleSubmitAndStay (e) {
       this.form.stayonpage = true
@@ -2086,6 +2198,14 @@ export default {
           deployVmData.bootintosetup = values.bootintosetup
         }
 
+        if (this.owner.account) {
+          deployVmData.account = this.owner.account
+          deployVmData.domainid = this.owner.domainid
+        } else if (this.owner.projectid) {
+          deployVmData.domainid = this.owner.domainid
+          deployVmData.projectid = this.owner.projectid
+        }
+
         const title = this.$t('label.launch.vm')
         const description = values.name || ''
         const password = this.$t('label.password')
@@ -2178,6 +2298,29 @@ export default {
         }
       })
     },
+    fetchOwnerOptions (OwnerOptions) {
+      this.owner = {
+        projectid: null,
+        domainid: store.getters.userInfo.domainid,
+        account: store.getters.userInfo.account
+      }
+      if (OwnerOptions.selectedAccountType === 'Account') {
+        if (!OwnerOptions.selectedAccount) {
+          return
+        }
+        this.owner.account = OwnerOptions.selectedAccount
+        this.owner.domainid = OwnerOptions.selectedDomain
+        this.owner.projectid = null
+      } else if (OwnerOptions.selectedAccountType === 'Project') {
+        if (!OwnerOptions.selectedProject) {
+          return
+        }
+        this.owner.account = null
+        this.owner.domainid = null
+        this.owner.projectid = OwnerOptions.selectedProject
+      }
+      this.resetData()
+    },
     fetchZones (zoneId, listZoneAllow) {
       this.zones = []
       return new Promise((resolve) => {
@@ -2215,7 +2358,7 @@ export default {
       param.loading = true
       param.opts = []
       const options = param.options || {}
-      if (!('listall' in options) && !['zones', 'pods', 'clusters', 'hosts', 'dynamicScalingVmConfig', 'hypervisors'].includes(name)) {
+      if (!('listall' in options) && !['zones', 'pods', 'clusters', 'hosts', 'hypervisors'].includes(name)) {
         options.listall = true
       }
       api(param.list, options).then((response) => {
@@ -2275,6 +2418,12 @@ export default {
         args.pageSize = args.pageSize || 10
       }
       args.zoneid = _.get(this.zone, 'id')
+      if (this.isZoneSelectedMultiArch) {
+        args.arch = this.selectedArchitecture
+      }
+      args.account = store.getters.project?.id ? null : this.owner.account
+      args.domainid = store.getters.project?.id ? null : this.owner.domainid
+      args.projectid = store.getters.project?.id || this.owner.projectid
       args.templatefilter = templateFilter
       args.details = 'all'
       args.showicon = 'true'
@@ -2297,6 +2446,9 @@ export default {
         args.pageSize = args.pageSize || 10
       }
       args.zoneid = _.get(this.zone, 'id')
+      if (this.isZoneSelectedMultiArch) {
+        args.arch = this.selectedArchitecture
+      }
       args.isoFilter = isoFilter
       args.bootable = true
       args.showicon = 'true'
@@ -2360,6 +2512,10 @@ export default {
       this.podId = null
       this.clusterId = null
       this.zone = _.find(this.options.zones, (option) => option.id === value)
+      this.isZoneSelectedMultiArch = this.zone.ismultiarch
+      if (this.isZoneSelectedMultiArch) {
+        this.selectedArchitecture = this.architectureTypes.opts[0].id
+      }
       this.zoneSelected = true
       this.form.startvm = true
       this.selectedZone = this.zoneId
@@ -2405,14 +2561,28 @@ export default {
       if (this.clusterId === null) {
         this.form.clusterid = undefined
       }
-
       this.fetchOptions(this.params.hosts, 'hosts')
+      if (this.clusterId && Array.isArray(this.options.clusters)) {
+        const cluster = this.options.clusters.find(c => c.id === this.clusterId)
+        this.handleArchResourceSelected(cluster.arch)
+      }
     },
     onSelectHostId (value) {
       this.hostId = value
       if (this.hostId === null) {
         this.form.hostid = undefined
       }
+      if (this.hostId && Array.isArray(this.options.hosts)) {
+        const host = this.options.hosts.find(h => h.id === this.hostId)
+        this.handleArchResourceSelected(host.arch)
+      }
+    },
+    handleArchResourceSelected (resourceArch) {
+      if (!resourceArch || !this.isZoneSelectedMultiArch || this.selectedArchitecture === resourceArch) {
+        return
+      }
+      this.selectedArchitecture = resourceArch
+      this.changeArchitecture(resourceArch, this.tabKey === 'templateid')
     },
     handleSearchFilter (name, options) {
       this.params[name].options = { ...this.params[name].options, ...options }
@@ -2531,7 +2701,8 @@ export default {
       }
     },
     resetFromTemplateConfiguration () {
-      this.deleteFrom(this.params.serviceOfferings.options, ['cpuspeed', 'cpunumber', 'memory'])
+      this.deleteFrom(this.instanceConfig, ['disksize', 'rootdisksize'])
+      this.deleteFrom(this.params.serviceOfferings.options, ['templateid', 'cpuspeed', 'cpunumber', 'memory'])
       this.deleteFrom(this.dataPreFill, ['cpuspeed', 'cpunumber', 'memory'])
       this.handleSearchFilter('serviceOfferings', {
         page: 1,
@@ -2539,19 +2710,27 @@ export default {
       })
     },
     handleTemplateConfiguration () {
-      if (!this.selectedTemplateConfiguration) {
+      if (!this.selectedTemplateConfiguration && !this.template.templatetag) {
         return
       }
-      const params = {
-        cpunumber: this.selectedTemplateConfiguration.cpunumber,
-        cpuspeed: this.selectedTemplateConfiguration.cpuspeed,
-        memory: this.selectedTemplateConfiguration.memory,
+      let params = {
         page: 1,
         pageSize: 10
       }
-      this.dataPreFill.cpunumber = params.cpunumber
-      this.dataPreFill.cpuspeed = params.cpuspeed
-      this.dataPreFill.memory = params.memory
+      if (this.template.templatetag) {
+        params.templateid = this.template.id
+      }
+      if (this.selectedTemplateConfiguration && Object.keys(this.selectedTemplateConfiguration).length > 0) {
+        params = {
+          ...params,
+          cpunumber: this.selectedTemplateConfiguration.cpunumber,
+          cpuspeed: this.selectedTemplateConfiguration.cpuspeed,
+          memory: this.selectedTemplateConfiguration.memory
+        }
+        this.dataPreFill.cpunumber = params.cpunumber
+        this.dataPreFill.cpuspeed = params.cpuspeed
+        this.dataPreFill.memory = params.memory
+      }
       this.handleSearchFilter('serviceOfferings', params)
     },
     updateFormProperties () {
@@ -2620,10 +2799,10 @@ export default {
         this.templateProperties = this.fetchTemplateProperties(this.template)
         this.selectedTemplateConfiguration = {}
         setTimeout(() => {
-          if (this.templateConfigurationExists) {
-            this.selectedTemplateConfiguration = this.templateConfigurations[0]
+          if (this.templateConfigurationExists || this.template.templatetag) {
+            this.selectedTemplateConfiguration = this.templateConfigurationExists ? this.templateConfigurations[0] : {}
             this.handleTemplateConfiguration()
-            if ('templateConfiguration' in this.form.fieldsStore.fieldsMeta) {
+            if (this.selectedTemplateConfiguration) {
               this.updateFieldValue('templateConfiguration', this.selectedTemplateConfiguration.id)
             }
             this.updateComputeOffering(null) // reset as existing selection may be incompatible
@@ -2710,10 +2889,6 @@ export default {
   .card-footer {
     text-align: right;
     margin-top: 2rem;
-
-    button + button {
-      margin-left: 8px;
-    }
   }
 
   .ant-list-item-meta-avatar {
@@ -2753,7 +2928,7 @@ export default {
   .vm-info-card {
     .ant-card-body {
       min-height: 250px;
-      max-height: calc(100vh - 150px);
+      height: calc(100vh - 258px);
       overflow-y: auto;
       scroll-behavior: smooth;
     }
@@ -2773,13 +2948,5 @@ export default {
 
   .form-item-hidden {
     display: none;
-  }
-
-  .btn-stay-on-page {
-    &.ant-dropdown-menu-dark {
-      .ant-dropdown-menu-item:hover {
-        background: transparent !important;
-      }
-    }
   }
 </style>

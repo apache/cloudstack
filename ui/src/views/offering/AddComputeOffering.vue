@@ -47,6 +47,7 @@
             <tooltip-label :title="$t('label.systemvmtype')" :tooltip="apiParams.systemvmtype.description"/>
           </template>
           <a-select
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.systemvmtype"
             showSearch
             optionFilterProp="label"
@@ -214,6 +215,7 @@
             <tooltip-label :title="$t('label.deploymentplanner')" :tooltip="apiParams.deploymentplanner.description"/>
           </template>
           <a-select
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.deploymentplanner"
             showSearch
             optionFilterProp="label"
@@ -245,6 +247,7 @@
         </a-form-item>
         <a-form-item name="pcidevice" ref="pcidevice" :label="$t('label.gpu')" v-if="!isSystem">
           <a-select
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.pcidevice"
             showSearch
             optionFilterProp="label"
@@ -260,6 +263,7 @@
         </a-form-item>
         <a-form-item name="vgputype" ref="vgputype" :label="$t('label.vgputype')" v-if="vGpuVisible">
           <a-select
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.vgputype"
             showSearch
             optionFilterProp="label"
@@ -281,6 +285,7 @@
           </template>
           <a-select
             mode="multiple"
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.domainid"
             showSearch
             optionFilterProp="label"
@@ -305,6 +310,7 @@
           <a-select
             id="zone-selection"
             mode="multiple"
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.zoneid"
             showSearch
             optionFilterProp="label"
@@ -331,6 +337,7 @@
             <tooltip-label :title="$t('label.vmware.storage.policy')" :tooltip="apiParams.storagepolicy.description"/>
           </template>
           <a-select
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.storagepolicy"
             :placeholder="apiParams.storagepolicy.description"
             showSearch
@@ -342,6 +349,12 @@
               {{ policy.name || policy.id }}
             </a-select-option>
           </a-select>
+        </a-form-item>
+        <a-form-item name="purgeresources" ref="purgeresources">
+          <template #label>
+            <tooltip-label :title="$t('label.purgeresources')" :tooltip="apiParams.purgeresources.description"/>
+          </template>
+          <a-switch v-model:checked="form.purgeresources"/>
         </a-form-item>
         <a-form-item name="computeonly" ref="computeonly">
           <template #label>
@@ -519,6 +532,7 @@
                   </template>
                   <a-select
                     mode="tags"
+                    :getPopupContainer="(trigger) => trigger.parentNode"
                     v-model:value="form.storagetags"
                     showSearch
                     optionFilterProp="value"
@@ -558,6 +572,7 @@
               <br /><br />
               <a-form-item :label="$t('label.disk.offerings')" name="diskofferingid" ref="diskofferingid">
                 <a-select
+                  :getPopupContainer="(trigger) => trigger.parentNode"
                   v-model:value="form.diskofferingid"
                   :loading="loading"
                   :placeholder="$t('label.diskoffering')">
@@ -958,7 +973,8 @@ export default {
           limitcpuuse: values.limitcpuuse === true,
           dynamicscalingenabled: values.dynamicscalingenabled,
           diskofferingstrictness: values.diskofferingstrictness,
-          encryptroot: values.encryptdisk
+          encryptroot: values.encryptdisk,
+          purgeresources: values.purgeresources
         }
         if (values.diskofferingid) {
           params.diskofferingid = values.diskofferingid

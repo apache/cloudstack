@@ -23,7 +23,6 @@ import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import org.apache.log4j.Logger;
 
 import com.trilead.ssh2.SCPClient;
 
@@ -31,7 +30,6 @@ import com.cloud.storage.StorageLayer;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class ScpTemplateDownloader extends TemplateDownloaderBase implements TemplateDownloader {
-    private static final Logger s_logger = Logger.getLogger(ScpTemplateDownloader.class);
 
     public ScpTemplateDownloader(StorageLayer storageLayer, String downloadUrl, String toDir, long maxTemplateSizeInBytes, DownloadCompleteCallback callback) {
         super(storageLayer, downloadUrl, toDir, maxTemplateSizeInBytes, callback);
@@ -40,7 +38,7 @@ public class ScpTemplateDownloader extends TemplateDownloaderBase implements Tem
         try {
             uri = new URI(_downloadUrl);
         } catch (URISyntaxException e) {
-            s_logger.warn("URI syntax error: " + _downloadUrl);
+            logger.warn("URI syntax error: " + _downloadUrl);
             _status = Status.UNRECOVERABLE_ERROR;
             return;
         }
@@ -108,7 +106,7 @@ public class ScpTemplateDownloader extends TemplateDownloaderBase implements Tem
 
             if (!file.exists()) {
                 _status = Status.UNRECOVERABLE_ERROR;
-                s_logger.debug("unable to scp the file " + _downloadUrl);
+                logger.debug("unable to scp the file " + _downloadUrl);
                 return 0;
             }
 
@@ -123,7 +121,7 @@ public class ScpTemplateDownloader extends TemplateDownloaderBase implements Tem
             return _totalBytes;
 
         } catch (Exception e) {
-            s_logger.warn("Unable to download " + _downloadUrl, e);
+            logger.warn("Unable to download " + _downloadUrl, e);
             _status = TemplateDownloader.Status.UNRECOVERABLE_ERROR;
             _errorString = e.getMessage();
             return 0;

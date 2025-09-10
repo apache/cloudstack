@@ -19,14 +19,15 @@ package com.cloud.api.dispatch;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 
 public class ParamUnpackWorker implements DispatchWorker {
 
-    private static final Logger s_logger = Logger.getLogger(ParamUnpackWorker.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     @Override
@@ -76,7 +77,7 @@ public class ParamUnpackWorker implements DispatchWorker {
                         parsedIndex = true;
                     }
                 } catch (final NumberFormatException nfe) {
-                    s_logger.warn("Invalid parameter " + key + " received, unable to parse object array, returning an error.");
+                    logger.warn("Invalid parameter " + key + " received, unable to parse object array, returning an error.");
                 }
 
                 if (!parsedIndex) {

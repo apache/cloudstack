@@ -333,6 +333,8 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Partition, 
      */
     Date getCreated();
 
+    Date getRemoved();
+
     long getServiceOfferingId();
 
     Long getBackupOfferingId();

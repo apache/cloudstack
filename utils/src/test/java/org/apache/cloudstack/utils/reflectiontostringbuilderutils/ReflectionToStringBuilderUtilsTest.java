@@ -251,7 +251,7 @@ public class ReflectionToStringBuilderUtilsTest extends TestCase {
     @Test
     public void validateReflectOnlySelectedFieldsNullNonSelectedFieldsMustReturnNull() throws Exception{
         try (MockedStatic<ReflectionToStringBuilderUtils> reflectionToStringBuilderUtilsMocked = Mockito.mockStatic(ReflectionToStringBuilderUtils.class, Mockito.CALLS_REAL_METHODS)) {
-            reflectionToStringBuilderUtilsMocked.when(() -> ReflectionToStringBuilderUtils.getNonSelectedFields(Mockito.any(), Mockito.any())).thenReturn(null);
+            reflectionToStringBuilderUtilsMocked.when(() -> ReflectionToStringBuilderUtils.getNonSelectedFields(Mockito.any(), Mockito.any(String[].class))).thenReturn(null);
 
             TO_STRING_STYLES.forEach(style -> {
                 String result = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(null, style, "-");
@@ -280,8 +280,8 @@ public class ReflectionToStringBuilderUtilsTest extends TestCase {
         String expectedResult = "test";
 
         try (MockedStatic<ReflectionToStringBuilderUtils> reflectionToStringBuilderUtilsMocked = Mockito.mockStatic(ReflectionToStringBuilderUtils.class, Mockito.CALLS_REAL_METHODS)) {
-            reflectionToStringBuilderUtilsMocked.when(() -> ReflectionToStringBuilderUtils.getNonSelectedFields(Mockito.any(), Mockito.any())).thenReturn(classToReflectFieldsNamesArray);
-            reflectionToStringBuilderUtilsMocked.when(() -> ReflectionToStringBuilderUtils.reflectCollection(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.any())).thenReturn(expectedResult);
+            reflectionToStringBuilderUtilsMocked.when(() -> ReflectionToStringBuilderUtils.getNonSelectedFields(Mockito.any(), Mockito.any(String[].class))).thenReturn(classToReflectFieldsNamesArray);
+            reflectionToStringBuilderUtilsMocked.when(() -> ReflectionToStringBuilderUtils.reflectCollection(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.any(String[].class))).thenReturn(expectedResult);
 
             TO_STRING_STYLES.forEach(style -> {
                 String result = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(new Object(), style, "-", fieldToRemove);
@@ -323,7 +323,7 @@ public class ReflectionToStringBuilderUtilsTest extends TestCase {
         String expectedResult = "[test]";
 
         try (MockedStatic<ReflectionToStringBuilderUtils> reflectionToStringBuilderUtilsMocked = Mockito.mockStatic(ReflectionToStringBuilderUtils.class, Mockito.CALLS_REAL_METHODS)) {
-            reflectionToStringBuilderUtilsMocked.when(() -> ReflectionToStringBuilderUtils.reflectOnlySelectedFields(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.any())).thenReturn("test");
+            reflectionToStringBuilderUtilsMocked.when(() -> ReflectionToStringBuilderUtils.reflectOnlySelectedFields(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.any(String[].class))).thenReturn("test");
             reflectionToStringBuilderUtilsMocked.when(() -> ReflectionToStringBuilderUtils.isCollection(Mockito.any())).thenReturn(true);
 
             String result = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(new Object());
@@ -336,7 +336,7 @@ public class ReflectionToStringBuilderUtilsTest extends TestCase {
         String expectedResult = "test";
 
         try (MockedStatic<ReflectionToStringBuilderUtils> reflectionToStringBuilderUtilsMocked = Mockito.mockStatic(ReflectionToStringBuilderUtils.class, Mockito.CALLS_REAL_METHODS)) {
-            reflectionToStringBuilderUtilsMocked.when(() -> ReflectionToStringBuilderUtils.reflectOnlySelectedFields(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.any())).thenReturn(expectedResult);
+            reflectionToStringBuilderUtilsMocked.when(() -> ReflectionToStringBuilderUtils.reflectOnlySelectedFields(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.any(String[].class))).thenReturn(expectedResult);
             reflectionToStringBuilderUtilsMocked.when(() -> ReflectionToStringBuilderUtils.isCollection(Mockito.any())).thenReturn(false);
 
             String result = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(new Object());

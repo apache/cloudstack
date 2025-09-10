@@ -18,7 +18,6 @@
 package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.SetupPersistentNetworkAnswer;
@@ -33,7 +32,6 @@ import com.xensource.xenapi.Network;
 @ResourceWrapper(handles = SetupPersistentNetworkCommand.class)
 public class CitrixSetupPersistentNetworkCommandWrapper extends CommandWrapper<SetupPersistentNetworkCommand, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixSetupPersistentNetworkCommandWrapper.class);
 
     @Override
     public Answer execute(SetupPersistentNetworkCommand command, CitrixResourceBase citrixResourceBase) {
@@ -47,7 +45,7 @@ public class CitrixSetupPersistentNetworkCommandWrapper extends CommandWrapper<S
             return new SetupPersistentNetworkAnswer(command, true, "Successfully setup network on host: "+ host.getIp());
         } catch (final Exception e) {
             final String msg = " Failed to setup network on host: " + host.getIp() + " due to: " + e.toString();
-            s_logger.error(msg, e);
+            logger.error(msg, e);
             return new SetupPersistentNetworkAnswer(command, false, msg);
         }
     }

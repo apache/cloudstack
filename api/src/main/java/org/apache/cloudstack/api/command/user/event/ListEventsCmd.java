@@ -24,14 +24,12 @@ import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.Event;
 
 @APICommand(name = "listEvents", description = "A command to list events.", responseObject = EventResponse.class, entityType = {Event.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListEventsCmd extends BaseListProjectAndAccountResourcesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListEventsCmd.class.getName());
 
 
     /////////////////////////////////////////////////////

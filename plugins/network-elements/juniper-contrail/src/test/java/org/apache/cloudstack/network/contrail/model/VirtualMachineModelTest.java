@@ -17,7 +17,7 @@
 
 package org.apache.cloudstack.network.contrail.model;
 
-import static org.mockito.Matchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -30,7 +30,6 @@ import net.juniper.contrail.api.ApiConnectorMock;
 
 import org.apache.cloudstack.network.contrail.management.ContrailManagerImpl;
 import org.apache.cloudstack.network.contrail.management.ModelDatabase;
-import org.apache.log4j.Logger;
 import org.junit.Test;
 
 import com.cloud.network.Network;
@@ -40,8 +39,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.UserVmDao;
 
 public class VirtualMachineModelTest extends TestCase {
-    private static final Logger s_logger =
-            Logger.getLogger(VirtualMachineModelTest.class);
 
     @Test
     public void testVirtualMachineDBLookup() {
@@ -60,7 +57,6 @@ public class VirtualMachineModelTest extends TestCase {
         VirtualMachineModel vm2 = new VirtualMachineModel(vm, "fbc1f8fa-4b78-45ee-bba0-b551dbf94575");
         db.getVirtualMachines().add(vm2);
 
-        s_logger.debug("No of Vitual Machines added to database : " + db.getVirtualMachines().size());
 
         assertEquals(3, db.getVirtualMachines().size());
 

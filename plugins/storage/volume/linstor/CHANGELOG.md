@@ -5,6 +5,18 @@ All notable changes to Linstor CloudStack plugin will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2025-08-05]
+
+### Fixed
+
+- getVolumeStats wasn't correctly working if multiple Linstor clusters/primary storages are used.
+
+## [2025-07-01]
+
+### Fixed
+
+- Regression in 4.19.3 and 4.21.0 with templates from snapshots
+
 ## [2025-05-07]
 
 ### Added

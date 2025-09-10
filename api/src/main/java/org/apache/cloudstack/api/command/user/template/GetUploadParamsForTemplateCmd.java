@@ -22,6 +22,7 @@ import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.Map;
 
+import com.cloud.cpu.CPU;
 import com.cloud.hypervisor.Hypervisor;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -34,7 +35,6 @@ import org.apache.cloudstack.api.response.GetUploadParamsResponse;
 import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.ResourceAllocationException;
 
@@ -43,7 +43,6 @@ import com.cloud.exception.ResourceAllocationException;
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
-    public static final Logger s_logger = Logger.getLogger(GetUploadParamsForTemplateCmd.class.getName());
 
     private static final String s_name = "postuploadtemplateresponse";
 
@@ -56,6 +55,11 @@ public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
     @Parameter(name = ApiConstants.OS_TYPE_ID, type = CommandType.UUID, entityType = GuestOSResponse.class, required = false,
             description = "the ID of the OS Type that best represents the OS of this template. Not required for VMware as the guest OS is obtained from the OVF file.")
     private Long osTypeId;
+
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+            description = "the CPU arch of the template. Valid options are: x86_64, aarch64",
+            since = "4.20")
+    private String arch;
 
     @Parameter(name = ApiConstants.BITS, type = CommandType.INTEGER, description = "32 or 64 bits support. 64 by default")
     private Integer bits;
@@ -164,6 +168,10 @@ public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
                 Boolean.TRUE.equals(deployAsIs);
     }
 
+    public CPU.CPUArch getArch() {
+        return CPU.CPUArch.fromType(arch);
+    }
+
     @Override
     public void execute() throws ServerApiException {
         validateRequest();
@@ -172,7 +180,7 @@ public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } catch (ResourceAllocationException | MalformedURLException e) {
-            s_logger.error("exception while registering template", e);
+            logger.error("exception while registering template", e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "exception while registering template: " + e.getMessage());
         }
     }

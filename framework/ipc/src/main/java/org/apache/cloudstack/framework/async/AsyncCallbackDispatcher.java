@@ -29,11 +29,12 @@ import net.sf.cglib.proxy.Factory;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 @SuppressWarnings("rawtypes")
 public class AsyncCallbackDispatcher<T, R> implements AsyncCompletionCallback {
-    private static final Logger s_logger = Logger.getLogger(AsyncCallbackDispatcher.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private Method _callbackMethod;
     private final T _targetObject;
@@ -100,7 +101,7 @@ public class AsyncCallbackDispatcher<T, R> implements AsyncCompletionCallback {
             });
             return t;
         } catch (Throwable e) {
-            s_logger.error("Unexpected exception", e);
+            logger.error("Unexpected exception", e);
         }
 
         return null;

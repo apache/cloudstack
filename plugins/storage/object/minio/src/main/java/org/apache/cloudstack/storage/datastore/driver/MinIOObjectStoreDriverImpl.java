@@ -38,10 +38,10 @@ import org.apache.cloudstack.storage.object.Bucket;
 import org.apache.cloudstack.storage.object.BucketObject;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.amazonaws.services.s3.model.AccessControlList;
 import com.amazonaws.services.s3.model.BucketPolicy;
+import com.cloud.agent.api.to.BucketTO;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.storage.BucketVO;
 import com.cloud.storage.dao.BucketDao;
@@ -66,7 +66,6 @@ import io.minio.messages.SseConfiguration;
 import io.minio.messages.VersioningConfiguration;
 
 public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
-    private static final Logger s_logger = Logger.getLogger(MinIOObjectStoreDriverImpl.class);
     protected static final String ACS_PREFIX = "acs";
 
     @Inject
@@ -182,7 +181,8 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     }
 
     @Override
-    public boolean deleteBucket(String bucketName, long storeId) {
+    public boolean deleteBucket(BucketTO bucket, long storeId) {
+        String bucketName = bucket.getName();
         MinioClient minioClient = getMinIOClient(storeId);
         try {
             if(!minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build())) {
@@ -201,17 +201,18 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     }
 
     @Override
-    public AccessControlList getBucketAcl(String bucketName, long storeId) {
+    public AccessControlList getBucketAcl(BucketTO bucket, long storeId) {
         return null;
     }
 
     @Override
-    public void setBucketAcl(String bucketName, AccessControlList acl, long storeId) {
+    public void setBucketAcl(BucketTO bucket, AccessControlList acl, long storeId) {
 
     }
 
     @Override
-    public void setBucketPolicy(String bucketName, String policy, long storeId) {
+    public void setBucketPolicy(BucketTO bucket, String policy, long storeId) {
+        String bucketName = bucket.getName();
         String privatePolicy = "{\"Version\":\"2012-10-17\",\"Statement\":[]}";
 
         StringBuilder builder = new StringBuilder();
@@ -251,12 +252,12 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     }
 
     @Override
-    public BucketPolicy getBucketPolicy(String bucketName, long storeId) {
+    public BucketPolicy getBucketPolicy(BucketTO bucket, long storeId) {
         return null;
     }
 
     @Override
-    public void deleteBucketPolicy(String bucketName, long storeId) {
+    public void deleteBucketPolicy(BucketTO bucket, long storeId) {
 
     }
 
@@ -268,7 +269,7 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             updateNeeded = true;
         }
         if (StringUtils.isAllBlank(secretKey, details.get(MINIO_SECRET_KEY))) {
-            s_logger.error(String.format("Failed to retrieve secret key for MinIO user: %s from store and account details", accessKey));
+            logger.error(String.format("Failed to retrieve secret key for MinIO user: %s from store and account details", accessKey));
         }
         if (StringUtils.isNotBlank(secretKey) && (!checkIfNotPresent || StringUtils.isBlank(details.get(MINIO_SECRET_KEY)))) {
             details.put(MINIO_SECRET_KEY, secretKey);
@@ -289,23 +290,23 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         try {
             UserInfo userInfo = minioAdminClient.getUserInfo(accessKey);
             if(userInfo != null) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(String.format("Skipping user creation as the user already exists in MinIO store: %s", accessKey));
+                if (logger.isDebugEnabled()) {
+                    logger.debug(String.format("Skipping user creation as the user already exists in MinIO store: %s", accessKey));
                 }
                 updateAccountCredentials(accountId, accessKey, userInfo.secretKey(), true);
                 return true;
             }
         } catch (NoSuchAlgorithmException | IOException | InvalidKeyException e) {
-            s_logger.error(String.format("Error encountered while retrieving user: %s for existing MinIO store user check", accessKey), e);
+            logger.error(String.format("Error encountered while retrieving user: %s for existing MinIO store user check", accessKey), e);
             return false;
         } catch (RuntimeException e) { // MinIO lib may throw RuntimeException with code: XMinioAdminNoSuchUser
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(String.format("Ignoring error encountered while retrieving user: %s for existing MinIO store user check", accessKey));
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("Ignoring error encountered while retrieving user: %s for existing MinIO store user check", accessKey));
             }
-            s_logger.trace("Exception during MinIO user check", e);
+            logger.trace("Exception during MinIO user check", e);
         }
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug(String.format("MinIO store user does not exist. Creating user: %s", accessKey));
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("MinIO store user does not exist. Creating user: %s", accessKey));
         }
         KeyGenerator generator = null;
         try {
@@ -326,11 +327,11 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     }
 
     @Override
-    public boolean setBucketEncryption(String bucketName, long storeId) {
+    public boolean setBucketEncryption(BucketTO bucket, long storeId) {
         MinioClient minioClient = getMinIOClient(storeId);
         try {
             minioClient.setBucketEncryption(SetBucketEncryptionArgs.builder()
-                    .bucket(bucketName)
+                    .bucket(bucket.getName())
                     .config(SseConfiguration.newConfigWithSseS3Rule())
                     .build()
             );
@@ -341,11 +342,11 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     }
 
     @Override
-    public boolean deleteBucketEncryption(String bucketName, long storeId) {
+    public boolean deleteBucketEncryption(BucketTO bucket, long storeId) {
         MinioClient minioClient = getMinIOClient(storeId);
         try {
             minioClient.deleteBucketEncryption(DeleteBucketEncryptionArgs.builder()
-                    .bucket(bucketName)
+                    .bucket(bucket.getName())
                     .build()
             );
         } catch (Exception e) {
@@ -355,11 +356,11 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     }
 
     @Override
-    public boolean setBucketVersioning(String bucketName, long storeId) {
+    public boolean setBucketVersioning(BucketTO bucket, long storeId) {
         MinioClient minioClient = getMinIOClient(storeId);
         try {
             minioClient.setBucketVersioning(SetBucketVersioningArgs.builder()
-                    .bucket(bucketName)
+                    .bucket(bucket.getName())
                     .config(new VersioningConfiguration(VersioningConfiguration.Status.ENABLED, null))
                     .build()
             );
@@ -370,11 +371,11 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     }
 
     @Override
-    public boolean deleteBucketVersioning(String bucketName, long storeId) {
+    public boolean deleteBucketVersioning(BucketTO bucket, long storeId) {
         MinioClient minioClient = getMinIOClient(storeId);
         try {
             minioClient.setBucketVersioning(SetBucketVersioningArgs.builder()
-                    .bucket(bucketName)
+                    .bucket(bucket.getName())
                     .config(new VersioningConfiguration(VersioningConfiguration.Status.SUSPENDED, null))
                     .build()
             );
@@ -385,11 +386,11 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     }
 
     @Override
-    public void setBucketQuota(String bucketName, long storeId, long size) {
+    public void setBucketQuota(BucketTO bucket, long storeId, long size) {
 
         MinioAdminClient minioAdminClient = getMinIOAdminClient(storeId);
         try {
-            minioAdminClient.setBucketQuota(bucketName, size, QuotaUnit.GB);
+            minioAdminClient.setBucketQuota(bucket.getName(), size, QuotaUnit.GB);
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }

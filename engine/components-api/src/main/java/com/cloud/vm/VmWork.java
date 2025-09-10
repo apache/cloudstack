@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.vm;
 
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
@@ -30,6 +33,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 
 public class VmWork implements Serializable {
+    protected transient Logger logger = LogManager.getLogger(getClass());
     private static final long serialVersionUID = -6946320465729853589L;
     private static final Gson gsonLogger = GsonHelper.getGsonLogger();
 

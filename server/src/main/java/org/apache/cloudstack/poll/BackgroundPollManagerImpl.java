@@ -22,7 +22,6 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.common.base.Preconditions;
-import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +30,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public final class BackgroundPollManagerImpl extends ManagerBase implements BackgroundPollManager, Manager {
-    public static final Logger LOG = Logger.getLogger(BackgroundPollManagerImpl.class);
 
     private ScheduledExecutorService backgroundPollTaskScheduler;
     private List<BackgroundPollTask> submittedTasks = new ArrayList<>();
@@ -57,7 +55,7 @@ public final class BackgroundPollManagerImpl extends ManagerBase implements Back
                 delay = getRoundDelay();
             }
             backgroundPollTaskScheduler.scheduleWithFixedDelay(task, getInitialDelay(), delay, TimeUnit.MILLISECONDS);
-            LOG.debug("Scheduled background poll task: " + task.getClass().getName());
+            logger.debug("Scheduled background poll task: " + task.getClass().getName());
         }
         isConfiguredAndStarted = true;
         return true;
@@ -77,7 +75,7 @@ public final class BackgroundPollManagerImpl extends ManagerBase implements Back
         if (isConfiguredAndStarted) {
             throw new CloudRuntimeException("Background Poll Manager cannot accept poll task as it has been configured and started.");
         }
-        LOG.debug("Background Poll Manager received task: " + task.getClass().getSimpleName());
+        logger.debug("Background Poll Manager received task: " + task.getClass().getSimpleName());
         submittedTasks.add(task);
     }
 }

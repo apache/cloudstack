@@ -29,7 +29,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.trilead.ssh2.SCPClient;
@@ -134,7 +135,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 
 public class OvmResourceBase implements ServerResource, HypervisorResource {
-    private static final Logger s_logger = Logger.getLogger(OvmResourceBase.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     String _name;
     Long _zoneId;
     Long _podId;
@@ -183,7 +184,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
             _agentUserName = (String)params.get("agentusername");
             _agentPassword = (String)params.get("agentpassword");
         } catch (Exception e) {
-            s_logger.debug("Configure " + _name + " failed", e);
+            logger.debug("Configure " + _name + " failed", e);
             throw new ConfigurationException("Configure " + _name + " failed, " + e.toString());
         }
 
@@ -218,7 +219,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
         try {
             setupServer();
         } catch (Exception e) {
-            s_logger.debug("Setup server failed, ip " + _ip, e);
+            logger.debug("Setup server failed, ip " + _ip, e);
             throw new ConfigurationException("Unable to setup server");
         }
 
@@ -228,7 +229,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
             OvmHost.registerAsVmServer(_conn);
             _bridges = OvmBridge.getAllBridges(_conn);
         } catch (XmlRpcException e) {
-            s_logger.debug("Get bridges failed", e);
+            logger.debug("Get bridges failed", e);
             throw new ConfigurationException("Cannot get bridges on host " + _ip + "," + e.getMessage());
         }
 
@@ -251,14 +252,14 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
         try {
             _canBridgeFirewall = canBridgeFirewall();
         } catch (XmlRpcException e) {
-            s_logger.error("Failed to detect whether the host supports security groups.", e);
+            logger.error("Failed to detect whether the host supports security groups.", e);
             _canBridgeFirewall = false;
         }
         */
 
         _canBridgeFirewall = false;
 
-        s_logger.debug("OVM host doesn't support security groups.");
+        logger.debug("OVM host doesn't support security groups.");
 
         return true;
     }
@@ -318,9 +319,9 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
             d.put("guest.network.device", _guestNetworkName);
             cmd.setHostDetails(d);
 
-            s_logger.debug(String.format("Add a OVM host(%s)", hostDetails.toJson()));
+            logger.debug(String.format("Add a OVM host(%s)", hostDetails.toJson()));
         } catch (XmlRpcException e) {
-            s_logger.debug("XML RPC Exception" + e.getMessage(), e);
+            logger.debug("XML RPC Exception" + e.getMessage(), e);
             throw new CloudRuntimeException("XML RPC Exception" + e.getMessage(), e);
         }
     }
@@ -353,8 +354,8 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
                 continue;
             }
 
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Copying " + script.getPath() + " to " + s_ovsAgentPath + " on " + _ip + " with permission 0644");
+            if (logger.isDebugEnabled()) {
+                logger.debug("Copying " + script.getPath() + " to " + s_ovsAgentPath + " on " + _ip + " with permission 0644");
             }
             scp.put(script.getPath(), s_ovsAgentPath, "0644");
         }
@@ -378,7 +379,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
             cmd.setCaps("hvm");
             return new StartupCommand[] {cmd};
         } catch (Exception e) {
-            s_logger.debug("Ovm resource initializes failed", e);
+            logger.debug("Ovm resource initializes failed", e);
             return null;
         }
     }
@@ -389,7 +390,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
             OvmHost.ping(_conn);
             return new PingRoutingCommand(getType(), id, getHostVmStateReport());
         } catch (XmlRpcException e) {
-            s_logger.debug("Check agent status failed", e);
+            logger.debug("Check agent status failed", e);
             return null;
         }
     }
@@ -401,11 +402,11 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
             if (d.primaryIp.equalsIgnoreCase(_ip)) {
                 return new ReadyAnswer(cmd);
             } else {
-                s_logger.debug("Primary IP changes to " + d.primaryIp + ", it should be " + _ip);
+                logger.debug("Primary IP changes to " + d.primaryIp + ", it should be " + _ip);
                 return new ReadyAnswer(cmd, "I am not the primary server");
             }
         } catch (XmlRpcException e) {
-            s_logger.debug("XML RPC Exception" + e.getMessage(), e);
+            logger.debug("XML RPC Exception" + e.getMessage(), e);
             throw new CloudRuntimeException("XML RPC Exception" + e.getMessage(), e);
         }
 
@@ -418,7 +419,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
         d.type = OvmStoragePool.NFS;
         d.uuid = pool.getUuid();
         OvmStoragePool.create(_conn, d);
-        s_logger.debug(String.format("Created SR (mount point:%1$s)", mountPoint));
+        logger.debug(String.format("Created SR (mount point:%1$s)", mountPoint));
     }
 
     protected void createOCFS2Sr(StorageFilerTO pool) throws XmlRpcException {
@@ -427,7 +428,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
         d.type = OvmStoragePool.OCFS2;
         d.uuid = pool.getUuid();
         OvmStoragePool.create(_conn, d);
-        s_logger.debug(String.format("Created SR (mount point:%1$s)", d.path));
+        logger.debug(String.format("Created SR (mount point:%1$s)", d.path));
     }
 
     private void setupHeartBeat(String poolUuid) {
@@ -437,7 +438,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
                 s_isHeartBeat = true;
             }
         } catch (Exception e) {
-            s_logger.debug("setup heart beat for " + _ip + " failed", e);
+            logger.debug("setup heart beat for " + _ip + " failed", e);
             s_isHeartBeat = false;
         }
     }
@@ -459,7 +460,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
             ModifyStoragePoolAnswer answer = new ModifyStoragePoolAnswer(cmd, d.totalSpace, d.freeSpace, tInfo);
             return answer;
         } catch (Exception e) {
-            s_logger.debug("ModifyStoragePoolCommand failed", e);
+            logger.debug("ModifyStoragePoolCommand failed", e);
             return new Answer(cmd, false, e.getMessage());
         }
     }
@@ -475,7 +476,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
             Pair<String, Long> res = OvmStoragePool.downloadTemplate(_conn, cmd.getPoolUuid(), secondaryStoragePath);
             return new PrimaryStorageDownloadAnswer(res.first(), res.second());
         } catch (Exception e) {
-            s_logger.debug("PrimaryStorageDownloadCommand failed", e);
+            logger.debug("PrimaryStorageDownloadCommand failed", e);
             return new PrimaryStorageDownloadAnswer(e.getMessage());
         }
     }
@@ -497,7 +498,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
                     vol.size, null);
             return new CreateAnswer(cmd, volume);
         } catch (Exception e) {
-            s_logger.debug("CreateCommand failed", e);
+            logger.debug("CreateCommand failed", e);
             return new CreateAnswer(cmd, e.getMessage());
         }
     }
@@ -637,7 +638,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
         try {
             cleanupNetwork(vm.vifs);
         } catch (XmlRpcException e) {
-            s_logger.debug("Clean up network for " + vm.name + " failed", e);
+            logger.debug("Clean up network for " + vm.name + " failed", e);
         }
         _vmNetworkStats.remove(vm.name);
     }
@@ -666,7 +667,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
 
             return new StartAnswer(cmd);
         } catch (Exception e) {
-            s_logger.debug("Start vm " + vmName + " failed", e);
+            logger.debug("Start vm " + vmName + " failed", e);
             cleanup(vmDetails);
             return new StartAnswer(cmd, e.getMessage());
         }
@@ -683,7 +684,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
             HostStatsEntry hostStats = new HostStatsEntry(cmd.getHostId(), cpuUtil, rxBytes, txBytes, "host", totalMemory, freeMemory, 0, 0);
             return new GetHostStatsAnswer(cmd, hostStats);
         } catch (Exception e) {
-            s_logger.debug("Get host stats of " + cmd.getHostName() + " failed", e);
+            logger.debug("Get host stats of " + cmd.getHostName() + " failed", e);
             return new Answer(cmd, false, e.getMessage());
         }
 
@@ -697,7 +698,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
             try {
                 vm = OvmVm.getDetails(_conn, vmName);
             } catch (XmlRpcException e) {
-                s_logger.debug("Unable to get details of vm: " + vmName + ", treating it as stopped", e);
+                logger.debug("Unable to get details of vm: " + vmName + ", treating it as stopped", e);
                 return new StopAnswer(cmd, "success", true);
             }
 
@@ -706,7 +707,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
             cleanup(vm);
             return new StopAnswer(cmd, "success", true);
         } catch (Exception e) {
-            s_logger.debug("Stop " + vmName + "failed", e);
+            logger.debug("Stop " + vmName + "failed", e);
             return new StopAnswer(cmd, e.getMessage(), false);
         }
     }
@@ -720,7 +721,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
             Integer vncPort = Integer.parseInt(res.get("vncPort"));
             return new RebootAnswer(cmd, null, vncPort);
         } catch (Exception e) {
-            s_logger.debug("Reboot " + vmName + " failed", e);
+            logger.debug("Reboot " + vmName + " failed", e);
             return new RebootAnswer(cmd, e.getMessage(), false);
         }
     }
@@ -728,7 +729,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
     private PowerState toPowerState(String vmName, String s) {
         PowerState state = s_powerStateMaps.get(s);
         if (state == null) {
-            s_logger.debug("Unkown state " + s + " for " + vmName);
+            logger.debug("Unkown state " + s + " for " + vmName);
             state = PowerState.PowerUnknown;
         }
         return state;
@@ -760,7 +761,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
             OvmStoragePool.Details d = OvmStoragePool.getDetailsByUuid(_conn, cmd.getStorageId());
             return new GetStorageStatsAnswer(cmd, d.totalSpace, d.usedSpace);
         } catch (Exception e) {
-            s_logger.debug("GetStorageStatsCommand on pool " + cmd.getStorageId() + " failed", e);
+            logger.debug("GetStorageStatsCommand on pool " + cmd.getStorageId() + " failed", e);
             return new GetStorageStatsAnswer(cmd, e.getMessage());
         }
     }
@@ -801,7 +802,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
                 VmStatsEntry e = getVmStat(vmName);
                 vmStatsNameMap.put(vmName, e);
             } catch (XmlRpcException e) {
-                s_logger.debug("Get vm stat for " + vmName + " failed", e);
+                logger.debug("Get vm stat for " + vmName + " failed", e);
                 continue;
             }
         }
@@ -813,15 +814,15 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
             OvmVolume.destroy(_conn, cmd.getVolume().getPoolUuid(), cmd.getVolume().getPath());
             return new Answer(cmd, true, "Success");
         } catch (Exception e) {
-            s_logger.debug("Destroy volume " + cmd.getVolume().getName() + " failed", e);
+            logger.debug("Destroy volume " + cmd.getVolume().getName() + " failed", e);
             return new Answer(cmd, false, e.getMessage());
         }
     }
 
     protected PrepareForMigrationAnswer execute(PrepareForMigrationCommand cmd) {
         VirtualMachineTO vm = cmd.getVirtualMachine();
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Preparing host for migrating " + vm);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Preparing host for migrating " + vm);
         }
 
         NicTO[] nics = vm.getNics();
@@ -832,7 +833,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
 
             return new PrepareForMigrationAnswer(cmd);
         } catch (Exception e) {
-            s_logger.warn("Catch Exception " + e.getClass().getName() + " prepare for migration failed due to " + e.toString(), e);
+            logger.warn("Catch Exception " + e.getClass().getName() + " prepare for migration failed due to " + e.toString(), e);
             return new PrepareForMigrationAnswer(cmd, e);
         }
     }
@@ -847,7 +848,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
             return new MigrateAnswer(cmd, true, "migration succeeded", null);
         } catch (Exception e) {
             String msg = "Catch Exception " + e.getClass().getName() + ": Migration failed due to " + e.toString();
-            s_logger.debug(msg, e);
+            logger.debug(msg, e);
             return new MigrateAnswer(cmd, false, msg, null);
         }
     }
@@ -860,13 +861,13 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
             HashMap<String, PowerState> states = getAllVms();
             PowerState vmPowerState = states.get(vmName);
             if (vmPowerState == null) {
-                s_logger.warn("Check state of " + vmName + " return null in CheckVirtualMachineCommand");
+                logger.warn("Check state of " + vmName + " return null in CheckVirtualMachineCommand");
                 vmPowerState = PowerState.PowerOff;
             }
 
             return new CheckVirtualMachineAnswer(cmd, vmPowerState, vncPort);
         } catch (Exception e) {
-            s_logger.debug("Check migration for " + vmName + " failed", e);
+            logger.debug("Check migration for " + vmName + " failed", e);
             return new CheckVirtualMachineAnswer(cmd, PowerState.PowerOff, null);
         }
     }
@@ -880,7 +881,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
             Integer vncPort = OvmVm.getVncPort(_conn, cmd.getName());
             return new GetVncPortAnswer(cmd, _ip, vncPort);
         } catch (Exception e) {
-            s_logger.debug("get vnc port for " + cmd.getName() + " failed", e);
+            logger.debug("get vnc port for " + cmd.getName() + " failed", e);
             return new GetVncPortAnswer(cmd, e.getMessage());
         }
     }
@@ -895,7 +896,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
 
             return new Answer(cmd, true, "success");
         } catch (Exception e) {
-            s_logger.debug("Ping " + cmd.getComputingHostIp() + " failed", e);
+            logger.debug("Ping " + cmd.getComputingHostIp() + " failed", e);
             return new Answer(cmd, false, e.getMessage());
         }
     }
@@ -905,7 +906,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
             Boolean res = OvmHost.fence(_conn, cmd.getHostIp());
             return new FenceAnswer(cmd, res, res.toString());
         } catch (Exception e) {
-            s_logger.debug("fence " + cmd.getHostIp() + " failed", e);
+            logger.debug("fence " + cmd.getHostIp() + " failed", e);
             return new FenceAnswer(cmd, false, e.getMessage());
         }
     }
@@ -917,7 +918,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
             OvmVm.detachOrAttachIso(_conn, cmd.getVmName(), isoPath, cmd.isAttach());
             return new Answer(cmd);
         } catch (Exception e) {
-            s_logger.debug("Attach or detach ISO " + cmd.getIsoPath() + " for " + cmd.getVmName() + " attach:" + cmd.isAttach() + " failed", e);
+            logger.debug("Attach or detach ISO " + cmd.getIsoPath() + " for " + cmd.getVmName() + " attach:" + cmd.isAttach() + " failed", e);
             return new Answer(cmd, false, e.getMessage());
         }
     }
@@ -932,15 +933,15 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
                 addNetworkRules(cmd.getVmName(), Long.toString(cmd.getVmId()), cmd.getGuestIp(), cmd.getSignature(), String.valueOf(cmd.getSeqNum()), cmd.getGuestMac(),
                     cmd.stringifyRules(), vifDeviceName, bridgeName);
         } catch (XmlRpcException e) {
-            s_logger.error(e);
+            logger.error(e);
             result = false;
         }
 
         if (!result) {
-            s_logger.warn("Failed to program network rules for vm " + cmd.getVmName());
+            logger.warn("Failed to program network rules for vm " + cmd.getVmName());
             return new SecurityGroupRuleAnswer(cmd, false, "programming network rules failed");
         } else {
-            s_logger.info("Programmed network rules for vm " + cmd.getVmName() + " guestIp=" + cmd.getGuestIp() + ":ingress num rules=" + cmd.getIngressRuleSet().size() +
+            logger.info("Programmed network rules for vm " + cmd.getVmName() + " guestIp=" + cmd.getGuestIp() + ":ingress num rules=" + cmd.getIngressRuleSet().size() +
                 ":egress num rules=" + cmd.getEgressRuleSet().size());
             return new SecurityGroupRuleAnswer(cmd);
         }
@@ -951,7 +952,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
         try {
             result = cleanupNetworkRules();
         } catch (XmlRpcException e) {
-            s_logger.error(e);
+            logger.error(e);
             result = false;
         }
 
@@ -1013,7 +1014,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
         try {
             vifs = getInterfaces(vmName);
         } catch (XmlRpcException e) {
-            s_logger.error("Failed to get VIFs for VM " + vmName, e);
+            logger.error("Failed to get VIFs for VM " + vmName, e);
             throw e;
         }
 
@@ -1044,7 +1045,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
             OvmStoragePool.prepareOCFS2Nodes(_conn, cmd.getClusterName(), params.toString());
             return new Answer(cmd, true, "Success");
         } catch (XmlRpcException e) {
-            s_logger.debug("OCFS2 prepare nodes failed", e);
+            logger.debug("OCFS2 prepare nodes failed", e);
             return new Answer(cmd, false, e.getMessage());
         }
     }
@@ -1069,7 +1070,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
             return new CreatePrivateTemplateAnswer(cmd, true, null, res.get("installPath"), Long.parseLong(res.get("virtualSize")), Long.parseLong(res.get("physicalSize")),
                 res.get("templateFileName"), ImageFormat.RAW);
         } catch (Exception e) {
-            s_logger.debug("Create template failed", e);
+            logger.debug("Create template failed", e);
             return new CreatePrivateTemplateAnswer(cmd, false, e.getMessage());
         }
     }
@@ -1091,7 +1092,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
             String res = OvmStoragePool.copyVolume(_conn, secStorageMountPath, volumeFolderOnSecStorage, volumePath, storagePoolUuid, toSec, wait);
             return new CopyVolumeAnswer(cmd, true, null, null, res);
         } catch (Exception e) {
-            s_logger.debug("Copy volume failed", e);
+            logger.debug("Copy volume failed", e);
             return new CopyVolumeAnswer(cmd, false, e.getMessage(), null, null);
         }
     }
@@ -1100,15 +1101,15 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
         try {
             OvmStoragePool.delete(_conn, cmd.getPool().getUuid());
         } catch (Exception e) {
-            s_logger.debug("Delete storage pool on host " + _ip + " failed, however, we leave to user for cleanup and tell management server it succeeded", e);
+            logger.debug("Delete storage pool on host " + _ip + " failed, however, we leave to user for cleanup and tell management server it succeeded", e);
         }
 
         return new Answer(cmd);
     }
 
     protected CheckNetworkAnswer execute(CheckNetworkCommand cmd) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Checking if network name setup is done on the resource");
+        if (logger.isDebugEnabled()) {
+            logger.debug("Checking if network name setup is done on the resource");
         }
 
         List<PhysicalNetworkSetupInfo> infoList = cmd.getPhysicalNetworkInfoList();
@@ -1137,7 +1138,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
         }
 
         if (errorout) {
-            s_logger.error(msg);
+            logger.error(msg);
             return new CheckNetworkAnswer(cmd, false, msg);
         } else {
             return new CheckNetworkAnswer(cmd, true, "Network Setup check by names is done");
@@ -1146,8 +1147,8 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
 
     private boolean isNetworkSetupByName(String nameTag) {
         if (nameTag != null) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Looking for network setup by name " + nameTag);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Looking for network setup by name " + nameTag);
             }
             return _bridges.contains(nameTag);
         }

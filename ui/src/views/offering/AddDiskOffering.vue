@@ -124,6 +124,14 @@
             v-model:value="form.diskbytesreadrate"
             :placeholder="apiParams.bytesreadrate.description"/>
         </a-form-item>
+        <a-form-item v-if="form.qostype === 'hypervisor'" name="diskbytesreadratemax" ref="diskbytesreadratemax">
+          <template #label>
+            <tooltip-label :title="$t('label.diskbytesreadratemax')" :tooltip="apiParams.bytesreadratemax.description"/>
+          </template>
+          <a-input
+            v-model:value="form.diskbytesreadratemax"
+            :placeholder="apiParams.bytesreadratemax.description"/>
+        </a-form-item>
         <a-form-item v-if="form.qostype === 'hypervisor'" name="diskbyteswriterate" ref="diskbyteswriterate">
           <template #label>
             <tooltip-label :title="$t('label.diskbyteswriterate')" :tooltip="apiParams.byteswriterate.description"/>
@@ -131,6 +139,14 @@
           <a-input
             v-model:value="form.diskbyteswriterate"
             :placeholder="apiParams.byteswriterate.description"/>
+        </a-form-item>
+        <a-form-item v-if="form.qostype === 'hypervisor'" name="diskbyteswriteratemax" ref="diskbyteswriteratemax">
+          <template #label>
+            <tooltip-label :title="$t('label.diskbyteswriteratemax')" :tooltip="apiParams.byteswriteratemax.description"/>
+          </template>
+          <a-input
+            v-model:value="form.diskbyteswriteratemax"
+            :placeholder="apiParams.byteswriteratemax.description"/>
         </a-form-item>
         <a-form-item v-if="form.qostype === 'hypervisor'" name="diskiopsreadrate" ref="diskiopsreadrate">
           <template #label>
@@ -202,6 +218,7 @@
             <tooltip-label :title="$t('label.storagetags')" :tooltip="apiParams.tags.description"/>
           </template>
           <a-select
+            :getPopupContainer="(trigger) => trigger.parentNode"
             mode="tags"
             v-model:value="form.tags"
             showSearch
@@ -226,6 +243,7 @@
           </template>
           <a-select
             mode="multiple"
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.domainid"
             showSearch
             optionFilterProp="label"
@@ -250,6 +268,7 @@
           <a-select
             id="zone-selection"
             mode="multiple"
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.zoneid"
             showSearch
             optionFilterProp="label"
@@ -273,6 +292,7 @@
             <tooltip-label :title="$t('label.vmware.storage.policy')" :tooltip="apiParams.storagepolicy.description"/>
           </template>
           <a-select
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.storagepolicy"
             :placeholder="apiParams.storagepolicy.description"
             showSearch
@@ -362,7 +382,9 @@ export default {
           { type: 'number', validator: this.validateNumber }
         ],
         diskbytesreadrate: [{ type: 'number', validator: this.validateNumber }],
+        diskbytesreadratemax: [{ type: 'number', validator: this.validateNumber }],
         diskbyteswriterate: [{ type: 'number', validator: this.validateNumber }],
+        diskbyteswriteratemax: [{ type: 'number', validator: this.validateNumber }],
         diskiopsreadrate: [{ type: 'number', validator: this.validateNumber }],
         diskiopswriterate: [{ type: 'number', validator: this.validateNumber }],
         diskiopsmin: [{ type: 'number', validator: this.validateNumber }],
@@ -473,7 +495,6 @@ export default {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
         var params = {
-          isMirrored: false,
           name: values.name,
           displaytext: values.displaytext,
           storageType: values.storagetype,
@@ -504,8 +525,14 @@ export default {
           if (values.diskbytesreadrate != null && values.diskbytesreadrate.length > 0) {
             params.bytesreadrate = values.diskbytesreadrate
           }
+          if (values.diskbytesreadratemax != null && values.diskbytesreadratemax.length > 0) {
+            params.bytesreadratemax = values.diskbytesreadratemax
+          }
           if (values.diskbyteswriterate != null && values.diskbyteswriterate.length > 0) {
             params.byteswriterate = values.diskbyteswriterate
+          }
+          if (values.diskbyteswriteratemax != null && values.diskbyteswriteratemax.length > 0) {
+            params.byteswriteratemax = values.diskbyteswriteratemax
           }
           if (values.diskiopsreadrate != null && values.diskiopsreadrate.length > 0) {
             params.iopsreadrate = values.diskiopsreadrate

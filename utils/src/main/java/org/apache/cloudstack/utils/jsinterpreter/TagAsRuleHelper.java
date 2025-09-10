@@ -18,13 +18,14 @@ package org.apache.cloudstack.utils.jsinterpreter;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.lang3.StringEscapeUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 
 public class TagAsRuleHelper {
 
-    private static final Logger LOGGER = Logger.getLogger(TagAsRuleHelper.class);
+    protected static Logger LOGGER = LogManager.getLogger(TagAsRuleHelper.class);
 
     private static final String PARSE_TAGS = "tags = tags ? tags.split(',') : [];";
 

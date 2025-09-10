@@ -86,7 +86,7 @@
       </a-form-item>
       <a-form-item v-if="userDataEnabled">
         <template #label>
-          <tooltip-label :title="$t('label.userdata')" :tooltip="apiParams.userdata.description"/>
+          <tooltip-label :title="$t('label.user.data')" :tooltip="apiParams.userdata.description"/>
         </template>
         <a-textarea v-model:value="form.userdata">
         </a-textarea>
@@ -109,6 +109,13 @@
             </div>
           </a-select-option>
         </a-select>
+      </a-form-item>
+
+      <a-form-item name="deleteprotection" ref="deleteprotection">
+        <template #label>
+          <tooltip-label :title="$t('label.deleteprotection')" :tooltip="apiParams.deleteprotection.description"/>
+        </template>
+        <a-switch v-model:checked="form.deleteprotection" />
       </a-form-item>
 
       <div :span="24" class="action-button">
@@ -145,7 +152,6 @@ export default {
       template: {},
       userDataEnabled: false,
       securityGroupsEnabled: false,
-      dynamicScalingVmConfig: false,
       loading: false,
       securitygroups: {
         loading: false,
@@ -176,6 +182,7 @@ export default {
         displayname: this.resource.displayname,
         ostypeid: this.resource.ostypeid,
         isdynamicallyscalable: this.resource.isdynamicallyscalable,
+        deleteprotection: this.resource.deleteprotection,
         group: this.resource.group,
         userdata: '',
         haenable: this.resource.haenable
@@ -189,7 +196,6 @@ export default {
       this.fetchInstaceGroups()
       this.fetchServiceOfferingData()
       this.fetchTemplateData()
-      this.fetchDynamicScalingVmConfig()
       this.fetchUserData()
     },
     fetchZoneDetails () {
@@ -197,7 +203,7 @@ export default {
         id: this.resource.zoneid
       }).then(response => {
         const zone = response?.listzonesresponse?.zone || []
-        this.securityGroupsEnabled = zone?.[0]?.securitygroupsenabled
+        this.securityGroupsEnabled = zone?.[0]?.securitygroupsenabled || this.$store.getters.showSecurityGroups
       })
     },
     fetchSecurityGroups () {
@@ -241,18 +247,8 @@ export default {
         this.template = templateResponses[0]
       })
     },
-    fetchDynamicScalingVmConfig () {
-      const params = {}
-      params.name = 'enable.dynamic.scale.vm'
-      params.zoneid = this.resource.zoneid
-      var apiName = 'listConfigurations'
-      api(apiName, params).then(json => {
-        const configResponse = json.listconfigurationsresponse.configuration
-        this.dynamicScalingVmConfig = configResponse[0]?.value === 'true'
-      })
-    },
-    canDynamicScalingEnabled () {
-      return this.template.isdynamicallyscalable && this.serviceOffering.dynamicscalingenabled && this.dynamicScalingVmConfig
+    isDynamicScalingEnabled () {
+      return this.template.isdynamicallyscalable && this.serviceOffering.dynamicscalingenabled && this.$store.getters.features.dynamicscalingenabled
     },
     fetchOsTypes () {
       this.osTypes.loading = true
@@ -333,6 +329,9 @@ export default {
         }
         if (values.isdynamicallyscalable !== undefined) {
           params.isdynamicallyscalable = values.isdynamicallyscalable
+        }
+        if (values.deleteprotection !== undefined) {
+          params.deleteprotection = values.deleteprotection
         }
         if (values.haenable !== undefined) {
           params.haenable = values.haenable

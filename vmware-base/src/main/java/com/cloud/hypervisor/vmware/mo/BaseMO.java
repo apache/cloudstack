@@ -16,20 +16,22 @@
 // under the License.
 package com.cloud.hypervisor.vmware.mo;
 
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+
+import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.utils.Pair;
+
 import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.ObjectContent;
 import com.vmware.vim25.VirtualMachineBootOptions;
 import com.vmware.vim25.VirtualMachinePowerState;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.vmware.vim25.CustomFieldDef;
 import com.vmware.vim25.CustomFieldStringValue;
 import com.vmware.vim25.ManagedObjectReference;
-
-import com.cloud.hypervisor.vmware.util.VmwareContext;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -38,7 +40,7 @@ import java.util.List;
 import java.util.Map;
 
 public class BaseMO {
-    private static final Logger s_logger = Logger.getLogger(BaseMO.class);
+    protected static Logger logger = LogManager.getLogger(BaseMO.class);
 
     protected VmwareContext _context;
     protected ManagedObjectReference _mor;
@@ -77,12 +79,12 @@ public class BaseMO {
     }
 
     public ManagedObjectReference getParentMor() throws Exception {
-        return (ManagedObjectReference)_context.getVimClient().getDynamicProperty(_mor, "parent");
+        return _context.getVimClient().getDynamicProperty(_mor, "parent");
     }
 
     public String getName() throws Exception {
         if (_name == null)
-            _name = (String)_context.getVimClient().getDynamicProperty(_mor, "name");
+            _name = _context.getVimClient().getDynamicProperty(_mor, "name");
 
         return _name;
     }
@@ -99,7 +101,7 @@ public class BaseMO {
             _context.waitForTaskProgressDone(morTask);
             return true;
         } else {
-            s_logger.error("VMware destroy_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+            logger.error("VMware destroy_Task failed due to {}", TaskMO.getTaskFailureInfo(_context, morTask));
         }
         return false;
     }
@@ -116,7 +118,7 @@ public class BaseMO {
             _context.waitForTaskProgressDone(morTask);
             return true;
         } else {
-            s_logger.error("VMware rename_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+            logger.error("VMware rename_Task failed due to {}", TaskMO.getTaskFailureInfo(_context, morTask));
         }
         return false;
     }
@@ -147,7 +149,7 @@ public class BaseMO {
         if (key == 0)
             return null;
 
-        CustomFieldStringValue cfValue = (CustomFieldStringValue)_context.getVimClient().getDynamicProperty(getMor(), String.format("value[%d]", key));
+        CustomFieldStringValue cfValue = _context.getVimClient().getDynamicProperty(getMor(), String.format("value[%d]", key));
         if (cfValue != null)
             return cfValue.getValue();
 
@@ -251,8 +253,9 @@ public class BaseMO {
                 hostClusterPair = hostClusterNamesMap.get(hostMorValue);
             } else {
                 HostMO hostMO = new HostMO(_context, hostMor);
-                ClusterMO clusterMO = new ClusterMO(_context, hostMO.getHyperHostCluster());
-                hostClusterPair = new Pair<>(hostMO.getHostName(), clusterMO.getName());
+                String hostName = hostMO.getHostName();
+                String clusterName = getClusterNameFromHostIncludingStandaloneHosts(hostMO, hostName);
+                hostClusterPair = new Pair<>(hostName, clusterName);
                 hostClusterNamesMap.put(hostMorValue, hostClusterPair);
             }
             vm.setHostName(hostClusterPair.first());
@@ -260,4 +263,19 @@ public class BaseMO {
         }
     }
 
+    /**
+     * Return the cluster name of the host on the vCenter
+     * @return null in case the host is standalone (doesn't belong to a cluster), cluster name otherwise
+     */
+    private String getClusterNameFromHostIncludingStandaloneHosts(HostMO hostMO, String hostName) {
+        try {
+            ClusterMO clusterMO = new ClusterMO(_context, hostMO.getHyperHostCluster());
+            return clusterMO.getName();
+        } catch (Exception e) {
+            String msg = String.format("Cannot find a cluster for host %s, assuming standalone host, " +
+                    "setting its cluster name as empty", hostName);
+            logger.info(msg);
+            return null;
+        }
+    }
 }

@@ -766,7 +766,7 @@ class TestKubernetesCluster(cloudstackTestCase):
                 self.verifyKubernetesCluster(cluster, cluster.name, None, size, control_nodes)
                 self.debug("Existing Kubernetes cluster available with name %s" % cluster.name)
                 return cluster
-            except  AssertionError as error:
+            except AssertionError as error:
                 self.debug("Existing cluster failed verification due to %s, need to deploy a new one" % error)
                 self.deleteKubernetesClusterAndVerify(cluster.id, False, True)
 

@@ -20,6 +20,8 @@ have limits and resource count **/
 
 package org.apache.cloudstack.api.response;
 
+import java.util.List;
+
 public interface ResourceLimitAndCountResponse {
 
     public void setNetworkLimit(String networkLimit);
@@ -91,5 +93,7 @@ public interface ResourceLimitAndCountResponse {
     public void setVmStopped(Integer vmStopped);
 
     public void setVmRunning(Integer vmRunning);
+
+    public void setTaggedResourceLimitsAndCounts(List<TaggedResourceLimitAndCountResponse> taggedResourceLimitsAndCounts);
 
 }

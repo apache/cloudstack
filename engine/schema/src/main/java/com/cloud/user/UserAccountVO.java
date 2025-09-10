@@ -17,6 +17,7 @@
 package com.cloud.user;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.persistence.Column;
@@ -32,12 +33,11 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
-
-import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
-import org.apache.commons.lang3.StringUtils;
 
 @Entity
 @Table(name = "user")
@@ -363,6 +363,9 @@ public class UserAccountVO implements UserAccount, InternalIdentity {
 
     @Override
     public Map<String, String> getDetails() {
+        if (details == null) {
+            details = new HashMap<>();
+        }
         return details;
     }
 
@@ -373,6 +376,7 @@ public class UserAccountVO implements UserAccount, InternalIdentity {
 
     @Override
     public String toString() {
-        return String.format("User %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "name", "uuid"));
+        return String.format("UserAccount %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields
+                (this, "id", "uuid", "username", "accountName"));
     }
 }

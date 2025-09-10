@@ -18,10 +18,20 @@ package com.cloud.hypervisor;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.domain.Domain;
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -32,7 +42,6 @@ import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DataStoreTO;
@@ -72,7 +81,6 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public abstract class HypervisorGuruBase extends AdapterBase implements HypervisorGuru, Configurable {
-    public static final Logger s_logger = Logger.getLogger(HypervisorGuruBase.class);
 
     @Inject
     protected
@@ -80,6 +88,14 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     @Inject
     protected
     NetworkDao networkDao;
+    @Inject
+    protected VpcDao vpcDao;
+    @Inject
+    protected AccountManager accountManager;
+    @Inject
+    private DomainDao domainDao;
+    @Inject
+    private DataCenterDao dcDao;
     @Inject
     private NetworkOfferingDetailsDao networkOfferingDetailsDao;
     @Inject
@@ -113,7 +129,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
 
     private Map<NetworkOffering.Detail, String> getNicDetails(Network network) {
         if (network == null) {
-            s_logger.debug("Unable to get NIC details as the network is null");
+            logger.debug("Unable to get NIC details as the network is null");
             return null;
         }
         Map<NetworkOffering.Detail, String> details = networkOfferingDetailsDao.getNtwkOffDetails(network.getNetworkOfferingId());
@@ -154,9 +170,27 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         to.setMtu(profile.getMtu());
         to.setIp6Dns1(profile.getIPv6Dns1());
         to.setIp6Dns2(profile.getIPv6Dns2());
+        to.setNetworkId(profile.getNetworkId());
 
         NetworkVO network = networkDao.findById(profile.getNetworkId());
         to.setNetworkUuid(network.getUuid());
+        Account account = accountManager.getAccount(network.getAccountId());
+        Domain domain = domainDao.findById(network.getDomainId());
+        DataCenter zone = dcDao.findById(network.getDataCenterId());
+        if (Objects.isNull(zone)) {
+            throw new CloudRuntimeException(String.format("Failed to find zone with ID: %s", network.getDataCenterId()));
+        }
+        if (Objects.isNull(account)) {
+            throw new CloudRuntimeException(String.format("Failed to find account with ID: %s", network.getAccountId()));
+        }
+        if (Objects.isNull(domain)) {
+            throw new CloudRuntimeException(String.format("Failed to find domain with ID: %s", network.getDomainId()));
+        }
+        VpcVO vpc = null;
+        if (Objects.nonNull(network.getVpcId())) {
+            vpc = vpcDao.findById(network.getVpcId());
+        }
+        to.setNetworkSegmentName(getNetworkName(zone.getId(), domain.getId(), account.getId(), vpc, network.getId()));
 
         // Workaround to make sure the TO has the UUID we need for Nicira integration
         NicVO nicVO = nicDao.findById(profile.getId());
@@ -172,7 +206,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
             }
             to.setNicSecIps(secIps);
         } else {
-            s_logger.warn("Unabled to load NicVO for NicProfile " + profile.getId());
+            logger.warn("Unabled to load NicVO for NicProfile {}", profile);
             //Workaround for dynamically created nics
             //FixMe: uuid and secondary IPs can be made part of nic profile
             to.setUuid(UUID.randomUUID().toString());
@@ -184,6 +218,15 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         // configuration. Use full when vm stop/start
         return to;
     }
+
+    private String getNetworkName(long zoneId, long domainId, long accountId, VpcVO vpc, long networkId) {
+        String prefix = String.format("D%s-A%s-Z%s", domainId, accountId, zoneId);
+        if (Objects.isNull(vpc)) {
+            return prefix + "-S" + networkId;
+        }
+        return prefix + "-V" + vpc.getId() + "-S" + networkId;
+    }
+
 
     /**
      * Add extra configuration from VM details. Extra configuration is stored as details starting with 'extraconfig'
@@ -306,13 +349,13 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
             return host.getClusterId();
         }
 
-        s_logger.debug(String.format("VM [%s] does not have a host id. Trying the last host.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "instanceName", "id", "uuid")));
+        logger.debug(String.format("VM [%s] does not have a host id. Trying the last host.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "instanceName", "id", "uuid")));
         host = hostDao.findById(vm.getLastHostId());
         if (host != null) {
             return host.getClusterId();
         }
 
-        s_logger.debug(String.format("VM [%s] does not have a last host id.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "instanceName", "id", "uuid")));
+        logger.debug(String.format("VM [%s] does not have a last host id.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "instanceName", "id", "uuid")));
         return null;
     }
 
@@ -379,25 +422,25 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
 
     @Override
     public Pair<UnmanagedInstanceTO, Boolean> getHypervisorVMOutOfBandAndCloneIfRequired(String hostIp, String vmName, Map<String, String> params) {
-        s_logger.error("Unsupported operation: cannot clone external VM");
+        logger.error("Unsupported operation: cannot clone external VM");
         return null;
     }
 
     @Override
     public boolean removeClonedHypervisorVMOutOfBand(String hostIp, String vmName, Map<String, String> params) {
-        s_logger.error("Unsupported operation: cannot remove external VM");
+        logger.error("Unsupported operation: cannot remove external VM");
         return false;
     }
 
     @Override
     public String createVMTemplateOutOfBand(String hostIp, String vmName, Map<String, String> params, DataStoreTO templateLocation, int threadsCountToExportOvf) {
-        s_logger.error("Unsupported operation: cannot create template file");
+        logger.error("Unsupported operation: cannot create template file");
         return null;
     }
 
     @Override
     public boolean removeVMTemplateOutOfBand(DataStoreTO templateLocation, String templateDir) {
-        s_logger.error("Unsupported operation: cannot remove template file");
+        logger.error("Unsupported operation: cannot remove template file");
         return false;
     }
 }

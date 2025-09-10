@@ -22,19 +22,16 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import com.cloud.storage.VMTemplateStoragePoolVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
-import com.cloud.template.TemplateManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -42,11 +39,18 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
+import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.template.TemplateManager;
 import com.cloud.utils.Pair;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class BasePrimaryDataStoreLifeCycleImpl {
-    private static final Logger s_logger = Logger.getLogger(BasePrimaryDataStoreLifeCycleImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
+
     @Inject
     AgentManager agentMgr;
     @Inject
@@ -57,6 +61,8 @@ public class BasePrimaryDataStoreLifeCycleImpl {
     PrimaryDataStoreHelper dataStoreHelper;
     @Inject
     protected HostDao hostDao;
+    @Inject
+    protected DataCenterDao zoneDao;
     @Inject
     protected StoragePoolHostDao storagePoolHostDao;
     @Inject
@@ -79,13 +85,13 @@ public class BasePrimaryDataStoreLifeCycleImpl {
 
     public void changeStoragePoolScopeToZone(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
         List<HostVO> hosts = getPoolHostsList(clusterScope, hypervisorType);
-        s_logger.debug("Changing scope of the storage pool to Zone");
+        logger.debug("Changing scope of the storage pool to Zone");
         if (hosts != null) {
             for (HostVO host : hosts) {
                 try {
-                    storageMgr.connectHostToSharedPool(host.getId(), store.getId());
+                    storageMgr.connectHostToSharedPool(host, store.getId());
                 } catch (Exception e) {
-                    s_logger.warn("Unable to establish a connection between " + host + " and " + store, e);
+                    logger.warn("Unable to establish a connection between {} and {}", host, store, e);
                 }
             }
         }
@@ -94,7 +100,7 @@ public class BasePrimaryDataStoreLifeCycleImpl {
 
     public void changeStoragePoolScopeToCluster(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
         Pair<List<StoragePoolHostVO>, Integer> hostPoolRecords = storagePoolHostDao.listByPoolIdNotInCluster(clusterScope.getScopeId(), store.getId());
-        s_logger.debug("Changing scope of the storage pool to Cluster");
+        logger.debug("Changing scope of the storage pool to Cluster");
         if (hostPoolRecords.second() > 0) {
             StoragePool pool = (StoragePool) store;
             for (StoragePoolHostVO host : hostPoolRecords.first()) {
@@ -103,7 +109,7 @@ public class BasePrimaryDataStoreLifeCycleImpl {
 
                 if (answer != null) {
                     if (!answer.getResult()) {
-                        s_logger.debug("Failed to delete storage pool: " + answer.getResult());
+                        logger.debug("Failed to delete storage pool: {}", answer.getResult());
                     } else if (HypervisorType.KVM != hypervisorType) {
                         break;
                     }
@@ -128,12 +134,12 @@ public class BasePrimaryDataStoreLifeCycleImpl {
             DeleteStoragePoolCommand deleteStoragePoolCommand = new DeleteStoragePoolCommand(storagePool);
             final Answer answer = agentMgr.easySend(poolHostVO.getHostId(), deleteStoragePoolCommand);
             if (answer != null && answer.getResult()) {
-                s_logger.info("Successfully deleted storage pool: " + storagePool.getId() + " from host: " + poolHostVO.getHostId());
+                logger.info("Successfully deleted storage pool: {} from host: {}", storagePool.getId(), poolHostVO.getHostId());
             } else {
                 if (answer != null) {
-                    s_logger.error("Failed to delete storage pool: " + storagePool.getId() + " from host: " + poolHostVO.getHostId() + " , result: " + answer.getResult());
+                    logger.error("Failed to delete storage pool: {} from host: {} , result: {}", storagePool.getId(), poolHostVO.getHostId(), answer.getResult());
                 } else {
-                    s_logger.error("Failed to delete storage pool: " + storagePool.getId() + " from host: " + poolHostVO.getHostId());
+                    logger.error("Failed to delete storage pool: {} from host: {}", storagePool.getId(), poolHostVO.getHostId());
                 }
             }
         }

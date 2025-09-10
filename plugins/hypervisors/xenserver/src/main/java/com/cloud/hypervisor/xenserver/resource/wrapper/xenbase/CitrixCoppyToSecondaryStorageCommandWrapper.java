@@ -19,7 +19,6 @@
 package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 
 import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageCommand;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
@@ -30,13 +29,12 @@ import com.xensource.xenapi.Connection;
 
 @ResourceWrapper(handles = CopyToSecondaryStorageCommand.class)
 public class CitrixCoppyToSecondaryStorageCommandWrapper extends CommandWrapper<CopyToSecondaryStorageCommand, Answer, CitrixResourceBase> {
-    public static final Logger LOGGER = Logger.getLogger(CitrixCoppyToSecondaryStorageCommandWrapper.class);
 
     @Override
     public Answer execute(CopyToSecondaryStorageCommand cmd, CitrixResourceBase citrixResourceBase) {
         final Connection conn = citrixResourceBase.getConnection();
         String msg = String.format("Copying diagnostics zip file %s from system vm %s to secondary storage %s", cmd.getFileName(), cmd.getSystemVmIp(), cmd.getSecondaryStorageUrl());
-        LOGGER.debug(msg);
+        logger.debug(msg);
         // Allow the hypervisor host to copy file from system VM to mounted secondary storage
         return citrixResourceBase.copyDiagnosticsFileToSecondaryStorage(conn, cmd);
     }

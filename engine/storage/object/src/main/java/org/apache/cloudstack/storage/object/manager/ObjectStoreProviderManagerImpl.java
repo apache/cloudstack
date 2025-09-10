@@ -29,7 +29,6 @@ import org.apache.cloudstack.storage.object.ObjectStoreDriver;
 import org.apache.cloudstack.storage.object.ObjectStoreEntity;
 import org.apache.cloudstack.storage.object.datastore.ObjectStoreProviderManager;
 import org.apache.cloudstack.storage.object.store.ObjectStoreImpl;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -41,7 +40,6 @@ import java.util.Map;
 
 @Component
 public class ObjectStoreProviderManagerImpl implements ObjectStoreProviderManager, Configurable {
-    private static final Logger s_logger = Logger.getLogger(ObjectStoreProviderManagerImpl.class);
     @Inject
     ObjectStoreDao objectStoreDao;
 

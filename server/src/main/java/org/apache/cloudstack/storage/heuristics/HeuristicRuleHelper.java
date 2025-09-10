@@ -17,6 +17,7 @@
 package org.apache.cloudstack.storage.heuristics;
 
 import com.cloud.api.ApiDBUtils;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.storage.StorageManager;
@@ -42,7 +43,8 @@ import org.apache.cloudstack.storage.heuristics.presetvariables.Snapshot;
 import org.apache.cloudstack.storage.heuristics.presetvariables.Template;
 import org.apache.cloudstack.storage.heuristics.presetvariables.Volume;
 import org.apache.cloudstack.utils.jsinterpreter.JsInterpreter;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -54,7 +56,7 @@ import java.util.List;
  */
 public class HeuristicRuleHelper {
 
-    protected static final Logger LOGGER = Logger.getLogger(HeuristicRuleHelper.class);
+    protected Logger logger = LogManager.getLogger(HeuristicRuleHelper.class);
 
     private static final Long HEURISTICS_SCRIPT_TIMEOUT = StorageManager.HEURISTICS_SCRIPT_TIMEOUT.value();
 
@@ -73,6 +75,9 @@ public class HeuristicRuleHelper {
     @Inject
     private AccountDao accountDao;
 
+    @Inject
+    private DataCenterDao zoneDao;
+
     /**
      * Returns the {@link DataStore} object if the zone, specified by the ID, has an active heuristic rule for the given {@link HeuristicType}.
      * It returns null otherwise.
@@ -86,10 +91,10 @@ public class HeuristicRuleHelper {
         HeuristicVO heuristicsVO = secondaryStorageHeuristicDao.findByZoneIdAndType(zoneId, heuristicType);
 
         if (heuristicsVO == null) {
-            LOGGER.debug(String.format("No heuristic rules found for zone with ID [%s] and heuristic type [%s]. Returning null.", zoneId, heuristicType));
+            logger.debug("No heuristic rules found for zone [{}] and heuristic type [{}]. Returning null.", () -> zoneDao.findById(zoneId), heuristicType::toString);
             return null;
         } else {
-            LOGGER.debug(String.format("Found the heuristic rule %s to apply for zone with ID [%s].", heuristicsVO, zoneId));
+            logger.debug("Found the heuristic rule {} to apply for zone [{}].", heuristicsVO::toString, () -> zoneDao.findById(zoneId));
             return interpretHeuristicRule(heuristicsVO.getHeuristicRule(), heuristicType, obj, zoneId);
         }
     }
@@ -270,7 +275,7 @@ public class HeuristicRuleHelper {
             return dataStore;
         } catch (IOException ex) {
             String message = String.format("Error while executing script [%s].", rule);
-            LOGGER.error(message, ex);
+            logger.error(message, ex);
             throw new CloudRuntimeException(message, ex);
         }
     }

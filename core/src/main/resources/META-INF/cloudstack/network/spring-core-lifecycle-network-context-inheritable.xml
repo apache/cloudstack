@@ -92,7 +92,7 @@
         <property name="typeClass"
             value="com.cloud.network.element.Site2SiteVpnServiceProvider" />
     </bean>
-    
+
     <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
         <property name="registry" ref="remoteAccessVPNServiceProviderRegistry" />
         <property name="typeClass"
@@ -102,5 +102,10 @@
         <property name="registry" ref="gslbServiceProvidersRegistry" />
         <property name="typeClass"
             value="org.apache.cloudstack.region.gslb.GslbServiceProvider" />
+    </bean>
+
+    <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
+        <property name="registry" ref="internalLoadBalancerElementServiceRegistry" />
+        <property name="typeClass" value="org.apache.cloudstack.network.element.InternalLoadBalancerElementService" />
     </bean>
 </beans>

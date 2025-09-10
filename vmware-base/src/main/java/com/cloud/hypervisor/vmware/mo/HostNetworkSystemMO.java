@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.hypervisor.vmware.mo;
 
-import org.apache.log4j.Logger;
 
 import com.vmware.vim25.HostPortGroupSpec;
 import com.vmware.vim25.HostVirtualSwitchSpec;
@@ -26,7 +25,6 @@ import com.cloud.hypervisor.vmware.util.VmwareContext;
 
 public class HostNetworkSystemMO extends BaseMO {
     @SuppressWarnings("unused")
-    private static final Logger s_logger = Logger.getLogger(HostNetworkSystemMO.class);
 
     public HostNetworkSystemMO(VmwareContext context, ManagedObjectReference morNetworkSystem) {
         super(context, morNetworkSystem);

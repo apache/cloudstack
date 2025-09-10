@@ -23,7 +23,8 @@ import java.util.Iterator;
 import java.util.Properties;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.context.ApplicationContext;
@@ -35,7 +36,7 @@ import com.cloud.utils.component.Registry;
 
 public class RegistryLifecycle implements BeanPostProcessor, SmartLifecycle, ApplicationContextAware {
 
-    private static final Logger log = Logger.getLogger(RegistryLifecycle.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public static final String EXTENSION_EXCLUDE = "extensions.exclude";
     public static final String EXTENSION_INCLUDE_PREFIX = "extensions.include.";
@@ -47,7 +48,7 @@ public class RegistryLifecycle implements BeanPostProcessor, SmartLifecycle, App
      * can use this.
      */
     String registryBeanName;
-    Set<Object> beans = new HashSet<Object>();
+    Set<Object> beans = new HashSet<>();
     Class<?> typeClass;
     ApplicationContext applicationContext;
     Set<String> excludes = null;
@@ -70,7 +71,7 @@ public class RegistryLifecycle implements BeanPostProcessor, SmartLifecycle, App
 
         boolean result = excludes.contains(name);
         if (result) {
-            log.info("Excluding extension [" + name + "] based on configuration");
+            logger.info("Excluding extension [" + name + "] based on configuration");
         }
 
         return result;
@@ -78,7 +79,7 @@ public class RegistryLifecycle implements BeanPostProcessor, SmartLifecycle, App
 
     protected synchronized void loadExcluded() {
         Properties props = applicationContext.getBean("DefaultConfigProperties", Properties.class);
-        excludes = new HashSet<String>();
+        excludes = new HashSet<>();
         for (String exclude : props.getProperty(EXTENSION_EXCLUDE, "").trim().split("\\s*,\\s*")) {
             if (StringUtils.hasText(exclude)) {
                 excludes.add(exclude);
@@ -110,13 +111,13 @@ public class RegistryLifecycle implements BeanPostProcessor, SmartLifecycle, App
             Object next = iter.next();
             try {
                 if (registry.register(next)) {
-                    log.debug("Registered " + next);
+                    logger.debug("Registered " + next);
                 } else {
-                    log.warn("Bean registration failed for " + next.toString());
+                    logger.warn("Bean registration failed for " + next.toString());
                     iter.remove();
                 }
             } catch (Throwable e) {
-                log.warn("Bean registration attempt resulted in an exception for " + next.toString(), e);
+                logger.warn("Bean registration attempt resulted in an exception for " + next.toString(), e);
             }
         }
     }

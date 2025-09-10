@@ -21,7 +21,7 @@
       size="small"
       :columns="columns"
       :dataSource="dataSchedules"
-      :rowKey="record => record.virtualmachineid"
+      :rowKey="record => record.intervaltype"
       :pagination="false"
       :loading="loading">
       <template #bodyCell="{ column, text, record }">
@@ -147,7 +147,7 @@ export default {
   mounted () {
     this.dataSchedules = []
     if (this.dataSource && Object.keys(this.dataSource).length > 0) {
-      this.dataSchedules.push(this.dataSource)
+      this.dataSchedules = this.dataSource
     }
   },
   inject: ['refreshSchedule'],
@@ -155,10 +155,7 @@ export default {
     dataSource: {
       deep: true,
       handler (newData) {
-        this.dataSchedules = []
-        if (newData && Object.keys(newData).length > 0) {
-          this.dataSchedules.push(newData)
-        }
+        this.dataSchedules = newData
       }
     }
   },

@@ -392,7 +392,8 @@ for example:
 
     def processEncryptionStuff(self):
         def encrypt(value):
-            cmd = ['java','-classpath','"' + self.encryptionJarPath + '"','com.cloud.utils.crypt.EncryptionCLI','-i','"' + value + '"', '-p', '"' + self.mgmtsecretkey + '"', self.encryptorVersion]
+            cmd = ['java','-classpath','"' + self.encryptionJarPath + '"','com.cloud.utils.crypt.EncryptionCLI','-i','"' + value + '"', '-p', '"' +
+                   self.mgmtsecretkey + '"', self.encryptorVersion]
             return str(runCmd(cmd)).strip('\r\n')
 
         def saveMgmtServerSecretKey():

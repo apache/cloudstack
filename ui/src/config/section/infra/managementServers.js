@@ -26,14 +26,14 @@ export default {
   permission: ['listManagementServersMetrics'],
   resourceType: 'ManagementServer',
   columns: () => {
-    const fields = ['name', 'state', 'serviceip', 'version', 'osdistribution', 'agentcount']
+    const fields = ['name', 'state', 'ipaddress', 'version', 'osdistribution', 'agentcount']
     const metricsFields = ['collectiontime', 'availableprocessors', 'cpuload', 'heapmemoryused']
     if (store.getters.metrics) {
       fields.push(...metricsFields)
     }
     return fields
   },
-  details: ['collectiontime', 'usageislocal', 'dbislocal', 'lastserverstart', 'lastserverstop', 'lastboottime', 'version', 'loginfo', 'systemtotalcpucycles', 'systemloadaverages', 'systemcycleusage', 'systemmemorytotal', 'systemmemoryfree', 'systemmemoryvirtualsize', 'availableprocessors', 'javadistribution', 'javaversion', 'osdistribution', 'kernelversion', 'agentcount', 'sessions', 'heapmemoryused', 'heapmemorytotal', 'threadsblockedcount', 'threadsdeamoncount', 'threadsnewcount', 'threadsrunnablecount', 'threadsterminatedcount', 'threadstotalcount', 'threadswaitingcount'],
+  details: ['ipaddress', 'collectiontime', 'usageislocal', 'dbislocal', 'lastserverstart', 'lastserverstop', 'lastboottime', 'version', 'loginfo', 'systemtotalcpucycles', 'systemloadaverages', 'systemcycleusage', 'systemmemorytotal', 'systemmemoryfree', 'systemmemoryvirtualsize', 'availableprocessors', 'javadistribution', 'javaversion', 'osdistribution', 'kernelversion', 'agentcount', 'sessions', 'heapmemoryused', 'heapmemorytotal', 'threadsblockedcount', 'threadsdeamoncount', 'threadsnewcount', 'threadsrunnablecount', 'threadsterminatedcount', 'threadstotalcount', 'threadswaitingcount'],
   tabs: [
     {
       name: 'details',
@@ -42,6 +42,10 @@ export default {
     {
       name: 'pending.jobs',
       component: shallowRef(defineAsyncComponent(() => import('@/views/infra/AsyncJobsTab.vue')))
+    },
+    {
+      name: 'management.server.peers',
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/ManagementServerPeerTab.vue')))
     },
     {
       name: 'comments',
