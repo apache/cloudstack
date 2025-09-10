@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
+import com.cloud.utils.exception.CloudRuntimeException;
+
 import java.io.InputStream;
 import java.sql.Connection;
 
@@ -24,20 +26,43 @@ public interface DbUpgrade {
 
     String getUpgradedVersion();
 
-    boolean supportsRollingUpgrade();
+    default boolean supportsRollingUpgrade() {
+        return false;
+    }
 
     /**
      * @return the script to prepare the database schema for the
      * data migration step.
      */
-    InputStream[] getPrepareScripts();
+    default InputStream[] getPrepareScripts() {
+        String fromVersion = getUpgradableVersionRange()[0];
+        String toVersion = getUpgradableVersionRange()[1];
+        final String scriptFile = String.format("META-INF/db/schema-%sto%s.sql", fromVersion.replace(".", ""), toVersion.replace(".", ""));
+        final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
+        if (script == null) {
+            throw new CloudRuntimeException("Unable to find " + scriptFile);
+        }
+
+        return new InputStream[]{script};
+    }
 
     /**
      * Performs the actual data migration.
      */
-    void performDataMigration(Connection conn);
+    default void performDataMigration(Connection conn) {
+    }
 
-    InputStream[] getCleanupScripts();
+    default InputStream[] getCleanupScripts() {
+        String fromVersion = getUpgradableVersionRange()[0];
+        String toVersion = getUpgradableVersionRange()[1];
+        final String scriptFile = String.format("META-INF/db/schema-%sto%s-cleanup.sql", fromVersion.replace(".", ""), toVersion.replace(".", ""));
+        final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
+        if (script == null) {
+            throw new CloudRuntimeException("Unable to find " + scriptFile);
+        }
+
+        return new InputStream[]{script};
+    }
 
     default boolean refreshPoolConnectionsAfterUpgrade() {
         return false;

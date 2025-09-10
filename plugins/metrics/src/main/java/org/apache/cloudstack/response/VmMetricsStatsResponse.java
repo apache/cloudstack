@@ -32,7 +32,7 @@ public class VmMetricsStatsResponse extends BaseResponse {
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "The Name of the Instance")
+    @Param(description = "The name of the Instance")
     private String name;
 
     @SerializedName("displayname")
@@ -40,7 +40,7 @@ public class VmMetricsStatsResponse extends BaseResponse {
     private String displayName;
 
     @SerializedName("stats")
-    @Param(description = "The list of Instance stats")
+    @Param(description = "The list of Instance stats", responseObject = StatsResponse.class)
     private List<StatsResponse> stats;
 
     public void setId(String id) {

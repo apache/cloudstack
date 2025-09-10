@@ -96,7 +96,7 @@ reboot() {
 
 status() {
     parse_json "$1" || exit 1
-    echo '{"status": "success", "power_state": "running"}'
+    echo '{"status": "success", "power_state": "poweron"}'
 }
 
 action=$1

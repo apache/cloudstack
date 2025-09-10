@@ -113,7 +113,7 @@ public class SnapshotHelper {
         }
 
         List<SnapshotJoinVO> snapshots = snapshotJoinDao.listBySnapshotIdAndZoneId(zoneId, snapInfo.getSnapshotId());
-        if (kvmSnapshotOnlyInPrimaryStorage || snapshots.size() <= 1) {
+        if (snapshots.size() <= 1) {
             if (snapInfo != null) {
                 logger.trace(String.format("Snapshot [{}] is not a temporary backup to create a volume from snapshot. Not expunging it.", snapInfo.getId()));
             }

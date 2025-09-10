@@ -58,3 +58,7 @@ access.log=/var/log/cloudstack/management/access.log
 
 # The deployment mode for the extensions
 extensions.deployment.mode=@EXTENSIONSDEPLOYMENTMODE@
+
+# Thread pool configuration
+#threads.min=10
+#threads.max=500

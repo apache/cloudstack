@@ -191,7 +191,7 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
 
     @Override
     public Pair<Long, Long> getBackupStorageStats(Long zoneId) {
-        return new Pair<>(8L * 1024 * 1024 * 1024, 10L * 1024 * 1024 * 1024);
+        return new Pair<>(0L, 0L);
     }
 
     @Override

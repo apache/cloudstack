@@ -99,9 +99,8 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
-
+import org.apache.logging.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainInfo;
@@ -2950,7 +2949,9 @@ public class KVMStorageProcessor implements StorageProcessor {
             if (template != null) {
                 templatePath = template.getPath();
             }
-            if (StringUtils.isEmpty(templatePath)) {
+            if (ImageFormat.ISO.equals(cmd.getFormat())) {
+                logger.debug("Skipping template validations as image format is {}", cmd.getFormat());
+            } else if (StringUtils.isEmpty(templatePath)) {
                 logger.warn("Skipped validation whether downloaded file is QCOW2 for template {}, due to downloaded template path is empty", template.getName());
             } else if (!new File(templatePath).exists()) {
                 logger.warn("Skipped validation whether downloaded file is QCOW2 for template {}, due to downloaded template path is not valid: {}", template.getName(), templatePath);

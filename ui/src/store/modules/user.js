@@ -496,9 +496,17 @@ const user = {
         }).catch(() => {
           resolve()
         }).finally(() => {
+          const paths = ['/', '/client']
+          const hostname = window.location.hostname
+          const domains = [undefined, hostname, `.${hostname}`]
           Object.keys(Cookies.get()).forEach(cookieName => {
-            Cookies.remove(cookieName)
-            Cookies.remove(cookieName, { path: '/client' })
+            paths.forEach(path => {
+              domains.forEach(domain => {
+                const options = { path }
+                if (domain) options.domain = domain
+                Cookies.remove(cookieName, options)
+              })
+            })
           })
         })
       })

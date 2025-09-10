@@ -317,7 +317,7 @@ install -D plugins/integrations/kubernetes-service/src/main/resources/conf/k8s-n
 # SystemVM template
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/templates/systemvm
 cp -r engine/schema/dist/systemvm-templates/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/templates/systemvm
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/templates/systemvm/md5sum.txt
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/templates/systemvm/sha512sum.txt
 
 # Sample Extensions
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/extensions
