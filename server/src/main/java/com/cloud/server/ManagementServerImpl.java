@@ -2553,7 +2553,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final List<Long> permittedAccounts = new ArrayList<>();
         ListProjectResourcesCriteria listProjectResourcesCriteria = null;
         Boolean isAllocatedOrReserved = false;
-        if (isAllocated || states.contains(IpAddress.State.Allocated)) {
+        if (isAllocated || states.contains(IpAddress.State.Reserved)) {
             isAllocatedOrReserved = true;
         }
         if (isAllocatedOrReserved || (vlanType == VlanType.VirtualNetwork && (caller.getType() != Account.Type.ADMIN || cmd.getDomainId() != null))) {
