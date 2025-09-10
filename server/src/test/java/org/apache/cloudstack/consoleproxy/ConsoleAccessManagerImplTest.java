@@ -339,7 +339,7 @@ public class ConsoleAccessManagerImplTest {
 
         Mockito.when(managementServer.getExternalVmConsole(vm, host)).thenReturn(null);
 
-        ConsoleConnectionDetails result = consoleAccessManager.getConsoleConnectionDetailsFoxExternalVm(details, vm, host);
+        ConsoleConnectionDetails result = consoleAccessManager.getConsoleConnectionDetailsForExternalVm(details, vm, host);
 
         Assert.assertNull(result);
     }
@@ -355,7 +355,7 @@ public class ConsoleAccessManagerImplTest {
         Mockito.when(answer.getDetails()).thenReturn("Error details");
         Mockito.when(managementServer.getExternalVmConsole(vm, host)).thenReturn(answer);
 
-        ConsoleConnectionDetails result = consoleAccessManager.getConsoleConnectionDetailsFoxExternalVm(details, vm, host);
+        ConsoleConnectionDetails result = consoleAccessManager.getConsoleConnectionDetailsForExternalVm(details, vm, host);
 
         Assert.assertNull(result);
     }
@@ -370,7 +370,7 @@ public class ConsoleAccessManagerImplTest {
         Mockito.when(answer.getResult()).thenReturn(true);
         Mockito.when(managementServer.getExternalVmConsole(vm, host)).thenReturn(answer);
 
-        ConsoleConnectionDetails result = consoleAccessManager.getConsoleConnectionDetailsFoxExternalVm(details, vm, host);
+        ConsoleConnectionDetails result = consoleAccessManager.getConsoleConnectionDetailsForExternalVm(details, vm, host);
 
         Assert.assertNull(result);
     }
@@ -392,7 +392,7 @@ public class ConsoleAccessManagerImplTest {
         Mockito.when(answer.getPassword()).thenReturn(expectedPassword);
         Mockito.when(managementServer.getExternalVmConsole(vm, host)).thenReturn(answer);
 
-        ConsoleConnectionDetails result = consoleAccessManager.getConsoleConnectionDetailsFoxExternalVm(details, vm, host);
+        ConsoleConnectionDetails result = consoleAccessManager.getConsoleConnectionDetailsForExternalVm(details, vm, host);
 
         Assert.assertNotNull(result);
         Assert.assertEquals(expectedHost, result.getHost());
@@ -413,7 +413,7 @@ public class ConsoleAccessManagerImplTest {
         Mockito.when(answer.getPassword()).thenReturn("");
         Mockito.when(managementServer.getExternalVmConsole(vm, host)).thenReturn(answer);
 
-        ConsoleConnectionDetails result = consoleAccessManager.getConsoleConnectionDetailsFoxExternalVm(details, vm, host);
+        ConsoleConnectionDetails result = consoleAccessManager.getConsoleConnectionDetailsForExternalVm(details, vm, host);
 
         Assert.assertNotNull(result);
         Assert.assertEquals("10.0.0.1", result.getHost());
@@ -487,12 +487,12 @@ public class ConsoleAccessManagerImplTest {
         Mockito.when(host.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.External);
         Mockito.when(vmInstanceDetailsDao.listDetailsKeyPairs(Mockito.anyLong(), Mockito.anyList())).thenReturn(Map.of());
 
-        Mockito.doReturn(details).when(consoleAccessManager).getConsoleConnectionDetailsFoxExternalVm(Mockito.any(), Mockito.eq(vm), Mockito.eq(host));
+        Mockito.doReturn(details).when(consoleAccessManager).getConsoleConnectionDetailsForExternalVm(Mockito.any(), Mockito.eq(vm), Mockito.eq(host));
 
         ConsoleConnectionDetails result = consoleAccessManager.getConsoleConnectionDetails(vm, host);
 
         Assert.assertNotNull(result);
-        Mockito.verify(consoleAccessManager).getConsoleConnectionDetailsFoxExternalVm(Mockito.any(), Mockito.eq(vm), Mockito.eq(host));
+        Mockito.verify(consoleAccessManager).getConsoleConnectionDetailsForExternalVm(Mockito.any(), Mockito.eq(vm), Mockito.eq(host));
     }
 
     @Test

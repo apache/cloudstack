@@ -425,8 +425,8 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         return consoleEndpoint;
     }
 
-    protected ConsoleConnectionDetails getConsoleConnectionDetailsFoxExternalVm(ConsoleConnectionDetails details,
-                                VirtualMachine vm, HostVO host) {
+    protected ConsoleConnectionDetails getConsoleConnectionDetailsForExternalVm(ConsoleConnectionDetails details,
+                            VirtualMachine vm, HostVO host) {
         Answer answer = managementServer.getExternalVmConsole(vm, host);
         if (answer == null) {
             logger.error("Unable to get console access details for external {} on {}: answer is null.", vm, host);
@@ -481,7 +481,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         }
         ConsoleConnectionDetails details = new ConsoleConnectionDetails(vm.getVncPassword(), locale, tag, displayName);
         if (Hypervisor.HypervisorType.External.equals(host.getHypervisorType())) {
-            return getConsoleConnectionDetailsFoxExternalVm(details, vm, host);
+            return getConsoleConnectionDetailsForExternalVm(details, vm, host);
         }
         Pair<String, Integer> hostPortInfo = getHostAndPortForKVMMaintenanceHostIfNeeded(host, vmDetails);
         if (hostPortInfo == null) {
