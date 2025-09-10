@@ -53,7 +53,7 @@ public class Upgrade42100to42200 extends DbUpgradeAbstractImpl implements DbUpgr
         updateBackupScheduleOwnership(conn);
     }
 
-    private void updateSnapshotPolicyOwnership(Connection conn) {
+    protected void updateSnapshotPolicyOwnership(Connection conn) {
         // set account_id and domain_id in snapshot_policy table from volume table
         String selectSql = "SELECT sp.id, v.account_id, v.domain_id FROM snapshot_policy sp, volumes v WHERE sp.volume_id = v.id AND (sp.account_id IS NULL AND sp.domain_id IS NULL)";
         String updateSql = "UPDATE snapshot_policy SET account_id = ?, domain_id = ? WHERE id = ?";
@@ -77,7 +77,7 @@ public class Upgrade42100to42200 extends DbUpgradeAbstractImpl implements DbUpgr
         }
     }
 
-    private void updateBackupScheduleOwnership(Connection conn) {
+    protected void updateBackupScheduleOwnership(Connection conn) {
         // Set account_id and domain_id in backup_schedule table from vm_instance table
         String selectSql = "SELECT bs.id, vm.account_id, vm.domain_id FROM backup_schedule bs, vm_instance vm WHERE bs.vm_id = vm.id AND (bs.account_id IS NULL AND bs.domain_id IS NULL)";
         String updateSql = "UPDATE backup_schedule SET account_id = ?, domain_id = ? WHERE id = ?";
