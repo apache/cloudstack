@@ -2048,7 +2048,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     void persistDomainForKVM(VMInstanceVO vm) {
-        long hostId = vm.getHostId();
+        Long hostId = vm.getHostId();
         UnmanageInstanceCommand unmanageInstanceCommand;
         if (State.Stopped.equals(vm.getState())) {
             hostId = vm.getLastHostId();
