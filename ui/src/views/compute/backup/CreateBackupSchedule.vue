@@ -22,7 +22,7 @@
         <a-form-item :label="$t('label.virtualmachine')" required>
           <a-select
             v-model:value="selectedVMId"
-            :placeholder="$t('label.select.virtualmachine')"
+            :placeholder="$t('label.select.vm')"
             :loading="vmsLoading"
             show-search
             :filter-option="filterOption"
