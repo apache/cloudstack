@@ -81,7 +81,6 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.ConsoleSessionVO;
-import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VmDetailConstants;
@@ -127,6 +126,11 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     private static final List<VirtualMachine.State> unsupportedConsoleVMState = Arrays.asList(
             VirtualMachine.State.Stopped, VirtualMachine.State.Restoring, VirtualMachine.State.Error, VirtualMachine.State.Destroyed
     );
+
+    protected static final List<ResourceState> MAINTENANCE_RESOURCE_STATES = new ArrayList<>(Arrays.asList(
+            ResourceState.ErrorInMaintenance, ResourceState.ErrorInPrepareForMaintenance
+    ));
+    protected static final String WEB_SOCKET_PATH= "websockify";
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -421,159 +425,109 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         return consoleEndpoint;
     }
 
-    private static class Result {
-        String host;
-        int port;
-        String sid;
-        String locale;
-        String tunnelUrl = null;
-        String tunnelSession = null;
-        boolean usingRDP;
-
-        Result(String host, int port, String sid, String locale) {
-            this.host = host;
-            this.port = port;
-            this.sid = sid;
-            this.locale = locale;
+    protected ConsoleConnectionDetails getConsoleConnectionDetailsFoxExternalVm(ConsoleConnectionDetails details,
+                                VirtualMachine vm, HostVO host) {
+        Answer answer = managementServer.getExternalVmConsole(vm, host);
+        if (answer == null) {
+            logger.error("Unable to get console access details for external {} on {}: answer is null.", vm, host);
+            return null;
         }
-
-        public String getHost() {
-            return host;
+        if (!answer.getResult()) {
+            logger.error("Unable to get console access details for external {} on {}: answer result is false. Reason: {}", vm, host, answer.getDetails());
+            return null;
         }
-
-        public int getPort() {
-            return port;
+        if (!(answer instanceof GetExternalConsoleAnswer)) {
+            logger.error("Unable to get console access details for external {} on {}: answer is not of type GetExternalConsoleAnswer.", vm, host);
+            return null;
         }
-
-        public String getSid() {
-            return sid;
+        GetExternalConsoleAnswer getExternalConsoleAnswer = (GetExternalConsoleAnswer) answer;
+        details.setHost(getExternalConsoleAnswer.getHost());
+        details.setPort(getExternalConsoleAnswer.getPort());
+        if (StringUtils.isNotBlank(getExternalConsoleAnswer.getPassword())) {
+            details.setSid(getExternalConsoleAnswer.getPassword());
         }
-
-        public String getLocale() {
-            return locale;
-        }
-
-        public String getTunnelUrl() {
-            return tunnelUrl;
-        }
-
-        public void setTunnelUrl(String tunnelUrl) {
-            this.tunnelUrl = tunnelUrl;
-        }
-
-        public String getTunnelSession() {
-            return tunnelSession;
-        }
-
-        public void setTunnelSession(String tunnelSession) {
-            this.tunnelSession = tunnelSession;
-        }
-
-        public boolean isUsingRDP() {
-            return usingRDP;
-        }
-
-        public void setUsingRDP(boolean usingRDP) {
-            this.usingRDP = usingRDP;
-        }
+        return details;
     }
 
-    protected Result getConsoleDetails(VirtualMachine vm, HostVO host, Pair<String, Integer> portInfo) {
-        String hostInfo = null;
+    protected Pair<String, Integer> getHostAndPortForKVMMaintenanceHostIfNeeded(HostVO host,
+                            Map<String, String> vmDetails) {
+        if (!Hypervisor.HypervisorType.KVM.equals(host.getHypervisorType())) {
+            return null;
+        }
+        if(!MAINTENANCE_RESOURCE_STATES.contains(host.getResourceState())) {
+            return null;
+        }
+        String address = vmDetails.get(VmDetailConstants.KVM_VNC_ADDRESS);
+        String port = vmDetails.get(VmDetailConstants.KVM_VNC_PORT);
+        if (ObjectUtils.allNotNull(address, port)) {
+            return new Pair<>(address, Integer.valueOf(port));
+        }
+        logger.warn("KVM Host in ErrorInMaintenance/ErrorInPrepareForMaintenance but " +
+                "no VNC Address/Port was available. Falling back to default one from MS.");
+        return null;
+    }
+
+    protected ConsoleConnectionDetails getConsoleConnectionDetails(VirtualMachine vm, HostVO host) {
         String locale = null;
-        VMInstanceDetailVO details = vmInstanceDetailsDao.findDetail(vm.getId(), VmDetailConstants.KEYBOARD);
-        if (details != null) {
-            locale = details.getValue();
-        }
-        if (Hypervisor.HypervisorType.External.equals(host.getHypervisorType())) {
-            Answer answer = managementServer.getExternalConsole(vm, host);
-            if (answer == null) {
-                logger.error("Unable to get console access details for external {} on {}: answer is null.", vm, host);
-                return null;
-            }
-            if (!answer.getResult()) {
-                logger.error("Unable to get console access details for external {} on {}: answer result is false. Reason: {}", vm, host, answer.getDetails());
-                return null;
-            }
-            if (!(answer instanceof GetExternalConsoleAnswer)) {
-                logger.error("Unable to get console access details for external {} on {}: answer is not of type GetExternalConsoleAnswer.", vm, host);
-                return null;
-            }
-            GetExternalConsoleAnswer getExternalConsoleAnswer = (GetExternalConsoleAnswer) answer;
-            return new Result(getExternalConsoleAnswer.getHost(), getExternalConsoleAnswer.getPort(), getExternalConsoleAnswer.getPassword(), locale);
-        }
-
-        int port = -1;
-        if (portInfo == null) {
-            portInfo = managementServer.getVncPort(vm);
-            hostInfo = portInfo.first();
-            port = portInfo.second();
-        }
-        logger.debug("Host and port info :[{}, {}]", hostInfo, port);
-        Ternary<String, String, String> parsedHostInfo = parseHostInfo(portInfo.first());
-        boolean usingRDP = false;
-        if (portInfo.second() == -9) {
-            //for hyperv
-            usingRDP = true;
-            port = Integer.parseInt(managementServer.findDetail(host.getId(), "rdp.server.port").getValue());
-        } else {
-            port = portInfo.second();
-        }
-        String sid = vm.getVncPassword();
-        Result result = new Result(parsedHostInfo.first(), port, sid, locale);
-        result.setTunnelUrl(parsedHostInfo.second());
-        result.setTunnelSession(parsedHostInfo.third());
-        result.setUsingRDP(usingRDP);
-        return result;
-    }
-
-    private ConsoleEndpoint composeConsoleAccessEndpoint(String rootUrl, VirtualMachine vm, HostVO hostVo, String addr,
-                                                         String sessionUuid, String extraSecurityToken) {
-        String host = hostVo.getPrivateIpAddress();
-
-        Pair<String, Integer> portInfo = null;
-        if (hostVo.getHypervisorType() == Hypervisor.HypervisorType.KVM &&
-                (hostVo.getResourceState().equals(ResourceState.ErrorInMaintenance) ||
-                        hostVo.getResourceState().equals(ResourceState.ErrorInPrepareForMaintenance))) {
-            VMInstanceDetailVO detailAddress = vmInstanceDetailsDao.findDetail(vm.getId(), VmDetailConstants.KVM_VNC_ADDRESS);
-            VMInstanceDetailVO detailPort = vmInstanceDetailsDao.findDetail(vm.getId(), VmDetailConstants.KVM_VNC_PORT);
-            if (detailAddress != null && detailPort != null) {
-                portInfo = new Pair<>(detailAddress.getValue(), Integer.valueOf(detailPort.getValue()));
-            } else {
-                logger.warn("KVM Host in ErrorInMaintenance/ErrorInPrepareForMaintenance but " +
-                        "no VNC Address/Port was available. Falling back to default one from MS.");
-            }
-        }
-        Result result = getConsoleDetails(vm, hostVo, portInfo);
-        if (result == null) {
-            return new ConsoleEndpoint(false, null, "Console access to this instance cannot be provided");
-        }
-
         String tag = vm.getUuid();
         String displayName = vm.getHostName();
         if (vm instanceof UserVm) {
             displayName = ((UserVm) vm).getDisplayName();
         }
+        Map<String, String> vmDetails = vmInstanceDetailsDao.listDetailsKeyPairs(vm.getId(),
+                List.of(VmDetailConstants.KEYBOARD, VmDetailConstants.KVM_VNC_ADDRESS, VmDetailConstants.KVM_VNC_PORT));
+        if (vmDetails.get(VmDetailConstants.KEYBOARD) != null) {
+            locale = vmDetails.get(VmDetailConstants.KEYBOARD);
+        }
+        ConsoleConnectionDetails details = new ConsoleConnectionDetails(vm.getVncPassword(), locale, tag, displayName);
+        if (Hypervisor.HypervisorType.External.equals(host.getHypervisorType())) {
+            return getConsoleConnectionDetailsFoxExternalVm(details, vm, host);
+        }
+        Pair<String, Integer> hostPortInfo = getHostAndPortForKVMMaintenanceHostIfNeeded(host, vmDetails);
+        if (hostPortInfo == null) {
+            hostPortInfo = managementServer.getVncPort(vm);
+        }
+        logger.debug("Retrieved VNC host and port info :[{}, {}] for {} on {}", hostPortInfo.first(),
+                hostPortInfo.second(), vm, host);
+        Ternary<String, String, String> parsedHostInfo = parseHostInfo(hostPortInfo.first());
+        details.setHost(parsedHostInfo.first());
+        details.setTunnelUrl(parsedHostInfo.second());
+        details.setTunnelSession(parsedHostInfo.third());
+        details.setPort(hostPortInfo.second());
+        if (hostPortInfo.second() == -9) {
+            details.setUsingRDP(true);
+            details.setPort(Integer.parseInt(managementServer.findDetail(host.getId(), "rdp.server.port")
+                    .getValue()));
+            logger.debug("HyperV RDP port for {} on {} is: {}", vm, host, details.getPort());
+        }
+        return details;
+    }
 
-        String ticket = genAccessTicket(result.getHost(), String.valueOf(result.getPort()), result.getSid(), tag, sessionUuid);
+    protected ConsoleEndpoint composeConsoleAccessEndpoint(String rootUrl, VirtualMachine vm, HostVO hostVo, String addr,
+                         String sessionUuid, String extraSecurityToken) {
+        ConsoleConnectionDetails result = getConsoleConnectionDetails(vm, hostVo);
+        if (result == null) {
+            return new ConsoleEndpoint(false, null, "Console access to this instance cannot be provided");
+        }
+
+        String ticket = genAccessTicket(result.getHost(), String.valueOf(result.getPort()), result.getSid(),
+                result.getTag(), sessionUuid);
         ConsoleProxyPasswordBasedEncryptor encryptor = new ConsoleProxyPasswordBasedEncryptor(getEncryptorPassword());
-        ConsoleProxyClientParam param = generateConsoleProxyClientParam(
-                new Ternary<>(result.getHost(), result.getTunnelUrl(), result.getTunnelSession()), result.getPort(),
-                result.getSid(), tag, ticket, sessionUuid, addr, extraSecurityToken, vm, hostVo, result.getLocale(), result.isUsingRDP(),
-                host, displayName);
+        ConsoleProxyClientParam param = generateConsoleProxyClientParam(result, ticket, sessionUuid, addr,
+                extraSecurityToken, vm, hostVo);
         String token = encryptor.encryptObject(ConsoleProxyClientParam.class, param);
         int vncPort = consoleProxyManager.getVncPort();
 
         String url = generateConsoleAccessUrl(rootUrl, param, token, vncPort, vm, hostVo, result.getLocale());
 
-        logger.debug("Adding allowed session: " + sessionUuid);
+        logger.debug("Adding allowed session: {}", sessionUuid);
         persistConsoleSession(sessionUuid, vm.getId(), hostVo.getId(), addr);
         managementServer.setConsoleAccessForVm(vm.getId(), sessionUuid);
 
         ConsoleEndpoint consoleEndpoint = new ConsoleEndpoint(true, url);
         consoleEndpoint.setWebsocketHost(managementServer.getConsoleAccessAddress(vm.getId()));
         consoleEndpoint.setWebsocketPort(String.valueOf(vncPort));
-        consoleEndpoint.setWebsocketPath("websockify");
+        consoleEndpoint.setWebsocketPath(WEB_SOCKET_PATH);
         consoleEndpoint.setWebsocketToken(token);
         if (StringUtils.isNotBlank(param.getExtraSecurityToken())) {
             consoleEndpoint.setWebsocketExtra(param.getExtraSecurityToken());
@@ -595,7 +549,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         consoleSessionDao.persist(consoleSessionVo);
     }
 
-    private String generateConsoleAccessUrl(String rootUrl, ConsoleProxyClientParam param, String token, int vncPort,
+    protected String generateConsoleAccessUrl(String rootUrl, ConsoleProxyClientParam param, String token, int vncPort,
                                             VirtualMachine vm, HostVO hostVo, String locale) {
         StringBuilder sb = new StringBuilder(rootUrl);
         if (param.getHypervHost() != null || !ConsoleProxyManager.NoVncConsoleDefault.value()) {
@@ -626,19 +580,14 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         return sb.toString().startsWith("https") ? sb.toString() : "http:" + sb;
     }
 
-    private ConsoleProxyClientParam generateConsoleProxyClientParam(Ternary<String, String, String> parsedHostInfo,
-                                                                    int port, String sid, String tag, String ticket,
-                                                                    String sessionUuid, String addr,
-                                                                    String extraSecurityToken, VirtualMachine vm,
-                                                                    HostVO hostVo, String locale,
-                                                                    boolean usingRDP, String host,
-                                                                    String displayName) {
+    protected ConsoleProxyClientParam generateConsoleProxyClientParam(ConsoleConnectionDetails details, String ticket,
+                        String sessionUuid, String addr, String extraSecurityToken, VirtualMachine vm, HostVO host) {
         ConsoleProxyClientParam param = new ConsoleProxyClientParam();
-        param.setClientHostAddress(parsedHostInfo.first());
-        param.setClientHostPort(port);
-        param.setClientHostPassword(sid);
-        param.setClientTag(tag);
-        param.setClientDisplayName(displayName);
+        param.setClientHostAddress(details.getHost());
+        param.setClientHostPort(details.getPort());
+        param.setClientHostPassword(details.getSid());
+        param.setClientTag(details.getTag());
+        param.setClientDisplayName(details.getDisplayName());
         param.setTicket(ticket);
         param.setSessionUuid(sessionUuid);
         param.setSourceIP(addr);
@@ -648,23 +597,23 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
             logger.debug("Added security token for client validation");
         }
 
-        if (requiresVncOverWebSocketConnection(vm, hostVo)) {
+        if (requiresVncOverWebSocketConnection(vm, host)) {
             setWebsocketUrl(vm, param);
         }
 
-        if (locale != null) {
-            param.setLocale(locale);
+        if (details.getLocale() != null) {
+            param.setLocale(details.getLocale());
         }
 
-        if (usingRDP) {
+        if (details.isUsingRDP()) {
             //For Hyperv Client Host Address will send Instance id
-            param.setHypervHost(host);
-            param.setUsername(managementServer.findDetail(hostVo.getId(), "username").getValue());
-            param.setPassword(managementServer.findDetail(hostVo.getId(), "password").getValue());
+            param.setHypervHost(host.getPrivateIpAddress());
+            param.setUsername(managementServer.findDetail(host.getId(), "username").getValue());
+            param.setPassword(managementServer.findDetail(host.getId(), "password").getValue());
         }
-        if (parsedHostInfo.second() != null  && parsedHostInfo.third() != null) {
-            param.setClientTunnelUrl(parsedHostInfo.second());
-            param.setClientTunnelSession(parsedHostInfo.third());
+        if (ObjectUtils.allNotNull(details.getTunnelUrl(), details.getTunnelSession())) {
+            param.setClientTunnelUrl(details.getTunnelUrl());
+            param.setClientTunnelSession(details.getTunnelSession());
         }
         return param;
     }
@@ -737,7 +686,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         return "";
     }
 
-    private String getEncryptorPassword() {
+    protected String getEncryptorPassword() {
         String key = keysManager.getEncryptionKey();
         String iv = keysManager.getEncryptionIV();
 
@@ -786,4 +735,82 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         }
     }
 
+    protected static class ConsoleConnectionDetails {
+        String host;
+        int port;
+        String sid;
+        String locale;
+        String tag;
+        String displayName;
+        String tunnelUrl = null;
+        String tunnelSession = null;
+        boolean usingRDP;
+
+        ConsoleConnectionDetails(String sid, String locale, String tag, String displayName) {
+            this.sid = sid;
+            this.locale = locale;
+            this.tag = tag;
+            this.displayName = displayName;
+        }
+
+        public String getHost() {
+            return host;
+        }
+
+        public void setHost(String host) {
+            this.host = host;
+        }
+
+        public int getPort() {
+            return port;
+        }
+
+        public void setPort(int port) {
+            this.port = port;
+        }
+
+        public String getSid() {
+            return sid;
+        }
+
+        public void setSid(String sid) {
+            this.sid = sid;
+        }
+
+        public String getLocale() {
+            return locale;
+        }
+
+        public String getTag() {
+            return tag;
+        }
+
+        public String getDisplayName() {
+            return displayName;
+        }
+
+        public String getTunnelUrl() {
+            return tunnelUrl;
+        }
+
+        public void setTunnelUrl(String tunnelUrl) {
+            this.tunnelUrl = tunnelUrl;
+        }
+
+        public String getTunnelSession() {
+            return tunnelSession;
+        }
+
+        public void setTunnelSession(String tunnelSession) {
+            this.tunnelSession = tunnelSession;
+        }
+
+        public boolean isUsingRDP() {
+            return usingRDP;
+        }
+
+        public void setUsingRDP(boolean usingRDP) {
+            this.usingRDP = usingRDP;
+        }
+    }
 }

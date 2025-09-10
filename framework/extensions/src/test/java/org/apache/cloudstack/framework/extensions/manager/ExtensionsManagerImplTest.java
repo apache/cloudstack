@@ -92,7 +92,6 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -102,6 +101,7 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.RunCustomActionAnswer;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ManagementServerHostVO;
@@ -111,6 +111,7 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.ExternalProvisioner;
@@ -1281,7 +1282,7 @@ public class ExtensionsManagerImplTest {
     }
 
     private void mockCallerRole(RoleType roleType) {
-        CallContext callContextMock = Mockito.mock(CallContext.class);
+        CallContext callContextMock = mock(CallContext.class);
         when(CallContext.current()).thenReturn(callContextMock);
         Account accountMock = mock(Account.class);
         when(accountMock.getRoleId()).thenReturn(1L);
@@ -1880,6 +1881,75 @@ public class ExtensionsManagerImplTest {
         long clusterId = 10L;
         when(extensionsManager.getExtensionIdForCluster(clusterId)).thenReturn(null);
         Extension result = extensionsManager.getExtensionForCluster(clusterId);
+        assertNull(result);
+    }
+
+    @Test
+    public void getInstanceConsole_whenValid() {
+        Extension extension = mock(Extension.class);
+        when(extension.getType()).thenReturn(Extension.Type.Orchestrator);
+        when(extension.getState()).thenReturn(Extension.State.Enabled);
+        when(extensionsManager.getExtensionForCluster(anyLong())).thenReturn(extension);
+        VirtualMachine vm = mock(VirtualMachine.class);
+        Host host = mock(Host.class);
+        when(host.getClusterId()).thenReturn(1L);
+        Answer expectedAnswer = mock(Answer.class);
+        when(virtualMachineManager.toVmTO(any())).thenReturn(mock(VirtualMachineTO.class));
+        when(agentMgr.easySend(anyLong(), any())).thenReturn(expectedAnswer);
+        Answer result = extensionsManager.getInstanceConsole(vm, host);
+        assertNotNull(result);
+        assertEquals(expectedAnswer, result);
+    }
+
+    @Test
+    public void getInstanceConsole_whenNullExtension() {
+        when(extensionsManager.getExtensionForCluster(anyLong())).thenReturn(null);
+        VirtualMachine vm = mock(VirtualMachine.class);
+        Host host = mock(Host.class);
+        when(host.getClusterId()).thenReturn(1L);
+        Answer result = extensionsManager.getInstanceConsole(vm, host);
+        assertNotNull(result);
+        assertFalse(result.getResult());
+    }
+
+    @Test
+    public void getInstanceConsole_whenNullExtensionNotOrchestrator() {
+        Extension extension = mock(Extension.class);
+        when(extensionsManager.getExtensionForCluster(anyLong())).thenReturn(extension);
+        VirtualMachine vm = mock(VirtualMachine.class);
+        Host host = mock(Host.class);
+        when(host.getClusterId()).thenReturn(1L);
+        Answer result = extensionsManager.getInstanceConsole(vm, host);
+        assertNotNull(result);
+        assertFalse(result.getResult());
+    }
+
+    @Test
+    public void getInstanceConsole_whenNullExtensionNotEnabled() {
+        Extension extension = mock(Extension.class);
+        when(extension.getType()).thenReturn(Extension.Type.Orchestrator);
+        when(extension.getState()).thenReturn(Extension.State.Disabled);
+        when(extensionsManager.getExtensionForCluster(anyLong())).thenReturn(extension);
+        VirtualMachine vm = mock(VirtualMachine.class);
+        Host host = mock(Host.class);
+        when(host.getClusterId()).thenReturn(1L);
+        Answer result = extensionsManager.getInstanceConsole(vm, host);
+        assertNotNull(result);
+        assertFalse(result.getResult());
+    }
+
+    @Test
+    public void getInstanceConsole_whenAgentManagerFails() {
+        Extension extension = mock(Extension.class);
+        when(extension.getType()).thenReturn(Extension.Type.Orchestrator);
+        when(extension.getState()).thenReturn(Extension.State.Enabled);
+        when(extensionsManager.getExtensionForCluster(anyLong())).thenReturn(extension);
+        VirtualMachine vm = mock(VirtualMachine.class);
+        Host host = mock(Host.class);
+        when(host.getClusterId()).thenReturn(1L);
+        when(virtualMachineManager.toVmTO(any())).thenReturn(mock(VirtualMachineTO.class));
+        when(agentMgr.easySend(anyLong(), any())).thenReturn(null);
+        Answer result = extensionsManager.getInstanceConsole(vm, host);
         assertNull(result);
     }
 }

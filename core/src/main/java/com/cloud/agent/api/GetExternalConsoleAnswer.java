@@ -21,6 +21,7 @@ public class GetExternalConsoleAnswer extends Answer {
 
     private String host;
     private int port;
+    @LogLevel(LogLevel.Log4jLevel.Off)
     private String password;
     private String protocol;
 

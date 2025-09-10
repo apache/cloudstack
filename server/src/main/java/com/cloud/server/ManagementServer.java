@@ -76,6 +76,6 @@ public interface ManagementServer extends ManagementService, PluggableService {
 
     Pair<Boolean, String> updateSystemVM(VMInstanceVO systemVM, boolean forced);
 
-    Answer getExternalConsole(VirtualMachine vm, Host host);
+    Answer getExternalVmConsole(VirtualMachine vm, Host host);
 
 }

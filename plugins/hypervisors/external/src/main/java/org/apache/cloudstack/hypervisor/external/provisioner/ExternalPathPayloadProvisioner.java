@@ -219,6 +219,13 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
         return hvGuru.implement(profile);
     }
 
+    protected String getSanitizedJsonStringForLog(String json) {
+        if (StringUtils.isBlank(json)) {
+            return json;
+        }
+        return json.replaceAll("(\"password\"\\s*:\\s*\")([^\"]*)(\")", "$1****$3");
+    }
+
     private String getServerProperty(String name) {
         Properties props = propertiesRef.get();
         if (props == null) {
@@ -485,20 +492,23 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
         if (!result.first()) {
             return new GetExternalConsoleAnswer(cmd, output);
         }
-        logger.debug("Received console details from the external system: {}", output);
+        logger.debug("Received console details from the external system: {}",
+                getSanitizedJsonStringForLog(output));
         try {
             JsonObject jsonObj = JsonParser.parseString(output).getAsJsonObject();
             JsonObject consoleObj = jsonObj.has("console") ? jsonObj.getAsJsonObject("console") : null;
             if (consoleObj == null) {
-                logger.error("Missing console object in external console output: {}", output);
+                logger.error("Missing console object in external console output: {}",
+                        getSanitizedJsonStringForLog(output));
                 return new GetExternalConsoleAnswer(cmd, "Missing console object in output");
             }
             String host = consoleObj.has("host") ? consoleObj.get("host").getAsString() : null;
             Integer port = consoleObj.has("port") ? Integer.valueOf(consoleObj.get("port").getAsString()) : null;
             String password = consoleObj.has("password") ? consoleObj.get("password").getAsString() : null;
             String protocol = consoleObj.has("protocol") ? consoleObj.get("protocol").getAsString() : null;
-            if (ObjectUtils.anyNull(host, port, password)) {
-                logger.error("Missing required fields in external console output: {}", output);
+            if (ObjectUtils.anyNull(host, port)) {
+                logger.error("Missing required fields in external console output: {}",
+                        getSanitizedJsonStringForLog(output));
                 return new GetExternalConsoleAnswer(cmd, "Missing required fields in output");
             }
             return new GetExternalConsoleAnswer(cmd, host, port, password, protocol);

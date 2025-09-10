@@ -5813,7 +5813,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
-    public Answer getExternalConsole(VirtualMachine vm, Host host) {
+    public Answer getExternalVmConsole(VirtualMachine vm, Host host) {
         return extensionsManager.getInstanceConsole(vm, host);
     }
 }
