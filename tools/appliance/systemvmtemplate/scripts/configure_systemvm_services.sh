@@ -133,7 +133,7 @@ function configure_services() {
   systemctl disable containerd
 
   # Disable cloud init by default
-cat <<EOF > /etc/cloud/cloud.cfg.d/cloudstack.cfg
+  cat <<EOF > /etc/cloud/cloud.cfg.d/cloudstack.cfg
 datasource_list: ['CloudStack']
 datasource:
   CloudStack:

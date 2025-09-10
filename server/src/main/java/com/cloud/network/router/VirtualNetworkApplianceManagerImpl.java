@@ -18,6 +18,7 @@
 package com.cloud.network.router;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+import static com.cloud.vm.VirtualMachineManager.SystemVmEnableUserData;
 
 import java.lang.reflect.Type;
 import java.math.BigInteger;
@@ -27,6 +28,7 @@ import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -2096,6 +2098,14 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 " on the virtual router.", RouterLogrotateFrequency.key(), routerLogrotateFrequency, dc.getUuid()));
         buf.append(String.format(" logrotatefrequency=%s", routerLogrotateFrequency));
 
+        if (SystemVmEnableUserData.valueIn(router.getDataCenterId())) {
+            String userData = RouterUserData.valueIn(router.getDataCenterId());
+            if (StringUtils.isNotBlank(userData)) {
+                String encodedUserData = Base64.getEncoder().encodeToString(userData.getBytes());
+                buf.append(" userdata=").append(encodedUserData);
+            }
+        }
+
         if (logger.isDebugEnabled()) {
             logger.debug("Boot Args for " + profile + ": " + buf);
         }
@@ -3355,7 +3365,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 RouterHealthChecksMaxMemoryUsageThreshold,
                 ExposeDnsAndBootpServer,
                 RouterLogrotateFrequency,
-                RemoveControlIpOnStop
+                RemoveControlIpOnStop,
+                RouterUserData
         };
     }
 
