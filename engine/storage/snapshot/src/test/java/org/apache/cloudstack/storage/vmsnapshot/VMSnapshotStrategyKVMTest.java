@@ -29,6 +29,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -436,6 +437,11 @@ public class VMSnapshotStrategyKVMTest extends TestCase{
         @Bean
         public BackupOfferingDao backupOfferingDao() {
             return Mockito.mock(BackupOfferingDao.class);
+        }
+
+        @Bean
+        public BackupManager backupManager() {
+            return Mockito.mock(BackupManager.class);
         }
     }
 }
