@@ -17,11 +17,13 @@
 package org.apache.cloudstack.secondarystorage;
 
 import static com.cloud.configuration.Config.SecStorageAllowedInternalDownloadSites;
+import static com.cloud.vm.VirtualMachineManager.SystemVmEnableUserData;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -1227,6 +1229,15 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         String nfsVersion = imageStoreDetailsUtil != null ? imageStoreDetailsUtil.getNfsVersion(secStores.get(0).getId()) : null;
         buf.append(" nfsVersion=").append(nfsVersion);
         buf.append(" keystore_password=").append(VirtualMachineGuru.getEncodedString(PasswordGenerator.generateRandomPassword(16)));
+
+        if (SystemVmEnableUserData.valueIn(dc.getId())) {
+            String userData = SecondaryStorageUserData.valueIn(dc.getId());
+            if (StringUtils.isNotBlank(userData)) {
+                String encodedUserData = Base64.getEncoder().encodeToString(userData.getBytes());
+                buf.append(" userdata=").append(encodedUserData);
+            }
+        }
+
         String bootArgs = buf.toString();
         if (logger.isDebugEnabled()) {
             logger.debug(String.format("Boot args for machine profile [%s]: [%s].", profile.toString(), bootArgs));
@@ -1529,7 +1540,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {NTPServerConfig, MaxNumberOfSsvmsForMigration, SecondaryStorageCapacityScanInterval};
+        return new ConfigKey<?>[] {NTPServerConfig, MaxNumberOfSsvmsForMigration, SecondaryStorageCapacityScanInterval, SecondaryStorageUserData};
     }
 
 }

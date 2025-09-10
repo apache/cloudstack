@@ -19,6 +19,7 @@ package com.cloud.consoleproxy;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -151,6 +152,8 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
+
+import static com.cloud.vm.VirtualMachineManager.SystemVmEnableUserData;
 
 /**
  * Class to manage console proxys. <br><br>
@@ -1265,6 +1268,15 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             buf.append(" vncport=").append(getVncPort(datacenterId));
         }
         buf.append(" keystore_password=").append(VirtualMachineGuru.getEncodedString(PasswordGenerator.generateRandomPassword(16)));
+
+        if (SystemVmEnableUserData.valueIn(dc.getId())) {
+            String userData = ConsoleProxyUserData.valueIn(dc.getId());
+            if (StringUtils.isNotBlank(userData)) {
+                String encodedUserData = Base64.getEncoder().encodeToString(userData.getBytes());
+                buf.append(" userdata=").append(encodedUserData);
+            }
+        }
+
         String bootArgs = buf.toString();
         if (logger.isDebugEnabled()) {
             logger.debug("Boot Args for " + profile + ": " + bootArgs);
@@ -1572,7 +1584,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] { ConsoleProxySslEnabled, NoVncConsoleDefault, NoVncConsoleSourceIpCheckEnabled, ConsoleProxyServiceOffering,
                 ConsoleProxyCapacityStandby, ConsoleProxyCapacityScanInterval, ConsoleProxyCmdPort, ConsoleProxyRestart, ConsoleProxyUrlDomain, ConsoleProxySessionMax, ConsoleProxySessionTimeout, ConsoleProxyDisableRpFilter, ConsoleProxyLaunchMax,
-                ConsoleProxyManagementLastState, ConsoleProxyServiceManagementState, NoVncConsoleShowDot };
+                ConsoleProxyManagementLastState, ConsoleProxyServiceManagementState, NoVncConsoleShowDot, ConsoleProxyUserData };
     }
 
     protected ConsoleProxyStatus parseJsonToConsoleProxyStatus(String json) throws JsonParseException {

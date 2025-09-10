@@ -17,6 +17,7 @@
 package com.cloud.network.lb;
 
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -35,6 +36,7 @@ import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
@@ -100,6 +102,9 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
+
+import static com.cloud.network.router.VirtualNetworkApplianceManager.RouterUserData;
+import static com.cloud.vm.VirtualMachineManager.SystemVmEnableUserData;
 
 @Component
 public class ElasticLoadBalancerManagerImpl extends ManagerBase implements ElasticLoadBalancerManager, VirtualMachineGuru {
@@ -477,6 +482,15 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
         }
         String msPublicKey = _configDao.getValue("ssh.publickey");
         buf.append(" authorized_key=").append(VirtualMachineGuru.getEncodedMsPublicKey(msPublicKey));
+
+        if (SystemVmEnableUserData.valueIn(dc.getId())) {
+            String userData = RouterUserData.valueIn(dc.getId());
+            if (StringUtils.isNotBlank(userData)) {
+                String encodedUserData = Base64.getEncoder().encodeToString(userData.getBytes());
+                buf.append(" userdata=").append(encodedUserData);
+            }
+        }
+
         if (logger.isDebugEnabled()) {
             logger.debug("Boot Args for " + profile + ": " + buf.toString());
         }

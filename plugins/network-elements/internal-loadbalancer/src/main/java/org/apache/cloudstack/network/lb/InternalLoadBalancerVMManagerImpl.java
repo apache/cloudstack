@@ -21,9 +21,12 @@ import static com.cloud.hypervisor.Hypervisor.HypervisorType.KVM;
 import static com.cloud.hypervisor.Hypervisor.HypervisorType.LXC;
 import static com.cloud.hypervisor.Hypervisor.HypervisorType.VMware;
 import static com.cloud.hypervisor.Hypervisor.HypervisorType.XenServer;
+import static com.cloud.network.router.VirtualNetworkApplianceManager.RouterUserData;
+import static com.cloud.vm.VirtualMachineManager.SystemVmEnableUserData;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -126,6 +129,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
+import org.apache.commons.lang3.StringUtils;
 
 public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements InternalLoadBalancerVMManager, InternalLoadBalancerVMService, VirtualMachineGuru {
     static final private String InternalLbVmNamePrefix = "b";
@@ -242,6 +246,15 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
 
         final String type = "ilbvm";
         buf.append(" type=" + type);
+
+        long dcId = profile.getVirtualMachine().getDataCenterId();
+        if (SystemVmEnableUserData.valueIn(dcId)) {
+            String userData = RouterUserData.valueIn(dcId);
+            if (StringUtils.isNotBlank(userData)) {
+                String encodedUserData = Base64.getEncoder().encodeToString(userData.getBytes());
+                buf.append(" userdata=").append(encodedUserData);
+            }
+        }
 
         if (logger.isDebugEnabled()) {
             logger.debug("Boot Args for " + profile + ": " + buf.toString());
