@@ -476,6 +476,8 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
             scaleKubernetesClusterOffering();
         } else if (clusterSizeScalingNeeded) {
             scaleKubernetesClusterSize();
+        } else {
+            return true;
         }
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
         return true;
