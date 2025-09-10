@@ -5370,10 +5370,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                 vlan.getVlanTag()));
                     }
                 }
-                if (NetUtils.isSameIsolationId(vlanId, vlan.getVlanTag()) && !vlanIp6Gateway.equals(vlan.getIp6Gateway())) {
-                    throw new InvalidParameterValueException(String.format("The IP range with tag: %s has already been added with gateway %s. Please specify a different tag.",
-                            vlan.getVlanTag(), vlan.getIp6Gateway()));
-                }
             }
         }
 
