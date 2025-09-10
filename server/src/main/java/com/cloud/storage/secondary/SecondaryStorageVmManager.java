@@ -44,6 +44,10 @@ public interface SecondaryStorageVmManager extends Manager {
             "The time interval(in millisecond) to scan whether or not system needs more SSVM to ensure minimal standby capacity",
             false);
 
+    ConfigKey<String> SecondaryStorageUserData = new ConfigKey<>(String.class, "secstorage.userdata", "Advanced", "",
+            "Default user data for secondary storage VMs. This works only when systemvm.userdata.enabled is set to true.", true, ConfigKey.Scope.Zone, null);
+
+
     public static final int DEFAULT_SS_VM_RAMSIZE = 512;            // 512M
     public static final int DEFAULT_SS_VM_CPUMHZ = 500;             // 500 MHz
     public static final int DEFAULT_SS_VM_MTUSIZE = 1500;

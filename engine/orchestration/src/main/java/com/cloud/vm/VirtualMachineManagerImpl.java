@@ -5121,7 +5121,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 VmConfigDriveLabel, VmConfigDriveOnPrimaryPool, VmConfigDriveForceHostCacheUse, VmConfigDriveUseHostCacheOnUnsupportedPool,
                 HaVmRestartHostUp, ResourceCountRunningVMsonly, AllowExposeHypervisorHostname, AllowExposeHypervisorHostnameAccountLevel, SystemVmRootDiskSize,
                 AllowExposeDomainInMetadata, MetadataCustomCloudName, VmMetadataManufacturer, VmMetadataProductName,
-                VmSyncPowerStateTransitioning
+                VmSyncPowerStateTransitioning, SystemVmEnableUserData
         };
     }
 
