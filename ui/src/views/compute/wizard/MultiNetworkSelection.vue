@@ -265,33 +265,32 @@ export default {
       this.values = {}
       this.ipAddresses = {}
       for (const item of this.items) {
-        var network = this.validNetworks[item.id]?.[0] || null
+        let network = null
+        if (item.vlanid && item.vlanid !== -1) {
+          const matched = this.validNetworks[item.id].filter(x => Number(x.vlan) === item.vlanid)
+          if (matched.length > 0) {
+            network = matched[0]
+          }
+        }
+        if (!network) {
+          network = this.validNetworks[item.id]?.[0] || null
+        }
         this.values[item.id] = network ? network.id : ''
         this.ipAddresses[item.id] = (!network || network.type === 'L2') ? null : 'auto'
         this.setIpAddressEnabled(item, network)
       }
       this.sendValuesTimed()
     },
-    setNetworkState (nic, networkId) {
+    handleNetworkChange (nic, networkId) {
       if (this.hypervisor === 'KVM') {
         this.setIpAddressEnabled(nic, _.find(this.networks, (option) => option.id === networkId))
       } else {
         this.setIpAddressEnabled(nic, _.find(this.validNetworks[nic.id], (option) => option.id === networkId))
       }
-    },
-    handleNetworkChange (nic, networkId) {
-      this.setNetworkState(nic, networkId)
       this.sendValuesTimed()
     },
     getDefaultNetwork (record) {
-      if (record.vlanid && record.vlanid !== -1) {
-        const matched = this.validNetworks[record.id].filter(x => Number(x.vlan) === record.vlanid)
-        if (matched.length > 0) {
-          this.setNetworkState(record, matched[0].id)
-          return matched[0].id
-        }
-      }
-      return this.validNetworks[record.id][0].id
+      return this.values[record.id] || this.validNetworks[record.id]?.[0]?.id
     },
     sendValuesTimed () {
       clearTimeout(this.sendValuesTimer)
