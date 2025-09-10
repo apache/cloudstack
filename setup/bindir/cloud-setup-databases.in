@@ -239,7 +239,7 @@ for full help
             ("DROP USER 'cloud'@'%' ;", "DO NULL;")
         )
 
-        if self.areCloudDatabasesCreated() and not self.options.forcerecreate:
+        if self.areCloudDatabasesCreated() and not self.options.forcerecreate and not self.options.schemaonly:
             self.errorAndExit("Aborting script as the databases (cloud, cloud_usage) already exist.\n" \
                               "Please use the --force-recreate parameter if you want to recreate the schemas.")
 
