@@ -153,7 +153,7 @@ public class CreateSnapshotFromVMSnapshotCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void create() throws ResourceAllocationException {
-        Snapshot snapshot = this._volumeService.allocSnapshotForVm(getVmId(), getVolumeId(), getSnapshotName());
+        Snapshot snapshot = this._volumeService.allocSnapshotForVm(getVmId(), getVolumeId(), getSnapshotName(), getVMSnapshotId());
         if (snapshot != null) {
             this.setEntityId(snapshot.getId());
             this.setEntityUuid(snapshot.getUuid());
@@ -208,5 +208,10 @@ public class CreateSnapshotFromVMSnapshotCmd extends BaseAsyncCreateCmd {
             return getHostId();
         }
         return null;
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return getEntityId();
     }
 }

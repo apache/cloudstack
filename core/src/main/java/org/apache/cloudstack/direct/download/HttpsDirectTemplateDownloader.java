@@ -97,8 +97,8 @@ public class HttpsDirectTemplateDownloader extends DirectTemplateDownloaderImpl 
         req = new HttpGet(downloadUrl);
         setFollowRedirects(this.isFollowRedirects());
         if (MapUtils.isNotEmpty(headers)) {
-            for (String headerKey: headers.keySet()) {
-                req.setHeader(headerKey, headers.get(headerKey));
+            for (Map.Entry<String, String> entry : headers.entrySet()) {
+                req.setHeader(entry.getKey(), entry.getValue());
             }
         }
     }

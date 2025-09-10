@@ -18,6 +18,7 @@
 package org.apache.cloudstack.backup;
 
 import java.util.Date;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -39,6 +40,9 @@ public class BackupScheduleVO implements BackupSchedule {
     @Column(name = "id")
     private long id;
 
+    @Column(name = "uuid", nullable = false)
+    private String uuid = UUID.randomUUID().toString();
+
     @Column(name = "vm_id")
     private Long vmId;
 
@@ -58,15 +62,23 @@ public class BackupScheduleVO implements BackupSchedule {
     @Column(name = "async_job_id")
     Long asyncJobId;
 
+    @Column(name = "max_backups")
+    private int maxBackups = 0;
+
+    @Column(name = "quiescevm")
+    Boolean quiesceVM = false;
+
     public BackupScheduleVO() {
     }
 
-    public BackupScheduleVO(Long vmId, DateUtil.IntervalType scheduleType, String schedule, String timezone, Date scheduledTimestamp) {
+    public BackupScheduleVO(Long vmId, DateUtil.IntervalType scheduleType, String schedule, String timezone, Date scheduledTimestamp, int maxBackups, Boolean quiesceVM) {
         this.vmId = vmId;
         this.scheduleType = (short) scheduleType.ordinal();
         this.schedule = schedule;
         this.timezone = timezone;
         this.scheduledTimestamp = scheduledTimestamp;
+        this.maxBackups = maxBackups;
+        this.quiesceVM = quiesceVM;
     }
 
     @Override
@@ -78,6 +90,11 @@ public class BackupScheduleVO implements BackupSchedule {
     @Override
     public long getId() {
         return id;
+    }
+
+    @Override
+    public String getUuid() {
+        return uuid;
     }
 
     public Long getVmId() {
@@ -127,5 +144,21 @@ public class BackupScheduleVO implements BackupSchedule {
 
     public void setAsyncJobId(Long asyncJobId) {
         this.asyncJobId = asyncJobId;
+    }
+
+    public int getMaxBackups() {
+        return maxBackups;
+    }
+
+    public void setMaxBackups(int maxBackups) {
+        this.maxBackups = maxBackups;
+    }
+
+    public void setQuiesceVM(Boolean quiesceVM) {
+        this.quiesceVM = quiesceVM;
+    }
+
+    public Boolean getQuiesceVM() {
+        return quiesceVM;
     }
 }

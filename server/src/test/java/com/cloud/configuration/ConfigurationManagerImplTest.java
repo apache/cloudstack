@@ -34,6 +34,7 @@ import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkService;
 import com.cloud.network.Networks;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.NetrisProviderDao;
 import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.element.NsxProviderVO;
@@ -48,6 +49,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManagerImpl;
 import com.cloud.user.User;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -55,9 +57,11 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.api.command.admin.config.ResetCfgCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.UpdateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
+import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.config.ConfigDepot;
@@ -66,8 +70,10 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.resourcedetail.DiskOfferingDetailVO;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.vm.UnmanagedVMsManager;
-import org.apache.cloudstack.config.Configuration;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -83,6 +89,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -130,6 +137,8 @@ public class ConfigurationManagerImplTest {
     @Mock
     NsxProviderDao nsxProviderDao;
     @Mock
+    NetrisProviderDao netrisProviderDao;
+    @Mock
     DataCenterDao zoneDao;
     @Mock
     HostDao hostDao;
@@ -165,6 +174,10 @@ public class ConfigurationManagerImplTest {
     NetworkService networkService;
     @Mock
     NetworkModel networkModel;
+    @Mock
+    PrimaryDataStoreDao storagePoolDao;
+    @Mock
+    StoragePoolDetailsDao storagePoolDetailsDao;
 
     DeleteZoneCmd deleteZoneCmd;
     CreateNetworkOfferingCmd createNetworkOfferingCmd;
@@ -181,7 +194,7 @@ public class ConfigurationManagerImplTest {
 
     @Before
     public void setUp() throws Exception {
-        Mockito.when(configurationVOMock.getScope()).thenReturn(ConfigKey.Scope.Global.name());
+        Mockito.when(configurationVOMock.getScopes()).thenReturn(List.of(ConfigKey.Scope.Global));
         Mockito.when(configDao.findByName(Mockito.anyString())).thenReturn(configurationVOMock);
         Mockito.when(configDepot.get(Mockito.anyString())).thenReturn(configKeyMock);
 
@@ -409,6 +422,7 @@ public class ConfigurationManagerImplTest {
         DataCenterVO dataCenterVO = Mockito.mock(DataCenterVO.class);
 
         when(nsxProviderDao.findByZoneId(anyLong())).thenReturn(nsxProviderVO);
+        when(netrisProviderDao.findByZoneId(anyLong())).thenReturn(null);
         when(zoneDao.findById(anyLong())).thenReturn(dataCenterVO);
         lenient().when(hostDao.findByDataCenterId(anyLong())).thenReturn(Collections.emptyList());
         when(podDao.listByDataCenterId(anyLong())).thenReturn(Collections.emptyList());
@@ -449,30 +463,31 @@ public class ConfigurationManagerImplTest {
         Assert.assertNotNull(offering);
     }
 
+    @Test
     public void testValidateInvalidConfiguration() {
         Mockito.doReturn(null).when(configDao).findByName(Mockito.anyString());
-        String msg = configurationManagerImplSpy.validateConfigurationValue("test.config.name", "testvalue", ConfigKey.Scope.Global.toString());
+        String msg = configurationManagerImplSpy.validateConfigurationValue("test.config.name", "testvalue", ConfigKey.Scope.Global);
         Assert.assertEquals("Invalid configuration variable.", msg);
     }
 
     @Test
     public void testValidateInvalidScopeForConfiguration() {
         ConfigurationVO cfg = mock(ConfigurationVO.class);
-        when(cfg.getScope()).thenReturn(ConfigKey.Scope.Account.toString());
+        when(cfg.getScopes()).thenReturn(List.of(ConfigKey.Scope.Account));
         Mockito.doReturn(cfg).when(configDao).findByName(Mockito.anyString());
-        String msg = configurationManagerImplSpy.validateConfigurationValue("test.config.name", "testvalue", ConfigKey.Scope.Domain.toString());
+        String msg = configurationManagerImplSpy.validateConfigurationValue("test.config.name", "testvalue", ConfigKey.Scope.Domain);
         Assert.assertEquals("Invalid scope id provided for the parameter test.config.name", msg);
     }
 
     @Test
     public void testValidateConfig_ThreadsOnKVMHostToTransferVMwareVMFiles_Failure() {
         ConfigurationVO cfg = mock(ConfigurationVO.class);
-        when(cfg.getScope()).thenReturn(ConfigKey.Scope.Global.toString());
+        when(cfg.getScopes()).thenReturn(List.of(ConfigKey.Scope.Global));
         ConfigKey<Integer> configKey = UnmanagedVMsManager.ThreadsOnKVMHostToImportVMwareVMFiles;
         Mockito.doReturn(cfg).when(configDao).findByName(Mockito.anyString());
         Mockito.doReturn(configKey).when(configurationManagerImplSpy._configDepot).get(configKey.key());
 
-        String result = configurationManagerImplSpy.validateConfigurationValue(configKey.key(), "11", configKey.scope().toString());
+        String result = configurationManagerImplSpy.validateConfigurationValue(configKey.key(), "11", configKey.getScopes().get(0));
 
         Assert.assertNotNull(result);
     }
@@ -480,24 +495,24 @@ public class ConfigurationManagerImplTest {
     @Test
     public void testValidateConfig_ThreadsOnKVMHostToTransferVMwareVMFiles_Success() {
         ConfigurationVO cfg = mock(ConfigurationVO.class);
-        when(cfg.getScope()).thenReturn(ConfigKey.Scope.Global.toString());
+        when(cfg.getScopes()).thenReturn(List.of(ConfigKey.Scope.Global));
         ConfigKey<Integer> configKey = UnmanagedVMsManager.ThreadsOnKVMHostToImportVMwareVMFiles;
         Mockito.doReturn(cfg).when(configDao).findByName(Mockito.anyString());
         Mockito.doReturn(configKey).when(configurationManagerImplSpy._configDepot).get(configKey.key());
-        String msg = configurationManagerImplSpy.validateConfigurationValue(configKey.key(), "10", configKey.scope().toString());
+        String msg = configurationManagerImplSpy.validateConfigurationValue(configKey.key(), "10", configKey.getScopes().get(0));
         Assert.assertNull(msg);
     }
 
     @Test
     public void testValidateConfig_ConvertVmwareInstanceToKvmTimeout_Failure() {
         ConfigurationVO cfg = mock(ConfigurationVO.class);
-        when(cfg.getScope()).thenReturn(ConfigKey.Scope.Global.toString());
+        when(cfg.getScopes()).thenReturn(List.of(ConfigKey.Scope.Global));
         ConfigKey<Integer> configKey = UnmanagedVMsManager.ConvertVmwareInstanceToKvmTimeout;
         Mockito.doReturn(cfg).when(configDao).findByName(Mockito.anyString());
         Mockito.doReturn(configKey).when(configurationManagerImplSpy._configDepot).get(configKey.key());
         configurationManagerImplSpy.populateConfigValuesForValidationSet();
 
-        String result = configurationManagerImplSpy.validateConfigurationValue(configKey.key(), "0", configKey.scope().toString());
+        String result = configurationManagerImplSpy.validateConfigurationValue(configKey.key(), "0", configKey.getScopes().get(0));
 
         Assert.assertNotNull(result);
     }
@@ -505,12 +520,12 @@ public class ConfigurationManagerImplTest {
     @Test
     public void testValidateConfig_ConvertVmwareInstanceToKvmTimeout_Success() {
         ConfigurationVO cfg = mock(ConfigurationVO.class);
-        when(cfg.getScope()).thenReturn(ConfigKey.Scope.Global.toString());
+        when(cfg.getScopes()).thenReturn(List.of(ConfigKey.Scope.Global));
         ConfigKey<Integer> configKey = UnmanagedVMsManager.ConvertVmwareInstanceToKvmTimeout;
         Mockito.doReturn(cfg).when(configDao).findByName(Mockito.anyString());
         Mockito.doReturn(configKey).when(configurationManagerImplSpy._configDepot).get(configKey.key());
         configurationManagerImplSpy.populateConfigValuesForValidationSet();
-        String msg = configurationManagerImplSpy.validateConfigurationValue(configKey.key(), "9", configKey.scope().toString());
+        String msg = configurationManagerImplSpy.validateConfigurationValue(configKey.key(), "9", configKey.getScopes().get(0));
         Assert.assertNull(msg);
     }
 
@@ -625,14 +640,14 @@ public class ConfigurationManagerImplTest {
     @Test
     public void validateConfigurationValueTestValidatesValueType() {
         Mockito.when(configKeyMock.type()).thenReturn(Integer.class);
-        configurationManagerImplSpy.validateConfigurationValue("validate.type", "100", ConfigKey.Scope.Global.name());
+        configurationManagerImplSpy.validateConfigurationValue("validate.type", "100", ConfigKey.Scope.Global);
         Mockito.verify(configurationManagerImplSpy).validateValueType("100", Integer.class);
     }
 
     @Test
     public void validateConfigurationValueTestValidatesValueRange() {
         Mockito.when(configKeyMock.type()).thenReturn(Integer.class);
-        configurationManagerImplSpy.validateConfigurationValue("validate.range", "100", ConfigKey.Scope.Global.name());
+        configurationManagerImplSpy.validateConfigurationValue("validate.range", "100", ConfigKey.Scope.Global);
         Mockito.verify(configurationManagerImplSpy).validateValueRange("validate.range", "100", Integer.class, null);
     }
 
@@ -860,6 +875,28 @@ public class ConfigurationManagerImplTest {
     }
 
     @Test
+    public void testResetConfigurations() {
+        Long poolId = 1L;
+        ResetCfgCmd cmd = Mockito.mock(ResetCfgCmd.class);
+        Mockito.when(cmd.getCfgName()).thenReturn("pool.storage.capacity.disablethreshold");
+        Mockito.when(cmd.getStoragepoolId()).thenReturn(poolId);
+        Mockito.when(cmd.getZoneId()).thenReturn(null);
+        Mockito.when(cmd.getClusterId()).thenReturn(null);
+        Mockito.when(cmd.getAccountId()).thenReturn(null);
+        Mockito.when(cmd.getDomainId()).thenReturn(null);
+        Mockito.when(cmd.getImageStoreId()).thenReturn(null);
+
+        ConfigurationVO cfg = new ConfigurationVO("Advanced", "DEFAULT", "test", "pool.storage.capacity.disablethreshold", null, "description");
+        cfg.setScope(10);
+        cfg.setDefaultValue(".85");
+        Mockito.when(configDao.findByName("pool.storage.capacity.disablethreshold")).thenReturn(cfg);
+        Mockito.when(storagePoolDao.findById(poolId)).thenReturn(Mockito.mock(StoragePoolVO.class));
+
+        Pair<Configuration, String> result = configurationManagerImplSpy.resetConfiguration(cmd);
+        Assert.assertEquals(".85", result.second());
+    }
+
+    @Test
     public void testValidateConfigurationAllowedOnlyForDefaultAdmin_withAdminUser_shouldNotThrowException() {
         CallContext callContext = mock(CallContext.class);
         when(callContext.getCallingUserId()).thenReturn(User.UID_ADMIN);
@@ -1008,5 +1045,55 @@ public class ConfigurationManagerImplTest {
 
         configurationManagerImplSpy.getConfigurationType(configuration.key());
         Mockito.verify(configurationManagerImplSpy).parseConfigurationTypeIntoString(configuration.type(), configurationVOMock);
+    }
+
+    @Test
+    public void serviceOfferingExternalDetailsNeedUpdateReturnsFalseWhenExternalDetailsIsEmpty() {
+        Map<String, String> offeringDetails = Map.of("key1", "value1");
+        Map<String, String> externalDetails = Collections.emptyMap();
+
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void serviceOfferingExternalDetailsNeedUpdateReturnsTrueWhenExistingExternalDetailsIsEmpty() {
+        Map<String, String> offeringDetails = Map.of("key1", "value1");
+        Map<String, String> externalDetails = Map.of("External:key1", "value1");
+
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void serviceOfferingExternalDetailsNeedUpdateReturnsTrueWhenSizesDiffer() {
+        Map<String, String> offeringDetails = Map.of("External:key1", "value1");
+        Map<String, String> externalDetails = Map.of("External:key1", "value1", "External:key2", "value2");
+
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void serviceOfferingExternalDetailsNeedUpdateReturnsTrueWhenValuesDiffer() {
+        Map<String, String> offeringDetails = Map.of("External:key1", "value1");
+        Map<String, String> externalDetails = Map.of("External:key1", "differentValue");
+
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void serviceOfferingExternalDetailsNeedUpdateReturnsFalseWhenDetailsMatch() {
+        Map<String, String> offeringDetails = Map.of("External:key1", "value1", "External:key2", "value2");
+        Map<String, String> externalDetails = Map.of("External:key1", "value1", "External:key2", "value2");
+
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails);
+
+        Assert.assertFalse(result);
     }
 }

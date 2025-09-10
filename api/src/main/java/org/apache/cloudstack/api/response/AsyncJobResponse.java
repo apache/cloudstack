@@ -55,10 +55,6 @@ public class AsyncJobResponse extends BaseResponse {
     @Param(description = "the async command executed")
     private String cmd;
 
-    @SerializedName("jobstatus")
-    @Param(description = "the current job status-should be 0 for PENDING")
-    private Integer jobStatus;
-
     @SerializedName("jobprocstatus")
     @Param(description = "the progress information of the PENDING job")
     private Integer jobProcStatus;
@@ -83,9 +79,13 @@ public class AsyncJobResponse extends BaseResponse {
     @Param(description = "the unique ID of the instance/entity object related to the job")
     private String jobInstanceId;
 
-    @SerializedName("managementserverid")
+    @SerializedName(ApiConstants.MANAGEMENT_SERVER_ID)
     @Param(description = "the msid of the management server on which the job is running", since = "4.19")
-    private Long msid;
+    private String managementServerId;
+
+    @SerializedName(ApiConstants.MANAGEMENT_SERVER_NAME)
+    @Param(description = "the management server name of the host", since = "4.21.0")
+    private String managementServerName;
 
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "  the created date of the job")
@@ -117,11 +117,6 @@ public class AsyncJobResponse extends BaseResponse {
 
     public void setCmd(String cmd) {
         this.cmd = cmd;
-    }
-
-    @Override
-    public void setJobStatus(Integer jobStatus) {
-        this.jobStatus = jobStatus;
     }
 
     public void setJobProcStatus(Integer jobProcStatus) {
@@ -156,7 +151,11 @@ public class AsyncJobResponse extends BaseResponse {
         this.removed = removed;
     }
 
-    public void setMsid(Long msid) {
-        this.msid = msid;
+    public void setManagementServerId(String managementServerId) {
+        this.managementServerId = managementServerId;
+    }
+
+    public void setManagementServerName(String managementServerName) {
+        this.managementServerName = managementServerName;
     }
 }

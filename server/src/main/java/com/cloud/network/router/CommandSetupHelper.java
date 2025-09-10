@@ -28,6 +28,7 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import com.cloud.agent.api.HandleCksIsoCommand;
 import com.cloud.network.rules.PortForwardingRuleVO;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -868,7 +869,11 @@ public class CommandSetupHelper {
                 String vlanTag = ipAddr.getVlanTag();
                 String key = null;
                 if (Objects.isNull(vlanTag)) {
-                    key = "nsx-" + ipAddr.getAddress().addr();
+                    if (Hypervisor.HypervisorType.VMware == router.getHypervisorType()) {
+                        key = "nsx-" + ipAddr.getAddress().addr();
+                    } else if (Hypervisor.HypervisorType.KVM == router.getHypervisorType()) {
+                        key = "netris-" + ipAddr.getAddress().addr();
+                    }
                 } else {
                     key = BroadcastDomainType.getValue(BroadcastDomainType.fromString(ipAddr.getVlanTag()));
                 }
@@ -1217,7 +1222,10 @@ public class CommandSetupHelper {
         final SetupGuestNetworkCommand setupCmd = new SetupGuestNetworkCommand(dhcpRange, networkDomain, router.getIsRedundantRouter(), defaultDns1, defaultDns2, add, _itMgr.toNicTO(nicProfile,
                 router.getHypervisorType()));
 
-        setupCmd.setVrGuestGateway(networkOfferingVO.isForNsx());
+        boolean isVrGuestGateway = _networkModel.isAnyServiceSupportedInNetwork(network.getId(), Provider.VPCVirtualRouter, Service.SourceNat, Service.Gateway);
+        setupCmd.setVrGuestGateway(isVrGuestGateway);
+        setupCmd.setNetworkId(network.getId());
+
         NicVO publicNic = _nicDao.findDefaultNicForVM(router.getId());
         if (publicNic != null) {
             updateSetupGuestNetworkCommandIpv6(setupCmd, network, publicNic, defaultIp6Dns1, defaultIp6Dns2);
@@ -1423,6 +1431,13 @@ public class CommandSetupHelper {
             cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
             cmds.addCommand("updateNetwork", cmd);
         }
+    }
+
+    public void createHandleCksIsoCommand(final VirtualRouter router, final boolean mount, Commands cmds) {
+        HandleCksIsoCommand command = new HandleCksIsoCommand(mount);
+        command.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
+        command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+        cmds.addCommand("handleCksIso", command);
     }
 
     public void createBgpPeersCommands(final List<? extends BgpPeer> bgpPeers, final VirtualRouter router, final Commands cmds, final Network network) {

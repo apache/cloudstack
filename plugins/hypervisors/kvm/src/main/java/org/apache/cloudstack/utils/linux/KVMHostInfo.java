@@ -58,7 +58,7 @@ public class KVMHostInfo {
     private long reservedMemory;
     private long overCommitMemory;
     private List<String> capabilities = new ArrayList<>();
-    private static String cpuArchCommand = "/usr/bin/arch";
+    private static String cpuArchRetrieveExecutable = "arch";
     private static List<String> cpuInfoFreqFileNames = List.of("/sys/devices/system/cpu/cpu0/cpufreq/base_frequency","/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq");
 
     public KVMHostInfo(long reservedMemory, long overCommitMemory, long manualSpeed, int reservedCpus) {
@@ -110,6 +110,10 @@ public class KVMHostInfo {
         return cpuArch;
     }
 
+    public static boolean isHostS390x() {
+       return "s390x".equals(System.getProperty("os.arch"));
+    }
+
     protected static long getCpuSpeed(final String cpabilities, final NodeInfo nodeInfo) {
         long speed = 0L;
         speed = getCpuSpeedFromCommandLscpu();
@@ -137,6 +141,9 @@ public class KVMHostInfo {
         LOGGER.info("Fetching CPU speed from command \"lscpu\".");
         try {
             String command = "lscpu | grep -i 'Model name' | head -n 1 | egrep -o '[[:digit:]].[[:digit:]]+GHz' | sed 's/GHz//g'";
+            if(isHostS390x()) {
+                command = "lscpu | grep 'CPU dynamic MHz' | cut -d ':' -f 2 | tr -d ' ' | awk '{printf \"%.1f\\n\", $1 / 1000}'";
+            }
             String result = Script.runSimpleBashScript(command);
             speed = (long) (Float.parseFloat(result) * 1000);
             LOGGER.info(String.format("Command [%s] resulted in the value [%s] for CPU speed.", command, speed));
@@ -248,6 +255,6 @@ public class KVMHostInfo {
 
     private String getCPUArchFromCommand() {
         LOGGER.info("Fetching host CPU arch");
-        return Script.runSimpleBashScript(cpuArchCommand);
+        return Script.runSimpleBashScript(Script.getExecutableAbsolutePath(cpuArchRetrieveExecutable));
     }
 }

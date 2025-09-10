@@ -479,12 +479,23 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
                 sql.append(" FIND_IN_SET(?, ");
             }
 
+            if (op == Op.LIKE_REPLACE) {
+                sql.append(" ? LIKE REPLACE (");
+            }
+
+            if (op == Op.LIKE_CONCAT) {
+                sql.append(" ? LIKE CONCAT (");
+            }
+
             if (tableAlias == null) {
                 if (joinName != null) {
                     tableAlias = joinName;
                 } else {
                     tableAlias = attr.table;
                 }
+            }
+            if (op == Op.BINARY_OR) {
+                sql.append("(");
             }
 
             sql.append(tableAlias).append(".").append(attr.columnName).append(op.toString());

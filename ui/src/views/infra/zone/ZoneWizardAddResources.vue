@@ -105,7 +105,7 @@
 </template>
 <script>
 import { nextTick } from 'vue'
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import StaticInputsForm from '@views/infra/zone/StaticInputsForm'
 import store from '@/store'
@@ -467,7 +467,7 @@ export default {
           title: 'label.rados.monitor',
           key: 'primaryStorageRADOSMonitor',
           placeHolder: 'message.error.rados.monitor',
-          required: false,
+          required: true,
           display: {
             primaryStorageProtocol: ['rbd']
           }
@@ -476,6 +476,14 @@ export default {
           title: 'label.rados.pool',
           key: 'primaryStorageRADOSPool',
           placeHolder: 'message.error.rados.pool',
+          required: true,
+          display: {
+            primaryStorageProtocol: ['rbd']
+          }
+        },
+        {
+          title: 'label.data.pool',
+          key: 'primaryStorageDataPool',
           required: false,
           display: {
             primaryStorageProtocol: ['rbd']
@@ -485,7 +493,7 @@ export default {
           title: 'label.rados.user',
           key: 'primaryStorageRADOSUser',
           placeHolder: 'message.error.rados.user',
-          required: false,
+          required: true,
           display: {
             primaryStorageProtocol: ['rbd']
           }
@@ -494,7 +502,7 @@ export default {
           title: 'label.rados.secret',
           key: 'primaryStorageRADOSSecret',
           placeHolder: 'message.error.rados.secret',
-          required: false,
+          required: true,
           display: {
             primaryStorageProtocol: ['rbd']
           }
@@ -1076,7 +1084,7 @@ export default {
       }
     },
     fetchNexusSwitchConfig () {
-      api('listConfigurations', { name: 'vmware.use.nexus.vswitch' }).then(json => {
+      getAPI('listConfigurations', { name: 'vmware.use.nexus.vswitch' }).then(json => {
         let vSwitchEnabled = false
         if (json.listconfigurationsresponse.configuration[0].value) {
           vSwitchEnabled = true
@@ -1086,7 +1094,7 @@ export default {
     },
     fetchDvSwitchConfig () {
       let dvSwitchEnabled = false
-      api('listConfigurations', { name: 'vmware.use.dvswitch' }).then(json => {
+      getAPI('listConfigurations', { name: 'vmware.use.dvswitch' }).then(json => {
         if (json.listconfigurationsresponse.configuration[0].value) {
           dvSwitchEnabled = true
         }
@@ -1095,7 +1103,7 @@ export default {
     },
     fetchProvider () {
       const storageProviders = []
-      api('listImageStores', { provider: 'S3' }).then(json => {
+      getAPI('listImageStores', { provider: 'S3' }).then(json => {
         const s3stores = json.listimagestoresresponse.imagestore
         if (s3stores != null && s3stores.length > 0) {
           storageProviders.push({ id: 'S3', description: 'S3' })
@@ -1110,7 +1118,7 @@ export default {
     },
     fetchPrimaryStorageProvider () {
       this.primaryStorageProviders = []
-      api('listStorageProviders', { type: 'primary' }).then(json => {
+      getAPI('listStorageProviders', { type: 'primary' }).then(json => {
         this.primaryStorageProviders = json.liststorageprovidersresponse.dataStoreProvider || []
         this.primaryStorageProviders.map((item, idx) => { this.primaryStorageProviders[idx].id = item.name })
       })

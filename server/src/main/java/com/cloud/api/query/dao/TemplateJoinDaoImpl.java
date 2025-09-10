@@ -28,54 +28,53 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.deployasis.DeployAsIsConstants;
-import com.cloud.deployasis.TemplateDeployAsIsDetailVO;
-import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.VMTemplateStoragePoolVO;
-import com.cloud.storage.dao.VMTemplatePoolDao;
-import com.cloud.storage.VnfTemplateDetailVO;
-import com.cloud.storage.VnfTemplateNicVO;
-import com.cloud.storage.dao.VnfTemplateDetailsDao;
-import com.cloud.storage.dao.VnfTemplateNicDao;
-import com.cloud.user.dao.UserDataDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.response.VnfNicResponse;
-import org.apache.cloudstack.api.response.VnfTemplateResponse;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.utils.security.DigestHelper;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.ChildTemplateResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.VnfNicResponse;
+import org.apache.cloudstack.api.response.VnfTemplateResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.cloudstack.utils.security.DigestHelper;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.TemplateJoinVO;
+import com.cloud.deployasis.DeployAsIsConstants;
+import com.cloud.deployasis.TemplateDeployAsIsDetailVO;
+import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VnfTemplateDetailVO;
+import com.cloud.storage.VnfTemplateNicVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
+import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.storage.dao.VnfTemplateDetailsDao;
+import com.cloud.storage.dao.VnfTemplateNicDao;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
+import com.cloud.user.dao.UserDataDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
@@ -173,10 +172,10 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
                 }
             } else if (template.getDownloadState() == Status.BYPASSED) {
                 templateStatus = "Bypassed Secondary Storage";
-            }else if (template.getErrorString()==null){
+            } else if (template.getErrorString() == null) {
                 templateStatus = template.getTemplateState().toString();
-            }else {
-                templateStatus = template.getErrorString();
+            } else {
+                templateStatus = template.getErrorString().trim();
             }
         } else if (template.getDownloadState() == Status.DOWNLOADED) {
             templateStatus = "Download Complete";
@@ -241,7 +240,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         templateResponse.setDisplayText(template.getDisplayText());
         templateResponse.setPublic(template.isPublicTemplate());
         templateResponse.setCreated(template.getCreatedOnStore());
-        if (template.getFormat() == Storage.ImageFormat.BAREMETAL) {
+        if (template.getFormat() == Storage.ImageFormat.BAREMETAL || template.getFormat() == Storage.ImageFormat.EXTERNAL) {
             // for baremetal template, we didn't download, but is ready to use.
             templateResponse.setReady(true);
         } else {
@@ -253,15 +252,16 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         templateResponse.setDynamicallyScalable(template.isDynamicallyScalable());
         templateResponse.setSshKeyEnabled(template.isEnableSshKey());
         templateResponse.setCrossZones(template.isCrossZones());
-        templateResponse.setFormat(template.getFormat());
         if (template.getTemplateType() != null) {
             templateResponse.setTemplateType(template.getTemplateType().toString());
         }
 
         templateResponse.setHypervisor(template.getHypervisorType().getHypervisorDisplayName());
+        templateResponse.setFormat(template.getFormat());
 
         templateResponse.setOsTypeId(template.getGuestOSUuid());
         templateResponse.setOsTypeName(template.getGuestOSName());
+        templateResponse.setOsTypeCategoryId(template.getGuestOSCategoryId());
 
         // populate owner.
         ApiResponseHelper.populateOwner(templateResponse, template);
@@ -313,6 +313,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             templateResponse.setDetails(details);
 
             setDeployAsIsDetails(template, templateResponse);
+            templateResponse.setForCks(template.isForCks());
         }
 
         // update tag information
@@ -329,6 +330,10 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         templateResponse.setRequiresHvm(template.isRequiresHvm());
         if (template.getArch() != null) {
             templateResponse.setArch(template.getArch().getType());
+        }
+        if (template.getExtensionId() != null) {
+            templateResponse.setExtensionId(template.getExtensionUuid());
+            templateResponse.setExtensionName(template.getExtensionName());
         }
 
         //set template children disks
@@ -402,6 +407,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         response.setFormat(result.getFormat());
         response.setOsTypeId(result.getGuestOSUuid());
         response.setOsTypeName(result.getGuestOSName());
+        response.setOsTypeCategoryId(result.getGuestOSCategoryId());
         response.setBootable(result.isBootable());
         response.setHypervisor(result.getHypervisorType().getHypervisorDisplayName());
         response.setDynamicallyScalable(result.isDynamicallyScalable());
@@ -476,6 +482,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         isoResponse.setExtractable(iso.isExtractable() && !(iso.getTemplateType() == TemplateType.PERHOST));
         isoResponse.setCreated(iso.getCreatedOnStore());
         isoResponse.setDynamicallyScalable(iso.isDynamicallyScalable());
+        isoResponse.setFormat(iso.getFormat());
         if (iso.getTemplateType() == TemplateType.PERHOST) {
             // for TemplateManager.XS_TOOLS_ISO and TemplateManager.VMWARE_TOOLS_ISO, we didn't download, but is ready to use.
             isoResponse.setReady(true);
@@ -490,6 +497,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
 
         isoResponse.setOsTypeId(iso.getGuestOSUuid());
         isoResponse.setOsTypeName(iso.getGuestOSName());
+        isoResponse.setOsTypeCategoryId(iso.getGuestOSCategoryId());
         isoResponse.setBits(iso.getBits());
         isoResponse.setPasswordEnabled(iso.isEnablePassword());
 
@@ -574,9 +582,13 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             isoResponse.setZoneName(iso.getDataCenterName());
         }
 
-        Long isoSize = iso.getSize();
+        long isoSize = iso.getSize();
         if (isoSize > 0) {
             isoResponse.setSize(isoSize);
+        }
+        long isoPhysicalSize = iso.getPhysicalSize();
+        if (isoPhysicalSize > 0) {
+            isoResponse.setPhysicalSize(isoPhysicalSize);
         }
 
         if (iso.getUserDataId() != null) {

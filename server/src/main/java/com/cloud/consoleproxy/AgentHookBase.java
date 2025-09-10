@@ -89,6 +89,7 @@ public abstract class AgentHookBase implements AgentHook {
 
         String ticketInUrl = cmd.getTicket();
         String sessionUuid = cmd.getSessionUuid();
+        String clientAddress = cmd.getClientAddress();
 
         if (ticketInUrl == null) {
             logger.error("Access ticket could not be found, you could be running an old version of console proxy. vmId: " + cmd.getVmId());
@@ -111,7 +112,7 @@ public abstract class AgentHookBase implements AgentHook {
             }
 
             logger.debug(String.format("Acquiring session [%s] as it was just used.", sessionUuid));
-            consoleAccessManager.acquireSession(sessionUuid);
+            consoleAccessManager.acquireSession(sessionUuid, clientAddress);
 
             if (!ticket.equals(ticketInUrl)) {
                 Date now = new Date();

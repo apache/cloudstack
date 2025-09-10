@@ -86,6 +86,14 @@
           </div>
         </div>
       </a-list-item>
+      <a-list-item v-if="host.storageaccessgroups">
+        <div>
+          <strong>{{ $t('label.storageaccessgroups') }}</strong>
+          <div>
+            {{ host.storageaccessgroups }}
+          </div>
+        </div>
+      </a-list-item>
       <a-list-item v-if="host.oscategoryid">
         <div>
           <strong>{{ $t('label.oscategoryid') }}</strong>
@@ -181,7 +189,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 
 export default {
   name: 'HostInfo',
@@ -220,7 +228,7 @@ export default {
   methods: {
     fetchData () {
       this.fetchLoading = true
-      api('listHosts', { id: this.resource.id }).then(json => {
+      getAPI('listHosts', { id: this.resource.id }).then(json => {
         this.host = json.listhostsresponse.host[0]
         const hosttags = this.host.hosttags?.split(',') || []
         const explicithosttags = this.host.explicithosttags?.split(',') || []

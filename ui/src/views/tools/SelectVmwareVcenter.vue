@@ -143,7 +143,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import { ref, reactive } from 'vue'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import Status from '@/components/widgets/Status'
@@ -229,7 +229,7 @@ export default {
       }
       params.page = 1
       params.pagesize = 10
-      api('listVmwareDcVms', params).then(json => {
+      getAPI('listVmwareDcVms', params).then(json => {
         const obj = {
           params: params,
           response: json.listvmwaredcvmsresponse
@@ -243,7 +243,7 @@ export default {
     },
     fetchZones () {
       this.loading = true
-      api('listZones', { showicon: true }).then(response => {
+      getAPI('listZones', { showicon: true }).then(response => {
         this.zones = response.listzonesresponse.zone || []
       }).catch(error => {
         this.$notifyError(error)
@@ -257,7 +257,7 @@ export default {
     },
     listZoneVmwareDcs () {
       this.loading = true
-      api('listVmwareDcs', { zoneid: this.sourcezoneid }).then(response => {
+      getAPI('listVmwareDcs', { zoneid: this.sourcezoneid }).then(response => {
         if (response.listvmwaredcsresponse.VMwareDC && response.listvmwaredcsresponse.VMwareDC.length > 0) {
           this.existingvcenter = response.listvmwaredcsresponse.VMwareDC
         }

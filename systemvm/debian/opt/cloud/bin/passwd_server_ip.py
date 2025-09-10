@@ -28,6 +28,7 @@
 import binascii
 import cgi
 import os
+import socketserver
 import sys
 import syslog
 import threading
@@ -97,9 +98,17 @@ def removePassword(ip):
             del passMap[ip]
 
 
-class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
-    pass
+class CloudStackPasswordServer(socketserver.TCPServer):
+    allow_reuse_address = 1
+    def server_bind(self):
+        """Override server_bind to store the server name."""
+        socketserver.TCPServer.server_bind(self)
+        host, port = self.server_address[:2]
+        self.server_name = host
+        self.server_port = port
 
+class ThreadedHTTPServer(ThreadingMixIn, CloudStackPasswordServer):
+    pass
 
 class PasswordRequestHandler(BaseHTTPRequestHandler):
     server_version = 'CloudStack Password Server'

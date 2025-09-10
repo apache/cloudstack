@@ -400,7 +400,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
     protected void wakeupWorkers() {
         logger.debug("Wakeup workers HA");
         for (WorkerThread worker : _workers) {
-            worker.wakup();
+            worker.wakeup();
         }
     }
 
@@ -608,6 +608,10 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         if (vm.getState() != work.getPreviousState() || vm.getUpdated() != work.getUpdateTime()) {
             logger.info("VM " + vm + " has been changed.  Current State = " + vm.getState() + " Previous State = " + work.getPreviousState() + " last updated = " +
                 vm.getUpdated() + " previous updated = " + work.getUpdateTime());
+            return null;
+        }
+        if (vm.getHostId() != null && !vm.getHostId().equals(work.getHostId())) {
+            logger.info("VM " + vm + " has been changed.  Current host id = " + vm.getHostId() + " Previous host id = " + work.getHostId());
             return null;
         }
 
@@ -1230,7 +1234,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             }
         }
 
-        public synchronized void wakup() {
+        public synchronized void wakeup() {
             notifyAll();
         }
     }

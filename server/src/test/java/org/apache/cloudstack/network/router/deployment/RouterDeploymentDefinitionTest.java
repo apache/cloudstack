@@ -30,6 +30,7 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.VirtualRouterProvider.Type;
 import com.cloud.network.addr.PublicIp;
+import com.cloud.network.dao.NetrisProviderDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
@@ -79,6 +80,8 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
     PhysicalNetworkDao physicalNetworkDao;
     @Mock
     protected NsxProviderDao nsxProviderDao;
+    @Mock
+    protected NetrisProviderDao netrisProviderDao;
 
     protected RouterDeploymentDefinition deployment;
 

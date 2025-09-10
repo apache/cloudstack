@@ -17,12 +17,14 @@
 package com.cloud.storage.dao;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -521,6 +523,48 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     }
 
     @Override
+    public List<Long> listTemplateIsoByArchVnfAndZone(Long dataCenterId, CPU.CPUArch arch, Boolean isIso,
+                  Boolean isVnf) {
+        GenericSearchBuilder<VMTemplateVO, Long> sb = createSearchBuilder(Long.class);
+        sb.select(null, Func.DISTINCT, sb.entity().getGuestOSId());
+        sb.and("state", sb.entity().getState(), SearchCriteria.Op.IN);
+        sb.and("type", sb.entity().getTemplateType(), SearchCriteria.Op.IN);
+        sb.and("arch", sb.entity().getArch(), SearchCriteria.Op.EQ);
+        if (isIso != null) {
+            sb.and("isIso", sb.entity().getFormat(), isIso ? SearchCriteria.Op.EQ : SearchCriteria.Op.NEQ);
+        }
+        if (dataCenterId != null) {
+            SearchBuilder<VMTemplateZoneVO> templateZoneSearch = _templateZoneDao.createSearchBuilder();
+            templateZoneSearch.and("removed", templateZoneSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
+            templateZoneSearch.and("zoneId", templateZoneSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
+            sb.join("templateZoneSearch", templateZoneSearch, templateZoneSearch.entity().getTemplateId(),
+                    sb.entity().getId(), JoinBuilder.JoinType.INNER);
+            templateZoneSearch.done();
+        }
+        sb.done();
+        SearchCriteria<Long> sc = sb.create();
+        List<TemplateType> types = new ArrayList<>(Arrays.asList(TemplateType.USER, TemplateType.BUILTIN,
+                TemplateType.PERHOST));
+        if (isVnf == null) {
+            types.add(TemplateType.VNF);
+        } else if (isVnf) {
+            types = Collections.singletonList(TemplateType.VNF);
+        }
+        sc.setParameters("type", types.toArray());
+        sc.setParameters("state", VirtualMachineTemplate.State.Active);
+        if (dataCenterId != null) {
+            sc.setJoinParameters("templateZoneSearch", "zoneId", dataCenterId);
+        }
+        if (arch != null) {
+            sc.setParameters("arch", arch);
+        }
+        if (isIso != null) {
+            sc.setParameters("isIso", ImageFormat.ISO);
+        }
+        return customSearch(sc, null);
+    }
+
+    @Override
     public List<VMTemplateVO> listAllActive() {
         SearchCriteria<VMTemplateVO> sc = ActiveTmpltSearch.create();
         sc.setParameters("state", VirtualMachineTemplate.State.Active.toString());
@@ -578,10 +622,18 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     }
 
     @Override
-    public VMTemplateVO findSystemVMReadyTemplate(long zoneId, HypervisorType hypervisorType) {
+    public VMTemplateVO findSystemVMReadyTemplate(long zoneId, HypervisorType hypervisorType, String preferredArch) {
         List<VMTemplateVO> templates = listAllReadySystemVMTemplates(zoneId);
         if (CollectionUtils.isEmpty(templates)) {
             return null;
+        }
+        if (StringUtils.isNotBlank(preferredArch)) {
+            // Sort the templates by preferred architecture first
+            templates = templates.stream()
+                    .sorted(Comparator.comparing(
+                            x -> !x.getArch().getType().equalsIgnoreCase(preferredArch)
+                    ))
+                    .collect(Collectors.toList());
         }
         if (hypervisorType == HypervisorType.Any) {
             return templates.get(0);
@@ -792,6 +844,17 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         SearchCriteria<Long> sc = sb.create();
         sc.setParameters("tag", tag);
         return customSearchIncludingRemoved(sc, null);
+    }
+
+    @Override
+    public List<Long> listIdsByExtensionId(long extensionId) {
+        GenericSearchBuilder<VMTemplateVO, Long> sb = createSearchBuilder(Long.class);
+        sb.selectFields(sb.entity().getId());
+        sb.and("extensionId", sb.entity().getExtensionId(), SearchCriteria.Op.EQ);
+        sb.done();
+        SearchCriteria<Long> sc = sb.create();
+        sc.setParameters("extensionId", extensionId);
+        return customSearch(sc, null);
     }
 
     @Override

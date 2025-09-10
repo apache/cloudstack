@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponseWithAnnotations;
@@ -57,6 +58,34 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
     @SerializedName("serviceofferingname")
     @Param(description = "the name of the service offering of the Kubernetes cluster")
     private String serviceOfferingName;
+
+    @SerializedName(ApiConstants.WORKER_SERVICE_OFFERING_ID)
+    @Param(description = "the ID of the service offering of the worker nodes on the Kubernetes cluster")
+    private String workerOfferingId;
+
+    @SerializedName(ApiConstants.WORKER_SERVICE_OFFERING_NAME)
+    @Param(description = "the name of the service offering of the worker nodes on the Kubernetes cluster")
+    private String workerOfferingName;
+
+    @SerializedName(ApiConstants.CONTROL_SERVICE_OFFERING_ID)
+    @Param(description = "the ID of the service offering of the control nodes on the Kubernetes cluster")
+    private String controlOfferingId;
+
+    @SerializedName(ApiConstants.CONTROL_SERVICE_OFFERING_NAME)
+    @Param(description = "the name of the service offering of the control nodes on the Kubernetes cluster")
+    private String controlOfferingName;
+
+    @SerializedName(ApiConstants.ETCD_SERVICE_OFFERING_ID)
+    @Param(description = "the ID of the service offering of the etcd nodes on the Kubernetes cluster")
+    private String etcdOfferingId;
+
+    @SerializedName(ApiConstants.ETCD_SERVICE_OFFERING_NAME)
+    @Param(description = "the name of the service offering of the etcd nodes on the Kubernetes cluster")
+    private String etcdOfferingName;
+
+    @SerializedName(ApiConstants.ETCD_NODES)
+    @Param(description = "the number of the etcd nodes on the Kubernetes cluster")
+    private Long etcdNodes;
 
     @SerializedName(ApiConstants.TEMPLATE_ID)
     @Param(description = "the ID of the template of the Kubernetes cluster")
@@ -106,6 +135,14 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
     @Param(description = "keypair details")
     private String keypair;
 
+    @SerializedName(ApiConstants.CNI_CONFIG_ID)
+    @Param(description = "ID of CNI Configuration associated with the cluster")
+    private String cniConfigId;
+
+    @SerializedName(ApiConstants.CNI_CONFIG_NAME)
+    @Param(description = "Name of CNI Configuration associated with the cluster")
+    private String cniConfigName;
+
     @Deprecated(since = "4.16")
     @SerializedName(ApiConstants.MASTER_NODES)
     @Param(description = "the master nodes count for the Kubernetes cluster. This parameter is deprecated, please use 'controlnodes' parameter.")
@@ -141,7 +178,7 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINES)
     @Param(description = "the list of virtualmachine associated with this Kubernetes cluster")
-    private List<UserVmResponse> virtualMachines;
+    private List<KubernetesUserVmResponse> virtualMachines;
 
     @SerializedName(ApiConstants.IP_ADDRESS)
     @Param(description = "Public IP Address of the cluster")
@@ -150,6 +187,10 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
     @SerializedName(ApiConstants.IP_ADDRESS_ID)
     @Param(description = "Public IP Address ID of the cluster")
     private String ipAddressId;
+
+    @SerializedName(ApiConstants.ETCD_IPS)
+    @Param(description = "Public IP Addresses of the etcd nodes")
+    private Map<String, String> etcdIps;
 
     @SerializedName(ApiConstants.AUTOSCALING_ENABLED)
     @Param(description = "Whether autoscaling is enabled for the cluster")
@@ -367,11 +408,67 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
         this.serviceOfferingName = serviceOfferingName;
     }
 
-    public void setVirtualMachines(List<UserVmResponse> virtualMachines) {
+    public String getWorkerOfferingId() {
+        return workerOfferingId;
+    }
+
+    public void setWorkerOfferingId(String workerOfferingId) {
+        this.workerOfferingId = workerOfferingId;
+    }
+
+    public String getWorkerOfferingName() {
+        return workerOfferingName;
+    }
+
+    public void setWorkerOfferingName(String workerOfferingName) {
+        this.workerOfferingName = workerOfferingName;
+    }
+
+    public String getControlOfferingId() {
+        return controlOfferingId;
+    }
+
+    public void setControlOfferingId(String controlOfferingId) {
+        this.controlOfferingId = controlOfferingId;
+    }
+
+    public String getControlOfferingName() {
+        return controlOfferingName;
+    }
+
+    public void setControlOfferingName(String controlOfferingName) {
+        this.controlOfferingName = controlOfferingName;
+    }
+
+    public String getEtcdOfferingId() {
+        return etcdOfferingId;
+    }
+
+    public void setEtcdOfferingId(String etcdOfferingId) {
+        this.etcdOfferingId = etcdOfferingId;
+    }
+
+    public String getEtcdOfferingName() {
+        return etcdOfferingName;
+    }
+
+    public void setEtcdOfferingName(String etcdOfferingName) {
+        this.etcdOfferingName = etcdOfferingName;
+    }
+
+    public Long getEtcdNodes() {
+        return etcdNodes;
+    }
+
+    public void setEtcdNodes(Long etcdNodes) {
+        this.etcdNodes = etcdNodes;
+    }
+
+    public void setVirtualMachines(List<KubernetesUserVmResponse> virtualMachines) {
         this.virtualMachines = virtualMachines;
     }
 
-    public List<UserVmResponse> getVirtualMachines() {
+    public List<KubernetesUserVmResponse> getVirtualMachines() {
         return virtualMachines;
     }
 
@@ -381,6 +478,10 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
 
     public void setIpAddressId(String ipAddressId) {
         this.ipAddressId = ipAddressId;
+    }
+
+    public void setEtcdIps(Map<String, String> etcdIps) {
+        this.etcdIps = etcdIps;
     }
 
     public void setAutoscalingEnabled(boolean isAutoscalingEnabled) {
@@ -405,5 +506,13 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
 
     public void setClusterType(KubernetesCluster.ClusterType clusterType) {
         this.clusterType = clusterType;
+    }
+
+    public void setCniConfigId(String cniConfigId) {
+        this.cniConfigId = cniConfigId;
+    }
+
+    public void setCniConfigName(String cniConfigName) {
+        this.cniConfigName = cniConfigName;
     }
 }

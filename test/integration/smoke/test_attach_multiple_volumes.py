@@ -285,6 +285,8 @@ class TestMultipleVolumeAttach(cloudstackTestCase):
         self.query_async_job(vol3_jobId.jobid)
         self.query_async_job(vol4_jobId.jobid)
 
+        time.sleep(60)
+
         # List all the volumes attached to the instance. Includes even the Root disk.
         list_volume_response = Volume.list(
                                             self.apiClient,
@@ -336,6 +338,8 @@ class TestMultipleVolumeAttach(cloudstackTestCase):
         self.query_async_job(vol4_jobId.jobid)
         self.query_async_job(vol5_jobId.jobid)
         self.query_async_job(vol6_jobId.jobid)
+
+        time.sleep(60)
 
         volumes = Volume.list(self.apiClient,
                               virtualmachineid=self.virtual_machine.id,

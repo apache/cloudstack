@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -47,6 +46,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.joda.time.Duration;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.StringUtils;
@@ -670,6 +670,26 @@ public class Script implements Callable<String> {
         return runScript(getScriptForCommandRun(command));
     }
 
+    /**
+     * Execute command and return standard output and standard error.
+     *
+     * @param command OS command to be executed
+     * @return {@link Pair} with standard output as first and standard error as second field
+     */
+    public static Pair<String, String> executeCommand(String command) {
+        // wrap command into bash
+        Script script = new Script("/bin/bash");
+        script.add("-c");
+        script.add(command);
+
+        // parse all lines from the output
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+        String stdErr = script.execute(parser);
+        String stdOut = parser.getLines();
+        LOGGER.debug(String.format("Command [%s] result - stdout: [%s], stderr: [%s]", command, stdOut, stdErr));
+        return new Pair<>(stdOut, stdErr);
+    }
+
     public static int executeCommandForExitValue(long timeout, String... command) {
         return runScriptForExitValue(getScriptForCommandRun(timeout, command));
     }
@@ -777,5 +797,18 @@ public class Script implements Callable<String> {
         } else {
             return result.trim();
         }
+    }
+
+    public static String runSimpleBashScriptWithFullResult(String command, int timeout) {
+        Script script = new Script("/bin/bash", Duration.standardSeconds(timeout));
+        script.add("-c");
+        script.add(command);
+
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+
+        if (script.execute(parser) != null) {
+            throw new CloudRuntimeException(String.format("Error executing command [%s]", script));
+        }
+        return parser.getLines();
     }
 }

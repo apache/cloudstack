@@ -40,9 +40,7 @@ This PR...
 - [ ] Minor
 - [ ] Trivial
 
-
 ### Screenshots (if appropriate):
-
 
 ### How Has This Been Tested?
 
@@ -52,6 +50,5 @@ This PR...
 #### How did you try to break this feature and the system with this change?
 
 <!-- see how your change affects other areas of the code, etc. -->
-
 
 <!-- Please read the [CONTRIBUTING](https://github.com/apache/cloudstack/blob/main/CONTRIBUTING.md) document -->

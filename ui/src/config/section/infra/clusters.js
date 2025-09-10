@@ -35,7 +35,7 @@ export default {
     fields.push('zonename')
     return fields
   },
-  details: ['name', 'id', 'allocationstate', 'clustertype', 'managedstate', 'arch', 'hypervisortype', 'podname', 'zonename', 'drsimbalance'],
+  details: ['name', 'id', 'allocationstate', 'clustertype', 'managedstate', 'arch', 'hypervisortype', 'externalprovisioner', 'podname', 'zonename', 'drsimbalance', 'storageaccessgroups', 'podstorageaccessgroups', 'zonestorageaccessgroups', 'externaldetails'],
   related: [{
     name: 'host',
     title: 'label.hosts',
@@ -57,7 +57,8 @@ export default {
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/SettingsTab.vue')))
   }, {
     name: 'drs',
-    component: shallowRef(defineAsyncComponent(() => import('@/views/infra/ClusterDRSTab.vue')))
+    component: shallowRef(defineAsyncComponent(() => import('@/views/infra/ClusterDRSTab.vue'))),
+    show: (resource) => { return resource.hypervisortype !== 'External' }
   }, {
     name: 'comments',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
@@ -83,12 +84,8 @@ export default {
       icon: 'edit-outlined',
       label: 'label.edit',
       dataView: true,
-      args: ['clustername', 'arch'],
-      mapping: {
-        arch: {
-          options: ['x86_64', 'aarch64']
-        }
-      }
+      popup: true,
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/ClusterUpdate.vue')))
     },
     {
       api: 'updateCluster',
@@ -136,7 +133,7 @@ export default {
       dataView: true,
       defaultArgs: { iterations: null },
       args: ['iterations'],
-      show: (record) => { return record.managedstate === 'Managed' }
+      show: (record) => { return record.hypervisortype !== 'External' && record.managedstate === 'Managed' }
     },
     {
       api: 'enableOutOfBandManagementForCluster',
@@ -145,7 +142,7 @@ export default {
       message: 'label.outofbandmanagement.enable',
       dataView: true,
       show: (record) => {
-        return record?.resourcedetails?.outOfBandManagementEnabled === 'false'
+        return record.hypervisortype !== 'External' && record?.resourcedetails?.outOfBandManagementEnabled === 'false'
       },
       args: ['clusterid'],
       mapping: {
@@ -161,7 +158,7 @@ export default {
       message: 'label.outofbandmanagement.disable',
       dataView: true,
       show: (record) => {
-        return !(record?.resourcedetails?.outOfBandManagementEnabled === 'false')
+        return record.hypervisortype !== 'External' && !(record?.resourcedetails?.outOfBandManagementEnabled === 'false')
       },
       args: ['clusterid'],
       mapping: {
@@ -177,7 +174,7 @@ export default {
       message: 'label.ha.enable',
       dataView: true,
       show: (record) => {
-        return record?.resourcedetails?.resourceHAEnabled === 'false'
+        return record.hypervisortype !== 'External' && record?.resourcedetails?.resourceHAEnabled === 'false'
       },
       args: ['clusterid'],
       mapping: {
@@ -193,7 +190,7 @@ export default {
       message: 'label.ha.disable',
       dataView: true,
       show: (record) => {
-        return !(record?.resourcedetails?.resourceHAEnabled === 'false')
+        return record.hypervisortype !== 'External' && !(record?.resourcedetails?.resourceHAEnabled === 'false')
       },
       args: ['clusterid'],
       mapping: {
@@ -213,6 +210,9 @@ export default {
         clusterids: {
           value: (record) => { return record.id }
         }
+      },
+      show: (record) => {
+        return record.hypervisortype !== 'External'
       }
     },
     {

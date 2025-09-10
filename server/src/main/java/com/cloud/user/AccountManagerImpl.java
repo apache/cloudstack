@@ -176,6 +176,7 @@ import com.cloud.utils.ConstantTimeComparator;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
@@ -650,6 +651,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return false;
     }
 
+    @Override
     public boolean isResourceDomainAdmin(Long accountId) {
         if (accountId != null) {
             AccountVO acct = _accountDao.findById(accountId);
@@ -1330,7 +1332,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         // Check permissions
         checkAccess(getCurrentCallingAccount(), domain);
 
-        if (!userAllowMultipleAccounts.valueInDomain(domainId) && !_userAccountDao.validateUsernameInDomain(userName, domainId)) {
+        if (!userAllowMultipleAccounts.valueInScope(ConfigKey.Scope.Domain, domainId) && !_userAccountDao.validateUsernameInDomain(userName, domainId)) {
             throw new InvalidParameterValueException(String.format("The user %s already exists in domain %s", userName, domain));
         }
 
@@ -1364,7 +1366,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 if (accountType == Account.Type.RESOURCE_DOMAIN_ADMIN) {
                     // set registration token
                     byte[] bytes = (domainIdFinal + accountNameFinal + userName + System.currentTimeMillis()).getBytes();
-                    String registrationToken = UUID.nameUUIDFromBytes(bytes).toString();
+                    String registrationToken = UuidUtils.nameUUIDFromBytes(bytes).toString();
                     user.setRegistrationToken(registrationToken);
                 }
 
@@ -1518,7 +1520,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new PermissionDeniedException(String.format("Account: %s is a system account, can't add a user to it", account));
         }
 
-        if (!userAllowMultipleAccounts.valueInDomain(domainId) && !_userAccountDao.validateUsernameInDomain(userName, domainId)) {
+        if (!userAllowMultipleAccounts.valueInScope(ConfigKey.Scope.Domain, domainId) && !_userAccountDao.validateUsernameInDomain(userName, domainId)) {
             throw new CloudRuntimeException("The user " + userName + " already exists in domain " + domainId);
         }
         List<UserVO> duplicatedUsers = _userDao.findUsersByName(userName);
@@ -1614,7 +1616,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     callingAccount.getName(), callingAccount.getUuid(), userAccount.getName(), userAccount.getUuid()));
         } else if (callerRoleType.getId() == userAccountRoleType.getId()) {
             if (callingAccount.getId() != userAccount.getId()) {
-                String allowedRoleTypes = listOfRoleTypesAllowedForOperationsOfSameRoleType.valueInDomain(callingAccount.getDomainId());
+                String allowedRoleTypes = listOfRoleTypesAllowedForOperationsOfSameRoleType.valueInScope(ConfigKey.Scope.Domain, callingAccount.getDomainId());
                 boolean updateAllowed = allowedRoleTypes != null &&
                         Arrays.stream(allowedRoleTypes.split(","))
                                 .map(String::trim)
@@ -1626,7 +1628,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     throw new PermissionDeniedException(errMsg);
                 }
             } else if ((callingAccount.getId() == userAccount.getId()) && user != null) {
-                Boolean allowOperationOnUsersinSameAccount = allowOperationsOnUsersInSameAccount.valueInDomain(callingAccount.getDomainId());
+                Boolean allowOperationOnUsersinSameAccount = allowOperationsOnUsersInSameAccount.valueInScope(ConfigKey.Scope.Domain, callingAccount.getDomainId());
                 User callingUser = CallContext.current().getCallingUser();
                 if (callingUser.getId() != user.getId() && BooleanUtils.isFalse(allowOperationOnUsersinSameAccount)) {
                     String errMsg = "The user operations are not allowed by the users in the same account";
@@ -1757,7 +1759,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
 
             // duplicate usernames cannot exist in same domain unless explicitly configured
-            if (!userAllowMultipleAccounts.valueInDomain(newAccount.getDomainId())) {
+            if (!userAllowMultipleAccounts.valueInScope(ConfigKey.Scope.Domain, newAccount.getDomainId())) {
                 assertUserNotAlreadyInDomain(existingUser, newAccount);
             }
 

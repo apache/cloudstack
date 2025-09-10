@@ -23,6 +23,10 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.bgp.BGPService;
+import com.cloud.dc.ASNumberVO;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.dao.ASNumberDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -63,6 +67,10 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
     protected AccountManager accountManager;
     @Inject
     private AnnotationDao annotationDao;
+    @Inject
+    private ASNumberDao asNumberDao;
+    @Inject
+    private BGPService bgpService;
 
     private List<KubernetesClusterVmMapVO> clusterVMs;
 
@@ -131,6 +139,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
             Account owner = accountManager.getAccount(network.getAccountId());
             User callerUser = accountManager.getActiveUser(CallContext.current().getCallingUserId());
             ReservationContext context = new ReservationContextImpl(null, null, callerUser, owner);
+            releaseASNumber(kubernetesCluster.getZoneId(), kubernetesCluster.getNetworkId());
             boolean networkDestroyed = networkMgr.destroyNetwork(kubernetesCluster.getNetworkId(), context, true);
             if (!networkDestroyed) {
                 String msg = String.format("Failed to destroy network: %s as part of Kubernetes cluster: %s cleanup", network, kubernetesCluster);
@@ -140,6 +149,15 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
             if (logger.isInfoEnabled()) {
                 logger.info("Destroyed network: {} as part of Kubernetes cluster: {} cleanup", network, kubernetesCluster);
             }
+        }
+    }
+
+    private void releaseASNumber(Long zoneId, long networkId) {
+        DataCenter zone = dataCenterDao.findById(zoneId);
+        ASNumberVO asNumber = asNumberDao.findByZoneAndNetworkId(zone.getId(), networkId);
+        if (asNumber != null) {
+            logger.debug(String.format("Releasing AS number %s from network %s", asNumber.getAsNumber(), networkId));
+            bgpService.releaseASNumber(zone.getId(), asNumber.getAsNumber(), true);
         }
     }
 
@@ -157,7 +175,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
         if (firewallRule == null) {
             logMessage(Level.WARN, "Firewall rule for API access can't be removed", null);
         }
-        firewallRule = removeSshFirewallRule(publicIp);
+        firewallRule = removeSshFirewallRule(publicIp, network.getId());
         if (firewallRule == null) {
             logMessage(Level.WARN, "Firewall rule for SSH access can't be removed", null);
         }
@@ -256,6 +274,12 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
         }
         if (cleanupNetwork) { // if network has additional VM, cannot proceed with cluster destroy
             NetworkVO network = networkDao.findById(kubernetesCluster.getNetworkId());
+            List<KubernetesClusterVmMapVO> externalNodes = clusterVMs.stream().filter(KubernetesClusterVmMapVO::isExternalNode).collect(Collectors.toList());
+            if (!externalNodes.isEmpty()) {
+                String errMsg = String.format("Failed to delete kubernetes cluster %s as there are %s external node(s) present. Please remove the external node(s) from the cluster (and network) or delete them before deleting the cluster.", kubernetesCluster.getName(), externalNodes.size());
+                logger.error(errMsg);
+                throw new CloudRuntimeException(errMsg);
+            }
             if (network != null) {
                 List<VMInstanceVO> networkVMs = vmInstanceDao.listNonRemovedVmsByTypeAndNetwork(network.getId(), VirtualMachine.Type.User);
                 if (networkVMs.size() > clusterVMs.size()) {

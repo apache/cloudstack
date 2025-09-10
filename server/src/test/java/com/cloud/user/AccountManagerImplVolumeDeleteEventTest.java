@@ -56,8 +56,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -150,7 +150,7 @@ public class AccountManagerImplVolumeDeleteEventTest extends AccountManagetImplT
 
         lenient().when(_domainMgr.getDomain(nullable(Long.class))).thenReturn(domain);
 
-        Mockito.doReturn(true).when(_vmMgr).expunge(any(UserVmVO.class));
+        lenient().doReturn(true).when(_vmMgr).expunge(any(UserVmVO.class));
 
     }
 

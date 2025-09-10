@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.cluster;
 
+import java.util.Map;
+
 import com.cloud.cpu.CPU;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 
@@ -59,6 +61,12 @@ public class UpdateClusterCmd extends BaseCmd {
             description = "the CPU arch of the cluster. Valid options are: x86_64, aarch64",
             since = "4.20")
     private String arch;
+
+    @Parameter(name = ApiConstants.EXTERNAL_DETAILS,
+            type = CommandType.MAP,
+            description = "Details in key/value pairs to be added to the extension-resource mapping. Use the format externaldetails[i].<key>=<value>. Example: externaldetails[0].endpoint.url=https://example.com",
+            since = "4.21.0")
+    protected Map externalDetails;
 
     public String getClusterName() {
         return clusterName;
@@ -122,6 +130,10 @@ public class UpdateClusterCmd extends BaseCmd {
         return CPU.CPUArch.fromType(arch);
     }
 
+    public Map<String, String> getExternalDetails() {
+        return convertDetailsToMap(externalDetails);
+    }
+
     @Override
     public void execute() {
         Cluster cluster = _resourceService.getCluster(getId());
@@ -130,7 +142,7 @@ public class UpdateClusterCmd extends BaseCmd {
         }
         Cluster result = _resourceService.updateCluster(this);
         if (result != null) {
-            ClusterResponse clusterResponse = _responseGenerator.createClusterResponse(cluster, false);
+            ClusterResponse clusterResponse = _responseGenerator.createClusterResponse(result, false);
             clusterResponse.setResponseName(getCommandName());
             this.setResponseObject(clusterResponse);
         } else {

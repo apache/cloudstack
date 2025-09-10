@@ -359,6 +359,11 @@ public class TemplateObject implements TemplateInfo {
     }
 
     @Override
+    public Long getExtensionId() {
+        return imageVO.getExtensionId();
+    }
+
+    @Override
     public DataTO getTO() {
         DataTO to = null;
         if (dataStore == null) {
@@ -431,6 +436,11 @@ public class TemplateObject implements TemplateInfo {
             return false;
         }
         return this.imageVO.isDeployAsIs();
+    }
+
+    @Override
+    public boolean isForCks() {
+        return imageVO.isForCks();
     }
 
     public void setInstallPath(String installPath) {

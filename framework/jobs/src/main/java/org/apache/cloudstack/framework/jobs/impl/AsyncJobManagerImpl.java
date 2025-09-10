@@ -37,6 +37,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.command.ReconcileCommandService;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
@@ -71,6 +72,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
@@ -167,6 +169,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     private NetworkDao networkDao;
     @Inject
     private NetworkOrchestrationService networkOrchestrationService;
+    @Inject
+    private ReconcileCommandService reconcileCommandService;
 
     private volatile long _executionRunNumber = 1;
 
@@ -174,7 +178,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     private ExecutorService _apiJobExecutor;
     private ExecutorService _workerJobExecutor;
 
-    private boolean asyncJobsEnabled = true;
+    private boolean asyncJobsDisabled = false;
+    private long asyncJobsDisabledTime = 0;
 
     @Override
     public String getConfigComponentName() {
@@ -218,16 +223,48 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         return submitAsyncJob(job, false);
     }
 
-    private void checkShutdown() {
-        if (!isAsyncJobsEnabled()) {
-            throw new CloudRuntimeException("A shutdown has been triggered. Can not accept new jobs");
+    private void checkAsyncJobAllowed(AsyncJob job) {
+        if (isAsyncJobsEnabled()) {
+            return;
         }
+
+        if (job instanceof VmWorkJobVO) {
+            String related = job.getRelated();
+            if (StringUtils.isNotBlank(related)) {
+                AsyncJob relatedJob = _jobDao.findByIdIncludingRemoved(Long.parseLong(related));
+                if (relatedJob != null) {
+                    long relatedJobCreatedTime = relatedJob.getCreated().getTime();
+                    if ((asyncJobsDisabledTime - relatedJobCreatedTime) >= 0) {
+                        return;
+                    }
+                }
+            }
+        }
+
+        throw new CloudRuntimeException("Maintenance or Shutdown has been initiated on this management server. Can not accept new async jobs");
+    }
+
+    private boolean checkSyncQueueItemAllowed(SyncQueueItemVO item) {
+        if (isAsyncJobsEnabled()) {
+            return true;
+        }
+
+        Long contentId = item.getContentId();
+        AsyncJob relatedJob = _jobDao.findByIdIncludingRemoved(contentId);
+        if (relatedJob != null) {
+            long relatedJobCreatedTime = relatedJob.getCreated().getTime();
+            if ((asyncJobsDisabledTime - relatedJobCreatedTime) >= 0) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     @SuppressWarnings("unchecked")
     @DB
     public long submitAsyncJob(AsyncJob job, boolean scheduleJobExecutionInContext) {
-        checkShutdown();
+        checkAsyncJobAllowed(job);
 
         @SuppressWarnings("rawtypes")
         GenericDao dao = GenericDaoBase.getDao(job.getClass());
@@ -248,7 +285,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     @Override
     @DB
     public long submitAsyncJob(final AsyncJob job, final String syncObjType, final long syncObjId) {
-        checkShutdown();
+        checkAsyncJobAllowed(job);
 
         try {
             @SuppressWarnings("rawtypes")
@@ -860,7 +897,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             protected void reallyRun() {
                 try {
                     if (!isAsyncJobsEnabled()) {
-                        logger.info("A shutdown has been triggered. Not executing any async job");
+                        logger.info("Maintenance or Shutdown has been initiated on this management server. Not executing any async jobs");
                         return;
                     }
 
@@ -1164,6 +1201,23 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             return true;
         }
         if (vol.getState().isTransitional()) {
+            if (Volume.State.Migrating.equals(vol.getState())) {
+                if (ReconcileCommandService.ReconcileCommandsEnabled.value()) {
+                    if (reconcileCommandService.isReconcileResourceNeeded(volumeId, ApiCommandResourceType.Volume)) {
+                        logger.debug(String.format("Skipping cleaning up Migrating volume: %s, it will be reconciled", vol));
+                        return true;
+                    }
+                    if (vol.getInstanceId() != null && reconcileCommandService.isReconcileResourceNeeded(vol.getInstanceId(), ApiCommandResourceType.VirtualMachine)) {
+                        logger.debug(String.format("Skipping cleaning up Migrating volume: %s, the vm %s will be reconciled", vol, _vmInstanceDao.findById(vol.getInstanceId())));
+                        return true;
+                    }
+                }
+                VolumeVO destVolume = _volsDao.findByLastIdAndState(vol.getId(), Volume.State.Migrating, Volume.State.Creating);
+                if (destVolume != null) {
+                    logger.debug(String.format("Found destination volume of Migrating volume %s: %s", vol, destVolume));
+                    cleanupVolume(destVolume.getId());
+                }
+            }
             logger.debug("Cleaning up volume with Id: " + volumeId);
             boolean status = vol.stateTransit(Volume.Event.OperationFailed);
             cleanupFailedVolumesCreatedFromSnapshots(volumeId);
@@ -1180,6 +1234,18 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             return true;
         }
         if (vmInstanceVO.getState().isTransitional()) {
+            if (VirtualMachine.State.Migrating.equals(vmInstanceVO.getState())) {
+                if (ReconcileCommandService.ReconcileCommandsEnabled.value()
+                        && reconcileCommandService.isReconcileResourceNeeded(vmId, ApiCommandResourceType.VirtualMachine)) {
+                    logger.debug(String.format("Skipping cleaning up Instance %s, it will be reconciled", vmInstanceVO));
+                    return true;
+                }
+                logger.debug("Cleaning up volumes with instance Id: " + vmId);
+                List<VolumeVO> volumes = _volsDao.findByInstance(vmInstanceVO.getId());
+                for (VolumeVO volume : volumes) {
+                    cleanupVolume(volume.getId());
+                }
+            }
             logger.debug("Cleaning up Instance with Id: " + vmId);
             return virtualMachineManager.stateTransitTo(vmInstanceVO, VirtualMachine.Event.OperationFailed, vmInstanceVO.getHostId());
         }
@@ -1301,16 +1367,18 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     @Override
     public void enableAsyncJobs() {
-        this.asyncJobsEnabled = true;
+        this.asyncJobsDisabled = false;
+        this.asyncJobsDisabledTime = 0;
     }
 
     @Override
     public void disableAsyncJobs() {
-        this.asyncJobsEnabled = false;
+        this.asyncJobsDisabled = true;
+        this.asyncJobsDisabledTime = System.currentTimeMillis();
     }
 
     @Override
     public boolean isAsyncJobsEnabled() {
-        return asyncJobsEnabled;
+        return !asyncJobsDisabled;
     }
 }

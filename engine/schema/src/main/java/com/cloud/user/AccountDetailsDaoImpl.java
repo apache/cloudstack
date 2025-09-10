@@ -33,6 +33,7 @@ import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.domain.dao.DomainDetailsDao;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -155,5 +156,14 @@ public class AccountDetailsDaoImpl extends ResourceDetailsDaoBase<AccountDetailV
             }
         }
         return value;
+    }
+
+    @Override
+    public Pair<Scope, Long> getParentScope(long id) {
+        Account account = _accountDao.findById(id);
+        if (account == null) {
+            return null;
+        }
+        return new Pair<>(getScope().getParent(), account.getDomainId());
     }
 }

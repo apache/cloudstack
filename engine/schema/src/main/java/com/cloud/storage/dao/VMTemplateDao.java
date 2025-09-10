@@ -58,6 +58,8 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long>, StateDao<
 
     public List<VMTemplateVO> listInZoneByState(long dataCenterId, VirtualMachineTemplate.State... states);
 
+    public List<Long> listTemplateIsoByArchVnfAndZone(Long dataCenterId, CPU.CPUArch arch, Boolean isIso, Boolean isVnf);
+
     public List<VMTemplateVO> listAllActive();
 
     public List<VMTemplateVO> listByState(VirtualMachineTemplate.State... states);
@@ -72,7 +74,7 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long>, StateDao<
 
     VMTemplateVO findSystemVMTemplate(long zoneId);
 
-    VMTemplateVO findSystemVMReadyTemplate(long zoneId, HypervisorType hypervisorType);
+    VMTemplateVO findSystemVMReadyTemplate(long zoneId, HypervisorType hypervisorType, String preferredArch);
 
     List<VMTemplateVO> findSystemVMReadyTemplates(long zoneId, HypervisorType hypervisorType, String preferredArch);
 
@@ -99,4 +101,6 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long>, StateDao<
     List<VMTemplateVO> listByIds(List<Long> ids);
 
     List<Long> listIdsByTemplateTag(String tag);
+
+    List<Long> listIdsByExtensionId(long extensionId);
 }

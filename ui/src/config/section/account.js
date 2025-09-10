@@ -55,11 +55,15 @@ export default {
     param: 'account'
   }, {
     name: 'userdata',
-    title: 'label.userdata',
+    title: 'label.user.data',
     param: 'account'
   }, {
     name: 'template',
     title: 'label.templates',
+    param: 'account'
+  }, {
+    name: 'iso',
+    title: 'label.isos',
     param: 'account'
   }],
   filters: () => {

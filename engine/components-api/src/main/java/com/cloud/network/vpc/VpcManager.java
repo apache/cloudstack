@@ -38,8 +38,26 @@ import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 public interface VpcManager {
+    ConfigKey<Boolean> VpcTierNamePrepend = new ConfigKey<>(Boolean.class,
+            "vpc.tier.name.prepend",
+            ConfigKey.CATEGORY_NETWORK,
+            "false",
+            "Whether to prepend the VPC name to the VPC tier network name",
+            true,
+            ConfigKey.Scope.Global,
+            null);
+    ConfigKey<String> VpcTierNamePrependDelimiter = new ConfigKey<>(String.class,
+            "vpc.tier.name.prepend.delimiter",
+            ConfigKey.CATEGORY_NETWORK,
+            " ",
+            "Delimiter string to use between the VPC and the VPC tier name",
+            true,
+            ConfigKey.Scope.Global,
+            null);
+
     /**
      * Returns all the Guest networks that are part of VPC
      *
@@ -177,4 +195,20 @@ public interface VpcManager {
      * @return
      */
     boolean isSrcNatIpRequired(long vpcOfferingId);
+
+    boolean isSrcNatIpRequiredForVpcVr(long vpcOfferingId);
+
+    List<StaticRouteVO> getVpcStaticRoutes(Long vpcId);
+
+    List<StaticRouteProfile> getVpcStaticRoutes(List<? extends StaticRoute> routes);
+
+    boolean isProviderSupportServiceInVpc(long vpcId, Service service, Provider provider);
+
+    IPAddressVO getIpAddressForVpcVr(Vpc vpc, IPAddressVO ipAddress, boolean allocateIpIfNeeded);
+
+    boolean configStaticNatForVpcVr(Vpc vpc, IPAddressVO ipAddress);
+
+    void reconfigStaticNatForVpcVr(Long vpcId);
+
+    boolean applyStaticRouteForVpcVpnIfNeeded(Long vpcId, boolean updateAllVpn) throws ResourceUnavailableException;
 }

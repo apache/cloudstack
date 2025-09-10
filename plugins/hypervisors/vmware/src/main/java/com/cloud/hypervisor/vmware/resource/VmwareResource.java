@@ -294,6 +294,7 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionUtil;
@@ -1960,7 +1961,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             // Check if license supports the feature
             VmwareHelper.isFeatureLicensed(hyperHost, FeatureKeyConstants.HOTPLUG);
             VmwareHelper.setVmScaleUpConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getMaxSpeed(), getReservedCpuMHZ(vmSpec), (int) requestedMaxMemoryInMb, ramMb,
-                    vmSpec.getLimitCpuUse());
+                    vmSpec.isLimitCpuUse());
 
             if (!vmMo.configureVm(vmConfigSpec)) {
                 throw new Exception("Unable to execute ScaleVmCommand");
@@ -2186,8 +2187,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                                 }
                             }
                             tearDownVm(vmMo);
-                        } else if (!hyperHost.createBlankVm(vmNameOnVcenter, vmInternalCSName, vmSpec.getCpus(), vmSpec.getMaxSpeed(), getReservedCpuMHZ(vmSpec),
-                                vmSpec.getLimitCpuUse(), (int) (vmSpec.getMaxRam() / ResourceType.bytesToMiB), getReservedMemoryMb(vmSpec), guestOsId, rootDiskDataStoreDetails.first(), false,
+                        } else if (!hyperHost.createBlankVm(vmNameOnVcenter, vmInternalCSName, vmSpec.getCpus(), vmSpec.getMaxSpeed().intValue(), getReservedCpuMHZ(vmSpec),
+                                vmSpec.isLimitCpuUse(), (int) (vmSpec.getMaxRam() / ResourceType.bytesToMiB), getReservedMemoryMb(vmSpec), guestOsId, rootDiskDataStoreDetails.first(), false,
                                 controllerInfo, systemVm)) {
                             throw new Exception("Failed to create VM. vmName: " + vmInternalCSName);
                         }
@@ -2231,7 +2232,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[totalChangeDevices];
             DiskTO[] sortedDisks = sortVolumesByDeviceId(disks);
             VmwareHelper.setBasicVmConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getMaxSpeed(), getReservedCpuMHZ(vmSpec), (int) (vmSpec.getMaxRam() / (1024 * 1024)),
-                    getReservedMemoryMb(vmSpec), guestOsId, vmSpec.getLimitCpuUse(), deployAsIs);
+                    getReservedMemoryMb(vmSpec), guestOsId, vmSpec.isLimitCpuUse(), deployAsIs);
 
             // Check for multi-cores per socket settings
             int numCoresPerSocket = 1;
@@ -3203,7 +3204,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
     }
 
     /**
-     * Modifies vm vram size if it was set to a different size to the one provided in svga.vramSize (user_vm_details or template_vm_details) on {@code vmConfigSpec}
+     * Modifies vm vram size if it was set to a different size to the one provided in svga.vramSize (vm_instance_details or template_vm_details) on {@code vmConfigSpec}
      *
      * @param videoCard     vm's video card device
      * @param vmMo          virtual machine mo
@@ -5309,7 +5310,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                     poolInfo.setHostPath(childPath);
                     String uuid = childDsMo.getCustomFieldValue(CustomFieldConstants.CLOUD_UUID);
                     if (uuid == null || !uuid.contains("-")) {
-                        uuid = UUID.nameUUIDFromBytes(((pool.getHost() + childPath)).getBytes()).toString();
+                        uuid = UuidUtils.nameUUIDFromBytes(((pool.getHost() + childPath)).getBytes()).toString();
                     }
                     poolInfo.setUuid(uuid);
                     poolInfo.setLocalPath(cmd.LOCAL_PATH_PREFIX + File.separator + uuid);
@@ -5544,7 +5545,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
     private String getSecondaryDatastoreUUID(String storeUrl) {
         String uuid = null;
         try {
-            uuid = UUID.nameUUIDFromBytes(storeUrl.getBytes("UTF-8")).toString();
+            uuid = UuidUtils.nameUUIDFromBytes(storeUrl.getBytes("UTF-8")).toString();
         } catch (UnsupportedEncodingException e) {
             logger.warn("Failed to create UUID from string " + storeUrl + ". Bad storeUrl or UTF-8 encoding error.");
         }
@@ -6144,6 +6145,11 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
     @Override
     public StartupCommand[] initialize() {
+        return initialize(false);
+    }
+
+    @Override
+    public StartupCommand[] initialize(boolean isTransferredConnection) {
         try {
             String hostApiVersion;
             VmwareContext context = getServiceContext();
@@ -6172,6 +6178,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             cmd.setHypervisorType(HypervisorType.VMware);
             cmd.setCluster(_cluster);
             cmd.setHypervisorVersion(hostApiVersion);
+            cmd.setConnectionTransferred(isTransferredConnection);
 
             List<StartupStorageCommand> storageCmds = initializeLocalStorage();
             StartupCommand[] answerCmds = new StartupCommand[1 + storageCmds.size()];

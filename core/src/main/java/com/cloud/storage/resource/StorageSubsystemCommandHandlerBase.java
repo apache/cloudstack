@@ -142,7 +142,7 @@ public class StorageSubsystemCommandHandlerBase implements StorageSubsystemComma
             }
             return new CreateObjectAnswer("not supported type");
         } catch (Exception e) {
-            logger.debug("Failed to create object: " + data.getObjectType() + ": " + e.toString());
+            logger.error("Failed to create object [{}] due to [{}].", data.getObjectType(), e.getMessage(), e);
             return new CreateObjectAnswer(e.toString());
         }
     }
