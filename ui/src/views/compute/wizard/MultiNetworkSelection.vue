@@ -272,19 +272,22 @@ export default {
       }
       this.sendValuesTimed()
     },
-    handleNetworkChange (nic, networkId) {
+    setNetworkState (nic, networkId) {
       if (this.hypervisor === 'KVM') {
         this.setIpAddressEnabled(nic, _.find(this.networks, (option) => option.id === networkId))
       } else {
         this.setIpAddressEnabled(nic, _.find(this.validNetworks[nic.id], (option) => option.id === networkId))
       }
+    },
+    handleNetworkChange (nic, networkId) {
+      this.setNetworkState(nic, networkId)
       this.sendValuesTimed()
     },
     getDefaultNetwork (record) {
       if (record.vlanid && record.vlanid !== -1) {
         const matched = this.validNetworks[record.id].filter(x => Number(x.vlan) === record.vlanid)
         if (matched.length > 0) {
-          this.handleNetworkChange(record, matched[0].id)
+          this.setNetworkState(record, matched[0].id)
           return matched[0].id
         }
       }
