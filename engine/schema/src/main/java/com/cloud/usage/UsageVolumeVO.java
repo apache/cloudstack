@@ -67,16 +67,21 @@ public class UsageVolumeVO implements InternalIdentity {
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date deleted = null;
 
+    @Column(name = "vm_instance_id")
+    private long vmInstanceId;
+
     protected UsageVolumeVO() {
     }
 
-    public UsageVolumeVO(long id, long zoneId, long accountId, long domainId, Long diskOfferingId, Long templateId, long size, Date created, Date deleted) {
+    public UsageVolumeVO(long id, long zoneId, long accountId, long domainId, Long diskOfferingId, Long templateId,
+                         Long vmInstanceId, long size, Date created, Date deleted) {
         this.volumeId = id;
         this.zoneId = zoneId;
         this.accountId = accountId;
         this.domainId = domainId;
         this.diskOfferingId = diskOfferingId;
         this.templateId = templateId;
+        this.vmInstanceId = vmInstanceId;
         this.size = size;
         this.created = created;
         this.deleted = deleted;
@@ -125,5 +130,9 @@ public class UsageVolumeVO implements InternalIdentity {
 
     public long getVolumeId() {
         return volumeId;
+    }
+
+    public long getVmInstanceId() {
+        return vmInstanceId;
     }
 }
