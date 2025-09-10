@@ -102,9 +102,9 @@ status() {
 get_console() {
     parse_json "$1" || exit 1
     local response
-    response=$(jq -n \
-        '{status: "success", message: "Console retrieved"}')
-    echo "$response"
+    jq -n --arg msg "Operation not supported" \
+      '{status:"error", message:$msg, code:"OPERATION_NOT_SUPPORTED"}'
+    return 1
 }
 
 action=$1
@@ -146,7 +146,7 @@ case $action in
     status)
         status "$parameters"
         ;;
-    GetConsole)
+    getconsole)
         get_console "$parameters"
         ;;
     *)
