@@ -33,7 +33,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import com.cloud.upgrade.dao.Upgrade42010to42020;
 import com.cloud.utils.FileUtil;
 import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.commons.lang3.StringUtils;
