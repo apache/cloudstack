@@ -24,7 +24,7 @@ public class OfferingUtils {
     }
 
     public static boolean isNetrisNatted(String provider, String networkMode) {
-        return "Netris".equalsIgnoreCase(provider) && 
+        return "Netris".equalsIgnoreCase(provider) &&
                NetworkOffering.NetworkMode.NATTED.name().equalsIgnoreCase(networkMode);
     }
 
