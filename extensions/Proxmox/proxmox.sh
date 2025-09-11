@@ -285,6 +285,38 @@ status() {
     echo "{\"status\": \"success\", \"power_state\": \"$powerstate\"}"
 }
 
+statuses() {
+    local response
+    response=$(call_proxmox_api GET "/nodes/${node}/qemu")
+
+    if [[ -z "$response" ]]; then
+        echo '{"status":"error","message":"empty response from Proxmox API"}'
+        return 1
+    fi
+
+    if ! echo "$response" | jq empty >/dev/null 2>&1; then
+        echo '{"status":"error","message":"invalid JSON response from Proxmox API"}'
+        return 1
+    fi
+
+    echo "$response" | jq -c '
+      def map_state(s):
+        if   s=="running" then "poweron"
+        elif s=="stopped" then "poweroff"
+        else "unknown" end;
+
+      {
+        status: "success",
+        power_state: (
+          .data
+          | map(select(.template != 1))
+          | map({ ( (.name // (.vmid|tostring)) ): map_state(.status) })
+          | add
+        )
+      }'
+}
+
+
 list_snapshots() {
     snapshot_response=$(call_proxmox_api GET "/nodes/${node}/qemu/${vmid}/snapshot")
     echo "$snapshot_response" | jq '
@@ -395,6 +427,9 @@ case $action in
         ;;
     status)
         status
+        ;;
+    statuses)
+        statuses
         ;;
     ListSnapshots)
         list_snapshots
