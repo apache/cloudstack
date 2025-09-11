@@ -256,14 +256,6 @@ public enum Config {
             "8081",
             "Load Balancer(haproxy) stats port number.",
             null),
-    NetworkLBHaproxyMaxConn(
-            "Network",
-            ManagementServer.class,
-            Integer.class,
-            "network.loadbalancer.haproxy.max.conn",
-            "4096",
-            "Load Balancer(haproxy) maximum number of concurrent connections(global max)",
-            null),
     NetworkRouterRpFilter(
             "Network",
             ManagementServer.class,
@@ -1812,11 +1804,11 @@ public enum Config {
 
     private static final HashMap<Integer, List<Config>> s_scopeLevelConfigsMap = new HashMap<>();
     static {
-        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Zone.getBitValue(), new ArrayList<Config>());
-        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Cluster.getBitValue(), new ArrayList<Config>());
-        s_scopeLevelConfigsMap.put(ConfigKey.Scope.StoragePool.getBitValue(), new ArrayList<Config>());
-        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Account.getBitValue(), new ArrayList<Config>());
-        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Global.getBitValue(), new ArrayList<Config>());
+        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Zone.getBitValue(), new ArrayList<>());
+        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Cluster.getBitValue(), new ArrayList<>());
+        s_scopeLevelConfigsMap.put(ConfigKey.Scope.StoragePool.getBitValue(), new ArrayList<>());
+        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Account.getBitValue(), new ArrayList<>());
+        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Global.getBitValue(), new ArrayList<>());
 
         for (Config c : Config.values()) {
             //Creating group of parameters per each level (zone/cluster/pool/account)
@@ -1829,23 +1821,22 @@ public enum Config {
         }
     }
 
-    private static final HashMap<String, List<Config>> Configs = new HashMap<String, List<Config>>();
+    private static final HashMap<String, List<Config>> Configs = new HashMap<>();
     static {
         // Add categories
-        Configs.put("Alert", new ArrayList<Config>());
-        Configs.put("Storage", new ArrayList<Config>());
-        Configs.put("Snapshots", new ArrayList<Config>());
-        Configs.put("Network", new ArrayList<Config>());
-        Configs.put("Usage", new ArrayList<Config>());
-        Configs.put("Console Proxy", new ArrayList<Config>());
-        Configs.put("Advanced", new ArrayList<Config>());
-        Configs.put("Usage", new ArrayList<Config>());
-        Configs.put("Developer", new ArrayList<Config>());
-        Configs.put("Hidden", new ArrayList<Config>());
-        Configs.put("Account Defaults", new ArrayList<Config>());
-        Configs.put("Domain Defaults", new ArrayList<Config>());
-        Configs.put("Project Defaults", new ArrayList<Config>());
-        Configs.put("Secure", new ArrayList<Config>());
+        Configs.put("Account Defaults", new ArrayList<>());
+        Configs.put("Advanced", new ArrayList<>());
+        Configs.put("Alert", new ArrayList<>());
+        Configs.put("Console Proxy", new ArrayList<>());
+        Configs.put("Developer", new ArrayList<>());
+        Configs.put("Domain Defaults", new ArrayList<>());
+        Configs.put("Hidden", new ArrayList<>());
+        Configs.put("Network", new ArrayList<>());
+        Configs.put("Secure", new ArrayList<>());
+        Configs.put("Snapshots", new ArrayList<>());
+        Configs.put("Storage", new ArrayList<>());
+        Configs.put("Usage", new ArrayList<>());
+        Configs.put("Project Defaults", new ArrayList<>());
 
         // Add values into HashMap
         for (Config c : Config.values()) {
@@ -1856,11 +1847,11 @@ public enum Config {
         }
     }
 
-    private Config(String category, Class<?> componentClass, Class<?> type, String name, String defaultValue, String description, String range) {
+    Config(String category, Class<?> componentClass, Class<?> type, String name, String defaultValue, String description, String range) {
         this(category, componentClass, type, name, defaultValue, description, range, null, null);
     }
 
-    private Config(String category, Class<?> componentClass, Class<?> type, String name, String defaultValue, String description, String range, ConfigKey.Kind kind, String options) {
+    Config(String category, Class<?> componentClass, Class<?> type, String name, String defaultValue, String description, String range, ConfigKey.Kind kind, String options) {
         _category = category;
         _componentClass = componentClass;
         _type = type;
@@ -1965,7 +1956,7 @@ public enum Config {
 
     public static List<String> getCategories() {
         Object[] keys = Configs.keySet().toArray();
-        List<String> categories = new ArrayList<String>();
+        List<String> categories = new ArrayList<>();
         for (Object key : keys) {
             categories.add((String)key);
         }
