@@ -612,10 +612,13 @@ class TestVPCRedundancy(cloudstackTestCase):
 
         time.sleep(total_sleep)
 
-        # Router will be in FAULT state, i.e. keepalived is stopped
-        self.check_routers_state(status_to_check="FAULT", expected_count=2)
+        # Router will be in UNKNOWN state, i.e. keepalived is stopped
+        self.check_routers_state(status_to_check="UNKNOWN", expected_count=2)
+
         self.start_vm()
+        # Routers will be in PRIMARY/BACKUP state
         self.check_routers_state(status_to_check="PRIMARY")
+        self.check_routers_state(status_to_check="BACKUP")
 
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_05_rvpc_multi_tiers(self):

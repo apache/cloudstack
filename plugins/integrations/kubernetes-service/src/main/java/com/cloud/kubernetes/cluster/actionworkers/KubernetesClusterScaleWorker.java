@@ -358,7 +358,8 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
     private void scaleKubernetesClusterOffering(KubernetesClusterNodeType nodeType, ServiceOffering serviceOffering,
                                                 boolean updateNodeOffering, boolean updateClusterOffering) throws CloudRuntimeException {
         validateKubernetesClusterScaleOfferingParameters();
-        if (!kubernetesCluster.getState().equals(KubernetesCluster.State.Scaling)) {
+        List<KubernetesCluster.State> scalingStates = List.of(KubernetesCluster.State.Scaling, KubernetesCluster.State.ScalingStoppedCluster);
+        if (!scalingStates.contains(kubernetesCluster.getState())) {
             stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.ScaleUpRequested);
         }
         if (KubernetesCluster.State.Created.equals(originalState)) {
@@ -581,6 +582,8 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
                 scaleKubernetesClusterOffering(nodeType, scalingServiceOffering, updateNodeOffering, updateClusterOffering);
             } else if (clusterSizeScalingNeeded) {
                 scaleKubernetesClusterSize(nodeType);
+            } else {
+                return true;
             }
         }
 
