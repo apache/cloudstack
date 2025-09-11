@@ -50,6 +50,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.reflections.ReflectionUtils;
 import org.springframework.stereotype.Component;
 
+import com.cloud.api.ApiServlet;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.serializer.Param;
 import com.cloud.user.Account;
@@ -189,7 +190,7 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
         return responseResponse;
     }
 
-    private ApiDiscoveryResponse getCmdRequestMap(Class<?> cmdClass, APICommand apiCmdAnnotation) {
+    protected ApiDiscoveryResponse getCmdRequestMap(Class<?> cmdClass, APICommand apiCmdAnnotation) {
         String apiName = apiCmdAnnotation.name();
         ApiDiscoveryResponse response = new ApiDiscoveryResponse();
         response.setName(apiName);
@@ -197,6 +198,12 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
         if (!apiCmdAnnotation.since().isEmpty()) {
             response.setSince(apiCmdAnnotation.since());
         }
+        String httpRequestType = apiCmdAnnotation.httpMethod();
+        if (StringUtils.isBlank(httpRequestType)) {
+            httpRequestType = ApiServlet.GET_REQUEST_COMMANDS.matcher(apiName.toLowerCase()).matches() ?
+                    "GET" : "POST";
+        }
+        response.setHttpRequestType(httpRequestType);
 
         Set<Field> fields = ReflectUtil.getAllFieldsForClass(cmdClass, new Class<?>[] {BaseCmd.class, BaseAsyncCmd.class, BaseAsyncCreateCmd.class});
 
