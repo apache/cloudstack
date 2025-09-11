@@ -177,7 +177,7 @@ class TestUnmanageKvmVM(cloudstackTestCase):
         9. Verify details of imported VM
         10. Destroy VM
         """
-        
+
         # 1 - Deploy VM
         self.virtual_machine = VirtualMachine.create(
             self.apiclient,
@@ -187,7 +187,7 @@ class TestUnmanageKvmVM(cloudstackTestCase):
             networkids=[self.network.id, self.network1.id, self.network2.id],
             zoneid=self.zone.id
         )
-        
+
         vm_id = self.virtual_machine.id
         vm_instance_name = self.virtual_machine.instancename
 
@@ -240,10 +240,10 @@ class TestUnmanageKvmVM(cloudstackTestCase):
         )
 
         # 5 - Verify VM domain is persistent for KVM
-        ssh_host = self.get_ssh_client(host.ipaddress, 
-                                    self.hostConfig["username"], 
+        ssh_host = self.get_ssh_client(host.ipaddress,
+                                    self.hostConfig["username"],
                                     self.hostConfig["password"], 10)
-        
+
         cmd = f"virsh dominfo {vm_instance_name}"
         result = ssh_host.execute(cmd)
         if result == None or result == "":
@@ -264,7 +264,7 @@ class TestUnmanageKvmVM(cloudstackTestCase):
         result = ssh_host.execute(cmd)
         if result == None or result == "":
             raise Exception("Failed to stop VM: %s on host: %s" % (vm_instance_name, host.name))
-        
+
         cmd = "virsh list --all | grep %s" % vm_instance_name
         result = ssh_host.execute(cmd)
         if result == None or result == "":
@@ -286,8 +286,8 @@ class TestUnmanageKvmVM(cloudstackTestCase):
         if result == None or result == "":
             raise Exception("Failed to fetch VM: %s state on host: %s" % (vm_instance_name, host.name))
         if 'running' not in str(result).lower():
-            raise Exception(f"VM: {vm_instance_name} is NOT running on host: {host.name}, state: {state_line}")  
-         
+            raise Exception(f"VM: {vm_instance_name} is NOT running on host: {host.name}, state: {state_line}")
+
         # 8 - Import VM
 
         nicnetworklist = []
@@ -333,7 +333,7 @@ class TestUnmanageKvmVM(cloudstackTestCase):
         # 10 - Destroy VM. This will be done during cleanup
 
 
-    
+
     @attr(tags=["advanced", "advancedns", "smoke", "sg"], required_hardware="true")
     @skipTestIf("hypervisorNotSupported")
     def test_02_unmanage_stopped_vm_cycle_persistent_domain(self):
@@ -358,7 +358,7 @@ class TestUnmanageKvmVM(cloudstackTestCase):
             networkids=[self.network.id, self.network1.id, self.network2.id],
             zoneid=self.zone.id
         )
-        
+
         vm_id = self.virtual_machine.id
         vm_instance_name = self.virtual_machine.instancename
 
@@ -394,7 +394,7 @@ class TestUnmanageKvmVM(cloudstackTestCase):
             vm_response.state,
             "Stopped",
             "VM state should be Stopped after stopping the VM"
-        )  
+        )
 
         # 3 - Unmanage VM from CloudStack
         self.virtual_machine.unmanage(self.apiclient)
@@ -411,16 +411,16 @@ class TestUnmanageKvmVM(cloudstackTestCase):
         )
 
         # 5 - Verify VM is listed as part of the unmanaged instances
-        ssh_host = self.get_ssh_client(host.ipaddress, 
-                                    self.hostConfig["username"], 
+        ssh_host = self.get_ssh_client(host.ipaddress,
+                                    self.hostConfig["username"],
                                     self.hostConfig["password"], 10)
         cmd = "virsh list --all | grep %s" % vm_instance_name
         result = ssh_host.execute(cmd)
         if result == None or result == "":
             raise Exception("Failed to fetch VM: %s state on host: %s" % (vm_instance_name, host.name))
         if 'shut off' not in str(result).lower():
-            raise Exception(f"VM: {vm_instance_name} is NOT in stopped on host: {host.name}")  
-        
+            raise Exception(f"VM: {vm_instance_name} is NOT in stopped on host: {host.name}")
+
         # 6 - Start VM using virsh, confirm VM is running
         cmd = "virsh start %s" % vm_instance_name
         result = ssh_host.execute(cmd)
@@ -432,8 +432,8 @@ class TestUnmanageKvmVM(cloudstackTestCase):
         if result == None or result == "":
             raise Exception("Failed to fetch VM: %s state on host: %s" % (vm_instance_name, host.name))
         if 'running' not in str(result).lower():
-            raise Exception(f"VM: {vm_instance_name} is NOT running on host: {host.name}")  
-         
+            raise Exception(f"VM: {vm_instance_name} is NOT running on host: {host.name}")
+
         # 8 - Import VM
         self.imported_vm = VirtualMachine.importUnmanagedInstance(
             self.apiclient,
@@ -444,7 +444,7 @@ class TestUnmanageKvmVM(cloudstackTestCase):
             templateid=self.template.id)
         self.cleanup.append(self.imported_vm)
         self.unmanaged_instance = None
-        
+
         # 9 - Verify details of the imported VM
         self.assertEqual(
             self.small_offering.id,
