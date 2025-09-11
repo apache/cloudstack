@@ -177,9 +177,8 @@ public class ActionEventUtilsTest {
         account.setId(ACCOUNT_ID);
         user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone",
                 UUID.randomUUID().toString(), User.Source.UNKNOWN);
-
-        Mockito.when(accountDao.findById(ACCOUNT_ID)).thenReturn(account);
         Mockito.when(userDao.findById(USER_ID)).thenReturn(user);
+        CallContext.register(user, account);
     }
 
     /**
@@ -204,12 +203,11 @@ public class ActionEventUtilsTest {
         utils.init();
 
         componentContextMocked.close();
+        CallContext.unregister();
     }
 
     @Test
     public void testPopulateFirstClassEntities() {
-        CallContext.register(user, account);
-
         //Inject some entity UUIDs into the call context
         String instanceUuid = UUID.randomUUID().toString();
         String ipUuid = UUID.randomUUID().toString();
@@ -231,8 +229,6 @@ public class ActionEventUtilsTest {
         Assert.assertTrue(json.has("IpAddress"));
         Assert.assertEquals(json.get("VirtualMachine").getAsString(), instanceUuid);
         Assert.assertEquals(json.get("IpAddress").getAsString(), ipUuid);
-
-        CallContext.unregister();
     }
 
     private void checkEventResourceAndUnregisterContext(Long resourceId, String resourceUuid, String resourceType) {
@@ -248,14 +244,10 @@ public class ActionEventUtilsTest {
         EventVO eventVO = persistedEvents.get(0);
         Assert.assertEquals(eventVO.getResourceType(), resourceType);
         Assert.assertEquals(eventVO.getResourceId(), resourceId);
-
-        CallContext.unregister();
     }
 
     @Test
     public void testPublishedEventResource() {
-        CallContext.register(user, account);
-
         final Long resourceId = 1L;
         final String resourceType = ApiCommandResourceType.VirtualMachine.toString();
         final String resourceUuid = UUID.randomUUID().toString();
@@ -270,8 +262,6 @@ public class ActionEventUtilsTest {
 
     @Test
     public void testPublishedEventResourceWithCallContext() {
-        CallContext.register(user, account);
-
         final Long resourceId = 1L;
         final String resourceType = ApiCommandResourceType.VirtualMachine.toString();
         final String resourceUuid = UUID.randomUUID().toString();
@@ -287,8 +277,6 @@ public class ActionEventUtilsTest {
 
     @Test
     public void testScheduledEvent() {
-        CallContext.register(user, account);
-
         final Long resourceId = 1L;
         final String resourceType = ApiCommandResourceType.VirtualMachine.toString();
         final String resourceUuid = UUID.randomUUID().toString();
@@ -304,14 +292,10 @@ public class ActionEventUtilsTest {
         Assert.assertEquals(persistedEvents.size(), 1);
         EventVO eventVO = persistedEvents.get(0);
         Assert.assertEquals(eventVO.getState(), com.cloud.event.Event.State.Scheduled);
-
-        CallContext.unregister();
     }
 
     @Test
     public void testCreatedEvent() {
-        CallContext.register(user, account);
-
         final Long resourceId = 1L;
         final String resourceType = ApiCommandResourceType.VirtualMachine.toString();
         final String resourceUuid = UUID.randomUUID().toString();
@@ -327,14 +311,10 @@ public class ActionEventUtilsTest {
         Assert.assertEquals(persistedEvents.size(), 1);
         EventVO eventVO = persistedEvents.get(0);
         Assert.assertEquals(eventVO.getState(), com.cloud.event.Event.State.Created);
-
-        CallContext.unregister();
     }
 
     @Test
     public void testNestedEvent() {
-        CallContext.register(user, account);
-
         final Long resourceId = 1L;
         final String resourceType = ApiCommandResourceType.VirtualMachine.toString();
         final String resourceUuid = UUID.randomUUID().toString();
@@ -344,14 +324,10 @@ public class ActionEventUtilsTest {
         Assert.assertEquals(persistedEvents.size(), 1);
         EventVO eventVO = persistedEvents.get(0);
         Assert.assertEquals(eventVO.getState(), com.cloud.event.Event.State.Started);
-
-        CallContext.unregister();
     }
 
     @Test
     public void testSnapshotEventResource() {
-        CallContext.register(user, account);
-
         final Long snapshotResourceId = 100L;
         final String snapshotResourceType = ApiCommandResourceType.Snapshot.toString();
         final String snapshotResourceUuid = UUID.randomUUID().toString();
@@ -366,7 +342,6 @@ public class ActionEventUtilsTest {
 
     @Test
     public void testVmSnapshotEventResource() {
-        CallContext.register(user, account);
 
         final Long vmSnapshotResourceId = 100L;
         final String vmSnapshotResourceType = ApiCommandResourceType.VmSnapshot.toString();
