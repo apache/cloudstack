@@ -1677,4 +1677,9 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     public boolean volumesRequireGrantAccessWhenUsed() {
         return true;
     }
+
+    @Override
+    public boolean zoneWideVolumesAvailableWithoutClusterMotion() {
+        return true;
+    }
 }
