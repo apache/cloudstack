@@ -314,7 +314,7 @@ public class ExternalPathPayloadProvisionerTest {
                 .executeExternalCommand(anyString(), anyString(), anyMap(), anyInt(), anyString(), anyString());
 
             PrepareExternalProvisioningAnswer answer = provisioner.prepareExternalProvisioning(
-                "host-guid", "test-extension", "test-extension.sh", cmd);
+                "host-name", "test-extension", "test-extension.sh", cmd);
 
             assertTrue(answer.getResult());
             assertEquals("test-net-uuid", answer.getVirtualMachineTO().getNics()[0].getNetworkUuid());
@@ -326,11 +326,14 @@ public class ExternalPathPayloadProvisionerTest {
     public void testPrepareExternalProvisioning_ExtensionNotConfigured() {
         PrepareExternalProvisioningCommand cmd = mock(PrepareExternalProvisioningCommand.class);
 
+        String extensionName = "test-extension";
+        String hostName = "host-name";
         PrepareExternalProvisioningAnswer answer = provisioner.prepareExternalProvisioning(
-            "host-guid", "test-extension", "nonexistent.sh", cmd);
+            hostName, extensionName, "nonexistent.sh", cmd);
 
         assertFalse(answer.getResult());
-        assertEquals("Extension not configured", answer.getDetails());
+        assertNotNull(answer);
+        assertEquals(String.format("Extension: %s not configured for host: %s", extensionName, hostName), answer.getDetails());
     }
 
     @Test
@@ -345,7 +348,7 @@ public class ExternalPathPayloadProvisionerTest {
         doReturn(new Pair<>(true, "{\"status\": \"success\", \"message\": \"Instance started\"}")).when(provisioner)
             .executeExternalCommand(anyString(), anyString(), anyMap(), anyInt(), anyString(), anyString());
 
-        StartAnswer answer = provisioner.startInstance("host-guid", "test-extension", "test-extension.sh", cmd);
+        StartAnswer answer = provisioner.startInstance("host-name", "test-extension", "test-extension.sh", cmd);
 
         assertTrue(answer.getResult());
         Mockito.verify(logger).debug("Starting VM test-uuid on the external system");
@@ -366,7 +369,7 @@ public class ExternalPathPayloadProvisionerTest {
         doReturn(new Pair<>(true, "{\"status\": \"success\", \"message\": \"Instance started\"}")).when(provisioner)
                 .executeExternalCommand(anyString(), anyString(), anyMap(), anyInt(), anyString(), anyString());
 
-        StartAnswer answer = provisioner.startInstance("host-guid", "test-extension", "test-extension.sh", cmd);
+        StartAnswer answer = provisioner.startInstance("host-name", "test-extension", "test-extension.sh", cmd);
 
         assertTrue(answer.getResult());
         Mockito.verify(logger).debug("Deploying VM test-uuid on the external system");
@@ -384,7 +387,7 @@ public class ExternalPathPayloadProvisionerTest {
         doReturn(new Pair<>(false, "{\"error\": \"Instance failed to start\"}")).when(provisioner)
                 .executeExternalCommand(anyString(), anyString(), anyMap(), anyInt(), anyString(), anyString());
 
-        StartAnswer answer = provisioner.startInstance("host-guid", "test-extension", "test-extension.sh", cmd);
+        StartAnswer answer = provisioner.startInstance("host-name", "test-extension", "test-extension.sh", cmd);
 
         assertFalse(answer.getResult());
         assertEquals("{\"error\": \"Instance failed to start\"}", answer.getDetails());
@@ -403,7 +406,7 @@ public class ExternalPathPayloadProvisionerTest {
         doReturn(new Pair<>(true, "success")).when(provisioner)
             .executeExternalCommand(anyString(), anyString(), anyMap(), anyInt(), anyString(), anyString());
 
-        StopAnswer answer = provisioner.stopInstance("host-guid", "test-extension", "test-extension.sh", cmd);
+        StopAnswer answer = provisioner.stopInstance("host-name", "test-extension", "test-extension.sh", cmd);
 
         assertTrue(answer.getResult());
     }
@@ -420,7 +423,7 @@ public class ExternalPathPayloadProvisionerTest {
         doReturn(new Pair<>(true, "success")).when(provisioner)
             .executeExternalCommand(anyString(), anyString(), anyMap(), anyInt(), anyString(), anyString());
 
-        RebootAnswer answer = provisioner.rebootInstance("host-guid", "test-extension", "test-extension.sh", cmd);
+        RebootAnswer answer = provisioner.rebootInstance("host-name", "test-extension", "test-extension.sh", cmd);
 
         assertTrue(answer.getResult());
     }
@@ -437,7 +440,7 @@ public class ExternalPathPayloadProvisionerTest {
         doReturn(new Pair<>(true, "success")).when(provisioner)
             .executeExternalCommand(anyString(), anyString(), anyMap(), anyInt(), anyString(), anyString());
 
-        StopAnswer answer = provisioner.expungeInstance("host-guid", "test-extension", "test-extension.sh", cmd);
+        StopAnswer answer = provisioner.expungeInstance("host-name", "test-extension", "test-extension.sh", cmd);
 
         assertTrue(answer.getResult());
     }
@@ -490,7 +493,7 @@ public class ExternalPathPayloadProvisionerTest {
         doReturn(new Pair<>(true, "success")).when(provisioner)
             .executeExternalCommand(anyString(), anyString(), anyMap(), anyInt(), anyString(), anyString());
 
-        RunCustomActionAnswer answer = provisioner.runCustomAction("host-guid", "test-extension", "test-extension.sh", cmd);
+        RunCustomActionAnswer answer = provisioner.runCustomAction("host-name", "test-extension", "test-extension.sh", cmd);
 
         assertTrue(answer.getResult());
         Mockito.verify(logger).debug("Executing custom action '{}' in the external system", "test-action");
@@ -770,7 +773,7 @@ public class ExternalPathPayloadProvisionerTest {
         doReturn(new Pair<>(true, validOutput)).when(provisioner)
                 .getInstanceConsoleOnExternalSystem(anyString(), anyString(), anyString(), anyMap(), anyInt());
 
-        GetExternalConsoleAnswer result = provisioner.getInstanceConsole("host-guid", "test-extension", "test-extension.sh", cmd);
+        GetExternalConsoleAnswer result = provisioner.getInstanceConsole("host-name", "test-extension", "test-extension.sh", cmd);
 
         assertNotNull(result);
         assertEquals("127.0.0.1", result.getHost());
@@ -784,11 +787,13 @@ public class ExternalPathPayloadProvisionerTest {
         GetExternalConsoleCommand cmd = mock(GetExternalConsoleCommand.class);
         when(provisioner.getExtensionCheckedPath(anyString(), anyString())).thenReturn(null);
 
-        GetExternalConsoleAnswer result = provisioner.getInstanceConsole("host-guid",
-                "test-extension", "test-extension.sh", cmd);
+        String extensionName = "test-extension";
+        String hostName = "host-name";
+        GetExternalConsoleAnswer result = provisioner.getInstanceConsole(hostName,
+                extensionName, "test-extension.sh", cmd);
 
         assertNotNull(result);
-        assertEquals("Extension not configured", result.getDetails());
+        assertEquals(String.format("Extension: %s not configured for host: %s", extensionName, hostName), result.getDetails());
     }
 
     @Test
@@ -801,7 +806,7 @@ public class ExternalPathPayloadProvisionerTest {
         doReturn(new Pair<>(false, "External system error")).when(provisioner)
                 .getInstanceConsoleOnExternalSystem(anyString(), anyString(), anyString(), anyMap(), anyInt());
 
-        GetExternalConsoleAnswer result = provisioner.getInstanceConsole("host-guid", "test-extension", "test-extension.sh", cmd);
+        GetExternalConsoleAnswer result = provisioner.getInstanceConsole("host-name", "test-extension", "test-extension.sh", cmd);
 
         assertNotNull(result);
         assertEquals("External system error", result.getDetails());
@@ -818,7 +823,7 @@ public class ExternalPathPayloadProvisionerTest {
         doReturn(new Pair<>(true, invalidOutput)).when(provisioner)
                 .getInstanceConsoleOnExternalSystem(anyString(), anyString(), anyString(), anyMap(), anyInt());
 
-        GetExternalConsoleAnswer result = provisioner.getInstanceConsole("host-guid", "test-extension", "test-extension.sh", cmd);
+        GetExternalConsoleAnswer result = provisioner.getInstanceConsole("host-name", "test-extension", "test-extension.sh", cmd);
 
         assertNotNull(result);
         assertEquals("Missing console object in output", result.getDetails());
@@ -835,7 +840,7 @@ public class ExternalPathPayloadProvisionerTest {
         doReturn(new Pair<>(true, incompleteOutput)).when(provisioner)
                 .getInstanceConsoleOnExternalSystem(anyString(), anyString(), anyString(), anyMap(), anyInt());
 
-        GetExternalConsoleAnswer result = provisioner.getInstanceConsole("host-guid", "test-extension", "test-extension.sh", cmd);
+        GetExternalConsoleAnswer result = provisioner.getInstanceConsole("host-name", "test-extension", "test-extension.sh", cmd);
 
         assertNotNull(result);
         assertEquals("Missing required fields in output", result.getDetails());
@@ -852,7 +857,7 @@ public class ExternalPathPayloadProvisionerTest {
         doReturn(new Pair<>(true, malformedOutput)).when(provisioner)
                 .getInstanceConsoleOnExternalSystem(anyString(), anyString(), anyString(), anyMap(), anyInt());
 
-        GetExternalConsoleAnswer result = provisioner.getInstanceConsole("host-guid", "test-extension", "test-extension.sh", cmd);
+        GetExternalConsoleAnswer result = provisioner.getInstanceConsole("host-name", "test-extension", "test-extension.sh", cmd);
 
         assertNotNull(result);
         assertEquals("Failed to parse output", result.getDetails());
@@ -946,5 +951,23 @@ public class ExternalPathPayloadProvisionerTest {
         String json = "{password:\"secret\"";
         String result = provisioner.getSanitizedJsonStringForLog(json);
         assertEquals("{password:\"secret\"", result);
+    }
+
+    @Test
+    public void getExtensionConfigureErrorReturnsMessageWhenHostNameIsNotBlank() {
+        String result = provisioner.getExtensionConfigureError("test-extension", "test-host");
+        assertEquals("Extension: test-extension not configured for host: test-host", result);
+    }
+
+    @Test
+    public void getExtensionConfigureErrorReturnsMessageWhenHostNameIsBlank() {
+        String result = provisioner.getExtensionConfigureError("test-extension", "");
+        assertEquals("Extension: test-extension not configured", result);
+    }
+
+    @Test
+    public void getExtensionConfigureErrorReturnsMessageWhenHostNameIsNull() {
+        String result = provisioner.getExtensionConfigureError("test-extension", null);
+        assertEquals("Extension: test-extension not configured", result);
     }
 }

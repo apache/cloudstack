@@ -93,7 +93,6 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -115,9 +114,6 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
 
     @Inject
     HostDao hostDao;
-
-    @Inject
-    VMInstanceDao vmInstanceDao;
 
     @Inject
     HypervisorGuruManager hypervisorGuruManager;
@@ -307,12 +303,20 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
         }
     }
 
+    protected String getExtensionConfigureError(String extensionName, String hostName) {
+        StringBuilder sb = new StringBuilder("Extension: ").append(extensionName).append(" not configured");
+        if (StringUtils.isNotBlank(hostName)) {
+            sb.append(" for host: ").append(hostName);
+        }
+        return sb.toString();
+    }
+
     @Override
-    public PrepareExternalProvisioningAnswer prepareExternalProvisioning(String hostGuid,
+    public PrepareExternalProvisioningAnswer prepareExternalProvisioning(String hostName,
                  String extensionName, String extensionRelativePath, PrepareExternalProvisioningCommand cmd) {
         String extensionPath = getExtensionCheckedPath(extensionName, extensionRelativePath);
         if (StringUtils.isEmpty(extensionPath)) {
-            return new PrepareExternalProvisioningAnswer(cmd, false, "Extension not configured");
+            return new PrepareExternalProvisioningAnswer(cmd, false, getExtensionConfigureError(extensionName, hostName));
         }
         VirtualMachineTO vmTO = cmd.getVirtualMachineTO();
         String vmUUID = vmTO.getUuid();
@@ -340,11 +344,11 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
     }
 
     @Override
-    public StartAnswer startInstance(String hostGuid, String extensionName, String extensionRelativePath,
+    public StartAnswer startInstance(String hostName, String extensionName, String extensionRelativePath,
                              StartCommand cmd) {
         String extensionPath = getExtensionCheckedPath(extensionName, extensionRelativePath);
         if (StringUtils.isEmpty(extensionPath)) {
-            return new StartAnswer(cmd, "Extension not configured");
+            return new StartAnswer(cmd, getExtensionConfigureError(extensionName, hostName));
         }
         VirtualMachineTO virtualMachineTO = cmd.getVirtualMachine();
         Map<String, Object> accessDetails = loadAccessDetails(cmd.getExternalDetails(), virtualMachineTO);
@@ -384,11 +388,11 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
     }
 
     @Override
-    public StopAnswer stopInstance(String hostGuid, String extensionName, String extensionRelativePath,
+    public StopAnswer stopInstance(String hostName, String extensionName, String extensionRelativePath,
                            StopCommand cmd) {
         String extensionPath = getExtensionCheckedPath(extensionName, extensionRelativePath);
         if (StringUtils.isEmpty(extensionPath)) {
-            return new StopAnswer(cmd, "Extension not configured", false);
+            return new StopAnswer(cmd, getExtensionConfigureError(extensionName, hostName), false);
         }
         logger.debug("Executing stop command on the external provisioner");
         VirtualMachineTO virtualMachineTO = cmd.getVirtualMachine();
@@ -405,11 +409,11 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
     }
 
     @Override
-    public RebootAnswer rebootInstance(String hostGuid, String extensionName, String extensionRelativePath,
+    public RebootAnswer rebootInstance(String hostName, String extensionName, String extensionRelativePath,
                            RebootCommand cmd) {
         String extensionPath = getExtensionCheckedPath(extensionName, extensionRelativePath);
         if (StringUtils.isEmpty(extensionPath)) {
-            return new RebootAnswer(cmd, "Extension not configured", false);
+            return new RebootAnswer(cmd, getExtensionConfigureError(extensionName, hostName), false);
         }
         VirtualMachineTO virtualMachineTO = cmd.getVirtualMachine();
         String vmUUID = virtualMachineTO.getUuid();
@@ -425,11 +429,11 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
     }
 
     @Override
-    public StopAnswer expungeInstance(String hostGuid, String extensionName, String extensionRelativePath,
+    public StopAnswer expungeInstance(String hostName, String extensionName, String extensionRelativePath,
                           StopCommand cmd) {
         String extensionPath = getExtensionCheckedPath(extensionName, extensionRelativePath);
         if (StringUtils.isEmpty(extensionPath)) {
-            return new StopAnswer(cmd, "Extension not configured", false);
+            return new StopAnswer(cmd, getExtensionConfigureError(extensionName, hostName), false);
         }
         VirtualMachineTO virtualMachineTO = cmd.getVirtualMachine();
         String vmUUID = virtualMachineTO.getUuid();
@@ -473,11 +477,11 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
     }
 
     @Override
-    public GetExternalConsoleAnswer getInstanceConsole(String hostGuid, String extensionName,
+    public GetExternalConsoleAnswer getInstanceConsole(String hostName, String extensionName,
                            String extensionRelativePath, GetExternalConsoleCommand cmd) {
         String extensionPath = getExtensionCheckedPath(extensionName, extensionRelativePath);
         if (StringUtils.isEmpty(extensionPath)) {
-            return new GetExternalConsoleAnswer(cmd, "Extension not configured");
+            return new GetExternalConsoleAnswer(cmd, getExtensionConfigureError(extensionName, hostName));
         }
         VirtualMachineTO virtualMachineTO = cmd.getVirtualMachine();
         String vmUUID = virtualMachineTO.getUuid();
@@ -519,11 +523,11 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
     }
 
     @Override
-    public RunCustomActionAnswer runCustomAction(String hostGuid, String extensionName,
+    public RunCustomActionAnswer runCustomAction(String hostName, String extensionName,
                          String extensionRelativePath, RunCustomActionCommand cmd) {
         String extensionPath = getExtensionCheckedPath(extensionName, extensionRelativePath);
         if (StringUtils.isEmpty(extensionPath)) {
-            return new RunCustomActionAnswer(cmd, false, "Extension not configured");
+            return new RunCustomActionAnswer(cmd, false, getExtensionConfigureError(extensionName, hostName));
         }
         final String actionName = cmd.getActionName();
         final Map<String, Object> parameters = cmd.getParameters();

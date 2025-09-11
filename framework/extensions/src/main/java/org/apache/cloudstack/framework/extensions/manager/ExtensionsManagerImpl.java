@@ -1535,7 +1535,10 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         Extension extension = getExtensionForCluster(host.getClusterId());
         if (extension == null || !Extension.Type.Orchestrator.equals(extension.getType()) ||
                 !Extension.State.Enabled.equals(extension.getState())) {
-            return new Answer(null, false, "No enabled orchestrator extension found for the host");
+            logger.error("No enabled orchestrator {} found for the {} while trying to get console for {}",
+                    extension == null ? "extension" : extension, host, vm);
+            return new Answer(null, false,
+                    String.format("No enabled orchestrator extension found for the host: %s", host.getName()));
         }
         VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vm);
         VirtualMachineTO virtualMachineTO = virtualMachineManager.toVmTO(vmProfile);
