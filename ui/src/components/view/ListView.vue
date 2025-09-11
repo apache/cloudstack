@@ -236,13 +236,13 @@
       <template v-if="column.key === 'schedule'">
         <div v-if="['/snapshotpolicy', '/backupschedule'].some(path => $route.path.endsWith(path))">
           <label class="interval-content">
-            <span v-if="record.intervaltype===0">{{ record.schedule + $t('label.min.past.hour') }}</span>
+            <span v-if="record.intervaltype===0 || record.intervaltype==='HOURLY'">{{ record.schedule + $t('label.min.past.hour') }}</span>
             <span v-else>{{ record.schedule.split(':')[1] + ':' + record.schedule.split(':')[0] }}</span>
           </label>
-          <span v-if="record.intervaltype===2">
+          <span v-if="record.intervaltype===2 || record.intervaltype==='WEEKLY'">
             {{ ` ${$t('label.every')} ${$t(listDayOfWeek[record.schedule.split(':')[2] - 1])}` }}
           </span>
-          <span v-else-if="record.intervaltype===3">
+          <span v-else-if="record.intervaltype===3 || record.intervaltype==='MONTHLY'">
             {{ ` ${$t('label.day')} ${record.schedule.split(':')[2]} ${$t('label.of.month')}` }}
           </span>
         </div>
