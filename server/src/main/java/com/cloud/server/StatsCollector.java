@@ -46,6 +46,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.utils.DateUtil;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
@@ -294,7 +295,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private static StatsCollector s_instance = null;
 
     private static Gson gson = new GsonBuilder()
-            .setDateFormat(GsonHelper.DATE_FORMAT)
+            .setDateFormat(DateUtil.ZONED_DATETIME_FORMAT)
             .create();
 
     private ScheduledExecutorService _executor = null;

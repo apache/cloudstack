@@ -19,9 +19,13 @@ package com.cloud.serializer;
 
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.utils.DateUtil;
 import com.google.gson.Gson;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -77,5 +81,52 @@ public class GsonHelperTest {
         assertNotNull(deserializedNfsTO);
         assertEquals("http://example.com", deserializedNfsTO.getUrl());
         assertEquals(DataStoreRole.Primary, deserializedNfsTO.getRole());
+    }
+
+    @Test
+    public void testGsonDateFormatSerialization() {
+        Date now = new Date();
+        TestClass testObj = new TestClass("TestString", 999, now);
+        String json = gson.toJson(testObj);
+
+        assertTrue(json.contains("TestString"));
+        assertTrue(json.contains("999"));
+        String expectedDate = new SimpleDateFormat(DateUtil.ZONED_DATETIME_FORMAT).format(now);
+        assertTrue(json.contains(expectedDate));
+    }
+
+    @Test
+    public void testGsonDateFormatDeserialization() throws Exception {
+        String json = "{\"str\":\"TestString\",\"num\":999,\"date\":\"2025-08-22T15:39:43+0000\"}";
+        TestClass testObj = gson.fromJson(json, TestClass.class);
+
+        assertEquals("TestString", testObj.getStr());
+        assertEquals(999, testObj.getNum());
+        Date expectedDate = new SimpleDateFormat(DateUtil.ZONED_DATETIME_FORMAT).parse("2025-08-22T15:39:43+0000");
+        assertEquals(expectedDate, testObj.getDate());
+    }
+
+    private static class TestClass {
+        private String str;
+        private int num;
+        private Date date;
+
+        public TestClass(String str, int num, Date date) {
+            this.str = str;
+            this.num = num;
+            this.date = date;
+        }
+
+        public String getStr() {
+            return str;
+        }
+
+        public int getNum() {
+            return num;
+        }
+
+        public Date getDate() {
+            return date;
+        }
     }
 }
