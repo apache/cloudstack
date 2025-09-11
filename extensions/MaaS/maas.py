@@ -47,7 +47,11 @@ class MaasManager:
 
             endpoint = host.get("endpoint") or extension.get("endpoint")
             apikey = host.get("apikey") or extension.get("apikey")
-            distro_series = host.get("distro_series") or extension.get("distro_series") or "ubuntu"
+            distro_series = (
+                json_data.get("cloudstack.vm.details", {})
+                .get("details", {})
+                .get("distro_series", "ubuntu")
+            )
 
             if not endpoint or not apikey:
                 fail("Missing MAAS endpoint or apikey")
