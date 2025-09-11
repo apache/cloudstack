@@ -18,7 +18,7 @@
 
 parse_json() {
     local json_string="$1"
-    echo "$json_string" | jq '.' > /dev/null || { echo '{"error":"Invalid JSON input"}'; exit 1; }
+    echo "$json_string" | jq '.' > /dev/null || { echo '{"status": "error", "error": "Invalid JSON input"}'; exit 1; }
 
     local -A details
     while IFS="=" read -r key value; do
@@ -112,9 +112,14 @@ call_proxmox_api() {
       curl_opts+=(-d "$data")
     fi
 
-    #echo curl "${curl_opts[@]}" "https://${url}:8006/api2/json${path}" >&2
     response=$(curl "${curl_opts[@]}" "https://${url}:8006/api2/json${path}")
+    local status=$?
+    if [[ $status -ne 0 ]]; then
+        echo "{\"errors\":{\"curl\":\"API call failed with status $status: $(echo "$response" | jq -Rsa . | jq -r .)\"}}"
+        return $status
+    fi
     echo "$response"
+    return 0
 }
 
 wait_for_proxmox_task() {
@@ -129,7 +134,7 @@ wait_for_proxmox_task() {
         local now
         now=$(date +%s)
         if (( now - start_time > timeout )); then
-            echo '{"error":"Timeout while waiting for async task"}'
+            echo '{"status": "error", "error":"Timeout while waiting for async task"}'
             exit 1
         fi
 
@@ -139,7 +144,7 @@ wait_for_proxmox_task() {
         if [[ -z "$status_response" || "$status_response" == *'"errors":'* ]]; then
             local msg
             msg=$(echo "$status_response" | jq -r '.message // "Unknown error"')
-            echo "{\"error\":\"$msg\"}"
+            echo "{\"status\": \"error\", \"error\": \"$msg\"}"
             exit 1
         fi
 
@@ -286,85 +291,81 @@ status() {
 }
 
 get_node_host() {
-   check_required_fields node
-   local net_json host
+    check_required_fields node
+    local net_json host
 
-   if ! net_json="$(call_proxmox_api GET "/nodes/${node}/network")"; then
-     echo ""
-     return 1
-   fi
+    if ! net_json="$(call_proxmox_api GET "/nodes/${node}/network")"; then
+        echo ""
+        return 1
+    fi
 
-   # Prefer a static non-bridge IP
-   host="$(echo "$net_json" | jq -r '
-     .data
-     | map(select(
-         (.type // "") != "bridge" and
-         (.type // "") != "bond" and
-         (.method // "") == "static" and
-         ((.address // .cidr // "") != "")
-       ))
-     | map(.address // (.cidr | split("/")[0]))
-     | .[0] // empty
-   ' 2>/dev/null)"
+    # Prefer a static non-bridge IP
+    host="$(echo "$net_json" | jq -r '
+        .data
+        | map(select(
+            (.type // "") != "bridge" and
+            (.type // "") != "bond" and
+            (.method // "") == "static" and
+            ((.address // .cidr // "") != "")
+        ))
+        | map(.address // (.cidr | split("/")[0]))
+        | .[0] // empty
+    ' 2>/dev/null)"
 
-   # Fallback: first interface with a CIDR
-   if [[ -z "$host" ]]; then
-     host="$(echo "$net_json" | jq -r '
-       .data
-       | map(select((.cidr // "") != ""))
-       | map(.cidr | split("/")[0])
-       | .[0] // empty
-     ' 2>/dev/null)"
-   fi
+    # Fallback: first interface with a CIDR
+    if [[ -z "$host" ]]; then
+        host="$(echo "$net_json" | jq -r '
+            .data
+            | map(select((.cidr // "") != ""))
+            | map(.cidr | split("/")[0])
+            | .[0] // empty
+        ' 2>/dev/null)"
+    fi
 
-   echo "$host"
- }
+    echo "$host"
+}
 
  get_console() {
-   check_required_fields node vmid
+     check_required_fields node vmid
 
-   # Request VNC proxy from Proxmox
-   local api_resp port ticket
-   if ! api_resp="$(call_proxmox_api POST "/nodes/${node}/qemu/${vmid}/vncproxy")"; then
-     jq -n --arg msg "API call failed for node=$node vmid=$vmid" \
-       '{status:"error", message:$msg, code:"API_CALL_FAILED"}'
-     return 1
-   fi
+     local api_resp port ticket
+     if ! api_resp="$(call_proxmox_api POST "/nodes/${node}/qemu/${vmid}/vncproxy")"; then
+         echo "$api_resp" | jq -c '{status:"error", error:(.errors.curl // (.errors|tostring))}'
+         exit 1
+     fi
 
-   port="$(echo "$api_resp"   | jq -re '.data.port // empty' 2>/dev/null || true)"
-   ticket="$(echo "$api_resp" | jq -re '.data.ticket // empty' 2>/dev/null || true)"
+     port="$(echo "$api_resp"   | jq -re '.data.port // empty' 2>/dev/null || true)"
+     ticket="$(echo "$api_resp" | jq -re '.data.ticket // empty' 2>/dev/null || true)"
 
-   if [[ -z "$port" || -z "$ticket" ]]; then
-     jq -n --arg msg "Proxmox response missing port/ticket" \
-       --arg raw "$api_resp" \
-       '{status:"error", message:$msg, code:"BAD_UPSTREAM_RESPONSE", upstream:$raw}'
-     return 1
-   fi
+     if [[ -z "$port" || -z "$ticket" ]]; then
+         jq -n --arg raw "$api_resp" \
+             '{status:"error", error:"Proxmox response missing port/ticket", upstream:$raw}'
+         exit 1
+     fi
 
-   # Derive host from node’s network info
-   local host
-   host="$(get_node_host)"
-   if [[ -z "$host" ]]; then
-     jq -n --arg msg "Could not determine host IP for node $node" \
-       '{status:"error", message:$msg, code:"HOST_RESOLUTION_ERROR"}'
-     return 1
-   fi
+     # Derive host from node’s network info
+     local host
+     host="$(get_node_host)"
+     if [[ -z "$host" ]]; then
+         jq -n --arg msg "Could not determine host IP for node $node" \
+             '{status:"error", error:$msg}'
+         exit 1
+     fi
 
-   # Success JSON to stdout
-   jq -n \
-     --arg host "$host" \
-     --arg port "$port" \
-     --arg password "$ticket" \
-     '{
-        status: "success",
-        message: "Console retrieved",
-        console: {
-          host: $host,
-          port: $port,
-          password: $password,
-          protocol: "vnc"
-        }
-      }'
+     jq -n \
+         --arg host "$host" \
+         --arg port "$port" \
+         --arg password "$ticket" \
+         '{
+             status: "success",
+             message: "Console retrieved",
+             console: {
+                 host: $host,
+                 port: $port,
+                 password: $password,
+                 protocol: "vnc"
+             }
+         }'
  }
 
 list_snapshots() {
@@ -438,7 +439,12 @@ parameters_file="$2"
 wait_time=$3
 
 if [[ -z "$action" || -z "$parameters_file" ]]; then
-    echo '{"error":"Missing required arguments"}'
+    echo '{"status": "error", "error": "Missing required arguments"}'
+    exit 1
+fi
+
+if [[ ! -r "$parameters_file" ]]; then
+    echo '{"status": "error", "error": "File not found or unreadable"}'
     exit 1
 fi
 
@@ -479,7 +485,7 @@ case $action in
         status
         ;;
     getconsole)
-        get_console "$parameters"
+        get_console
         ;;
     ListSnapshots)
         list_snapshots
@@ -494,7 +500,7 @@ case $action in
         delete_snapshot
         ;;
     *)
-        echo '{"error":"Invalid action"}'
+        echo '{"status": "error", "error": "Invalid action"}'
         exit 1
         ;;
 esac
