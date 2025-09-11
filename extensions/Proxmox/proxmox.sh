@@ -311,7 +311,7 @@ statuses() {
           .data
           | map(select(.template != 1))
           | map({ ( (.name // (.vmid|tostring)) ): map_state(.status) })
-          | add
+          | add // {}
         )
       }'
 }
