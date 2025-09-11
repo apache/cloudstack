@@ -1250,9 +1250,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         try {
             FilterByVpc vpcFilter = new FilterByVpc();
             vpcFilter.add(associatedVpc.getId());
-            FilterBySites siteFilter = new FilterBySites();
-            siteFilter.add(siteId);
-            List<VnetsBody> vnetsList = getVnets(associatedVpc, prevVnetName, siteFilter, vpcFilter);
+            List<VnetsBody> vnetsList = getVnets(associatedVpc, prevVnetName, vpcFilter);
             if (CollectionUtils.isEmpty(vnetsList)) {
                 String errorMsg = String.format("Could not find vNet with name: %s", prevVnetName);
                 logger.error(errorMsg);
@@ -1355,9 +1353,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             String netrisSubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET, String.valueOf(cmd.getVpcId()), vnetCidr);
             FilterByVpc vpcFilter = new FilterByVpc();
             vpcFilter.add(associatedVpc.getId());
-            FilterBySites siteFilter = new FilterBySites();
-            siteFilter.add(siteId);
-            deleteVnetInternal(associatedVpc, siteFilter, vpcFilter, netrisVnetName, vNetName);
+            deleteVnetInternal(associatedVpc, vpcFilter, netrisVnetName, vNetName);
 
             logger.debug("Successfully deleted vNet {}", vNetName);
             deleteSubnetInternal(vpcFilter, netrisVnetName, netrisSubnetName);
@@ -1750,10 +1746,11 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         return true;
     }
 
-    private List<VnetsBody> getVnets(VPCListing associatedVpc, String netrisVnetName, FilterBySites siteFilter, FilterByVpc vpcFilter) {
+    private List<VnetsBody> getVnets(VPCListing associatedVpc, String netrisVnetName, FilterByVpc vpcFilter) {
+        // Filter by site not working as expected, so filtering by VPC only and then filtering by name in the code
         try {
             VNetApi vNetApi = apiClient.getApiStubForMethod(VNetApi.class);
-            VnetResListBody vnetList = vNetApi.apiV2VnetGet(siteFilter, vpcFilter);
+            VnetResListBody vnetList = vNetApi.apiV2VnetGet(null, vpcFilter);
             if (vnetList == null || !vnetList.isIsSuccess()) {
                 throw new CloudRuntimeException(String.format("Failed to list vNets for the given VPC: %s and site: %s", associatedVpc.getName(), siteName));
             }
@@ -1764,10 +1761,10 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         return Collections.emptyList();
     }
 
-    private void deleteVnetInternal(VPCListing associatedVpc, FilterBySites siteFilter, FilterByVpc vpcFilter, String netrisVnetName, String vNetName) {
+    private void deleteVnetInternal(VPCListing associatedVpc, FilterByVpc vpcFilter, String netrisVnetName, String vNetName) {
         try {
             VNetApi vNetApi = apiClient.getApiStubForMethod(VNetApi.class);
-            List<VnetsBody> vnetsList = getVnets(associatedVpc, netrisVnetName, siteFilter, vpcFilter);
+            List<VnetsBody> vnetsList = getVnets(associatedVpc, netrisVnetName, vpcFilter);
             if (CollectionUtils.isEmpty(vnetsList)) {
                 logger.debug("vNet: {} for the given VPC: {} appears to already be deleted on Netris", vNetName, associatedVpc.getName());
                 return;
