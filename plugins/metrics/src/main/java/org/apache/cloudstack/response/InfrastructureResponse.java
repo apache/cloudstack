@@ -19,6 +19,8 @@ package org.apache.cloudstack.response;
 
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
+
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 public class InfrastructureResponse extends BaseResponse {
@@ -75,6 +77,10 @@ public class InfrastructureResponse extends BaseResponse {
     @Param(description = "Number of Alerts")
     private Integer alerts;
 
+    @SerializedName(ApiConstants.IMAGE_CACHE_STORES)
+    @Param(description = "Number of image cache stores", since = "4.22.0")
+    private Integer imageCacheStores;
+
     public InfrastructureResponse() {
         setObjectName("infrastructure");
     }
@@ -125,5 +131,9 @@ public class InfrastructureResponse extends BaseResponse {
 
     public void setObjectStores(Integer objectStores) {
         this.objectStores = objectStores;
+    }
+
+    public void setImageCacheStores(Integer imageCacheStores) {
+        this.imageCacheStores = imageCacheStores;
     }
 }
