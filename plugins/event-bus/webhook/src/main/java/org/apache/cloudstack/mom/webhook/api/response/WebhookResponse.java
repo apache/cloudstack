@@ -55,7 +55,7 @@ public class WebhookResponse extends BaseResponse implements ControlledViewEntit
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the domain to which the Webhook belongs")
+    @Param(description = "Path of the domain to which the Webhook belongs")
     private String domainPath;
 
     @SerializedName(ApiConstants.ACCOUNT)

@@ -416,7 +416,7 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
                 result.setTunnelUrl(authAnswer.getTunnelUrl());
                 result.setTunnelSession(authAnswer.getTunnelSession());
             } else {
-                logger.error("Authentication failed for vm: {} with sid: {}", vmId, sid);
+                logger.error("Authentication failed for Instance: {} with sid: {}", vmId, sid);
             }
         } catch (AgentControlChannelException e) {
             logger.error("Unable to send out console access authentication request due to {}", e.getMessage(), e);

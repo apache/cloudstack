@@ -987,7 +987,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
 
             if (!allTemplatesDeleted) {
-                logger.warn("Failed to delete templates while removing account {}", account);
+                logger.warn("Failed to delete Templates while removing account {}", account);
                 accountCleanupNeeded = true;
             }
 
@@ -997,7 +997,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 try {
                     _vmSnapshotMgr.deleteVMSnapshot(vmSnapshot.getId());
                 } catch (Exception e) {
-                    logger.debug("Failed to cleanup vm snapshot {} due to {}", vmSnapshot, e.toString());
+                    logger.debug("Failed to cleanup Instance Snapshot {} due to {}", vmSnapshot, e.toString());
                 }
             }
 
@@ -1006,7 +1006,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             // Destroy the account's VMs
             List<UserVmVO> vms = _userVmDao.listByAccountId(accountId);
             if (logger.isDebugEnabled()) {
-                logger.debug("Expunging # of vms (account={}): {}", account, vms.size());
+                logger.debug("Expunging # of Instances (account={}): {}", account, vms.size());
             }
 
             for (UserVmVO vm : vms) {
@@ -1015,13 +1015,13 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                         _vmMgr.destroyVm(vm.getId(), false);
                     } catch (Exception e) {
                         e.printStackTrace();
-                        logger.warn("Failed destroying instance {} as part of account deletion.", vm);
+                        logger.warn("Failed destroying Instance {} as part of account deletion.", vm);
                     }
                 }
                 // no need to catch exception at this place as expunging vm
                 // should pass in order to perform further cleanup
                 if (!_vmMgr.expunge(vm)) {
-                    logger.error("Unable to expunge vm: {}", vm);
+                    logger.error("Unable to expunge Instance: {}", vm);
                     accountCleanupNeeded = true;
                 }
             }
@@ -1273,7 +1273,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 try {
                     _itMgr.advanceStop(vm.getUuid(), false);
                 } catch (OperationTimedoutException ote) {
-                    logger.warn("Operation for stopping vm timed out, unable to stop vm {}", vm, ote);
+                    logger.warn("Operation for stopping Instance timed out, unable to stop vm {}", vm, ote);
                     success = false;
                 }
             } catch (AgentUnavailableException aue) {

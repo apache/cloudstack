@@ -164,9 +164,9 @@ public class Upgrade450to451 extends DbUpgradeAbstractImpl {
     private void upgradeVMWareLocalStorage(Connection conn) {
         try (PreparedStatement updatePstmt = conn.prepareStatement("UPDATE storage_pool SET pool_type='VMFS',host_address=@newaddress WHERE (@newaddress:=concat('VMFS datastore: ', path)) IS NOT NULL AND scope = 'HOST' AND pool_type = 'LVM' AND id IN (SELECT * FROM (SELECT storage_pool.id FROM storage_pool,cluster WHERE storage_pool.cluster_id = cluster.id AND cluster.hypervisor_type='VMware') AS t);");) {
             updatePstmt.executeUpdate();
-            logger.debug("Done, upgraded VMWare local storage pool type to VMFS and host_address to the VMFS format");
+            logger.debug("Done, upgraded VMware local storage pool type to VMFS and host_address to the VMFS format");
         } catch (SQLException e) {
-            throw new CloudRuntimeException("Unable to upgrade VMWare local storage pool type", e);
+            throw new CloudRuntimeException("Unable to upgrade VMware local storage pool type", e);
         }
     }
 }

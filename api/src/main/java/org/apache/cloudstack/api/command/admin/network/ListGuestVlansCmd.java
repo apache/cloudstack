@@ -33,7 +33,7 @@ import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.network.GuestVlan;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listGuestVlans", description = "Lists all guest vlans", responseObject = GuestVlanResponse.class,
+@APICommand(name = "listGuestVlans", description = "Lists all guest VLANs", responseObject = GuestVlanResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         since = "4.17.0",
         authorized = {RoleType.Admin})
@@ -44,19 +44,19 @@ public class ListGuestVlansCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required = false, description = "list guest vlan by id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required = false, description = "List guest VLAN by ID")
     private Long id;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = false, description = "list guest vlan by zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = false, description = "List guest VLAN by zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, required = false, description = "list guest vlan by physical network")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, required = false, description = "List guest VLAN by physical Network")
     private Long physicalNetworkId;
 
-    @Parameter(name = ApiConstants.VNET, type = CommandType.STRING, required = false, description = "list guest vlan by vnet")
+    @Parameter(name = ApiConstants.VNET, type = CommandType.STRING, required = false, description = "List guest VLAN by vnet")
     private String vnet;
 
-    @Parameter(name = ApiConstants.ALLOCATED_ONLY, type = CommandType.BOOLEAN, required = false, description = "limits search results to allocated guest vlan. false by default.")
+    @Parameter(name = ApiConstants.ALLOCATED_ONLY, type = CommandType.BOOLEAN, required = false, description = "Limits search results to allocated guest VLAN. False by default.")
     private Boolean allocatedOnly;
 
     /////////////////////////////////////////////////////

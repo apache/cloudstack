@@ -265,8 +265,8 @@ public class VmwareStorageLayoutHelper implements Configurable {
                 String link = "https://github.com/apache/cloudstack/pull/6283";
                 String message = String.format("Failed to list folder content of VM [name: %s] due to: [%s]. For more information about this error, or "
                         + "to know why ACS tries to check folder content, please check this link [%s]. This error apparently only occurs with datastores that use the NFS protocol and "
-                        + "in specific versions of VMWare. Users using VMFS or VMWare versions greater than 6.7 have not reported this error. If the operation performed is a volume detach, "
-                        + "it was successful. If you want to know why this error occurs in VMWare, please contact VMWare's technical support.",
+                        + "in specific versions of VMware. Users using VMFS or VMware versions greater than 6.7 have not reported this error. If the operation performed is a volume detach, "
+                        + "it was successful. If you want to know why this error occurs in VMware, please contact VMware's technical support.",
                         vmName, e.getMessage(), link);
                 LOGGER.warn(message, e);
             } else {

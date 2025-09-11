@@ -45,7 +45,7 @@ public class RemoveCertFromLoadBalancerCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = FirewallRuleResponse.class,
                required = true,
-               description = "the ID of the load balancer rule")
+               description = "The ID of the load balancer rule")
     Long lbRuleId;
 
     @Override

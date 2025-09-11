@@ -46,23 +46,23 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.GATEWAY_ID,
                type = CommandType.UUID,
                entityType = PrivateGatewayResponse.class,
-               description = "the gateway id we are creating static route for. Mutually exclusive with the nexthop parameter")
+               description = "The gateway id we are creating static route for. Mutually exclusive with the nexthop parameter")
     private Long gatewayId;
 
     @Parameter(name = ApiConstants.VPC_ID,
             type = CommandType.UUID,
             entityType = VpcResponse.class,
-            description = "the vpc id for which the static route is created. This is required for nexthop parameter",
+            description = "The VPC ID for which the static route is created. This is required for nexthop parameter",
             since = "4.21.0")
     private Long vpcId;
 
     @Parameter(name = ApiConstants.NEXT_HOP,
             type = CommandType.STRING,
-            description = "the next hop of static route. Mutually exclusive with the gatewayid parameter",
+            description = "The next hop of static route. Mutually exclusive with the gatewayid parameter",
             since = "4.21.0")
     private String nextHop;
 
-    @Parameter(name = ApiConstants.CIDR, required = true, type = CommandType.STRING, description = "static route cidr")
+    @Parameter(name = ApiConstants.CIDR, required = true, type = CommandType.STRING, description = "Static route CIDR")
     private String cidr;
 
     /////////////////////////////////////////////////////
@@ -128,7 +128,7 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd {
         } finally {
             if (!success || route == null) {
                 _entityMgr.remove(StaticRoute.class, getEntityId());
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create static route");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create a static route");
             }
         }
     }

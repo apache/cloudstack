@@ -39,32 +39,32 @@ public class UpdateTrafficTypeCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TrafficTypeResponse.class, required = true, description = "traffic type id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TrafficTypeResponse.class, required = true, description = "Traffic type ID")
     private Long id;
 
     @Parameter(name = ApiConstants.XENSERVER_NETWORK_LABEL,
                type = CommandType.STRING,
-               description = "The network name label of the physical device dedicated to this traffic on a XenServer host")
+               description = "The Network name label of the physical device dedicated to this traffic on a XenServer host")
     private String xenLabel;
 
     @Parameter(name = ApiConstants.KVM_NETWORK_LABEL,
                type = CommandType.STRING,
-               description = "The network name label of the physical device dedicated to this traffic on a KVM host")
+               description = "The Network name label of the physical device dedicated to this traffic on a KVM host")
     private String kvmLabel;
 
     @Parameter(name = ApiConstants.VMWARE_NETWORK_LABEL,
                type = CommandType.STRING,
-               description = "The network name label of the physical device dedicated to this traffic on a VMware host")
+               description = "The Network name label of the physical device dedicated to this traffic on a VMware host")
     private String vmwareLabel;
 
     @Parameter(name = ApiConstants.HYPERV_NETWORK_LABEL,
                type = CommandType.STRING,
-               description = "The network name label of the physical device dedicated to this traffic on a Hyperv host")
+               description = "The Network name label of the physical device dedicated to this traffic on a Hyperv host")
     private String hypervLabel;
 
     @Parameter(name = ApiConstants.OVM3_NETWORK_LABEL,
                type = CommandType.STRING,
-               description = "The network name of the physical device dedicated to this traffic on an OVM3 host")
+               description = "The Network name of the physical device dedicated to this traffic on an OVM3 host")
     private String ovm3Label;
 
     /////////////////////////////////////////////////////

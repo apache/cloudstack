@@ -29,31 +29,31 @@ import com.cloud.storage.GuestOSHypervisor;
 @EntityReference(value = GuestOSHypervisor.class)
 public class GuestOsMappingResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the Guest OS mapping")
+    @Param(description = "The ID of the Guest OS mapping")
     private String id;
 
     @SerializedName(ApiConstants.HYPERVISOR)
-    @Param(description = "the hypervisor")
+    @Param(description = "The hypervisor")
     private String hypervisor;
 
     @SerializedName(ApiConstants.HYPERVISOR_VERSION)
-    @Param(description = "version of the hypervisor for mapping")
+    @Param(description = "Version of the hypervisor for mapping")
     private String hypervisorVersion;
 
     @SerializedName(ApiConstants.OS_TYPE_ID)
-    @Param(description = "the ID of the Guest OS type")
+    @Param(description = "The ID of the Guest OS type")
     private String osTypeId;
 
     @SerializedName(ApiConstants.OS_DISPLAY_NAME)
-    @Param(description = "standard display name for the Guest OS")
+    @Param(description = "Standard display name for the Guest OS")
     private String osStdName;
 
     @SerializedName(ApiConstants.OS_NAME_FOR_HYPERVISOR)
-    @Param(description = "hypervisor specific name for the Guest OS")
+    @Param(description = "Hypervisor specific name for the Guest OS")
     private String osNameForHypervisor;
 
     @SerializedName(ApiConstants.IS_USER_DEFINED)
-    @Param(description = "is the mapping user defined")
+    @Param(description = "Is the mapping user defined")
     private String isUserDefined;
 
     public String getIsUserDefined() {

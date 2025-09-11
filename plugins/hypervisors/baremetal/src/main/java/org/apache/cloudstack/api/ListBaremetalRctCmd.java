@@ -32,7 +32,7 @@ import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 
-@APICommand(name = "listBaremetalRct", description = "list baremetal rack configuration", responseObject = BaremetalRctResponse.class,
+@APICommand(name = "listBaremetalRct", description = "List baremetal rack configuration", responseObject = BaremetalRctResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
 public class ListBaremetalRctCmd extends BaseListCmd {
     @Inject

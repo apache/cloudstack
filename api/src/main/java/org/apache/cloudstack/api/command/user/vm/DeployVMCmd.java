@@ -42,7 +42,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "deployVirtualMachine", description = "Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
+@APICommand(name = "deployVirtualMachine", description = "Creates and automatically starts an Instance based on a service offering, disk offering, and Template.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class DeployVMCmd extends BaseDeployVMCmd {
 
@@ -51,11 +51,11 @@ public class DeployVMCmd extends BaseDeployVMCmd {
     /////////////////////////////////////////////////////
 
     @ACL
-    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class, required = true, description = "the ID of the service offering for the virtual machine")
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class, required = true, description = "The ID of the Service offering for the Instance")
     private Long serviceOfferingId;
 
     @ACL
-    @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class, description = "the ID of the template for the virtual machine")
+    @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class, required = true, description = "The ID of the Template for the Instance")
     private Long templateId;
 
     @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.UUID, entityType = VolumeResponse.class, since = "4.21")
@@ -91,7 +91,7 @@ public class DeployVMCmd extends BaseDeployVMCmd {
     public void execute() {
         UserVm result;
 
-        CallContext.current().setEventDetails("Vm Id: " + getEntityUuid());
+        CallContext.current().setEventDetails("Instance Id: " + getEntityUuid());
         if (getStartVm()) {
             try {
                 result = _userVmService.startVirtualMachine(this);
@@ -116,7 +116,7 @@ public class DeployVMCmd extends BaseDeployVMCmd {
                 throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, message.toString());
             }
         } else {
-            logger.info("VM " + getEntityUuid() + " already created, load UserVm from DB");
+            logger.info("Instance " + getEntityUuid() + " already created, load UserVm from DB");
             result = _userVmService.finalizeCreateVirtualMachine(getEntityId());
         }
 
@@ -125,7 +125,7 @@ public class DeployVMCmd extends BaseDeployVMCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to deploy vm uuid:"+getEntityUuid());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to deploy Instance UUID:"+getEntityUuid());
         }
     }
 
@@ -142,7 +142,7 @@ public class DeployVMCmd extends BaseDeployVMCmd {
                 setEntityId(vm.getId());
                 setEntityUuid(vm.getUuid());
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to deploy vm");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to deploy Instance");
             }
         } catch (InsufficientCapacityException ex) {
             logger.info(ex);

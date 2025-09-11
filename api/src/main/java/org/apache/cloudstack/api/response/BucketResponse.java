@@ -49,17 +49,17 @@ public class BucketResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "the project name of the bucket")
     private String projectName;
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the ID of the domain associated with the bucket")
+    @Param(description = "The ID of the domain associated with the bucket")
     private String domainId;
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain associated with the bucket")
+    @Param(description = "The domain associated with the bucket")
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the domain to which the bucket belongs", since = "4.19.2.0")
+    @Param(description = "Path of the domain to which the bucket belongs", since = "4.19.2.0")
     private String domainPath;
     @SerializedName(ApiConstants.OBJECT_STORAGE_ID)
-    @Param(description = "id of the object storage hosting the Bucket; returned to admin user only")
+    @Param(description = "ID of the object storage hosting the Bucket; returned to admin user only")
     private String objectStoragePoolId;
 
     @SerializedName(ApiConstants.OBJECT_STORAGE)

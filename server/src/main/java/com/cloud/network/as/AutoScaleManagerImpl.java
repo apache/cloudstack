@@ -554,8 +554,8 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             throw new InvalidParameterValueException("Unable to find template by id " + cmd.getTemplateId());
         }
         if (HypervisorType.External.equals(template.getHypervisorType())) {
-            logger.error("Cannot create AutoScale Vm Profile with {} as it is an {} hypervisor template", template, HypervisorType.External);
-            throw new InvalidParameterValueException(String.format("Unable to create AutoScale Vm Profile with template: %s", template.getName()));
+            logger.error("Cannot create AutoScale VM Profile with {} as it is an {} hypervisor template", template, HypervisorType.External);
+            throw new InvalidParameterValueException(String.format("Unable to create AutoScale VM Profile with template: %s", template.getName()));
         }
 
         // validations
@@ -594,7 +594,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
 
         profileVO = checkValidityAndPersist(profileVO, true);
-        logger.info("Successfully create AutoScale Vm Profile: {}", profileVO);
+        logger.info("Successfully create AutoScale VM Profile: {}", profileVO);
 
         return profileVO;
     }
@@ -670,7 +670,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         List<AutoScaleVmGroupVO> vmGroupList = autoScaleVmGroupDao.listByAll(null, profileId);
         for (AutoScaleVmGroupVO vmGroupVO : vmGroupList) {
             if (physicalParameterUpdate && !vmGroupVO.getState().equals(AutoScaleVmGroup.State.DISABLED)) {
-                throw new InvalidParameterValueException("The AutoScale Vm Profile can be updated only if the Vm Group it is associated with is disabled in state");
+                throw new InvalidParameterValueException("The AutoScale VM Profile can be updated only if the Vm Group it is associated with is disabled in state");
             }
         }
 
@@ -684,14 +684,14 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     @ActionEvent(eventType = EventTypes.EVENT_AUTOSCALEVMPROFILE_DELETE, eventDescription = "deleting autoscale vm profile")
     public boolean deleteAutoScaleVmProfile(long id) {
         /* Check if entity is in database */
-        AutoScaleVmProfileVO vmProfile = getEntityInDatabase(CallContext.current().getCallingAccount(), "AutoScale Vm Profile", id, autoScaleVmProfileDao);
+        AutoScaleVmProfileVO vmProfile = getEntityInDatabase(CallContext.current().getCallingAccount(), "AutoScale VM Profile", id, autoScaleVmProfileDao);
         if (autoScaleVmGroupDao.isProfileInUse(id)) {
-            throw new InvalidParameterValueException("Cannot delete AutoScale Vm Profile when it is in use by one more vm groups");
+            throw new InvalidParameterValueException("Cannot delete AutoScale VM Profile when it is in use by one more vm groups");
         }
 
         boolean success = autoScaleVmProfileDao.remove(id);
         if (success) {
-            logger.info("Successfully deleted AutoScale Vm Profile: {}", vmProfile);
+            logger.info("Successfully deleted AutoScale VM Profile: {}", vmProfile);
         }
         return success;
     }
@@ -837,7 +837,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         AutoScalePolicyVO policy = getEntityInDatabase(CallContext.current().getCallingAccount(), "AutoScale Policy", id, autoScalePolicyDao);
 
         if (autoScaleVmGroupPolicyMapDao.isAutoScalePolicyInUse(id)) {
-            throw new InvalidParameterValueException("Cannot delete AutoScale Policy when it is in use by one or more AutoScale Vm Groups");
+            throw new InvalidParameterValueException("Cannot delete AutoScale Policy when it is in use by one or more AutoScale VM Groups");
         }
 
         return Transaction.execute(new TransactionCallback<Boolean>() {
@@ -1093,7 +1093,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_AUTOSCALEVMGROUP_DELETE, eventDescription = "deleting autoscale vm group", async = true)
     public boolean deleteAutoScaleVmGroup(final long id, final Boolean cleanup) {
-        AutoScaleVmGroupVO autoScaleVmGroupVO = getEntityInDatabase(CallContext.current().getCallingAccount(), "AutoScale Vm Group", id, autoScaleVmGroupDao);
+        AutoScaleVmGroupVO autoScaleVmGroupVO = getEntityInDatabase(CallContext.current().getCallingAccount(), "AutoScale VM Group", id, autoScaleVmGroupDao);
 
         if (autoScaleVmGroupVO.getState().equals(AutoScaleVmGroup.State.NEW)) {
             /* This condition is for handling failures during creation command */
@@ -1129,7 +1129,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             autoScaleVmGroupDao.persist(autoScaleVmGroupVO);
         } finally {
             if (!success) {
-                logger.warn("Could not delete AutoScale Vm Group : {}", autoScaleVmGroupVO);
+                logger.warn("Could not delete AutoScale VM Group : {}", autoScaleVmGroupVO);
                 return false;
             }
         }
@@ -1337,13 +1337,13 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         List<Long> scaleUpPolicyIds = cmd.getScaleUpPolicyIds();
         List<Long> scaleDownPolicyIds = cmd.getScaleDownPolicyIds();
 
-        AutoScaleVmGroupVO vmGroupVO = getEntityInDatabase(CallContext.current().getCallingAccount(), "AutoScale Vm Group", vmGroupId, autoScaleVmGroupDao);
+        AutoScaleVmGroupVO vmGroupVO = getEntityInDatabase(CallContext.current().getCallingAccount(), "AutoScale VM Group", vmGroupId, autoScaleVmGroupDao);
         int currentInterval = vmGroupVO.getInterval();
 
         boolean physicalParametersUpdate = (minMembers != null || maxMembers != null || (interval != null && interval != currentInterval) || CollectionUtils.isNotEmpty(scaleUpPolicyIds) || CollectionUtils.isNotEmpty(scaleDownPolicyIds));
 
         if (physicalParametersUpdate && !vmGroupVO.getState().equals(AutoScaleVmGroup.State.DISABLED)) {
-            throw new InvalidParameterValueException("An AutoScale Vm Group can be updated with minMembers/maxMembers/Interval only when it is in disabled state");
+            throw new InvalidParameterValueException("An AutoScale VM Group can be updated with minMembers/maxMembers/Interval only when it is in disabled state");
         }
 
         if (StringUtils.isNotBlank(name)) {
@@ -1387,7 +1387,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_AUTOSCALEVMGROUP_ENABLE, eventDescription = "enabling autoscale vm group", async = true)
     public AutoScaleVmGroup enableAutoScaleVmGroup(Long id) {
-        AutoScaleVmGroupVO vmGroup = getEntityInDatabase(CallContext.current().getCallingAccount(), "AutoScale Vm Group", id, autoScaleVmGroupDao);
+        AutoScaleVmGroupVO vmGroup = getEntityInDatabase(CallContext.current().getCallingAccount(), "AutoScale VM Group", id, autoScaleVmGroupDao);
         boolean success = false;
 
         if (vmGroup.getState().equals(AutoScaleVmGroup.State.ENABLED)) {
@@ -1395,7 +1395,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
 
         if (!vmGroup.getState().equals(AutoScaleVmGroup.State.DISABLED)) {
-            throw new InvalidParameterValueException("Only a AutoScale Vm Group which is in Disabled state can be enabled.");
+            throw new InvalidParameterValueException("Only a AutoScale VM Group which is in Disabled state can be enabled.");
         }
 
         try {
@@ -1408,10 +1408,10 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             autoScaleVmGroupDao.persist(vmGroup);
         } finally {
             if (!success) {
-                logger.warn("Failed to enable AutoScale Vm Group: {}", vmGroup);
+                logger.warn("Failed to enable AutoScale VM Group: {}", vmGroup);
                 return null;
             }
-            logger.info("Successfully enabled AutoScale Vm Group: {}", vmGroup);
+            logger.info("Successfully enabled AutoScale VM Group: {}", vmGroup);
             createInactiveDummyRecord(vmGroup.getId());
         }
         return vmGroup;
@@ -1421,7 +1421,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     @ActionEvent(eventType = EventTypes.EVENT_AUTOSCALEVMGROUP_DISABLE, eventDescription = "disabling autoscale vm group", async = true)
     @DB
     public AutoScaleVmGroup disableAutoScaleVmGroup(Long id) {
-        AutoScaleVmGroupVO vmGroup = getEntityInDatabase(CallContext.current().getCallingAccount(), "AutoScale Vm Group", id, autoScaleVmGroupDao);
+        AutoScaleVmGroupVO vmGroup = getEntityInDatabase(CallContext.current().getCallingAccount(), "AutoScale VM Group", id, autoScaleVmGroupDao);
         boolean success = false;
 
         if (vmGroup.getState().equals(AutoScaleVmGroup.State.DISABLED)) {
@@ -1429,7 +1429,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
 
         if (!vmGroup.getState().equals(AutoScaleVmGroup.State.ENABLED) && !vmGroup.getState().equals(AutoScaleVmGroup.State.SCALING)) {
-            throw new InvalidParameterValueException("Only a AutoScale Vm Group which is in Enabled or Scaling state can be disabled.");
+            throw new InvalidParameterValueException("Only a AutoScale VM Group which is in Enabled or Scaling state can be disabled.");
         }
 
         try {
@@ -1443,10 +1443,10 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             autoScaleVmGroupDao.persist(vmGroup);
         } finally {
             if (!success) {
-                logger.warn("Failed to disable AutoScale Vm Group: {}", vmGroup);
+                logger.warn("Failed to disable AutoScale VM Group: {}", vmGroup);
                 return null;
             }
-            logger.info("Successfully disabled AutoScale Vm Group: {}", vmGroup);
+            logger.info("Successfully disabled AutoScale VM Group: {}", vmGroup);
         }
         return vmGroup;
     }
@@ -1684,12 +1684,12 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         boolean success = true;
         List<AutoScaleVmGroupVO> groups = autoScaleVmGroupDao.listByAccount(account.getId());
         for (AutoScaleVmGroupVO group : groups) {
-            logger.debug("Deleting AutoScale Vm Group {} for account: {}", group, account);
+            logger.debug("Deleting AutoScale VM Group {} for account: {}", group, account);
             try {
                 deleteAutoScaleVmGroup(group.getId(), true);
-                logger.debug("AutoScale Vm Group {} has been successfully deleted for account: {}", group, account);
+                logger.debug("AutoScale VM Group {} has been successfully deleted for account: {}", group, account);
             } catch (Exception e) {
-                logger.warn("Failed to delete AutoScale Vm Group {} for account: {} due to: ", group, account, e);
+                logger.warn("Failed to delete AutoScale VM Group {} for account: {} due to: ", group, account, e);
                 success = false;
             }
         }
@@ -1702,7 +1702,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         int count = 0;
         count = autoScaleVmProfileDao.removeByAccountId(account.getId());
         if (count > 0) {
-            logger.debug("Deleted {} AutoScale Vm Profile for account: {}", count, account);
+            logger.debug("Deleted {} AutoScale VM Profile for account: {}", count, account);
         }
         count = autoScalePolicyDao.removeByAccountId(account.getId());
         if (count > 0) {
@@ -1877,7 +1877,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             if (overrideDiskOfferingInParam != null) {
                 overrideDiskOfferingId = overrideDiskOfferingInParam.getId();
             } else {
-                logger.warn("Cannot find disk offering by overridediskofferingid from otherdeployparams in AutoScale Vm profile");
+                logger.warn("Cannot find disk offering by overridediskofferingid from otherdeployparams in AutoScale VM profile");
             }
         }
         return overrideDiskOfferingId;
@@ -1891,7 +1891,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             if (diskOfferingInParam != null) {
                 diskOfferingId = diskOfferingInParam.getId();
             } else {
-                logger.warn("Cannot find disk offering by diskofferingid from otherdeployparams in AutoScale Vm profile");
+                logger.warn("Cannot find disk offering by diskofferingid from otherdeployparams in AutoScale VM profile");
             }
         }
         return diskOfferingId;
@@ -1904,7 +1904,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             try {
                 dataDiskSize = Long.parseLong(dataDiskSizeInParam);
             } catch (NumberFormatException ex) {
-                logger.warn("Cannot parse size from otherdeployparams in AutoScale Vm profile");
+                logger.warn("Cannot parse size from otherdeployparams in AutoScale VM profile");
             }
         }
         return dataDiskSize;
@@ -1919,7 +1919,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                 if (s != null) {
                     sshKeyPairs.add(s.getName());
                 } else {
-                    logger.warn("Cannot find ssh keypair by name in sshkeypairs from otherdeployparams in AutoScale Vm profile");
+                    logger.warn("Cannot find SSH keypair by name in sshkeypairs from otherdeployparams in AutoScale VM profile");
                 }
             }
         }
@@ -1935,7 +1935,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                 if (affintyGroup != null) {
                     affinityGroupIdList.add(affintyGroup.getId());
                 } else {
-                    logger.warn("Cannot find affinity group by affinitygroupids from otherdeployparams in AutoScale Vm profile");
+                    logger.warn("Cannot find affinity group by affinitygroupids from otherdeployparams in AutoScale VM profile");
                 }
             }
         }
@@ -1949,7 +1949,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                 Long rootDiskSize = Long.parseLong(value);
                 customParameters.put(VmDetailConstants.ROOT_DISK_SIZE, String.valueOf(rootDiskSize));
             } catch (NumberFormatException ex) {
-                logger.warn("Cannot parse rootdisksize from otherdeployparams in AutoScale Vm profile");
+                logger.warn("Cannot parse rootdisksize from otherdeployparams in AutoScale VM profile");
             }
         }
     }
@@ -1967,9 +1967,9 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     public void checkAutoScaleVmGroupName(String groupName) {
         String errorMessage = "";
         if (groupName == null || groupName.length() > 255 || groupName.length() < 1) {
-            errorMessage = "AutoScale Vm Group name must be between 1 and 255 characters long";
+            errorMessage = "AutoScale VM Group name must be between 1 and 255 characters long";
         } else if (!groupName.toLowerCase().matches("[a-z0-9-]*")) {
-            errorMessage = "AutoScale Vm Group name may contain only the ASCII letters 'a' through 'z' (in a case-insensitive manner), " +
+            errorMessage = "AutoScale VM Group name may contain only the ASCII letters 'a' through 'z' (in a case-insensitive manner), " +
                     "the digits '0' through '9' and the hyphen ('-')";
         }
         if (StringUtils.isNotBlank(errorMessage)) {
@@ -3028,7 +3028,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                     }
                 }
             } catch (final Exception e) {
-                logger.warn("Caught the following exception on monitoring AutoScale Vm Group", e);
+                logger.warn("Caught the following exception on monitoring AutoScale VM Group", e);
             }
         }
     }

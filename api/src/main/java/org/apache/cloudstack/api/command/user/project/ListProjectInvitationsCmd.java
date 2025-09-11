@@ -37,21 +37,21 @@ public class ListProjectInvitationsCmd extends BaseListAccountResourcesCmd {
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "list by project id")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "List by project ID")
     private Long projectId;
 
     @Parameter(name = ApiConstants.ACTIVE_ONLY,
                type = CommandType.BOOLEAN,
-               description = "if true, list only active invitations - having Pending state and ones that are not timed out yet")
+               description = "If true, list only active invitations - having Pending state and ones that are not timed out yet")
     private boolean activeOnly;
 
-    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "list invitations by state")
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "List invitations by state")
     private String state;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ProjectInvitationResponse.class, description = "list invitations by id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ProjectInvitationResponse.class, description = "List invitations by ID")
     private Long id;
 
-    @Parameter(name = ApiConstants.USER_ID, type = CommandType.UUID, entityType = UserResponse.class, description = "list invitation by user ID")
+    @Parameter(name = ApiConstants.USER_ID, type = CommandType.UUID, entityType = UserResponse.class, description = "List invitation by user ID")
     private Long userId;
 
     // ///////////////////////////////////////////////////

@@ -33,7 +33,7 @@ import org.apache.cloudstack.api.response.Site2SiteVpnGatewayResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.context.CallContext;
 
-@APICommand(name = "createVpnGateway", description = "Creates site to site vpn local gateway", responseObject = Site2SiteVpnGatewayResponse.class, entityType = {Site2SiteVpnGateway.class},
+@APICommand(name = "createVpnGateway", description = "Creates site to site VPN local gateway", responseObject = Site2SiteVpnGatewayResponse.class, entityType = {Site2SiteVpnGateway.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateVpnGatewayCmd extends BaseAsyncCreateCmd {
 
@@ -45,17 +45,17 @@ public class CreateVpnGatewayCmd extends BaseAsyncCreateCmd {
                type = CommandType.UUID,
                entityType = VpcResponse.class,
                required = true,
-               description = "id of the vpc")
+               description = "ID of the VPC")
     private Long vpcId;
 
     @Parameter(name = ApiConstants.IP_ADDRESS_ID,
             type = CommandType.UUID,
             entityType = IPAddressResponse.class,
-            description = "the public IP address ID for which VPN gateway is being enabled. By default the source NAT IP or router IP will be used.",
+            description = "The public IP address ID for which VPN gateway is being enabled. By default the source NAT IP or router IP will be used.",
             since = "4.21.0")
     private Long ipAddressId;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the vpn to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the VPN to the end User or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
     /////////////////////////////////////////////////////
@@ -96,7 +96,7 @@ public class CreateVpnGatewayCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "Create site-to-site VPN gateway for account " + getEntityOwnerId();
+        return "Create site-to-site VPN gateway for Account " + getEntityOwnerId();
     }
 
     @Override
