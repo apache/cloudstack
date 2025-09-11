@@ -441,8 +441,12 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
             return null;
         }
         GetExternalConsoleAnswer getExternalConsoleAnswer = (GetExternalConsoleAnswer) answer;
+        details.setModeFromExternalProtocol(getExternalConsoleAnswer.getProtocol());
+        details.setDirectUrl(getExternalConsoleAnswer.getUrl());
         details.setHost(getExternalConsoleAnswer.getHost());
-        details.setPort(getExternalConsoleAnswer.getPort());
+        if (getExternalConsoleAnswer.getPort() != null) {
+            details.setPort(getExternalConsoleAnswer.getPort());
+        }
         if (StringUtils.isNotBlank(getExternalConsoleAnswer.getPassword())) {
             details.setSid(getExternalConsoleAnswer.getPassword());
         }
@@ -508,6 +512,11 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         ConsoleConnectionDetails result = getConsoleConnectionDetails(vm, hostVo);
         if (result == null) {
             return new ConsoleEndpoint(false, null, "Console access to this instance cannot be provided");
+        }
+
+        if (ConsoleConnectionDetails.Mode.Direct.equals(result.getMode())) {
+            persistConsoleSession(sessionUuid, vm.getId(), hostVo.getId(), addr);
+            return new ConsoleEndpoint(true, result.getDirectUrl());
         }
 
         String ticket = genAccessTicket(result.getHost(), String.valueOf(result.getPort()), result.getSid(),
@@ -736,21 +745,42 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     }
 
     protected static class ConsoleConnectionDetails {
-        String host;
-        int port;
-        String sid;
-        String locale;
-        String tag;
-        String displayName;
-        String tunnelUrl = null;
-        String tunnelSession = null;
-        boolean usingRDP;
+        public enum Mode {
+            ConsoleProxy,
+            Direct
+        }
+
+        private Mode mode = Mode.ConsoleProxy;
+        private String host;
+        private int port = -1;
+        private String sid;
+        private String locale;
+        private String tag;
+        private String displayName;
+        private String tunnelUrl = null;
+        private String tunnelSession = null;
+        private boolean usingRDP;
+        private String directUrl;
 
         ConsoleConnectionDetails(String sid, String locale, String tag, String displayName) {
             this.sid = sid;
             this.locale = locale;
             this.tag = tag;
             this.displayName = displayName;
+        }
+
+        public Mode getMode() {
+            return mode;
+        }
+
+        public void setModeFromExternalProtocol(String protocol) {
+            this.mode = Mode.ConsoleProxy;
+            if (StringUtils.isBlank(protocol)) {
+                return;
+            }
+            if (List.of("link", "url", "direct").contains(protocol.toLowerCase())) {
+                this.mode = Mode.Direct;
+            }
         }
 
         public String getHost() {
@@ -811,6 +841,14 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
 
         public void setUsingRDP(boolean usingRDP) {
             this.usingRDP = usingRDP;
+        }
+
+        public String getDirectUrl() {
+            return directUrl;
+        }
+
+        public void setDirectUrl(String directUrl) {
+            this.directUrl = directUrl;
         }
     }
 }

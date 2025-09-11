@@ -506,16 +506,17 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
                         getSanitizedJsonStringForLog(output));
                 return new GetExternalConsoleAnswer(cmd, "Missing console object in output");
             }
+            String url = consoleObj.has("url") ? consoleObj.get("url").getAsString() : null;
             String host = consoleObj.has("host") ? consoleObj.get("host").getAsString() : null;
             Integer port = consoleObj.has("port") ? Integer.valueOf(consoleObj.get("port").getAsString()) : null;
             String password = consoleObj.has("password") ? consoleObj.get("password").getAsString() : null;
             String protocol = consoleObj.has("protocol") ? consoleObj.get("protocol").getAsString() : null;
-            if (ObjectUtils.anyNull(host, port)) {
+            if (url == null && ObjectUtils.anyNull(host, port)) {
                 logger.error("Missing required fields in external console output: {}",
                         getSanitizedJsonStringForLog(output));
                 return new GetExternalConsoleAnswer(cmd, "Missing required fields in output");
             }
-            return new GetExternalConsoleAnswer(cmd, host, port, password, protocol);
+            return new GetExternalConsoleAnswer(cmd, url, host, port, password, protocol);
         } catch (RuntimeException e) {
             logger.error("Failed to parse output for getInstanceConsole: {}", e.getMessage(), e);
             return new GetExternalConsoleAnswer(cmd, "Failed to parse output");

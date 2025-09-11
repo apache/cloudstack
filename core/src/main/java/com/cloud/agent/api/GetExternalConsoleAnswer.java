@@ -19,8 +19,9 @@ package com.cloud.agent.api;
 
 public class GetExternalConsoleAnswer extends Answer {
 
+    private String url;
     private String host;
-    private int port;
+    private Integer port;
     @LogLevel(LogLevel.Log4jLevel.Off)
     private String password;
     private String protocol;
@@ -29,19 +30,24 @@ public class GetExternalConsoleAnswer extends Answer {
         super(command, false, details);
     }
 
-    public GetExternalConsoleAnswer(Command command, String host, int port, String password, String protocol) {
+    public GetExternalConsoleAnswer(Command command, String url, String host, Integer port, String password, String protocol) {
         super(command, true, "");
+        this.url = url;
         this.host = host;
         this.port = port;
         this.password = password;
         this.protocol = protocol;
     }
 
+    public String getUrl() {
+        return url;
+    }
+
     public String getHost() {
         return host;
     }
 
-    public int getPort() {
+    public Integer getPort() {
         return port;
     }
 

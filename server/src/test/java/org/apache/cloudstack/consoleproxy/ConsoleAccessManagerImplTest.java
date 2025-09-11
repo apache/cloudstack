@@ -332,7 +332,7 @@ public class ConsoleAccessManagerImplTest {
     }
 
     @Test
-    public void returnsNullWhenAnswerIsNull() {
+    public void getConsoleConnectionDetailsForExternalVmReturnsNullWhenAnswerIsNull() {
         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
         HostVO host = Mockito.mock(HostVO.class);
         ConsoleConnectionDetails details = new ConsoleConnectionDetails("sid", "en", "tag", "displayName");
@@ -345,7 +345,7 @@ public class ConsoleAccessManagerImplTest {
     }
 
     @Test
-    public void returnsNullWhenAnswerResultIsFalse() {
+    public void getConsoleConnectionDetailsForExternalVmReturnsNullWhenAnswerResultIsFalse() {
         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
         HostVO host = Mockito.mock(HostVO.class);
         ConsoleConnectionDetails details = new ConsoleConnectionDetails("sid", "en", "tag", "displayName");
@@ -361,7 +361,7 @@ public class ConsoleAccessManagerImplTest {
     }
 
     @Test
-    public void returnsNullWhenAnswerIsNotOfTypeGetExternalConsoleAnswer() {
+    public void getConsoleConnectionDetailsForExternalVmReturnsNullWhenAnswerIsNotOfTypeGetExternalConsoleAnswer() {
         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
         HostVO host = Mockito.mock(HostVO.class);
         ConsoleConnectionDetails details = new ConsoleConnectionDetails("sid", "en", "tag", "displayName");
@@ -376,7 +376,7 @@ public class ConsoleAccessManagerImplTest {
     }
 
     @Test
-    public void setsDetailsWhenAnswerIsValid() {
+    public void getConsoleConnectionDetailsForExternalVmSetsDetailsWhenAnswerIsValid() {
         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
         HostVO host = Mockito.mock(HostVO.class);
         ConsoleConnectionDetails details = new ConsoleConnectionDetails("sid", "en", "tag", "displayName");
@@ -395,13 +395,36 @@ public class ConsoleAccessManagerImplTest {
         ConsoleConnectionDetails result = consoleAccessManager.getConsoleConnectionDetailsForExternalVm(details, vm, host);
 
         Assert.assertNotNull(result);
+        Assert.assertEquals(ConsoleConnectionDetails.Mode.ConsoleProxy, result.getMode());
         Assert.assertEquals(expectedHost, result.getHost());
         Assert.assertEquals(expectedPort, result.getPort());
         Assert.assertEquals(expectedPassword, result.getSid());
+        Assert.assertNull(result.getDirectUrl());
     }
 
     @Test
-    public void doesNotSetSidWhenPasswordIsBlank() {
+    public void getConsoleConnectionDetailsForExternalVmSetsDetailsWhenAnswerIsValidDirect() {
+        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        HostVO host = Mockito.mock(HostVO.class);
+        ConsoleConnectionDetails details = new ConsoleConnectionDetails("sid", "en", "tag", "displayName");
+        GetExternalConsoleAnswer answer = Mockito.mock(GetExternalConsoleAnswer.class);
+
+        String url = "url";
+
+        Mockito.when(answer.getResult()).thenReturn(true);
+        Mockito.when(answer.getUrl()).thenReturn(url);
+        Mockito.when(answer.getProtocol()).thenReturn("url");
+        Mockito.when(managementServer.getExternalVmConsole(vm, host)).thenReturn(answer);
+
+        ConsoleConnectionDetails result = consoleAccessManager.getConsoleConnectionDetailsForExternalVm(details, vm, host);
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(ConsoleConnectionDetails.Mode.Direct, result.getMode());
+        Assert.assertEquals(url, result.getDirectUrl());
+    }
+
+    @Test
+    public void getConsoleConnectionDetailsForExternalVmDoesNotSetSidWhenPasswordIsBlank() {
         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
         HostVO host = Mockito.mock(HostVO.class);
         ConsoleConnectionDetails details = new ConsoleConnectionDetails("sid", "en", "tag", "displayName");
@@ -422,7 +445,7 @@ public class ConsoleAccessManagerImplTest {
     }
 
     @Test
-    public void returnsNullForNonKVMHypervisor() {
+    public void getHostAndPortForKVMMaintenanceHostIfNeededReturnsNullForNonKVMHypervisor() {
         HostVO host = Mockito.mock(HostVO.class);
         Mockito.when(host.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.XenServer);
 
@@ -432,7 +455,7 @@ public class ConsoleAccessManagerImplTest {
     }
 
     @Test
-    public void returnsNullForNonMaintenanceResourceState() {
+    public void getHostAndPortForKVMMaintenanceHostIfNeededReturnsNullForNonMaintenanceResourceState() {
         HostVO host = Mockito.mock(HostVO.class);
         Mockito.when(host.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
         Mockito.when(host.getResourceState()).thenReturn(ResourceState.Enabled);
@@ -443,7 +466,7 @@ public class ConsoleAccessManagerImplTest {
     }
 
     @Test
-    public void returnsHostAndPortForValidKVMInMaintenance() {
+    public void getHostAndPortForKVMMaintenanceHostIfNeededReturnsHostAndPortForValidKVMInMaintenance() {
         HostVO host = Mockito.mock(HostVO.class);
         Mockito.when(host.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
         Mockito.when(host.getResourceState()).thenReturn(ResourceState.ErrorInMaintenance);
@@ -463,7 +486,7 @@ public class ConsoleAccessManagerImplTest {
     }
 
     @Test
-    public void returnsNullWhenVncAddressOrPortIsMissing() {
+    public void getHostAndPortForKVMMaintenanceHostIfNeededReturnsNullWhenVncAddressOrPortIsMissing() {
         HostVO host = Mockito.mock(HostVO.class);
         Mockito.when(host.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
         Mockito.when(host.getResourceState()).thenReturn(ResourceState.ErrorInMaintenance);
@@ -476,7 +499,7 @@ public class ConsoleAccessManagerImplTest {
     }
 
     @Test
-    public void returnsDetailsForExternalHypervisor() {
+    public void getConsoleConnectionDetailsReturnsDetailsForExternalHypervisor() {
         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
         HostVO host = Mockito.mock(HostVO.class);
         ConsoleConnectionDetails details = Mockito.mock(ConsoleConnectionDetails.class);
@@ -496,7 +519,7 @@ public class ConsoleAccessManagerImplTest {
     }
 
     @Test
-    public void returnsDetailsForKVMHypervisor() {
+    public void getConsoleConnectionDetailsReturnsDetailsForKVMHypervisor() {
         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
         HostVO host = Mockito.mock(HostVO.class);
         String hostAddress = "192.168.1.100";
@@ -523,7 +546,7 @@ public class ConsoleAccessManagerImplTest {
     }
 
     @Test
-    public void returnsDetailsWithRDPForHyperV() {
+    public void getConsoleConnectionDetailsReturnsDetailsWithRDPForHyperV() {
         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
         HostVO host = Mockito.mock(HostVO.class);
         String hostAddress = "192.168.1.100";
@@ -549,7 +572,7 @@ public class ConsoleAccessManagerImplTest {
     }
 
     @Test
-    public void returnsNullHostInvalidPortWhenVncPortInfoIsMissing() {
+    public void getConsoleConnectionDetailsReturnsNullHostInvalidPortWhenVncPortInfoIsMissing() {
         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
         HostVO host = Mockito.mock(HostVO.class);
 
@@ -567,7 +590,7 @@ public class ConsoleAccessManagerImplTest {
     }
 
     @Test
-    public void setsLocaleWhenKeyboardDetailIsPresent() {
+    public void getConsoleConnectionDetailsSetsLocaleWhenKeyboardDetailIsPresent() {
         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
         HostVO host = Mockito.mock(HostVO.class);
         String hostAddress = "192.168.1.100";
@@ -588,7 +611,7 @@ public class ConsoleAccessManagerImplTest {
     }
 
     @Test
-    public void setsBasicDetailsCorrectly() {
+    public void generateConsoleProxyClientParamSetsBasicDetailsCorrectly() {
         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
         HostVO host = Mockito.mock(HostVO.class);
         String hostAddress = "192.168.1.100";
@@ -618,7 +641,7 @@ public class ConsoleAccessManagerImplTest {
     }
 
     @Test
-    public void setsExtraSecurityTokenWhenProvided() {
+    public void generateConsoleProxyClientParamSetsExtraSecurityTokenWhenProvided() {
         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
         HostVO host = Mockito.mock(HostVO.class);
         ConsoleConnectionDetails details = new ConsoleConnectionDetails("password", null, null, null);
@@ -629,7 +652,7 @@ public class ConsoleAccessManagerImplTest {
     }
 
     @Test
-    public void setsLocaleWhenProvided() {
+    public void generateConsoleProxyClientParamSetsLocaleWhenProvided() {
         HostVO host = Mockito.mock(HostVO.class);
         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
         ConsoleConnectionDetails details = new ConsoleConnectionDetails(null, "fr-fr", null, null);
@@ -640,7 +663,7 @@ public class ConsoleAccessManagerImplTest {
     }
 
     @Test
-    public void setsRdpDetailsForHyperV() {
+    public void generateConsoleProxyClientParamSetsRdpDetailsForHyperV() {
         long hostId = 1L;
         String username = "admin";
         String password = "adminPass";
@@ -662,7 +685,7 @@ public class ConsoleAccessManagerImplTest {
     }
 
     @Test
-    public void setsTunnelDetailsWhenProvided() {
+    public void generateConsoleProxyClientParamSetsTunnelDetailsWhenProvided() {
         HostVO host = Mockito.mock(HostVO.class);
         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
         ConsoleConnectionDetails details = new ConsoleConnectionDetails(null, null, null, null);
@@ -690,7 +713,7 @@ public class ConsoleAccessManagerImplTest {
     }
 
     @Test
-    public void returnsNullWhenConsoleConnectionDetailsAreValid() {
+    public void composeConsoleAccessEndpointReturnsConsoleEndpointWhenConsoleConnectionDetailsAreValid() {
         String locale = "en";
         String hostStr = "192.168.1.100";
         int port = 5900;
@@ -736,5 +759,32 @@ public class ConsoleAccessManagerImplTest {
         Assert.assertEquals(ConsoleAccessManagerImpl.WEB_SOCKET_PATH, endpoint.getWebsocketPath());
         Assert.assertEquals(extraToken, endpoint.getWebsocketExtra());
         Assert.assertEquals(consoleAddress, endpoint.getWebsocketHost());
+    }
+
+    @Test
+    public void composeConsoleAccessEndpointReturnsWithoutPersistWhenConsoleConnectionDetailsAreValidDirect() {
+        String url = "url";
+        long vmId = 100L;
+        long hostId = 1L;
+        String sessionUuid = UUID.randomUUID().toString();
+        String addr = "addr";
+        ConsoleConnectionDetails details = new ConsoleConnectionDetails("password", "en", "tag", null);
+        details.setDirectUrl(url);
+        details.setModeFromExternalProtocol("url");
+        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        Mockito.when(vm.getId()).thenReturn(vmId);
+        HostVO host = Mockito.mock(HostVO.class);
+        Mockito.when(host.getId()).thenReturn(hostId);
+        Mockito.doReturn(details).when(consoleAccessManager).getConsoleConnectionDetails(vm, host);
+        Mockito.doNothing().when(consoleAccessManager).persistConsoleSession(sessionUuid, vmId, hostId, addr);
+
+        ConsoleEndpoint endpoint = consoleAccessManager.composeConsoleAccessEndpoint("url", vm, host, addr, sessionUuid, "");
+
+        Mockito.verify(consoleAccessManager).persistConsoleSession(sessionUuid, vmId, hostId, addr);
+        Mockito.verify(managementServer, Mockito.never()).setConsoleAccessForVm(Mockito.anyLong(), Mockito.anyString());
+        Assert.assertEquals(url, endpoint.getUrl());
+        Assert.assertNull(endpoint.getWebsocketPath());
+        Assert.assertNull(endpoint.getWebsocketExtra());
+        Assert.assertNull(endpoint.getWebsocketHost());
     }
 }

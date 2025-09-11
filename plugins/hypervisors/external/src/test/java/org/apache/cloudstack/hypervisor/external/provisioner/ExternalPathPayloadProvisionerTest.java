@@ -777,7 +777,8 @@ public class ExternalPathPayloadProvisionerTest {
 
         assertNotNull(result);
         assertEquals("127.0.0.1", result.getHost());
-        assertEquals(5900, result.getPort());
+        Integer port = 5900;
+        assertEquals(port, result.getPort());
         assertEquals("pass", result.getPassword());
         assertEquals("vnc", result.getProtocol());
     }
