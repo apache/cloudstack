@@ -71,6 +71,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManag
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.ca.Certificate;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -150,11 +151,13 @@ import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.UnPlugNicAnswer;
 import com.cloud.agent.api.UnPlugNicCommand;
+import com.cloud.agent.api.UnmanageInstanceCommand;
 import com.cloud.agent.api.UnregisterVMCommand;
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmNetworkStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.DpdkTO;
 import com.cloud.agent.api.to.GPUDeviceTO;
@@ -2014,6 +2017,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             throw new ConcurrentOperationException(msg);
         }
 
+        if (HypervisorType.KVM.equals(vm.getHypervisorType())) {
+            persistDomainForKVM(vm);
+        }
         Boolean result = Transaction.execute(new TransactionCallback<Boolean>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
@@ -2039,6 +2045,33 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         });
 
         return BooleanUtils.isTrue(result);
+    }
+
+    void persistDomainForKVM(VMInstanceVO vm) {
+        Long hostId = vm.getHostId();
+        UnmanageInstanceCommand unmanageInstanceCommand;
+        if (State.Stopped.equals(vm.getState())) {
+            hostId = vm.getLastHostId();
+            unmanageInstanceCommand = new UnmanageInstanceCommand(prepVmSpecForUnmanageCmd(vm.getId(), hostId)); // reconstruct vmSpec for stopped instance
+        } else {
+            unmanageInstanceCommand = new UnmanageInstanceCommand(vm.getName());
+        }
+        try {
+            Answer answer = _agentMgr.send(hostId, unmanageInstanceCommand);
+            if (!answer.getResult()) {
+                String errorMsg = "Failed to persist domainXML for instance: " + vm.getName();
+                logger.debug(errorMsg);
+                throw new CloudRuntimeException(errorMsg);
+            }
+        } catch (AgentUnavailableException e) {
+            String errorMsg = "Failed to send command, agent unavailable";
+            logger.error(errorMsg, e);
+            throw new CloudRuntimeException(errorMsg);
+        } catch (OperationTimedoutException e) {
+            String errorMsg = "Failed to send command, operation timed out";
+            logger.error(errorMsg, e);
+            throw new CloudRuntimeException(errorMsg);
+        }
     }
 
     /**
@@ -4002,6 +4035,62 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
         logger.debug("Orchestrating VM reboot for '{}' {} set to {}", vmTo.getName(), VirtualMachineProfile.Param.BootIntoSetup, enterSetup);
         vmTo.setEnterHardwareSetup(enterSetup == null ? false : enterSetup);
+    }
+
+    /**
+     * This method helps constructing vmSpec for Unmanage operation for Stopped Instance
+     * @param vmId
+     * @param hostId
+     * @return VirtualMachineTO
+     */
+    protected VirtualMachineTO prepVmSpecForUnmanageCmd(Long vmId, Long hostId) {
+        final VMInstanceVO vm = _vmDao.findById(vmId);
+        final Account owner = _entityMgr.findById(Account.class, vm.getAccountId());
+        final ServiceOfferingVO offering = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
+        final VirtualMachineTemplate template = _entityMgr.findByIdIncludingRemoved(VirtualMachineTemplate.class, vm.getTemplateId());
+        Host host = _hostDao.findById(hostId);
+        VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm, template, offering, owner, null);
+        updateOverCommitRatioForVmProfile(vmProfile, host.getClusterId());
+        final List<NicVO> nics = _nicsDao.listByVmId(vmProfile.getId());
+        Collections.sort(nics, (nic1, nic2) -> {
+            Long nicId1 = Long.valueOf(nic1.getDeviceId());
+            Long nicId2 = Long.valueOf(nic2.getDeviceId());
+            return nicId1.compareTo(nicId2);
+        });
+
+        for (final NicVO nic : nics) {
+            final Network network = _networkModel.getNetwork(nic.getNetworkId());
+            final NicProfile nicProfile =
+                    new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), null, _networkModel.isSecurityGroupSupportedInNetwork(network),
+                            _networkModel.getNetworkTag(vmProfile.getHypervisorType(), network));
+            vmProfile.addNic(nicProfile);
+        }
+
+        List<VolumeVO> volumes = _volsDao.findUsableVolumesForInstance(vmId);
+        for (VolumeVO vol: volumes) {
+            VolumeInfo volumeInfo = volumeDataFactory.getVolume(vol.getId());
+            DataTO dataTO = volumeInfo.getTO();
+            DiskTO disk = storageMgr.getDiskWithThrottling(dataTO, vol.getVolumeType(), vol.getDeviceId(), vol.getPath(), vm.getServiceOfferingId(), vol.getDiskOfferingId());
+            vmProfile.addDisk(disk);
+        }
+
+        Map<String, String> details = vmInstanceDetailsDao.listDetailsKeyPairs(vmId,
+                List.of(VirtualMachineProfile.Param.BootType.getName(), VirtualMachineProfile.Param.BootMode.getName(),
+                        VirtualMachineProfile.Param.UefiFlag.getName()));
+
+        if (details.containsKey(VirtualMachineProfile.Param.BootType.getName())) {
+            vmProfile.getParameters().put(VirtualMachineProfile.Param.BootType, details.get(VirtualMachineProfile.Param.BootType.getName()));
+        }
+
+        if (details.containsKey(VirtualMachineProfile.Param.BootMode.getName())) {
+            vmProfile.getParameters().put(VirtualMachineProfile.Param.BootMode, details.get(VirtualMachineProfile.Param.BootMode.getName()));
+        }
+
+        if (details.containsKey(VirtualMachineProfile.Param.UefiFlag.getName())) {
+            vmProfile.getParameters().put(VirtualMachineProfile.Param.UefiFlag, details.get(VirtualMachineProfile.Param.UefiFlag.getName()));
+        }
+
+        return toVmTO(vmProfile);
     }
 
     protected VirtualMachineTO getVmTO(Long vmId) {
