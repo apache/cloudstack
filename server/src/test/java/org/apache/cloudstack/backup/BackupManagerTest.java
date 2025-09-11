@@ -31,7 +31,6 @@ import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
@@ -1275,7 +1274,7 @@ public class BackupManagerTest {
         when(rootVolume.getPoolId()).thenReturn(poolId);
         when(volumeDao.findIncludingRemovedByInstanceAndType(vmId, Volume.Type.ROOT)).thenReturn(List.of(rootVolume));
         when(primaryDataStoreDao.findById(poolId)).thenReturn(pool);
-        when(backupProvider.restoreBackupToVM(vm, backup, null, null)).thenReturn(true);
+        when(backupProvider.restoreBackupToVM(vm, backup, null, null)).thenReturn(new Pair<>(true, null));
 
         try (MockedStatic<ActionEventUtils> utils = Mockito.mockStatic(ActionEventUtils.class)) {
             boolean result = backupManager.restoreBackupToVM(backupId, vmId);
@@ -1284,7 +1283,7 @@ public class BackupManagerTest {
             verify(backupProvider, times(1)).restoreBackupToVM(vm, backup, null, null);
             verify(virtualMachineManager, times(1)).stateTransitTo(vm, VirtualMachine.Event.RestoringRequested, hostId);
             verify(virtualMachineManager, times(1)).stateTransitTo(vm, VirtualMachine.Event.RestoringSuccess, hostId);
-        } catch (ResourceUnavailableException e) {
+        } catch (CloudRuntimeException e) {
             fail("Test failed due to exception" + e);
         }
     }
@@ -1331,7 +1330,7 @@ public class BackupManagerTest {
         when(rootVolume.getPoolId()).thenReturn(poolId);
         when(volumeDao.findIncludingRemovedByInstanceAndType(vmId, Volume.Type.ROOT)).thenReturn(List.of(rootVolume));
         when(primaryDataStoreDao.findById(poolId)).thenReturn(pool);
-        when(backupProvider.restoreBackupToVM(vm, backup, null, null)).thenReturn(false);
+        when(backupProvider.restoreBackupToVM(vm, backup, null, null)).thenReturn(new Pair<>(false, null));
 
         try (MockedStatic<ActionEventUtils> utils = Mockito.mockStatic(ActionEventUtils.class)) {
             CloudRuntimeException exception = Assert.assertThrows(CloudRuntimeException.class,

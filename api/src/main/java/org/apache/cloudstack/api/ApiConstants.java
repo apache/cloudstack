@@ -209,6 +209,7 @@ public class ApiConstants {
     public static final String DOMAIN_ID = "domainid";
     public static final String DOMAIN__ID = "domainId";
     public static final String DURATION = "duration";
+    public static final String DRAAS_ENABLED = "draasenabled";
     public static final String ELIGIBLE = "eligible";
     public static final String EMAIL = "email";
     public static final String END_ASN = "endasn";
