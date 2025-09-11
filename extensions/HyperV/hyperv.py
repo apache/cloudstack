@@ -210,6 +210,22 @@ class HyperVManager:
             power_state = "poweroff"
         succeed({"status": "success", "power_state": power_state})
 
+    def statuses(self):
+        command = 'Get-VM | Select-Object Name, State | ConvertTo-Json'
+        vms = json.loads(self.run_ps(command))
+        power_state = {}
+        if isinstance(vms, dict):
+            vms = [vms]
+        for vm in vms:
+            state = vm["State"].strip().lower()
+            if state == "running":
+                power_state[vm["Name"]] = "poweron"
+            elif state == "off":
+                power_state[vm["Name"]] = "poweroff"
+            else:
+                power_state[vm["Name"]] = "unknown"
+        succeed({"status": "success", "power_state": power_state})
+
     def delete(self):
         try:
             self.run_ps_int(f'Remove-VM -Name "{self.data["vmname"]}" -Force')
@@ -283,6 +299,7 @@ def main():
         "reboot": manager.reboot,
         "delete": manager.delete,
         "status": manager.status,
+        "statuses": manager.statuses,
         "suspend": manager.suspend,
         "resume": manager.resume,
         "listsnapshots": manager.list_snapshots,
