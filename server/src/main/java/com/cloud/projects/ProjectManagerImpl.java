@@ -611,7 +611,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
     @Override
     public boolean canAccessProjectAccount(Account caller, long accountId) {
         //ROOT admin always can access the project
-        if (_accountMgr.isRootAdmin(caller.getId())) {
+        if (_accountMgr.isRootAdmin(caller)) {
             return true;
         } else if (_accountMgr.isDomainAdmin(caller.getId())) {
             Account owner = _accountMgr.getAccount(accountId);
@@ -632,7 +632,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
     @Override
     public boolean canModifyProjectAccount(Account caller, long accountId) {
         //ROOT admin always can access the project
-        if (_accountMgr.isRootAdmin(caller.getId())) {
+        if (_accountMgr.isRootAdmin(caller)) {
             return true;
         } else if (_accountMgr.isDomainAdmin(caller.getId())) {
             Account owner = _accountMgr.getAccount(accountId);
