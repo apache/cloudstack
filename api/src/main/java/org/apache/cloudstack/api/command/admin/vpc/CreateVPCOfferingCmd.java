@@ -62,6 +62,10 @@ import static com.cloud.network.Network.Service.NetworkACL;
 import static com.cloud.network.Network.Service.UserData;
 import static com.cloud.network.Network.Service.Gateway;
 
+import static org.apache.cloudstack.api.command.utils.OfferingUtils.isNetrisNatted;
+import static org.apache.cloudstack.api.command.utils.OfferingUtils.isNetrisRouted;
+import static org.apache.cloudstack.api.command.utils.OfferingUtils.isNsxWithoutLb;
+
 @APICommand(name = "createVPCOffering", description = "Creates VPC offering", responseObject = VpcOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
@@ -194,8 +198,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
             if (NetworkOffering.NetworkMode.ROUTED.name().equalsIgnoreCase(getNetworkMode())) {
                 supportedServices.add(Gateway.getName());
             }
-            if (getNsxSupportsLbService() || (provider != null && provider.equalsIgnoreCase("Netris") &&
-                    NetworkOffering.NetworkMode.NATTED.name().equalsIgnoreCase(getNetworkMode()))) {
+            if (getNsxSupportsLbService() || isNetrisNatted(getProvider(), getNetworkMode())) {
                 supportedServices.add(Lb.getName());
             }
         }
@@ -260,8 +263,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
                 serviceProviderMap.put(service, List.of(provider));
             }
         }
-        if (("Nsx".equalsIgnoreCase(provider) && !getNsxSupportsLbService()) ||
-                ("Netris".equalsIgnoreCase(provider) && NetworkOffering.NetworkMode.ROUTED.name().equalsIgnoreCase(getNetworkMode()))) {
+        if ((isNsxWithoutLb(getProvider(), getNsxSupportsLbService())) || isNetrisRouted(getProvider(), getNetworkMode())) {
             serviceProviderMap.remove(Lb.getName());
         }
     }
