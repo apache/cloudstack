@@ -212,7 +212,14 @@ class HyperVManager:
 
     def statuses(self):
         command = 'Get-VM | Select-Object Name, State | ConvertTo-Json'
-        vms = json.loads(self.run_ps(command))
+        output = self.run_ps(command)
+        if not output or output.strip() in ("", "null"):
+            vms = []
+        else:
+            try:
+                vms = json.loads(output)
+            except json.JSONDecodeError:
+                fail("Failed to parse VM status output: " + output)
         power_state = {}
         if isinstance(vms, dict):
             vms = [vms]
