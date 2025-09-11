@@ -39,14 +39,6 @@
         </a-form-item>
       </a-form>
     </div>
-    <div v-if="isVMResource" class="current-vm-info">
-      <a-alert
-        :message="`${$t('label.backup.schedules.for')} ${resource.name}`"
-        type="info"
-        show-icon
-        style="margin-bottom: 16px"
-      />
-    </div>
     <div v-if="currentVMResource && currentVMResource.id">
       <BackupScheduleWizard
         ref="backupScheduleWizard"
