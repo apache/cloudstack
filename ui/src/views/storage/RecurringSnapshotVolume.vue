@@ -84,6 +84,7 @@ export default {
       default: () => null
     }
   },
+  inject: ['parentFetchData'],
   data () {
     return {
       loading: false,
@@ -184,6 +185,7 @@ export default {
     },
     handleRefresh () {
       this.fetchData()
+      this.parentFetchData()
     },
     closeAction () {
       this.fetchData()

@@ -79,6 +79,7 @@ export default {
       default: () => null
     }
   },
+  inject: ['parentFetchData'],
   data () {
     return {
       vms: [],
@@ -145,6 +146,7 @@ export default {
     },
     handleRefresh () {
       this.$emit('refresh')
+      this.parentFetchData()
     },
     filterOption (input, option) {
       return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
