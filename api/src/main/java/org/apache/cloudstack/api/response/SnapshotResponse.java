@@ -48,11 +48,11 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the Domain the snapshot's account belongs to", since = "4.19.2.0")
+    @Param(description = "Path of the Domain the snapshot's account belongs to", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "The project id of the Snapshot")
+    @Param(description = "The project ID of the Snapshot")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)

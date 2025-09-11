@@ -40,7 +40,7 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
     private String description;
 
     @SerializedName(ApiConstants.PUBLIC_IP_ID)
-    @Param(description = "The public IP address id")
+    @Param(description = "The public IP address ID")
     private String publicIpId;
 
     @SerializedName(ApiConstants.PUBLIC_IP)
@@ -60,7 +60,7 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
     private String algorithm;
 
     @SerializedName(ApiConstants.NETWORK_ID)
-    @Param(description = "The id of the guest Network the LB rule belongs to")
+    @Param(description = "The ID of the guest Network the LB rule belongs to")
     private String networkId;
 
     @SerializedName(ApiConstants.CIDR_LIST)
@@ -72,7 +72,7 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "The project id of the Load balancer")
+    @Param(description = "The project ID of the Load balancer")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
@@ -88,7 +88,7 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the domain to which the load balancer rule belongs", since = "4.19.2.0")
+    @Param(description = "Path of the domain to which the Load balancer rule belongs", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.STATE)
@@ -96,11 +96,11 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
     private String state;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "The id of the zone the rule belongs to")
+    @Param(description = "The ID of the Zone the rule belongs to")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)
-    @Param(description = "The name of the zone the Load balancer rule belongs to", since = "4.11")
+    @Param(description = "The name of the Zone the Load balancer rule belongs to", since = "4.11")
     private String zoneName;
 
     @SerializedName(ApiConstants.PROTOCOL)

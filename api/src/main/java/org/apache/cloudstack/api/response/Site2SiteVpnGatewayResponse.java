@@ -39,7 +39,7 @@ public class Site2SiteVpnGatewayResponse extends BaseResponse implements Control
     private String ip;
 
     @SerializedName(ApiConstants.VPC_ID)
-    @Param(description = "The VPC id of this gateway")
+    @Param(description = "The VPC ID of this gateway")
     private String vpcId;
 
     @SerializedName(ApiConstants.VPC_NAME)
@@ -51,7 +51,7 @@ public class Site2SiteVpnGatewayResponse extends BaseResponse implements Control
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "The project id")
+    @Param(description = "The project ID")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
@@ -59,7 +59,7 @@ public class Site2SiteVpnGatewayResponse extends BaseResponse implements Control
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "The domain id of the owner")
+    @Param(description = "The domain ID of the owner")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
@@ -67,7 +67,7 @@ public class Site2SiteVpnGatewayResponse extends BaseResponse implements Control
     private String domain;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "the domain path of the owner", since = "4.19.2.0")
+    @Param(description = "The domain path of the owner", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.REMOVED)

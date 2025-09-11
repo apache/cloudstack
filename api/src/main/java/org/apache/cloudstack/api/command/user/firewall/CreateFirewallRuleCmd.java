@@ -57,7 +57,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
                type = CommandType.UUID,
                entityType = IPAddressResponse.class,
                required = true,
-               description = "The IP address id of the port forwarding rule")
+               description = "The IP address ID of the port forwarding rule")
     private Long ipAddressId;
 
     @Parameter(name = ApiConstants.PROTOCOL,

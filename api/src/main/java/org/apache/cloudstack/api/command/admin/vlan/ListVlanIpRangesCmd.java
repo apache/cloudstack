@@ -72,7 +72,7 @@ public class ListVlanIpRangesCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The Zone ID of the VLAN IP range")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "Network id of the VLAN IP range")
+    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "Network ID of the VLAN IP range")
     private Long networkId;
 
     @Parameter(name = ApiConstants.FOR_VIRTUAL_NETWORK, type = CommandType.BOOLEAN, description = "True if VLAN is of Virtual type, false if Direct")
@@ -81,7 +81,7 @@ public class ListVlanIpRangesCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID,
                type = CommandType.UUID,
                entityType = PhysicalNetworkResponse.class,
-               description = "Physical Network id of the VLAN IP range")
+               description = "Physical Network ID of the VLAN IP range")
     private Long physicalNetworkId;
 
     /////////////////////////////////////////////////////

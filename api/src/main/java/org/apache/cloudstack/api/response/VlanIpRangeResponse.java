@@ -56,7 +56,7 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the domain to which the VLAN IP range belongs", since = "4.19.2.0")
+    @Param(description = "Path of the domain to which the VLAN IP range belongs", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.POD_ID)
@@ -92,11 +92,11 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
     private String endIp;
 
     @SerializedName(ApiConstants.NETWORK_ID)
-    @Param(description = "The Network id of VLAN range")
+    @Param(description = "The Network ID of VLAN range")
     private String networkId;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "The project id of the VLAN range")
+    @Param(description = "The project ID of the VLAN range")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
@@ -128,7 +128,7 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
     private Boolean forSystemVms;
 
     @SerializedName(ApiConstants.PROVIDER)
-    @Param(description = "indicates to which provider the IP range is dedicated to", since = "4.21.0")
+    @Param(description = "Indicates to which provider the IP range is dedicated to", since = "4.21.0")
     private String provider;
 
     public void setId(String id) {

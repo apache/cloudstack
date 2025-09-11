@@ -41,7 +41,7 @@ public class DedicatePublicIpRangeCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VlanIpRangeResponse.class, required = true, description = "The id of the VLAN IP range")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VlanIpRangeResponse.class, required = true, description = "The ID of the VLAN IP range")
     private Long id;
 
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "Account who will own the VLAN")

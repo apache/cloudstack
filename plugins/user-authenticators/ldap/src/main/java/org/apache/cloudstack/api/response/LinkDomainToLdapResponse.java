@@ -26,7 +26,7 @@ import org.apache.cloudstack.api.BaseResponse;
 public class LinkDomainToLdapResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "Id of the Domain which is linked to LDAP")
+    @Param(description = "ID of the Domain which is linked to LDAP")
     private String domainId;
 
     @Deprecated
@@ -43,7 +43,7 @@ public class LinkDomainToLdapResponse extends BaseResponse {
     private String type;
 
     @SerializedName(ApiConstants.ACCOUNT_TYPE)
-    @Param(description = "Type of the account to auto import")
+    @Param(description = "Type of the Account to auto import")
     private int accountType;
 
     @SerializedName(ApiConstants.ACCOUNT_ID)

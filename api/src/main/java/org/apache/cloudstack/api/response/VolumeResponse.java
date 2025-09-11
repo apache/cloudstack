@@ -146,7 +146,7 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the Domain the disk volume belongs to", since = "4.19.2.0")
+    @Param(description = "Path of the Domain the disk volume belongs to", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName("storagetype")

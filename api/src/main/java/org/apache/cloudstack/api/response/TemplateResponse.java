@@ -96,7 +96,7 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     private transient Long osTypeCategoryId;
 
     @SerializedName(ApiConstants.ACCOUNT_ID)
-    @Param(description = "The Account id to which the Template belongs")
+    @Param(description = "The Account ID to which the Template belongs")
     private String accountId;
 
     @SerializedName(ApiConstants.ACCOUNT)
@@ -138,7 +138,7 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the Domain the template belongs to", since = "4.19.2.0")
+    @Param(description = "Path of the Domain the template belongs to", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
@@ -170,7 +170,7 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     private String templateTag;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "The project id of the Template")
+    @Param(description = "The project ID of the Template")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)

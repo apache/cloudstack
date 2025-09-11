@@ -32,7 +32,7 @@ import com.cloud.serializer.Param;
 public class QuotaBalanceResponse extends BaseResponse {
 
     @SerializedName("accountid")
-    @Param(description = "Account id")
+    @Param(description = "Account ID")
     private Long accountId;
 
     @SerializedName("account")
@@ -40,7 +40,7 @@ public class QuotaBalanceResponse extends BaseResponse {
     private String accountName;
 
     @SerializedName("domain")
-    @Param(description = "Domain id")
+    @Param(description = "Domain ID")
     private Long domainId;
 
     @SerializedName("startquota")

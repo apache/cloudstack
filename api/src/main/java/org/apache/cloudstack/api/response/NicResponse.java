@@ -99,19 +99,19 @@ public class NicResponse extends BaseResponse {
     private List<NicExtraDhcpOptionResponse> extraDhcpOptions;
 
     @SerializedName(ApiConstants.DEVICE_ID)
-    @Param(description = "Device id for the Network when plugged into the Instance", since = "4.4")
+    @Param(description = "Device ID for the Network when plugged into the Instance", since = "4.4")
     private String deviceId;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
-    @Param(description = "Id of the Instance to which the NIC belongs")
+    @Param(description = "ID of the Instance to which the NIC belongs")
     private String vmId;
 
     @SerializedName(ApiConstants.NSX_LOGICAL_SWITCH)
-    @Param(description = "Id of the NSX Logical Switch (if NSX based), null otherwise", since="4.6.0")
+    @Param(description = "ID of the NSX Logical Switch (if NSX based), null otherwise", since="4.6.0")
     private String nsxLogicalSwitch;
 
     @SerializedName(ApiConstants.NSX_LOGICAL_SWITCH_PORT)
-    @Param(description = "Id of the NSX Logical Switch Port (if NSX based), null otherwise", since="4.6.0")
+    @Param(description = "ID of the NSX Logical Switch Port (if NSX based), null otherwise", since="4.6.0")
     private String nsxLogicalSwitchPort;
 
     @SerializedName(ApiConstants.VLAN_ID)
@@ -139,7 +139,7 @@ public class NicResponse extends BaseResponse {
     private Integer mtu;
 
     @SerializedName(ApiConstants.PUBLIC_IP_ID)
-    @Param(description = "public IP address id associated with this nic via Static nat rule")
+    @Param(description = "public IP address ID associated with this nic via Static nat rule")
     private String publicIpId;
 
     @SerializedName(ApiConstants.PUBLIC_IP)
@@ -223,7 +223,7 @@ public class NicResponse extends BaseResponse {
     }
 
     @SerializedName(ApiConstants.VPC_ID)
-    @Param(description = "Id of the VPC to which the NIC belongs")
+    @Param(description = "ID of the VPC to which the NIC belongs")
     private String vpcId;
 
     @SerializedName(ApiConstants.VPC_NAME)

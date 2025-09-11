@@ -31,7 +31,7 @@ import java.util.Date;
 @EntityReference(value = {KubernetesSupportedVersion.class})
 public class KubernetesSupportedVersionResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "The id of the Kubernetes supported version")
+    @Param(description = "The ID of the Kubernetes supported version")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
@@ -43,7 +43,7 @@ public class KubernetesSupportedVersionResponse extends BaseResponse {
     private String semanticVersion;
 
     @SerializedName(ApiConstants.ISO_ID)
-    @Param(description = "The id of the binaries ISO for Kubernetes supported version")
+    @Param(description = "The ID of the binaries ISO for Kubernetes supported version")
     private String isoId;
 
     @SerializedName(ApiConstants.ISO_NAME)
@@ -59,11 +59,11 @@ public class KubernetesSupportedVersionResponse extends BaseResponse {
     private String isoArch;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "The id of the zone in which Kubernetes supported version is available")
+    @Param(description = "The ID of the Zone in which Kubernetes supported version is available")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)
-    @Param(description = "The name of the zone in which Kubernetes supported version is available")
+    @Param(description = "The name of the Zone in which Kubernetes supported version is available")
     private String zoneName;
 
     @SerializedName(ApiConstants.SUPPORTS_HA)

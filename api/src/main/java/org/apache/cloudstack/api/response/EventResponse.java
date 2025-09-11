@@ -54,7 +54,7 @@ public class EventResponse extends BaseResponse implements ControlledViewEntityR
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "The project id of the IP address")
+    @Param(description = "The project ID of the IP address")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
@@ -62,7 +62,7 @@ public class EventResponse extends BaseResponse implements ControlledViewEntityR
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "The id of the Account's domain")
+    @Param(description = "The ID of the Account's domain")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
@@ -70,11 +70,11 @@ public class EventResponse extends BaseResponse implements ControlledViewEntityR
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the Domain the account's domain belongs to", since = "4.19.2.0")
+    @Param(description = "Path of the Domain the account's domain belongs to", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.RESOURCE_ID)
-    @Param(description = "The id of the resource", since = "4.17.0")
+    @Param(description = "The ID of the resource", since = "4.17.0")
     private String resourceId;
 
     @SerializedName(ApiConstants.RESOURCE_TYPE)

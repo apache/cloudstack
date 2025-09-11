@@ -36,7 +36,7 @@ import com.google.gson.annotations.SerializedName;
 public class NetworkResponse extends BaseResponseWithAssociatedNetwork implements ControlledEntityResponse, SetResourceIconResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "The id of the Network")
+    @Param(description = "The ID of the Network")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
@@ -76,15 +76,15 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     private String reservedIpRange;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "Zone id of the Network")
+    @Param(description = "Zone ID of the Network")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)
-    @Param(description = "The name of the zone the Network belongs to")
+    @Param(description = "The name of the Zone the Network belongs to")
     private String zoneName;
 
     @SerializedName("networkofferingid")
-    @Param(description = "Network offering id the Network is created from")
+    @Param(description = "Network offering ID the Network is created from")
     private String networkOfferingId;
 
     @SerializedName("networkofferingname")
@@ -156,7 +156,7 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "The project id of the IP address")
+    @Param(description = "The project ID of the IP address")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
@@ -164,7 +164,7 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "The domain id of the Network owner")
+    @Param(description = "The domain ID of the Network owner")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
@@ -172,7 +172,7 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     private String domain;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the Domain the network belongs to", since = "4.19.0.0")
+    @Param(description = "Path of the Domain the network belongs to", since = "4.19.0.0")
     private String domainPath;
 
     @SerializedName("isdefault")
@@ -244,7 +244,7 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     private Boolean displayNetwork;
 
     @SerializedName(ApiConstants.ACL_ID)
-    @Param(description = "ACL Id associated with the VPC Network")
+    @Param(description = "ACL ID associated with the VPC Network")
     private String aclId;
 
     @SerializedName(ApiConstants.ACL_NAME)
@@ -260,7 +260,7 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     private Set<String> networkSpannedZones;
 
     @SerializedName(ApiConstants.EXTERNAL_ID)
-    @Param(description = "The external id of the Network", since = "4.11")
+    @Param(description = "The external ID of the Network", since = "4.11")
     private String externalId;
 
     @SerializedName(ApiConstants.REDUNDANT_ROUTER)

@@ -45,7 +45,7 @@ public class GuestVlanRangeResponse extends BaseResponse implements ControlledEn
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the domain to which the guest VLAN range belongs", since = "4.19.2.0")
+    @Param(description = "Path of the domain to which the guest VLAN range belongs", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.GUEST_VLAN_RANGE)

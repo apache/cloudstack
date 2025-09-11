@@ -64,7 +64,7 @@ public class SecurityGroupResponse extends BaseResponse implements ControlledVie
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the Domain the security group belongs to", since = "4.19.2.0")
+    @Param(description = "Path of the Domain the security group belongs to", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName("ingressrule")

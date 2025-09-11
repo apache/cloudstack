@@ -30,7 +30,7 @@ import java.util.Set;
 @EntityReference(value = SecurityRule.class)
 public class SecurityGroupRuleResponse extends BaseResponse {
     @SerializedName("ruleid")
-    @Param(description = "The id of the security group rule")
+    @Param(description = "The ID of the security group rule")
     private String ruleId;
 
     @SerializedName("protocol")

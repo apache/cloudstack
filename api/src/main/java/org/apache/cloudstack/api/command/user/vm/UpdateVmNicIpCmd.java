@@ -53,7 +53,7 @@ public class UpdateVmNicIpCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @Parameter(name=ApiConstants.NIC_ID, type=CommandType.UUID, entityType = NicResponse.class, required = true,
-            description = "The ID of the   NIC  to which you want to assign private IP")
+            description = "The ID of the NIC  to which you want to assign private IP")
             private Long nicId;
 
     @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, required = false,
@@ -79,7 +79,7 @@ public class UpdateVmNicIpCmd extends BaseAsyncCmd {
     private long getZoneId() {
         Network ntwk = _entityMgr.findById(Network.class, getNetworkId());
         if (ntwk == null) {
-            throw new InvalidParameterValueException("Can't find zone id for specified");
+            throw new InvalidParameterValueException("Can't find Zone ID for specified");
         }
         return ntwk.getDataCenterId();
     }
@@ -87,7 +87,7 @@ public class UpdateVmNicIpCmd extends BaseAsyncCmd {
     public Long getNetworkId() {
         Nic nic = _entityMgr.findById(Nic.class, nicId);
         if (nic == null) {
-            throw new InvalidParameterValueException("Can't find Network id for specified NIC ");
+            throw new InvalidParameterValueException("Can't find Network ID for specified NIC");
         }
         Long networkId = nic.getNetworkId();
         return networkId;

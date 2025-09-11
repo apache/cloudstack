@@ -29,7 +29,7 @@ import java.util.List;
 public class DirectDownloadCertificateResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "The direct download certificate id")
+    @Param(description = "The direct download certificate ID")
     private String id;
 
     @SerializedName(ApiConstants.ALIAS)
@@ -37,11 +37,11 @@ public class DirectDownloadCertificateResponse extends BaseResponse {
     private String alias;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "The zone id where the certificate is uploaded")
+    @Param(description = "The Zone ID where the certificate is uploaded")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)
-    @Param(description = "The zone name where the certificate is uploaded")
+    @Param(description = "The Zone name where the certificate is uploaded")
     private String zoneName;
 
     @SerializedName(ApiConstants.VERSION)

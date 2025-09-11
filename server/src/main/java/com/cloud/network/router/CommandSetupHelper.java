@@ -366,6 +366,7 @@ public class CommandSetupHelper {
             final LoadBalancerTO lb = new LoadBalancerTO(uuid, srcIp, srcPort, protocol, algorithm, revoked, false, inline, destinations, stickinessPolicies);
             lb.setCidrList(rule.getCidrList());
             lb.setLbProtocol(lb_protocol);
+            lb.setLbSslCert(rule.getLbSslCert());
             lbs[i++] = lb;
         }
         String routerPublicIp = null;

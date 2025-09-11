@@ -39,7 +39,7 @@ public class DeleteSnapshotPoliciesCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = SnapshotPolicyResponse.class, description = "The Id of the Snapshot policy")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = SnapshotPolicyResponse.class, description = "The ID of the Snapshot policy")
     private Long id;
 
     @Parameter(name = ApiConstants.IDS,

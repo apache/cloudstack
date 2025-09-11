@@ -63,7 +63,7 @@ public class StaticRouteResponse extends BaseResponse implements ControlledEntit
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "The project id of the static route")
+    @Param(description = "The project ID of the static route")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
@@ -79,7 +79,7 @@ public class StaticRouteResponse extends BaseResponse implements ControlledEntit
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "the domain path associated with the static route", since = "4.19.2.0")
+    @Param(description = "The domain path associated with the static route", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.TAGS)

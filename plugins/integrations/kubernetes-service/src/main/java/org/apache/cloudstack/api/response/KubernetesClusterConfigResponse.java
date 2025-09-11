@@ -24,7 +24,7 @@ import com.google.gson.annotations.SerializedName;
 
 public class KubernetesClusterConfigResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "The id of the container cluster")
+    @Param(description = "The ID of the container cluster")
     private String id;
 
     @SerializedName(ApiConstants.NAME)

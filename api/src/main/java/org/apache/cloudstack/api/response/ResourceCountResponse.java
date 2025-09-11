@@ -30,7 +30,7 @@ public class ResourceCountResponse extends BaseResponse implements ControlledEnt
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "The project id for which resource count's are updated")
+    @Param(description = "The project ID for which resource count's are updated")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
@@ -46,7 +46,7 @@ public class ResourceCountResponse extends BaseResponse implements ControlledEnt
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the domain to which the resource counts are updated", since = "4.19.2.0")
+    @Param(description = "Path of the domain to which the resource counts are updated", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.RESOURCE_TYPE)

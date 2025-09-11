@@ -43,7 +43,7 @@ public class DedicateZoneResponse extends BaseResponse {
     private String domainId;
 
     @SerializedName("accountid")
-    @Param(description = "The Account Id to which the Zone is dedicated")
+    @Param(description = "The Account ID to which the Zone is dedicated")
     private String accountId;
 
     @SerializedName("affinitygroupid")

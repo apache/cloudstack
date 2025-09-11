@@ -32,7 +32,7 @@ import com.google.gson.annotations.SerializedName;
 @EntityReference(value = {KubernetesCluster.class})
 public class KubernetesClusterResponse extends BaseResponseWithAnnotations implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "The id of the Kubernetes cluster")
+    @Param(description = "The ID of the Kubernetes cluster")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
@@ -60,31 +60,31 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
     private String serviceOfferingName;
 
     @SerializedName(ApiConstants.WORKER_SERVICE_OFFERING_ID)
-    @Param(description = "the ID of the service offering of the worker nodes on the Kubernetes cluster")
+    @Param(description = "The ID of the service offering of the worker nodes on the Kubernetes cluster")
     private String workerOfferingId;
 
     @SerializedName(ApiConstants.WORKER_SERVICE_OFFERING_NAME)
-    @Param(description = "the name of the service offering of the worker nodes on the Kubernetes cluster")
+    @Param(description = "The name of the service offering of the worker nodes on the Kubernetes cluster")
     private String workerOfferingName;
 
     @SerializedName(ApiConstants.CONTROL_SERVICE_OFFERING_ID)
-    @Param(description = "the ID of the service offering of the control nodes on the Kubernetes cluster")
+    @Param(description = "The ID of the service offering of the control nodes on the Kubernetes cluster")
     private String controlOfferingId;
 
     @SerializedName(ApiConstants.CONTROL_SERVICE_OFFERING_NAME)
-    @Param(description = "the name of the service offering of the control nodes on the Kubernetes cluster")
+    @Param(description = "The name of the service offering of the control nodes on the Kubernetes cluster")
     private String controlOfferingName;
 
     @SerializedName(ApiConstants.ETCD_SERVICE_OFFERING_ID)
-    @Param(description = "the ID of the service offering of the etcd nodes on the Kubernetes cluster")
+    @Param(description = "The ID of the service offering of the etcd nodes on the Kubernetes cluster")
     private String etcdOfferingId;
 
     @SerializedName(ApiConstants.ETCD_SERVICE_OFFERING_NAME)
-    @Param(description = "the name of the service offering of the etcd nodes on the Kubernetes cluster")
+    @Param(description = "The name of the service offering of the etcd nodes on the Kubernetes cluster")
     private String etcdOfferingName;
 
     @SerializedName(ApiConstants.ETCD_NODES)
-    @Param(description = "the number of the etcd nodes on the Kubernetes cluster")
+    @Param(description = "The number of the etcd nodes on the Kubernetes cluster")
     private Long etcdNodes;
 
     @SerializedName(ApiConstants.TEMPLATE_ID)
@@ -128,7 +128,7 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the domain to which the Kubernetes cluster belongs", since = "4.19.2.0")
+    @Param(description = "Path of the domain to which the Kubernetes cluster belongs", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.SSH_KEYPAIR)

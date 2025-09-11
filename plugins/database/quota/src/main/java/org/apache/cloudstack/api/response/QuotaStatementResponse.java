@@ -28,7 +28,7 @@ import java.util.List;
 public class QuotaStatementResponse  extends BaseResponse {
 
     @SerializedName("accountid")
-    @Param(description = "Account id")
+    @Param(description = "Account ID")
     private Long accountId;
 
     @SerializedName("account")
@@ -36,7 +36,7 @@ public class QuotaStatementResponse  extends BaseResponse {
     private String accountName;
 
     @SerializedName("domain")
-    @Param(description = "Domain id")
+    @Param(description = "Domain ID")
     private Long domainId;
 
     @SerializedName("quotausage")

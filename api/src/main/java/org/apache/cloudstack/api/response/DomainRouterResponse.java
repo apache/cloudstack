@@ -34,7 +34,7 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 public class DomainRouterResponse extends BaseResponseWithAnnotations implements ControlledViewEntityResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "The id of the router")
+    @Param(description = "The ID of the router")
     private String id;
 
     @SerializedName(ApiConstants.ZONE_ID)
@@ -82,7 +82,7 @@ public class DomainRouterResponse extends BaseResponseWithAnnotations implements
     private String podName;
 
     @SerializedName(ApiConstants.HOST_ID)
-    @Param(description = "The host ID for the router")
+    @Param(description = "The Host ID for the router")
     private String hostId;
 
     @SerializedName("hostname")
@@ -170,7 +170,7 @@ public class DomainRouterResponse extends BaseResponseWithAnnotations implements
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "The project id of the IP address")
+    @Param(description = "The project ID of the IP address")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
@@ -186,7 +186,7 @@ public class DomainRouterResponse extends BaseResponseWithAnnotations implements
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the Domain the router belongs to", since = "4.19.2.0")
+    @Param(description = "Path of the Domain the router belongs to", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.SERVICE_OFFERING_ID)

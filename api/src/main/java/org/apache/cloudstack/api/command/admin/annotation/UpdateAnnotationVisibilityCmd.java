@@ -38,7 +38,7 @@ public class UpdateAnnotationVisibilityCmd extends BaseCmd {
 
 
     @Parameter(name = ApiConstants.ID, type = CommandType.STRING, required = true,
-            description = "The id of the annotation")
+            description = "The ID of the annotation")
     private String uuid;
 
     @Parameter(name = ApiConstants.ADMINS_ONLY, type = CommandType.BOOLEAN, required = true,

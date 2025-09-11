@@ -67,7 +67,7 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     private String userName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "The project id of the Instance")
+    @Param(description = "The project ID of the Instance")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
@@ -83,7 +83,7 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the domain in which the virtual machine exists", since = "4.19.2.0")
+    @Param(description = "Path of the domain in which the Instance exists", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.CREATED)
@@ -408,7 +408,7 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "Base64 string containing the user data", since = "4.18.0.0")
     private String userData;
 
-    @SerializedName(ApiConstants.USER_DATA_ID) @Param(description = "The id of userdata used for the Instance", since = "4.18.0")
+    @SerializedName(ApiConstants.USER_DATA_ID) @Param(description = "The ID of userdata used for the Instance", since = "4.18.0")
     private String userDataId;
 
     @SerializedName(ApiConstants.USER_DATA_NAME) @Param(description = "The name of userdata used for the Instance", since = "4.18.0")

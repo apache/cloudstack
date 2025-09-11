@@ -44,11 +44,11 @@ public class FirewallResponse extends BaseResponse {
     private Integer endPort;
 
     @SerializedName(ApiConstants.IP_ADDRESS_ID)
-    @Param(description = "The public IP address id for the firewall rule")
+    @Param(description = "The public IP address ID for the firewall rule")
     private String publicIpAddressId;
 
     @SerializedName(ApiConstants.NETWORK_ID)
-    @Param(description = "The Network id of the firewall rule")
+    @Param(description = "The Network ID of the firewall rule")
     private String networkId;
 
     @SerializedName(ApiConstants.IP_ADDRESS)

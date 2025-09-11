@@ -68,7 +68,7 @@ public class ListNetworksCmd extends BaseListRetrieveOnlyResourceCountCmd implem
     @Parameter(name = ApiConstants.TRAFFIC_TYPE, type = CommandType.STRING, description = "Type of the traffic")
     private String trafficType;
 
-    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "List Networks by physical Network id")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "List Networks by physical Network ID")
     private Long physicalNetworkId;
 
     @Parameter(name = ApiConstants.SUPPORTED_SERVICES, type = CommandType.LIST, collectionType = CommandType.STRING, description = "List Networks supporting certain services")

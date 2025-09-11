@@ -28,7 +28,7 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 public class ListElastistorInterfaceResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "The id of the NIC")
+    @Param(description = "The ID of the NIC")
     private String id;
 
     @SerializedName(ApiConstants.NAME)

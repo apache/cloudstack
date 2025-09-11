@@ -80,7 +80,7 @@ public class BackupResponse extends BaseResponse {
     private String volumes;
 
     @SerializedName(ApiConstants.BACKUP_OFFERING_ID)
-    @Param(description = "Backup offering id")
+    @Param(description = "Backup offering ID")
     private String backupOfferingId;
 
     @SerializedName(ApiConstants.BACKUP_OFFERING_NAME)
@@ -88,7 +88,7 @@ public class BackupResponse extends BaseResponse {
     private String backupOfferingName;
 
     @SerializedName(ApiConstants.ACCOUNT_ID)
-    @Param(description = "Account id")
+    @Param(description = "Account ID")
     private String accountId;
 
     @SerializedName(ApiConstants.ACCOUNT)
@@ -96,7 +96,7 @@ public class BackupResponse extends BaseResponse {
     private String account;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "Domain id")
+    @Param(description = "Domain ID")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
@@ -104,7 +104,7 @@ public class BackupResponse extends BaseResponse {
     private String domain;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "Zone id")
+    @Param(description = "Zone ID")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE)

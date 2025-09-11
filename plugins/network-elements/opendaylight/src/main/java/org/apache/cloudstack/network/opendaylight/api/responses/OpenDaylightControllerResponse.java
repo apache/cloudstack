@@ -31,11 +31,11 @@ import com.cloud.serializer.Param;
 @EntityReference(value = OpenDaylightControllerVO.class)
 public class OpenDaylightControllerResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "Device id of the controller")
+    @Param(description = "Device ID of the controller")
     private String id;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)
-    @Param(description = "The physical network to which this controller belongs to")
+    @Param(description = "The physical Network to which this controller belongs to")
     private String physicalNetworkId;
 
     @SerializedName(ApiConstants.NAME)

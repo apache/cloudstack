@@ -28,7 +28,7 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 public class ListElastistorVolumeResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "The id of the volume")
+    @Param(description = "The ID of the volume")
     private String id;
 
     @SerializedName(ApiConstants.NAME)

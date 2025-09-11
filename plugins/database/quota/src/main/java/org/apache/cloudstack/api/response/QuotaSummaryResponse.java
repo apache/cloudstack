@@ -30,7 +30,7 @@ import com.cloud.user.Account.State;
 public class QuotaSummaryResponse extends BaseResponse {
 
     @SerializedName("accountid")
-    @Param(description = "Account id")
+    @Param(description = "Account ID")
     private String accountId;
 
     @SerializedName("account")
@@ -38,7 +38,7 @@ public class QuotaSummaryResponse extends BaseResponse {
     private String accountName;
 
     @SerializedName("domainid")
-    @Param(description = "Domain id")
+    @Param(description = "Domain ID")
     private String domainId;
 
     @SerializedName("domain")

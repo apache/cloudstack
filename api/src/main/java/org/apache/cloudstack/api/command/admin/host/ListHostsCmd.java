@@ -55,22 +55,22 @@ public class ListHostsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, description = "Lists hosts existing in particular cluster")
     private Long clusterId;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HostResponse.class, description = "The id of the host")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HostResponse.class, description = "The ID of the Host")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the host")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the Host")
     private String hostName;
 
-    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "The Pod ID for the host")
+    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "The Pod ID for the Host")
     private Long podId;
 
-    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "The state of the host")
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "The state of the Host")
     private String state;
 
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "The host type")
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "The Host type")
     private String type;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The Zone ID for the host")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The Zone ID for the Host")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
@@ -107,14 +107,14 @@ public class ListHostsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "Hypervisor type of host: XenServer,KVM,VMware,Hyperv,BareMetal,Simulator")
     private String hypervisor;
 
-    @Parameter(name = ApiConstants.MANAGEMENT_SERVER_ID, type = CommandType.UUID, entityType = ManagementServerResponse.class, description = "the id of the management server", since="4.21.0")
+    @Parameter(name = ApiConstants.MANAGEMENT_SERVER_ID, type = CommandType.UUID, entityType = ManagementServerResponse.class, description = "The ID of the management server", since="4.21.0")
     private Long managementServerId;
 
     @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING, description = "CPU Arch of the host", since = "4.20.1")
     private String arch;
 
     @Parameter(name = ApiConstants.STORAGE_ACCESS_GROUP, type = CommandType.STRING,
-            description = "the name of the storage access group",
+            description = "The name of the storage access group",
             since = "4.21.0")
     private String storageAccessGroup;
 

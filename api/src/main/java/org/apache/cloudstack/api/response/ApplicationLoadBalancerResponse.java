@@ -77,7 +77,7 @@ public class ApplicationLoadBalancerResponse extends BaseResponse implements Con
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the domain to which the Load Balancer belongs", since = "4.19.2.0")
+    @Param(description = "Path of the domain to which the Load Balancer belongs", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName("loadbalancerrule")

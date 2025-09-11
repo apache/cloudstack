@@ -32,7 +32,7 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 public class IPAddressResponse extends BaseResponseWithAnnotations implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "Public IP address id")
+    @Param(description = "Public IP address ID")
     private String id;
 
     @SerializedName(ApiConstants.IP_ADDRESS)
@@ -60,7 +60,7 @@ public class IPAddressResponse extends BaseResponseWithAnnotations implements Co
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "The project id of the IP address")
+    @Param(description = "The project ID of the IP address")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
@@ -80,7 +80,7 @@ public class IPAddressResponse extends BaseResponseWithAnnotations implements Co
     private String domainPath;
 
     @SerializedName(ApiConstants.FOR_VIRTUAL_NETWORK)
-    @Param(description = "The virtual Network for the IP address")
+    @Param(description = "The virtual network for the IP address")
     private Boolean forVirtualNetwork;
 
     @SerializedName(ApiConstants.VLAN_ID)
@@ -100,7 +100,7 @@ public class IPAddressResponse extends BaseResponseWithAnnotations implements Co
     private Boolean isSystem;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
-    @Param(description = "Instance id the IP address is assigned to")
+    @Param(description = "Instance ID the IP address is assigned to")
     private String virtualMachineId;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_TYPE)
@@ -144,7 +144,7 @@ public class IPAddressResponse extends BaseResponseWithAnnotations implements Co
     private String purpose;
 
     @SerializedName(ApiConstants.VPC_ID)
-    @Param(description = "VPC id the IP belongs to")
+    @Param(description = "VPC ID the IP belongs to")
     private String vpcId;
 
     @SerializedName(ApiConstants.VPC_NAME)

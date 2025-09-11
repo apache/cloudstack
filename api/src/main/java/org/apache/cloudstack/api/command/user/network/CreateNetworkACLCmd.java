@@ -78,7 +78,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.NUMBER, type = CommandType.INTEGER, description = "The number of the ACL item, its ordering")
     private Integer number;
 
-    @Parameter(name = ApiConstants.ACTION, type = CommandType.STRING, description = "Scl entry action, allow or deny")
+    @Parameter(name = ApiConstants.ACTION, type = CommandType.STRING, description = "ACL entry action, allow or deny")
     private String action;
 
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the rule to the end User or not", since = "4.4", authorized = {

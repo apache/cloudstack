@@ -46,10 +46,10 @@ public class ListVPCsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     ////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "List VPC by id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "List VPC by ID")
     private Long id;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "List by zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "List by Zone")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "List by name of the VPC")

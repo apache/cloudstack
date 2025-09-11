@@ -44,7 +44,7 @@ public class AddAnnotationCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ENTITY_TYPE, type = CommandType.STRING, description = "The following entity types are allowed VM, VOLUME, SNAPSHOT, VM_SNAPSHOT, INSTANCE_GROUP, SSH_KEYPAIR, USER_DATA, NETWORK, VPC, PUBLIC_IP_ADDRESS, VPN_CUSTOMER_GATEWAY, TEMPLATE, ISO, KUBERNETES_CLUSTER, SERVICE_OFFERING, DISK_OFFERING, NETWORK_OFFERING, ZONE, POD, CLUSTER, HOST, DOMAIN, PRIMARY_STORAGE, SECONDARY_STORAGE, VR, SYSTEM_VM, AUTOSCALE_VM_GROUP, MANAGEMENT_SERVER")
     private String entityType;
 
-    @Parameter(name = ApiConstants.ENTITY_ID, type = CommandType.STRING, description = "The id of the entity to annotate")
+    @Parameter(name = ApiConstants.ENTITY_ID, type = CommandType.STRING, description = "The ID of the entity to annotate")
     private String entityUuid;
 
     @Parameter(name = ApiConstants.ADMINS_ONLY, type = CommandType.BOOLEAN, since = "4.16.0",

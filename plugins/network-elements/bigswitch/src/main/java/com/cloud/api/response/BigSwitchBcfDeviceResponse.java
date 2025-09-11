@@ -32,7 +32,7 @@ import com.cloud.serializer.Param;
 @EntityReference(value = BigSwitchBcfDeviceVO.class)
 public class BigSwitchBcfDeviceResponse extends BaseResponse {
     @SerializedName(BcfConstants.BIGSWITCH_BCF_DEVICE_ID)
-    @Param(description = "Device id of the BigSwitch BCF Controller")
+    @Param(description = "Device ID of the BigSwitch BCF Controller")
     private String id;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)

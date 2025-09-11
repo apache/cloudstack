@@ -48,7 +48,7 @@ public class DeleteTungstenFabricFirewallPolicyCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "The ID of zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.FIREWALL_POLICY_UUID, type = CommandType.STRING, required = true, description = "The uuid of Tungsten-Fabric firewall policy")
+    @Parameter(name = ApiConstants.FIREWALL_POLICY_UUID, type = CommandType.STRING, required = true, description = "The UUID of Tungsten-Fabric firewall policy")
     private String firewallPolicyUuid;
 
     @Override

@@ -70,7 +70,7 @@ public class ResizeVolumeCmd extends BaseAsyncCmd implements UserCmd {
                entityType = DiskOfferingResponse.class,
                type = CommandType.UUID,
                required = false,
-               description = "New disk offering id")
+               description = "New disk offering ID")
     private Long newDiskOfferingId;
 
     @Parameter(name = ApiConstants.AUTO_MIGRATE, type = CommandType.BOOLEAN, required = false,

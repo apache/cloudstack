@@ -61,7 +61,7 @@ public class SharedFSResponse extends BaseResponseWithTagInformation implements 
     private String virtualMachineState;
 
     @SerializedName(ApiConstants.VOLUME_NAME)
-    @Param(description = "name of the storage fs data volume")
+    @Param(description = "Name of the storage fs data volume")
     private String volumeName;
 
     @SerializedName(ApiConstants.VOLUME_ID)
@@ -69,7 +69,7 @@ public class SharedFSResponse extends BaseResponseWithTagInformation implements 
     private String volumeId;
 
     @SerializedName(ApiConstants.STORAGE)
-    @Param(description = "name of the storage pool hosting the data volume")
+    @Param(description = "Name of the storage pool hosting the data volume")
     private String storagePoolName;
 
     @SerializedName(ApiConstants.STORAGE_ID)
@@ -77,35 +77,35 @@ public class SharedFSResponse extends BaseResponseWithTagInformation implements 
     private String storagePoolId;
 
     @SerializedName(ApiConstants.SIZE)
-    @Param(description = "size of the shared filesystem")
+    @Param(description = "Size of the shared filesystem")
     private Long size;
 
     @SerializedName(ApiConstants.SIZEGB)
-    @Param(description = "size of the shared filesystem in GiB")
+    @Param(description = "Size of the shared filesystem in GiB")
     private String sizeGB;
 
     @SerializedName(ApiConstants.DISK_OFFERING_ID)
-    @Param(description = "disk offering ID for the shared filesystem")
+    @Param(description = "Disk offering ID for the shared filesystem")
     private String diskOfferingId;
 
     @SerializedName("diskofferingname")
-    @Param(description = "disk offering for the shared filesystem")
+    @Param(description = "Disk offering for the shared filesystem")
     private String diskOfferingName;
 
     @SerializedName("iscustomdiskoffering")
-    @Param(description = "disk offering for the shared filesystem has custom size")
+    @Param(description = "Disk offering for the shared filesystem has custom size")
     private Boolean isCustomDiskOffering;
 
     @SerializedName("diskofferingdisplaytext")
-    @Param(description = "disk offering display text for the shared filesystem")
+    @Param(description = "Disk offering display text for the shared filesystem")
     private String diskOfferingDisplayText;
 
     @SerializedName(ApiConstants.SERVICE_OFFERING_ID)
-    @Param(description = "service offering ID for the shared filesystem")
+    @Param(description = "Service offering ID for the shared filesystem")
     private String serviceOfferingId;
 
     @SerializedName("serviceofferingname")
-    @Param(description = "service offering for the shared filesystem")
+    @Param(description = "Service offering for the shared filesystem")
     private String serviceOfferingName;
 
     @SerializedName(ApiConstants.NETWORK_ID)
@@ -117,79 +117,79 @@ public class SharedFSResponse extends BaseResponseWithTagInformation implements 
     private String networkName;
 
     @SerializedName(ApiConstants.NIC)
-    @Param(description = "the list of nics associated with the shared filesystem", responseObject = NicResponse.class)
+    @Param(description = "The list of NICs associated with the shared filesystem", responseObject = NicResponse.class)
     private List<NicResponse> nics;
 
     @SerializedName(ApiConstants.PATH)
-    @Param(description = "path to mount the shared filesystem")
+    @Param(description = "Path to mount the shared filesystem")
     private String path;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "the state of the shared filesystem")
+    @Param(description = "The state of the shared filesystem")
     private String state;
 
     @SerializedName(ApiConstants.PROVIDER)
-    @Param(description = "the shared filesystem provider")
+    @Param(description = "The shared filesystem provider")
     private String provider;
 
     @SerializedName(ApiConstants.FILESYSTEM)
-    @Param(description = "the filesystem format")
+    @Param(description = "The filesystem format")
     private String filesystem;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account associated with the shared filesystem")
+    @Param(description = "The account associated with the shared filesystem")
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project ID of the shared filesystem")
+    @Param(description = "The project ID of the shared filesystem")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name of the shared filesystem")
+    @Param(description = "The project name of the shared filesystem")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the ID of the domain associated with the shared filesystem")
+    @Param(description = "The ID of the domain associated with the shared filesystem")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain associated with the shared filesystem")
+    @Param(description = "The domain associated with the shared filesystem")
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the domain to which the shared filesystem")
+    @Param(description = "Path of the domain to which the shared filesystem")
     private String domainPath;
 
     @SerializedName(ApiConstants.PROVISIONINGTYPE)
-    @Param(description = "provisioning type used in the shared filesystem")
+    @Param(description = "Provisioning type used in the shared filesystem")
     private String provisioningType;
 
     @SerializedName(ApiConstants.DISK_IO_READ)
-    @Param(description = "the read (IO) of disk on the shared filesystem")
+    @Param(description = "The read (IO) of disk on the shared filesystem")
     private Long diskIORead;
 
     @SerializedName(ApiConstants.DISK_IO_WRITE)
-    @Param(description = "the write (IO) of disk on the shared filesystem")
+    @Param(description = "The write (IO) of disk on the shared filesystem")
     private Long diskIOWrite;
 
     @SerializedName(ApiConstants.DISK_KBS_READ)
-    @Param(description = "the shared filesystem's disk read in KiB")
+    @Param(description = "The shared filesystem's disk read in KiB")
     private Long diskKbsRead;
 
     @SerializedName(ApiConstants.DISK_KBS_WRITE)
-    @Param(description = "the shared filesystem's disk write in KiB")
+    @Param(description = "The shared filesystem's disk write in KiB")
     private Long diskKbsWrite;
 
     @SerializedName(ApiConstants.VIRTUAL_SIZE)
-    @Param(description = "the bytes allocated")
+    @Param(description = "The bytes allocated")
     private Long virtualSize;
 
     @SerializedName(ApiConstants.PHYSICAL_SIZE)
-    @Param(description = "the bytes actually consumed on disk")
+    @Param(description = "The bytes actually consumed on disk")
     private Long physicalSize;
 
     @SerializedName(ApiConstants.UTILIZATION)
-    @Param(description = "the disk utilization")
+    @Param(description = "The disk utilization")
     private String utilization;
 
     @Override

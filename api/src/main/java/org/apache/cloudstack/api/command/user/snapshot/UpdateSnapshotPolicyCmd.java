@@ -80,11 +80,11 @@ public class UpdateSnapshotPolicyCmd extends BaseAsyncCustomIdCmd {
 
         SnapshotPolicy policy = _entityMgr.findById(SnapshotPolicy.class, getId());
         if (policy == null) {
-            throw new InvalidParameterValueException("Invalid Snapshot policy id was provided");
+            throw new InvalidParameterValueException("Invalid Snapshot policy ID was provided");
         }
         Volume volume = _responseGenerator.findVolumeById(policy.getVolumeId());
         if (volume == null) {
-            throw new InvalidParameterValueException("Snapshot policy's volume id doesn't exist");
+            throw new InvalidParameterValueException("Snapshot policy's volume ID doesn't exist");
         }else{
             return volume.getAccountId();
         }
@@ -104,7 +104,7 @@ public class UpdateSnapshotPolicyCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("SnapshotPolicy Id: " + getId());
+        CallContext.current().setEventDetails("SnapshotPolicy ID: " + getId());
         SnapshotPolicy result = _snapshotService.updateSnapshotPolicy(this);
         if (result != null) {
             SnapshotPolicyResponse response = _responseGenerator.createSnapshotPolicyResponse(result);

@@ -27,7 +27,7 @@ import com.cloud.serializer.Param;
 
 public class BaremetalPxeResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "Device id of ")
+    @Param(description = "Device ID of ")
     private String id;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)

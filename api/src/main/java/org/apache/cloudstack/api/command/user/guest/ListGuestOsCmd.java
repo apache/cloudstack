@@ -42,10 +42,10 @@ public class ListGuestOsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = GuestOSResponse.class, description = "List by OS type Id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = GuestOSResponse.class, description = "List by OS type ID")
     private Long id;
 
-    @Parameter(name = ApiConstants.OS_CATEGORY_ID, type = CommandType.UUID, entityType = GuestOSCategoryResponse.class, description = "List by OS Category id")
+    @Parameter(name = ApiConstants.OS_CATEGORY_ID, type = CommandType.UUID, entityType = GuestOSCategoryResponse.class, description = "List by OS Category ID")
     private Long osCategoryId;
 
     @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "List OS by description", since = "3.0.1")

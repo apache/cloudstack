@@ -1737,11 +1737,13 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                         .append(",sourcePortEnd=").append(firewallRuleVO.getSourcePortEnd());
                 if (firewallRuleVO instanceof LoadBalancerVO) {
                     LoadBalancerVO loadBalancerVO = (LoadBalancerVO) firewallRuleVO;
-                    loadBalancingData.append(",sourceIp=").append(_ipAddressDao.findById(loadBalancerVO.getSourceIpAddressId()).getAddress().toString())
+                    String sourceIp = _ipAddressDao.findById(loadBalancerVO.getSourceIpAddressId()).getAddress().toString();
+                    loadBalancingData.append(",sourceIp=").append(sourceIp)
                             .append(",destPortStart=").append(loadBalancerVO.getDefaultPortStart())
                             .append(",destPortEnd=").append(loadBalancerVO.getDefaultPortEnd())
                             .append(",algorithm=").append(loadBalancerVO.getAlgorithm())
                             .append(",protocol=").append(loadBalancerVO.getLbProtocol());
+                    updateWithLbRuleSslCertificates(loadBalancingData, loadBalancerVO, sourceIp);
                 } else if (firewallRuleVO instanceof ApplicationLoadBalancerRuleVO) {
                     ApplicationLoadBalancerRuleVO appLoadBalancerVO = (ApplicationLoadBalancerRuleVO) firewallRuleVO;
                     loadBalancingData.append(",sourceIp=").append(appLoadBalancerVO.getSourceIp())
@@ -1756,6 +1758,16 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                     loadBalancingData.append(vmMapVO.getInstanceIp()).append(" ");
                 }
                 loadBalancingData.setCharAt(loadBalancingData.length() - 1, ';');
+            }
+        }
+    }
+
+    protected void updateWithLbRuleSslCertificates(final StringBuilder loadBalancingData, LoadBalancerVO loadBalancerVO, String sourceIp) {
+        if (NetUtils.SSL_PROTO.equals(loadBalancerVO.getLbProtocol())) {
+            final LbSslCert sslCert = _lbMgr.getLbSslCert(loadBalancerVO.getId());
+            if (sslCert != null && ! sslCert.isRevoked()) {
+                loadBalancingData.append(",sslcert=").append(sourceIp.replace(".", "_")).append('-')
+                        .append(loadBalancerVO.getSourcePortStart()).append(".pem");
             }
         }
     }

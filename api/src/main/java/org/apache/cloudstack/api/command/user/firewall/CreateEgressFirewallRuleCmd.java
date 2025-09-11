@@ -57,7 +57,7 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
                type = CommandType.UUID,
                entityType = NetworkResponse.class,
                required = true,
-               description = "The Network id of the port forwarding rule")
+               description = "The Network ID of the port forwarding rule")
     private Long networkId;
 
     @Parameter(name = ApiConstants.PROTOCOL,

@@ -39,7 +39,7 @@ public class Site2SiteCustomerGatewayResponse extends BaseResponseWithAnnotation
     private String name;
 
     @SerializedName(ApiConstants.GATEWAY)
-    @Param(description = "Public IP address id of the customer gateway")
+    @Param(description = "Public IP address ID of the customer gateway")
     private String gatewayIp;
 
     @SerializedName(ApiConstants.IP_ADDRESS)
@@ -83,7 +83,7 @@ public class Site2SiteCustomerGatewayResponse extends BaseResponseWithAnnotation
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "The project id")
+    @Param(description = "The project ID")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
@@ -91,7 +91,7 @@ public class Site2SiteCustomerGatewayResponse extends BaseResponseWithAnnotation
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "The domain id of the owner")
+    @Param(description = "The domain ID of the owner")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
@@ -99,7 +99,7 @@ public class Site2SiteCustomerGatewayResponse extends BaseResponseWithAnnotation
     private String domain;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "the domain path of the owner", since = "4.19.2.0")
+    @Param(description = "The domain path of the owner", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.REMOVED)

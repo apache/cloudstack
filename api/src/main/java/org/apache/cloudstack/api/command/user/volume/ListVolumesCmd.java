@@ -62,10 +62,10 @@ public class ListVolumesCmd extends BaseListRetrieveOnlyResourceCountCmd impleme
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the disk volume")
     private String volumeName;
 
-    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "The pod id the disk volume belongs to")
+    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "The Pod ID the disk volume belongs to")
     private Long podId;
 
-    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, description = "The cluster id the disk volume belongs to", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, description = "The Cluster ID the disk volume belongs to", authorized = {RoleType.Admin})
     private Long clusterId;
 
     @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "The type of disk volume")
@@ -74,7 +74,7 @@ public class ListVolumesCmd extends BaseListRetrieveOnlyResourceCountCmd impleme
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class, description = "The ID of the Instance")
     private Long virtualMachineId;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The ID of the availability zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The ID of the availability Zone")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.STORAGE_ID, type = CommandType.STRING, entityType = StoragePoolResponse.class, description = "The ID of the storage pool, available to ROOT admin only", since = "4.3", authorized = {
@@ -94,14 +94,14 @@ public class ListVolumesCmd extends BaseListRetrieveOnlyResourceCountCmd impleme
             RoleType.Admin})
     private Boolean display;
 
-    @Parameter(name = ApiConstants.LIST_SYSTEM_VMS, type = CommandType.BOOLEAN, description = "List system VMs; only ROOT admin is eligible to pass this parameter", since = "4.18",
+    @Parameter(name = ApiConstants.LIST_SYSTEM_VMS, type = CommandType.BOOLEAN, description = "List System VMs; only ROOT admin is eligible to pass this parameter", since = "4.18",
             authorized = { RoleType.Admin })
     private Boolean listSystemVms;
 
-    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "State of the volume. Possible values are: Ready, Allocated, Destroy, Expunging, Expunged.")
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "State of the Volume. Possible values are: Ready, Allocated, Destroy, Expunging, Expunged.")
     private String state;
 
-    @Parameter(name = ApiConstants.IS_ENCRYPTED, type = CommandType.BOOLEAN, description = "list only volumes that are encrypted", since = "4.19.1",
+    @Parameter(name = ApiConstants.IS_ENCRYPTED, type = CommandType.BOOLEAN, description = "List only volumes that are encrypted", since = "4.19.1",
             authorized = { RoleType.Admin })
     private Boolean encrypted;
 

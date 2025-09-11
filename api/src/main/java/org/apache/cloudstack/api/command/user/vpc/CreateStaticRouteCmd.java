@@ -52,7 +52,7 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.VPC_ID,
             type = CommandType.UUID,
             entityType = VpcResponse.class,
-            description = "The VPC id for which the static route is created. This is required for nexthop parameter",
+            description = "The VPC ID for which the static route is created. This is required for nexthop parameter",
             since = "4.21.0")
     private Long vpcId;
 

@@ -171,7 +171,7 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd implements UserC
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create private gateway");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Private Gateway");
         }
     }
 
@@ -179,7 +179,7 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd implements UserC
     public long getEntityOwnerId() {
         Vpc vpc = _entityMgr.findById(Vpc.class, vpcId);
         if (vpc == null) {
-            throw new InvalidParameterValueException("Invalid id is specified for the VPC");
+            throw new InvalidParameterValueException("Invalid ID is specified for the VPC");
         }
         return vpc.getAccountId();
     }
@@ -191,7 +191,7 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd implements UserC
 
     @Override
     public String getEventDescription() {
-        return "Applying VPC private gateway. Private gateway Id: " + getEntityId();
+        return "Applying VPC Private Gateway. Private Gateway ID: " + getEntityId();
     }
 
     @Override
@@ -203,7 +203,7 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd implements UserC
     public Long getSyncObjId() {
         Vpc vpc = _entityMgr.findById(Vpc.class, vpcId);
         if (vpc == null) {
-            throw new InvalidParameterValueException("Invalid id is specified for the VPC");
+            throw new InvalidParameterValueException("Invalid ID is specified for the VPC");
         }
         return vpc.getId();
     }

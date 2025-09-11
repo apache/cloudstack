@@ -30,7 +30,7 @@ import com.cloud.serializer.Param;
 @SuppressWarnings("unused")
 public class ConditionResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName("id")
-    @Param(description = "The id of the Condition")
+    @Param(description = "The ID of the Condition")
     private String id;
 
     @SerializedName(value = ApiConstants.THRESHOLD)
@@ -42,7 +42,7 @@ public class ConditionResponse extends BaseResponse implements ControlledEntityR
     private String relationalOperator;
 
     @SerializedName("counterid")
-    @Param(description = "The Id of the Counter.")
+    @Param(description = "The ID of the Counter.")
     private String counterId;
 
     @SerializedName("countername")
@@ -54,7 +54,7 @@ public class ConditionResponse extends BaseResponse implements ControlledEntityR
     private CounterResponse counterResponse;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "The domain id of the Condition owner")
+    @Param(description = "The domain ID of the Condition owner")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
@@ -62,15 +62,15 @@ public class ConditionResponse extends BaseResponse implements ControlledEntityR
     private String domain;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the domain to which the Condition owner belongs", since = "4.19.2.0")
+    @Param(description = "Path of the domain to which the Condition owner belongs", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "Zone id of counter")
+    @Param(description = "Zone ID of counter")
     private String zoneId;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "The project id of the Condition.")
+    @Param(description = "The project ID of the Condition.")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)

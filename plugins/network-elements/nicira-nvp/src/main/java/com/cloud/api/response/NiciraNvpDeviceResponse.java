@@ -31,7 +31,7 @@ import com.cloud.serializer.Param;
 @EntityReference(value = NiciraNvpDeviceVO.class)
 public class NiciraNvpDeviceResponse extends BaseResponse {
     @SerializedName(ApiConstants.NICIRA_NVP_DEVICE_ID)
-    @Param(description = "Device id of the Nicire Nvp")
+    @Param(description = "Device ID of the Nicire Nvp")
     private String id;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)

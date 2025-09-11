@@ -44,7 +44,7 @@ public class ServiceInstanceResponse extends BaseResponse implements ControlledE
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "The project id of the Instance")
+    @Param(description = "The project ID of the Instance")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
@@ -60,7 +60,7 @@ public class ServiceInstanceResponse extends BaseResponse implements ControlledE
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the Domain in which the virtual machine exists", since = "4.19.2.0")
+    @Param(description = "Path of the Domain in which the virtual machine exists", since = "4.19.2.0")
     private String domainPath;
 
     public void setId(String id) {

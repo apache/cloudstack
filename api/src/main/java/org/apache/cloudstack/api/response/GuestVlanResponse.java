@@ -30,7 +30,7 @@ import java.util.List;
 public class GuestVlanResponse extends BaseResponse implements ControlledEntityResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "The guest VLAN id")
+    @Param(description = "The guest VLAN ID")
     private long id;
 
     @SerializedName(ApiConstants.VLAN)
@@ -50,11 +50,11 @@ public class GuestVlanResponse extends BaseResponse implements ControlledEntityR
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the domain to which the guest VLAN range belongs", since = "4.19.2.0")
+    @Param(description = "Path of the domain to which the guest VLAN range belongs", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "The project id of the guest VLAN range")
+    @Param(description = "The project ID of the guest VLAN range")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
@@ -62,11 +62,11 @@ public class GuestVlanResponse extends BaseResponse implements ControlledEntityR
     private String projectName;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "The zone ID of the guest VLAN range")
+    @Param(description = "The Zone ID of the guest VLAN range")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)
-    @Param(description = "The zone name of the guest VLAN range")
+    @Param(description = "The Zone name of the guest VLAN range")
     private String zoneName;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)

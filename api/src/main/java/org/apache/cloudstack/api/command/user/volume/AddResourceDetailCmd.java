@@ -43,7 +43,7 @@ public class AddResourceDetailCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING, required = true, description = "Type of the resource")
     private String resourceType;
 
-    @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.STRING, required = true, collectionType = CommandType.STRING, description = "Resource id to create the details for")
+    @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.STRING, required = true, collectionType = CommandType.STRING, description = "Resource ID to create the details for")
     private String resourceId;
 
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "Pass false if you want this detail to be disabled for the regular User. True by default", since = "4.4")

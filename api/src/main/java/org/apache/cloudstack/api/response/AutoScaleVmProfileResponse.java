@@ -115,7 +115,7 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the domain to which the vm profile belongs", since = "4.19.2.0")
+    @Param(description = "Path of the domain to which the vm profile belongs", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.FOR_DISPLAY)

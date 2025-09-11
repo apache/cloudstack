@@ -32,7 +32,7 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
     @SerializedName("id")
-    @Param(description = "The id of the Network offering")
+    @Param(description = "The ID of the Network offering")
     private String id;
 
     @SerializedName(ApiConstants.NAME)

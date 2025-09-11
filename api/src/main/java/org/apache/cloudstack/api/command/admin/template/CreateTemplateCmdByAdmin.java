@@ -23,6 +23,6 @@ import org.apache.cloudstack.api.command.user.template.CreateTemplateCmd;
 import org.apache.cloudstack.api.response.TemplateResponse;
 
 @APICommand(name = "createTemplate", responseObject = TemplateResponse.class, description = "Creates a Template of an Instance. " + "The Instance must be in a STOPPED state. "
-        + "A Template created from this command is automatically designated as a private Template visible to the account that created it.", responseView = ResponseView.Full,
+        + "A Template created from this command is automatically designated as a private Template visible to the Account that created it.", responseView = ResponseView.Full,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateTemplateCmdByAdmin extends CreateTemplateCmd implements AdminCmd {}

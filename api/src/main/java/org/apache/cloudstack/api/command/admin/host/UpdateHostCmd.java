@@ -40,7 +40,7 @@ public class UpdateHostCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HostResponse.class, required = true, description = "The ID of the host to update")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HostResponse.class, required = true, description = "The ID of the Host to update")
     private Long id;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Change the name of host", since = "4.15", authorized = {RoleType.Admin})
@@ -49,12 +49,12 @@ public class UpdateHostCmd extends BaseCmd {
     @Parameter(name = ApiConstants.OS_CATEGORY_ID,
                type = CommandType.UUID,
                entityType = GuestOSCategoryResponse.class,
-               description = "The id of Os category to update the host with")
+               description = "The ID of OS category to update the Host with")
     private Long osCategoryId;
 
     @Parameter(name = ApiConstants.ALLOCATION_STATE,
                type = CommandType.STRING,
-               description = "Change resource state of host, valid values are [Enable, Disable]. Operation may failed if host in states not allowing Enable/Disable")
+               description = "Change resource state of host, valid values are [Enable, Disable]. Operation may failed if Host in states not allowing Enable/Disable")
     private String allocationState;
 
     @Parameter(name = ApiConstants.HOST_TAGS, type = CommandType.LIST, collectionType = CommandType.STRING, description = "List of tags to be added to the host")
@@ -66,7 +66,7 @@ public class UpdateHostCmd extends BaseCmd {
     @Parameter(name = ApiConstants.URL, type = CommandType.STRING, description = "The new URI for the secondary storage: nfs://host/path")
     private String url;
 
-    @Parameter(name = ApiConstants.ANNOTATION, type = CommandType.STRING, description = "Add an annotation to this host", since = "4.11", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.ANNOTATION, type = CommandType.STRING, description = "Add an annotation to this Host", since = "4.11", authorized = {RoleType.Admin})
     private String annotation;
 
     @Parameter(name = ApiConstants.EXTERNAL_DETAILS, type = CommandType.MAP, description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].endpoint.url=urlvalue", since = "4.21.0")
@@ -135,8 +135,8 @@ public class UpdateHostCmd extends BaseCmd {
             this.setResponseObject(hostResponse);
         } catch (Exception e) {
             Host host = _entityMgr.findById(Host.class, getId());
-            logger.debug("Failed to update host: {} with id {}", host, getId(), e);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to update host: %s with id %d, %s", host, getId(), e.getMessage()));
+            logger.debug("Failed to update Host: {} with ID {}", host, getId(), e);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to update host: %s with ID %d, %s", host, getId(), e.getMessage()));
         }
     }
 }

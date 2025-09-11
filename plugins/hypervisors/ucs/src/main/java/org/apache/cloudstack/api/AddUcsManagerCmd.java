@@ -38,7 +38,7 @@ public class AddUcsManagerCmd extends BaseCmd {
     @Inject
     private UcsManager mgr;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, description = "The Zone id for the ucs manager", entityType = ZoneResponse.class, required = true)
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, description = "The Zone ID for the ucs manager", entityType = ZoneResponse.class, required = true)
     private Long zoneId;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of UCS manager")

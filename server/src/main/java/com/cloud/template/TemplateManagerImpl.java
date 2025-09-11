@@ -511,7 +511,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         VirtualMachineTemplate template = _tmpltDao.findById(templateId);
         if (template == null) {
-            throw new InvalidParameterValueException("Unable to find Template with id " + templateId);
+            throw new InvalidParameterValueException("Unable to find Template with ID " + templateId);
         }
 
         String extractUrl = extract(caller, templateId, url, zoneId, mode, eventId, false);
@@ -558,7 +558,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         VMTemplateVO template = _tmpltDao.findById(templateId);
         if (template == null || template.getRemoved() != null) {
-            throw new InvalidParameterValueException("Unable to find " + desc + " with id " + templateId);
+            throw new InvalidParameterValueException("Unable to find " + desc + " with ID " + templateId);
         }
 
         if (template.getTemplateType() == Storage.TemplateType.PERHOST) {
@@ -1199,12 +1199,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             if (isVirtualRouter) {
                 vm = _vmInstanceDao.findById(vmId);
                 if (vm == null) {
-                    throw new InvalidParameterValueException("Unable to find an Instance with id " + vmId);
+                    throw new InvalidParameterValueException("Unable to find an Instance with ID " + vmId);
                 } else if (vm.getType() != VirtualMachine.Type.DomainRouter) {
-                    throw new InvalidParameterValueException("Unable to find a virtual router with id " + vmId);
+                    throw new InvalidParameterValueException("Unable to find a virtual router with ID " + vmId);
                 }
             } else {
-                throw new InvalidParameterValueException("Unable to find an Instance with id " + vmId);
+                throw new InvalidParameterValueException("Unable to find an Instance with ID " + vmId);
             }
         }
         if (vm instanceof UserVm && UserVmManager.SHAREDFSVM.equals(((UserVm) vm).getUserVmType())) {
@@ -1217,7 +1217,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         VMTemplateVO iso = _tmpltDao.findById(isoId);
         if (iso == null || iso.getRemoved() != null) {
-            throw new InvalidParameterValueException("Unable to find an ISO with id " + isoId);
+            throw new InvalidParameterValueException("Unable to find an ISO with ID " + isoId);
         }
 
         if (!TemplateType.PERHOST.equals(iso.getTemplateType())) {
@@ -1353,7 +1353,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         VMTemplateVO template = _tmpltDao.findById(templateId);
         if (template == null) {
-            throw new InvalidParameterValueException("Unable to find Template with id " + templateId);
+            throw new InvalidParameterValueException("Unable to find Template with ID " + templateId);
         }
 
         List<VMInstanceVO> vmInstanceVOList;
@@ -1391,7 +1391,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         VMTemplateVO template = _tmpltDao.findById(templateId);
         if (template == null) {
-            throw new InvalidParameterValueException("Unable to find ISO with id " + templateId);
+            throw new InvalidParameterValueException("Unable to find ISO with ID " + templateId);
         }
 
         _accountMgr.checkAccess(caller, AccessType.OperateEntry, true, template);
@@ -1425,12 +1425,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Long id = cmd.getId();
 
         if (id.equals(Long.valueOf(1))) {
-            throw new PermissionDeniedException("unable to list permissions for " + cmd.getMediaType() + " with id " + id);
+            throw new PermissionDeniedException("unable to list permissions for " + cmd.getMediaType() + " with ID " + id);
         }
 
         VirtualMachineTemplate template = _tmpltDao.findById(id);
         if (template == null) {
-            throw new InvalidParameterValueException("unable to find " + cmd.getMediaType() + " with id " + id);
+            throw new InvalidParameterValueException("unable to find " + cmd.getMediaType() + " with ID " + id);
         }
 
         if (cmd instanceof ListTemplatePermissionsCmd) {
@@ -1483,7 +1483,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         VMTemplateVO template = _tmpltDao.findById(id);
 
         if (template == null) {
-            throw new InvalidParameterValueException("unable to find " + mediaType + " with id " + id);
+            throw new InvalidParameterValueException("Unable to find " + mediaType + " with ID " + id);
         }
 
         if (cmd instanceof UpdateTemplatePermissionsCmd) {
@@ -1508,7 +1508,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             for (Long projectId : projectIds) {
                 Project project = _projectMgr.getProject(projectId);
                 if (project == null) {
-                    throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+                    throw new InvalidParameterValueException("Unable to find project by ID " + projectId);
                 }
 
                 if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
@@ -1523,12 +1523,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         // If the template is removed throw an error.
         if (template.getRemoved() != null) {
-            logger.error("unable to update permissions for " + mediaType + " with id " + id + " as it is removed  ");
-            throw new InvalidParameterValueException("unable to update permissions for " + mediaType + " with id " + id + " as it is removed ");
+            logger.error("Unable to update permissions for " + mediaType + " with ID " + id + " as it is removed  ");
+            throw new InvalidParameterValueException("Unable to update permissions for " + mediaType + " with ID " + id + " as it is removed ");
         }
 
         if (id.equals(Long.valueOf(1))) {
-            throw new InvalidParameterValueException("unable to update permissions for " + mediaType + " with id " + id);
+            throw new InvalidParameterValueException("Unable to update permissions for " + mediaType + " with ID " + id);
         }
 
         Long ownerId = template.getAccountId();
@@ -2480,7 +2480,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             template = _tmpltDao.findById(isoId);
         }
         if (template == null) {
-            throw new InvalidParameterValueException(String.format("Unable to find Template/ISO with id %s", templateId == null? isoId : templateId));
+            throw new InvalidParameterValueException(String.format("Unable to find Template/ISO with ID %s", templateId == null? isoId : templateId));
         }
 
         _accountMgr.checkAccess(caller, AccessType.OperateEntry, true, template);

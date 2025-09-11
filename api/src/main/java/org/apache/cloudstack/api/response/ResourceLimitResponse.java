@@ -41,7 +41,7 @@ public class ResourceLimitResponse extends BaseResponse implements ControlledEnt
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the domain to which the resource limit belongs", since = "4.19.2.0")
+    @Param(description = "Path of the domain to which the resource limit belongs", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.RESOURCE_TYPE)
@@ -49,7 +49,7 @@ public class ResourceLimitResponse extends BaseResponse implements ControlledEnt
     private String resourceType;
 
     @SerializedName(ApiConstants.RESOURCE_TYPE_NAME)
-    @Param(description = "Resource type name. Values include user_vm, public_ip, volume, Snapshot, Template, project, Network, VPC, CPU, memory, primary_storage, secondary_storage.")
+    @Param(description = "Resource type name. Values include user_vm, public_ip, Volume, Snapshot, Template, project, Network, VPC, CPU, memory, primary_storage, secondary_storage.")
     private String resourceTypeName;
 
     @SerializedName("max")
@@ -57,7 +57,7 @@ public class ResourceLimitResponse extends BaseResponse implements ControlledEnt
     private Long max;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "The project id of the resource limit")
+    @Param(description = "The project ID of the resource limit")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)

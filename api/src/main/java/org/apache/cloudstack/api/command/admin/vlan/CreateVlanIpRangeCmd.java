@@ -93,10 +93,10 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The Zone ID of the VLAN IP range")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "The network id")
+    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "The Network ID")
     private Long networkID;
 
-    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "The physical network id")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "The physical Network ID")
     private Long physicalNetworkId;
 
     @Parameter(name = ApiConstants.START_IPV6, type = CommandType.STRING, description = "The beginning IPv6 address in the IPv6 network range")
@@ -105,7 +105,7 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     @Parameter(name = ApiConstants.END_IPV6, type = CommandType.STRING, description = "The ending IPv6 address in the IPv6 network range")
     private String endIpv6;
 
-    @Parameter(name = ApiConstants.IP6_GATEWAY, type = CommandType.STRING, description = "The gateway of the IPv6 network. Required "
+    @Parameter(name = ApiConstants.IP6_GATEWAY, type = CommandType.STRING, description = "The gateway of the IPv6 Network. Required "
         + "for Shared networks and Isolated networks when it belongs to VPC")
     private String ip6Gateway;
 
