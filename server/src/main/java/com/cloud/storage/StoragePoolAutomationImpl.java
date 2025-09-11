@@ -31,14 +31,15 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManag
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.logging.log4j.Logger;
+import org.apache.commons.collections.MapUtils;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.ModifyStoragePoolAnswer;
+import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.alert.AlertManager;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -112,6 +113,11 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
 
     @Override
     public boolean maintain(DataStore store) {
+        return maintain(store, null);
+    }
+
+    @Override
+    public boolean maintain(DataStore store, Map<String,String> details) {
         Long userId = CallContext.current().getCallingUserId();
         User user = _userDao.findById(userId);
         Account account = CallContext.current().getCallingAccount();
@@ -161,6 +167,9 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
             // remove heartbeat
             for (HostVO host : hosts) {
                 ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(false, storagePool);
+                if (MapUtils.isNotEmpty(details) && storageManager.canDisconnectHostFromStoragePool(host, storagePool)) {
+                    cmd.setDetails(details);
+                }
                 final Answer answer = agentMgr.easySend(host.getId(), cmd);
                 if (answer == null || !answer.getResult()) {
                     if (logger.isDebugEnabled()) {
@@ -299,6 +308,11 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
 
     @Override
     public boolean cancelMaintain(DataStore store) {
+        return cancelMaintain(store, null);
+    }
+
+    @Override
+    public boolean cancelMaintain(DataStore store, Map<String,String> details) {
         // Change the storage state back to up
         Long userId = CallContext.current().getCallingUserId();
         User user = _userDao.findById(userId);
@@ -327,7 +341,10 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
         Pair<Map<String, String>, Boolean> nfsMountOpts = storageManager.getStoragePoolNFSMountOpts(pool, null);
         // add heartbeat
         for (HostVO host : hosts) {
-            ModifyStoragePoolCommand msPoolCmd = new ModifyStoragePoolCommand(true, pool, nfsMountOpts.first());
+            ModifyStoragePoolCommand msPoolCmd = new ModifyStoragePoolCommand(true, pool);
+            if (MapUtils.isNotEmpty(details)) {
+                msPoolCmd.setDetails(details);
+            }
             final Answer answer = agentMgr.easySend(host.getId(), msPoolCmd);
             if (answer == null || !answer.getResult()) {
                 if (logger.isDebugEnabled()) {

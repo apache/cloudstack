@@ -26,6 +26,7 @@ import com.cloud.user.Account;
 
 import org.apache.cloudstack.api.response.ManagementServerMaintenanceResponse;
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.commons.lang3.BooleanUtils;
 
 @APICommand(name = PrepareForMaintenanceCmd.APINAME,
             description = "Prepares management server for maintenance by preventing new jobs from being accepted after completion of active jobs and migrating the agents",
@@ -40,12 +41,19 @@ public class PrepareForMaintenanceCmd extends BaseMSMaintenanceActionCmd {
             " when this is not set, already configured algorithm from setting 'indirect.agent.lb.algorithm' is considered")
     private String algorithm;
 
+    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, description = "Force management server to maintenance after the maintenance window timeout, default is false")
+    private Boolean forced;
+
     public String getAlgorithm() {
         return algorithm;
     }
 
     public void setAlgorithm(String algorithm) {
         this.algorithm = algorithm;
+    }
+
+    public boolean isForced() {
+        return BooleanUtils.toBooleanDefaultIfNull(forced, false);
     }
 
     @Override

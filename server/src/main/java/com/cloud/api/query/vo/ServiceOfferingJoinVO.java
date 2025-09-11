@@ -16,7 +16,12 @@
 // under the License.
 package com.cloud.api.query.vo;
 
-import java.util.Date;
+import com.cloud.offering.ServiceOffering.State;
+import com.cloud.storage.Storage;
+import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.vm.lease.VMLeaseManager;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -24,13 +29,7 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
-
-import com.cloud.offering.ServiceOffering.State;
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
-
-import com.cloud.storage.Storage;
-import com.cloud.utils.db.GenericDao;
+import java.util.Date;
 
 @Entity
 @Table(name = "service_offering_view")
@@ -220,6 +219,49 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
 
     @Column(name = "encrypt_root")
     private boolean encryptRoot;
+
+    @Column(name = "lease_duration")
+    private Integer leaseDuration;
+
+    @Column(name = "lease_expiry_action")
+    @Enumerated(value = EnumType.STRING)
+    private VMLeaseManager.ExpiryAction leaseExpiryAction;
+
+    @Column(name = "gpu_card_id")
+    private Long gpuCardId;
+
+    @Column(name = "gpu_card_uuid")
+    private String gpuCardUuid;
+
+    @Column(name = "gpu_card_name")
+    private String gpuCardName;
+
+    @Column(name = "vgpu_profile_id")
+    private Long vgpuProfileId;
+
+    @Column(name = "vgpu_profile_uuid")
+    private String vgpuProfileUuid;
+
+    @Column(name = "vgpu_profile_name")
+    private String vgpuProfileName;
+
+    @Column(name = "vgpu_profile_video_ram")
+    private Long videoRam;
+
+    @Column(name = "vgpu_profile_max_heads")
+    private Long maxHeads;
+
+    @Column(name = "vgpu_profile_max_resolution_x")
+    private Long maxResolutionX;
+
+    @Column(name = "vgpu_profile_max_resolution_y")
+    private Long maxResolutionY;
+
+    @Column(name = "gpu_count")
+    private Integer gpuCount;
+
+    @Column(name = "gpu_display")
+    private Boolean gpuDisplay;
 
     public ServiceOfferingJoinVO() {
     }
@@ -459,4 +501,60 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
     }
 
     public boolean getEncryptRoot() { return encryptRoot; }
+
+    public Integer getLeaseDuration() {
+        return leaseDuration;
+    }
+
+    public VMLeaseManager.ExpiryAction getLeaseExpiryAction() {
+        return leaseExpiryAction;
+    }
+
+    public Long getGpuCardId() {
+        return gpuCardId;
+    }
+
+    public String getGpuCardUuid() {
+        return gpuCardUuid;
+    }
+
+    public String getGpuCardName() {
+        return gpuCardName;
+    }
+
+    public Long getVgpuProfileId() {
+        return vgpuProfileId;
+    }
+
+    public String getVgpuProfileUuid() {
+        return vgpuProfileUuid;
+    }
+
+    public String getVgpuProfileName() {
+        return vgpuProfileName;
+    }
+
+    public Long getMaxResolutionY() {
+        return maxResolutionY;
+    }
+
+    public Long getMaxResolutionX() {
+        return maxResolutionX;
+    }
+
+    public Long getMaxHeads() {
+        return maxHeads;
+    }
+
+    public Long getVideoRam() {
+        return videoRam;
+    }
+
+    public Integer getGpuCount() {
+        return gpuCount;
+    }
+
+    public Boolean getGpuDisplay() {
+        return gpuDisplay;
+    }
 }

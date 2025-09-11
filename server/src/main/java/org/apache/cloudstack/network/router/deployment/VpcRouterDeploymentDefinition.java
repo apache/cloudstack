@@ -23,7 +23,6 @@ import java.util.Objects;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.network.dao.IPAddressVO;
-import com.cloud.network.element.NsxProviderVO;
 
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
@@ -125,10 +124,11 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
         if (Objects.nonNull(zone)) {
             zoneId = zone.getId();
         }
-        NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(zoneId);
+
+        boolean isExternalProvider = isExternalProviderPresent(zoneId);
 
         if (isPublicNetwork) {
-            if (Objects.isNull(nsxProvider)) {
+            if (!isExternalProvider) {
                 sourceNatIp = vpcMgr.assignSourceNatIpAddressToVpc(owner, vpc, null);
             } else {
                 sourceNatIp = vpcMgr.assignSourceNatIpAddressToVpc(owner, vpc, getPodId());

@@ -142,7 +142,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import CreateNetwork from '@/views/network/CreateNetwork'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipButton from '@/components/widgets/TooltipButton'
@@ -243,7 +243,7 @@ export default {
     },
     fetchData () {
       this.componentLoading = true
-      api('listNetworks', {
+      getAPI('listNetworks', {
         zoneid: this.resource.zoneid,
         physicalnetworkid: this.resource.id,
         showicon: true,
@@ -260,7 +260,7 @@ export default {
       this.fetchIpv6PrefixData()
     },
     fetchIpv6PrefixData () {
-      api('listGuestNetworkIpv6Prefixes', {
+      getAPI('listGuestNetworkIpv6Prefixes', {
         zoneid: this.resource.zoneid,
         page: this.page,
         pagesize: this.pageSize
@@ -308,7 +308,7 @@ export default {
           zoneid: this.resource.zoneid,
           prefix: values.prefix
         }
-        api('createGuestNetworkIpv6Prefix', params).then(response => {
+        postAPI('createGuestNetworkIpv6Prefix', params).then(response => {
           this.$pollJob({
             jobId: response.createguestnetworkipv6prefixresponse.jobid,
             title: this.$t('label.add.ip.v6.prefix'),
@@ -342,7 +342,7 @@ export default {
     },
     handleDeleteIpv6Prefix (prefix) {
       this.componentLoading = true
-      api('deleteGuestNetworkIpv6Prefix', { id: prefix.id }).then(response => {
+      postAPI('deleteGuestNetworkIpv6Prefix', { id: prefix.id }).then(response => {
         this.$pollJob({
           jobId: response.deleteguestnetworkipv6prefixresponse.jobid,
           title: this.$t('label.delete.ip.v6.prefix'),

@@ -139,7 +139,7 @@ import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -170,6 +170,7 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -223,7 +224,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     @Inject
     private ResourceLimitService resourceLimitService;
     @Inject
-    private UserVmDetailsDao userVmDetailsDao;
+    private VMInstanceDetailsDao vmInstanceDetailsDao;
     @Inject
     private UserVmManager userVmManager;
     @Inject
@@ -460,7 +461,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         if (diskOffering == null) {
             return false;
         }
-        return volumeApiService.doesTargetStorageSupportDiskOffering(pool, diskOffering.getTags());
+        return volumeApiService.doesStoragePoolSupportDiskOffering(pool, diskOffering);
     }
 
     private ServiceOfferingVO getUnmanagedInstanceServiceOffering(final UnmanagedInstanceTO instance, ServiceOfferingVO serviceOffering, final Account owner, final DataCenter zone, final Map<String, String> details, Hypervisor.HypervisorType hypervisorType)
@@ -538,7 +539,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return nicIpAddresses;
     }
 
-    private StoragePool getStoragePool(final UnmanagedInstanceTO.Disk disk, final DataCenter zone, final Cluster cluster, String diskOfferingTags) {
+    private StoragePool getStoragePool(final UnmanagedInstanceTO.Disk disk, final DataCenter zone, final Cluster cluster, DiskOffering diskOffering) {
         StoragePool storagePool = null;
         final String dsHost = disk.getDatastoreHost();
         final String dsPath = disk.getDatastorePath();
@@ -549,7 +550,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             for (StoragePool pool : pools) {
                 if (pool.getDataCenterId() == zone.getId() &&
                         (pool.getClusterId() == null || pool.getClusterId().equals(cluster.getId())) &&
-                        volumeApiService.doesTargetStorageSupportDiskOffering(pool, diskOfferingTags)) {
+                        volumeApiService.doesStoragePoolSupportDiskOffering(pool, diskOffering)) {
                     storagePool = pool;
                     break;
                 }
@@ -562,7 +563,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             for (StoragePool pool : pools) {
                 String searchPoolParam = StringUtils.isNotBlank(dsPath) ? dsPath : dsName;
                 if (StringUtils.contains(pool.getPath(), searchPoolParam) &&
-                        volumeApiService.doesTargetStorageSupportDiskOffering(pool, diskOfferingTags)) {
+                        volumeApiService.doesStoragePoolSupportDiskOffering(pool, diskOffering)) {
                     storagePool = pool;
                     break;
                 }
@@ -626,7 +627,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Size of disk offering(ID: %s) %dGB is found less than the size of disk(ID: %s) %dGB during VM import", diskOffering.getUuid(), (diskOffering.getDiskSize() / Resource.ResourceType.bytesToGiB), disk.getDiskId(), (disk.getCapacity() / (Resource.ResourceType.bytesToGiB))));
         }
         diskOffering = diskOffering != null ? diskOffering : diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
-        StoragePool storagePool = getStoragePool(disk, zone, cluster, diskOffering != null ? diskOffering.getTags() : null);
+        StoragePool storagePool = getStoragePool(disk, zone, cluster, diskOffering);
         if (diskOffering != null && !migrateAllowed && !storagePoolSupportsDiskOffering(storagePool, diskOffering)) {
             throw new InvalidParameterValueException(String.format("Disk offering: %s is not compatible with storage pool: %s of unmanaged disk: %s", diskOffering.getUuid(), storagePool.getUuid(), disk.getDiskId()));
         }
@@ -814,7 +815,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new CloudRuntimeException("Error while copying volume of remote instance: " + answer.getDetails());
         }
         CopyRemoteVolumeAnswer copyRemoteVolumeAnswer = (CopyRemoteVolumeAnswer) answer;
-        if(!copyRemoteVolumeAnswer.getResult()) {
+        checkVolume(copyRemoteVolumeAnswer.getVolumeDetails());
+        if (!copyRemoteVolumeAnswer.getResult()) {
             throw new CloudRuntimeException("Unable to copy volume of remote instance");
         }
         diskProfile.setSize(copyRemoteVolumeAnswer.getSize());
@@ -863,7 +865,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             diskInfo.setDiskChain(new String[]{disk.getImagePath()});
             chainInfo = gson.toJson(diskInfo);
         }
-        StoragePool storagePool = getStoragePool(disk, zone, cluster, diskOffering != null ? diskOffering.getTags() : null);
+        StoragePool storagePool = getStoragePool(disk, zone, cluster, diskOffering);
         DiskProfile profile = volumeManager.importVolume(type, name, diskOffering, diskSize,
                 minIops, maxIops, vm.getDataCenterId(), vm.getHypervisorType(), vm, template, owner, deviceId, storagePool.getId(), path, chainInfo);
 
@@ -1188,6 +1190,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             allDetails.put(VmDetailConstants.KVM_VNC_PASSWORD, unmanagedInstance.getVncPassword());
         }
 
+        addImportingVMBootTypeAndModeDetails(unmanagedInstance.getBootType(), unmanagedInstance.getBootMode(), allDetails);
+
         VirtualMachine.PowerState powerState = VirtualMachine.PowerState.PowerOff;
         if (unmanagedInstance.getPowerState().equals(UnmanagedInstanceTO.PowerState.PowerOn)) {
             powerState = VirtualMachine.PowerState.PowerOn;
@@ -1257,6 +1261,12 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
         publishVMUsageUpdateResourceCount(userVm, validatedServiceOffering, template);
         return userVm;
+    }
+
+    private void addImportingVMBootTypeAndModeDetails(String bootType, String bootMode, Map<String, String> allDetails) {
+        if (StringUtils.isNotBlank(bootType) && bootType.equalsIgnoreCase("uefi") && StringUtils.isNotBlank(bootMode)) {
+            allDetails.put("UEFI", bootMode);
+        }
     }
 
     private HashMap<String, UnmanagedInstanceTO> getUnmanagedInstancesForHost(HostVO host, String instanceName, List<String> managedVms) {
@@ -1765,9 +1775,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         convertedInstance.setPowerState(UnmanagedInstanceTO.PowerState.PowerOff);
         List<UnmanagedInstanceTO.Disk> convertedInstanceDisks = convertedInstance.getDisks();
         List<UnmanagedInstanceTO.Disk> sourceVMwareInstanceDisks = sourceVMwareInstance.getDisks();
-        for (UnmanagedInstanceTO.Disk sourceVMwareInstanceDisk : sourceVMwareInstanceDisks) {
-            UnmanagedInstanceTO.Disk convertedDisk = convertedInstanceDisks.get(sourceVMwareInstanceDisk.getPosition());
-            convertedDisk.setDiskId(sourceVMwareInstanceDisk.getDiskId());
+        for (int i = 0; i < convertedInstanceDisks.size(); i++) {
+            UnmanagedInstanceTO.Disk disk = convertedInstanceDisks.get(i);
+            disk.setDiskId(sourceVMwareInstanceDisks.get(i).getDiskId());
         }
         List<UnmanagedInstanceTO.Nic> convertedInstanceNics = convertedInstance.getNics();
         List<UnmanagedInstanceTO.Nic> sourceVMwareInstanceNics = sourceVMwareInstance.getNics();
@@ -1962,27 +1972,12 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         RemoteInstanceTO remoteInstanceTO = new RemoteInstanceTO(sourceVM);
         List<String> destinationStoragePools = selectInstanceConversionStoragePools(convertStoragePools, sourceVMwareInstance.getDisks(), serviceOffering, dataDiskOfferingMap);
         ConvertInstanceCommand cmd = new ConvertInstanceCommand(remoteInstanceTO,
-                Hypervisor.HypervisorType.KVM, destinationStoragePools, temporaryConvertLocation, ovfTemplateDirConvertLocation, false, false);
+                Hypervisor.HypervisorType.KVM, temporaryConvertLocation, ovfTemplateDirConvertLocation, false, false);
         int timeoutSeconds = UnmanagedVMsManager.ConvertVmwareInstanceToKvmTimeout.value() * 60 * 60;
         cmd.setWait(timeoutSeconds);
 
-        Answer convertAnswer;
-        try {
-             convertAnswer = agentManager.send(convertHost.getId(), cmd);
-        } catch (AgentUnavailableException | OperationTimedoutException e) {
-            String err = String.format("Could not send the convert instance command to host %s due to: %s",
-                    convertHost, e.getMessage());
-            logger.error(err, e);
-            throw new CloudRuntimeException(err);
-        }
-
-        if (!convertAnswer.getResult()) {
-            String err = String.format("The convert process failed for instance %s from VMware to KVM on host %s: %s",
-                    sourceVM, convertHost, convertAnswer.getDetails());
-            logger.error(err);
-            throw new CloudRuntimeException(err);
-        }
-        return ((ConvertInstanceAnswer) convertAnswer).getConvertedInstance();
+        return convertAndImportToKVM(cmd, convertHost, importHost, sourceVM,
+                remoteInstanceTO, destinationStoragePools, temporaryConvertLocation);
     }
 
     private UnmanagedInstanceTO convertVmwareInstanceToKVMAfterExportingOVFToConvertLocation(
@@ -1994,10 +1989,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     ) {
         logger.debug("Delegating the conversion of instance {} from VMware to KVM to the host {} after OVF export through ovftool", sourceVM, convertHost);
 
-        RemoteInstanceTO remoteInstanceTO = new RemoteInstanceTO(sourceVMwareInstance.getName(), vcenterHost, vcenterUsername, vcenterPassword, datacenterName);
+        RemoteInstanceTO remoteInstanceTO = new RemoteInstanceTO(sourceVMwareInstance.getName(), sourceVMwareInstance.getPath(), vcenterHost, vcenterUsername, vcenterPassword, datacenterName);
         List<String> destinationStoragePools = selectInstanceConversionStoragePools(convertStoragePools, sourceVMwareInstance.getDisks(), serviceOffering, dataDiskOfferingMap);
         ConvertInstanceCommand cmd = new ConvertInstanceCommand(remoteInstanceTO,
-                Hypervisor.HypervisorType.KVM, destinationStoragePools, temporaryConvertLocation, null, false, true);
+                Hypervisor.HypervisorType.KVM, temporaryConvertLocation, null, false, true);
         int timeoutSeconds = UnmanagedVMsManager.ConvertVmwareInstanceToKvmTimeout.value() * 60 * 60;
         cmd.setWait(timeoutSeconds);
         int noOfThreads = UnmanagedVMsManager.ThreadsOnKVMHostToImportVMwareVMFiles.value();
@@ -2065,7 +2060,25 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         List<StoragePoolVO> pools = new ArrayList<>();
         pools.addAll(primaryDataStoreDao.findClusterWideStoragePoolsByHypervisorAndPoolType(destinationCluster.getId(), Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.NetworkFilesystem));
         pools.addAll(primaryDataStoreDao.findZoneWideStoragePoolsByHypervisorAndPoolType(destinationCluster.getDataCenterId(), Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.NetworkFilesystem));
-        List<String> diskOfferingTags = new ArrayList<>();
+        if (pools.isEmpty()) {
+            String msg = String.format("Cannot find suitable storage pools in the cluster %s for the conversion", destinationCluster.getName());
+            logger.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+
+        if (serviceOffering.getDiskOfferingId() != null) {
+            DiskOfferingVO diskOffering = diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
+            if (diskOffering == null) {
+                String msg = String.format("Cannot find disk offering with ID %s that belongs to the service offering %s", serviceOffering.getDiskOfferingId(), serviceOffering.getName());
+                logger.error(msg);
+                throw new CloudRuntimeException(msg);
+            }
+            if (getStoragePoolWithTags(pools, diskOffering.getTags()) == null) {
+                String msg = String.format("Cannot find suitable storage pool for disk offering %s that belongs to the service offering %s", diskOffering.getName(), serviceOffering.getName());
+                logger.error(msg);
+                throw new CloudRuntimeException(msg);
+            }
+        }
         for (Long diskOfferingId : dataDiskOfferingMap.values()) {
             DiskOfferingVO diskOffering = diskOfferingDao.findById(diskOfferingId);
             if (diskOffering == null) {
@@ -2073,44 +2086,26 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 logger.error(msg);
                 throw new CloudRuntimeException(msg);
             }
-            diskOfferingTags.add(diskOffering.getTags());
-        }
-        if (serviceOffering.getDiskOfferingId() != null) {
-            DiskOfferingVO diskOffering = diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
-            if (diskOffering != null) {
-                diskOfferingTags.add(diskOffering.getTags());
-            }
-        }
-
-        pools = getPoolsWithMatchingTags(pools, diskOfferingTags);
-        if (pools.isEmpty()) {
-            String msg = String.format("Cannot find suitable storage pools in cluster %s for the conversion", destinationCluster);
-            logger.error(msg);
-            throw new CloudRuntimeException(msg);
-        }
-        return pools;
-    }
-
-    private List<StoragePoolVO> getPoolsWithMatchingTags(List<StoragePoolVO> pools, List<String> diskOfferingTags) {
-        if (diskOfferingTags.isEmpty()) {
-            return pools;
-        }
-        List<StoragePoolVO> poolsSupportingTags = new ArrayList<>(pools);
-        for (String tags : diskOfferingTags) {
-            boolean tagsMatched = false;
-            for (StoragePoolVO pool : pools) {
-                if (volumeApiService.doesTargetStorageSupportDiskOffering(pool, tags)) {
-                    poolsSupportingTags.add(pool);
-                    tagsMatched = true;
-                }
-            }
-            if (!tagsMatched) {
-                String msg = String.format("Cannot find suitable storage pools for the conversion with disk offering tags %s", tags);
+            if (getStoragePoolWithTags(pools, diskOffering.getTags()) == null) {
+                String msg = String.format("Cannot find suitable storage pool for disk offering %s", diskOffering.getName());
                 logger.error(msg);
                 throw new CloudRuntimeException(msg);
             }
         }
-        return poolsSupportingTags;
+
+        return pools;
+    }
+
+    private StoragePoolVO getStoragePoolWithTags(List<StoragePoolVO> pools, String tags) {
+        if (StringUtils.isEmpty(tags)) {
+            return pools.get(0);
+        }
+        for (StoragePoolVO pool : pools) {
+            if (volumeApiService.doesStoragePoolSupportDiskOfferingTags(pool, tags)) {
+                return pool;
+            }
+        }
+        return null;
     }
 
     private List<String> selectInstanceConversionStoragePools(
@@ -2118,26 +2113,22 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             ServiceOfferingVO serviceOffering, Map<String, Long> dataDiskOfferingMap
     ) {
         List<String> storagePools = new ArrayList<>(disks.size());
-        for (int i = 0; i < disks.size(); i++) {
-            storagePools.add(null);
-        }
         Set<String> dataDiskIds = dataDiskOfferingMap.keySet();
         for (UnmanagedInstanceTO.Disk disk : disks) {
-            Long diskOfferingId = dataDiskOfferingMap.get(disk.getDiskId());
-            if (diskOfferingId == null && !dataDiskIds.contains(disk.getDiskId())) {
+            Long diskOfferingId = null;
+            if (dataDiskIds.contains(disk.getDiskId())) {
+                diskOfferingId = dataDiskOfferingMap.get(disk.getDiskId());
+            } else {
                 diskOfferingId = serviceOffering.getDiskOfferingId();
             }
+
             //TODO: Choose pools by capacity
             if (diskOfferingId == null) {
-                storagePools.set(disk.getPosition(), pools.get(0).getUuid());
+                storagePools.add(pools.get(0).getUuid());
             } else {
                 DiskOfferingVO diskOffering = diskOfferingDao.findById(diskOfferingId);
-                for (StoragePoolVO pool : pools) {
-                    if (volumeApiService.doesTargetStorageSupportDiskOffering(pool, diskOffering.getTags())) {
-                        storagePools.set(disk.getPosition(), pool.getUuid());
-                        break;
-                    }
-                }
+                StoragePoolVO pool = getStoragePoolWithTags(pools, diskOffering.getTags());
+                storagePools.add(pool.getUuid());
             }
         }
         return storagePools;
@@ -2711,7 +2702,13 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new CloudRuntimeException("Disk not found or is invalid");
         }
         CheckVolumeAnswer checkVolumeAnswer = (CheckVolumeAnswer) answer;
-        if(!checkVolumeAnswer.getResult()) {
+        try {
+            checkVolume(checkVolumeAnswer.getVolumeDetails());
+        } catch (CloudRuntimeException e) {
+            cleanupFailedImportVM(userVm);
+            throw e;
+        }
+        if (!checkVolumeAnswer.getResult()) {
             cleanupFailedImportVM(userVm);
             throw new CloudRuntimeException("Disk not found or is invalid");
         }
@@ -2735,6 +2732,31 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         networkOrchestrationService.importNic(macAddress, 0, network, true, userVm, requestedIpPair, zone, true);
         publishVMUsageUpdateResourceCount(userVm, dummyOffering, template);
         return userVm;
+    }
+
+    private void checkVolume(Map<VolumeOnStorageTO.Detail, String> volumeDetails) {
+        if (MapUtils.isEmpty(volumeDetails)) {
+            return;
+        }
+
+        if (volumeDetails.containsKey(VolumeOnStorageTO.Detail.IS_LOCKED)) {
+            String isLocked = volumeDetails.get(VolumeOnStorageTO.Detail.IS_LOCKED);
+            if (Boolean.parseBoolean(isLocked)) {
+                logFailureAndThrowException("Locked volume cannot be imported or unmanaged.");
+            }
+        }
+        if (volumeDetails.containsKey(VolumeOnStorageTO.Detail.IS_ENCRYPTED)) {
+            String isEncrypted = volumeDetails.get(VolumeOnStorageTO.Detail.IS_ENCRYPTED);
+            if (Boolean.parseBoolean(isEncrypted)) {
+                logFailureAndThrowException("Encrypted volume cannot be imported or unmanaged.");
+            }
+        }
+        if (volumeDetails.containsKey(VolumeOnStorageTO.Detail.BACKING_FILE)) {
+            String backingFile = volumeDetails.get(VolumeOnStorageTO.Detail.BACKING_FILE);
+            if (StringUtils.isNotBlank(backingFile)) {
+                logFailureAndThrowException("Volume with backing file cannot be imported or unmanaged.");
+            }
+        }
     }
 
     private NetworkVO getDefaultNetwork(DataCenter zone, Account owner, boolean selectAny) throws InsufficientCapacityException, ResourceAllocationException {

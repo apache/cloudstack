@@ -77,19 +77,19 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
         processReport(hostId, translatedInfo, force);
     }
 
-    private void updateAndPublishVmPowerStates(long hostId, Map<Long, VirtualMachine.PowerState> instancePowerStates,
-           Date updateTime) {
+    protected void updateAndPublishVmPowerStates(long hostId, Map<Long, VirtualMachine.PowerState> instancePowerStates,
+               Date updateTime) {
         if (instancePowerStates.isEmpty()) {
             return;
         }
         Set<Long> vmIds = instancePowerStates.keySet();
-        Map<Long, VirtualMachine.PowerState> notUpdated = _instanceDao.updatePowerState(instancePowerStates, hostId,
-                updateTime);
+        Map<Long, VirtualMachine.PowerState> notUpdated =
+                _instanceDao.updatePowerState(instancePowerStates, hostId, updateTime);
         if (notUpdated.size() > vmIds.size()) {
             return;
         }
         for (Long vmId : vmIds) {
-            if (!notUpdated.isEmpty() && !notUpdated.containsKey(vmId)) {
+            if (!notUpdated.containsKey(vmId)) {
                 logger.debug("VM state report is updated. {}, {}, power state: {}",
                         () -> hostCache.get(hostId), () -> vmCache.get(vmId), () -> instancePowerStates.get(vmId));
                 _messageBus.publish(null, VirtualMachineManager.Topics.VM_POWER_STATE,

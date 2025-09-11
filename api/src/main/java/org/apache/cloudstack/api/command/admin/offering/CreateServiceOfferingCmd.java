@@ -29,14 +29,17 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.VgpuProfileResponse;
 import org.apache.cloudstack.api.response.VsphereStoragePoliciesResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.cloudstack.api.response.DiskOfferingResponse;
-import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.cloudstack.vm.lease.VMLeaseManager;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.EnumUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.offering.ServiceOffering;
@@ -251,7 +254,40 @@ public class CreateServiceOfferingCmd extends BaseCmd {
             since="4.20")
     private Boolean purgeResources;
 
+    @Parameter(name = ApiConstants.INSTANCE_LEASE_DURATION,
+            type = CommandType.INTEGER,
+            description = "Number of days instance is leased for.",
+            since = "4.21.0")
+    private Integer leaseDuration;
 
+    @Parameter(name = ApiConstants.INSTANCE_LEASE_EXPIRY_ACTION, type = CommandType.STRING, since = "4.21.0",
+            description = "Lease expiry action, valid values are STOP and DESTROY")
+    private String leaseExpiryAction;
+
+    @Parameter(name = ApiConstants.VGPU_PROFILE_ID,
+            type = CommandType.UUID,
+            entityType = VgpuProfileResponse.class,
+            description = "the ID of the vGPU profile to which service offering should be mapped",
+            since = "4.21")
+    private Long vgpuProfileId;
+
+    @Parameter(name = ApiConstants.GPU_COUNT,
+            type = CommandType.INTEGER,
+            description = "Count of GPUs to be used with this service offering. This is applicable only when passed with vGPU profile.",
+            since = "4.21")
+    private Integer gpuCount;
+
+    @Parameter(name = ApiConstants.GPU_DISPLAY,
+            type = CommandType.BOOLEAN,
+            description = "Whether to enable GPU display for this service offering. This is applicable only when passed with vGPU profile. Defaults to false.",
+            since = "4.21")
+    private Boolean gpuDisplay;
+
+    @Parameter(name = ApiConstants.EXTERNAL_DETAILS,
+            type = CommandType.MAP,
+            description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].endpoint.url=urlvalue",
+            since = "4.21.0")
+    private Map externalDetails;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -359,7 +395,13 @@ public class CreateServiceOfferingCmd extends BaseCmd {
                 }
             }
         }
+
+        detailsMap.putAll(getExternalDetails());
         return detailsMap;
+    }
+
+    public Map<String, String> getExternalDetails() {
+        return convertExternalDetailsToMap(externalDetails);
     }
 
     public Long getRootDiskSize() {
@@ -487,8 +529,36 @@ public class CreateServiceOfferingCmd extends BaseCmd {
         return false;
     }
 
+    public VMLeaseManager.ExpiryAction getLeaseExpiryAction() {
+        if (StringUtils.isBlank(leaseExpiryAction)) {
+            return null;
+        }
+        VMLeaseManager.ExpiryAction action = EnumUtils.getEnumIgnoreCase(VMLeaseManager.ExpiryAction.class, leaseExpiryAction);
+        if (action == null) {
+            throw new InvalidParameterValueException("Invalid value configured for leaseexpiryaction, valid values are: " +
+                    com.cloud.utils.EnumUtils.listValues(VMLeaseManager.ExpiryAction.values()));
+        }
+        return action;
+    }
+
+    public Integer getLeaseDuration() {
+        return leaseDuration;
+    }
+
     public boolean isPurgeResources() {
         return Boolean.TRUE.equals(purgeResources);
+    }
+
+    public Long getVgpuProfileId() {
+        return vgpuProfileId;
+    }
+
+    public Integer getGpuCount() {
+        return gpuCount;
+    }
+
+    public Boolean getGpuDisplay() {
+        return Boolean.TRUE.equals(gpuDisplay);
     }
 
     /////////////////////////////////////////////////////

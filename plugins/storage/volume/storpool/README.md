@@ -39,7 +39,7 @@ independent parts:
   * ./src/com/... directory tree: agent related classes and commands send from management to agent
   * ./src/org/... directory tree: management related classes
 
-The plugin is intended to be self contained and non-intrusive, thus ideally deploying it would consist of only
+The plugin is intended to be self-contained and non-intrusive, thus ideally deploying it would consist of only
 dropping the jar file into the appropriate places. This is the reason why all StorPool related communication
 (ex. data copying, volume resize) is done with StorPool specific commands even when there is a CloudStack command
 that does pretty much the same.
@@ -183,7 +183,7 @@ This storage tag may be used later, when defining service or disk offerings.
   <td>takeSnapshot + copyAsync (S => S)</td>
 </tr>
 <tr>
-  <td>Create volume from snapshoot</td>
+  <td>Create volume from snapshot</td>
   <td>create volume from snapshot</td>
   <td>management + agent(?)</td>
   <td>copyAsync (S => V)</td>
@@ -279,7 +279,7 @@ In this case only snapshots won't be downloaded to secondary storage.
 
 #### If bypass option is enabled
 
-The snapshot exists only on PRIMARY (StorPool) storage. From this snapshot it will be created a template on SECONADRY.
+The snapshot exists only on PRIMARY (StorPool) storage. From this snapshot it will be created a template on SECONDARY.
 
 #### If bypass option is disabled
 
@@ -290,7 +290,7 @@ This is independent of StorPool as snapshots exist on secondary.
 ### Creating ROOT volume from templates
 
 When creating the first volume based on the given template, if snapshot of the template does not exists on StorPool it will be first downloaded (cached) to PRIMARY storage.
-This is mapped to a StorPool snapshot so, creating succecutive volumes from the same template does not incur additional
+This is mapped to a StorPool snapshot so, creating successive volumes from the same template does not incur additional
 copying of data to PRIMARY storage.
 
 This cached snapshot is garbage collected when the original template is deleted from CloudStack. This cleanup is done

@@ -45,4 +45,8 @@ public interface DataStoreDriver {
     boolean canCopy(DataObject srcData, DataObject destData);
 
     void resize(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback);
+
+    default boolean canDisplayDetails() {
+        return true;
+    }
 }

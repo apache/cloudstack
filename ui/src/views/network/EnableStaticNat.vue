@@ -113,7 +113,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import Status from '@/components/widgets/Status'
 
 export default {
@@ -186,7 +186,7 @@ export default {
       }
 
       this.loading = true
-      api('listVirtualMachines', {
+      getAPI('listVirtualMachines', {
         page: this.page,
         pageSize: this.pageSize,
         listAll: true,
@@ -203,7 +203,7 @@ export default {
     },
     fetchDataTiers (e) {
       this.loading = true
-      api('listVirtualMachines', {
+      getAPI('listVirtualMachines', {
         page: this.page,
         pageSize: this.pageSize,
         listAll: true,
@@ -222,7 +222,7 @@ export default {
       this.selectedVm = e.target.value
       this.nicsList = []
       this.loading = true
-      api('listNics', {
+      getAPI('listNics', {
         virtualmachineid: this.selectedVm,
         networkid: this.resource.associatednetworkid || this.selectedVpcTier
       }).then(response => {
@@ -244,7 +244,7 @@ export default {
     },
     fetchNetworks () {
       this.loading = true
-      api('listNetworks', {
+      getAPI('listNetworks', {
         vpcid: this.resource.vpcid,
         isrecursive: true,
         supportedservices: 'StaticNat'
@@ -258,7 +258,7 @@ export default {
     },
     handleSubmit () {
       this.loading = true
-      api('enableStaticNat', {
+      postAPI('enableStaticNat', {
         ipaddressid: this.resource.id,
         virtualmachineid: this.selectedVm,
         vmguestip: this.selectedNic.ipaddress,

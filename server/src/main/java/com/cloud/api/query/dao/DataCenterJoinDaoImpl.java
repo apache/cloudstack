@@ -25,8 +25,13 @@ import javax.inject.Inject;
 import com.cloud.cpu.CPU;
 import com.cloud.dc.ASNumberRangeVO;
 import com.cloud.dc.dao.ASNumberRangeDao;
+import com.cloud.gpu.dao.HostGpuGroupsDao;
+import com.cloud.network.Network;
+import com.cloud.network.dao.NetrisProviderDao;
 import com.cloud.network.dao.NsxProviderDao;
+import com.cloud.network.element.NetrisProviderVO;
 import com.cloud.network.element.NsxProviderVO;
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
@@ -63,7 +68,11 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
     @Inject
     private NsxProviderDao nsxProviderDao;
     @Inject
+    private NetrisProviderDao netrisProviderDao;
+    @Inject
     private ASNumberRangeDao asNumberRangeDao;
+    @Inject
+    private HostGpuGroupsDao hostGpuGroupsDao;
 
     protected DataCenterJoinDaoImpl() {
 
@@ -75,6 +84,15 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
     }
 
     @Override
+    public ZoneResponse newMinimalDataCenterResponse(ResponseView view, DataCenterJoinVO dataCenter) {
+        ZoneResponse zoneResponse = new ZoneResponse(null);
+        zoneResponse.setId(dataCenter.getUuid());
+        zoneResponse.setName(dataCenter.getName());
+        zoneResponse.setObjectName("zone");
+        return zoneResponse;
+    }
+
+    @Override
     public ZoneResponse newDataCenterResponse(ResponseView view, DataCenterJoinVO dataCenter, Boolean showCapacities, Boolean showResourceImage) {
         ZoneResponse zoneResponse = new ZoneResponse();
         zoneResponse.setId(dataCenter.getUuid());
@@ -82,6 +100,14 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
         zoneResponse.setSecurityGroupsEnabled(ApiDBUtils.isSecurityGroupEnabledInZone(dataCenter.getId()));
         zoneResponse.setLocalStorageEnabled(dataCenter.isLocalStorageEnabled());
         zoneResponse.setType(ObjectUtils.defaultIfNull(dataCenter.getType(), DataCenter.Type.Core).toString());
+        zoneResponse.setStorageAccessGroups(dataCenter.getStorageAccessGroups());
+        Pair<Long, Long> gpuStats = hostGpuGroupsDao.getGpuStats(dataCenter.getId(), null, null, null);
+        if (gpuStats != null) {
+            Long totalGpuDevices = gpuStats.first();
+            Long usedGpuDevices = totalGpuDevices - gpuStats.second();
+            zoneResponse.setGpuTotal(totalGpuDevices);
+            zoneResponse.setGpuUsed(usedGpuDevices);
+        }
 
         if ((dataCenter.getDescription() != null) && !dataCenter.getDescription().equalsIgnoreCase("null")) {
             zoneResponse.setDescription(dataCenter.getDescription());
@@ -130,10 +156,7 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
             }
         }
 
-        NsxProviderVO nsxProviderVO = nsxProviderDao.findByZoneId(dataCenter.getId());
-        if (Objects.nonNull(nsxProviderVO)) {
-            zoneResponse.setNsxEnabled(true);
-        }
+        setExternalNetworkProviderUsedByZone(zoneResponse, dataCenter.getId());
 
         List<CPU.CPUArch> clusterArchs = ApiDBUtils.listZoneClustersArchs(dataCenter.getId());
         zoneResponse.setMultiArch(CollectionUtils.isNotEmpty(clusterArchs) && clusterArchs.size() > 1);
@@ -153,6 +176,19 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
 
         zoneResponse.setObjectName("zone");
         return zoneResponse;
+    }
+
+    private void setExternalNetworkProviderUsedByZone(ZoneResponse zoneResponse, Long zoneId) {
+        NsxProviderVO nsxProviderVO = nsxProviderDao.findByZoneId(zoneId);
+        if (Objects.nonNull(nsxProviderVO)) {
+            zoneResponse.setNsxEnabled(true);
+            zoneResponse.setProvider(Network.Provider.Nsx.getName());
+        }
+
+        NetrisProviderVO netrisProviderVO = netrisProviderDao.findByZoneId(zoneId);
+        if (Objects.nonNull(netrisProviderVO)) {
+            zoneResponse.setProvider(Network.Provider.Netris.getName());
+        }
     }
 
     @Override

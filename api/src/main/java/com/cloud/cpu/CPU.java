@@ -16,52 +16,55 @@
 // under the License.
 package com.cloud.cpu;
 
-import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 public class CPU {
+    public enum CPUArch {
+        x86("i686", 32),
+        amd64("x86_64", 64),
+        arm64("aarch64", 64);
 
-    public static final String archX86Identifier = "i686";
-    public static final String archX86_64Identifier = "x86_64";
-    public static final String archARM64Identifier = "aarch64";
+        private final String type;
+        private final int bits;
 
-    public static class CPUArch {
-        private static final Map<String, CPUArch> cpuArchMap = new LinkedHashMap<>();
-
-        public static final CPUArch archX86 = new CPUArch(archX86Identifier, 32);
-        public static final CPUArch amd64 = new CPUArch(archX86_64Identifier, 64);
-        public static final CPUArch arm64 = new CPUArch(archARM64Identifier, 64);
-
-        private String type;
-        private int bits;
-
-        public CPUArch(String type, int bits) {
+        CPUArch(String type, int bits) {
             this.type = type;
             this.bits = bits;
-            cpuArchMap.put(type, this);
+        }
+
+        public static CPUArch getDefault() {
+            return amd64;
         }
 
         public String getType() {
-            return this.type;
+            return type;
         }
 
         public int getBits() {
-            return this.bits;
+            return bits;
         }
 
         public static CPUArch fromType(String type) {
             if (StringUtils.isBlank(type)) {
-                return amd64;
+                return getDefault();
             }
-            switch (type) {
-                case archX86Identifier: return archX86;
-                case archX86_64Identifier: return amd64;
-                case archARM64Identifier: return arm64;
-                default: throw new CloudRuntimeException(String.format("Unsupported arch type: %s", type));
+            for (CPUArch arch : values()) {
+                if (arch.type.equals(type)) {
+                    return arch;
+                }
             }
+            throw new IllegalArgumentException("Unsupported arch type: " + type);
+        }
+
+        public static String getTypesAsCSV() {
+            StringBuilder sb = new StringBuilder();
+            for (CPUArch arch : values()) {
+                sb.append(arch.getType()).append(",");
+            }
+            if (sb.length() > 0) {
+                sb.setLength(sb.length() - 1);
+            }
+            return sb.toString();
         }
     }
 }

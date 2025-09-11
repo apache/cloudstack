@@ -33,6 +33,8 @@ public class UnmanagedInstanceTO {
 
     private String internalCSName;
 
+    private String path;
+
     private PowerState powerState;
 
     private PowerState cloneSourcePowerState;
@@ -59,6 +61,9 @@ public class UnmanagedInstanceTO {
 
     private String vncPassword;
 
+    private String bootType;
+    private String bootMode;
+
     public String getName() {
         return name;
     }
@@ -73,6 +78,14 @@ public class UnmanagedInstanceTO {
 
     public void setInternalCSName(String internalCSName) {
         this.internalCSName = internalCSName;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
     }
 
     public PowerState getPowerState() {
@@ -184,6 +197,22 @@ public class UnmanagedInstanceTO {
         return String.format("UnmanagedInstanceTO %s",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
                         this, "name", "internalCSName", "hostName", "clusterName"));
+    }
+
+    public String getBootType() {
+        return bootType;
+    }
+
+    public void setBootType(String bootType) {
+        this.bootType = bootType;
+    }
+
+    public String getBootMode() {
+        return bootMode;
+    }
+
+    public void setBootMode(String bootMode) {
+        this.bootMode = bootMode;
     }
 
     public static class Disk {

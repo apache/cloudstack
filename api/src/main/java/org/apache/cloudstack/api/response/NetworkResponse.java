@@ -28,12 +28,11 @@ import org.apache.cloudstack.api.BaseResponseWithAssociatedNetwork;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.Network;
-import com.cloud.projects.ProjectAccount;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
-@EntityReference(value = {Network.class, ProjectAccount.class})
+@EntityReference(value = {Network.class})
 public class NetworkResponse extends BaseResponseWithAssociatedNetwork implements ControlledEntityResponse, SetResourceIconResponse {
 
     @SerializedName(ApiConstants.ID)
@@ -211,14 +210,6 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     @SerializedName(ApiConstants.VPC_NAME)
     @Param(description = "Name of the VPC to which this network belongs", since = "4.15")
     private String vpcName;
-
-    @SerializedName(ApiConstants.ASSOCIATED_NETWORK_ID)
-    @Param(description = "the ID of the Network associated with this network")
-    private String associatedNetworkId;
-
-    @SerializedName(ApiConstants.ASSOCIATED_NETWORK)
-    @Param(description = "the name of the Network associated with this network")
-    private String associatedNetworkName;
 
     @SerializedName(ApiConstants.TUNGSTEN_VIRTUAL_ROUTER_UUID)
     @Param(description = "Tungsten-Fabric virtual router the network belongs to")
@@ -618,14 +609,6 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
 
     public void setVpcName(String vpcName) {
         this.vpcName = vpcName;
-    }
-
-    public void setAssociatedNetworkId(String associatedNetworkId) {
-        this.associatedNetworkId = associatedNetworkId;
-    }
-
-    public void setAssociatedNetworkName(String associatedNetworkName) {
-        this.associatedNetworkName = associatedNetworkName;
     }
 
     @Override

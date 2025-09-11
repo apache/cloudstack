@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.query;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -31,6 +32,7 @@ import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListObjectStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListSecondaryStagingStoresCmd;
+import org.apache.cloudstack.api.command.admin.storage.ListStorageAccessGroupsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStorageTagsCmd;
 import org.apache.cloudstack.api.command.admin.storage.heuristics.ListSecondaryStorageSelectorsCmd;
@@ -86,6 +88,7 @@ import org.apache.cloudstack.api.response.SecondaryStorageHeuristicsResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.SnapshotResponse;
+import org.apache.cloudstack.api.response.StorageAccessGroupResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.StorageTagResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
@@ -97,6 +100,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.vm.VmDetailConstants;
 
 /**
  * Service used for list api query.
@@ -104,15 +108,17 @@ import com.cloud.exception.PermissionDeniedException;
  */
 public interface QueryService {
 
+    List<String> RootAdminOnlyVmSettings = Arrays.asList(VmDetailConstants.GUEST_CPU_MODE, VmDetailConstants.GUEST_CPU_MODEL);
+
     // Config keys
     ConfigKey<Boolean> AllowUserViewDestroyedVM = new ConfigKey<>("Advanced", Boolean.class, "allow.user.view.destroyed.vm", "false",
             "Determines whether users can view their destroyed or expunging vm ", true, ConfigKey.Scope.Account);
 
-    static final ConfigKey<String> UserVMDeniedDetails = new ConfigKey<>(String.class,
+    ConfigKey<String> UserVMDeniedDetails = new ConfigKey<>(String.class,
     "user.vm.denied.details", "Advanced", "rootdisksize, cpuOvercommitRatio, memoryOvercommitRatio, Message.ReservedCapacityFreed.Flag",
             "Determines whether users can view certain VM settings. When set to empty, default value used is: rootdisksize, cpuOvercommitRatio, memoryOvercommitRatio, Message.ReservedCapacityFreed.Flag.", true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.CSV, null);
 
-    static final ConfigKey<String> UserVMReadOnlyDetails = new ConfigKey<>(String.class,
+    ConfigKey<String> UserVMReadOnlyDetails = new ConfigKey<>(String.class,
     "user.vm.readonly.details", "Advanced", "dataDiskController, rootDiskController",
             "List of read-only VM settings/details as comma separated string", true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.CSV, null);
 
@@ -121,15 +127,19 @@ public interface QueryService {
                     "network offering, zones), we use the flag to determine if the entities should be sorted ascending (when flag is true) " +
                     "or descending (when flag is false). Within the scope of the config all users see the same result.", true, ConfigKey.Scope.Global);
 
-    public static final ConfigKey<Boolean> AllowUserViewAllDomainAccounts = new ConfigKey<>("Advanced", Boolean.class,
+    ConfigKey<Boolean> AllowUserViewAllDomainAccounts = new ConfigKey<>("Advanced", Boolean.class,
             "allow.user.view.all.domain.accounts", "false",
             "Determines whether users can view all user accounts within the same domain", true, ConfigKey.Scope.Domain);
 
-    static final ConfigKey<Boolean> SharePublicTemplatesWithOtherDomains = new ConfigKey<>("Advanced", Boolean.class, "share.public.templates.with.other.domains", "true",
+    ConfigKey<Boolean> AllowUserViewAllDataCenters = new ConfigKey<>("Advanced", Boolean.class, "allow.user.view.all.zones", "true",
+            "Determines whether for instance a Resource Admin can view zones that are not dedicated to them.", true, ConfigKey.Scope.Domain);
+
+    ConfigKey<Boolean> SharePublicTemplatesWithOtherDomains = new ConfigKey<>("Advanced", Boolean.class, "share.public.templates.with.other.domains", "true",
             "If false, templates of this domain will not show up in the list templates of other domains.", true, ConfigKey.Scope.Domain);
 
     ConfigKey<Boolean> ReturnVmStatsOnVmList = new ConfigKey<>("Advanced", Boolean.class, "list.vm.default.details.stats", "true",
             "Determines whether VM stats should be returned when details are not explicitly specified in listVirtualMachines API request. When false, details default to [group, nics, secgrp, tmpl, servoff, diskoff, backoff, iso, volume, min, affgrp]. When true, all details are returned including 'stats'.", true, ConfigKey.Scope.Global);
+
 
     ListResponse<UserResponse> searchForUsers(ResponseObject.ResponseView responseView, ListUsersCmd cmd) throws PermissionDeniedException;
 
@@ -192,6 +202,8 @@ public interface QueryService {
     ListResponse<DomainRouterResponse> searchForInternalLbVms(ListInternalLBVMsCmd cmd);
 
     ListResponse<StorageTagResponse> searchForStorageTags(ListStorageTagsCmd cmd);
+
+    ListResponse<StorageAccessGroupResponse> searchForStorageAccessGroups(ListStorageAccessGroupsCmd cmd);
 
     ListResponse<HostTagResponse> searchForHostTags(ListHostTagsCmd cmd);
 

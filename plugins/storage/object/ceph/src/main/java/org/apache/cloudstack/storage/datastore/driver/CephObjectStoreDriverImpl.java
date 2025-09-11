@@ -95,8 +95,8 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         AmazonS3 s3client = getS3Client(storeId, accountId);
 
         try {
-            if (s3client.getBucketAcl(bucketName) != null) {
-                throw new CloudRuntimeException("Bucket already exists with name " + bucketName);
+            if (s3client.doesBucketExistV2(bucketName)) {
+                throw new CloudRuntimeException("Bucket already exists with the name: " + bucketName);
             }
         } catch (AmazonS3Exception e) {
             if (e.getStatusCode() != 404) {
@@ -193,19 +193,19 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             policyConfig = "{\"Version\":\"2012-10-17\",\"Statement\":[]}";
         }
 
-        AmazonS3 client = getS3Client(getStoreURL(storeId), bucket.getAccessKey(), bucket.getAccessKey());
+        AmazonS3 client = getS3Client(getStoreURL(storeId), bucket.getAccessKey(), bucket.getSecretKey());
         client.setBucketPolicy(new SetBucketPolicyRequest(bucket.getName(), policyConfig));
     }
 
     @Override
     public BucketPolicy getBucketPolicy(BucketTO bucket, long storeId) {
-        AmazonS3 client = getS3Client(getStoreURL(storeId), bucket.getAccessKey(), bucket.getAccessKey());
+        AmazonS3 client = getS3Client(getStoreURL(storeId), bucket.getAccessKey(), bucket.getSecretKey());
         return client.getBucketPolicy(new GetBucketPolicyRequest(bucket.getName()));
     }
 
     @Override
     public void deleteBucketPolicy(BucketTO bucket, long storeId) {
-        AmazonS3 client = getS3Client(getStoreURL(storeId), bucket.getAccessKey(), bucket.getAccessKey());
+        AmazonS3 client = getS3Client(getStoreURL(storeId), bucket.getAccessKey(), bucket.getSecretKey());
         client.deleteBucketPolicy(new DeleteBucketPolicyRequest(bucket.getName()));
     }
 
@@ -221,9 +221,11 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             if (user.isPresent()) {
                 logger.info("User already exists in Ceph RGW: " + username);
                 return true;
+            } else {
+                logger.debug("User does not exist. Creating user in Ceph RGW: " + username);
             }
         } catch (Exception e) {
-            logger.debug("User does not exist. Creating user in Ceph RGW: " + username);
+            logger.debug("Get user info failed for user {} with exception {}. Proceeding with user creation.",  username, e.getMessage());
         }
 
         try {
@@ -253,7 +255,7 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
 
     @Override
     public boolean setBucketVersioning(BucketTO bucket, long storeId) {
-        AmazonS3 client = getS3Client(getStoreURL(storeId), bucket.getAccessKey(), bucket.getAccessKey());
+        AmazonS3 client = getS3Client(getStoreURL(storeId), bucket.getAccessKey(), bucket.getSecretKey());
         try {
             BucketVersioningConfiguration configuration =
                     new BucketVersioningConfiguration().withStatus("Enabled");
@@ -270,7 +272,7 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
 
     @Override
     public boolean deleteBucketVersioning(BucketTO bucket, long storeId) {
-        AmazonS3 client = getS3Client(getStoreURL(storeId), bucket.getAccessKey(), bucket.getAccessKey());
+        AmazonS3 client = getS3Client(getStoreURL(storeId), bucket.getAccessKey(), bucket.getSecretKey());
         try {
             BucketVersioningConfiguration configuration =
                     new BucketVersioningConfiguration().withStatus("Suspended");
@@ -348,7 +350,7 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
                         new AWSStaticCredentialsProvider(
                                 new BasicAWSCredentials(accessKey, secretKey)))
                 .withEndpointConfiguration(
-                        new AwsClientBuilder.EndpointConfiguration(url, "auto"))
+                        new AwsClientBuilder.EndpointConfiguration(url, null))
                 .build();
 
         if (client == null) {

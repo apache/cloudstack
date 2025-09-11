@@ -93,6 +93,8 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "the name of the OS type for this template.")
     private String osTypeName;
 
+    private transient Long osTypeCategoryId;
+
     @SerializedName(ApiConstants.ACCOUNT_ID)
     @Param(description = "the account id to which the template belongs")
     private String accountId;
@@ -208,6 +210,11 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
             since = "4.15")
     private Boolean deployAsIs;
 
+    @SerializedName(ApiConstants.FOR_CKS)
+    @Param(description = "If true it indicates that the template can be used for CKS cluster deployments",
+            since = "4.21.0")
+    private Boolean forCks;
+
     @SerializedName(ApiConstants.DEPLOY_AS_IS_DETAILS)
     @Param(description = "VMware only: additional key/value details tied with deploy-as-is template",
             since = "4.15")
@@ -247,6 +254,12 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @SerializedName(ApiConstants.USER_DATA_PARAMS) @Param(description="list of parameters which contains the list of keys or string parameters that are needed to be passed for any variables declared in userdata", since = "4.18.0")
     private String userDataParams;
 
+    @SerializedName(ApiConstants.EXTENSION_ID) @Param(description="The ID of extension linked to this template", since = "4.21.0")
+    private String extensionId;
+
+    @SerializedName(ApiConstants.EXTENSION_NAME) @Param(description="The name of extension linked to this template", since = "4.21.0")
+    private String extensionName;
+
     public TemplateResponse() {
         tags = new LinkedHashSet<>();
     }
@@ -283,6 +296,14 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
 
     public void setOsTypeName(String osTypeName) {
         this.osTypeName = osTypeName;
+    }
+
+    public Long getOsTypeCategoryId() {
+        return osTypeCategoryId;
+    }
+
+    public void setOsTypeCategoryId(Long osTypeCategoryId) {
+        this.osTypeCategoryId = osTypeCategoryId;
     }
 
     public void setId(String id) {
@@ -453,6 +474,10 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
         this.deployAsIs = deployAsIs;
     }
 
+    public void setForCks(Boolean forCks) {
+        this.forCks = forCks;
+    }
+
     public void setParentTemplateId(String parentTemplateId) {
         this.parentTemplateId = parentTemplateId;
     }
@@ -527,5 +552,21 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
 
     public void setArch(String arch) {
         this.arch = arch;
+    }
+
+    public String getExtensionId() {
+        return extensionId;
+    }
+
+    public void setExtensionId(String extensionId) {
+        this.extensionId = extensionId;
+    }
+
+    public String getExtensionName() {
+        return extensionName;
+    }
+
+    public void setExtensionName(String extensionName) {
+        this.extensionName = extensionName;
     }
 }

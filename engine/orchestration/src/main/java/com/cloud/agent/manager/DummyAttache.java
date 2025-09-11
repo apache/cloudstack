@@ -19,11 +19,12 @@ package com.cloud.agent.manager;
 import com.cloud.agent.transport.Request;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.Status;
+import com.cloud.hypervisor.Hypervisor;
 
 public class DummyAttache extends AgentAttache {
 
-    public DummyAttache(AgentManagerImpl agentMgr, long id, String uuid, String name, boolean maintenance) {
-        super(agentMgr, id, uuid, name, maintenance);
+    public DummyAttache(AgentManagerImpl agentMgr, long id, String uuid, String name, final Hypervisor.HypervisorType hypervisorType, boolean maintenance) {
+        super(agentMgr, id, uuid, name, hypervisorType, maintenance);
     }
 
     @Override

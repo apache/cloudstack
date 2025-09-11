@@ -21,19 +21,27 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.offering.DiskOffering;
+import com.cloud.offering.ServiceOffering;
+import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.utils.script.Script;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SshHelper;
-import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
+
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDaoImpl;
 import org.apache.cloudstack.backup.networker.NetworkerClient;
@@ -44,7 +52,9 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.xml.utils.URI;
 import org.apache.cloudstack.backup.networker.api.NetworkerBackup;
+
 import javax.inject.Inject;
+
 import java.net.URISyntaxException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -60,7 +70,6 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import com.cloud.utils.script.Script;
 
 public class NetworkerBackupProvider extends AdapterBase implements BackupProvider, Configurable {
 
@@ -112,6 +121,18 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
 
     @Inject
     private VMInstanceDao vmInstanceDao;
+
+    @Inject
+    private VMTemplateDao vmTemplateDao;
+
+    @Inject
+    ServiceOfferingDao serviceOfferingDao;
+
+    @Inject
+    private BackupManager backupManager;
+
+    @Inject
+    private DiskOfferingDao diskOfferingDao;
 
     private static String getUrlDomain(String url) throws URISyntaxException {
         URI uri;
@@ -169,7 +190,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
             List<HostVO> altClusterHosts = hostDao.findHypervisorHostInCluster(host.getClusterId());
             for (final HostVO candidateClusterHost : altClusterHosts) {
                 if ( candidateClusterHost.getStatus() == Status.Up ) {
-                    LOG.debug(String.format("Found Host %s", candidateClusterHost));
+                    LOG.debug("Found Host {}", candidateClusterHost);
                     return candidateClusterHost;
                 }
             }
@@ -178,7 +199,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         List<HostVO> altZoneHosts = hostDao.findByDataCenterId(host.getDataCenterId());
         for (final HostVO candidateZoneHost : altZoneHosts) {
             if ( candidateZoneHost.getStatus() == Status.Up && candidateZoneHost.getHypervisorType() == Hypervisor.HypervisorType.KVM ) {
-                LOG.debug("Found Host " + candidateZoneHost);
+                LOG.debug("Found Host {}", candidateZoneHost);
                 return candidateZoneHost;
             }
         }
@@ -229,13 +250,13 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
             Pair<Boolean, String> response = SshHelper.sshExecute(host.getPrivateIpAddress(), 22,
                     username, null, password, command, 120000, 120000, 3600000);
             if (!response.first()) {
-                LOG.error(String.format("Backup Script failed on HYPERVISOR %s due to: %s", host, response.second()));
+                LOG.error("Backup Script failed on HYPERVISOR {} due to: {}", host, response.second());
             } else {
-                LOG.debug(String.format("Networker Backup Results: %s", response.second()));
+                LOG.debug("Networker Backup Results: {}", response.second());
             }
             Matcher saveTimeMatcher = saveTimePattern.matcher(response.second());
             if (saveTimeMatcher.find()) {
-                LOG.debug(String.format("Got saveTimeMatcher: %s", saveTimeMatcher.group(1)));
+                LOG.debug("Got saveTimeMatcher: {}", saveTimeMatcher.group(1));
                 return saveTimeMatcher.group(1);
             }
         } catch (final Exception e) {
@@ -251,9 +272,9 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
                 username, null, password, command, 120000, 120000, 3600000);
 
             if (!response.first()) {
-                LOG.error(String.format("Restore Script failed on HYPERVISOR %s due to: %s", host, response.second()));
+                LOG.error("Restore Script failed on HYPERVISOR {} due to: {}", host, response.second());
             } else {
-                LOG.debug(String.format("Networker Restore Results: %s",response.second()));
+                LOG.debug("Networker Restore Results: {}",response.second());
                 return true;
             }
         } catch (final Exception e) {
@@ -310,7 +331,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         List<String> backupsTaken = getClient(vm.getDataCenterId()).getBackupsForVm(vm);
 
         for (String backupId : backupsTaken) {
-            LOG.debug("Trying to remove backup with id" + backupId);
+            LOG.debug("Trying to remove backup with id {}", backupId);
             getClient(vm.getDataCenterId()).deleteBackupForVM(backupId);
         }
 
@@ -327,10 +348,10 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         final NetworkerBackup networkerBackup=getClient(zoneId).getNetworkerBackupInfo(externalBackupId);
         final String SSID = networkerBackup.getShortId();
 
-        LOG.debug(String.format("Restoring vm %s from backup %s on the Networker Backup Provider", vm, backup));
+        LOG.debug("Restoring vm {} from backup {} on the Networker Backup Provider", vm, backup);
 
         if ( SSID.isEmpty() ) {
-            LOG.debug("There was an error retrieving the SSID for backup with id " + externalBackupId + " from EMC NEtworker");
+            LOG.debug("There was an error retrieving the SSID for backup with id {} from EMC NEtworker", externalBackupId);
             return false;
         }
 
@@ -338,7 +359,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         hostVO = getLastVMHypervisorHost(vm);
         // Get credentials for that host
         Ternary<String, String, String> credentials = getKVMHyperisorCredentials(hostVO);
-        LOG.debug("The SSID was reported successfully " + externalBackupId);
+        LOG.debug("The SSID was reported successfully {}", externalBackupId);
         try {
             networkerServer = getUrlDomain(NetworkerUrl.value());
         } catch (URISyntaxException e) {
@@ -355,23 +376,23 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
             script.add("-v");
 
         Date restoreJobStart = new Date();
-        LOG.debug(String.format("Starting Restore for VM %s and %s at %s", vm, SSID, restoreJobStart));
+        LOG.debug("Starting Restore for VM {} and {} at {}", vm, SSID, restoreJobStart);
 
         if ( executeRestoreCommand(hostVO, credentials.first(), credentials.second(), script.toString()) ) {
             Date restoreJobEnd = new Date();
-            LOG.debug("Restore Job for SSID " + SSID + " completed successfully at " + restoreJobEnd);
+            LOG.debug("Restore Job for SSID {} completed successfully at {}", SSID, restoreJobEnd);
             return true;
         } else {
-            LOG.debug("Restore Job for SSID " + SSID + " failed!");
+            LOG.debug("Restore Job for SSID {} failed!", SSID);
             return false;
         }
     }
 
     @Override
-    public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, String volumeUuid, String hostIp, String dataStoreUuid, Pair<String, VirtualMachine.State> vmNameAndState) {
+    public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, Backup.VolumeInfo backupVolumeInfo, String hostIp, String dataStoreUuid, Pair<String, VirtualMachine.State> vmNameAndState) {
         String networkerServer;
-        VolumeVO volume = volumeDao.findByUuid(volumeUuid);
-        VMInstanceVO backupSourceVm = vmInstanceDao.findById(backup.getVmId());
+        VolumeVO volume = volumeDao.findByUuid(backupVolumeInfo.getUuid());
+        final DiskOffering diskOffering = diskOfferingDao.findByUuid(backupVolumeInfo.getDiskOfferingId());
         StoragePoolHostVO dataStore = storagePoolHostDao.findByUuid(dataStoreUuid);
         HostVO hostVO = hostDao.findByIp(hostIp);
 
@@ -381,9 +402,8 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         final String SSID = networkerBackup.getShortId();
         final String clusterName = networkerBackup.getClientHostname();
         final String destinationNetworkerClient = hostVO.getName().split("\\.")[0];
-        Long restoredVolumeDiskSize = 0L;
 
-        LOG.debug(String.format("Restoring volume %s with uuid %s from backup %s on the Networker Backup Provider", volume, volumeUuid, backup));
+        LOG.debug("Restoring volume {} with uuid {} from backup {} on the Networker Backup Provider", volume, backupVolumeInfo, backup);
 
         if ( SSID.isEmpty() ) {
             LOG.debug("There was an error retrieving the SSID for backup with id " + externalBackupId + " from EMC NEtworker");
@@ -398,18 +418,13 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
             throw new CloudRuntimeException(String.format("Failed to convert API to HOST : %s", e));
         }
 
-        // Find volume size  from backup vols
-        for ( Backup.VolumeInfo VMVolToRestore : backupSourceVm.getBackupVolumeList()) {
-            if (VMVolToRestore.getUuid().equals(volumeUuid))
-                restoredVolumeDiskSize = (VMVolToRestore.getSize());
-        }
-
         VolumeVO restoredVolume = new VolumeVO(Volume.Type.DATADISK, null, backup.getZoneId(),
                 backup.getDomainId(), backup.getAccountId(), 0, null,
                 backup.getSize(), null, null, null);
 
-        restoredVolume.setName("RV-"+volume.getName());
-        restoredVolume.setProvisioningType(volume.getProvisioningType());
+        String volumeName = volume != null ? volume.getName() : backupVolumeInfo.getUuid();
+        restoredVolume.setName("RV-" + volumeName);
+        restoredVolume.setProvisioningType(diskOffering.getProvisioningType());
         restoredVolume.setUpdated(new Date());
         restoredVolume.setUuid(UUID.randomUUID().toString());
         restoredVolume.setRemoved(null);
@@ -417,8 +432,8 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         restoredVolume.setPoolId(volume.getPoolId());
         restoredVolume.setPath(restoredVolume.getUuid());
         restoredVolume.setState(Volume.State.Copying);
-        restoredVolume.setSize(restoredVolumeDiskSize);
-        restoredVolume.setDiskOfferingId(volume.getDiskOfferingId());
+        restoredVolume.setSize(backupVolumeInfo.getSize());
+        restoredVolume.setDiskOfferingId(diskOffering.getId());
 
         try {
             volumeDao.persist(restoredVolume);
@@ -458,7 +473,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
     }
 
     @Override
-    public Pair<Boolean, Backup> takeBackup(VirtualMachine vm) {
+    public Pair<Boolean, Backup> takeBackup(VirtualMachine vm, Boolean quiesceVM) {
         String networkerServer;
         String clusterName;
 
@@ -508,7 +523,10 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         LOG.info("EMC Networker finished backup job for vm {} with saveset Time: {}", vm, saveTime);
         BackupVO backup = getClient(vm.getDataCenterId()).registerBackupForVm(vm, backupJobStart, saveTime);
         if (backup != null) {
-            backup.setBackedUpVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
+            List<Volume> volumes = new ArrayList<>(volumeDao.findByInstance(vm.getId()));
+            backup.setBackedUpVolumes(backupManager.createVolumeInfoFromVolumes(volumes));
+            Map<String, String> details = backupManager.getBackupDetailsFromVM(vm);
+            backup.setDetails(details);
             backupDao.persist(backup);
             return new Pair<>(true, backup);
         } else {
@@ -533,35 +551,11 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         return false;
     }
 
-    @Override
-    public Map<VirtualMachine, Backup.Metric> getBackupMetrics(Long zoneId, List<VirtualMachine> vms) {
-        final Map<VirtualMachine, Backup.Metric> metrics = new HashMap<>();
-        Long vmBackupSize=0L;
-        Long vmBackupProtectedSize=0L;
-
-        if (CollectionUtils.isEmpty(vms)) {
-            LOG.warn("Unable to get VM Backup Metrics because the list of VMs is empty.");
-            return metrics;
-        }
-
-        for (final VirtualMachine vm : vms) {
-            for ( Backup.VolumeInfo thisVMVol : vm.getBackupVolumeList()) {
-                vmBackupProtectedSize += (thisVMVol.getSize() / 1024L / 1024L);
-            }
-            final ArrayList<String> vmBackups = getClient(zoneId).getBackupsForVm(vm);
-            for ( String vmBackup : vmBackups ) {
-                NetworkerBackup vmNwBackup = getClient(zoneId).getNetworkerBackupInfo(vmBackup);
-                vmBackupSize += vmNwBackup.getSize().getValue() / 1024L;
-            }
-            Backup.Metric vmBackupMetric = new Backup.Metric(vmBackupSize,vmBackupProtectedSize);
-            LOG.debug(String.format("Metrics for VM [%s] is [backup size: %s, data size: %s].", vm, vmBackupMetric.getBackupSize(), vmBackupMetric.getDataSize()));
-            metrics.put(vm, vmBackupMetric);
-        }
-        return metrics;
+    public void syncBackupMetrics(Long zoneId) {
     }
 
     @Override
-    public Backup createNewBackupEntryForRestorePoint(Backup.RestorePoint restorePoint, VirtualMachine vm, Backup.Metric metric) {
+    public Backup createNewBackupEntryForRestorePoint(Backup.RestorePoint restorePoint, VirtualMachine vm) {
         // Technically an administrator can manually create a backup for a VM by utilizing the KVM scripts
         // with the proper parameters. So we will register any backups taken on the Networker side from
         // outside Cloudstack. If ever Networker will support KVM out of the box this functionality also will
@@ -584,7 +578,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
                 throw new CloudRuntimeException(msg, e);
             }
             backup.setStatus(Backup.Status.BackedUp);
-            Long vmBackupProtectedSize=0L;
+            long vmBackupProtectedSize=0L;
             for (Backup.VolumeInfo thisVMVol : vm.getBackupVolumeList()) {
                 vmBackupProtectedSize += (thisVMVol.getSize() / 1024L / 1024L);
             }
@@ -594,6 +588,16 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
             backup.setAccountId(vm.getAccountId());
             backup.setDomainId(vm.getDomainId());
             backup.setZoneId(vm.getDataCenterId());
+            backup.setName(backupManager.getBackupNameFromVM(vm));
+
+            HashMap<String, String> details = new HashMap<>();
+            details.put(ApiConstants.HYPERVISOR, vm.getHypervisorType().toString());
+            ServiceOffering serviceOffering =  serviceOfferingDao.findById(vm.getServiceOfferingId());
+            details.put(ApiConstants.SERVICE_OFFERING_ID, serviceOffering.getUuid());
+            VirtualMachineTemplate template =  vmTemplateDao.findById(vm.getTemplateId());
+            details.put(ApiConstants.TEMPLATE_ID, template.getUuid());
+            backup.setDetails(details);
+
             backupDao.persist(backup);
             return backup;
         }
@@ -605,11 +609,28 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
     public List<Backup.RestorePoint> listRestorePoints(VirtualMachine vm) {
         final Long zoneId = vm.getDataCenterId();
         final ArrayList<String> backupIds = getClient(zoneId).getBackupsForVm(vm);
-        List<Backup.RestorePoint> restorePoints =
-            backupIds.stream().map(id -> new Backup.RestorePoint(id, null, null)).collect(Collectors.toList());
-        return restorePoints;
+        return backupIds.stream().map(id -> new Backup.RestorePoint(id, null, null)).collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean supportsInstanceFromBackup() {
+        return false;
+    }
+
+    @Override
+    public Pair<Long, Long> getBackupStorageStats(Long zoneId) {
+        return new Pair<>(0L, 0L);
+    }
+
+    @Override
+    public void syncBackupStorageStats(Long zoneId) {
     }
 
     @Override
     public boolean willDeleteBackupsOnOfferingRemoval() { return false; }
+
+    @Override
+    public boolean restoreBackupToVM(VirtualMachine vm, Backup backup, String hostIp, String dataStoreUuid) {
+        return true;
+    }
 }

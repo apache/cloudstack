@@ -188,7 +188,7 @@
 </template>
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -257,7 +257,7 @@ export default {
       if (keyword) {
         params.keyword = keyword
       }
-      api('listUsers', params).then(response => {
+      getAPI('listUsers', params).then(response => {
         this.users = this.parseUsers(response?.listusersresponse?.user)
       }).catch(error => {
         this.$notifyError(error)
@@ -286,7 +286,7 @@ export default {
       if (keyword) {
         params.keyword = keyword
       }
-      api('listAccounts', params).then(response => {
+      getAPI('listAccounts', params).then(response => {
         this.accounts = this.parseAccounts(response?.listaccountsresponse?.account)
       }).catch(error => {
         this.$notifyError(error)
@@ -309,7 +309,7 @@ export default {
     },
     fetchProjectRoles () {
       this.load.projectRoles = true
-      api('listProjectRoles', {
+      getAPI('listProjectRoles', {
         projectid: this.resource.id
       }).then(response => {
         this.projectRoles = response.listprojectrolesresponse.projectrole || []
@@ -338,7 +338,7 @@ export default {
           }
           params[key] = input
         }
-        api('addAccountToProject', params).then(response => {
+        postAPI('addAccountToProject', params).then(response => {
           this.$pollJob({
             jobId: response.addaccounttoprojectresponse.jobid,
             successMessage: `Successfully added account ${params.account} to project`,
@@ -373,7 +373,7 @@ export default {
           }
           params[key] = input
         }
-        api('addUserToProject', params).then(response => {
+        postAPI('addUserToProject', params).then(response => {
           this.$pollJob({
             jobId: response.addusertoprojectresponse.jobid,
             successMessage: `Successfully added user ${params.username} to project`,
