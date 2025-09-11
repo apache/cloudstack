@@ -38,3 +38,6 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backup_repository', 'cross_zone_inst
 -- Updated display to false for password/token detail of the storage pool details
 UPDATE `cloud`.`storage_pool_details` SET display = 0 WHERE name LIKE '%password%';
 UPDATE `cloud`.`storage_pool_details` SET display = 0 WHERE name LIKE '%token%';
+
+CALL `cloud`.`INSERT_EXTENSION_IF_NOT_EXISTS`('MaaS', 'Sample extension for Baremetal MaaS written in python', 'MaaS/maas.py');
+CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('MaaS', 'orchestratorrequirespreparevm', 'true', 0);
