@@ -44,10 +44,12 @@ import org.apache.cloudstack.framework.extensions.api.UpdateCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.UpdateExtensionCmd;
 import org.apache.cloudstack.framework.extensions.command.ExtensionServerActionBaseCommand;
 
+import com.cloud.agent.api.Answer;
 import com.cloud.host.Host;
 import com.cloud.org.Cluster;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
+import com.cloud.vm.VirtualMachine;
 
 public interface ExtensionsManager extends Manager {
 
@@ -93,4 +95,6 @@ public interface ExtensionsManager extends Manager {
                       final ExtensionResourceMap.ResourceType resourceType, final Map<String, String> details);
 
     void updateExtensionResourceMapDetails(final long extensionResourceMapId, final Map<String, String> details);
+
+    Answer getInstanceConsole(VirtualMachine vm, Host host);
 }
