@@ -573,7 +573,7 @@ export default {
         const filters = ['cloud.managed', 'external.managed']
         return filters
       },
-      details: ['name', 'description', 'zonename', 'kubernetesversionname', 'autoscalingenabled', 'minsize', 'maxsize', 'size', 'controlnodes', 'etcdnodes', 'cpunumber', 'memory', 'keypair', 'cniconfigname', 'associatednetworkname', 'account', 'domain', 'zonename', 'clustertype', 'created'],
+      details: ['name', 'description', 'zonename', 'kubernetesversionname', 'autoscalingenabled', 'csienabled', 'minsize', 'maxsize', 'size', 'controlnodes', 'etcdnodes', 'cpunumber', 'memory', 'keypair', 'cniconfigname', 'associatednetworkname', 'account', 'domain', 'zonename', 'clustertype', 'created'],
       tabs: [
         {
           name: 'k8s',
