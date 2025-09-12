@@ -3037,7 +3037,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 destVolumeName = volumeName + "." + destFormat.getFileExtension();
 
                 // Update path in the command for reconciliation
-                if (destData.getPath() == null) {
+                if (StringUtils.isBlank(destVolumePath)) {
                     ((VolumeObjectTO) destData).setPath(destVolumeName);
                 }
             }
@@ -3071,7 +3071,10 @@ public class KVMStorageProcessor implements StorageProcessor {
             }
 
             final VolumeObjectTO newVol = new VolumeObjectTO();
-            String path = destPrimaryStore.isManaged() ? destVolumeName : destVolumePath + File.separator + destVolumeName;
+            String path = destVolumeName;
+            if (!destPrimaryStore.isManaged() && StringUtils.isNotBlank(destVolumePath)) {
+                path = destVolumePath + File.separator + destVolumeName;
+            }
             newVol.setPath(path);
             newVol.setFormat(destFormat);
             newVol.setEncryptFormat(destVol.getEncryptFormat());

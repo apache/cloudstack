@@ -1422,7 +1422,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         String volumeToString = getVolumeIdentificationInfos(volume);
 
         VolumeInfo vol = volFactory.getVolume(volume.getId());
-        if (vol == null){
+        if (vol == null) {
             throw new CloudRuntimeException(String.format("Volume migration failed because volume [%s] is null.", volumeToString));
         }
         if (destPool == null) {
@@ -2303,6 +2303,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 StoragePoolVO pool = _storagePoolDao.findByUuid(updatedDataStoreUUID);
                 if (pool != null) {
                     vol.setPoolId(pool.getId());
+                    vol.setPoolType(pool.getPoolType());
                 }
             }
             _volsDao.update(volumeId, vol);
@@ -2312,7 +2313,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     @Override
     public DiskProfile importVolume(Type type, String name, DiskOffering offering, Long sizeInBytes, Long minIops, Long maxIops,
                                     Long zoneId, HypervisorType hypervisorType, VirtualMachine vm, VirtualMachineTemplate template, Account owner,
-                                    Long deviceId, Long poolId, String path, String chainInfo) {
+                                    Long deviceId, Long poolId, Storage.StoragePoolType poolType, String path, String chainInfo) {
         if (sizeInBytes == null) {
             sizeInBytes = offering.getDiskSize();
         }
@@ -2353,6 +2354,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         vol.setFormat(getSupportedImageFormatForCluster(hypervisorType));
         vol.setPoolId(poolId);
+        vol.setPoolType(poolType);
         vol.setPath(path);
         vol.setChainInfo(chainInfo);
         vol.setState(Volume.State.Ready);
@@ -2362,7 +2364,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
     @Override
     public DiskProfile updateImportedVolume(Type type, DiskOffering offering, VirtualMachine vm, VirtualMachineTemplate template,
-                                    Long deviceId, Long poolId, String path, String chainInfo, DiskProfile diskProfile) {
+                                    Long deviceId, Long poolId, Storage.StoragePoolType poolType, String path, String chainInfo, DiskProfile diskProfile) {
 
         VolumeVO vol = _volsDao.findById(diskProfile.getVolumeId());
         if (vm != null) {
@@ -2396,6 +2398,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         vol.setFormat(getSupportedImageFormatForCluster(vm.getHypervisorType()));
         vol.setPoolId(poolId);
+        vol.setPoolType(poolType);
         vol.setPath(path);
         vol.setChainInfo(chainInfo);
         vol.setSize(diskProfile.getSize());
