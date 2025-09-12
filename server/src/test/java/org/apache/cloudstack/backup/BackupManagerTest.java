@@ -1824,6 +1824,13 @@ public class BackupManagerTest {
         Mockito.when(cmd.getVmId()).thenReturn(vmId);
         Mockito.when(cmd.getId()).thenReturn(1L);
 
+        // Mock VM for validation
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vmInstanceDao.findById(vmId)).thenReturn(vm);
+        Mockito.when(vm.getDataCenterId()).thenReturn(1L);
+        overrideBackupFrameworkConfigValue();
+        Mockito.doNothing().when(accountManager).checkAccess(Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any());
+
         BackupScheduleVO schedule1 = Mockito.mock(BackupScheduleVO.class);
         BackupScheduleVO schedule2 = Mockito.mock(BackupScheduleVO.class);
         List<BackupScheduleVO> schedules = List.of(schedule1, schedule2);
@@ -1852,6 +1859,13 @@ public class BackupManagerTest {
         ListBackupScheduleCmd cmd = Mockito.mock(ListBackupScheduleCmd.class);
         Mockito.when(cmd.getVmId()).thenReturn(vmId);
         Mockito.when(cmd.getId()).thenReturn(1L);
+
+        // Mock VM for validation
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vmInstanceDao.findById(vmId)).thenReturn(vm);
+        Mockito.when(vm.getDataCenterId()).thenReturn(1L);
+        overrideBackupFrameworkConfigValue();
+        Mockito.doNothing().when(accountManager).checkAccess(Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any());
 
         BackupScheduleVO schedule = Mockito.mock(BackupScheduleVO.class);
         List<BackupScheduleVO> schedules = List.of(schedule);
