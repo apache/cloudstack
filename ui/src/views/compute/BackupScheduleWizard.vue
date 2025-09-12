@@ -22,13 +22,17 @@
         <FormSchedule
           :loading="loading"
           :resource="resource"
-          :dataSource="dataSource"/>
+          :dataSource="dataSource"
+          @close-action="closeAction"
+          @refresh="handleRefresh"/>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.scheduled.backups')" key="2">
         <BackupSchedule
           :loading="loading"
           :resource="resource"
-          :dataSource="dataSource" />
+          :dataSource="dataSource"
+          @refresh="handleRefresh"
+          @close-action="closeAction" />
       </a-tab-pane>
     </a-tabs>
   </div>
@@ -54,7 +58,7 @@ export default {
   data () {
     return {
       loading: false,
-      dataSource: {}
+      dataSource: []
     }
   },
   provide () {
@@ -69,16 +73,21 @@ export default {
   methods: {
     fetchData () {
       const params = {}
-      this.dataSource = {}
+      this.dataSource = []
       this.loading = true
       params.virtualmachineid = this.resource.id
       getAPI('listBackupSchedule', params).then(json => {
-        this.dataSource = json.listbackupscheduleresponse.backupschedule || {}
+        this.dataSource = json.listbackupscheduleresponse.backupschedule || []
       }).finally(() => {
         this.loading = false
       })
     },
+    handleRefresh () {
+      this.fetchData()
+      this.$emit('refresh')
+    },
     closeAction () {
+      this.$emit('refresh')
       this.$emit('close-action')
     }
   }
