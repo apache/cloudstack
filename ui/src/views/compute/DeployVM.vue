@@ -3433,12 +3433,15 @@ export default {
       this.form.externaldetails = undefined
     },
     onChangeBackupOffering (val) {
-      if (val && val.id) {
-        this.selectedBackupOffering = val
+      if (!val || !val.id) {
+        this.selectedBackupOffering = null
+        this.backupSchedules = []
         return
       }
-      this.selectedBackupOffering = null
-      this.backupSchedules = []
+      this.selectedBackupOffering = val
+      if (this.backupSchedules && this.backupSchedules.length > 0 && !['nas'].includes(val.provider)) {
+        this.backupSchedules = this.backupSchedules.filter(item => !item.quiescevm)
+      }
     },
     async performPostDeployBackupActions (vm) {
       if (!this.isUserAllowedBackupOperations) {
@@ -3446,8 +3449,6 @@ export default {
       }
       const assigned = await this.assignVirtualMachineToBackupOfferingIfNeeded(vm)
       if (assigned) {
-        // wait for 200ms
-        await new Promise(resolve => setTimeout(resolve, 200))
         await this.createVirtualMachineBackupSchedulesIfNeeded(vm)
       }
     },
