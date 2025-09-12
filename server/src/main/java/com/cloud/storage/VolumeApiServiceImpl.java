@@ -2937,8 +2937,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 List<StoragePoolVO> childDatastores = _storagePoolDao.listChildStoragePoolsInDatastoreCluster(storageId);
                 Collections.shuffle(childDatastores);
                 volume.setPoolId(childDatastores.get(0).getId());
+                volume.setPoolType(childDatastores.get(0).getPoolType());
             } else {
                 volume.setPoolId(pool.getId());
+                volume.setPoolType(pool.getPoolType());
             }
         }
 
@@ -3225,6 +3227,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     if (storagePoolVO != null) {
                         VolumeVO volumeVO = _volsDao.findById(volumeId);
                         volumeVO.setPoolId(storagePoolVO.getId());
+                        volumeVO.setPoolType(storagePoolVO.getPoolType());
                         _volsDao.update(volumeVO.getId(), volumeVO);
                     } else {
                         logger.warn("Unable to find datastore {} while updating the new datastore of the volume {}", datastoreName, volume);

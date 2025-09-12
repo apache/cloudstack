@@ -796,6 +796,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
         volumeVO.setPodId(destPool.getPodId());
         volumeVO.setPoolId(destPool.getId());
+        volumeVO.setPoolType(destPool.getPoolType());
         volumeVO.setLastPoolId(srcVolumeInfo.getPoolId());
 
         _volumeDao.update(srcVolumeInfo.getId(), volumeVO);
@@ -2398,13 +2399,13 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         Long lastPoolId = volume.getPoolId();
 
         VolumeVO newVol = new VolumeVO(volume);
-
         newVol.setInstanceId(null);
         newVol.setChainInfo(null);
         newVol.setPath(null);
         newVol.setFolder(null);
         newVol.setPodId(storagePoolVO.getPodId());
         newVol.setPoolId(storagePoolVO.getId());
+        newVol.setPoolType(storagePoolVO.getPoolType());
         newVol.setLastPoolId(lastPoolId);
         newVol.setLastId(volume.getId());
 
