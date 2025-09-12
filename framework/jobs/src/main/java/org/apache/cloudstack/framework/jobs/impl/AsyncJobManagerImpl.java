@@ -1222,7 +1222,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     private boolean cleanupSnapshot(final long snapshotId) {
         SnapshotVO snapshotVO = _snapshotDao.findById(snapshotId);
         if (snapshotVO == null) {
-            s_logger.warn("Snapshot not found. Skip Cleanup. SnapshotId: " + snapshotId);
+            logger.warn("Snapshot not found. Skip Cleanup. SnapshotId: " + snapshotId);
             return true;
         }
         if (Snapshot.State.Allocated.equals(snapshotVO.getState())) {
@@ -1242,7 +1242,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     private boolean cleanupVmSnapshot(final long vmSnapshotId) {
         VMSnapshotVO vmSnapshotVO = _vmSnapshotDao.findById(vmSnapshotId);
         if (vmSnapshotVO == null) {
-            s_logger.warn("VM Snapshot not found. Skip Cleanup. VMSnapshotId: " + vmSnapshotId);
+            logger.warn("VM Snapshot not found. Skip Cleanup. VMSnapshotId: " + vmSnapshotId);
             return true;
         }
         if (VMSnapshot.State.Allocated.equals(vmSnapshotVO.getState())) {

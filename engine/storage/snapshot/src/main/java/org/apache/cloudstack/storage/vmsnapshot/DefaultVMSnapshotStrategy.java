@@ -487,7 +487,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
         try {
             vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationFailed);
         } catch (NoTransitionException e) {
-            s_logger.debug("Failed to change vm snapshot state with event OperationFailed");
+            logger.debug("Failed to change vm snapshot state with event OperationFailed");
             throw e;
         }
     }
