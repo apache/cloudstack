@@ -541,21 +541,21 @@
                 </template>
               </a-step>
               <a-step
-                v-if="isUserAllowedToListBackupOfferings"
-                :title="$t('label.backup.offering')"
+                v-if="isUserAllowedBackupOperations"
+                :title="$t('label.backup')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description>
                   <div v-if="zoneSelected" style="margin-top: 15px">
-                    <div>{{ $t('message.backup.offering.select.assign.instance') }}</div>
-                    <infinite-scroll-select
-                      style="margin-top: 10px; width: 100%;"
-                      v-model:value="selectedBackupOfferingId"
-                      placeholder="Select backup offering"
-                      api="listBackupOfferings"
-                      :apiParams="listBackupOfferingApiParams"
-                      resourceType="backupoffering"
-                      defaultIcon="cloud-upload-outlined"
-                      :defaultOption="backupOfferingDefaultOption" />
+                    <deploy-instance-backup-selection
+                      :zoneId="zoneId"
+                      v-model:backupOfferingId="form.backupofferingid"
+                      :backupSchedules="backupSchedules"
+                      @change-backup-offering="onChangeBackupOffering"
+                      @add-backup-schedule="backupSchedules.push($event)"
+                      @delete-backup-schedule="backupSchedules = backupSchedules.filter(schedule => schedule.id !== $event.id)" />
+                    <a-form-item class="form-item-hidden">
+                      <a-input v-model:value="form.backupofferingid" />
+                    </a-form-item>
                   </div>
                 </template>
               </a-step>
@@ -949,7 +949,7 @@ import SecurityGroupSelection from '@views/compute/wizard/SecurityGroupSelection
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import InstanceNicsNetworkSelectListView from '@/components/view/InstanceNicsNetworkSelectListView'
 import DetailsInput from '@/components/widgets/DetailsInput'
-import InfiniteScrollSelect from '@/components/widgets/InfiniteScrollSelect'
+import DeployInstanceBackupSelection from '@views/compute/wizard/DeployInstanceBackupSelection'
 
 export default {
   name: 'Wizard',
@@ -976,7 +976,7 @@ export default {
     TooltipLabel,
     InstanceNicsNetworkSelectListView,
     DetailsInput,
-    InfiniteScrollSelect
+    DeployInstanceBackupSelection
   },
   props: {
     visible: {
@@ -1157,7 +1157,8 @@ export default {
       },
       externalDetailsEnabled: false,
       selectedExtensionId: null,
-      selectedBackupOfferingId: null
+      selectedBackupOffering: null,
+      backupSchedules: []
     }
   },
   computed: {
@@ -1538,16 +1539,9 @@ export default {
     isTemplateHypervisorExternal () {
       return !!this.template && this.template.hypervisor === 'External'
     },
-    isUserAllowedToListBackupOfferings () {
-      return Boolean('listBackupOfferings' in this.$store.getters.apis)
-    },
-    listBackupOfferingApiParams () {
-      return {
-        zoneid: this.zone?.id
-      }
-    },
-    backupOfferingDefaultOption () {
-      return { id: null, name: '', showicon: false }
+    isUserAllowedBackupOperations () {
+      return Boolean('listBackupOfferings' in this.$store.getters.apis) &&
+        Boolean('assignVirtualMachineToBackupOffering' in this.$store.getters.apis)
     }
   },
   watch: {
@@ -1704,6 +1698,13 @@ export default {
 
         if (this.leaseduration < 1) {
           this.vm.leaseduration = undefined
+        }
+
+        delete this.vm.backupofferingid
+        delete this.vm.backupofferingname
+        if (this.form.backupofferingid && this.selectedBackupOffering) {
+          this.vm.backupofferingid = this.selectedBackupOffering.id
+          this.vm.backupofferingname = this.selectedBackupOffering.name
         }
       }
     }
@@ -2540,7 +2541,7 @@ export default {
                     duration: 0
                   })
                 }
-                this.assigneVirtualMachineToBackupOfferingIfNeeded(vm)
+                this.performPostDeployBackupActions(vm)
                 eventBus.emit('vm-refresh-data')
               },
               loadingMessage: `${title} ${this.$t('label.in.progress')}`,
@@ -3038,7 +3039,7 @@ export default {
       this.resetTemplatesList()
       this.resetIsosList()
       this.imageType = this.queryIsoId ? 'isoid' : 'templateid'
-      this.selectedBackupOfferingId = undefined
+      this.form.backupofferingid = undefined
       this.fetchZoneOptions()
     },
     onSelectPodId (value) {
@@ -3431,16 +3432,61 @@ export default {
       }
       this.form.externaldetails = undefined
     },
-    assigneVirtualMachineToBackupOfferingIfNeeded (vm) {
-      if (!this.selectedBackupOfferingId || !vm || !vm.id) {
+    onChangeBackupOffering (val) {
+      if (val && val.id) {
+        this.selectedBackupOffering = val
         return
       }
-      postAPI('assignVirtualMachineToBackupOffering', {
+      this.selectedBackupOffering = null
+      this.backupSchedules = []
+    },
+    async performPostDeployBackupActions (vm) {
+      if (!this.isUserAllowedBackupOperations) {
+        return
+      }
+      const assigned = await this.assignVirtualMachineToBackupOfferingIfNeeded(vm)
+      if (assigned) {
+        await this.createVirtualMachineBackupSchedulesIfNeeded(vm)
+      }
+    },
+    assignVirtualMachineToBackupOfferingIfNeeded (vm) {
+      if (!this.form.backupofferingid || !vm || !vm.id) {
+        return Promise.resolve(false)
+      }
+      return postAPI('assignVirtualMachineToBackupOffering', {
         virtualmachineid: vm.id,
-        backupofferingid: this.selectedBackupOfferingId
-      }).catch(error => {
+        backupofferingid: this.form.backupofferingid
+      }).then(() => true).catch(error => {
         this.$notification.error({
           message: this.$t('label.backup.offering.assign.failed'),
+          description: error.message || error
+        })
+        return false
+      })
+    },
+    createVirtualMachineBackupSchedulesIfNeeded (vm) {
+      if (!vm || !vm.id || !this.backupSchedules || this.backupSchedules.length === 0) {
+        return Promise.resolve()
+      }
+      const promises = (this.form.backupSchedules).map(item =>
+        this.createVirtualMachineBackupSchedule(vm, item)
+      )
+      return Promise.all(promises)
+    },
+    createVirtualMachineBackupSchedule (vm, item) {
+      const params = {
+        virtualmachineid: vm.id,
+        intervaltype: item.intervaltype,
+        maxbackups: item.maxbackups,
+        timezone: item.timezone,
+        schedule: item.schedule
+      }
+      if (item.quiescevm) {
+        params.quiescevm = item.quiescevm
+      }
+      return postAPI('createBackupSchedule', params).catch(error => {
+        this.$notification.error({
+          message: this.$t('label.backup.schedule.create.failed'),
           description: error.message || error
         })
       })

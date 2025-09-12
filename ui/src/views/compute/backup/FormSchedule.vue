@@ -180,13 +180,13 @@ export default {
       type: Boolean,
       default: false
     },
-    dataSource: {
-      type: Object,
-      required: true
-    },
     resource: {
       type: Object,
       required: true
+    },
+    submitFn: {
+      type: Function,
+      default: null
     }
   },
   data () {
@@ -226,6 +226,10 @@ export default {
       })
     },
     fetchBackupOffering () {
+      if ('backupoffering' in this.resource) {
+        this.backupProvider = this.resource.backupoffering.provider
+        return
+      }
       getAPI('listBackupOfferings', { id: this.resource.backupofferingid }).then(json => {
         if (json.listbackupofferingsresponse && json.listbackupofferingsresponse.backupoffering) {
           const backupoffering = json.listbackupofferingsresponse.backupoffering[0]
@@ -304,6 +308,11 @@ export default {
           case 'monthly':
             params.schedule = [values.timeSelect.format('mm:HH'), values['day-of-month']].join(':')
             break
+        }
+        if (this.submitFn) {
+          this.submitFn(params)
+          this.resetForm()
+          return
         }
         this.actionLoading = true
         postAPI('createBackupSchedule', params).then(json => {
