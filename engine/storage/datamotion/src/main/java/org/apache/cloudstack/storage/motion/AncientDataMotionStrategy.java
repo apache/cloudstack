@@ -363,6 +363,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
         if (cacheStore == null) {
             if (bypassSecondaryStorage) {
+                logger.debug("Secondary storage is bypassed, copy volume between pools directly");
                 CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _copyvolumewait, VirtualMachineManager.ExecuteInSequence.value());
                 EndPoint ep = selector.select(srcData, destData, encryptionRequired);
                 Answer answer = null;
@@ -462,9 +463,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             if (destData instanceof VolumeInfo) {
                 Scope srcDataStoreScope = srcData.getDataStore().getScope();
                 Scope destDataStoreScope = destData.getDataStore().getScope();
-                logger.info("srcDataStoreScope: {}, destDataStoreScope: {}", srcDataStoreScope, destDataStoreScope);
-                logger.info("srcData - pool type: {}, scope: {}; destData - pool type: {}, scope: {}",
-                        ((VolumeInfo)srcData).getStoragePoolType(), srcDataStoreScope != null ? srcDataStoreScope.getScopeType() : null, ((VolumeInfo)destData).getStoragePoolType(), destDataStoreScope != null ? destDataStoreScope.getScopeType() : null);
+                logger.info("srcDataStoreScope: {}, srcData pool type: {}; destDataStoreScope: {}, destData pool type: {}",
+                        srcDataStoreScope, ((VolumeInfo)srcData).getStoragePoolType(), destDataStoreScope, ((VolumeInfo)destData).getStoragePoolType());
 
                 if (srcDataStoreScope != null && destDataStoreScope != null &&
                         SUPPORTED_POOL_TYPES_TO_BYPASS_SECONDARY_STORE.contains(((VolumeInfo)srcData).getStoragePoolType()) &&
@@ -474,16 +474,26 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                         return true;
                     }
 
-                    if (srcDataStoreScope.getScopeType() == ScopeType.CLUSTER &&
-                            destDataStoreScope.getScopeType() == ScopeType.HOST &&
-                            (Objects.equals(((ClusterScope) srcDataStoreScope).getScopeId(), ((HostScope) destDataStoreScope).getClusterId()))) {
-                        return true;
+                    if (srcDataStoreScope.getScopeType() == ScopeType.HOST) {
+                        if (destDataStoreScope.getScopeType() == ScopeType.CLUSTER &&
+                                (Objects.equals(((HostScope) srcDataStoreScope).getClusterId(), ((ClusterScope) destDataStoreScope).getScopeId()))) {
+                            return true;
+                        }
+                        if (destDataStoreScope.getScopeType() == ScopeType.ZONE &&
+                                (Objects.equals(((HostScope) srcDataStoreScope).getZoneId(), ((ZoneScope) destDataStoreScope).getScopeId()))) {
+                            return true;
+                        }
                     }
 
-                    if (srcDataStoreScope.getScopeType() == ScopeType.HOST &&
-                            destDataStoreScope.getScopeType() == ScopeType.CLUSTER &&
-                            (Objects.equals(((HostScope) srcDataStoreScope).getClusterId(), ((ClusterScope) destDataStoreScope).getScopeId()))) {
-                        return true;
+                    if (destDataStoreScope.getScopeType() == ScopeType.HOST) {
+                        if (srcDataStoreScope.getScopeType() == ScopeType.CLUSTER &&
+                                (Objects.equals(((ClusterScope) srcDataStoreScope).getScopeId(), ((HostScope) destDataStoreScope).getClusterId()))) {
+                            return true;
+                        }
+                        if (srcDataStoreScope.getScopeType() == ScopeType.ZONE &&
+                                (Objects.equals(((ZoneScope) srcDataStoreScope).getScopeId(), ((HostScope) destDataStoreScope).getZoneId()))) {
+                            return true;
+                        }
                     }
                 }
             }
