@@ -65,7 +65,8 @@ public class ListBackupScheduleCmd extends BaseListDomainResourcesCmd {
     @Parameter(name = ApiConstants.ID,
             type = CommandType.UUID,
             entityType = BackupScheduleResponse.class,
-            description = "the ID of the backup schedule")
+            description = "the ID of the backup schedule",
+            since = "4.22.0")
     private Long id;
 
     /////////////////////////////////////////////////////
