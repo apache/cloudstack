@@ -67,6 +67,11 @@ class MaasManager:
                 fail("Invalid apikey format. Expected consumer:token:secret")
 
             consumer, token, secret = parts
+            vm_name = (
+                    json_data.get("externaldetails", {}).get("virtualmachine", {}).get("vm_name")
+                    or json_data.get("cloudstack.vm.details", {}).get("name", "")
+            )
+
             return {
                 "endpoint": endpoint,
                 "consumer": consumer,
@@ -74,7 +79,7 @@ class MaasManager:
                 "secret": secret,
                 "distro_series": distro_series,
                 "system_id": json_data.get("cloudstack.vm.details", {}).get("details", {}).get("maas_system_id", ""),
-                "vm_name": json_data.get("cloudstack.vm.details", {}).get("name", ""),
+                "vm_name": vm_name,
                 "memory": json_data.get("cloudstack.vm.details", {}).get("minRam", ""),
                 "cpus": json_data.get("cloudstack.vm.details", {}).get("cpus", ""),
                 "nics": json_data.get("cloudstack.vm.details", {}).get("nics", []),
@@ -131,11 +136,16 @@ class MaasManager:
         sysid = self.data.get("system_id")
         if not sysid:
             fail("system_id missing for create")
-        self.call_maas(
-            "POST",
-            f"/machines/{sysid}/",
-            {"op": "deploy", "distro_series": self.data["distro_series"]},
-        )
+
+        payload = {
+            "op": "deploy",
+            "distro_series": self.data["distro_series"],
+        }
+
+        if self.data.get("vm_name"):
+            payload["name"] = self.data["vm_name"]
+
+        self.call_maas("POST", f"/machines/{sysid}/", payload)
         succeed({"status": "success", "message": f"Instance created with {self.data['distro_series']}"})
 
     def delete(self):
