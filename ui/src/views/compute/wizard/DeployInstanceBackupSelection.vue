@@ -30,13 +30,15 @@
       @change-option="handleChangeBackupOffering" />
 
       <div v-if="backupOfferingId && 'createBackupSchedule' in $store.getters.apis" style="margin-top: 15px">
-        <a-button
-          type="dashed"
-          style="width: 100%"
-          @click="onShowAddBackupSchedule">
-          <template #icon><plus-outlined /></template>
-          {{ $t('label.add.backup.schedule') }}
-        </a-button>
+        <a-form-item :label="$t('label.schedule')">
+          <a-button
+            type="dashed"
+            style="width: 100%"
+            @click="onShowAddBackupSchedule">
+            <template #icon><plus-outlined /></template>
+            {{ $t('label.add.backup.schedule') }}
+          </a-button>
+        </a-form-item>
         <backup-schedule
           style="margin-top: 10px;"
           :dataSource="backupSchedules"

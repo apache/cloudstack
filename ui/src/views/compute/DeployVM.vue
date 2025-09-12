@@ -3446,6 +3446,8 @@ export default {
       }
       const assigned = await this.assignVirtualMachineToBackupOfferingIfNeeded(vm)
       if (assigned) {
+        // wait for 200ms
+        await new Promise(resolve => setTimeout(resolve, 200))
         await this.createVirtualMachineBackupSchedulesIfNeeded(vm)
       }
     },
@@ -3453,22 +3455,46 @@ export default {
       if (!this.form.backupofferingid || !vm || !vm.id) {
         return Promise.resolve(false)
       }
-      return postAPI('assignVirtualMachineToBackupOffering', {
+      const params = {
         virtualmachineid: vm.id,
         backupofferingid: this.form.backupofferingid
-      }).then(() => true).catch(error => {
-        this.$notification.error({
-          message: this.$t('label.backup.offering.assign.failed'),
-          description: error.message || error
+      }
+      return new Promise((resolve, reject) => {
+        postAPI('assignVirtualMachineToBackupOffering', params).then(json => {
+          const jobId = json.assignvirtualmachinetobackupofferingresponse?.jobid
+          if (!jobId) {
+            resolve(false)
+            return
+          }
+          this.$pollJob({
+            jobId,
+            loadingMessage: `${this.$t('label.backup.offering.assign')} ${this.$t('label.in.progress')}`,
+            successMethod: () => {
+              resolve(true)
+            },
+            errorMethod: (result) => {
+              this.$notification.error({
+                message: this.$t('label.backup.offering.assign.failed'),
+                description: result?.jobresult?.errortext || this.$t('error.fetching.async.job.result')
+              })
+              resolve(false)
+            },
+            catchMessage: this.$t('error.fetching.async.job.result')
+          })
+        }).catch(error => {
+          this.$notification.error({
+            message: this.$t('label.backup.offering.assign.failed'),
+            description: error.message || error
+          })
+          resolve(false)
         })
-        return false
       })
     },
     createVirtualMachineBackupSchedulesIfNeeded (vm) {
-      if (!vm || !vm.id || !this.backupSchedules || this.backupSchedules.length === 0) {
+      if (!vm || !vm.id || !this.backupSchedules) {
         return Promise.resolve()
       }
-      const promises = (this.form.backupSchedules).map(item =>
+      const promises = (this.backupSchedules || []).map(item =>
         this.createVirtualMachineBackupSchedule(vm, item)
       )
       return Promise.all(promises)
@@ -3484,10 +3510,15 @@ export default {
       if (item.quiescevm) {
         params.quiescevm = item.quiescevm
       }
-      return postAPI('createBackupSchedule', params).catch(error => {
-        this.$notification.error({
-          message: this.$t('label.backup.schedule.create.failed'),
-          description: error.message || error
+      return new Promise((resolve, reject) => {
+        postAPI('createBackupSchedule', params).then(response => {
+          resolve(response)
+        }).catch(error => {
+          this.$notification.error({
+            message: this.$t('label.backup.schedule.create.failed'),
+            description: error.message || error
+          })
+          reject(error)
         })
       })
     }
