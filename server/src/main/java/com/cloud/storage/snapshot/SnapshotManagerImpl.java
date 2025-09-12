@@ -1399,6 +1399,13 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         Boolean isRecursive = null;
         ListProjectResourcesCriteria listProjectResourcesCriteria = null;
 
+        if (volumeId != null) {
+            VolumeVO volume = _volsDao.findById(volumeId);
+            if (volume != null) {
+                _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
+            }
+        }
+
         if (!isRootAdmin) {
             Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject =
                     new Ternary<>(cmd.getDomainId(), cmd.isRecursive(), null);

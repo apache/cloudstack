@@ -648,6 +648,12 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         Boolean isRecursive = null;
         Project.ListProjectResourcesCriteria listProjectResourcesCriteria = null;
 
+        if (vmId != null) {
+            final VMInstanceVO vm = findVmById(vmId);
+            validateBackupForZone(vm.getDataCenterId());
+            accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
+        }
+
         if (!isRootAdmin) {
             Ternary<Long, Boolean, Project.ListProjectResourcesCriteria> domainIdRecursiveListProject =
                     new Ternary<>(cmd.getDomainId(), cmd.isRecursive(), null);
