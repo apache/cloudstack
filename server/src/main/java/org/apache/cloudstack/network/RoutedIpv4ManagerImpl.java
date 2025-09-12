@@ -617,7 +617,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         }
         Boolean isAutoAllocationEnabled = RoutedIPv4NetworkCidrAutoAllocationEnabled.valueIn(ownerAccountId);
         if (!Boolean.TRUE.equals(isAutoAllocationEnabled)) {
-            throw new CloudRuntimeException("CIDR auto-allocation is disabled for this account");
+            throw new InvalidParameterValueException("CIDR auto-allocation is disabled for this account");
         }
         for (DataCenterIpv4GuestSubnetVO subnet : subnets) {
             Ipv4GuestSubnetNetworkMap result = createIpv4SubnetForGuestNetworkOrVpcInternal(cidrSize, subnet);
@@ -713,7 +713,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
     private void validateNetworkCidrSize(Integer networkCidrSize) {
         if (networkCidrSize == null) {
-            throw new CloudRuntimeException("network/vpc CidrSize is null");
+            throw new InvalidParameterValueException("network/vpc CidrSize is null");
         }
     }
 
@@ -769,7 +769,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         // Allocate a subnet automatically
         String networkCidr = getFreeNetworkCidr(subnetsInFreeIpRanges, networkCidrSize);
         if (networkCidr == null) {
-            throw new CloudRuntimeException("Failed to automatically allocate a subnet with specified cidrsize");
+            throw new InvalidParameterValueException("Failed to automatically allocate a subnet with specified cidrsize");
         }
         return networkCidr;
     }
