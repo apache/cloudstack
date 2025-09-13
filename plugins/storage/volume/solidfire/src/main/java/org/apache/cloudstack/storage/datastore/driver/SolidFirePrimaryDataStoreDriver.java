@@ -25,6 +25,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.agent.AgentManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -118,6 +119,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Inject private VolumeDao volumeDao;
     @Inject private VolumeDetailsDao volumeDetailsDao;
     @Inject private VolumeDataFactory volumeFactory;
+    @Inject private AgentManager agentManager;
 
     @Override
     public Map<String, String> getCapabilities() {
@@ -1680,6 +1682,16 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     @Override
     public boolean zoneWideVolumesAvailableWithoutClusterMotion() {
+        return true;
+    }
+
+    @Override
+    public boolean requiresAccessForMigration(DataObject dataObject) {
+        return true;
+    }
+
+    @Override
+    public boolean zoneWideVolumesDatastoreCleanupOnOriginHostAfterInterClusterMigration() {
         return true;
     }
 }

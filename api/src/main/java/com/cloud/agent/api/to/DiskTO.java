@@ -29,6 +29,8 @@ public class DiskTO {
     public static final String CHAP_TARGET_SECRET = "chapTargetSecret";
     public static final String SCSI_NAA_DEVICE_ID = "scsiNaaDeviceId";
     public static final String MANAGED = "managed";
+    public static final String SCOPE = "scope";
+    public static final String INTER_CLUSTER_MIGRATION = "interClusterMigration";
     public static final String IQN = "iqn";
     public static final String STORAGE_HOST = "storageHost";
     public static final String STORAGE_PORT = "storagePort";

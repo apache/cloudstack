@@ -183,4 +183,15 @@ public interface PrimaryDataStoreDriver extends DataStoreDriver {
     default boolean zoneWideVolumesAvailableWithoutClusterMotion() {
         return false;
     }
+
+    /**
+     * Disabled by default. Set to true if the data store driver needs to unmount/revoke volumes datastore on the
+     * origin host in case of:
+     * - zone wide storage
+     * - inter-cluster VM migration (without storage motion)
+     * - the hypervisor has restrictions on the number of mounted datastores per host/cluster
+     */
+    default boolean zoneWideVolumesDatastoreCleanupOnOriginHostAfterInterClusterMigration() {
+        return false;
+    }
 }

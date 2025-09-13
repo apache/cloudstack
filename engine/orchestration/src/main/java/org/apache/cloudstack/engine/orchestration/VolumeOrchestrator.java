@@ -84,6 +84,7 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -1496,7 +1497,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     @Override
-    public void prepareForMigration(VirtualMachineProfile vm, DeployDestination dest) {
+    public void prepareForMigration(VirtualMachineProfile vm, DeployDestination dest, Long srcHostId) {
         List<VolumeVO> vols = _volsDao.findUsableVolumesForInstance(vm.getId());
         if (s_logger.isDebugEnabled()) {
             s_logger.debug(String.format("Preparing to migrate [%s] volumes for VM [%s].", vols.size(), vm.getVirtualMachine()));
@@ -1514,7 +1515,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             // make sure this is done AFTER grantAccess, as grantAccess may change the volume's state
             DataTO volTO = volumeInfo.getTO();
             DiskTO disk = storageMgr.getDiskWithThrottling(volTO, vol.getVolumeType(), vol.getDeviceId(), vol.getPath(), vm.getServiceOfferingId(), vol.getDiskOfferingId());
-            disk.setDetails(getDetails(volumeInfo, dataStore));
+            disk.setDetails(getDetails(volumeInfo, dataStore, vm, srcHostId));
             vm.addDisk(disk);
         }
 
@@ -1527,7 +1528,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
     }
 
-    private Map<String, String> getDetails(VolumeInfo volumeInfo, DataStore dataStore) {
+    private Map<String, String> getDetails(VolumeInfo volumeInfo, DataStore dataStore, VirtualMachineProfile vmProfile, Long srcHostId) {
         Map<String, String> details = new HashMap<String, String>();
 
         StoragePoolVO storagePool = _storagePoolDao.findById(dataStore.getId());
@@ -1558,6 +1559,17 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             details.put(DiskTO.CHAP_INITIATOR_SECRET, chapInfo.getInitiatorSecret());
             details.put(DiskTO.CHAP_TARGET_USERNAME, chapInfo.getTargetUsername());
             details.put(DiskTO.CHAP_TARGET_SECRET, chapInfo.getTargetSecret());
+        }
+
+        // Zone wide storage Solidfire inter-cluster VM migrations needs the destination host mount the LUN before migrating
+        if (storagePool.isManaged() && storagePool.getScope() != null && ScopeType.ZONE == storagePool.getScope()) {
+            details.put(DiskTO.SCOPE, storagePool.getScope().name());
+            if (vmProfile.getHostId() != null && srcHostId != null) {
+                HostVO host = _hostDao.findById(vmProfile.getHostId());
+                HostVO lastHost = _hostDao.findById(srcHostId);
+                boolean interClusterMigration = isVmwareInterClusterMigration(lastHost, host);
+                details.put(DiskTO.INTER_CLUSTER_MIGRATION, BooleanUtils.toStringTrueFalse(interClusterMigration));
+            }
         }
 
         return details;
@@ -1937,7 +1949,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             DiskTO disk = storageMgr.getDiskWithThrottling(volTO, vol.getVolumeType(), vol.getDeviceId(), vol.getPath(), vm.getServiceOfferingId(), vol.getDiskOfferingId());
             DataStore dataStore = dataStoreMgr.getDataStore(vol.getPoolId(), DataStoreRole.Primary);
 
-            disk.setDetails(getDetails(volumeInfo, dataStore));
+            disk.setDetails(getDetails(volumeInfo, dataStore, vm, null));
 
             vm.addDisk(disk);
 
@@ -2307,5 +2319,53 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 }
             }
         });
+    }
+
+    protected boolean isVmwareInterClusterMigration(Host lastHost, Host host) {
+        if (ObjectUtils.anyNull(lastHost, host)) {
+            return false;
+        }
+        if (host.getHypervisorType() != HypervisorType.VMware) {
+            return false;
+        }
+        Long lastHostClusterId = lastHost.getClusterId();
+        Long clusterId = host.getClusterId();
+        if (ObjectUtils.anyNull(lastHostClusterId, clusterId)) {
+            return false;
+        }
+        return lastHostClusterId.compareTo(clusterId) != 0;
+    }
+
+    @Override
+    public List<String> postMigrationReleaseDatastoresOnOriginHost(VirtualMachineProfile profile, long vmId) {
+        List<String> pools = new ArrayList<>();
+        if (profile.getVirtualMachine() == null) {
+            s_logger.debug("Cannot release from source as the virtual machine profile is not set");
+            return pools;
+        }
+        HostVO lastHost = _hostDao.findById(profile.getVirtualMachine().getLastHostId());
+        HostVO host = _hostDao.findById(profile.getHostId());
+
+        // Consider only Vmware inter-cluster migration
+        if (!isVmwareInterClusterMigration(lastHost, host)) {
+            return pools;
+        }
+
+        List<VolumeVO> volumesForVm = _volsDao.findUsableVolumesForInstance(vmId);
+        for (VolumeVO volumeForVm : volumesForVm) {
+            if (volumeForVm.getPoolId() != null) {
+                DataStore dataStore = dataStoreMgr.getDataStore(volumeForVm.getPoolId(), DataStoreRole.Primary);
+                PrimaryDataStore primaryDataStore = (PrimaryDataStore) dataStore;
+                if (primaryDataStore.getScope() != null && primaryDataStore.getScope().getScopeType() == ScopeType.ZONE) {
+                    // Consider zone-wide storage
+                    PrimaryDataStoreDriver driver = (PrimaryDataStoreDriver) primaryDataStore.getDriver();
+                    if (driver.zoneWideVolumesDatastoreCleanupOnOriginHostAfterInterClusterMigration()) {
+                        // Currently enabled for SolidFire only on inter-cluster migrations on zone-wide pools.
+                        pools.add(volumeForVm.get_iScsiName());
+                    }
+                }
+            }
+        }
+        return pools;
     }
 }

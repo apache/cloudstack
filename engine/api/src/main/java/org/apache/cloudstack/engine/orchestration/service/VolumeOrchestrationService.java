@@ -124,7 +124,7 @@ public interface VolumeOrchestrationService {
 
     boolean storageMigration(VirtualMachineProfile vm, Map<Volume, StoragePool> volumeToPool) throws StorageUnavailableException;
 
-    void prepareForMigration(VirtualMachineProfile vm, DeployDestination dest);
+    void prepareForMigration(VirtualMachineProfile vm, DeployDestination dest, Long srcHostId);
 
     void prepare(VirtualMachineProfile vm, DeployDestination dest) throws StorageUnavailableException, InsufficientStorageCapacityException, ConcurrentOperationException, StorageAccessException;
 
@@ -178,4 +178,6 @@ public interface VolumeOrchestrationService {
      * Unmanage VM volumes
      */
     void unmanageVolumes(long vmId);
+
+    List<String> postMigrationReleaseDatastoresOnOriginHost(VirtualMachineProfile profile, long vmId);
 }
