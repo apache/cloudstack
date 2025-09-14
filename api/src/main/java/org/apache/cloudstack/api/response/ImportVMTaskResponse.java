@@ -47,6 +47,10 @@ public class ImportVMTaskResponse extends BaseResponse {
     @Param(description = "the ID of account")
     private String accountId;
 
+    @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
+    @Param(description = "the ID of the imported VM (after task is completed)")
+    private String virtualMachineId;
+
     @SerializedName(ApiConstants.DISPLAY_NAME)
     @Param(description = "the display name of the importing VM")
     private String displayName;
@@ -67,9 +71,13 @@ public class ImportVMTaskResponse extends BaseResponse {
     @Param(description = "the current step on the importing VM task")
     private String step;
 
+    @SerializedName("stepduration")
+    @Param(description = "the duration of the current step")
+    private String stepDuration;
+
     @SerializedName(ApiConstants.DURATION)
-    @Param(description = "the current step duration in seconds")
-    private Long duration;
+    @Param(description = "the total task duration")
+    private String duration;
 
     @SerializedName(ApiConstants.DESCRIPTION)
     @Param(description = "the current step description on the importing VM task")
@@ -131,6 +139,14 @@ public class ImportVMTaskResponse extends BaseResponse {
         this.accountId = accountId;
     }
 
+    public String getVirtualMachineId() {
+        return virtualMachineId;
+    }
+
+    public void setVirtualMachineId(String virtualMachineId) {
+        this.virtualMachineId = virtualMachineId;
+    }
+
     public String getDisplayName() {
         return displayName;
     }
@@ -171,11 +187,19 @@ public class ImportVMTaskResponse extends BaseResponse {
         this.step = step;
     }
 
-    public Long getDuration() {
+    public String getStepDuration() {
+        return stepDuration;
+    }
+
+    public void setStepDuration(String stepDuration) {
+        this.stepDuration = stepDuration;
+    }
+
+    public String getDuration() {
         return duration;
     }
 
-    public void setDuration(Long duration) {
+    public void setDuration(String duration) {
         this.duration = duration;
     }
 

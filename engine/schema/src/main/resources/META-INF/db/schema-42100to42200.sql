@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`import_vm_task`(
     `zone_id` bigint unsigned NOT NULL COMMENT 'Zone ID',
     `account_id` bigint unsigned NOT NULL COMMENT 'Account ID',
     `user_id` bigint unsigned NOT NULL COMMENT 'User ID',
+    `vm_id` bigint unsigned COMMENT 'VM ID',
     `display_name` varchar(255) COMMENT 'Display VM Name',
     `vcenter` varchar(255) COMMENT 'VCenter',
     `datacenter` varchar(255) COMMENT 'VCenter Datacenter name',
@@ -37,6 +38,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`import_vm_task`(
     `import_host_id` bigint unsigned COMMENT 'Import Host ID',
     `step` varchar(20) NOT NULL COMMENT 'Importing VM Task Step',
     `description` varchar(255) COMMENT 'Importing VM Task Description',
+    `duration` bigint unsigned COMMENT 'Duration in milliseconds for the completed tasks',
     `created` datetime NOT NULL COMMENT 'date created',
     `updated` datetime COMMENT 'date updated if not null',
     `removed` datetime COMMENT 'date removed if not null',
@@ -44,6 +46,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`import_vm_task`(
     CONSTRAINT `fk_import_vm_task__zone_id` FOREIGN KEY `fk_import_vm_task__zone_id` (`zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_import_vm_task__account_id` FOREIGN KEY `fk_import_vm_task__account_id` (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_import_vm_task__user_id` FOREIGN KEY `fk_import_vm_task__user_id` (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_import_vm_task__vm_id` FOREIGN KEY `fk_import_vm_task__vm_id` (`user_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_import_vm_task__convert_host_id` FOREIGN KEY `fk_import_vm_task__convert_host_id` (`convert_host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_import_vm_task__import_host_id` FOREIGN KEY `fk_import_vm_task__import_host_id` (`import_host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
     INDEX `i_import_vm_task__zone_id`(`zone_id`)

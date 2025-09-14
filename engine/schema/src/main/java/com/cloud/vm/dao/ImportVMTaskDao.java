@@ -25,5 +25,5 @@ import java.util.List;
 
 public interface ImportVMTaskDao extends GenericDao<ImportVMTaskVO, Long> {
 
-    List<ImportVMTaskVO> listImportVMTasks(Long zoneId, Long accountId, String vcenter, Long convertHostId);
+    List<ImportVMTaskVO> listImportVMTasks(Long zoneId, Long accountId, String vcenter, Long convertHostId, boolean showCompleted);
 }

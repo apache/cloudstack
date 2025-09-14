@@ -497,10 +497,10 @@
                 </a-col>
               </a-row>
             </a-tab-pane>
-            <a-tab-pane :key=2 tab="Running Tasks" v-if="isMigrateFromVmware">
+            <a-tab-pane :key=2 tab="Import VM Tasks" v-if="isMigrateFromVmware">
               <a-card class="instances-card">
                 <template #title>
-                  Running Import VM Tasks
+                  Import VM Tasks
                   <a-tooltip :title="'Running Import VM Tasks'">
                     <info-circle-outlined />
                   </a-tooltip>
@@ -512,6 +512,27 @@
                     @click="fetchImportVmTasks()" >
                     <template #icon><reload-outlined /></template>
                   </a-button>
+                  <a-select
+                    :placeholder="$t('label.filterby')"
+                    :value="importVmTasksFilterValue"
+                    style="min-width: 100px; margin-left: 10px; margin-bottom: 5px"
+                    size=small
+                    @change="onImportVmTasksFilterChange"
+                    showSearch
+                    optionFilterProp="label"
+                    :filterOption="(input, option) => {
+                      return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    }"
+                  >
+                    <template #suffixIcon><filter-outlined class="ant-select-suffix" /></template>
+                      <a-select-option
+                        v-for="filter in importVmTasksFilters"
+                        :key="filter"
+                        :label="$t('label.' + filter)"
+                      >
+                        {{ $t('label.' + filter) }}
+                      </a-select-option>
+                    </a-select>
                 </template>
                 <a-table
                   :data-source="importVmTasks"
@@ -519,6 +540,10 @@
                     <template #bodyCell="{ column, record }">
                       <template v-if="column.key === 'convertinstancehostid'">
                         <router-link :to="{ path: '/host/' + record.convertinstancehostid }">{{ record.convertinstancehostname }}</router-link>
+                      </template>
+                      <template v-else-if="column.key === 'displayname'">
+                        <router-link v-if="record.virtualmachineid" :to="{ path: '/vm/' + record.virtualmachineid }">{{ record.displayname }}</router-link>
+                        <span v-else>{{ record.displayname }}</span>
                       </template>
                     </template>
                 </a-table>
@@ -703,9 +728,9 @@ export default {
     ]
     const importVmTasksColumn = [
       {
-        key: 'lastupdated',
-        title: 'Last Updated',
-        dataIndex: 'lastupdated'
+        key: 'displayname',
+        title: 'VM Display Name',
+        dataIndex: 'displayname'
       },
       {
         key: 'convertinstancehostid',
@@ -714,8 +739,13 @@ export default {
       },
       {
         key: 'step',
-        title: 'Step',
+        title: 'Current Step',
         dataIndex: 'step'
+      },
+      {
+        key: 'stepduration',
+        title: 'Current Step Duration',
+        dataIndex: 'stepduration'
       },
       {
         key: 'description',
@@ -724,7 +754,7 @@ export default {
       },
       {
         key: 'duration',
-        title: 'Duration (in seconds)',
+        title: 'Total Duration',
         dataIndex: 'duration'
       },
       {
@@ -826,7 +856,9 @@ export default {
       activeTabKey: 1,
       loadingImportVmTasks: false,
       importVmTasks: [],
-      importVmTasksColumn
+      importVmTasksColumn,
+      importVmTasksFilters: ['running', 'completed'],
+      importVmTasksFilterValue: 'running'
     }
   },
   created () {
@@ -1239,9 +1271,19 @@ export default {
         this.fetchImportVmTasks()
       }
     },
+    onImportVmTasksFilterChange (e) {
+      this.importVmTasksFilterValue = e
+      this.fetchImportVmTasks()
+    },
     fetchImportVmTasks () {
       this.loadingImportVmTasks = true
-      getAPI('listImportVmTasks', { zoneid: this.zoneId }).then(response => {
+      const params = {
+        zoneid: this.zoneId
+      }
+      if (this.importVmTasksFilterValue === 'completed') {
+        params.showcompleted = true
+      }
+      getAPI('listImportVmTasks', params).then(response => {
         this.importVmTasks = response.listimportvmtasksresponse.importvmtask || []
       }).catch(error => {
         this.$notifyError(error)

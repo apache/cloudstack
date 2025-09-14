@@ -75,6 +75,8 @@ public class ImportVMTaskVO implements Identity, InternalIdentity {
     @Column(name = "user_id")
     private long userId;
 
+    @Column(name = "vm_id")
+    private Long vmId;
     @Column(name = "display_name")
     private String displayName;
 
@@ -94,10 +96,13 @@ public class ImportVMTaskVO implements Identity, InternalIdentity {
     private long importHostId;
 
     @Column(name = "step")
-    Step step;
+    private Step step;
 
     @Column(name = "description")
     private String description;
+
+    @Column(name = "duration")
+    private Long duration;
 
     @Column(name = "created")
     @Temporal(value = TemporalType.TIMESTAMP)
@@ -151,6 +156,14 @@ public class ImportVMTaskVO implements Identity, InternalIdentity {
 
     public void setUserId(long userId) {
         this.userId = userId;
+    }
+
+    public Long getVmId() {
+        return vmId;
+    }
+
+    public void setVmId(Long vmId) {
+        this.vmId = vmId;
     }
 
     public String getDisplayName() {
@@ -215,6 +228,14 @@ public class ImportVMTaskVO implements Identity, InternalIdentity {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public Long getDuration() {
+        return duration;
+    }
+
+    public void setDuration(Long duration) {
+        this.duration = duration;
     }
 
     public Date getCreated() {

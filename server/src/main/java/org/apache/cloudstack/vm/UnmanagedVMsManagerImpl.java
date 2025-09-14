@@ -195,13 +195,13 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.TimeZone;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static com.cloud.vm.ImportVMTaskVO.Step.CloningInstance;
 import static com.cloud.vm.ImportVMTaskVO.Step.Completed;
 import static com.cloud.vm.ImportVMTaskVO.Step.ConvertingInstance;
 import static com.cloud.vm.ImportVMTaskVO.Step.Importing;
+import static com.cloud.vm.ImportVMTaskVO.Step.Prepare;
 import static org.apache.cloudstack.api.ApiConstants.MAX_IOPS;
 import static org.apache.cloudstack.api.ApiConstants.MIN_IOPS;
 
@@ -1639,13 +1639,19 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         String datacenter = importVMTaskVO.getDatacenter();
 
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append(String.format("[%s] ", DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), updatedDate)));
-        if (CloningInstance == step) {
-            stringBuilder.append(String.format("Cloning source instance: %s on vCenter: %s / datacenter: %s", sourceVMName, vcenter, datacenter));
-        } else if (ConvertingInstance == step) {
-            stringBuilder.append(String.format("Converting the cloned VMware instance to a KVM instance on the host: %s", convertHost.getName()));
-        } else if (Importing == step) {
-            stringBuilder.append(String.format("Importing the converted KVM instance on the host: %s", importHost.getName()));
+        if (Completed == step) {
+            stringBuilder.append("Completed at ").append(DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), updatedDate));
+        } else {
+            stringBuilder.append(String.format("[%s] ", DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), updatedDate)));
+            if (CloningInstance == step) {
+                stringBuilder.append(String.format("Cloning source instance: %s on vCenter: %s / datacenter: %s", sourceVMName, vcenter, datacenter));
+            } else if (ConvertingInstance == step) {
+                stringBuilder.append(String.format("Converting the cloned VMware instance to a KVM instance on the host: %s", convertHost.getName()));
+            } else if (Importing == step) {
+                stringBuilder.append(String.format("Importing the converted KVM instance on the host: %s", importHost.getName()));
+            } else if (Prepare == step) {
+                stringBuilder.append("Preparing to convert Vmware instance");
+            }
         }
         return stringBuilder.toString();
     }
@@ -1660,6 +1666,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         importVMTaskVO.setStep(step);
         importVMTaskVO.setDescription(description);
         importVMTaskVO.setUpdated(updatedDate);
+        if (Completed == step) {
+            Duration duration = Duration.between(importVMTaskVO.getCreated().toInstant(), updatedDate.toInstant());
+            importVMTaskVO.setDuration(duration.toMillis());
+        }
         importVMTaskDao.update(importVMTaskVO.getId(), importVMTaskVO);
     }
 
@@ -1762,6 +1772,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             long timeElapsedInSecs = (System.currentTimeMillis() - importStartTime) / 1000;
             logger.debug(String.format("VMware VM %s imported successfully to CloudStack instance %s (%s), Time taken: %d secs, OVF files imported from %s, Source VMware VM details - OS: %s, PowerState: %s, Disks: %s, NICs: %s",
                     sourceVMName, instanceName, displayName, timeElapsedInSecs, (ovfTemplateOnConvertLocation != null)? "MS" : "KVM Host", sourceVMwareInstance.getOperatingSystem(), sourceVMwareInstance.getPowerState(), sourceVMwareInstance.getDisks(), sourceVMwareInstance.getNics()));
+            importVMTaskVO.setVmId(userVm.getId());
             updateImportVMTaskStep(importVMTaskVO, zone, owner, convertHost, importHost, Completed);
             importVMTaskDao.remove(importVMTaskVO.getId());
             return userVm;
@@ -2925,7 +2936,16 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         Long accountId = cmd.getAccountId();
         String vcenter = cmd.getVcenter();
         Long convertHostId = cmd.getConvertHostId();
-        List<ImportVMTaskVO> tasks = importVMTaskDao.listImportVMTasks(zoneId, accountId, vcenter, convertHostId);
+        boolean listAll = cmd.isListAll();
+        boolean showCompleted = cmd.isShowCompleted();
+
+        List<ImportVMTaskVO> tasks;
+        if (listAll) {
+            tasks = importVMTaskDao.listAll();
+        } else {
+            tasks = importVMTaskDao.listImportVMTasks(zoneId, accountId, vcenter, convertHostId, showCompleted);
+        }
+
         List<ImportVMTaskResponse> responses = new ArrayList<>();
         for (ImportVMTaskVO task : tasks) {
             responses.add(createImportVMTaskResponse(task));
@@ -2950,24 +2970,61 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         response.setVcenter(task.getVcenter());
         response.setDatacenterName(task.getDatacenter());
         response.setSourceVMName(task.getSourceVMName());
-        response.setStep(task.getStep().name());
-        Date updated = task.getUpdated();
-        if (updated != null) {
-            Date currentDate = new Date();
-            Duration duration = Duration.between(updated.toInstant(), currentDate.toInstant());
-            long durationSeconds = TimeUnit.SECONDS.convert(duration.toMillis(), TimeUnit.MILLISECONDS);
-            response.setDuration(durationSeconds);
-        }
+        response.setDisplayName(task.getDisplayName());
+        response.setStep(getStepDisplayField(task.getStep()));
         response.setDescription(task.getDescription());
+
+        Date updated = task.getUpdated();
+        Date currentDate = new Date();
+        if (updated != null && Completed != task.getStep()) {
+            Duration stepDuration = Duration.between(updated.toInstant(), currentDate.toInstant());
+            response.setStepDuration(getDurationDisplay(stepDuration.toMillis()));
+        }
+        if (Completed == task.getStep()) {
+            response.setStepDuration(getDurationDisplay(task.getDuration()));
+        } else {
+            Duration totalDuration = Duration.between(task.getCreated().toInstant(), currentDate.toInstant());
+            response.setDuration(getDurationDisplay(totalDuration.toMillis()));
+        }
         HostVO host = hostDao.findById(task.getConvertHostId());
         if (host != null) {
             response.setConvertInstanceHostId(host.getUuid());
             response.setConvertInstanceHostName(host.getName());
         }
+        if (task.getVmId() != null) {
+            UserVmVO userVm = userVmDao.findById(task.getVmId());
+            response.setVirtualMachineId(userVm.getUuid());
+        }
         response.setCreated(task.getCreated());
         response.setLastUpdated(task.getUpdated());
         response.setObjectName("importvmtask");
         return response;
+    }
+
+    protected String getStepDisplayField(ImportVMTaskVO.Step step) {
+        int totalSteps = ImportVMTaskVO.Step.values().length;
+        return String.format("[%s/%s] %s", step.ordinal() + 1, totalSteps, step.name());
+    }
+
+    protected static String getDurationDisplay(Long durationMs) {
+        if (durationMs == null) {
+            return null;
+        }
+        long hours = durationMs / (1000 * 60 * 60);
+        long minutes = (durationMs / (1000 * 60)) % 60;
+        long seconds = (durationMs / 1000) % 60;
+
+        StringBuilder result = new StringBuilder();
+        if (hours > 0) {
+            result.append(String.format("%s hs ", hours));
+        }
+        if (minutes > 0) {
+            result.append(String.format("%s min ", minutes));
+        }
+        if (seconds > 0) {
+            result.append(String.format("%s secs", seconds));
+        }
+        return result.toString();
     }
 
     private HashMap<String, UnmanagedInstanceTO> getRemoteVmsOnKVMHost(long zoneId, String remoteHostUrl, String username, String password) {

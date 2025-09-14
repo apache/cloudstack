@@ -120,10 +120,10 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
                     timeout, verboseModeEnabled);
             if (!result) {
                 String err = String.format(
-                        "The virt-v2v conversion for the OVF %s failed. Please check the agent logs " +
+                        "(%s) The virt-v2v conversion for the OVF %s failed. Please check the agent logs " +
                                 "for the virt-v2v output. Please try on a different kvm host which " +
                                 "has a different virt-v2v version.",
-                        ovfTemplateDirOnConversionLocation);
+                        sourceInstanceName, ovfTemplateDirOnConversionLocation);
                 logger.error(err);
                 return new Answer(cmd, false, err);
             }

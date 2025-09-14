@@ -75,6 +75,12 @@ public class ListImportVMTasksCmd extends BaseListCmd {
             description = "Conversion host of the importing task")
     private Long convertHostId;
 
+    @Parameter(name = ApiConstants.LIST_ALL, type = CommandType.BOOLEAN, description = "Whether to list all import tasks.")
+    private boolean listAll = false;
+
+    @Parameter(name = ApiConstants.SHOW_COMPLETED, type = CommandType.BOOLEAN, description = "Whether to list completed tasks.")
+    private boolean showCompleted = false;
+
     public Long getZoneId() {
         return zoneId;
     }
@@ -89,6 +95,14 @@ public class ListImportVMTasksCmd extends BaseListCmd {
 
     public Long getConvertHostId() {
         return convertHostId;
+    }
+
+    public boolean isListAll() {
+        return listAll;
+    }
+
+    public boolean isShowCompleted() {
+        return showCompleted;
     }
 
     @Override

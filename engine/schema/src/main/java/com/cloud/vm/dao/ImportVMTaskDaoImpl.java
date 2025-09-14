@@ -46,7 +46,7 @@ public class ImportVMTaskDaoImpl extends GenericDaoBase<ImportVMTaskVO, Long> im
 
 
     @Override
-    public List<ImportVMTaskVO> listImportVMTasks(Long zoneId, Long accountId, String vcenter, Long convertHostId) {
+    public List<ImportVMTaskVO> listImportVMTasks(Long zoneId, Long accountId, String vcenter, Long convertHostId, boolean showCompleted) {
         SearchCriteria<ImportVMTaskVO> sc = AllFieldsSearch.create();
         if (zoneId != null) {
             sc.setParameters("zoneId", zoneId);
@@ -60,6 +60,6 @@ public class ImportVMTaskDaoImpl extends GenericDaoBase<ImportVMTaskVO, Long> im
         if (convertHostId != null) {
             sc.setParameters("convertHostId", convertHostId);
         }
-        return listBy(sc);
+        return showCompleted ? listIncludingRemovedBy(sc) : listBy(sc);
     }
 }

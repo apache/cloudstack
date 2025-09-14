@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.cloud.offering.DiskOffering;
+import com.cloud.vm.ImportVMTaskVO;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
@@ -1149,5 +1150,18 @@ public class UnmanagedVMsManagerImplTest {
         } catch (ResourceAllocationException e) {
             Assert.fail("Exception encountered: " + e.getMessage());
         }
+    }
+
+    @Test
+    public void testStepsField() {
+        ImportVMTaskVO.Step step = ImportVMTaskVO.Step.ConvertingInstance;
+        System.out.println(step.ordinal());
+        System.out.println(ImportVMTaskVO.Step.values().length);
+    }
+
+    @Test
+    public void testDurationDisplay() {
+        long duration = 125 * 1000;
+        System.out.println(UnmanagedVMsManagerImpl.getDurationDisplay(duration));
     }
 }
