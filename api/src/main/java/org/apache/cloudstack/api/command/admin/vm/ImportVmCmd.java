@@ -159,6 +159,12 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
             description = "(only for importing VMs from VMware to KVM) optional - if true, forces MS to export OVF from VMware to temporary storage, else uses KVM Host if ovftool is available, falls back to MS if not.")
     private Boolean forceMsToImportVmFiles;
 
+    @Parameter(name = "extraparams",
+            type = CommandType.STRING,
+            since = "4.22",
+            description = "(VMware to KVM only) extra parameters to be passed on the virt-v2v command, if allowed by the administrator")
+    private String extraParams;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -246,6 +252,10 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
     @Override
     public String getEventType() {
         return EventTypes.EVENT_VM_IMPORT;
+    }
+
+    public String getExtraParams() {
+        return extraParams;
     }
 
     @Override

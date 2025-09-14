@@ -3696,6 +3696,7 @@
 "message.select.destination.image.stores": "Please select Image Store(s) to which data is to be migrated to",
 "message.select.disk.offering": "Please select a disk offering for disk",
 "message.select.end.date.and.time": "Select an end date & time.",
+"message.select.extra.parameters.for.instance.conversion": "(Optional) Pass extra parameters to the virt-v2v command on the conversion host",
 "message.select.kvm.host.instance.conversion": "(Optional) Select a KVM host in the Zone to perform the instance conversion through virt-v2v",
 "message.select.kvm.host.instance.import": "(Optional) Select a KVM host in the Cluster to perform the importing of the converted instance",
 "message.select.load.balancer.rule": "Please select a load balancer rule for your AutoScale Instance group.",

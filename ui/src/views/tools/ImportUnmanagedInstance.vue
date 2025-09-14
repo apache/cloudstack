@@ -179,7 +179,6 @@
               <a-form-item name="convertstorageoption" ref="convertstorageoption">
                 <check-box-select-pair
                   layout="vertical"
-                  style="margin-bottom: 5px"
                   v-if="cluster.hypervisortype === 'KVM' && selectedVmwareVcenter"
                   :resourceKey="cluster.id"
                   :selectOptions="storageOptionsForConversion"
@@ -187,6 +186,18 @@
                   :defaultCheckBoxValue="false"
                   :reversed="false"
                   @handle-checkselectpair-change="updateSelectedStorageOptionForConversion"
+                />
+              </a-form-item>
+              <a-form-item name="extraparams" ref="extraparams">
+                <a-checkbox
+                  v-if="cluster.hypervisortype === 'KVM' && selectedVmwareVcenter && vmwareToKvmExtraParamsAllowed"
+                  v-model:checked="vmwareToKvmExtraParamsSelected">
+                  {{ $t('message.select.extra.parameters.for.instance.conversion') }}
+                </a-checkbox>
+                <a-input
+                  v-if="vmwareToKvmExtraParamsSelected"
+                  v-model:value="vmwareToKvmExtraParams"
+                  :placeholder="$t('label.extra')"
                 />
               </a-form-item>
               <a-form-item v-if="showStoragePoolsForConversion" name="convertstoragepool" ref="convertstoragepool" :label="$t('label.storagepool')">
@@ -529,7 +540,10 @@ export default {
           title: this.$t('label.rootdisk')
         }
       ],
-      selectedRootDiskSources: []
+      selectedRootDiskSources: [],
+      vmwareToKvmExtraParamsAllowed: false,
+      vmwareToKvmExtraParamsSelected: false,
+      vmwareToKvmExtraParams: ''
     }
   },
   beforeCreate () {
@@ -749,6 +763,20 @@ export default {
       if (this.resource?.disk?.length > 1) {
         this.updateSelectedRootDisk()
       }
+      this.fetchVmwareToKVMExtraConfigsSetting()
+    },
+    fetchVmwareToKVMExtraConfigsSetting () {
+      const params = {
+        name: 'convert.vmware.instance.to.kvm.extra.params.allowed'
+      }
+      getAPI('listConfigurations', params).then(json => {
+        if (json.listconfigurationsresponse.configuration !== null) {
+          const config = json.listconfigurationsresponse.configuration[0]
+          if (config && config.name === params.name) {
+            this.vmwareToKvmExtraParamsAllowed = config.value
+          }
+        }
+      })
     },
     getMeta (obj, metaKeys) {
       var meta = []
@@ -1155,6 +1183,9 @@ export default {
           }
           if (this.selectedStoragePoolForConversion) {
             params.convertinstancepoolid = this.selectedStoragePoolForConversion
+          }
+          if (this.vmwareToKvmExtraParams) {
+            params.extraparams = this.vmwareToKvmExtraParams
           }
           params.forcemstoimportvmfiles = values.forcemstoimportvmfiles
         }

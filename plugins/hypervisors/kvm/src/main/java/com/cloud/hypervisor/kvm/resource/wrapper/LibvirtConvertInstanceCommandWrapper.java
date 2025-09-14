@@ -57,6 +57,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         Hypervisor.HypervisorType destinationHypervisorType = cmd.getDestinationHypervisorType();
         DataStoreTO conversionTemporaryLocation = cmd.getConversionTemporaryLocation();
         long timeout = (long) cmd.getWait() * 1000;
+        String extraParams = cmd.getExtraParams();
 
         if (cmd.getCheckConversionSupport() && !serverResource.hostSupportsInstanceConversion()) {
             String msg = String.format("Cannot convert the instance %s from VMware as the virt-v2v binary is not found. " +
@@ -117,7 +118,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         boolean cleanupSecondaryStorage = false;
         try {
             boolean result = performInstanceConversion(sourceInstanceName, sourceOVFDirPath, temporaryConvertPath, temporaryConvertUuid,
-                    timeout, verboseModeEnabled);
+                    timeout, verboseModeEnabled, extraParams);
             if (!result) {
                 String err = String.format(
                         "(%s) The virt-v2v conversion for the OVF %s failed. Please check the agent logs " +
@@ -220,7 +221,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
     protected boolean performInstanceConversion(String sourceInstanceName, String sourceOVFDirPath,
                                                 String temporaryConvertFolder,
                                                 String temporaryConvertUuid,
-                                                long timeout, boolean verboseModeEnabled) {
+                                                long timeout, boolean verboseModeEnabled, String extraParams) {
         Script script = new Script("virt-v2v", timeout, logger);
         script.add("--root", "first");
         script.add("-i", "ova");
@@ -231,6 +232,9 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         script.add("-on", temporaryConvertUuid);
         if (verboseModeEnabled) {
             script.add("-v");
+        }
+        if (StringUtils.isNotBlank(extraParams)) {
+            script.add(extraParams);
         }
 
         String logPrefix = String.format("(%s) virt-v2v ovf source: %s progress", sourceInstanceName, sourceOVFDirPath);

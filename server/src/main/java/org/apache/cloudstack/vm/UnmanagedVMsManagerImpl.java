@@ -179,6 +179,7 @@ import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -1406,6 +1407,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 throw new CloudRuntimeException("Please provide an import source for importing the VM");
             }
             String source = importVmCmd.getImportSource().toUpperCase();
+            String extraParams = ((ImportVmCmd) cmd).getExtraParams();
             ImportSource importSource = Enum.valueOf(ImportSource.class, source);
             if (ImportSource.VMWARE == importSource) {
                 userVm = importUnmanagedInstanceFromVmwareToKvm(zone, cluster,
@@ -1432,6 +1434,16 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         ActionEventUtils.onCompletedActionEvent(userId, owner.getId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_IMPORT,
                 cmd.getEventDescription(), userVm.getId(), ApiCommandResourceType.VirtualMachine.toString(), 0);
         return responseGenerator.createUserVmResponse(ResponseObject.ResponseView.Full, "virtualmachine", userVm).get(0);
+    }
+
+    private void checkExtraParamsAllowed(String extraParams) {
+        if (StringUtils.isBlank(extraParams)) {
+            return;
+        }
+        if (BooleanUtils.isFalse(ConvertVmwareInstanceToKvmExtraParamsAllowed.value())) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                    "Extra parameters for Vmware to KVM conversion are disabled by the administrator");
+        }
     }
 
     private long getUserIdForImportInstance(Account owner) {
@@ -1529,6 +1541,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         String source = cmd.getImportSource().toUpperCase();
         ImportSource importSource = Enum.valueOf(ImportSource.class, source);
         if (ImportSource.VMWARE == importSource  || ImportSource.UNMANAGED == importSource) {
+            checkExtraParamsAllowed(cmd.getExtraParams());
             return baseImportInstance(cmd);
         } else {
             return importKvmInstance(cmd);
@@ -1689,6 +1702,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         Long convertInstanceHostId = cmd.getConvertInstanceHostId();
         Long importInstanceHostId = cmd.getImportInstanceHostId();
         Long convertStoragePoolId = cmd.getConvertStoragePoolId();
+        String extraParams = cmd.getExtraParams();
 
         if ((existingVcenterId == null && vcenter == null) || (existingVcenterId != null && vcenter != null)) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
@@ -1698,6 +1712,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
                     "Please set all the information for a vCenter IP/Name, datacenter, username and password");
         }
+
+        checkExtraParamsAllowed(extraParams);
 
         if (existingVcenterId != null) {
             VmwareDatacenterVO existingDC = vmwareDatacenterDao.findById(existingVcenterId);
@@ -1752,14 +1768,14 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 convertedInstance = convertVmwareInstanceToKVMWithOVFOnConvertLocation(sourceVMName,
                         sourceVMwareInstance, convertHost, importHost, convertStoragePools,
                         serviceOffering, dataDiskOfferingMap, temporaryConvertLocation,
-                        ovfTemplateOnConvertLocation);
+                        ovfTemplateOnConvertLocation, extraParams);
             } else {
                 // Uses KVM Host for OVF export to temporary conversion location, through ovftool
                 updateImportVMTaskStep(importVMTaskVO, zone, owner, convertHost, importHost, ConvertingInstance);
                 convertedInstance = convertVmwareInstanceToKVMAfterExportingOVFToConvertLocation(
                         sourceVMName, sourceVMwareInstance, convertHost, importHost,
                         convertStoragePools, serviceOffering, dataDiskOfferingMap,
-                        temporaryConvertLocation, vcenter, username, password, datacenterName);
+                        temporaryConvertLocation, vcenter, username, password, datacenterName, extraParams);
             }
 
             sanitizeConvertedInstance(convertedInstance, sourceVMwareInstance);
@@ -2041,8 +2057,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             String sourceVM, UnmanagedInstanceTO sourceVMwareInstance, HostVO convertHost,
             HostVO importHost, List<StoragePoolVO> convertStoragePools,
             ServiceOfferingVO serviceOffering, Map<String, Long> dataDiskOfferingMap,
-            DataStoreTO temporaryConvertLocation, String ovfTemplateDirConvertLocation
-    ) {
+            DataStoreTO temporaryConvertLocation, String ovfTemplateDirConvertLocation, String extraParams) {
             logger.debug("Delegating the conversion of instance {} from VMware to KVM to the host {} using OVF {} on conversion datastore",
                     sourceVM, convertHost, ovfTemplateDirConvertLocation);
 
@@ -2050,6 +2065,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         List<String> destinationStoragePools = selectInstanceConversionStoragePools(convertStoragePools, sourceVMwareInstance.getDisks(), serviceOffering, dataDiskOfferingMap);
         ConvertInstanceCommand cmd = new ConvertInstanceCommand(remoteInstanceTO,
                 Hypervisor.HypervisorType.KVM, temporaryConvertLocation, ovfTemplateDirConvertLocation, false, false);
+        if (StringUtils.isNotBlank(extraParams)) {
+            cmd.setExtraParams(extraParams);
+        }
         int timeoutSeconds = UnmanagedVMsManager.ConvertVmwareInstanceToKvmTimeout.value() * 60 * 60;
         cmd.setWait(timeoutSeconds);
 
@@ -2062,8 +2080,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             HostVO importHost, List<StoragePoolVO> convertStoragePools,
             ServiceOfferingVO serviceOffering, Map<String, Long> dataDiskOfferingMap,
             DataStoreTO temporaryConvertLocation, String vcenterHost, String vcenterUsername,
-            String vcenterPassword, String datacenterName
-    ) {
+            String vcenterPassword, String datacenterName, String extraParams) {
         logger.debug("Delegating the conversion of instance {} from VMware to KVM to the host {} after OVF export through ovftool", sourceVM, convertHost);
 
         RemoteInstanceTO remoteInstanceTO = new RemoteInstanceTO(sourceVMwareInstance.getName(), sourceVMwareInstance.getPath(), vcenterHost, vcenterUsername, vcenterPassword, datacenterName);
@@ -2078,7 +2095,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             noOfThreads = sourceVMwareInstance.getDisks().size();
         }
         cmd.setThreadsCountToExportOvf(noOfThreads);
-
+        if (StringUtils.isNotBlank(extraParams)) {
+            cmd.setExtraParams(extraParams);
+        }
         return convertAndImportToKVM(cmd, convertHost, importHost, sourceVM,
                 remoteInstanceTO, destinationStoragePools, temporaryConvertLocation);
     }
@@ -3064,7 +3083,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 RemoteKvmInstanceDisksCopyTimeout,
                 ConvertVmwareInstanceToKvmTimeout,
                 ThreadsOnMSToImportVMwareVMFiles,
-                ThreadsOnKVMHostToImportVMwareVMFiles
+                ThreadsOnKVMHostToImportVMwareVMFiles,
+                ConvertVmwareInstanceToKvmExtraParamsAllowed
         };
     }
 }
