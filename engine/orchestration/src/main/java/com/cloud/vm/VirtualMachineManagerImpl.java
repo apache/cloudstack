@@ -2049,17 +2049,32 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     void persistDomainForKVM(VMInstanceVO vm) {
         Long hostId = vm.getHostId();
+        String vmName = vm.getName();
         UnmanageInstanceCommand unmanageInstanceCommand;
         if (State.Stopped.equals(vm.getState())) {
-            hostId = vm.getLastHostId();
+            Pair<Long, Long> clusterAndHostId = findClusterAndHostIdForVm(vm.getLastHostId());
+            Long clusterId = clusterAndHostId.first();
+            hostId = clusterAndHostId.second();
+            if (hostId == null) {
+                logger.debug("No previous host found for Instance: {}. " +
+                        "Searching for any available hosts in cluster with ID: {}.", vmName, clusterId);
+                 List<HostVO> availableHosts = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.Routing, clusterId,
+                         null, vm.getDataCenterId());
+                 if (availableHosts.isEmpty()) {
+                     String errorMsg = "No available host to persist domainXML for Instance: " + vmName;
+                     logger.debug(errorMsg);
+                     throw new CloudRuntimeException(errorMsg);
+                 }
+                 hostId = availableHosts.get(0).getId();
+            }
             unmanageInstanceCommand = new UnmanageInstanceCommand(prepVmSpecForUnmanageCmd(vm.getId(), hostId)); // reconstruct vmSpec for stopped instance
         } else {
-            unmanageInstanceCommand = new UnmanageInstanceCommand(vm.getName());
+            unmanageInstanceCommand = new UnmanageInstanceCommand(vmName);
         }
         try {
             Answer answer = _agentMgr.send(hostId, unmanageInstanceCommand);
             if (!answer.getResult()) {
-                String errorMsg = "Failed to persist domainXML for instance: " + vm.getName();
+                String errorMsg = "Failed to persist domainXML for instance: " + vmName;
                 logger.debug(errorMsg);
                 throw new CloudRuntimeException(errorMsg);
             }
