@@ -18,35 +18,38 @@
  */
 package org.apache.cloudstack.storage.resource;
 
-import org.apache.logging.log4j.Logger;
 import static org.mockito.ArgumentMatchers.any;
-import org.mockito.Mock;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
 
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.utils.EncryptionUtil;
-import com.cloud.utils.net.NetUtils;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.QuerySnapshotZoneCopyAnswer;
 import org.apache.cloudstack.storage.command.QuerySnapshotZoneCopyCommand;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import static org.mockito.Mockito.times;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.utils.EncryptionUtil;
+import com.cloud.utils.net.NetUtils;
 
 @RunWith(MockitoJUnitRunner.class)
 public class NfsSecondaryStorageResourceTest {
@@ -240,5 +243,46 @@ public class NfsSecondaryStorageResourceTest {
         String result = resource.getUploadProtocol();
 
         Assert.assertEquals(NetUtils.HTTP_PROTO, result);
+    }
+
+    @Test
+    public void configureStorageNetworkSetsStorageNetworkWhenParamsContainValues() {
+        Map<String, Object> params = new HashMap<>();
+       String ip = "192.168.1.10";
+       String netmask = "255.255.255.0";
+       String gateway = "192.168.1.1";
+       params.put("storageip", ip);
+       params.put("storagenetmask", netmask);
+       params.put("storagegateway", gateway);
+       resource.configureStorageNetwork(params);
+       Assert.assertEquals(ip, ReflectionTestUtils.getField(resource, "_storageIp"));
+       Assert.assertEquals(netmask, ReflectionTestUtils.getField(resource, "_storageNetmask"));
+       Assert.assertEquals(gateway, ReflectionTestUtils.getField(resource, "_storageGateway"));
+    }
+
+    @Test
+    public void configureStorageNetworkUsesManagementNetworkWhenStorageIpIsNullAndInSystemVM() {
+        Map<String, Object> params = new HashMap<>();
+        resource._inSystemVM = true;
+        String ip = "10.0.0.10";
+        String netmask = "255.255.255.0";
+        String gateway = "10.0.0.1";
+        ReflectionTestUtils.setField(resource, "_eth1ip", ip);
+        ReflectionTestUtils.setField(resource, "_eth1mask", netmask);
+        ReflectionTestUtils.setField(resource, "_localgw", gateway);
+        resource.configureStorageNetwork(params);
+        Assert.assertEquals(ip, ReflectionTestUtils.getField(resource, "_storageIp"));
+        Assert.assertEquals(netmask, ReflectionTestUtils.getField(resource, "_storageNetmask"));
+        Assert.assertEquals(gateway, ReflectionTestUtils.getField(resource, "_storageGateway"));
+    }
+
+    @Test
+    public void configureStorageNetworkDoesNotSetStorageNetworkWhenNotInSystemVMAndStorageIpIsNull() {
+        Map<String, Object> params = new HashMap<>();
+        resource._inSystemVM = false;
+        resource.configureStorageNetwork(params);
+        Assert.assertNull(ReflectionTestUtils.getField(resource, "_storageIp"));
+        Assert.assertNull(ReflectionTestUtils.getField(resource, "_storageNetmask"));
+        Assert.assertNull(ReflectionTestUtils.getField(resource, "_storageGateway"));
     }
 }

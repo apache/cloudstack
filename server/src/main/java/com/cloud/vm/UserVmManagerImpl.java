@@ -7712,7 +7712,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             HypervisorType.getListOfHypervisorsSupportingFunctionality(Functionality.VmStorageMigration)));
         }
 
-        if (_vmSnapshotDao.findByVm(vmId).size() > 0) {
+        if (!vm.getHypervisorType().isFunctionalitySupported(Functionality.VmStorageMigrationWithSnapshots) &&
+                CollectionUtils.isNotEmpty(_vmSnapshotDao.findByVm(vmId))) {
             throw new InvalidParameterValueException("Instance with Instance Snapshots cannot be migrated with storage, please remove all Instance Snapshots");
         }
 
@@ -9494,11 +9495,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         } else {
             String serviceOfferingUuid = backup.getDetail(ApiConstants.SERVICE_OFFERING_ID);
             if (serviceOfferingUuid == null) {
-                throw new CloudRuntimeException("Backup doesn't contain service offering uuid. Please specify a valid service offering ID while creating the instance");
+                throw new CloudRuntimeException("Backup doesn't contain service offering UUID. Please specify a valid service offering ID while creating the Instance");
             }
             serviceOffering = serviceOfferingDao.findByUuid(serviceOfferingUuid);
             if (serviceOffering == null) {
-                throw new CloudRuntimeException("Unable to find service offering with the uuid stored in backup. Please specify a valid service offering ID while creating instance");
+                throw new CloudRuntimeException("Unable to find service offering with the UUID stored in backup. Please specify a valid service offering ID while creating Instance");
             }
         }
         verifyServiceOffering(cmd, serviceOffering);
