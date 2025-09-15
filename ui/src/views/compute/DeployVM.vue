@@ -551,7 +551,7 @@
                       v-model:backupOfferingId="form.backupofferingid"
                       :backupSchedules="backupSchedules"
                       @change-backup-offering="onChangeBackupOffering"
-                      @add-backup-schedule="backupSchedules.push($event)"
+                      @add-backup-schedule="onAddBackupSchedule"
                       @delete-backup-schedule="backupSchedules = backupSchedules.filter(schedule => schedule.id !== $event.id)" />
                     <a-form-item class="form-item-hidden">
                       <a-input v-model:value="form.backupofferingid" />
@@ -3442,6 +3442,18 @@ export default {
       if (this.backupSchedules && this.backupSchedules.length > 0 && !this.$isBackupProviderSupportsQuiesceVm(val.provider)) {
         this.backupSchedules = this.backupSchedules.filter(item => !item.quiescevm)
       }
+    },
+    onAddBackupSchedule (schedule) {
+      if (!schedule) {
+        return
+      }
+      // This is in accordance with the API behavior that only one schedule per intervaltype is allowed
+      const existingIndex = this.backupSchedules.findIndex(item => item.intervaltype === schedule.intervaltype)
+      if (existingIndex !== -1) {
+        this.backupSchedules.splice(existingIndex, 1, schedule)
+        return
+      }
+      this.backupSchedules.push(schedule)
     },
     async performPostDeployBackupActions (vm) {
       if (!this.isUserAllowedBackupOperations) {
