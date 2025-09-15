@@ -18,6 +18,7 @@
  */
 package org.apache.cloudstack.storage.datastore.lifecycle;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -176,9 +177,10 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStor
 
         String tags = (String)dsInfos.get("tags");
         parameters.setTags(tags);
+        parameters.setIsTagARule((Boolean)dsInfos.get("isTagARule"));
+
         String storageAccessGroups = (String)dsInfos.get(ApiConstants.STORAGE_ACCESS_GROUPS);
         parameters.setStorageAccessGroups(storageAccessGroups);
-        parameters.setIsTagARule((Boolean)dsInfos.get("isTagARule"));
 
         String scheme = dsInfos.get("scheme").toString();
         String storageHost = dsInfos.get("host").toString();
