@@ -2052,18 +2052,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         String vmName = vm.getName();
         UnmanageInstanceCommand unmanageInstanceCommand;
         if (State.Stopped.equals(vm.getState())) {
-            Pair<Long, Long> clusterAndHostId = findClusterAndHostIdForVm(vm.getLastHostId());
+            Pair<Long, Long> clusterAndHostId = findClusterAndHostIdForVm(vm, false);
             hostId = clusterAndHostId.second();
             if (hostId == null) {
-                logger.debug("No previous host found for Instance: {}. " +
-                        "Searching for any available hosts in Zone with ID: {}.", vmName, vm.getDataCenterId());
-                List <HostVO> availableHosts = _hostDao.listByDataCenterIdAndHypervisorType(vm.getDataCenterId(), HypervisorType.KVM);
-                 if (availableHosts.isEmpty()) {
-                     String errorMsg = "No available host to persist domainXML for Instance: " + vmName;
-                     logger.debug(errorMsg);
-                     throw new CloudRuntimeException(errorMsg);
-                 }
-                 hostId = availableHosts.get(0).getId();
+                String errorMsg = "No available host to persist domain XML for Instance: " + vmName;
+                logger.debug(errorMsg);
+                throw new CloudRuntimeException(errorMsg);
             }
             unmanageInstanceCommand = new UnmanageInstanceCommand(prepVmSpecForUnmanageCmd(vm.getId(), hostId)); // reconstruct vmSpec for stopped instance
         } else {
@@ -2073,7 +2067,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         try {
             Answer answer = _agentMgr.send(hostId, unmanageInstanceCommand);
             if (!answer.getResult()) {
-                String errorMsg = "Failed to persist domainXML for instance: " + vmName;
+                String errorMsg = "Failed to persist domain XML for instance: " + vmName;
                 logger.debug(errorMsg);
                 throw new CloudRuntimeException(errorMsg);
             }
@@ -6273,8 +6267,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         host = host == null ? _hostDao.findById(hostId) : host;
         if (host != null) {
             clusterId = host.getClusterId();
+            return new Pair<>(clusterId, hostId);
         }
-        return new Pair<>(clusterId, hostId);
+        return findClusterAndHostIdForVmFromVolumes(vm.getId());
     }
 
     private Pair<Long, Long> findClusterAndHostIdForVm(VirtualMachine vm) {
