@@ -133,7 +133,7 @@
               </a-form-item>
             </a-col>
             <a-col :md="24" :lg="12">
-              <a-form-item v-if="backupProvider === 'nas'" name="quiescevm" ref="quiescevm">
+              <a-form-item v-if="isQuiesceVmSupported" name="quiescevm" ref="quiescevm">
                 <a-switch v-model:checked="form.quiescevm"/>
                 <template #label>
                   <tooltip-label :title="$t('label.quiescevm')" :tooltip="apiParams.quiescevm.description"/>
@@ -211,6 +211,11 @@ export default {
     this.fetchBackupOffering()
   },
   inject: ['refreshSchedule', 'closeSchedule'],
+  computed: {
+    isQuiesceVmSupported () {
+      return this.$isBackupProviderSupportsQuiesceVm(this.backupProvider)
+    }
+  },
   methods: {
     initForm () {
       this.formRef = ref()
