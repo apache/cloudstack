@@ -1562,7 +1562,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
 
         // Zone wide storage Solidfire inter-cluster VM migrations needs the destination host mount the LUN before migrating
-        if (storagePool.isManaged() && storagePool.getScope() != null && ScopeType.ZONE == storagePool.getScope()) {
+        if (storagePool.isManaged() && ScopeType.ZONE.equals(storagePool.getScope()) &&
+                isCleanupNeededOnOriginHostAfterInterClusterMigration(dataStore)) {
             details.put(DiskTO.SCOPE, storagePool.getScope().name());
             if (vmProfile.getHostId() != null && srcHostId != null) {
                 HostVO host = _hostDao.findById(vmProfile.getHostId());
@@ -1573,6 +1574,18 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
 
         return details;
+    }
+
+    private boolean isCleanupNeededOnOriginHostAfterInterClusterMigration(DataStore dataStore) {
+        if (dataStore == null || dataStore.getDriver() == null) {
+            return false;
+        }
+
+        DataStoreDriver driver = dataStore.getDriver();
+        if (driver instanceof PrimaryDataStoreDriver) {
+            return ((PrimaryDataStoreDriver)driver).zoneWideVolumesDatastoreCleanupOnOriginHostAfterInterClusterMigration();
+        }
+        return false;
     }
 
     private void setIoDriverPolicy(Map<String, String> details, StoragePoolVO storagePool, VolumeVO volume) {
