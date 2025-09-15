@@ -2053,13 +2053,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         UnmanageInstanceCommand unmanageInstanceCommand;
         if (State.Stopped.equals(vm.getState())) {
             Pair<Long, Long> clusterAndHostId = findClusterAndHostIdForVm(vm.getLastHostId());
-            Long clusterId = clusterAndHostId.first();
             hostId = clusterAndHostId.second();
             if (hostId == null) {
                 logger.debug("No previous host found for Instance: {}. " +
-                        "Searching for any available hosts in cluster with ID: {}.", vmName, clusterId);
-                 List<HostVO> availableHosts = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.Routing, clusterId,
-                         null, vm.getDataCenterId());
+                        "Searching for any available hosts in Zone with ID: {}.", vmName, vm.getDataCenterId());
+                List <HostVO> availableHosts = _hostDao.listByDataCenterIdAndHypervisorType(vm.getDataCenterId(), HypervisorType.KVM);
                  if (availableHosts.isEmpty()) {
                      String errorMsg = "No available host to persist domainXML for Instance: " + vmName;
                      logger.debug(errorMsg);
@@ -2071,6 +2069,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         } else {
             unmanageInstanceCommand = new UnmanageInstanceCommand(vmName);
         }
+        logger.debug("Selected host with ID: {} to persist domain XML for Instance: {}.", hostId, vmName);
         try {
             Answer answer = _agentMgr.send(hostId, unmanageInstanceCommand);
             if (!answer.getResult()) {
