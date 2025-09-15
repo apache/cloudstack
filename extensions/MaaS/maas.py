@@ -74,10 +74,6 @@ class MaasManager:
                 "secret": secret,
                 "distro_series": distro_series,
                 "system_id": json_data.get("cloudstack.vm.details", {}).get("details", {}).get("maas_system_id", ""),
-                "vm_name": json_data.get("cloudstack.vm.details", {}).get("name", ""),
-                "memory": json_data.get("cloudstack.vm.details", {}).get("minRam", ""),
-                "cpus": json_data.get("cloudstack.vm.details", {}).get("cpus", ""),
-                "nics": json_data.get("cloudstack.vm.details", {}).get("nics", []),
             }
         except Exception as e:
             fail(f"Error parsing JSON: {str(e)}")
