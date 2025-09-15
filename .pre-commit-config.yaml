@@ -48,6 +48,7 @@ repos:
         exclude: >
           (?x)
           ^scripts/vm/systemvm/id_rsa\.cloud$|
+          ^server/src/test/java/org/apache/cloudstack/network/ssl/CertServiceTest.java$|
           ^server/src/test/java/com/cloud/keystore/KeystoreTest\.java$|
           ^server/src/test/resources/certs/dsa_self_signed\.key$|
           ^server/src/test/resources/certs/non_root\.key$|
@@ -57,7 +58,8 @@ repos:
           ^server/src/test/resources/certs/rsa_self_signed\.key$|
           ^services/console-proxy/rdpconsole/src/test/doc/rdp-key\.pem$|
           ^systemvm/agent/certs/localhost\.key$|
-          ^systemvm/agent/certs/realhostip\.key$
+          ^systemvm/agent/certs/realhostip\.key$|
+          ^test/integration/smoke/test_ssl_offloading.py$
       - id: end-of-file-fixer
         exclude: \.vhd$
       - id: fix-byte-order-marker
@@ -75,7 +77,7 @@ repos:
         name: run codespell
         description: Check spelling with codespell
         args: [--ignore-words=.github/linters/codespell.txt]
-        exclude: ^systemvm/agent/noVNC/|^ui/package\.json$|^ui/package-lock\.json$|^ui/public/js/less\.min\.js$|^ui/public/locales/.*[^n].*\.json$
+        exclude: ^systemvm/agent/noVNC/|^ui/package\.json$|^ui/package-lock\.json$|^ui/public/js/less\.min\.js$|^ui/public/locales/.*[^n].*\.json$|^server/src/test/java/org/apache/cloudstack/network/ssl/CertServiceTest.java$|^test/integration/smoke/test_ssl_offloading.py$
   - repo: https://github.com/pycqa/flake8
     rev: 7.0.0
     hooks:

@@ -1902,6 +1902,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return "";
     }
 
+    public Integer getVlanIdForBridge(final String bridge) {
+        String pif = matchPifFileInDirectory(bridge);
+        final File vlanfile = new File("/proc/net/vlan/" + pif);
+        if (vlanfile.isFile()) {
+            String vlan = Script.runSimpleBashScript("awk '/VID:/ {print $3}' /proc/net/vlan/" + pif);
+            try {
+                return Integer.parseInt(vlan);
+            } catch (final NumberFormatException e) {
+                return null;
+            }
+        }
+        return null;
+    }
+
     static String [] ifNamePatterns = {
             "^eth",
             "^bond",
@@ -3875,10 +3889,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public synchronized String attachOrDetachISO(final Connect conn, final String vmName, String isoPath, final boolean isAttach, final Integer diskSeq) throws LibvirtException, URISyntaxException,
             InternalErrorException {
         final DiskDef iso = new DiskDef();
-        if (isAttach && StringUtils.isNotBlank(isoPath) && isoPath.lastIndexOf("/") > 0) {
-            if (isoPath.startsWith(getConfigPath() + "/" + ConfigDrive.CONFIGDRIVEDIR) && isoPath.contains(vmName)) {
+        if (isAttach && StringUtils.isNotBlank(isoPath)) {
+            if (isoPath.startsWith(getConfigPath() + "/" + ConfigDrive.CONFIGDRIVEDIR) || isoPath.contains(vmName)) {
                 iso.defISODisk(isoPath, diskSeq, DiskDef.DiskType.FILE);
-            } else {
+            } else if (isoPath.lastIndexOf("/") > 0) {
                 final int index = isoPath.lastIndexOf("/");
                 final String path = isoPath.substring(0, index);
                 final String name = isoPath.substring(index + 1);
@@ -3902,7 +3916,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     cleanupDisk(disk);
                 }
             }
-
         }
         return result;
     }
@@ -6097,7 +6110,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public static String generateSecretUUIDFromString(String seed) {
-        return UUID.nameUUIDFromBytes(seed.getBytes()).toString();
+        return UuidUtils.nameUUIDFromBytes(seed.getBytes()).toString();
     }
 
     /**
