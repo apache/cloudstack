@@ -78,10 +78,10 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
     private String clusterName;
 
     @SerializedName(ApiConstants.CAPACITY_BYTES)
-    @Param(description = "bytes CloudStack can provision from this storage pool", since = "4.19.3")
+    @Param(description = "bytes CloudStack can provision from this storage pool", since = "4.22.0")
     private Long capacityBytes;
 
-    @Deprecated(since = "4.19.3")
+    @Deprecated(since = "4.22.0")
     @SerializedName("disksizetotal")
     @Param(description = "the total disk size of the storage pool")
     private Long diskSizeTotal;

@@ -21,3 +21,7 @@
 
 -- Increase length of scripts_version column to 128 due to md5sum to sha512sum change
 CALL `cloud`.`IDEMPOTENT_CHANGE_COLUMN`('cloud.domain_router', 'scripts_version', 'scripts_version', 'VARCHAR(128)');
+
+-- Updated display to false for password/token detail of the storage pool details
+UPDATE `cloud`.`storage_pool_details` SET display = 0 WHERE name LIKE '%password%';
+UPDATE `cloud`.`storage_pool_details` SET display = 0 WHERE name LIKE '%token%';
