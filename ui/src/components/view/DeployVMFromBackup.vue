@@ -46,7 +46,7 @@
                 </template>
               </a-step>
               <a-step
-                v-if="isDRaaSEnabled"
+                v-if="crossZoneInstanceCreationEnabled"
                 :title="$t('label.select.a.zone')"
                 status="process">
                 <template #description>
@@ -972,8 +972,8 @@ export default {
     isDifferentZoneFromBackup () {
       return this.selectedZone !== this.dataPreFill.zoneid
     },
-    isDRaaSEnabled () {
-      return this.dataPreFill.draasenabled
+    crossZoneInstanceCreationEnabled () {
+      return this.dataPreFill.crosszoneinstancecreation
     },
     isNormalUserOrProject () {
       return ['User'].includes(this.$store.getters.userInfo.roletype) || store.getters.project.id

@@ -56,8 +56,8 @@ public class UpdateBackupRepositoryCmd extends BaseCmd {
     @Parameter(name = ApiConstants.MOUNT_OPTIONS, type = CommandType.STRING, description = "shared storage mount options")
     private String mountOptions;
 
-    @Parameter(name = ApiConstants.DRAAS_ENABLED, type = CommandType.BOOLEAN, description = "the backup repository is configured to be used for disaster recovery on other Zones")
-    private Boolean draasEnabled;
+    @Parameter(name = ApiConstants.CROSS_ZONE_INSTANCE_CREATION, type = CommandType.BOOLEAN, description = "backups in this repository can be used to create Instances on all Zones")
+    private Boolean crossZoneInstanceCreation;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -83,8 +83,8 @@ public class UpdateBackupRepositoryCmd extends BaseCmd {
         return mountOptions == null ? "" : mountOptions;
     }
 
-    public Boolean isDraasEnabled() {
-        return draasEnabled;
+    public Boolean crossZoneInstanceCreationEnabled() {
+        return crossZoneInstanceCreation;
     }
 
     /////////////////////////////////////////////////////

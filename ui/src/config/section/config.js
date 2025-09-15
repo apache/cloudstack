@@ -141,7 +141,7 @@ export default {
       permission: ['listBackupRepositories'],
       searchFilters: ['zoneid'],
       columns: ['name', 'provider', 'type', 'address', 'zonename'],
-      details: ['name', 'type', 'address', 'provider', 'zonename', 'draasenabled'],
+      details: ['name', 'type', 'address', 'provider', 'zonename', 'crosszoneinstancecreation'],
       actions: [
         {
           api: 'addBackupRepository',
@@ -149,7 +149,7 @@ export default {
           label: 'label.backup.repository.add',
           listView: true,
           args: [
-            'name', 'provider', 'address', 'type', 'mountopts', 'zoneid', 'draasenabled'
+            'name', 'provider', 'address', 'type', 'mountopts', 'zoneid', 'crosszoneinstancecreation'
           ],
           mapping: {
             type: {
@@ -165,7 +165,7 @@ export default {
           icon: 'edit-outlined',
           label: 'label.backup.repository.edit',
           message: 'message.action.edit.backup.repository',
-          args: ['name', 'address', 'mountopts', 'draasenabled'],
+          args: ['name', 'address', 'mountopts', 'crosszoneinstancecreation'],
           dataView: true,
           popup: true
         },

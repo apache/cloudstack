@@ -67,8 +67,8 @@ public class BackupRepositoryVO implements BackupRepository {
     @Column(name = "capacity_bytes", nullable = true)
     private Long capacityBytes;
 
-    @Column(name = "draas_enabled")
-    private Boolean draasEnabled;
+    @Column(name = "cross_zone_instance_creation")
+    private Boolean crossZoneInstanceCreation;
 
     @Column(name = "created")
     @Temporal(value = TemporalType.TIMESTAMP)
@@ -82,7 +82,7 @@ public class BackupRepositoryVO implements BackupRepository {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public BackupRepositoryVO(final long zoneId, final String provider, final String name, final String type, final String address, final String mountOptions, final Long capacityBytes, final Boolean draasEnabled) {
+    public BackupRepositoryVO(final long zoneId, final String provider, final String name, final String type, final String address, final String mountOptions, final Long capacityBytes, final Boolean crossZoneInstanceCreation) {
         this();
         this.zoneId = zoneId;
         this.provider = provider;
@@ -91,7 +91,7 @@ public class BackupRepositoryVO implements BackupRepository {
         this.address = address;
         this.mountOptions = mountOptions;
         this.capacityBytes = capacityBytes;
-        this.draasEnabled = draasEnabled;
+        this.crossZoneInstanceCreation = crossZoneInstanceCreation;
         this.created = new Date();
     }
 
@@ -164,13 +164,13 @@ public class BackupRepositoryVO implements BackupRepository {
     }
 
     @Override
-    public Boolean isDraasEnabled() {
-        return draasEnabled;
+    public Boolean crossZoneInstanceCreationEnabled() {
+        return crossZoneInstanceCreation;
     }
 
     @Override
-    public void setDraasEnabled(Boolean draasEnabled) {
-        this.draasEnabled = draasEnabled;
+    public void setCrossZoneInstanceCreation(Boolean crossZoneInstanceCreation) {
+        this.crossZoneInstanceCreation = crossZoneInstanceCreation;
     }
 
     @Override

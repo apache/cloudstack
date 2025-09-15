@@ -63,14 +63,14 @@ public class AddBackupRepositoryCmd extends BaseCmd {
             type = CommandType.UUID,
             entityType = ZoneResponse.class,
             required = true,
-            description = "ID of the zone where the backup repository is to be added")
+            description = "ID of the zone where the backup repository is to be added for taking backups")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.CAPACITY_BYTES, type = CommandType.LONG, description = "capacity of this backup repository")
     private Long capacityBytes;
 
-    @Parameter(name = ApiConstants.DRAAS_ENABLED, type = CommandType.BOOLEAN, description = "the backup repository is configured to be used for disaster recovery on other Zones", since = "4.22.0")
-    private Boolean draasEnabled;
+    @Parameter(name = ApiConstants.CROSS_ZONE_INSTANCE_CREATION, type = CommandType.BOOLEAN, description = "backups on this repository can be used to create Instances on all Zones", since = "4.22.0")
+    private Boolean crossZoneInstanceCreation;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -111,8 +111,8 @@ public class AddBackupRepositoryCmd extends BaseCmd {
         return capacityBytes;
     }
 
-    public Boolean isDraasEnabled() {
-        return draasEnabled;
+    public Boolean crossZoneInstanceCreationEnabled() {
+        return crossZoneInstanceCreation;
     }
 
     /////////////////////////////////////////////////////

@@ -99,7 +99,7 @@ public class BackupRepositoryServiceImplTest {
         when(updateCmd.getName()).thenReturn("updated-repo");
         when(updateCmd.getAddress()).thenReturn("192.168.1.200:/backup");
         when(updateCmd.getMountOptions()).thenReturn("rw,noexec");
-        when(updateCmd.isDraasEnabled()).thenReturn(false);
+        when(updateCmd.crossZoneInstanceCreationEnabled()).thenReturn(false);
 
         when(repositoryDao.findById(1L)).thenReturn(repositoryVO);
         when(repositoryDao.createForUpdate(1L)).thenReturn(repositoryVO);

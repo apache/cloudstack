@@ -57,7 +57,7 @@ public class BackupRepositoryServiceImpl extends ManagerBase implements BackupRe
     @ActionEvent(eventType = EventTypes.EVENT_BACKUP_REPOSITORY_ADD, eventDescription = "add backup repository")
     public BackupRepository addBackupRepository(AddBackupRepositoryCmd cmd) {
         BackupRepositoryVO repository = new BackupRepositoryVO(cmd.getZoneId(), cmd.getProvider(), cmd.getName(),
-                cmd.getType(), cmd.getAddress(), cmd.getMountOptions(), cmd.getCapacityBytes(), cmd.isDraasEnabled());
+                cmd.getType(), cmd.getAddress(), cmd.getMountOptions(), cmd.getCapacityBytes(), cmd.crossZoneInstanceCreationEnabled());
         return repositoryDao.persist(repository);
     }
 
@@ -68,7 +68,7 @@ public class BackupRepositoryServiceImpl extends ManagerBase implements BackupRe
         String name = cmd.getName();
         String address = cmd.getAddress();
         String mountOptions = cmd.getMountOptions();
-        Boolean draasEnabled = cmd.isDraasEnabled();
+        Boolean crossZoneInstanceCreation = cmd.crossZoneInstanceCreationEnabled();
 
         BackupRepositoryVO backupRepository = repositoryDao.findById(id);
         if (Objects.isNull(backupRepository)) {
@@ -91,9 +91,9 @@ public class BackupRepositoryServiceImpl extends ManagerBase implements BackupRe
             backupRepositoryVO.setMountOptions(mountOptions);
         }
 
-        if (draasEnabled != null){
-            backupRepositoryVO.setDraasEnabled(draasEnabled);
-            fields.add("draasEnabled: " + draasEnabled);
+        if (crossZoneInstanceCreation != null){
+            backupRepositoryVO.setCrossZoneInstanceCreation(crossZoneInstanceCreation);
+            fields.add("crossZoneInstanceCreation: " + crossZoneInstanceCreation);
         }
 
         if (!repositoryDao.update(id, backupRepositoryVO)) {
@@ -103,7 +103,7 @@ public class BackupRepositoryServiceImpl extends ManagerBase implements BackupRe
 
         BackupRepositoryVO repositoryVO = repositoryDao.findById(id);
         CallContext.current().setEventDetails(String.format("Backup Repository updated [%s].",
-                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(repositoryVO, "id", "name", "description", "userDrivenBackupAllowed", "externalId", "draasEnabled")));
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(repositoryVO, "id", "name", "description", "userDrivenBackupAllowed", "externalId", "crossZoneInstanceCreation")));
         return repositoryVO;
     }
 

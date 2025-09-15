@@ -33,7 +33,7 @@ public interface BackupRepository extends InternalIdentity, Identity {
     Long getCapacityBytes();
     Long getUsedBytes();
     void setCapacityBytes(Long capacityBytes);
-    Boolean isDraasEnabled();
-    void setDraasEnabled(Boolean draasEnabled);
+    Boolean crossZoneInstanceCreationEnabled();
+    void setCrossZoneInstanceCreation(Boolean crossZoneInstanceCreation);
     Date getCreated();
 }

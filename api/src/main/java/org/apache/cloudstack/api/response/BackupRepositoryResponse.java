@@ -61,9 +61,9 @@ public class BackupRepositoryResponse extends BaseResponse {
     @Param(description = "capacity of the backup repository")
     private Long capacityBytes;
 
-    @SerializedName(ApiConstants.DRAAS_ENABLED)
-    @Param(description = "is the backup repository configured to be used for disaster recovery on other Zones")
-    private Boolean draasEnabled;
+    @SerializedName(ApiConstants.CROSS_ZONE_INSTANCE_CREATION)
+    @Param(description = "the backups in this repository can be used to create Instances on all Zones")
+    private Boolean crossZoneInstanceCreation;
 
     @SerializedName("created")
     @Param(description = "the date and time the backup repository was added")
@@ -136,12 +136,12 @@ public class BackupRepositoryResponse extends BaseResponse {
         this.capacityBytes = capacityBytes;
     }
 
-    public Boolean getDraasEnabled() {
-        return draasEnabled;
+    public Boolean getCrossZoneInstanceCreation() {
+        return crossZoneInstanceCreation;
     }
 
-    public void setDraasEnabled(Boolean draasEnabled) {
-        this.draasEnabled = draasEnabled;
+    public void setCrossZoneInstanceCreation(Boolean crossZoneInstanceCreation) {
+        this.crossZoneInstanceCreation = crossZoneInstanceCreation;
     }
 
     public Date getCreated() {

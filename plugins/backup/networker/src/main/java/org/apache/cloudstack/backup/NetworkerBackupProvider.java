@@ -159,7 +159,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
     }
 
     @Override
-    public Boolean isDraasEnabled(BackupOffering backupOffering) {
+    public Boolean crossZoneInstanceCreationEnabled(BackupOffering backupOffering) {
         return false;
     }
 

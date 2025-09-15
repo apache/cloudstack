@@ -1266,7 +1266,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException("Failed to find backup offering");
         }
         final BackupProvider backupProvider = getBackupProvider(offering.getProvider());
-        return backupProvider.isDraasEnabled(offering);
+        return backupProvider.crossZoneInstanceCreationEnabled(offering);
     }
 
     @Override

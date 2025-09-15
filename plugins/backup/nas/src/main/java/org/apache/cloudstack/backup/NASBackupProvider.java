@@ -539,12 +539,12 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     }
 
     @Override
-    public Boolean isDraasEnabled(BackupOffering backupOffering) {
+    public Boolean crossZoneInstanceCreationEnabled(BackupOffering backupOffering) {
         final BackupRepository backupRepository = backupRepositoryDao.findByBackupOfferingId(backupOffering.getId());
         if (backupRepository == null) {
             throw new CloudRuntimeException("Backup repository not found for the backup offering" + backupOffering.getName());
         }
-        return Boolean.TRUE.equals(backupRepository.isDraasEnabled());
+        return Boolean.TRUE.equals(backupRepository.crossZoneInstanceCreationEnabled());
     }
 
     @Override

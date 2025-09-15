@@ -359,7 +359,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     }
 
     @Override
-    public Boolean isDraasEnabled(BackupOffering backupOffering) {
+    public Boolean crossZoneInstanceCreationEnabled(BackupOffering backupOffering) {
         return false;
     }
 

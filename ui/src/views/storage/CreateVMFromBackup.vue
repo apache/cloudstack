@@ -132,7 +132,7 @@ export default {
     populatePreFillData () {
       this.vmdetails = this.resource.vmdetails
       this.dataPreFill.zoneid = this.resource.zoneid
-      this.dataPreFill.draasenabled = this.backupRepository?.draasenabled || this.backupOffering.provider === 'dummy'
+      this.dataPreFill.crosszoneinstancecreation = this.backupRepository?.crosszoneinstancecreation || this.backupOffering.provider === 'dummy'
       this.dataPreFill.isIso = (this.vmdetails.isiso === 'true')
       this.dataPreFill.backupid = this.resource.id
       this.dataPreFill.computeofferingid = this.vmdetails.serviceofferingid

@@ -139,6 +139,7 @@ public class ApiConstants {
     public static final String CPU_SPEED = "cpuspeed";
     public static final String CPU_LOAD_AVERAGE = "cpuloadaverage";
     public static final String CREATED = "created";
+    public static final String CROSS_ZONE_INSTANCE_CREATION = "crosszoneinstancecreation";
     public static final String CTX_ACCOUNT_ID = "ctxaccountid";
     public static final String CTX_DETAILS = "ctxDetails";
     public static final String CTX_USER_ID = "ctxuserid";
@@ -209,7 +210,6 @@ public class ApiConstants {
     public static final String DOMAIN_ID = "domainid";
     public static final String DOMAIN__ID = "domainId";
     public static final String DURATION = "duration";
-    public static final String DRAAS_ENABLED = "draasenabled";
     public static final String ELIGIBLE = "eligible";
     public static final String EMAIL = "email";
     public static final String END_ASN = "endasn";

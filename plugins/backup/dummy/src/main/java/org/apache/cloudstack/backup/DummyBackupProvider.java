@@ -54,7 +54,7 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     private DiskOfferingDao diskOfferingDao;
 
     @Override
-    public Boolean isDraasEnabled(BackupOffering backupOffering) {
+    public Boolean crossZoneInstanceCreationEnabled(BackupOffering backupOffering) {
         return true;
     }
 
