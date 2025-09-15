@@ -1554,15 +1554,15 @@ export default {
       })
     },
     async fetchData () {
-      if (this.dataPreFill.zoneid) {
-        this.fetchDataByZone(this.dataPreFill.zoneid)
-      }
-      this.fetchZones(null, null)
+      await this.fetchZones(null, null)
       _.each(this.params, (param, name) => {
         if (param.isLoad) {
           this.fetchOptions(param, name)
         }
       })
+      if (this.dataPreFill.zoneid) {
+        this.selectPreFillZone(this.dataPreFill.zoneid)
+      }
       this.fetchBootTypes()
       this.fetchBootModes()
       this.fetchInstaceGroups()
@@ -1591,9 +1591,8 @@ export default {
       }
       this.showOverrideDiskOfferingOption = val
     },
-    async fetchDataByZone (zoneId) {
+    async selectPreFillZone (zoneId) {
       this.fillValue('zoneid')
-      this.options.zones = await this.fetchZones(zoneId)
       this.onSelectZoneId(zoneId)
     },
     fetchBootTypes () {
