@@ -3439,7 +3439,7 @@ export default {
         return
       }
       this.selectedBackupOffering = val
-      if (this.backupSchedules && this.backupSchedules.length > 0 && !['nas'].includes(val.provider)) {
+      if (this.backupSchedules && this.backupSchedules.length > 0 && !this.$isBackupProviderSupportsQuiesceVm(val.provider)) {
         this.backupSchedules = this.backupSchedules.filter(item => !item.quiescevm)
       }
     },
