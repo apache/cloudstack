@@ -41,7 +41,9 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.user.PasswordPolicy;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.PasswordGenerator;
 import com.cloud.vm.UserVmService;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.Role;
@@ -242,6 +244,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     );
     private static final String PROJECT_KUBERNETES_ACCOUNT_FIRST_NAME = "Kubernetes";
     private static final String PROJECT_KUBERNETES_ACCOUNT_LAST_NAME = "Service User";
+    private static final int CKS_USER_MIN_PASSWORD_LENGTH = 12;
 
 
     private static final String DEFAULT_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_DISPLAY_TEXT = "Network Offering used for CloudStack Kubernetes service";
@@ -1499,6 +1502,14 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
     }
 
+    protected String generateRandomUserPassword(Long domainId) {
+        Integer passwordPolicyMinimumLength = PasswordPolicy.PasswordPolicyMinimumLength.valueIn(domainId);
+        if (passwordPolicyMinimumLength == null || passwordPolicyMinimumLength < CKS_USER_MIN_PASSWORD_LENGTH) {
+            passwordPolicyMinimumLength = CKS_USER_MIN_PASSWORD_LENGTH;
+        }
+        return PasswordGenerator.generateRandomPassword(passwordPolicyMinimumLength);
+    }
+
     protected String[] getServiceUserKeys(Account owner) {
         String username = owner.getAccountName();
         if (!username.startsWith(KUBEADMIN_ACCOUNT_NAME + "-")) {
@@ -1507,8 +1518,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         UserAccount kubeadmin = accountService.getActiveUserAccount(username, owner.getDomainId());
         String[] keys;
         if (kubeadmin == null) {
-            User kube = userDao.persist(new UserVO(owner.getAccountId(), username, UUID.randomUUID().toString(), owner.getAccountName(),
-                    KUBEADMIN_ACCOUNT_NAME, "kubeadmin", null, UUID.randomUUID().toString(), User.Source.UNKNOWN));
+            Integer passwordPolicyMinimumLength = PasswordPolicy.PasswordPolicyMinimumLength.valueIn(owner.getDomainId());
+            User kube = userDao.persist(new UserVO(owner.getAccountId(), username, generateRandomUserPassword(owner.getDomainId()), owner.getAccountName(),
+                    KUBEADMIN_ACCOUNT_NAME, "kubeadmin", null, UUID.randomUUID().toString(), User.Source.CKS));
             keys = createUserApiKeyAndSecretKey(kube.getId());
         } else {
             String apiKey = kubeadmin.getApiKey();
@@ -1551,9 +1563,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         try {
             Role role = getProjectKubernetesAccountRole();
             UserAccount userAccount = accountService.createUserAccount(accountName,
-                    UuidUtils.first(UUID.randomUUID().toString()), PROJECT_KUBERNETES_ACCOUNT_FIRST_NAME,
+                    generateRandomUserPassword(project.getDomainId()), PROJECT_KUBERNETES_ACCOUNT_FIRST_NAME,
                     PROJECT_KUBERNETES_ACCOUNT_LAST_NAME, null, null, accountName, Account.Type.NORMAL, role.getId(),
-                    project.getDomainId(), null, null, null, null, User.Source.NATIVE);
+                    project.getDomainId(), null, null, null, null, User.Source.CKS);
             projectManager.assignAccountToProject(project, userAccount.getAccountId(), ProjectAccount.Role.Regular,
                     userAccount.getId(), null);
             Account account = accountService.getAccount(userAccount.getAccountId());

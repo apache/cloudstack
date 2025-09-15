@@ -2747,7 +2747,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             logger.debug("Creating user: " + userName + ", accountId: " + accountId + " timezone:" + timezone);
         }
 
-        passwordPolicy.verifyIfPasswordCompliesWithPasswordPolicies(password, userName, getAccount(accountId).getDomainId());
+        if (!User.Source.CKS.equals(source)) {
+            passwordPolicy.verifyIfPasswordCompliesWithPasswordPolicies(password, userName, getAccount(accountId).getDomainId());
+        }
 
         String encodedPassword = null;
         for (UserAuthenticator authenticator : _userPasswordEncoders) {

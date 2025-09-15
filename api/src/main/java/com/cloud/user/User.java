@@ -24,7 +24,7 @@ public interface User extends OwnedBy, InternalIdentity {
 
     // UNKNOWN and NATIVE can be used interchangeably
     public enum Source {
-        OAUTH2, LDAP, SAML2, SAML2DISABLED, UNKNOWN, NATIVE
+        OAUTH2, LDAP, SAML2, SAML2DISABLED, UNKNOWN, NATIVE, CKS
     }
 
     public static final long UID_SYSTEM = 1;
