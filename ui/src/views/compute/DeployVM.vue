@@ -920,7 +920,7 @@
 
 <script>
 import { ref, reactive, toRaw, nextTick, h } from 'vue'
-import { Button } from 'ant-design-vue'
+import { Button, message } from 'ant-design-vue'
 import { getAPI, postAPI } from '@/api'
 import _ from 'lodash'
 import { mixin, mixinDevice } from '@/utils/mixin.js'
@@ -3450,6 +3450,7 @@ export default {
       // This is in accordance with the API behavior that only one schedule per intervaltype is allowed
       const existingIndex = this.backupSchedules.findIndex(item => item.intervaltype === schedule.intervaltype)
       if (existingIndex !== -1) {
+        message.warning({ content: this.$t('Updating existing backup schedule for the same interval type') + ' ' + schedule.intervaltype, duration: 3 })
         this.backupSchedules.splice(existingIndex, 1, schedule)
         return
       }

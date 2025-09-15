@@ -3067,7 +3067,7 @@
 "message.backup.attach.restore": "Please confirm that you want to restore and attach the volume from the backup?",
 "message.backup.create": "Are you sure you want to create an Instance backup?",
 "message.backup.offering.remove": "Are you sure you want to remove Instance from backup offering and delete the backup chain?",
-"message.backup.provision.instance": "Select a backup offering to assign to the Instance. You can also add one or more backup schedules to automate backups for this Instance. Assigning a backup offering and schedules helps protect your data by enabling automated and scheduled backups.",
+"message.backup.provision.instance": "Select a backup offering to assign to the Instance. You can also add one or more backup schedules for different interval types to automate backups for this Instance. Assigning a backup offering and schedules helps protect your data by enabling automated and scheduled backups.",
 "message.backup.restore": "Please confirm that you want to restore the Instance backup?",
 "message.cancel.shutdown": "Please confirm that you would like to cancel the shutdown on this Management Server. It will resume accepting any new Async Jobs.",
 "message.cancel.maintenance": "Please confirm that you would like to cancel the maintenance on this Management Server. It will resume accepting any new Async Jobs.",
