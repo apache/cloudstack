@@ -541,7 +541,7 @@
                 </template>
               </a-step>
               <a-step
-                v-if="isUserAllowedBackupOperations"
+                v-if="zoneAllowsBackupOperations"
                 :title="$t('label.backup')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description>
@@ -1157,6 +1157,7 @@ export default {
       },
       externalDetailsEnabled: false,
       selectedExtensionId: null,
+      zoneAllowsBackupOperations: false,
       selectedBackupOffering: null,
       backupSchedules: []
     }
@@ -1538,10 +1539,6 @@ export default {
     },
     isTemplateHypervisorExternal () {
       return !!this.template && this.template.hypervisor === 'External'
-    },
-    isUserAllowedBackupOperations () {
-      return Boolean('listBackupOfferings' in this.$store.getters.apis) &&
-        Boolean('assignVirtualMachineToBackupOffering' in this.$store.getters.apis)
     }
   },
   watch: {
@@ -3014,6 +3011,31 @@ export default {
       this.updateTemplateKey()
       this.formModel = toRaw(this.form)
     },
+    async updateZoneAllowsBackupOperations () {
+      this.zoneAllowsBackupOperations = false
+      if (!this.zoneId) {
+        return
+      }
+      if (!('listBackupOfferings' in this.$store.getters.apis) ||
+        !('assignVirtualMachineToBackupOffering' in this.$store.getters.apis)) {
+        return
+      }
+      const params = {
+        zoneid: this.zoneId,
+        issystem: false,
+        listall: true,
+        page: 1,
+        pageSize: 1
+      }
+      try {
+        const response = await getAPI('listBackupOfferings', params)
+        const backupOfferings = response.listbackupofferingsresponse.backupoffering || []
+        this.zoneAllowsBackupOperations = backupOfferings.length > 0
+      } catch (error) {
+        console.error('Error fetching backup offerings:', error)
+        this.zoneAllowsBackupOperations = false
+      }
+    },
     onSelectZoneId (value) {
       if (this.dataPreFill.zoneid !== value) {
         this.dataPreFill = {}
@@ -3040,7 +3062,9 @@ export default {
       this.resetIsosList()
       this.imageType = this.queryIsoId ? 'isoid' : 'templateid'
       this.form.backupofferingid = undefined
+      this.selectedBackupOffering = null
       this.fetchZoneOptions()
+      this.updateZoneAllowsBackupOperations()
     },
     onSelectPodId (value) {
       this.podId = value
@@ -3450,14 +3474,17 @@ export default {
       // This is in accordance with the API behavior that only one schedule per intervaltype is allowed
       const existingIndex = this.backupSchedules.findIndex(item => item.intervaltype === schedule.intervaltype)
       if (existingIndex !== -1) {
-        message.warning({ content: this.$t('Updating existing backup schedule for the same interval type') + ' ' + schedule.intervaltype, duration: 3 })
+        message.warning({
+          content: this.$t('message.backup.update.existing.schedule') + ' ' + schedule.intervaltype,
+          duration: 2
+        })
         this.backupSchedules.splice(existingIndex, 1, schedule)
         return
       }
       this.backupSchedules.push(schedule)
     },
     async performPostDeployBackupActions (vm) {
-      if (!this.isUserAllowedBackupOperations) {
+      if (!this.zoneAllowsBackupOperations) {
         return
       }
       const assigned = await this.assignVirtualMachineToBackupOfferingIfNeeded(vm)
