@@ -757,10 +757,3 @@ SET `cs`.`domain_id` = (
 
 -- Re-apply VPC: update default network offering for vpc tier to conserve_mode=1 (#8309)
 UPDATE `cloud`.`network_offerings` SET conserve_mode = 1 WHERE name = 'DefaultIsolatedNetworkOfferingForVpcNetworks';
-
--- Move to 4.22
--- Add uuid column to ldap_configuration table
-CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.ldap_configuration', 'uuid', 'VARCHAR(40) NOT NULL');
-
--- Populate uuid for existing rows where uuid is NULL or empty
-UPDATE `cloud`.`ldap_configuration` SET uuid = UUID() WHERE uuid IS NULL OR uuid = '';
