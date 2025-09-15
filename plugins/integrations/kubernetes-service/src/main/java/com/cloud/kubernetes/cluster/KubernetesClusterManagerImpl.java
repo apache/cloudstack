@@ -1551,7 +1551,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         try {
             Role role = getProjectKubernetesAccountRole();
             UserAccount userAccount = accountService.createUserAccount(accountName,
-                    UuidUtils.first(UUID.randomUUID().toString()), PROJECT_KUBERNETES_ACCOUNT_FIRST_NAME,
+                    UUID.randomUUID().toString(), PROJECT_KUBERNETES_ACCOUNT_FIRST_NAME,
                     PROJECT_KUBERNETES_ACCOUNT_LAST_NAME, null, null, accountName, Account.Type.NORMAL, role.getId(),
                     project.getDomainId(), null, null, null, null, User.Source.NATIVE);
             projectManager.assignAccountToProject(project, userAccount.getAccountId(), ProjectAccount.Role.Regular,
