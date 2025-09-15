@@ -1554,15 +1554,12 @@ export default {
       })
     },
     async fetchData () {
-      await this.fetchZones(null, null)
+      this.fetchZones(null, null)
       _.each(this.params, (param, name) => {
         if (param.isLoad) {
           this.fetchOptions(param, name)
         }
       })
-      if (this.dataPreFill.zoneid) {
-        this.selectPreFillZone(this.dataPreFill.zoneid)
-      }
       this.fetchBootTypes()
       this.fetchBootModes()
       this.fetchInstaceGroups()
@@ -1590,10 +1587,6 @@ export default {
         this.form.overridediskofferingid = undefined
       }
       this.showOverrideDiskOfferingOption = val
-    },
-    async selectPreFillZone (zoneId) {
-      this.fillValue('zoneid')
-      this.onSelectZoneId(zoneId)
     },
     fetchBootTypes () {
       this.options.bootTypes = [
@@ -2183,7 +2176,9 @@ export default {
 
           if (name === 'zones') {
             let zoneid = ''
-            if (this.$route.query.zoneid) {
+            if (this.dataPreFill.zoneid) {
+              zoneid = this.dataPreFill.zoneid
+            } else if (this.$route.query.zoneid) {
               zoneid = this.$route.query.zoneid
             } else if (this.options.zones.length === 1) {
               zoneid = this.options.zones[0].id
