@@ -286,7 +286,8 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
     public ManagementServerHostVO findOneInUpStateByClassName(String className) {
         SearchCriteria<ManagementServerHostVO> sc = StateSearch.create();
         sc.setParameters("state", ManagementServerHost.State.Up);
-        List<ManagementServerHostVO> mshosts = listBy(sc, null);
+        Filter filter = new Filter(ManagementServerHostVO.class, "id", true, null, null);
+        List<ManagementServerHostVO> mshosts = listBy(sc, filter);
         if (CollectionUtils.isEmpty(mshosts)) {
             return null;
         }
