@@ -141,7 +141,6 @@ export default {
       schedule.id = 'SCH_' + new Date().getTime()
       schedule.intervaltype = schedule.intervaltype?.toUpperCase()
       this.$emit('add-backup-schedule', schedule)
-      console.log('Added schedule', schedule)
       this.closeModals()
     },
     handleDeleteBackupSchedule (schedule) {
