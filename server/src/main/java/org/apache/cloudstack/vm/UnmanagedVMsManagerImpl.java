@@ -1494,7 +1494,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         if (templateId == null) {
             template = templateDao.findByName(VM_IMPORT_DEFAULT_TEMPLATE_NAME);
             if (template == null) {
-                template = createDefaultDummyVmImportTemplate(false);
+                boolean isKVM = Hypervisor.HypervisorType.KVM == hypervisorType;
+                template = createDefaultDummyVmImportTemplate(isKVM);
                 if (template == null) {
                     throw new InvalidParameterValueException(String.format("Default VM import template with unique name: %s for hypervisor: %s cannot be created. Please use templateid parameter for import", VM_IMPORT_DEFAULT_TEMPLATE_NAME, hypervisorType.toString()));
                 }
@@ -2342,14 +2343,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         if (CollectionUtils.isNotEmpty(userVOs)) {
             userId = userVOs.get(0).getId();
         }
-        VMTemplateVO template = templateDao.findByName(KVM_VM_IMPORT_DEFAULT_TEMPLATE_NAME);
-        if (template == null) {
-            template = createDefaultDummyVmImportTemplate(true);
-            if (template == null) {
-                throw new InvalidParameterValueException("Error while creating default Import Vm Template");
-            }
-        }
-
+        VMTemplateVO template = getTemplateForImportInstance(cmd.getTemplateId(), Hypervisor.HypervisorType.KVM);
         final Long serviceOfferingId = cmd.getServiceOfferingId();
         if (serviceOfferingId == null) {
             throw new InvalidParameterValueException(String.format("Service offering ID cannot be null"));
