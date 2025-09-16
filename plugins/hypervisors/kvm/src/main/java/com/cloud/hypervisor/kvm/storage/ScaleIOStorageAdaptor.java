@@ -653,10 +653,24 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
             if (!ScaleIOUtil.startSDCService()) {
                 return new Ternary<>(false, null, "Couldn't start SDC service on host");
             }
-        } else {
-            logger.debug("SDC service is active on host, re-starting it");
-            if (!ScaleIOUtil.restartSDCService()) {
-                return new Ternary<>(false, null, "Couldn't restart SDC service on host");
+        }
+
+        if (MapUtils.isNotEmpty(details) && details.containsKey(ScaleIOGatewayClient.STORAGE_POOL_MDMS)) {
+            // Assuming SDC service is started, add mdms
+            String mdms = details.get(ScaleIOGatewayClient.STORAGE_POOL_MDMS);
+            String[] mdmAddresses = mdms.split(",");
+            if (mdmAddresses.length > 0) {
+                if (ScaleIOUtil.isMdmPresent(mdmAddresses[0])) {
+                    return new Ternary<>(true, getSDCDetails(details), "MDM added, no need to prepare the SDC client");
+                }
+
+                ScaleIOUtil.addMdms(mdmAddresses);
+                if (!ScaleIOUtil.isMdmPresent(mdmAddresses[0])) {
+                    return new Ternary<>(false, null, "Failed to add MDMs");
+                } else {
+                    logger.debug(String.format("MDMs %s added to storage pool %s", mdms, uuid));
+                    applyMdmsChangeWaitTime(details);
+                }
             }
         }
 
@@ -784,12 +798,12 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
             if (sdcId != null) {
                 sdcDetails.put(ScaleIOGatewayClient.SDC_ID, sdcId);
                 return sdcDetails;
-            } else {
-                String sdcGuId = ScaleIOUtil.getSdcGuid();
-                if (sdcGuId != null) {
-                    sdcDetails.put(ScaleIOGatewayClient.SDC_GUID, sdcGuId);
-                    return sdcDetails;
-                }
+            }
+
+            String sdcGuId = ScaleIOUtil.getSdcGuid();
+            if (sdcGuId != null) {
+                sdcDetails.put(ScaleIOGatewayClient.SDC_GUID, sdcGuId);
+                return sdcDetails;
             }
 
             try {

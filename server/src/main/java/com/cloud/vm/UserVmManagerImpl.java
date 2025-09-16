@@ -7712,7 +7712,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             HypervisorType.getListOfHypervisorsSupportingFunctionality(Functionality.VmStorageMigration)));
         }
 
-        if (_vmSnapshotDao.findByVm(vmId).size() > 0) {
+        if (!vm.getHypervisorType().isFunctionalitySupported(Functionality.VmStorageMigrationWithSnapshots) &&
+                CollectionUtils.isNotEmpty(_vmSnapshotDao.findByVm(vmId))) {
             throw new InvalidParameterValueException("VM with VM Snapshots cannot be migrated with storage, please remove all VM snapshots");
         }
 

@@ -809,7 +809,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 if (ObjectUtils.anyNotNull(uefiEnabled, virtv2vVersion, ovftoolVersion)) {
                     _hostDao.loadDetails(host);
                     boolean updateNeeded = false;
-                    if (!uefiEnabled.equals(host.getDetails().get(Host.HOST_UEFI_ENABLE))) {
+                    if (StringUtils.isNotBlank(uefiEnabled) && !uefiEnabled.equals(host.getDetails().get(Host.HOST_UEFI_ENABLE))) {
                         host.getDetails().put(Host.HOST_UEFI_ENABLE, uefiEnabled);
                         updateNeeded = true;
                     }
