@@ -297,7 +297,7 @@ public class EngineClusterDaoImpl extends GenericDaoBase<EngineClusterVO, Long> 
                     .append("; updatedTime=")
                     .append(oldUpdatedTime);
             } else {
-                logger.debug("Unable to update dataCenter: id=" + vo.getId() + ", as there is no such dataCenter exists in the database anymore");
+                logger.debug("Unable to update dataCenter {} with id={}, as there is no such dataCenter exists in the database anymore", vo, vo.getId());
             }
         }
         return rows > 0;

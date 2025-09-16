@@ -166,7 +166,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
 
     private LdapConfigurationResponse addConfigurationInternal(final String hostname, int port, final Long domainId) throws InvalidParameterValueException {
         // TODO evaluate what the right default should be
-        if(port <= 0) {
+        if (port <= 0) {
             port = 389;
         }
 
@@ -184,6 +184,11 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
             } catch (NamingException | IOException e) {
                 logger.debug("NamingException while doing an LDAP bind", e);
                 throw new InvalidParameterValueException("Unable to bind to the given LDAP server");
+            } catch (RuntimeException e) {
+                if (e.getMessage().contains("Invalid truststore")) {
+                    throw new InvalidParameterValueException("Invalid truststore or truststore password");
+                }
+                throw e;
             } finally {
                 closeContext(context);
             }
@@ -205,7 +210,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
             // TODO return the right account for this user
             final LdapContext context = _ldapContextFactory.createUserContext(principal, password, domainId);
             closeContext(context);
-            if(logger.isTraceEnabled()) {
+            if (logger.isTraceEnabled()) {
                 logger.trace(String.format("User(%s) authenticated for domain(%s)", principal, domainId));
             }
             return true;
@@ -229,7 +234,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
     @Override
     public LdapConfigurationResponse createLdapConfigurationResponse(final LdapConfigurationVO configuration) {
         String domainUuid = null;
-        if(configuration.getDomainId() != null) {
+        if (configuration.getDomainId() != null) {
             DomainVO domain = domainDao.findById(configuration.getDomainId());
             if (domain != null) {
                 domainUuid = domain.getUuid();
@@ -298,8 +303,8 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
             return _ldapUserManagerFactory.getInstance(_ldapConfiguration.getLdapProvider(null)).getUser(escapedUsername, context, domainId);
 
         } catch (NamingException | IOException e) {
-            logger.debug("ldap Exception: ",e);
-            throw new NoLdapUserMatchingQueryException("No Ldap User found for username: "+username);
+            logger.debug("LDAP Exception: ", e);
+            throw new NoLdapUserMatchingQueryException("Unable to find LDAP User for username: " + username + ", due to " + e.getMessage());
         } finally {
             closeContext(context);
         }
@@ -319,8 +324,8 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
             LdapUserManager userManagerFactory = _ldapUserManagerFactory.getInstance(ldapProvider);
             return userManagerFactory.getUser(escapedUsername, type, name, context, domainId);
         } catch (NamingException | IOException e) {
-            logger.debug("ldap Exception: ",e);
-            throw new NoLdapUserMatchingQueryException("No Ldap User found for username: "+username + " in group: " + name + " of type: " + type);
+            logger.debug("LDAP Exception: ", e);
+            throw new NoLdapUserMatchingQueryException("Unable to find LDAP User for username: " + username + " in group: " + name + " of type: " + type + ", due to " + e.getMessage());
         } finally {
             closeContext(context);
         }
@@ -333,7 +338,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
             context = _ldapContextFactory.createBindContext(domainId);
             return _ldapUserManagerFactory.getInstance(_ldapConfiguration.getLdapProvider(domainId)).getUsers(context, domainId);
         } catch (NamingException | IOException e) {
-            logger.debug("ldap Exception: ",e);
+            logger.debug("LDAP Exception: ", e);
             throw new NoLdapUserMatchingQueryException("*");
         } finally {
             closeContext(context);
@@ -347,7 +352,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
             context = _ldapContextFactory.createBindContext(domainId);
             return _ldapUserManagerFactory.getInstance(_ldapConfiguration.getLdapProvider(domainId)).getUsersInGroup(groupName, context, domainId);
         } catch (NamingException | IOException e) {
-            logger.debug("ldap NamingException: ",e);
+            logger.debug("LDAP Exception: ", e);
             throw new NoLdapUserMatchingQueryException("groupName=" + groupName);
         } finally {
             closeContext(context);
@@ -385,7 +390,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
             final String escapedUsername = LdapUtils.escapeLDAPSearchFilter(username);
             return _ldapUserManagerFactory.getInstance(_ldapConfiguration.getLdapProvider(null)).getUsers("*" + escapedUsername + "*", context, null);
         } catch (NamingException | IOException e) {
-            logger.debug("ldap Exception: ",e);
+            logger.debug("LDAP Exception: ",e);
             throw new NoLdapUserMatchingQueryException(username);
         } finally {
             closeContext(context);
@@ -476,7 +481,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
     private void clearOldAccountMapping(LinkAccountToLdapCmd cmd) {
         //        first find if exists log warning and update
         LdapTrustMapVO oldVo = _ldapTrustMapDao.findGroupInDomain(cmd.getDomainId(), cmd.getLdapDomain());
-        if(oldVo != null) {
+        if (oldVo != null) {
             // deal with edge cases, i.e. check if the old account is indeed deleted etc.
             if (oldVo.getAccountId() != 0l) {
                 AccountVO oldAcount = accountDao.findByIdIncludingRemoved(oldVo.getAccountId());

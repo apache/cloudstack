@@ -17,8 +17,11 @@
 package org.apache.cloudstack.api.command.admin.cluster;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import javax.inject.Inject;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -28,7 +31,13 @@ import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.extension.Extension;
+import org.apache.cloudstack.extension.ExtensionHelper;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
+import com.cloud.cpu.CPU;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.org.Cluster;
 import com.cloud.utils.Pair;
 
@@ -36,6 +45,8 @@ import com.cloud.utils.Pair;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListClustersCmd extends BaseListCmd {
 
+    @Inject
+    ExtensionHelper extensionHelper;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -67,6 +78,16 @@ public class ListClustersCmd extends BaseListCmd {
 
     @Parameter(name = ApiConstants.SHOW_CAPACITIES, type = CommandType.BOOLEAN, description = "flag to display the capacity of the clusters")
     private Boolean showCapacities;
+
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+            description = "CPU arch of the clusters",
+            since = "4.20.1")
+    private String arch;
+
+    @Parameter(name = ApiConstants.STORAGE_ACCESS_GROUP, type = CommandType.STRING,
+            description = "the name of the storage access group",
+            since = "4.21.0")
+    private String storageAccessGroup;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -112,25 +133,64 @@ public class ListClustersCmd extends BaseListCmd {
         return showCapacities;
     }
 
+    public CPU.CPUArch getArch() {
+        return StringUtils.isBlank(arch) ? null : CPU.CPUArch.fromType(arch);
+    }
+
+    public String getStorageAccessGroup() {
+        return storageAccessGroup;
+    }
+
+    public ListClustersCmd() {
+
+    }
+
+    public ListClustersCmd(String storageAccessGroup) {
+        this.storageAccessGroup = storageAccessGroup;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+    protected void updateClustersExtensions(final List<ClusterResponse> clusterResponses) {
+        if (CollectionUtils.isEmpty(clusterResponses)) {
+            return;
+        }
+        Map<Long, Extension> idExtensionMap = new HashMap<>();
+        for  (ClusterResponse response : clusterResponses) {
+            if (!Hypervisor.HypervisorType.External.getHypervisorDisplayName().equals(response.getHypervisorType())) {
+                continue;
+            }
+            Long extensionId = extensionHelper.getExtensionIdForCluster(response.getInternalId());
+            if (extensionId == null) {
+                continue;
+            }
+            Extension extension = idExtensionMap.computeIfAbsent(extensionId, id -> extensionHelper.getExtension(id));
+            if (extension == null) {
+                continue;
+            }
+            response.setExtensionId(extension.getUuid());
+            response.setExtensionName(extension.getName());
+        }
+    }
+
     protected Pair<List<ClusterResponse>, Integer> getClusterResponses() {
         Pair<List<? extends Cluster>, Integer> result = _mgr.searchForClusters(this);
-        List<ClusterResponse> clusterResponses = new ArrayList<ClusterResponse>();
+        List<ClusterResponse> clusterResponses = new ArrayList<>();
         for (Cluster cluster : result.first()) {
             ClusterResponse clusterResponse = _responseGenerator.createClusterResponse(cluster, showCapacities);
             clusterResponse.setObjectName("cluster");
             clusterResponses.add(clusterResponse);
         }
-        return new Pair<List<ClusterResponse>, Integer>(clusterResponses, result.second());
+        updateClustersExtensions(clusterResponses);
+        return new Pair<>(clusterResponses, result.second());
     }
 
     @Override
     public void execute() {
         Pair<List<ClusterResponse>, Integer> clusterResponses = getClusterResponses();
-        ListResponse<ClusterResponse> response = new ListResponse<ClusterResponse>();
+        ListResponse<ClusterResponse> response = new ListResponse<>();
         response.setResponses(clusterResponses.first(), clusterResponses.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);

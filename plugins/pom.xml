@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.21.0.0-SNAPSHOT</version>
+        <version>4.22.0.0-SNAPSHOT</version>
     </parent>
     <build>
         <plugins>
@@ -87,10 +87,9 @@
         <module>host-allocators/random</module>
 
         <module>hypervisors/baremetal</module>
+        <module>hypervisors/external</module>
         <module>hypervisors/hyperv</module>
         <module>hypervisors/kvm</module>
-        <module>hypervisors/ovm3</module>
-        <module>hypervisors/ovm</module>
         <module>hypervisors/ucs</module>
         <module>hypervisors/xenserver</module>
 
@@ -118,7 +117,7 @@
         <module>outofbandmanagement-drivers/nested-cloudstack</module>
         <module>outofbandmanagement-drivers/redfish</module>
 
-        <module>shutdown</module>
+        <module>maintenance</module>
 
         <module>storage/sharedfs/storagevm</module>
         <module>storage/image/default</module>
@@ -139,6 +138,7 @@
         <module>storage/volume/primera</module>
         <module>storage/object/minio</module>
         <module>storage/object/ceph</module>
+        <module>storage/object/cloudian</module>
         <module>storage/object/simulator</module>
 
 
@@ -233,6 +233,7 @@
                 <module>hypervisors/vmware</module>
                 <module>network-elements/cisco-vnmc</module>
                 <module>network-elements/nsx</module>
+                <module>network-elements/netris</module>
                 <module>network-elements/juniper-contrail</module>
                 <module>network-elements/tungsten</module>
             </modules>

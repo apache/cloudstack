@@ -87,7 +87,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 
 const BASIC_ZONE = 'Basic'
 const ADVANCED_ZONE = 'Advanced'
@@ -125,6 +125,7 @@ export default {
         launching: 'message.please.wait.while.zone.is.being.created'
       },
       nsx: false,
+      netris: false,
       isLaunchZone: false,
       processStatus: null,
       messageError: '',
@@ -218,6 +219,7 @@ export default {
       const index = this.steps.findIndex(step => step.index === this.currentStep)
       this.steps[index].status = status
       this.nsx = false
+      this.netris = false
     },
     handleBack (e) {
       this.$emit('backPressed')
@@ -470,7 +472,6 @@ export default {
           if (physicalNetwork.tags) {
             params.tags = physicalNetwork.tags
           }
-
           try {
             if (!this.stepData.stepMove.includes('createPhysicalNetwork' + index)) {
               const physicalNetworkResult = await this.createPhysicalNetwork(params)
@@ -487,7 +488,10 @@ export default {
               if (physicalNetwork.isolationMethod === 'NSX' &&
                 physicalNetwork.traffics.findIndex(traffic => traffic.type === 'public' || traffic.type === 'guest') > -1) {
                 this.stepData.isNsxZone = true
-                this.stepData.tungstenPhysicalNetworkId = physicalNetworkReturned.id
+              }
+              if (physicalNetwork.isolationMethod.toLowerCase() === 'netris' &&
+                physicalNetwork.traffics.findIndex(traffic => traffic.type === 'public' || traffic.type === 'guest') > -1) {
+                this.stepData.isNetrisZone = true
               }
             } else {
               this.stepData.physicalNetworkReturned = this.stepData.physicalNetworkItem['createPhysicalNetwork' + index]
@@ -899,6 +903,17 @@ export default {
         this.setStepStatus(STATUS_FAILED)
       }
     },
+    async stepNetworkingProviderOrStorageTraffic () {
+      if (this.stepData.isTungstenZone) {
+        await this.stepCreateTungstenFabricPublicNetwork()
+      } else if (this.stepData.isNsxZone) {
+        await this.stepAddNsxController()
+      } else if (this.stepData.isNetrisZone) {
+        await this.stepAddNetrisProvider()
+      } else {
+        await this.stepConfigureStorageTraffic()
+      }
+    },
     async stepConfigurePublicTraffic (message, trafficType, idx) {
       if (
         (this.isBasicZone &&
@@ -909,12 +924,14 @@ export default {
         this.addStep(message, trafficType)
         if (trafficType === 'nsxPublicTraffic') {
           this.nsx = false
+        } else if (trafficType === 'netrisPublicTraffic') {
+          this.netris = false
         }
 
         let stopNow = false
         this.stepData.returnedPublicTraffic = this.stepData?.returnedPublicTraffic || []
         let publicIpRanges = this.prefillContent['public-ipranges']
-        publicIpRanges = publicIpRanges.filter(item => item.fornsx === (idx === 1))
+        publicIpRanges = publicIpRanges.filter(item => (item.fornsx || item.fornetris) === (idx === 1))
         for (let index = 0; index < publicIpRanges.length; index++) {
           const publicVlanIpRange = publicIpRanges[index]
           let isExisting = false
@@ -937,16 +954,22 @@ export default {
           params.zoneId = this.stepData.zoneReturned.id
           if (publicVlanIpRange.vlan && publicVlanIpRange.vlan.length > 0) {
             params.vlan = publicVlanIpRange.vlan
-          } else if (publicVlanIpRange.fornsx) {
+          } else if (publicVlanIpRange.fornsx || publicVlanIpRange.fornetris) { // TODO: should this be the same for Netris?
             params.vlan = null
           } else {
             params.vlan = 'untagged'
+          }
+          let provider = null
+          if (publicVlanIpRange.fornsx) {
+            provider = 'Nsx'
+          } else if (publicVlanIpRange.fornetris) {
+            provider = 'Netris'
           }
           params.gateway = publicVlanIpRange.gateway
           params.netmask = publicVlanIpRange.netmask
           params.startip = publicVlanIpRange.startIp
           params.endip = publicVlanIpRange.endIp
-          params.fornsx = publicVlanIpRange.fornsx
+          params.provider = provider
           params.forsystemvms = publicVlanIpRange.forsystemvms
 
           if (this.isBasicZone) {
@@ -979,17 +1002,17 @@ export default {
         if (stopNow) {
           return
         }
-
         if (idx === 0) {
-          await this.stepConfigurePublicTraffic('message.configuring.nsx.public.traffic', 'nsxPublicTraffic', 1)
-        } else {
-          if (this.stepData.isTungstenZone) {
-            await this.stepCreateTungstenFabricPublicNetwork()
-          } else if (this.stepData.isNsxZone) {
-            await this.stepAddNsxController()
+          const isolationMethods = Object.values(this.stepData.physicalNetworkItem).map(network => network.isolationmethods.toLowerCase())
+          if (isolationMethods.includes('nsx')) {
+            await this.stepConfigurePublicTraffic('message.configuring.nsx.public.traffic', 'nsxPublicTraffic', 1)
+          } else if (isolationMethods.includes('netris')) {
+            await this.stepConfigurePublicTraffic('message.configuring.netris.public.traffic', 'netrisPublicTraffic', 1)
           } else {
-            await this.stepConfigureStorageTraffic()
+            await this.stepNetworkingProviderOrStorageTraffic()
           }
+        } else {
+          await this.stepNetworkingProviderOrStorageTraffic()
         }
       } else if (this.isAdvancedZone && this.sgEnabled) {
         if (this.stepData.isTungstenZone) {
@@ -1080,9 +1103,53 @@ export default {
           providerParams.transportzone = this.prefillContent?.transportZone || ''
 
           await this.addNsxController(providerParams)
+          await this.updateNsxServiceProviderStatus()
           this.stepData.stepMove.push('addNsxController')
         }
         this.stepData.stepMove.push('nsx')
+        await this.stepConfigureStorageTraffic()
+      } catch (e) {
+        this.messageError = e
+        this.processStatus = STATUS_FAILED
+        this.setStepStatus(STATUS_FAILED)
+      }
+    },
+    async updateNsxServiceProviderStatus () {
+      const listParams = {}
+      listParams.name = 'Nsx'
+      const nsxPhysicalNetwork = this.stepData.physicalNetworksReturned.find(net => net.isolationmethods.trim().toUpperCase() === 'NSX')
+      const nsxPhysicalNetworkId = nsxPhysicalNetwork?.id || null
+      listParams.physicalNetworkId = nsxPhysicalNetworkId
+      const nsxProviderId = await this.listNetworkServiceProviders(listParams, 'nsxProvider')
+      console.log(nsxProviderId)
+      if (nsxProviderId !== null) {
+        await this.updateNetworkServiceProvider(nsxProviderId)
+      }
+    },
+    async stepAddNetrisProvider () {
+      this.setStepStatus(STATUS_FINISH)
+      this.currentStep++
+      this.addStep('message.add.netris.controller', 'netris')
+      if (this.stepData.stepMove.includes('netris')) {
+        await this.stepConfigureStorageTraffic()
+        return
+      }
+      try {
+        if (!this.stepData.stepMove.includes('addNetrisProvider')) {
+          const providerParams = {}
+          providerParams.name = this.prefillContent?.netrisName || ''
+          providerParams.netrisurl = this.prefillContent?.netrisurl || ''
+          providerParams.username = this.prefillContent?.username || ''
+          providerParams.password = this.prefillContent?.password || ''
+          providerParams.zoneid = this.stepData.zoneReturned.id
+          providerParams.sitename = this.prefillContent?.siteName || ''
+          providerParams.tenantname = this.prefillContent?.tenantName || ''
+          providerParams.netristag = this.prefillContent?.netrisTag || ''
+
+          await this.addNetrisProvider(providerParams)
+          this.stepData.stepMove.push('addNetrisProvider')
+        }
+        this.stepData.stepMove.push('netris')
         await this.stepConfigureStorageTraffic()
       } catch (e) {
         this.messageError = e
@@ -1280,9 +1347,10 @@ export default {
       params.clustertype = clusterType
       params.podId = this.stepData.podReturned.id
       let clusterName = this.prefillContent?.clusterName || null
-      if (this.isEdgeZone) {
+      if (!clusterName && this.isEdgeZone) {
         clusterName = 'Cluster-' + this.stepData.zoneReturned.name
       }
+      params.arch = this.prefillContent?.arch || null
 
       if (hypervisor === 'VMware') {
         params.username = this.prefillContent?.vCenterUsername || null
@@ -1485,6 +1553,10 @@ export default {
         const rbdpool = this.prefillContent?.primaryStorageRADOSPool || ''
         const rbdid = this.prefillContent?.primaryStorageRADOSUser || ''
         const rbdsecret = this.prefillContent?.primaryStorageRADOSSecret || ''
+
+        if (this.prefillContent?.primaryStorageDataPool) {
+          params['details[0].rbd_default_data_pool'] = this.prefillContent.primaryStorageDataPool
+        }
         url = this.rbdURL(rbdmonitor, rbdpool, rbdid, rbdsecret)
       } else if (protocol === 'Linstor') {
         url = this.linstorURL(server)
@@ -1718,8 +1790,13 @@ export default {
         await this.$message.success('Success')
         this.loading = false
         this.steps = []
-        this.$emit('closeAction')
-        this.$emit('refresh-data')
+        if (this.prefillContent.hypervisor === 'KVM') {
+          this.$emit('fieldsChanged', { zoneReturned: { id: this.stepData.zoneReturned.id } })
+          this.$emit('nextPressed')
+        } else {
+          this.$emit('closeAction')
+          this.$emit('refresh-data')
+        }
       } catch (e) {
         this.loading = false
         await this.$notification.error({
@@ -1731,7 +1808,7 @@ export default {
     async pollJob (jobId) {
       return new Promise(resolve => {
         const asyncJobInterval = setInterval(() => {
-          api('queryAsyncJobResult', { jobId }).then(async json => {
+          getAPI('queryAsyncJobResult', { jobId }).then(async json => {
             const result = json.queryasyncjobresultresponse
             if (result.jobstatus === 0) {
               return
@@ -1747,7 +1824,7 @@ export default {
       return new Promise((resolve, reject) => {
         let message = ''
 
-        api('createZone', args).then(json => {
+        postAPI('createZone', args).then(json => {
           const zone = json.createzoneresponse.zone
           resolve(zone)
         }).catch(error => {
@@ -1760,7 +1837,7 @@ export default {
       return new Promise((resolve, reject) => {
         let message = ''
 
-        api('dedicateZone', args).then(json => {
+        postAPI('dedicateZone', args).then(json => {
           resolve()
         }).catch(error => {
           message = error.response.headers['x-description']
@@ -1772,7 +1849,7 @@ export default {
       return new Promise((resolve, reject) => {
         let message = ''
 
-        api('createPhysicalNetwork', args).then(async json => {
+        postAPI('createPhysicalNetwork', args).then(async json => {
           const jobId = json.createphysicalnetworkresponse.jobid
           if (jobId) {
             const result = await this.pollJob(jobId)
@@ -1800,7 +1877,7 @@ export default {
       return new Promise((resolve, reject) => {
         let message = ''
 
-        api('addTrafficType', params).then(async json => {
+        postAPI('addTrafficType', params).then(async json => {
           const jobId = json.addtraffictyperesponse.jobid
           if (jobId) {
             const result = await this.pollJob(jobId)
@@ -1824,7 +1901,7 @@ export default {
       return new Promise((resolve, reject) => {
         let message = ''
 
-        api('updatePhysicalNetwork', args).then(async json => {
+        postAPI('updatePhysicalNetwork', args).then(async json => {
           const jobId = json.updatephysicalnetworkresponse.jobid
           if (jobId) {
             const result = await this.pollJob(jobId)
@@ -1846,7 +1923,7 @@ export default {
         let providerId = null
         let message = ''
 
-        api('listNetworkServiceProviders', params).then(json => {
+        getAPI('listNetworkServiceProviders', params).then(json => {
           const items = json.listnetworkserviceprovidersresponse.networkserviceprovider
           if (items != null && items.length > 0) {
             providerId = items[0].id
@@ -1868,7 +1945,7 @@ export default {
         let virtualRouterElementId = null
         let message = ''
 
-        api('listVirtualRouterElements', { nspid: virtualRouterProviderId }).then(json => {
+        getAPI('listVirtualRouterElements', { nspid: virtualRouterProviderId }).then(json => {
           const items = json.listvirtualrouterelementsresponse.virtualrouterelement
           if (items != null && items.length > 0) {
             virtualRouterElementId = items[0].id
@@ -1892,7 +1969,7 @@ export default {
         params.enabled = true
         params.id = virtualRouterElementId
 
-        api('configureVirtualRouterElement', params).then(async json => {
+        postAPI('configureVirtualRouterElement', params).then(async json => {
           const jobId = json.configurevirtualrouterelementresponse.jobid
           if (jobId) {
             const result = await this.pollJob(jobId)
@@ -1917,7 +1994,7 @@ export default {
         params.id = providerId
         params.state = 'Enabled'
 
-        api('updateNetworkServiceProvider', params).then(async json => {
+        postAPI('updateNetworkServiceProvider', params).then(async json => {
           const jobId = json.updatenetworkserviceproviderresponse.jobid
           if (jobId) {
             const result = await this.pollJob(jobId)
@@ -1948,7 +2025,7 @@ export default {
         let message = ''
         let ovsElementId = null
 
-        api('listOvsElements', { nspid: ovsProviderId }).then(json => {
+        getAPI('listOvsElements', { nspid: ovsProviderId }).then(json => {
           const items = json.listovselementsresponse.ovselement
           if (items != null && items.length > 0) {
             ovsElementId = items[0].id
@@ -1964,7 +2041,7 @@ export default {
       return new Promise((resolve, reject) => {
         let message = ''
 
-        api('configureOvsElement', { enabled: true, id: ovsElementId }).then(async json => {
+        postAPI('configureOvsElement', { enabled: true, id: ovsElementId }).then(async json => {
           const jobId = json.configureovselementresponse.jobid
           if (jobId) {
             const result = await this.pollJob(jobId)
@@ -1986,7 +2063,7 @@ export default {
         let internalLbElementId = null
         let message = ''
 
-        api('listInternalLoadBalancerElements', { nspid: internalLbProviderId }).then(json => {
+        getAPI('listInternalLoadBalancerElements', { nspid: internalLbProviderId }).then(json => {
           const items = json.listinternalloadbalancerelementsresponse.internalloadbalancerelement
           if (items != null && items.length > 0) {
             internalLbElementId = items[0].id
@@ -2006,7 +2083,7 @@ export default {
     configureInternalLoadBalancerElement (internalLbElementId) {
       return new Promise((resolve, reject) => {
         let message = ''
-        api('configureInternalLoadBalancerElement', { enabled: true, id: internalLbElementId }).then(async json => {
+        postAPI('configureInternalLoadBalancerElement', { enabled: true, id: internalLbElementId }).then(async json => {
           const jobId = json.configureinternalloadbalancerelementresponse.jobid
           if (jobId) {
             const result = await this.pollJob(jobId)
@@ -2027,7 +2104,7 @@ export default {
       return new Promise((resolve, reject) => {
         let message = ''
 
-        api('addNetworkServiceProvider', arg).then(async json => {
+        postAPI('addNetworkServiceProvider', arg).then(async json => {
           const jobId = json.addnetworkserviceproviderresponse.jobid
           if (jobId) {
             const result = await this.pollJob(jobId)
@@ -2048,7 +2125,7 @@ export default {
       return new Promise((resolve, reject) => {
         let message = ''
 
-        api('createNetwork', args).then(json => {
+        postAPI('createNetwork', args).then(json => {
           const returnedGuestNetwork = json.createnetworkresponse.network
           resolve(returnedGuestNetwork)
         }).catch(error => {
@@ -2061,7 +2138,7 @@ export default {
       return new Promise((resolve, reject) => {
         let message = ''
 
-        api('createPod', args).then(json => {
+        postAPI('createPod', args).then(json => {
           const returnedPod = json.createpodresponse.pod
           resolve(returnedPod)
         }).catch(error => {
@@ -2074,7 +2151,7 @@ export default {
       return new Promise((resolve, reject) => {
         let message = ''
 
-        api('createVlanIpRange', args).then(json => {
+        postAPI('createVlanIpRange', args).then(json => {
           const item = json.createvlaniprangeresponse.vlan
           resolve(item)
         }).catch(error => {
@@ -2087,7 +2164,7 @@ export default {
       return new Promise((resolve, reject) => {
         let message = ''
 
-        api('createStorageNetworkIpRange', args).then(async json => {
+        postAPI('createStorageNetworkIpRange', args).then(async json => {
           const jobId = json.createstoragenetworkiprangeresponse.jobid
           resolve({
             jobid: jobId,
@@ -2103,7 +2180,7 @@ export default {
       return new Promise((resolve, reject) => {
         let message = ''
 
-        api('addVmwareDc', {}, 'POST', args).then(json => {
+        postAPI('addVmwareDc', args).then(json => {
           const item = json.addvmwaredcresponse.vmwaredc
           resolve(item)
         }).catch(error => {
@@ -2116,7 +2193,7 @@ export default {
       return new Promise((resolve, reject) => {
         let message = ''
 
-        api('addCluster', args, 'POST').then(json => {
+        postAPI('addCluster', args).then(json => {
           const result = json.addclusterresponse.cluster[0]
           resolve(result)
         }).catch(error => {
@@ -2129,21 +2206,9 @@ export default {
       return new Promise((resolve, reject) => {
         let message = ''
 
-        api('addHost', {}, 'POST', args).then(json => {
+        postAPI('addHost', args).then(json => {
           const result = json.addhostresponse.host[0]
           resolve(result)
-        }).catch(error => {
-          message = error.response.headers['x-description']
-          reject(message)
-        })
-      })
-    },
-    updateConfiguration (args) {
-      return new Promise((resolve, reject) => {
-        let message = ''
-
-        api('updateConfiguration', args).then(json => {
-          resolve()
         }).catch(error => {
           message = error.response.headers['x-description']
           if (message.includes('is already in the database')) {
@@ -2154,11 +2219,23 @@ export default {
         })
       })
     },
+    updateConfiguration (args) {
+      return new Promise((resolve, reject) => {
+        let message = ''
+
+        postAPI('updateConfiguration', args).then(json => {
+          resolve()
+        }).catch(error => {
+          message = error.response.headers['x-description']
+          reject(message)
+        })
+      })
+    },
     createStoragePool (args) {
       return new Promise((resolve, reject) => {
         let message = ''
 
-        api('createStoragePool', args).then(json => {
+        postAPI('createStoragePool', args).then(json => {
           const result = json.createstoragepoolresponse.storagepool
           resolve(result)
         }).catch(error => {
@@ -2171,7 +2248,7 @@ export default {
       return new Promise((resolve, reject) => {
         let message = ''
 
-        api('addImageStore', args).then(json => {
+        postAPI('addImageStore', args).then(json => {
           const result = json.addimagestoreresponse.secondarystorage
           resolve(result)
         }).catch(error => {
@@ -2184,7 +2261,7 @@ export default {
       return new Promise((resolve, reject) => {
         let message = ''
 
-        api('createSecondaryStagingStore', args).then(json => {
+        postAPI('createSecondaryStagingStore', args).then(json => {
           const result = json.addimagestoreresponse.secondarystorage
           resolve(result)
         }).catch(error => {
@@ -2197,7 +2274,7 @@ export default {
       return new Promise((resolve, reject) => {
         let message = ''
 
-        api('addNetscalerLoadBalancer', {}, 'POST', args).then(async json => {
+        postAPI('addNetscalerLoadBalancer', args).then(async json => {
           const jobId = json.addnetscalerloadbalancerresponse.jobid
           if (jobId) {
             const result = await this.pollJob(jobId)
@@ -2218,7 +2295,7 @@ export default {
       return new Promise((resolve, reject) => {
         let message = ''
 
-        api('updateZone', args).then(json => {
+        postAPI('updateZone', args).then(json => {
           const result = json.updatezoneresponse.zone
           resolve(result)
         }).catch(error => {
@@ -2229,7 +2306,7 @@ export default {
     },
     createTungstenFabricProvider (args) {
       return new Promise((resolve, reject) => {
-        api('createTungstenFabricProvider', {}, 'POST', args).then(json => {
+        postAPI('createTungstenFabricProvider', args).then(json => {
           resolve()
         }).catch(error => {
           const message = error.response.headers['x-description']
@@ -2239,7 +2316,17 @@ export default {
     },
     addNsxController (args) {
       return new Promise((resolve, reject) => {
-        api('addNsxController', {}, 'POST', args).then(json => {
+        postAPI('addNsxController', args).then(json => {
+          resolve()
+        }).catch(error => {
+          const message = error.response.headers['x-description']
+          reject(message)
+        })
+      })
+    },
+    addNetrisProvider (args) {
+      return new Promise((resolve, reject) => {
+        postAPI('addNetrisProvider', args).then(json => {
           resolve()
         }).catch(error => {
           const message = error.response.headers['x-description']
@@ -2249,7 +2336,7 @@ export default {
     },
     configTungstenFabricService (args) {
       return new Promise((resolve, reject) => {
-        api('configTungstenFabricService', {}, 'POST', args).then(json => {
+        postAPI('configTungstenFabricService', args).then(json => {
           resolve()
         }).catch(error => {
           const message = error.response.headers['x-description']
@@ -2259,7 +2346,7 @@ export default {
     },
     createTungstenFabricManagementNetwork (args) {
       return new Promise((resolve, reject) => {
-        api('createTungstenFabricManagementNetwork', args).then(json => {
+        postAPI('createTungstenFabricManagementNetwork', args).then(json => {
           resolve()
         }).catch(error => {
           const message = error.response.headers['x-description']
@@ -2269,7 +2356,7 @@ export default {
     },
     createTungstenFabricPublicNetwork (args) {
       return new Promise((resolve, reject) => {
-        api('createTungstenFabricPublicNetwork', args).then(json => {
+        postAPI('createTungstenFabricPublicNetwork', args).then(json => {
           resolve()
         }).catch(error => {
           const message = error.response.headers['x-description']

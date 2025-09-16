@@ -1,6 +1,6 @@
 /*
  * noVNC: HTML5 VNC client
- * Copyright (C) 2019 The noVNC Authors
+ * Copyright (C) 2019 The noVNC authors
  * Licensed under MPL 2.0 (see LICENSE.txt)
  *
  * See README.md for usage and integration instructions.
@@ -20,7 +20,11 @@ import * as WebUtil from "./webutil.js";
 
 const PAGE_TITLE = "noVNC";
 
+const LINGUAS = ["cs", "de", "el", "es", "fr", "it", "ja", "ko", "nl", "pl", "pt_BR", "ru", "sv", "tr", "zh_CN", "zh_TW"];
+
 const UI = {
+
+    customSettings: {},
 
     connected: false,
     desktopName: "",
@@ -41,23 +45,33 @@ const UI = {
     inhibitReconnect: true,
     reconnectCallback: null,
     reconnectPassword: null,
-
     fullScreen: false,
 
-    prime() {
-        return WebUtil.initSettings().then(() => {
-            if (document.readyState === "interactive" || document.readyState === "complete") {
-                return UI.start();
-            }
+    async start(options={}) {
+        UI.customSettings = options.settings || {};
+        if (UI.customSettings.defaults === undefined) {
+            UI.customSettings.defaults = {};
+        }
+        if (UI.customSettings.mandatory === undefined) {
+            UI.customSettings.mandatory = {};
+        }
 
-            return new Promise((resolve, reject) => {
-                document.addEventListener('DOMContentLoaded', () => UI.start().then(resolve).catch(reject));
+        // Set up translations
+        try {
+            await l10n.setup(LINGUAS, "app/locale/");
+        } catch (err) {
+            Log.Error("Failed to load translations: " + err);
+        }
+
+        // Initialize setting storage
+        await WebUtil.initSettings();
+
+        // Wait for the page to load
+        if (document.readyState !== "interactive" && document.readyState !== "complete") {
+            await new Promise((resolve, reject) => {
+                document.addEventListener('DOMContentLoaded', resolve);
             });
-        });
-    },
-
-    // Render default UI and initialize settings menu
-    start() {
+        }
 
         UI.initSettings();
 
@@ -68,26 +82,24 @@ const UI = {
         // insecure context
         if (!window.isSecureContext) {
             // FIXME: This gets hidden when connecting
-            UI.showStatus(_("HTTPS is required for full functionality"), 'error');
+            UI.showStatus(_("Running without HTTPS is not recommended, crashes or other issues are likely."), 'error');
         }
 
         // Try to fetch version number
-        fetch('./package.json')
-            .then((response) => {
-                if (!response.ok) {
-                    throw Error("" + response.status + " " + response.statusText);
-                }
-                return response.json();
-            })
-            .then((packageInfo) => {
-                Array.from(document.getElementsByClassName('noVNC_version')).forEach(el => el.innerText = packageInfo.version);
-            })
-            .catch((err) => {
-                Log.Error("Couldn't fetch package.json: " + err);
-                Array.from(document.getElementsByClassName('noVNC_version_wrapper'))
-                    .concat(Array.from(document.getElementsByClassName('noVNC_version_separator')))
-                    .forEach(el => el.style.display = 'none');
-            });
+        try {
+            let response = await fetch('./package.json');
+            if (!response.ok) {
+                throw Error("" + response.status + " " + response.statusText);
+            }
+
+            let packageInfo = await response.json();
+            Array.from(document.getElementsByClassName('noVNC_version')).forEach(el => el.innerText = packageInfo.version);
+        } catch (err) {
+            Log.Error("Couldn't fetch package.json: " + err);
+            Array.from(document.getElementsByClassName('noVNC_version_wrapper'))
+                .concat(Array.from(document.getElementsByClassName('noVNC_version_separator')))
+                .forEach(el => el.style.display = 'none');
+        }
 
         // Adapt the interface for touch screen devices
         if (isTouchDevice) {
@@ -122,7 +134,7 @@ const UI = {
 
         document.documentElement.classList.remove("noVNC_loading");
 
-        let autoconnect = WebUtil.getConfigVar('autoconnect', false);
+        let autoconnect = UI.getSetting('autoconnect');
         if (autoconnect === 'true' || autoconnect == '1') {
             autoconnect = true;
             UI.connect();
@@ -131,8 +143,6 @@ const UI = {
             // Show the connect panel on first load unless autoconnecting
             UI.openConnectPanel();
         }
-
-        return Promise.resolve(UI.rfb);
     },
 
     initFullscreen() {
@@ -160,6 +170,8 @@ const UI = {
         UI.initSetting('logging', 'warn');
         UI.updateLogging();
 
+        UI.setupSettingLabels();
+
         // if port == 80 (or 443) then it won't be present and should be
         // set manually
         let port = window.location.port;
@@ -177,19 +189,20 @@ const UI = {
         UI.initSetting('port', port);
         UI.initSetting('token', window.location.token);
         UI.initSetting('encrypt', (window.location.protocol === "https:"));
+        UI.initSetting('password');
+        UI.initSetting('autoconnect', false);
         UI.initSetting('view_clip', false);
         UI.initSetting('resize', 'off');
         UI.initSetting('quality', 6);
         UI.initSetting('compression', 2);
         UI.initSetting('shared', true);
+        UI.initSetting('bell', 'on');
         UI.initSetting('view_only', false);
         UI.initSetting('show_dot', false);
         UI.initSetting('path', 'websockify');
         UI.initSetting('repeaterID', '');
         UI.initSetting('reconnect', false);
         UI.initSetting('reconnect_delay', 5000);
-
-        UI.setupSettingLabels();
     },
     // Adds a link to the label elements on the corresponding input elements
     setupSettingLabels() {
@@ -767,6 +780,10 @@ const UI = {
 
     // Initial page load read/initialization of settings
     initSetting(name, defVal) {
+        // Has the user overridden the default value?
+        if (name in UI.customSettings.defaults) {
+            defVal = UI.customSettings.defaults[name];
+        }
         // Check Query string followed by cookie
         let val = WebUtil.getConfigVar(name);
         if (val === null) {
@@ -774,6 +791,11 @@ const UI = {
         }
         WebUtil.setSetting(name, val);
         UI.updateSetting(name);
+        // Has the user forced a value?
+        if (name in UI.customSettings.mandatory) {
+            val = UI.customSettings.mandatory[name];
+            UI.forceSetting(name, val);
+        }
         return val;
     },
 
@@ -792,9 +814,12 @@ const UI = {
         let value = UI.getSetting(name);
 
         const ctrl = document.getElementById('noVNC_setting_' + name);
+        if (ctrl === null) {
+            return;
+        }
+
         if (ctrl.type === 'checkbox') {
             ctrl.checked = value;
-
         } else if (typeof ctrl.options !== 'undefined') {
             for (let i = 0; i < ctrl.options.length; i += 1) {
                 if (ctrl.options[i].value === value) {
@@ -827,7 +852,8 @@ const UI = {
     getSetting(name) {
         const ctrl = document.getElementById('noVNC_setting_' + name);
         let val = WebUtil.readSetting(name);
-        if (typeof val !== 'undefined' && val !== null && ctrl.type === 'checkbox') {
+        if (typeof val !== 'undefined' && val !== null &&
+            ctrl !== null && ctrl.type === 'checkbox') {
             if (val.toString().toLowerCase() in {'0': 1, 'no': 1, 'false': 1}) {
                 val = false;
             } else {
@@ -842,14 +868,22 @@ const UI = {
     // disable the labels that belong to disabled input elements.
     disableSetting(name) {
         const ctrl = document.getElementById('noVNC_setting_' + name);
-        ctrl.disabled = true;
-        ctrl.label.classList.add('noVNC_disabled');
+        if (ctrl !== null) {
+            ctrl.disabled = true;
+            if (ctrl.label !== undefined) {
+                ctrl.label.classList.add('noVNC_disabled');
+            }
+        }
     },
 
     enableSetting(name) {
         const ctrl = document.getElementById('noVNC_setting_' + name);
-        ctrl.disabled = false;
-        ctrl.label.classList.remove('noVNC_disabled');
+        if (ctrl !== null) {
+            ctrl.disabled = false;
+            if (ctrl.label !== undefined) {
+                ctrl.label.classList.remove('noVNC_disabled');
+            }
+        }
     },
 
 /* ------^-------
@@ -1040,7 +1074,7 @@ const UI = {
         const extra = UI.getSetting('extra');
 
         if (typeof password === 'undefined') {
-            password = WebUtil.getConfigVar('password');
+            password = UI.getSetting('password');
             UI.reconnectPassword = password;
         }
 
@@ -1050,36 +1084,55 @@ const UI = {
 
         UI.hideStatus();
 
-        if (!host) {
-            Log.Error("Can't connect when host is: " + host);
-            UI.showStatus(_("Must set host"), 'error');
-            return;
-        }
-
         UI.closeConnectPanel();
 
         UI.updateVisualState('connecting');
 
         let url;
 
-        url = UI.getSetting('encrypt') ? 'wss' : 'ws';
+        if (host) {
+            url = new URL("https://" + host);
 
-        url += '://' + host;
-        if (port) {
-            url += ':' + port;
+            url.protocol = UI.getSetting('encrypt') ? 'wss:' : 'ws:';
+            if (port) {
+                url.port = port;
+            }
+
+            // "./" is needed to force URL() to interpret the path-variable as
+            // a path and not as an URL. This is relevant if for example path
+            // starts with more than one "/", in which case it would be
+            // interpreted as a host name instead.
+            url = new URL("./" + path, url);
+        } else {
+            // Current (May 2024) browsers support relative WebSocket
+            // URLs natively, but we need to support older browsers for
+            // some time.
+            url = new URL(path, location.href);
+            url.protocol = (window.location.protocol === "https:") ? 'wss:' : 'ws:';
         }
-        url += '/' + path;
-        url += '?token=' + token;
+
+        url.href += '/' + path;
+        url.href += '?token=' + token;
 
         if (extra) {
-            url += '&extra=' + extra
+            url.href += '&extra=' + extra
         }
 
-        UI.rfb = new RFB(document.getElementById('noVNC_container'), url,
-                         { shared: UI.getSetting('shared'),
-                           repeaterID: UI.getSetting('repeaterID'),
-                           language: WebUtil.getConfigVar('language'),
-                           credentials: { password: password } });
+
+        try {
+            UI.rfb = new RFB(document.getElementById('noVNC_container'),
+                             url.href,
+                             { shared: UI.getSetting('shared'),
+                               repeaterID: UI.getSetting('repeaterID'),
+                               language: WebUtil.getConfigVar('language'),
+                               credentials: { password: password } });
+        } catch (exc) {
+            Log.Error("Failed to connect to server: " + exc);
+            UI.updateVisualState('disconnected');
+            UI.showStatus(_("Failed to connect to server: ") + exc, 'error');
+            return;
+        }
+
         UI.rfb.addEventListener("connect", UI.connectFinished);
         UI.rfb.addEventListener("disconnect", UI.disconnectFinished);
         UI.rfb.addEventListener("serververification", UI.serverVerify);
@@ -1758,7 +1811,7 @@ const UI = {
     },
 
     bell(e) {
-        if (WebUtil.getConfigVar('bell', 'on') === 'on') {
+        if (UI.getSetting('bell') === 'on') {
             const promise = document.getElementById('noVNC_bell').play();
             // The standards disagree on the return value here
             if (promise) {
@@ -1788,23 +1841,5 @@ const UI = {
  * ==============
  */
 };
-
-// Set up translations
-const LINGUAS = ["cs", "de", "el", "es", "fr", "it", "ja", "ko", "nl", "pl", "pt_BR", "ru", "sv", "tr", "zh_CN", "zh_TW"];
-l10n.setup(LINGUAS);
-if (l10n.language === "en" || l10n.dictionary !== undefined) {
-    UI.prime();
-} else {
-    fetch('app/locale/' + l10n.language + '.json')
-        .then((response) => {
-            if (!response.ok) {
-                throw Error("" + response.status + " " + response.statusText);
-            }
-            return response.json();
-        })
-        .then((translations) => { l10n.dictionary = translations; })
-        .catch(err => Log.Error("Failed to load translations: " + err))
-        .then(UI.prime);
-}
 
 export default UI;

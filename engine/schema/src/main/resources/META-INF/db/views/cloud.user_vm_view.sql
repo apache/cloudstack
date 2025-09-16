@@ -83,6 +83,7 @@ SELECT
     `iso`.`uuid` AS `iso_uuid`,
     `iso`.`name` AS `iso_name`,
     `iso`.`display_text` AS `iso_display_text`,
+    `vm_template`.`arch` AS `arch`,
     `service_offering`.`id` AS `service_offering_id`,
     `service_offering`.`uuid` AS `service_offering_uuid`,
     `disk_offering`.`uuid` AS `disk_offering_uuid`,
@@ -102,6 +103,17 @@ SELECT
     `backup_offering`.`uuid` AS `backup_offering_uuid`,
     `backup_offering`.`id` AS `backup_offering_id`,
     `service_offering`.`name` AS `service_offering_name`,
+    `service_offering`.`vgpu_profile_id` AS `vgpu_profile_id`,
+    `vgpu_profile`.`uuid` AS `vgpu_profile_uuid`,
+    `vgpu_profile`.`name` AS `vgpu_profile_name`,
+    `vgpu_profile`.`video_ram` AS `vgpu_profile_video_ram`,
+    `vgpu_profile`.`max_heads` AS `vgpu_profile_max_heads`,
+    `vgpu_profile`.`max_resolution_x` AS `vgpu_profile_max_resolution_x`,
+    `vgpu_profile`.`max_resolution_y` AS `vgpu_profile_max_resolution_y`,
+    `gpu_card`.`id` AS `gpu_card_id`,
+    `gpu_card`.`uuid` AS `gpu_card_uuid`,
+    `gpu_card`.`name` AS `gpu_card_name`,
+    `service_offering`.`gpu_count` AS `gpu_count`,
     `disk_offering`.`name` AS `disk_offering_name`,
     `backup_offering`.`name` AS `backup_offering_name`,
     `storage_pool`.`id` AS `pool_id`,
@@ -168,9 +180,12 @@ SELECT
     `user_data`.`uuid` AS `user_data_uuid`,
     `user_data`.`name` AS `user_data_name`,
     `user_vm`.`user_data_details` AS `user_data_details`,
-    `vm_template`.`user_data_link_policy` AS `user_data_policy`
+    `vm_template`.`user_data_link_policy` AS `user_data_policy`,
+    `lease_expiry_date`.`value` AS `lease_expiry_date`,
+    `lease_expiry_action`.`value` AS `lease_expiry_action`,
+    `lease_action_execution`.`value` AS `lease_action_execution`
 FROM
-    (((((((((((((((((((((((((((((((((((`user_vm`
+    (((((((((((((((((((((((((((((((((((((`user_vm`
         JOIN `vm_instance` ON (((`vm_instance`.`id` = `user_vm`.`id`)
             AND ISNULL(`vm_instance`.`removed`))))
         JOIN `account` ON ((`vm_instance`.`account_id` = `account`.`id`)))
@@ -188,6 +203,8 @@ FROM
         LEFT JOIN `service_offering` ON ((`vm_instance`.`service_offering_id` = `service_offering`.`id`)))
         LEFT JOIN `disk_offering` `svc_disk_offering` ON ((`volumes`.`disk_offering_id` = `svc_disk_offering`.`id`)))
         LEFT JOIN `disk_offering` ON ((`volumes`.`disk_offering_id` = `disk_offering`.`id`)))
+        LEFT JOIN `vgpu_profile` ON ((`service_offering`.`vgpu_profile_id` = `vgpu_profile`.`id`)))
+        LEFT JOIN `gpu_card` ON ((`vgpu_profile`.`card_id` = `gpu_card`.`id`)))
         LEFT JOIN `backup_offering` ON ((`vm_instance`.`backup_offering_id` = `backup_offering`.`id`)))
         LEFT JOIN `storage_pool` ON ((`volumes`.`pool_id` = `storage_pool`.`id`)))
         LEFT JOIN `security_group_vm_map` ON ((`vm_instance`.`id` = `security_group_vm_map`.`instance_id`)))
@@ -199,7 +216,7 @@ FROM
         LEFT JOIN `vpc` ON (((`networks`.`vpc_id` = `vpc`.`id`)
         AND ISNULL(`vpc`.`removed`))))
         LEFT JOIN `user_ip_address` FORCE INDEX(`fk_user_ip_address__vm_id`) ON ((`user_ip_address`.`vm_id` = `vm_instance`.`id`)))
-        LEFT JOIN `user_vm_details` `ssh_details` ON (((`ssh_details`.`vm_id` = `vm_instance`.`id`)
+        LEFT JOIN `vm_instance_details` `ssh_details` ON (((`ssh_details`.`vm_id` = `vm_instance`.`id`)
         AND (`ssh_details`.`name` = 'SSH.KeyPairNames'))))
         LEFT JOIN `resource_tags` ON (((`resource_tags`.`resource_id` = `vm_instance`.`id`)
         AND (`resource_tags`.`resource_type` = 'UserVm'))))
@@ -210,9 +227,15 @@ FROM
         LEFT JOIN `affinity_group` ON ((`affinity_group_vm_map`.`affinity_group_id` = `affinity_group`.`id`)))
         LEFT JOIN `autoscale_vmgroup_vm_map` ON ((`autoscale_vmgroup_vm_map`.`instance_id` = `vm_instance`.`id`)))
         LEFT JOIN `autoscale_vmgroups` ON ((`autoscale_vmgroup_vm_map`.`vmgroup_id` = `autoscale_vmgroups`.`id`)))
-        LEFT JOIN `user_vm_details` `custom_cpu` ON (((`custom_cpu`.`vm_id` = `vm_instance`.`id`)
+        LEFT JOIN `vm_instance_details` `custom_cpu` ON (((`custom_cpu`.`vm_id` = `vm_instance`.`id`)
         AND (`custom_cpu`.`name` = 'CpuNumber'))))
-        LEFT JOIN `user_vm_details` `custom_speed` ON (((`custom_speed`.`vm_id` = `vm_instance`.`id`)
+        LEFT JOIN `vm_instance_details` `custom_speed` ON (((`custom_speed`.`vm_id` = `vm_instance`.`id`)
         AND (`custom_speed`.`name` = 'CpuSpeed'))))
-        LEFT JOIN `user_vm_details` `custom_ram_size` ON (((`custom_ram_size`.`vm_id` = `vm_instance`.`id`)
-        AND (`custom_ram_size`.`name` = 'memory'))));
+        LEFT JOIN `vm_instance_details` `custom_ram_size` ON (((`custom_ram_size`.`vm_id` = `vm_instance`.`id`)
+        AND (`custom_ram_size`.`name` = 'memory')))
+        LEFT JOIN `vm_instance_details` `lease_expiry_date` ON ((`lease_expiry_date`.`vm_id` = `vm_instance`.`id`)
+        AND (`lease_expiry_date`.`name` = 'leaseexpirydate'))
+        LEFT JOIN `vm_instance_details` `lease_action_execution` ON ((`lease_action_execution`.`vm_id` = `vm_instance`.`id`)
+        AND (`lease_action_execution`.`name` = 'leaseactionexecution'))
+        LEFT JOIN `vm_instance_details` `lease_expiry_action` ON (((`lease_expiry_action`.`vm_id` = `vm_instance`.`id`)
+        AND (`lease_expiry_action`.`name` = 'leaseexpiryaction'))));

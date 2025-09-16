@@ -56,4 +56,9 @@ public class IndirectAgentLBRoundRobinAlgorithm implements IndirectAgentLBAlgori
     public boolean compare(final List<String> msList, final List<String> receivedMsList) {
         return msList != null && receivedMsList != null && msList.equals(receivedMsList);
     }
+
+    @Override
+    public boolean isHostListNeeded() {
+        return true;
+    }
 }

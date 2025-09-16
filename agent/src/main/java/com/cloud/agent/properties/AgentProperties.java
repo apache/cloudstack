@@ -156,6 +156,14 @@ public class AgentProperties{
     public static final Property<Integer> CMDS_TIMEOUT = new Property<>("cmds.timeout", 7200);
 
     /**
+     * The timeout (in seconds) for the snapshot merge operation, mainly used for classic volume snapshots and disk-only VM snapshots on file-based storage.<br>
+     * This configuration is only considered if libvirt.events.enabled is also true. <br>
+     * Data type: Integer.<br>
+     * Default value: <code>259200</code>
+     */
+    public static final Property<Integer> QCOW2_DELTA_MERGE_TIMEOUT = new Property<>("qcow2.delta.merge.timeout", 60 * 60 * 72);
+
+    /**
      * This parameter sets the VM migration speed (in mbps). The default value is -1,<br>
      * which means that the agent will try to guess the speed of the guest network and consume all possible bandwidth.<br>
      * When entering a value, make sure to enter it in megabits per second.<br>
@@ -214,6 +222,15 @@ public class AgentProperties{
     public static final Property<String> AGENT_HOOKS_LIBVIRT_VM_XML_TRANSFORMER_SCRIPT = new Property<>("agent.hooks.libvirt_vm_xml_transformer.script", "libvirt-vm-xml-transformer.groovy");
 
     /**
+     * This property is used with the agent.hooks.basedir property to define the Libvirt VM XML transformer shell script.<br>
+     * The shell script is used to execute the Libvirt VM XML transformer script.<br>
+     * For more information see the agent.properties file.<br>
+     * Data type: String.<br>
+     * Default value: <code>libvirt-vm-xml-transformer.sh</code>
+     */
+    public static final Property<String> AGENT_HOOKS_LIBVIRT_VM_XML_TRANSFORMER_SHELL_SCRIPT = new Property<>("agent.hooks.libvirt_vm_xml_transformer.shell_script", "libvirt-vm-xml-transformer.sh");
+
+    /**
      * This property is used with the agent.hooks.basedir and agent.hooks.libvirt_vm_xml_transformer.script properties to define the Libvirt VM XML transformer method.<br>
      * Libvirt XML transformer hook does XML-to-XML transformation.<br>
      * The provider can use this to add/remove/modify some sort of attributes in Libvirt XML domain specification.<br>
@@ -234,6 +251,15 @@ public class AgentProperties{
     public static final Property<String> AGENT_HOOKS_LIBVIRT_VM_ON_START_SCRIPT = new Property<>("agent.hooks.libvirt_vm_on_start.script", "libvirt-vm-state-change.groovy");
 
     /**
+     * This property is used with the agent.hooks.basedir property to define the Libvirt VM on start shell script.<br>
+     * The shell script is used to execute the Libvirt VM on start script.<br>
+     * For more information see the agent.properties file.<br>
+     * Data type: String.<br>
+     * Default value: <code>libvirt-vm-state-change.sh</code>
+     */
+    public static final Property<String> AGENT_HOOKS_LIBVIRT_VM_ON_START_SHELL_SCRIPT = new Property<>("agent.hooks.libvirt_vm_on_start.shell_script", "libvirt-vm-state-change.sh");
+
+    /**
      * This property is used with the agent.hooks.basedir and agent.hooks.libvirt_vm_on_start.script properties to define the Libvirt VM on start method.<br>
      * The hook is called right after Libvirt successfully launched the VM.<br>
      * For more information see the agent.properties file.<br>
@@ -251,6 +277,15 @@ public class AgentProperties{
      * Default value: <code>libvirt-vm-state-change.groovy</code>
      */
     public static final Property<String> AGENT_HOOKS_LIBVIRT_VM_ON_STOP_SCRIPT = new Property<>("agent.hooks.libvirt_vm_on_stop.script", "libvirt-vm-state-change.groovy");
+
+    /**
+     * This property is used with the agent.hooks.basedir property to define the Libvirt VM on stop shell script.<br>
+     * The shell script is used to execute the Libvirt VM on stop script.<br>
+     * For more information see the agent.properties file.<br>
+     * Data type: String.<br>
+     * Default value: <code>libvirt-vm-state-change.sh</code>
+     */
+    public static final Property<String> AGENT_HOOKS_LIBVIRT_VM_ON_STOP_SHELL_SCRIPT = new Property<>("agent.hooks.libvirt_vm_on_stop.shell_script", "libvirt-vm-state-change.sh");
 
     /**
      * This property is used with the agent.hooks.basedir and agent.hooks.libvirt_vm_on_stop.script properties to define the Libvirt VM on stop method.<br>
@@ -383,15 +418,16 @@ public class AgentProperties{
     /**
      * This param will set the CPU architecture for the domain to override what the management server would send.<br>
      * In case of arm64 (aarch64), this will change the machine type to 'virt' and add a SCSI and a USB controller in the domain XML.<br>
-     * Possible values: x86_64 | aarch64 <br>
+     * Possible values: x86_64 | aarch64 | s390x <br>
      * Data type: String.<br>
      * Default value: <code>null</code> (will set use the architecture of the VM's OS).
      */
     public static final Property<String> GUEST_CPU_ARCH = new Property<>("guest.cpu.arch", null, String.class);
 
     /**
-     * This param will require CPU features on the CPU section.<br>
-     * The features listed in this property must be separated by a blank space (see example below).<br>
+     * Specifies required CPU features for end-user and system VMs.<br>
+     * These features must be present on the host CPU for VM deployment.<br>
+     * Multiple features should be separated by whitespace (see example below).<br>
      * Possible values: vmx vme <br>
      * Data type: String.<br>
      * Default value: <code>null</code>
@@ -516,6 +552,7 @@ public class AgentProperties{
     /**
      * The model of Watchdog timer to present to the Guest.<br>
      * For all models refer to the libvirt documentation.<br>
+     * PLEASE NOTE: to disable the watchdogs definitions, use value: none
      * Data type: String.<br>
      * Default value: <code>i6300esb</code>
      */
@@ -810,12 +847,37 @@ public class AgentProperties{
      */
     public static final Property<String> HOST_TAGS = new Property<>("host.tags", null, String.class);
 
+    /**
+     * Timeout for SSL handshake in seconds
+     * Data type: Integer.<br>
+     * Default value: <code>null</code>
+     */
+    public static final Property<Integer> SSL_HANDSHAKE_TIMEOUT = new Property<>("ssl.handshake.timeout", 30, Integer.class);
+
+    /**
+     * Timeout (in seconds) to wait for the incremental snapshot to complete.
+     * */
+    public static final Property<Integer> INCREMENTAL_SNAPSHOT_TIMEOUT = new Property<>("incremental.snapshot.timeout", 10800);
+
+    /**
+     * Timeout (in seconds) to wait for the snapshot reversion to complete.
+     * */
+    public static final Property<Integer> REVERT_SNAPSHOT_TIMEOUT = new Property<>("revert.snapshot.timeout", 10800);
+
+    /**
+     *  If set to true, creates VMs as full clones of their templates on KVM hypervisor. Creates as linked clones otherwise. <br>
+     * Data type: Boolean. <br>
+     * Default value: <code>false</code>
+     */
+    public static final Property<Boolean> CREATE_FULL_CLONE = new Property<>("create.full.clone", false);
+
+
     public static class Property <T>{
         private String name;
         private T defaultValue;
         private Class<T> typeClass;
 
-        Property(String name, T value) {
+        public Property(String name, T value) {
             init(name, value);
         }
 

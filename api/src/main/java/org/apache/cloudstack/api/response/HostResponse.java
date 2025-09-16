@@ -90,7 +90,6 @@ public class HostResponse extends BaseResponseWithAnnotations {
     @SerializedName(ApiConstants.HYPERVISOR)
     @Param(description = "the host hypervisor")
     private String hypervisor;
-
     @SerializedName("cpusockets")
     @Param(description = "the number of CPU sockets on the host")
     private Integer cpuSockets;
@@ -166,6 +165,14 @@ public class HostResponse extends BaseResponseWithAnnotations {
     @Param(description = "the amount of the host's memory currently used")
     private Long memoryUsed;
 
+    @SerializedName("gputotal")
+    @Param(description = "Total GPUs on the Host", responseObject = Long.class, since = "4.21")
+    private Long gpuTotal;
+
+    @SerializedName("gpuused")
+    @Param(description = "Used GPUs on the Host", responseObject = Long.class, since = "4.21")
+    private Long gpuUsed;
+
     @SerializedName(ApiConstants.GPUGROUP)
     @Param(description = "GPU cards present in the host", responseObject = GpuResponse.class, since = "4.4")
     private List<GpuResponse> gpuGroup;
@@ -186,9 +193,19 @@ public class HostResponse extends BaseResponseWithAnnotations {
     @Param(description = "the date and time the host was last pinged")
     private Date lastPinged;
 
-    @SerializedName("managementserverid")
+    @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
+    @Param(description = "the virtual machine id for host type ConsoleProxy and SecondaryStorageVM", since = "4.21.0")
+    private String virtualMachineId;
+
+    @SerializedName(ApiConstants.MANAGEMENT_SERVER_ID)
     @Param(description = "the management server ID of the host")
     private String managementServerId;
+
+    @SerializedName(ApiConstants.MANAGEMENT_SERVER_NAME)
+    @Param(description = "the management server name of the host", since = "4.21.0")
+    private String managementServerName;
+
+    private transient long clusterInternalId;
 
     @SerializedName("clusterid")
     @Param(description = "the cluster ID of the host")
@@ -293,6 +310,30 @@ public class HostResponse extends BaseResponseWithAnnotations {
     @SerializedName(ApiConstants.ARCH)
     @Param(description = "CPU Arch of the host", since = "4.20")
     private String arch;
+
+    @SerializedName(ApiConstants.STORAGE_ACCESS_GROUPS)
+    @Param(description = "comma-separated list of storage access groups for the host", since = "4.21.0")
+    private String storageAccessGroups;
+
+    @SerializedName(ApiConstants.CLUSTER_STORAGE_ACCESS_GROUPS)
+    @Param(description = "comma-separated list of storage access groups on the cluster", since = "4.21.0")
+    private String clusterStorageAccessGroups;
+
+    @SerializedName(ApiConstants.POD_STORAGE_ACCESS_GROUPS)
+    @Param(description = "comma-separated list of storage access groups on the pod", since = "4.21.0")
+    private String podStorageAccessGroups;
+
+    @SerializedName(ApiConstants.ZONE_STORAGE_ACCESS_GROUPS)
+    @Param(description = "comma-separated list of storage access groups on the zone", since = "4.21.0")
+    private String zoneStorageAccessGroups;
+
+    @SerializedName(ApiConstants.EXTENSION_ID)
+    @Param(description="The ID of extension for this cluster", since = "4.21.0")
+    private String extensionId;
+
+    @SerializedName(ApiConstants.EXTENSION_NAME)
+    @Param(description="The name of extension for this cluster", since = "4.21.0")
+    private String extensionName;
 
     @Override
     public String getObjectId() {
@@ -415,6 +456,14 @@ public class HostResponse extends BaseResponseWithAnnotations {
         this.memoryUsed = memoryUsed;
     }
 
+    public void setGpuTotal(Long gpuTotal) {
+        this.gpuTotal = gpuTotal;
+    }
+
+    public void setGpuUsed(Long gpuUsed) {
+        this.gpuUsed = gpuUsed;
+    }
+
     public void setGpuGroup(List<GpuResponse> gpuGroup) {
         this.gpuGroup = gpuGroup;
     }
@@ -435,8 +484,24 @@ public class HostResponse extends BaseResponseWithAnnotations {
         this.lastPinged = lastPinged;
     }
 
+    public void setVirtualMachineId(String virtualMachineId) {
+        this.virtualMachineId = virtualMachineId;
+    }
+
     public void setManagementServerId(String managementServerId) {
         this.managementServerId = managementServerId;
+    }
+
+    public void setManagementServerName(String managementServerName) {
+        this.managementServerName = managementServerName;
+    }
+
+    public long getClusterInternalId() {
+        return clusterInternalId;
+    }
+
+    public void setClusterInternalId(long clusterInternalId) {
+        this.clusterInternalId = clusterInternalId;
     }
 
     public void setClusterId(String clusterId) {
@@ -473,6 +538,38 @@ public class HostResponse extends BaseResponseWithAnnotations {
 
     public void setHostTags(String hostTags) {
         this.hostTags = hostTags;
+    }
+
+    public String getStorageAccessGroups() {
+        return storageAccessGroups;
+    }
+
+    public void setStorageAccessGroups(String storageAccessGroups) {
+        this.storageAccessGroups = storageAccessGroups;
+    }
+
+    public String getClusterStorageAccessGroups() {
+        return clusterStorageAccessGroups;
+    }
+
+    public void setClusterStorageAccessGroups(String clusterStorageAccessGroups) {
+        this.clusterStorageAccessGroups = clusterStorageAccessGroups;
+    }
+
+    public String getPodStorageAccessGroups() {
+        return podStorageAccessGroups;
+    }
+
+    public void setPodStorageAccessGroups(String podStorageAccessGroups) {
+        this.podStorageAccessGroups = podStorageAccessGroups;
+    }
+
+    public String getZoneStorageAccessGroups() {
+        return zoneStorageAccessGroups;
+    }
+
+    public void setZoneStorageAccessGroups(String zoneStorageAccessGroups) {
+        this.zoneStorageAccessGroups = zoneStorageAccessGroups;
     }
 
     public String getExplicitHostTags() {
@@ -723,8 +820,16 @@ public class HostResponse extends BaseResponseWithAnnotations {
         return lastPinged;
     }
 
+    public String getVirtualMachineId() {
+        return virtualMachineId;
+    }
+
     public String getManagementServerId() {
         return managementServerId;
+    }
+
+    public String getManagementServerName() {
+        return managementServerName;
     }
 
     public String getClusterId() {
@@ -831,6 +936,14 @@ public class HostResponse extends BaseResponseWithAnnotations {
         return memoryAllocatedBytes;
     }
 
+    public Long getGpuTotal() {
+        return gpuTotal;
+    }
+
+    public Long getGpuUsed() {
+        return gpuUsed;
+    }
+
     public Boolean getTagARule() {
         return isTagARule;
     }
@@ -869,5 +982,21 @@ public class HostResponse extends BaseResponseWithAnnotations {
 
     public Boolean getInstanceConversionSupported() {
         return instanceConversionSupported;
+    }
+
+    public void setExtensionId(String extensionId) {
+        this.extensionId = extensionId;
+    }
+
+    public String getExtensionId() {
+        return extensionId;
+    }
+
+    public void setExtensionName(String extensionName) {
+        this.extensionName = extensionName;
+    }
+
+    public String getExtensionName() {
+        return extensionName;
     }
 }

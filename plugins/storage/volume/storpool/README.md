@@ -11,7 +11,6 @@ Secondary storage stores the following:
 * ISO images — disc images containing data or bootable media for operating systems
 * Disk volume snapshots — saved copies of VM data which can be used for data recovery or to create new templates
 
-
 ### ROOT and DATA volumes
 
 ROOT volumes correspond to the boot disk of a VM. They are created automatically by CloudStack during VM creation.
@@ -20,7 +19,6 @@ is based on. We may change the ROOT volume disk offering but only to another sys
 
 DATA volumes correspond to additional disks. These can be created by users and then attached/detached to VMs.
 DATA volumes are created based on a user-defined disk offering.
-
 
 ## Plugin Organization
 
@@ -41,14 +39,13 @@ independent parts:
   * ./src/com/... directory tree: agent related classes and commands send from management to agent
   * ./src/org/... directory tree: management related classes
 
-The plugin is intended to be self contained and non-intrusive, thus ideally deploying it would consist of only
+The plugin is intended to be self-contained and non-intrusive, thus ideally deploying it would consist of only
 dropping the jar file into the appropriate places. This is the reason why all StorPool related communication
 (ex. data copying, volume resize) is done with StorPool specific commands even when there is a CloudStack command
 that does pretty much the same.
 
 Note that for the present the StorPool plugin may only be used for a single primary storage cluster; support for
 multiple clusters is planned.
-
 
 ## Build, Install, Setup
 
@@ -122,7 +119,6 @@ SP_TEMPLATE - name of StorPool's template
 Storage Tags: If left blank, the StorPool storage plugin will use the pool name to create a corresponding storage tag.
 This storage tag may be used later, when defining service or disk offerings.
 
-
 ## Plugin Functionality
 
 <table cellpadding="5">
@@ -187,7 +183,7 @@ This storage tag may be used later, when defining service or disk offerings.
   <td>takeSnapshot + copyAsync (S => S)</td>
 </tr>
 <tr>
-  <td>Create volume from snapshoot</td>
+  <td>Create volume from snapshot</td>
   <td>create volume from snapshot</td>
   <td>management + agent(?)</td>
   <td>copyAsync (S => V)</td>
@@ -283,7 +279,7 @@ In this case only snapshots won't be downloaded to secondary storage.
 
 #### If bypass option is enabled
 
-The snapshot exists only on PRIMARY (StorPool) storage. From this snapshot it will be created a template on SECONADRY.
+The snapshot exists only on PRIMARY (StorPool) storage. From this snapshot it will be created a template on SECONDARY.
 
 #### If bypass option is disabled
 
@@ -294,7 +290,7 @@ This is independent of StorPool as snapshots exist on secondary.
 ### Creating ROOT volume from templates
 
 When creating the first volume based on the given template, if snapshot of the template does not exists on StorPool it will be first downloaded (cached) to PRIMARY storage.
-This is mapped to a StorPool snapshot so, creating succecutive volumes from the same template does not incur additional
+This is mapped to a StorPool snapshot so, creating successive volumes from the same template does not incur additional
 copying of data to PRIMARY storage.
 
 This cached snapshot is garbage collected when the original template is deleted from CloudStack. This cleanup is done
@@ -361,7 +357,6 @@ Users who were using the offerings to change the StorPool template via the `SP_T
  - `resizeVolume` API call for DATA disk
  - `scaleVirtualMachine` API call for ROOT disk
 
-
 If the disk offering has both `SP_TEMPLATE` and `SP_QOSCLASS` defined, the `SP_QOSCLASS` detail will be prioritised, setting the volume’s QoS using the respective ‘qc’ tag value. In case the QoS for a volume is changed manually, the ‘storpool_qos’ service will automatically reset the QoS limits following the ‘qc’ tag value once per minute.
 
 <h4>Usage</h4>
@@ -373,7 +368,6 @@ Go to Service Offerings > Disk Offering > Add disk offering.
 Add disk offering detail with API call in CloudStack CLI.
 
 	add resourcedetail resourcetype=diskoffering resourceid=$UUID details[0].key=SP_QOSCLASS details[0].value=$Tier Name
-
 
 Creating VM with QoS
 

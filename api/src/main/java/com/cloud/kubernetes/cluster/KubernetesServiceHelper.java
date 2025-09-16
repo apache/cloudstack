@@ -18,12 +18,23 @@ package com.cloud.kubernetes.cluster;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 
+import java.util.Map;
+
+import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Adapter;
 
 public interface KubernetesServiceHelper extends Adapter {
 
+    enum KubernetesClusterNodeType {
+        CONTROL, WORKER, ETCD, DEFAULT
+    }
+
     ControlledEntity findByUuid(String uuid);
     ControlledEntity findByVmId(long vmId);
     void checkVmCanBeDestroyed(UserVm userVm);
+    boolean isValidNodeType(String nodeType);
+    Map<String, Long> getServiceOfferingNodeTypeMap(Map<String, Map<String, String>> serviceOfferingNodeTypeMap);
+    Map<String, Long> getTemplateNodeTypeMap(Map<String, Map<String, String>> templateNodeTypeMap);
+    void cleanupForAccount(Account account);
 }

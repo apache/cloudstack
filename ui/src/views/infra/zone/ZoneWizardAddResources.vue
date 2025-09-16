@@ -105,7 +105,7 @@
 </template>
 <script>
 import { nextTick } from 'vue'
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import StaticInputsForm from '@views/infra/zone/StaticInputsForm'
 import store from '@/store'
@@ -151,15 +151,12 @@ export default {
       return this.prefillContent?.zoneSuperType === 'Edge' || false
     },
     steps () {
-      const steps = []
+      const steps = [{
+        title: 'label.cluster',
+        fromKey: 'clusterResource',
+        description: 'message.desc.cluster'
+      }]
       const hypervisor = this.prefillContent.hypervisor ? this.prefillContent.hypervisor : null
-      if (!this.isEdgeZone) {
-        steps.push({
-          title: 'label.cluster',
-          fromKey: 'clusterResource',
-          description: 'message.desc.cluster'
-        })
-      }
       if (hypervisor !== 'VMware') {
         steps.push({
           title: 'label.host',
@@ -190,7 +187,15 @@ export default {
           title: 'label.cluster.name',
           key: 'clusterName',
           placeHolder: 'message.error.cluster.name',
-          required: true
+          required: true,
+          defaultValue: this.isEdgeZone ? 'Cluster-' + (this.prefillContent?.name || 'Edge') : undefined
+        },
+        {
+          title: 'label.arch',
+          key: 'arch',
+          required: false,
+          select: true,
+          options: this.architectureTypes
         },
         {
           title: 'label.vcenter.host',
@@ -462,7 +467,7 @@ export default {
           title: 'label.rados.monitor',
           key: 'primaryStorageRADOSMonitor',
           placeHolder: 'message.error.rados.monitor',
-          required: false,
+          required: true,
           display: {
             primaryStorageProtocol: ['rbd']
           }
@@ -471,6 +476,14 @@ export default {
           title: 'label.rados.pool',
           key: 'primaryStorageRADOSPool',
           placeHolder: 'message.error.rados.pool',
+          required: true,
+          display: {
+            primaryStorageProtocol: ['rbd']
+          }
+        },
+        {
+          title: 'label.data.pool',
+          key: 'primaryStorageDataPool',
           required: false,
           display: {
             primaryStorageProtocol: ['rbd']
@@ -480,7 +493,7 @@ export default {
           title: 'label.rados.user',
           key: 'primaryStorageRADOSUser',
           placeHolder: 'message.error.rados.user',
-          required: false,
+          required: true,
           display: {
             primaryStorageProtocol: ['rbd']
           }
@@ -489,7 +502,7 @@ export default {
           title: 'label.rados.secret',
           key: 'primaryStorageRADOSSecret',
           placeHolder: 'message.error.rados.secret',
-          required: false,
+          required: true,
           display: {
             primaryStorageProtocol: ['rbd']
           }
@@ -846,6 +859,13 @@ export default {
       primaryStorageScopes: [],
       primaryStorageProtocols: [],
       primaryStorageProviders: [],
+      architectureTypes: [{
+        id: 'x86_64',
+        description: 'AMD 64 bits (x86_64)'
+      }, {
+        id: 'aarch64',
+        description: 'ARM 64 bits (aarch64)'
+      }],
       storageProviders: [],
       currentStep: null,
       options: ['primaryStorageScope', 'primaryStorageProtocol', 'provider', 'primaryStorageProvider']
@@ -1064,7 +1084,7 @@ export default {
       }
     },
     fetchNexusSwitchConfig () {
-      api('listConfigurations', { name: 'vmware.use.nexus.vswitch' }).then(json => {
+      getAPI('listConfigurations', { name: 'vmware.use.nexus.vswitch' }).then(json => {
         let vSwitchEnabled = false
         if (json.listconfigurationsresponse.configuration[0].value) {
           vSwitchEnabled = true
@@ -1074,7 +1094,7 @@ export default {
     },
     fetchDvSwitchConfig () {
       let dvSwitchEnabled = false
-      api('listConfigurations', { name: 'vmware.use.dvswitch' }).then(json => {
+      getAPI('listConfigurations', { name: 'vmware.use.dvswitch' }).then(json => {
         if (json.listconfigurationsresponse.configuration[0].value) {
           dvSwitchEnabled = true
         }
@@ -1083,7 +1103,7 @@ export default {
     },
     fetchProvider () {
       const storageProviders = []
-      api('listImageStores', { provider: 'S3' }).then(json => {
+      getAPI('listImageStores', { provider: 'S3' }).then(json => {
         const s3stores = json.listimagestoresresponse.imagestore
         if (s3stores != null && s3stores.length > 0) {
           storageProviders.push({ id: 'S3', description: 'S3' })
@@ -1098,7 +1118,7 @@ export default {
     },
     fetchPrimaryStorageProvider () {
       this.primaryStorageProviders = []
-      api('listStorageProviders', { type: 'primary' }).then(json => {
+      getAPI('listStorageProviders', { type: 'primary' }).then(json => {
         this.primaryStorageProviders = json.liststorageprovidersresponse.dataStoreProvider || []
         this.primaryStorageProviders.map((item, idx) => { this.primaryStorageProviders[idx].id = item.name })
       })

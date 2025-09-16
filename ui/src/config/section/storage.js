@@ -17,6 +17,7 @@
 
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
+import { isZoneCreated } from '@/utils/zone'
 
 export default {
   name: 'storage',
@@ -38,7 +39,7 @@ export default {
         }
       },
       columns: () => {
-        const fields = ['name', 'state', 'sizegb', 'type', 'vmname']
+        const fields = ['name', 'state', 'size', 'type', 'vmname', 'vmstate']
         const metricsFields = ['diskkbsread', 'diskkbswrite', 'diskiopstotal']
 
         if (store.getters.userInfo.roletype === 'Admin') {
@@ -103,6 +104,7 @@ export default {
           icon: 'plus-outlined',
           docHelp: 'adminguide/storage.html#creating-a-new-volume',
           label: 'label.action.create.volume',
+          show: isZoneCreated,
           listView: true,
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/CreateVolume.vue')))
@@ -112,7 +114,7 @@ export default {
           icon: 'cloud-upload-outlined',
           docHelp: 'adminguide/storage.html#uploading-an-existing-volume-to-a-virtual-machine',
           label: 'label.upload.volume.from.local',
-          show: () => { return 'getUploadParamsForVolume' in store.getters.apis },
+          show: () => { return isZoneCreated() && 'getUploadParamsForVolume' in store.getters.apis },
           listView: true,
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/UploadLocalVolume.vue')))
@@ -122,6 +124,7 @@ export default {
           icon: 'link-outlined',
           docHelp: 'adminguide/storage.html#uploading-an-existing-volume-to-a-virtual-machine',
           label: 'label.upload.volume.from.url',
+          show: isZoneCreated,
           listView: true,
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/UploadVolume.vue')))
@@ -165,9 +168,10 @@ export default {
           label: 'label.action.take.snapshot',
           dataView: true,
           show: (record, store) => {
-            return record.state === 'Ready' && (record.hypervisor !== 'KVM' ||
-                record.hypervisor === 'KVM' && record.vmstate === 'Running' && store.features.kvmsnapshotenabled ||
-                record.hypervisor === 'KVM' && record.vmstate !== 'Running')
+            return record.state === 'Ready' &&
+              (record.hypervisor !== 'KVM' ||
+               ['Stopped', 'Destroyed'].includes(record.vmstate) ||
+               store.features.kvmsnapshotenabled)
           },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/TakeSnapshot.vue')))
@@ -179,9 +183,10 @@ export default {
           label: 'label.action.recurring.snapshot',
           dataView: true,
           show: (record, store) => {
-            return record.state === 'Ready' && (record.hypervisor !== 'KVM' ||
-                record.hypervisor === 'KVM' && record.vmstate === 'Running' && store.features.kvmsnapshotenabled ||
-                record.hypervisor === 'KVM' && record.vmstate !== 'Running')
+            return record.state === 'Ready' &&
+              (record.hypervisor !== 'KVM' ||
+               (['Stopped', 'Destroyed'].includes(record.vmstate)) ||
+               (store.features.kvmsnapshotenabled))
           },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/RecurringSnapshotVolume.vue'))),
@@ -223,7 +228,7 @@ export default {
           label: 'label.change.offering.for.volume',
           args: ['id', 'diskofferingid', 'size', 'miniops', 'maxiops', 'automigrate'],
           dataView: true,
-          show: (record, store) => { return ['Allocated', 'Ready'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
+          show: (record, store) => { return ['Allocated', 'Ready'].includes(record.state) },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/ChangeOfferingForVolume.vue')))
         },
@@ -253,25 +258,8 @@ export default {
           show: (record) => {
             return record.state === 'Ready' && (record.vmstate === 'Stopped' || !record.virtualmachineid)
           },
-          args: (record, store) => {
-            var fields = ['volumeid', 'name', 'displaytext', 'ostypeid', 'isdynamicallyscalable', 'requireshvm', 'passwordenabled']
-            if (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype)) {
-              fields.push('domainid')
-              fields.push('account')
-            }
-            if (['Admin'].includes(store.userInfo.roletype) || store.features.userpublictemplateenabled) {
-              fields.push('ispublic')
-            }
-            if (['Admin'].includes(store.userInfo.roletype)) {
-              fields.push('isfeatured')
-            }
-            return fields
-          },
-          mapping: {
-            volumeid: {
-              value: (record) => { return record.id }
-            }
-          }
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/CreateTemplate.vue')))
         },
         {
           api: 'recoverVolume',
@@ -336,7 +324,7 @@ export default {
         fields.push('zonename')
         return fields
       },
-      details: ['name', 'id', 'volumename', 'volumetype', 'snapshottype', 'intervaltype', 'physicalsize', 'virtualsize', 'account', 'domain', 'created'],
+      details: ['name', 'id', 'volumename', 'volumetype', 'snapshottype', 'intervaltype', 'physicalsize', 'virtualsize', 'chainsize', 'account', 'domain', 'created'],
       tabs: [
         {
           name: 'details',
@@ -430,17 +418,32 @@ export default {
       title: 'label.backup',
       icon: 'cloud-upload-outlined',
       permission: ['listBackups'],
-      columns: [{ name: (record) => { return record.virtualmachinename } }, 'status', 'size', 'virtualsize', 'type', 'created', 'account', 'domain', 'zone'],
-      details: ['virtualmachinename', 'id', 'type', 'externalid', 'size', 'virtualsize', 'volumes', 'backupofferingname', 'zone', 'account', 'domain', 'created'],
+      params: { listvmdetails: 'true' },
+      columns: ['name', 'status', 'size', 'virtualsize', 'virtualmachinename', 'backupofferingname', 'intervaltype', 'type', 'created', 'account', 'domain', 'zone'],
+      details: ['name', 'description', 'virtualmachinename', 'id', 'intervaltype', 'type', 'externalid', 'size', 'virtualsize', 'volumes', 'backupofferingname', 'zone', 'account', 'domain', 'created'],
+      searchFilters: () => {
+        var filters = ['name', 'zoneid', 'domainid', 'account', 'backupofferingid']
+        return filters
+      },
+      tabs: [
+        {
+          name: 'details',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'instance.metadata',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/BackupMetadata.vue')))
+        }
+      ],
       actions: [
         {
           api: 'restoreBackup',
           icon: 'sync-outlined',
-          docHelp: 'adminguide/virtual_machines.html#restoring-vm-backups',
+          docHelp: 'adminguide/virtual_machines.html#restoring-instance-backups',
           label: 'label.backup.restore',
           message: 'message.backup.restore',
           dataView: true,
-          show: (record) => { return record.state !== 'Destroyed' }
+          show: (record) => { return record.status === 'BackedUp' }
         },
         {
           api: 'restoreVolumeFromBackupAndAttachToVM',
@@ -448,9 +451,20 @@ export default {
           label: 'label.backup.attach.restore',
           message: 'message.backup.attach.restore',
           dataView: true,
-          show: (record) => { return record.state !== 'Destroyed' },
+          show: (record) => { return record.status === 'BackedUp' },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/RestoreAttachBackupVolume.vue')))
+        },
+        {
+          api: 'createVMFromBackup',
+          icon: 'caret-right-outlined',
+          docHelp: 'adminguide/virtual_machines.html#creating-a-new-instance-from-backup',
+          label: 'label.create.instance.from.backup',
+          message: 'message.backup.restore',
+          dataView: true,
+          popup: true,
+          show: (record) => { return record.status === 'BackedUp' },
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/CreateVMFromBackup.vue')))
         },
         {
           api: 'removeVirtualMachineFromBackupOffering',
@@ -458,7 +472,7 @@ export default {
           label: 'label.backup.offering.remove',
           message: 'message.backup.offering.remove',
           dataView: true,
-          show: (record) => { return record.state !== 'Destroyed' },
+          show: (record) => { return record.state !== 'Destroyed' && record.vmbackupofferingremoved !== true },
           args: ['forced', 'virtualmachineid'],
           mapping: {
             forced: {

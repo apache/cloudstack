@@ -31,8 +31,8 @@
           }
         "
       >
-        <a-select-option :value="$t('label.account')">{{ $t('label.account') }}</a-select-option>
-        <a-select-option :value="$t('label.project')">{{ $t('label.project') }}</a-select-option>
+        <a-select-option :value="'Account'">{{ $t('label.account') }}</a-select-option>
+        <a-select-option :value="'Project'">{{ $t('label.project') }}</a-select-option>
       </a-select>
     </a-form-item>
     <a-form-item :label="$t('label.domain')" required>
@@ -67,7 +67,7 @@
       </a-select>
     </a-form-item>
 
-    <template v-if="selectedAccountType === $t('label.account')">
+    <template v-if="selectedAccountType === 'Account'">
       <a-form-item :label="$t('label.account')" required>
         <a-select
           @change="emitChangeEvent"
@@ -128,7 +128,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import ResourceIcon from '@/components/view/ResourceIcon.vue'
 
 export default {
@@ -139,7 +139,7 @@ export default {
       domains: [],
       accounts: [],
       projects: [],
-      selectedAccountType: this.$store.getters.project?.id ? this.$t('label.project') : this.$t('label.account'),
+      selectedAccountType: this.$store.getters.project?.id ? 'Project' : 'Account',
       selectedDomain: null,
       selectedAccount: null,
       selectedProject: null,
@@ -157,7 +157,7 @@ export default {
   methods: {
     fetchData () {
       this.loading = true
-      api('listDomains', {
+      getAPI('listDomains', {
         response: 'json',
         listAll: true,
         showicon: true,
@@ -188,7 +188,7 @@ export default {
     },
     fetchAccounts () {
       this.loading = true
-      api('listAccounts', {
+      getAPI('listAccounts', {
         response: 'json',
         domainId: this.selectedDomain,
         showicon: true,
@@ -218,7 +218,7 @@ export default {
     },
     fetchProjects () {
       this.loading = true
-      api('listProjects', {
+      getAPI('listProjects', {
         response: 'json',
         domainId: this.selectedDomain,
         state: 'Active',
@@ -243,7 +243,7 @@ export default {
         })
     },
     changeDomain () {
-      if (this.selectedAccountType === this.$t('label.account')) {
+      if (this.selectedAccountType === 'Account') {
         this.fetchAccounts()
       } else {
         this.fetchProjects()

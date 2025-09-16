@@ -1,4 +1,4 @@
-﻿// Licensed to the Apache Software Foundation (ASF) under one
+// Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -32,62 +32,62 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
     // Datetime conversion functions ToDateTime and ToDmtfDateTime are added to the class to convert DMTF datetime to System.DateTime and vice-versa.
     // An Early Bound class generated for the WMI class.Msvm_StorageJob
     public class StorageJob : System.ComponentModel.Component {
-        
+
         // Private property to hold the WMI namespace in which the class resides.
         private static string CreatedWmiNamespace = "ROOT\\virtualization\\v2";
-        
+
         // Private property to hold the name of WMI class which created this class.
         public static string CreatedClassName = "Msvm_StorageJob";
-        
+
         // Private member variable to hold the ManagementScope which is used by the various methods.
         private static System.Management.ManagementScope statMgmtScope = null;
-        
+
         private ManagementSystemProperties PrivateSystemProperties;
-        
+
         // Underlying lateBound WMI object.
         private System.Management.ManagementObject PrivateLateBoundObject;
-        
+
         // Member variable to store the 'automatic commit' behavior for the class.
         private bool AutoCommitProp;
-        
+
         // Private variable to hold the embedded property representing the instance.
         private System.Management.ManagementBaseObject embeddedObj;
-        
+
         // The current WMI object used
         private System.Management.ManagementBaseObject curObj;
-        
+
         // Flag to indicate if the instance is an embedded object.
         private bool isEmbedded;
-        
+
         // Below are different overloads of constructors to initialize an instance of the class with a WMI object.
         public StorageJob() {
             this.InitializeObject(null, null, null);
         }
-        
+
         public StorageJob(string keyInstanceID) {
             this.InitializeObject(null, new System.Management.ManagementPath(StorageJob.ConstructPath(keyInstanceID)), null);
         }
-        
+
         public StorageJob(System.Management.ManagementScope mgmtScope, string keyInstanceID) {
             this.InitializeObject(((System.Management.ManagementScope)(mgmtScope)), new System.Management.ManagementPath(StorageJob.ConstructPath(keyInstanceID)), null);
         }
-        
+
         public StorageJob(System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
             this.InitializeObject(null, path, getOptions);
         }
-        
+
         public StorageJob(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path) {
             this.InitializeObject(mgmtScope, path, null);
         }
-        
+
         public StorageJob(System.Management.ManagementPath path) {
             this.InitializeObject(null, path, null);
         }
-        
+
         public StorageJob(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
             this.InitializeObject(mgmtScope, path, getOptions);
         }
-        
+
         public StorageJob(System.Management.ManagementObject theObject) {
             Initialize();
             if ((CheckIfProperClass(theObject) == true)) {
@@ -99,7 +99,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 throw new System.ArgumentException("Class name does not match.");
             }
         }
-        
+
         public StorageJob(System.Management.ManagementBaseObject theObject) {
             Initialize();
             if ((CheckIfProperClass(theObject) == true)) {
@@ -112,7 +112,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 throw new System.ArgumentException("Class name does not match.");
             }
         }
-        
+
         // Property returns the namespace of the WMI class.
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -121,7 +121,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return "ROOT\\virtualization\\v2";
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string ManagementClassName {
@@ -130,7 +130,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 if ((curObj != null)) {
                     if ((curObj.ClassPath != null)) {
                         strRet = ((string)(curObj["__CLASS"]));
-                        if (((strRet == null) 
+                        if (((strRet == null)
                                     || (strRet == string.Empty))) {
                             strRet = CreatedClassName;
                         }
@@ -139,7 +139,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return strRet;
             }
         }
-        
+
         // Property pointing to an embedded object to get System properties of the WMI object.
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -148,7 +148,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return PrivateSystemProperties;
             }
         }
-        
+
         // Property returning the underlying lateBound object.
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -157,7 +157,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return curObj;
             }
         }
-        
+
         // ManagementScope of the object.
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -176,7 +176,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         // Property to show the commit behavior for the WMI object. If true, WMI object will be automatically saved after each property modification.(ie. Put() is called after modification of a property).
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -188,7 +188,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 AutoCommitProp = value;
             }
         }
-        
+
         // The ManagementPath of the underlying WMI object.
         [Browsable(true)]
         public System.Management.ManagementPath Path {
@@ -209,7 +209,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         // Public static scope property which is used by the various methods.
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -221,7 +221,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 statMgmtScope = value;
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsCancellableNull {
@@ -234,7 +234,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("Indicates whether the job can be cancelled. The value of this property does not g" +
@@ -248,7 +248,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((bool)(curObj["Cancellable"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string Caption {
@@ -256,7 +256,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((string)(curObj["Caption"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("On failure of the asynchronous operation, this property contains the file path to" +
@@ -266,7 +266,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((string)(curObj["Child"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsCommunicationStatusNull {
@@ -279,7 +279,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -291,7 +291,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((ushort)(curObj["CommunicationStatus"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsDeleteOnCompletionNull {
@@ -304,7 +304,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -316,7 +316,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((bool)(curObj["DeleteOnCompletion"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string Description {
@@ -324,7 +324,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((string)(curObj["Description"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsDetailedStatusNull {
@@ -337,7 +337,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -349,7 +349,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((ushort)(curObj["DetailedStatus"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsElapsedTimeNull {
@@ -362,7 +362,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -376,7 +376,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string ElementName {
@@ -384,7 +384,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((string)(curObj["ElementName"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsErrorCodeNull {
@@ -397,7 +397,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -409,7 +409,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((ushort)(curObj["ErrorCode"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string ErrorDescription {
@@ -417,7 +417,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((string)(curObj["ErrorDescription"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string ErrorSummaryDescription {
@@ -425,7 +425,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((string)(curObj["ErrorSummaryDescription"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsHealthStateNull {
@@ -438,7 +438,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -450,7 +450,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((ushort)(curObj["HealthState"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsInstallDateNull {
@@ -463,7 +463,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -477,7 +477,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string InstanceID {
@@ -485,7 +485,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((string)(curObj["InstanceID"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsJobCompletionStatusCodeNull {
@@ -498,7 +498,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The HRESULT code that describes the completion status for the asynchronous operat" +
@@ -512,7 +512,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((uint)(curObj["JobCompletionStatusCode"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsJobRunTimesNull {
@@ -525,7 +525,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -537,7 +537,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((uint)(curObj["JobRunTimes"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsJobStateNull {
@@ -550,7 +550,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -562,7 +562,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((ushort)(curObj["JobState"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string JobStatus {
@@ -570,7 +570,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((string)(curObj["JobStatus"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsJobTypeNull {
@@ -583,7 +583,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description(@"The type of asynchronous operation being tracked by this instance of Msvm_StorageJob.
@@ -607,7 +607,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 return ((JobTypeValues)(System.Convert.ToInt32(curObj["JobType"])));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsLocalOrUtcTimeNull {
@@ -620,7 +620,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -632,7 +632,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 return ((ushort)(curObj["LocalOrUtcTime"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string Name {
@@ -640,7 +640,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 return ((string)(curObj["Name"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string Notify {
@@ -648,7 +648,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 return ((string)(curObj["Notify"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsOperatingStatusNull {
@@ -661,7 +661,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -673,7 +673,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 return ((ushort)(curObj["OperatingStatus"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public ushort[] OperationalStatus {
@@ -681,7 +681,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 return ((ushort[])(curObj["OperationalStatus"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string OtherRecoveryAction {
@@ -689,7 +689,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 return ((string)(curObj["OtherRecoveryAction"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string Owner {
@@ -697,7 +697,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 return ((string)(curObj["Owner"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("On failure of the asynchronous operation, this property contains the file path to" +
@@ -707,7 +707,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 return ((string)(curObj["Parent"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsPercentCompleteNull {
@@ -720,7 +720,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -732,7 +732,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 return ((ushort)(curObj["PercentComplete"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsPrimaryStatusNull {
@@ -745,7 +745,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -757,7 +757,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 return ((ushort)(curObj["PrimaryStatus"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsPriorityNull {
@@ -770,7 +770,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -782,7 +782,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 return ((uint)(curObj["Priority"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsRecoveryActionNull {
@@ -795,7 +795,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -807,7 +807,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 return ((ushort)(curObj["RecoveryAction"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsRunDayNull {
@@ -820,7 +820,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -832,7 +832,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 return ((sbyte)(curObj["RunDay"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsRunDayOfWeekNull {
@@ -845,7 +845,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -857,7 +857,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 return ((sbyte)(curObj["RunDayOfWeek"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsRunMonthNull {
@@ -870,7 +870,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -882,7 +882,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 return ((byte)(curObj["RunMonth"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsRunStartIntervalNull {
@@ -895,7 +895,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -909,7 +909,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 }
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsScheduledStartTimeNull {
@@ -922,7 +922,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -936,7 +936,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 }
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsStartTimeNull {
@@ -949,7 +949,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -963,7 +963,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string Status {
@@ -971,7 +971,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 return ((string)(curObj["Status"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string[] StatusDescriptions {
@@ -979,7 +979,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 return ((string[])(curObj["StatusDescriptions"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsTimeBeforeRemovalNull {
@@ -992,7 +992,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -1006,7 +1006,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 }
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsTimeOfLastStateChangeNull {
@@ -1019,7 +1019,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -1033,7 +1033,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 }
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsTimeSubmittedNull {
@@ -1046,7 +1046,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -1060,7 +1060,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 }
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsUntilTimeNull {
@@ -1073,7 +1073,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -1087,9 +1087,9 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 }
             }
         }
-        
+
         private bool CheckIfProperClass(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path, System.Management.ObjectGetOptions OptionsParam) {
-            if (((path != null) 
+            if (((path != null)
                         && (string.Compare(path.ClassName, this.ManagementClassName, true, System.Globalization.CultureInfo.InvariantCulture) == 0))) {
                 return true;
             }
@@ -1097,9 +1097,9 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 return CheckIfProperClass(new System.Management.ManagementObject(mgmtScope, path, OptionsParam));
             }
         }
-        
+
         private bool CheckIfProperClass(System.Management.ManagementBaseObject theObj) {
-            if (((theObj != null) 
+            if (((theObj != null)
                         && (string.Compare(((string)(theObj["__CLASS"])), this.ManagementClassName, true, System.Globalization.CultureInfo.InvariantCulture) == 0))) {
                 return true;
             }
@@ -1116,35 +1116,35 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
             }
             return false;
         }
-        
+
         private bool ShouldSerializeCancellable() {
             if ((this.IsCancellableNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeCommunicationStatus() {
             if ((this.IsCommunicationStatusNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeDeleteOnCompletion() {
             if ((this.IsDeleteOnCompletionNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeDetailedStatus() {
             if ((this.IsDetailedStatusNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         // Converts a given datetime in DMTF format to System.DateTime object.
         static System.DateTime ToDateTime(string dmtfDate) {
             System.DateTime initializer = System.DateTime.MinValue;
@@ -1196,13 +1196,13 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 if (("******" != tempString)) {
                     ticks = (long.Parse(tempString) * ((long)((System.TimeSpan.TicksPerMillisecond / 1000))));
                 }
-                if (((((((((year < 0) 
-                            || (month < 0)) 
-                            || (day < 0)) 
-                            || (hour < 0)) 
-                            || (minute < 0)) 
-                            || (minute < 0)) 
-                            || (second < 0)) 
+                if (((((((((year < 0)
+                            || (month < 0))
+                            || (day < 0))
+                            || (hour < 0))
+                            || (minute < 0))
+                            || (minute < 0))
+                            || (second < 0))
                             || (ticks < 0))) {
                     throw new System.ArgumentOutOfRangeException();
                 }
@@ -1230,7 +1230,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
             }
             return datetime;
         }
-        
+
         // Converts a given System.DateTime object to DMTF datetime format.
         static string ToDmtfDateTime(System.DateTime date) {
             string utcString = string.Empty;
@@ -1257,8 +1257,8 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
             dmtfDateTime = string.Concat(dmtfDateTime, ((int)(date.Second)).ToString().PadLeft(2, '0'));
             dmtfDateTime = string.Concat(dmtfDateTime, ".");
             System.DateTime dtTemp = new System.DateTime(date.Year, date.Month, date.Day, date.Hour, date.Minute, date.Second, 0);
-            long microsec = ((long)((((date.Ticks - dtTemp.Ticks) 
-                        * 1000) 
+            long microsec = ((long)((((date.Ticks - dtTemp.Ticks)
+                        * 1000)
                         / System.TimeSpan.TicksPerMillisecond)));
             string strMicrosec = ((long)(microsec)).ToString();
             if ((strMicrosec.Length > 6)) {
@@ -1268,200 +1268,200 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
             dmtfDateTime = string.Concat(dmtfDateTime, utcString);
             return dmtfDateTime;
         }
-        
+
         private bool ShouldSerializeElapsedTime() {
             if ((this.IsElapsedTimeNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeErrorCode() {
             if ((this.IsErrorCodeNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeHealthState() {
             if ((this.IsHealthStateNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeInstallDate() {
             if ((this.IsInstallDateNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeJobCompletionStatusCode() {
             if ((this.IsJobCompletionStatusCodeNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeJobRunTimes() {
             if ((this.IsJobRunTimesNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeJobState() {
             if ((this.IsJobStateNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeJobType() {
             if ((this.IsJobTypeNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeLocalOrUtcTime() {
             if ((this.IsLocalOrUtcTimeNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeOperatingStatus() {
             if ((this.IsOperatingStatusNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializePercentComplete() {
             if ((this.IsPercentCompleteNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializePrimaryStatus() {
             if ((this.IsPrimaryStatusNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializePriority() {
             if ((this.IsPriorityNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeRecoveryAction() {
             if ((this.IsRecoveryActionNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeRunDay() {
             if ((this.IsRunDayNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeRunDayOfWeek() {
             if ((this.IsRunDayOfWeekNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeRunMonth() {
             if ((this.IsRunMonthNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeRunStartInterval() {
             if ((this.IsRunStartIntervalNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeScheduledStartTime() {
             if ((this.IsScheduledStartTimeNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeStartTime() {
             if ((this.IsStartTimeNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeTimeBeforeRemoval() {
             if ((this.IsTimeBeforeRemovalNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeTimeOfLastStateChange() {
             if ((this.IsTimeOfLastStateChangeNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeTimeSubmitted() {
             if ((this.IsTimeSubmittedNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeUntilTime() {
             if ((this.IsUntilTimeNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         [Browsable(true)]
         public void CommitObject() {
             if ((isEmbedded == false)) {
                 PrivateLateBoundObject.Put();
             }
         }
-        
+
         [Browsable(true)]
         public void CommitObject(System.Management.PutOptions putOptions) {
             if ((isEmbedded == false)) {
                 PrivateLateBoundObject.Put(putOptions);
             }
         }
-        
+
         private void Initialize() {
             AutoCommitProp = true;
             isEmbedded = false;
         }
-        
+
         private static string ConstructPath(string keyInstanceID) {
             string strPath = "ROOT\\virtualization\\v2:Msvm_StorageJob";
             strPath = string.Concat(strPath, string.Concat(".InstanceID=", string.Concat("\"", string.Concat(keyInstanceID, "\""))));
             return strPath;
         }
-        
+
         private void InitializeObject(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
             Initialize();
             if ((path != null)) {
@@ -1473,24 +1473,24 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
             PrivateSystemProperties = new ManagementSystemProperties(PrivateLateBoundObject);
             curObj = PrivateLateBoundObject;
         }
-        
+
         // Different overloads of GetInstances() help in enumerating instances of the WMI class.
         public static StorageJobCollection GetInstances() {
             return GetInstances(null, null, null);
         }
-        
+
         public static StorageJobCollection GetInstances(string condition) {
             return GetInstances(null, condition, null);
         }
-        
+
         public static StorageJobCollection GetInstances(string[] selectedProperties) {
             return GetInstances(null, null, selectedProperties);
         }
-        
+
         public static StorageJobCollection GetInstances(string condition, string[] selectedProperties) {
             return GetInstances(null, condition, selectedProperties);
         }
-        
+
         public static StorageJobCollection GetInstances(System.Management.ManagementScope mgmtScope, System.Management.EnumerationOptions enumOptions) {
             if ((mgmtScope == null)) {
                 if ((statMgmtScope == null)) {
@@ -1511,15 +1511,15 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
             }
             return new StorageJobCollection(clsObject.GetInstances(enumOptions));
         }
-        
+
         public static StorageJobCollection GetInstances(System.Management.ManagementScope mgmtScope, string condition) {
             return GetInstances(mgmtScope, condition, null);
         }
-        
+
         public static StorageJobCollection GetInstances(System.Management.ManagementScope mgmtScope, string[] selectedProperties) {
             return GetInstances(mgmtScope, null, selectedProperties);
         }
-        
+
         public static StorageJobCollection GetInstances(System.Management.ManagementScope mgmtScope, string condition, string[] selectedProperties) {
             if ((mgmtScope == null)) {
                 if ((statMgmtScope == null)) {
@@ -1536,7 +1536,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
             ObjectSearcher.Options = enumOptions;
             return new StorageJobCollection(ObjectSearcher.Get());
         }
-        
+
         [Browsable(true)]
         public static StorageJob CreateInstance() {
             System.Management.ManagementScope mgmtScope = null;
@@ -1551,12 +1551,12 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
             System.Management.ManagementClass tmpMgmtClass = new System.Management.ManagementClass(mgmtScope, mgmtPath, null);
             return new StorageJob(tmpMgmtClass.CreateInstance());
         }
-        
+
         [Browsable(true)]
         public void Delete() {
             PrivateLateBoundObject.Delete();
         }
-        
+
         public uint GetError(out string Error) {
             if ((isEmbedded == false)) {
                 System.Management.ManagementBaseObject inParams = null;
@@ -1569,7 +1569,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 return System.Convert.ToUInt32(0);
             }
         }
-        
+
         public uint GetErrorEx(out string[] Errors) {
             if ((isEmbedded == false)) {
                 System.Management.ManagementBaseObject inParams = null;
@@ -1582,7 +1582,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 return System.Convert.ToUInt32(0);
             }
         }
-        
+
         public uint KillJob(bool DeleteOnKill) {
             if ((isEmbedded == false)) {
                 System.Management.ManagementBaseObject inParams = null;
@@ -1595,7 +1595,7 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 return System.Convert.ToUInt32(0);
             }
         }
-        
+
         public uint RequestStateChange(ushort RequestedState, System.DateTime TimeoutPeriod) {
             if ((isEmbedded == false)) {
                 System.Management.ManagementBaseObject inParams = null;
@@ -1609,59 +1609,59 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                 return System.Convert.ToUInt32(0);
             }
         }
-        
+
         public enum JobTypeValues {
-            
+
             Unknown0 = 0,
-            
+
             VHD_Creation = 1,
-            
+
             Floppy_Creation = 2,
-            
+
             Compaction = 3,
-            
+
             Expansion = 4,
-            
+
             Merging = 5,
-            
+
             Conversion = 6,
-            
+
             Loopback_Mount = 7,
-            
+
             Get_VHD_Info = 8,
-            
+
             Validate_VHD_Image = 9,
-            
+
             NULL_ENUM_VALUE = 10,
         }
-        
+
         // Enumerator implementation for enumerating instances of the class.
         public class StorageJobCollection : object, ICollection {
-            
+
             private ManagementObjectCollection privColObj;
-            
+
             public StorageJobCollection(ManagementObjectCollection objCollection) {
                 privColObj = objCollection;
             }
-            
+
             public virtual int Count {
                 get {
                     return privColObj.Count;
                 }
             }
-            
+
             public virtual bool IsSynchronized {
                 get {
                     return privColObj.IsSynchronized;
                 }
             }
-            
+
             public virtual object SyncRoot {
                 get {
                     return this;
                 }
             }
-            
+
             public virtual void CopyTo(System.Array array, int index) {
                 privColObj.CopyTo(array, index);
                 int nCtr;
@@ -1669,189 +1669,189 @@ Validate VHD Image: Validating a virtual hard disk image (VHD).")]
                     array.SetValue(new StorageJob(((System.Management.ManagementObject)(array.GetValue(nCtr)))), nCtr);
                 }
             }
-            
+
             public virtual System.Collections.IEnumerator GetEnumerator() {
                 return new StorageJobEnumerator(privColObj.GetEnumerator());
             }
-            
+
             public class StorageJobEnumerator : object, System.Collections.IEnumerator {
-                
+
                 private ManagementObjectCollection.ManagementObjectEnumerator privObjEnum;
-                
+
                 public StorageJobEnumerator(ManagementObjectCollection.ManagementObjectEnumerator objEnum) {
                     privObjEnum = objEnum;
                 }
-                
+
                 public virtual object Current {
                     get {
                         return new StorageJob(((System.Management.ManagementObject)(privObjEnum.Current)));
                     }
                 }
-                
+
                 public virtual bool MoveNext() {
                     return privObjEnum.MoveNext();
                 }
-                
+
                 public virtual void Reset() {
                     privObjEnum.Reset();
                 }
             }
         }
-        
+
         // TypeConverter to handle null values for ValueType properties
         public class WMIValueTypeConverter : TypeConverter {
-            
+
             private TypeConverter baseConverter;
-            
+
             private System.Type baseType;
-            
+
             public WMIValueTypeConverter(System.Type inBaseType) {
                 baseConverter = TypeDescriptor.GetConverter(inBaseType);
                 baseType = inBaseType;
             }
-            
+
             public override bool CanConvertFrom(System.ComponentModel.ITypeDescriptorContext context, System.Type srcType) {
                 return baseConverter.CanConvertFrom(context, srcType);
             }
-            
+
             public override bool CanConvertTo(System.ComponentModel.ITypeDescriptorContext context, System.Type destinationType) {
                 return baseConverter.CanConvertTo(context, destinationType);
             }
-            
+
             public override object ConvertFrom(System.ComponentModel.ITypeDescriptorContext context, System.Globalization.CultureInfo culture, object value) {
                 return baseConverter.ConvertFrom(context, culture, value);
             }
-            
+
             public override object CreateInstance(System.ComponentModel.ITypeDescriptorContext context, System.Collections.IDictionary dictionary) {
                 return baseConverter.CreateInstance(context, dictionary);
             }
-            
+
             public override bool GetCreateInstanceSupported(System.ComponentModel.ITypeDescriptorContext context) {
                 return baseConverter.GetCreateInstanceSupported(context);
             }
-            
+
             public override PropertyDescriptorCollection GetProperties(System.ComponentModel.ITypeDescriptorContext context, object value, System.Attribute[] attributeVar) {
                 return baseConverter.GetProperties(context, value, attributeVar);
             }
-            
+
             public override bool GetPropertiesSupported(System.ComponentModel.ITypeDescriptorContext context) {
                 return baseConverter.GetPropertiesSupported(context);
             }
-            
+
             public override System.ComponentModel.TypeConverter.StandardValuesCollection GetStandardValues(System.ComponentModel.ITypeDescriptorContext context) {
                 return baseConverter.GetStandardValues(context);
             }
-            
+
             public override bool GetStandardValuesExclusive(System.ComponentModel.ITypeDescriptorContext context) {
                 return baseConverter.GetStandardValuesExclusive(context);
             }
-            
+
             public override bool GetStandardValuesSupported(System.ComponentModel.ITypeDescriptorContext context) {
                 return baseConverter.GetStandardValuesSupported(context);
             }
-            
+
             public override object ConvertTo(System.ComponentModel.ITypeDescriptorContext context, System.Globalization.CultureInfo culture, object value, System.Type destinationType) {
                 if ((baseType.BaseType == typeof(System.Enum))) {
                     if ((value.GetType() == destinationType)) {
                         return value;
                     }
-                    if ((((value == null) 
-                                && (context != null)) 
+                    if ((((value == null)
+                                && (context != null))
                                 && (context.PropertyDescriptor.ShouldSerializeValue(context.Instance) == false))) {
                         return  "NULL_ENUM_VALUE" ;
                     }
                     return baseConverter.ConvertTo(context, culture, value, destinationType);
                 }
-                if (((baseType == typeof(bool)) 
+                if (((baseType == typeof(bool))
                             && (baseType.BaseType == typeof(System.ValueType)))) {
-                    if ((((value == null) 
-                                && (context != null)) 
+                    if ((((value == null)
+                                && (context != null))
                                 && (context.PropertyDescriptor.ShouldSerializeValue(context.Instance) == false))) {
                         return "";
                     }
                     return baseConverter.ConvertTo(context, culture, value, destinationType);
                 }
-                if (((context != null) 
+                if (((context != null)
                             && (context.PropertyDescriptor.ShouldSerializeValue(context.Instance) == false))) {
                     return "";
                 }
                 return baseConverter.ConvertTo(context, culture, value, destinationType);
             }
         }
-        
+
         // Embedded class to represent WMI system Properties.
         [TypeConverter(typeof(System.ComponentModel.ExpandableObjectConverter))]
         public class ManagementSystemProperties {
-            
+
             private System.Management.ManagementBaseObject PrivateLateBoundObject;
-            
+
             public ManagementSystemProperties(System.Management.ManagementBaseObject ManagedObject) {
                 PrivateLateBoundObject = ManagedObject;
             }
-            
+
             [Browsable(true)]
             public int GENUS {
                 get {
                     return ((int)(PrivateLateBoundObject["__GENUS"]));
                 }
             }
-            
+
             [Browsable(true)]
             public string CLASS {
                 get {
                     return ((string)(PrivateLateBoundObject["__CLASS"]));
                 }
             }
-            
+
             [Browsable(true)]
             public string SUPERCLASS {
                 get {
                     return ((string)(PrivateLateBoundObject["__SUPERCLASS"]));
                 }
             }
-            
+
             [Browsable(true)]
             public string DYNASTY {
                 get {
                     return ((string)(PrivateLateBoundObject["__DYNASTY"]));
                 }
             }
-            
+
             [Browsable(true)]
             public string RELPATH {
                 get {
                     return ((string)(PrivateLateBoundObject["__RELPATH"]));
                 }
             }
-            
+
             [Browsable(true)]
             public int PROPERTY_COUNT {
                 get {
                     return ((int)(PrivateLateBoundObject["__PROPERTY_COUNT"]));
                 }
             }
-            
+
             [Browsable(true)]
             public string[] DERIVATION {
                 get {
                     return ((string[])(PrivateLateBoundObject["__DERIVATION"]));
                 }
             }
-            
+
             [Browsable(true)]
             public string SERVER {
                 get {
                     return ((string)(PrivateLateBoundObject["__SERVER"]));
                 }
             }
-            
+
             [Browsable(true)]
             public string NAMESPACE {
                 get {
                     return ((string)(PrivateLateBoundObject["__NAMESPACE"]));
                 }
             }
-            
+
             [Browsable(true)]
             public string PATH {
                 get {

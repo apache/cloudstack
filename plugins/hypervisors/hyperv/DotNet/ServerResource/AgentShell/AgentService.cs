@@ -67,7 +67,7 @@ namespace CloudStack.Plugin.AgentShell
         public static void ConfigServerResource()
         {
             // For simplicity, ServerResource config and settings file are tightly coupled.
-            // An alternative is to pass a dictionary to the server resource and let it find 
+            // An alternative is to pass a dictionary to the server resource and let it find
             // required settings.  In contrast, the approach below is strongly typed and makes
             // use of VisualStudio settings designer.  The designer allows us to avoid
             // accessing config using their key strings.

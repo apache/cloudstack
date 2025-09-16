@@ -25,7 +25,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.21.0.0-SNAPSHOT</version>
+        <version>4.22.0.0-SNAPSHOT</version>
     </parent>
     <dependencies>
         <dependency>
@@ -323,16 +323,6 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
-            <artifactId>cloud-plugin-hypervisor-ovm</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.cloudstack</groupId>
-            <artifactId>cloud-plugin-hypervisor-ovm3</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-hypervisor-kvm</artifactId>
             <version>${project.version}</version>
             <exclusions>
@@ -345,6 +335,11 @@
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-hypervisor-hyperv</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-hypervisor-external</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -624,7 +619,7 @@
         </dependency>
         <dependency>
            <groupId>org.apache.cloudstack</groupId>
-           <artifactId>cloud-plugin-shutdown</artifactId>
+           <artifactId>cloud-plugin-maintenance</artifactId>
            <version>${project.version}</version>
        </dependency>
         <dependency>
@@ -640,6 +635,11 @@
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-storage-object-ceph</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-storage-object-cloudian</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -1095,6 +1095,11 @@
                 <dependency>
                     <groupId>org.apache.cloudstack</groupId>
                     <artifactId>cloud-plugin-network-nsx</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.cloudstack</groupId>
+                    <artifactId>cloud-plugin-network-netris</artifactId>
                     <version>${project.version}</version>
                 </dependency>
                 <dependency>

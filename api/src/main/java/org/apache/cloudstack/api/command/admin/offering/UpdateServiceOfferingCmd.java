@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.admin.offering;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import com.cloud.offering.ServiceOffering.State;
 import org.apache.cloudstack.api.APICommand;
@@ -93,6 +94,12 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
             description = "Whether to cleanup VM and its associated resource upon expunge",
             since="4.20")
     private Boolean purgeResources;
+
+    @Parameter(name = ApiConstants.EXTERNAL_DETAILS,
+            type = CommandType.MAP,
+            description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].endpoint.url=urlvalue",
+            since = "4.21.0")
+    private Map externalDetails;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -192,6 +199,10 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
 
     public boolean isPurgeResources() {
         return Boolean.TRUE.equals(purgeResources);
+    }
+
+    public Map<String, String> getExternalDetails() {
+        return convertExternalDetailsToMap(externalDetails);
     }
 
     /////////////////////////////////////////////////////

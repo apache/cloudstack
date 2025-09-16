@@ -82,6 +82,7 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.component.ComponentContext;
 
 @ContextConfiguration(locations = {"classpath:/storageContext.xml"})
@@ -281,7 +282,7 @@ public class VolumeServiceTest extends CloudStackTestNGBase {
         params.put("name", this.primaryName);
         params.put("port", "1");
         params.put("roles", DataStoreRole.Primary.toString());
-        params.put("uuid", UUID.nameUUIDFromBytes(this.getPrimaryStorageUrl().getBytes()).toString());
+        params.put("uuid", UuidUtils.nameUUIDFromBytes(this.getPrimaryStorageUrl().getBytes()).toString());
         params.put("providerName", String.valueOf(provider.getName()));
 
         DataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();
@@ -324,7 +325,7 @@ public class VolumeServiceTest extends CloudStackTestNGBase {
             params.put("name", this.primaryName);
             params.put("port", "1");
             params.put("roles", DataStoreRole.Primary.toString());
-            params.put("uuid", UUID.nameUUIDFromBytes(this.getPrimaryStorageUrl().getBytes()).toString());
+            params.put("uuid", UuidUtils.nameUUIDFromBytes(this.getPrimaryStorageUrl().getBytes()).toString());
             params.put("providerName", String.valueOf(provider.getName()));
 
             DataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();

@@ -349,7 +349,7 @@ public class UploadListener implements Listener {
     }
 
     public void log(String message, Level level) {
-        logger.log(level, message + ", " + type.toString() + " = " + typeName + " at host " + sserver.getName());
+        logger.log(level, message + ", " + type.toString() + " = " + typeName + " at host " + sserver);
     }
 
     public void setDisconnected() {
@@ -463,7 +463,7 @@ public class UploadListener implements Listener {
     }
 
     public void logDisconnect() {
-        logger.warn("Unable to monitor upload progress of " + typeName + " at host " + sserver.getName());
+        logger.warn("Unable to monitor upload progress of {} at host {}", typeName, sserver);
     }
 
     public void scheduleImmediateStatusCheck(RequestType request) {
