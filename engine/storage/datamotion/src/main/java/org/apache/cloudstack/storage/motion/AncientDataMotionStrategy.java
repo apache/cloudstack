@@ -90,7 +90,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     private static final String NO_REMOTE_ENDPOINT_WITH_ENCRYPTION = "No remote endpoint to send command, unable to find a valid endpoint. Requires encryption support: %s";
     private static final List<StoragePoolType> SUPPORTED_POOL_TYPES_TO_BYPASS_SECONDARY_STORE = Arrays.asList(
             StoragePoolType.NetworkFilesystem,
-            StoragePoolType.Filesystem
+            StoragePoolType.Filesystem,
+            StoragePoolType.RBD
     );
 
     @Inject
