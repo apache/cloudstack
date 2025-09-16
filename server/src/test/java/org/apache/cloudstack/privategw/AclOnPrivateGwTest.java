@@ -121,7 +121,7 @@ public class AclOnPrivateGwTest {
         try {
             createPrivateGwCmd.execute();
         } catch (ServerApiException exception) {
-            Assert.assertEquals("Failed to create private gateway", exception.getDescription());
+            Assert.assertEquals("Failed to create Private Gateway", exception.getDescription());
         } catch (ResourceAllocationException e) {
             e.printStackTrace();
         } catch (InsufficientCapacityException e) {

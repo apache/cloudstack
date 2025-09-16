@@ -454,7 +454,7 @@ public class HypervisorTemplateAdapterTest {
 
         boolean result = _adapter.isZoneAndImageStoreAvailable(dataStoreMock, zoneId, zoneSet, isTemplatePrivate);
 
-        Mockito.verify(loggerMock, Mockito.times(1)).warn("Unable to find zone by id [{}], so skip downloading template to its image store [{}].",
+        Mockito.verify(loggerMock, Mockito.times(1)).warn("Unable to find Zone by ID [{}], so skip downloading template to its image store [{}].",
                 zoneId, dataStoreMock);
         Assert.assertFalse(result);
     }

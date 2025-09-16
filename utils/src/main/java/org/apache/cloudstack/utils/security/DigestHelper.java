@@ -143,7 +143,7 @@ public class DigestHelper {
         try (InputStream is = Files.newInputStream(Paths.get(file.getPath()))) {
             return DigestUtils.sha512Hex(is);
         } catch (IOException e) {
-            String errMsg = "Failed to calculate sha512 checksum of template";
+            String errMsg = "Failed to calculate sha512 checksum of Template";
             LOGGER.error(errMsg);
             throw new CloudRuntimeException(errMsg, e);
         }

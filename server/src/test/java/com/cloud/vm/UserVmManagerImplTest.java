@@ -2099,7 +2099,7 @@ public class UserVmManagerImplTest {
 
     @Test
     public void addSecurityGroupsToVmTestIsVmWareAndSecurityGroupIdListIsNotNullThrowsInvalidParameterValueException() {
-        String expectedMessage = "Security group feature is not supported for VMWare hypervisor.";
+        String expectedMessage = "Security group feature is not supported for VMware hypervisor.";
         LinkedList<Long> securityGroupIdList = new LinkedList<Long>();
 
         Mockito.doReturn(Hypervisor.HypervisorType.VMware).when(virtualMachineTemplateMock).getHypervisorType();

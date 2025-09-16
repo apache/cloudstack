@@ -34,14 +34,14 @@ public class ListMgmtsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ManagementServerResponse.class, description = "the id of the management server")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ManagementServerResponse.class, description = "The ID of the Management Server")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the management server")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the Management Server")
     private String hostName;
 
     @Parameter(name = ApiConstants.PEERS, type = CommandType.BOOLEAN,
-            description = "Whether to return the management server peers or not. By default, the management server peers will not be returned.",
+            description = "Whether to return the Management Server peers or not. By default, the Management Server peers will not be returned.",
             since = "4.20.1.0")
     private Boolean peers;
 

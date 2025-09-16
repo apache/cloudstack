@@ -684,7 +684,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
     private void basicNetworkChecks(String instanceName, UnmanagedInstanceTO.Nic nic, Network network) {
         if (nic == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Unable to retrieve the NIC details used by VM [%s] from VMware. Please check if this VM have NICs in VMWare.", instanceName));
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Unable to retrieve the NIC details used by VM [%s] from VMware. Please check if this VM have NICs in VMware.", instanceName));
         }
         if (network == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Network for nic ID: %s not found during VM import.", nic.getNicId()));
@@ -1814,7 +1814,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             logger.warn(msg);
             return;
         }
-        logger.debug(String.format("Removed the cloned instance %s from VMWare datacenter %s/%s",
+        logger.debug(String.format("Removed the cloned instance %s from VMware datacenter %s/%s",
                 clonedInstanceName, vcenter, datacenterName));
     }
 

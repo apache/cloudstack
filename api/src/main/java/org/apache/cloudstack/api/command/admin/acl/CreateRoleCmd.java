@@ -83,7 +83,7 @@ public class CreateRoleCmd extends RoleCmd {
         if (getRoleId() != null) {
             Role existingRole = roleService.findRole(getRoleId());
             if (existingRole == null) {
-                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid role id provided");
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid role ID provided");
             }
 
             CallContext.current().setEventDetails("Role: " + getRoleName() + ", from role: " + getRoleId() + ", description: " + getRoleDescription());
@@ -109,7 +109,7 @@ public class CreateRoleCmd extends RoleCmd {
         }
 
         if (getRoleId() != null && getRoleId() < 1L) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid role id provided");
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid role ID provided");
         }
     }
 

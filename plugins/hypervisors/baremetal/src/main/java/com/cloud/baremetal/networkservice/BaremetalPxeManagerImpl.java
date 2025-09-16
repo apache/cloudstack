@@ -231,13 +231,13 @@ public class BaremetalPxeManagerImpl extends ManagerBase implements BaremetalPxe
         try {
             Answer ans = _agentMgr.send(pxeVo.getHostId(), cmd);
             if (!ans.getResult()) {
-                logger.debug(String.format("Add userdata to vm:%s failed because %s", vm.getInstanceName(), ans.getDetails()));
+                logger.debug(String.format("Add User Data to Instance:%s failed because %s", vm.getInstanceName(), ans.getDetails()));
                 return false;
             } else {
                 return true;
             }
         } catch (Exception e) {
-            logger.debug(String.format("Add userdata to vm:%s failed", vm.getInstanceName()), e);
+            logger.debug(String.format("Add User Data to Instance:%s failed", vm.getInstanceName()), e);
             return false;
         }
     }

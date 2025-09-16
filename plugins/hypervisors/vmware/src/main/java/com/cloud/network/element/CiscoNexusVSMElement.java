@@ -192,7 +192,7 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
             List<? extends Cluster> clusterList = ref.searchForClusters(zoneId, cmd.getStartIndex(), cmd.getPageSizeVal(), "VMware");
 
             if (clusterList.size() == 0) {
-                throw new CloudRuntimeException("No VMWare clusters found in the specified zone!");
+                throw new CloudRuntimeException("No VMware clusters found in the specified zone!");
             }
             // Else, iterate through each vmware cluster, pull its VSM if it has one, and add to the list.
             for (Cluster clus : clusterList) {

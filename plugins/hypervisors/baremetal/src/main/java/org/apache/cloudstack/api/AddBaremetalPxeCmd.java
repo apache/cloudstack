@@ -47,7 +47,7 @@ public class AddBaremetalPxeCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = PhysicalNetworkResponse.class,
                required = true,
-               description = "the Physical Network ID")
+               description = "The Physical Network ID")
     private Long physicalNetworkId;
 
     @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "Pod Id")
@@ -56,7 +56,7 @@ public class AddBaremetalPxeCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "URL of the external pxe device")
     private String url;
 
-    @Parameter(name = ApiConstants.PXE_SERVER_TYPE, type = CommandType.STRING, required = true, description = "type of pxe device")
+    @Parameter(name = ApiConstants.PXE_SERVER_TYPE, type = CommandType.STRING, required = true, description = "Type of pxe device")
     private String deviceType;
 
     @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "Credentials to reach external pxe device")

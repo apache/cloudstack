@@ -40,7 +40,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "deleteBackupSchedule",
-        description = "Deletes the backup schedule of a VM",
+        description = "Deletes the backup schedule of a Instance",
         responseObject = SuccessResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class DeleteBackupScheduleCmd extends BaseCmd {
@@ -52,8 +52,10 @@ public class DeleteBackupScheduleCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class,
-            description = "ID of the VM from which all backup schedules will be deleted.")
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
+            type = CommandType.UUID,
+            entityType = UserVmResponse.class,
+            description = "ID of the Instance from which all backup schedules will be deleted.")
     private Long vmId;
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = BackupScheduleResponse.class,
@@ -85,7 +87,7 @@ public class DeleteBackupScheduleCmd extends BaseCmd {
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {
-                throw new CloudRuntimeException("Failed to delete VM backup schedule");
+                throw new CloudRuntimeException("Failed to delete Instance backup schedule");
             }
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());

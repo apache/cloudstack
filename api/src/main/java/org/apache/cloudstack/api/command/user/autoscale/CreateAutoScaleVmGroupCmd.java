@@ -39,7 +39,7 @@ import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.network.rules.LoadBalancer;
 
 @APICommand(name = "createAutoScaleVmGroup",
-            description = "Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.",
+            description = "Creates and automatically starts an Instance based on a service offering, disk offering, and Template.",
         responseObject = AutoScaleVmGroupResponse.class, entityType = {AutoScaleVmGroup.class},
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
@@ -55,28 +55,28 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
                type = CommandType.UUID,
                entityType = FirewallRuleResponse.class,
                required = true,
-               description = "the ID of the load balancer rule")
+               description = "The ID of the load balancer rule")
     private long lbRuleId;
 
     @Parameter(name = ApiConstants.NAME,
             type = CommandType.STRING,
-            description = "the name of the autoscale vmgroup",
+            description = "The name of the autoscale Instance Group",
             since = "4.18.0")
     private String name;
 
     @Parameter(name = ApiConstants.MIN_MEMBERS,
                type = CommandType.INTEGER,
                required = true,
-               description = "the minimum number of members in the vmgroup, the number of instances in the vm group will be equal to or more than this number.")
+               description = "The minimum number of members in the Instance Group, the number of Instances in the Instance group will be equal to or more than this number.")
     private int minMembers;
 
     @Parameter(name = ApiConstants.MAX_MEMBERS,
                type = CommandType.INTEGER,
                required = true,
-               description = "the maximum number of members in the vmgroup, The number of instances in the vm group will be equal to or less than this number.")
+               description = "The maximum number of members in the Instance Group, The number of Instances in the Instance group will be equal to or less than this number.")
     private int maxMembers;
 
-    @Parameter(name = ApiConstants.INTERVAL, type = CommandType.INTEGER, description = "the frequency in which the performance counters to be collected")
+    @Parameter(name = ApiConstants.INTERVAL, type = CommandType.INTEGER, description = "The frequency in which the performance counters to be collected")
     private Integer interval;
 
     @Parameter(name = ApiConstants.SCALEUP_POLICY_IDS,
@@ -84,7 +84,7 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
                collectionType = CommandType.UUID,
                entityType = AutoScalePolicyResponse.class,
                required = true,
-               description = "list of scaleup autoscale policies")
+               description = "List of scaleup autoscale policies")
     private List<Long> scaleUpPolicyIds;
 
     @Parameter(name = ApiConstants.SCALEDOWN_POLICY_IDS,
@@ -92,17 +92,17 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
                collectionType = CommandType.UUID,
                entityType = AutoScalePolicyResponse.class,
                required = true,
-               description = "list of scaledown autoscale policies")
+               description = "List of scaledown autoscale policies")
     private List<Long> scaleDownPolicyIds;
 
     @Parameter(name = ApiConstants.VMPROFILE_ID,
                type = CommandType.UUID,
                entityType = AutoScaleVmProfileResponse.class,
                required = true,
-               description = "the autoscale profile that contains information about the vms in the vm group.")
+               description = "The autoscale profile that contains information about the Instances in the Instance group.")
     private long profileId;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the group to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the group to the end user or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
     // ///////////////////////////////////////////////////
@@ -180,12 +180,12 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getCreateEventDescription() {
-        return "creating AutoScale Vm Group";
+        return "Creating AutoScale Instance Group";
     }
 
     @Override
     public String getEventDescription() {
-        return "configuring AutoScale Vm Group. Vm Group Id: " + getEntityId();
+        return "Configuring AutoScale Instance Group. Instance Group Id: " + getEntityId();
     }
 
     @Override
@@ -213,7 +213,7 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
             setEntityId(result.getId());
             setEntityUuid(result.getUuid());
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Autoscale Vm Group");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Autoscale Instance Group");
         }
     }
 
@@ -231,11 +231,11 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
             }
         } catch (Exception ex) {
             // TODO what will happen if Resource Layer fails in a step in between
-            logger.warn("Failed to create autoscale vm group", ex);
+            logger.warn("Failed to create autoscale Instance group", ex);
         } finally {
             if (!success || vmGroup == null) {
                 _autoScaleService.deleteAutoScaleVmGroup(getEntityId(), true);
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Autoscale Vm Group");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Autoscale Instance Group");
             }
         }
     }

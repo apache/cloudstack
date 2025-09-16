@@ -44,31 +44,31 @@ public class UpdateVPCOfferingCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VpcOfferingResponse.class, required = true, description = "the id of the VPC offering")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VpcOfferingResponse.class, required = true, description = "The ID of the VPC offering")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the VPC offering")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the VPC offering")
     private String vpcOffName;
 
-    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "the display text of the VPC offering")
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "The display text of the VPC offering")
     private String displayText;
 
-    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "update state for the VPC offering; " + "supported states - Enabled/Disabled")
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "Update state for the VPC offering; " + "supported states - Enabled/Disabled")
     private String state;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
             type = CommandType.STRING,
-            description = "the ID of the containing domain(s) as comma separated string, public for public offerings",
+            description = "The ID of the containing domain(s) as comma separated string, public for public offerings",
             length = 4096)
     private String domainIds;
 
     @Parameter(name = ApiConstants.ZONE_ID,
             type = CommandType.STRING,
-            description = "the ID of the containing zone(s) as comma separated string, all for all zones offerings",
+            description = "The ID of the containing zone(s) as comma separated string, all for all zones offerings",
             since = "4.13")
     private String zoneIds;
 
-    @Parameter(name = ApiConstants.SORT_KEY, type = CommandType.INTEGER, description = "sort key of the VPC offering, integer")
+    @Parameter(name = ApiConstants.SORT_KEY, type = CommandType.INTEGER, description = "Sort key of the VPC offering, integer")
     private Integer sortKey;
 
     /////////////////////////////////////////////////////

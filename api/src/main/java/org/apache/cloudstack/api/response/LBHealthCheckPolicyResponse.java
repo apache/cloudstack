@@ -26,19 +26,19 @@ import com.google.gson.annotations.SerializedName;
 
 public class LBHealthCheckPolicyResponse extends BaseResponse {
     @SerializedName("id")
-    @Param(description = "the LB HealthCheck policy ID")
+    @Param(description = "The LB HealthCheck policy ID")
     private String id;
 
     @SerializedName("pingpath")
-    @Param(description = "the pingpath  of the healthcheck policy")
+    @Param(description = "The pingpath  of the healthcheck policy")
     private String pingpath;
 
     @SerializedName("description")
-    @Param(description = "the description of the healthcheck policy")
+    @Param(description = "The description of the healthcheck policy")
     private String description;
 
     @SerializedName("state")
-    @Param(description = "the state of the policy")
+    @Param(description = "The state of the policy")
     private String state;
 
     @SerializedName("responsetime")
@@ -50,15 +50,15 @@ public class LBHealthCheckPolicyResponse extends BaseResponse {
     private int healthcheckInterval;
 
     @SerializedName("healthcheckthresshold")
-    @Param(description = "Number of consecutive health check success before declaring an instance healthy")
+    @Param(description = "Number of consecutive health check success before declaring an Instance healthy")
     private int healthcheckthresshold;
 
     @SerializedName("unhealthcheckthresshold")
-    @Param(description = "Number of consecutive health check failures before declaring an instance unhealthy.")
+    @Param(description = "Number of consecutive health check failures before declaring an Instance unhealthy.")
     private int unhealthcheckthresshold;
 
     @SerializedName(ApiConstants.FOR_DISPLAY)
-    @Param(description = "is policy for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
+    @Param(description = "Is policy for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
     private Boolean forDisplay;
 
     public void setId(String id) {

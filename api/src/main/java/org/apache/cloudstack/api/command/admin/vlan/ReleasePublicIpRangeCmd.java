@@ -37,7 +37,7 @@ public class ReleasePublicIpRangeCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VlanIpRangeResponse.class, required = true, description = "the id of the Public IP range")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VlanIpRangeResponse.class, required = true, description = "The ID of the Public IP range")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -64,7 +64,7 @@ public class ReleasePublicIpRangeCmd extends BaseCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to release public ip range");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to release public IP range");
         }
     }
 }

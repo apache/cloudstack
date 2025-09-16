@@ -29,7 +29,7 @@ import org.apache.cloudstack.quota.constant.QuotaConfig;
 import javax.inject.Inject;
 import java.util.Arrays;
 
-@APICommand(name = "quotaEmailTemplateUpdate", responseObject = SuccessResponse.class, description = "Updates existing email templates for quota alerts", since = "4.7.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "quotaEmailTemplateUpdate", responseObject = SuccessResponse.class, description = "Updates existing email Templates for quota alerts", since = "4.7.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class QuotaEmailTemplateUpdateCmd extends BaseCmd {
 
     @Inject

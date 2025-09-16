@@ -587,7 +587,7 @@ public class HypervisorHostHelper {
                 BroadcastDomainType.Storage, BroadcastDomainType.UnDecided, BroadcastDomainType.Vlan, BroadcastDomainType.NSX};
 
         if (!Arrays.asList(supportedBroadcastTypes).contains(broadcastDomainType)) {
-            throw new InvalidParameterValueException("BroadcastDomainType " + broadcastDomainType + " it not supported on a VMWare hypervisor at this time.");
+            throw new InvalidParameterValueException("BroadcastDomainType " + broadcastDomainType + " it not supported on a VMware hypervisor at this time.");
         }
 
         if (broadcastDomainType == BroadcastDomainType.Lswitch) {
@@ -791,7 +791,7 @@ public class HypervisorHostHelper {
             try {
                 dvSwitchMo.updateVMWareDVSwitchGetTask(morDvSwitch, dvsSpec);
             } catch (AlreadyExistsFaultMsg e) {
-                LOGGER.info("Specified vlan id (" + vid + ") private vlan id (" + spvlanid + ") tuple already configured on VMWare DVSwitch");
+                LOGGER.info("Specified vlan id (" + vid + ") private vlan id (" + spvlanid + ") tuple already configured on VMware DVSwitch");
                 // Do nothing, good if the tuple's already configured on the dvswitch.
             } catch (Exception e) {
                 // Rethrow the exception
@@ -1324,7 +1324,7 @@ public class HypervisorHostHelper {
                 BroadcastDomainType.Storage, BroadcastDomainType.UnDecided, BroadcastDomainType.Vlan, BroadcastDomainType.NSX};
 
         if (!Arrays.asList(supportedBroadcastTypes).contains(broadcastDomainType)) {
-            throw new InvalidParameterValueException("BroadcastDomainType " + broadcastDomainType + " it not supported on a VMWare hypervisor at this time.");
+            throw new InvalidParameterValueException("BroadcastDomainType " + broadcastDomainType + " it not supported on a VMware hypervisor at this time.");
         }
 
         if (broadcastDomainType == BroadcastDomainType.Lswitch) {
