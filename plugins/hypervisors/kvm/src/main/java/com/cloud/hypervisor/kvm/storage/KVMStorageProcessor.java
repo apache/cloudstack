@@ -364,16 +364,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 final TemplateObjectTO newTemplate = new TemplateObjectTO();
                 newTemplate.setPath(primaryVol.getName());
                 newTemplate.setSize(primaryVol.getSize());
-
-                if(List.of(
-                    StoragePoolType.RBD,
-                    StoragePoolType.PowerFlex,
-                    StoragePoolType.Linstor,
-                    StoragePoolType.FiberChannel).contains(primaryPool.getType())) {
-                    newTemplate.setFormat(ImageFormat.RAW);
-                } else {
-                    newTemplate.setFormat(ImageFormat.QCOW2);
-                }
+                newTemplate.setFormat(getFormat(primaryPool.getType()));
                 data = newTemplate;
             } else if (destData.getObjectType() == DataObjectType.VOLUME) {
                 final VolumeObjectTO volumeObjectTO = new VolumeObjectTO();
@@ -2990,7 +2981,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         final VolumeObjectTO srcVol = (VolumeObjectTO)srcData;
         final VolumeObjectTO destVol = (VolumeObjectTO)destData;
         final ImageFormat srcFormat = srcVol.getFormat();
-        final ImageFormat destFormat = destVol.getFormat();
+        ImageFormat destFormat = destVol.getFormat();
         final DataStoreTO srcStore = srcData.getDataStore();
         final DataStoreTO destStore = destData.getDataStore();
         final PrimaryDataStoreTO srcPrimaryStore = (PrimaryDataStoreTO)srcStore;
@@ -3025,14 +3016,17 @@ public class KVMStorageProcessor implements StorageProcessor {
             volume.setFormat(PhysicalDiskFormat.valueOf(srcFormat.toString()));
             volume.setDispName(srcVol.getName());
             volume.setVmName(srcVol.getVmName());
-
-            String destVolumeName = null;
+            KVMPhysicalDisk newVolume;
+            String destVolumeName;
+            destPool = storagePoolMgr.getStoragePool(destPrimaryStore.getPoolType(), destPrimaryStore.getUuid());
             if (destPrimaryStore.isManaged()) {
                 if (!storagePoolMgr.connectPhysicalDisk(destPrimaryStore.getPoolType(), destPrimaryStore.getUuid(), destVolumePath, destPrimaryStore.getDetails())) {
                     logger.warn("Failed to connect dest volume {}, in storage pool {}", destVol, destPrimaryStore);
                 }
                 destVolumeName = derivePath(destPrimaryStore, destData, destPrimaryStore.getDetails());
             } else {
+                PhysicalDiskFormat destPoolDefaultFormat = destPool.getDefaultFormat();
+                destFormat = getFormat(destPoolDefaultFormat);
                 final String volumeName = UUID.randomUUID().toString();
                 destVolumeName = volumeName + "." + destFormat.getFileExtension();
 
@@ -3042,16 +3036,15 @@ public class KVMStorageProcessor implements StorageProcessor {
                 }
             }
 
-            destPool = storagePoolMgr.getStoragePool(destPrimaryStore.getPoolType(), destPrimaryStore.getUuid());
             try {
                 Volume.Type volumeType = srcVol.getVolumeType();
 
                 resource.createOrUpdateLogFileForCommand(cmd, Command.State.PROCESSING_IN_BACKEND);
                 if (srcVol.getPassphrase() != null && (Volume.Type.ROOT.equals(volumeType) || Volume.Type.DATADISK.equals(volumeType))) {
                     volume.setQemuEncryptFormat(QemuObject.EncryptFormat.LUKS);
-                    storagePoolMgr.copyPhysicalDisk(volume, destVolumeName, destPool, cmd.getWaitInMillSeconds(), srcVol.getPassphrase(), destVol.getPassphrase(), srcVol.getProvisioningType());
+                    newVolume = storagePoolMgr.copyPhysicalDisk(volume, destVolumeName, destPool, cmd.getWaitInMillSeconds(), srcVol.getPassphrase(), destVol.getPassphrase(), srcVol.getProvisioningType());
                 } else {
-                    storagePoolMgr.copyPhysicalDisk(volume, destVolumeName, destPool, cmd.getWaitInMillSeconds());
+                    newVolume = storagePoolMgr.copyPhysicalDisk(volume, destVolumeName, destPool, cmd.getWaitInMillSeconds());
                 }
                 resource.createOrUpdateLogFileForCommand(cmd, Command.State.COMPLETED);
             } catch (Exception e) { // Any exceptions while copying the disk, should send failed answer with the error message
@@ -3076,7 +3069,8 @@ public class KVMStorageProcessor implements StorageProcessor {
                 path = destVolumePath + File.separator + destVolumeName;
             }
             newVol.setPath(path);
-            newVol.setFormat(destFormat);
+            ImageFormat newVolumeFormat = getFormat(newVolume.getFormat());
+            newVol.setFormat(newVolumeFormat);
             newVol.setEncryptFormat(destVol.getEncryptFormat());
             return new CopyCmdAnswer(newVol);
         } catch (final CloudRuntimeException e) {
@@ -3085,6 +3079,26 @@ public class KVMStorageProcessor implements StorageProcessor {
         } finally {
             srcVol.clearPassphrase();
             destVol.clearPassphrase();
+        }
+    }
+
+    private Storage.ImageFormat getFormat(PhysicalDiskFormat format) {
+        if (format == null) {
+            return null;
+        }
+
+        return ImageFormat.valueOf(format.toString().toUpperCase());
+    }
+
+    private Storage.ImageFormat getFormat(StoragePoolType poolType) {
+        if(List.of(
+                StoragePoolType.RBD,
+                StoragePoolType.PowerFlex,
+                StoragePoolType.Linstor,
+                StoragePoolType.FiberChannel).contains(poolType)) {
+            return ImageFormat.RAW;
+        } else {
+            return ImageFormat.QCOW2;
         }
     }
 
