@@ -16,6 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
+from marvin.cloudstackAPI import listZones
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.utils import (cleanup_resources)
 from marvin.lib.base import (Account, ServiceOffering, DiskOffering, VirtualMachine, BackupOffering,
@@ -109,40 +110,7 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
-    @attr(tags=["advanced", "backup"], required_hardware="true")
-    def test_vm_backup_lifecycle(self):
-        """
-        Test VM backup lifecycle
-        """
-
-        # Verify there are no backups for the VM
-        backups = Backup.list(self.apiclient, self.vm.id)
-        self.assertEqual(backups, None, "There should not exist any backup for the VM")
-
-        # Assign VM to offering and create ad-hoc backup
-        self.backup_offering.assignOffering(self.apiclient, self.vm.id)
-        Backup.create(self.apiclient, self.vm.id)
-
-        # Verify backup is created for the VM
-        backups = Backup.list(self.apiclient, self.vm.id)
-        self.assertEqual(len(backups), 1, "There should exist only one backup for the VM")
-        backup = backups[0]
-
-        # Delete backup
-        Backup.delete(self.apiclient, backup.id)
-
-        # Verify backup is deleted
-        backups = Backup.list(self.apiclient, self.vm.id)
-        self.assertEqual(backups, None, "There should not exist any backup for the VM")
-
-        # Remove VM from offering
-        self.backup_offering.removeOffering(self.apiclient, self.vm.id)
-
-    @attr(tags=["advanced", "backup"], required_hardware="true")
-    def test_vm_backup_create_vm_from_backup(self):
-        """
-        Test creating a new VM from a backup
-        """
+    def vm_backup_create_vm_from_backup_int(self, destination_zone):
         self.backup_offering.assignOffering(self.apiclient, self.vm.id)
 
         # Create a file and take backup
@@ -217,3 +185,56 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         # Delete backups
         Backup.delete(self.apiclient, backups[0].id)
         Backup.delete(self.apiclient, backups[1].id)
+
+    @attr(tags=["advanced", "backup"], required_hardware="true")
+    def test_vm_backup_lifecycle(self):
+        """
+        Test VM backup lifecycle
+        """
+
+        # Verify there are no backups for the VM
+        backups = Backup.list(self.apiclient, self.vm.id)
+        self.assertEqual(backups, None, "There should not exist any backup for the VM")
+
+        # Assign VM to offering and create ad-hoc backup
+        self.backup_offering.assignOffering(self.apiclient, self.vm.id)
+        Backup.create(self.apiclient, self.vm.id)
+
+        # Verify backup is created for the VM
+        backups = Backup.list(self.apiclient, self.vm.id)
+        self.assertEqual(len(backups), 1, "There should exist only one backup for the VM")
+        backup = backups[0]
+
+        # Delete backup
+        Backup.delete(self.apiclient, backup.id)
+
+        # Verify backup is deleted
+        backups = Backup.list(self.apiclient, self.vm.id)
+        self.assertEqual(backups, None, "There should not exist any backup for the VM")
+
+        # Remove VM from offering
+        self.backup_offering.removeOffering(self.apiclient, self.vm.id)
+
+    @attr(tags=["advanced", "backup"], required_hardware="true")
+    def test_vm_backup_create_vm_from_backup(self):
+        """
+        Test creating a new VM from a backup
+        """
+        self.vm_backup_create_vm_from_backup_int(self.zone.id)
+
+    @attr(tags=["advanced", "backup"], required_hardware="true")
+    def test_vm_backup_create_vm_from_backup_in_another_zone(self):
+        """
+        Test creating a new VM from a backup in another zone
+        """
+        cmd = listZones.listZonesCmd()
+        zones = self.apiclient.listZones(cmd)
+        if not isinstance(zones, list):
+            raise Exception("Failed to find zones.")
+        if len(zones) < 2:
+            self.skipTest("Skipping test due to there are less than two zones.")
+            return
+
+        self.destZone = zones[1]
+
+        self.vm_backup_create_vm_from_backup_int(self.destZone)
