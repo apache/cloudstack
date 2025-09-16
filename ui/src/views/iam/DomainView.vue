@@ -78,7 +78,7 @@
 </template>
 
 <script>
-import { getAPI, postAPI } from '@/api'
+import { getAPI, callAPI } from '@/api'
 import store from '@/store'
 import { mixinDevice } from '@/utils/mixin.js'
 
@@ -274,7 +274,7 @@ export default {
       }
       param.loading = true
       param.opts = []
-      postAPI(possibleApi, params)
+      callAPI(possibleApi, params)
         .then(json => {
           param.loading = false
           const responseObj = Object.values(json).find(obj => obj.includes('response'))

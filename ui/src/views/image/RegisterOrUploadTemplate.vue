@@ -405,7 +405,7 @@
               name="userdataid"
               ref="userdataid">
               <template #label>
-                <tooltip-label :title="$t('label.userdata')" :tooltip="linkUserDataParams.userdataid.description"/>
+                <tooltip-label :title="$t('label.user.data')" :tooltip="linkUserDataParams.userdataid.description"/>
               </template>
               <a-select
                 showSearch
@@ -425,7 +425,7 @@
           <a-col :md="24" :lg="12">
             <a-form-item ref="userdatapolicy" name="userdatapolicy">
               <template #label>
-                <tooltip-label :title="$t('label.userdatapolicy')" :tooltip="linkUserDataParams.userdatapolicy.description"/>
+                <tooltip-label :title="$t('label.user.data.policy')" :tooltip="linkUserDataParams.userdatapolicy.description"/>
               </template>
               <a-select
                 showSearch

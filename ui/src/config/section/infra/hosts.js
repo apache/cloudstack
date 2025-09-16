@@ -36,7 +36,7 @@ export default {
       'name', 'state', 'resourcestate', 'ipaddress', 'arch', 'hypervisor',
       { field: 'systeminstances', customTitle: 'system.vms' }, 'version'
     ]
-    const metricsFields = ['instances', 'powerstate', 'cpunumber', 'cputotalghz', 'cpuusedghz', 'cpuallocatedghz', 'memorytotalgb', 'memoryusedgb', 'memoryallocatedgb', 'networkread', 'networkwrite']
+    const metricsFields = ['instances', 'powerstate', 'cpunumber', 'cputotalghz', 'cpuusedghz', 'cpuallocatedghz', 'memorytotalgb', 'memoryusedgb', 'memoryallocatedgb', 'gputotal', 'gpuused', 'networkread', 'networkwrite']
     if (store.getters.metrics) {
       fields.push(...metricsFields)
     }
@@ -49,6 +49,10 @@ export default {
   tabs: [{
     name: 'details',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+  }, {
+    name: 'gpu',
+    resourceType: 'Host',
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/GPUTab.vue')))
   }, {
     name: 'events',
     resourceType: 'Host',

@@ -106,8 +106,8 @@ export default {
       const params = {
         listall: true,
         zoneid: this.resource.zoneid,
-        isready: true,
-        isofilter: isoFilter
+        isofilter: isoFilter,
+        isready: true
       }
       return new Promise((resolve, reject) => {
         getAPI('listIsos', params).then((response) => {

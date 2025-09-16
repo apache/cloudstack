@@ -19,9 +19,9 @@
 -- Schema upgrade from 4.20.1.0 to 4.21.0.0
 --;
 
--- Add columns max_backup and backup_interval_type to backup table
-ALTER TABLE `cloud`.`backup_schedule` ADD COLUMN `max_backups` int(8) default NULL COMMENT 'maximum number of backups to maintain';
-ALTER TABLE `cloud`.`backups` ADD COLUMN `backup_interval_type` int(5) COMMENT 'type of backup, e.g. manual, recurring - hourly, daily, weekly or monthly';
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backup_schedule', 'max_backups', 'INT(8) UNSIGNED NOT NULL DEFAULT 0 COMMENT ''Maximum number of backups to be retained''');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'backup_schedule_id', 'BIGINT(20) UNSIGNED');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backup_schedule', 'quiescevm', 'tinyint(1) default NULL COMMENT "Quiesce VM before taking backup"');
 
 -- Update default value for the config 'vm.network.nic.max.secondary.ipaddresses' (and value to default value if value is null)
 UPDATE `cloud`.`configuration` SET default_value = '10' WHERE name = 'vm.network.nic.max.secondary.ipaddresses';
@@ -237,6 +237,68 @@ CREATE TABLE IF NOT EXISTS `cloud`.`gui_themes_details` (
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_gui_themes_details__gui_theme_id` FOREIGN KEY (`gui_theme_id`) REFERENCES `gui_themes`(`id`)
 );
+
+-- Create the GPU card table to hold the GPU card information
+CREATE TABLE IF NOT EXISTS `cloud`.`gpu_card` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(40) NOT NULL UNIQUE,
+  `device_id` varchar(4) NOT NULL COMMENT 'device id of the GPU card',
+  `device_name` varchar(255) NOT NULL COMMENT 'device name of the GPU card',
+  `name` varchar(255) NOT NULL COMMENT 'name of the GPU card',
+  `vendor_name` varchar(255) NOT NULL COMMENT 'vendor name of the GPU card',
+  `vendor_id` varchar(4) NOT NULL COMMENT 'vendor id of the GPU card',
+  `created` datetime NOT NULL COMMENT 'date created',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY (`vendor_id`, `device_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='GPU cards supported by CloudStack';
+
+-- Create the vGPU profile table to hold the vGPU profile information.
+CREATE TABLE IF NOT EXISTS `cloud`.`vgpu_profile` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(40) NOT NULL UNIQUE,
+  `name` varchar(255) NOT NULL COMMENT 'name of the vGPU profile',
+  `description` varchar(255) DEFAULT NULL COMMENT 'description of the vGPU profile',
+  `card_id` bigint unsigned NOT NULL COMMENT 'id of the GPU card',
+  `video_ram` bigint unsigned DEFAULT NULL COMMENT 'video RAM of the vGPU profile',
+  `max_heads` bigint unsigned DEFAULT NULL COMMENT 'maximum number of heads of the vGPU profile',
+  `max_resolution_x` bigint unsigned DEFAULT NULL COMMENT 'maximum resolution x of the vGPU profile',
+  `max_resolution_y` bigint unsigned DEFAULT NULL COMMENT 'maximum resolution y of the vGPU profile',
+  `max_vgpu_per_pgpu` bigint unsigned DEFAULT NULL COMMENT 'Maximum number of vGPUs per physical GPU',
+  `created` datetime NOT NULL COMMENT 'date created',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY (`name`, `card_id`),
+  CONSTRAINT `fk_vgpu_profile_card_id` FOREIGN KEY (`card_id`) REFERENCES `gpu_card`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='vGPU profiles supported by CloudStack';
+
+-- Create the GPU device table to hold the GPU device information on different hosts
+CREATE TABLE IF NOT EXISTS `cloud`.`gpu_device` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(40) NOT NULL UNIQUE,
+  `card_id` bigint unsigned NOT NULL COMMENT 'id of the GPU card',
+  `vgpu_profile_id` bigint unsigned DEFAULT NULL COMMENT 'id of the vGPU profile.',
+  `bus_address` varchar(255) NOT NULL COMMENT 'PCI bus address of the GPU device',
+  `type` varchar(32) NOT NULL COMMENT 'type of the GPU device. PCI or MDEV',
+  `host_id` bigint unsigned NOT NULL COMMENT 'id of the host where GPU is installed',
+  `vm_id` bigint unsigned DEFAULT NULL COMMENT 'id of the VM using this GPU device',
+  `numa_node` varchar(255) DEFAULT NULL COMMENT 'NUMA node of the GPU device',
+  `pci_root` varchar(255) DEFAULT NULL COMMENT 'PCI root of the GPU device',
+  `parent_gpu_device_id` bigint unsigned DEFAULT NULL COMMENT 'id of the parent GPU device. null if it is a physical GPU device and for vGPUs points to the actual GPU',
+  `state` varchar(32) NOT NULL COMMENT 'state of the GPU device',
+  `managed_state` varchar(32) NOT NULL COMMENT 'resource state of the GPU device',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY (`bus_address`, `host_id`),
+  CONSTRAINT `fk_gpu_devices__card_id` FOREIGN KEY (`card_id`) REFERENCES `gpu_card` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_gpu_devices__host_id` FOREIGN KEY (`host_id`) REFERENCES `host` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_gpu_devices__vm_id` FOREIGN KEY (`vm_id`) REFERENCES `vm_instance` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_gpu_devices__parent_gpu_device_id` FOREIGN KEY (`parent_gpu_device_id`) REFERENCES `gpu_device` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='GPU devices installed on hosts';
+
+-- Add references to GPU tables
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.service_offering', 'vgpu_profile_id', 'bigint unsigned DEFAULT NULL COMMENT "vgpu profile ID"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.service_offering', 'gpu_count', 'int unsigned DEFAULT NULL COMMENT "number of GPUs"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.service_offering', 'gpu_display', 'boolean DEFAULT false COMMENT "enable GPU display"');
+CALL `cloud`.`IDEMPOTENT_DROP_FOREIGN_KEY`('cloud.service_offering','fk_service_offering__vgpu_profile_id');
+CALL `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`('cloud.service_offering', 'fk_service_offering__vgpu_profile_id', '(vgpu_profile_id)', '`vgpu_profile`(`id`)');
 
 -- Netris Plugin
 CREATE TABLE `cloud`.`netris_providers` (
@@ -597,3 +659,101 @@ CALL `cloud`.`INSERT_EXTENSION_CUSTOM_ACTION_DETAILS_IF_NOT_EXISTS`(
     'Resume',
     '[]'
 );
+
+ALTER TABLE `cloud`.`networks` MODIFY COLUMN `cidr` varchar(255) DEFAULT NULL COMMENT 'CloudStack managed vms get IP address from cidr.In general this cidr also serves as the network CIDR. But in case IP reservation feature is being used by a Guest network, networkcidr is the Effective network CIDR for that network';
+ALTER TABLE `cloud`.`networks` MODIFY COLUMN `gateway` varchar(255) DEFAULT NULL COMMENT 'gateway(s) for this network configuration';
+ALTER TABLE `cloud`.`networks` MODIFY COLUMN `ip6_cidr` varchar(1024) DEFAULT NULL COMMENT 'IPv6 cidr(s) for this network';
+ALTER TABLE `cloud`.`networks` MODIFY COLUMN `ip6_gateway` varchar(1024) DEFAULT NULL COMMENT 'IPv6 gateway(s) for this network';
+
+-- Add columns name, description and backup_interval_type to backup table
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'name', 'VARCHAR(255) NULL COMMENT "name of the backup"');
+UPDATE `cloud`.`backups` backup INNER JOIN `cloud`.`vm_instance` vm ON backup.vm_id = vm.id SET backup.name = vm.name;
+ALTER TABLE `cloud`.`backups` MODIFY COLUMN `name` VARCHAR(255) NOT NULL;
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'description', 'VARCHAR(1024) COMMENT "description for the backup"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'backup_interval_type', 'int(5) COMMENT "type of backup, e.g. manual, recurring - hourly, daily, weekly or monthly"');
+
+-- Create backup details table
+CREATE TABLE IF NOT EXISTS `cloud`.`backup_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `backup_id` bigint unsigned NOT NULL COMMENT 'backup id',
+  `name` varchar(255) NOT NULL,
+  `value` TEXT NOT NULL,
+  `display` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Should detail be displayed to the end user',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_backup_details__backup_id` FOREIGN KEY `fk_backup_details__backup_id`(`backup_id`) REFERENCES `backups`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Add diskOfferingId, deviceId, minIops and maxIops to backed_volumes in backups table
+UPDATE `cloud`.`backups` b
+INNER JOIN `cloud`.`vm_instance` vm ON b.vm_id = vm.id
+SET b.backed_volumes = (
+    SELECT CONCAT("[",
+        GROUP_CONCAT(
+            CONCAT(
+                "{\"uuid\":\"", v.uuid, "\",",
+                "\"type\":\"", v.volume_type, "\",",
+                "\"size\":", v.`size`, ",",
+                "\"path\":\"", IFNULL(v.path, 'null'), "\",",
+                "\"deviceId\":", IFNULL(v.device_id, 'null'), ",",
+                "\"diskOfferingId\":\"", doff.uuid, "\",",
+                "\"minIops\":", IFNULL(v.min_iops, 'null'), ",",
+                "\"maxIops\":", IFNULL(v.max_iops, 'null'),
+                "}"
+            )
+            SEPARATOR ","
+        ),
+    "]")
+    FROM `cloud`.`volumes` v
+    LEFT JOIN `cloud`.`disk_offering` doff ON v.disk_offering_id = doff.id
+    WHERE v.instance_id = vm.id
+);
+
+-- Add diskOfferingId, deviceId, minIops and maxIops to backup_volumes in vm_instance table
+UPDATE `cloud`.`vm_instance` vm
+SET vm.backup_volumes = (
+    SELECT CONCAT("[",
+        GROUP_CONCAT(
+            CONCAT(
+                "{\"uuid\":\"", v.uuid, "\",",
+                "\"type\":\"", v.volume_type, "\",",
+                "\"size\":", v.`size`, ",",
+                "\"path\":\"", IFNULL(v.path, 'null'), "\",",
+                "\"deviceId\":", IFNULL(v.device_id, 'null'), ",",
+                "\"diskOfferingId\":\"", doff.uuid, "\",",
+                "\"minIops\":", IFNULL(v.min_iops, 'null'), ",",
+                "\"maxIops\":", IFNULL(v.max_iops, 'null'),
+                "}"
+            )
+            SEPARATOR ","
+        ),
+    "]")
+    FROM `cloud`.`volumes` v
+    LEFT JOIN `cloud`.`disk_offering` doff ON v.disk_offering_id = doff.id
+    WHERE v.instance_id = vm.id
+)
+WHERE vm.backup_offering_id IS NOT NULL;
+
+-- Add column allocated_size to object_store table. Rename column 'used_bytes' to 'used_size'
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.object_store', 'allocated_size', 'bigint unsigned COMMENT "allocated size in bytes"');
+ALTER TABLE `cloud`.`object_store` CHANGE COLUMN `used_bytes` `used_size` BIGINT UNSIGNED COMMENT 'used size in bytes';
+ALTER TABLE `cloud`.`object_store` MODIFY COLUMN `total_size` bigint unsigned COMMENT 'total size in bytes';
+UPDATE `cloud`.`object_store`
+JOIN (
+    SELECT object_store_id, SUM(quota) AS total_quota
+    FROM `cloud`.`bucket`
+    WHERE removed IS NULL
+    GROUP BY object_store_id
+) buckets_quota_sum_view ON `object_store`.id = buckets_quota_sum_view.object_store_id
+SET `object_store`.allocated_size = buckets_quota_sum_view.total_quota;
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.console_session', 'domain_id', 'bigint(20) unsigned NOT NULL');
+
+UPDATE `cloud`.`console_session` `cs`
+SET `cs`.`domain_id` = (
+    SELECT `acc`.`domain_id`
+    FROM `cloud`.`account` `acc`
+    WHERE `acc`.`id` = `cs`.`account_id`
+);
+
+-- Re-apply VPC: update default network offering for vpc tier to conserve_mode=1 (#8309)
+UPDATE `cloud`.`network_offerings` SET conserve_mode = 1 WHERE name = 'DefaultIsolatedNetworkOfferingForVpcNetworks';

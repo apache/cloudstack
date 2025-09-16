@@ -126,6 +126,9 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
             since = "4.21.0")
     private Long extensionId;
 
+    @Parameter(name = ApiConstants.IS_READY, type = CommandType.BOOLEAN, description = "list templates that are ready to be deployed", since = "4.21.0")
+    private Boolean ready;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -195,6 +198,13 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
         boolean onlyReady =
             (templateFilter == TemplateFilter.featured) || (templateFilter == TemplateFilter.selfexecutable) || (templateFilter == TemplateFilter.sharedexecutable) ||
                 (templateFilter == TemplateFilter.executable && isAccountSpecific) || (templateFilter == TemplateFilter.community);
+
+        if (!onlyReady) {
+            if (isReady() != null && isReady().booleanValue() != onlyReady) {
+                onlyReady = isReady().booleanValue();
+            }
+        }
+
         return onlyReady;
     }
 
@@ -228,6 +238,10 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
 
     public Long getExtensionId() {
         return extensionId;
+    }
+
+    public Boolean isReady() {
+        return ready;
     }
 
     @Override

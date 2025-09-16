@@ -16,6 +16,9 @@
 # specific language governing permissions and limitations
 # under the License.
 
+import warnings
+warnings.filterwarnings('ignore')
+
 import json
 import sys
 import winrm
@@ -200,12 +203,11 @@ class HyperVManager:
     def status(self):
         command = f'(Get-VM -Name "{self.data["vmname"]}").State'
         state = self.run_ps(command)
-        if state.lower() == "running":
+        power_state = "unknown"
+        if state.strip().lower() == "running":
             power_state = "poweron"
-        elif state.lower() == "off":
+        elif state.strip().lower() == "off":
             power_state = "poweroff"
-        else:
-            power_state = "unknown"
         succeed({"status": "success", "power_state": power_state})
 
     def delete(self):

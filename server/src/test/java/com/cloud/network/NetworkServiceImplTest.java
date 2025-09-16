@@ -1268,4 +1268,35 @@ public class NetworkServiceImplTest {
             service.getNicVlanValueForExternalVm(nic);
         }
     }
+
+    @Test
+    public void testGetIpAddressesFromIps() {
+        // Test with valid IPv4, IPv6 and MAC address
+        Network.IpAddresses result = service.getIpAddressesFromIps("192.168.1.1", "2001:db8::1", "00:11:22:33:44:55");
+        Assert.assertEquals("192.168.1.1", result.getIp4Address());
+        Assert.assertEquals("2001:db8::1", result.getIp6Address());
+        Assert.assertEquals("00:11:22:33:44:55", result.getMacAddress());
+
+        // Test with all null values
+        result = service.getIpAddressesFromIps(null, null, null);
+        Assert.assertNull(result.getIp4Address());
+        Assert.assertNull(result.getIp6Address());
+        Assert.assertNull(result.getMacAddress());
+
+        // Test with invalid MAC address (non-unicast)
+        try {
+            service.getIpAddressesFromIps(null, null, "ff:ff:ff:ff:ff:ff");
+            Assert.fail("Expected InvalidParameterValueException for non-unicast MAC address");
+        } catch (InvalidParameterValueException e) {
+            Assert.assertEquals("Mac address is not unicast: ff:ff:ff:ff:ff:ff", e.getMessage());
+        }
+
+        // Test with invalid MAC address (invalid format)
+        try {
+            service.getIpAddressesFromIps(null, null, "invalid-mac");
+            Assert.fail("Expected InvalidParameterValueException for invalid MAC address format");
+        } catch (InvalidParameterValueException e) {
+            Assert.assertEquals("Mac address is not valid: invalid-mac", e.getMessage());
+        }
+    }
 }

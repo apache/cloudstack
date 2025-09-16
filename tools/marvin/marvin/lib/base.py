@@ -517,6 +517,43 @@ class VirtualMachine:
         virtual_machine.public_ip = nat_rule.ipaddress
 
     @classmethod
+    def program_ssh_access(
+            cls, apiclient, services, mode, networkids, virtual_machine, allow_egress=False, vpcid=None):
+        """
+        Program SSH access to the VM
+        """
+        # program ssh access over NAT via PF
+        retries = 5
+        interval = 30
+        while retries > 0:
+            try:
+                if mode.lower() == 'advanced':
+                    cls.access_ssh_over_nat(
+                        apiclient,
+                        services,
+                        virtual_machine,
+                        allow_egress=allow_egress,
+                        networkid=networkids[0] if networkids else None,
+                        vpcid=vpcid)
+                elif mode.lower() == 'basic':
+                    if virtual_machine.publicip is not None:
+                        # EIP/ELB (netscaler) enabled zone
+                        vm_ssh_ip = virtual_machine.publicip
+                    else:
+                        # regular basic zone with security group
+                        vm_ssh_ip = virtual_machine.nic[0].ipaddress
+                    virtual_machine.ssh_ip = vm_ssh_ip
+                    virtual_machine.public_ip = vm_ssh_ip
+                break
+            except Exception as e:
+                if retries >= 0:
+                    retries = retries - 1
+                    time.sleep(interval)
+                    continue
+                raise Exception(
+                    "The following exception appeared while programming ssh access - %s" % e)
+
+    @classmethod
     def create(cls, apiclient, services, templateid=None, accountid=None,
                domainid=None, zoneid=None, networkids=None,
                serviceofferingid=None, securitygroupids=None,
@@ -716,36 +753,7 @@ class VirtualMachine:
             virtual_machine.public_ip = virtual_machine.nic[0].ipaddress
             return VirtualMachine(virtual_machine.__dict__, services)
 
-        # program ssh access over NAT via PF
-        retries = 5
-        interval = 30
-        while retries > 0:
-            time.sleep(interval)
-            try:
-                if mode.lower() == 'advanced':
-                    cls.access_ssh_over_nat(
-                        apiclient,
-                        services,
-                        virtual_machine,
-                        allow_egress=allow_egress,
-                        networkid=cmd.networkids[0] if cmd.networkids else None,
-                        vpcid=vpcid)
-                elif mode.lower() == 'basic':
-                    if virtual_machine.publicip is not None:
-                        # EIP/ELB (netscaler) enabled zone
-                        vm_ssh_ip = virtual_machine.publicip
-                    else:
-                        # regular basic zone with security group
-                        vm_ssh_ip = virtual_machine.nic[0].ipaddress
-                    virtual_machine.ssh_ip = vm_ssh_ip
-                    virtual_machine.public_ip = vm_ssh_ip
-                break
-            except Exception as e:
-                if retries >= 0:
-                    retries = retries - 1
-                    continue
-                raise Exception(
-                    "The following exception appeared while programming ssh access - %s" % e)
+        cls.program_ssh_access(apiclient, services, mode, cmd.networkids, virtual_machine, allow_egress, vpcid)
 
         return VirtualMachine(virtual_machine.__dict__, services)
 
@@ -1141,7 +1149,7 @@ class Volume:
 
     @classmethod
     def create(cls, apiclient, services, zoneid=None, account=None,
-               domainid=None, diskofferingid=None, projectid=None, size=None):
+               domainid=None, diskofferingid=None, projectid=None, size=None, snapshotid=None):
         """Create Volume"""
         cmd = createVolume.createVolumeCmd()
         cmd.name = "-".join([services["diskname"], random_gen()])
@@ -1171,6 +1179,9 @@ class Volume:
 
         if size:
             cmd.size = size
+
+        if snapshotid:
+            cmd.snapshotid = snapshotid
 
         return Volume(apiclient.createVolume(cmd).__dict__)
 
@@ -1387,7 +1398,7 @@ class Snapshot:
 
     @classmethod
     def create(cls, apiclient, volume_id, account=None,
-               domainid=None, projectid=None, locationtype=None, asyncbackup=None):
+               domainid=None, projectid=None, locationtype=None, asyncbackup=None, zoneids=None, pool_ids=None, usestoragereplication=None):
         """Create Snapshot"""
         cmd = createSnapshot.createSnapshotCmd()
         cmd.volumeid = volume_id
@@ -1401,12 +1412,20 @@ class Snapshot:
             cmd.locationtype = locationtype
         if asyncbackup:
             cmd.asyncbackup = asyncbackup
+        if zoneids:
+            cmd.zoneids = zoneids
+        if pool_ids:
+            cmd.storageids = pool_ids
+        if usestoragereplication:
+            cmd.usestoragereplication = usestoragereplication
         return Snapshot(apiclient.createSnapshot(cmd).__dict__)
 
-    def delete(self, apiclient):
+    def delete(self, apiclient, zone_id=None):
         """Delete Snapshot"""
         cmd = deleteSnapshot.deleteSnapshotCmd()
         cmd.id = self.id
+        if zone_id:
+            cmd.zoneid = zone_id
         apiclient.deleteSnapshot(cmd)
 
     @classmethod
@@ -1418,6 +1437,22 @@ class Snapshot:
         if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
             cmd.listall = True
         return (apiclient.listSnapshots(cmd))
+
+    @classmethod
+    def copy(cls, apiclient, snapshotid, zone_ids=None, source_zone_id=None, pool_ids=None, usestoragereplication=None):
+        """ Copy snapshot to another zone or a primary storage in another zone"""
+        cmd = copySnapshot.copySnapshotCmd()
+        cmd.id = snapshotid
+        if source_zone_id:
+            cmd.sourcezoneid = source_zone_id
+        if zone_ids:
+            cmd.destzoneids = zone_ids
+        if pool_ids:
+            cmd.storageids = pool_ids
+        if usestoragereplication:
+            cmd.usestoragereplication = usestoragereplication
+        return Snapshot(apiclient.copySnapshot(cmd).__dict__)
+
 
     def validateState(self, apiclient, snapshotstate, timeout=600):
         """Check if snapshot is in required state
@@ -1454,7 +1489,7 @@ class Template:
 
     @classmethod
     def create(cls, apiclient, services, volumeid=None,
-               account=None, domainid=None, projectid=None, randomise=True):
+               account=None, domainid=None, projectid=None, randomise=True, snapshotid=None, zoneid=None):
         """Create template from Volume"""
         # Create template from Virtual machine and Volume ID
         cmd = createTemplate.createTemplateCmd()
@@ -1500,6 +1535,12 @@ class Template:
 
         if projectid:
             cmd.projectid = projectid
+
+        if snapshotid:
+            cmd.snapshotid = snapshotid
+
+        if zoneid:
+            cmd.zoneid = zoneid
         return Template(apiclient.createTemplate(cmd).__dict__)
 
     @classmethod
@@ -2714,6 +2755,13 @@ class ServiceOffering:
         if "diskofferingid" in services:
             cmd.diskofferingid = services["diskofferingid"]
 
+        if "vgpuprofileid" in services:
+            cmd.vgpuprofileid = services["vgpuprofileid"]
+            cmd.gpucount = 1
+
+        if "gpucount" in services:
+            cmd.gpucount = services["gpucount"]
+
         # Service Offering private to that domain
         if domainid:
             cmd.domainid = domainid
@@ -3032,6 +3080,9 @@ class LoadBalancerRule:
         if "openfirewall" in services:
             cmd.openfirewall = services["openfirewall"]
 
+        if "protocol" in services:
+            cmd.protocol = services["protocol"]
+
         if projectid:
             cmd.projectid = projectid
 
@@ -3139,6 +3190,22 @@ class LoadBalancerRule:
 
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return apiclient.listLoadBalancerRuleInstances(cmd)
+
+    def assignCert(self, apiclient, certId, forced=None):
+        """"""
+        cmd = assignCertToLoadBalancer.assignCertToLoadBalancerCmd()
+        cmd.lbruleid = self.id
+        cmd.certid = certId
+        if forced is not None:
+            cmd.forced = forced
+        return apiclient.assignCertToLoadBalancer(cmd)
+
+    def removeCert(self, apiclient):
+        """Removes a certificate from a load balancer rule"""
+
+        cmd = removeCertFromLoadBalancer.removeCertFromLoadBalancerCmd()
+        cmd.lbruleid = self.id
+        return apiclient.removeCertFromLoadBalancer(cmd)
 
 
 class Cluster:
@@ -3332,6 +3399,14 @@ class Host:
         cmd = deleteHost.deleteHostCmd()
         cmd.id = self.id
         apiclient.deleteHost(cmd)
+        return
+
+    def discoverGpuDevices(self, apiclient):
+        """Discover GPU devices on the host"""
+        # Host must be in maintenance mode before deletion
+        cmd = discoverGpuDevices.discoverGpuDevicesCmd()
+        cmd.id = self.id
+        apiclient.discoverGpuDevices(cmd)
         return
 
     @classmethod
@@ -6142,11 +6217,13 @@ class Backup:
         self.__dict__.update(items)
 
     @classmethod
-    def create(self, apiclient, vmid):
+    def create(cls, apiclient, vmid, name=None):
         """Create VM backup"""
 
         cmd = createBackup.createBackupCmd()
         cmd.virtualmachineid = vmid
+        if name:
+            cmd.name = name
         return Backup(apiclient.createBackup(cmd).__dict__)
 
     @classmethod
@@ -6160,11 +6237,12 @@ class Backup:
         return (apiclient.deleteBackup(cmd))
 
     @classmethod
-    def list(self, apiclient, vmid):
+    def list(self, apiclient, vmid=None):
         """List VM backups"""
 
         cmd = listBackups.listBackupsCmd()
-        cmd.virtualmachineid = vmid
+        if vmid:
+            cmd.virtualmachineid = vmid
         cmd.listall = True
         return (apiclient.listBackups(cmd))
 
@@ -6186,6 +6264,21 @@ class Backup:
         cmd.virtualmachineid = virtualmachineid
         return (apiclient.restoreVolumeFromBackupAndAttachToVM(cmd))
 
+    @classmethod
+    def createVMFromBackup(cls, apiclient, services, mode, backupid, accountname, domainid, zoneid, vmname=None):
+        """Create new VM from backup
+        """
+        cmd = createVMFromBackup.createVMFromBackupCmd()
+        cmd.backupid = backupid
+        cmd.account = accountname
+        cmd.domainid = domainid
+        cmd.zoneid = zoneid
+        if vmname:
+            cmd.name = vmname
+        response = apiclient.createVMFromBackup(cmd)
+        virtual_machine = VirtualMachine(response.__dict__, [])
+        VirtualMachine.program_ssh_access(apiclient, services, mode, cmd.networkids, virtual_machine)
+        return virtual_machine
 
 class BackupSchedule:
 
@@ -6227,6 +6320,37 @@ class BackupSchedule:
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return (apiclient.updateBackupSchedule(cmd))
 
+
+class BackupRepository:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def add(cls, apiclient, zoneid, name, address, provider, type):
+        """Add backup repository"""
+
+        cmd = addBackupRepository.addBackupRepositoryCmd()
+        cmd.zoneid = zoneid
+        cmd.name = name
+        cmd.address = address
+        cmd.provider = provider
+        cmd.type = type
+        response = apiclient.addBackupRepository(cmd)
+        return BackupRepository(response.__dict__)
+
+    def delete(self, apiclient):
+        """Delete backup repository"""
+
+        cmd = deleteBackupRepository.deleteBackupRepositoryCmd()
+        cmd.id = self.id
+        return (apiclient.deleteBackupRepository(cmd))
+
+    def list(self, apiclient):
+        """List backup repository"""
+
+        cmd = listBackupRepositories.listBackupRepositoriesCmd()
+        return (apiclient.listBackupRepository(cmd))
 
 class ProjectRole:
 
@@ -7831,3 +7955,140 @@ class SharedFS:
         cmd.diskofferingid = diskofferingid
         cmd.size = size
         return (apiclient.changeSharedFileSystemDiskOffering(cmd))
+
+class GpuDevice:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    """Manage GPU Device"""
+    @classmethod
+    def create(cls, apiclient, services, name, description=None, hostid=None, busaddress=None, gpuCardId=None, vgpuProfileId=None, type=None, parentGpuDeviceId=None, numaNode=None, pciRoot=None):
+        """Create GPU Device"""
+        cmd = createGpuDevice.createGpuDeviceCmd()
+        cmd.name = name
+
+        if description:
+            cmd.description = description
+
+
+        if hostid:
+            cmd.hostid = hostid
+        elif "hostid" in services:
+            cmd.hostid = services["hostid"]
+
+        if busaddress:
+            cmd.busaddress = busaddress
+        elif "busaddress" in services:
+            cmd.busaddress = services["busaddress"]
+
+        if gpuCardId:
+            cmd.gpuCardId = gpuCardId
+        elif "gpuCardId" in services:
+            cmd.gpuCardId = services["gpuCardId"]
+
+        if vgpuProfileId:
+            cmd.vgpuProfileId = vgpuProfileId
+        elif "vgpuProfileId" in services:
+            cmd.vgpuProfileId = services["vgpuProfileId"]
+
+        if type:
+            cmd.type = type
+        elif "type" in services:
+            cmd.type = services["type"]
+
+        if parentGpuDeviceId:
+            cmd.parentGpuDeviceId = parentGpuDeviceId
+        elif "parentGpuDeviceId" in services:
+            cmd.parentGpuDeviceId = services["parentGpuDeviceId"]
+
+        if numaNode:
+            cmd.numaNode = numaNode
+        elif "numaNode" in services:
+            cmd.numaNode = services["numaNode"]
+
+        if pciRoot:
+            cmd.pciRoot = pciRoot
+        elif "pciRoot" in services:
+            cmd.pciRoot = services["pciRoot"]
+
+        return GpuDevice(apiclient.createGpuDevice(cmd).__dict__)
+
+    def delete(self, apiclient, expunge=True, forced=True):
+        """Delete GPU Device"""
+        cmd = deleteGpuDevice.deleteGpuDeviceCmd()
+        cmd.id = self.id
+        cmd.expunge = expunge
+        cmd.forced = forced
+        apiclient.deleteGpuDevice(cmd)
+
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listGpuDevices.listGpuDevicesCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return (apiclient.listGpuDevices(cmd))
+
+    def update(self, apiclient, **kwargs):
+        """Update GPU Device"""
+        cmd = updateGpuDevice.updateGpuDeviceCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return (apiclient.updateGpuDevice(cmd))
+
+
+class SslCertificate:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, services, name, certificate=None, privatekey=None,
+               certchain=None, password=None, enabledrevocationcheck=None,
+               account=None, domainid=None, projectid=None):
+        """Upload SSL certificate"""
+        cmd = uploadSslCert.uploadSslCertCmd()
+        cmd.name = name
+
+        if certificate:
+            cmd.certificate = certificate
+        elif "certificate" in services:
+            cmd.certificate = services["certificate"]
+
+        if privatekey:
+            cmd.privatekey = privatekey
+        elif "privatekey" in services:
+            cmd.privatekey = services["privatekey"]
+
+        if certchain:
+            cmd.certchain = certchain
+        elif "certchain" in services:
+            cmd.certchain = services["certchain"]
+
+        if password:
+            cmd.password = password
+        elif "password" in services:
+            cmd.password = services["password"]
+
+        if enabledrevocationcheck is not None:
+            cmd.enabledrevocationcheck = enabledrevocationcheck
+        elif "enabledrevocationcheck" in services:
+            cmd.enabledrevocationcheck = services["enabledrevocationcheck"]
+
+        if account:
+            cmd.account = account
+
+        if projectid:
+            cmd.projectid = projectid
+
+        if domainid:
+            cmd.domainid = domainid
+
+        return SslCertificate(apiclient.uploadSslCert(cmd, method='POST').__dict__)
+
+    def delete(self, apiclient):
+        """Delete SSL Certificate"""
+
+        cmd = deleteSslCert.deleteSslCertCmd()
+        cmd.id = self.id
+        apiclient.deleteSslCert(cmd)
