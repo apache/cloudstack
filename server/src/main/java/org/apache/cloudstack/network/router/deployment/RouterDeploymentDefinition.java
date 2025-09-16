@@ -23,14 +23,18 @@ import java.util.Objects;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Vlan;
+import com.cloud.network.dao.NetrisProviderDao;
 import com.cloud.network.dao.NetworkDetailVO;
 import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.NsxProviderDao;
+import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.element.NetrisProviderVO;
 import com.cloud.network.element.NsxProviderVO;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -93,7 +97,9 @@ public class RouterDeploymentDefinition {
     protected NetworkDao networkDao;
     protected DomainRouterDao routerDao;
     protected NsxProviderDao nsxProviderDao;
+    protected NetrisProviderDao netrisProviderDao;
     protected PhysicalNetworkServiceProviderDao physicalProviderDao;
+    protected PhysicalNetworkDao pNtwkDao;
     protected NetworkModel networkModel;
     protected VirtualRouterProviderDao vrProviderDao;
     protected NetworkOfferingDao networkOfferingDao;
@@ -257,7 +263,7 @@ public class RouterDeploymentDefinition {
     protected void lock() {
         final Network lock = networkDao.acquireInLockTable(guestNetwork.getId(), NetworkOrchestrationService.NetworkLockTimeout.value());
         if (lock == null) {
-            throw new ConcurrentOperationException("Unable to lock network " + guestNetwork.getId());
+            throw new ConcurrentOperationException(String.format("Unable to lock network %s", guestNetwork));
         }
         tableLockId = lock.getId();
     }
@@ -266,7 +272,7 @@ public class RouterDeploymentDefinition {
         if (tableLockId != null) {
             networkDao.releaseFromLockTable(tableLockId);
             if (logger.isDebugEnabled()) {
-                logger.debug("Lock is released for network id " + tableLockId + " as a part of router startup in " + dest);
+                logger.debug(String.format("Lock is released for network [id: %d] (%s) as a part of router startup in %s", tableLockId, guestNetwork, dest));
             }
         }
     }
@@ -309,7 +315,7 @@ public class RouterDeploymentDefinition {
 
                 // If List size is one, we already have a starting or running VR, skip deployment
                 if (virtualRouters.size() == 1) {
-                    logger.debug("Skipping VR deployment: Found a running or starting VR in Pod " + pod.getName() + " id=" + podId);
+                    logger.debug(String.format("Skipping VR deployment: Found a running or starting VR in Pod %s", pod));
                     continue;
                 }
                 // Add new DeployDestination for this pod
@@ -395,15 +401,26 @@ public class RouterDeploymentDefinition {
         if (Objects.nonNull(zone)) {
             zoneId = zone.getId();
         }
-        NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(zoneId);
+
+        boolean isExternalProvider = isExternalProviderPresent(zoneId);
 
         if (isPublicNetwork) {
-            if (Objects.isNull(nsxProvider)) {
+            if (!isExternalProvider) {
                 sourceNatIp = ipAddrMgr.assignSourceNatIpAddressToGuestNetwork(owner, guestNetwork);
             } else {
                 sourceNatIp = ipAddrMgr.assignPublicIpAddress(zoneId, getPodId(), owner, Vlan.VlanType.VirtualNetwork, null, null, false, true);
             }
         }
+    }
+
+    protected boolean isExternalProviderPresent(Long zoneId) {
+        NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(zoneId);
+        NetrisProviderVO netrisProviderVO = netrisProviderDao.findByZoneId(zoneId);
+
+        if (ObjectUtils.anyNotNull(nsxProvider, netrisProviderVO)) {
+            return true;
+        }
+        return false;
     }
 
     protected void findDefaultServiceOfferingId() {
@@ -429,7 +446,7 @@ public class RouterDeploymentDefinition {
             DiskOfferingVO diskOffering = diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
             boolean isLocalStorage = ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dest.getDataCenter().getId());
             if (isLocalStorage == diskOffering.isUseLocalStorage()) {
-                logger.debug(String.format("Service offering %s (uuid: %s) will be used on virtual router", serviceOffering.getName(), serviceOffering.getUuid()));
+                logger.debug(String.format("Service offering %s will be used on virtual router", serviceOffering));
                 serviceOfferingId = serviceOffering.getId();
             }
         }
@@ -452,7 +469,7 @@ public class RouterDeploymentDefinition {
         final PhysicalNetworkServiceProvider provider = physicalProviderDao.findByServiceProvider(physicalNetworkId, type.toString());
 
         if (provider == null) {
-            throw new CloudRuntimeException(String.format("Cannot find service provider %s in physical network %s", type.toString(), physicalNetworkId));
+            throw new CloudRuntimeException(String.format("Cannot find service provider %s in physical network %s", type.toString(), pNtwkDao.findById(physicalNetworkId)));
         }
 
         vrProvider = vrProviderDao.findByNspIdAndType(provider.getId(), type);

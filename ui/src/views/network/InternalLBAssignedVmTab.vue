@@ -65,7 +65,7 @@
   </a-spin>
 </template>
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
@@ -121,7 +121,7 @@ export default {
   methods: {
     fetchData () {
       this.fetchLoading = true
-      api('listLoadBalancerRuleInstances', {
+      getAPI('listLoadBalancerRuleInstances', {
         id: this.resource.id,
         page: this.page,
         pagesize: this.pageSize
@@ -134,7 +134,7 @@ export default {
     },
     removeVmFromLB (vm) {
       this.fetchLoading = true
-      api('removeFromLoadBalancerRule', {
+      postAPI('removeFromLoadBalancerRule', {
         id: this.resource.id,
         virtualmachineids: vm.id
       }).then(response => {

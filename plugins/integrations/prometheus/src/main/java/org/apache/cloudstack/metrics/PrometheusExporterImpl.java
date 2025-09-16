@@ -19,6 +19,7 @@ package org.apache.cloudstack.metrics;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -298,11 +299,11 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
                     metricsList.add(new ItemHostMemory(zoneName, zoneUuid, null, null, null, null, ALLOCATED, allocatedCapacityByTag.third(), 0, tag));
                 });
 
-        List<HostTagVO> allHostTagVOS = hostDao.listAll().stream()
-                .flatMap( h -> _hostTagsDao.getHostTags(h.getId()).stream())
+        List<HostTagVO> allHostTagVOS = hostDao.listAllIds().stream()
+                .flatMap( h -> _hostTagsDao.getHostTags(h).stream())
                 .distinct()
                 .collect(Collectors.toList());
-        List<String> allHostTags = new ArrayList<>();
+        HashSet<String> allHostTags = new HashSet<>();
         allHostTagVOS.forEach(hostTagVO -> allHostTags.add(hostTagVO.getTag()));
 
         for (final State state : State.values()) {
@@ -393,6 +394,7 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
     private void addDomainLimits(final List<Item> metricsList) {
         Long totalCpuLimit = 0L;
         Long totalMemoryLimit = 0L;
+        Long totalGpuLimit = 0L;
 
         for (final DomainJoinVO domain: domainDao.listAll()) {
             if (domain == null || domain.getLevel() != 1) {
@@ -410,6 +412,12 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
                 totalMemoryLimit += memoryLimit;
             }
 
+            long gpuLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getGpuLimit(), false,
+                    Resource.ResourceType.gpu, domain.getId());
+            if (gpuLimit > 0) {
+                totalGpuLimit += gpuLimit;
+            }
+
             long primaryStorageLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getPrimaryStorageLimit(), false,
                     Resource.ResourceType.primary_storage, domain.getId());
             long secondaryStorageLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getSecondaryStorageLimit(), false,
@@ -418,6 +426,7 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
             // Add per domain cpu, memory and storage count
             metricsList.add(new ItemPerDomainResourceLimit(cpuLimit, domain.getPath(), Resource.ResourceType.cpu.getName()));
             metricsList.add(new ItemPerDomainResourceLimit(memoryLimit, domain.getPath(), Resource.ResourceType.memory.getName()));
+            metricsList.add(new ItemPerDomainResourceLimit(gpuLimit, domain.getPath(), Resource.ResourceType.gpu.getName()));
             metricsList.add(new ItemPerDomainResourceLimit(primaryStorageLimit, domain.getPath(), Resource.ResourceType.primary_storage.getName()));
             metricsList.add(new ItemPerDomainResourceLimit(secondaryStorageLimit, domain.getPath(), Resource.ResourceType.secondary_storage.getName()));
         }
@@ -441,6 +450,8 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
                     Resource.ResourceType.memory, null);
             long cpuUsed = _resourceCountDao.getResourceCount(domain.getId(), Resource.ResourceOwnerType.Domain,
                     Resource.ResourceType.cpu, null);
+            long gpuUsed = _resourceCountDao.getResourceCount(domain.getId(), Resource.ResourceOwnerType.Domain,
+                    Resource.ResourceType.gpu, null);
             long primaryStorageUsed = _resourceCountDao.getResourceCount(domain.getId(), Resource.ResourceOwnerType.Domain,
                     Resource.ResourceType.primary_storage, null);
             long secondaryStorageUsed = _resourceCountDao.getResourceCount(domain.getId(), Resource.ResourceOwnerType.Domain,
@@ -448,6 +459,7 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
 
             metricsList.add(new ItemPerDomainResourceCount(memoryUsed, domain.getPath(), Resource.ResourceType.memory.getName()));
             metricsList.add(new ItemPerDomainResourceCount(cpuUsed, domain.getPath(), Resource.ResourceType.cpu.getName()));
+            metricsList.add(new ItemPerDomainResourceCount(gpuUsed, domain.getPath(), Resource.ResourceType.gpu.getName()));
             metricsList.add(new ItemPerDomainResourceCount(primaryStorageUsed, domain.getPath(),
                     Resource.ResourceType.primary_storage.getName()));
             metricsList.add(new ItemPerDomainResourceCount(secondaryStorageUsed, domain.getPath(),

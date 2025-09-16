@@ -1,4 +1,4 @@
-﻿[Unit]
+[Unit]
 Description=Xen Guest Monitoring Agent
 DefaultDependencies=no
 After=local-fs.target

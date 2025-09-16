@@ -34,6 +34,7 @@ import javax.persistence.Transient;
 
 import com.cloud.cpu.CPU;
 import com.cloud.user.UserData;
+import com.cloud.utils.UuidUtils;
 import org.apache.cloudstack.util.CPUArchConverter;
 import org.apache.cloudstack.util.HypervisorTypeConverter;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
@@ -162,6 +163,9 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     @Column(name = "deploy_as_is")
     private boolean deployAsIs;
 
+    @Column(name = "for_cks")
+    private boolean forCks;
+
     @Column(name = "user_data_id")
     private Long userDataId;
 
@@ -172,6 +176,9 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     @Column(name = "arch")
     @Convert(converter = CPUArchConverter.class)
     private CPU.CPUArch arch;
+
+    @Column(name = "extension_id")
+    private Long extensionId;
 
     @Override
     public String getUniqueName() {
@@ -215,7 +222,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 
     public VMTemplateVO(long id, String name, ImageFormat format, boolean isPublic, boolean featured, boolean isExtractable, TemplateType type, String url, boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable,
                         HypervisorType hyperType, String templateTag, Map<String, String> details, boolean sshKeyEnabled, boolean isDynamicallyScalable, boolean directDownload,
-                        boolean deployAsIs, CPU.CPUArch arch) {
+                        boolean deployAsIs, CPU.CPUArch arch, Long extensionId) {
         this(id,
             name,
             format,
@@ -242,6 +249,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
         this.directDownload = directDownload;
         this.deployAsIs = deployAsIs;
         this.arch = arch;
+        this.extensionId = extensionId;
     }
 
     public static VMTemplateVO createPreHostIso(Long id, String uniqueName, String name, ImageFormat format, boolean isPublic, boolean featured, TemplateType type,
@@ -337,7 +345,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
         name.append("-");
         name.append(userId);
         name.append("-");
-        name.append(UUID.nameUUIDFromBytes((displayName + System.currentTimeMillis()).getBytes()).toString());
+        name.append(UuidUtils.nameUUIDFromBytes((displayName + System.currentTimeMillis()).getBytes()).toString());
         return name.toString();
     }
 
@@ -572,7 +580,9 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 
     @Override
     public String toString() {
-        return String.format("Template %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "uniqueName", "format"));
+        return String.format("Template %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "name", "uniqueName", "format"));
     }
 
     public void setRemoved(Date removed) {
@@ -662,6 +672,14 @@ public class VMTemplateVO implements VirtualMachineTemplate {
         this.deployAsIs = deployAsIs;
     }
 
+    public boolean isForCks() {
+        return forCks;
+    }
+
+    public void setForCks(boolean forCks) {
+        this.forCks = forCks;
+    }
+
     @Override
     public Long getUserDataId() {
         return userDataId;
@@ -689,4 +707,11 @@ public class VMTemplateVO implements VirtualMachineTemplate {
         this.arch = arch;
     }
 
+    public Long getExtensionId() {
+        return extensionId;
+    }
+
+    public void setExtensionId(Long extensionId) {
+        this.extensionId = extensionId;
+    }
 }

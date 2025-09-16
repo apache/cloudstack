@@ -330,7 +330,10 @@ public class NicVO implements Nic {
 
     @Override
     public String toString() {
-        return String.format("Nic %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "instanceId", "deviceId", "broadcastUri", "reservationId", "iPv4Address"));
+        return String.format("Nic %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "instanceId",
+                        "deviceId", "broadcastUri", "reservationId", "iPv4Address"));
     }
 
     @Override

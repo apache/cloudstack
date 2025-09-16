@@ -16,13 +16,14 @@
 // under the License.
 package com.cloud.vm;
 
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.Volume;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
@@ -38,6 +39,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -101,6 +103,10 @@ public interface VirtualMachineManager extends Manager {
                     "refer documentation",
             true, ConfigKey.Scope.Zone);
 
+    ConfigKey<Boolean> VmSyncPowerStateTransitioning = new ConfigKey<>("Advanced", Boolean.class, "vm.sync.power.state.transitioning", "true",
+            "Whether to sync power states of the transitioning and stalled VMs while processing VM power reports.", false);
+
+
     interface Topics {
         String VM_POWER_STATE = "vm.powerstate";
     }
@@ -118,6 +124,7 @@ public interface VirtualMachineManager extends Manager {
      * @param defaultNetwork The default network for the VM.
      * @param rootDiskOffering For created VMs not based on templates, root disk offering specifies the root disk.
      * @param dataDiskOfferings Data disks to attach to the VM.
+     * @param dataDiskDeviceIds Device Ids to assign the data disks to.
      * @param auxiliaryNetworks additional networks to attach the VMs to.
      * @param plan How to deploy the VM.
      * @param hyperType Hypervisor type
@@ -125,11 +132,11 @@ public interface VirtualMachineManager extends Manager {
      * @throws InsufficientCapacityException If there are insufficient capacity to deploy this vm.
      */
     void allocate(String vmInstanceName, VirtualMachineTemplate template, ServiceOffering serviceOffering, DiskOfferingInfo rootDiskOfferingInfo,
-        List<DiskOfferingInfo> dataDiskOfferings, LinkedHashMap<? extends Network, List<? extends NicProfile>> auxiliaryNetworks, DeploymentPlan plan,
-        HypervisorType hyperType, Map<String, Map<Integer, String>> extraDhcpOptions, Map<Long, DiskOffering> datadiskTemplateToDiskOfferingMap) throws InsufficientCapacityException;
+                  List<DiskOfferingInfo> dataDiskOfferings, List<Long> dataDiskDeviceIds, LinkedHashMap<? extends Network, List<? extends NicProfile>> auxiliaryNetworks, DeploymentPlan plan,
+                  HypervisorType hyperType, Map<String, Map<Integer, String>> extraDhcpOptions, Map<Long, DiskOffering> datadiskTemplateToDiskOfferingMap, Volume volume, Snapshot snapshot) throws InsufficientCapacityException;
 
     void allocate(String vmInstanceName, VirtualMachineTemplate template, ServiceOffering serviceOffering,
-        LinkedHashMap<? extends Network, List<? extends NicProfile>> networkProfiles, DeploymentPlan plan, HypervisorType hyperType) throws InsufficientCapacityException;
+        LinkedHashMap<? extends Network, List<? extends NicProfile>> networkProfiles, DeploymentPlan plan, HypervisorType hyperType, Volume volume, Snapshot snapshot) throws InsufficientCapacityException;
 
     void start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params);
 
@@ -286,25 +293,27 @@ public interface VirtualMachineManager extends Manager {
 
     /**
      * Obtains statistics for a list of VMs; CPU and network utilization
-     * @param hostId ID of the host
-     * @param hostName name of the host
+     * @param host host
      * @param vmIds list of VM IDs
      * @return map of VM ID and stats entry for the VM
      */
-    HashMap<Long, ? extends VmStats> getVirtualMachineStatistics(long hostId, String hostName, List<Long> vmIds);
+    HashMap<Long, ? extends VmStats> getVirtualMachineStatistics(Host host, List<Long> vmIds);
     /**
      * Obtains statistics for a list of VMs; CPU and network utilization
-     * @param hostId ID of the host
-     * @param hostName name of the host
-     * @param vmMap map of VM IDs and the corresponding VirtualMachine object
+     * @param host host
+     * @param vmMap map of VM instanceName and its ID
      * @return map of VM ID and stats entry for the VM
      */
-    HashMap<Long, ? extends VmStats> getVirtualMachineStatistics(long hostId, String hostName, Map<Long, ? extends VirtualMachine> vmMap);
+    HashMap<Long, ? extends VmStats> getVirtualMachineStatistics(Host host, Map<String, Long> vmMap);
 
-    HashMap<Long, List<? extends VmDiskStats>> getVmDiskStatistics(long hostId, String hostName, Map<Long, ? extends VirtualMachine> vmMap);
+    HashMap<Long, List<? extends VmDiskStats>> getVmDiskStatistics(Host host, Map<String, Long> vmInstanceNameIdMap);
 
-    HashMap<Long, List<? extends VmNetworkStats>> getVmNetworkStatistics(long hostId, String hostName, Map<Long, ? extends VirtualMachine> vmMap);
+    HashMap<Long, List<? extends VmNetworkStats>> getVmNetworkStatistics(Host host, Map<String, Long> vmInstanceNameIdMap);
 
     Map<Long, Boolean> getDiskOfferingSuitabilityForVm(long vmId, List<Long> diskOfferingIds);
+
+    void checkDeploymentPlan(VirtualMachine virtualMachine, VirtualMachineTemplate template,
+                ServiceOffering serviceOffering, Account systemAccount, DeploymentPlan plan)
+            throws InsufficientServerCapacityException;
 
 }

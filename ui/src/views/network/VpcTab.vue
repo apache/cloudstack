@@ -34,14 +34,14 @@
       <a-tab-pane :tab="$t('label.public.ips')" key="ip" v-if="'listPublicIpAddresses' in $store.getters.apis">
         <IpAddressesTab :resource="resource" :loading="loading" />
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.network.acl.lists')" key="acl" v-if="'listNetworkACLLists' in $store.getters.apis">
+      <a-tab-pane :tab="$t('label.network.acls')" key="acl" v-if="'listNetworkACLLists' in $store.getters.apis">
         <a-button
           type="dashed"
           style="width: 100%"
           :disabled="!('createNetworkACLList' in $store.getters.apis)"
           @click="() => handleOpenModals('networkAcl')">
           <template #icon><plus-circle-outlined /></template>
-          {{ $t('label.add.network.acl.list') }}
+          {{ $t('label.add.network.acl') }}
         </a-button>
         <a-table
           class="table"
@@ -76,7 +76,7 @@
         </a-pagination>
         <a-modal
           :visible="modals.networkAcl"
-          :title="$t('label.add.acl.list')"
+          :title="$t('label.add.acl')"
           :footer="null"
           :maskClosable="false"
           :closable="true"
@@ -89,7 +89,7 @@
             @finish="handleNetworkAclFormSubmit"
             v-ctrl-enter="handleNetworkAclFormSubmit"
            >
-            <a-form-item :label="$t('label.add.list.name')" ref="name" name="name">
+            <a-form-item :label="$t('label.add.acl.name')" ref="name" name="name">
               <a-input
                 v-model:value="form.name"
                 v-focus="true"></a-input>
@@ -258,7 +258,7 @@
           type="dashed"
           style="width: 100%"
           :disabled="!('createVpnGateway' in $store.getters.apis)"
-          @click="handleCreateVpnGateway">
+          @click="() => handleOpenModals('vpnGateway')">
           <template #icon><plus-circle-outlined /></template>
           {{ $t('label.create.site.vpn.gateway') }}
         </a-button>
@@ -276,6 +276,42 @@
             </div>
           </a-list-item>
         </a-list>
+        <a-modal
+          :visible="modals.vpnGateway"
+          :title="$t('label.add.vpn.gateway')"
+          :maskClosable="false"
+          :closable="true"
+          :footer="null"
+          @cancel="modals.vpnGateway = false">
+          <a-spin :spinning="modals.vpnGatewayLoading" v-ctrl-enter="handleCreateVpnGateway">
+            <a-form
+              class="form"
+              layout="vertical"
+              :ref="formRef"
+              :model="form"
+              :rules="rules"
+            >
+              <a-form-item :label="$t('label.ip')" ref="ipaddress" name="ipaddress">
+                <a-select
+                  v-focus="true"
+                  v-model:value="form.ipaddress"
+                  showSearch
+                  optionFilterProp="label"
+                  :filterOption="(input, option) => {
+                      return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    }" >
+                  <a-select-option v-for="(item, index) in publicIps" :key="index" :value="item.id" :label="item.ipaddress">
+                    {{ item.ipaddress }}
+                  </a-select-option>
+                </a-select>
+              </a-form-item>
+              <div :span="24" class="action-button">
+                <a-button @click="modals.vpnGateway = false">{{ $t('label.cancel') }}</a-button>
+                <a-button type="primary" htmlType="submit" @click="handleCreateVpnGateway">{{ $t('label.ok') }}</a-button>
+              </div>
+            </a-form>
+          </a-spin>
+        </a-modal>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.vpn.connection')" key="vpnc" v-if="'listVpnConnections' in $store.getters.apis">
         <a-button
@@ -360,6 +396,9 @@
           </a-spin>
         </a-modal>
       </a-tab-pane>
+      <a-tab-pane :tab="$t('label.static.routes')" key="staticroutes">
+        <StaticRoutesTab :resource="resource" :loading="loading" />
+      </a-tab-pane>
       <a-tab-pane :tab="$t('label.virtual.routers')" key="vr" v-if="$store.getters.userInfo.roletype === 'Admin'">
         <RoutersTab :resource="resource" :loading="loading" />
       </a-tab-pane>
@@ -381,7 +420,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import DetailsTab from '@/components/view/DetailsTab'
 import Status from '@/components/widgets/Status'
@@ -393,6 +432,7 @@ import EventsTab from '@/components/view/EventsTab'
 import AnnotationsTab from '@/components/view/AnnotationsTab'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import BgpPeersTab from '@/views/infra/zone/BgpPeersTab.vue'
+import StaticRoutesTab from './StaticRoutesTab'
 
 export default {
   name: 'VpcTab',
@@ -404,6 +444,7 @@ export default {
     RoutersTab,
     VpcTiersTab,
     VnfAppliancesTab,
+    StaticRoutesTab,
     EventsTab,
     AnnotationsTab,
     ResourceIcon
@@ -425,11 +466,14 @@ export default {
       privateGateways: [],
       associatedNetworks: [],
       vpnGateways: [],
+      publicIps: [],
       vpnConnections: [],
       networkAcls: [],
       modals: {
         gateway: false,
         gatewayLoading: false,
+        vpnGateway: false,
+        vpnGatewayLoading: false,
         vpnConnection: false,
         vpnConnectionLoading: false,
         networkAcl: false
@@ -563,6 +607,7 @@ export default {
           break
         case 'vpngw':
           this.fetchVpnGateways()
+          this.fetchPublicIpAddress()
           break
         case 'vpnc':
           this.fetchVpnConnections()
@@ -577,7 +622,7 @@ export default {
     },
     fetchComments () {
       this.fetchLoading = true
-      api('listAnnotations', { entityid: this.resource.id, entitytype: 'VPC', annotationfilter: 'all' }).then(json => {
+      getAPI('listAnnotations', { entityid: this.resource.id, entitytype: 'VPC', annotationfilter: 'all' }).then(json => {
         if (json.listannotationsresponse && json.listannotationsresponse.annotation) {
           this.annotations = json.listannotationsresponse.annotation
         }
@@ -589,7 +634,7 @@ export default {
     },
     fetchPrivateGateways () {
       this.fetchLoading = true
-      api('listPrivateGateways', {
+      getAPI('listPrivateGateways', {
         vpcid: this.resource.id,
         listAll: true,
         page: this.page,
@@ -603,7 +648,7 @@ export default {
         this.fetchLoading = false
       })
       this.associatedNetworks = []
-      api('listNetworks', {
+      getAPI('listNetworks', {
         domainid: this.resource.domainid,
         account: this.resource.account,
         listAll: true,
@@ -620,8 +665,8 @@ export default {
       })
     },
     fetchVpnGateways () {
-      this.fetchLoading = true
-      api('listVpnGateways', {
+      this.modals.vpnGatewayLoading = true
+      getAPI('listVpnGateways', {
         vpcid: this.resource.id,
         listAll: true
       }).then(json => {
@@ -629,12 +674,35 @@ export default {
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
-        this.fetchLoading = false
+        this.modals.vpnGatewayLoading = false
+      })
+    },
+    fetchPublicIpAddress () {
+      this.modals.vpnGatewayLoading = true
+      getAPI('listPublicIpAddresses', {
+        vpcid: this.resource.id,
+        listAll: true
+      }).then(json => {
+        this.publicIps = json.listpublicipaddressesresponse.publicipaddress || []
+        const sourceNatIpForProvider = this.publicIps.filter(ip => ip.issourcenat && ip.forprovider) || []
+        if (sourceNatIpForProvider && sourceNatIpForProvider.length > 0) {
+          const publicIpForRouter = this.publicIps.filter(ip => ip.forprovider && ip.virtualmachinetype === 'DomainRouter') || []
+          if (publicIpForRouter && publicIpForRouter.length > 0) {
+            this.publicIps = publicIpForRouter
+          } else {
+            this.publicIps = this.publicIps.filter(ip => ip.forprovider && !ip.issourcenat && !ip.isstaticnat) || []
+          }
+        } else {
+          this.publicIps = this.publicIps.filter(ip => ip.issourcenat) || []
+        }
+        this.form.ipaddress = this.publicIps?.[0]?.id || ''
+      }).finally(() => {
+        this.modals.vpnGatewayLoading = false
       })
     },
     fetchVpnConnections () {
       this.fetchLoading = true
-      api('listVpnConnections', {
+      getAPI('listVpnConnections', {
         vpcid: this.resource.id,
         listAll: true,
         page: this.page,
@@ -650,7 +718,7 @@ export default {
     },
     fetchAclList () {
       this.fetchLoading = true
-      api('listNetworkACLLists', {
+      getAPI('listNetworkACLLists', {
         vpcid: this.resource.id,
         listAll: true,
         page: this.page,
@@ -673,7 +741,7 @@ export default {
         this.modals.gatewayLoading = false
         return
       }
-      api('listPhysicalNetworks', { zoneid: this.resource.zoneid }).then(json => {
+      getAPI('listPhysicalNetworks', { zoneid: this.resource.zoneid }).then(json => {
         this.physicalnetworks = json.listphysicalnetworksresponse.physicalnetwork
         if (this.modals.gateway === true) {
           this.form.physicalnetwork = this.physicalnetworks[0].id
@@ -686,7 +754,7 @@ export default {
     },
     fetchVpnCustomerGateways () {
       this.modals.vpnConnectionLoading = true
-      api('listVpnCustomerGateways', { listAll: true }).then(json => {
+      getAPI('listVpnCustomerGateways', { listAll: true }).then(json => {
         this.vpncustomergateways = json.listvpncustomergatewaysresponse.vpncustomergateway || []
         if (this.modals.vpnConnection === true) {
           this.form.vpncustomergateway = this.vpncustomergateways[0]?.id
@@ -720,6 +788,14 @@ export default {
           this.fetchAclList()
           this.fetchPhysicalNetworks()
           break
+        case 'vpnGateway':
+          this.rules = {
+            ipaddress: [{ required: true, message: this.$t('label.required') }]
+          }
+          this.modals.vpnGateway = true
+          this.fetchVpnGateways()
+          this.fetchPublicIpAddress()
+          break
         case 'vpnConnection':
           this.modals.vpnConnection = true
           this.fetchVpnCustomerGateways()
@@ -727,8 +803,7 @@ export default {
           break
         case 'networkAcl':
           this.rules = {
-            name: [{ required: true, message: this.$t('label.required') }],
-            description: [{ required: true, message: this.$t('label.required') }]
+            name: [{ required: true, message: this.$t('label.required') }]
           }
           this.modals.networkAcl = true
           break
@@ -760,7 +835,7 @@ export default {
           params.associatednetworkid = data.associatednetworkid
         }
 
-        api('createPrivateGateway', params).then(response => {
+        postAPI('createPrivateGateway', params).then(response => {
           this.$pollJob({
             jobId: response.createprivategatewayresponse.jobid,
             title: this.$t('message.success.add.private.gateway'),
@@ -805,7 +880,7 @@ export default {
           s2scustomergatewayid: values.vpncustomergateway,
           passive: values.passive ? values.passive : false
         }
-        api('createVpnConnection', params).then(response => {
+        postAPI('createVpnConnection', params).then(response => {
           this.$pollJob({
             jobId: response.createvpnconnectionresponse.jobid,
             title: this.$t('label.vpn.connection'),
@@ -844,7 +919,7 @@ export default {
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
 
-        api('createNetworkACLList', {
+        postAPI('createNetworkACLList', {
           name: values.name,
           description: values.description,
           vpcid: this.resource.id
@@ -880,31 +955,38 @@ export default {
     },
     handleCreateVpnGateway () {
       this.fetchLoading = true
-      api('createVpnGateway', {
-        vpcid: this.resource.id
-      }).then(response => {
-        this.$pollJob({
-          jobId: response.createvpngatewayresponse.jobid,
-          title: this.$t('message.success.add.vpn.gateway'),
-          description: this.resource.id,
-          successMethod: () => {
-            this.fetchLoading = false
-          },
-          errorMessage: this.$t('message.add.vpn.gateway.failed'),
-          errorMethod: () => {
-            this.fetchLoading = false
-          },
-          loadingMessage: this.$t('message.add.vpn.gateway.processing'),
-          catchMessage: this.$t('error.fetching.async.job.result'),
-          catchMethod: () => {
-            this.fetchLoading = false
-          }
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
+        postAPI('createVpnGateway', {
+          vpcid: this.resource.id,
+          ipaddressid: values.ipaddress
+        }).then(response => {
+          this.$pollJob({
+            jobId: response.createvpngatewayresponse.jobid,
+            title: this.$t('message.success.add.vpn.gateway'),
+            description: this.resource.id,
+            successMethod: () => {
+              this.fetchLoading = false
+            },
+            errorMessage: this.$t('message.add.vpn.gateway.failed'),
+            errorMethod: () => {
+              this.fetchLoading = false
+            },
+            loadingMessage: this.$t('message.add.vpn.gateway.processing'),
+            catchMessage: this.$t('error.fetching.async.job.result'),
+            catchMethod: () => {
+              this.fetchLoading = false
+            }
+          })
+        }).catch(error => {
+          this.$notifyError(error)
+        }).finally(() => {
+          this.fetchLoading = false
+          this.handleFetchData()
         })
       }).catch(error => {
-        this.$notifyError(error)
-      }).finally(() => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
         this.fetchLoading = false
-        this.handleFetchData()
       })
     },
     changePage (page, pageSize) {

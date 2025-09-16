@@ -17,7 +17,11 @@
 package com.cloud.configuration;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
+import com.cloud.network.Network;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.config.ResetCfgCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateGuestNetworkIpv6PrefixCmd;
@@ -201,11 +205,12 @@ public interface ConfigurationService {
      *            TODO
      * @param allocationState
      *            TODO
+     * @param storageAccessGroups
      * @return the new pod if successful, null otherwise
      * @throws
      * @throws
      */
-    Pod createPod(long zoneId, String name, String startIp, String endIp, String gateway, String netmask, String allocationState);
+    Pod createPod(long zoneId, String name, String startIp, String endIp, String gateway, String netmask, String allocationState, List<String> storageAccessGroups);
 
     /**
      * Creates a mutual exclusive IP range in the pod with same gateway, netmask.
@@ -372,4 +377,16 @@ public interface ConfigurationService {
     List<? extends PortableIp> listPortableIps(long id);
 
     Boolean isAccountAllowedToCreateOfferingsWithTags(IsAccountAllowedToCreateOfferingsWithTagsCmd cmd);
+
+    public static final Map<String, String> ProviderDetailKeyMap = Map.of(
+            Network.Provider.Nsx.getName(), ApiConstants.NSX_DETAIL_KEY,
+            Network.Provider.Netris.getName(), ApiConstants.NETRIS_DETAIL_KEY
+    );
+
+    public static boolean IsIpRangeForProvider(Network.Provider provider) {
+        if (Objects.isNull(provider)) {
+            return false;
+        }
+        return ProviderDetailKeyMap.containsKey(provider.getName());
+    }
 }

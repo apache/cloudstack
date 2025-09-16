@@ -33,6 +33,7 @@ import org.apache.cloudstack.api.response.LoadBalancerResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -112,7 +113,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
         + "rule will be created for. Required when public Ip address is not associated with any Guest network yet (VPC case)")
     private Long networkId;
 
-    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, description = "The protocol for the LB such as tcp, udp or tcp-proxy.")
+    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, description = "The protocol for the LB such as tcp, udp, tcp-proxy or ssl.")
     private String lbProtocol;
 
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
@@ -253,7 +254,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
     }
 
     public String getLbProtocol() {
-        return lbProtocol;
+        return StringUtils.trim(StringUtils.lowerCase(lbProtocol));
     }
 
     /////////////////////////////////////////////////////

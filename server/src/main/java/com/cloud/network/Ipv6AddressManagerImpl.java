@@ -105,7 +105,7 @@ public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressMa
     public String acquireGuestIpv6Address(Network network, String requestedIpv6) throws InsufficientAddressCapacityException {
         if (!_networkModel.areThereIPv6AddressAvailableInNetwork(network.getId())) {
             throw new InsufficientAddressCapacityException(
-                    String.format("There is no IPv6 address available in the network [name=%s, network id=%s]", network.getName(), network.getId()), DataCenter.class,
+                    String.format("There is no IPv6 address available in the network [name=%s, id=%s, uuid=%s]", network.getName(), network.getId(), network.getUuid()), DataCenter.class,
                     network.getDataCenterId());
         }
 
@@ -123,7 +123,7 @@ public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressMa
         if (ip != null) {
             State ipState = ip.getState();
             if (ipState != State.Free) {
-                throw new InsufficientAddressCapacityException(String.format("Requested ip address [%s] is not free [ip state=%]", requestedIpv6, ipState), DataCenter.class,
+                throw new InsufficientAddressCapacityException(String.format("Requested ip address [%s] is not free [ip state=%s]", requestedIpv6, ipState), DataCenter.class,
                         network.getDataCenterId());
             }
         }
@@ -158,19 +158,22 @@ public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressMa
     protected void checkIfCanAllocateIpv6Address(Network network, String ipv6) throws InsufficientAddressCapacityException {
         if (isIp6Taken(network, ipv6)) {
             throw new InsufficientAddressCapacityException(
-                    String.format("The IPv6 address [%s] is already in use in the network [id=%s, name=%s]", ipv6, network.getId(), network.getName()), Network.class,
+                    String.format("The IPv6 address [%s] is already in use in the network [id=%s, uuid=%s, name=%s]",
+                            ipv6, network.getId(), network.getUuid(), network.getName()), Network.class,
                     network.getId());
         }
 
         if (ipAddressManager.isIpEqualsGatewayOrNetworkOfferingsEmpty(network, ipv6)) {
             throw new InvalidParameterValueException(
-                    String.format("The network [id=%s] offering is empty or the requested IP address [%s] is equals to the Gateway", network.getId(), ipv6));
+                    String.format("The network [id=%s, uuid=%s, name=%s] offering is empty or the requested IP address [%s] is equals to the Gateway",
+                            network.getId(), network.getUuid(), network.getName(), ipv6));
         }
 
         String networkIp6Cidr = network.getIp6Cidr();
         if (!NetUtils.isIp6InNetwork(ipv6, networkIp6Cidr)) {
             throw new InvalidParameterValueException(
-                    String.format("The IPv6 address [%s] is not in the network [id=%s, name=%s, ipv6cidr=%s]", ipv6, network.getId(), network.getName(), network.getIp6Cidr()));
+                    String.format("The IPv6 address [%s] is not in the network [id=%s, uuid=%s name=%s, ipv6cidr=%s]",
+                            ipv6, network.getId(), network.getUuid(), network.getName(), network.getIp6Cidr()));
         }
     }
 
@@ -210,7 +213,7 @@ public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressMa
                 setNicPropertiesFromNetwork(nic, network);
 
                 IPv6Address ipv6addr = NetUtils.EUI64Address(network.getIp6Cidr(), nic.getMacAddress());
-                logger.info("Calculated IPv6 address " + ipv6addr + " using EUI-64 for NIC " + nic.getUuid());
+                logger.info("Calculated IPv6 address {} using EUI-64 for NIC {}", ipv6addr, nic);
                 nic.setIPv6Address(ipv6addr.toString());
 
                 if (nic.getIPv4Address() != null) {

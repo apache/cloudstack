@@ -62,7 +62,7 @@ Fix issues and vulnerabilities:
 
     npm audit
 
-A basic development guide and explaination of the basic components can be found
+A basic development guide and explanation of the basic components can be found
   [here](docs/development.md)
 
 ## Production

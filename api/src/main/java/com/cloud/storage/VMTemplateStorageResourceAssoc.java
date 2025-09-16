@@ -17,6 +17,7 @@
 package com.cloud.storage;
 
 import java.util.Date;
+import java.util.List;
 
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -24,6 +25,8 @@ public interface VMTemplateStorageResourceAssoc extends InternalIdentity {
     public static enum Status {
         UNKNOWN, DOWNLOAD_ERROR, NOT_DOWNLOADED, DOWNLOAD_IN_PROGRESS, DOWNLOADED, ABANDONED, UPLOADED, NOT_UPLOADED, UPLOAD_ERROR, UPLOAD_IN_PROGRESS, CREATING, CREATED, BYPASSED
     }
+
+    List<Status> PENDING_DOWNLOAD_STATES = List.of(Status.NOT_DOWNLOADED, Status.DOWNLOAD_IN_PROGRESS);
 
     String getInstallPath();
 

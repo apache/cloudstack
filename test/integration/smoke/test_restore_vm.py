@@ -148,9 +148,13 @@ class TestRestoreVM(cloudstackTestCase):
         self.assertEqual(root_vol.state, 'Ready', "Volume should be in Ready state")
         self.assertEqual(root_vol.size, 16 * 1024 * 1024 * 1024, "Size of volume and custom disk size should match")
 
-        old_root_vol = Volume.list(self.apiclient, id=old_root_vol.id)[0]
-        self.assertEqual(old_root_vol.state, "Destroy", "Old volume should be in Destroy state")
-        Volume.delete(old_root_vol, self.apiclient)
+        if self.hypervisor.lower() == "vmware":
+            old_root_vol = Volume.list(self.apiclient, id=old_root_vol.id)
+            self.assertEqual(old_root_vol, None, "Old volume should be deleted")
+        else:
+            old_root_vol = Volume.list(self.apiclient, id=old_root_vol.id)[0]
+            self.assertEqual(old_root_vol.state, "Destroy", "Old volume should be in Destroy state")
+            Volume.delete(old_root_vol, self.apiclient)
 
     @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_04_restore_vm_allocated_root(self):

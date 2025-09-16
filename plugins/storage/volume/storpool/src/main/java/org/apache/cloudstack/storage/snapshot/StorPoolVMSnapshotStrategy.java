@@ -148,7 +148,7 @@ public class StorPoolVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
                                     vmSnapshot.getId(), StorPoolUtil.SP_STORAGE_POOL_ID, String.valueOf(poolId), false);
                             vmSnapshotDetailsDao.persist(vmSnapshotDetailStoragePoolId);
                         }
-                        StorPoolUtil.spLog("Snapshot=%s of volume=%s for a group snapshot=%s.", snapshot, vol.getUuid(), vmSnapshot.getUuid());
+                        StorPoolUtil.spLog("Snapshot=%s of volume=%s for a group snapshot=%s.", snapshot, vol, vmSnapshot);
                     }
                 }
             }
@@ -237,8 +237,8 @@ public class StorPoolVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
             VMSnapshotDetailsVO snapshotDetailsVO = vmSnapshotDetailsDao.findDetail(vmSnapshot.getId(), volumeObjectTO.getUuid());
             String snapshotName = StorPoolStorageAdaptor.getVolumeNameFromPath(snapshotDetailsVO.getValue(), true);
             if (snapshotName == null) {
-                err = String.format("Could not find StorPool's snapshot vm snapshot uuid=%s and volume uui=%s",
-                        vmSnapshot.getUuid(), volumeObjectTO.getUuid());
+                err = String.format("Could not find StorPool's snapshot vm snapshot %s and volume [id: %s, uuid: %s, name: %s]",
+                        vmSnapshot, volumeObjectTO.getId(), volumeObjectTO.getUuid(), volumeObjectTO.getName());
                 logger.error("Could not delete snapshot for vm:" + err);
             }
             StorPoolUtil.spLog("StorpoolVMSnapshotStrategy.deleteVMSnapshot snapshotName=%s", snapshotName);
@@ -254,10 +254,9 @@ public class StorPoolVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
             }
             if (err != null) {
                 StorPoolUtil.spLog(
-                        "StorpoolVMSnapshotStrategy.deleteVMSnapshot delete snapshot=%s of gropusnapshot=%s failed due to %s",
-                        snapshotName, userVm.getInstanceName(), err);
-                throw new CloudRuntimeException("Delete vm snapshot " + vmSnapshot.getName() + " of vm "
-                        + userVm.getInstanceName() + " failed due to " + err);
+                        "StorpoolVMSnapshotStrategy.deleteVMSnapshot delete snapshot=%s of group snapshot=%s failed due to %s",
+                        snapshotName, userVm, err);
+                throw new CloudRuntimeException(String.format("Delete vm snapshot %s of vm %s failed due to %s", vmSnapshot, userVm, err));
             }
         }
         vmSnapshotDetailsDao.removeDetails(vmSnapshot.getId());
@@ -344,7 +343,7 @@ public class StorPoolVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
             finalizeRevert(vmSnapshotVO, volumeTOs);
             result = vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationSucceeded);
         } catch (CloudRuntimeException | NoTransitionException  e) {
-            String errMsg = String.format("Error while finalize create vm snapshot [%s] due to %s", vmSnapshot.getName(), e.getMessage());
+            String errMsg = String.format("Error while finalize create vm snapshot [%s] due to %s", vmSnapshot, e.getMessage());
             logger.error(errMsg, e);
             throw new CloudRuntimeException(errMsg);
         } finally {

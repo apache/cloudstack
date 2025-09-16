@@ -32,13 +32,14 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.springframework.stereotype.Component;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.UploadStatusAnswer;
 import org.apache.cloudstack.storage.command.UploadStatusAnswer.UploadStatus;
 import org.apache.cloudstack.storage.command.UploadStatusCommand;
+import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
@@ -102,6 +103,7 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.template.TemplateProp;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -639,8 +641,11 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
                 if (totalUsed == null) {
                     totalUsed = 0L;
                 }
+                // Mock IOPS stats
+                long capacityIops = Math.min(Math.max(ByteScaleUtils.bytesToGibibytes(pool.getCapacity()), 1), 1000) * 1000L;
+                long usedIops = capacityIops / 2;
                 txn.commit();
-                return new GetStorageStatsAnswer(cmd, pool.getCapacity(), totalUsed);
+                return new GetStorageStatsAnswer(cmd, pool.getCapacity(), totalUsed, capacityIops, usedIops);
             }
         } catch (Exception ex) {
             txn.rollback();
@@ -882,7 +887,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
                 String nfsHost = uri.getHost();
                 String nfsPath = uri.getPath();
                 String path = nfsHost + ":" + nfsPath;
-                String dir = "/mnt/" + UUID.nameUUIDFromBytes(path.getBytes()).toString() + File.separator;
+                String dir = "/mnt/" + UuidUtils.nameUUIDFromBytes(path.getBytes()).toString() + File.separator;
 
                 storage.setUrl(url);
                 storage.setCapacity(DEFAULT_HOST_STORAGE_SIZE);

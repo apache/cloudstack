@@ -175,19 +175,19 @@ class TestEgressAfterHostMaintenance(cloudstackTestCase):
         self.debug("Created security group with ID: %s" % security_group.id)
 
         # Default Security group should not have any ingress rule
-        sercurity_groups = SecurityGroup.list(
+        security_groups = SecurityGroup.list(
                                         self.apiclient,
                                         account=self.account.name,
                                         domainid=self.account.domainid
                                       )
         self.assertEqual(
-                         isinstance(sercurity_groups, list),
+                         isinstance(security_groups, list),
                          True,
                          "Check for list security groups response"
                          )
 
         self.assertEqual(
-                            len(sercurity_groups),
+                            len(security_groups),
                             2,
                             "Check List Security groups response"
                             )

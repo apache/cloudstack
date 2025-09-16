@@ -16,6 +16,14 @@
 // under the License.
 package com.cloud.user.dao;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.Date;
+import java.util.List;
+
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Component;
+
 import com.cloud.user.Account;
 import com.cloud.user.Account.State;
 import com.cloud.user.AccountVO;
@@ -30,14 +38,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
-import org.apache.commons.lang3.StringUtils;
 import com.cloud.utils.db.TransactionLegacy;
-import org.springframework.stereotype.Component;
-
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.util.Date;
-import java.util.List;
 
 @Component
 public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements AccountDao {
@@ -191,6 +192,16 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
     }
 
     @Override
+    public List<AccountVO> findAccountsByName(String accountName) {
+        SearchBuilder<AccountVO> sb = createSearchBuilder();
+        sb.and("accountName", sb.entity().getAccountName(), SearchCriteria.Op.EQ);
+        sb.done();
+        SearchCriteria<AccountVO> sc = sb.create();
+        sc.setParameters("accountName", accountName);
+        return search(sc, null);
+    }
+
+    @Override
     public Account findEnabledAccount(String accountName, Long domainId) {
         SearchCriteria<AccountVO> sc = AllFieldsSearch.create("accountName", accountName);
         sc.setParameters("domainId", domainId);
@@ -310,7 +321,7 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
         if (!account.getNeedsCleanup()) {
             account.setNeedsCleanup(true);
             if (!update(accountId, account)) {
-                logger.warn("Failed to mark account id=" + accountId + " for cleanup");
+                logger.warn("Failed to mark account {} for cleanup", account);
             }
         }
     }
