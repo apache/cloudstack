@@ -139,7 +139,7 @@
               </a-form-item>
             </a-col>
             <a-col :md="24" :lg="24" v-if="resourceType === 'Volume'">
-              <a-form-item ref="zoneids" name="zoneids">
+              <a-form-item ref="zoneids" name="zoneids" :required="(!isAdmin && form.useStorageReplication)">
                 <template #label>
                   <tooltip-label :title="$t('label.zones')" :tooltip="''"/>
                 </template>
@@ -160,6 +160,35 @@
                   :loading="zoneLoading"
                   :placeholder="''">
                   <a-select-option v-for="opt in this.zones" :key="opt.id" :label="opt.name || opt.description">
+                    <span>
+                      <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                      <global-outlined v-else style="margin-right: 5px"/>
+                      {{ opt.name || opt.description }}
+                    </span>
+                  </a-select-option>
+                </a-select>
+              </a-form-item>
+            </a-col>
+            <a-col :md="24" :lg="24" v-if="resourceType === 'Volume'">
+              <a-form-item :label="$t('label.usestoragereplication')" name="useStorageReplication" ref="useStorageReplication">
+                <a-switch v-model:checked="form.useStorageReplication" />
+              </a-form-item>
+              <a-form-item v-if="isAdmin && form.useStorageReplication" ref="storageids" name="storageids">
+                <template #label>
+                  <tooltip-label :title="$t('label.storagepools')" :tooltip="''"/>
+                </template>
+                <a-select
+                  id="storagepool-selection"
+                  v-model:value="form.storageids"
+                  mode="multiple"
+                  showSearch
+                  optionFilterProp="label"
+                  :filterOption="(input, option) => {
+                    return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }"
+                  :loading="storagePoolLoading"
+                  :placeholder="''">
+                  <a-select-option v-for="opt in this.storagePools" :key="opt.id" :label="opt.name || opt.description">
                     <span>
                       <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                       <global-outlined v-else style="margin-right: 5px"/>
@@ -224,6 +253,7 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { getAPI, postAPI } from '@/api'
+import { isAdmin } from '@/role'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import { timeZone } from '@/utils/timezone'
@@ -272,7 +302,8 @@ export default {
       timeZoneMap: [],
       fetching: false,
       listDayOfWeek: ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'],
-      zones: []
+      zones: [],
+      storagePools: []
     }
   },
   created () {
@@ -283,6 +314,9 @@ export default {
   computed: {
     formattedAdditionalZoneMessage () {
       return `${this.$t('message.snapshot.additional.zones').replace('%x', this.resource.zonename)}`
+    },
+    isAdmin () {
+      return isAdmin()
     }
   },
   methods: {
@@ -295,7 +329,8 @@ export default {
         'day-of-week': undefined,
         'day-of-month': undefined,
         maxsnaps: undefined,
-        timezone: undefined
+        timezone: undefined,
+        useStorageReplication: false
       })
       this.rules = reactive({
         time: [{ type: 'number', required: true, message: this.$t('message.error.required.input') }],
@@ -307,6 +342,7 @@ export default {
       })
       if (this.resourceType === 'Volume') {
         this.fetchZoneData()
+        this.fetchStoragePoolData()
       }
     },
     fetchZoneData () {
@@ -321,6 +357,20 @@ export default {
         }
       }).finally(() => {
         this.zoneLoading = false
+      })
+    },
+    fetchStoragePoolData () {
+      const params = {}
+      params.showicon = true
+      this.storagePoolsLoading = true
+      getAPI('listStoragePools', params).then(json => {
+        const listStoragePools = json.liststoragepoolsresponse.storagepool
+        if (listStoragePools) {
+          this.storagePools = listStoragePools
+          this.storagePools = this.storagePools.filter(pool => pool.storagecapabilities.CAN_COPY_SNAPSHOT_BETWEEN_ZONES_AND_SAME_POOL_TYPE && pool.zoneid !== this.resource.zoneid)
+        }
+      }).finally(() => {
+        this.storagePoolsLoading = false
       })
     },
     fetchTimeZone (value) {
@@ -419,8 +469,12 @@ export default {
         params.intervaltype = values.intervaltype
         params.timezone = values.timezone
         params.maxsnaps = values.maxsnaps
+        params.useStorageReplication = values.useStorageReplication
         if (values.zoneids && values.zoneids.length > 0) {
           params.zoneids = values.zoneids.join()
+        }
+        if (values.storageids && values.storageids.length > 0) {
+          params.storageids = values.storageids.join()
         }
         switch (values.intervaltype) {
           case 'hourly':

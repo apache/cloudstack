@@ -182,6 +182,42 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "the name of the disk offering of the virtual machine. This parameter should not be used for retrieving disk offering details of DATA volumes. Use listVolumes API instead", since = "4.4")
     private String diskOfferingName;
 
+    @SerializedName(ApiConstants.GPU_CARD_ID)
+    @Param(description = "the ID of the gpu card to which service offering is linked", since = "4.21")
+    private String gpuCardId;
+
+    @SerializedName(ApiConstants.GPU_CARD_NAME)
+    @Param(description = "the name of the gpu card to which service offering is linked", since = "4.21")
+    private String gpuCardName;
+
+    @SerializedName(ApiConstants.VGPU_PROFILE_ID)
+    @Param(description = "the ID of the vgpu profile to which service offering is linked", since = "4.21")
+    private String vgpuProfileId;
+
+    @SerializedName(ApiConstants.VGPU_PROFILE_NAME)
+    @Param(description = "the name of the vgpu profile to which service offering is linked", since = "4.21")
+    private String vgpuProfileName;
+
+    @SerializedName(ApiConstants.VIDEORAM)
+    @Param(description = "the video RAM size in MB")
+    private Long videoRam;
+
+    @SerializedName(ApiConstants.MAXHEADS)
+    @Param(description = "the maximum number of display heads")
+    private Long maxHeads;
+
+    @SerializedName(ApiConstants.MAXRESOLUTIONX)
+    @Param(description = "the maximum X resolution")
+    private Long maxResolutionX;
+
+    @SerializedName(ApiConstants.MAXRESOLUTIONY)
+    @Param(description = "the maximum Y resolution")
+    private Long maxResolutionY;
+
+    @SerializedName(ApiConstants.GPU_COUNT)
+    @Param(description = "the count of GPUs on the virtual machine", since = "4.21")
+    private Integer gpuCount;
+
     @SerializedName(ApiConstants.BACKUP_OFFERING_ID)
     @Param(description = "the ID of the backup offering of the virtual machine", since = "4.14")
     private String backupOfferingId;
@@ -565,6 +601,42 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         return diskOfferingName;
     }
 
+    public String getGpuCardId() {
+        return gpuCardId;
+    }
+
+    public String getGpuCardName() {
+        return gpuCardName;
+    }
+
+    public String getVgpuProfileId() {
+        return vgpuProfileId;
+    }
+
+    public String getVgpuProfileName() {
+        return vgpuProfileName;
+    }
+
+    public Long getVideoRam() {
+        return videoRam;
+    }
+
+    public Long getMaxHeads() {
+        return maxHeads;
+    }
+
+    public Long getMaxResolutionX() {
+        return maxResolutionX;
+    }
+
+    public Long getMaxResolutionY() {
+        return maxResolutionY;
+    }
+
+    public Integer getGpuCount() {
+        return gpuCount;
+    }
+
     public String getBackupOfferingId() {
         return backupOfferingId;
     }
@@ -845,6 +917,42 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public void setDiskOfferingName(String diskOfferingName) {
         this.diskOfferingName = diskOfferingName;
+    }
+
+    public void setGpuCardId(String gpuCardId) {
+        this.gpuCardId = gpuCardId;
+    }
+
+    public void setGpuCardName(String gpuCardName) {
+        this.gpuCardName = gpuCardName;
+    }
+
+    public void setVgpuProfileId(String vgpuProfileId) {
+        this.vgpuProfileId = vgpuProfileId;
+    }
+
+    public void setVgpuProfileName(String vgpuProfileName) {
+        this.vgpuProfileName = vgpuProfileName;
+    }
+
+    public void setVideoRam(Long videoRam) {
+        this.videoRam = videoRam;
+    }
+
+    public void setMaxHeads(Long maxHeads) {
+        this.maxHeads = maxHeads;
+    }
+
+    public void setMaxResolutionX(Long maxResolutionX) {
+        this.maxResolutionX = maxResolutionX;
+    }
+
+    public void setMaxResolutionY(Long maxResolutionY) {
+        this.maxResolutionY = maxResolutionY;
+    }
+
+    public void setGpuCount(Integer gpuCount) {
+        this.gpuCount = gpuCount;
     }
 
     public void setBackupOfferingId(String backupOfferingId) {

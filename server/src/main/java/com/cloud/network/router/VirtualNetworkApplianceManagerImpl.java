@@ -203,6 +203,7 @@ import com.cloud.network.rules.StaticNatImpl;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcService;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpn.Site2SiteVpnManager;
@@ -335,6 +336,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
     @Inject private NetworkService networkService;
     @Inject private VpcService vpcService;
+    @Inject private VpcManager vpcManager;
 
     @Autowired
     @Qualifier("networkHelper")
@@ -1735,11 +1737,13 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                         .append(",sourcePortEnd=").append(firewallRuleVO.getSourcePortEnd());
                 if (firewallRuleVO instanceof LoadBalancerVO) {
                     LoadBalancerVO loadBalancerVO = (LoadBalancerVO) firewallRuleVO;
-                    loadBalancingData.append(",sourceIp=").append(_ipAddressDao.findById(loadBalancerVO.getSourceIpAddressId()).getAddress().toString())
+                    String sourceIp = _ipAddressDao.findById(loadBalancerVO.getSourceIpAddressId()).getAddress().toString();
+                    loadBalancingData.append(",sourceIp=").append(sourceIp)
                             .append(",destPortStart=").append(loadBalancerVO.getDefaultPortStart())
                             .append(",destPortEnd=").append(loadBalancerVO.getDefaultPortEnd())
                             .append(",algorithm=").append(loadBalancerVO.getAlgorithm())
                             .append(",protocol=").append(loadBalancerVO.getLbProtocol());
+                    updateWithLbRuleSslCertificates(loadBalancingData, loadBalancerVO, sourceIp);
                 } else if (firewallRuleVO instanceof ApplicationLoadBalancerRuleVO) {
                     ApplicationLoadBalancerRuleVO appLoadBalancerVO = (ApplicationLoadBalancerRuleVO) firewallRuleVO;
                     loadBalancingData.append(",sourceIp=").append(appLoadBalancerVO.getSourceIp())
@@ -1754,6 +1758,16 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                     loadBalancingData.append(vmMapVO.getInstanceIp()).append(" ");
                 }
                 loadBalancingData.setCharAt(loadBalancingData.length() - 1, ';');
+            }
+        }
+    }
+
+    protected void updateWithLbRuleSslCertificates(final StringBuilder loadBalancingData, LoadBalancerVO loadBalancerVO, String sourceIp) {
+        if (NetUtils.SSL_PROTO.equals(loadBalancerVO.getLbProtocol())) {
+            final LbSslCert sslCert = _lbMgr.getLbSslCert(loadBalancerVO.getId());
+            if (sslCert != null && ! sslCert.isRevoked()) {
+                loadBalancingData.append(",sslcert=").append(sourceIp.replace(".", "_")).append('-')
+                        .append(loadBalancerVO.getSourcePortStart()).append(".pem");
             }
         }
     }
@@ -2042,6 +2056,12 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             type = "vpcrouter";
             if (_disableRpFilter) {
                 rpFilter = " disable_rp_filter=true";
+            }
+            Vpc vpc = vpcManager.getActiveVpc(router.getVpcId());
+            if (vpcManager.isSrcNatIpRequiredForVpcVr(vpc.getVpcOfferingId())) {
+                buf.append(" has_public_network=true");
+            } else {
+                buf.append(" has_public_network=false");
             }
         } else if (!publicNetwork) {
             type = "dhcpsrvr";

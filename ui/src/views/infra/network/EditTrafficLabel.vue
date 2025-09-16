@@ -99,6 +99,7 @@
 import { ref, reactive, toRaw } from 'vue'
 import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import { trafficTypeTab } from '@/config/section/infra/phynetworks.js'
 
 export default {
   name: 'EditTrafficLabel',
@@ -150,9 +151,9 @@ export default {
       getAPI('listTrafficTypes', { physicalnetworkid: this.resource.id })
         .then(json => {
           this.trafficTypes = json.listtraffictypesresponse.traffictype || []
-          this.form.id = this.trafficTypes[0].id || undefined
-          this.trafficResource = this.trafficTypes[0] || {}
-          this.traffictype = this.trafficTypes[0].traffictype || undefined
+          this.form.id = this.trafficTypes[trafficTypeTab.index].id || undefined
+          this.trafficResource = this.trafficTypes[trafficTypeTab.index] || {}
+          this.traffictype = this.trafficTypes[trafficTypeTab.index].traffictype || undefined
           this.fillEditFromFieldValues()
         }).catch(error => {
           this.$notification.error({

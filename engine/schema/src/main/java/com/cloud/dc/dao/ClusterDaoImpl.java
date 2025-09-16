@@ -168,16 +168,26 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Returns distinct (HypervisorType, CPUArch) pairs from clusters in the given zone,
+     * excluding clusters with {@link HypervisorType#External}.
+     *
+     * @param zoneId the zone ID to filter by, or {@code null} to include all zones
+     * @return list of unique hypervisor type and CPU architecture pairs
+     */
     @Override
-    public List<Pair<HypervisorType, CPU.CPUArch>> listDistinctHypervisorsArchAcrossClusters(Long zoneId) {
+    public List<Pair<HypervisorType, CPU.CPUArch>> listDistinctHypervisorsAndArchExcludingExternalType(Long zoneId) {
         SearchBuilder<ClusterVO> sb = createSearchBuilder();
         sb.select(null, Func.DISTINCT_PAIR, sb.entity().getHypervisorType(), sb.entity().getArch());
         sb.and("zoneId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.NEQ);
         sb.done();
         SearchCriteria<ClusterVO> sc = sb.create();
         if (zoneId != null) {
             sc.setParameters("zoneId", zoneId);
         }
+        sc.setParameters("hypervisorType", HypervisorType.External);
+
         final List<ClusterVO> clusters = search(sc, null);
         return clusters.stream()
                 .map(c -> new Pair<>(c.getHypervisorType(), c.getArch()))
@@ -376,6 +386,31 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
             sc.setParameters("keyword", "%" + keyword + "%");
         }
 
+        return customSearch(sc, null);
+    }
+
+    @Override
+    public List<Long> listEnabledClusterIdsByZoneHypervisorArch(Long zoneId, HypervisorType hypervisorType, CPU.CPUArch arch) {
+        GenericSearchBuilder<ClusterVO, Long> sb = createSearchBuilder(Long.class);
+        sb.selectFields(sb.entity().getId());
+        sb.and("zoneId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.and("allocationState", sb.entity().getAllocationState(), Op.EQ);
+        sb.and("managedState", sb.entity().getManagedState(), Op.EQ);
+        sb.and("hypervisor", sb.entity().getHypervisorType(), Op.EQ);
+        sb.and("arch", sb.entity().getArch(), Op.EQ);
+        sb.done();
+        SearchCriteria<Long> sc = sb.create();
+        sc.setParameters("allocationState", Grouping.AllocationState.Enabled);
+        sc.setParameters("managedState", Managed.ManagedState.Managed);
+        if (zoneId != null) {
+            sc.setParameters("zoneId", zoneId);
+        }
+        if (hypervisorType != null) {
+            sc.setParameters("hypervisor", hypervisorType);
+        }
+        if (arch != null) {
+            sc.setParameters("arch", arch);
+        }
         return customSearch(sc, null);
     }
 }
