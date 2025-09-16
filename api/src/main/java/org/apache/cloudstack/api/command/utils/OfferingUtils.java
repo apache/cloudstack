@@ -14,14 +14,25 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network.dao;
+package org.apache.cloudstack.api.command.utils;
 
-import java.util.List;
+import com.cloud.offering.NetworkOffering;
 
-import com.cloud.utils.db.GenericDao;
+public class OfferingUtils {
 
-public interface SslCertDao extends GenericDao<SslCertVO, Long> {
-    List<SslCertVO> listByAccountId(Long id);
+    private OfferingUtils() {
+    }
 
-    int removeByAccountId(long accountId);
+    public static boolean isNetrisNatted(String provider, String networkMode) {
+        return "Netris".equalsIgnoreCase(provider) &&
+               NetworkOffering.NetworkMode.NATTED.name().equalsIgnoreCase(networkMode);
+    }
+
+    public static boolean isNsxWithoutLb(String provider, boolean nsxSupportsLbService) {
+        return "Nsx".equalsIgnoreCase(provider) && !nsxSupportsLbService;
+    }
+
+    public static boolean isNetrisRouted(String provider, String networkMode) {
+        return "Netris".equalsIgnoreCase(provider) && NetworkOffering.NetworkMode.ROUTED.name().equalsIgnoreCase(networkMode);
+    }
 }
