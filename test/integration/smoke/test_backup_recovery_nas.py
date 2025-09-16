@@ -19,8 +19,8 @@
 from marvin.cloudstackAPI import listZones
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.utils import (cleanup_resources)
-from marvin.lib.base import (Account, ServiceOffering, DiskOffering, VirtualMachine, BackupOffering,
-                             BackupRepository, Backup, Configurations, Volume, StoragePool)
+from marvin.lib.base import (Account, Network, ServiceOffering, DiskOffering, VirtualMachine, BackupOffering,
+                             NetworkOffering, BackupRepository, Backup, Configurations, Volume, StoragePool)
 from marvin.lib.common import (get_domain, get_zone, get_template)
 from nose.plugins.attrib import attr
 from marvin.codes import FAILED
@@ -110,7 +110,7 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
-    def vm_backup_create_vm_from_backup_int(self, destination_zone):
+    def vm_backup_create_vm_from_backup_int(self, templateid=None, networkids=None):
         self.backup_offering.assignOffering(self.apiclient, self.vm.id)
 
         # Create a file and take backup
@@ -146,7 +146,9 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
             vmname=new_vm_name,
             accountname=self.account.name,
             domainid=self.account.domainid,
-            zoneid=self.zone.id
+            zoneid=self.destZone.id,
+            networkids=networkids,
+            templateid=templateid
         )
         self.cleanup.append(new_vm)
 
@@ -162,7 +164,7 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
                         "New VM should have the correct service offering")
 
         # Verify the new VM has the correct zone
-        self.assertEqual(new_vm.zoneid, self.zone.id, "New VM should be in the correct zone")
+        self.assertEqual(new_vm.zoneid, self.destZone.id, "New VM should be in the correct zone")
 
         # Verify the new VM has the correct number of volumes (ROOT + DATADISK)
         volumes = Volume.list(
@@ -220,7 +222,8 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         """
         Test creating a new VM from a backup
         """
-        self.vm_backup_create_vm_from_backup_int(self.zone.id)
+        self.destZone = self.zone
+        self.vm_backup_create_vm_from_backup_int()
 
     @attr(tags=["advanced", "backup"], required_hardware="true")
     def test_vm_backup_create_vm_from_backup_in_another_zone(self):
@@ -234,7 +237,31 @@ class TestNASBackupAndRecovery(cloudstackTestCase):
         if len(zones) < 2:
             self.skipTest("Skipping test due to there are less than two zones.")
             return
-
         self.destZone = zones[1]
 
-        self.vm_backup_create_vm_from_backup_int(self.destZone)
+        template = get_template(self.api_client, self.destZone.id, self.services["ostype"])
+
+        list_isolated_network_offerings_response = NetworkOffering.list(
+            self.apiclient,
+            name="DefaultIsolatedNetworkOfferingWithSourceNatService"
+        )
+        isolated_network_offering_id = list_isolated_network_offerings_response[0].id
+        network = {
+            "name": "Network-",
+            "displaytext": "Network-"
+        }
+        network["name"] = self.account.name + " -destZone"
+        network["displaytext"] = self.account.name + " -destZone"
+        network = Network.create(
+            self.apiclient,
+            network,
+            accountid=self.account.name,
+            domainid=self.domain.id,
+            networkofferingid=isolated_network_offering_id,
+            zoneid=self.destZone.id
+        )
+
+        backup_repository = self.backup_repository.update(self.api_client, crosszoneinstancecreation=True)
+        self.assertEqual(backup_repository.crosszoneinstancecreation, True, "Cross-Zone Instance Creation could not be enabled on the backup repository")
+
+        self.vm_backup_create_vm_from_backup_int(template.id, [network.id])

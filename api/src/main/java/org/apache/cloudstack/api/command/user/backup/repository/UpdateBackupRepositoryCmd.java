@@ -44,13 +44,13 @@ public class UpdateBackupRepositoryCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = BackupRepositoryResponse.class, description = "ID of the backup repository")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, required = true, entityType = BackupRepositoryResponse.class, description = "ID of the backup repository")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "name of the backup repository")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "name of the backup repository")
     private String name;
 
-    @Parameter(name = ApiConstants.ADDRESS, type = CommandType.STRING, required = true, description = "address of the backup repository")
+    @Parameter(name = ApiConstants.ADDRESS, type = CommandType.STRING, description = "address of the backup repository")
     private String address;
 
     @Parameter(name = ApiConstants.MOUNT_OPTIONS, type = CommandType.STRING, description = "shared storage mount options")
