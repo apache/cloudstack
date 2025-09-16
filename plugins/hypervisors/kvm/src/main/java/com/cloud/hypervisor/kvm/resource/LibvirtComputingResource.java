@@ -1902,6 +1902,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return "";
     }
 
+    public Integer getVlanIdForBridge(final String bridge) {
+        String pif = matchPifFileInDirectory(bridge);
+        final File vlanfile = new File("/proc/net/vlan/" + pif);
+        if (vlanfile.isFile()) {
+            String vlan = Script.runSimpleBashScript("awk '/VID:/ {print $3}' /proc/net/vlan/" + pif);
+            try {
+                return Integer.parseInt(vlan);
+            } catch (final NumberFormatException e) {
+                return null;
+            }
+        }
+        return null;
+    }
+
     static String [] ifNamePatterns = {
             "^eth",
             "^bond",
@@ -3292,6 +3306,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
             }
             guest.setIothreads(customParams.containsKey(VmDetailConstants.IOTHREADS));
+            if (customParams.containsKey(VmDetailConstants.KVM_GUEST_OS_MACHINE_TYPE)) {
+                guest.setMachineType(customParams.get(VmDetailConstants.KVM_GUEST_OS_MACHINE_TYPE));
+            }
         }
         guest.setUuid(uuid);
         if(!isGuestS390x()) {
