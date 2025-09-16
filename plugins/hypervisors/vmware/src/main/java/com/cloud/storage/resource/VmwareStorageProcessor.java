@@ -3792,14 +3792,14 @@ public class VmwareStorageProcessor implements StorageProcessor {
             DatastoreMO primaryDsMo = new DatastoreMO(hyperHost.getContext(), morPrimaryDs);
             boolean isDatastoreStoragePolicyComplaint = primaryDsMo.isDatastoreStoragePolicyComplaint(storagePolicyId);
 
-            String failedMessage = String.format("DataStore %s is not complaince with storage policy id %s", primaryStorageNameLabel, storagePolicyId);
+            String failedMessage = String.format("DataStore %s is not compliance with storage policy id %s", primaryStorageNameLabel, storagePolicyId);
             if (!isDatastoreStoragePolicyComplaint)
                 return new Answer(cmd, isDatastoreStoragePolicyComplaint, failedMessage);
             else
                 return new Answer(cmd, isDatastoreStoragePolicyComplaint, null);
         } catch (Throwable e) {
             hostService.createLogMessageException(e, cmd);
-            String details = String.format("Exception while checking if datastore [%s] is storage policy [%s] complaince due to: [%s]", primaryStorageNameLabel, storagePolicyId, VmwareHelper.getExceptionMessage(e));
+            String details = String.format("Exception while checking if datastore [%s] is storage policy [%s] compliance due to: [%s]", primaryStorageNameLabel, storagePolicyId, VmwareHelper.getExceptionMessage(e));
             return new Answer(cmd, false, details);
         }
     }

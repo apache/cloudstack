@@ -1543,7 +1543,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                                     continue;
                                 }
                             } catch (StorageUnavailableException e) {
-                                logger.warn("Could not verify storage policy complaince against storage pool {} due to exception {}", storagePool, e.getMessage());
+                                logger.warn("Could not verify storage policy compliance against storage pool {} due to exception {}", storagePool, e.getMessage());
                                 continue;
                             }
                             haveEnoughSpace = true;
@@ -1582,7 +1582,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                                             continue;
                                         }
                                     } catch (StorageUnavailableException e) {
-                                        logger.warn("Could not verify storage policy complaince against storage pool {} due to exception {}", potentialSPool, e.getMessage());
+                                        logger.warn("Could not verify storage policy compliance against storage pool {} due to exception {}", potentialSPool, e.getMessage());
                                         continue;
                                     }
                                 }
