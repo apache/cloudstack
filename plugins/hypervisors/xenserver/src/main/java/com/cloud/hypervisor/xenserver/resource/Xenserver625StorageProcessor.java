@@ -51,6 +51,7 @@ import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
@@ -73,7 +74,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
 
     private void mountNfs(Connection conn, String remoteDir, String localDir, String nfsVersion) {
         if (localDir == null) {
-            localDir = BASE_MOUNT_POINT_ON_REMOTE + UUID.nameUUIDFromBytes(remoteDir.getBytes());
+            localDir = BASE_MOUNT_POINT_ON_REMOTE + UuidUtils.nameUUIDFromBytes(remoteDir.getBytes());
         }
         String result = hypervisorResource.callHostPluginAsync(conn, "cloud-plugin-storage", "mountNfsSecondaryStorage", 100 * 1000, "localDir", localDir, "remoteDir", remoteDir, "nfsVersion", nfsVersion);
         if (StringUtils.isBlank(result)) {
@@ -110,7 +111,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
 
     /**
      * Creates a new file SR for the given path. If any of XenServer's checked exception occurs, we use method {@link #removeSrAndPbdIfPossible(Connection, SR, PBD)} to clean the created PBD and SR entries.
-     * To avoid race conditions between management servers, we are using a deterministic srUuid for the file SR to be created (we are leaving XenServer with the burden of managing race conditions). The UUID is based on the SR file path, and is generated using {@link UUID#nameUUIDFromBytes(byte[])}.
+     * To avoid race conditions between management servers, we are using a deterministic srUuid for the file SR to be created (we are leaving XenServer with the burden of managing race conditions). The UUID is based on the SR file path, and is generated using {@link UuidUtils.nameUUIDFromBytes(byte[])}.
      * If there is an SR with the generated UUID, this means that some other management server has just created it. An exception will occur and this exception will be an {@link InternalError}. The exception will contain {@link InternalError#message} a message saying 'Db_exn.Uniqueness_constraint_violation'.
      * For cases where the previous described error happens, we catch the exception and use the method {@link #retrieveAlreadyConfiguredSrWithoutException(Connection, String)}.
      */
@@ -121,7 +122,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
         PBD pbd = null;
         try {
             Host host = Host.getByUuid(conn, hostUuid);
-            String srUuid = UUID.nameUUIDFromBytes(srPath.getBytes()).toString();
+            String srUuid = UuidUtils.nameUUIDFromBytes(srPath.getBytes()).toString();
 
             Map<String, String> smConfig = new HashMap<String, String>();
             sr = SR.introduce(conn, srUuid, srPath, srPath, "file", "file", false, smConfig);
@@ -243,7 +244,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
     }
 
     protected SR createFileSr(Connection conn, String remotePath, String dir, String nfsVersion) {
-        String localDir = BASE_MOUNT_POINT_ON_REMOTE + UUID.nameUUIDFromBytes(remotePath.getBytes());
+        String localDir = BASE_MOUNT_POINT_ON_REMOTE + UuidUtils.nameUUIDFromBytes(remotePath.getBytes());
         mountNfs(conn, remotePath, localDir, nfsVersion);
         return createFileSR(conn, localDir + "/" + dir);
     }
@@ -563,12 +564,12 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             final String folder = destPath;
             String finalPath = null;
 
-            final String localMountPoint = BaseMountPointOnHost + File.separator + UUID.nameUUIDFromBytes(secondaryStorageUrl.getBytes()).toString();
+            final String localMountPoint = BaseMountPointOnHost + File.separator + UuidUtils.nameUUIDFromBytes(secondaryStorageUrl.getBytes()).toString();
             if (fullbackup) {
                 SR snapshotSr = null;
                 Task task = null;
                 try {
-                    final String localDir = BASE_MOUNT_POINT_ON_REMOTE + UUID.nameUUIDFromBytes(secondaryStorageMountPath.getBytes());
+                    final String localDir = BASE_MOUNT_POINT_ON_REMOTE + UuidUtils.nameUUIDFromBytes(secondaryStorageMountPath.getBytes());
                     mountNfs(conn, secondaryStorageMountPath, localDir, nfsVersion);
                     final boolean result = makeDirectory(conn, localDir + "/" + folder);
                     if (!result) {
@@ -1097,7 +1098,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             srcSr = createFileSr(conn, srcUri.getHost() + ":" + srcUri.getPath(), srcDir, srcNfsVersion);
 
             final String destNfsPath = destUri.getHost() + ":" + destUri.getPath();
-            final String localDir = BASE_MOUNT_POINT_ON_REMOTE + UUID.nameUUIDFromBytes(destNfsPath.getBytes());
+            final String localDir = BASE_MOUNT_POINT_ON_REMOTE + UuidUtils.nameUUIDFromBytes(destNfsPath.getBytes());
 
             String destNfsVersion = destStore.getNfsVersion();
             mountNfs(conn, destUri.getHost() + ":" + destUri.getPath(), localDir, destNfsVersion);
@@ -1240,7 +1241,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             srcSr = hypervisorResource.getIscsiSR(conn, iScsiName, storageHost, iScsiName, chapInitiatorUsername, chapInitiatorSecret, false, srType, true);
 
             final String destNfsPath = destUri.getHost() + ":" + destUri.getPath();
-            final String localDir = BASE_MOUNT_POINT_ON_REMOTE + UUID.nameUUIDFromBytes(destNfsPath.getBytes());
+            final String localDir = BASE_MOUNT_POINT_ON_REMOTE + UuidUtils.nameUUIDFromBytes(destNfsPath.getBytes());
 
             String nfsVersion = destStore.getNfsVersion();
             mountNfs(conn, destNfsPath, localDir, nfsVersion);

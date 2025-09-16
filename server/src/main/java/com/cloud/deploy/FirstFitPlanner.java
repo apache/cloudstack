@@ -203,8 +203,13 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
                 }
 
             }
-            // In case of non-GPU VMs, protect GPU enabled Hosts and prefer VM deployment on non-GPU Hosts.
-            if (((serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString()) == null) && !(hostGpuGroupsDao.listHostIds().isEmpty())) || nonUefiVMDeploy) {
+            // In case of non-GPU VMs, protect GPU enabled Hosts and prefer VM deployment on
+            // non-GPU Hosts.
+            if (((offering.getVgpuProfileId() == null &&
+                  serviceOfferingDetailsDao.findDetail(offering.getId(),
+                          GPU.Keys.vgpuType.toString()) == null)
+                 && !(hostGpuGroupsDao.listHostIds().isEmpty())) || nonUefiVMDeploy
+            ) {
                 int requiredCpu = offering.getCpu() * offering.getSpeed();
                 long requiredRam = offering.getRamSize() * 1024L * 1024L;
                 reorderClustersBasedOnImplicitTags(clusterList, requiredCpu, requiredRam);
@@ -645,7 +650,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
     public boolean canHandle(VirtualMachineProfile vm, DeploymentPlan plan, ExcludeList avoid) {
         // check what the ServiceOffering says. If null, check the global config
         ServiceOffering offering = vm.getServiceOffering();
-        if (vm.getHypervisorType() != HypervisorType.BareMetal) {
+        if (vm.getHypervisorType() != HypervisorType.BareMetal && vm.getHypervisorType() != HypervisorType.External) {
             if (offering != null && offering.getDeploymentPlanner() != null) {
                 if (offering.getDeploymentPlanner().equals(getName())) {
                     return true;

@@ -97,9 +97,18 @@ class TestEncryptedVolumes(cloudstackTestCase):
 
         zone = config.zones[0]
         assert zone is not None
-        cls.zone = list_zones(cls.apiclient, name=zone.name)[0]
 
-        cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
+        storage_pools = zone.primaryStorages
+        sp_pools = []
+        for storage in storage_pools:
+            if storage['provider'] and "StorPool" in storage['provider']:
+                sp_pools.append(storage)
+
+        if len(sp_pools) < 2:
+            cls.debug("Cannot perform the tests because there aren't the required count of StorPool storage pools %s" % sp_pools)
+            return
+
+        cls.zone = list_zones(cls.apiclient, name=zone.name)[0]
 
         cls.spapi = spapi.Api(host=zone.spEndpoint, port=zone.spEndpointPort, auth=zone.spAuthToken, multiCluster=True)
         cls.helper = StorPoolHelper()
@@ -118,48 +127,43 @@ class TestEncryptedVolumes(cloudstackTestCase):
         td = TestData()
         cls.testdata = td.testdata
 
-        cls.sp_template_1 = "ssd"
-        storpool_primary_storage = {
-            "name": cls.sp_template_1,
-            "zoneid": cls.zone.id,
-            "url": "SP_API_HTTP=%s:%s;SP_AUTH_TOKEN=%s;SP_TEMPLATE=%s" % (zone.spEndpoint, zone.spEndpointPort, zone.spAuthToken, cls.sp_template_1),
-            "scope": "zone",
-            "capacitybytes": 564325555333,
-            "capacityiops": 155466,
-            "hypervisor": "kvm",
-            "provider": "StorPool",
-            "tags": cls.sp_template_1
-        }
-
-        cls.storpool_primary_storage = storpool_primary_storage
+        storpool_primary_storage = sp_pools[0]
+        cls.template_name = storpool_primary_storage["name"]
 
         storage_pool = list_storage_pools(
             cls.apiclient,
-            name=storpool_primary_storage["name"]
-        )
-
+            name=cls.template_name
+            )
         if storage_pool is None:
-            newTemplate = sptypes.VolumeTemplateCreateDesc(name=storpool_primary_storage["name"], placeAll="virtual",
-                                                           placeTail="virtual", placeHead="virtual", replication=1)
-            template_on_local = cls.spapi.volumeTemplateCreate(newTemplate)
-
             storage_pool = StoragePool.create(cls.apiclient, storpool_primary_storage)
         else:
             storage_pool = storage_pool[0]
+        cls.storage_pool = storage_pool
+        cls.helper.updateStoragePoolTags(cls.apiclient, cls.storage_pool.id, cls.testdata[TestData.sp_template_1]["tags"])
+
+        cls.debug(pprint.pformat(storage_pool))
+
         cls.primary_storage = storage_pool
 
-        storpool_service_offerings_ssd = {
-            "name": "ssd-encrypted",
-            "displaytext": "SP_CO_2 (Min IOPS = 10,000; Max IOPS = 15,000)",
-            "cpunumber": 1,
-            "cpuspeed": 500,
-            "memory": 512,
-            "storagetype": "shared",
-            "customizediops": False,
-            "hypervisorsnapshotreserve": 200,
-            "encryptroot": True,
-            "tags": cls.sp_template_1
-        }
+        storpool_primary_storage = sp_pools[1]
+        cls.template_name = storpool_primary_storage["name"]
+
+        storage_pool = list_storage_pools(
+            cls.apiclient,
+            name=cls.template_name
+            )
+        if storage_pool is None:
+            storage_pool = StoragePool.create(cls.apiclient, storpool_primary_storage)
+        else:
+            storage_pool = storage_pool[0]
+        cls.storage_pool = storage_pool
+        cls.helper.updateStoragePoolTags(cls.apiclient, cls.storage_pool.id, cls.testdata[TestData.sp_template_2]["tags"])
+
+        cls.debug(pprint.pformat(storage_pool))
+
+        cls.primary_storage2 = storage_pool
+
+        storpool_service_offerings_ssd = cls.testdata[TestData.serviceOfferingEncrypted]
 
         service_offerings_ssd = list_service_offering(
             cls.apiclient,
@@ -173,69 +177,6 @@ class TestEncryptedVolumes(cloudstackTestCase):
 
         cls.service_offering = service_offerings_ssd
         cls.debug(pprint.pformat(cls.service_offering))
-
-        cls.sp_template_2 = "ssd2"
-
-        storpool_primary_storage2 = {
-            "name": cls.sp_template_2,
-            "zoneid": cls.zone.id,
-            "url": "SP_API_HTTP=%s:%s;SP_AUTH_TOKEN=%s;SP_TEMPLATE=%s" % (zone.spEndpoint, zone.spEndpointPort, zone.spAuthToken, cls.sp_template_2),
-            "scope": "zone",
-            "capacitybytes": 564325555333,
-            "capacityiops": 1554,
-            "hypervisor": "kvm",
-            "provider": "StorPool",
-            "tags": cls.sp_template_2
-        }
-
-        cls.storpool_primary_storage2 = storpool_primary_storage2
-        storage_pool = list_storage_pools(
-            cls.apiclient,
-            name=storpool_primary_storage2["name"]
-        )
-
-        if storage_pool is None:
-            newTemplate = sptypes.VolumeTemplateCreateDesc(name=storpool_primary_storage2["name"], placeAll="virtual",
-                                                           placeTail="virtual", placeHead="virtual", replication=1)
-            template_on_local = cls.spapi.volumeTemplateCreate(newTemplate)
-            storage_pool = StoragePool.create(cls.apiclient, storpool_primary_storage2)
-
-        else:
-            storage_pool = storage_pool[0]
-        cls.primary_storage2 = storage_pool
-
-        storpool_service_offerings_ssd2 = {
-            "name": "ssd2-encrypted",
-            "displaytext": "SP_CO_2",
-            "cpunumber": 1,
-            "cpuspeed": 500,
-            "memory": 512,
-            "storagetype": "shared",
-            "customizediops": False,
-            "encryptroot": True,
-            "tags": cls.sp_template_2
-        }
-
-        service_offerings_ssd2 = list_service_offering(
-            cls.apiclient,
-            name=storpool_service_offerings_ssd2["name"]
-        )
-
-        if service_offerings_ssd2 is None:
-            service_offerings_ssd2 = ServiceOffering.create(cls.apiclient, storpool_service_offerings_ssd2, encryptroot=True)
-        else:
-            service_offerings_ssd2 = service_offerings_ssd2[0]
-
-        cls.service_offering2 = service_offerings_ssd2
-
-        cls.disk_offerings_ssd2_encrypted = list_disk_offering(
-            cls.apiclient,
-            name=cls.testdata[TestData.diskOfferingEncrypted2]["name"]
-        )
-        if cls.disk_offerings_ssd2_encrypted is None:
-            cls.disk_offerings_ssd2_encrypted = DiskOffering.create(cls.apiclient, cls.testdata[TestData.diskOfferingEncrypted2], encrypt=True)
-        else:
-            cls.disk_offerings_ssd2_encrypted = cls.disk_offerings_ssd2_encrypted[0]
 
         cls.disk_offering_ssd_encrypted = list_disk_offering(
             cls.apiclient,

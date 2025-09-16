@@ -209,32 +209,46 @@ public class VeeamClientTest {
 
 
     private void verifyBackupMetrics(Map<String, Backup.Metric> metrics) {
-        Assert.assertEquals(2, metrics.size());
+        Assert.assertEquals(7, metrics.size());
 
-        Assert.assertTrue(metrics.containsKey("d1bd8abd-fc73-4b77-9047-7be98a2ecb72"));
-        Assert.assertEquals(537776128L, (long) metrics.get("d1bd8abd-fc73-4b77-9047-7be98a2ecb72").getBackupSize());
-        Assert.assertEquals(2147506644L, (long) metrics.get("d1bd8abd-fc73-4b77-9047-7be98a2ecb72").getDataSize());
+        Assert.assertTrue(metrics.containsKey("d93d7c7d-068a-4e8f-ba54-e08cea3cb9d2"));
+        Assert.assertEquals(537776128L, (long) metrics.get("d93d7c7d-068a-4e8f-ba54-e08cea3cb9d2").getBackupSize());
+        Assert.assertEquals(2147506644L, (long) metrics.get("d93d7c7d-068a-4e8f-ba54-e08cea3cb9d2").getDataSize());
 
-        Assert.assertTrue(metrics.containsKey("0d752ca6-d628-4d85-a739-75275e4661e6"));
-        Assert.assertEquals(1268682752L, (long) metrics.get("0d752ca6-d628-4d85-a739-75275e4661e6").getBackupSize());
-        Assert.assertEquals(15624049921L, (long) metrics.get("0d752ca6-d628-4d85-a739-75275e4661e6").getDataSize());
+        Assert.assertTrue(metrics.containsKey("d2110f5f-aa22-4e67-8084-5d8597f26d63"));
+        Assert.assertEquals(579756032L, (long) metrics.get("d2110f5f-aa22-4e67-8084-5d8597f26d63").getBackupSize());
+        Assert.assertEquals(7516219400L, (long) metrics.get("d2110f5f-aa22-4e67-8084-5d8597f26d63").getDataSize());
     }
 
     @Test
     public void testProcessPowerShellResultForBackupMetrics() {
-        String result = "i-2-3-VM-CSBKP-d1bd8abd-fc73-4b77-9047-7be98a2ecb72\r\n" +
+        String result = "d93d7c7d-068a-4e8f-ba54-e08cea3cb9d2\r\n" +
                 "537776128\r\n" +
                 "2147506644\r\n" +
                 "=====\r\n" +
-                "i-13-22-VM-CSBKP-b3b3cb75-cfbf-4496-9c63-a08a93347276\r\n" +
+                "4b1181fd-7b1e-4af1-a76b-8284a8953b99\r\n" +
+                "12398592\r\n" +
+                "71329948\r\n" +
                 "=====\r\n" +
-                "backup-job-based-on-sla\r\n" +
+                "8e9a854e-9bb8-4a34-815c-a6ab17a1e72f\r\n" +
+                "11870208\r\n" +
+                "72378524\r\n" +
                 "=====\r\n" +
-                "i-12-20-VM-CSBKP-9f292f11-00ec-4915-84f0-e3895828640e\r\n" +
+                "7c54d13d-7b9c-465a-8ec8-7a276bde57dd\r\n" +
+                "12083200\r\n" +
+                "69232800\r\n" +
                 "=====\r\n" +
-                "i-2-5-VM-CSBKP-0d752ca6-d628-4d85-a739-75275e4661e6\r\n" +
-                "1268682752\r\n" +
-                "15624049921\r\n" +
+                "094564ff-02a1-46c7-b9e5-e249b8b9acf6\r\n" +
+                "14217216\r\n" +
+                "76572832\r\n" +
+                "=====\r\n" +
+                "1f6f5c49-92ef-4757-b327-e63ae9f1fdea\r\n" +
+                "12460032\r\n" +
+                "72378524\r\n" +
+                "=====\r\n" +
+                "d2110f5f-aa22-4e67-8084-5d8597f26d63\r\n" +
+                "579756032\r\n" +
+                "7516219400\r\n" +
                 "=====\r\n";
 
         Map<String, Backup.Metric> metrics = client.processPowerShellResultForBackupMetrics(result);
@@ -294,22 +308,6 @@ public class VeeamClientTest {
                 "    <CreationTimeUtc>2023-11-01T00:00:35.163Z</CreationTimeUtc>\n" +
                 "    <FileType>vib</FileType>\n" +
                 "  </BackupFile>\n" +
-                "  <BackupFile Href=\"https://10.0.3.141:9398/api/backupFiles/66b39f48-af76-4373-b333-996fc04da894?format=Entity\" Type=\"BackupFile\" Name=\"i-2-5-VM-CSBKP-0d752ca6-d628-4d85-a739-75275eD2023-11-04T000109_2AC1.vbk\" UID=\"urn:veeam:BackupFile:66b39f48-af76-4373-b333-996fc04da894\">\n" +
-                "    <Links>\n" +
-                "      <Link Href=\"https://10.0.3.141:9398/api/backups/e7484f82-b01b-47cf-92ad-ac5e8379a4fe\" Name=\"i-2-5-VM-CSBKP-0d752ca6-d628-4d85-a739-75275e4661e6\" Type=\"BackupReference\" Rel=\"Up\"/>\n" +
-                "      <Link Href=\"https://10.0.3.141:9398/api/backupServers/bb188236-7b8b-4763-b35a-5d6645d3e95b\" Name=\"10.0.3.141\" Type=\"BackupServerReference\" Rel=\"Up\"/>\n" +
-                "      <Link Href=\"https://10.0.3.141:9398/api/backupFiles/66b39f48-af76-4373-b333-996fc04da894\" Name=\"i-2-5-VM-CSBKP-0d752ca6-d628-4d85-a739-75275eD2023-11-04T000109_2AC1.vbk\" Type=\"BackupFileReference\" Rel=\"Alternate\"/>\n" +
-                "      <Link Href=\"https://10.0.3.141:9398/api/backupFiles/66b39f48-af76-4373-b333-996fc04da894/restorePoints\" Type=\"RestorePointReferenceList\" Rel=\"Related\"/>\n" +
-                "      <Link Href=\"https://10.0.3.141:9398/api/backupFiles/66b39f48-af76-4373-b333-996fc04da894/vmRestorePoints\" Type=\"VmRestorePointReferenceList\" Rel=\"Down\"/>\n" +
-                "    </Links>\n" +
-                "    <FilePath>V:\\Backup\\i-2-5-VM-CSBKP-0d752ca6-d628-4d85-a739-75275e4661e6\\i-2-5-VM-CSBKP-0d752ca6-d628-4d85-a739-75275eD2023-11-04T000109_2AC1.vbk</FilePath>\n" +
-                "    <BackupSize>581083136</BackupSize>\n" +
-                "    <DataSize>7516219404</DataSize>\n" +
-                "    <DeduplicationRatio>5.82</DeduplicationRatio>\n" +
-                "    <CompressRatio>2.22</CompressRatio>\n" +
-                "    <CreationTimeUtc>2023-11-04T00:00:24.973Z</CreationTimeUtc>\n" +
-                "    <FileType>vbk</FileType>\n" +
-                "  </BackupFile>\n" +
                 "  <BackupFile Href=\"https://10.0.3.141:9398/api/backupFiles/8e9a854e-9bb8-4a34-815c-a6ab17a1e72f?format=Entity\" Type=\"BackupFile\" Name=\"i-2-5-VM-CSBKP-0d752ca6-d628-4d85-a739-75275eD2023-10-29T000033_F468.vib\" UID=\"urn:veeam:BackupFile:8e9a854e-9bb8-4a34-815c-a6ab17a1e72f\">\n" +
                 "    <Links>\n" +
                 "      <Link Href=\"https://10.0.3.141:9398/api/backups/e7484f82-b01b-47cf-92ad-ac5e8379a4fe\" Name=\"i-2-5-VM-CSBKP-0d752ca6-d628-4d85-a739-75275e4661e6\" Type=\"BackupReference\" Rel=\"Up\"/>\n" +
@@ -324,54 +322,6 @@ public class VeeamClientTest {
                 "    <DeduplicationRatio>1</DeduplicationRatio>\n" +
                 "    <CompressRatio>7.14</CompressRatio>\n" +
                 "    <CreationTimeUtc>2023-10-28T23:00:33.233Z</CreationTimeUtc>\n" +
-                "    <FileType>vib</FileType>\n" +
-                "  </BackupFile>\n" +
-                "  <BackupFile Href=\"https://10.0.3.141:9398/api/backupFiles/cf4536c0-d752-4ba5-ad7f-bbc17c7e107b?format=Entity\" Type=\"BackupFile\" Name=\"i-2-5-VM-CSBKP-0d752ca6-d628-4d85-a739-75275eD2023-10-30T000022_0CE3.vib\" UID=\"urn:veeam:BackupFile:cf4536c0-d752-4ba5-ad7f-bbc17c7e107b\">\n" +
-                "    <Links>\n" +
-                "      <Link Href=\"https://10.0.3.141:9398/api/backups/e7484f82-b01b-47cf-92ad-ac5e8379a4fe\" Name=\"i-2-5-VM-CSBKP-0d752ca6-d628-4d85-a739-75275e4661e6\" Type=\"BackupReference\" Rel=\"Up\"/>\n" +
-                "      <Link Href=\"https://10.0.3.141:9398/api/backupServers/bb188236-7b8b-4763-b35a-5d6645d3e95b\" Name=\"10.0.3.141\" Type=\"BackupServerReference\" Rel=\"Up\"/>\n" +
-                "      <Link Href=\"https://10.0.3.141:9398/api/backupFiles/cf4536c0-d752-4ba5-ad7f-bbc17c7e107b\" Name=\"i-2-5-VM-CSBKP-0d752ca6-d628-4d85-a739-75275eD2023-10-30T000022_0CE3.vib\" Type=\"BackupFileReference\" Rel=\"Alternate\"/>\n" +
-                "      <Link Href=\"https://10.0.3.141:9398/api/backupFiles/cf4536c0-d752-4ba5-ad7f-bbc17c7e107b/restorePoints\" Type=\"RestorePointReferenceList\" Rel=\"Related\"/>\n" +
-                "      <Link Href=\"https://10.0.3.141:9398/api/backupFiles/cf4536c0-d752-4ba5-ad7f-bbc17c7e107b/vmRestorePoints\" Type=\"VmRestorePointReferenceList\" Rel=\"Down\"/>\n" +
-                "    </Links>\n" +
-                "    <FilePath>V:\\Backup\\i-2-5-VM-CSBKP-0d752ca6-d628-4d85-a739-75275e4661e6\\i-2-5-VM-CSBKP-0d752ca6-d628-4d85-a739-75275eD2023-10-30T000022_0CE3.vib</FilePath>\n" +
-                "    <BackupSize>14409728</BackupSize>\n" +
-                "    <DataSize>76572828</DataSize>\n" +
-                "    <DeduplicationRatio>1</DeduplicationRatio>\n" +
-                "    <CompressRatio>6.25</CompressRatio>\n" +
-                "    <CreationTimeUtc>2023-10-30T00:00:22.7Z</CreationTimeUtc>\n" +
-                "    <FileType>vib</FileType>\n" +
-                "  </BackupFile>\n" +
-                "  <BackupFile Href=\"https://10.0.3.141:9398/api/backupFiles/2dd7f5b6-8a10-406d-9c4f-c0dfa987e85c?format=Entity\" Type=\"BackupFile\" Name=\"i-2-5-VM-CSBKP-0d752ca6-d628-4d85-a739-75275eD2023-11-06T000018_055B.vib\" UID=\"urn:veeam:BackupFile:2dd7f5b6-8a10-406d-9c4f-c0dfa987e85c\">\n" +
-                "    <Links>\n" +
-                "      <Link Href=\"https://10.0.3.141:9398/api/backups/e7484f82-b01b-47cf-92ad-ac5e8379a4fe\" Name=\"i-2-5-VM-CSBKP-0d752ca6-d628-4d85-a739-75275e4661e6\" Type=\"BackupReference\" Rel=\"Up\"/>\n" +
-                "      <Link Href=\"https://10.0.3.141:9398/api/backupServers/bb188236-7b8b-4763-b35a-5d6645d3e95b\" Name=\"10.0.3.141\" Type=\"BackupServerReference\" Rel=\"Up\"/>\n" +
-                "      <Link Href=\"https://10.0.3.141:9398/api/backupFiles/2dd7f5b6-8a10-406d-9c4f-c0dfa987e85c\" Name=\"i-2-5-VM-CSBKP-0d752ca6-d628-4d85-a739-75275eD2023-11-06T000018_055B.vib\" Type=\"BackupFileReference\" Rel=\"Alternate\"/>\n" +
-                "      <Link Href=\"https://10.0.3.141:9398/api/backupFiles/2dd7f5b6-8a10-406d-9c4f-c0dfa987e85c/restorePoints\" Type=\"RestorePointReferenceList\" Rel=\"Related\"/>\n" +
-                "      <Link Href=\"https://10.0.3.141:9398/api/backupFiles/2dd7f5b6-8a10-406d-9c4f-c0dfa987e85c/vmRestorePoints\" Type=\"VmRestorePointReferenceList\" Rel=\"Down\"/>\n" +
-                "    </Links>\n" +
-                "    <FilePath>V:\\Backup\\i-2-5-VM-CSBKP-0d752ca6-d628-4d85-a739-75275e4661e6\\i-2-5-VM-CSBKP-0d752ca6-d628-4d85-a739-75275eD2023-11-06T000018_055B.vib</FilePath>\n" +
-                "    <BackupSize>17883136</BackupSize>\n" +
-                "    <DataSize>80767136</DataSize>\n" +
-                "    <DeduplicationRatio>1</DeduplicationRatio>\n" +
-                "    <CompressRatio>5</CompressRatio>\n" +
-                "    <CreationTimeUtc>2023-11-06T00:00:18.253Z</CreationTimeUtc>\n" +
-                "    <FileType>vib</FileType>\n" +
-                "  </BackupFile>\n" +
-                "  <BackupFile Href=\"https://10.0.3.141:9398/api/backupFiles/3fd6da3a-47bf-45fa-a4c8-c436e3cd34a7?format=Entity\" Type=\"BackupFile\" Name=\"i-2-5-VM-CSBKP-0d752ca6-d628-4d85-a739-75275eD2023-11-02T000029_65BE.vib\" UID=\"urn:veeam:BackupFile:3fd6da3a-47bf-45fa-a4c8-c436e3cd34a7\">\n" +
-                "    <Links>\n" +
-                "      <Link Href=\"https://10.0.3.141:9398/api/backups/e7484f82-b01b-47cf-92ad-ac5e8379a4fe\" Name=\"i-2-5-VM-CSBKP-0d752ca6-d628-4d85-a739-75275e4661e6\" Type=\"BackupReference\" Rel=\"Up\"/>\n" +
-                "      <Link Href=\"https://10.0.3.141:9398/api/backupServers/bb188236-7b8b-4763-b35a-5d6645d3e95b\" Name=\"10.0.3.141\" Type=\"BackupServerReference\" Rel=\"Up\"/>\n" +
-                "      <Link Href=\"https://10.0.3.141:9398/api/backupFiles/3fd6da3a-47bf-45fa-a4c8-c436e3cd34a7\" Name=\"i-2-5-VM-CSBKP-0d752ca6-d628-4d85-a739-75275eD2023-11-02T000029_65BE.vib\" Type=\"BackupFileReference\" Rel=\"Alternate\"/>\n" +
-                "      <Link Href=\"https://10.0.3.141:9398/api/backupFiles/3fd6da3a-47bf-45fa-a4c8-c436e3cd34a7/restorePoints\" Type=\"RestorePointReferenceList\" Rel=\"Related\"/>\n" +
-                "      <Link Href=\"https://10.0.3.141:9398/api/backupFiles/3fd6da3a-47bf-45fa-a4c8-c436e3cd34a7/vmRestorePoints\" Type=\"VmRestorePointReferenceList\" Rel=\"Down\"/>\n" +
-                "    </Links>\n" +
-                "    <FilePath>V:\\Backup\\i-2-5-VM-CSBKP-0d752ca6-d628-4d85-a739-75275e4661e6\\i-2-5-VM-CSBKP-0d752ca6-d628-4d85-a739-75275eD2023-11-02T000029_65BE.vib</FilePath>\n" +
-                "    <BackupSize>12521472</BackupSize>\n" +
-                "    <DataSize>72378525</DataSize>\n" +
-                "    <DeduplicationRatio>1</DeduplicationRatio>\n" +
-                "    <CompressRatio>6.67</CompressRatio>\n" +
-                "    <CreationTimeUtc>2023-11-02T00:00:29.05Z</CreationTimeUtc>\n" +
                 "    <FileType>vib</FileType>\n" +
                 "  </BackupFile>\n" +
                 "  <BackupFile Href=\"https://10.0.3.141:9398/api/backupFiles/d93d7c7d-068a-4e8f-ba54-e08cea3cb9d2?format=Entity\" Type=\"BackupFile\" Name=\"i-2-3-VM-CSBKP-d1bd8abd-fc73-4b77-9047-7be98aD2023-10-25T145951_8062.vbk\" UID=\"urn:veeam:BackupFile:d93d7c7d-068a-4e8f-ba54-e08cea3cb9d2\">\n" +
@@ -463,14 +413,72 @@ public class VeeamClientTest {
         Map<String, Backup.Metric> metrics = client.getBackupMetricsViaVeeamAPI();
 
         Assert.assertEquals(1, metrics.size());
-        Assert.assertTrue(metrics.containsKey("506760dc-ed77-40d6-a91d-e0914e7a1ad8"));
-        Assert.assertEquals(535875584L, (long) metrics.get("506760dc-ed77-40d6-a91d-e0914e7a1ad8").getBackupSize());
-        Assert.assertEquals(2147507235L, (long) metrics.get("506760dc-ed77-40d6-a91d-e0914e7a1ad8").getDataSize());
+        Assert.assertTrue(metrics.containsKey("6bf10cad-9181-45d9-9cc5-dd669366a381"));
+        Assert.assertEquals(535875584L, (long) metrics.get("6bf10cad-9181-45d9-9cc5-dd669366a381").getBackupSize());
+        Assert.assertEquals(2147507235L, (long) metrics.get("6bf10cad-9181-45d9-9cc5-dd669366a381").getDataSize());
     }
 
     @Test
     public void testListVmRestorePointsViaVeeamAPI() {
-        String xmlResponse = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+        String backupFilesXmlResponse = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+                "<BackupFiles xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns=\"http://www.veeam.com/ent/v1.0\">\n" +
+                "  <BackupFile Href=\"https://10.0.3.141:9398/api/backupFiles/d2110f5f-aa22-4e67-8084-5d8597f26d63?format=Entity\" Type=\"BackupFile\" Name=\"i-2-5-VM-CSBKP-0d752ca6-d628-4d85-a739-75275eD2023-10-28T000059_745D.vbk\" UID=\"urn:veeam:BackupFile:d2110f5f-aa22-4e67-8084-5d8597f26d63\">\n" +
+                "    <Links>\n" +
+                "      <Link Href=\"https://10.0.3.141:9398/api/backups/e7484f82-b01b-47cf-92ad-ac5e8379a4fe\" Name=\"i-2-5-VM-CSBKP-0d752ca6-d628-4d85-a739-75275e4661e6\" Type=\"BackupReference\" Rel=\"Up\"/>\n" +
+                "      <Link Href=\"https://10.0.3.141:9398/api/backupServers/bb188236-7b8b-4763-b35a-5d6645d3e95b\" Name=\"10.0.3.141\" Type=\"BackupServerReference\" Rel=\"Up\"/>\n" +
+                "      <Link Href=\"https://10.0.3.141:9398/api/backupFiles/d2110f5f-aa22-4e67-8084-5d8597f26d63\" Name=\"i-2-5-VM-CSBKP-0d752ca6-d628-4d85-a739-75275eD2023-10-28T000059_745D.vbk\" Type=\"BackupFileReference\" Rel=\"Alternate\"/>\n" +
+                "      <Link Href=\"https://10.0.3.141:9398/api/backupFiles/d2110f5f-aa22-4e67-8084-5d8597f26d63/restorePoints\" Type=\"RestorePointReferenceList\" Rel=\"Related\"/>\n" +
+                "      <Link Href=\"https://10.0.3.141:9398/api/backupFiles/d2110f5f-aa22-4e67-8084-5d8597f26d63/vmRestorePoints\" Type=\"VmRestorePointReferenceList\" Rel=\"Down\"/>\n" +
+                "    </Links>\n" +
+                "    <FilePath>V:\\Backup\\i-2-5-VM-CSBKP-0d752ca6-d628-4d85-a739-75275e4661e6\\i-2-5-VM-CSBKP-0d752ca6-d628-4d85-a739-75275eD2023-10-28T000059_745D.vbk</FilePath>\n" +
+                "    <BackupSize>579756032</BackupSize>\n" +
+                "    <DataSize>7516219400</DataSize>\n" +
+                "    <DeduplicationRatio>5.83</DeduplicationRatio>\n" +
+                "    <CompressRatio>2.22</CompressRatio>\n" +
+                "    <CreationTimeUtc>2023-10-27T23:00:13.74Z</CreationTimeUtc>\n" +
+                "    <FileType>vbk</FileType>\n" +
+                "  </BackupFile>\n" +
+                "  <BackupFile Href=\"https://10.0.3.141:9398/api/backupFiles/6bf10cad-9181-45d9-9cc5-dd669366a381?format=Entity\" Type=\"BackupFile\" Name=\"i-2-4-VM-CSBKP-0d752ca6-d628-4d85-a739-75275eD2023-1036D2023-11-03T162535_89D6.vbk\" UID=\"urn:veeam:BackupFile:6bf10cad-9181-45d9-9cc5-dd669366a381\">\n" +
+                "    <Links>\n" +
+                "      <Link Href=\"https://10.0.3.141:9398/api/backups/e7484f82-b01b-47cf-92ad-ac5e8379a4fe\" Name=\"i-2-4-VM-CSBKP-0d752ca6-d628-4d85-a739-75275e4661e6\" Type=\"BackupReference\" Rel=\"Up\"/>\n" +
+                "      <Link Href=\"https://10.0.3.141:9398/api/backupServers/bb188236-7b8b-4763-b35a-5d6645d3e95b\" Name=\"10.0.3.141\" Type=\"BackupServerReference\" Rel=\"Up\"/>\n" +
+                "      <Link Href=\"https://10.0.3.141:9398/api/backupFiles/6bf10cad-9181-45d9-9cc5-dd669366a381\" Name=\"i-2-4-VM.vm-1036D2023-11-03T162535_89D6.vbk\" Type=\"BackupFileReference\" Rel=\"Alternate\"/>\n" +
+                "      <Link Href=\"https://10.0.3.141:9398/api/backupFiles/6bf10cad-9181-45d9-9cc5-dd669366a381/restorePoints\" Type=\"RestorePointReferenceList\" Rel=\"Related\"/>\n" +
+                "      <Link Href=\"https://10.0.3.141:9398/api/backupFiles/6bf10cad-9181-45d9-9cc5-dd669366a381/vmRestorePoints\" Type=\"VmRestorePointReferenceList\" Rel=\"Down\"/>\n" +
+                "    </Links>\n" +
+                "    <FilePath>V:\\Backup\\i-2-4-VM-CSBKP-0d752ca6-d628-4d85-a739-75275e4661e6\\i-2-4-VM-CSBKP-0d752ca6-d628-4d85-a739-75275eD2023-1036D2023-11-03T162535_89D6.vbk</FilePath>\n" +
+                "    <BackupSize>12083200</BackupSize>\n" +
+                "    <DataSize>69232800</DataSize>\n" +
+                "    <DeduplicationRatio>1</DeduplicationRatio>\n" +
+                "    <CompressRatio>6.67</CompressRatio>\n" +
+                "    <CreationTimeUtc>2023-11-05T00:00:22.827Z</CreationTimeUtc>\n" +
+                "    <FileType>vib</FileType>\n" +
+                "  </BackupFile>\n" +
+                "  <BackupFile Href=\"https://10.0.3.141:9398/api/backupFiles/4b1181fd-7b1e-4af1-a76b-8284a8953b99?format=Entity\" Type=\"BackupFile\" Name=\"i-2-5-VM-CSBKP-0d752ca6-d628-4d85-a739-75275eD2023-11-01T000035_BEBF.vib\" UID=\"urn:veeam:BackupFile:4b1181fd-7b1e-4af1-a76b-8284a8953b99\">\n" +
+                "    <Links>\n" +
+                "      <Link Href=\"https://10.0.3.141:9398/api/backups/e7484f82-b01b-47cf-92ad-ac5e8379a4fe\" Name=\"i-2-5-VM-CSBKP-0d752ca6-d628-4d85-a739-75275e4661e6\" Type=\"BackupReference\" Rel=\"Up\"/>\n" +
+                "      <Link Href=\"https://10.0.3.141:9398/api/backupServers/bb188236-7b8b-4763-b35a-5d6645d3e95b\" Name=\"10.0.3.141\" Type=\"BackupServerReference\" Rel=\"Up\"/>\n" +
+                "      <Link Href=\"https://10.0.3.141:9398/api/backupFiles/4b1181fd-7b1e-4af1-a76b-8284a8953b99\" Name=\"i-2-5-VM-CSBKP-0d752ca6-d628-4d85-a739-75275eD2023-11-01T000035_BEBF.vib\" Type=\"BackupFileReference\" Rel=\"Alternate\"/>\n" +
+                "      <Link Href=\"https://10.0.3.141:9398/api/backupFiles/4b1181fd-7b1e-4af1-a76b-8284a8953b99/restorePoints\" Type=\"RestorePointReferenceList\" Rel=\"Related\"/>\n" +
+                "      <Link Href=\"https://10.0.3.141:9398/api/backupFiles/4b1181fd-7b1e-4af1-a76b-8284a8953b99/vmRestorePoints\" Type=\"VmRestorePointReferenceList\" Rel=\"Down\"/>\n" +
+                "    </Links>\n" +
+                "    <FilePath>V:\\Backup\\i-2-5-VM-CSBKP-0d752ca6-d628-4d85-a739-75275e4661e6\\i-2-5-VM-CSBKP-0d752ca6-d628-4d85-a739-75275eD2023-11-01T000035_BEBF.vib</FilePath>\n" +
+                "    <BackupSize>12398592</BackupSize>\n" +
+                "    <DataSize>71329948</DataSize>\n" +
+                "    <DeduplicationRatio>1</DeduplicationRatio>\n" +
+                "    <CompressRatio>6.67</CompressRatio>\n" +
+                "    <CreationTimeUtc>2023-11-01T00:00:35.163Z</CreationTimeUtc>\n" +
+                "    <FileType>vib</FileType>\n" +
+                "  </BackupFile>\n" +
+                "</BackupFiles>\n";
+
+        wireMockRule.stubFor(get(urlMatching(".*/backupFiles\\?format=Entity"))
+                .willReturn(aResponse()
+                        .withHeader("content-type", "application/xml")
+                        .withStatus(200)
+                        .withBody(backupFilesXmlResponse)));
+
+                String vmRestorePointsXmlResponse = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
                 "<VmRestorePoints\n" +
                 "  xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"\n" +
                 "  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
@@ -489,7 +497,7 @@ public class VeeamClientTest {
                 "    <VmName>i-2-4-VM</VmName>\n" +
                 "    <Algorithm>Full</Algorithm>\n" +
                 "    <PointType>Full</PointType>\n" +
-                "    <HierarchyObjRef>urn:VMware:Vm:adb5423b-b578-4c26-8ab8-cde9c1faec55.vm-1036</HierarchyObjRef>\n" +
+                "    <HierarchyObjRef>urn:VMware:Vm:24490b30-81db-4038-821f-59694cd89519.vm-1036</HierarchyObjRef>\n" +
                 "  </VmRestorePoint>\n" +
                 "</VmRestorePoints>\n";
         String vmName = "i-2-4-VM";
@@ -498,13 +506,38 @@ public class VeeamClientTest {
                 .willReturn(aResponse()
                         .withHeader("content-type", "application/xml")
                         .withStatus(200)
-                        .withBody(xmlResponse)));
-        List<Backup.RestorePoint> vmRestorePointList = client.listVmRestorePointsViaVeeamAPI(vmName);
+                        .withBody(vmRestorePointsXmlResponse)));
+
+        String hierarchyXmlResponse = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+                "<EntityReferences\n" +
+                "  xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"\n" +
+                "  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
+                "  xmlns=\"http://www.veeam.com/ent/v1.0\">\n" +
+                "   <Ref UID=\"urn:veeam:HierarchyRoot:24490b30-81db-4038-821f-59694cd89519\" Name=\"10.0.32.153\" Href=\"https://10.0.3.141:9398/api/hierarchyRoots/24490b30-81db-4038-821f-59694cd89519\" Type=\"HierarchyRootReference\">\n" +
+                "   <Links>\n" +
+                "       <Link Href=\"https://10.0.3.141:9398/api/backupServers/bb188236-7b8b-4763-b35a-5d6645d3e95b\" Name=\"10.0.3.141\" Type=\"BackupServerReference\" Rel=\"Up\"/>\n" +
+                "       <Link Href=\"https://10.0.3.141:9398/api/hierarchyRoots/24490b30-81db-4038-821f-59694cd89519?format=Entity\" Name=\"10.0.32.153\" Type=\"HierarchyRoot\" Rel=\"Alternate\"/>\n" +
+                "   </Links>\n" +
+                "   </Ref>" +
+                "</EntityReferences>";
+        String vmwareDcName = "10.0.32.153";
+        String hierarchyId = "urn:VMware:Vm:24490b30-81db-4038-821f-59694cd89519";
+
+        wireMockRule.stubFor(get(urlMatching(".*/hierarchyRoots"))
+                .willReturn(aResponse()
+                        .withHeader("content-type", "application/xml")
+                        .withStatus(200)
+                        .withBody(hierarchyXmlResponse)));
+
+        Map<String, Backup.Metric> metricsMap = client.getBackupMetrics();
+        List<Backup.RestorePoint> vmRestorePointList = client.listVmRestorePointsViaVeeamAPI(vmwareDcName, vmName, metricsMap);
 
         Assert.assertEquals(1, vmRestorePointList.size());
         Assert.assertEquals("f6d504cf-eafe-4cd2-8dfc-e9cfe2f1e977", vmRestorePointList.get(0).getId());
         Assert.assertEquals("2023-11-03 16:26:12", newDateFormat.format(vmRestorePointList.get(0).getCreated()));
         Assert.assertEquals("Full", vmRestorePointList.get(0).getType());
+        Assert.assertEquals(12083200L, (long) vmRestorePointList.get(0).getBackupSize());
+        Assert.assertEquals(69232800L, (long) vmRestorePointList.get(0).getDataSize());
     }
 
     @Test

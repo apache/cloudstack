@@ -1,0 +1,9 @@
+# gitleaks.toml
+[allowlist]
+description = "Global allow list for Gitleaks"
+paths = [
+    '''gitleaks\.toml''',
+    '''server/src/test/java/org/apache/cloudstack/network/ssl/CertServiceTest\.java''',
+    '''test/integration/smoke/test_ssl_offloading\.py''',
+    '''utils/src/test/java/com/cloud/utils/StringUtilsTest\.java'''
+]

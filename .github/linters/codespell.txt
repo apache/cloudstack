@@ -111,6 +111,7 @@ coudl
 couldnt
 craete
 craeted
+crate
 crated
 createa
 createing
@@ -282,6 +283,7 @@ maintenence
 mamagement
 mambers
 manaully
+manuel
 maxium
 mergable
 mesage
