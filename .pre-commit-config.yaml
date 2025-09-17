@@ -25,8 +25,8 @@ repos:
     hooks:
       - id: identity
       - id: check-hooks-apply
-  - repo: https://github.com/shssoichiro/oxipng
-    rev: v9.1.4
+  - repo: https://github.com/oxipng/oxipng
+    rev: v9.1.5
     hooks:
       - id: oxipng
         name: run oxipng
