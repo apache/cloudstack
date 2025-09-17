@@ -2265,7 +2265,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_UNMANAGE, eventDescription = "unmanaging VM", async = true)
-    public boolean unmanageVMInstance(long vmId) {
+    public Pair<Boolean, String> unmanageVMInstance(long vmId, Long paramHostId) {
         VMInstanceVO vmVO = vmDao.findById(vmId);
         if (vmVO == null || vmVO.getRemoved() != null) {
             throw new InvalidParameterValueException("Could not find VM to unmanage, it is either removed or not existing VM");
@@ -2276,6 +2276,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                     vmVO.getHypervisorType().toString());
         } else if (vmVO.getType() != VirtualMachine.Type.User) {
             throw new UnsupportedServiceException("Unmanage VM is currently allowed for guest VMs only");
+        } else if (paramHostId != null &&
+                (vmVO.getHypervisorType() != Hypervisor.HypervisorType.KVM || vmVO.getState() != VirtualMachine.State.Stopped)) {
+            throw new UnsupportedServiceException("Param hostid is only supported for KVM hypervisor for stopped Instances.");
         }
 
         if (vmVO.getType().equals(VirtualMachine.Type.User)) {
@@ -2287,15 +2290,15 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
         performUnmanageVMInstancePrechecks(vmVO);
 
-        boolean isVMStopped = VirtualMachine.State.Stopped.equals(vmVO.getState());
-        Long hostId = isVMStopped ? vmVO.getLastHostId() : findSuitableHostId(vmVO);
+        boolean isKvmVmStopped = VirtualMachine.State.Stopped.equals(vmVO.getState()) && vmVO.getHypervisorType() == Hypervisor.HypervisorType.KVM;
+        Long hostId = isKvmVmStopped ? vmVO.getLastHostId() : findSuitableHostId(vmVO);
         String instanceName = vmVO.getInstanceName();
 
-        if (!isVMStopped && !existsVMToUnmanage(instanceName, hostId)) {
+        if (!isKvmVmStopped && !existsVMToUnmanage(instanceName, hostId)) {
             throw new CloudRuntimeException(String.format("VM %s is not found in the hypervisor", vmVO));
         }
 
-        return userVmManager.unmanageUserVM(vmId);
+        return userVmManager.unmanageUserVM(vmId, paramHostId);
     }
 
     /**

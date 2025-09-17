@@ -2004,7 +2004,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public boolean unmanage(String vmUuid) {
+    public Pair<Boolean, String> unmanage(String vmUuid, Long paramHostId) {
         VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
         if (vm == null || vm.getRemoved() != null) {
             throw new CloudRuntimeException("Could not find VM with id = " + vmUuid);
@@ -2017,8 +2017,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             throw new ConcurrentOperationException(msg);
         }
 
+        Long agentHostId = vm.getHostId();
         if (HypervisorType.KVM.equals(vm.getHypervisorType())) {
-            persistDomainForKVM(vm);
+            agentHostId = persistDomainForKVM(vm, paramHostId);
         }
         Boolean result = Transaction.execute(new TransactionCallback<Boolean>() {
             @Override
@@ -2043,43 +2044,49 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 return true;
             }
         });
-
-        return BooleanUtils.isTrue(result);
+        HostVO host = ApiDBUtils.findHostById(agentHostId);
+        if (host == null) {
+            throw new CloudRuntimeException("Unable to retrieve host with ID: " + agentHostId);
+        }
+        logger.debug("Selected host UUID: {} to unmanage Instance: {}.", host.getUuid(), vm.getName());
+        return new Pair<>(result, host.getUuid());
     }
 
-    void persistDomainForKVM(VMInstanceVO vm) {
-        Long hostId = vm.getHostId();
+    Long persistDomainForKVM(VMInstanceVO vm, Long paramHostId) {
+        Long agentHostId = vm.getHostId();
         String vmName = vm.getName();
         UnmanageInstanceCommand unmanageInstanceCommand;
         if (State.Stopped.equals(vm.getState())) {
-            Pair<Long, Long> clusterAndHostId = findClusterAndHostIdForVm(vm, false);
-            hostId = clusterAndHostId.second();
-            if (hostId == null) {
-                String errorMsg = "No available host to persist domain XML for Instance: " + vmName;
-                logger.debug(errorMsg);
-                throw new CloudRuntimeException(errorMsg);
+            if (paramHostId == null) {
+                Pair<Long, Long> clusterAndHostId = findClusterAndHostIdForVm(vm, false);
+                agentHostId = clusterAndHostId.second();
+                if (agentHostId == null) {
+                    String errorMsg = "No available host to persist domain XML for Instance: " + vmName;
+                    logger.debug(errorMsg);
+                    throw new CloudRuntimeException(errorMsg);
+                }
+            } else {
+                agentHostId = paramHostId;
             }
-            unmanageInstanceCommand = new UnmanageInstanceCommand(prepVmSpecForUnmanageCmd(vm.getId(), hostId)); // reconstruct vmSpec for stopped instance
+            unmanageInstanceCommand = new UnmanageInstanceCommand(prepVmSpecForUnmanageCmd(vm.getId(), agentHostId)); // reconstruct vmSpec for stopped instance
         } else {
             unmanageInstanceCommand = new UnmanageInstanceCommand(vmName);
         }
-        logger.debug("Selected host with ID: {} to persist domain XML for Instance: {}.", hostId, vmName);
+
+        logger.debug("Selected host ID: {} to persist domain XML for Instance: {}.", agentHostId, vmName);
         try {
-            Answer answer = _agentMgr.send(hostId, unmanageInstanceCommand);
+            Answer answer = _agentMgr.send(agentHostId, unmanageInstanceCommand);
             if (!answer.getResult()) {
-                String errorMsg = "Failed to persist domain XML for instance: " + vmName;
+                String errorMsg = "Failed to persist domain XML for Instance: " + vmName + " on host ID: " + agentHostId;
                 logger.debug(errorMsg);
                 throw new CloudRuntimeException(errorMsg);
             }
-        } catch (AgentUnavailableException e) {
-            String errorMsg = "Failed to send command, agent unavailable";
-            logger.error(errorMsg, e);
-            throw new CloudRuntimeException(errorMsg);
-        } catch (OperationTimedoutException e) {
-            String errorMsg = "Failed to send command, operation timed out";
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
+            String errorMsg = "Failed to send command to persist domain XML for Instance: " + vmName + " on host ID: " + agentHostId;
             logger.error(errorMsg, e);
             throw new CloudRuntimeException(errorMsg);
         }
+        return agentHostId;
     }
 
     /**

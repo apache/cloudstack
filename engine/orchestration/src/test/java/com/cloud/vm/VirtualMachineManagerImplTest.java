@@ -1755,7 +1755,7 @@ public class VirtualMachineManagerImplTest {
         when(vmInstanceMock.getHostId()).thenReturn(hostMockId);
         UnmanageInstanceAnswer successAnswer = new UnmanageInstanceAnswer(null, true, "success");
         when(agentManagerMock.send(anyLong(), any(Command.class))).thenReturn(successAnswer);
-        virtualMachineManagerImpl.persistDomainForKVM(vmInstanceMock);
+        virtualMachineManagerImpl.persistDomainForKVM(vmInstanceMock, null);
         ArgumentCaptor<Long> hostIdCaptor = ArgumentCaptor.forClass(Long.class);
         ArgumentCaptor<UnmanageInstanceCommand> commandCaptor = ArgumentCaptor.forClass(UnmanageInstanceCommand.class);
         verify(agentManagerMock).send(hostIdCaptor.capture(), commandCaptor.capture());
@@ -1771,7 +1771,7 @@ public class VirtualMachineManagerImplTest {
         UnmanageInstanceAnswer successAnswer = new UnmanageInstanceAnswer(null, true, "success");
         when(agentManagerMock.send(anyLong(), any(UnmanageInstanceCommand.class))).thenReturn(successAnswer);
         when(virtualMachineManagerImpl.findClusterAndHostIdForVm(vmInstanceMock, false)).thenReturn(new Pair<>(clusterMockId, hostMockId));
-        virtualMachineManagerImpl.persistDomainForKVM(vmInstanceMock);
+        virtualMachineManagerImpl.persistDomainForKVM(vmInstanceMock, null);
         ArgumentCaptor<Long> hostIdCaptor = ArgumentCaptor.forClass(Long.class);
         ArgumentCaptor<UnmanageInstanceCommand> commandCaptor = ArgumentCaptor.forClass(UnmanageInstanceCommand.class);
         verify(agentManagerMock).send(hostIdCaptor.capture(), commandCaptor.capture());
@@ -1790,7 +1790,7 @@ public class VirtualMachineManagerImplTest {
         VirtualMachineTO vmTO = new VirtualMachineTO() {};
         vmTO.setName(vmName);
         when(virtualMachineManagerImpl.findClusterAndHostIdForVm(vmInstanceMock, false)).thenReturn(new Pair<>(clusterMockId, null));
-        CloudRuntimeException exception = assertThrows(CloudRuntimeException.class, () -> virtualMachineManagerImpl.persistDomainForKVM(vmInstanceMock));
+        CloudRuntimeException exception = assertThrows(CloudRuntimeException.class, () -> virtualMachineManagerImpl.persistDomainForKVM(vmInstanceMock, null));
         assertEquals("No available host to persist domain XML for Instance: " + vmName, exception.getMessage());
     }
 
@@ -1800,8 +1800,8 @@ public class VirtualMachineManagerImplTest {
         when(vmInstanceMock.getHostId()).thenReturn(hostMockId);
         UnmanageInstanceAnswer failureAnswer = new UnmanageInstanceAnswer(null, false, "failure");
         when(agentManagerMock.send(anyLong(), any(UnmanageInstanceCommand.class))).thenReturn(failureAnswer);
-        CloudRuntimeException exception = assertThrows(CloudRuntimeException.class, () -> virtualMachineManagerImpl.persistDomainForKVM(vmInstanceMock));
-        assertEquals("Failed to persist domain XML for instance: " + vmName, exception.getMessage());
+        CloudRuntimeException exception = assertThrows(CloudRuntimeException.class, () -> virtualMachineManagerImpl.persistDomainForKVM(vmInstanceMock, null));
+        assertEquals("Failed to persist domain XML for Instance: " + vmName + " on host ID: " + hostMockId, exception.getMessage());
     }
 
     @Test
@@ -1809,8 +1809,8 @@ public class VirtualMachineManagerImplTest {
         when(vmInstanceMock.getState()).thenReturn(VirtualMachine.State.Running);
         when(vmInstanceMock.getHostId()).thenReturn(hostMockId);
         doThrow(new AgentUnavailableException("Agent down", hostMockId)).when(agentManagerMock).send(anyLong(), any(UnmanageInstanceCommand.class));
-        CloudRuntimeException exception = assertThrows(CloudRuntimeException.class, () -> virtualMachineManagerImpl.persistDomainForKVM(vmInstanceMock));
-        assertEquals("Failed to send command, agent unavailable", exception.getMessage());
+        CloudRuntimeException exception = assertThrows(CloudRuntimeException.class, () -> virtualMachineManagerImpl.persistDomainForKVM(vmInstanceMock, null));
+        assertEquals("Failed to send command to persist domain XML for Instance: " + vmName + " on host ID: " + hostMockId, exception.getMessage());
     }
 
     @Test
@@ -1818,7 +1818,7 @@ public class VirtualMachineManagerImplTest {
         when(vmInstanceMock.getState()).thenReturn(VirtualMachine.State.Running);
         when(vmInstanceMock.getHostId()).thenReturn(hostMockId);
         doThrow(new OperationTimedoutException(null, hostMockId, 123L, 60, false)).when(agentManagerMock).send(anyLong(), any(UnmanageInstanceCommand.class));
-        CloudRuntimeException exception = assertThrows(CloudRuntimeException.class, () -> virtualMachineManagerImpl.persistDomainForKVM(vmInstanceMock));
-        assertEquals("Failed to send command, operation timed out", exception.getMessage());
+        CloudRuntimeException exception = assertThrows(CloudRuntimeException.class, () -> virtualMachineManagerImpl.persistDomainForKVM(vmInstanceMock, null));
+        assertEquals("Failed to send command to persist domain XML for Instance: " + vmName + " on host ID: " + hostMockId, exception.getMessage());
     }
 }

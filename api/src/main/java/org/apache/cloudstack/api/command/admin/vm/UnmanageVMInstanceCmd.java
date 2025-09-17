@@ -27,6 +27,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -36,6 +37,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.UnmanageVMInstanceResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -65,6 +67,12 @@ public class UnmanageVMInstanceCmd extends BaseAsyncCmd {
             description = "The ID of the virtual machine to unmanage")
     private Long vmId;
 
+    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID,
+            entityType = HostResponse.class, required = false,
+            description = "ID of the host where domain XML is stored for stopped Instance",
+            since = "4.22.0")
+    private Long hostId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -83,6 +91,14 @@ public class UnmanageVMInstanceCmd extends BaseAsyncCmd {
         return "unmanaging VM. VM ID = " + vmId;
     }
 
+    public Long getHostId() {
+        return hostId;
+    }
+
+    public void setHostId(Long hostId) {
+        this.hostId = hostId;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -93,9 +109,10 @@ public class UnmanageVMInstanceCmd extends BaseAsyncCmd {
         UnmanageVMInstanceResponse response = new UnmanageVMInstanceResponse();
         try {
             CallContext.current().setEventDetails("VM ID = " + vmId);
-            boolean result = unmanagedVMsManager.unmanageVMInstance(vmId);
-            response.setSuccess(result);
-            if (result) {
+            Pair<Boolean, String> result = unmanagedVMsManager.unmanageVMInstance(vmId, hostId);
+            if (result.first()) {
+                response.setSuccess(true);
+                response.setHostId(result.second());
                 response.setDetails("VM unmanaged successfully");
             }
         } catch (Exception e) {
@@ -124,5 +141,4 @@ public class UnmanageVMInstanceCmd extends BaseAsyncCmd {
     public Long getApiResourceId() {
         return vmId;
     }
-
 }

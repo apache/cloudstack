@@ -9399,18 +9399,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
-    public boolean unmanageUserVM(Long vmId) {
+    public Pair<Boolean, String> unmanageUserVM(Long vmId, Long paramHostId) {
         UserVmVO vm = _vmDao.findById(vmId);
         if (vm == null || vm.getRemoved() != null) {
             throw new InvalidParameterValueException("Unable to find a VM with ID = " + vmId);
         }
 
         vm = _vmDao.acquireInLockTable(vm.getId());
-        boolean result;
+
         try {
             if (vm.getState() != State.Running && vm.getState() != State.Stopped) {
-                logger.debug("VM {} is not running or stopped, cannot be unmanaged", vm);
-                return false;
+                String errorMsg = "Instance: " + vm.getName() + " is not running or stopped, cannot be unmanaged";
+                logger.debug(errorMsg);
+                throw new CloudRuntimeException(errorMsg);
             }
 
             if (!UnmanagedVMsManager.isSupported(vm.getHypervisorType())) {
@@ -9422,22 +9423,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             checkUnmanagingVMOngoingVolumeSnapshots(vm);
             checkUnmanagingVMVolumes(vm, volumes);
 
-            result = _itMgr.unmanage(vm.getUuid());
-            if (result) {
+            Pair<Boolean, String> result = _itMgr.unmanage(vm.getUuid(), paramHostId);
+            if (result.first()) {
                 cleanupUnmanageVMResources(vm);
                 unmanageVMFromDB(vm.getId());
                 publishUnmanageVMUsageEvents(vm, volumes);
             } else {
                 throw new CloudRuntimeException("Error while unmanaging VM: " + vm.getUuid());
             }
+            return result;
         } catch (Exception e) {
             logger.error("Could not unmanage VM {}", vm, e);
             throw new CloudRuntimeException(e);
         } finally {
             _vmDao.releaseFromLockTable(vm.getId());
         }
-
-        return true;
     }
 
     private void updateDetailsWithRootDiskAttributes(Map<String, String> details, VmDiskInfo rootVmDiskInfo) {
