@@ -453,7 +453,7 @@ public class StorageManagerImplTest {
         }
         try {
             Mockito.doReturn(new com.cloud.agent.api.Answer(
-                    Mockito.mock(CheckDataStoreStoragePolicyComplianceCommand.class)))
+                            Mockito.mock(CheckDataStoreStoragePolicyComplianceCommand.class)))
                     .when(storageManagerImpl).getCheckDatastorePolicyComplianceAnswer("policy", pool);
             assertTrue(storageManagerImpl.isStoragePoolCompliantWithStoragePolicy(1L, pool));
         } catch (StorageUnavailableException e) {
