@@ -78,4 +78,23 @@ public class CreateServiceOfferingCmdTest {
         ReflectionTestUtils.setField(createServiceOfferingCmd, "leaseExpiryAction", "Unknown");
         Assert.assertEquals(null, createServiceOfferingCmd.getLeaseExpiryAction());
     }
+
+    @Test
+    public void testGetVgpuProfileId() {
+        ReflectionTestUtils.setField(createServiceOfferingCmd, "vgpuProfileId", 10L);
+        Assert.assertEquals(10L, createServiceOfferingCmd.getVgpuProfileId().longValue());
+    }
+
+    @Test
+    public void testGetGpuCount() {
+        ReflectionTestUtils.setField(createServiceOfferingCmd, "gpuCount", 2);
+        Assert.assertEquals(2, createServiceOfferingCmd.getGpuCount().intValue());
+    }
+
+    @Test
+    public void testGetGpuDisplay() {
+        ReflectionTestUtils.setField(createServiceOfferingCmd, "gpuDisplay", true);
+        Assert.assertTrue(createServiceOfferingCmd.getGpuDisplay());
+    }
+
 }

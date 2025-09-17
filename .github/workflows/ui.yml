@@ -56,6 +56,7 @@ jobs:
           npm run test:unit
 
       - uses: codecov/codecov-action@v4
+        if: github.repository == 'apache/cloudstack'
         with:
           working-directory: ui
           files: ./coverage/lcov.info

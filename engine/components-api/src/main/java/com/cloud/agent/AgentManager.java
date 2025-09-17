@@ -171,5 +171,5 @@ public interface AgentManager {
 
     void propagateChangeToAgents(Map<String, String> params);
 
-    boolean transferDirectAgentsFromMS(String fromMsUuid, long fromMsId, long timeoutDurationInMs);
+    boolean transferDirectAgentsFromMS(String fromMsUuid, long fromMsId, long timeoutDurationInMs, boolean excludeHostsInMaintenance);
 }

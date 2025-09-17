@@ -93,9 +93,9 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotVO;
@@ -171,7 +171,7 @@ public class PresetVariableHelperTest {
     VolumeDao volumeDaoMock;
 
     @Mock
-    UserVmDetailsDao userVmDetailsDaoMock;
+    VMInstanceDetailsDao vmInstanceDetailsDaoMock;
 
     @InjectMocks
     PresetVariableHelper presetVariableHelperSpy = Mockito.spy(PresetVariableHelper.class);
@@ -296,11 +296,11 @@ public class PresetVariableHelperTest {
         return quotaTypesMap.entrySet();
     }
 
-    private List<UserVmDetailVO> getVmDetailsForTests() {
-        List<UserVmDetailVO> details = new LinkedList<>();
-        details.add(new UserVmDetailVO(1l, "test_with_value", "277", false));
-        details.add(new UserVmDetailVO(1l, "test_with_invalid_value", "invalid", false));
-        details.add(new UserVmDetailVO(1l, "test_with_null", null, false));
+    private List<VMInstanceDetailVO> getVmDetailsForTests() {
+        List<VMInstanceDetailVO> details = new LinkedList<>();
+        details.add(new VMInstanceDetailVO(1l, "test_with_value", "277", false));
+        details.add(new VMInstanceDetailVO(1l, "test_with_invalid_value", "invalid", false));
+        details.add(new VMInstanceDetailVO(1l, "test_with_null", null, false));
         return details;
     }
 
@@ -1245,7 +1245,7 @@ public class PresetVariableHelperTest {
         ComputingResources result = presetVariableHelperSpy.getPresetVariableValueComputingResource(vmInstanceVoMock, serviceOfferingVoMock);
 
         Assert.assertEquals(expected.toString(), result.toString());
-        Mockito.verify(userVmDetailsDaoMock, Mockito.never()).listDetails(Mockito.anyLong());
+        Mockito.verify(vmInstanceDetailsDaoMock, Mockito.never()).listDetails(Mockito.anyLong());
     }
 
     @Test
@@ -1263,7 +1263,7 @@ public class PresetVariableHelperTest {
         ComputingResources result = presetVariableHelperSpy.getPresetVariableValueComputingResource(vmInstanceVoMock, serviceOfferingVoMock);
 
         Assert.assertEquals(expected.toString(), result.toString());
-        Mockito.verify(userVmDetailsDaoMock).listDetails(Mockito.anyLong());
+        Mockito.verify(vmInstanceDetailsDaoMock).listDetails(Mockito.anyLong());
     }
 
     @Test

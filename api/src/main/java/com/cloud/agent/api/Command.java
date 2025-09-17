@@ -19,9 +19,10 @@ package com.cloud.agent.api;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.cloud.agent.api.LogLevel.Log4jLevel;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import com.cloud.agent.api.LogLevel.Log4jLevel;
 
 /**
  * implemented by classes that extends the Command class. Command specifies
@@ -60,6 +61,7 @@ public abstract class Command {
     private int wait;  //in second
     private boolean bypassHostMaintenance = false;
     private transient long requestSequence = 0L;
+    protected Map<String, Map<String, String>> externalDetails;
 
     protected Command() {
         this.wait = 0;
@@ -126,6 +128,14 @@ public abstract class Command {
 
     public void setRequestSequence(long requestSequence) {
         this.requestSequence = requestSequence;
+    }
+
+    public void setExternalDetails(Map<String, Map<String, String>> externalDetails) {
+        this.externalDetails = externalDetails;
+    }
+
+    public Map<String, Map<String, String>> getExternalDetails() {
+        return externalDetails;
     }
 
     @Override

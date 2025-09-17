@@ -32,6 +32,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.utils.cryptsetup.KeyFile;
 import org.apache.cloudstack.utils.qemu.QemuImageOptions;
@@ -224,8 +226,33 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             } else {
                 Script.runSimpleBashScript("mv " + templateFilePath + " " + destinationFile);
             }
+        } else if (destPool.getType() == StoragePoolType.RBD) {
+            String temporaryExtractFilePath = sourceFile.getParent() + File.separator + templateUuid;
+            extractDownloadedTemplate(templateFilePath, destPool, temporaryExtractFilePath);
+            createTemplateOnRBDFromDirectDownloadFile(temporaryExtractFilePath, templateUuid, destPool, timeout);
         }
         return destPool.getPhysicalDisk(templateUuid);
+    }
+
+    private void createTemplateOnRBDFromDirectDownloadFile(String srcTemplateFilePath, String templateUuid, KVMStoragePool destPool, int timeout) {
+        try {
+            QemuImg.PhysicalDiskFormat srcFileFormat = QemuImg.PhysicalDiskFormat.QCOW2;
+            QemuImgFile srcFile = new QemuImgFile(srcTemplateFilePath, srcFileFormat);
+            QemuImg qemu = new QemuImg(timeout);
+            Map<String, String> info = qemu.info(srcFile);
+            Long virtualSize = Long.parseLong(info.get(QemuImg.VIRTUAL_SIZE));
+            KVMPhysicalDisk destDisk = new KVMPhysicalDisk(destPool.getSourceDir() + "/" + templateUuid, templateUuid, destPool);
+            destDisk.setFormat(PhysicalDiskFormat.RAW);
+            destDisk.setSize(virtualSize);
+            destDisk.setVirtualSize(virtualSize);
+            QemuImgFile destFile = new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(destPool, destDisk.getPath()));
+            destFile.setFormat(PhysicalDiskFormat.RAW);
+            qemu.convert(srcFile, destFile);
+        } catch (LibvirtException | QemuImgException e) {
+            String err = String.format("Error creating template from direct download file on pool %s: %s", destPool.getUuid(), e.getMessage());
+            logger.error(err, e);
+            throw new CloudRuntimeException(err, e);
+        }
     }
 
     public StorageVol getVolume(StoragePool pool, String volName) {
@@ -734,10 +761,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
     @Override
     public KVMStoragePool createStoragePool(String name, String host, int port, String path, String userInfo, StoragePoolType type, Map<String, String> details, boolean isPrimaryStorage) {
-        logger.info("Attempting to create storage pool " + name + " (" + type.toString() + ") in libvirt");
-
-        StoragePool sp = null;
-        Connect conn = null;
+        logger.info("Attempting to create storage pool {} ({}) in libvirt", name, type);
+        StoragePool sp;
+        Connect conn;
         try {
             conn = LibvirtConnection.getConnection();
         } catch (LibvirtException e) {
@@ -1290,14 +1316,22 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                         passphraseObjects.add(QemuObject.prepareSecretForQemuImg(format, QemuObject.EncryptFormat.LUKS, keyFile.toString(), "sec0", options));
                         disk.setQemuEncryptFormat(QemuObject.EncryptFormat.LUKS);
                     }
+
+                    QemuImgFile srcFile = new QemuImgFile(template.getPath(), template.getFormat());
+                    Boolean createFullClone = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.CREATE_FULL_CLONE);
                     switch(provisioningType){
                     case THIN:
-                        QemuImgFile backingFile = new QemuImgFile(template.getPath(), template.getFormat());
-                        qemu.create(destFile, backingFile, options, passphraseObjects);
+                        logger.info("Creating volume [{}] {} backing file [{}] as the property [{}] is [{}].", destFile.getFileName(), createFullClone ? "without" : "with",
+                                template.getPath(), AgentProperties.CREATE_FULL_CLONE.getName(), createFullClone);
+                        if (createFullClone) {
+                            qemu.convert(srcFile, destFile, options, passphraseObjects, null, false);
+                        } else {
+                            qemu.create(destFile, srcFile, options, passphraseObjects);
+                        }
                         break;
                     case SPARSE:
                     case FAT:
-                        QemuImgFile srcFile = new QemuImgFile(template.getPath(), template.getFormat());
+                        srcFile = new QemuImgFile(template.getPath(), template.getFormat());
                         qemu.convert(srcFile, destFile, options, passphraseObjects, null, false);
                         break;
                     }

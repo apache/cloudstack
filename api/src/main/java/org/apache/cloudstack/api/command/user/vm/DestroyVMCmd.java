@@ -140,7 +140,8 @@ public class DestroyVMCmd extends BaseAsyncCmd implements UserCmd {
             if (responses != null && !responses.isEmpty()) {
                 response = responses.get(0);
             }
-            response.setResponseName("virtualmachine");
+            response.setResponseName(getCommandName());
+            response.setObjectName("virtualmachine");
             setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to destroy vm");

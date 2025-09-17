@@ -59,6 +59,9 @@ if [ "$1" = configure ]; then
     chown -R cloud:cloud /usr/share/cloudstack-management/templates
     find /usr/share/cloudstack-management/templates -type d -exec chmod 0770 {} \;
 
+    chmod -R 0755 /etc/cloudstack/extensions
+    chown -R cloud:cloud /etc/cloudstack/extensions
+
     ln -sf ${CONFDIR}/log4j-cloud.xml ${CONFDIR}/log4j2.xml
 
     # Add jdbc MySQL driver settings to db.properties if not present

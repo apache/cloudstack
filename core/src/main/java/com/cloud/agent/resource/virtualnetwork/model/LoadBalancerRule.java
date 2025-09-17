@@ -25,12 +25,60 @@ public class LoadBalancerRule {
     private String[] configuration;
     private String tmpCfgFilePath;
     private String tmpCfgFileName;
+    private SslCertEntry[] sslCerts;
 
     private String[] addRules;
     private String[] removeRules;
     private String[] statRules;
 
     private String routerIp;
+
+    public static class SslCertEntry {
+        private String name;
+        private String cert;
+        private String key;
+        private String chain;
+        private String password;
+
+        public SslCertEntry(String name, String cert, String key, String chain, String password) {
+            this.name = name;
+            this.cert = cert;
+            this.key = key;
+            this.chain = chain;
+            this.password = password;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+        public String getName() {
+            return name;
+        }
+        public void setCert(String cert) {
+            this.cert = cert;
+        }
+        public String getCert() {
+            return cert;
+        }
+        public void setKey(String key) {
+            this.key = key;
+        }
+        public String getKey() {
+            return key;
+        }
+        public void setChain(String chain) {
+            this.chain = chain;
+        }
+        public String getChain() {
+            return chain;
+        }
+        public void setPassword(String password) {
+            this.password = password;
+        }
+        public String getPassword() {
+            return password;
+        }
+    }
 
     public LoadBalancerRule() {
         // Empty constructor for (de)serialization
@@ -100,5 +148,13 @@ public class LoadBalancerRule {
 
     public void setRouterIp(final String routerIp) {
         this.routerIp = routerIp;
+    }
+
+    public SslCertEntry[] getSslCerts() {
+        return sslCerts;
+    }
+
+    public void setSslCerts(final SslCertEntry[] sslCerts) {
+        this.sslCerts = sslCerts;
     }
 }
