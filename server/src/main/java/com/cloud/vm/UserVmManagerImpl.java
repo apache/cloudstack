@@ -55,8 +55,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 
 import com.cloud.network.NetworkService;
-import com.cloud.network.addr.PublicIp;
-import com.cloud.utils.db.TransactionCallback;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
