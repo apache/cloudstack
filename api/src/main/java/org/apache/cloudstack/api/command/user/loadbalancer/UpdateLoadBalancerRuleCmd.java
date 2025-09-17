@@ -33,6 +33,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
+import java.util.List;
 
 @APICommand(name = "updateLoadBalancerRule", description = "Updates load balancer", responseObject = LoadBalancerResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -64,6 +65,9 @@ public class UpdateLoadBalancerRuleCmd extends BaseAsyncCustomIdCmd {
     @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, description = "The protocol for the LB")
     private String lbProtocol;
 
+    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list to forward traffic from", since = "4.22")
+    private List<String> cidrList;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -92,6 +96,9 @@ public class UpdateLoadBalancerRuleCmd extends BaseAsyncCustomIdCmd {
        return lbProtocol;
     }
 
+    public List<String> getCidrList() {
+        return cidrList;
+    }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
