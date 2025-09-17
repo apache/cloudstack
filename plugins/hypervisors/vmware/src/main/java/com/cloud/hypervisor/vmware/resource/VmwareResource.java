@@ -49,8 +49,10 @@ import com.cloud.agent.api.CleanupVMCommand;
 import javax.naming.ConfigurationException;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import com.cloud.agent.api.UnmountDatastoresCommand;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.hypervisor.vmware.mo.HostDatastoreBrowserMO;
+import com.cloud.storage.ScopeType;
 import com.vmware.vim25.FileInfo;
 import com.vmware.vim25.FileQueryFlags;
 import com.vmware.vim25.FolderFileInfo;
@@ -74,6 +76,7 @@ import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -619,6 +622,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 answer = execute((ListDataStoreObjectsCommand) cmd);
             } else if (clz == PrepareForBackupRestorationCommand.class) {
                 answer = execute((PrepareForBackupRestorationCommand) cmd);
+            } else if (clz == UnmountDatastoresCommand.class) {
+                answer = execute((UnmountDatastoresCommand) cmd);
             } else {
                 answer = Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -4624,6 +4629,11 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 prepareNetworkFromNicInfo(new HostMO(getServiceContext(), _morHyperHost), nic, false, cmd.getVirtualMachine().getType());
             }
 
+            DiskTO[] disks = vm.getDisks();
+            for (DiskTO disk : disks) {
+                prepareDatastoreForZoneWideManagedStorageInterClusterMigration(disk, hyperHost);
+            }
+
             List<Pair<String, Long>> secStoreUrlAndIdList = mgr.getSecondaryStorageStoresUrlAndIdList(Long.parseLong(_dcId));
             for (Pair<String, Long> secStoreUrlAndId : secStoreUrlAndIdList) {
                 String secStoreUrl = secStoreUrlAndId.first();
@@ -4642,6 +4652,29 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             return new PrepareForMigrationAnswer(cmd);
         } catch (Throwable e) {
             return new PrepareForMigrationAnswer(cmd, createLogMessageException(e, cmd));
+        }
+    }
+
+    private void prepareDatastoreForZoneWideManagedStorageInterClusterMigration(DiskTO disk, VmwareHypervisorHost hyperHost) throws Exception {
+        Map<String, String> details = disk.getDetails();
+        if (MapUtils.isEmpty(details) || !details.containsKey(DiskTO.SCOPE) ||
+                !details.containsKey(DiskTO.MANAGED) && !details.containsKey(DiskTO.INTER_CLUSTER_MIGRATION)) {
+            return;
+        }
+
+        VmwareContext context = hyperHost.getContext();
+        boolean isManaged = details.containsKey(DiskTO.MANAGED) && BooleanUtils.toBoolean(details.get(DiskTO.MANAGED));
+        boolean isZoneWideStorage = details.containsKey(DiskTO.SCOPE) && details.get(DiskTO.SCOPE).equalsIgnoreCase(ScopeType.ZONE.name());
+        boolean isInterClusterMigration = details.containsKey(DiskTO.INTER_CLUSTER_MIGRATION) && BooleanUtils.toBoolean(details.get(DiskTO.INTER_CLUSTER_MIGRATION));
+
+        if (isManaged && isZoneWideStorage && isInterClusterMigration) {
+            s_logger.debug(String.format("Preparing storage on destination cluster for host %s", hyperHost.getHyperHostName()));
+            String iScsiName = details.get(DiskTO.IQN); // details should not be null for managed storage (it may or may not be null for non-managed storage)
+            String datastoreName = VmwareResource.getDatastoreName(iScsiName);
+            s_logger.debug(String.format("Ensuring datastore %s is mounted on destination cluster", datastoreName));
+            _storageProcessor.prepareManagedDatastore(context, hyperHost, datastoreName,
+                    details.get(DiskTO.IQN), details.get(DiskTO.STORAGE_HOST),
+                    Integer.parseInt(details.get(DiskTO.STORAGE_PORT)));
         }
     }
 
@@ -5337,6 +5370,34 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 s_logger.warn(ex.getMessage());
             }
         }
+    }
+
+    private Answer execute(UnmountDatastoresCommand cmd) {
+        VmwareContext context = getServiceContext(cmd);
+        VmwareHypervisorHost hyperHost = getHyperHost(context, cmd);
+        if (hyperHost == null) {
+            throw new CloudRuntimeException("No hypervisor host found to unmount datastore");
+        }
+        try {
+            List<String> datastorePools = cmd.getDatastorePools();
+            if (CollectionUtils.isNotEmpty(datastorePools)) {
+                ManagedObjectReference clusterMor = hyperHost.getHyperHostCluster();
+                if (clusterMor == null) {
+                    return new Answer(cmd, false, "Cannot unmount datastore pools as the cluster is not found");
+                }
+                ClusterMO clusterMO = new ClusterMO(context, clusterMor);
+                List<Pair<ManagedObjectReference, String>> clusterHosts = clusterMO.getClusterHosts();
+                for (String datastorePool : datastorePools) {
+                    String datastoreName = VmwareResource.getDatastoreName(datastorePool);
+                    s_logger.debug(String.format("Unmounting datastore %s from cluster %s hosts", datastoreName, clusterMO.getName()));
+                    _storageProcessor.unmountVmfsDatastore(context, hyperHost, datastoreName, clusterHosts);
+                }
+            }
+        } catch (Exception e) {
+            s_logger.error("Error unmounting datastores", e);
+            return new Answer(cmd, e);
+        }
+        return new Answer(cmd, true, "success");
     }
 
     protected Answer execute(DeleteStoragePoolCommand cmd) {

@@ -3038,7 +3038,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         }
     }
 
-    private void unmountVmfsDatastore(VmwareContext context, VmwareHypervisorHost hyperHost, String datastoreName,
+    public void unmountVmfsDatastore(VmwareContext context, VmwareHypervisorHost hyperHost, String datastoreName,
                                       List<Pair<ManagedObjectReference, String>> hosts) throws Exception {
         for (Pair<ManagedObjectReference, String> host : hosts) {
             HostMO hostMO = new HostMO(context, host.first());
