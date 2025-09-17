@@ -255,9 +255,9 @@ public class BGPServiceImpl implements BGPService {
             netName = network.getName();
         }
 
-        LOGGER.debug("Allocating the AS Number {} to {} on zone {}", asNumber::toString,
-                (Objects.nonNull(vpcId) ? "VPC " + vpc : "network " + network)::toString,
-                () -> dataCenterDao.findById(zoneId));
+        String networkName = Objects.nonNull(vpcId) ? ("VPC " + vpc) : ("network " + network);
+        LOGGER.debug("Allocating the AS Number {} to {} on zone {}", asNumberVO::toString,
+                networkName::toString, () -> dataCenterDao.findById(zoneId));
         asNumberVO.setAllocated(true);
         asNumberVO.setAllocatedTime(new Date());
         if (Objects.nonNull(vpcId)) {

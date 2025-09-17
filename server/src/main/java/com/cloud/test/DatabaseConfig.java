@@ -57,6 +57,7 @@ import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.dao.DiskOfferingDaoImpl;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
@@ -226,7 +227,6 @@ public class DatabaseConfig {
         s_configurationDescriptions.put("snapshot.max.daily", "Maximum daily snapshots for a volume");
         s_configurationDescriptions.put("snapshot.max.weekly", "Maximum weekly snapshots for a volume");
         s_configurationDescriptions.put("snapshot.max.monthly", "Maximum monthly snapshots for a volume");
-        s_configurationDescriptions.put("snapshot.delta.max", "max delta snapshots between two full snapshots.");
         s_configurationDescriptions.put("snapshot.recurring.test", "Flag for testing recurring snapshots");
         s_configurationDescriptions.put("snapshot.test.minutes.per.hour", "Set it to a smaller value to take more recurring snapshots");
         s_configurationDescriptions.put("snapshot.test.hours.per.day", "Set it to a smaller value to take more recurring snapshots");
@@ -298,7 +298,6 @@ public class DatabaseConfig {
         s_configurationComponents.put("snapshot.max.daily", "SnapshotManager");
         s_configurationComponents.put("snapshot.max.weekly", "SnapshotManager");
         s_configurationComponents.put("snapshot.max.monthly", "SnapshotManager");
-        s_configurationComponents.put("snapshot.delta.max", "SnapshotManager");
         s_configurationComponents.put("snapshot.recurring.test", "SnapshotManager");
         s_configurationComponents.put("snapshot.test.minutes.per.hour", "SnapshotManager");
         s_configurationComponents.put("snapshot.test.hours.per.day", "SnapshotManager");
@@ -329,7 +328,6 @@ public class DatabaseConfig {
         s_defaultConfigurationValues.put("snapshot.max.daily", "8");
         s_defaultConfigurationValues.put("snapshot.max.weekly", "8");
         s_defaultConfigurationValues.put("snapshot.max.monthly", "8");
-        s_defaultConfigurationValues.put("snapshot.delta.max", "16");
         s_defaultConfigurationValues.put("snapshot.recurring.test", "false");
         s_defaultConfigurationValues.put("snapshot.test.minutes.per.hour", "60");
         s_defaultConfigurationValues.put("snapshot.test.hours.per.day", "24");
@@ -612,7 +610,7 @@ public class DatabaseConfig {
         String hostAddress = _currentObjectParams.get("hostAddress");
         String hostPath = _currentObjectParams.get("hostPath");
         String storageType = _currentObjectParams.get("storageType");
-        String uuid = UUID.nameUUIDFromBytes(new String(hostAddress + hostPath).getBytes()).toString();
+        String uuid = UuidUtils.nameUUIDFromBytes(new String(hostAddress + hostPath).getBytes()).toString();
 
         String insertSql1 =
             "INSERT INTO `storage_pool` (`id`, `name`, `uuid` , `pool_type` , `port`, `data_center_id` ,`available_bytes` , `capacity_bytes` ,`host_address`, `path`, `created`, `pod_id`,`status` , `cluster_id`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)";

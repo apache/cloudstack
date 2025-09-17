@@ -24,7 +24,7 @@ import com.cloud.usage.UsageBackupVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface UsageBackupDao extends GenericDao<UsageBackupVO, Long> {
-    void updateMetrics(Long vmId, Long size, Long virtualSize);
-    void removeUsage(Long accountId, Long vmId, Date eventDate);
+    void updateMetrics(Long vmId, Long backupOfferingId, Long size, Long virtualSize);
+    void removeUsage(Long accountId, Long vmId, Long backupOfferingId, Date eventDate);
     List<UsageBackupVO> getUsageRecords(Long accountId, Date startDate, Date endDate);
 }

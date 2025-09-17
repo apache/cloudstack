@@ -102,7 +102,7 @@ The Apache CloudStack files shared between agent and management server
 Summary: CloudStack Agent for KVM hypervisors
 Requires: (openssh-clients or openssh)
 Requires: java-17-openjdk
-Requires: tzdata-java
+Requires: (tzdata-java or timezone-java)
 Requires: %{name}-common = %{_ver}
 Requires: libvirt
 Requires: libvirt-daemon-driver-storage-rbd
@@ -114,6 +114,7 @@ Requires: iproute
 Requires: ipset
 Requires: perl
 Requires: rsync
+Requires: cifs-utils
 Requires: (python3-libvirt or python3-libvirt-python)
 Requires: (qemu-img or qemu-tools)
 Requires: qemu-kvm
@@ -142,7 +143,7 @@ The CloudStack baremetal agent
 %package usage
 Summary: CloudStack Usage calculation server
 Requires: java-17-openjdk
-Requires: tzdata-java
+Requires: (tzdata-java or timezone-java)
 Group: System Environment/Libraries
 %description usage
 The CloudStack usage calculation service
@@ -247,6 +248,7 @@ cp -r plugins/network-elements/cisco-vnmc/src/main/scripts/network/cisco/* ${RPM
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/lib
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup
+mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/cks/conf
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/management
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/systemd/system/%{name}-management.service.d
@@ -272,7 +274,7 @@ wget https://github.com/apache/cloudstack-cloudmonkey/releases/download/$CMK_REL
 chmod +x ${RPM_BUILD_ROOT}%{_bindir}/cmk
 
 cp -r client/target/utilities/scripts/db/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup
-
+cp -r plugins/integrations/kubernetes-service/src/main/resources/conf/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/cks/conf
 cp -r client/target/cloud-client-ui-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/
 cp -r client/target/classes/META-INF/webapp ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapp
 cp ui/dist/config.json ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/
@@ -307,10 +309,20 @@ touch ${RPM_BUILD_ROOT}%{_localstatedir}/run/%{name}-management.pid
 #install -D server/target/conf/cloudstack-catalina.logrotate ${RPM_BUILD_ROOT}%{_sysconfdir}/logrotate.d/%{name}-catalina
 install -D server/target/conf/cloudstack-management.logrotate ${RPM_BUILD_ROOT}%{_sysconfdir}/logrotate.d/%{name}-management
 
+install -D plugins/integrations/kubernetes-service/src/main/resources/conf/etcd-node.yml ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/cks/conf/etcd-node.yml
+install -D plugins/integrations/kubernetes-service/src/main/resources/conf/k8s-control-node.yml ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/cks/conf/k8s-control-node.yml
+install -D plugins/integrations/kubernetes-service/src/main/resources/conf/k8s-control-node-add.yml ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/cks/conf/k8s-control-node-add.yml
+install -D plugins/integrations/kubernetes-service/src/main/resources/conf/k8s-node.yml ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/cks/conf/k8s-node.yml
+
 # SystemVM template
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/templates/systemvm
 cp -r engine/schema/dist/systemvm-templates/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/templates/systemvm
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/templates/systemvm/md5sum.txt
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/templates/systemvm/sha512sum.txt
+
+# Sample Extensions
+mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/extensions
+cp -r extensions/* ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/extensions
+ln -sf %{_sysconfdir}/%{name}/extensions ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/extensions
 
 # UI
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/ui
@@ -469,6 +481,8 @@ if [ -f %{_sysconfdir}/sysconfig/%{name}-management ] ; then
 fi
 
 chown -R cloud:cloud /var/log/cloudstack/management
+chown -R cloud:cloud /usr/share/cloudstack-management/templates
+find /usr/share/cloudstack-management/templates -type d -exec chmod 0770 {} \;
 
 systemctl daemon-reload
 
@@ -598,6 +612,7 @@ pip3 install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %{_datadir}/%{name}-management/lib/*.jar
 %{_datadir}/%{name}-management/logs
 %{_datadir}/%{name}-management/templates
+%{_datadir}/%{name}-management/extensions
 %attr(0755,root,root) %{_bindir}/%{name}-setup-databases
 %attr(0755,root,root) %{_bindir}/%{name}-migrate-databases
 %attr(0755,root,root) %{_bindir}/%{name}-set-guest-password
@@ -605,16 +620,22 @@ pip3 install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %attr(0755,root,root) %{_bindir}/%{name}-sysvmadm
 %attr(0755,root,root) %{_bindir}/%{name}-setup-encryption
 %attr(0755,root,root) %{_bindir}/cmk
+%{_datadir}/%{name}-management/cks/conf/*.yml
 %{_datadir}/%{name}-management/setup/*.sql
 %{_datadir}/%{name}-management/setup/*.sh
 %{_datadir}/%{name}-management/setup/server-setup.xml
 %{_datadir}/%{name}-management/webapp/*
+%dir %attr(0770, cloud, cloud) %{_datadir}/%{name}-management/templates
+%dir %attr(0770, cloud, cloud) %{_datadir}/%{name}-management/templates/systemvm
+%attr(0644, cloud, cloud) %{_datadir}/%{name}-management/templates/systemvm/*
 %attr(0755,root,root) %{_bindir}/%{name}-external-ipallocator.py
 %attr(0755,root,root) %{_initrddir}/%{name}-ipallocator
 %dir %attr(0770,root,root) %{_localstatedir}/log/%{name}/ipallocator
 %{_defaultdocdir}/%{name}-management-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-management-%{version}/NOTICE
 %{_datadir}/%{name}-management/setup/wheel/*.whl
+%dir %attr(0755,cloud,cloud) %{_sysconfdir}/%{name}/extensions
+%attr(0755,cloud,cloud) %{_sysconfdir}/%{name}/extensions/*
 
 %files agent
 %attr(0755,root,root) %{_bindir}/%{name}-setup-agent

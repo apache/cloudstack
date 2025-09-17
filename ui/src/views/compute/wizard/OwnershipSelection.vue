@@ -128,7 +128,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import ResourceIcon from '@/components/view/ResourceIcon.vue'
 
 export default {
@@ -157,7 +157,7 @@ export default {
   methods: {
     fetchData () {
       this.loading = true
-      api('listDomains', {
+      getAPI('listDomains', {
         response: 'json',
         listAll: true,
         showicon: true,
@@ -188,7 +188,7 @@ export default {
     },
     fetchAccounts () {
       this.loading = true
-      api('listAccounts', {
+      getAPI('listAccounts', {
         response: 'json',
         domainId: this.selectedDomain,
         showicon: true,
@@ -218,7 +218,7 @@ export default {
     },
     fetchProjects () {
       this.loading = true
-      api('listProjects', {
+      getAPI('listProjects', {
         response: 'json',
         domainId: this.selectedDomain,
         state: 'Active',

@@ -34,6 +34,7 @@ import org.apache.cloudstack.storage.datastore.api.SnapshotGroup;
 import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
 import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClientConnectionPool;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.ScaleIOUtil;
@@ -301,7 +302,11 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                 srcSnapshotDestVolumeMap.put(srcSnapshotVolumeId, destVolumeId);
             }
 
-            String systemId = storagePoolDetailsDao.findDetail(storagePoolId, ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID).getValue();
+            String systemId = null;
+            StoragePoolDetailVO systemIdDetail = storagePoolDetailsDao.findDetail(storagePoolId, ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
+            if (systemIdDetail != null) {
+                systemId = systemIdDetail.getValue();
+            }
             if (systemId == null) {
                 throw new CloudRuntimeException("Failed to get the system id for PowerFlex storage pool for reverting VM snapshot: " + vmSnapshot.getName());
             }
@@ -380,7 +385,11 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
         try {
             List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(vmSnapshot.getVmId());
             StoragePoolVO storagePool = vmSnapshotHelper.getStoragePoolForVM(userVm);
-            String systemId = storagePoolDetailsDao.findDetail(storagePool.getId(), ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID).getValue();
+            String systemId = null;
+            StoragePoolDetailVO systemIdDetail = storagePoolDetailsDao.findDetail(storagePool.getId(), ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
+            if (systemIdDetail != null) {
+                systemId = systemIdDetail.getValue();
+            }
             if (systemId == null) {
                 throw new CloudRuntimeException("Failed to get the system id for PowerFlex storage pool for deleting VM snapshot: " + vmSnapshot.getName());
             }

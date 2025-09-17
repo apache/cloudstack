@@ -77,7 +77,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import { genericCompare } from '@/utils/sort.js'
 import Breadcrumb from '@/components/widgets/Breadcrumb'
 
@@ -117,7 +117,7 @@ export default {
   methods: {
     fetchDbMetrics () {
       var metrics
-      api('listDbMetrics').then(json => {
+      getAPI('listDbMetrics').then(json => {
         metrics = this.mapToArray(json.listdbmetricsresponse.dbMetrics)
         this.dbMetrics = metrics
       })
@@ -125,7 +125,7 @@ export default {
     },
     fetchUsageMetrics () {
       var metrics
-      api('listUsageServerMetrics').then(json => {
+      getAPI('listUsageServerMetrics').then(json => {
         metrics = this.mapToArray(json.listusageservermetricsresponse.usageMetrics)
         this.usageMetrics = metrics
       })

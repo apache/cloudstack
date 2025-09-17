@@ -23,6 +23,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.cloud.utils.ThreadUtil;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
@@ -35,6 +36,7 @@ import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Response;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.Status;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ServerResource;
 import org.apache.logging.log4j.ThreadContext;
 
@@ -51,8 +53,8 @@ public class DirectAgentAttache extends AgentAttache {
     AtomicInteger _outstandingTaskCount;
     AtomicInteger _outstandingCronTaskCount;
 
-    public DirectAgentAttache(AgentManagerImpl agentMgr, long id, String uuid,String name, ServerResource resource, boolean maintenance) {
-        super(agentMgr, id, uuid, name, maintenance);
+    public DirectAgentAttache(AgentManagerImpl agentMgr, long id, String uuid, String name, final Hypervisor.HypervisorType hypervisorType, ServerResource resource, boolean maintenance) {
+        super(agentMgr, id, uuid, name, hypervisorType, maintenance);
         _resource = resource;
         _outstandingTaskCount = new AtomicInteger(0);
         _outstandingCronTaskCount = new AtomicInteger(0);
@@ -165,7 +167,7 @@ public class DirectAgentAttache extends AgentAttache {
                     PingCommand cmd = resource.getCurrentStatus(_id);
                     int retried = 0;
                     while (cmd == null && ++retried <= _HostPingRetryCount.value()) {
-                        Thread.sleep(1000*_HostPingRetryTimer.value());
+                        ThreadUtil.wait(this, 1000L *_HostPingRetryTimer.value(), _id, _uuid, _name);
                         cmd = resource.getCurrentStatus(_id);
                     }
 

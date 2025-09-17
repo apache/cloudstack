@@ -25,7 +25,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
@@ -395,7 +394,7 @@ public enum Config {
             null),
     MaxNumberOfSecondaryIPsPerNIC(
             "Network", ManagementServer.class, Integer.class,
-            "vm.network.nic.max.secondary.ipaddresses", "256",
+            "vm.network.nic.max.secondary.ipaddresses", "10",
             "Specify the number of secondary ip addresses per nic per vm. Default value 10 is used, if not specified.", null),
 
     EnableServiceMonitoring(
@@ -403,96 +402,6 @@ public enum Config {
             "network.router.enableserviceMonitoring", "false",
             "service monitoring in router enable/disable option, default false", null),
 
-
-    // Console Proxy
-    ConsoleProxyCapacityStandby(
-            "Console Proxy",
-            AgentManager.class,
-            String.class,
-            "consoleproxy.capacity.standby",
-            "10",
-            "The minimal number of console proxy viewer sessions that system is able to serve immediately(standby capacity)",
-            null),
-    ConsoleProxyCapacityScanInterval(
-            "Console Proxy",
-            AgentManager.class,
-            String.class,
-            "consoleproxy.capacityscan.interval",
-            "30000",
-            "The time interval(in millisecond) to scan whether or not system needs more console proxy to ensure minimal standby capacity",
-            null),
-    ConsoleProxyCmdPort(
-            "Console Proxy",
-            AgentManager.class,
-            Integer.class,
-            "consoleproxy.cmd.port",
-            "8001",
-            "Console proxy command port that is used to communicate with management server",
-            null),
-    ConsoleProxyRestart(
-        "Console Proxy",
-        AgentManager.class,
-        Boolean.class,
-        "consoleproxy.restart",
-        "true",
-        "Console proxy restart flag, defaulted to true",
-        null),
-    ConsoleProxyUrlDomain(
-        "Console Proxy",
-        AgentManager.class,
-        String.class,
-        "consoleproxy.url.domain",
-        "",
-        "Console proxy url domain",
-        "domainName,privateip"),
-    ConsoleProxySessionMax(
-            "Console Proxy",
-            AgentManager.class,
-            Integer.class,
-            "consoleproxy.session.max",
-            String.valueOf(ConsoleProxyManager.DEFAULT_PROXY_CAPACITY),
-            "The max number of viewer sessions console proxy is configured to serve for",
-            null),
-    ConsoleProxySessionTimeout(
-            "Console Proxy",
-            AgentManager.class,
-            Integer.class,
-            "consoleproxy.session.timeout",
-            "300000",
-            "Timeout(in milliseconds) that console proxy tries to maintain a viewer session before it times out the session for no activity",
-            null),
-    ConsoleProxyDisableRpFilter(
-            "Console Proxy",
-            AgentManager.class,
-            Boolean.class,
-            "consoleproxy.disable.rpfilter",
-            "true",
-            "disable rp_filter on console proxy VM public interface",
-            null),
-    ConsoleProxyLaunchMax(
-            "Console Proxy",
-            AgentManager.class,
-            Integer.class,
-            "consoleproxy.launch.max",
-            "10",
-            "maximum number of console proxy instances per zone can be launched",
-            null),
-    ConsoleProxyManagementState(
-            "Console Proxy",
-            AgentManager.class,
-            String.class,
-            "consoleproxy.management.state",
-            com.cloud.consoleproxy.ConsoleProxyManagementState.Auto.toString(),
-            "console proxy service management state",
-            null),
-    ConsoleProxyManagementLastState(
-            "Console Proxy",
-            AgentManager.class,
-            String.class,
-            "consoleproxy.management.state.last",
-            com.cloud.consoleproxy.ConsoleProxyManagementState.Auto.toString(),
-            "last console proxy service management state",
-            null),
 
     // Snapshots
 
@@ -504,7 +413,6 @@ public enum Config {
             "300",
             "The time interval in seconds when the management server polls for snapshots to be scheduled.",
             null),
-    SnapshotDeltaMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.delta.max", "16", "max delta snapshots between two full snapshots.", null),
     KVMSnapshotEnabled("Hidden", SnapshotManager.class, Boolean.class, "kvm.snapshot.enabled", "false", "Whether volume snapshot is enabled on running instances on a KVM host", null),
 
     // Advanced
@@ -665,7 +573,7 @@ public enum Config {
             String.class,
             "hypervisor.list",
             HypervisorType.KVM + "," + HypervisorType.VMware + "," + HypervisorType.XenServer + "," + HypervisorType.Hyperv + "," +
-                    HypervisorType.BareMetal + "," + HypervisorType.Ovm + "," + HypervisorType.LXC + "," + HypervisorType.Ovm3,
+                    HypervisorType.BareMetal + "," + HypervisorType.Ovm + "," + HypervisorType.LXC + "," + HypervisorType.Ovm3 + "," + HypervisorType.External,
                     "The list of hypervisors that this deployment will use.",
             "hypervisorList",
             ConfigKey.Kind.CSV,
@@ -898,8 +806,9 @@ public enum Config {
             String.class,
             "host.capacityType.to.order.clusters",
             "CPU",
-            "The host capacity type (CPU or RAM) is used by deployment planner to order clusters during VM resource allocation",
-            "CPU,RAM"),
+            "The host capacity type (CPU, RAM, COMBINED) is used by deployment planner to order clusters during VM resource allocation",
+            "CPU,RAM,COMBINED"),
+
     ApplyAllocationAlgorithmToPods(
             "Advanced",
             ManagementServer.class,
@@ -1587,14 +1496,6 @@ public enum Config {
             "false",
             "Should be set to true, if there will be multiple NetScaler devices providing EIP service in a zone",
             null),
-    ConsoleProxyServiceOffering(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "consoleproxy.service.offering",
-            null,
-            "Uuid of the service offering used by console proxy; if NULL - system offering will be used",
-            null),
     SecondaryStorageServiceOffering(
             "Advanced",
             ManagementServer.class,
@@ -1798,6 +1699,7 @@ public enum Config {
     StatsOutPutGraphiteHost("Advanced", ManagementServer.class, String.class, "stats.output.uri", "", "URI to additionally send StatsCollector statistics to", null),
 
     SSVMPSK("Hidden", ManagementServer.class, String.class, "upload.post.secret.key", "", "PSK with SSVM", null);
+
 
     private final String _category;
     private final Class<?> _componentClass;

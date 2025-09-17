@@ -40,7 +40,7 @@ public class OperationTimedoutException extends CloudException {
     boolean _isActive;
 
     public OperationTimedoutException(Command[] cmds, long agentId, long seqId, int time, boolean isActive) {
-        super("Commands " + seqId + " to Host " + agentId + " timed out after " + time);
+        super("Commands " + seqId + " to Host " + agentId + " timed out after " + time + " secs");
         _agentId = agentId;
         _seqId = seqId;
         _time = time;

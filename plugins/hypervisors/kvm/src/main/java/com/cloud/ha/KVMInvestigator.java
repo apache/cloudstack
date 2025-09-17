@@ -38,6 +38,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import javax.inject.Inject;
+import java.util.Arrays;
 import java.util.List;
 
 public class KVMInvestigator extends AdapterBase implements Investigator {
@@ -81,7 +82,7 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
             return haManager.getHostStatus(agent);
         }
 
-        List<StoragePoolVO> clusterPools = _storagePoolDao.listPoolsByCluster(agent.getClusterId());
+        List<StoragePoolVO> clusterPools = _storagePoolDao.findPoolsInClusters(Arrays.asList(agent.getClusterId()), null);
         boolean storageSupportHA = storageSupportHa(clusterPools);
         if (!storageSupportHA) {
             List<StoragePoolVO> zonePools = _storagePoolDao.findZoneWideStoragePoolsByHypervisor(agent.getDataCenterId(), agent.getHypervisorType());
@@ -89,7 +90,7 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
         }
         if (!storageSupportHA) {
             logger.warn("Agent investigation was requested on host {}, but host does not support investigation because it has no NFS storage. Skipping investigation.", agent);
-            return Status.Disconnected;
+            return null;
         }
 
         Status hostStatus = null;

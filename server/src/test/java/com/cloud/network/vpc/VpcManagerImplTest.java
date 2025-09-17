@@ -492,7 +492,7 @@ public class VpcManagerImplTest {
         try {
             doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.vpc);
             manager.createVpc(zoneId, vpcOfferingId, vpcOwnerId, vpcName, vpcName, ip4Cidr, vpcDomain,
-                    ip4Dns[0], null, null, null, true, 1500, null, null, null);
+                    ip4Dns[0], null, null, null, true, 1500, null, null, null, false);
         } catch (ResourceAllocationException e) {
             Assert.fail(String.format("failure with exception: %s", e.getMessage()));
         }
@@ -504,7 +504,7 @@ public class VpcManagerImplTest {
         try {
             doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.vpc);
             manager.createVpc(zoneId, vpcOfferingId, vpcOwnerId, vpcName, vpcName, ip4Cidr, vpcDomain,
-                    ip4Dns[0], ip4Dns[1], ip6Dns[0], null, true, 1500, null, null, null);
+                    ip4Dns[0], ip4Dns[1], ip6Dns[0], null, true, 1500, null, null, null, false);
         } catch (ResourceAllocationException e) {
             Assert.fail(String.format("failure with exception: %s", e.getMessage()));
         }
@@ -519,7 +519,7 @@ public class VpcManagerImplTest {
         try {
             doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.vpc);
             manager.createVpc(zoneId, vpcOfferingId, vpcOwnerId, vpcName, vpcName, ip4Cidr, vpcDomain,
-                    ip4Dns[0], ip4Dns[1], null, null, true, 1500, null, null, null);
+                    ip4Dns[0], ip4Dns[1], null, null, true, 1500, null, null, null, false);
         } catch (ResourceAllocationException e) {
             Assert.fail(String.format("failure with exception: %s", e.getMessage()));
         }
@@ -536,7 +536,7 @@ public class VpcManagerImplTest {
         try {
             doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.vpc);
             manager.createVpc(zoneId, vpcOfferingId, vpcOwnerId, vpcName, vpcName, ip4Cidr, vpcDomain,
-                    ip4Dns[0], ip4Dns[1], null, null, true, 1500, null, null, null);
+                    ip4Dns[0], ip4Dns[1], null, null, true, 1500, null, null, null, false);
         } catch (ResourceAllocationException e) {
             Assert.fail(String.format("failure with exception: %s", e.getMessage()));
         }
@@ -551,7 +551,7 @@ public class VpcManagerImplTest {
         Mockito.when(vpcDao.persist(any(), anyMap())).thenReturn(vpc);
         Mockito.when(vpc.getUuid()).thenReturn("uuid");
         doReturn(true).when(routedIpv4Manager).isRoutedVpc(any());
-        doReturn(true).when(routedIpv4Manager).isVpcVirtualRouterGateway(vpcOfferingVO);
+        doReturn(true).when(routedIpv4Manager).isValidGateway(vpcOfferingVO);
         doReturn(true).when(routedIpv4Manager).isDynamicRoutedVpc(vpcOfferingVO);
         Ipv4GuestSubnetNetworkMap ipv4GuestSubnetNetworkMap = Mockito.mock(Ipv4GuestSubnetNetworkMap.class);
         doReturn(ipv4GuestSubnetNetworkMap).when(routedIpv4Manager).getOrCreateIpv4SubnetForVpc(any(), anyInt());
@@ -559,7 +559,7 @@ public class VpcManagerImplTest {
         try {
             doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.vpc);
             manager.createVpc(zoneId, vpcOfferingId, vpcOwnerId, vpcName, vpcName, null, vpcDomain,
-                    ip4Dns[0], ip4Dns[1], null, null, true, 1500, 24, null, bgpPeerIds);
+                    ip4Dns[0], ip4Dns[1], null, null, true, 1500, 24, null, bgpPeerIds, false);
         } catch (ResourceAllocationException e) {
             Assert.fail(String.format("failure with exception: %s", e.getMessage()));
         }

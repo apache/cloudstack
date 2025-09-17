@@ -184,7 +184,7 @@
           :disabled="valueLoading" />
         <tooltip-button
           :tooltip="$t('label.reset.config.value')"
-          @onClick="resetConfigurationValue(configrecord)"
+          @onClick="$resetConfigurationValueConfirm(configrecord, resetConfigurationValue)"
           v-if="editableValueKey === null"
           icon="reload-outlined"
           :disabled="(!('resetConfiguration' in $store.getters.apis) || configDisabled || valueLoading)" />
@@ -193,7 +193,7 @@
   </a-list>
 </template>
 <script>
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
@@ -222,12 +222,35 @@ export default {
   data () {
     return {
       valueLoading: this.loading,
+      scopeKey: '',
       actualValue: null,
       editableValue: null,
       editableValueKey: null
     }
   },
   created () {
+    switch (this.$route.meta.name) {
+      case 'account':
+        this.scopeKey = 'accountid'
+        break
+      case 'domain':
+        this.scopeKey = 'domainid'
+        break
+      case 'zone':
+        this.scopeKey = 'zoneid'
+        break
+      case 'cluster':
+        this.scopeKey = 'clusterid'
+        break
+      case 'storagepool':
+        this.scopeKey = 'storageid'
+        break
+      case 'imagestore':
+        this.scopeKey = 'imagestoreuuid'
+        break
+      default:
+        this.scopeKey = ''
+    }
     this.setConfigData()
   },
   watch: {
@@ -253,10 +276,11 @@ export default {
         newValue = newValue.join(' ')
       }
       const params = {
+        [this.scopeKey]: this.$route.params?.id,
         name: configrecord.name,
         value: newValue
       }
-      api('updateConfiguration', params).then(json => {
+      postAPI('updateConfiguration', params).then(json => {
         this.editableValue = this.getEditableValue(json.updateconfigurationresponse.configuration)
         this.actualValue = this.editableValue
         this.$emit('change-config', { value: newValue })
@@ -287,9 +311,11 @@ export default {
     resetConfigurationValue (configrecord) {
       this.valueLoading = true
       this.editableValueKey = null
-      api('resetConfiguration', {
+      const params = {
+        [this.scopeKey]: this.$route.params?.id,
         name: configrecord.name
-      }).then(json => {
+      }
+      postAPI('resetConfiguration', params).then(json => {
         this.editableValue = this.getEditableValue(json.resetconfigurationresponse.configuration)
         this.actualValue = this.editableValue
         var newValue = this.editableValue

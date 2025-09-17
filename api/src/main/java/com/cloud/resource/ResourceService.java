@@ -95,4 +95,11 @@ public interface ResourceService {
 
     boolean releaseHostReservation(Long hostId);
 
+    void updatePodStorageAccessGroups(long podId, List<String> newStorageAccessGroups);
+
+    void updateZoneStorageAccessGroups(long zoneId, List<String> newStorageAccessGroups);
+
+    void updateClusterStorageAccessGroups(Long clusterId, List<String> newStorageAccessGroups);
+
+    void updateHostStorageAccessGroups(Long hostId, List<String> newStorageAccessGroups);
 }

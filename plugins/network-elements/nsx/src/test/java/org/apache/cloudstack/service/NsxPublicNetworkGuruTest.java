@@ -22,10 +22,10 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.network.Network;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
-import com.cloud.network.guru.PublicNetworkGuru;
 import com.cloud.network.vpc.VpcOfferingVO;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
@@ -56,6 +56,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.times;
@@ -80,23 +81,26 @@ public class NsxPublicNetworkGuruTest {
     VpcOfferingDao vpcOfferingDao;
     @Mock
     NsxControllerUtils nsxControllerUtils;
+    @Mock
+    NetworkModel networkModel;
 
     @Before
     public void setup() {
         guru = new NsxPublicNetworkGuru();
 
-        ReflectionTestUtils.setField((PublicNetworkGuru) guru, "_ipAddressDao", ipAddressDao);
+        ReflectionTestUtils.setField(guru, "_ipAddressDao", ipAddressDao);
         ReflectionTestUtils.setField(guru, "vpcDao", vpcDao);
         ReflectionTestUtils.setField(guru, "vlanDetailsDao", vlanDetailsDao);
         ReflectionTestUtils.setField(guru, "vpcOfferingServiceMapDao", vpcOfferingServiceMapDao);
         ReflectionTestUtils.setField(guru, "nsxService", nsxService);
         ReflectionTestUtils.setField(guru, "vpcOfferingDao", vpcOfferingDao);
         ReflectionTestUtils.setField(guru, "nsxControllerUtils", nsxControllerUtils);
+        ReflectionTestUtils.setField(guru, "networkModel", networkModel);
 
         offering = Mockito.mock(NetworkOffering.class);
         when(offering.getTrafficType()).thenReturn(Networks.TrafficType.Public);
-        when(offering.isForNsx()).thenReturn(true);
         when(offering.isSystemOnly()).thenReturn(true);
+        when(networkModel.isProviderForNetworkOffering(eq(Network.Provider.Nsx), anyLong())).thenReturn(true);
     }
 
     @Test

@@ -29,6 +29,7 @@ import com.cloud.network.dao.AccountGuestVlanMapDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
+import com.cloud.network.dao.SslCertDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.dao.SecurityGroupDao;
@@ -198,6 +199,8 @@ public class AccountManagetImplTestBase {
     @Mock
     UserDataDao userDataDao;
     @Mock
+    SslCertDao sslCertDao;
+    @Mock
     NetworkPermissionDao networkPermissionDaoMock;
 
     @Spy
@@ -209,6 +212,9 @@ public class AccountManagetImplTestBase {
     AccountService _accountService;
     @Mock
     RoutedIpv4Manager routedIpv4Manager;
+
+    @Mock
+    Account accountMock;
 
     @Before
     public void setup() {

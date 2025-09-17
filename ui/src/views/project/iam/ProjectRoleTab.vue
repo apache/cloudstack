@@ -120,7 +120,7 @@
 </template>
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import ProjectRolePermissionTab from '@/views/project/iam/ProjectRolePermissionTab'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
@@ -173,17 +173,6 @@ export default {
   mounted () {
     this.fetchData()
   },
-  watch: {
-    resource: {
-      deep: true,
-      handler (newItem) {
-        if (!newItem || !newItem.id) {
-          return
-        }
-        this.fetchData()
-      }
-    }
-  },
   methods: {
     initForm () {
       this.formRef = ref()
@@ -192,7 +181,8 @@ export default {
     },
     fetchData () {
       this.loading = true
-      api('listProjectRoles', { projectid: this.resource.id }).then(json => {
+      if (!this.resource.id) return
+      getAPI('listProjectRoles', { projectid: this.resource.id }).then(json => {
         const projectRoles = json.listprojectrolesresponse.projectrole
         if (!projectRoles || projectRoles.length === 0) {
           this.dataSource = []
@@ -232,7 +222,7 @@ export default {
           }
           params[key] = input
         }
-        api('updateProjectRole', params).then(response => {
+        postAPI('updateProjectRole', params).then(response => {
           this.$notification.success({
             message: this.$t('label.update.project.role'),
             description: this.$t('label.update.project.role')
@@ -271,7 +261,7 @@ export default {
           }
           params[key] = input
         }
-        api('createProjectRole', params).then(response => {
+        postAPI('createProjectRole', params).then(response => {
           this.$notification.success({
             message: this.$t('label.create.project.role'),
             description: this.$t('label.create.project.role')
@@ -289,7 +279,7 @@ export default {
     },
     deleteProjectRole (role) {
       this.loading = true
-      api('deleteProjectRole', {
+      postAPI('deleteProjectRole', {
         projectid: this.resource.id,
         id: role.id
       }).then(response => {

@@ -203,6 +203,7 @@ import com.cloud.network.rules.StaticNatImpl;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcService;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpn.Site2SiteVpnManager;
@@ -262,7 +263,7 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.NicIpAliasVO;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 
@@ -310,7 +311,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     @Inject protected RemoteAccessVpnDao _vpnDao;
     @Inject protected NicDao _nicDao;
     @Inject private NicIpAliasDao _nicIpAliasDao;
-    @Inject private UserVmDetailsDao _vmDetailsDao;
+    @Inject private VMInstanceDetailsDao _vmDetailsDao;
     @Inject protected VirtualRouterProviderDao _vrProviderDao;
     @Inject private ManagementServerHostDao _msHostDao;
     @Inject private Site2SiteCustomerGatewayDao _s2sCustomerGatewayDao;
@@ -335,6 +336,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
     @Inject private NetworkService networkService;
     @Inject private VpcService vpcService;
+    @Inject private VpcManager vpcManager;
 
     @Autowired
     @Qualifier("networkHelper")
@@ -1735,11 +1737,13 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                         .append(",sourcePortEnd=").append(firewallRuleVO.getSourcePortEnd());
                 if (firewallRuleVO instanceof LoadBalancerVO) {
                     LoadBalancerVO loadBalancerVO = (LoadBalancerVO) firewallRuleVO;
-                    loadBalancingData.append(",sourceIp=").append(_ipAddressDao.findById(loadBalancerVO.getSourceIpAddressId()).getAddress().toString())
+                    String sourceIp = _ipAddressDao.findById(loadBalancerVO.getSourceIpAddressId()).getAddress().toString();
+                    loadBalancingData.append(",sourceIp=").append(sourceIp)
                             .append(",destPortStart=").append(loadBalancerVO.getDefaultPortStart())
                             .append(",destPortEnd=").append(loadBalancerVO.getDefaultPortEnd())
                             .append(",algorithm=").append(loadBalancerVO.getAlgorithm())
                             .append(",protocol=").append(loadBalancerVO.getLbProtocol());
+                    updateWithLbRuleSslCertificates(loadBalancingData, loadBalancerVO, sourceIp);
                 } else if (firewallRuleVO instanceof ApplicationLoadBalancerRuleVO) {
                     ApplicationLoadBalancerRuleVO appLoadBalancerVO = (ApplicationLoadBalancerRuleVO) firewallRuleVO;
                     loadBalancingData.append(",sourceIp=").append(appLoadBalancerVO.getSourceIp())
@@ -1754,6 +1758,16 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                     loadBalancingData.append(vmMapVO.getInstanceIp()).append(" ");
                 }
                 loadBalancingData.setCharAt(loadBalancingData.length() - 1, ';');
+            }
+        }
+    }
+
+    protected void updateWithLbRuleSslCertificates(final StringBuilder loadBalancingData, LoadBalancerVO loadBalancerVO, String sourceIp) {
+        if (NetUtils.SSL_PROTO.equals(loadBalancerVO.getLbProtocol())) {
+            final LbSslCert sslCert = _lbMgr.getLbSslCert(loadBalancerVO.getId());
+            if (sslCert != null && ! sslCert.isRevoked()) {
+                loadBalancingData.append(",sslcert=").append(sourceIp.replace(".", "_")).append('-')
+                        .append(loadBalancerVO.getSourcePortStart()).append(".pem");
             }
         }
     }
@@ -2043,6 +2057,12 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             if (_disableRpFilter) {
                 rpFilter = " disable_rp_filter=true";
             }
+            Vpc vpc = vpcManager.getActiveVpc(router.getVpcId());
+            if (vpcManager.isSrcNatIpRequiredForVpcVr(vpc.getVpcOfferingId())) {
+                buf.append(" has_public_network=true");
+            } else {
+                buf.append(" has_public_network=false");
+            }
         } else if (!publicNetwork) {
             type = "dhcpsrvr";
         } else {
@@ -2072,6 +2092,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
          * service, we need to override the DHCP response to return DNS server
          * rather than virtual router itself.
          */
+        boolean useRouterIpResolver = getUseRouterIpAsResolver(router);
         if (dnsProvided || dhcpProvided) {
             if (defaultDns1 != null) {
                 buf.append(" dns1=").append(defaultDns1);
@@ -2092,6 +2113,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
             if (useExtDns) {
                 buf.append(" useextdns=true");
+            }
+            if (useRouterIpResolver) {
+                buf.append(" userouteripresolver=true");
             }
         }
 
@@ -2130,6 +2154,18 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         }
 
         return true;
+    }
+
+    private boolean getUseRouterIpAsResolver(DomainRouterVO router) {
+        if (router == null || router.getVpcId() == null) {
+            return false;
+        }
+        Vpc vpc = _vpcDao.findById(router.getVpcId());
+        if (vpc == null) {
+            logger.warn(String.format("Cannot find VPC with ID %s from router %s", router.getVpcId(), router.getName()));
+            return false;
+        }
+        return vpc.useRouterIpAsResolver();
     }
 
     /**
