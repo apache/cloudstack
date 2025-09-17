@@ -274,24 +274,35 @@ def monitProcess( processes_info ):
         printd ("---------------------------\nchecking the service %s\n---------------------------- " %process)
         serviceName = process + ".service"
         processStatus, wasRestarted = checkProcessStatus(properties)
-        if processStatus != StatusCodes.RUNNING:
-            printd( "\n Service %s is not Running"%process)
-            checkEndTime = time.time()
-            service_status[serviceName] = {
-                "success": "false",
-                "lastUpdate": str(int(checkStartTime * 1000)),
-                "lastRunDuration": str((checkEndTime - checkStartTime) * 1000),
-                "message": "service down at last check " + str(csec)
-            }
+        routerHealth = RouterHealthStatus.UNKNOWN
+
+        match processStatus:
+            case StatusCodes.RUNNING:
+                routerHealth = RouterHealthStatus.SUCCESS
+                routerMessage = "service is running" + (", was restarted" if wasRestarted else "")
+            case StatusCodes.STARTING:
+                routerHealth = RouterHealthStatus.WARNING
+                routerMessage = "service is starting at " + str(csec)
+            case StatusCodes.STOPPED:
+                routerHealth = RouterHealthStatus.WARNING
+                routerMessage = "service down at last check " + str(csec)
+            case StatusCodes.SUCCESS:
+                routerHealth = RouterHealthStatus.UNKNOWN
+                routerMessage = "service exisits but no status"
+            case StatusCodes.FAILED | StatusCodes.INVALID_INP:
+                routerHealth = RouterHealthStatus.FAILED
+                routerMessage = "service down at last check " + str(csec)
+
+        printd( "\n Service %s is status == " % routerHealth)
+        checkEndTime = time.time()
+        service_status[serviceName] = {
+            "success": routerHealth,
+            "lastUpdate": str(int(checkStartTime * 1000)),
+            "lastRunDuration": str((checkEndTime - checkStartTime) * 1000),
+            "message": routerMessage
+        }
+        if routerHealth != RouterHealthStatus.SUCCESS:
             failing_services.append(serviceName)
-        else:
-            checkEndTime = time.time()
-            service_status[serviceName] = {
-                "success": "true",
-                "lastUpdate": str(int(checkStartTime * 1000)),
-                "lastRunDuration": str((checkEndTime - checkStartTime) * 1000),
-                "message": "service is running" + (", was restarted" if wasRestarted else "")
-            }
 
     return service_status, failing_services
 
