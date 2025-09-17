@@ -4668,20 +4668,13 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         boolean isInterClusterMigration = details.containsKey(DiskTO.INTER_CLUSTER_MIGRATION) && BooleanUtils.toBoolean(details.get(DiskTO.INTER_CLUSTER_MIGRATION));
 
         if (isManaged && isZoneWideStorage && isInterClusterMigration) {
-            s_logger.debug("Preparing storage on destination host " + hyperHost.getHyperHostName());
+            s_logger.debug(String.format("Preparing storage on destination cluster for host %s", hyperHost.getHyperHostName()));
             String iScsiName = details.get(DiskTO.IQN); // details should not be null for managed storage (it may or may not be null for non-managed storage)
             String datastoreName = VmwareResource.getDatastoreName(iScsiName);
-            s_logger.debug("Checking for datastore " + datastoreName);
-            ManagedObjectReference morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, datastoreName);
-
-            // if the datastore is not present, we need to discover the iSCSI device that will support it,
-            // create the datastore
-            if (morDatastore == null) {
-                s_logger.debug("The datastore " + datastoreName + " is not mounted, mounting");
-                _storageProcessor.prepareManagedDatastore(context, getHyperHost(context), datastoreName,
-                        details.get(DiskTO.IQN), details.get(DiskTO.STORAGE_HOST),
-                        Integer.parseInt(details.get(DiskTO.STORAGE_PORT)));
-            }
+            s_logger.debug(String.format("Ensuring datastore %s is mounted on destination cluster", datastoreName));
+            _storageProcessor.prepareManagedDatastore(context, hyperHost, datastoreName,
+                    details.get(DiskTO.IQN), details.get(DiskTO.STORAGE_HOST),
+                    Integer.parseInt(details.get(DiskTO.STORAGE_PORT)));
         }
     }
 
@@ -5380,24 +5373,29 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
     }
 
     private Answer execute(UnmountDatastoresCommand cmd) {
-        VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
+        VmwareContext context = getServiceContext(cmd);
+        VmwareHypervisorHost hyperHost = getHyperHost(context, cmd);
         if (hyperHost == null) {
             throw new CloudRuntimeException("No hypervisor host found to unmount datastore");
         }
-        List<String> datastorePools = cmd.getDatastorePools();
-        if (CollectionUtils.isNotEmpty(datastorePools)) {
-            try {
+        try {
+            List<String> datastorePools = cmd.getDatastorePools();
+            if (CollectionUtils.isNotEmpty(datastorePools)) {
+                ManagedObjectReference clusterMor = hyperHost.getHyperHostCluster();
+                if (clusterMor == null) {
+                    return new Answer(cmd, false, "Cannot unmount datastore pools as the cluster is not found");
+                }
+                ClusterMO clusterMO = new ClusterMO(context, clusterMor);
+                List<Pair<ManagedObjectReference, String>> clusterHosts = clusterMO.getClusterHosts();
                 for (String datastorePool : datastorePools) {
                     String datastoreName = VmwareResource.getDatastoreName(datastorePool);
-                    s_logger.debug("Checking for datastore " + datastoreName);
-                    ManagedObjectReference morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, datastoreName);
-                    if (morDatastore != null) {
-                        hyperHost.unmountDatastore(datastoreName);
-                    }
+                    s_logger.debug(String.format("Unmounting datastore %s from cluster %s hosts", datastoreName, clusterMO.getName()));
+                    _storageProcessor.unmountVmfsDatastore(context, hyperHost, datastoreName, clusterHosts);
                 }
-            } catch (Exception e) {
-                throw new RuntimeException(e);
             }
+        } catch (Exception e) {
+            s_logger.error("Error unmounting datastores", e);
+            return new Answer(cmd, e);
         }
         return new Answer(cmd, true, "success");
     }
