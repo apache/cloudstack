@@ -21,3 +21,18 @@
 
 -- Increase length of scripts_version column to 128 due to md5sum to sha512sum change
 CALL `cloud`.`IDEMPOTENT_CHANGE_COLUMN`('cloud.domain_router', 'scripts_version', 'scripts_version', 'VARCHAR(128)');
+
+UPDATE `cloud`.`configuration`
+SET subgroup_id = (SELECT id FROM `cloud`.`configuration_subgroup` WHERE name = 'ConsoleProxyVM'),
+    group_id = (SELECT id FROM `cloud`.`configuration_group` WHERE name = 'System VMs')
+WHERE name = 'consoleproxy.userdata';
+
+UPDATE `cloud`.`configuration`
+SET subgroup_id = (SELECT id FROM `cloud`.`configuration_subgroup` WHERE name = 'SecStorageVM'),
+    group_id = (SELECT id FROM `cloud`.`configuration_group` WHERE name = 'System VMs')
+WHERE name = 'secstorage.userdata';
+
+UPDATE `cloud`.`configuration`
+SET subgroup_id = (SELECT id FROM `cloud`.`configuration_subgroup` WHERE name = 'VirtualRouter'),
+    group_id = (SELECT id FROM `cloud`.`configuration_group` WHERE name = 'System VMs')
+WHERE name = 'router.userdata';

@@ -44,7 +44,7 @@ public interface SecondaryStorageVmManager extends Manager {
             "The time interval(in millisecond) to scan whether or not system needs more SSVM to ensure minimal standby capacity",
             false);
 
-    ConfigKey<String> SecondaryStorageUserData = new ConfigKey<>(String.class, "secstorage.userdata", "Advanced", "",
+    ConfigKey<String> SecondaryStorageUserData = new ConfigKey<>(String.class, "secstorage.userdata", ConfigKey.CATEGORY_SECURE, "",
             "Default user data for secondary storage VMs. This works only when systemvm.userdata.enabled is set to true.", true, ConfigKey.Scope.Zone, null);
 
 
