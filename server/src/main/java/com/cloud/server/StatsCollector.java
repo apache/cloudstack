@@ -294,7 +294,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
     private static StatsCollector s_instance = null;
 
-    private static Gson gson = new GsonBuilder()
+    private static Gson gson = new Gson();
+    private static Gson msStatsGson = new GsonBuilder()
             .setDateFormat(DateUtil.ZONED_DATETIME_FORMAT)
             .create();
 
@@ -742,7 +743,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
              dbStats.put(uptime, (Long.valueOf(stats.get(uptime))));
          }
 
-
          @Override
          protected Point createInfluxDbPoint(Object metricsObject) {
              return null;
@@ -762,7 +762,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 hostStatsEntry = getDataFrom(mshost);
                 managementServerHostStats.put(mshost.getUuid(), hostStatsEntry);
                 // send to other hosts
-                clusterManager.publishStatus(gson.toJson(hostStatsEntry));
+                clusterManager.publishStatus(msStatsGson.toJson(hostStatsEntry));
             } catch (Throwable t) {
                 // pokemon catch to make sure the thread stays running
                 logger.error("Error trying to retrieve management server host statistics", t);
@@ -1163,7 +1163,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
             ManagementServerHostStatsEntry hostStatsEntry;
             try {
-                hostStatsEntry = gson.fromJson(pdu.getJsonPackage(), ManagementServerHostStatsEntry.class);
+                hostStatsEntry = msStatsGson.fromJson(pdu.getJsonPackage(), ManagementServerHostStatsEntry.class);
                 managementServerHostStats.put(hostStatsEntry.getManagementServerHostUuid(), hostStatsEntry);
 
                 // Update peer state to Up in mshost_peer

@@ -22,7 +22,6 @@ package com.cloud.serializer;
 import java.util.List;
 
 import com.cloud.hypervisor.Hypervisor;
-import com.cloud.utils.DateUtil;
 import org.apache.cloudstack.transport.HypervisorTypeAdaptor;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -79,7 +78,6 @@ public class GsonHelper {
         }.getType(), new NwGroupsCommandTypeAdaptor());
         builder.registerTypeAdapter(Storage.StoragePoolType.class, new StoragePoolTypeAdaptor());
         builder.registerTypeAdapter(Hypervisor.HypervisorType.class, new HypervisorTypeAdaptor());
-        builder.setDateFormat(DateUtil.ZONED_DATETIME_FORMAT);
         Gson gson = builder.create();
         dsAdaptor.initGson(gson);
         dtAdaptor.initGson(gson);
