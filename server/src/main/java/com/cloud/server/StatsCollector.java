@@ -937,12 +937,12 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 logger.info(String.format("used memory from /proc: %d", newEntry.getSystemMemoryUsed()));
             }
             try {
-                String bootTime = Script.runSimpleBashScript("uptime -s");
-                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.ENGLISH);
+                String bootTime = Script.runSimpleBashScript("date -d @$(grep btime /proc/stat | awk '{print $2}') '+%Y-%m-%d %H:%M:%S'");
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
                 Date date = formatter.parse(bootTime);
                 newEntry.setSystemBootTime(date);
             } catch (ParseException e) {
-                logger.error("can not retrieve system uptime");
+                logger.error("can not retrieve system uptime", e);
             }
             String maxuse = Script.runSimpleBashScript(String.format("ps -o vsz= %d", newEntry.getPid()));
             newEntry.setSystemMemoryVirtualSize(Long.parseLong(maxuse) * 1024);
