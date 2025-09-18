@@ -738,7 +738,7 @@ public class ConsoleAccessManagerImplTest {
         details.setPort(port);
         details.setSid(sid);
         Mockito.doReturn(details).when(consoleAccessManager).getConsoleConnectionDetails(vm, host);
-        Mockito.when(consoleProxyManager.getVncPort()).thenReturn(vncPort);
+        Mockito.when(consoleProxyManager.getVncPort(Mockito.anyLong())).thenReturn(vncPort);
         ConsoleProxyPasswordBasedEncryptor.KeyIVPair keyIvPair = new ConsoleProxyPasswordBasedEncryptor.KeyIVPair("key", "iv");
         Mockito.doReturn(GsonHelper.getGson().toJson(keyIvPair)).when(consoleAccessManager).getEncryptorPassword();
         Mockito.doReturn(ticket).when(consoleAccessManager).genAccessTicket(hostStr, String.valueOf(port), sid, tag, sessionUuid);
