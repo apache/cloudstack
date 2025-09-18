@@ -375,6 +375,7 @@ propogate
 provison
 psudo
 pyhsical
+re-use
 readabilty
 readd
 reccuring
@@ -411,7 +412,6 @@ retriving
 retrun
 retuned
 returing
-re-use
 rever
 rocessor
 runing
