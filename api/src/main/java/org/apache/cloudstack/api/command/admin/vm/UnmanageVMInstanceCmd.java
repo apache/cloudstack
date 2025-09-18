@@ -69,7 +69,8 @@ public class UnmanageVMInstanceCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID,
             entityType = HostResponse.class, required = false,
-            description = "ID of the host where domain XML is stored for stopped Instance",
+            description = "ID of the host which will be used for unmanaging the Instance. " +
+                    "Applicable only for KVM hypervisor and stopped Instances. Domain XML will be stored on this host.",
             since = "4.22.0")
     private Long hostId;
 

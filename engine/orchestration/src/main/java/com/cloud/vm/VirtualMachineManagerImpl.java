@@ -2049,6 +2049,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             throw new CloudRuntimeException("Unable to retrieve host with ID: " + agentHostId);
         }
         logger.debug("Selected host UUID: {} to unmanage Instance: {}.", host.getUuid(), vm.getName());
+        ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, Domain.ROOT_DOMAIN, EventTypes.EVENT_VM_UNMANAGE,
+                String.format("Successfully unmanaged Instance: %s (ID: %s) on host ID: %s", vm.getName(), vm.getUuid(), host.getUuid()),
+                vm.getId(), ApiCommandResourceType.VirtualMachine.toString());
         return new Pair<>(result, host.getUuid());
     }
 
@@ -2092,14 +2095,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     /**
      * Clean up VM snapshots (if any) from DB
      */
-    private void unmanageVMSnapshots(VMInstanceVO vm) {
+    void unmanageVMSnapshots(VMInstanceVO vm) {
         _vmSnapshotMgr.deleteVMSnapshotsFromDB(vm.getId(), true);
     }
 
     /**
      * Clean up volumes for a VM to be unmanaged from CloudStack
      */
-    private void unmanageVMVolumes(VMInstanceVO vm) {
+    void unmanageVMVolumes(VMInstanceVO vm) {
         final Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
         if (hostId != null) {
             volumeMgr.revokeAccess(vm.getId(), hostId);
@@ -2117,7 +2120,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
      * - If 'unmanage.vm.preserve.nics' = true: then the NICs are not removed but still Allocated, to preserve MAC addresses
      * - If 'unmanage.vm.preserve.nics' = false: then the NICs are removed while unmanaging
      */
-    private void unmanageVMNics(VirtualMachineProfile profile, VMInstanceVO vm) {
+    void unmanageVMNics(VirtualMachineProfile profile, VMInstanceVO vm) {
         logger.debug("Cleaning up NICs of {}.", vm.toString());
         Boolean preserveNics = UnmanagedVMsManager.UnmanageVMPreserveNic.valueIn(vm.getDataCenterId());
         if (BooleanUtils.isTrue(preserveNics)) {
