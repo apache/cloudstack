@@ -25,17 +25,20 @@ public class GetExternalConsoleAnswer extends Answer {
     @LogLevel(LogLevel.Log4jLevel.Off)
     private String password;
     private String protocol;
+    private boolean passwordOneTimeUseOnly;
 
     public GetExternalConsoleAnswer(Command command, String details) {
         super(command, false, details);
     }
 
-    public GetExternalConsoleAnswer(Command command, String url, String host, Integer port, String password, String protocol) {
+    public GetExternalConsoleAnswer(Command command, String url, String host, Integer port, String password,
+                    boolean passwordOneTimeUseOnly, String protocol) {
         super(command, true, "");
         this.url = url;
         this.host = host;
         this.port = port;
         this.password = password;
+        this.passwordOneTimeUseOnly = passwordOneTimeUseOnly;
         this.protocol = protocol;
     }
 
@@ -57,5 +60,9 @@ public class GetExternalConsoleAnswer extends Answer {
 
     public String getProtocol() {
         return protocol;
+    }
+
+    public boolean isPasswordOneTimeUseOnly() {
+        return passwordOneTimeUseOnly;
     }
 }

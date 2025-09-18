@@ -356,6 +356,7 @@ get_node_host() {
          --arg host "$host" \
          --arg port "$port" \
          --arg password "$ticket" \
+         --argjson passwordonetimeuseonly true \
          '{
              status: "success",
              message: "Console retrieved",
@@ -363,6 +364,7 @@ get_node_host() {
                  host: $host,
                  port: $port,
                  password: $password,
+                 passwordonetimeuseonly: $passwordonetimeuseonly,
                  protocol: "vnc"
              }
          }'

@@ -449,6 +449,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         }
         if (StringUtils.isNotBlank(getExternalConsoleAnswer.getPassword())) {
             details.setSid(getExternalConsoleAnswer.getPassword());
+            details.setSessionRequiresNewViewer(getExternalConsoleAnswer.isPasswordOneTimeUseOnly());
         }
         return details;
     }
@@ -600,6 +601,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         param.setTicket(ticket);
         param.setSessionUuid(sessionUuid);
         param.setSourceIP(addr);
+        param.setSessionRequiresNewViewer(details.isSessionRequiresNewViewer());
 
         if (StringUtils.isNotBlank(extraSecurityToken)) {
             param.setExtraSecurityToken(extraSecurityToken);
@@ -761,6 +763,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         private String tunnelSession = null;
         private boolean usingRDP;
         private String directUrl;
+        private boolean sessionRequiresNewViewer = false;
 
         ConsoleConnectionDetails(String sid, String locale, String tag, String displayName) {
             this.sid = sid;
@@ -849,6 +852,14 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
 
         public void setDirectUrl(String directUrl) {
             this.directUrl = directUrl;
+        }
+
+        public boolean isSessionRequiresNewViewer() {
+            return sessionRequiresNewViewer;
+        }
+
+        public void setSessionRequiresNewViewer(boolean sessionRequiresNewViewer) {
+            this.sessionRequiresNewViewer = sessionRequiresNewViewer;
         }
     }
 }
