@@ -490,12 +490,25 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                     StringUtils.join(Arrays.stream(HypervisorType.values()).filter(h -> h != HypervisorType.None).map(HypervisorType::name).toArray(), ", ")));
         }
 
+        TemplateType templateType;
+        if (params.getTemplateType() != null) {
+            try {
+                templateType = TemplateType.valueOf(params.getTemplateType().toUpperCase());
+            } catch (IllegalArgumentException ex) {
+                throw new InvalidParameterValueException(String.format("Please specify a valid templatetype: %s",
+                        org.apache.commons.lang3.StringUtils.join(",", TemplateType.values())));
+            }
+        } else {
+            templateType = params.isRoutingType() ? TemplateType.ROUTING : TemplateType.USER;
+        }
+
         return prepare(params.isIso(), params.getUserId(), params.getName(), params.getDisplayText(), params.getArch(), params.getBits(),
                 params.isPasswordEnabled(), params.requiresHVM(), params.getUrl(), params.isPublic(), params.isFeatured(),
                 params.isExtractable(), params.getFormat(), params.getGuestOSId(), zoneList,
                 params.getHypervisorType(), params.getChecksum(), params.isBootable(), params.getTemplateTag(), owner,
                 params.getDetails(), params.isSshKeyEnabled(), params.getImageStoreUuid(),
-                params.isDynamicallyScalable(), params.isRoutingType() ? TemplateType.ROUTING : TemplateType.USER, params.isDirectDownload(), params.isDeployAsIs(), false, null);
+                params.isDynamicallyScalable(), templateType, params.isDirectDownload(), params.isDeployAsIs(),
+                params.isForCks(), null);
     }
 
     private Long getDefaultDeployAsIsGuestOsId() {
@@ -516,7 +529,8 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                 BooleanUtils.toBoolean(cmd.isFeatured()), BooleanUtils.toBoolean(cmd.isExtractable()), cmd.getFormat(), osTypeId,
                 cmd.getZoneId(), HypervisorType.getType(cmd.getHypervisor()), cmd.getChecksum(),
                 cmd.getTemplateTag(), cmd.getEntityOwnerId(), cmd.getDetails(), BooleanUtils.toBoolean(cmd.isSshKeyEnabled()),
-                BooleanUtils.toBoolean(cmd.isDynamicallyScalable()), BooleanUtils.toBoolean(cmd.isRoutingType()), cmd.isDeployAsIs(), cmd.isForCks());
+                BooleanUtils.toBoolean(cmd.isDynamicallyScalable()), BooleanUtils.toBoolean(cmd.isRoutingType()), cmd.isDeployAsIs(),
+                cmd.isForCks(), cmd.getTemplateType());
         return prepareUploadParamsInternal(params);
     }
 
