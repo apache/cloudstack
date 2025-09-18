@@ -232,4 +232,8 @@ public class ConsoleProxyClientParam {
     public boolean isSessionRequiresNewViewer() {
         return sessionRequiresNewViewer;
     }
+
+    public void setSessionRequiresNewViewer(boolean sessionRequiresNewViewer) {
+        this.sessionRequiresNewViewer = sessionRequiresNewViewer;
+    }
 }
