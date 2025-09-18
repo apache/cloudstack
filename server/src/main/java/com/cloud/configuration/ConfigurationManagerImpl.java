@@ -49,6 +49,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.consoleproxy.ConsoleProxyManager;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -573,7 +574,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         configValuesForValidation.add("event.purge.interval");
         configValuesForValidation.add("account.cleanup.interval");
         configValuesForValidation.add("alert.wait");
-        configValuesForValidation.add("consoleproxy.capacityscan.interval");
+        configValuesForValidation.add(ConsoleProxyManager.ConsoleProxyCapacityScanInterval.key());
         configValuesForValidation.add("expunge.interval");
         configValuesForValidation.add("host.stats.interval");
         configValuesForValidation.add("network.gc.interval");

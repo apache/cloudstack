@@ -526,7 +526,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         ConsoleProxyClientParam param = generateConsoleProxyClientParam(result, ticket, sessionUuid, addr,
                 extraSecurityToken, vm, hostVo);
         String token = encryptor.encryptObject(ConsoleProxyClientParam.class, param);
-        int vncPort = consoleProxyManager.getVncPort();
+        int vncPort = consoleProxyManager.getVncPort(vm.getDataCenterId());
 
         String url = generateConsoleAccessUrl(rootUrl, param, token, vncPort, vm, hostVo, result.getLocale());
 
