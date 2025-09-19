@@ -94,3 +94,4 @@ repos:
         args: [--config=.github/linters/.markdown-lint.yml]
         types: [markdown]
         files: \.(md|mdown|markdown)$
+        exclude: ^CHANGES\.md$
