@@ -83,14 +83,23 @@ export default {
   computed: {
     resourceType () {
       if (!this.resource) return 'none'
+
       if (this.resource.vmstate !== undefined ||
-        this.resource.guestosid !== undefined || this.resource.hypervisor !== undefined ||
-        this.resource.backupofferingid !== undefined) {
+        this.resource.guestosid !== undefined ||
+        this.resource.hypervisor !== undefined ||
+        this.resource.backupofferingid !== undefined ||
+        this.resource.serviceofferingid !== undefined) {
         return 'vm'
       }
-      if (this.resource.intervaltype !== undefined && this.resource.schedule !== undefined) {
+      if (this.resource.intervaltype !== undefined &&
+          this.resource.schedule !== undefined) {
         return 'backupschedule'
       }
+
+      if (this.resource.virtualmachineid !== undefined) {
+        return 'backupschedule'
+      }
+
       return 'unknown'
     },
     isVMResource () {
@@ -105,9 +114,7 @@ export default {
     }
   },
   created () {
-    if (!this.isVMResource) {
-      this.fetchVMs()
-    }
+    this.fetchVMs()
   },
   methods: {
     async fetchVMs () {

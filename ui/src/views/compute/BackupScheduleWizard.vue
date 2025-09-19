@@ -75,7 +75,14 @@ export default {
       const params = {}
       this.dataSource = []
       this.loading = true
-      params.virtualmachineid = this.resource.id
+      params.virtualmachineid = this.resource.id || this.resource.virtualmachineid
+
+      if (!params.virtualmachineid) {
+        console.error('No VM ID found in resource:', this.resource)
+        this.loading = false
+        return
+      }
+
       getAPI('listBackupSchedule', params).then(json => {
         this.dataSource = json.listbackupscheduleresponse.backupschedule || []
       }).finally(() => {
