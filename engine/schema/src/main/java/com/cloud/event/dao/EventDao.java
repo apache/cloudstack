@@ -27,12 +27,12 @@ import com.cloud.utils.db.SearchCriteria;
 public interface EventDao extends GenericDao<EventVO, Long> {
     public List<EventVO> searchAllEvents(SearchCriteria<EventVO> sc, Filter filter);
 
-    public List<EventVO> listOlderEvents(Date oldTime);
-
     EventVO findCompletedEvent(long startId);
 
     public List<EventVO> listToArchiveOrDeleteEvents(List<Long> ids, String type, Date startDate, Date endDate, List<Long> accountIds);
 
     public void archiveEvents(List<EventVO> events);
 
+    long purgeAll(List<Long> ids, Date startDate, Date endDate, Date limitDate, String type, Long accountId, List<Long> domainIds,
+                  long limitPerQuery);
 }
