@@ -91,7 +91,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
         StringBuilder ldapGroupsFilter = new StringBuilder();
         // this should get the trustmaps for this domain
         List<String> ldapGroups = getMappedLdapGroups(domainId);
-        if (null != ldapGroups && ldapGroups.size() > 0) {
+        if (CollectionUtils.isNotEmpty(ldapGroups)) {
             ldapGroupsFilter.append("(|");
             for (String ldapGroup : ldapGroups) {
                 ldapGroupsFilter.append(getMemberOfGroupString(ldapGroup, memberOfAttribute));
@@ -101,7 +101,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
         // make sure only users in the principle group are retrieved
         String pricipleGroup = _ldapConfiguration.getSearchGroupPrinciple(domainId);
         final StringBuilder principleGroupFilter = new StringBuilder();
-        if (null != pricipleGroup) {
+        if (StringUtils.isNotBlank(pricipleGroup)) {
             principleGroupFilter.append(getMemberOfGroupString(pricipleGroup, memberOfAttribute));
         }
         final StringBuilder result = new StringBuilder();
@@ -133,7 +133,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
 
     private String getMemberOfGroupString(String group, String memberOfAttribute) {
         final StringBuilder memberOfFilter = new StringBuilder();
-        if (null != group) {
+        if (StringUtils.isNotBlank(group)) {
             if(logger.isDebugEnabled()) {
                 logger.debug("adding search filter for '" + group +
                 "', using '" + memberOfAttribute + "'");
