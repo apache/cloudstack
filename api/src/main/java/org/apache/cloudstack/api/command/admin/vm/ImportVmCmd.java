@@ -159,13 +159,15 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
             description = "(only for importing VMs from VMware to KVM) optional - if true, forces MS to export OVF from VMware to temporary storage, else uses KVM Host if ovftool is available, falls back to MS if not.")
     private Boolean forceMsToImportVmFiles;
 
-    @Parameter(name = "extraparams",
+    @Parameter(name = ApiConstants.EXTRA_PARAMS,
             type = CommandType.STRING,
             since = "4.22",
-            description = "(VMware to KVM only) extra parameters to be passed on the virt-v2v command, if allowed by the administrator")
+            description = "(only for importing VMs from VMware to KVM) optional - extra parameters to be passed on the virt-v2v command, if allowed by the administrator")
     private String extraParams;
 
-    @Parameter(name = "forceconverttopool", type = CommandType.BOOLEAN,
+    @Parameter(name = ApiConstants.FORCE_CONVERT_TO_POOL,
+            type = CommandType.BOOLEAN,
+            since = "4.22",
             description = "(only for importing VMs from VMware to KVM) optional - if true, forces virt-v2v conversions to write directly on the provided storage pool (avoid using temporary conversion pool).")
     private Boolean forceConvertToPool;
 

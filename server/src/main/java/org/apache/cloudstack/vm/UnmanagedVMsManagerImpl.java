@@ -120,14 +120,12 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.DateUtil;
 import com.cloud.utils.LogUtils;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DiskProfile;
-import com.cloud.vm.ImportVMTaskVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmManager;
@@ -139,7 +137,6 @@ import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
-import com.cloud.vm.dao.ImportVMTaskDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
@@ -158,7 +155,6 @@ import org.apache.cloudstack.api.command.admin.vm.ListImportVMTasksCmd;
 import org.apache.cloudstack.api.command.admin.vm.ListUnmanagedInstancesCmd;
 import org.apache.cloudstack.api.command.admin.vm.ListVmsForImportCmd;
 import org.apache.cloudstack.api.command.admin.vm.UnmanageVMInstanceCmd;
-import org.apache.cloudstack.api.response.ImportVMTaskResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.UnmanagedInstanceDiskResponse;
@@ -185,26 +181,22 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.TimeZone;
 import java.util.stream.Collectors;
 
-import static com.cloud.vm.ImportVMTaskVO.Step.CloningInstance;
-import static com.cloud.vm.ImportVMTaskVO.Step.Completed;
-import static com.cloud.vm.ImportVMTaskVO.Step.ConvertingInstance;
-import static com.cloud.vm.ImportVMTaskVO.Step.Importing;
-import static com.cloud.vm.ImportVMTaskVO.Step.Prepare;
 import static org.apache.cloudstack.api.ApiConstants.MAX_IOPS;
 import static org.apache.cloudstack.api.ApiConstants.MIN_IOPS;
+import static org.apache.cloudstack.vm.ImportVmTask.Step.CloningInstance;
+import static org.apache.cloudstack.vm.ImportVmTask.Step.Completed;
+import static org.apache.cloudstack.vm.ImportVmTask.Step.ConvertingInstance;
+import static org.apache.cloudstack.vm.ImportVmTask.Step.Importing;
 
 public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     public static final String VM_IMPORT_DEFAULT_TEMPLATE_NAME = "system-default-vm-import-dummy-template.iso";
@@ -298,7 +290,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     @Inject
     private DataStoreManager dataStoreManager;
     @Inject
-    private ImportVMTaskDao importVMTaskDao;
+    private ImportVmTasksManager importVmTasksManager;
 
     protected Gson gson;
 
@@ -1633,58 +1625,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return vmwareGuru.createVMTemplateOutOfBand(sourceHostName, sourceVMwareInstanceName, params, convertLocation, threadsCountToExportOvf);
     }
 
-    protected ImportVMTaskVO createImportVMTaskRecord(DataCenter zone, Account owner, long userId, String displayName,
-                                                      String vcenter, String datacenterName, String sourceVMName,
-                                                      HostVO convertHost, HostVO importHost) {
-        logger.debug("Creating import VM task entry for VM: {} for account {} on zone {} " +
-                        "from the vCenter: {} / datacenter: {} / source VM: {}",
-                sourceVMName, owner.getAccountName(), zone.getName(), displayName, vcenter, datacenterName);
-        ImportVMTaskVO importVMTaskVO = new ImportVMTaskVO(zone.getId(), owner.getAccountId(), userId, displayName,
-                vcenter, datacenterName, sourceVMName, convertHost.getId(), importHost.getId());
-        return importVMTaskDao.persist(importVMTaskVO);
-    }
-
-    private String getStepDescription(ImportVMTaskVO importVMTaskVO, HostVO convertHost, HostVO importHost,
-                                      ImportVMTaskVO.Step step, Date updatedDate) {
-        String sourceVMName = importVMTaskVO.getSourceVMName();
-        String vcenter = importVMTaskVO.getVcenter();
-        String datacenter = importVMTaskVO.getDatacenter();
-
-        StringBuilder stringBuilder = new StringBuilder();
-        if (Completed == step) {
-            stringBuilder.append("Completed at ").append(DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), updatedDate));
-        } else {
-            stringBuilder.append(String.format("[%s] ", DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), updatedDate)));
-            if (CloningInstance == step) {
-                stringBuilder.append(String.format("Cloning source instance: %s on vCenter: %s / datacenter: %s", sourceVMName, vcenter, datacenter));
-            } else if (ConvertingInstance == step) {
-                stringBuilder.append(String.format("Converting the cloned VMware instance to a KVM instance on the host: %s", convertHost.getName()));
-            } else if (Importing == step) {
-                stringBuilder.append(String.format("Importing the converted KVM instance on the host: %s", importHost.getName()));
-            } else if (Prepare == step) {
-                stringBuilder.append("Preparing to convert Vmware instance");
-            }
-        }
-        return stringBuilder.toString();
-    }
-
-    protected void updateImportVMTaskStep(ImportVMTaskVO importVMTaskVO, DataCenter zone, Account owner, HostVO convertHost, HostVO importHost, ImportVMTaskVO.Step step) {
-        logger.debug("Updating import VM task entry for VM: {} for account {} on zone {} " +
-                        "from the vCenter: {} / datacenter: {} / source VM: {} to step: {}",
-                importVMTaskVO.getSourceVMName(), owner.getAccountName(), zone.getName(), importVMTaskVO.getDisplayName(),
-                importVMTaskVO.getVcenter(), importVMTaskVO.getDatacenter(), step);
-        Date updatedDate = DateUtil.now();
-        String description = getStepDescription(importVMTaskVO, convertHost, importHost, step, updatedDate);
-        importVMTaskVO.setStep(step);
-        importVMTaskVO.setDescription(description);
-        importVMTaskVO.setUpdated(updatedDate);
-        if (Completed == step) {
-            Duration duration = Duration.between(importVMTaskVO.getCreated().toInstant(), updatedDate.toInstant());
-            importVMTaskVO.setDuration(duration.toMillis());
-        }
-        importVMTaskDao.update(importVMTaskVO.getId(), importVMTaskVO);
-    }
-
     protected UserVm importUnmanagedInstanceFromVmwareToKvm(DataCenter zone, Cluster destinationCluster, VMTemplateVO template,
                                                           String sourceVMName, String displayName, String hostName,
                                                           Account caller, Account owner, long userId,
@@ -1732,7 +1672,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         UnmanagedInstanceTO sourceVMwareInstance = null;
         DataStoreTO temporaryConvertLocation = null;
         String ovfTemplateOnConvertLocation = null;
-        ImportVMTaskVO importVMTaskVO = null;
+        ImportVmTask importVMTask = null;
         try {
             HostVO convertHost = selectKVMHostForConversionInCluster(destinationCluster, convertInstanceHostId);
             HostVO importHost = selectKVMHostForImportingInCluster(destinationCluster, importInstanceHostId);
@@ -1744,9 +1684,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                     destinationCluster, convertHost, convertStoragePoolId, forceConvertToPool);
             List<StoragePoolVO> convertStoragePools = findInstanceConversionStoragePoolsInCluster(destinationCluster, serviceOffering, dataDiskOfferingMap);
             long importStartTime = System.currentTimeMillis();
-            importVMTaskVO = createImportVMTaskRecord(zone, owner, userId, displayName, vcenter, datacenterName, sourceVMName,
+            importVMTask = importVmTasksManager.createImportVMTaskRecord(zone, owner, userId, displayName, vcenter, datacenterName, sourceVMName,
                     convertHost, importHost);
-            updateImportVMTaskStep(importVMTaskVO, zone, owner, convertHost, importHost, CloningInstance);
+            importVmTasksManager.updateImportVMTaskStep(importVMTask, zone, owner, convertHost, importHost, null, CloningInstance);
             Pair<UnmanagedInstanceTO, Boolean> sourceInstanceDetails = getSourceVmwareUnmanagedInstance(vcenter, datacenterName, username, password, clusterName, sourceHostName, sourceVMName);
             sourceVMwareInstance = sourceInstanceDetails.first();
             isClonedInstance = sourceInstanceDetails.second();
@@ -1761,7 +1701,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             if (cmd.getForceMsToImportVmFiles() || !conversionSupportAnswer.isOvfExportSupported()) {
                 // Uses MS for OVF export to temporary conversion location
                 int noOfThreads = UnmanagedVMsManager.ThreadsOnMSToImportVMwareVMFiles.value();
-                updateImportVMTaskStep(importVMTaskVO, zone, owner, convertHost, importHost, ConvertingInstance);
+                importVmTasksManager.updateImportVMTaskStep(importVMTask, zone, owner, convertHost, importHost, null, ConvertingInstance);
                 ovfTemplateOnConvertLocation = createOvfTemplateOfSourceVmwareUnmanagedInstance(
                         vcenter, datacenterName, username, password, clusterName, sourceHostName,
                         sourceVMwareInstance.getName(), temporaryConvertLocation, noOfThreads);
@@ -1771,7 +1711,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                         ovfTemplateOnConvertLocation, forceConvertToPool, extraParams);
             } else {
                 // Uses KVM Host for OVF export to temporary conversion location, through ovftool
-                updateImportVMTaskStep(importVMTaskVO, zone, owner, convertHost, importHost, ConvertingInstance);
+                importVmTasksManager.updateImportVMTaskStep(importVMTask, zone, owner, convertHost, importHost, null, ConvertingInstance);
                 convertedInstance = convertVmwareInstanceToKVMAfterExportingOVFToConvertLocation(
                         sourceVMName, sourceVMwareInstance, convertHost, importHost,
                         convertStoragePools, serviceOffering, dataDiskOfferingMap,
@@ -1779,7 +1719,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             }
 
             sanitizeConvertedInstance(convertedInstance, sourceVMwareInstance);
-            updateImportVMTaskStep(importVMTaskVO, zone, owner, convertHost, importHost, Importing);
+            importVmTasksManager.updateImportVMTaskStep(importVMTask, zone, owner, convertHost, importHost, null, Importing);
             UserVm userVm = importVirtualMachineInternal(convertedInstance, instanceName, zone, destinationCluster, null,
                     template, displayName, hostName, caller, owner, userId,
                     serviceOffering, dataDiskOfferingMap,
@@ -1788,9 +1728,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             long timeElapsedInSecs = (System.currentTimeMillis() - importStartTime) / 1000;
             logger.debug(String.format("VMware VM %s imported successfully to CloudStack instance %s (%s), Time taken: %d secs, OVF files imported from %s, Source VMware VM details - OS: %s, PowerState: %s, Disks: %s, NICs: %s",
                     sourceVMName, instanceName, displayName, timeElapsedInSecs, (ovfTemplateOnConvertLocation != null)? "MS" : "KVM Host", sourceVMwareInstance.getOperatingSystem(), sourceVMwareInstance.getPowerState(), sourceVMwareInstance.getDisks(), sourceVMwareInstance.getNics()));
-            importVMTaskVO.setVmId(userVm.getId());
-            updateImportVMTaskStep(importVMTaskVO, zone, owner, convertHost, importHost, Completed);
-            importVMTaskDao.remove(importVMTaskVO.getId());
+            importVmTasksManager.updateImportVMTaskStep(importVMTask, zone, owner, convertHost, importHost, userVm.getId(), Completed);
+            importVmTasksManager.removeImportVMTask(importVMTask.getId());
             return userVm;
         } catch (CloudRuntimeException e) {
             logger.error(String.format("Error importing VM: %s", e.getMessage()), e);
@@ -2952,103 +2891,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         ListResponse<UnmanagedInstanceResponse> listResponses = new ListResponse<>();
         listResponses.setResponses(responses, responses.size());
         return listResponses;
-    }
-
-    @Override
-    public ListResponse<ImportVMTaskResponse> listImportVMTasks(ListImportVMTasksCmd cmd) {
-        Long zoneId = cmd.getZoneId();
-        Long accountId = cmd.getAccountId();
-        String vcenter = cmd.getVcenter();
-        Long convertHostId = cmd.getConvertHostId();
-        boolean listAll = cmd.isListAll();
-        boolean showCompleted = cmd.isShowCompleted();
-
-        List<ImportVMTaskVO> tasks;
-        if (listAll) {
-            tasks = importVMTaskDao.listAll();
-        } else {
-            tasks = importVMTaskDao.listImportVMTasks(zoneId, accountId, vcenter, convertHostId, showCompleted);
-        }
-
-        List<ImportVMTaskResponse> responses = new ArrayList<>();
-        for (ImportVMTaskVO task : tasks) {
-            responses.add(createImportVMTaskResponse(task));
-        }
-        ListResponse<ImportVMTaskResponse> listResponses = new ListResponse<>();
-        listResponses.setResponses(responses, responses.size());
-        return listResponses;
-    }
-
-    private ImportVMTaskResponse createImportVMTaskResponse(ImportVMTaskVO task) {
-        ImportVMTaskResponse response = new ImportVMTaskResponse();
-        DataCenterVO zone = dataCenterDao.findById(task.getZoneId());
-        if (zone != null) {
-            response.setZoneId(zone.getUuid());
-            response.setZoneName(zone.getName());
-        }
-        Account account = accountService.getAccount(task.getAccountId());
-        if (account != null) {
-            response.setAccountId(account.getUuid());
-            response.setAccountName(account.getAccountName());
-        }
-        response.setVcenter(task.getVcenter());
-        response.setDatacenterName(task.getDatacenter());
-        response.setSourceVMName(task.getSourceVMName());
-        response.setDisplayName(task.getDisplayName());
-        response.setStep(getStepDisplayField(task.getStep()));
-        response.setDescription(task.getDescription());
-
-        Date updated = task.getUpdated();
-        Date currentDate = new Date();
-        if (updated != null && Completed != task.getStep()) {
-            Duration stepDuration = Duration.between(updated.toInstant(), currentDate.toInstant());
-            response.setStepDuration(getDurationDisplay(stepDuration.toMillis()));
-        }
-        if (Completed == task.getStep()) {
-            response.setStepDuration(getDurationDisplay(task.getDuration()));
-        } else {
-            Duration totalDuration = Duration.between(task.getCreated().toInstant(), currentDate.toInstant());
-            response.setDuration(getDurationDisplay(totalDuration.toMillis()));
-        }
-        HostVO host = hostDao.findById(task.getConvertHostId());
-        if (host != null) {
-            response.setConvertInstanceHostId(host.getUuid());
-            response.setConvertInstanceHostName(host.getName());
-        }
-        if (task.getVmId() != null) {
-            UserVmVO userVm = userVmDao.findById(task.getVmId());
-            response.setVirtualMachineId(userVm.getUuid());
-        }
-        response.setCreated(task.getCreated());
-        response.setLastUpdated(task.getUpdated());
-        response.setObjectName("importvmtask");
-        return response;
-    }
-
-    protected String getStepDisplayField(ImportVMTaskVO.Step step) {
-        int totalSteps = ImportVMTaskVO.Step.values().length;
-        return String.format("[%s/%s] %s", step.ordinal() + 1, totalSteps, step.name());
-    }
-
-    protected static String getDurationDisplay(Long durationMs) {
-        if (durationMs == null) {
-            return null;
-        }
-        long hours = durationMs / (1000 * 60 * 60);
-        long minutes = (durationMs / (1000 * 60)) % 60;
-        long seconds = (durationMs / 1000) % 60;
-
-        StringBuilder result = new StringBuilder();
-        if (hours > 0) {
-            result.append(String.format("%s hs ", hours));
-        }
-        if (minutes > 0) {
-            result.append(String.format("%s min ", minutes));
-        }
-        if (seconds > 0) {
-            result.append(String.format("%s secs", seconds));
-        }
-        return result.toString();
     }
 
     private HashMap<String, UnmanagedInstanceTO> getRemoteVmsOnKVMHost(long zoneId, String remoteHostUrl, String username, String password) {

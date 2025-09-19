@@ -222,6 +222,7 @@ public class ApiConstants {
     public static final String EVENT_TYPE = "eventtype";
     public static final String EXPIRES = "expires";
     public static final String EXTRA_CONFIG = "extraconfig";
+    public static final String EXTRA_PARAMS = "extraparams";
     public static final String EXTRA_DHCP_OPTION = "extradhcpoption";
     public static final String EXTRA_DHCP_OPTION_NAME = "extradhcpoptionname";
     public static final String EXTRA_DHCP_OPTION_CODE = "extradhcpoptioncode";
@@ -240,6 +241,8 @@ public class ApiConstants {
     public static final String FIRSTNAME = "firstname";
     public static final String FORCED = "forced";
     public static final String FORCED_DESTROY_LOCAL_STORAGE = "forcedestroylocalstorage";
+    public static final String FORCE_CONVERT_TO_POOL = "forceconverttopool";
+
     public static final String FORCE_DELETE_HOST = "forcedeletehost";
     public static final String FORCE_MS_TO_IMPORT_VM_FILES = "forcemstoimportvmfiles";
     public static final String FORCE_UPDATE_OS_TYPE = "forceupdateostype";

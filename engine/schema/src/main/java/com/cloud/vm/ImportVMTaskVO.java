@@ -18,8 +18,7 @@
 //
 package com.cloud.vm;
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.vm.ImportVmTask;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -34,11 +33,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "import_vm_task")
-public class ImportVMTaskVO implements Identity, InternalIdentity {
-
-    public enum Step {
-        Prepare, CloningInstance, ConvertingInstance, Importing, Cleaning, Completed
-    }
+public class ImportVMTaskVO implements ImportVmTask {
 
     public ImportVMTaskVO(long zoneId, long accountId, long userId, String displayName,
                           String vcenter, String datacenter, String sourceVMName, long convertHostId, long importHostId) {

@@ -35,7 +35,7 @@ import org.apache.cloudstack.api.response.ImportVMTaskResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.vm.VmImportService;
+import org.apache.cloudstack.vm.ImportVmTasksManager;
 
 import javax.inject.Inject;
 
@@ -45,11 +45,11 @@ import javax.inject.Inject;
         responseView = ResponseObject.ResponseView.Full,
         requestHasSensitiveInfo = false,
         authorized = {RoleType.Admin},
-        since = "4.22.0")
+        since = "4.22")
 public class ListImportVMTasksCmd extends BaseListCmd {
 
     @Inject
-    public VmImportService vmImportService;
+    public ImportVmTasksManager importVmTasksManager;
 
     @Parameter(name = ApiConstants.ZONE_ID,
             type = CommandType.UUID,
@@ -107,7 +107,7 @@ public class ListImportVMTasksCmd extends BaseListCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        ListResponse<ImportVMTaskResponse> response = vmImportService.listImportVMTasks(this);
+        ListResponse<ImportVMTaskResponse> response = importVmTasksManager.listImportVMTasks(this);
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }

@@ -31,7 +31,6 @@ import static org.mockito.Mockito.when;
 
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -40,7 +39,6 @@ import java.util.UUID;
 
 import com.cloud.offering.DiskOffering;
 import com.cloud.vm.ImportVMTaskVO;
-import com.cloud.vm.dao.ImportVMTaskDao;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
@@ -234,7 +232,7 @@ public class UnmanagedVMsManagerImplTest {
     @Mock
     private StoragePoolHostDao storagePoolHostDao;
     @Mock
-    private ImportVMTaskDao importVMTaskDao;
+    private ImportVmTasksManager importVmTasksManager;
 
     @Mock
     private VMInstanceVO virtualMachine;
@@ -706,13 +704,9 @@ public class UnmanagedVMsManagerImplTest {
             when(agentManager.send(Mockito.eq(convertHostId), Mockito.any(CheckConvertInstanceCommand.class))).thenReturn(checkConvertInstanceAnswer);
         }
 
-        when(importVMTaskVO.getCreated()).thenReturn(new Date());
-        when(importVMTaskVO.getSourceVMName()).thenReturn(vmName);
-        when(importVMTaskVO.getDisplayName()).thenReturn(vmName);
-        when(importVMTaskVO.getVcenter()).thenReturn(vcenterHost);
-        when(importVMTaskVO.getDatacenter()).thenReturn(datacenter);
-        when(importVMTaskDao.persist(any(ImportVMTaskVO.class))).thenReturn(importVMTaskVO);
-
+        when(importVMTaskVO.getId()).thenReturn(1L);
+        when(importVmTasksManager.createImportVMTaskRecord(any(DataCenter.class), any(Account.class), anyLong(), anyString(),
+                anyString(), anyString(), anyString(), any(Host.class), any(Host.class))).thenReturn(importVMTaskVO);
         when(volumeApiService.doesStoragePoolSupportDiskOffering(any(StoragePool.class), any(DiskOffering.class))).thenReturn(true);
 
         ConvertInstanceAnswer convertInstanceAnswer = mock(ConvertInstanceAnswer.class);
@@ -1163,18 +1157,5 @@ public class UnmanagedVMsManagerImplTest {
         } catch (ResourceAllocationException e) {
             Assert.fail("Exception encountered: " + e.getMessage());
         }
-    }
-
-    @Test
-    public void testStepsField() {
-        ImportVMTaskVO.Step step = ImportVMTaskVO.Step.ConvertingInstance;
-        System.out.println(step.ordinal());
-        System.out.println(ImportVMTaskVO.Step.values().length);
-    }
-
-    @Test
-    public void testDurationDisplay() {
-        long duration = 125 * 1000;
-        System.out.println(UnmanagedVMsManagerImpl.getDurationDisplay(duration));
     }
 }
