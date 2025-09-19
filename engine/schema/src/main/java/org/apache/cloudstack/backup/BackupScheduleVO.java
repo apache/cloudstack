@@ -189,4 +189,12 @@ public class BackupScheduleVO implements BackupSchedule {
     public long getAccountId() {
         return accountId;
     }
+
+    public void setAccountId(Long accountId) {
+        this.accountId = accountId;
+    }
+
+    public void setDomainId(Long domainId) {
+        this.domainId = domainId;
+    }
 }
