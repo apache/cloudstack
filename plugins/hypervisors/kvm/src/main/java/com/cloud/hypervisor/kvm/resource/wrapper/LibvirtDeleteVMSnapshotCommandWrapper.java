@@ -24,6 +24,7 @@ import java.util.List;
 
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.lang3.StringUtils;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainInfo;
@@ -104,7 +105,7 @@ public final class LibvirtDeleteVMSnapshotCommandWrapper extends CommandWrapper<
                     commands.add(new String[]{Script.getExecutableAbsolutePath("awk"), "-F", " ", "{print $2}"});
                     commands.add(new String[]{Script.getExecutableAbsolutePath("grep"), "^" + sanitizeBashCommandArgument(cmd.getTarget().getSnapshotName()) + "$"});
                     String qemu_img_snapshot = Script.executePipedCommands(commands, 0).second();
-                    if (qemu_img_snapshot == null) {
+                    if (StringUtils.isEmpty(qemu_img_snapshot)) {
                         logger.info("Cannot find snapshot " + cmd.getTarget().getSnapshotName() + " in file " + rootDisk.getPath() + ", return true");
                         return new DeleteVMSnapshotAnswer(cmd, cmd.getVolumeTOs());
                     }
