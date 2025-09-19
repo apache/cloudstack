@@ -29,7 +29,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 
 export default {
   name: 'OsLogo',
@@ -79,7 +79,7 @@ export default {
         return
       }
       this.name = 'linux'
-      api('listOsTypes', { id: osId }).then(json => {
+      getAPI('listOsTypes', { id: osId }).then(json => {
         if (json && json.listostypesresponse && json.listostypesresponse.ostype && json.listostypesresponse.ostype.length > 0) {
           this.discoverOsLogo(json.listostypesresponse.ostype[0].description)
         } else {

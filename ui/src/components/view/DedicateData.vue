@@ -53,7 +53,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import DedicateModal from './DedicateModal'
 
 export default {
@@ -124,7 +124,7 @@ export default {
       }
     },
     fetchDedicatedZones () {
-      api('listDedicatedZones', {
+      getAPI('listDedicatedZones', {
         zoneid: this.resource.id
       }).then(response => {
         if (response?.listdedicatedzonesresponse?.dedicatedzone?.length > 0) {
@@ -136,7 +136,7 @@ export default {
       })
     },
     fetchDedicatedPods () {
-      api('listDedicatedPods', {
+      getAPI('listDedicatedPods', {
         podid: this.resource.id
       }).then(response => {
         if (response?.listdedicatedpodsresponse?.dedicatedpod?.length > 0) {
@@ -148,7 +148,7 @@ export default {
       })
     },
     fetchDedicatedClusters () {
-      api('listDedicatedClusters', {
+      getAPI('listDedicatedClusters', {
         clusterid: this.resource.id
       }).then(response => {
         if (response?.listdedicatedclustersresponse?.dedicatedcluster?.length > 0) {
@@ -160,7 +160,7 @@ export default {
       })
     },
     fetchDedicatedHosts () {
-      api('listDedicatedHosts', {
+      getAPI('listDedicatedHosts', {
         hostid: this.resource.id
       }).then(response => {
         if (response?.listdedicatedhostsresponse?.dedicatedhost?.length > 0) {
@@ -172,7 +172,7 @@ export default {
       })
     },
     releaseDedidcatedZone () {
-      api('releaseDedicatedZone', {
+      postAPI('releaseDedicatedZone', {
         zoneid: this.resource.id
       }).then(response => {
         this.$pollJob({
@@ -195,7 +195,7 @@ export default {
       })
     },
     releaseDedidcatedPod () {
-      api('releaseDedicatedPod', {
+      postAPI('releaseDedicatedPod', {
         podid: this.resource.id
       }).then(response => {
         this.$pollJob({
@@ -218,7 +218,7 @@ export default {
       })
     },
     releaseDedidcatedCluster () {
-      api('releaseDedicatedCluster', {
+      postAPI('releaseDedicatedCluster', {
         clusterid: this.resource.id
       }).then(response => {
         this.$pollJob({
@@ -241,7 +241,7 @@ export default {
       })
     },
     releaseDedidcatedHost () {
-      api('releaseDedicatedHost', {
+      postAPI('releaseDedicatedHost', {
         hostid: this.resource.id
       }).then(response => {
         this.$pollJob({

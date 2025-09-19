@@ -163,6 +163,7 @@
                       :value="serviceOffering ? serviceOffering.id : ''"
                       :loading="loading.serviceOfferings"
                       :preFillContent="dataPreFill"
+                      :show-gpu-filter="zone.gputotal && zone.gputotal > 0"
                       :minimum-cpunumber="templateConfigurationExists && selectedTemplateConfiguration && selectedTemplateConfiguration.cpunumber ? selectedTemplateConfiguration.cpunumber : 0"
                       :minimum-cpuspeed="templateConfigurationExists && selectedTemplateConfiguration && selectedTemplateConfiguration.cpuspeed ? selectedTemplateConfiguration.cpuspeed : 0"
                       :minimum-memory="templateConfigurationExists && selectedTemplateConfiguration && selectedTemplateConfiguration.memory ? selectedTemplateConfiguration.memory : 0"
@@ -549,7 +550,7 @@
                           @change="val => { dynamicscalingenabled = val }"/>
                       </a-form-item>
                     </a-form-item>
-                    <a-form-item :label="$t('label.userdata')">
+                    <a-form-item :label="$t('label.user.data')">
                       <a-card>
                         <div v-if="this.template && this.template.userdataid">
                           <a-typography-text>
@@ -603,11 +604,11 @@
                         </div><br/><br/>
                         <div v-if="userdataDefaultOverridePolicy === 'ALLOWOVERRIDE' || userdataDefaultOverridePolicy === 'APPEND' || !userdataDefaultOverridePolicy">
                           <span v-if="userdataDefaultOverridePolicy === 'ALLOWOVERRIDE'" >
-                            {{ $t('label.userdata.do.override') }}
+                            {{ $t('label.user.data.do.override') }}
                             <a-switch v-model:checked="doUserdataOverride" style="margin-left: 10px"/>
                           </span>
                           <span v-if="userdataDefaultOverridePolicy === 'APPEND'">
-                            {{ $t('label.userdata.do.append') }}
+                            {{ $t('label.user.data.do.append') }}
                             <a-switch v-model:checked="doUserdataAppend" style="margin-left: 10px"/>
                           </span>
                           <a-step
@@ -810,7 +811,7 @@
                 :deployButtonMenuOptions="deployMenuOptions"
                 @handle-cancel="() => $router.back()"
                 @handle-deploy="handleSubmit"
-                @handle-deploy-menu="handleSubmitAndStay" />
+                @handle-deploy-menu="(index, e) => handleSubmitAndStay(e)" />
             </div>
           </a-form>
         </a-card>
@@ -825,7 +826,7 @@
                 :deployButtonMenuOptions="deployMenuOptions"
                 @handle-cancel="() => $router.back()"
                 @handle-deploy="handleSubmit"
-                @handle-deploy-menu="handleSubmitAndStay" />
+                @handle-deploy-menu="(index, e) => handleSubmitAndStay(e)" />
             </template>
           </info-card>
         </a-affix>
@@ -836,7 +837,7 @@
 
 <script>
 import { ref, reactive, toRaw, nextTick } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import _ from 'lodash'
 import { mixin, mixinDevice } from '@/utils/mixin.js'
 import store from '@/store'
@@ -952,8 +953,7 @@ export default {
         keyboards: [],
         bootTypes: [],
         bootModes: [],
-        ioPolicyTypes: [],
-        dynamicScalingVmConfig: false
+        ioPolicyTypes: []
       },
       rowCount: {},
       loading: {
@@ -1011,11 +1011,11 @@ export default {
       userDataValues: {},
       templateUserDataCols: [
         {
-          title: this.$t('label.userdata'),
+          title: this.$t('label.user.data'),
           dataIndex: 'userdata'
         },
         {
-          title: this.$t('label.userdatapolicy'),
+          title: this.$t('label.user.data.policy'),
           dataIndex: 'userdataoverridepolicy'
         }
       ],
@@ -1290,16 +1290,17 @@ export default {
       }]
     },
     userdataTabList () {
-      return [
-        {
-          key: 'userdataregistered',
-          tab: this.$t('label.userdata.registered')
-        },
-        {
-          key: 'userdatatext',
-          tab: this.$t('label.userdata.text')
-        }
-      ]
+      let tabList = []
+      tabList = [{
+        key: 'userdataregistered',
+        tab: this.$t('label.user.data.registered')
+      },
+      {
+        key: 'userdatatext',
+        tab: this.$t('label.user.data.text')
+      }]
+
+      return tabList
     },
     showVnfNicsSection () {
       return this.networks && this.networks.length > 0 && this.vm.templateid && this.templateVnfNics && this.templateVnfNics.length > 0
@@ -1330,13 +1331,16 @@ export default {
       return Boolean('listUserData' in this.$store.getters.apis)
     },
     dynamicScalingVmConfigValue () {
-      return this.options.dynamicScalingVmConfig?.[0]?.value === 'true'
+      return this.$store.getters.features.dynamicscalingenabled
     },
     isCustomizedDiskIOPS () {
       return this.diskSelected?.iscustomizediops || false
     },
     isCustomizedIOPS () {
       return this.rootDiskSelected?.iscustomizediops || this.serviceOffering?.iscustomizediops || false
+    },
+    deployMenuOptions () {
+      return [this.$t('label.launch.vnf.appliance.and.stay')]
     },
     isModernImageSelection () {
       return this.$config.imageSelectionInterface === undefined || this.$config.imageSelectionInterface === 'modern'
@@ -1717,7 +1721,7 @@ export default {
         }
         if (!apiName) return resolve(zones)
 
-        api(apiName, params).then(json => {
+        getAPI(apiName, params).then(json => {
           let objectName
           const responseName = [apiName.toLowerCase(), 'response'].join('')
           for (const key in json[responseName]) {
@@ -1814,7 +1818,7 @@ export default {
     },
     fetchInstaceGroups () {
       this.options.instanceGroups = []
-      api('listInstanceGroups', {
+      getAPI('listInstanceGroups', {
         account: this.$store.getters.userInfo.account,
         domainid: this.$store.getters.userInfo.domainid,
         listall: true
@@ -1944,7 +1948,7 @@ export default {
       }
       this.form.userdataid = id
       this.userDataParams = []
-      api('listUserData', { id: id }).then(json => {
+      getAPI('listUserData', { id: id }).then(json => {
         const resp = json.listuserdataresponse?.userdata || []
         if (resp.length > 0) {
           var params = resp[0]?.params || null
@@ -1967,7 +1971,7 @@ export default {
       }
       this.templateUserDataParams = []
 
-      api('listUserData', { id: id }).then(json => {
+      getAPI('listUserData', { id: id }).then(json => {
         const resp = json?.listuserdataresponse?.userdata || []
         if (resp) {
           var params = resp[0]?.params || null
@@ -2346,11 +2350,7 @@ export default {
           }
         }
 
-        const httpMethod = createVnfAppData.userdata ? 'POST' : 'GET'
-        const args = httpMethod === 'POST' ? {} : createVnfAppData
-        const data = httpMethod === 'POST' ? createVnfAppData : {}
-
-        api('deployVnfAppliance', args, httpMethod, data).then(response => {
+        postAPI('deployVnfAppliance', createVnfAppData).then(response => {
           const jobId = response.deployvirtualmachineresponse.jobid
           if (jobId) {
             this.$pollJob({
@@ -2447,7 +2447,7 @@ export default {
         const param = this.params.zones
         const args = { showicon: true }
         if (zoneId) args.id = zoneId
-        api(param.list, args).then(json => {
+        getAPI(param.list, args).then(json => {
           const zoneResponse = json.listzonesresponse.zone || []
           if (listZoneAllow && listZoneAllow.length > 0) {
             zoneResponse.map(zone => {
@@ -2476,51 +2476,60 @@ export default {
         param.loading = true
         param.opts = []
         const options = param.options || {}
-        if (!('listall' in options) && !['zones', 'pods', 'clusters', 'hosts', 'dynamicScalingVmConfig', 'hypervisors'].includes(name)) {
+        if (!('listall' in options) && !['zones', 'pods', 'clusters', 'hosts', 'hypervisors'].includes(name)) {
           options.listall = true
         }
-        api(param.list, options).then((response) => {
+        getAPI(param.list, options).then((response) => {
           param.loading = false
           _.map(response, (responseItem, responseKey) => {
             if (Object.keys(responseItem).length === 0) {
               this.rowCount[name] = 0
               this.options[name] = []
-              return resolve(null)
+              return
             }
             if (!responseKey.includes('response')) {
-              return resolve(null)
+              return
             }
             _.map(responseItem, (response, key) => {
               if (key === 'count') {
                 this.rowCount[name] = response
                 return
               }
-              param.opts = response
-              this.options[name] = response
-
-              if (name === 'hypervisors') {
-                const hypervisorFromResponse = response[0] && response[0].name ? response[0].name : null
-                this.dataPreFill.hypervisor = hypervisorFromResponse
-                this.form.hypervisor = hypervisorFromResponse
+              if (!responseKey.includes('response')) {
+                return resolve(null)
               }
+              _.map(responseItem, (response, key) => {
+                if (key === 'count') {
+                  this.rowCount[name] = response
+                  return
+                }
+                param.opts = response
+                this.options[name] = response
 
-              if (param.field) {
-                this.fillValue(param.field)
+                if (name === 'hypervisors') {
+                  const hypervisorFromResponse = response[0] && response[0].name ? response[0].name : null
+                  this.dataPreFill.hypervisor = hypervisorFromResponse
+                  this.form.hypervisor = hypervisorFromResponse
+                }
+
+                if (param.field) {
+                  this.fillValue(param.field)
+                }
+              })
+
+              if (name === 'zones') {
+                let zoneid = ''
+                if (this.$route.query.zoneid) {
+                  zoneid = this.$route.query.zoneid
+                } else if (this.options.zones.length === 1) {
+                  zoneid = this.options.zones[0].id
+                }
+                if (zoneid) {
+                  this.form.zoneid = zoneid
+                  this.onSelectZoneId(zoneid)
+                }
               }
             })
-
-            if (name === 'zones') {
-              let zoneid = ''
-              if (this.$route.query.zoneid) {
-                zoneid = this.$route.query.zoneid
-              } else if (this.options.zones.length === 1) {
-                zoneid = this.options.zones[0].id
-              }
-              if (zoneid) {
-                this.form.zoneid = zoneid
-                this.onSelectZoneId(zoneid)
-              }
-            }
           })
           resolve(response)
         }).catch(function (error) {
@@ -2537,15 +2546,16 @@ export default {
       if (this.isModernImageSelection && this.form.guestoscategoryid && !['-1', '0'].includes(this.form.guestoscategoryid)) {
         args.oscategoryid = this.form.guestoscategoryid
       }
-      if (args.keyword || (args.category && args.category !== templateFilter)) {
+      if (!args.page || args.keyword || (args.category && args.category !== templateFilter)) {
         args.page = 1
-        args.pageSize = args.pageSize || 10
       }
+      args.pageSize = args.pageSize || 10
       args.zoneid = _.get(this.zone, 'id')
       if (this.isZoneSelectedMultiArch) {
         args.arch = this.selectedArchitecture
       }
       args.templatefilter = templateFilter
+      args.isready = true
       args.details = 'all'
       args.showicon = 'true'
       args.id = this.queryTemplateId
@@ -2555,7 +2565,7 @@ export default {
       delete args.featured
 
       return new Promise((resolve, reject) => {
-        api('listVnfTemplates', args).then((response) => {
+        getAPI('listVnfTemplates', args).then((response) => {
           resolve(response)
         }).catch((reason) => {
           // ToDo: Handle errors

@@ -97,10 +97,10 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ManagementServerImplTest {
@@ -145,7 +145,7 @@ public class ManagementServerImplTest {
     UserDataManager userDataManager;
 
     @Mock
-    UserVmDetailsDao userVmDetailsDao;
+    VMInstanceDetailsDao vmInstanceDetailsDao;
 
     @Mock
     HostDetailsDao hostDetailsDao;
@@ -509,7 +509,7 @@ public class ManagementServerImplTest {
             Pair<List<UserDataVO>, Integer> result = new Pair(userDataList, 1);
             when(_userDataDao.searchAndCount(nullable(SearchCriteria.class), nullable(Filter.class))).thenReturn(result);
 
-            Pair<List<? extends UserData>, Integer> userdataResultList = spy.listUserDatas(cmd);
+            Pair<List<? extends UserData>, Integer> userdataResultList = spy.listUserDatas(cmd, false);
 
             Assert.assertEquals(userdataResultList.first().get(0), userDataList.get(0));
         }
@@ -542,7 +542,7 @@ public class ManagementServerImplTest {
             Pair<List<UserDataVO>, Integer> result = new Pair(userDataList, 1);
             when(_userDataDao.searchAndCount(nullable(SearchCriteria.class), nullable(Filter.class))).thenReturn(result);
 
-            Pair<List<? extends UserData>, Integer> userdataResultList = spy.listUserDatas(cmd);
+            Pair<List<? extends UserData>, Integer> userdataResultList = spy.listUserDatas(cmd, false);
 
             Assert.assertEquals(userdataResultList.first().get(0), userDataList.get(0));
         }
@@ -575,7 +575,7 @@ public class ManagementServerImplTest {
             Pair<List<UserDataVO>, Integer> result = new Pair(userDataList, 1);
             when(_userDataDao.searchAndCount(nullable(SearchCriteria.class), nullable(Filter.class))).thenReturn(result);
 
-            Pair<List<? extends UserData>, Integer> userdataResultList = spy.listUserDatas(cmd);
+            Pair<List<? extends UserData>, Integer> userdataResultList = spy.listUserDatas(cmd, false);
 
             Assert.assertEquals(userdataResultList.first().get(0), userDataList.get(0));
         }
@@ -585,10 +585,10 @@ public class ManagementServerImplTest {
         UserVmVO vm = Mockito.mock(UserVmVO.class);
         Mockito.when(vm.getId()).thenReturn(1L);
         if (uefiValue == null) {
-            Mockito.when(userVmDetailsDao.findDetail(vm.getId(), ApiConstants.BootType.UEFI.toString())).thenReturn(null);
+            Mockito.when(vmInstanceDetailsDao.findDetail(vm.getId(), ApiConstants.BootType.UEFI.toString())).thenReturn(null);
         } else {
-            UserVmDetailVO detail = new UserVmDetailVO(vm.getId(), ApiConstants.BootType.UEFI.toString(), uefiValue, true);
-            Mockito.when(userVmDetailsDao.findDetail(vm.getId(), ApiConstants.BootType.UEFI.toString())).thenReturn(detail);
+            VMInstanceDetailVO detail = new VMInstanceDetailVO(vm.getId(), ApiConstants.BootType.UEFI.toString(), uefiValue, true);
+            Mockito.when(vmInstanceDetailsDao.findDetail(vm.getId(), ApiConstants.BootType.UEFI.toString())).thenReturn(detail);
             Mockito.when(hostDetailsDao.findByName(Host.HOST_UEFI_ENABLE)).thenReturn(new ArrayList<>(List.of(new DetailVO(1l, Host.HOST_UEFI_ENABLE, "true"), new DetailVO(2l, Host.HOST_UEFI_ENABLE, "false"))));
         }
         return vm;

@@ -137,7 +137,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -229,7 +229,7 @@ export default {
       const params = {}
       params.showicon = true
       this.zoneLoading = true
-      api('listZones', params).then(json => {
+      getAPI('listZones', params).then(json => {
         const listZones = json.listzonesresponse.zone
         if (listZones) {
           this.zones = this.zones.concat(listZones)
@@ -281,7 +281,7 @@ export default {
         if (this.isValidValueForKey(values, 'minmemory') && values.minmemory > 0) {
           params.minmemory = values.minmemory
         }
-        api('addKubernetesSupportedVersion', params).then(json => {
+        postAPI('addKubernetesSupportedVersion', params).then(json => {
           this.$message.success(`${this.$t('message.success.add.kuberversion')}: ${values.semanticversion}`)
           this.$emit('refresh-data')
           this.closeAction()

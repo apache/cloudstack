@@ -77,7 +77,7 @@
 </template>
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
@@ -128,7 +128,7 @@ export default {
       this.roleLoading = true
       const params = {}
       params.state = 'enabled'
-      api('listRoles', params).then(response => {
+      getAPI('listRoles', params).then(response => {
         this.roles = response.listrolesresponse.role || []
         this.form.roleid = this.resource.roleid
       }).finally(() => {
@@ -154,7 +154,7 @@ export default {
           params.networkdomain = values.networkdomain
         }
 
-        api('updateAccount', params).then(response => {
+        getAPI('updateAccount', params).then(response => {
           this.$emit('refresh-data')
           this.$notification.success({
             message: this.$t('label.edit.account'),

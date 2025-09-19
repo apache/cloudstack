@@ -18,7 +18,7 @@ package org.apache.cloudstack.api.command.admin.host;
 
 import java.util.ArrayList;
 import java.util.List;
-
+import java.util.Map;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -81,6 +81,12 @@ public class AddHostCmd extends BaseCmd {
             since = "4.21.0")
     private List<String> storageAccessGroups;
 
+    @Parameter(name = ApiConstants.EXTERNAL_DETAILS,
+            type = CommandType.MAP,
+            description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].endpoint.url=urlvalue",
+            since = "4.21.0")
+    protected Map externalDetails;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -127,6 +133,10 @@ public class AddHostCmd extends BaseCmd {
 
     public String getAllocationState() {
         return allocationState;
+    }
+
+    public Map<String, String> getExternalDetails() {
+        return convertExternalDetailsToMap(externalDetails);
     }
 
     /////////////////////////////////////////////////////

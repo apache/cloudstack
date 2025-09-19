@@ -60,7 +60,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { genericCompare } from '@/utils/sort.js'
 
 export default {
@@ -115,7 +115,7 @@ export default {
       this.loading = true
       this.items = []
       this.total = 0
-      api('listSSHKeyPairs', this.options).then(response => {
+      getAPI('listSSHKeyPairs', this.options).then(response => {
         this.total = response.listsshkeypairsresponse.count
         if (this.total !== 0) {
           this.items = response.listsshkeypairsresponse.sshkeypair
@@ -140,7 +140,7 @@ export default {
     handleSubmit () {
       if (this.loading) return
       this.loading = true
-      api('resetSSHKeyForVirtualMachine', {
+      postAPI('resetSSHKeyForVirtualMachine', {
         id: this.resource.id,
         keypairs: this.selectedRowKeys.join(',')
       }).then(response => {

@@ -26,6 +26,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.GetGPUStatsCommand;
 import org.apache.cloudstack.ca.SetupCertificateCommand;
 import org.apache.cloudstack.ca.SetupKeyStoreCommand;
 import org.apache.cloudstack.diagnostics.DiagnosticsCommand;
@@ -287,8 +288,10 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
             if (answer == null) {
                 if (cmd instanceof GetHostStatsCommand) {
                     answer = _mockAgentMgr.getHostStatistic((GetHostStatsCommand)cmd);
+                } else if (cmd instanceof GetGPUStatsCommand) {
+                    answer = _mockAgentMgr.getGpuStats((GetGPUStatsCommand) cmd, host.getId());
                 } else if (cmd instanceof CheckHealthCommand) {
-                    answer = _mockAgentMgr.checkHealth((CheckHealthCommand)cmd);
+                    answer = _mockAgentMgr.checkHealth((CheckHealthCommand) cmd);
                 } else if (cmd instanceof PingTestCommand) {
                     answer = _mockAgentMgr.pingTest((PingTestCommand)cmd);
                 } else if (cmd instanceof SetupKeyStoreCommand) {

@@ -177,14 +177,24 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<HostVO> listHostsByMsAndDc(long msId, long dcId);
 
+    List<HostVO> listHostsByMsDcResourceState(long msId, long dcId, List<ResourceState> excludedResourceStates);
+
     List<HostVO> listHostsByMs(long msId);
 
+    List<HostVO> listHostsByMsResourceState(long msId, List<ResourceState> excludedResourceStates);
+
     /**
-     * Retrieves the number of hosts/agents this {@see ManagementServer} has responsibility over.
-     * @param msId the id of the {@see ManagementServer}
-     * @return the number of hosts/agents this {@see ManagementServer} has responsibility over
+     * Count Hosts by given Management Server, Host and Hypervisor Types,
+     * and exclude Hosts with given Resource States.
+     *
+     * @param msId                   Management Server Id
+     * @param excludedResourceStates Resource States to be excluded
+     * @param hostTypes              Host Types
+     * @param hypervisorTypes        Hypervisor Types
+     * @return Hosts count
      */
-    int countByMs(long msId);
+    int countHostsByMsResourceStateTypeAndHypervisorType(long msId, List<ResourceState> excludedResourceStates,
+                                                         List<Type> hostTypes, List<HypervisorType> hypervisorTypes);
 
     /**
      * Retrieves the host ids/agents this {@see ManagementServer} has responsibility over.
