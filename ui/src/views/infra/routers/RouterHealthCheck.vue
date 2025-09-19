@@ -35,7 +35,7 @@
         size="large">
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'status'">
-            <status class="status" :text="record.success" displayText />
+            <status class="status" :text="record.status" displayText />
           </template>
         </template>
       </a-table>
@@ -113,7 +113,7 @@ export default {
         },
         {
           key: 'status',
-          dataIndex: 'success',
+          dataIndex: 'status',
           title: this.$t('label.router.health.check.success')
         },
         {
