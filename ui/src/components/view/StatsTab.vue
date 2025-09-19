@@ -41,7 +41,7 @@
           <a-radio-group
             v-model:value="durationSelectorValue"
             buttonStyle="solid"
-            @change="handleDurationChange">
+            @change="updateVirtualMachineStats">
             <a-radio-button value="">
               {{ $t('label.duration.1hour') }}
             </a-radio-button>
@@ -388,12 +388,12 @@ export default {
       this.fetchData()
     },
     refreshTime: function () {
-      this.fetchData()
+      this.updateVirtualMachineStats()
       if (this.refreshTime === '0') return window.clearInterval(this.refreshIntervalId)
 
       window.clearInterval(this.refreshIntervalId)
       this.refreshIntervalId = window.setInterval(() => {
-        this.fetchData()
+        this.updateVirtualMachineStats()
       }, parseInt(this.refreshTime))
     }
   },
@@ -422,26 +422,10 @@ export default {
       this.resourceTypeToShowInfo = resource
       this.showResourceInfoModal = true
     },
-    handleDurationChange () {
-      var now = this.getEndDate()
-      var start = new Date(now)
-      switch (this.durationSelectorValue) {
-        case '6hours':
-          start.setHours(start.getHours() - 6)
-          break
-        case '12hours':
-          start.setHours(start.getHours() - 12)
-          break
-        case 'day':
-          start.setDate(start.getDate() - 1)
-          break
-        case 'week':
-          start.setDate(start.getDate() - 7)
-          break
-        default:
-          start.setHours(start.getHours() - 1)
-      }
-      this.handleSubmit({ startDate: start, endDate: now })
+    updateVirtualMachineStats () {
+      var end = this.getEndDate()
+      var start = this.getStartDate()
+      this.handleSubmit({ startDate: start, endDate: end })
     },
     handleSubmit (values) {
       if (values.startDate) {
@@ -461,9 +445,19 @@ export default {
       this.showFilterStatsModal = false
     },
     getStartDate () {
-      var now = new Date()
-      now.setHours(now.getHours() - 1)
-      return now
+      const now = new Date()
+      switch (this.durationSelectorValue) {
+        case '6hours':
+          return now.setHours(now.getHours() - 6)
+        case '12hours':
+          return now.setHours(now.getHours() - 12)
+        case 'day':
+          return now.setDate(now.getDate() - 1)
+        case 'week':
+          return now.setDate(now.getDate() - 7)
+        default:
+          return now.setHours(now.getHours() - 1)
+      }
     },
     getEndDate () {
       return new Date()
