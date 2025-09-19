@@ -56,7 +56,6 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
     private static final String UMOUNT_COMMAND = "sudo umount %s";
     private static final String FILE_PATH_PLACEHOLDER = "%s/%s";
     private static final String ATTACH_QCOW2_DISK_COMMAND = " virsh attach-disk %s %s %s --driver qemu --subdriver qcow2 --cache none";
-    private static final String ATTACH_RBD_DISK_COMMAND = " virsh attach-disk %s /dev/null %s --driver qemu --subdriver raw --type network --source-protocol rbd --source-name %s --cache none";
     private static final String ATTACH_RBD_DISK_XML_COMMAND = " virsh attach-device %s /dev/stdin <<EOF%sEOF";
     private static final String CURRRENT_DEVICE = "virsh domblklist --domain %s | tail -n 3 | head -n 1 | awk '{print $1}'";
     private static final String RSYNC_COMMAND = "rsync -az %s %s";
@@ -156,7 +155,7 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         try {
             bkpPathAndVolUuid = getBackupPath(mountDirectory, volumePath, backupPath, diskType, volumeUUID);
             verifyBackupFile(bkpPathAndVolUuid.first(), bkpPathAndVolUuid.second());
-            if (!replaceVolumeWithBackup(storagePoolMgr, volumePool, volumePath, bkpPathAndVolUuid.first(), timeout)) {
+            if (!replaceVolumeWithBackup(storagePoolMgr, volumePool, volumePath, bkpPathAndVolUuid.first(), timeout, true)) {
                 throw new CloudRuntimeException(String.format("Unable to restore contents from the backup volume [%s].", bkpPathAndVolUuid.second()));
             }
             if (VirtualMachine.State.Running.equals(vmNameAndState.second())) {
@@ -239,28 +238,34 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
     }
 
     private boolean replaceVolumeWithBackup(KVMStoragePoolManager storagePoolMgr, PrimaryDataStoreTO volumePool, String volumePath, String backupPath, int timeout) {
+        return replaceVolumeWithBackup(storagePoolMgr, volumePool, volumePath, backupPath, timeout, false);
+    }
+
+    private boolean replaceVolumeWithBackup(KVMStoragePoolManager storagePoolMgr, PrimaryDataStoreTO volumePool, String volumePath, String backupPath, int timeout, boolean createTargetVolume) {
         if (volumePool.getPoolType() != Storage.StoragePoolType.RBD) {
             int exitValue = Script.runSimpleBashScriptForExitValue(String.format(RSYNC_COMMAND, backupPath, volumePath));
             return exitValue == 0;
         }
 
-        return replaceRbdVolumeWithBackup(storagePoolMgr, volumePool, volumePath, backupPath, timeout);
+        return replaceRbdVolumeWithBackup(storagePoolMgr, volumePool, volumePath, backupPath, timeout, createTargetVolume);
     }
 
-    private boolean replaceRbdVolumeWithBackup(KVMStoragePoolManager storagePoolMgr, PrimaryDataStoreTO volumePool, String volumePath, String backupPath, int timeout) {
+    private boolean replaceRbdVolumeWithBackup(KVMStoragePoolManager storagePoolMgr, PrimaryDataStoreTO volumePool, String volumePath, String backupPath, int timeout, boolean createTargetVolume) {
         KVMStoragePool volumeStoragePool = storagePoolMgr.getStoragePool(volumePool.getPoolType(), volumePool.getUuid());
-        KVMPhysicalDisk rdbDisk = volumeStoragePool.getPhysicalDisk(volumePath);
-        logger.debug("RBD volume: {}", rdbDisk.toString());
         QemuImg qemu;
         try {
             qemu = new QemuImg(timeout * 1000, true, false);
-            qemu.setSkipTargetVolumeCreation(true);
+            if (!createTargetVolume) {
+                KVMPhysicalDisk rdbDisk = volumeStoragePool.getPhysicalDisk(volumePath);
+                logger.debug("RBD volume: {}", rdbDisk.toString());
+                qemu.setSkipTargetVolumeCreation(true);
+            }
         } catch (LibvirtException ex) {
             throw new CloudRuntimeException("Failed to create qemu-img command to replace RBD volume with backup", ex);
         }
+
         QemuImgFile srcBackupFile = null;
         QemuImgFile destVolumeFile = null;
-
         try {
             srcBackupFile = new QemuImgFile(backupPath, QemuImg.PhysicalDiskFormat.QCOW2);
             String rbdDestVolumeFile = KVMPhysicalDisk.RBDStringBuilder(volumeStoragePool, volumePath);
@@ -285,7 +290,6 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         if (volumePool.getPoolType() != Storage.StoragePoolType.RBD) {
             exitValue = Script.runSimpleBashScriptForExitValue(String.format(ATTACH_QCOW2_DISK_COMMAND, vmName, volumePath, deviceToAttachDiskTo));
         } else {
-//            exitValue = Script.runSimpleBashScriptForExitValue(String.format(ATTACH_RBD_DISK_COMMAND, vmName, deviceToAttachDiskTo, volumePath));
             String xmlForRbdDisk = getXmlForRbdDisk(storagePoolMgr, volumePool, volumePath, deviceToAttachDiskTo);
             logger.debug("RBD disk xml to attach: {}", xmlForRbdDisk);
             exitValue = Script.runSimpleBashScriptForExitValue(String.format(ATTACH_RBD_DISK_XML_COMMAND, vmName, xmlForRbdDisk));
