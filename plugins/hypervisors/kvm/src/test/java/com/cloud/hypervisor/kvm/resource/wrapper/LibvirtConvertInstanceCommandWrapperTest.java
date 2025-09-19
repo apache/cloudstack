@@ -167,7 +167,7 @@ public class LibvirtConvertInstanceCommandWrapperTest {
             Answer answer = convertInstanceCommandWrapper.execute(cmd, libvirtComputingResourceMock);
             Assert.assertFalse(answer.getResult());
             Mockito.verify(convertInstanceCommandWrapper).performInstanceConversion(Mockito.anyString(), Mockito.anyString(),
-                    Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyBoolean(), null);
+                    Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyBoolean(), Mockito.nullable(String.class));
         }
     }
 }

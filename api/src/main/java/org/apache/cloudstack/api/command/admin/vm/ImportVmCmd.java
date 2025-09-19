@@ -165,6 +165,10 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
             description = "(VMware to KVM only) extra parameters to be passed on the virt-v2v command, if allowed by the administrator")
     private String extraParams;
 
+    @Parameter(name = "forceconverttopool", type = CommandType.BOOLEAN,
+            description = "(only for importing VMs from VMware to KVM) optional - if true, forces virt-v2v conversions to write directly on the provided storage pool (avoid using temporary conversion pool).")
+    private Boolean forceConvertToPool;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -256,6 +260,10 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
 
     public String getExtraParams() {
         return extraParams;
+    }
+
+    public boolean getForceConvertToPool() {
+        return BooleanUtils.toBooleanDefaultIfNull(forceConvertToPool, false);
     }
 
     @Override

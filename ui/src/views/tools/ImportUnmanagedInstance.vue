@@ -152,6 +152,12 @@
                   </a-row>
                 </a-radio-group>
               </a-form-item>
+              <a-form-item name="forceconverttopool" ref="forceconverttopool" v-if="selectedVmwareVcenter">
+                <template #label>
+                  <tooltip-label :title="'Force converting to storage pool directly (not using temporary storage for conversion)'" :tooltip="apiParams.forcemstoimportvmfiles.description"/>
+                </template>
+                <a-switch v-model:checked="form.forceconverttopool" @change="val => { switches.forceConvertToPool = val }" />
+              </a-form-item>
               <a-form-item name="converthostid" ref="converthostid">
                 <check-box-select-pair
                   layout="vertical"
@@ -188,18 +194,6 @@
                   @handle-checkselectpair-change="updateSelectedStorageOptionForConversion"
                 />
               </a-form-item>
-              <a-form-item name="extraparams" ref="extraparams">
-                <a-checkbox
-                  v-if="cluster.hypervisortype === 'KVM' && selectedVmwareVcenter && vmwareToKvmExtraParamsAllowed"
-                  v-model:checked="vmwareToKvmExtraParamsSelected">
-                  {{ $t('message.select.extra.parameters.for.instance.conversion') }}
-                </a-checkbox>
-                <a-input
-                  v-if="vmwareToKvmExtraParamsSelected"
-                  v-model:value="vmwareToKvmExtraParams"
-                  :placeholder="$t('label.extra')"
-                />
-              </a-form-item>
               <a-form-item v-if="showStoragePoolsForConversion" name="convertstoragepool" ref="convertstoragepool" :label="$t('label.storagepool')">
                 <a-select
                   v-model:value="form.convertstoragepoolid"
@@ -214,6 +208,18 @@
                     {{ pool.name }}
                   </a-select-option>
                 </a-select>
+              </a-form-item>
+              <a-form-item name="extraparams" ref="extraparams">
+                <a-checkbox
+                  v-if="cluster.hypervisortype === 'KVM' && selectedVmwareVcenter && vmwareToKvmExtraParamsAllowed"
+                  v-model:checked="vmwareToKvmExtraParamsSelected">
+                  {{ $t('message.select.extra.parameters.for.instance.conversion') }}
+                </a-checkbox>
+                <a-input
+                  v-if="vmwareToKvmExtraParamsSelected"
+                  v-model:value="vmwareToKvmExtraParams"
+                  :placeholder="$t('label.extra')"
+                />
               </a-form-item>
               <a-form-item name="forcemstoimportvmfiles" ref="forcemstoimportvmfiles" v-if="selectedVmwareVcenter">
                 <template #label>
@@ -738,6 +744,7 @@ export default {
         migrateallowed: this.switches.migrateAllowed,
         forced: this.switches.forced,
         forcemstoimportvmfiles: this.switches.forceMsToImportVmFiles,
+        forceconverttopool: this.switches.forceConvertToPool,
         domainid: null,
         account: null
       })
@@ -1188,6 +1195,9 @@ export default {
             params.extraparams = this.vmwareToKvmExtraParams
           }
           params.forcemstoimportvmfiles = values.forcemstoimportvmfiles
+          if (values.forceconverttopool) {
+            params.forceconverttopool = values.forceconverttopool
+          }
         }
         var keys = ['hostname', 'domainid', 'projectid', 'account', 'migrateallowed', 'forced', 'forcemstoimportvmfiles']
         if (this.templateType !== 'auto') {
