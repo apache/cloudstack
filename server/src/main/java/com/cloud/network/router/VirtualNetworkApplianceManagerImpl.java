@@ -2153,7 +2153,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         if (SystemVmEnableUserData.valueIn(router.getDataCenterId())) {
             String userData = RouterUserData.valueIn(router.getDataCenterId());
-            if (userData != null && !userData.trim().isEmpty()) {
+            if (StringUtils.isNotBlank(userData)) {
                 String encodedUserData = Base64.getEncoder().encodeToString(userData.getBytes());
                 buf.append(" userdata=").append(encodedUserData);
             }

@@ -1271,7 +1271,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
         if (SystemVmEnableUserData.valueIn(dc.getId())) {
             String userData = ConsoleProxyUserData.valueIn(dc.getId());
-            if (userData != null && !userData.trim().isEmpty()) {
+            if (StringUtils.isNotBlank(userData)) {
                 String encodedUserData = Base64.getEncoder().encodeToString(userData.getBytes());
                 buf.append(" userdata=").append(encodedUserData);
             }

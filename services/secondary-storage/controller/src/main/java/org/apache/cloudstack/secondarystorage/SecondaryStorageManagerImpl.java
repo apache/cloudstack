@@ -1232,7 +1232,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
         if (SystemVmEnableUserData.valueIn(dc.getId())) {
             String userData = SecondaryStorageUserData.valueIn(dc.getId());
-            if (userData != null && !userData.trim().isEmpty()) {
+            if (StringUtils.isNotBlank(userData)) {
                 String encodedUserData = Base64.getEncoder().encodeToString(userData.getBytes());
                 buf.append(" userdata=").append(encodedUserData);
             }
