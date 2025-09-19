@@ -66,7 +66,7 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
 
     ConfigKey<String> RouterUserData = new ConfigKey<>(String.class, "router.userdata",
             ConfigKey.CATEGORY_SECURE, "",
-            "Default user data for virtual routers. This works only when systemvm.userdata.enabled is set to true",
+            "Default user data for VR, VPC VR, internal LB, and elastic LB. This works only when systemvm.userdata.enabled is set to true",
             true, ConfigKey.Scope.Zone, null, "User Data for VRs",
             null, ConfigKey.GROUP_SYSTEM_VMS, ConfigKey.SUBGROUP_VIRTUAL_ROUTER);
 
