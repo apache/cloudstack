@@ -46,6 +46,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.utils.DateUtil;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
@@ -170,10 +171,10 @@ import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
 import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
 import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
-import com.google.gson.reflect.TypeToken;
 import com.sun.management.OperatingSystemMXBean;
 
 /**
@@ -294,6 +295,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private static StatsCollector s_instance = null;
 
     private static Gson gson = new Gson();
+    private static Gson msStatsGson = new GsonBuilder()
+            .setDateFormat(DateUtil.ZONED_DATETIME_FORMAT)
+            .create();
 
     private ScheduledExecutorService _executor = null;
     @Inject
@@ -739,7 +743,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
              dbStats.put(uptime, (Long.valueOf(stats.get(uptime))));
          }
 
-
          @Override
          protected Point createInfluxDbPoint(Object metricsObject) {
              return null;
@@ -759,7 +762,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 hostStatsEntry = getDataFrom(mshost);
                 managementServerHostStats.put(mshost.getUuid(), hostStatsEntry);
                 // send to other hosts
-                clusterManager.publishStatus(gson.toJson(hostStatsEntry));
+                clusterManager.publishStatus(msStatsGson.toJson(hostStatsEntry));
             } catch (Throwable t) {
                 // pokemon catch to make sure the thread stays running
                 logger.error("Error trying to retrieve management server host statistics", t);
@@ -1158,9 +1161,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 logger.debug(String.format("StatusUpdate from %s, json: %s", pdu.getSourcePeer(), pdu.getJsonPackage()));
             }
 
-            ManagementServerHostStatsEntry hostStatsEntry = null;
+            ManagementServerHostStatsEntry hostStatsEntry;
             try {
-                hostStatsEntry = gson.fromJson(pdu.getJsonPackage(),new TypeToken<ManagementServerHostStatsEntry>(){}.getType());
+                hostStatsEntry = msStatsGson.fromJson(pdu.getJsonPackage(), ManagementServerHostStatsEntry.class);
                 managementServerHostStats.put(hostStatsEntry.getManagementServerHostUuid(), hostStatsEntry);
 
                 // Update peer state to Up in mshost_peer
