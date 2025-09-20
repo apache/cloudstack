@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,17 +15,38 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
 
-package org.apache.cloudstack.vm;
+package com.cloud.agent.api;
 
-import com.cloud.utils.Pair;
+import com.cloud.agent.api.to.VirtualMachineTO;
 
-public interface UnmanageVMService {
+/**
+ */
+public class UnmanageInstanceCommand extends Command {
+    String instanceName;
+    boolean executeInSequence = false;
+    VirtualMachineTO vm;
 
-    /**
-     * Unmanage a guest VM from CloudStack
-     *
-     * @return (true if successful, false if not, hostUuid) if the VM is successfully unmanaged.
-     */
-    Pair<Boolean, String> unmanageVMInstance(long vmId, Long paramHostId);
+    @Override
+    public boolean executeInSequence() {
+        return executeInSequence;
+    }
+
+    public UnmanageInstanceCommand(VirtualMachineTO vm) {
+        this.vm = vm;
+        this.instanceName = vm.getName();
+    }
+
+    public UnmanageInstanceCommand(String instanceName) {
+        this.instanceName = instanceName;
+    }
+
+    public String getInstanceName() {
+        return instanceName;
+    }
+
+    public VirtualMachineTO getVm() {
+        return vm;
+    }
 }
