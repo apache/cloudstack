@@ -425,6 +425,7 @@ public class StorPoolDataMotionStrategy implements DataMotionStrategy {
         newVol.setFolder(null);
         newVol.setPodId(storagePoolVO.getPodId());
         newVol.setPoolId(storagePoolVO.getId());
+        newVol.setPoolType(storagePoolVO.getPoolType());
         newVol.setLastPoolId(lastPoolId);
 
         return _volumeDao.persist(newVol);
