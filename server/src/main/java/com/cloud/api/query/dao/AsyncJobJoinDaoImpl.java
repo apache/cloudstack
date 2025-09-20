@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.ApiSerializerHelper;
 import com.cloud.api.SerializationContext;
 import com.cloud.api.query.vo.AsyncJobJoinVO;
@@ -60,9 +61,7 @@ public class AsyncJobJoinDaoImpl extends GenericDaoBase<AsyncJobJoinVO, Long> im
         jobResponse.setAccountId(job.getAccountUuid());
         jobResponse.setAccount(job.getAccountName());
         jobResponse.setDomainId(job.getDomainUuid());
-        StringBuilder domainPath = new StringBuilder("ROOT");
-        (domainPath.append(job.getDomainPath())).deleteCharAt(domainPath.length() - 1);
-        jobResponse.setDomainPath(domainPath.toString());
+        jobResponse.setDomainPath(ApiResponseHelper.getPrettyDomainPath(job.getDomainPath()));
         jobResponse.setUserId(job.getUserUuid());
         jobResponse.setCmd(job.getCmd());
         jobResponse.setCreated(job.getCreated());
