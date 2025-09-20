@@ -33,13 +33,13 @@ jobs:
     name: Sonar JaCoCo Coverage
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: "refs/pull/${{ github.event.number }}/merge"
           fetch-depth: 0
 
       - name: Set up JDK17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '17'
