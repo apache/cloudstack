@@ -153,7 +153,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
 
 /**
- * Class to manage console proxys. <br><br>
+ * Class to manage console proxies. <br><br>
  * Possible console proxy state transition cases:<br>
  * - Stopped -> Starting -> Running <br>
  * - HA -> Stopped -> Starting -> Running <br>
