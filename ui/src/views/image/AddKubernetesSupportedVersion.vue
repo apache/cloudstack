@@ -17,7 +17,12 @@
 
 <template>
   <div class="form-layout" v-ctrl-enter="handleSubmit">
-    <a-spin :spinning="loading">
+    <span v-if="uploadPercentage > 0">
+      <loading-outlined />
+      {{ $t('message.upload.file.processing') }}
+      <a-progress :percent="uploadPercentage" />
+    </span>
+    <a-spin :spinning="loading" v-else>
       <a-form
         :ref="formRef"
         :model="form"
@@ -56,7 +61,7 @@
             :loading="zoneLoading"
             :placeholder="apiParams.zoneid.description"
             @change="handleZoneChange">
-            <a-select-option v-for="(opt, optIndex) in this.zones" :key="optIndex" :label="opt.name || opt.description">
+            <a-select-option v-for="opt in this.zones" :key="opt.id" :label="opt.name || opt.description">
               <span>
                 <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                 <global-outlined v-else style="margin-right: 5px"/>
@@ -65,13 +70,28 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item ref="url" name="url">
+        <a-form-item ref="url" name="url" v-if="currentForm === 'Create'">
           <template #label>
             <tooltip-label :title="$t('label.url')" :tooltip="apiParams.url.description"/>
           </template>
           <a-input
             v-model:value="form.url"
             :placeholder="apiParams.url.description" />
+        </a-form-item>
+        <a-form-item ref="file" name="file" :label="$t('label.templatefileupload')" v-else>
+          <a-upload-dragger
+            :multiple="false"
+            :fileList="fileList"
+            @remove="handleRemove"
+            :beforeUpload="beforeUpload"
+            v-model:value="form.file">
+            <p class="ant-upload-drag-icon">
+              <cloud-upload-outlined />
+            </p>
+            <p class="ant-upload-text" v-if="fileList.length === 0">
+              {{ $t('label.volume.volumefileupload.description') }}
+            </p>
+          </a-upload-dragger>
         </a-form-item>
         <a-form-item ref="checksum" name="checksum">
           <template #label>
@@ -97,7 +117,7 @@
             v-model:value="form.minmemory"
             :placeholder="apiParams.minmemory.description"/>
         </a-form-item>
-        <a-form-item ref="directdownload" name="directdownload">
+        <a-form-item ref="directdownload" name="directdownload" v-if="currentForm !== 'Upload'">
           <template #label>
             <tooltip-label :title="$t('label.directdownload')" :tooltip="apiParams.directdownload.description"/>
           </template>
@@ -138,6 +158,7 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { getAPI, postAPI } from '@/api'
+import { axios } from '../../utils/request'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -147,27 +168,39 @@ export default {
     ResourceIcon,
     TooltipLabel
   },
+  props: {
+    action: {
+      type: Object,
+      required: true
+    }
+  },
   data () {
     return {
+      fileList: [],
       zones: [],
       zoneLoading: false,
       loading: false,
       selectedZone: {},
+      uploadParams: null,
       directDownloadDisabled: false,
       lastNonEdgeDirectDownloadUserSelection: false,
-      architectureTypes: {}
+      architectureTypes: {},
+      uploadPercentage: 0,
+      currentForm: ['plus-outlined', 'PlusOutlined'].includes(this.action.currentAction.icon) ? 'Create' : 'Upload'
     }
   },
   beforeCreate () {
     this.apiParams = this.$getApiParams('addKubernetesSupportedVersion')
   },
   created () {
-    this.zones = [
-      {
-        id: null,
-        name: this.$t('label.all.zone')
-      }
-    ]
+    if (this.$store.getters.userInfo.roletype === 'Admin' && this.currentForm === 'Create') {
+      this.zones = [
+        {
+          id: null,
+          name: this.$t('label.all.zone')
+        }
+      ]
+    }
     this.initForm()
     this.fetchData()
   },
@@ -181,14 +214,10 @@ export default {
       })
       this.rules = reactive({
         semanticversion: [{ required: true, message: this.$t('message.error.kuberversion') }],
+        name: [{ required: true, message: this.$t('message.error.name') }],
         zoneid: [{
-          type: 'number',
-          validator: async (rule, value) => {
-            if (value && value.length > 1 && value.indexOf(0) !== -1) {
-              return Promise.reject(this.$t('message.error.zone.combined'))
-            }
-            return Promise.resolve()
-          }
+          required: this.currentForm === 'Upload',
+          message: this.$t('message.error.select')
         }],
         url: [{ required: true, message: this.$t('message.error.binaries.iso.url') }],
         mincpunumber: [
@@ -237,7 +266,8 @@ export default {
       }).finally(() => {
         this.zoneLoading = false
         if (this.arrayHasItems(this.zones)) {
-          this.form.zoneid = 0
+          this.form.zoneid = (this.zones[0].id ? this.zones[0].id : '')
+          this.selectedZone = this.zones[0]
         }
       })
     },
@@ -266,14 +296,11 @@ export default {
         const values = toRaw(this.form)
         this.loading = true
         const params = {}
-        const customCheckParams = ['mincpunumber', 'minmemory', 'zoneid']
+        const customCheckParams = ['mincpunumber', 'minmemory']
         for (const key in values) {
           if (!customCheckParams.includes(key) && values[key]) {
             params[key] = values[key]
           }
-        }
-        if (this.isValidValueForKey(values, 'zoneid') && values.zoneid > 0) {
-          params.zoneid = this.zones[values.zoneid].id
         }
         if (this.isValidValueForKey(values, 'mincpunumber') && values.mincpunumber > 0) {
           params.mincpunumber = values.mincpunumber
@@ -281,21 +308,99 @@ export default {
         if (this.isValidValueForKey(values, 'minmemory') && values.minmemory > 0) {
           params.minmemory = values.minmemory
         }
-        postAPI('addKubernetesSupportedVersion', params).then(json => {
-          this.$message.success(`${this.$t('message.success.add.kuberversion')}: ${values.semanticversion}`)
-          this.$emit('refresh-data')
-          this.closeAction()
-        }).catch(error => {
-          this.$notifyError(error)
-        }).finally(() => {
-          this.loading = false
-        })
+
+        if (this.currentForm === 'Create') {
+          postAPI('addKubernetesSupportedVersion', params).then(json => {
+            this.$message.success(`${this.$t('message.success.add.kuberversion')}: ${values.semanticversion}`)
+            this.$emit('refresh-data')
+            this.closeAction()
+          }).catch(error => {
+            this.$notifyError(error)
+          }).finally(() => {
+            this.loading = false
+          })
+        } else {
+          if (this.fileList.length !== 1) {
+            return
+          }
+          params.format = 'ISO'
+          this.loading = true
+          postAPI('getUploadParamsForKubernetesSupportedVersion', params).then(json => {
+            this.uploadParams = (json.getuploadparamsforkubernetessupportedversionresponse && json.getuploadparamsforkubernetessupportedversionresponse.getuploadparams) ? json.getuploadparamsforkubernetessupportedversionresponse.getuploadparams : ''
+            const response = this.handleUpload()
+            if (response === 'upload successful') {
+              this.$notification.success({
+                message: this.$t('message.success.upload'),
+                description: this.$t('message.success.add.kuberversion.from.local')
+              })
+            }
+          }).catch(error => {
+            this.$notifyError(error)
+          }).finally(() => {
+            this.loading = false
+            this.$emit('refresh-data')
+          })
+        }
       }).catch(error => {
         this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     closeAction () {
       this.$emit('close-action')
+    },
+    handleRemove (file) {
+      const index = this.fileList.indexOf(file)
+      const newFileList = this.fileList.slice()
+      newFileList.splice(index, 1)
+      this.fileList = newFileList
+      this.form.file = undefined
+    },
+    beforeUpload (file) {
+      this.fileList = [file]
+      this.form.file = file
+      return false
+    },
+    handleUpload () {
+      const { fileList } = this
+      if (this.fileList.length > 1) {
+        this.$notification.error({
+          message: this.$t('message.upload.iso.failed'),
+          description: this.$t('message.error.upload.iso.description'),
+          duration: 0
+        })
+      }
+      const formData = new FormData()
+      fileList.forEach(file => {
+        formData.append('files[]', file)
+      })
+      this.uploadPercentage = 0
+      axios.post(this.uploadParams.postURL,
+        formData,
+        {
+          headers: {
+            'content-type': 'multipart/form-data',
+            'x-signature': this.uploadParams.signature,
+            'x-expires': this.uploadParams.expires,
+            'x-metadata': this.uploadParams.metadata
+          },
+          onUploadProgress: (progressEvent) => {
+            this.uploadPercentage = Number(parseFloat(100 * progressEvent.loaded / progressEvent.total).toFixed(1))
+          },
+          timeout: 86400000
+        }).then((json) => {
+        this.$notification.success({
+          message: this.$t('message.success.upload'),
+          description: this.$t('message.success.upload.description')
+        })
+        this.closeAction()
+        this.$emit('refresh-data')
+      }).catch(e => {
+        this.$notification.error({
+          message: this.$t('message.upload.failed'),
+          description: `${this.$t('message.upload.iso.failed.description')} -  ${e}`,
+          duration: 0
+        })
+      })
     }
   }
 }
