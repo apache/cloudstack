@@ -984,6 +984,27 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     @DB()
     @SuppressWarnings("unchecked")
     public T findById(final ID id) {
+        StackTraceElement[] stack = Thread.currentThread().getStackTrace();
+        String callerClass = "unknown";
+        String callerMethod = "unknown";
+        for (int i = 2; i < stack.length; i++) {
+            String className = stack[i].getClassName();
+            String classNameLower = className.toLowerCase();
+            String methodName = stack[i].getMethodName();
+            String methodNameLower = methodName.toLowerCase();
+            if (!classNameLower.contains("reflect") &&
+                    !classNameLower.contains("intercept") &&
+                    !classNameLower.contains("proxy") &&
+                    !methodNameLower.contains("reflect") &&
+                    !methodNameLower.contains("intercept") &&
+                    !methodNameLower.contains("invoke")){
+                callerClass = className;
+                callerMethod = stack[i].getMethodName();
+                break;
+            }
+        }
+        logger.info("@@@findById {}: {} from: {}.{}",
+                _entityBeanType.getSimpleName(), id, callerClass, callerMethod);
         T result = null;
         if (_cache != null) {
             final Element element = _cache.get(id);

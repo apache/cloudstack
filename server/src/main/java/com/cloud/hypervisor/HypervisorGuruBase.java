@@ -25,6 +25,7 @@ import javax.inject.Inject;
 
 import com.cloud.agent.api.to.GPUDeviceTO;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
@@ -37,6 +38,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -181,7 +183,8 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         to.setNetworkUuid(network.getUuid());
         Account account = accountManager.getAccount(network.getAccountId());
         Domain domain = domainDao.findById(network.getDomainId());
-        DataCenter zone = dcDao.findById(network.getDataCenterId());
+        DataCenter zone = CallContext.current().getRequestEntityCache().get(DataCenterVO.class, network.getDataCenterId(),
+                () -> dcDao.findById(network.getDataCenterId()));
         if (Objects.isNull(zone)) {
             throw new CloudRuntimeException(String.format("Failed to find zone with ID: %s", network.getDataCenterId()));
         }
