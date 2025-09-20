@@ -77,19 +77,24 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
     @Param(description = "the name of the cluster for the storage pool")
     private String clusterName;
 
+    @SerializedName(ApiConstants.CAPACITY_BYTES)
+    @Param(description = "bytes CloudStack can provision from this storage pool", since = "4.22.0")
+    private Long capacityBytes;
+
+    @Deprecated(since = "4.22.0")
     @SerializedName("disksizetotal")
     @Param(description = "the total disk size of the storage pool")
     private Long diskSizeTotal;
 
     @SerializedName("disksizeallocated")
-    @Param(description = "the host's currently allocated disk size")
+    @Param(description = "the pool's currently allocated disk size")
     private Long diskSizeAllocated;
 
     @SerializedName("disksizeused")
-    @Param(description = "the host's currently used disk size")
+    @Param(description = "the pool's currently used disk size")
     private Long diskSizeUsed;
 
-    @SerializedName("capacityiops")
+    @SerializedName(ApiConstants.CAPACITY_IOPS)
     @Param(description = "IOPS CloudStack can provision from this storage pool")
     private Long capacityIops;
 
@@ -286,6 +291,14 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
 
     public void setClusterName(String clusterName) {
         this.clusterName = clusterName;
+    }
+
+    public Long getCapacityBytes() {
+        return capacityBytes;
+    }
+
+    public void setCapacityBytes(Long capacityBytes) {
+        this.capacityBytes = capacityBytes;
     }
 
     public Long getDiskSizeTotal() {
