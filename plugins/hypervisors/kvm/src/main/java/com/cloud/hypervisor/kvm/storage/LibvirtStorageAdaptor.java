@@ -306,12 +306,27 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     }
 
     private void checkNetfsStoragePoolMounted(String uuid) {
-        String targetPath = _mountPoint + File.separator + uuid;
-        int mountpointResult = Script.runSimpleBashScriptForExitValue("mountpoint -q " + targetPath);
-        if (mountpointResult != 0) {
-            String errMsg = String.format("libvirt failed to mount storage pool %s at %s", uuid, targetPath);
-            logger.error(errMsg);
-            throw new CloudRuntimeException(errMsg);
+        try {
+            // lookup the storage pool definition
+            Connect conn = LibvirtConnection.getConnection();
+            StoragePool pool = conn.storagePoolLookupByUUIDString(uuid);
+            LibvirtStoragePoolDef def = getStoragePoolDef(conn, pool);
+
+            // Skip mountpoint check if pool type is RBD
+            if (def.getPoolType() == LibvirtStoragePoolDef.PoolType.RBD) {
+                logger.debug("Skipping mountpoint check for RBD pool " + uuid);
+                return;
+            }
+
+          String targetPath = _mountPoint + File.separator + uuid;
+          int mountpointResult = Script.runSimpleBashScriptForExitValue("mountpoint -q " + targetPath);
+          if (mountpointResult != 0) {
+              String errMsg = String.format("libvirt failed to mount storage pool %s at %s", uuid, targetPath);
+              logger.error(errMsg);
+              throw new CloudRuntimeException(errMsg);
+          }
+        } catch (LibvirtException e) {
+            throw new CloudRuntimeException("Failed to check storage pool type for " + uuid, e);
         }
     }
 
