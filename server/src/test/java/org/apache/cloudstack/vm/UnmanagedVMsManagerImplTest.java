@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.cloud.offering.DiskOffering;
+import com.cloud.vm.ImportVMTaskVO;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
@@ -230,6 +231,8 @@ public class UnmanagedVMsManagerImplTest {
     private DataStoreManager dataStoreManager;
     @Mock
     private StoragePoolHostDao storagePoolHostDao;
+    @Mock
+    private ImportVmTasksManager importVmTasksManager;
 
     @Mock
     private VMInstanceVO virtualMachine;
@@ -237,6 +240,8 @@ public class UnmanagedVMsManagerImplTest {
     EntityManager entityMgr;
     @Mock
     DeploymentPlanningManager deploymentPlanningManager;
+    @Mock
+    ImportVMTaskVO importVMTaskVO;
 
     private static final long virtualMachineId = 1L;
 
@@ -699,6 +704,9 @@ public class UnmanagedVMsManagerImplTest {
             when(agentManager.send(Mockito.eq(convertHostId), Mockito.any(CheckConvertInstanceCommand.class))).thenReturn(checkConvertInstanceAnswer);
         }
 
+        when(importVMTaskVO.getId()).thenReturn(1L);
+        when(importVmTasksManager.createImportVMTaskRecord(any(DataCenter.class), any(Account.class), anyLong(), anyString(),
+                anyString(), anyString(), anyString(), any(Host.class), any(Host.class))).thenReturn(importVMTaskVO);
         when(volumeApiService.doesStoragePoolSupportDiskOffering(any(StoragePool.class), any(DiskOffering.class))).thenReturn(true);
 
         ConvertInstanceAnswer convertInstanceAnswer = mock(ConvertInstanceAnswer.class);
@@ -825,7 +833,7 @@ public class UnmanagedVMsManagerImplTest {
 
         long poolId = 1L;
         when(primaryDataStoreDao.findById(poolId)).thenReturn(null);
-        unmanagedVMsManager.selectInstanceConversionTemporaryLocation(cluster, null, poolId);
+        unmanagedVMsManager.selectInstanceConversionTemporaryLocation(cluster, null, poolId, false);
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -836,7 +844,7 @@ public class UnmanagedVMsManagerImplTest {
         when(pool.getScope()).thenReturn(ScopeType.CLUSTER);
         when(pool.getClusterId()).thenReturn(100L);
         when(primaryDataStoreDao.findById(poolId)).thenReturn(pool);
-        unmanagedVMsManager.selectInstanceConversionTemporaryLocation(cluster, null, poolId);
+        unmanagedVMsManager.selectInstanceConversionTemporaryLocation(cluster, null, poolId, false);
     }
 
 
@@ -850,7 +858,7 @@ public class UnmanagedVMsManagerImplTest {
         HostVO host = mock(HostVO.class);
         when(primaryDataStoreDao.findById(poolId)).thenReturn(pool);
         when(host.getClusterId()).thenReturn(2L);
-        unmanagedVMsManager.selectInstanceConversionTemporaryLocation(cluster, host, poolId);
+        unmanagedVMsManager.selectInstanceConversionTemporaryLocation(cluster, host, poolId, false);
     }
 
 
@@ -861,7 +869,7 @@ public class UnmanagedVMsManagerImplTest {
         StoragePoolVO pool = mock(StoragePoolVO.class);
         when(pool.getScope()).thenReturn(ScopeType.HOST);
         when(primaryDataStoreDao.findById(poolId)).thenReturn(pool);
-        unmanagedVMsManager.selectInstanceConversionTemporaryLocation(cluster, null, poolId);
+        unmanagedVMsManager.selectInstanceConversionTemporaryLocation(cluster, null, poolId, false);
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -873,14 +881,14 @@ public class UnmanagedVMsManagerImplTest {
         when(pool.getClusterId()).thenReturn(1L);
         when(primaryDataStoreDao.findById(poolId)).thenReturn(pool);
         when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.RBD);
-        unmanagedVMsManager.selectInstanceConversionTemporaryLocation(cluster, null, poolId);
+        unmanagedVMsManager.selectInstanceConversionTemporaryLocation(cluster, null, poolId, false);
     }
 
     @Test(expected = CloudRuntimeException.class)
     public void testSelectInstanceConversionTemporaryLocationNoPoolAvailable() {
         ClusterVO cluster = getClusterForTests();
         when(imageStoreDao.findOneByZoneAndProtocol(anyLong(), anyString())).thenReturn(null);
-        unmanagedVMsManager.selectInstanceConversionTemporaryLocation(cluster, null, null);
+        unmanagedVMsManager.selectInstanceConversionTemporaryLocation(cluster, null, null, false);
     }
 
     @Test

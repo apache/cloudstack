@@ -29,6 +29,7 @@ public class ConvertInstanceCommand extends Command {
     private boolean checkConversionSupport;
     private boolean exportOvfToConversionLocation;
     private int threadsCountToExportOvf = 0;
+    private String extraParams;
 
     public ConvertInstanceCommand() {
     }
@@ -73,6 +74,14 @@ public class ConvertInstanceCommand extends Command {
 
     public void setThreadsCountToExportOvf(int threadsCountToExportOvf) {
         this.threadsCountToExportOvf = threadsCountToExportOvf;
+    }
+
+    public String getExtraParams() {
+        return extraParams;
+    }
+
+    public void setExtraParams(String extraParams) {
+        this.extraParams = extraParams;
     }
 
     @Override

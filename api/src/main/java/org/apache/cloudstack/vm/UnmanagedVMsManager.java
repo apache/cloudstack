@@ -70,6 +70,15 @@ public interface UnmanagedVMsManager extends VmImportService, UnmanageVMService,
             ConfigKey.Scope.Global,
             null);
 
+    ConfigKey<Boolean> ConvertVmwareInstanceToKvmExtraParamsAllowed = new ConfigKey<>(Boolean.class,
+            "convert.vmware.instance.to.kvm.extra.params.allowed",
+            "Advanced",
+            "false",
+            "Disabled by default. If enabled, allows extra parameters to be passed to the virt-v2v binary on KVM conversion hosts",
+            true,
+            ConfigKey.Scope.Global,
+            null);
+
     static boolean isSupported(Hypervisor.HypervisorType hypervisorType) {
         return hypervisorType == VMware || hypervisorType == KVM;
     }

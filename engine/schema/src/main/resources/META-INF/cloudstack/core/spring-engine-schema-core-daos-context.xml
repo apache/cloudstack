@@ -309,4 +309,5 @@
   <bean id="gpuCardDaoImpl" class="com.cloud.gpu.dao.GpuCardDaoImpl" />
   <bean id="gpuDeviceDaoImpl" class="com.cloud.gpu.dao.GpuDeviceDaoImpl" />
   <bean id="vgpuProfileDaoImpl" class="com.cloud.gpu.dao.VgpuProfileDaoImpl" />
+  <bean id="importVMTaskDaoImpl" class="com.cloud.vm.dao.ImportVMTaskDaoImpl" />
 </beans>
