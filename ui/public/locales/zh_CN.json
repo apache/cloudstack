@@ -561,6 +561,7 @@
 
   "label.back": "\u540E\u9000",
   "label.backup": "\u5907\u4EFD",
+  "label.backups": "\u5907\u4EFD",
   "label.backup.attach.restore": "\u6062\u590D\u5E76\u8FDE\u63A5\u5907\u4EFD\u5377",
   "label.backup.offering.assign": "\u5C06\u865A\u62DF\u673A\u5206\u914D\u7ED9\u5907\u4EFD\u4EA7\u54C1",
   "label.backup.offering.remove": "\u4ECE\u5907\u4EFD\u4EA7\u54C1\u4E2D\u5220\u9664\u865A\u62DF\u673A",

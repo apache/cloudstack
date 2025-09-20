@@ -21,13 +21,11 @@
       <a-tab-pane :tab="$t('label.schedule')" key="1">
         <FormSchedule
           :loading="loading"
-          :resource="resource"
-          :dataSource="dataSource"/>
+          :resource="resource"/>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.scheduled.backups')" key="2">
         <BackupSchedule
           :loading="loading"
-          :resource="resource"
           :dataSource="dataSource" />
       </a-tab-pane>
     </a-tabs>
