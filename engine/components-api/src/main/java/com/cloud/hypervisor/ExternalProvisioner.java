@@ -18,6 +18,8 @@ package com.cloud.hypervisor;
 
 import java.util.Map;
 
+import com.cloud.agent.api.GetExternalConsoleAnswer;
+import com.cloud.agent.api.GetExternalConsoleCommand;
 import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.PrepareExternalProvisioningAnswer;
 import com.cloud.agent.api.PrepareExternalProvisioningCommand;
@@ -56,6 +58,8 @@ public interface ExternalProvisioner extends Manager {
     StopAnswer expungeInstance(String hostGuid, String extensionName, String extensionRelativePath, StopCommand cmd);
 
     Map<String, HostVmStateReportEntry> getHostVmStateReport(long hostId, String extensionName, String extensionRelativePath);
+
+    GetExternalConsoleAnswer getInstanceConsole(String hostGuid, String extensionName, String extensionRelativePath, GetExternalConsoleCommand cmd);
 
     RunCustomActionAnswer runCustomAction(String hostGuid, String extensionName, String extensionRelativePath, RunCustomActionCommand cmd);
 }
