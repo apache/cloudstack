@@ -41,13 +41,23 @@ import com.cloud.utils.net.Ip;
 public interface LoadBalancingRulesService {
     /**
      * Create a load balancer rule from the given ipAddress/port to the given private port
+     * @param xId an existing UUID for this rule (for instance a device generated one)
+     * @param name
+     * @param description
+     * @param srcPortStart
+     * @param srcPortEnd
+     * @param defPortStart
+     * @param defPortEnd
+     * @param ipAddrId
+     * @param protocol
+     * @param algorithm
+     * @param networkId
+     * @param lbOwnerId
      * @param openFirewall
-     *            TODO
-     * @param forDisplay TODO
-     * @param cmd
-     *            the command specifying the ip address, public port, protocol, private port, and algorithm
-     *
+     * @param lbProtocol
+     * @param forDisplay
      * @return the newly created LoadBalancerVO if successful, null otherwise
+     * @throws NetworkRuleConflictException
      * @throws InsufficientAddressCapacityException
      */
     LoadBalancer createPublicLoadBalancerRule(String xId, String name, String description, int srcPortStart, int srcPortEnd, int defPortStart, int defPortEnd,

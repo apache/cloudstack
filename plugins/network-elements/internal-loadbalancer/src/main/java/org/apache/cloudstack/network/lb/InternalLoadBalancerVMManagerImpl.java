@@ -488,7 +488,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
         final NetworkOffering offering = _networkOfferingDao.findById(guestNetwork.getNetworkOfferingId());
         String maxconn = null;
         if (offering.getConcurrentConnections() == null) {
-            maxconn = _configDao.getValue(Config.NetworkLBHaproxyMaxConn.key());
+            maxconn = NetworkOrchestrationService.NETWORK_LB_HAPROXY_MAX_CONN.value().toString();
         } else {
             maxconn = offering.getConcurrentConnections().toString();
         }
