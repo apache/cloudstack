@@ -399,7 +399,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         _accountMgr.checkAccess(caller, null, true, userVmVo);
 
         // check max snapshot limit for per VM
-        int vmSnapshotMax = VMSnapshotManager.VMSnapshotMax.value();
+        int vmSnapshotMax = VMSnapshotManager.VMSnapshotMax.valueIn(userVmVo.getAccountId());
 
         if (_vmSnapshotDao.findByVm(vmId).size() >= vmSnapshotMax) {
             throw new CloudRuntimeException("Creating vm snapshot failed due to a VM can just have : " + vmSnapshotMax + " VM snapshots. Please delete old ones");
