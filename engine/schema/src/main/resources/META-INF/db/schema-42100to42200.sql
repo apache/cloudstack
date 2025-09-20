@@ -21,3 +21,6 @@
 
 -- Increase length of scripts_version column to 128 due to md5sum to sha512sum change
 CALL `cloud`.`IDEMPOTENT_CHANGE_COLUMN`('cloud.domain_router', 'scripts_version', 'scripts_version', 'VARCHAR(128)');
+
+CALL `cloud`.`INSERT_EXTENSION_IF_NOT_EXISTS`('MaaS', 'Sample extension for Baremetal MaaS written in python', 'MaaS/maas.py');
+CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('MaaS', 'orchestratorrequirespreparevm', 'true', 0);
