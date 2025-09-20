@@ -61,6 +61,10 @@ public class BackupRepositoryResponse extends BaseResponse {
     @Param(description = "capacity of the backup repository")
     private Long capacityBytes;
 
+    @SerializedName(ApiConstants.CROSS_ZONE_INSTANCE_CREATION)
+    @Param(description = "the backups in this repository can be used to create Instances on all Zones")
+    private Boolean crossZoneInstanceCreation;
+
     @SerializedName("created")
     @Param(description = "the date and time the backup repository was added")
     private Date created;
@@ -130,6 +134,14 @@ public class BackupRepositoryResponse extends BaseResponse {
 
     public void setCapacityBytes(Long capacityBytes) {
         this.capacityBytes = capacityBytes;
+    }
+
+    public Boolean getCrossZoneInstanceCreation() {
+        return crossZoneInstanceCreation;
+    }
+
+    public void setCrossZoneInstanceCreation(Boolean crossZoneInstanceCreation) {
+        this.crossZoneInstanceCreation = crossZoneInstanceCreation;
     }
 
     public Date getCreated() {

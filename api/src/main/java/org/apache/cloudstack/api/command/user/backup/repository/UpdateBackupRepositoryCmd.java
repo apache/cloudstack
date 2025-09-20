@@ -25,18 +25,17 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.BackupRepositoryResponse;
-import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.BackupRepository;
 import org.apache.cloudstack.backup.BackupRepositoryService;
 import org.apache.cloudstack.context.CallContext;
 
 import javax.inject.Inject;
 
-@APICommand(name = "addBackupRepository",
-        description = "Adds a backup repository to store NAS backups",
-        responseObject = BackupRepositoryResponse.class, since = "4.20.0",
+@APICommand(name = "updateBackupRepository",
+        description = "Update a backup repository",
+        responseObject = BackupRepositoryResponse.class, since = "4.22.0",
         authorized = {RoleType.Admin})
-public class AddBackupRepositoryCmd extends BaseCmd {
+public class UpdateBackupRepositoryCmd extends BaseCmd {
 
     @Inject
     private BackupRepositoryService backupRepositoryService;
@@ -44,32 +43,20 @@ public class AddBackupRepositoryCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "name of the backup repository")
+
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, required = true, entityType = BackupRepositoryResponse.class, description = "ID of the backup repository")
+    private Long id;
+
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "name of the backup repository")
     private String name;
 
-    @Parameter(name = ApiConstants.ADDRESS, type = CommandType.STRING, required = true, description = "address of the backup repository")
+    @Parameter(name = ApiConstants.ADDRESS, type = CommandType.STRING, description = "address of the backup repository")
     private String address;
-
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, required = true, description = "type of the backup repository storage. Supported values: nfs, cephfs, cifs")
-    private String type;
-
-    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "backup repository provider")
-    private String provider;
 
     @Parameter(name = ApiConstants.MOUNT_OPTIONS, type = CommandType.STRING, description = "shared storage mount options")
     private String mountOptions;
 
-    @Parameter(name = ApiConstants.ZONE_ID,
-            type = CommandType.UUID,
-            entityType = ZoneResponse.class,
-            required = true,
-            description = "ID of the zone where the backup repository is to be added for taking backups")
-    private Long zoneId;
-
-    @Parameter(name = ApiConstants.CAPACITY_BYTES, type = CommandType.LONG, description = "capacity of this backup repository")
-    private Long capacityBytes;
-
-    @Parameter(name = ApiConstants.CROSS_ZONE_INSTANCE_CREATION, type = CommandType.BOOLEAN, description = "backups on this repository can be used to create Instances on all Zones", since = "4.22.0")
+    @Parameter(name = ApiConstants.CROSS_ZONE_INSTANCE_CREATION, type = CommandType.BOOLEAN, description = "backups in this repository can be used to create Instances on all Zones")
     private Boolean crossZoneInstanceCreation;
 
     /////////////////////////////////////////////////////
@@ -80,35 +67,20 @@ public class AddBackupRepositoryCmd extends BaseCmd {
         return backupRepositoryService;
     }
 
-    public String getName() {
-        return name;
+    public Long getId() {
+        return id;
     }
 
-    public String getType() {
-        if ("cephfs".equalsIgnoreCase(type)) {
-            return "ceph";
-        }
-        return type.toLowerCase();
+    public String getName() {
+        return name;
     }
 
     public String getAddress() {
         return address;
     }
 
-    public String getProvider() {
-        return provider;
-    }
-
     public String getMountOptions() {
         return mountOptions == null ? "" : mountOptions;
-    }
-
-    public Long getZoneId() {
-        return zoneId;
-    }
-
-    public Long getCapacityBytes() {
-        return capacityBytes;
     }
 
     public Boolean crossZoneInstanceCreationEnabled() {
@@ -116,19 +88,20 @@ public class AddBackupRepositoryCmd extends BaseCmd {
     }
 
     /////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
     @Override
     public void execute() {
         try {
-            BackupRepository result = backupRepositoryService.addBackupRepository(this);
+            BackupRepository result = backupRepositoryService.updateBackupRepository(this);
             if (result != null) {
                 BackupRepositoryResponse response = _responseGenerator.createBackupRepositoryResponse(result);
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add backup repository");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update the backup repository");
             }
         } catch (Exception ex4) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex4.getMessage());
