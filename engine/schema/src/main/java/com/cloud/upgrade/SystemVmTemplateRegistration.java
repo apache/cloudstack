@@ -108,7 +108,10 @@ public class SystemVmTemplateRegistration {
     private static Integer LINUX_12_ID = 363;
     private static final Integer SCRIPT_TIMEOUT = 1800000;
     private static final Integer LOCK_WAIT_TIMEOUT = 1200;
+    protected static final String TEMPLATES_DOWNLOAD_REPOSITORY_KEY = "downloadurl";
+    protected static final String TEMPLATES_CUSTOM_DOWNLOAD_REPOSITORY_KEY = "system.vm.templates.download.repository";
     protected static final List<CPU.CPUArch> DOWNLOADABLE_TEMPLATE_ARCH_TYPES = Arrays.asList(
+            CPU.CPUArch.amd64,
             CPU.CPUArch.arm64
     );
 
@@ -820,6 +823,14 @@ public class SystemVmTemplateRegistration {
             LOGGER.error(errMsg);
             throw new CloudRuntimeException(errMsg);
         }
+        Ini.Section defaultSection = ini.get("default");
+        boolean updateCustomDownloadRepository = false;
+        String defaultDownloadRepository = defaultSection.get(TEMPLATES_DOWNLOAD_REPOSITORY_KEY);
+        String customDownloadRepository = System.getProperty(TEMPLATES_CUSTOM_DOWNLOAD_REPOSITORY_KEY);
+        if (StringUtils.isNotBlank(customDownloadRepository) && StringUtils.isNotBlank(defaultDownloadRepository)) {
+            LOGGER.debug("Updating custom download repository: {}", customDownloadRepository);
+            updateCustomDownloadRepository = true;
+        }
         for (Pair<Hypervisor.HypervisorType, CPU.CPUArch> hypervisorType : hypervisorList) {
             String key = getHypervisorArchKey(hypervisorType.first(), hypervisorType.second());
             Ini.Section section = ini.get(key);
@@ -828,16 +839,21 @@ public class SystemVmTemplateRegistration {
                         key, metadataFilePath);
                 continue;
             }
+            String url = section.get("downloadurl");
+            if (StringUtils.isNotBlank(url) && updateCustomDownloadRepository) {
+                url = url.replaceFirst(defaultDownloadRepository.trim(),
+                        customDownloadRepository.trim());
+                LOGGER.info("Updated download URL for {} to {}", key, url);
+            }
             NewTemplateMap.put(key, new MetadataTemplateDetails(
                     hypervisorType.first(),
                     section.get("templatename"),
                     section.get("filename"),
-                    section.get("downloadurl"),
+                    url,
                     section.get("checksum"),
                     hypervisorType.second(),
                     section.get("guestos")));
         }
-        Ini.Section defaultSection = ini.get("default");
         return defaultSection.get("version").trim();
     }
 
