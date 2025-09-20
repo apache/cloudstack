@@ -118,7 +118,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         boolean cleanupSecondaryStorage = false;
         try {
             boolean result = performInstanceConversion(sourceInstanceName, sourceOVFDirPath, temporaryConvertPath, temporaryConvertUuid,
-                    timeout, verboseModeEnabled, extraParams);
+                    timeout, verboseModeEnabled, extraParams, serverResource);
             if (!result) {
                 String err = String.format(
                         "(%s) The virt-v2v conversion for the OVF %s failed. Please check the agent logs " +
@@ -221,7 +221,8 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
     protected boolean performInstanceConversion(String sourceInstanceName, String sourceOVFDirPath,
                                                 String temporaryConvertFolder,
                                                 String temporaryConvertUuid,
-                                                long timeout, boolean verboseModeEnabled, String extraParams) {
+                                                long timeout, boolean verboseModeEnabled, String extraParams,
+                                                LibvirtComputingResource serverResource) {
         Script script = new Script("virt-v2v", timeout, logger);
         script.add("--root", "first");
         script.add("-i", "ova");
@@ -239,7 +240,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
 
         String logPrefix = String.format("(%s) virt-v2v ovf source: %s progress", sourceInstanceName, sourceOVFDirPath);
         OutputInterpreter.LineByLineOutputLogger outputLogger = new OutputInterpreter.LineByLineOutputLogger(logger, logPrefix);
-        script.execute(outputLogger);
+        script.execute(outputLogger, serverResource.getConvertInstanceEnv());
         int exitValue = script.getExitValue();
         return exitValue == 0;
     }
