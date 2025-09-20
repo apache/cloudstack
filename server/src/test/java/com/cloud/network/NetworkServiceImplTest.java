@@ -327,12 +327,12 @@ public class NetworkServiceImplTest {
         accountMock = Mockito.mock(Account.class);
         Mockito.when(service._accountMgr.finalizeOwner(any(Account.class), nullable(String.class), nullable(Long.class), nullable(Long.class))).thenReturn(accountMock);
         Mockito.when(callContextMock.getCallingAccount()).thenReturn(accountMock);
+        Mockito.when(callContextMock.isCallingAccountRootAdmin()).thenReturn(true);
         NetworkOffering networkOffering = Mockito.mock(NetworkOffering.class);
         Mockito.when(entityMgr.findById(NetworkOffering.class, 1L)).thenReturn(networkOffering);
         Mockito.when(networkOfferingDao.findById(1L)).thenReturn(offering);
         Mockito.when(physicalNetworkDao.findById(Mockito.anyLong())).thenReturn(phyNet);
         Mockito.when(_dcDao.findById(Mockito.anyLong())).thenReturn(dc);
-        Mockito.when(accountManager.isRootAdmin(accountMock.getId())).thenReturn(true);
     }
 
     @After
