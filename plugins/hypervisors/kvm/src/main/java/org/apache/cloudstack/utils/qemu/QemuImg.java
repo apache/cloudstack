@@ -61,6 +61,7 @@ public class QemuImg {
     private String cloudQemuImgPath = "cloud-qemu-img";
     private int timeout;
     private boolean skipZero = false;
+    private boolean skipTargetVolumeCreation = false;
     private boolean noCache = false;
     private long version;
 
@@ -435,6 +436,8 @@ public class QemuImg {
             // with target-is-zero we skip zeros in 1M chunks for compatibility
             script.add("-S");
             script.add("1M");
+        } else if (skipTargetVolumeCreation) {
+            script.add("-n");
         }
 
         script.add("-O");
@@ -879,6 +882,10 @@ public class QemuImg {
 
     public void setSkipZero(boolean skipZero) {
         this.skipZero = skipZero;
+    }
+
+    public void setSkipTargetVolumeCreation(boolean skipTargetVolumeCreation) {
+        this.skipTargetVolumeCreation = skipTargetVolumeCreation;
     }
 
     public boolean supportsImageFormat(QemuImg.PhysicalDiskFormat format) {
