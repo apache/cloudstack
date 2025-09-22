@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.vm.UserVmManager;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.consoleproxy.ConsoleAccessManager;
@@ -49,6 +50,7 @@ import org.apache.cloudstack.framework.security.keystore.KeystoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 
@@ -230,6 +232,10 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     private CAManager caManager;
     @Inject
     private NetworkOrchestrationService networkMgr;
+    @Inject
+    private UserDataManager userDataManager;
+    @Inject
+    private UserVmManager userVmManager;
 
     private ConsoleProxyListener consoleProxyListener;
 
@@ -1270,10 +1276,16 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         buf.append(" keystore_password=").append(VirtualMachineGuru.getEncodedString(PasswordGenerator.generateRandomPassword(16)));
 
         if (SystemVmEnableUserData.valueIn(dc.getId())) {
-            String userData = ConsoleProxyUserData.valueIn(dc.getId());
-            if (StringUtils.isNotBlank(userData)) {
-                String encodedUserData = Base64.getEncoder().encodeToString(userData.getBytes());
-                buf.append(" userdata=").append(encodedUserData);
+            String userDataUuid = ConsoleProxyUserData.valueIn(dc.getId());
+            try {
+                Long userDataId = userDataManager.validateAndGetUserDataIdForSystemVms(userDataUuid, profile.getTemplate());
+                String userData = userVmManager.finalizeUserData(null, userDataId, profile.getTemplate());
+                if (org.apache.commons.lang3.StringUtils.isNotBlank(userData)) {
+                    String encodedUserData = Base64.getEncoder().encodeToString(userData.getBytes());
+                    buf.append(" userdata=").append(encodedUserData);
+                }
+            } catch (Exception e) {
+                logger.warn("Failed to load user data for the cpvm, ignored", e);
             }
         }
 

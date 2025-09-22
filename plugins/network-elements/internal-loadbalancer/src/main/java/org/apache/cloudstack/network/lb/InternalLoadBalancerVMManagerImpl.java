@@ -37,11 +37,13 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
+import com.cloud.vm.UserVmManager;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
+import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.agent.AgentManager;
@@ -179,6 +181,10 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
     ResourceManager _resourceMgr;
     @Inject
     UserDao _userDao;
+    @Inject
+    private UserDataManager userDataManager;
+    @Inject
+    private UserVmManager userVmManager;
 
     @Override
     public boolean finalizeVirtualMachineProfile(final VirtualMachineProfile profile, final DeployDestination dest, final ReservationContext context) {
@@ -249,10 +255,16 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
 
         long dcId = profile.getVirtualMachine().getDataCenterId();
         if (SystemVmEnableUserData.valueIn(dcId)) {
-            String userData = RouterUserData.valueIn(dcId);
-            if (StringUtils.isNotBlank(userData)) {
-                String encodedUserData = Base64.getEncoder().encodeToString(userData.getBytes());
-                buf.append(" userdata=").append(encodedUserData);
+            String userDataUuid = RouterUserData.valueIn(dcId);
+            try {
+                Long userDataId = userDataManager.validateAndGetUserDataIdForSystemVms(userDataUuid, profile.getTemplate());
+                String userData = userVmManager.finalizeUserData(null, userDataId, profile.getTemplate());
+                if (StringUtils.isNotBlank(userData)) {
+                    String encodedUserData = Base64.getEncoder().encodeToString(userData.getBytes());
+                    buf.append(" userdata=").append(encodedUserData);
+                }
+            } catch (Exception e) {
+                logger.warn("Failed to load user data for the internal lb vm, ignored", e);
             }
         }
 

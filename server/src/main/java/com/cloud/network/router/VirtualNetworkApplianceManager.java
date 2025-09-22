@@ -65,8 +65,8 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
             "Name of the default router template on Ovm3.", true, ConfigKey.Scope.Zone, null);
 
     ConfigKey<String> RouterUserData = new ConfigKey<>(String.class, "router.userdata",
-            ConfigKey.CATEGORY_SECURE, "",
-            "Default user data for VR, VPC VR, internal LB, and elastic LB. This works only when systemvm.userdata.enabled is set to true",
+            ConfigKey.CATEGORY_ADVANCED, "",
+            "UUID for user data of VR, VPC VR, internal LB, and elastic LB. This works only when systemvm.userdata.enabled is set to true",
             true, ConfigKey.Scope.Zone, null, "User Data for VRs",
             null, ConfigKey.GROUP_SYSTEM_VMS, ConfigKey.SUBGROUP_VIRTUAL_ROUTER);
 

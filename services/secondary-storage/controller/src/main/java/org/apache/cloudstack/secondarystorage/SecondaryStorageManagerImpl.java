@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.vm.UserVmManager;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.context.CallContext;
@@ -52,6 +53,7 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
+import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -257,6 +259,11 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     private IndirectAgentLB indirectAgentLB;
     @Inject
     private CAManager caManager;
+    @Inject
+    private UserDataManager userDataManager;
+    @Inject
+    private UserVmManager userVmManager;
+
     private int _secStorageVmMtuSize;
 
     private String _instance;
@@ -1231,10 +1238,17 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         buf.append(" keystore_password=").append(VirtualMachineGuru.getEncodedString(PasswordGenerator.generateRandomPassword(16)));
 
         if (SystemVmEnableUserData.valueIn(dc.getId())) {
-            String userData = SecondaryStorageUserData.valueIn(dc.getId());
-            if (StringUtils.isNotBlank(userData)) {
-                String encodedUserData = Base64.getEncoder().encodeToString(userData.getBytes());
-                buf.append(" userdata=").append(encodedUserData);
+            String userDataUuid = SecondaryStorageUserData.valueIn(dc.getId());
+            try {
+                Long userDataId = userDataManager.validateAndGetUserDataIdForSystemVms(userDataUuid,
+                        profile.getTemplate());
+                String userData = userVmManager.finalizeUserData(null, userDataId, profile.getTemplate());
+                if (StringUtils.isNotBlank(userData)) {
+                    String encodedUserData = Base64.getEncoder().encodeToString(userData.getBytes());
+                    buf.append(" userdata=").append(encodedUserData);
+                }
+            } catch (Exception e) {
+                logger.warn("Failed to load user data for the ssvm, ignored", e);
             }
         }
 

@@ -45,8 +45,8 @@ public interface SecondaryStorageVmManager extends Manager {
             false);
 
     ConfigKey<String> SecondaryStorageUserData = new ConfigKey<>(String.class, "secstorage.userdata",
-            ConfigKey.CATEGORY_SECURE, "",
-            "Default user data for secondary storage VMs. This works only when systemvm.userdata.enabled is set to true",
+            ConfigKey.CATEGORY_ADVANCED, "",
+            "UUID for user data for secondary storage VMs. This works only when systemvm.userdata.enabled is set to true",
             true, ConfigKey.Scope.Zone, null, "User Data for SSVMs",
             null, ConfigKey.GROUP_SYSTEM_VMS, ConfigKey.SUBGROUP_SEC_STORAGE_VM);
 

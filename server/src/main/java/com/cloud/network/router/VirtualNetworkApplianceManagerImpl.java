@@ -49,6 +49,7 @@ import java.util.regex.Pattern;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.vm.UserVmManager;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 
@@ -73,6 +74,7 @@ import org.apache.cloudstack.network.BgpPeer;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.network.topology.NetworkTopology;
 import org.apache.cloudstack.network.topology.NetworkTopologyContext;
+import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.usage.UsageUtils;
@@ -353,6 +355,11 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     RoutedIpv4Manager routedIpv4Manager;
     @Inject
     BGPService bgpService;
+
+    @Inject
+    private UserDataManager userDataManager;
+    @Inject
+    private UserVmManager userVmManager;
 
     private int _routerStatsInterval = 300;
     private int _routerCheckInterval = 30;
@@ -2099,10 +2106,17 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         buf.append(String.format(" logrotatefrequency=%s", routerLogrotateFrequency));
 
         if (SystemVmEnableUserData.valueIn(router.getDataCenterId())) {
-            String userData = RouterUserData.valueIn(router.getDataCenterId());
-            if (StringUtils.isNotBlank(userData)) {
-                String encodedUserData = Base64.getEncoder().encodeToString(userData.getBytes());
-                buf.append(" userdata=").append(encodedUserData);
+            String userDataUuid = RouterUserData.valueIn(dc.getId());
+            try {
+                Long userDataId = userDataManager.validateAndGetUserDataIdForSystemVms(userDataUuid,
+                        profile.getTemplate());
+                String userData = userVmManager.finalizeUserData(null, userDataId, profile.getTemplate());
+                if (StringUtils.isNotBlank(userData)) {
+                    String encodedUserData = Base64.getEncoder().encodeToString(userData.getBytes());
+                    buf.append(" userdata=").append(encodedUserData);
+                }
+            } catch (Exception e) {
+                logger.warn("Failed to load user data for the virtual router, ignored", e);
             }
         }
 
