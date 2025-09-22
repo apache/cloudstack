@@ -24,7 +24,6 @@ import java.util.List;
 
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.commons.lang3.StringUtils;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainInfo;
@@ -41,6 +40,7 @@ import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Volume;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.script.Script;
 
 @ResourceWrapper(handles =  DeleteVMSnapshotCommand.class)
