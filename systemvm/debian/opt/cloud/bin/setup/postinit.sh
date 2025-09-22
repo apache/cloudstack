@@ -102,11 +102,11 @@ EOF
   # Set up user data files (reuse the function from init.sh)
   mkdir -p /var/lib/cloud/seed/nocloud
 
-  # Decode and potentially decompress user data
+  # Decode and decompress user data
   local decoded_userdata
-  decoded_userdata=$(echo "$encoded_userdata" | base64 -d 2>/dev/null)
+  decoded_userdata=$(echo "$encoded_userdata" | base64 -d 2>/dev/null | gunzip 2>/dev/null)
   if [ $? -ne 0 ] || [ -z "$decoded_userdata" ]; then
-    log_it "ERROR: Failed to decode base64 user data"
+    log_it "ERROR: Failed to decode or decompress user data"
     return 1
   fi
 

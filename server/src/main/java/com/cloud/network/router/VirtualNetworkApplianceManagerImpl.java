@@ -49,6 +49,7 @@ import java.util.regex.Pattern;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.compression.CompressionUtil;
 import com.cloud.vm.UserVmManager;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
@@ -2112,7 +2113,11 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                         profile.getTemplate());
                 String userData = userVmManager.finalizeUserData(null, userDataId, profile.getTemplate());
                 if (StringUtils.isNotBlank(userData)) {
-                    String encodedUserData = Base64.getEncoder().encodeToString(userData.getBytes());
+                    // Decode base64 user data, compress it, then re-encode to reduce command line length
+                    String plainTextUserData = new String(Base64.getDecoder().decode(userData));
+                    CompressionUtil compressionUtil = new CompressionUtil();
+                    byte[] compressedUserData = compressionUtil.compressString(plainTextUserData);
+                    String encodedUserData = Base64.getEncoder().encodeToString(compressedUserData);
                     buf.append(" userdata=").append(encodedUserData);
                 }
             } catch (Exception e) {
