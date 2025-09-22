@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.userdata;
 
+import com.cloud.template.VirtualMachineTemplate;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -29,4 +30,5 @@ public interface UserDataManager extends Manager, Configurable {
 
     String concatenateUserData(String userdata1, String userdata2, String userdataProvider);
     String validateUserData(String userData, BaseCmd.HTTPMethod httpmethod);
+    Long validateAndGetUserDataIdForSystemVms(String userDataUuid, VirtualMachineTemplate vmTemplate);
 }

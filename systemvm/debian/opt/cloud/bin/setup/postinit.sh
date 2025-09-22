@@ -124,9 +124,6 @@ EOF
 
   log_it "User data files created, executing cloud-init..."
 
-  # Clean any previous cloud-init state
-  cloud-init clean --logs
-
   # Run cloud-init stages manually
   cloud-init init --local && \
   cloud-init init && \

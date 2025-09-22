@@ -31,11 +31,13 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.vm.UserVmManager;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerRuleCmd;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -141,6 +143,10 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
     private ElasticLbVmMapDao _elbVmMapDao;
     @Inject
     private NicDao _nicDao;
+    @Inject
+    private UserDataManager userDataManager;
+    @Inject
+    private UserVmManager userVmManager;
 
     String _instance;
 
@@ -484,10 +490,16 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
         buf.append(" authorized_key=").append(VirtualMachineGuru.getEncodedMsPublicKey(msPublicKey));
 
         if (SystemVmEnableUserData.valueIn(dc.getId())) {
-            String userData = RouterUserData.valueIn(dc.getId());
-            if (StringUtils.isNotBlank(userData)) {
-                String encodedUserData = Base64.getEncoder().encodeToString(userData.getBytes());
-                buf.append(" userdata=").append(encodedUserData);
+            String userDataUuid = RouterUserData.valueIn(dc.getId());
+            try {
+                Long userDataId = userDataManager.validateAndGetUserDataIdForSystemVms(userDataUuid, profile.getTemplate());
+                String userData = userVmManager.finalizeUserData(null, userDataId, profile.getTemplate());
+                if (StringUtils.isNotBlank(userData)) {
+                    String encodedUserData = Base64.getEncoder().encodeToString(userData.getBytes());
+                    buf.append(" userdata=").append(encodedUserData);
+                }
+            } catch (Exception e) {
+                logger.warn("Failed to load user data for the elastic lb vm, ignored", e);
             }
         }
 

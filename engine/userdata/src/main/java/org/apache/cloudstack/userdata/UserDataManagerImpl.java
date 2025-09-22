@@ -22,6 +22,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.domain.Domain;
+import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.user.User;
+import com.cloud.user.UserDataVO;
+import com.cloud.user.dao.UserDataDao;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.commons.codec.binary.Base64;
@@ -31,7 +36,12 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+import javax.inject.Inject;
+
 public class UserDataManagerImpl extends ManagerBase implements UserDataManager {
+    @Inject
+    UserDataDao userDataDao;
+
     private static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
     private static final int MAX_HTTP_GET_LENGTH = 2 * MAX_USER_DATA_LENGTH_BYTES; // 4KB
     private static final int NUM_OF_2K_BLOCKS = 512;
@@ -116,6 +126,21 @@ public class UserDataManagerImpl extends ManagerBase implements UserDataManager 
 
         // Re-encode so that the '=' paddings are added if necessary since 'isBase64' does not require it, but python does on the VR.
         return Base64.encodeBase64String(decodedUserData);
+    }
+
+    @Override
+    public Long validateAndGetUserDataIdForSystemVms(String userDataUuid, VirtualMachineTemplate vmTemplate) {
+        UserDataVO templateUserDataVo = vmTemplate.getUserDataId() != null ? userDataDao.findById(vmTemplate.getUserDataId()): null;
+        UserDataVO userDataVo = StringUtils.isNotBlank(userDataUuid) ? userDataDao.findByUuid(userDataUuid) : null;
+        if (isUserDataAllowedForSystemVm(templateUserDataVo) &&
+            isUserDataAllowedForSystemVm(userDataVo)) {
+            return userDataVo != null ? userDataVo.getId() : null;
+        }
+        throw new CloudRuntimeException("User data can only be used by system VMs if it belongs to the ROOT domain and ADMIN account.");
+    }
+
+    private boolean isUserDataAllowedForSystemVm(UserDataVO userData) {
+        return userData == null || (userData.getDomainId() == Domain.ROOT_DOMAIN && userData.getAccountId() == User.UID_ADMIN);
     }
 
     private byte[] validateAndDecodeByHTTPMethod(String userData, int maxHTTPLength, BaseCmd.HTTPMethod httpMethod) {

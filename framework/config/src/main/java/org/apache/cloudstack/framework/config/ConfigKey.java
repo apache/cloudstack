@@ -41,7 +41,6 @@ public class ConfigKey<T> {
     public static final String CATEGORY_ADVANCED = "Advanced";
     public static final String CATEGORY_ALERT = "Alert";
     public static final String CATEGORY_NETWORK = "Network";
-    public static final String CATEGORY_SECURE = "Secure";
     public static final String CATEGORY_SYSTEM = "System";
 
     // Configuration Groups to be used to define group for a config key
