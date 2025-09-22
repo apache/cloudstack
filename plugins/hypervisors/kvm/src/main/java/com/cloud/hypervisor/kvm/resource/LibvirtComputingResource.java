@@ -1439,7 +1439,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (StringUtils.isNotBlank(convertEnvTmpDir) && StringUtils.isNotBlank(convertEnvVirtv2vTmpDir)) {
             convertInstanceEnv = new String[2];
             convertInstanceEnv[0] = String.format("%s=%s", "TMPDIR", convertEnvTmpDir);
-            convertInstanceEnv[1] = String.format("%s=%s", "VIRT_V2V_TMPDIR", convertEnvTmpDir);
+            convertInstanceEnv[1] = String.format("%s=%s", "VIRT_V2V_TMPDIR", convertEnvVirtv2vTmpDir);
         } else {
             convertInstanceEnv = new String[1];
             String key = StringUtils.isNotBlank(convertEnvTmpDir) ? "TMPDIR" : "VIRT_V2V_TMPDIR";
