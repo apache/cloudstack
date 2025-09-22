@@ -2109,9 +2109,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         if (SystemVmEnableUserData.valueIn(router.getDataCenterId())) {
             String userDataUuid = RouterUserData.valueIn(dc.getId());
             try {
-                Long userDataId = userDataManager.validateAndGetUserDataIdForSystemVms(userDataUuid,
-                        profile.getTemplate());
-                String userData = userVmManager.finalizeUserData(null, userDataId, profile.getTemplate());
+                String userData = userDataManager.validateAndGetUserDataForSystemVM(userDataUuid);
                 if (StringUtils.isNotBlank(userData)) {
                     // Decode base64 user data, compress it, then re-encode to reduce command line length
                     String plainTextUserData = new String(Base64.getDecoder().decode(userData));
