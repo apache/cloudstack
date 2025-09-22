@@ -50,7 +50,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.utils.compression.CompressionUtil;
-import com.cloud.vm.UserVmManager;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 
@@ -359,9 +358,6 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
     @Inject
     private UserDataManager userDataManager;
-    @Inject
-    private UserVmManager userVmManager;
-
     private int _routerStatsInterval = 300;
     private int _routerCheckInterval = 30;
     private int _rvrStatusUpdatePoolSize = 10;

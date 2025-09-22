@@ -38,7 +38,6 @@ import javax.naming.ConfigurationException;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.utils.compression.CompressionUtil;
-import com.cloud.vm.UserVmManager;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -184,8 +183,6 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
     UserDao _userDao;
     @Inject
     private UserDataManager userDataManager;
-    @Inject
-    private UserVmManager userVmManager;
 
     @Override
     public boolean finalizeVirtualMachineProfile(final VirtualMachineProfile profile, final DeployDestination dest, final ReservationContext context) {

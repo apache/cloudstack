@@ -37,7 +37,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.utils.compression.CompressionUtil;
-import com.cloud.vm.UserVmManager;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.context.CallContext;
@@ -262,8 +261,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     private CAManager caManager;
     @Inject
     private UserDataManager userDataManager;
-    @Inject
-    private UserVmManager userVmManager;
 
     private int _secStorageVmMtuSize;
 
