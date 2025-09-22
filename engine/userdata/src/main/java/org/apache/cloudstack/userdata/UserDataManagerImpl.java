@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.domain.Domain;
-import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.User;
 import com.cloud.user.UserDataVO;
 import com.cloud.user.dao.UserDataDao;
@@ -129,18 +128,18 @@ public class UserDataManagerImpl extends ManagerBase implements UserDataManager 
     }
 
     @Override
-    public Long validateAndGetUserDataIdForSystemVms(String userDataUuid, VirtualMachineTemplate vmTemplate) {
-        UserDataVO templateUserDataVo = vmTemplate.getUserDataId() != null ? userDataDao.findById(vmTemplate.getUserDataId()): null;
-        UserDataVO userDataVo = StringUtils.isNotBlank(userDataUuid) ? userDataDao.findByUuid(userDataUuid) : null;
-        if (isUserDataAllowedForSystemVm(templateUserDataVo) &&
-            isUserDataAllowedForSystemVm(userDataVo)) {
-            return userDataVo != null ? userDataVo.getId() : null;
+    public String validateAndGetUserDataForSystemVM(String userDataUuid) {
+        if (StringUtils.isBlank(userDataUuid)) {
+            return null;
+        }
+        UserDataVO userDataVo = userDataDao.findByUuid(userDataUuid);
+        if (userDataVo == null) {
+            return null;
+        }
+        if (userDataVo.getDomainId() == Domain.ROOT_DOMAIN && userDataVo.getAccountId() == User.UID_ADMIN) {
+            return userDataVo.getUserData();
         }
         throw new CloudRuntimeException("User data can only be used by system VMs if it belongs to the ROOT domain and ADMIN account.");
-    }
-
-    private boolean isUserDataAllowedForSystemVm(UserDataVO userData) {
-        return userData == null || (userData.getDomainId() == Domain.ROOT_DOMAIN && userData.getAccountId() == User.UID_ADMIN);
     }
 
     private byte[] validateAndDecodeByHTTPMethod(String userData, int maxHTTPLength, BaseCmd.HTTPMethod httpMethod) {
