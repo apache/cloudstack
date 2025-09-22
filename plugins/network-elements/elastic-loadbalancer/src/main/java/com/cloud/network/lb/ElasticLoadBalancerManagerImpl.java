@@ -32,7 +32,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.utils.compression.CompressionUtil;
-import com.cloud.vm.UserVmManager;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerRuleCmd;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -146,8 +145,6 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
     private NicDao _nicDao;
     @Inject
     private UserDataManager userDataManager;
-    @Inject
-    private UserVmManager userVmManager;
 
     String _instance;
 

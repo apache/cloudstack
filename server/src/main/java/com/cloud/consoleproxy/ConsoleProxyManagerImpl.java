@@ -33,7 +33,6 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.vm.UserVmManager;
 import com.cloud.utils.compression.CompressionUtil;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.ca.CAManager;
@@ -235,8 +234,6 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     private NetworkOrchestrationService networkMgr;
     @Inject
     private UserDataManager userDataManager;
-    @Inject
-    private UserVmManager userVmManager;
 
     private ConsoleProxyListener consoleProxyListener;
 
