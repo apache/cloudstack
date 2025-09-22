@@ -5100,7 +5100,17 @@ public class ApiResponseHelper implements ResponseGenerator {
             healthCheckResponse.setObjectName("routerhealthchecks");
             healthCheckResponse.setCheckName(hcResult.getCheckName());
             healthCheckResponse.setCheckType(hcResult.getCheckType());
-            healthCheckResponse.setResult(hcResult.getCheckResult());
+            switch (hcResult.getCheckResult()) {
+                case SUCCESS:
+                    healthCheckResponse.setResult(true);
+                    break;
+                case FAILED:
+                    healthCheckResponse.setResult(false);
+                    break;
+                default:
+                    // no result if not definite
+            }
+            healthCheckResponse.setState(hcResult.getCheckResult());
             healthCheckResponse.setLastUpdated(hcResult.getLastUpdateTime());
             healthCheckResponse.setDetails(hcResult.getParsedCheckDetails());
             responses.add(healthCheckResponse);
