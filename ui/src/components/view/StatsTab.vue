@@ -423,8 +423,8 @@ export default {
       this.showResourceInfoModal = true
     },
     updateVirtualMachineStats () {
-      var end = this.getEndDate()
-      var start = this.getStartDate()
+      const start = this.getStartDate()
+      const end = this.getEndDate()
       this.handleSubmit({ startDate: start, endDate: end })
     },
     handleSubmit (values) {
