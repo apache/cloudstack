@@ -17,7 +17,6 @@
 package com.cloud.network.lb;
 
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -31,7 +30,6 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.compression.CompressionUtil;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerRuleCmd;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -492,12 +490,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
             try {
                 String userData = userDataManager.validateAndGetUserDataForSystemVM(userDataUuid);
                 if (StringUtils.isNotBlank(userData)) {
-                    // Decode base64 user data, compress it, then re-encode to reduce command line length
-                    String plainTextUserData = new String(Base64.getDecoder().decode(userData));
-                    CompressionUtil compressionUtil = new CompressionUtil();
-                    byte[] compressedUserData = compressionUtil.compressString(plainTextUserData);
-                    String encodedUserData = Base64.getEncoder().encodeToString(compressedUserData);
-                    buf.append(" userdata=").append(encodedUserData);
+                    buf.append(" userdata=").append(userData);
                 }
             } catch (Exception e) {
                 logger.warn("Failed to load user data for the elastic lb vm, ignored", e);

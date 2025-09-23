@@ -26,7 +26,6 @@ import static com.cloud.vm.VirtualMachineManager.SystemVmEnableUserData;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -37,7 +36,6 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
-import com.cloud.utils.compression.CompressionUtil;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -257,12 +255,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
             try {
                 String userData = userDataManager.validateAndGetUserDataForSystemVM(userDataUuid);
                 if (StringUtils.isNotBlank(userData)) {
-                    // Decode base64 user data, compress it, then re-encode to reduce command line length
-                    String plainTextUserData = new String(Base64.getDecoder().decode(userData));
-                    CompressionUtil compressionUtil = new CompressionUtil();
-                    byte[] compressedUserData = compressionUtil.compressString(plainTextUserData);
-                    String encodedUserData = Base64.getEncoder().encodeToString(compressedUserData);
-                    buf.append(" userdata=").append(encodedUserData);
+                    buf.append(" userdata=").append(userData);
                 }
             } catch (Exception e) {
                 logger.warn("Failed to load user data for the internal lb vm, ignored", e);

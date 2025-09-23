@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.userdata;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.HashMap;
@@ -26,6 +27,7 @@ import com.cloud.domain.Domain;
 import com.cloud.user.User;
 import com.cloud.user.UserDataVO;
 import com.cloud.user.dao.UserDataDao;
+import com.cloud.utils.compression.CompressionUtil;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.commons.codec.binary.Base64;
@@ -128,7 +130,7 @@ public class UserDataManagerImpl extends ManagerBase implements UserDataManager 
     }
 
     @Override
-    public String validateAndGetUserDataForSystemVM(String userDataUuid) {
+    public String validateAndGetUserDataForSystemVM(String userDataUuid) throws IOException {
         if (StringUtils.isBlank(userDataUuid)) {
             return null;
         }
@@ -137,7 +139,11 @@ public class UserDataManagerImpl extends ManagerBase implements UserDataManager 
             return null;
         }
         if (userDataVo.getDomainId() == Domain.ROOT_DOMAIN && userDataVo.getAccountId() == User.UID_ADMIN) {
-            return userDataVo.getUserData();
+            // Decode base64 user data, compress it, then re-encode to reduce command line length
+            String plainTextUserData = new String(java.util.Base64.getDecoder().decode(userDataVo.getUserData()));
+            CompressionUtil compressionUtil = new CompressionUtil();
+            byte[] compressedUserData = compressionUtil.compressString(plainTextUserData);
+            return java.util.Base64.getEncoder().encodeToString(compressedUserData);
         }
         throw new CloudRuntimeException("User data can only be used by system VMs if it belongs to the ROOT domain and ADMIN account.");
     }

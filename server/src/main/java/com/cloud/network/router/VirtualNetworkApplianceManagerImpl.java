@@ -28,7 +28,6 @@ import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -49,7 +48,6 @@ import java.util.regex.Pattern;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.compression.CompressionUtil;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 
@@ -2107,12 +2105,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             try {
                 String userData = userDataManager.validateAndGetUserDataForSystemVM(userDataUuid);
                 if (StringUtils.isNotBlank(userData)) {
-                    // Decode base64 user data, compress it, then re-encode to reduce command line length
-                    String plainTextUserData = new String(Base64.getDecoder().decode(userData));
-                    CompressionUtil compressionUtil = new CompressionUtil();
-                    byte[] compressedUserData = compressionUtil.compressString(plainTextUserData);
-                    String encodedUserData = Base64.getEncoder().encodeToString(compressedUserData);
-                    buf.append(" userdata=").append(encodedUserData);
+                    buf.append(" userdata=").append(userData);
                 }
             } catch (Exception e) {
                 logger.warn("Failed to load user data for the virtual router, ignored", e);

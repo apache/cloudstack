@@ -23,7 +23,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -36,7 +35,6 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.compression.CompressionUtil;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.context.CallContext;
@@ -1240,12 +1238,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             try {
                 String userData = userDataManager.validateAndGetUserDataForSystemVM(userDataUuid);
                 if (StringUtils.isNotBlank(userData)) {
-                    // Decode base64 user data, compress it, then re-encode to reduce command line length
-                    String plainTextUserData = new String(Base64.getDecoder().decode(userData));
-                    CompressionUtil compressionUtil = new CompressionUtil();
-                    byte[] compressedUserData = compressionUtil.compressString(plainTextUserData);
-                    String encodedUserData = Base64.getEncoder().encodeToString(compressedUserData);
-                    buf.append(" userdata=").append(encodedUserData);
+                    buf.append(" userdata=").append(userData);
                 }
             } catch (Exception e) {
                 logger.warn("Failed to load user data for the ssvm, ignored", e);
