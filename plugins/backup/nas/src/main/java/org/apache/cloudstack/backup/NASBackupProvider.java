@@ -384,12 +384,13 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoredVolume.setPoolType(pool.getPoolType());
         restoredVolume.setPath(restoredVolume.getUuid());
         restoredVolume.setState(Volume.State.Copying);
-        restoredVolume.setFormat(Storage.ImageFormat.QCOW2);
-        if (pool.getPoolType() == Storage.StoragePoolType.RBD) {
-            restoredVolume.setFormat(Storage.ImageFormat.RAW);
-        }
         restoredVolume.setSize(backupVolumeInfo.getSize());
         restoredVolume.setDiskOfferingId(diskOffering.getId());
+        if (pool.getPoolType() != Storage.StoragePoolType.RBD) {
+            restoredVolume.setFormat(Storage.ImageFormat.QCOW2);
+        } else {
+            restoredVolume.setFormat(Storage.ImageFormat.RAW);
+        }
 
         RestoreBackupCommand restoreCommand = new RestoreBackupCommand();
         restoreCommand.setBackupPath(backup.getExternalId());

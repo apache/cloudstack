@@ -257,11 +257,11 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
             qemu = new QemuImg(timeout * 1000, true, false);
             if (!createTargetVolume) {
                 KVMPhysicalDisk rdbDisk = volumeStoragePool.getPhysicalDisk(volumePath);
-                logger.debug("RBD volume: {}", rdbDisk.toString());
+                logger.debug("Restoring RBD volume: {}", rdbDisk.toString());
                 qemu.setSkipTargetVolumeCreation(true);
             }
         } catch (LibvirtException ex) {
-            throw new CloudRuntimeException("Failed to create qemu-img command to replace RBD volume with backup", ex);
+            throw new CloudRuntimeException("Failed to create qemu-img command to restore RBD volume with backup", ex);
         }
 
         QemuImgFile srcBackupFile = null;
