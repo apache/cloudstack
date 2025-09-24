@@ -99,7 +99,7 @@ public class ADLdapUserManagerImpl extends OpenLdapUserManagerImpl implements Ld
         } else {
             rc = MICROSOFT_AD_MEMBERS_FILTER;
         }
-        logger.debug("memberOf filter = " + rc);
+        logger.trace(“using memberOf filter = {} for domain with id {}”, rc, domainId);
 
         return rc;
     }
