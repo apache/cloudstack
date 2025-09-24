@@ -38,13 +38,15 @@ from marvin.lib.base import (Account,
                              StoragePool)
 from marvin.lib.common import (get_domain,
                                get_zone,
-                               get_template)
+                               get_template,
+                               list_disk_offering)
 from marvin.lib.decoratorGenerators import skipTestIf
 from marvin.codes import FAILED, PASS
 from nose.plugins.attrib import attr
 import logging
 from sp_util import (TestData, StorPoolHelper)
 import math
+import uuid
 
 class TestSnapshotCopy(cloudstackTestCase):
 
@@ -111,6 +113,10 @@ class TestSnapshotCopy(cloudstackTestCase):
         cls.helper = StorPoolHelper()
 
         compute_offering_service = cls.services["service_offerings"]["tiny"].copy()
+        td = TestData()
+        cls.testdata = td.testdata
+        cls.helper = StorPoolHelper()
+        cls.disk_offerings  = cls.create_do_if_not_exists(cls.testdata[TestData.diskOfferingCustomAdditionalZone])
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
             compute_offering_service)
@@ -160,8 +166,7 @@ class TestSnapshotCopy(cloudstackTestCase):
         snapshot = Snapshot.create(self.userapiclient, volume_id=self.volume.id, zoneids=[str(self.additional_zone.id)], usestoragereplication=True)
         self.snapshot_id = snapshot.id
         self.helper.verify_snapshot_copies(self.userapiclient, self.snapshot_id, [self.zone.id, self.additional_zone.id])
-        time.sleep(420)
-        Snapshot.delete(snapshot, self.userapiclient)
+        self._cleanup.append(snapshot)
         return
 
     @skipTestIf("testsNotSupported")
@@ -174,8 +179,8 @@ class TestSnapshotCopy(cloudstackTestCase):
         self.snapshot_id = snapshot.id
         Snapshot.copy(self.userapiclient, self.snapshot_id, zone_ids=[str(self.additional_zone.id)], source_zone_id=self.zone.id, usestoragereplication=True)
         self.helper.verify_snapshot_copies(self.userapiclient, self.snapshot_id, [self.zone.id, self.additional_zone.id])
-        time.sleep(420)
-        Snapshot.delete(snapshot, self.userapiclient)
+
+        self._cleanup.append(snapshot)
         return
 
     @skipTestIf("testsNotSupported")
@@ -190,7 +195,7 @@ class TestSnapshotCopy(cloudstackTestCase):
         time.sleep(420)
         Snapshot.delete(snapshot, self.userapiclient, self.zone.id)
         self.helper.verify_snapshot_copies(self.userapiclient, self.snapshot_id, [self.additional_zone.id])
-        self.cleanup.append(snapshot)
+        self._cleanup.append(snapshot)
         return
 
     @skipTestIf("testsNotSupported")
@@ -227,13 +232,12 @@ class TestSnapshotCopy(cloudstackTestCase):
                 self.apiclient,
                 service
             )
-            self.cleanup.append(self.disk_offering)
+            self._cleanup.append(self.disk_offering)
             disk_offering_id = self.disk_offering.id
 
         self.volume = Volume.create(self.userapiclient, {"diskname":"StorPoolDisk-1" }, snapshotid=self.snapshot_id, zoneid=self.zone.id, diskofferingid=disk_offering_id)
-        self.cleanup.append(self.volume)
-        time.sleep(420)
-        Snapshot.delete(snapshot, self.userapiclient)
+        self._cleanup.append(self.volume)
+        self._cleanup.append(snapshot)
         if self.zone.id != self.volume.zoneid:
             self.fail("Volume from snapshot not created in the additional zone")
         return
@@ -249,7 +253,96 @@ class TestSnapshotCopy(cloudstackTestCase):
         self.template = self.helper.create_snapshot_template(self.userapiclient, self.services, self.snapshot_id, self.additional_zone.id)
         if self.additional_zone.id != self.template.zoneid:
             self.fail("Template from snapshot not created in the additional zone")
-        time.sleep(420)
-        Snapshot.delete(snapshot, self.userapiclient)
-        self.cleanup.append(self.template)
+        self._cleanup.append(snapshot)
+        self._cleanup.append(self.template)
         return
+
+    @skipTestIf("testsNotSupported")
+    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    def test_07_take_snapshot_multi_zone_deply_vm_additional_zone(self):
+        """Test to take volume snapshot in multiple StorPool primary storages in diff zones and deploy a VM from snapshot in one of the additional zones
+        """
+        snapshot = Snapshot.create(self.userapiclient, volume_id=self.volume.id, zoneids=[str(self.additional_zone.id)], usestoragereplication=True)
+        self._cleanup.append(snapshot)
+        self.snapshot_id = snapshot.id
+        self.helper.verify_snapshot_copies(self.userapiclient, self.snapshot_id, [self.zone.id, self.additional_zone.id])
+        vm = self.deploy_vm_from_snapshot(snapshot, self.additional_zone.id)
+        if self.additional_zone.id != vm.zoneid:
+            self.fail("VM from snapshot not created in the additional zone")
+        return
+
+
+    @skipTestIf("testsNotSupported")
+    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    def test_08_take_snapshot_multi_zone_create_volume_additional_zone_deploy_vm(self):
+        """Test to take volume snapshot in multiple StorPool primary storages in diff zones
+         create a volume from the snapshot in the additional zone
+         and deploy a VM from the volume in one of the additional zones
+        """
+        snapshot = Snapshot.create(self.userapiclient, volume_id=self.volume.id, zoneids=[str(self.additional_zone.id)], usestoragereplication=True)
+        self._cleanup.append(snapshot)
+        self.snapshot_id = snapshot.id
+        self.helper.verify_snapshot_copies(self.userapiclient, self.snapshot_id, [self.zone.id, self.additional_zone.id])
+        vm = self.create_volume_from_snapshot_deploy_vm(snapshotid=self.snapshot_id, zoneid=self.additional_zone.id)
+        time.sleep(420)
+        if self.additional_zone.id != vm.zoneid:
+            self.fail("VM from snapshot not created in the additional zone")
+        return
+
+    def create_volume_from_snapshot_deploy_vm(self, snapshotid, zoneid=None):
+        volume = Volume.create_from_snapshot(
+            self.apiclient,
+            snapshot_id=snapshotid,
+            services=self.services,
+            disk_offering=self.disk_offerings.id,
+            size=8,
+            account=self.account.name,
+            domainid=self.account.domainid,
+            zoneid=zoneid,
+        )
+        virtual_machine = VirtualMachine.create(self.apiclient,
+                                                {"name": "Test-%s" % uuid.uuid4()},
+                                                accountid=self.account.name,
+                                                domainid=self.account.domainid,
+                                                zoneid=zoneid,
+                                                serviceofferingid=self.service_offering.id,
+                                                volumeid=volume.id,
+                                                mode="basic",
+                                                )
+        self._cleanup.append(virtual_machine)
+        try:
+            ssh_client = virtual_machine.get_ssh_client()
+        except Exception as e:
+            self.fail("SSH failed for virtual machine: %s - %s" %
+                      (virtual_machine.ipaddress, e))
+        return virtual_machine
+
+    def deploy_vm_from_snapshot(self, snapshot, zoneid=None):
+        virtual_machine = VirtualMachine.create(self.apiclient,
+                                                {"name": "Test-%s" % uuid.uuid4()},
+                                                accountid=self.account.name,
+                                                domainid=self.account.domainid,
+                                                zoneid=zoneid,
+                                                serviceofferingid=self.service_offering.id,
+                                                snapshotid=snapshot.id,
+                                                mode="basic",
+                                                )
+        self._cleanup.append(virtual_machine)
+        try:
+            ssh_client = virtual_machine.get_ssh_client()
+        except Exception as e:
+            self.fail("SSH failed for virtual machine: %s - %s" %
+                      (virtual_machine.ipaddress, e))
+        return virtual_machine
+
+    @classmethod
+    def create_do_if_not_exists(cls, data):
+        disk_offerings = list_disk_offering(
+            cls.apiclient,
+            name=data["name"]
+        )
+        if disk_offerings is None:
+            disk_offerings = DiskOffering.create(cls.apiclient, services=data, custom=True)
+        else:
+            disk_offerings = disk_offerings[0]
+        return disk_offerings
