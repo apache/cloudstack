@@ -106,9 +106,29 @@
         v-model:checked="migrateWithStorage"
         :disabled="!selectedHost || !selectedHost.id || selectedHost.id === -1" />
     </a-form-item>
+
+    <a-radio-group
+      v-if="migrateWithStorage"
+      v-model:value="migrateMode"
+      @change="e => { handleMigrateModeChange(e.target.value) }">
+      <a-radio class="radio-style" :value="1">
+        {{ $t('label.migrate.instance.single.storage') }}
+      </a-radio>
+      <a-radio class="radio-style" :value="2">
+        {{ $t('label.migrate.instance.specific.storages') }}
+      </a-radio>
+    </a-radio-group>
+
+    <div v-if="migrateWithStorage && migrateMode == 1">
+      <storage-pool-select-view
+        ref="storagePoolSelection"
+        :autoAssignAllowed="false"
+        :resource="resource"
+        @select="handleStoragePoolChange" />
+    </div>
     <instance-volumes-storage-pool-select-list-view
       ref="volumeToPoolSelect"
-      v-if="migrateWithStorage"
+      v-if="migrateWithStorage && migrateMode !== 1"
       class="top-spaced"
       :resource="resource"
       :clusterId="selectedHost.id ? selectedHost.clusterid : null"
@@ -118,7 +138,7 @@
 
     <div class="actions">
       <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
-      <a-button type="primary" ref="submit" :disabled="!selectedHost.id" @click="submitForm">{{ $t('label.ok') }}</a-button>
+      <a-button type="primary" ref="submit" :disabled="!selectedHost.id || (migrateWithStorage && migrateMode === 1 && !volumeToPoolSelection.length)" @click="submitForm">{{ $t('label.ok') }}</a-button>
     </div>
   </div>
 </template>
@@ -126,12 +146,14 @@
 <script>
 import { api } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import StoragePoolSelectView from '@/components/view/StoragePoolSelectView'
 import InstanceVolumesStoragePoolSelectListView from '@/components/view/InstanceVolumesStoragePoolSelectListView'
 
 export default {
   name: 'VMMigrateWizard',
   components: {
     TooltipLabel,
+    StoragePoolSelectView,
     InstanceVolumesStoragePoolSelectListView
   },
   props: {
@@ -188,6 +210,7 @@ export default {
         }
       ],
       migrateWithStorage: false,
+      migrateMode: 1,
       volumeToPoolSelection: [],
       volumes: []
     }
@@ -213,6 +236,10 @@ export default {
     },
     fetchData () {
       this.loading = true
+      this.fetchHostsForMigration()
+      this.fetchVolumes()
+    },
+    fetchHostsForMigration () {
       api('findHostsForMigration', {
         virtualmachineid: this.resource.id,
         keyword: this.searchQuery,
@@ -249,13 +276,23 @@ export default {
     handleSelectedHostChange (host) {
       if (host.id === -1) {
         this.migrateWithStorage = false
-        this.fetchVolumes()
       }
       this.selectedHost = host
       this.selectedVolumeForStoragePoolSelection = {}
       this.volumeToPoolSelection = []
       if (this.migrateWithStorage) {
         this.$refs.volumeToPoolSelect.resetSelection()
+      }
+    },
+    handleMigrateModeChange () {
+      this.volumeToPoolSelection = []
+    },
+    handleStoragePoolChange (storagePool) {
+      this.volumeToPoolSelection = []
+      for (const volume of this.volumes) {
+        if (storagePool && storagePool.id && storagePool.id !== -1) {
+          this.volumeToPoolSelection.push({ volume: volume.id, pool: storagePool.id })
+        }
       }
     },
     handleVolumeToPoolChange (volumeToPool) {
