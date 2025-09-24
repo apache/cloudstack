@@ -24,7 +24,7 @@ import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseListDomainResourcesCmd;
+import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.BackupScheduleResponse;
@@ -47,7 +47,7 @@ import java.util.List;
         description = "List backup schedule of a VM",
         responseObject = BackupScheduleResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class ListBackupScheduleCmd extends BaseListDomainResourcesCmd {
+public class ListBackupScheduleCmd extends BaseListProjectAndAccountResourcesCmd {
 
     @Inject
     BackupManager backupManager;

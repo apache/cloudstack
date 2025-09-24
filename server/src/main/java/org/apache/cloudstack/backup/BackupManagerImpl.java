@@ -654,21 +654,17 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
         }
 
-        if (!isRootAdmin) {
-            Ternary<Long, Boolean, Project.ListProjectResourcesCriteria> domainIdRecursiveListProject =
-                    new Ternary<>(cmd.getDomainId(), cmd.isRecursive(), null);
-            accountManager.buildACLSearchParameters(caller, id, null, null, permittedAccounts, domainIdRecursiveListProject, true, false);
-            domainId = domainIdRecursiveListProject.first();
-            isRecursive = domainIdRecursiveListProject.second();
-            listProjectResourcesCriteria = domainIdRecursiveListProject.third();
-        }
+        Ternary<Long, Boolean, Project.ListProjectResourcesCriteria> domainIdRecursiveListProject =
+                new Ternary<>(cmd.getDomainId(), cmd.isRecursive(), null);
+        accountManager.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, true, false);
+        domainId = domainIdRecursiveListProject.first();
+        isRecursive = domainIdRecursiveListProject.second();
+        listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
         Filter searchFilter = new Filter(BackupScheduleVO.class, "id", false, null, null);
         SearchBuilder<BackupScheduleVO> searchBuilder = backupScheduleDao.createSearchBuilder();
 
-        if (!isRootAdmin) {
-            accountManager.buildACLSearchBuilder(searchBuilder, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
-        }
+        accountManager.buildACLSearchBuilder(searchBuilder, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         searchBuilder.and("id", searchBuilder.entity().getId(), SearchCriteria.Op.EQ);
         if (vmId != null) {
@@ -676,9 +672,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
 
         SearchCriteria<BackupScheduleVO> sc = searchBuilder.create();
-        if (!isRootAdmin) {
-            accountManager.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
-        }
+        accountManager.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         if (id != null) {
             sc.setParameters("id", id);

@@ -1393,12 +1393,9 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         Long volumeId = cmd.getVolumeId();
         Long id = cmd.getId();
         Account caller = CallContext.current().getCallingAccount();
-        boolean isRootAdmin = _accountMgr.isRootAdmin(caller.getId());
         List<Long> permittedAccounts = new ArrayList<>();
-        Long domainId = null;
-        Boolean isRecursive = null;
-        ListProjectResourcesCriteria listProjectResourcesCriteria = null;
 
+        // Verify parameters
         if (volumeId != null) {
             VolumeVO volume = _volsDao.findById(volumeId);
             if (volume != null) {
@@ -1406,28 +1403,22 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             }
         }
 
-        if (!isRootAdmin) {
-            Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject =
-                    new Ternary<>(cmd.getDomainId(), cmd.isRecursive(), null);
-            _accountMgr.buildACLSearchParameters(caller, id, null, null, permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
-            domainId = domainIdRecursiveListProject.first();
-            isRecursive = domainIdRecursiveListProject.second();
-            listProjectResourcesCriteria = domainIdRecursiveListProject.third();
-        }
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject =
+                new Ternary<>(cmd.getDomainId(), cmd.isRecursive(), null);
+        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
+        Long domainId = domainIdRecursiveListProject.first();
+        Boolean isRecursive = domainIdRecursiveListProject.second();
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+
         Filter searchFilter = new Filter(SnapshotPolicyVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<SnapshotPolicyVO> policySearch = _snapshotPolicyDao.createSearchBuilder();
-
-        if (!isRootAdmin) {
-            _accountMgr.buildACLSearchBuilder(policySearch, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
-        }
+        _accountMgr.buildACLSearchBuilder(policySearch, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         policySearch.and("id", policySearch.entity().getId(), SearchCriteria.Op.EQ);
         policySearch.and("volumeId", policySearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
 
         SearchCriteria<SnapshotPolicyVO> sc = policySearch.create();
-        if (!isRootAdmin) {
-            _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
-        }
+        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         if (volumeId != null) {
             sc.setParameters("volumeId", volumeId);
