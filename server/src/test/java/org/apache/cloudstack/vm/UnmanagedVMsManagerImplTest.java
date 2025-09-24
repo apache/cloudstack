@@ -504,8 +504,6 @@ public class UnmanagedVMsManagerImplTest {
         when(cmd.getPassword()).thenReturn("pass");
         when(cmd.getImportSource()).thenReturn("external");
         when(cmd.getDomainId()).thenReturn(null);
-        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
-        when(templateDao.findByName(anyString())).thenReturn(template);
         HostVO host = Mockito.mock(HostVO.class);
         DeployDestination mockDest = Mockito.mock(DeployDestination.class);
         when(deploymentPlanningManager.planDeployment(any(), any(), any(), any())).thenReturn(mockDest);
@@ -736,8 +734,6 @@ public class UnmanagedVMsManagerImplTest {
         when(cmd.getImportSource()).thenReturn(source);
         when(cmd.getDiskPath()).thenReturn("/var/lib/libvirt/images/test.qcow2");
         when(cmd.getDomainId()).thenReturn(null);
-        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
-        when(templateDao.findByName(anyString())).thenReturn(template);
         HostVO host = Mockito.mock(HostVO.class);
         when(hostDao.findById(anyLong())).thenReturn(host);
         NetworkOffering netOffering = Mockito.mock(NetworkOffering.class);
