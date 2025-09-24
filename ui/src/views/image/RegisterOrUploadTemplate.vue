@@ -685,7 +685,7 @@ export default {
       })
     },
     fetchCustomHypervisorName () {
-      if (!this.isAdminRole) {
+      if (!('listConfigurations' in store.getters.apis)) {
         return
       }
       const params = {
