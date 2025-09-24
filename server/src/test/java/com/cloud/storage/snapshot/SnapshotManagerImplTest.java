@@ -430,8 +430,6 @@ public class SnapshotManagerImplTest {
         Mockito.when(caller.getId()).thenReturn(1L);
         CallContext.register(Mockito.mock(User.class), caller);
 
-        Mockito.when(accountManager.isRootAdmin(1L)).thenReturn(true);
-
         SnapshotPolicyVO policy1 = Mockito.mock(SnapshotPolicyVO.class);
         SnapshotPolicyVO policy2 = Mockito.mock(SnapshotPolicyVO.class);
         List<SnapshotPolicyVO> mockPolicies = List.of(policy1, policy2);
@@ -464,8 +462,6 @@ public class SnapshotManagerImplTest {
         Mockito.when(caller.getId()).thenReturn(2L);
         CallContext.register(Mockito.mock(User.class), caller);
 
-        Mockito.when(accountManager.isRootAdmin(2L)).thenReturn(false);
-
         SnapshotPolicyVO policy1 = Mockito.mock(SnapshotPolicyVO.class);
         SnapshotPolicyVO policy2 = Mockito.mock(SnapshotPolicyVO.class);
         List<SnapshotPolicyVO> mockPolicies = List.of(policy1, policy2);
@@ -497,8 +493,6 @@ public class SnapshotManagerImplTest {
         Account caller = Mockito.mock(Account.class);
         Mockito.when(caller.getId()).thenReturn(1L);
         CallContext.register(Mockito.mock(User.class), caller);
-
-        Mockito.when(accountManager.isRootAdmin(1L)).thenReturn(true);
 
         SnapshotPolicyVO policy = Mockito.mock(SnapshotPolicyVO.class);
         SearchBuilder<SnapshotPolicyVO> mockSearchBuilder = Mockito.mock(SearchBuilder.class);

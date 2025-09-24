@@ -1835,7 +1835,6 @@ public class BackupManagerTest {
         BackupScheduleVO schedule2 = Mockito.mock(BackupScheduleVO.class);
         List<BackupScheduleVO> schedules = List.of(schedule1, schedule2);
 
-        Mockito.lenient().when(accountManager.isRootAdmin(1L)).thenReturn(true);
         SearchBuilder<BackupScheduleVO> searchBuilder = Mockito.mock(SearchBuilder.class);
         SearchCriteria<BackupScheduleVO> searchCriteria = Mockito.mock(SearchCriteria.class);
         BackupScheduleVO entity = Mockito.mock(BackupScheduleVO.class);
