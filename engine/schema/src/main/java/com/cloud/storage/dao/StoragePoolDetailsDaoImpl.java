@@ -57,4 +57,9 @@ public class StoragePoolDetailsDaoImpl extends ResourceDetailsDaoBase<StoragePoo
         }
         super.addDetail(new StoragePoolDetailVO(resourceId, key, value, display));
     }
+
+    @Override
+    public boolean doesConfigKeyAndValueExist(String key, String value) {
+        return doesKeyValuePairExist(key, value);
+    }
 }
