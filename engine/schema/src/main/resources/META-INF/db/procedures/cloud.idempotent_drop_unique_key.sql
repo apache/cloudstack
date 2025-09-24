@@ -15,16 +15,12 @@
 -- specific language governing permissions and limitations
 -- under the License.
 
---;
--- Schema upgrade from 4.21.0.0 to 4.22.0.0
---;
+-- in cloud
+DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_DROP_UNIQUE_KEY`;
 
-
--- health check status as enum
-CALL `cloud`.`IDEMPOTENT_CHANGE_COLUMN`('router_health_check', 'check_result', 'check_result', 'varchar(16) NOT NULL COMMENT "check executions result: SUCCESS, FAILURE, WARNING, UNKNOWN"');
-
--- Increase length of scripts_version column to 128 due to md5sum to sha512sum change
-CALL `cloud`.`IDEMPOTENT_CHANGE_COLUMN`('cloud.domain_router', 'scripts_version', 'scripts_version', 'VARCHAR(128)');
-
-CALL `cloud`.`IDEMPOTENT_DROP_UNIQUE_KEY`('counter', 'uc_counter__provider__source__value');
-CALL `cloud`.`IDEMPOTENT_ADD_UNIQUE_KEY`('cloud.counter', 'uc_counter__provider__source__value__removed', '(provider, source, value, removed)');
+CREATE PROCEDURE `cloud`.`IDEMPOTENT_DROP_UNIQUE_KEY` (
+    IN in_table_name VARCHAR(200),
+    IN in_index_name VARCHAR(200)
+)
+BEGIN
+    DECLARE CONTINUE HANDLER FOR 1091, 1025 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name, ' DROP KEY ', in_index_name); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
