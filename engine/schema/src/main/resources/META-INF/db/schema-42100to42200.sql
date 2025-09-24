@@ -25,3 +25,8 @@ CALL `cloud`.`IDEMPOTENT_CHANGE_COLUMN`('router_health_check', 'check_result', '
 
 -- Increase length of scripts_version column to 128 due to md5sum to sha512sum change
 CALL `cloud`.`IDEMPOTENT_CHANGE_COLUMN`('cloud.domain_router', 'scripts_version', 'scripts_version', 'VARCHAR(128)');
+
+-- Change scope for configuration - 'use.https.to.upload from' from StoragePool to Zone
+UPDATE `cloud`.`configuration` SET `scope` = 2 WHERE `name` = 'use.https.to.upload';
+-- Delete the configuration for 'use.https.to.upload' from StoragePool
+DELETE FROM `cloud`.`storage_pool_details` WHERE `name` = 'use.https.to.upload';
