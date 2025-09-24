@@ -136,6 +136,7 @@ export default {
   components: { ResourceIcon },
   data () {
     return {
+      initialized: false,
       domains: [],
       accounts: [],
       projects: [],
@@ -214,6 +215,7 @@ export default {
         })
         .finally(() => {
           this.loading = false
+          this.initialized = true
         })
     },
     fetchProjects () {
@@ -240,6 +242,7 @@ export default {
         })
         .finally(() => {
           this.loading = false
+          this.initialized = true
         })
     },
     changeDomain () {
