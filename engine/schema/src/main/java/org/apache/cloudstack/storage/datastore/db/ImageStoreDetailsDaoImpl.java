@@ -119,4 +119,9 @@ public class ImageStoreDetailsDaoImpl extends ResourceDetailsDaoBase<ImageStoreD
     public void addDetail(long resourceId, String key, String value, boolean display) {
         super.addDetail(new ImageStoreDetailVO(resourceId, key, value, display));
     }
+
+    @Override
+    public boolean doesConfigKeyAndValueExist(String key, String value) {
+        return doesKeyValuePairExist(key, value);
+    }
 }

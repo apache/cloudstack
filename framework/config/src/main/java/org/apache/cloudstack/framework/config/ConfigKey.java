@@ -301,4 +301,10 @@ public class ConfigKey<T> {
         }
     }
 
+    public boolean hasValueInScope(String value) {
+        if (value != null && s_depot != null) {
+            return s_depot.doesConfigKeyAndValueExistsInScope(_name, value, _scope);
+        }
+        return false;
+    }
 }

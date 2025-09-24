@@ -156,4 +156,9 @@ public class AccountDetailsDaoImpl extends ResourceDetailsDaoBase<AccountDetailV
         }
         return value;
     }
+
+    @Override
+    public boolean doesConfigKeyAndValueExist(String key, String value) {
+        return doesKeyValuePairExist(key, value);
+    }
 }
