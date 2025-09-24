@@ -16,9 +16,63 @@
 // under the License.
 package org.apache.cloudstack.backup;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.TimeZone;
+import java.util.UUID;
+
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.admin.backup.ImportBackupOfferingCmd;
+import org.apache.cloudstack.api.command.admin.backup.UpdateBackupOfferingCmd;
+import org.apache.cloudstack.api.command.user.backup.CreateBackupCmd;
+import org.apache.cloudstack.api.command.user.backup.CreateBackupScheduleCmd;
+import org.apache.cloudstack.api.command.user.backup.DeleteBackupScheduleCmd;
+import org.apache.cloudstack.api.response.BackupResponse;
+import org.apache.cloudstack.backup.dao.BackupDao;
+import org.apache.cloudstack.backup.dao.BackupDetailsDao;
+import org.apache.cloudstack.backup.dao.BackupOfferingDao;
+import org.apache.cloudstack.backup.dao.BackupScheduleDao;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import com.cloud.alert.AlertManager;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.vo.UserVmJoinVO;
-import com.cloud.alert.AlertManager;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.configuration.Resource;
 import com.cloud.dc.DataCenter;
@@ -31,6 +85,7 @@ import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -43,7 +98,6 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
-import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
@@ -66,64 +120,11 @@ import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VmDiskInfo;
 import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.dao.VMInstanceDetailsDao;
+import com.cloud.vm.VmDiskInfo;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.google.gson.Gson;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.admin.backup.ImportBackupOfferingCmd;
-import org.apache.cloudstack.api.command.admin.backup.UpdateBackupOfferingCmd;
-import org.apache.cloudstack.api.command.user.backup.CreateBackupCmd;
-import org.apache.cloudstack.api.command.user.backup.CreateBackupScheduleCmd;
-import org.apache.cloudstack.api.command.user.backup.DeleteBackupScheduleCmd;
-import org.apache.cloudstack.api.response.BackupResponse;
-import org.apache.cloudstack.backup.dao.BackupDao;
-import org.apache.cloudstack.backup.dao.BackupDetailsDao;
-import org.apache.cloudstack.backup.dao.BackupOfferingDao;
-import org.apache.cloudstack.backup.dao.BackupScheduleDao;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
-import org.springframework.test.util.ReflectionTestUtils;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.TimeZone;
-import java.util.UUID;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.atLeastOnce;
 
 @RunWith(MockitoJUnitRunner.class)
 public class BackupManagerTest {
@@ -1637,8 +1638,7 @@ public class BackupManagerTest {
         when(accountVOMock.getDomainId()).thenReturn(domainId);
         when(domainManager.getDomain(domainId)).thenReturn(domainMock);
         when(resourceLimitMgr.findCorrectResourceLimitForDomain(domainMock, Resource.ResourceType.backup, null)).thenReturn(domainLimit);
-        when(accountVOMock.getId()).thenReturn(accountId);
-        when(accountManager.isRootAdmin(accountId)).thenReturn(false);
+        when(accountManager.isRootAdmin(accountVOMock)).thenReturn(false);
 
         backupManager.validateAndGetDefaultBackupRetentionIfRequired(maxBackups, backupOfferingVOMock, vmInstanceVOMock);
     }
@@ -1657,8 +1657,7 @@ public class BackupManagerTest {
         when(accountVOMock.getDomainId()).thenReturn(domainId);
         when(domainManager.getDomain(domainId)).thenReturn(domainMock);
         when(resourceLimitMgr.findCorrectResourceLimitForDomain(domainMock, Resource.ResourceType.backup, null)).thenReturn(domainLimit);
-        when(accountVOMock.getId()).thenReturn(accountId);
-        when(accountManager.isRootAdmin(accountId)).thenReturn(false);
+        when(accountManager.isRootAdmin(accountVOMock)).thenReturn(false);
 
         backupManager.validateAndGetDefaultBackupRetentionIfRequired(maxBackups, backupOfferingVOMock, vmInstanceVOMock);
     }
@@ -1677,8 +1676,7 @@ public class BackupManagerTest {
         when(accountVOMock.getDomainId()).thenReturn(domainId);
         when(domainManager.getDomain(domainId)).thenReturn(domainMock);
         when(resourceLimitMgr.findCorrectResourceLimitForDomain(domainMock, Resource.ResourceType.backup, null)).thenReturn(domainLimit);
-        when(accountVOMock.getId()).thenReturn(accountId);
-        when(accountManager.isRootAdmin(accountId)).thenReturn(true);
+        when(accountManager.isRootAdmin(accountVOMock)).thenReturn(true);
 
         int retention = backupManager.validateAndGetDefaultBackupRetentionIfRequired(maxBackups, backupOfferingVOMock, vmInstanceVOMock);
         assertEquals(maxBackups, retention);
