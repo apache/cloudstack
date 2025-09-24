@@ -26,7 +26,7 @@
       class="top-spaced"
       :placeholder="$t('label.search')"
       v-model:value="searchQuery"
-      @search="fetchData"
+      @search="fetchHostsForMigration"
       v-focus="true" />
     <a-table
       class="top-spaced"
@@ -97,7 +97,7 @@
     </a-pagination>
 
     <a-form-item
-      v-if="isUserVm"
+      v-if="isUserVm && hasVolumes"
       class="top-spaced">
       <template #label>
         <tooltip-label :title="$t('label.migrate.with.storage')" :tooltip="$t('message.migrate.with.storage')"/>
@@ -221,6 +221,9 @@ export default {
   computed: {
     isUserVm () {
       return this.$route.meta.resourceType === 'UserVm'
+    },
+    hasVolumes () {
+      return this.volumes && this.volumes.length > 0
     }
   },
   watch: {
@@ -235,11 +238,11 @@ export default {
       return array !== null && array !== undefined && Array.isArray(array) && array.length > 0
     },
     fetchData () {
-      this.loading = true
       this.fetchHostsForMigration()
       this.fetchVolumes()
     },
     fetchHostsForMigration () {
+      this.loading = true
       api('findHostsForMigration', {
         virtualmachineid: this.resource.id,
         keyword: this.searchQuery,
@@ -266,12 +269,12 @@ export default {
     handleChangePage (page, pageSize) {
       this.page = page
       this.pageSize = pageSize
-      this.fetchData()
+      this.fetchHostsForMigration()
     },
     handleChangePageSize (currentPage, pageSize) {
       this.page = currentPage
       this.pageSize = pageSize
-      this.fetchData()
+      this.fetchHostsForMigration()
     },
     handleSelectedHostChange (host) {
       if (host.id === -1) {
@@ -305,7 +308,7 @@ export default {
         listAll: true,
         virtualmachineid: this.resource.id
       }).then(response => {
-        this.volumes = response.listvolumesresponse.volume
+        this.volumes = response?.listvolumesresponse?.volume || []
       }).finally(() => {
         this.loading = false
       })
@@ -314,7 +317,7 @@ export default {
       if (this.selectedHost.requiresStorageMotion || this.volumeToPoolSelection.length > 0) {
         return true
       }
-      if (this.selectedHost.id === -1 && this.volumes && this.volumes.length > 0) {
+      if (this.selectedHost.id === -1 && this.hasVolumes) {
         for (var volume of this.volumes) {
           if (volume.storagetype === 'local') {
             return true
@@ -342,7 +345,7 @@ export default {
       var params = this.selectedHost.id === -1
         ? { autoselect: true, virtualmachineid: this.resource.id }
         : { hostid: this.selectedHost.id, virtualmachineid: this.resource.id }
-      if (this.migrateWithStorage) {
+      if (this.migrateWithStorage && this.volumeToPoolSelection && this.volumeToPoolSelection.length > 0) {
         for (var i = 0; i < this.volumeToPoolSelection.length; i++) {
           const mapping = this.volumeToPoolSelection[i]
           params['migrateto[' + i + '].volume'] = mapping.volume
