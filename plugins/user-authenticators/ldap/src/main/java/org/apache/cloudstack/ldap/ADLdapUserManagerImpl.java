@@ -39,7 +39,7 @@ public class ADLdapUserManagerImpl extends OpenLdapUserManagerImpl implements Ld
             throw new IllegalArgumentException("ldap group name cannot be blank");
         }
 
-        String basedn = _ldapConfiguration.getBaseDn(domainId);
+        String basedn = LdapConfiguration.getBaseDn(domainId);
         if (StringUtils.isBlank(basedn)) {
             throw new IllegalArgumentException("ldap basedn is not configured");
         }
@@ -49,7 +49,7 @@ public class ADLdapUserManagerImpl extends OpenLdapUserManagerImpl implements Ld
         searchControls.setReturningAttributes(_ldapConfiguration.getReturnAttributes(domainId));
 
         NamingEnumeration<SearchResult> results = context.search(basedn, generateADGroupSearchFilter(groupName, domainId), searchControls);
-        final List<LdapUser> users = new ArrayList<LdapUser>();
+        final List<LdapUser> users = new ArrayList<>();
         while (results.hasMoreElements()) {
             final SearchResult result = results.nextElement();
             users.add(createUser(result, domainId));
@@ -58,13 +58,12 @@ public class ADLdapUserManagerImpl extends OpenLdapUserManagerImpl implements Ld
     }
 
     String generateADGroupSearchFilter(String groupName, Long domainId) {
-        final StringBuilder userObjectFilter = new StringBuilder();
-        userObjectFilter.append("(objectClass=");
-        userObjectFilter.append(_ldapConfiguration.getUserObject(domainId));
-        userObjectFilter.append(")");
+        String userObjectFilter = "(objectClass=" +
+                LdapConfiguration.getUserObject(domainId) +
+                ")";
 
         final StringBuilder memberOfFilter = new StringBuilder();
-        String groupCnName =  _ldapConfiguration.getCommonNameAttribute() + "=" +groupName + "," +  _ldapConfiguration.getBaseDn(domainId);
+        String groupCnName =  _ldapConfiguration.getCommonNameAttribute() + "=" +groupName + "," +  LdapConfiguration.getBaseDn(domainId);
         memberOfFilter.append("(").append(getMemberOfAttribute(domainId)).append("=");
         memberOfFilter.append(groupCnName);
         memberOfFilter.append(")");
@@ -75,7 +74,7 @@ public class ADLdapUserManagerImpl extends OpenLdapUserManagerImpl implements Ld
         result.append(memberOfFilter);
         result.append(")");
 
-        logger.debug("group search filter = " + result);
+        logger.debug("group search filter = {}", result);
         return result.toString();
     }
 
