@@ -50,6 +50,7 @@ import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.network.dao.NetrisProviderDao;
 import com.cloud.network.dao.NsxProviderDao;
 
+import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.utils.security.CertificateHelper;
 import com.cloud.api.query.dao.ManagementServerJoinDao;
 import com.cloud.api.query.vo.ManagementServerJoinVO;
@@ -4699,7 +4700,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final boolean isCallerAdmin = _accountService.isAdmin(caller.getId());
         boolean securityGroupsEnabled = false;
         boolean elasticLoadBalancerEnabled = false;
-        boolean KVMSnapshotEnabled = false;
         String supportELB = "false";
         final List<NetworkVO> networks = networkDao.listSecurityGroupEnabledNetworks();
         if (networks != null && !networks.isEmpty()) {
@@ -4716,7 +4716,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         final long diskOffMinSize = VolumeOrchestrationService.CustomDiskOfferingMinSize.value();
         final long diskOffMaxSize = VolumeOrchestrationService.CustomDiskOfferingMaxSize.value();
-        KVMSnapshotEnabled = Boolean.parseBoolean(_configDao.getValue("KVM.snapshot.enabled"));
+        final boolean KVMSnapshotEnabled = SnapshotManager.KVMSnapshotEnabled.value();
 
         final boolean userPublicTemplateEnabled = TemplateManager.AllowPublicUserTemplates.valueIn(caller.getId());
 
