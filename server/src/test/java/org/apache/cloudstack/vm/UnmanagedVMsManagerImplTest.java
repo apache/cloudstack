@@ -566,10 +566,7 @@ public class UnmanagedVMsManagerImplTest {
         when(cmd.getPassword()).thenReturn("pass");
         when(cmd.getImportSource()).thenReturn("external");
         when(cmd.getDomainId()).thenReturn(null);
-        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
-        when(templateDao.findByName(anyString())).thenReturn(template);
         HostVO host = Mockito.mock(HostVO.class);
-        when(userVmDao.getNextInSequence(Long.class, "id")).thenReturn(1L);
         DeployDestination mockDest = Mockito.mock(DeployDestination.class);
         when(deploymentPlanningManager.planDeployment(any(), any(), any(), any())).thenReturn(mockDest);
         DiskProfile diskProfile = Mockito.mock(DiskProfile.class);
@@ -655,7 +652,6 @@ public class UnmanagedVMsManagerImplTest {
         String tmplFileName = "5b8d689a-e61a-4ac3-9b76-e121ff90fbd3";
         long newVmId = 2L;
         long networkId = 1L;
-        when(vmDao.getNextInSequence(Long.class, "id")).thenReturn(newVmId);
 
         ClusterVO cluster = mock(ClusterVO.class);
         when(cluster.getId()).thenReturn(clusterId);
@@ -800,13 +796,10 @@ public class UnmanagedVMsManagerImplTest {
         when(cmd.getImportSource()).thenReturn(source);
         when(cmd.getDiskPath()).thenReturn("/var/lib/libvirt/images/test.qcow2");
         when(cmd.getDomainId()).thenReturn(null);
-        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
-        when(templateDao.findByName(anyString())).thenReturn(template);
         HostVO host = Mockito.mock(HostVO.class);
         when(hostDao.findById(anyLong())).thenReturn(host);
         NetworkOffering netOffering = Mockito.mock(NetworkOffering.class);
         when(entityMgr.findById(NetworkOffering.class, 0L)).thenReturn(netOffering);
-        when(userVmDao.getNextInSequence(Long.class, "id")).thenReturn(1L);
         DeployDestination mockDest = Mockito.mock(DeployDestination.class);
         when(deploymentPlanningManager.planDeployment(any(), any(), any(), any())).thenReturn(mockDest);
         DiskProfile diskProfile = Mockito.mock(DiskProfile.class);

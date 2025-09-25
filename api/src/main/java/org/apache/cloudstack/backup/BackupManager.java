@@ -205,6 +205,8 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
 
     Boolean canCreateInstanceFromBackup(Long backupId);
 
+    Boolean canCreateInstanceFromBackupAcrossZones(Long backupId);
+
     /**
      * Restore a backup to a new Instance
      */

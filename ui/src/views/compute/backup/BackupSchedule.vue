@@ -102,9 +102,9 @@ export default {
       type: Object,
       required: true
     },
-    resource: {
-      type: Object,
-      required: true
+    deleteFn: {
+      type: Function,
+      default: null
     }
   },
   data () {
@@ -183,6 +183,10 @@ export default {
   },
   methods: {
     handleClickDelete (record) {
+      if (this.deleteFn) {
+        this.deleteFn(record)
+        return
+      }
       const params = {}
       params.id = record.id
       this.actionLoading = true
