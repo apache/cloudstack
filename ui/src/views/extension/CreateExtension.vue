@@ -135,7 +135,7 @@ export default {
       if (!value || value.length === 0) {
         return ''
       }
-      return value.replace(/[^a-zA-Z0-9._-]/g, '').toLowerCase()
+      return value.replace(/[^a-zA-Z0-9._-]/g, '_').toLowerCase()
     },
     extenstionBasePath () {
       return (this.$store.getters.features.extensionspath || '[EXTENSIONS_PATH]') + '/' + this.safeName + '/'

@@ -167,6 +167,8 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
@@ -1282,17 +1284,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException("Unable to create Instance from backup as the backup has a different number of disks than the Instance");
         }
 
-        int index = 0;
-        for (VolumeVO vmVolume: vmVolumes) {
-            Backup.VolumeInfo backupVolume = backupVolumes.get(index);
-            if (vmVolume.getSize() < backupVolume.getSize()) {
-                throw new CloudRuntimeException(String.format(
-                    "Instance volume size %d[GiB] for volume (%s) is less than the backed-up volume size %d[GiB] for backed-up volume (%s).",
-                    vmVolume.getSize(), vmVolume.getUuid(), backupVolume.getSize(), backupVolume.getUuid()));
-            }
-            index++;
-        }
-
         BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(backup.getBackupOfferingId());
         if (offering == null) {
             throw new CloudRuntimeException("Failed to find backup offering");
@@ -1524,7 +1515,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         HypervisorGuru guru = hypervisorGuruManager.getGuru(vm.getHypervisorType());
         backupVolumeInfo.setType(Volume.Type.DATADISK);
 
-        logger.debug("Attaching the restored volume to VM {}", vm);
+        logger.info("Attaching the restored volume {} to VM {}.", () -> ReflectionToStringBuilder.toString(backupVolumeInfo, ToStringStyle.JSON_STYLE), () -> vm);
         StoragePoolVO pool = primaryDataStoreDao.findByUuid(datastoreUuid);
         try {
             return guru.attachRestoredVolumeToVirtualMachine(zoneId, restoredVolumeLocation, backupVolumeInfo, vm, pool.getId(), backup);
@@ -2170,6 +2161,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
     @Override
     public CapacityVO getBackupStorageUsedStats(Long zoneId) {
+        if (isDisabled(zoneId)) {
+            return new CapacityVO(null, zoneId, null, null, 0L, 0L, Capacity.CAPACITY_TYPE_BACKUP_STORAGE);
+        }
         final BackupProvider backupProvider = getBackupProvider(zoneId);
         Pair<Long, Long> backupUsage = backupProvider.getBackupStorageStats(zoneId);
         return new CapacityVO(null, zoneId, null, null, backupUsage.first(), backupUsage.second(), Capacity.CAPACITY_TYPE_BACKUP_STORAGE);

@@ -678,7 +678,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             "Wait Interval (in seconds) for shared network vm dhcp ip addr fetch for next iteration ", true);
 
     private static final ConfigKey<Integer> VmIpFetchTrialMax = new ConfigKey<Integer>("Advanced", Integer.class, "externaldhcp.vmip.max.retry", "10",
-            "The max number of retrieval times for shared entwork vm dhcp ip fetch, in case of failures", true);
+            "The max number of retrieval times for shared network vm dhcp ip fetch, in case of failures", true);
 
     private static final ConfigKey<Integer> VmIpFetchThreadPoolMax = new ConfigKey<Integer>("Advanced", Integer.class, "externaldhcp.vmipFetch.threadPool.max", "10",
             "number of threads for fetching vms ip address", true);
@@ -2705,7 +2705,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                             if (vmIdAndCount.getRetrievalCount() <= 0) {
                                 vmIdCountMap.remove(nicId);
-                                logger.debug("Vm " + vmId +" nic "+nicId + " count is zero .. removing vm nic from map ");
+                                logger.debug("Vm {} nic {} count is zero .. removing vm nic from map ", vmId, nicId);
 
                                 ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
                                         Domain.ROOT_DOMAIN, EventTypes.EVENT_NETWORK_EXTERNAL_DHCP_VM_IPFETCH,
@@ -2714,12 +2714,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                                 continue;
                             }
 
-
                             UserVm userVm = _vmDao.findById(vmId);
                             VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
                             NicVO nicVo = _nicDao.findById(nicId);
-                            NetworkVO network = _networkDao.findById(nicVo.getNetworkId());
+                            if (ObjectUtils.anyNull(userVm, vmInstance, nicVo)) {
+                                logger.warn("Couldn't fetch ip addr, Vm {} or nic {} doesn't exists", vmId, nicId);
+                                continue;
+                            }
 
+                            NetworkVO network = _networkDao.findById(nicVo.getNetworkId());
                             VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(userVm);
                             VirtualMachine vm = vmProfile.getVirtualMachine();
                             boolean isWindows = _guestOSCategoryDao.findById(_guestOSDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
@@ -4195,15 +4198,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         DiskOfferingVO rootDiskOffering = _diskOfferingDao.findById(rootDiskOfferingId);
-        long volumesSize = 0;
-        if (volume != null) {
-            volumesSize = volume.getSize();
-        } else if (snapshot != null) {
-            VolumeVO volumeVO = _volsDao.findById(snapshot.getVolumeId());
-            volumesSize = volumeVO != null ? volumeVO.getSize() : 0;
-        } else {
-            volumesSize = configureCustomRootDiskSize(customParameters, template, hypervisorType, rootDiskOffering);
-        }
+        long volumesSize = configureCustomRootDiskSize(customParameters, template, hypervisorType, rootDiskOffering);
 
         if (rootDiskOffering.getEncrypt() && hypervisorType != HypervisorType.KVM) {
             throw new InvalidParameterValueException("Root volume encryption is not supported for hypervisor type " + hypervisorType);
@@ -5992,7 +5987,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                         for (VmDiskStatsEntry vmDiskStat : vmDiskStats) {
                             SearchCriteria<VolumeVO> sc_volume = _volsDao.createSearchCriteria();
-                            sc_volume.addAnd("path", SearchCriteria.Op.EQ, vmDiskStat.getPath());
+                            sc_volume.addAnd("path", SearchCriteria.Op.LIKE, vmDiskStat.getPath() + "%");
                             List<VolumeVO> volumes = _volsDao.search(sc_volume, null);
                             if ((volumes == null) || (volumes.size() == 0)) {
                                 break;
@@ -6292,7 +6287,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
             _accountMgr.checkAccess(caller, null, true, volume);
             templateId = volume.getTemplateId();
-            overrideDiskOfferingId = volume.getDiskOfferingId();
         } else if (cmd.getSnapshotId() != null) {
             snapshot = _snapshotDao.findById(cmd.getSnapshotId());
             if (snapshot == null) {
@@ -6301,7 +6295,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             _accountMgr.checkAccess(caller, null, true, snapshot);
             VolumeInfo volumeOfSnapshot = getVolume(snapshot.getVolumeId(), templateId, true);
             templateId = volumeOfSnapshot.getTemplateId();
-            overrideDiskOfferingId = volumeOfSnapshot.getDiskOfferingId();
         }
 
         VirtualMachineTemplate template = null;
@@ -7722,7 +7715,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             HypervisorType.getListOfHypervisorsSupportingFunctionality(Functionality.VmStorageMigration)));
         }
 
-        if (_vmSnapshotDao.findByVm(vmId).size() > 0) {
+        if (!vm.getHypervisorType().isFunctionalitySupported(Functionality.VmStorageMigrationWithSnapshots) &&
+                CollectionUtils.isNotEmpty(_vmSnapshotDao.findByVm(vmId))) {
             throw new InvalidParameterValueException("VM with VM Snapshots cannot be migrated with storage, please remove all VM snapshots");
         }
 
@@ -9378,34 +9372,47 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
     }
 
+    private String getInternalName(long accountId, long vmId) {
+        String instanceSuffix = _configDao.getValue(Config.InstanceName.key());
+        if (instanceSuffix == null) {
+            instanceSuffix = "DEFAULT";
+        }
+        return VirtualMachineName.getVmName(vmId, accountId, instanceSuffix);
+    }
+
     @Override
-    public UserVm importVM(final DataCenter zone, final Host host, final VirtualMachineTemplate template, final String instanceName, final String displayName,
+    public UserVm importVM(final DataCenter zone, final Host host, final VirtualMachineTemplate template, final String instanceNameInternal, final String displayName,
                            final Account owner, final String userData, final Account caller, final Boolean isDisplayVm, final String keyboard,
                            final long accountId, final long userId, final ServiceOffering serviceOffering, final String sshPublicKeys,
                            final String hostName, final HypervisorType hypervisorType, final Map<String, String> customParameters,
                            final VirtualMachine.PowerState powerState, final LinkedHashMap<String, List<NicProfile>> networkNicMap) throws InsufficientCapacityException {
-        if (zone == null) {
-            throw new InvalidParameterValueException("Unable to import virtual machine with invalid zone");
-        }
-        if (host == null && hypervisorType == HypervisorType.VMware) {
-            throw new InvalidParameterValueException("Unable to import virtual machine with invalid host");
-        }
+        return Transaction.execute((TransactionCallbackWithException<UserVm, InsufficientCapacityException>) status -> {
+            if (zone == null) {
+                throw new InvalidParameterValueException("Unable to import virtual machine with invalid zone");
+            }
+            if (host == null && hypervisorType == HypervisorType.VMware) {
+                throw new InvalidParameterValueException("Unable to import virtual machine with invalid host");
+            }
 
-        final long id = _vmDao.getNextInSequence(Long.class, "id");
+            final long id = _vmDao.getNextInSequence(Long.class, "id");
+            String instanceName = StringUtils.isBlank(instanceNameInternal) ?
+                    getInternalName(owner.getAccountId(), id) :
+                    instanceNameInternal;
 
-        if (hostName != null) {
-            // Check is hostName is RFC compliant
-            checkNameForRFCCompliance(hostName);
-        }
+            if (hostName != null) {
+                // Check is hostName is RFC compliant
+                checkNameForRFCCompliance(hostName);
+            }
 
-        final String uuidName = _uuidMgr.generateUuid(UserVm.class, null);
-        final Host lastHost = powerState != VirtualMachine.PowerState.PowerOn ? host : null;
-        final Boolean dynamicScalingEnabled = checkIfDynamicScalingCanBeEnabled(null, serviceOffering, template, zone.getId());
-        return commitUserVm(true, zone, host, lastHost, template, hostName, displayName, owner,
-                null, null, userData, null, null, isDisplayVm, keyboard,
-                accountId, userId, serviceOffering, template.getFormat().equals(ImageFormat.ISO), sshPublicKeys, networkNicMap,
-                id, instanceName, uuidName, hypervisorType, customParameters,
-                null, null, null, powerState, dynamicScalingEnabled, null, serviceOffering.getDiskOfferingId(), null, null, null, null);
+            final String uuidName = _uuidMgr.generateUuid(UserVm.class, null);
+            final Host lastHost = powerState != VirtualMachine.PowerState.PowerOn ? host : null;
+            final Boolean dynamicScalingEnabled = checkIfDynamicScalingCanBeEnabled(null, serviceOffering, template, zone.getId());
+            return commitUserVm(true, zone, host, lastHost, template, hostName, displayName, owner,
+                    null, null, userData, null, null, isDisplayVm, keyboard,
+                    accountId, userId, serviceOffering, template.getFormat().equals(ImageFormat.ISO), sshPublicKeys, networkNicMap,
+                    id, instanceName, uuidName, hypervisorType, customParameters,
+                    null, null, null, powerState, dynamicScalingEnabled, null, serviceOffering.getDiskOfferingId(), null, null, null, null);
+        });
     }
 
     @Override

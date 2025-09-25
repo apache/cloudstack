@@ -334,7 +334,11 @@ restore_snapshot() {
 
     execute_and_wait POST "/nodes/${node}/qemu/${vmid}/snapshot/${snap_name}/rollback"
 
-    execute_and_wait POST "/nodes/${node}/qemu/${vmid}/status/start"
+    status_response=$(call_proxmox_api GET "/nodes/${node}/qemu/${vmid}/status/current")
+    vm_status=$(echo "$status_response" | jq -r '.data.status')
+    if [ "$vm_status" = "stopped" ];then
+        execute_and_wait POST "/nodes/${node}/qemu/${vmid}/status/start"
+    fi
 
     echo '{"status": "success", "message": "Instance Snapshot restored"}'
 }

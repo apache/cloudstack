@@ -19,12 +19,42 @@
 
 package org.apache.cloudstack.storage.motion;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.inject.Inject;
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.MigrateAnswer;
+import com.cloud.agent.api.MigrateCommand;
+import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo;
+import com.cloud.agent.api.ModifyTargetsAnswer;
+import com.cloud.agent.api.ModifyTargetsCommand;
+import com.cloud.agent.api.PrepareForMigrationCommand;
+import com.cloud.agent.api.storage.StorPoolBackupTemplateFromSnapshotCommand;
+import com.cloud.agent.api.to.DataObjectType;
+import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.StorageManager;
+import com.cloud.storage.VMTemplateDetailVO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.GuestOSCategoryDao;
+import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.SnapshotDetailsDao;
+import com.cloud.storage.dao.SnapshotDetailsVO;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.dao.VMInstanceDao;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
@@ -55,48 +85,21 @@ import org.apache.cloudstack.storage.datastore.util.StorPoolHelper;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpApiResponse;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpConnectionDesc;
-import org.apache.cloudstack.storage.snapshot.StorPoolConfigurationManager;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
+
 import org.apache.commons.collections.MapUtils;
-import org.apache.logging.log4j.Logger;
+
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.springframework.stereotype.Component;
 
-import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.MigrateAnswer;
-import com.cloud.agent.api.MigrateCommand;
-import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo;
-import com.cloud.agent.api.ModifyTargetsAnswer;
-import com.cloud.agent.api.ModifyTargetsCommand;
-import com.cloud.agent.api.PrepareForMigrationCommand;
-import com.cloud.agent.api.storage.StorPoolBackupTemplateFromSnapshotCommand;
-import com.cloud.agent.api.to.DataObjectType;
-import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.dc.dao.ClusterDao;
-import com.cloud.exception.AgentUnavailableException;
-import com.cloud.exception.OperationTimedoutException;
-import com.cloud.host.Host;
-import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.StorageManager;
-import com.cloud.storage.VMTemplateDetailVO;
-import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.GuestOSCategoryDao;
-import com.cloud.storage.dao.GuestOSDao;
-import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.storage.dao.SnapshotDetailsDao;
-import com.cloud.storage.dao.SnapshotDetailsVO;
-import com.cloud.storage.dao.VMTemplateDetailsDao;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.dao.VMInstanceDao;
+import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class StorPoolDataMotionStrategy implements DataMotionStrategy {
@@ -149,10 +152,13 @@ public class StorPoolDataMotionStrategy implements DataMotionStrategy {
     public StrategyPriority canHandle(DataObject srcData, DataObject destData) {
         DataObjectType srcType = srcData.getType();
         DataObjectType dstType = destData.getType();
+
         if (srcType == DataObjectType.SNAPSHOT && dstType == DataObjectType.TEMPLATE) {
             SnapshotInfo sinfo = (SnapshotInfo) srcData;
-            VolumeInfo volume = sinfo.getBaseVolume();
-            StoragePoolVO storagePool = _storagePool.findById(volume.getPoolId());
+            if (!sinfo.getDataStore().getRole().equals(DataStoreRole.Primary)) {
+                return StrategyPriority.CANT_HANDLE;
+            }
+            StoragePoolVO storagePool = _storagePool.findById(sinfo.getDataStore().getId());
             if (!storagePool.getStorageProviderName().equals(StorPoolUtil.SP_PROVIDER_NAME)) {
                 return StrategyPriority.CANT_HANDLE;
             }
@@ -163,7 +169,7 @@ public class StorPoolDataMotionStrategy implements DataMotionStrategy {
             String snapshotName = StorPoolHelper.getSnapshotName(sinfo.getId(), sinfo.getUuid(), _snapshotStoreDao,
                     _snapshotDetailsDao);
             StorPoolUtil.spLog("StorPoolDataMotionStrategy.canHandle snapshot name=%s", snapshotName);
-            if (snapshotName != null && StorPoolConfigurationManager.BypassSecondaryStorage.value()) {
+            if (snapshotName != null) {
                 return StrategyPriority.HIGHEST;
             }
         }
@@ -175,13 +181,12 @@ public class StorPoolDataMotionStrategy implements DataMotionStrategy {
             AsyncCompletionCallback<CopyCommandResult> callback) {
         SnapshotObjectTO snapshot = (SnapshotObjectTO) srcData.getTO();
         TemplateObjectTO template = (TemplateObjectTO) destData.getTO();
-        DataStore store = _dataStore.getDataStore(snapshot.getVolume().getDataStore().getUuid(),
-                snapshot.getVolume().getDataStore().getRole());
+        DataStore store = _dataStore.getDataStore(snapshot.getDataStore().getUuid(),
+                snapshot.getDataStore().getRole());
         SnapshotInfo sInfo = _snapshotDataFactory.getSnapshot(snapshot.getId(), store);
 
-        VolumeInfo vInfo = sInfo.getBaseVolume();
-        SpConnectionDesc conn = StorPoolUtil.getSpConnection(vInfo.getDataStore().getUuid(),
-                vInfo.getDataStore().getId(), _storagePoolDetails, _storagePool);
+        SpConnectionDesc conn = StorPoolUtil.getSpConnection(sInfo.getDataStore().getUuid(),
+                sInfo.getDataStore().getId(), _storagePoolDetails, _storagePool);
         String name = template.getUuid();
         String volumeName = "";
 
@@ -209,11 +214,9 @@ public class StorPoolDataMotionStrategy implements DataMotionStrategy {
                 // final String snapName =
                 // StorpoolStorageAdaptor.getVolumeNameFromPath(((SnapshotInfo)
                 // srcData).getPath(), true);
-                Long clusterId = StorPoolHelper.findClusterIdByGlobalId(parentName, _clusterDao);
-                EndPoint ep2 = clusterId != null
-                        ? RemoteHostEndPoint
-                                .getHypervisorHostEndPoint(StorPoolHelper.findHostByCluster(clusterId, _hostDao))
-                        : _selector.select(sInfo, destData);
+                Long clusterId = StorPoolHelper.findClusterIdByGlobalId(StorPoolUtil.getSnapshotClusterId(parentName, conn), _clusterDao);
+                HostVO host = clusterId != null ? StorPoolHelper.findHostByCluster(clusterId, _hostDao) : null;
+                EndPoint ep2 = host != null ? RemoteHostEndPoint.getHypervisorHostEndPoint(host) : _selector.select(srcData, destData);
                 if (ep2 == null) {
                     err = "No remote endpoint to send command, check if host or ssvm is down?";
                 } else {
@@ -238,7 +241,7 @@ public class StorPoolDataMotionStrategy implements DataMotionStrategy {
             StorPoolUtil.volumeDelete(volumeName, conn);
         }
         _vmTemplateDetailsDao.persist(new VMTemplateDetailVO(template.getId(), StorPoolUtil.SP_STORAGE_POOL_ID,
-                String.valueOf(vInfo.getDataStore().getId()), false));
+                String.valueOf(sInfo.getDataStore().getId()), false));
         StorPoolUtil.spLog("StorPoolDataMotionStrategy.copyAsync Creating snapshot=%s for StorPool template=%s",
                 volumeName, conn.getTemplateName());
         final CopyCommandResult cmd = new CopyCommandResult(null, answer);

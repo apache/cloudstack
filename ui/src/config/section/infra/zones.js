@@ -119,6 +119,7 @@ export default {
       label: 'label.action.edit.zone',
       dataView: true,
       popup: true,
+      show: (record) => { return record.networktype === 'Advanced' },
       component: shallowRef(defineAsyncComponent(() => import('@/views/infra/ZoneUpdate.vue')))
     },
     {

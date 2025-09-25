@@ -32,6 +32,7 @@ After=network.target network-online.target mariadb.service mysqld.service mysql.
 Type=simple
 EnvironmentFile=/etc/default/cloudstack-usage
 Environment=JAVA_PID=$$
+ExecStartPre=/usr/share/cloudstack-common/scripts/installer/pre-check.sh
 ExecStart=/bin/sh -ec '/usr/bin/java -Dpid=${JAVA_PID} $JAVA_OPTS $JAVA_DEBUG -cp $CLASSPATH $JAVA_CLASS'
 Restart=always
 RestartSec=10s

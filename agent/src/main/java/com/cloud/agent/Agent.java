@@ -97,7 +97,6 @@ import com.cloud.utils.nio.Link;
 import com.cloud.utils.nio.NioClient;
 import com.cloud.utils.nio.NioConnection;
 import com.cloud.utils.nio.Task;
-import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
 /**
@@ -476,7 +475,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                 return;
             }
 
-            logger.info("Scheduling a recurring preferred host checker task with lb algorithm '{}' and host.lb.interval={} ms", lbAlgorithm, checkInterval);
+            logger.info("Scheduling a recurring preferred host checker task with host.lb.interval={} ms", checkInterval);
             hostLbCheckExecutor = Executors.newSingleThreadScheduledExecutor((new NamedThreadFactory(name)));
             hostLbCheckExecutor.scheduleAtFixedRate(new PreferredHostCheckerTask(), checkInterval, checkInterval,
                     TimeUnit.MILLISECONDS);
@@ -614,9 +613,9 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
     }
 
     protected String getAgentArch() {
-        final Script command = new Script("/usr/bin/arch", 500, logger);
-        final OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
-        return command.execute(parser);
+        String arch = Script.runSimpleBashScript(Script.getExecutableAbsolutePath("arch"), 1000);
+        logger.debug("Arch for agent: {} found: {}", _name, arch);
+        return arch;
     }
 
     @Override

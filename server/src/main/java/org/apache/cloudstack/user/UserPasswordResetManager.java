@@ -65,6 +65,11 @@ public interface UserPasswordResetManager {
             "Password for SMTP server for sending emails for resetting password for ACS users",
             false, ConfigKey.Scope.Global);
 
+    ConfigKey<String> UserPasswordResetDomainURL = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED,
+            String.class, "user.password.reset.mail.domain.url", null,
+            "Domain URL for reset password links sent to the user via email", true,
+            ConfigKey.Scope.Global);
+
     void setResetTokenAndSend(UserAccount userAccount);
 
     boolean validateAndResetPassword(UserAccount user, String token, String password);

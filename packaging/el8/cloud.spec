@@ -102,7 +102,7 @@ The Apache CloudStack files shared between agent and management server
 Summary: CloudStack Agent for KVM hypervisors
 Requires: (openssh-clients or openssh)
 Requires: java-17-openjdk
-Requires: tzdata-java
+Requires: (tzdata-java or timezone-java)
 Requires: %{name}-common = %{_ver}
 Requires: libvirt
 Requires: libvirt-daemon-driver-storage-rbd
@@ -143,7 +143,7 @@ The CloudStack baremetal agent
 %package usage
 Summary: CloudStack Usage calculation server
 Requires: java-17-openjdk
-Requires: tzdata-java
+Requires: (tzdata-java or timezone-java)
 Group: System Environment/Libraries
 %description usage
 The CloudStack usage calculation service
@@ -317,7 +317,7 @@ install -D plugins/integrations/kubernetes-service/src/main/resources/conf/k8s-n
 # SystemVM template
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/templates/systemvm
 cp -r engine/schema/dist/systemvm-templates/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/templates/systemvm
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/templates/systemvm/md5sum.txt
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/templates/systemvm/sha512sum.txt
 
 # Sample Extensions
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/extensions

@@ -184,6 +184,7 @@ import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmCloneSettingDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrationService, Configurable {
 
@@ -270,6 +271,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     ConfigDepot configDepot;
     @Inject
     ConfigurationDao configurationDao;
+    @Inject
+    VMInstanceDao vmInstanceDao;
 
     @Inject
     protected SnapshotHelper snapshotHelper;
@@ -577,14 +580,22 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
 
         VolumeInfo vol = volFactory.getVolume(volume.getId());
+        long zoneId = volume.getDataCenterId();
         DataStore store = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
-        DataStoreRole dataStoreRole = snapshotHelper.getDataStoreRole(snapshot);
-        SnapshotInfo snapInfo = snapshotFactory.getSnapshotWithRoleAndZone(snapshot.getId(), dataStoreRole, volume.getDataCenterId());
+        DataStoreRole dataStoreRole = snapshotHelper.getDataStoreRole(snapshot, zoneId);
+        SnapshotInfo snapInfo = snapshotFactory.getSnapshotWithRoleAndZone(snapshot.getId(), dataStoreRole, zoneId);
+        boolean kvmSnapshotOnlyInPrimaryStorage = snapshotHelper.isKvmSnapshotOnlyInPrimaryStorage(snapshot, dataStoreRole, zoneId);
+        logger.debug("Creating volume from snapshot, with dataStore role {} and on primary storage: {}", dataStoreRole, kvmSnapshotOnlyInPrimaryStorage);
 
-        boolean kvmSnapshotOnlyInPrimaryStorage = snapshotHelper.isKvmSnapshotOnlyInPrimaryStorage(snapshot, dataStoreRole);
-
+        boolean storageSupportSnapshotToTemplateEnabled = snapshotHelper.isStorageSupportSnapshotToTemplate(snapInfo); // storageSupportSnapshotToTemplateEnabled is true only for StorPool now [TODO: Update to check storage supports snapshot to volume (DataStoreCapabilities.CAN_CREATE_VOLUME_FROM_SNAPSHOT) - may impact other storages, or StorPool storage type only]
         try {
-            snapInfo = snapshotHelper.backupSnapshotToSecondaryStorageIfNotExists(snapInfo, dataStoreRole, snapshot, kvmSnapshotOnlyInPrimaryStorage);
+            if (!storageSupportSnapshotToTemplateEnabled) {
+                dataStoreRole = snapshotHelper.getDataStoreRole(snapshot);
+                snapInfo = snapshotFactory.getSnapshotWithRoleAndZone(snapshot.getId(), dataStoreRole, zoneId);
+                kvmSnapshotOnlyInPrimaryStorage = snapshotHelper.isKvmSnapshotOnlyInPrimaryStorage(snapshot, dataStoreRole);
+                logger.debug("Creating volume from snapshot, with dataStore role {} and on primary storage: {}", dataStoreRole, kvmSnapshotOnlyInPrimaryStorage);
+                snapInfo = snapshotHelper.backupSnapshotToSecondaryStorageIfNotExists(snapInfo, dataStoreRole, snapshot, kvmSnapshotOnlyInPrimaryStorage);
+            }
         } catch (CloudRuntimeException e) {
             snapshotHelper.expungeTemporarySnapshot(kvmSnapshotOnlyInPrimaryStorage, snapInfo);
             throw e;
@@ -596,7 +607,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
 
         // don't try to perform a sync if the DataStoreRole of the snapshot is equal to DataStoreRole.Primary
-        if (!DataStoreRole.Primary.equals(dataStoreRole) || kvmSnapshotOnlyInPrimaryStorage) {
+        if (!DataStoreRole.Primary.equals(dataStoreRole) || (kvmSnapshotOnlyInPrimaryStorage && !storageSupportSnapshotToTemplateEnabled)) {
             try {
                 // sync snapshot to region store if necessary
                 DataStore snapStore = snapInfo.getDataStore();
@@ -964,9 +975,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         // Create event and update resource count for volumes if vm is a user vm
         if (vm.getType() == VirtualMachine.Type.User) {
-
             Long offeringId = null;
-
             if (!offering.isComputeOnly()) {
                 offeringId = offering.getId();
             }
@@ -1935,14 +1944,18 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         if (newSize != vol.getSize()) {
             DiskOfferingVO diskOffering = diskOfferingDao.findByIdIncludingRemoved(vol.getDiskOfferingId());
-            if (newSize > vol.getSize()) {
-                _resourceLimitMgr.checkPrimaryStorageResourceLimit(_accountMgr.getActiveAccountById(vol.getAccountId()),
-                        vol.isDisplay(), newSize - vol.getSize(), diskOffering);
-                _resourceLimitMgr.incrementVolumePrimaryStorageResourceCount(vol.getAccountId(), vol.isDisplay(),
-                        newSize - vol.getSize(), diskOffering);
-            } else {
-                _resourceLimitMgr.decrementVolumePrimaryStorageResourceCount(vol.getAccountId(), vol.isDisplay(),
-                        vol.getSize() - newSize, diskOffering);
+            VMInstanceVO vm = vol.getInstanceId() != null ? vmInstanceDao.findById(vol.getInstanceId()) : null;
+            if (vm == null || vm.getType() == VirtualMachine.Type.User) {
+                // Update resource count for user vm volumes when volume is attached
+                if (newSize > vol.getSize()) {
+                    _resourceLimitMgr.checkPrimaryStorageResourceLimit(_accountMgr.getActiveAccountById(vol.getAccountId()),
+                            vol.isDisplay(), newSize - vol.getSize(), diskOffering);
+                    _resourceLimitMgr.incrementVolumePrimaryStorageResourceCount(vol.getAccountId(), vol.isDisplay(),
+                            newSize - vol.getSize(), diskOffering);
+                } else {
+                    _resourceLimitMgr.decrementVolumePrimaryStorageResourceCount(vol.getAccountId(), vol.isDisplay(),
+                            vol.getSize() - newSize, diskOffering);
+                }
             }
             vol.setSize(newSize);
             _volsDao.persist(vol);

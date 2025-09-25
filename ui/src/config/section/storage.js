@@ -228,7 +228,7 @@ export default {
           label: 'label.change.offering.for.volume',
           args: ['id', 'diskofferingid', 'size', 'miniops', 'maxiops', 'automigrate'],
           dataView: true,
-          show: (record, store) => { return ['Allocated', 'Ready'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
+          show: (record, store) => { return ['Allocated', 'Ready'].includes(record.state) },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/ChangeOfferingForVolume.vue')))
         },
@@ -415,7 +415,7 @@ export default {
     },
     {
       name: 'backup',
-      title: 'label.backup',
+      title: 'label.backups',
       icon: 'cloud-upload-outlined',
       permission: ['listBackups'],
       params: { listvmdetails: 'true' },

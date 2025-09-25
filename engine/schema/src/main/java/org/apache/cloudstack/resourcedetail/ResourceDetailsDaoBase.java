@@ -65,6 +65,12 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
         return findOneBy(sc);
     }
 
+    public List<R> findDetails(String key) {
+        SearchCriteria<R> sc = AllFieldsSearch.create();
+        sc.setParameters("name", key);
+        return listBy(sc);
+    }
+
     public List<R> findDetails(long resourceId, String key) {
         SearchCriteria<R> sc = AllFieldsSearch.create();
         sc.setParameters("resourceId", resourceId);
