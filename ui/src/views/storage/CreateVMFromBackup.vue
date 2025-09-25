@@ -92,39 +92,52 @@ export default {
     }
   },
   created () {
-    this.fetchBackupVmDetails().then(() => {
-      this.fetchServiceOffering()
+    this.fetchServiceOffering()
+    this.fetchBackupOffering().then(() => {
+      this.fetchBackupRepository()
       this.loading = false
     })
   },
   methods: {
-    fetchBackupVmDetails () {
-      this.serviceOfferings = []
-      return getAPI('listBackups', {
-        id: this.resource.id,
-        listvmdetails: true
-      }).then(response => {
-        const backups = response.listbackupsresponse.backup || []
-        this.vmdetails = backups[0].vmdetails
-      })
-    },
     fetchServiceOffering () {
-      this.serviceOfferings = []
       getAPI('listServiceOfferings', {
         zoneid: this.resource.zoneid,
-        id: this.vmdetails.serviceofferingid,
+        id: this.resource.vmdetails.serviceofferingid,
         listall: true
       }).then(response => {
         const serviceOfferings = response.listserviceofferingsresponse.serviceoffering || []
         this.serviceOffering = serviceOfferings[0]
       })
     },
+    fetchBackupOffering () {
+      return getAPI('listBackupOfferings', {
+        id: this.resource.backupofferingid,
+        listall: true
+      }).then(response => {
+        const backupOfferings = response.listbackupofferingsresponse.backupoffering || []
+        this.backupOffering = backupOfferings[0]
+      })
+    },
+    fetchBackupRepository () {
+      if (this.backupOffering.provider !== 'nas') {
+        return
+      }
+      getAPI('listBackupRepositories', {
+        id: this.backupOffering.externalid
+      }).then(response => {
+        const backupRepositories = response.listbackuprepositoriesresponse.backuprepository || []
+        this.backupRepository = backupRepositories[0]
+      })
+    },
     populatePreFillData () {
+      this.vmdetails = this.resource.vmdetails
       this.dataPreFill.zoneid = this.resource.zoneid
+      this.dataPreFill.crosszoneinstancecreation = this.backupRepository?.crosszoneinstancecreation || this.backupOffering.provider === 'dummy'
       this.dataPreFill.isIso = (this.vmdetails.isiso === 'true')
       this.dataPreFill.backupid = this.resource.id
       this.dataPreFill.computeofferingid = this.vmdetails.serviceofferingid
       this.dataPreFill.templateid = this.vmdetails.templateid
+      this.dataPreFill.allowtemplateisoselection = true
       this.dataPreFill.isoid = this.vmdetails.templateid
       this.dataPreFill.allowIpAddressesFetch = !this.resource.virtualmachineid
       if (this.vmdetails.nics) {

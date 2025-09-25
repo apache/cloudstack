@@ -1,4 +1,14 @@
-# Apache CloudStack [![Build Status](https://github.com/apache/cloudstack/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/apache/cloudstack/actions/workflows/build.yml) [![UI Build](https://github.com/apache/cloudstack/actions/workflows/ui.yml/badge.svg)](https://github.com/apache/cloudstack/actions/workflows/ui.yml) [![License Check](https://github.com/apache/cloudstack/actions/workflows/rat.yml/badge.svg?branch=main)](https://github.com/apache/cloudstack/actions/workflows/rat.yml) [![Simulator CI](https://github.com/apache/cloudstack/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/apache/cloudstack/actions/workflows/ci.yml) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=apache_cloudstack&metric=alert_status)](https://sonarcloud.io/dashboard?id=apache_cloudstack) [![codecov](https://codecov.io/gh/apache/cloudstack/branch/main/graph/badge.svg)](https://codecov.io/gh/apache/cloudstack)
+# Apache CloudStack
+
+[![Build Status](https://github.com/apache/cloudstack/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/apache/cloudstack/actions/workflows/build.yml)
+[![codecov](https://codecov.io/gh/apache/cloudstack/branch/main/graph/badge.svg)](https://codecov.io/gh/apache/cloudstack)
+[![Docker CloudStack Simulator Status](https://github.com/apache/cloudstack/actions/workflows/docker-cloudstack-simulator.yml/badge.svg?branch=main)](https://github.com/apache/cloudstack/actions/workflows/docker-cloudstack-simulator.yml)
+[![License Check](https://github.com/apache/cloudstack/actions/workflows/rat.yml/badge.svg?branch=main)](https://github.com/apache/cloudstack/actions/workflows/rat.yml)
+[![Linter Status](https://github.com/apache/cloudstack/actions/workflows/linter.yml/badge.svg)](https://github.com/apache/cloudstack/actions/workflows/linter.yml)
+[![Merge Conflict Checker Status](https://github.com/apache/cloudstack/actions/workflows/merge-conflict-checker.yml/badge.svg?branch=main)](https://github.com/apache/cloudstack/actions/workflows/merge-conflict-checker.yml)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=apache_cloudstack&metric=alert_status)](https://sonarcloud.io/dashboard?id=apache_cloudstack)
+[![Simulator CI](https://github.com/apache/cloudstack/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/apache/cloudstack/actions/workflows/ci.yml)
+[![UI Build](https://github.com/apache/cloudstack/actions/workflows/ui.yml/badge.svg?branch=main)](https://github.com/apache/cloudstack/actions/workflows/ui.yml)
 
 [![Apache CloudStack](tools/logo/apache_cloudstack.png)](https://cloudstack.apache.org/)
 
@@ -21,7 +31,7 @@ OVM and LXC containers.
 Users can manage their cloud with an easy to use Web interface, command line
 tools, and/or a full-featured query based API.
 
-For more information on Apache CloudStack, please visit the [website](http://cloudstack.apache.org)
+For more information on Apache CloudStack, please visit the [website](https://cloudstack.apache.org)
 
 ## Who Uses CloudStack?
 
@@ -78,10 +88,10 @@ via GitHub pull requests.
 ## Getting Involved and Contributing
 
 Interested in helping out with Apache CloudStack? Great! We welcome
-participation from anybody willing to work [The Apache Way](http://theapacheway.com) and make a
+participation from anybody willing to work [The Apache Way](https://theapacheway.com) and make a
 contribution. Note that you do not have to be a developer in order to contribute
 to Apache CloudStack. We need folks to help with documentation, translation,
-promotion etc. See our contribution [page](http://cloudstack.apache.org/contribute.html).
+promotion etc. See our contribution [page](https://cloudstack.apache.org/contribute.html).
 
 If you are a frequent contributors, you can request to be added as collaborators
 (see https://cwiki.apache.org/confluence/display/INFRA/Git+-+.asf.yaml+features#Git.asf.yamlfeatures-AssigningexternalcollaboratorswiththetriageroleonGitHub)
@@ -92,7 +102,7 @@ You may do so by sharing your GitHub users ID or raise a GitHub issue.
 
 If you're interested in learning more or participating in the Apache CloudStack
 project, the mailing lists are the best way to do that. While the project has
-several communications channels, the [mailing lists](http://cloudstack.apache.org/mailing-lists.html) are the most active and the
+several communications channels, the [mailing lists](https://cloudstack.apache.org/mailing-lists.html) are the most active and the
 official channels for making decisions about the project itself.
 
 Mailing lists:
@@ -112,7 +122,7 @@ released version of CloudStack, please report it to `security@apache.org` with
 details about the vulnerability, how it might be exploited, and any additional
 information that might be useful.
 
-For more details, please visit our security [page](http://cloudstack.apache.org/security.html).
+For more details, please visit our security [page](https://cloudstack.apache.org/security.html).
 
 ## License
 

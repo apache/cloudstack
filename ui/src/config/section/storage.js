@@ -415,7 +415,7 @@ export default {
     },
     {
       name: 'backup',
-      title: 'label.backup',
+      title: 'label.backups',
       icon: 'cloud-upload-outlined',
       permission: ['listBackups'],
       params: { listvmdetails: 'true' },

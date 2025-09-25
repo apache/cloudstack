@@ -24,6 +24,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 
 import com.cloud.agent.api.to.GPUDeviceTO;
+import com.cloud.cpu.CPU;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.Domain;
@@ -312,12 +313,17 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         to.setNics(nics);
         to.setDisks(vmProfile.getDisks().toArray(new DiskTO[vmProfile.getDisks().size()]));
 
-        if (vmProfile.getTemplate().getBits() == 32) {
-            to.setArch("i686");
-        } else if("s390x".equals(System.getProperty("os.arch"))) {
-            to.setArch("s390x");
+        CPU.CPUArch templateArch = vmProfile.getTemplate().getArch();
+        if (templateArch != null) {
+            to.setArch(templateArch.getType());
         } else {
-            to.setArch("x86_64");
+            if (vmProfile.getTemplate().getBits() == 32) {
+                to.setArch(CPU.CPUArch.x86.getType());
+            } else if("s390x".equals(System.getProperty("os.arch"))) {
+                to.setArch("s390x");
+            } else {
+                to.setArch(CPU.CPUArch.amd64.getType());
+            }
         }
 
         Map<String, String> detailsInVm = _vmInstanceDetailsDao.listDetailsKeyPairs(vm.getId());
