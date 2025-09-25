@@ -724,6 +724,12 @@
                         </div>
                       </a-card>
                     </a-form-item>
+                    <a-form-item v-if="extraConfigEnabledValue" name="extraconfig" ref="extraconfig">
+                      <template #label>
+                        <tooltip-label :title="$t('label.extraconfig')" :tooltip="$t('label.extraconfig.tooltip')"/>
+                      </template>
+                      <a-textarea v-model:value="form.extraconfig"/>
+                    </a-form-item>
                     <a-form-item :label="$t('label.affinity.groups')">
                       <affinity-group-selection
                         :items="options.affinityGroups"
@@ -979,7 +985,8 @@ export default {
         keyboards: [],
         bootTypes: [],
         bootModes: [],
-        ioPolicyTypes: []
+        ioPolicyTypes: [],
+        extraConfigEnabled: []
       },
       rowCount: {},
       loading: {
@@ -1024,6 +1031,7 @@ export default {
       sshKeyPairs: [],
       sshKeyPair: {},
       userData: {},
+      extraConfig: {},
       userDataParams: [],
       userDataParamCols: [
         {
@@ -1274,6 +1282,15 @@ export default {
             type: 'Routing'
           },
           field: 'hostid'
+        },
+        extraConfigEnabled: {
+          list: 'listConfigurations',
+          isLoad: true,
+          options: {
+            accountid: store.getters.userInfo.accountid,
+            name: 'enable.additional.vm.configuration'
+          },
+          field: 'value'
         }
       }
     },
@@ -1417,6 +1434,9 @@ export default {
     },
     dynamicScalingVmConfigValue () {
       return this.$store.getters.features.dynamicscalingenabled
+    },
+    extraConfigEnabledValue () {
+      return this.options.extraConfigEnabled?.[0]?.value === 'true'
     },
     isCustomizedDiskIOPS () {
       return this.diskSelected?.iscustomizediops || false
@@ -2053,6 +2073,9 @@ export default {
         const isUserdataAllowed = !this.userdataDefaultOverridePolicy || (this.userdataDefaultOverridePolicy === 'ALLOWOVERRIDE' && this.doUserdataOverride) || (this.userdataDefaultOverridePolicy === 'APPEND' && this.doUserdataAppend)
         if (isUserdataAllowed && values.userdata && values.userdata.length > 0) {
           deployVmData.userdata = this.$toBase64AndURIEncoded(values.userdata)
+        }
+        if (values.extraconfig && values.extraconfig.length > 0) {
+          deployVmData.extraconfig = encodeURIComponent(values.extraconfig)
         }
         // step 2: select template/iso
         if (this.tabKey === 'templateid') {

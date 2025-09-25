@@ -91,6 +91,12 @@
         <a-textarea v-model:value="form.userdata">
         </a-textarea>
       </a-form-item>
+      <a-form-item v-if="extraConfigEnabled">
+        <template #label>
+          <tooltip-label :title="$t('label.extraconfig')" :tooltip="$t('label.extraconfig.tooltip')"/>
+        </template>
+        <a-textarea v-model:value="form.extraconfig"/>
+      </a-form-item>
       <a-form-item ref="securitygroupids" name="securitygroupids" :label="$t('label.security.groups')" v-if="securityGroupsEnabled">
         <a-select
           mode="multiple"
@@ -151,6 +157,7 @@ export default {
       serviceOffering: {},
       template: {},
       userDataEnabled: false,
+      extraConfigEnabled: false,
       securityGroupsEnabled: false,
       loading: false,
       securitygroups: {
@@ -185,7 +192,8 @@ export default {
         deleteprotection: this.resource.deleteprotection,
         group: this.resource.group,
         userdata: '',
-        haenable: this.resource.haenable
+        haenable: this.resource.haenable,
+        extraconfig: ''
       })
       this.rules = reactive({})
     },
@@ -197,6 +205,7 @@ export default {
       this.fetchServiceOfferingData()
       this.fetchTemplateData()
       this.fetchUserData()
+      this.fetchExtraConfigEnabled()
     },
     fetchZoneDetails () {
       api('listZones', {
@@ -315,6 +324,17 @@ export default {
         })
       })
     },
+    fetchExtraConfigEnabled () {
+      getAPI('listConfigurations', {
+        accountid: this.$store.getters.userInfo.accountid,
+        name: 'enable.additional.vm.configuration'
+      }).then(json => {
+        const configResponse = json.listconfigurationsresponse.configuration || []
+        this.extraConfigEnabled = configResponse[0]?.value === 'true'
+      }).catch(error => {
+        this.$notifyError(error)
+      })
+    },
 
     handleSubmit () {
       this.formRef.value.validate().then(() => {
@@ -341,6 +361,9 @@ export default {
         }
         if (values.userdata && values.userdata.length > 0) {
           params.userdata = this.$toBase64AndURIEncoded(values.userdata)
+        }
+        if (values.extraconfig && values.extraconfig.length > 0) {
+          params.extraconfig = encodeURIComponent(values.extraconfig)
         }
         this.loading = true
 
