@@ -2046,7 +2046,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         });
         HostVO host = ApiDBUtils.findHostById(agentHostId);
         if (host == null) {
-            throw new CloudRuntimeException("Unable to retrieve host with ID: " + agentHostId);
+            return new Pair<>(result, null);
         }
         logger.debug("Selected host UUID: {} to unmanage Instance: {}.", host.getUuid(), vm.getName());
         ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, Domain.ROOT_DOMAIN, EventTypes.EVENT_VM_UNMANAGE,

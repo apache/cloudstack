@@ -1865,7 +1865,7 @@ public class VirtualMachineManagerImplTest {
         virtualMachineManagerImpl.unmanage(vmMockUuid, null);
     }
 
-    @Test(expected = CloudRuntimeException.class)
+    @Test
     public void testUnmanageHostNotFoundAfterTransaction() {
         when(vmInstanceMock.getHostId()).thenReturn(hostMockId);
         when(vmInstanceDaoMock.findByUuid(vmMockUuid)).thenReturn(vmInstanceMock);
@@ -1878,7 +1878,8 @@ public class VirtualMachineManagerImplTest {
         doNothing().when(guru).finalizeUnmanage(vmInstanceMock);
         try (MockedStatic<ApiDBUtils> ignored = Mockito.mockStatic(ApiDBUtils.class)) {
             when(ApiDBUtils.findHostById(hostMockId)).thenReturn(null);
-            virtualMachineManagerImpl.unmanage(vmMockUuid, null);
+            Pair<Boolean, String> result = virtualMachineManagerImpl.unmanage(vmMockUuid, null);
+            assertNull(result.second());
         }
     }
 
