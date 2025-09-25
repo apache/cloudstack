@@ -636,6 +636,7 @@ pip3 install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %{_datadir}/%{name}-management/setup/wheel/*.whl
 %dir %attr(0755,cloud,cloud) %{_sysconfdir}/%{name}/extensions
 %attr(0755,cloud,cloud) %{_sysconfdir}/%{name}/extensions/*
+%dir %attr(0770,cloud,cloud) %{_localstatedir}/lib/%{name}/management
 
 %files agent
 %attr(0755,root,root) %{_bindir}/%{name}-setup-agent
