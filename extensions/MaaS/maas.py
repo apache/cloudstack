@@ -44,36 +44,48 @@ class MaasManager:
 
             extension = json_data.get("externaldetails", {}).get("extension", {})
             host = json_data.get("externaldetails", {}).get("host", {})
+            vm = json_data.get("externaldetails", {}).get("virtualmachine", {})
 
             endpoint = host.get("endpoint") or extension.get("endpoint")
             apikey = host.get("apikey") or extension.get("apikey")
             distro_series = (
                 json_data.get("cloudstack.vm.details", {})
                 .get("details", {})
-                .get("distro_series", "ubuntu")
+                .get("distro_series", None)
             )
 
             if not endpoint or not apikey:
                 fail("Missing MAAS endpoint or apikey")
 
-            # normalize endpoint
             if not endpoint.startswith("http://") and not endpoint.startswith("https://"):
                 endpoint = "http://" + endpoint
             endpoint = endpoint.rstrip("/")
 
-            # split api key
             parts = apikey.split(":")
             if len(parts) != 3:
                 fail("Invalid apikey format. Expected consumer:token:secret")
 
             consumer, token, secret = parts
+
+            system_id = (
+                    json_data.get("cloudstack.vm.details", {})
+                    .get("details", {})
+                    .get("maas_system_id")
+                    or vm.get("maas_system_id", "")
+            )
+
+            vm_name = vm.get("vm_name") or json_data.get("cloudstack.vm.details", {}).get("name")
+            if not vm_name:
+                vm_name = f"cs-{system_id}" if system_id else "cs-unknown"
+
             return {
                 "endpoint": endpoint,
                 "consumer": consumer,
                 "token": token,
                 "secret": secret,
-                "distro_series": distro_series,
-                "system_id": json_data.get("cloudstack.vm.details", {}).get("details", {}).get("maas_system_id", ""),
+                "distro_series": distro_series or "ubuntu/focal",
+                "system_id": system_id,
+                "vm_name": vm_name,
             }
         except Exception as e:
             fail(f"Error parsing JSON: {str(e)}")
@@ -103,9 +115,19 @@ class MaasManager:
         if not ready:
             fail("No Ready machines available")
 
-        system = ready[0]
+        sysid = self.data.get("system_id")
+
+        if sysid:
+            match = next((m for m in ready if m["system_id"] == sysid), None)
+            if not match:
+                fail(f"Provided system_id '{sysid}' not found among Ready machines")
+            system = match
+        else:
+            system = ready[0]
+
         system_id = system["system_id"]
         mac = system.get("interface_set", [{}])[0].get("mac_address")
+        hostname = system.get("hostname", "")
 
         if not mac:
             fail("No MAC address found")
@@ -119,7 +141,11 @@ class MaasManager:
 
         result = {
             "nics": json_data["cloudstack.vm.details"]["nics"],
-            "details": {"External:mac_address": mac, "maas_system_id": system_id},
+            "details": {
+                "External:mac_address": mac,
+                "External:maas_system_id": system_id,
+                "External:hostname": hostname,
+            },
         }
         succeed(result)
 
@@ -127,10 +153,26 @@ class MaasManager:
         sysid = self.data.get("system_id")
         if not sysid:
             fail("system_id missing for create")
+
+        ds = self.data.get("distro_series", "ubuntu/focal")
+        vm_name = self.data.get("vm_name")
+
+        # Cloud-init userdata to disable netplan, flush IPs on ens35, and run dhclient
+        userdata = """#cloud-config
+network:
+  config: disabled
+runcmd:
+  - [ sh, -c, "dhclient -v -4 ens35 || true" ]
+"""
+
         self.call_maas(
             "POST",
             f"/machines/{sysid}/",
-            {"op": "deploy", "distro_series": self.data["distro_series"]},
+            {
+                "op": "deploy",
+                "distro_series": ds,
+                "userdata": userdata,
+            },
         )
         succeed({"status": "success", "message": f"Instance created with {self.data['distro_series']}"})
 
