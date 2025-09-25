@@ -3648,9 +3648,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      *
      * If all of the above validations pass, we check if the size of the new disk offering is different from the volume. If it is, we log a warning message.
      */
-    protected void validateConditionsToReplaceDiskOfferingOfVolume(VolumeVO volume, DiskOfferingVO newDiskOffering, StoragePool destPool) {
+    @Override
+    public boolean validateConditionsToReplaceDiskOfferingOfVolume(Volume volume, DiskOffering newDiskOffering, StoragePool destPool) {
         if (newDiskOffering == null) {
-            return;
+            return false;
         }
         if ((destPool.isShared() && newDiskOffering.isUseLocalStorage()) || destPool.isLocal() && newDiskOffering.isShared()) {
             throw new InvalidParameterValueException("You cannot move the volume to a shared storage and assign a disk offering for local storage and vice versa.");
@@ -3678,6 +3679,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     volume, oldDiskOffering, newDiskOffering);
         }
         logger.info("Changing disk offering to [{}] while migrating volume [{}].", newDiskOffering, volume);
+        return true;
     }
 
     /**
