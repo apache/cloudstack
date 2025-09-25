@@ -19,7 +19,7 @@
   <a-form layout="vertical" >
     <a-form-item :label="$t('label.owner.type')">
       <a-select
-        @change="changeDomain"
+        @change="changeAccountTypeOrDomain"
         v-model:value="selectedAccountType"
         defaultValue="account"
         autoFocus
@@ -37,7 +37,7 @@
     </a-form-item>
     <a-form-item :label="$t('label.domain')" required>
       <a-select
-        @change="changeDomain"
+        @change="changeAccountTypeOrDomain"
         v-model:value="selectedDomain"
         showSearch
         optionFilterProp="label"
@@ -144,7 +144,8 @@ export default {
       selectedDomain: null,
       selectedAccount: null,
       selectedProject: null,
-      loading: false
+      loading: false,
+      requestToken: 0
     }
   },
   props: {
@@ -178,7 +179,7 @@ export default {
           const domainIds = this.domains?.map(domain => domain.id)
           const ownerDomainId = this.$store.getters.project?.domainid || this.$store.getters.userInfo.domainid
           this.selectedDomain = domainIds?.includes(ownerDomainId) ? ownerDomainId : this.domains?.[0]?.id
-          this.changeDomain()
+          this.fetchOwnerData()
         })
         .catch((error) => {
           this.$notifyError(error)
@@ -187,8 +188,13 @@ export default {
           this.loading = false
         })
     },
+    increamentAndGetRequestToken () {
+      this.requestToken += 1
+      return this.requestToken
+    },
     fetchAccounts () {
       this.loading = true
+      const currentToken = this.increamentAndGetRequestToken()
       api('listAccounts', {
         response: 'json',
         domainId: this.selectedDomain,
@@ -197,6 +203,9 @@ export default {
         isrecursive: false
       })
         .then((response) => {
+          if (currentToken !== this.requestToken) {
+            return
+          }
           this.accounts = response.listaccountsresponse.account || []
           if (this.override?.accounts && this.accounts) {
             this.accounts = this.accounts.filter(item => this.override.accounts.has(item.name))
@@ -220,6 +229,7 @@ export default {
     },
     fetchProjects () {
       this.loading = true
+      const currentToken = this.increamentAndGetRequestToken()
       api('listProjects', {
         response: 'json',
         domainId: this.selectedDomain,
@@ -229,6 +239,9 @@ export default {
         isrecursive: false
       })
         .then((response) => {
+          if (currentToken !== this.requestToken) {
+            return
+          }
           this.projects = response.listprojectsresponse.project
           if (this.override?.projects && this.projects) {
             this.projects = this.projects.filter(item => this.override.projects.has(item.id))
@@ -245,7 +258,11 @@ export default {
           this.initialized = true
         })
     },
-    changeDomain () {
+    changeAccountTypeOrDomain () {
+      this.initialized = true
+      this.fetchOwnerData()
+    },
+    fetchOwnerData () {
       if (this.selectedAccountType === 'Account') {
         this.fetchAccounts()
       } else {
