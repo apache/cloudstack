@@ -67,6 +67,9 @@ public class BackupRepositoryVO implements BackupRepository {
     @Column(name = "capacity_bytes", nullable = true)
     private Long capacityBytes;
 
+    @Column(name = "cross_zone_instance_creation")
+    private Boolean crossZoneInstanceCreation;
+
     @Column(name = "created")
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date created;
@@ -79,7 +82,7 @@ public class BackupRepositoryVO implements BackupRepository {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public BackupRepositoryVO(final long zoneId, final String provider, final String name, final String type, final String address, final String mountOptions, final Long capacityBytes) {
+    public BackupRepositoryVO(final long zoneId, final String provider, final String name, final String type, final String address, final String mountOptions, final Long capacityBytes, final Boolean crossZoneInstanceCreation) {
         this();
         this.zoneId = zoneId;
         this.provider = provider;
@@ -88,6 +91,7 @@ public class BackupRepositoryVO implements BackupRepository {
         this.address = address;
         this.mountOptions = mountOptions;
         this.capacityBytes = capacityBytes;
+        this.crossZoneInstanceCreation = crossZoneInstanceCreation;
         this.created = new Date();
     }
 
@@ -140,6 +144,11 @@ public class BackupRepositoryVO implements BackupRepository {
     }
 
     @Override
+    public void setMountOptions(String mountOptions) {
+        this.mountOptions = mountOptions;
+    }
+
+    @Override
     public Long getUsedBytes() {
         return usedBytes;
     }
@@ -152,6 +161,16 @@ public class BackupRepositoryVO implements BackupRepository {
     @Override
     public Long getCapacityBytes() {
         return capacityBytes;
+    }
+
+    @Override
+    public Boolean crossZoneInstanceCreationEnabled() {
+        return crossZoneInstanceCreation;
+    }
+
+    @Override
+    public void setCrossZoneInstanceCreation(Boolean crossZoneInstanceCreation) {
+        this.crossZoneInstanceCreation = crossZoneInstanceCreation;
     }
 
     @Override
