@@ -343,7 +343,7 @@
 #	   "max_heads":null,
 #   	"max_resolution_x":null,
 #	   "max_resolution_y":null,
-#	
+#
 #   	"full_passthrough": {
 #     	  "enabled":1,
 #		  "libvirt_address": {
