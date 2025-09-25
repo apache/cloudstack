@@ -413,7 +413,7 @@ public class ConsoleAccessManagerImplTest {
 
         Mockito.when(answer.getResult()).thenReturn(true);
         Mockito.when(answer.getUrl()).thenReturn(url);
-        Mockito.when(answer.getProtocol()).thenReturn("url");
+        Mockito.when(answer.getProtocol()).thenReturn("direct");
         Mockito.when(managementServer.getExternalVmConsole(vm, host)).thenReturn(answer);
 
         ConsoleConnectionDetails result = consoleAccessManager.getConsoleConnectionDetailsForExternalVm(details, vm, host);
