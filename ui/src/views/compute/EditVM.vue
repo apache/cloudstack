@@ -91,6 +91,12 @@
         <a-textarea v-model:value="form.userdata">
         </a-textarea>
       </a-form-item>
+      <a-form-item v-if="extraConfigEnabled">
+        <template #label>
+          <tooltip-label :title="$t('label.extraconfig')" :tooltip="$t('label.extraconfig.tooltip')"/>
+        </template>
+        <a-textarea v-model:value="form.extraconfig"/>
+      </a-form-item>
       <a-form-item ref="securitygroupids" name="securitygroupids" :label="$t('label.security.groups')" v-if="securityGroupsEnabled">
         <a-select
           mode="multiple"
@@ -179,6 +185,7 @@ export default {
       serviceOffering: {},
       template: {},
       userDataEnabled: false,
+      extraConfigEnabled: false,
       securityGroupsEnabled: false,
       loading: false,
       securitygroups: {
@@ -224,7 +231,8 @@ export default {
         userdata: '',
         haenable: this.resource.haenable,
         leaseduration: this.resource.leaseduration,
-        leaseexpiryaction: this.resource.leaseexpiryaction
+        leaseexpiryaction: this.resource.leaseexpiryaction,
+        extraconfig: ''
       })
       this.rules = reactive({
         leaseduration: [this.naturalNumberRule]
@@ -239,6 +247,7 @@ export default {
       this.fetchServiceOfferingData()
       this.fetchTemplateData()
       this.fetchUserData()
+      this.fetchExtraConfigEnabled()
     },
     fetchZoneDetails () {
       getAPI('listZones', {
@@ -371,6 +380,17 @@ export default {
         })
       })
     },
+    fetchExtraConfigEnabled () {
+      getAPI('listConfigurations', {
+        accountid: this.$store.getters.userInfo.accountid,
+        name: 'enable.additional.vm.configuration'
+      }).then(json => {
+        const configResponse = json.listconfigurationsresponse.configuration || []
+        this.extraConfigEnabled = configResponse[0]?.value === 'true'
+      }).catch(error => {
+        this.$notifyError(error)
+      })
+    },
     handleSubmit () {
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
@@ -396,6 +416,9 @@ export default {
         }
         if (values.userdata && values.userdata.length > 0) {
           params.userdata = this.$toBase64AndURIEncoded(values.userdata)
+        }
+        if (values.extraconfig && values.extraconfig.length > 0) {
+          params.extraconfig = encodeURIComponent(values.extraconfig)
         }
         if (values.leaseduration !== undefined && (values.leaseduration === -1 || values.leaseduration > 0)) {
           params.leaseduration = values.leaseduration
