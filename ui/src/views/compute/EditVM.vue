@@ -325,7 +325,7 @@ export default {
       })
     },
     fetchExtraConfigEnabled () {
-      getAPI('listConfigurations', {
+      api('listConfigurations', {
         accountid: this.$store.getters.userInfo.accountid,
         name: 'enable.additional.vm.configuration'
       }).then(json => {
