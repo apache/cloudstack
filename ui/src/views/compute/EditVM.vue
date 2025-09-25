@@ -86,7 +86,7 @@
       </a-form-item>
       <a-form-item v-if="userDataEnabled">
         <template #label>
-          <tooltip-label :title="$t('label.userdata')" :tooltip="apiParams.userdata.description"/>
+          <tooltip-label :title="$t('label.user.data')" :tooltip="apiParams.userdata.description"/>
         </template>
         <a-textarea v-model:value="form.userdata">
         </a-textarea>
@@ -152,7 +152,6 @@ export default {
       template: {},
       userDataEnabled: false,
       securityGroupsEnabled: false,
-      dynamicScalingVmConfig: false,
       loading: false,
       securitygroups: {
         loading: false,
@@ -197,12 +196,11 @@ export default {
       this.fetchInstaceGroups()
       this.fetchServiceOfferingData()
       this.fetchTemplateData()
-      this.fetchDynamicScalingVmConfig()
       this.fetchUserData()
     },
     fetchZoneDetails () {
       api('listZones', {
-        zoneid: this.resource.zoneid
+        id: this.resource.zoneid
       }).then(response => {
         const zone = response?.listzonesresponse?.zone || []
         this.securityGroupsEnabled = zone?.[0]?.securitygroupsenabled || this.$store.getters.showSecurityGroups
@@ -249,18 +247,8 @@ export default {
         this.template = templateResponses[0]
       })
     },
-    fetchDynamicScalingVmConfig () {
-      const params = {}
-      params.name = 'enable.dynamic.scale.vm'
-      params.zoneid = this.resource.zoneid
-      var apiName = 'listConfigurations'
-      api(apiName, params).then(json => {
-        const configResponse = json.listconfigurationsresponse.configuration
-        this.dynamicScalingVmConfig = configResponse[0]?.value === 'true'
-      })
-    },
-    canDynamicScalingEnabled () {
-      return this.template.isdynamicallyscalable && this.serviceOffering.dynamicscalingenabled && this.dynamicScalingVmConfig
+    isDynamicScalingEnabled () {
+      return this.template.isdynamicallyscalable && this.serviceOffering.dynamicscalingenabled && this.$store.getters.features.dynamicscalingenabled
     },
     fetchOsTypes () {
       this.osTypes.loading = true
@@ -336,10 +324,8 @@ export default {
         params.name = values.name
         params.displayname = values.displayname
         params.ostypeid = values.ostypeid
-        if (this.securityGroupsEnabled) {
-          if (values.securitygroupids) {
-            params.securitygroupids = values.securitygroupids
-          }
+        if (this.securityGroupsEnabled && Array.isArray(values.securitygroupids) && values.securitygroupids.length > 0) {
+          params.securitygroupids = values.securitygroupids
         }
         if (values.isdynamicallyscalable !== undefined) {
           params.isdynamicallyscalable = values.isdynamicallyscalable

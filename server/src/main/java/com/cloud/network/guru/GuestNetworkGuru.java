@@ -28,6 +28,8 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.configuration.Config;
@@ -121,6 +123,8 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     Ipv6AddressManager ipv6AddressManager;
     @Inject
     DomainRouterDao domainRouterDao;
+    @Inject
+    RoutedIpv4Manager routedIpv4Manager;
 
     Random _rand = new Random(System.currentTimeMillis());
 
@@ -570,5 +574,25 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
             network.setRouterIpv6(userSpecified.getRouterIpv6());
         }
         return network;
+    }
+
+    public void getOrCreateIpv4SubnetForGuestNetwork(NetworkOffering offering, NetworkVO config, Network userSpecified, Account owner) {
+        if (NetworkOffering.NetworkMode.ROUTED.equals(offering.getNetworkMode()) && !offering.isForVpc()) {
+            if (userSpecified.getCidr() != null) {
+                routedIpv4Manager.getOrCreateIpv4SubnetForGuestNetwork(config, userSpecified.getCidr());
+            } else {
+                if (userSpecified.getNetworkCidrSize() == null) {
+                    throw new InvalidParameterValueException("The network CIDR or CIDR size must be specified.");
+                }
+                Ipv4GuestSubnetNetworkMap subnet = routedIpv4Manager.getOrCreateIpv4SubnetForGuestNetwork(owner.getDomainId(), owner.getAccountId(), config.getDataCenterId(), userSpecified.getNetworkCidrSize());
+                if (subnet != null) {
+                    final String[] cidrTuple = subnet.getSubnet().split("\\/");
+                    config.setGateway(NetUtils.getIpRangeStartIpFromCidr(cidrTuple[0], Long.parseLong(cidrTuple[1])));
+                    config.setCidr(subnet.getSubnet());
+                } else {
+                    throw new InvalidParameterValueException("Failed to allocate a CIDR with requested size.");
+                }
+            }
+        }
     }
 }

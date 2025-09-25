@@ -26,6 +26,7 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
@@ -50,6 +51,7 @@ import javax.inject.Inject;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -161,6 +163,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
         if (VirtualMachine.State.Stopped.equals(vm.getState())) {
             List<VolumeVO> vmVolumes = volumeDao.findByInstance(vm.getId());
+            vmVolumes.sort(Comparator.comparing(Volume::getDeviceId));
             List<String> volumePaths = getVolumePaths(vmVolumes);
             command.setVolumePaths(volumePaths);
         }
@@ -211,7 +214,10 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     @Override
     public boolean restoreVMFromBackup(VirtualMachine vm, Backup backup) {
         List<Backup.VolumeInfo> backedVolumes = backup.getBackedUpVolumes();
-        List<VolumeVO> volumes = backedVolumes.stream().map(volume -> volumeDao.findByUuid(volume.getUuid())).collect(Collectors.toList());
+        List<VolumeVO> volumes = backedVolumes.stream()
+                .map(volume -> volumeDao.findByUuid(volume.getUuid()))
+                .sorted((v1, v2) -> Long.compare(v1.getDeviceId(), v2.getDeviceId()))
+                .collect(Collectors.toList());
 
         LOG.debug("Restoring vm {} from backup {} on the NAS Backup Provider", vm, backup);
         BackupRepository backupRepository = getBackupRepository(vm, backup);
@@ -245,9 +251,13 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             if (Objects.isNull(storagePool)) {
                 throw new CloudRuntimeException("Unable to find storage pool associated to the volume");
             }
-            String volumePathPrefix = String.format("/mnt/%s", storagePool.getUuid());
+            String volumePathPrefix;
             if (ScopeType.HOST.equals(storagePool.getScope())) {
                 volumePathPrefix = storagePool.getPath();
+            } else if (Storage.StoragePoolType.SharedMountPoint.equals(storagePool.getPoolType())) {
+                volumePathPrefix = storagePool.getPath();
+            } else {
+                volumePathPrefix = String.format("/mnt/%s", storagePool.getUuid());
             }
             volumePaths.add(String.format("%s/%s", volumePathPrefix, volume.getPath()));
         }
@@ -280,6 +290,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoredVolume.setPoolId(dataStore.getPoolId());
         restoredVolume.setPath(restoredVolume.getUuid());
         restoredVolume.setState(Volume.State.Copying);
+        restoredVolume.setFormat(Storage.ImageFormat.QCOW2);
         restoredVolume.setSize(backedUpVolumeSize);
         restoredVolume.setDiskOfferingId(volume.getDiskOfferingId());
 

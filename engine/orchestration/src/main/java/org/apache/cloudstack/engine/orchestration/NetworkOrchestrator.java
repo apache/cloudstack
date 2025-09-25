@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -596,6 +597,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworks,
                             "Offering for Isolated VPC networks with Source Nat service enabled", TrafficType.Guest, null, false, Availability.Optional, null,
                             defaultVPCOffProviders, true, Network.GuestType.Isolated, false, null, true, null, false, false, null, false, null, true, true, false, false, null, null, null,true, null, null, false);
+
                 }
 
                 //#6 - default vpc offering with no LB service
@@ -1291,6 +1293,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             IPAddressVO lockedIpVO = _ipAddressDao.acquireInLockTable(ipVO.getId());
             validateLockedRequestedIp(ipVO, lockedIpVO);
             lockedIpVO.setState(IPAddressVO.State.Allocated);
+            lockedIpVO.setAllocatedTime(new Date());
             _ipAddressDao.update(lockedIpVO.getId(), lockedIpVO);
         } finally {
             _ipAddressDao.releaseFromLockTable(ipVO.getId());

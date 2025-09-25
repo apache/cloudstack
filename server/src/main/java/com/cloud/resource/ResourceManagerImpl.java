@@ -1240,7 +1240,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     for (int i = 0; i < retry; i++) {
                         lsuccess = true;
                         try {
-                            Thread.currentThread().wait(5 * 1000);
+                            Thread.sleep(5 * 1000);
                         } catch (final InterruptedException e) {
                             logger.debug("thread unexpectedly interrupted during wait, while updating cluster");
                         }
@@ -1274,6 +1274,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_MAINTENANCE_CANCEL, eventDescription = "cancel maintenance for host", async = true)
     public Host cancelMaintenance(final CancelMaintenanceCmd cmd) {
         final Long hostId = cmd.getId();
 
@@ -1297,6 +1299,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_HOST_RECONNECT, eventDescription = "reconnecting host", async = true)
     public Host reconnectHost(ReconnectHostCmd cmd) throws AgentUnavailableException {
         Long hostId = cmd.getId();
 
@@ -1500,6 +1504,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_MAINTENANCE_PREPARE, eventDescription = "prepare maintenance for host", async = true)
     public Host maintain(final PrepareForMaintenanceCmd cmd) {
         final Long hostId = cmd.getId();
         final HostVO host = _hostDao.findById(hostId);

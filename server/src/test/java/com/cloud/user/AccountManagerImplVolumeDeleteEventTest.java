@@ -192,6 +192,7 @@ public class AccountManagerImplVolumeDeleteEventTest extends AccountManagetImplT
     public void destroyedVMRootVolumeUsageEvent()
             throws SecurityException, IllegalArgumentException, ReflectiveOperationException, AgentUnavailableException, ConcurrentOperationException, CloudException {
         lenient().doReturn(vm).when(_vmMgr).destroyVm(nullable(Long.class), nullable(Boolean.class));
+        Mockito.doNothing().when(accountManagerImpl).verifyCallerPrivilegeForUserOrAccountOperations((Account) any());
         List<UsageEventVO> emittedEvents = deleteUserAccountRootVolumeUsageEvents(true);
         Assert.assertEquals(0, emittedEvents.size());
     }

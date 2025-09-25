@@ -17,6 +17,8 @@
 package com.cloud.hypervisor.kvm.resource;
 
 import static com.cloud.host.Host.HOST_INSTANCE_CONVERSION;
+import static com.cloud.host.Host.HOST_OVFTOOL_VERSION;
+import static com.cloud.host.Host.HOST_VIRTV2V_VERSION;
 import static com.cloud.host.Host.HOST_VOLUME_ENCRYPTION;
 
 import java.io.BufferedReader;
@@ -1795,6 +1797,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return "";
     }
 
+    public Integer getVlanIdForBridge(final String bridge) {
+        String pif = matchPifFileInDirectory(bridge);
+        final File vlanfile = new File("/proc/net/vlan/" + pif);
+        if (vlanfile.isFile()) {
+            String vlan = Script.runSimpleBashScript("awk '/VID:/ {print $3}' /proc/net/vlan/" + pif);
+            try {
+                return Integer.parseInt(vlan);
+            } catch (final NumberFormatException e) {
+                return null;
+            }
+        }
+        return null;
+    }
+
     static String [] ifNamePatterns = {
             "^eth",
             "^bond",
@@ -3085,7 +3101,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         if (vmSpec.getOs().toLowerCase().contains("window")) {
-            isWindowsTemplate =true;
+            isWindowsTemplate = true;
         }
         for (final DiskTO volume : disks) {
             KVMPhysicalDisk physicalDisk = null;
@@ -3204,6 +3220,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     disk.defNetworkBasedDisk(physicalDisk.getPath().replace("rbd:", ""), pool.getSourceHost(), pool.getSourcePort(), pool.getAuthUserName(),
                             pool.getUuid(), devId, diskBusType, DiskProtocol.RBD, DiskDef.DiskFmtType.RAW);
                 } else if (pool.getType() == StoragePoolType.PowerFlex) {
+                    if (isWindowsTemplate && isUefiEnabled) {
+                        diskBusTypeData = DiskDef.DiskBus.SATA;
+                    }
                     disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusTypeData);
                     if (physicalDisk.getFormat().equals(PhysicalDiskFormat.QCOW2)) {
                         disk.setDiskFormatType(DiskDef.DiskFmtType.QCOW2);
@@ -3234,7 +3253,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                             disk.defFileBasedDisk(physicalDisk.getPath(), devId, diskBusType, DiskDef.DiskFmtType.QCOW2);
                         }
                     }
-
                 }
                 pool.customizeLibvirtDiskDef(disk);
             }
@@ -3366,7 +3384,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (!meetRequirements) {
             return false;
         }
-        return isUbuntuHost() || isIoUringSupportedByQemu();
+        return isUbuntuOrDebianHost() || isIoUringSupportedByQemu();
     }
 
     /**
@@ -3379,13 +3397,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return diskBus != DiskDef.DiskBus.IDE || getHypervisorQemuVersion() >= HYPERVISOR_QEMU_VERSION_IDE_DISCARD_FIXED;
     }
 
-    public boolean isUbuntuHost() {
+    public boolean isUbuntuOrDebianHost() {
         Map<String, String> versionString = getVersionStrings();
         String hostKey = "Host.OS";
         if (MapUtils.isEmpty(versionString) || !versionString.containsKey(hostKey) || versionString.get(hostKey) == null) {
             return false;
         }
-        return versionString.get(hostKey).equalsIgnoreCase("ubuntu");
+        return versionString.get(hostKey).equalsIgnoreCase("ubuntu")
+                || versionString.get(hostKey).toLowerCase().startsWith("debian");
     }
 
     private KVMPhysicalDisk getPhysicalDiskFromNfsStore(String dataStoreUrl, DataTO data) {
@@ -3503,10 +3522,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public synchronized String attachOrDetachISO(final Connect conn, final String vmName, String isoPath, final boolean isAttach, final Integer diskSeq) throws LibvirtException, URISyntaxException,
             InternalErrorException {
         final DiskDef iso = new DiskDef();
-        if (isAttach && StringUtils.isNotBlank(isoPath) && isoPath.lastIndexOf("/") > 0) {
-            if (isoPath.startsWith(getConfigPath() + "/" + ConfigDrive.CONFIGDRIVEDIR) && isoPath.contains(vmName)) {
+        if (isAttach && StringUtils.isNotBlank(isoPath)) {
+            if (isoPath.startsWith(getConfigPath() + "/" + ConfigDrive.CONFIGDRIVEDIR) || isoPath.contains(vmName)) {
                 iso.defISODisk(isoPath, diskSeq, DiskDef.DiskType.FILE);
-            } else {
+            } else if (isoPath.lastIndexOf("/") > 0) {
                 final int index = isoPath.lastIndexOf("/");
                 final String path = isoPath.substring(0, index);
                 final String name = isoPath.substring(index + 1);
@@ -3530,7 +3549,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     cleanupDisk(disk);
                 }
             }
-
         }
         return result;
     }
@@ -3766,7 +3784,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.setIqn(getIqn());
         cmd.getHostDetails().put(HOST_VOLUME_ENCRYPTION, String.valueOf(hostSupportsVolumeEncryption()));
         cmd.setHostTags(getHostTags());
-        cmd.getHostDetails().put(HOST_INSTANCE_CONVERSION, String.valueOf(hostSupportsInstanceConversion()));
+        boolean instanceConversionSupported = hostSupportsInstanceConversion();
+        cmd.getHostDetails().put(HOST_INSTANCE_CONVERSION, String.valueOf(instanceConversionSupported));
+        if (instanceConversionSupported) {
+            cmd.getHostDetails().put(HOST_VIRTV2V_VERSION, getHostVirtV2vVersion());
+        }
+        if (hostSupportsOvfExport()) {
+            cmd.getHostDetails().put(HOST_OVFTOOL_VERSION, getHostOvfToolVersion());
+        }
         HealthCheckResult healthCheckResult = getHostHealthCheckResult();
         if (healthCheckResult != HealthCheckResult.IGNORE) {
             cmd.setHostHealthCheckResult(healthCheckResult == HealthCheckResult.SUCCESS);
@@ -4504,6 +4529,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     return token[1];
                 }
             } else if (token.length > 3) {
+                // for powerflex/scaleio, path = /dev/disk/by-id/emc-vol-2202eefc4692120f-540fd8fa00000003
+                if (token.length > 4 && StringUtils.isNotBlank(token[4]) && token[4].startsWith("emc-vol-")) {
+                    final String[] emcVolToken = token[4].split("-");
+                    if (emcVolToken.length == 4) {
+                        return emcVolToken[3];
+                    }
+                }
+
                 // for example, path = /mnt/pool_uuid/disk_path/
                 return token[3];
             }
@@ -5348,14 +5381,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public boolean hostSupportsInstanceConversion() {
         int exitValue = Script.runSimpleBashScriptForExitValue(INSTANCE_CONVERSION_SUPPORTED_CHECK_CMD);
-        if (isUbuntuHost() && exitValue == 0) {
+        if (isUbuntuOrDebianHost() && exitValue == 0) {
             exitValue = Script.runSimpleBashScriptForExitValue(UBUNTU_NBDKIT_PKG_CHECK_CMD);
         }
         return exitValue == 0;
     }
 
     public boolean hostSupportsWindowsGuestConversion() {
-        if (isUbuntuHost()) {
+        if (isUbuntuOrDebianHost()) {
             int exitValue = Script.runSimpleBashScriptForExitValue(UBUNTU_WINDOWS_GUEST_CONVERSION_SUPPORTED_CHECK_CMD);
             return exitValue == 0;
         }
@@ -5368,8 +5401,24 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return exitValue == 0;
     }
 
+    public String getHostVirtV2vVersion() {
+        if (!hostSupportsInstanceConversion()) {
+            return "";
+        }
+        String cmd = String.format("%s | awk '{print $2}'", INSTANCE_CONVERSION_SUPPORTED_CHECK_CMD);
+        String version = Script.runSimpleBashScript(cmd);
+        return StringUtils.isNotBlank(version) ? version.split(",")[0] : "";
+    }
+
+    public String getHostOvfToolVersion() {
+        if (!hostSupportsOvfExport()) {
+            return "";
+        }
+        return Script.runSimpleBashScript(OVF_EXPORT_TOOl_GET_VERSION_CMD);
+    }
+
     public boolean ovfExportToolSupportsParallelThreads() {
-        String ovfExportToolVersion = Script.runSimpleBashScript(OVF_EXPORT_TOOl_GET_VERSION_CMD);
+        String ovfExportToolVersion = getHostOvfToolVersion();
         if (StringUtils.isBlank(ovfExportToolVersion)) {
             return false;
         }

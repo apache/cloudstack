@@ -136,6 +136,10 @@ public class CapabilitiesResponse extends BaseResponse {
     @Param(description = "the min Ram size for the service offering used by the shared filesystem instance", since = "4.20.0")
     private Integer sharedFsVmMinRamSize;
 
+    @SerializedName(ApiConstants.DYNAMIC_SCALING_ENABLED)
+    @Param(description = "true if dynamically scaling for instances is enabled", since = "4.21.0")
+    private Boolean dynamicScalingEnabled;
+
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
         this.securityGroupsEnabled = securityGroupsEnabled;
     }
@@ -246,5 +250,9 @@ public class CapabilitiesResponse extends BaseResponse {
 
     public void setSharedFsVmMinRamSize(Integer sharedFsVmMinRamSize) {
         this.sharedFsVmMinRamSize = sharedFsVmMinRamSize;
+    }
+
+    public void setDynamicScalingEnabled(Boolean dynamicScalingEnabled) {
+        this.dynamicScalingEnabled = dynamicScalingEnabled;
     }
 }
