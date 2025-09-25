@@ -9478,24 +9478,27 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     public UserVm allocateVMFromBackup(CreateVMFromBackupCmd cmd) throws InsufficientCapacityException, ResourceAllocationException, ResourceUnavailableException {
-        if (!backupManager.canCreateInstanceFromBackup(cmd.getBackupId())) {
-            throw new CloudRuntimeException("Create instance from backup is not supported for this provider.");
-        }
-        DataCenter zone = _dcDao.findById(cmd.getZoneId());
-        if (zone == null) {
-            throw new InvalidParameterValueException("Unable to find zone by id=" + cmd.getZoneId());
-        }
-
         BackupVO backup = backupDao.findById(cmd.getBackupId());
         if (backup == null) {
             throw new InvalidParameterValueException("Backup " + cmd.getBackupId() + " does not exist");
         }
-        if (backup.getZoneId() != cmd.getZoneId()) {
-            throw new InvalidParameterValueException("Instance should be created in the same zone as the backup");
-        }
         backupManager.validateBackupForZone(backup.getZoneId());
-        backupDao.loadDetails(backup);
 
+        if (!backupManager.canCreateInstanceFromBackup(cmd.getBackupId())) {
+            throw new CloudRuntimeException("Create instance from backup is not supported for this provider.");
+        }
+
+        DataCenter targetZone = _dcDao.findById(cmd.getZoneId());
+        if (targetZone == null) {
+            throw new InvalidParameterValueException("Unable to find zone by id=" + cmd.getZoneId());
+        }
+
+        if (cmd.getZoneId() != backup.getZoneId() &&
+            !backupManager.canCreateInstanceFromBackupAcrossZones(cmd.getBackupId())) {
+            throw new CloudRuntimeException("Create Instance from Backup on another Zone is not supported by this provider or the Backup Repository.");
+        }
+
+        backupDao.loadDetails(backup);
         verifyDetails(cmd.getDetails());
 
         UserVmVO backupVm = _vmDao.findByIdIncludingRemoved(backup.getVmId());
@@ -9594,7 +9597,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         List<Long> networkIds = cmd.getNetworkIds();
         Account owner = _accountService.getActiveAccountById(cmd.getEntityOwnerId());
-        LinkedHashMap<Integer, Long> userVmNetworkMap = getVmOvfNetworkMapping(zone, owner, template, cmd.getVmNetworkMap());
+        LinkedHashMap<Integer, Long> userVmNetworkMap = getVmOvfNetworkMapping(targetZone, owner, template, cmd.getVmNetworkMap());
         if (MapUtils.isNotEmpty(userVmNetworkMap)) {
             networkIds = new ArrayList<>(userVmNetworkMap.values());
         }
@@ -9605,7 +9608,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             ipToNetworkMap = backupManager.getIpToNetworkMapFromBackup(backup, cmd.getPreserveIp(), networkIds);
         }
 
-        UserVm vm = createVirtualMachine(cmd, zone, owner, serviceOffering, template, hypervisorType, diskOfferingId, size, overrideDiskOfferingId, dataDiskInfoList, networkIds, ipToNetworkMap, null, null);
+        UserVm vm = createVirtualMachine(cmd, targetZone, owner, serviceOffering, template, hypervisorType, diskOfferingId, size, overrideDiskOfferingId, dataDiskInfoList, networkIds, ipToNetworkMap, null, null);
 
         String vmSettingsFromBackup = backup.getDetail(ApiConstants.VM_SETTINGS);
         if (vm != null && vmSettingsFromBackup != null) {
@@ -9629,20 +9632,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     public UserVm restoreVMFromBackup(CreateVMFromBackupCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         long vmId = cmd.getEntityId();
+        UserVm vm;
         Map<Long, DiskOffering> diskOfferingMap = cmd.getDataDiskTemplateToDiskOfferingMap();
         Map<VirtualMachineProfile.Param, Object> additonalParams = new HashMap<>();
-        UserVm vm;
+        additonalParams.put(VirtualMachineProfile.Param.ReturnAfterVolumePrepare, true);
 
         try {
-            vm = startVirtualMachine(vmId, null, null, null, diskOfferingMap, additonalParams, null);
-
-            boolean status =  stopVirtualMachine(CallContext.current().getCallingUserId(), vm.getId()) ;
-            if (!status) {
-                UserVmVO vmVO = _vmDao.findById(vmId);
-                expunge(vmVO);
-                logger.debug("Successfully cleaned up Instance {} after create Instance from backup failed", vmId);
-                throw new CloudRuntimeException("Unable to stop the Instance before restore");
-            }
+            Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> vmParamPair = null;
+            vmParamPair = startVirtualMachine(vmId, null, null, null, additonalParams, null);
+            vm = vmParamPair.first();
 
             Long isoId = vm.getIsoId();
             if (isoId != null) {
@@ -9653,7 +9651,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             backupManager.restoreBackupToVM(cmd.getBackupId(), vmId);
 
-        } catch (CloudRuntimeException e) {
+        } catch (CloudRuntimeException | ResourceUnavailableException | ResourceAllocationException | InsufficientCapacityException  e) {
             UserVmVO vmVO = _vmDao.findById(vmId);
             try {
                 expunge(vmVO);
@@ -9680,6 +9678,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 podId = adminCmd.getPodId();
                 clusterId = adminCmd.getClusterId();
             }
+            additonalParams.remove(VirtualMachineProfile.Param.ReturnAfterVolumePrepare);
             vm = startVirtualMachine(vmId, podId, clusterId, cmd.getHostId(), diskOfferingMap, additonalParams, cmd.getDeploymentPlanner());
         }
         return vm;
