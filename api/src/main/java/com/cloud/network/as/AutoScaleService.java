@@ -22,7 +22,7 @@ import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScalePolicyCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleVmGroupCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleVmProfileCmd;
-import org.apache.cloudstack.api.command.user.autoscale.CreateConditionCmd;
+import org.apache.cloudstack.api.command.user.autoscale.CreateConditionForVmAutoScalingCmd;
 import org.apache.cloudstack.api.command.user.autoscale.ListAutoScalePoliciesCmd;
 import org.apache.cloudstack.api.command.user.autoscale.ListAutoScaleVmGroupsCmd;
 import org.apache.cloudstack.api.command.user.autoscale.ListAutoScaleVmProfilesCmd;
@@ -76,7 +76,7 @@ public interface AutoScaleService {
 
     List<? extends Counter> listCounters(ListCountersCmd cmd);
 
-    Condition createCondition(CreateConditionCmd cmd);
+    Condition createCondition(CreateConditionForVmAutoScalingCmd cmd);
 
     List<? extends Condition> listConditions(ListConditionsCmd cmd);
 
