@@ -138,6 +138,10 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
     protected Map<String, Object> loadAccessDetails(Map<String, Map<String, String>> externalDetails,
                             VirtualMachineTO virtualMachineTO) {
         Map<String, Object> modifiedDetails = new HashMap<>();
+        if (MapUtils.isNotEmpty(externalDetails) && externalDetails.containsKey(ApiConstants.CALLER)) {
+            modifiedDetails.put(ApiConstants.CALLER, externalDetails.get(ApiConstants.CALLER));
+            externalDetails.remove(ApiConstants.CALLER);
+        }
         if (MapUtils.isNotEmpty(externalDetails)) {
             modifiedDetails.put(ApiConstants.EXTERNAL_DETAILS, externalDetails);
         }

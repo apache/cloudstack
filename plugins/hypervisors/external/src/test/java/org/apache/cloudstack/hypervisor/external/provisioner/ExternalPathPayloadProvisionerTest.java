@@ -92,6 +92,7 @@ import com.cloud.utils.script.Script;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -203,6 +204,20 @@ public class ExternalPathPayloadProvisionerTest {
         assertNull(result.get(ApiConstants.EXTERNAL_DETAILS));
         assertEquals("test-uuid", result.get(ApiConstants.VIRTUAL_MACHINE_ID));
         assertEquals("test-vm", result.get(ApiConstants.VIRTUAL_MACHINE_NAME));
+    }
+
+    @Test
+    public void testLoadAccessDetails_WithCaller() {
+        Map<String, Map<String, String>> externalDetails = new HashMap<>();
+        externalDetails.put(ApiConstants.EXTENSION, Map.of("key1", "value1"));
+        externalDetails.put(ApiConstants.CALLER, Map.of("key2", "value2"));
+        Map<String, Object> result = provisioner.loadAccessDetails(externalDetails, null);
+
+        assertNotNull(result);
+        assertNotNull(result.get(ApiConstants.EXTERNAL_DETAILS));
+        assertNotNull(((Map<String, String>) result.get(ApiConstants.EXTERNAL_DETAILS)).get(ApiConstants.EXTENSION));
+        assertNotNull(result.get(ApiConstants.CALLER));
+        assertNull(result.get(VmDetailConstants.CLOUDSTACK_VM_DETAILS));
     }
 
     @Test
