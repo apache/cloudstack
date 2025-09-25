@@ -781,7 +781,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
             if (StringUtils.isBlank(protocol)) {
                 return;
             }
-            if (List.of("link", "url", "direct").contains(protocol.toLowerCase())) {
+            if (Mode.Direct.name().toLowerCase().equalsIgnoreCase(protocol)) {
                 this.mode = Mode.Direct;
             }
         }

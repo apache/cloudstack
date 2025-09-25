@@ -476,6 +476,29 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         executorService.shutdown();
     }
 
+    protected Map<String, String> getCallerDetails() {
+        Account caller = CallContext.current().getCallingAccount();
+        if (caller == null) {
+            return null;
+        }
+        Map<String, String> callerDetails = new HashMap<>();
+        callerDetails.put(ApiConstants.ID, caller.getUuid());
+        callerDetails.put(ApiConstants.NAME, caller.getAccountName());
+        if (caller.getType() != null) {
+            callerDetails.put(ApiConstants.TYPE, caller.getType().name());
+        }
+        Role role = roleService.findRole(caller.getRoleId());
+        if (role == null) {
+            return callerDetails;
+        }
+        callerDetails.put(ApiConstants.ROLE_ID, role.getUuid());
+        callerDetails.put(ApiConstants.ROLE_NAME, role.getName());
+        if (role.getRoleType() != null) {
+            callerDetails.put(ApiConstants.ROLE_TYPE, role.getRoleType().name());
+        }
+        return callerDetails;
+    }
+
     protected Map<String, Map<String, String>> getExternalAccessDetails(Map<String, String> actionDetails, long hostId,
                            ExtensionResourceMap resourceMap) {
         Map<String, Map<String, String>> externalDetails = new HashMap<>();
@@ -496,6 +519,10 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         Map<String, String> extensionDetails = extensionDetailsDao.listDetailsKeyPairs(resourceMap.getExtensionId(), true);
         if (MapUtils.isNotEmpty(extensionDetails)) {
             externalDetails.put(ApiConstants.EXTENSION, extensionDetails);
+        }
+        Map<String, String> callerDetails = getCallerDetails();
+        if (MapUtils.isNotEmpty(callerDetails)) {
+            externalDetails.put(ApiConstants.CALLER, callerDetails);
         }
         return externalDetails;
     }

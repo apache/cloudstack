@@ -121,6 +121,7 @@ import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -525,11 +526,15 @@ public class ExtensionsManagerImplTest {
         when(hostDetailsDao.findDetails(hostId)).thenReturn(null);
         when(extensionResourceMapDetailsDao.listDetailsKeyPairs(2L, true)).thenReturn(Collections.emptyMap());
         when(extensionDetailsDao.listDetailsKeyPairs(3L, true)).thenReturn(map);
-        Map<String, Map<String, String>> result = extensionsManager.getExternalAccessDetails(map, hostId, resourceMap);
-        assertTrue(result.containsKey(ApiConstants.ACTION));
-        assertFalse(result.containsKey(ApiConstants.HOST));
-        assertFalse(result.containsKey(ApiConstants.RESOURCE_MAP));
-        assertTrue(result.containsKey(ApiConstants.EXTENSION));
+        try (MockedStatic<CallContext> ignored = mockStatic(CallContext.class)) {
+            mockCallerRole(RoleType.Admin);
+            Map<String, Map<String, String>> result = extensionsManager.getExternalAccessDetails(map, hostId, resourceMap);
+            assertTrue(result.containsKey(ApiConstants.ACTION));
+            assertFalse(result.containsKey(ApiConstants.HOST));
+            assertFalse(result.containsKey(ApiConstants.RESOURCE_MAP));
+            assertTrue(result.containsKey(ApiConstants.EXTENSION));
+            assertTrue(result.containsKey(ApiConstants.CALLER));
+        }
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -1285,9 +1290,14 @@ public class ExtensionsManagerImplTest {
         CallContext callContextMock = mock(CallContext.class);
         when(CallContext.current()).thenReturn(callContextMock);
         Account accountMock = mock(Account.class);
+        when(accountMock.getAccountName()).thenReturn("testAccount");
+        when(accountMock.getUuid()).thenReturn(UUID.randomUUID().toString());
+        when(accountMock.getType()).thenReturn(RoleType.Admin.equals(roleType) ? Account.Type.ADMIN : Account.Type.NORMAL);
         when(accountMock.getRoleId()).thenReturn(1L);
         Role role = mock(Role.class);
         when(role.getRoleType()).thenReturn(roleType);
+        when(role.getUuid()).thenReturn("role-uuid-1");
+        when(role.getName()).thenReturn(roleType.name() + "Role");
         when(roleService.findRole(1L)).thenReturn(role);
         when(callContextMock.getCallingAccount()).thenReturn(accountMock);
     }
@@ -1952,4 +1962,78 @@ public class ExtensionsManagerImplTest {
         Answer result = extensionsManager.getInstanceConsole(vm, host);
         assertNull(result);
     }
+
+    @Test
+    public void getExternalAccessDetailsReturnsExpectedDetails() {
+        Host host = mock(Host.class);
+        when(host.getId()).thenReturn(100L);
+        when(host.getClusterId()).thenReturn(1L);
+        Map<String, String> vmDetails = Map.of("key1", "value1", "key2", "value2");
+        ExtensionResourceMapVO resourceMapVO = mock(ExtensionResourceMapVO.class);
+        when(extensionResourceMapDao.findByResourceIdAndType(1L, ExtensionResourceMap.ResourceType.Cluster))
+                .thenReturn(resourceMapVO);
+        doReturn(new HashMap<>()).when(extensionsManager).getExternalAccessDetails(null, 100L, resourceMapVO);
+        Map<String, Map<String, String>> result = extensionsManager.getExternalAccessDetails(host, vmDetails);
+        assertNotNull(result);
+        assertNotNull(result.get(ApiConstants.VIRTUAL_MACHINE));
+        assertEquals(vmDetails, result.get(ApiConstants.VIRTUAL_MACHINE));
+    }
+
+    @Test
+    public void getExternalAccessDetailsReturnsExpectedNullDetails() {
+        Host host = mock(Host.class);
+        when(host.getId()).thenReturn(101L);
+        when(host.getClusterId()).thenReturn(1L);
+        Map<String, String> vmDetails = null;
+        ExtensionResourceMapVO resourceMapVO = mock(ExtensionResourceMapVO.class);
+        when(extensionResourceMapDao.findByResourceIdAndType(1L, ExtensionResourceMap.ResourceType.Cluster))
+                .thenReturn(resourceMapVO);
+        doReturn(new HashMap<>()).when(extensionsManager).getExternalAccessDetails(null, 101L, resourceMapVO);
+        Map<String, Map<String, String>> result = extensionsManager.getExternalAccessDetails(host, vmDetails);
+        assertNotNull(result);
+        assertNull(result.get(ApiConstants.VIRTUAL_MACHINE));
+    }
+
+    @Test
+    public void getCallerDetailsReturnsExpectedDetailsForValidCaller() {
+        try (MockedStatic<CallContext> ignored = mockStatic(CallContext.class)) {
+            mockCallerRole(RoleType.Admin);
+            Map<String, String> result = extensionsManager.getCallerDetails();
+            assertNotNull(result);
+            assertTrue(UuidUtils.isUuid(result.get(ApiConstants.ID)));
+            assertEquals("testAccount", result.get(ApiConstants.NAME));
+            assertEquals("ADMIN", result.get(ApiConstants.TYPE));
+            assertEquals("role-uuid-1", result.get(ApiConstants.ROLE_ID));
+            assertEquals("AdminRole", result.get(ApiConstants.ROLE_NAME));
+            assertEquals("Admin", result.get(ApiConstants.ROLE_TYPE));
+        }
+    }
+
+    @Test
+    public void getCallerDetailsReturnsNullWhenCallerIsNull() {
+        CallContext callContext = mock(CallContext.class);
+        when(callContext.getCallingAccount()).thenReturn(null);
+        try (MockedStatic<CallContext> mockedCallContext = mockStatic(CallContext.class)) {
+            mockedCallContext.when(CallContext::current).thenReturn(callContext);
+            Map<String, String> result = extensionsManager.getCallerDetails();
+            assertNull(result);
+        }
+    }
+
+    @Test
+    public void getCallerDetailsReturnsDetailsWithoutRoleWhenRoleIsNull() {
+        try (MockedStatic<CallContext> ignored = mockStatic(CallContext.class)) {
+            mockCallerRole(RoleType.User);
+            when(roleService.findRole(1L)).thenReturn(null);
+            Map<String, String> result = extensionsManager.getCallerDetails();
+            assertNotNull(result);
+            assertTrue(UuidUtils.isUuid(result.get(ApiConstants.ID)));
+            assertEquals("testAccount", result.get(ApiConstants.NAME));
+            assertEquals("NORMAL", result.get(ApiConstants.TYPE));
+            assertNull(result.get(ApiConstants.ROLE_ID));
+            assertNull(result.get(ApiConstants.ROLE_NAME));
+            assertNull(result.get(ApiConstants.ROLE_TYPE));
+        }
+    }
+
 }

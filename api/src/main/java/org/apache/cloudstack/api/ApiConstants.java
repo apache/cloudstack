@@ -80,6 +80,7 @@ public class ApiConstants {
     public static final String BYTES_WRITE_RATE_MAX = "byteswriteratemax";
     public static final String BYTES_WRITE_RATE_MAX_LENGTH = "byteswriteratemaxlength";
     public static final String BYPASS_VLAN_OVERLAP_CHECK = "bypassvlanoverlapcheck";
+    public static final String CALLER = "caller";
     public static final String CAPACITY = "capacity";
     public static final String CATEGORY = "category";
     public static final String CAN_REVERT = "canrevert";

@@ -770,7 +770,7 @@ public class ConsoleAccessManagerImplTest {
         String addr = "addr";
         ConsoleConnectionDetails details = new ConsoleConnectionDetails("password", "en", "tag", null);
         details.setDirectUrl(url);
-        details.setModeFromExternalProtocol("url");
+        details.setModeFromExternalProtocol("direct");
         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
         Mockito.when(vm.getId()).thenReturn(vmId);
         HostVO host = Mockito.mock(HostVO.class);
@@ -778,7 +778,7 @@ public class ConsoleAccessManagerImplTest {
         Mockito.doReturn(details).when(consoleAccessManager).getConsoleConnectionDetails(vm, host);
         Mockito.doNothing().when(consoleAccessManager).persistConsoleSession(sessionUuid, vmId, hostId, addr);
 
-        ConsoleEndpoint endpoint = consoleAccessManager.composeConsoleAccessEndpoint("url", vm, host, addr, sessionUuid, "");
+        ConsoleEndpoint endpoint = consoleAccessManager.composeConsoleAccessEndpoint("rootUrl", vm, host, addr, sessionUuid, "");
 
         Mockito.verify(consoleAccessManager).persistConsoleSession(sessionUuid, vmId, hostId, addr);
         Mockito.verify(managementServer, Mockito.never()).setConsoleAccessForVm(Mockito.anyLong(), Mockito.anyString());
