@@ -188,13 +188,13 @@ export default {
           this.loading = false
         })
     },
-    increamentAndGetRequestToken () {
+    incrementAndGetRequestToken () {
       this.requestToken += 1
       return this.requestToken
     },
     fetchAccounts () {
       this.loading = true
-      const currentToken = this.increamentAndGetRequestToken()
+      const currentToken = this.incrementAndGetRequestToken()
       api('listAccounts', {
         response: 'json',
         domainId: this.selectedDomain,
@@ -229,7 +229,7 @@ export default {
     },
     fetchProjects () {
       this.loading = true
-      const currentToken = this.increamentAndGetRequestToken()
+      const currentToken = this.incrementAndGetRequestToken()
       api('listProjects', {
         response: 'json',
         domainId: this.selectedDomain,
