@@ -67,9 +67,4 @@ public class DataCenterDetailsDaoImpl extends ResourceDetailsDaoBase<DataCenterD
         persist(vo);
         txn.commit();
     }
-
-    @Override
-    public boolean doesConfigKeyAndValueExist(String key, String value) {
-        return doesKeyValuePairExist(key, value);
-    }
 }

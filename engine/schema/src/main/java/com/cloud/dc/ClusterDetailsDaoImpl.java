@@ -186,9 +186,4 @@ public class ClusterDetailsDaoImpl extends ResourceDetailsDaoBase<ClusterDetails
 
         return name;
     }
-
-    @Override
-    public boolean doesConfigKeyAndValueExist(String key, String value) {
-        return doesKeyValuePairExist(key, value);
-    }
 }

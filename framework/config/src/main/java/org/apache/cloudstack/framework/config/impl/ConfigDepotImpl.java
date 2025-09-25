@@ -296,7 +296,7 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
         return null;
     }
 
-    public boolean doesConfigKeyAndValueExistsInScope(String key, String value, ConfigKey.Scope scope) {
+    public boolean doesConfigKeyAndValueExistInScope(String key, String value, ConfigKey.Scope scope) {
         if (!ConfigKey.Scope.Global.equals(scope)) {
             ScopedConfigStorage scopedConfigStorage = null;
             for (ScopedConfigStorage storage : _scopedStorages) {
@@ -305,7 +305,8 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
                 }
             }
             if (scopedConfigStorage == null) {
-                throw new CloudRuntimeException("Unable to find config storage for this scope: " + scope + " for " + key);
+                logger.warn("Unable to check existence of config key {} and value {} in scope: {}, couldn't find config storage for this scope", key, value, scope);
+                return false;
             }
             return scopedConfigStorage.doesConfigKeyAndValueExist(key, value);
         }
