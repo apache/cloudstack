@@ -157,7 +157,6 @@ export default {
       serviceOffering: {},
       template: {},
       userDataEnabled: false,
-      extraConfigEnabled: false,
       securityGroupsEnabled: false,
       loading: false,
       securitygroups: {
@@ -171,7 +170,8 @@ export default {
       groups: {
         loading: false,
         opts: []
-      }
+      },
+      extraConfigEnabled: this.$store.getters.features.additionalconfigenabled
     }
   },
   beforeCreate () {
@@ -192,8 +192,7 @@ export default {
         deleteprotection: this.resource.deleteprotection,
         group: this.resource.group,
         userdata: '',
-        haenable: this.resource.haenable,
-        extraconfig: ''
+        haenable: this.resource.haenable
       })
       this.rules = reactive({})
     },
@@ -205,7 +204,6 @@ export default {
       this.fetchServiceOfferingData()
       this.fetchTemplateData()
       this.fetchUserData()
-      this.fetchExtraConfigEnabled()
     },
     fetchZoneDetails () {
       api('listZones', {
@@ -322,17 +320,6 @@ export default {
             })
           }
         })
-      })
-    },
-    fetchExtraConfigEnabled () {
-      api('listConfigurations', {
-        accountid: this.$store.getters.userInfo.accountid,
-        name: 'enable.additional.vm.configuration'
-      }).then(json => {
-        const configResponse = json.listconfigurationsresponse.configuration || []
-        this.extraConfigEnabled = configResponse[0]?.value === 'true'
-      }).catch(error => {
-        this.$notifyError(error)
       })
     },
 

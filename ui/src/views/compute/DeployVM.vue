@@ -985,8 +985,7 @@ export default {
         keyboards: [],
         bootTypes: [],
         bootModes: [],
-        ioPolicyTypes: [],
-        extraConfigEnabled: []
+        ioPolicyTypes: []
       },
       rowCount: {},
       loading: {
@@ -1031,7 +1030,6 @@ export default {
       sshKeyPairs: [],
       sshKeyPair: {},
       userData: {},
-      extraConfig: {},
       userDataParams: [],
       userDataParamCols: [
         {
@@ -1282,15 +1280,6 @@ export default {
             type: 'Routing'
           },
           field: 'hostid'
-        },
-        extraConfigEnabled: {
-          list: 'listConfigurations',
-          isLoad: true,
-          options: {
-            accountid: store.getters.userInfo.accountid,
-            name: 'enable.additional.vm.configuration'
-          },
-          field: 'value'
         }
       }
     },
@@ -1436,7 +1425,7 @@ export default {
       return this.$store.getters.features.dynamicscalingenabled
     },
     extraConfigEnabledValue () {
-      return this.options.extraConfigEnabled?.[0]?.value === 'true'
+      return this.$store.getters.features.additionalconfigenabled
     },
     isCustomizedDiskIOPS () {
       return this.diskSelected?.iscustomizediops || false
