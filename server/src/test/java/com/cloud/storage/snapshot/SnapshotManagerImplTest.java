@@ -106,6 +106,8 @@ public class SnapshotManagerImplTest {
     @Before
     public void setUp() {
         snapshotManager._snapshotPolicyDao = snapshotPolicyDao;
+        snapshotManager._volsDao = volumeDao;
+        snapshotManager._accountMgr = accountManager;
     }
 
     @After
@@ -435,11 +437,14 @@ public class SnapshotManagerImplTest {
         List<SnapshotPolicyVO> mockPolicies = List.of(policy1, policy2);
 
         SearchBuilder<SnapshotPolicyVO> mockSearchBuilder = Mockito.mock(SearchBuilder.class);
+        SearchBuilder<VolumeVO> mockVolumeSearchBuilder = Mockito.mock(SearchBuilder.class);
         SearchCriteria<SnapshotPolicyVO> mockSearchCriteria = Mockito.mock(SearchCriteria.class);
 
         Mockito.when(snapshotPolicyDao.createSearchBuilder()).thenReturn(mockSearchBuilder);
         Mockito.when(mockSearchBuilder.entity()).thenReturn(Mockito.mock(SnapshotPolicyVO.class));
         Mockito.when(mockSearchBuilder.create()).thenReturn(mockSearchCriteria);
+        Mockito.when(volumeDao.createSearchBuilder()).thenReturn(mockVolumeSearchBuilder);
+        Mockito.when(mockVolumeSearchBuilder.entity()).thenReturn(Mockito.mock(VolumeVO.class));
         Mockito.when(snapshotPolicyDao.searchAndCount(Mockito.any(), Mockito.any())).thenReturn(new Pair<>(mockPolicies, 2));
 
         Pair<List<? extends SnapshotPolicy>, Integer> result = snapshotManager.listSnapshotPolicies(cmd);
@@ -467,11 +472,14 @@ public class SnapshotManagerImplTest {
         List<SnapshotPolicyVO> mockPolicies = List.of(policy1, policy2);
 
         SearchBuilder<SnapshotPolicyVO> mockSearchBuilder = Mockito.mock(SearchBuilder.class);
+        SearchBuilder<VolumeVO> mockVolumeSearchBuilder = Mockito.mock(SearchBuilder.class);
         SearchCriteria<SnapshotPolicyVO> mockSearchCriteria = Mockito.mock(SearchCriteria.class);
 
         Mockito.when(snapshotPolicyDao.createSearchBuilder()).thenReturn(mockSearchBuilder);
         Mockito.when(mockSearchBuilder.entity()).thenReturn(Mockito.mock(SnapshotPolicyVO.class));
         Mockito.when(mockSearchBuilder.create()).thenReturn(mockSearchCriteria);
+        Mockito.when(volumeDao.createSearchBuilder()).thenReturn(mockVolumeSearchBuilder);
+        Mockito.when(mockVolumeSearchBuilder.entity()).thenReturn(Mockito.mock(VolumeVO.class));
         Mockito.when(snapshotPolicyDao.searchAndCount(Mockito.any(), Mockito.any())).thenReturn(new Pair<>(mockPolicies, 2));
 
         Pair<List<? extends SnapshotPolicy>, Integer> result = snapshotManager.listSnapshotPolicies(cmd);
@@ -496,11 +504,14 @@ public class SnapshotManagerImplTest {
 
         SnapshotPolicyVO policy = Mockito.mock(SnapshotPolicyVO.class);
         SearchBuilder<SnapshotPolicyVO> mockSearchBuilder = Mockito.mock(SearchBuilder.class);
+        SearchBuilder<VolumeVO> mockVolumeSearchBuilder = Mockito.mock(SearchBuilder.class);
         SearchCriteria<SnapshotPolicyVO> mockSearchCriteria = Mockito.mock(SearchCriteria.class);
 
         Mockito.when(snapshotPolicyDao.createSearchBuilder()).thenReturn(mockSearchBuilder);
         Mockito.when(mockSearchBuilder.entity()).thenReturn(Mockito.mock(SnapshotPolicyVO.class));
         Mockito.when(mockSearchBuilder.create()).thenReturn(mockSearchCriteria);
+        Mockito.when(volumeDao.createSearchBuilder()).thenReturn(mockVolumeSearchBuilder);
+        Mockito.when(mockVolumeSearchBuilder.entity()).thenReturn(Mockito.mock(VolumeVO.class));
         Mockito.when(snapshotPolicyDao.searchAndCount(Mockito.any(), Mockito.any())).thenReturn(new Pair<>(List.of(policy), 1));
 
         Pair<List<? extends SnapshotPolicy>, Integer> result = snapshotManager.listSnapshotPolicies(cmd);
