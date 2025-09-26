@@ -345,7 +345,7 @@ public class VolumeObjectTO extends DownloadableObjectTO implements DataTO {
 
     public void setCacheMode(DiskCacheMode cacheMode) {
         if (DiskCacheMode.HYPERVISOR_DEFAULT.equals(cacheMode) && !Hypervisor.HypervisorType.KVM.equals(hypervisorType)) {
-            this.cacheMode = DiskOffering.DiskCacheMode.NONE;
+            this.cacheMode = DiskCacheMode.NONE;
             return;
         }
         this.cacheMode = cacheMode;
