@@ -213,8 +213,8 @@ class LdapImportUsersCmdSpec extends spock.lang.Specification {
         def accountService = Mock(AccountService)
         1 * accountService.getActiveAccountByName('ACCOUNT', 0) >>  Mock(AccountVO)
 
-        1 * accountService.createUser('rmurphy', _ , 'Ryan', 'Murphy', 'rmurphy@test.com', null, 'ACCOUNT', 0, _, User.Source.LDAP, null) >> Mock(UserVO)
-        0 * accountService.createUserAccount('rmurphy', _, 'Ryan', 'Murphy', 'rmurphy@test.com', null, 'ACCOUNT', 2, 0, 'DOMAIN', null, _, _, User.Source.LDAP, null)
+        1 * accountService.createUser('rmurphy', _ , 'Ryan', 'Murphy', 'rmurphy@test.com', null, 'ACCOUNT', 0, _, User.Source.LDAP) >> Mock(UserVO)
+        0 * accountService.createUserAccount('rmurphy', _, 'Ryan', 'Murphy', 'rmurphy@test.com', null, 'ACCOUNT', 2, 0, 'DOMAIN', null, _, _, User.Source.LDAP)
         0 * accountService.updateUser(_,'Ryan', 'Murphy', 'rmurphy@test.com', null, null, null, null, null);
 
         def ldapImportUsersCmd = new LdapImportUsersCmd(ldapManager, domainService, accountService)

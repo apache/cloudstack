@@ -1286,7 +1286,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 accountCmd.getLastName(), accountCmd.getEmail(), accountCmd.getTimeZone(), accountCmd.getAccountName(),
                 accountCmd.getAccountType(), accountCmd.getRoleId(), accountCmd.getDomainId(),
                 accountCmd.getNetworkDomain(), accountCmd.getDetails(), accountCmd.getAccountUUID(),
-                accountCmd.getUserUUID(), User.Source.UNKNOWN, CallContext.current().getCallingAccount());
+                accountCmd.getUserUUID(), User.Source.UNKNOWN);
     }
 
     // ///////////////////////////////////////////////////
@@ -1301,7 +1301,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                                          final String lastName, final String email, final String timezone,
                                          String accountName, final Account.Type accountType, final Long roleId, Long domainId,
                                          final String networkDomain, final Map<String, String> details,
-                                         String accountUUID, final String userUUID, final User.Source source, Account caller) {
+                                         String accountUUID, final String userUUID, final User.Source source) {
 
         if (accountName == null) {
             accountName = userName;
@@ -1360,7 +1360,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 checkRoleEscalation(getCurrentCallingAccount(), account);
 
                 // create the first user for the account
-                UserVO user = createUser(accountId, userName, password, firstName, lastName, email, timezone, userUUID, source, caller);
+                UserVO user = createUser(accountId, userName, password, firstName, lastName, email, timezone, userUUID, source);
 
                 if (accountType == Account.Type.RESOURCE_DOMAIN_ADMIN) {
                     // set registration token
@@ -1530,7 +1530,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         verifyCallerPrivilegeForUserOrAccountOperations(account);
         UserVO user;
-        user = createUser(account.getId(), userName, password, firstName, lastName, email, timeZone, userUUID, source, null);
+        user = createUser(account.getId(), userName, password, firstName, lastName, email, timeZone, userUUID, source);
         return user;
     }
 
@@ -2742,15 +2742,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         });
     }
 
-    protected UserVO createUser(long accountId, String userName, String password, String firstName, String lastName, String email, String timezone, String userUUID,
-                                User.Source source, Account caller) {
+    protected UserVO createUser(long accountId, String userName, String password, String firstName, String lastName, String email, String timezone, String userUUID, User.Source source) {
         if (logger.isDebugEnabled()) {
             logger.debug("Creating user: " + userName + ", accountId: " + accountId + " timezone:" + timezone);
         }
 
-        if (caller == null || caller.getId() != Account.ACCOUNT_ID_SYSTEM) {
-            passwordPolicy.verifyIfPasswordCompliesWithPasswordPolicies(password, userName, getAccount(accountId).getDomainId());
-        }
+        passwordPolicy.verifyIfPasswordCompliesWithPasswordPolicies(password, userName, getAccount(accountId).getDomainId());
 
         String encodedPassword = null;
         for (UserAuthenticator authenticator : _userPasswordEncoders) {

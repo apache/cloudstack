@@ -176,7 +176,7 @@ class LdapAuthenticatorSpec extends spock.lang.Specification {
         ldapManager.getUser(username, type.toString(), name) >> new LdapUser(username, "email", "firstname", "lastname", "principal", "domain", false, null)
         ldapManager.canAuthenticate(_, _, _) >> true
         //user should be created in cloudstack
-        accountManager.createUserAccount(username, "", "firstname", "lastname", "email", null, username, (short) 2, domainId, username, null, _, _, User.Source.LDAP, null) >> Mock(UserAccount)
+        accountManager.createUserAccount(username, "", "firstname", "lastname", "email", null, username, (short) 2, domainId, username, null, _, _, User.Source.LDAP) >> Mock(UserAccount)
 
         when:
             Pair<Boolean, UserAuthenticator.ActionOnFailedAuthentication> result = ldapAuthenticator.authenticate(username, "password", domainId, null)

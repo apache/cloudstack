@@ -88,7 +88,7 @@ public class LinkAccountToLdapCmdTest implements LdapConfigurationChanger {
         userAccount.setAccountId(24);
         when(accountService.createUserAccount(eq(username), eq(""), eq("Admin"), eq("Admin"), eq("admin@ccp.citrix.com"), isNull(String.class),
                 eq(username), eq(Account.Type.DOMAIN_ADMIN), eq(RoleType.DomainAdmin.getId()), eq(domainId), isNull(String.class),
-                (java.util.Map<String,String>)isNull(), anyString(), anyString(), eq(User.Source.LDAP), isNull(Account.class))).thenReturn(userAccount);
+                (java.util.Map<String,String>)isNull(), anyString(), anyString(), eq(User.Source.LDAP))).thenReturn(userAccount);
 
         linkAccountToLdapCmd.execute();
         LinkAccountToLdapResponse result = (LinkAccountToLdapResponse)linkAccountToLdapCmd.getResponseObject();

@@ -1553,7 +1553,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             UserAccount userAccount = accountService.createUserAccount(accountName,
                     UUID.randomUUID().toString(), PROJECT_KUBERNETES_ACCOUNT_FIRST_NAME,
                     PROJECT_KUBERNETES_ACCOUNT_LAST_NAME, null, null, accountName, Account.Type.NORMAL, role.getId(),
-                    project.getDomainId(), null, null, null, null, User.Source.NATIVE, accountService.getSystemAccount());
+                    project.getDomainId(), null, null, null, null, User.Source.NATIVE);
             projectManager.assignAccountToProject(project, userAccount.getAccountId(), ProjectAccount.Role.Regular,
                     userAccount.getId(), null);
             Account account = accountService.getAccount(userAccount.getAccountId());

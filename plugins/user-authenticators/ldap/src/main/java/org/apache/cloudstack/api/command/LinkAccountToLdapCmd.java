@@ -89,7 +89,7 @@ public class LinkAccountToLdapCmd extends BaseCmd {
                         try {
                             UserAccount userAccount = _accountService
                                     .createUserAccount(admin, "", ldapUser.getFirstname(), ldapUser.getLastname(), ldapUser.getEmail(), null, admin, Account.Type.DOMAIN_ADMIN, RoleType.DomainAdmin.getId(), domainId, null, null, UUID.randomUUID().toString(),
-                                            UUID.randomUUID().toString(), User.Source.LDAP, null);
+                                            UUID.randomUUID().toString(), User.Source.LDAP);
                             response.setAdminId(String.valueOf(userAccount.getAccountId()));
                             logger.info("created an account with name {} in the given domain {} with id {}", admin, _domainService.getDomain(domainId), domainId);
                         } catch (Exception e) {
