@@ -2138,32 +2138,33 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         //Included revoked rules to remove the rules of ips which are in revoke state
         List<FirewallRuleVO> rules = _firewallDao.listByIpAndPurpose(ipId, Purpose.LoadBalancing);
 
+        if (deleteRulesFails(caller, callerUserId, rules)) return false;
+        return true;
+    }
+
+    private boolean deleteRulesFails(Account caller, long callerUserId, List<FirewallRuleVO> rules) {
         if (rules != null) {
-            logger.debug("Found " + rules.size() + " lb rules to cleanup");
+            logger.debug("Found {} lb rules to cleanup", rules.size());
             for (FirewallRule rule : rules) {
-                boolean result = deleteLoadBalancerRule(rule.getId(), true, caller, callerUserId, false);
-                if (result == false) {
-                    logger.warn("Unable to remove load balancer rule {}", rule);
-                    return false;
-                }
+                if (deleteRuleFails(caller, callerUserId, rule)) return true;
             }
         }
-        return true;
+        return false;
+    }
+
+    private boolean deleteRuleFails(Account caller, long callerUserId, FirewallRule rule) {
+        boolean result = deleteLoadBalancerRule(rule.getId(), true, caller, callerUserId, false);
+        if (result == false) {
+            logger.warn("Unable to remove load balancer rule {}", rule);
+            return true;
+        }
+        return false;
     }
 
     @Override
     public boolean removeAllLoadBalanacersForNetwork(long networkId, Account caller, long callerUserId) {
         List<FirewallRuleVO> rules = _firewallDao.listByNetworkAndPurposeAndNotRevoked(networkId, Purpose.LoadBalancing);
-        if (rules != null) {
-            logger.debug("Found " + rules.size() + " lb rules to cleanup");
-            for (FirewallRule rule : rules) {
-                boolean result = deleteLoadBalancerRule(rule.getId(), true, caller, callerUserId, false);
-                if (result == false) {
-                    logger.warn("Unable to remove load balancer rule {}", rule);
-                    return false;
-                }
-            }
-        }
+        if (deleteRulesFails(caller, callerUserId, rules)) return false;
         return true;
     }
 
@@ -2257,6 +2258,17 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         }
 
         validateInputsForExternalNetworkProvider(lb, algorithm, lbProtocol);
+
+        List<String> cidrList = cmd.getCidrList();
+
+        if (cidrList != null) {
+            String cidrListStr = StringUtils.join(cidrList, ",");
+            if (!cidrListStr.isEmpty() && !NetUtils.isValidCidrList(cidrListStr)) {
+                throw new InvalidParameterValueException("Invalid CIDR list: " + cidrListStr);
+            }
+            lb.setCidrList(cidrListStr);
+        }
+
         // Validate rule in LB provider
         LoadBalancingRule rule = getLoadBalancerRuleToApply(lb);
         if (!validateLbRule(rule)) {
@@ -2266,10 +2278,12 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         LoadBalancerVO tmplbVo = _lbDao.findById(lbRuleId);
         boolean success = _lbDao.update(lbRuleId, lb);
 
-        // If algorithm or lb protocol is changed, have to reapply the lb config
-        boolean needToReApplyRule = (algorithm != null && !algorithm.equals(tmplbVo.getAlgorithm()))
-                || (lbProtocol != null && !lbProtocol.equals(tmplbVo.getLbProtocol()));
-        if (needToReApplyRule) {
+        // Check if algorithm, lb protocol, or cidrlist has changed, and reapply the lb config if needed
+        boolean algorithmChanged = !Objects.equals(algorithm, tmplbVo.getAlgorithm());
+        boolean protocolChanged = !Objects.equals(lbProtocol, tmplbVo.getLbProtocol());
+        boolean cidrListChanged = !Objects.equals(tmplbVo.getCidrList(), lb.getCidrList());
+
+        if (algorithmChanged || protocolChanged || cidrListChanged) {
             try {
                 lb.setState(FirewallRule.State.Add);
                 _lbDao.persist(lb);
@@ -2293,9 +2307,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     if (lbBackup.getAlgorithm() != null) {
                         lb.setAlgorithm(lbBackup.getAlgorithm());
                     }
-                    if (lbBackup.getLbProtocol() != null) {
-                        lb.setLbProtocol(lbBackup.getLbProtocol());
-                    }
+
+                    lb.setCidrList(lbBackup.getCidrList());
                     lb.setState(lbBackup.getState());
                     _lbDao.update(lb.getId(), lb);
                     _lbDao.persist(lb);
@@ -2780,5 +2793,4 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         }
         return null;
     }
-
 }
