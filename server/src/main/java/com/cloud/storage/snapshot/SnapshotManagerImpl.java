@@ -1394,6 +1394,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         Long id = cmd.getId();
         Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<>();
+        String keyword = cmd.getKeyword();
 
         // Verify parameters
         if (volumeId != null) {
@@ -1417,6 +1418,10 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         policySearch.and("id", policySearch.entity().getId(), SearchCriteria.Op.EQ);
         policySearch.and("volumeId", policySearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
 
+        SearchBuilder<VolumeVO> volumeSearch = _volsDao.createSearchBuilder();
+        volumeSearch.and("name", volumeSearch.entity().getName(), SearchCriteria.Op.LIKE);
+        policySearch.join("volumeJoin", volumeSearch, policySearch.entity().getVolumeId(), volumeSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+
         SearchCriteria<SnapshotPolicyVO> sc = policySearch.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
@@ -1425,6 +1430,9 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
         if (id != null) {
             sc.setParameters("id", id);
+        }
+        if (keyword != null) {
+            sc.setJoinParameters("volumeJoin", "name", "%" + keyword + "%");
         }
 
         Pair<List<SnapshotPolicyVO>, Integer> result = _snapshotPolicyDao.searchAndCount(sc, searchFilter);

@@ -640,12 +640,12 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
     public List<BackupSchedule> listBackupSchedules(ListBackupScheduleCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
-        boolean isRootAdmin = accountManager.isRootAdmin(caller.getId());
         Long id = cmd.getId();
         Long vmId = cmd.getVmId();
         List<Long> permittedAccounts = new ArrayList<>();
         Long domainId = null;
         Boolean isRecursive = null;
+        String keyword = cmd.getKeyword();
         Project.ListProjectResourcesCriteria listProjectResourcesCriteria = null;
 
         if (vmId != null) {
@@ -670,6 +670,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (vmId != null) {
             searchBuilder.and("vmId", searchBuilder.entity().getVmId(), SearchCriteria.Op.EQ);
         }
+        if (keyword != null && !keyword.isEmpty()) {
+            SearchBuilder<VMInstanceVO> vmSearch = vmInstanceDao.createSearchBuilder();
+            vmSearch.and("hostName", vmSearch.entity().getHostName(), SearchCriteria.Op.LIKE);
+            searchBuilder.join("vmJoin", vmSearch, searchBuilder.entity().getVmId(), vmSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        }
 
         SearchCriteria<BackupScheduleVO> sc = searchBuilder.create();
         accountManager.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
@@ -679,6 +684,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
         if (vmId != null) {
             sc.setParameters("vmId", vmId);
+        }
+        if (keyword != null && !keyword.isEmpty()) {
+            sc.setJoinParameters("vmJoin", "hostName", "%" + keyword + "%");
         }
 
         Pair<List<BackupScheduleVO>, Integer> result = backupScheduleDao.searchAndCount(sc, searchFilter);
