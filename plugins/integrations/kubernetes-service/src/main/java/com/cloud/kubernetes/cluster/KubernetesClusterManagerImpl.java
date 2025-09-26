@@ -381,6 +381,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 logger.warn("Unable to find the network with ID: {} passed for the Kubernetes cluster", networkId);
                 return false;
             }
+            if (isDirectAccess(network)) {
+                return true;
+            }
             networkOffering = networkOfferingDao.findById(network.getNetworkOfferingId());
             if (networkOffering == null) {
                 logger.warn("Unable to find the network offering of the network: {} ({}) to be used for provisioning Kubernetes cluster", network.getName(), network.getUuid());
