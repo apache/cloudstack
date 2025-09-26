@@ -310,7 +310,7 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
         String username = user.getUsername();
         _accountManager.createUserAccount(username, "", user.getFirstname(), user.getLastname(), user.getEmail(), null, username,
                                           accountType, RoleType.getByAccountType(accountType).getId(), domainId, null, null,
-                                          UUID.randomUUID().toString(), UUID.randomUUID().toString(), User.Source.LDAP);
+                                          UUID.randomUUID().toString(), UUID.randomUUID().toString(), User.Source.LDAP, null);
     }
 
     private void disableUserInCloudStack(UserAccount user) {

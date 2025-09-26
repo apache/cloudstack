@@ -108,7 +108,7 @@ public class LdapImportUsersCmd extends BaseListCmd {
         if (account == null) {
             logger.debug("No account exists with name: " + accountName + " creating the account and an user with name: " + user.getUsername() + " in the account");
             _accountService.createUserAccount(user.getUsername(), generatePassword(), user.getFirstname(), user.getLastname(), user.getEmail(), timezone, accountName, getAccountType(), getRoleId(),
-                    domain.getId(), domain.getNetworkDomain(), details, UUID.randomUUID().toString(), UUID.randomUUID().toString(), User.Source.LDAP);
+                    domain.getId(), domain.getNetworkDomain(), details, UUID.randomUUID().toString(), UUID.randomUUID().toString(), User.Source.LDAP, null);
         } else {
 //            check if the user exists. if yes, call update
             UserAccount csuser = _accountService.getActiveUserAccount(user.getUsername(), domain.getId());
