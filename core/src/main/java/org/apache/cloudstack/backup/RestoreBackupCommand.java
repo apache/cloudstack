@@ -36,6 +36,7 @@ public class RestoreBackupCommand extends Command  {
     private Boolean vmExists;
     private String restoreVolumeUUID;
     private VirtualMachine.State vmState;
+    private Integer mountTimeout;
 
     protected RestoreBackupCommand() {
         super();
@@ -135,5 +136,13 @@ public class RestoreBackupCommand extends Command  {
 
     public void setBackupVolumesUUIDs(List<String> backupVolumesUUIDs) {
         this.backupVolumesUUIDs = backupVolumesUUIDs;
+    }
+
+    public Integer getMountTimeout() {
+        return this.mountTimeout;
+    }
+
+    public void setMountTimeout(Integer mountTimeout) {
+        this.mountTimeout = mountTimeout;
     }
 }

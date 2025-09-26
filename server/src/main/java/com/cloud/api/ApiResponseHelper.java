@@ -5564,6 +5564,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setProviderName(backupRepository.getProvider());
         response.setType(backupRepository.getType());
         response.setCapacityBytes(backupRepository.getCapacityBytes());
+        response.setCrossZoneInstanceCreation(backupRepository.crossZoneInstanceCreationEnabled());
         response.setObjectName("backuprepository");
         DataCenter zone = ApiDBUtils.findZoneById(backupRepository.getZoneId());
         if (zone != null) {
