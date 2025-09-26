@@ -20,7 +20,6 @@
 package org.apache.cloudstack.storage.to;
 
 import com.cloud.agent.api.LogLevel;
-import com.cloud.offering.DiskOffering;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 
 import com.cloud.agent.api.to.DataObjectType;
