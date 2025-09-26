@@ -139,12 +139,15 @@ class MaasManager:
         if json_data.get("cloudstack.vm.details", {}).get("nics"):
             json_data["cloudstack.vm.details"]["nics"][0]["mac"] = mac
 
+        console_url = f"http://{self.data['endpoint'].replace('http://','').replace('https://','')}:5240/MAAS/r/machine/{system_id}/summary"
+
         result = {
             "nics": json_data["cloudstack.vm.details"]["nics"],
             "details": {
                 "External:mac_address": mac,
                 "External:maas_system_id": system_id,
                 "External:hostname": hostname,
+                "External:console_url": console_url,
             },
         }
         succeed(result)
