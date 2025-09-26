@@ -25,7 +25,7 @@ def main():
 
     if vMs is None or len(vMs) == 0:
         print("No VMs running data available, skipping")
-        exit(0)
+        exit(3)
 
     try:
         with open('/etc/dhcphosts.txt', 'r') as hostsFile:
