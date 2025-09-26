@@ -85,7 +85,7 @@
           <template #label>
             <tooltip-label :title="$t('label.directdownload')" :tooltip="apiParams.directdownload.description"/>
           </template>
-          <a-switch v-model:checked="form.directdownload"/>
+          <a-switch v-model:checked="form.directdownload" @change="handleDirectDownloadChange"/>
         </a-form-item>
 
         <a-form-item ref="checksum" name="checksum">
@@ -110,7 +110,7 @@
             }"
             :loading="zoneLoading"
             :placeholder="apiParams.zoneid.description">
-            <a-select-option :value="opt.id" v-for="opt in zones" :key="opt.id" :label="opt.name || opt.description">
+            <a-select-option :value="opt.id" v-for="opt in zoneList" :key="opt.id" :label="opt.name || opt.description">
               <span>
                 <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                 <global-outlined v-else style="margin-right: 5px" />
@@ -361,16 +361,17 @@ export default {
   },
   created () {
     this.initForm()
-    this.zones = []
-    if (this.$store.getters.userInfo.roletype === 'Admin' && this.currentForm === 'Create') {
-      this.zones = [
-        {
-          id: '-1',
-          name: this.$t('label.all.zone')
-        }
-      ]
-    }
+    this.initZones()
     this.fetchData()
+  },
+  computed: {
+    zoneList () {
+      let filteredZones = this.zones
+      if (!this.form.directdownload) {
+        filteredZones = this.zones.filter(zone => zone.type !== 'Edge')
+      }
+      return filteredZones
+    }
   },
   methods: {
     initForm () {
@@ -389,6 +390,17 @@ export default {
         zoneid: [{ required: true, message: this.$t('message.error.select') }],
         ostypeid: [{ required: true, message: this.$t('message.error.select') }]
       })
+    },
+    initZones () {
+      this.zones = []
+      if (this.$store.getters.userInfo.roletype === 'Admin' && this.currentForm === 'Create') {
+        this.zones = [
+          {
+            id: '-1',
+            name: this.$t('label.all.zone')
+          }
+        ]
+      }
     },
     fetchData () {
       this.fetchZoneData()
@@ -412,11 +424,10 @@ export default {
         const listZones = json.listzonesresponse.zone
         if (listZones) {
           this.zones = this.zones.concat(listZones)
-          this.zones = this.zones.filter(zone => zone.type !== 'Edge')
         }
       }).finally(() => {
         this.zoneLoading = false
-        this.form.zoneid = (this.zones[0].id ? this.zones[0].id : '')
+        this.form.zoneid = this.zoneList?.[0]?.id || ''
       })
     },
     fetchOsType () {
@@ -466,6 +477,12 @@ export default {
       newFileList.splice(index, 1)
       this.fileList = newFileList
       this.form.file = undefined
+    },
+    handleDirectDownloadChange () {
+      if (this.form.zoneid && this.zoneList.find(entry => entry.id === this.form.zoneid)) {
+        return
+      }
+      this.form.zoneid = this.zoneList?.[0]?.id || ''
     },
     beforeUpload (file) {
       this.fileList = [file]
@@ -531,7 +548,7 @@ export default {
           }
           switch (key) {
             case 'zoneid':
-              var zone = this.zones.filter(zone => zone.id === input)
+              var zone = this.zoneList.filter(zone => zone.id === input)
               params[key] = zone[0].id
               break
             case 'ostypeid':
