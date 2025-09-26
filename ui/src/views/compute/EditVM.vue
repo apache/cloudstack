@@ -91,6 +91,12 @@
         <a-textarea v-model:value="form.userdata">
         </a-textarea>
       </a-form-item>
+      <a-form-item v-if="extraConfigEnabled">
+        <template #label>
+          <tooltip-label :title="$t('label.extraconfig')" :tooltip="$t('label.extraconfig.tooltip')"/>
+        </template>
+        <a-textarea v-model:value="form.extraconfig"/>
+      </a-form-item>
       <a-form-item ref="securitygroupids" name="securitygroupids" :label="$t('label.security.groups')" v-if="securityGroupsEnabled">
         <a-select
           mode="multiple"
@@ -164,7 +170,8 @@ export default {
       groups: {
         loading: false,
         opts: []
-      }
+      },
+      extraConfigEnabled: this.$store.getters.features.additionalconfigenabled
     }
   },
   beforeCreate () {
@@ -341,6 +348,9 @@ export default {
         }
         if (values.userdata && values.userdata.length > 0) {
           params.userdata = this.$toBase64AndURIEncoded(values.userdata)
+        }
+        if (values.extraconfig && values.extraconfig.length > 0) {
+          params.extraconfig = encodeURIComponent(values.extraconfig)
         }
         this.loading = true
 
