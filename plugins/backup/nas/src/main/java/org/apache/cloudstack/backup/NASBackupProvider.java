@@ -210,8 +210,8 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             List<VolumeVO> vmVolumes = volumeDao.findByInstance(vm.getId());
             vmVolumes.sort(Comparator.comparing(Volume::getDeviceId));
             Pair<List<PrimaryDataStoreTO>, List<String>> volumePoolsAndPaths = getVolumePoolsAndPaths(vmVolumes);
-            List<String> volumePaths = volumePoolsAndPaths.second();
-            command.setVolumePaths(volumePaths);
+            command.setVolumePools(volumePoolsAndPaths.first());
+            command.setVolumePaths(volumePoolsAndPaths.second());
         }
 
         BackupAnswer answer;
