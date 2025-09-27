@@ -152,7 +152,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
 
     ConfigKey<Integer> PathStateCheckInterval = new ConfigKey<>("Advanced", Integer.class,
             "extension.path.state.check.interval", "300",
-            "Interval (in seconds) for checking entry-point state of extensions",
+            "Interval (in seconds) for checking state of extensions path",
             false, ConfigKey.Scope.Global);
 
     @Inject
@@ -264,11 +264,11 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
 
     protected boolean prepareExtensionPathOnMSPeer(Extension extension, ManagementServerHostVO msHost) {
         final String msPeer = Long.toString(msHost.getMsid());
-        logger.debug("Sending prepare extension entry-point for {} command to MS: {}", extension, msPeer);
+        logger.debug("Sending prepare extension path for {} command to MS: {}", extension, msPeer);
         final Command[] commands = new Command[1];
         commands[0] = new PrepareExtensionPathCommand(ManagementServerNode.getManagementServerId(), extension);
         String answersStr = clusterManager.execute(msPeer, 0L, GsonHelper.getGson().toJson(commands), true);
-        return getResultFromAnswersString(answersStr, extension, msHost, "prepare entry-point").first();
+        return getResultFromAnswersString(answersStr, extension, msHost, "prepare path").first();
     }
 
     protected Pair<Boolean, String> prepareExtensionPathOnCurrentServer(String name, boolean userDefined,
@@ -276,7 +276,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         try {
             externalProvisioner.prepareExtensionPath(name, userDefined, relativePath);
         } catch (CloudRuntimeException e) {
-            logger.error("Failed to prepare entry-point for Extension [name: {}, userDefined: {}, relativePath: {}] on this server",
+            logger.error("Failed to prepare path for Extension [name: {}, userDefined: {}, relativePath: {}] on this server",
                     name, userDefined, relativePath, e);
             return new Pair<>(false, e.getMessage());
         }
@@ -285,11 +285,11 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
 
     protected boolean cleanupExtensionFilesOnMSPeer(Extension extension, ManagementServerHostVO msHost) {
         final String msPeer = Long.toString(msHost.getMsid());
-        logger.debug("Sending cleanup extension entry-point for {} command to MS: {}", extension, msPeer);
+        logger.debug("Sending cleanup extension files for {} command to MS: {}", extension, msPeer);
         final Command[] commands = new Command[1];
         commands[0] = new CleanupExtensionFilesCommand(ManagementServerNode.getManagementServerId(), extension);
         String answersStr = clusterManager.execute(msPeer, 0L, GsonHelper.getGson().toJson(commands), true);
-        return getResultFromAnswersString(answersStr, extension, msHost, "cleanup entry-point").first();
+        return getResultFromAnswersString(answersStr, extension, msHost, "cleanup files").first();
     }
 
     protected Pair<Boolean, String> cleanupExtensionFilesOnCurrentServer(String name, String relativePath) {
@@ -297,7 +297,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             externalProvisioner.cleanupExtensionPath(name, relativePath);
             externalProvisioner.cleanupExtensionData(name, 0, true);
         } catch (CloudRuntimeException e) {
-            logger.error("Failed to cleanup entry-point files for Extension [name: {}, relativePath: {}] on this server",
+            logger.error("Failed to cleanup files for Extension [name: {}, relativePath: {}] on this server",
                     name, relativePath, e);
             return new Pair<>(false, e.getMessage());
         }
@@ -305,18 +305,18 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     }
 
     protected void cleanupExtensionFilesAcrossServers(Extension extension) {
-        boolean cleanup = true;
+        boolean cleanedUp = true;
         List<ManagementServerHostVO> msHosts = managementServerHostDao.listBy(ManagementServerHost.State.Up);
         for (ManagementServerHostVO msHost : msHosts) {
             if (msHost.getMsid() == ManagementServerNode.getManagementServerId()) {
-                cleanup = cleanup && cleanupExtensionFilesOnCurrentServer(extension.getName(),
+                cleanedUp = cleanedUp && cleanupExtensionFilesOnCurrentServer(extension.getName(),
                         extension.getRelativePath()).first();
                 continue;
             }
-            cleanup = cleanup && cleanupExtensionFilesOnMSPeer(extension, msHost);
+            cleanedUp = cleanedUp && cleanupExtensionFilesOnMSPeer(extension, msHost);
         }
-        if (!cleanup) {
-            throw new CloudRuntimeException("Extension is deleted but its entry-point files are not cleaned up across servers");
+        if (!cleanedUp) {
+            throw new CloudRuntimeException("Extension is deleted but its files are not cleaned up across servers");
         }
     }
 
@@ -327,7 +327,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         cmds[0] = new GetExtensionPathChecksumCommand(ManagementServerNode.getManagementServerId(),
                 extension);
         String answersStr = clusterManager.execute(msPeer, 0L, GsonHelper.getGson().toJson(cmds), true);
-        return getResultFromAnswersString(answersStr, extension, msHost, "prepare entry-point");
+        return getResultFromAnswersString(answersStr, extension, msHost, "get path checksum");
     }
 
     protected List<ExtensionCustomAction.Parameter> getParametersListFromMap(String actionName, Map parametersMap) {
@@ -549,7 +549,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             final Pair<Boolean, String> msPeerChecksumResult = getChecksumForExtensionPathOnMSPeer(extension,
                     msHost);
             if (!msPeerChecksumResult.first() || !checksum.equals(msPeerChecksumResult.second())) {
-                logger.error("Entry-point checksum for {} is different [msid: {}, checksum: {}] and [msid: {}, checksum: {}]",
+                logger.error("Path checksum for {} is different [msid: {}, checksum: {}] and [msid: {}, checksum: {}]",
                         extension, ManagementServerNode.getManagementServerId(), checksum, msHost.getMsid(),
                         (msPeerChecksumResult.first() ? msPeerChecksumResult.second() : "unknown"));
                 updateExtensionPathReady(extension, false);
@@ -630,7 +630,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                 !prepareExtensionPathAcrossServers(extensionVO)) {
             disableExtension(extensionVO.getId());
             throw new CloudRuntimeException(String.format(
-                    "Failed to enable extension: %s as it entry-point is not ready",
+                    "Failed to enable extension: %s as its path is not ready",
                     extensionVO.getName()));
         }
         return extensionVO;
@@ -736,7 +736,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                 !prepareExtensionPathAcrossServers(result)) {
                 disableExtension(result.getId());
                 throw new CloudRuntimeException(String.format(
-                        "Failed to enable extension: %s as it entry-point is not ready",
+                        "Failed to enable extension: %s as it path is not ready",
                         extensionVO.getName()));
             }
             updateAllExtensionHosts(extensionVO, null, false);
