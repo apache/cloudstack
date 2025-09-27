@@ -165,7 +165,14 @@ backup_stopped_vm() {
 
   name="root"
   for disk in $DISK_PATHS; do
-    volUuid="${disk##*/}"
+    if [[ "$disk" == rbd:* ]]; then
+      # disk for rbd => rbd:<pool>/<uuid>:mon_host=<monitor_host>...
+      # sample: rbd:cloudstack/53d5c355-d726-4d3e-9422-046a503a0b12:mon_host=10.0.1.2...
+      beforeUuid="${disk#*/}"     # Remove up to first slash after rbd:
+      volUuid="${beforeUuid%%:*}" # Remove everything after colon to get the uuid
+    else
+      volUuid="${disk##*/}"
+    fi
     output="$dest/$name.$volUuid.qcow2"
     if ! qemu-img convert -O qcow2 "$disk" "$output" > "$logFile" 2> >(cat >&2); then
       echo "qemu-img convert failed for $disk $output"
