@@ -707,7 +707,7 @@ public class LibvirtVMDef {
         }
 
         public enum DiskCacheMode {
-            NONE("none"), WRITEBACK("writeback"), WRITETHROUGH("writethrough");
+            NONE("none"), WRITEBACK("writeback"), WRITETHROUGH("writethrough"), HYPERVISOR_DEFAULT("default");
             String _diskCacheMode;
 
             DiskCacheMode(String cacheMode) {
