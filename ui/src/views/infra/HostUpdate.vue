@@ -198,10 +198,12 @@ export default {
         if (values.istagarule !== undefined) {
           params.istagarule = values.istagarule
         }
-        if (values.externaldetails) {
+        if (values.externaldetails && Object.keys(values.externaldetails).length > 0) {
           Object.entries(values.externaldetails).forEach(([key, value]) => {
             params['externaldetails[0].' + key] = value
           })
+        } else {
+          params.cleanupexternaldetails = true
         }
         this.loading = true
 

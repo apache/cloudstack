@@ -1028,9 +1028,39 @@ public class ConfigurationManagerImplTest {
         Map<String, String> offeringDetails = Map.of("key1", "value1");
         Map<String, String> externalDetails = Collections.emptyMap();
 
-        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails);
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails, false);
 
         Assert.assertFalse(result);
+    }
+
+    @Test
+    public void serviceOfferingExternalDetailsNeedUpdateReturnsFalseWhenExternalDetailsIsEmptyAndCleanupTrue() {
+        Map<String, String> offeringDetails = Map.of("key1", "value1");
+        Map<String, String> externalDetails = Collections.emptyMap();
+
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails, true);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void serviceOfferingExternalDetailsNeedUpdateReturnsTrueWhenExistingDetailsExistExternalDetailsIsEmptyAndCleanupTrue() {
+        Map<String, String> offeringDetails = Map.of("External:key1", "value1");
+        Map<String, String> externalDetails = Collections.emptyMap();
+
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails, true);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void serviceOfferingExternalDetailsNeedUpdateReturnsTrueWhenExistingExternalDetailsExistValidExternalDetailsAndCleanupTrue() {
+        Map<String, String> offeringDetails = Map.of("External:key1", "value1");
+        Map<String, String> externalDetails = Collections.emptyMap();
+
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails, true);
+
+        Assert.assertTrue(result);
     }
 
     @Test
@@ -1038,7 +1068,7 @@ public class ConfigurationManagerImplTest {
         Map<String, String> offeringDetails = Map.of("key1", "value1");
         Map<String, String> externalDetails = Map.of("External:key1", "value1");
 
-        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails);
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails, false);
 
         Assert.assertTrue(result);
     }
@@ -1048,7 +1078,7 @@ public class ConfigurationManagerImplTest {
         Map<String, String> offeringDetails = Map.of("External:key1", "value1");
         Map<String, String> externalDetails = Map.of("External:key1", "value1", "External:key2", "value2");
 
-        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails);
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails, false);
 
         Assert.assertTrue(result);
     }
@@ -1058,7 +1088,7 @@ public class ConfigurationManagerImplTest {
         Map<String, String> offeringDetails = Map.of("External:key1", "value1");
         Map<String, String> externalDetails = Map.of("External:key1", "differentValue");
 
-        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails);
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails, false);
 
         Assert.assertTrue(result);
     }
@@ -1068,7 +1098,7 @@ public class ConfigurationManagerImplTest {
         Map<String, String> offeringDetails = Map.of("External:key1", "value1", "External:key2", "value2");
         Map<String, String> externalDetails = Map.of("External:key1", "value1", "External:key2", "value2");
 
-        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails);
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails, false);
 
         Assert.assertFalse(result);
     }
