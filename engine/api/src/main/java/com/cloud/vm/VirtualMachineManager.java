@@ -274,7 +274,7 @@ public interface VirtualMachineManager extends Manager {
      * - Remove the references of the VM and its volumes, nics, IPs from database
      * - Keep the VM as it is on the hypervisor
      */
-    boolean unmanage(String vmUuid);
+    Pair<Boolean, String> unmanage(String vmUuid, Long paramHostId);
 
     UserVm restoreVirtualMachine(long vmId, Long newTemplateId, Long rootDiskOfferingId, boolean expunge, Map<String, String> details) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException;
 

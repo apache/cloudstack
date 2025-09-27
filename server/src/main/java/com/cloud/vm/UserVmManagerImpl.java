@@ -9416,18 +9416,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
-    public boolean unmanageUserVM(Long vmId) {
+    public Pair<Boolean, String> unmanageUserVM(Long vmId, Long paramHostId) {
         UserVmVO vm = _vmDao.findById(vmId);
         if (vm == null || vm.getRemoved() != null) {
             throw new InvalidParameterValueException("Unable to find a VM with ID = " + vmId);
         }
 
         vm = _vmDao.acquireInLockTable(vm.getId());
-        boolean result;
+
         try {
             if (vm.getState() != State.Running && vm.getState() != State.Stopped) {
-                logger.debug("VM {} is not running or stopped, cannot be unmanaged", vm);
-                return false;
+                String errorMsg = "Instance: " + vm.getName() + " is not running or stopped, cannot be unmanaged";
+                logger.debug(errorMsg);
+                throw new CloudRuntimeException(errorMsg);
             }
 
             if (!UnmanagedVMsManager.isSupported(vm.getHypervisorType())) {
@@ -9439,22 +9440,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             checkUnmanagingVMOngoingVolumeSnapshots(vm);
             checkUnmanagingVMVolumes(vm, volumes);
 
-            result = _itMgr.unmanage(vm.getUuid());
-            if (result) {
+            Pair<Boolean, String> result = _itMgr.unmanage(vm.getUuid(), paramHostId);
+            if (result.first()) {
                 cleanupUnmanageVMResources(vm);
                 unmanageVMFromDB(vm.getId());
                 publishUnmanageVMUsageEvents(vm, volumes);
             } else {
                 throw new CloudRuntimeException("Error while unmanaging VM: " + vm.getUuid());
             }
+            return result;
         } catch (Exception e) {
             logger.error("Could not unmanage VM {}", vm, e);
             throw new CloudRuntimeException(e);
         } finally {
             _vmDao.releaseFromLockTable(vm.getId());
         }
-
-        return true;
     }
 
     private void updateDetailsWithRootDiskAttributes(Map<String, String> details, VmDiskInfo rootVmDiskInfo) {
@@ -9687,7 +9687,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     /*
         Generate usage events related to unmanaging a VM
      */
-    private void publishUnmanageVMUsageEvents(UserVmVO vm, List<VolumeVO> volumes) {
+    void publishUnmanageVMUsageEvents(UserVmVO vm, List<VolumeVO> volumes) {
         postProcessingUnmanageVMVolumes(volumes, vm);
         postProcessingUnmanageVM(vm);
     }
@@ -9695,12 +9695,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     /*
         Cleanup the VM from resources and groups
      */
-    private void cleanupUnmanageVMResources(UserVmVO vm) {
+    void cleanupUnmanageVMResources(UserVmVO vm) {
         cleanupVmResources(vm);
         removeVMFromAffinityGroups(vm.getId());
     }
 
-    private void unmanageVMFromDB(long vmId) {
+    void unmanageVMFromDB(long vmId) {
         VMInstanceVO vm = _vmInstanceDao.findById(vmId);
         vmInstanceDetailsDao.removeDetails(vmId);
         vm.setState(State.Expunging);
@@ -9762,7 +9762,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
     }
 
-    private void checkUnmanagingVMOngoingVolumeSnapshots(UserVmVO vm) {
+    void checkUnmanagingVMOngoingVolumeSnapshots(UserVmVO vm) {
         logger.debug("Checking if there are any ongoing snapshots on the ROOT volumes associated with VM {}", vm);
         if (checkStatusOfVolumeSnapshots(vm, Volume.Type.ROOT)) {
             throw new CloudRuntimeException("There is/are unbacked up snapshot(s) on ROOT volume, vm unmanage is not permitted, please try again later.");
@@ -9770,7 +9770,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         logger.debug("Found no ongoing snapshots on volume of type ROOT, for the vm {}", vm);
     }
 
-    private void checkUnmanagingVMVolumes(UserVmVO vm, List<VolumeVO> volumes) {
+    void checkUnmanagingVMVolumes(UserVmVO vm, List<VolumeVO> volumes) {
         for (VolumeVO volume : volumes) {
             if (volume.getInstanceId() == null || !volume.getInstanceId().equals(vm.getId())) {
                 throw new CloudRuntimeException(String.format("Invalid state for volume %s of VM %s: it is not attached to VM", volume, vm));
