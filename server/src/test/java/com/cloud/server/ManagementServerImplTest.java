@@ -26,6 +26,7 @@ import static org.mockito.Mockito.when;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -258,14 +259,14 @@ public class ManagementServerImplTest {
         Mockito.when(cmd.getId()).thenReturn(null);
         Mockito.when(cmd.isSourceNat()).thenReturn(null);
         Mockito.when(cmd.isStaticNat()).thenReturn(null);
-        Mockito.when(cmd.getState()).thenReturn(IpAddress.State.Free.name());
         Mockito.when(cmd.getTags()).thenReturn(null);
-        spy.setParameters(sc, cmd, VlanType.VirtualNetwork, Boolean.FALSE);
+        List<IpAddress.State> states = Collections.singletonList(IpAddress.State.Free);
+        spy.setParameters(sc, cmd, VlanType.VirtualNetwork, Boolean.FALSE, states);
 
         Mockito.verify(sc, Mockito.times(1)).setJoinParameters("vlanSearch", "vlanType", VlanType.VirtualNetwork);
         Mockito.verify(sc, Mockito.times(1)).setParameters("display", false);
         Mockito.verify(sc, Mockito.times(1)).setParameters("sourceNetworkId", 10L);
-        Mockito.verify(sc, Mockito.times(1)).setParameters("state", "Free");
+        Mockito.verify(sc, Mockito.times(1)).setParameters("state", states.toArray());
         Mockito.verify(sc, Mockito.times(1)).setParameters("forsystemvms", false);
     }
 
@@ -281,14 +282,14 @@ public class ManagementServerImplTest {
         Mockito.when(cmd.getId()).thenReturn(null);
         Mockito.when(cmd.isSourceNat()).thenReturn(null);
         Mockito.when(cmd.isStaticNat()).thenReturn(null);
-        Mockito.when(cmd.getState()).thenReturn(IpAddress.State.Free.name());
         Mockito.when(cmd.getTags()).thenReturn(null);
-        spy.setParameters(sc, cmd, VlanType.VirtualNetwork, Boolean.FALSE);
+        List<IpAddress.State> states = Collections.singletonList(IpAddress.State.Free);
+        spy.setParameters(sc, cmd, VlanType.VirtualNetwork, Boolean.FALSE, states);
 
         Mockito.verify(sc, Mockito.times(1)).setJoinParameters("vlanSearch", "vlanType", VlanType.VirtualNetwork);
         Mockito.verify(sc, Mockito.times(1)).setParameters("display", false);
         Mockito.verify(sc, Mockito.times(1)).setParameters("sourceNetworkId", 10L);
-        Mockito.verify(sc, Mockito.times(1)).setParameters("state", "Free");
+        Mockito.verify(sc, Mockito.times(1)).setParameters("state", states.toArray());
         Mockito.verify(sc, Mockito.times(1)).setParameters("forsystemvms", false);
     }
 
@@ -304,13 +305,13 @@ public class ManagementServerImplTest {
         Mockito.when(cmd.getId()).thenReturn(null);
         Mockito.when(cmd.isSourceNat()).thenReturn(null);
         Mockito.when(cmd.isStaticNat()).thenReturn(null);
-        Mockito.when(cmd.getState()).thenReturn(null);
         Mockito.when(cmd.getTags()).thenReturn(null);
-        spy.setParameters(sc, cmd, VlanType.VirtualNetwork, Boolean.TRUE);
+        spy.setParameters(sc, cmd, VlanType.VirtualNetwork, Boolean.TRUE, Collections.emptyList());
 
         Mockito.verify(sc, Mockito.times(1)).setJoinParameters("vlanSearch", "vlanType", VlanType.VirtualNetwork);
         Mockito.verify(sc, Mockito.times(1)).setParameters("display", false);
         Mockito.verify(sc, Mockito.times(1)).setParameters("sourceNetworkId", 10L);
+        Mockito.verify(sc, Mockito.times(1)).setParameters("state", IpAddress.State.Allocated);
         Mockito.verify(sc, Mockito.times(1)).setParameters("forsystemvms", false);
     }
 
@@ -326,13 +327,13 @@ public class ManagementServerImplTest {
         Mockito.when(cmd.getId()).thenReturn(null);
         Mockito.when(cmd.isSourceNat()).thenReturn(null);
         Mockito.when(cmd.isStaticNat()).thenReturn(null);
-        Mockito.when(cmd.getState()).thenReturn(null);
         Mockito.when(cmd.getTags()).thenReturn(null);
-        spy.setParameters(sc, cmd, VlanType.VirtualNetwork, Boolean.TRUE);
+        spy.setParameters(sc, cmd, VlanType.VirtualNetwork, Boolean.TRUE, Collections.emptyList());
 
         Mockito.verify(sc, Mockito.times(1)).setJoinParameters("vlanSearch", "vlanType", VlanType.VirtualNetwork);
         Mockito.verify(sc, Mockito.times(1)).setParameters("display", false);
         Mockito.verify(sc, Mockito.times(1)).setParameters("sourceNetworkId", 10L);
+        Mockito.verify(sc, Mockito.times(1)).setParameters("state", IpAddress.State.Allocated);
         Mockito.verify(sc, Mockito.times(1)).setParameters("forsystemvms", false);
     }
 
