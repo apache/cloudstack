@@ -588,7 +588,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         final BackupScheduleVO schedule = backupScheduleDao.findByVMAndIntervalType(vmId, intervalType);
         if (schedule == null) {
-            return backupScheduleDao.persist(new BackupScheduleVO(vmId, intervalType, scheduleString, timezoneId, nextDateTime, maxBackups, cmd.getQuiesceVM()));
+            return backupScheduleDao.persist(new BackupScheduleVO(vmId, intervalType, scheduleString, timezoneId, nextDateTime, maxBackups, cmd.getQuiesceVM(), vm.getAccountId(), vm.getDomainId()));
         }
 
         schedule.setScheduleType((short) intervalType.ordinal());
@@ -638,13 +638,59 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         return maxBackups;
     }
 
-    @Override
-    public List<BackupSchedule> listBackupSchedule(final Long vmId) {
-        final VMInstanceVO vm = findVmById(vmId);
-        validateBackupForZone(vm.getDataCenterId());
-        accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
+    public List<BackupSchedule> listBackupSchedules(ListBackupScheduleCmd cmd) {
+        Account caller = CallContext.current().getCallingAccount();
+        Long id = cmd.getId();
+        Long vmId = cmd.getVmId();
+        List<Long> permittedAccounts = new ArrayList<>();
+        Long domainId = null;
+        Boolean isRecursive = null;
+        String keyword = cmd.getKeyword();
+        Project.ListProjectResourcesCriteria listProjectResourcesCriteria = null;
 
-        return backupScheduleDao.listByVM(vmId).stream().map(BackupSchedule.class::cast).collect(Collectors.toList());
+        if (vmId != null) {
+            final VMInstanceVO vm = findVmById(vmId);
+            validateBackupForZone(vm.getDataCenterId());
+            accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
+        }
+
+        Ternary<Long, Boolean, Project.ListProjectResourcesCriteria> domainIdRecursiveListProject =
+                new Ternary<>(cmd.getDomainId(), cmd.isRecursive(), null);
+        accountManager.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, true, false);
+        domainId = domainIdRecursiveListProject.first();
+        isRecursive = domainIdRecursiveListProject.second();
+        listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+
+        Filter searchFilter = new Filter(BackupScheduleVO.class, "id", false, null, null);
+        SearchBuilder<BackupScheduleVO> searchBuilder = backupScheduleDao.createSearchBuilder();
+
+        accountManager.buildACLSearchBuilder(searchBuilder, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+
+        searchBuilder.and("id", searchBuilder.entity().getId(), SearchCriteria.Op.EQ);
+        if (vmId != null) {
+            searchBuilder.and("vmId", searchBuilder.entity().getVmId(), SearchCriteria.Op.EQ);
+        }
+        if (keyword != null && !keyword.isEmpty()) {
+            SearchBuilder<VMInstanceVO> vmSearch = vmInstanceDao.createSearchBuilder();
+            vmSearch.and("hostName", vmSearch.entity().getHostName(), SearchCriteria.Op.LIKE);
+            searchBuilder.join("vmJoin", vmSearch, searchBuilder.entity().getVmId(), vmSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        }
+
+        SearchCriteria<BackupScheduleVO> sc = searchBuilder.create();
+        accountManager.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+
+        if (id != null) {
+            sc.setParameters("id", id);
+        }
+        if (vmId != null) {
+            sc.setParameters("vmId", vmId);
+        }
+        if (keyword != null && !keyword.isEmpty()) {
+            sc.setJoinParameters("vmJoin", "hostName", "%" + keyword + "%");
+        }
+
+        Pair<List<BackupScheduleVO>, Integer> result = backupScheduleDao.searchAndCount(sc, searchFilter);
+        return new ArrayList<>(result.first());
     }
 
     @Override

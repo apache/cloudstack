@@ -60,6 +60,8 @@ import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.VMInstanceDetailVO;
@@ -77,6 +79,7 @@ import org.apache.cloudstack.api.command.admin.backup.UpdateBackupOfferingCmd;
 import org.apache.cloudstack.api.command.user.backup.CreateBackupCmd;
 import org.apache.cloudstack.api.command.user.backup.CreateBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.DeleteBackupScheduleCmd;
+import org.apache.cloudstack.api.command.user.backup.ListBackupScheduleCmd;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupDetailsDao;
@@ -1813,6 +1816,78 @@ public class BackupManagerTest {
                 expectedMessage,
                 expectedAlertDetails
         );
+    }
+
+    @Test
+    public void testListBackupSchedulesAsRootAdmin() {
+        long vmId = 1L;
+        ListBackupScheduleCmd cmd = Mockito.mock(ListBackupScheduleCmd.class);
+        Mockito.when(cmd.getVmId()).thenReturn(vmId);
+        Mockito.when(cmd.getId()).thenReturn(1L);
+
+        // Mock VM for validation
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vmInstanceDao.findById(vmId)).thenReturn(vm);
+        Mockito.when(vm.getDataCenterId()).thenReturn(1L);
+        overrideBackupFrameworkConfigValue();
+        Mockito.doNothing().when(accountManager).checkAccess(Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any());
+
+        BackupScheduleVO schedule1 = Mockito.mock(BackupScheduleVO.class);
+        BackupScheduleVO schedule2 = Mockito.mock(BackupScheduleVO.class);
+        List<BackupScheduleVO> schedules = List.of(schedule1, schedule2);
+
+        SearchBuilder<BackupScheduleVO> searchBuilder = Mockito.mock(SearchBuilder.class);
+        SearchCriteria<BackupScheduleVO> searchCriteria = Mockito.mock(SearchCriteria.class);
+        BackupScheduleVO entity = Mockito.mock(BackupScheduleVO.class);
+
+        Mockito.when(backupScheduleDao.createSearchBuilder()).thenReturn(searchBuilder);
+        Mockito.when(searchBuilder.entity()).thenReturn(entity);
+        Mockito.when(searchBuilder.and(Mockito.anyString(), (Object) any(), Mockito.any())).thenReturn(searchBuilder);
+        Mockito.when(searchBuilder.create()).thenReturn(searchCriteria);
+
+        Mockito.when(backupScheduleDao.searchAndCount(Mockito.any(), Mockito.any())).thenReturn(new Pair<>(schedules, schedules.size()));
+        List<BackupSchedule> result = backupManager.listBackupSchedules(cmd);
+
+        assertEquals(2, result.size());
+        assertTrue(result.contains(schedule1));
+        assertTrue(result.contains(schedule2));
+    }
+
+    @Test
+    public void testListBackupSchedulesAsNonAdmin() {
+        long vmId = 1L;
+        ListBackupScheduleCmd cmd = Mockito.mock(ListBackupScheduleCmd.class);
+        Mockito.when(cmd.getVmId()).thenReturn(vmId);
+        Mockito.when(cmd.getId()).thenReturn(1L);
+
+        // Mock VM for validation
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vmInstanceDao.findById(vmId)).thenReturn(vm);
+        Mockito.when(vm.getDataCenterId()).thenReturn(1L);
+        overrideBackupFrameworkConfigValue();
+        Mockito.doNothing().when(accountManager).checkAccess(Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any());
+
+        BackupScheduleVO schedule = Mockito.mock(BackupScheduleVO.class);
+        List<BackupScheduleVO> schedules = List.of(schedule);
+
+        SearchBuilder<BackupScheduleVO> searchBuilder = Mockito.mock(SearchBuilder.class);
+        SearchCriteria<BackupScheduleVO> searchCriteria = Mockito.mock(SearchCriteria.class);
+        BackupScheduleVO entity = Mockito.mock(BackupScheduleVO.class);
+
+        Mockito.when(backupScheduleDao.createSearchBuilder()).thenReturn(searchBuilder);
+        Mockito.when(searchBuilder.create()).thenReturn(searchCriteria);
+        Mockito.when(searchBuilder.entity()).thenReturn(entity);
+        Mockito.when(searchBuilder.and(Mockito.anyString(), (Object) any(), Mockito.any())).thenReturn(searchBuilder);
+        Mockito.lenient().when(backupScheduleDao.search(Mockito.eq(searchCriteria), Mockito.any())).thenReturn(schedules);
+
+        Mockito.doNothing().when(accountManager).buildACLSearchBuilder(Mockito.any(), Mockito.anyLong(), Mockito.anyBoolean(), Mockito.anyList(), Mockito.any());
+        Mockito.doNothing().when(accountManager).buildACLSearchCriteria(Mockito.any(), Mockito.anyLong(), Mockito.anyBoolean(), Mockito.anyList(), Mockito.any());
+
+        Mockito.when(backupScheduleDao.searchAndCount(Mockito.any(), Mockito.any())).thenReturn(new Pair<>(schedules, schedules.size()));
+        List<BackupSchedule> result = backupManager.listBackupSchedules(cmd);
+
+        assertEquals(1, result.size());
+        assertTrue(result.contains(schedule));
     }
 
     @Test

@@ -161,6 +161,13 @@
           <div>{{ dataResource[item] }}</div>
         </div>
       </a-list-item>
+      <a-list-item v-else-if="(item === 'zoneid' && $route.path.includes('/snapshotpolicy'))">
+        <div>
+          <strong>{{ $t('label.' + String(item).toLowerCase()) }}</strong>
+          <br/>
+          <div>{{ dataResource[item] }}</div>
+        </div>
+      </a-list-item>
       <a-list-item v-else-if="['startdate', 'enddate'].includes(item)">
         <div>
           <strong>{{ $t('label.' + item.replace('date', '.date.and.time'))}}</strong>
