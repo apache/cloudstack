@@ -149,7 +149,6 @@ public class BaremetalDhcpManagerImpl extends ManagerBase implements BaremetalDh
         String errMsg =
             String.format("Set dhcp entry on external DHCP %1$s failed(ip=%2$s, mac=%3$s, vmname=%4$s)", h.getPrivateIpAddress(), nic.getIPv4Address(),
                 nic.getMacAddress(), profile.getVirtualMachine().getHostName());
-        // prepareBareMetalDhcpEntry(nic, dhcpCommand);
         try {
             Answer ans = _agentMgr.send(h.getId(), dhcpCommand);
             if (ans.getResult()) {
