@@ -1029,6 +1029,7 @@
                             <exclude>CONTRIBUTING.md</exclude>
                             <exclude>README.md</exclude>
                             <exclude>INSTALL.md</exclude>
+                            <exclude>PRE-COMMIT.md</exclude>
                             <exclude>build/build.number</exclude>
                             <exclude>debian/cloudstack-agent.dirs</exclude>
                             <exclude>debian/cloudstack-usage.dirs</exclude>
