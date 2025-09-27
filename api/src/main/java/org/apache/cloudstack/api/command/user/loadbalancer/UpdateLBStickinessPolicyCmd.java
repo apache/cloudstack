@@ -62,7 +62,7 @@ public class UpdateLBStickinessPolicyCmd extends BaseAsyncCustomIdCmd{
 
     @Override
     public String getEventDescription() {
-        return "Update load balancer stickiness policy ID= " + id;
+        return "Update load balancer stickiness policy ID = " + id;
     }
 
     @Override
