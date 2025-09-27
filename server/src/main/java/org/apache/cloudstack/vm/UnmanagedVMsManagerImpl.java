@@ -150,6 +150,7 @@ import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.vm.ImportUnmanagedInstanceCmd;
 import org.apache.cloudstack.api.command.admin.vm.ImportVmCmd;
+import org.apache.cloudstack.api.command.admin.vm.ListImportVMTasksCmd;
 import org.apache.cloudstack.api.command.admin.vm.ListUnmanagedInstancesCmd;
 import org.apache.cloudstack.api.command.admin.vm.ListVmsForImportCmd;
 import org.apache.cloudstack.api.command.admin.vm.UnmanageVMInstanceCmd;
@@ -173,6 +174,7 @@ import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -190,6 +192,10 @@ import java.util.stream.Collectors;
 
 import static org.apache.cloudstack.api.ApiConstants.MAX_IOPS;
 import static org.apache.cloudstack.api.ApiConstants.MIN_IOPS;
+import static org.apache.cloudstack.vm.ImportVmTask.Step.CloningInstance;
+import static org.apache.cloudstack.vm.ImportVmTask.Step.Completed;
+import static org.apache.cloudstack.vm.ImportVmTask.Step.ConvertingInstance;
+import static org.apache.cloudstack.vm.ImportVmTask.Step.Importing;
 
 public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     public static final String VM_IMPORT_DEFAULT_TEMPLATE_NAME = "system-default-vm-import-dummy-template.iso";
@@ -282,6 +288,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     private ImageStoreDao imageStoreDao;
     @Inject
     private DataStoreManager dataStoreManager;
+    @Inject
+    private ImportVmTasksManager importVmTasksManager;
 
     protected Gson gson;
 
@@ -1418,6 +1426,16 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return responseGenerator.createUserVmResponse(ResponseObject.ResponseView.Full, "virtualmachine", userVm).get(0);
     }
 
+    private void checkExtraParamsAllowed(String extraParams) {
+        if (StringUtils.isBlank(extraParams)) {
+            return;
+        }
+        if (BooleanUtils.isFalse(ConvertVmwareInstanceToKvmExtraParamsAllowed.value())) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                    "Extra parameters for Vmware to KVM conversion are disabled by the administrator");
+        }
+    }
+
     private long getUserIdForImportInstance(Account owner) {
         long userId = CallContext.current().getCallingUserId();
         List<UserVO> userVOs = userDao.listByAccount(owner.getAccountId());
@@ -1513,6 +1531,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         String source = cmd.getImportSource().toUpperCase();
         ImportSource importSource = Enum.valueOf(ImportSource.class, source);
         if (ImportSource.VMWARE == importSource  || ImportSource.UNMANAGED == importSource) {
+            checkExtraParamsAllowed(cmd.getExtraParams());
             return baseImportInstance(cmd);
         } else {
             return importKvmInstance(cmd);
@@ -1621,6 +1640,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         Long convertInstanceHostId = cmd.getConvertInstanceHostId();
         Long importInstanceHostId = cmd.getImportInstanceHostId();
         Long convertStoragePoolId = cmd.getConvertStoragePoolId();
+        String extraParams = cmd.getExtraParams();
+        boolean forceConvertToPool = cmd.getForceConvertToPool();
 
         if ((existingVcenterId == null && vcenter == null) || (existingVcenterId != null && vcenter != null)) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
@@ -1630,6 +1651,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
                     "Please set all the information for a vCenter IP/Name, datacenter, username and password");
         }
+
+        checkExtraParamsAllowed(extraParams);
 
         if (existingVcenterId != null) {
             VmwareDatacenterVO existingDC = vmwareDatacenterDao.findById(existingVcenterId);
@@ -1648,6 +1671,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         UnmanagedInstanceTO sourceVMwareInstance = null;
         DataStoreTO temporaryConvertLocation = null;
         String ovfTemplateOnConvertLocation = null;
+        ImportVmTask importVMTask = null;
         try {
             HostVO convertHost = selectKVMHostForConversionInCluster(destinationCluster, convertInstanceHostId);
             HostVO importHost = selectKVMHostForImportingInCluster(destinationCluster, importInstanceHostId);
@@ -1656,9 +1680,12 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                     "instance {} from VMware to KVM ", convertHost, sourceVMName);
 
             temporaryConvertLocation = selectInstanceConversionTemporaryLocation(
-                    destinationCluster, convertHost, convertStoragePoolId);
+                    destinationCluster, convertHost, convertStoragePoolId, forceConvertToPool);
             List<StoragePoolVO> convertStoragePools = findInstanceConversionStoragePoolsInCluster(destinationCluster, serviceOffering, dataDiskOfferingMap);
             long importStartTime = System.currentTimeMillis();
+            importVMTask = importVmTasksManager.createImportVMTaskRecord(zone, owner, userId, displayName, vcenter, datacenterName, sourceVMName,
+                    convertHost, importHost);
+            importVmTasksManager.updateImportVMTaskStep(importVMTask, zone, owner, convertHost, importHost, null, CloningInstance);
             Pair<UnmanagedInstanceTO, Boolean> sourceInstanceDetails = getSourceVmwareUnmanagedInstance(vcenter, datacenterName, username, password, clusterName, sourceHostName, sourceVMName);
             sourceVMwareInstance = sourceInstanceDetails.first();
             isClonedInstance = sourceInstanceDetails.second();
@@ -1672,22 +1699,25 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             if (cmd.getForceMsToImportVmFiles() || !conversionSupportAnswer.isOvfExportSupported()) {
                 // Uses MS for OVF export to temporary conversion location
                 int noOfThreads = UnmanagedVMsManager.ThreadsOnMSToImportVMwareVMFiles.value();
+                importVmTasksManager.updateImportVMTaskStep(importVMTask, zone, owner, convertHost, importHost, null, ConvertingInstance);
                 ovfTemplateOnConvertLocation = createOvfTemplateOfSourceVmwareUnmanagedInstance(
                         vcenter, datacenterName, username, password, clusterName, sourceHostName,
                         sourceVMwareInstance.getName(), temporaryConvertLocation, noOfThreads);
                 convertedInstance = convertVmwareInstanceToKVMWithOVFOnConvertLocation(sourceVMName,
                         sourceVMwareInstance, convertHost, importHost, convertStoragePools,
                         serviceOffering, dataDiskOfferingMap, temporaryConvertLocation,
-                        ovfTemplateOnConvertLocation);
+                        ovfTemplateOnConvertLocation, forceConvertToPool, extraParams);
             } else {
                 // Uses KVM Host for OVF export to temporary conversion location, through ovftool
+                importVmTasksManager.updateImportVMTaskStep(importVMTask, zone, owner, convertHost, importHost, null, ConvertingInstance);
                 convertedInstance = convertVmwareInstanceToKVMAfterExportingOVFToConvertLocation(
                         sourceVMName, sourceVMwareInstance, convertHost, importHost,
                         convertStoragePools, serviceOffering, dataDiskOfferingMap,
-                        temporaryConvertLocation, vcenter, username, password, datacenterName);
+                        temporaryConvertLocation, vcenter, username, password, datacenterName, forceConvertToPool, extraParams);
             }
 
             sanitizeConvertedInstance(convertedInstance, sourceVMwareInstance);
+            importVmTasksManager.updateImportVMTaskStep(importVMTask, zone, owner, convertHost, importHost, null, Importing);
             UserVm userVm = importVirtualMachineInternal(convertedInstance, null, zone, destinationCluster, null,
                     template, displayName, hostName, caller, owner, userId,
                     serviceOffering, dataDiskOfferingMap,
@@ -1696,6 +1726,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             long timeElapsedInSecs = (System.currentTimeMillis() - importStartTime) / 1000;
             logger.debug(String.format("VMware VM %s imported successfully to CloudStack instance %s (%s), Time taken: %d secs, OVF files imported from %s, Source VMware VM details - OS: %s, PowerState: %s, Disks: %s, NICs: %s",
                     sourceVMName, displayName, displayName, timeElapsedInSecs, (ovfTemplateOnConvertLocation != null)? "MS" : "KVM Host", sourceVMwareInstance.getOperatingSystem(), sourceVMwareInstance.getPowerState(), sourceVMwareInstance.getDisks(), sourceVMwareInstance.getNics()));
+            importVmTasksManager.updateImportVMTaskStep(importVMTask, zone, owner, convertHost, importHost, userVm.getId(), Completed);
+            importVmTasksManager.removeImportVMTask(importVMTask.getId());
             return userVm;
         } catch (CloudRuntimeException e) {
             logger.error(String.format("Error importing VM: %s", e.getMessage()), e);
@@ -1953,20 +1985,24 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             String sourceVM, UnmanagedInstanceTO sourceVMwareInstance, HostVO convertHost,
             HostVO importHost, List<StoragePoolVO> convertStoragePools,
             ServiceOfferingVO serviceOffering, Map<String, Long> dataDiskOfferingMap,
-            DataStoreTO temporaryConvertLocation, String ovfTemplateDirConvertLocation
-    ) {
-            logger.debug("Delegating the conversion of instance {} from VMware to KVM to the host {} using OVF {} on conversion datastore",
-                    sourceVM, convertHost, ovfTemplateDirConvertLocation);
+            DataStoreTO temporaryConvertLocation, String ovfTemplateDirConvertLocation,
+            boolean forceConvertToPool, String extraParams) {
+
+        logger.debug("Delegating the conversion of instance {} from VMware to KVM to the host {} using OVF {} on conversion datastore",
+                sourceVM, convertHost, ovfTemplateDirConvertLocation);
 
         RemoteInstanceTO remoteInstanceTO = new RemoteInstanceTO(sourceVM);
         List<String> destinationStoragePools = selectInstanceConversionStoragePools(convertStoragePools, sourceVMwareInstance.getDisks(), serviceOffering, dataDiskOfferingMap);
         ConvertInstanceCommand cmd = new ConvertInstanceCommand(remoteInstanceTO,
                 Hypervisor.HypervisorType.KVM, temporaryConvertLocation, ovfTemplateDirConvertLocation, false, false);
+        if (StringUtils.isNotBlank(extraParams)) {
+            cmd.setExtraParams(extraParams);
+        }
         int timeoutSeconds = UnmanagedVMsManager.ConvertVmwareInstanceToKvmTimeout.value() * 60 * 60;
         cmd.setWait(timeoutSeconds);
 
         return convertAndImportToKVM(cmd, convertHost, importHost, sourceVM,
-                remoteInstanceTO, destinationStoragePools, temporaryConvertLocation);
+                remoteInstanceTO, destinationStoragePools, temporaryConvertLocation, forceConvertToPool);
     }
 
     private UnmanagedInstanceTO convertVmwareInstanceToKVMAfterExportingOVFToConvertLocation(
@@ -1974,8 +2010,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             HostVO importHost, List<StoragePoolVO> convertStoragePools,
             ServiceOfferingVO serviceOffering, Map<String, Long> dataDiskOfferingMap,
             DataStoreTO temporaryConvertLocation, String vcenterHost, String vcenterUsername,
-            String vcenterPassword, String datacenterName
-    ) {
+            String vcenterPassword, String datacenterName, boolean forceConvertToPool, String extraParams) {
         logger.debug("Delegating the conversion of instance {} from VMware to KVM to the host {} after OVF export through ovftool", sourceVM, convertHost);
 
         RemoteInstanceTO remoteInstanceTO = new RemoteInstanceTO(sourceVMwareInstance.getName(), sourceVMwareInstance.getPath(), vcenterHost, vcenterUsername, vcenterPassword, datacenterName);
@@ -1990,16 +2025,19 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             noOfThreads = sourceVMwareInstance.getDisks().size();
         }
         cmd.setThreadsCountToExportOvf(noOfThreads);
-
+        if (StringUtils.isNotBlank(extraParams)) {
+            cmd.setExtraParams(extraParams);
+        }
         return convertAndImportToKVM(cmd, convertHost, importHost, sourceVM,
-                remoteInstanceTO, destinationStoragePools, temporaryConvertLocation);
+                remoteInstanceTO, destinationStoragePools, temporaryConvertLocation, forceConvertToPool);
     }
 
     private UnmanagedInstanceTO convertAndImportToKVM(ConvertInstanceCommand convertInstanceCommand, HostVO convertHost, HostVO importHost,
                                                       String sourceVM,
                                                       RemoteInstanceTO remoteInstanceTO,
                                                       List<String> destinationStoragePools,
-                                                      DataStoreTO temporaryConvertLocation) {
+                                                      DataStoreTO temporaryConvertLocation,
+                                                      boolean forceConvertToPool) {
         Answer convertAnswer;
         try {
             convertAnswer = agentManager.send(convertHost.getId(), convertInstanceCommand);
@@ -2021,7 +2059,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         try {
             ImportConvertedInstanceCommand importCmd = new ImportConvertedInstanceCommand(
                     remoteInstanceTO, destinationStoragePools, temporaryConvertLocation,
-                    ((ConvertInstanceAnswer)convertAnswer).getTemporaryConvertUuid());
+                    ((ConvertInstanceAnswer)convertAnswer).getTemporaryConvertUuid(), forceConvertToPool);
             importAnswer = agentManager.send(importHost.getId(), importCmd);
         } catch (AgentUnavailableException | OperationTimedoutException e) {
             String err = String.format(
@@ -2130,7 +2168,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
     protected DataStoreTO selectInstanceConversionTemporaryLocation(Cluster destinationCluster,
                                                                     HostVO convertHost,
-                                                                    Long convertStoragePoolId) {
+                                                                    Long convertStoragePoolId, boolean forceConvertToPool) {
         if (convertStoragePoolId != null) {
             StoragePoolVO selectedStoragePool = primaryDataStoreDao.findById(convertStoragePoolId);
             if (selectedStoragePool == null) {
@@ -2145,10 +2183,12 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 logFailureAndThrowException(String.format("Cannot use the storage pool %s for the instance conversion as " +
                         "the host %s for conversion is in a different cluster", selectedStoragePool.getName(), convertHost.getName()));
             }
-            if (selectedStoragePool.getScope() == ScopeType.HOST) {
-                logFailureAndThrowException(String.format("The storage pool %s is a local storage pool and not supported for temporary conversion location, cluster and zone wide NFS storage pools are supported", selectedStoragePool.getName()));
-            } else if (selectedStoragePool.getPoolType() != Storage.StoragePoolType.NetworkFilesystem) {
-                logFailureAndThrowException(String.format("The storage pool %s is not supported for temporary conversion location, only NFS storage pools are supported", selectedStoragePool.getName()));
+            if (!forceConvertToPool) {
+                if (selectedStoragePool.getScope() == ScopeType.HOST) {
+                    logFailureAndThrowException(String.format("The storage pool %s is a local storage pool and not supported for temporary conversion location, cluster and zone wide NFS storage pools are supported", selectedStoragePool.getName()));
+                } else if (selectedStoragePool.getPoolType() != Storage.StoragePoolType.NetworkFilesystem) {
+                    logFailureAndThrowException(String.format("The storage pool %s is not supported for temporary conversion location, only NFS storage pools are supported", selectedStoragePool.getName()));
+                }
             }
             return dataStoreManager.getPrimaryDataStore(convertStoragePoolId).getTO();
         } else {
@@ -2186,6 +2226,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         cmdList.add(UnmanageVMInstanceCmd.class);
         cmdList.add(ListVmsForImportCmd.class);
         cmdList.add(ImportVmCmd.class);
+        cmdList.add(ListImportVMTasksCmd.class);
         return cmdList;
     }
 
@@ -2858,7 +2899,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 RemoteKvmInstanceDisksCopyTimeout,
                 ConvertVmwareInstanceToKvmTimeout,
                 ThreadsOnMSToImportVMwareVMFiles,
-                ThreadsOnKVMHostToImportVMwareVMFiles
+                ThreadsOnKVMHostToImportVMwareVMFiles,
+                ConvertVmwareInstanceToKvmExtraParamsAllowed
         };
     }
 }
