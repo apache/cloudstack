@@ -16,49 +16,6 @@
 // under the License.
 package org.apache.cloudstack.storage.allocator;
 
-import com.cloud.api.query.dao.StoragePoolJoinDao;
-import com.cloud.dc.dao.HostPodDao;
-import com.cloud.exception.StorageUnavailableException;
-import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
-import com.cloud.storage.ScopeType;
-import com.cloud.storage.StoragePoolStatus;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
-import org.apache.commons.collections.CollectionUtils;
-
-import com.cloud.utils.Pair;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-
-import com.cloud.capacity.Capacity;
-import com.cloud.capacity.dao.CapacityDao;
-import com.cloud.dc.ClusterVO;
-import com.cloud.dc.dao.ClusterDao;
-import com.cloud.deploy.DeploymentPlan;
-import com.cloud.deploy.DeploymentPlanner.ExcludeList;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.storage.Storage;
-import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.StorageUtil;
-import com.cloud.storage.Volume;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.user.Account;
-import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.component.AdapterBase;
-import com.cloud.vm.DiskProfile;
-import com.cloud.vm.VirtualMachineProfile;
-
-import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
 import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.text.DecimalFormat;
@@ -71,6 +28,48 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import com.cloud.api.query.dao.StoragePoolJoinDao;
+import com.cloud.capacity.Capacity;
+import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.deploy.DeploymentPlan;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
+import com.cloud.exception.StorageUnavailableException;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
+import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolStatus;
+import com.cloud.storage.StorageUtil;
+import com.cloud.storage.Volume;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.user.Account;
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
+import com.cloud.utils.component.AdapterBase;
+import com.cloud.vm.DiskProfile;
+import com.cloud.vm.VirtualMachineProfile;
 
 public abstract class AbstractStoragePoolAllocator extends AdapterBase implements StoragePoolAllocator {
 
@@ -88,8 +87,6 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     @Inject private StoragePoolDetailsDao storagePoolDetailsDao;
     @Inject
     protected HostDao hostDao;
-    @Inject
-    protected HostPodDao podDao;
 
     /**
      * make sure shuffled lists of Pools are really shuffled
@@ -304,7 +301,8 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 
         Long clusterId = pool.getClusterId();
         if (clusterId != null) {
-            ClusterVO cluster = clusterDao.findById(clusterId);
+            ClusterVO cluster = CallContext.current().getRequestEntityCache()
+                    .get(ClusterVO.class, clusterId, () -> clusterDao.findById(clusterId));
             if (!(cluster.getHypervisorType() == dskCh.getHypervisorType())) {
                 if (logger.isDebugEnabled()) {
                     logger.debug("StoragePool's Cluster does not have required hypervisorType, skipping this pool");
@@ -329,7 +327,8 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         }
 
         if (plan.getHostId() != null) {
-            HostVO plannedHost = hostDao.findById(plan.getHostId());
+            HostVO plannedHost = CallContext.current().getRequestEntityCache()
+                    .get(HostVO.class, plan.getHostId(), () -> hostDao.findById(plan.getHostId()));
             if (!storageMgr.checkIfHostAndStoragePoolHasCommonStorageAccessGroups(plannedHost, pool)) {
                 if (logger.isDebugEnabled()) {
                     logger.debug(String.format("StoragePool %s and host %s does not have matching storage access groups", pool, plannedHost));

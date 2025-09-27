@@ -17,9 +17,48 @@
 package com.cloud.deploy;
 
 
-import com.cloud.agent.AgentManager;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
+import java.lang.reflect.Field;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.context.RequestEntityCache;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.collections.CollectionUtils;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatchers;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
+
 import com.cloud.capacity.CapacityManager;
-import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.cpu.CPU;
 import com.cloud.dc.ClusterDetailsDao;
@@ -37,15 +76,10 @@ import com.cloud.deploy.DeploymentPlanner.PlannerResourceUsage;
 import com.cloud.deploy.dao.PlannerHostReservationDao;
 import com.cloud.exception.AffinityConflictException;
 import com.cloud.exception.InsufficientServerCapacityException;
-import com.cloud.gpu.GPU;
-import com.cloud.gpu.dao.HostGpuGroupsDao;
-import com.cloud.gpu.dao.VgpuProfileDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
-import com.cloud.host.dao.HostDetailsDao;
-import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.resource.ResourceManager;
@@ -54,16 +88,12 @@ import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
-import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.storage.dao.GuestOSCategoryDao;
-import com.cloud.storage.dao.GuestOSDao;
-import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.template.VirtualMachineTemplate;
@@ -72,145 +102,80 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.ComponentContext;
-import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
-import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.cloudstack.affinity.AffinityGroupProcessor;
-import org.apache.cloudstack.affinity.AffinityGroupService;
-import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
-import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
-import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
-import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMReservationDao;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.messagebus.MessageBus;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.test.utils.SpringUtils;
-import org.apache.commons.collections.CollectionUtils;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentMatchers;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.ComponentScan.Filter;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.FilterType;
-import org.springframework.core.type.classreading.MetadataReader;
-import org.springframework.core.type.classreading.MetadataReaderFactory;
-import org.springframework.core.type.filter.TypeFilter;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.support.AnnotationConfigContextLoader;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(loader = AnnotationConfigContextLoader.class)
+@RunWith(MockitoJUnitRunner.class)
 public class DeploymentPlanningManagerImplTest {
 
     @Spy
     @InjectMocks
     DeploymentPlanningManagerImpl _dpm;
 
-    @Inject
+    @Mock
     PlannerHostReservationDao _plannerHostReserveDao;
 
-    @Inject
+    @Mock
     VirtualMachineProfileImpl vmProfile;
 
-    @Inject
+    @Mock
     private AccountDao accountDao;
 
-    @Inject
+    @Mock
     private VMInstanceDao vmInstanceDao;
 
-    @Inject
+    @Mock
     AffinityGroupVMMapDao _affinityGroupVMMapDao;
 
-    @Inject
+    @Mock
     ExcludeList avoids;
 
-    @Inject
+    @Mock
     DataCenterVO dc;
 
-    @Inject
+    @Mock
     DataCenterDao _dcDao;
 
     @Mock
     FirstFitPlanner _planner;
 
-    @Inject
+    @Mock
     ClusterDao _clusterDao;
 
-    @Inject
+    @Mock
     DedicatedResourceDao _dedicatedDao;
 
-    @Inject
+    @Mock
     VMInstanceDetailsDao vmDetailsDao;
 
-    @Inject
+    @Mock
     VMTemplateDao templateDao;
 
-    @Inject
-    HostPodDao hostPodDao;
-
-    @Inject
+    @Mock
     VolumeDao volDao;
 
-    @Inject
+    @Mock
     HostDao hostDao;
 
-    @Inject
+    @Mock
     CapacityManager capacityMgr;
 
-    @Inject
+    @Mock
     ServiceOfferingDetailsDao serviceOfferingDetailsDao;
 
-    @Inject
+    @Mock
     ClusterDetailsDao clusterDetailsDao;
 
-    @Inject
+    @Mock
     PrimaryDataStoreDao primaryDataStoreDao;
 
     @Mock
-    Host host;
+    HostVO host;
 
     @Mock
     ConfigurationDao configDao;
@@ -218,14 +183,20 @@ public class DeploymentPlanningManagerImplTest {
     @Mock
     AccountManager _accountMgr;
 
-    @Inject
+    @Mock
     DiskOfferingDao _diskOfferingDao;
 
     @Mock
     DataStoreManager _dataStoreManager;
 
-    @Inject
+    @Mock
     HostPodDao _podDao;
+
+    @Mock
+    CallContext callContextMock;
+
+    @Mock
+    ResourceManager resourceManager;
 
     private static final long dataCenterId = 1L;
     private static final long instanceId = 123L;
@@ -233,21 +204,14 @@ public class DeploymentPlanningManagerImplTest {
     private static final long podId = 2L;
     private static final long clusterId = 3L;
     private static final long ADMIN_ACCOUNT_ROLE_ID = 1L;
-    private AutoCloseable closeable;
 
-    @BeforeClass
-    public static void setUp() throws ConfigurationException {
-    }
+    MockedStatic<CallContext> callContextMocked;
 
     @Before
     public void testSetUp() {
-        closeable = MockitoAnnotations.openMocks(this);
-
-        ComponentContext.initComponentsLifeCycle();
-
-        PlannerHostReservationVO reservationVO = new PlannerHostReservationVO(hostId, dataCenterId, podId, clusterId, PlannerResourceUsage.Shared);
-        Mockito.when(_plannerHostReserveDao.persist(ArgumentMatchers.any(PlannerHostReservationVO.class))).thenReturn(reservationVO);
-        Mockito.when(_plannerHostReserveDao.findById(ArgumentMatchers.anyLong())).thenReturn(reservationVO);
+        callContextMocked = Mockito.mockStatic(CallContext.class);
+        callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+        Mockito.when(callContextMock.getRequestEntityCache()).thenReturn(new RequestEntityCache(Duration.ofSeconds(60)));
         Mockito.when(_affinityGroupVMMapDao.countAffinityGroupsForVm(ArgumentMatchers.anyLong())).thenReturn(0L);
 
         VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
@@ -255,16 +219,16 @@ public class DeploymentPlanningManagerImplTest {
         Mockito.when(templateDao.findById(Mockito.anyLong())).thenReturn(template);
 
         VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vm.getId()).thenReturn(instanceId);
         Mockito.when(vm.getType()).thenReturn(Type.Instance);
         Mockito.when(vm.getLastHostId()).thenReturn(null);
         Mockito.when(vmProfile.getVirtualMachine()).thenReturn(vm);
+        Mockito.when(vmProfile.getTemplate()).thenReturn(template);
         Mockito.when(vmProfile.getId()).thenReturn(instanceId);
-
-        Mockito.when(vmDetailsDao.listDetailsKeyPairs(ArgumentMatchers.anyLong())).thenReturn(null);
 
         Mockito.when(volDao.findByInstance(ArgumentMatchers.anyLong())).thenReturn(new ArrayList<>());
 
-        Mockito.when(_dcDao.findById(ArgumentMatchers.anyLong())).thenReturn(dc);
+        Mockito.when(_dcDao.findById(Mockito.anyLong())).thenReturn(dc);
         Mockito.when(dc.getId()).thenReturn(dataCenterId);
 
         ClusterVO clusterVO = new ClusterVO();
@@ -282,11 +246,6 @@ public class DeploymentPlanningManagerImplTest {
         Mockito.doNothing().when(_dpm).avoidDisabledResources(vmProfile, dc, avoids);
     }
 
-    @After
-    public void tearDown() throws Exception {
-        closeable.close();
-    }
-
     @Test
     public void dataCenterAvoidTest() throws InsufficientServerCapacityException, AffinityConflictException {
         ServiceOfferingVO svcOffering =
@@ -301,15 +260,21 @@ public class DeploymentPlanningManagerImplTest {
         Mockito.when(template.getArch()).thenReturn(CPU.CPUArch.amd64);
         Mockito.when(vmProfile.getTemplate()).thenReturn(template);
         Mockito.when(_clusterDao.listClustersByArchAndZoneId(dataCenterId, CPU.CPUArch.arm64)).thenReturn(null);
+        Mockito.doNothing().when(_dpm).avoidDisabledResources(vmProfile, dc, avoids);
         DeployDestination dest = _dpm.planDeployment(vmProfile, plan, avoids, null);
         assertNull("DataCenter is in avoid set, destination should be null! ", dest);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        callContextMocked.close();
     }
 
     @Test
     public void plannerCannotHandleTest() throws InsufficientServerCapacityException, AffinityConflictException {
         ServiceOfferingVO svcOffering =
                 new ServiceOfferingVO("testOffering", 1, 512, 500, 1, 1, false, false, false, "test dpm",
-                        false, VirtualMachine.Type.User, null, "UserDispersingPlanner", true, false);
+                        false, VirtualMachine.Type.User, null, "FirstFitPlanner", true, false);
         Mockito.when(vmProfile.getServiceOffering()).thenReturn(svcOffering);
 
         DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);
@@ -317,7 +282,6 @@ public class DeploymentPlanningManagerImplTest {
 
         Mockito.when(_planner.canHandle(vmProfile, plan, avoids)).thenReturn(false);
         VirtualMachineTemplate template = Mockito.mock(VirtualMachineTemplate.class);
-        Mockito.when(template.getArch()).thenReturn(CPU.CPUArch.amd64);
         Mockito.when(vmProfile.getTemplate()).thenReturn(template);
         Mockito.when(_clusterDao.listClustersByArchAndZoneId(dataCenterId, CPU.CPUArch.arm64)).thenReturn(null);
         DeployDestination dest = _dpm.planDeployment(vmProfile, plan, avoids, null);
@@ -340,6 +304,7 @@ public class DeploymentPlanningManagerImplTest {
         Mockito.when(template.getArch()).thenReturn(CPU.CPUArch.amd64);
         Mockito.when(vmProfile.getTemplate()).thenReturn(template);
         Mockito.when(_clusterDao.listClustersByArchAndZoneId(dataCenterId, CPU.CPUArch.arm64)).thenReturn(null);
+        Mockito.doNothing().when(_dpm).avoidDisabledResources(vmProfile, dc, avoids);
         DeployDestination dest = _dpm.planDeployment(vmProfile, plan, avoids, null);
         assertNull("Planner cannot handle, destination should be null! ", dest);
     }
@@ -457,7 +422,7 @@ public class DeploymentPlanningManagerImplTest {
 
         ExcludeList avoids = new ExcludeList();
         AllocationState[] allocationStates = AllocationState.values();
-        for (int i = 0; i < allocationStates.length - 1; ++i) {
+        for (int i = 0; i < allocationStates.length; ++i) {
             Mockito.when(dc.getAllocationState()).thenReturn(allocationStates[i]);
 
             _dpm.avoidDisabledDataCenters(dc, avoids);
@@ -478,7 +443,7 @@ public class DeploymentPlanningManagerImplTest {
         List<Long> podIds = new ArrayList<>();
         long expectedPodId = 123l;
         podIds.add(expectedPodId);
-        Mockito.doReturn(new ArrayList<>()).when(hostPodDao).listDisabledPods(Mockito.anyLong());
+        Mockito.doReturn(new ArrayList<>()).when(_podDao).listDisabledPods(Mockito.anyLong());
         ExcludeList avoids = new ExcludeList();
 
         _dpm.avoidDisabledPods(dc, avoids);
@@ -491,7 +456,7 @@ public class DeploymentPlanningManagerImplTest {
         List<Long> podIds = new ArrayList<>();
         long expectedPodId = 123l;
         podIds.add(expectedPodId);
-        Mockito.doReturn(podIds).when(hostPodDao).listDisabledPods(Mockito.anyLong());
+        Mockito.doReturn(podIds).when(_podDao).listDisabledPods(Mockito.anyLong());
 
         ExcludeList avoids = new ExcludeList();
 
@@ -627,7 +592,7 @@ public class DeploymentPlanningManagerImplTest {
      */
     @Test
     public void passNoEncRootProvidedHostSupportingEncryptionTest() {
-        HostVO host = new HostVO("host");
+        ReflectionTestUtils.setField(host, "id", 1L);
         Map<String, String> hostDetails = new HashMap<>() {{
             put(Host.HOST_VOLUME_ENCRYPTION, "true");
         }};
@@ -641,7 +606,7 @@ public class DeploymentPlanningManagerImplTest {
         try {
             DeployDestination dest = _dpm.planDeployment(vmProfile, plan, avoids, null);
             Assert.assertEquals(dest.getHost(), host);
-        } catch (Exception ex) {
+        } catch (InsufficientServerCapacityException | AffinityConflictException ex) {
             ex.printStackTrace();
         }
     }
@@ -664,15 +629,16 @@ public class DeploymentPlanningManagerImplTest {
         setupMocksForPlanDeploymentHostTests(host, vol1);
 
         VMInstanceVO vm = (VMInstanceVO) vmProfile.getVirtualMachine();
-        vm.setLastHostId(hostId);
+        Mockito.when(vm.getLastHostId()).thenReturn(hostId);
 
         // host id is null here so we pick up last host id
         DataCenterDeployment plan = new DataCenterDeployment(dataCenterId, podId, clusterId, null, null, null);
         try {
             DeployDestination dest = _dpm.planDeployment(vmProfile, plan, avoids, null);
-            Assert.assertEquals(dest.getHost(), host);
-        } catch (Exception ex) {
-            ex.printStackTrace();
+            Assert.assertNotNull(dest);
+            Assert.assertEquals(host, dest.getHost());
+        } catch (InsufficientServerCapacityException | AffinityConflictException ex) {
+            Assert.fail(ex.getMessage());
         }
     }
 
@@ -686,7 +652,6 @@ public class DeploymentPlanningManagerImplTest {
             put(Host.HOST_VOLUME_ENCRYPTION, "false");
         }};
         host.setDetails(hostDetails);
-        Mockito.when(host.getStatus()).thenReturn(Status.Up);
 
         VolumeVO vol1 = new VolumeVO("vol1", dataCenterId, podId, 1L, 1L, instanceId, "folder", "path", Storage.ProvisioningType.THIN, (long) 10 << 30, Volume.Type.ROOT);
         vol1.setPassphraseId(1L);
@@ -694,14 +659,14 @@ public class DeploymentPlanningManagerImplTest {
         setupMocksForPlanDeploymentHostTests(host, vol1);
 
         VMInstanceVO vm = (VMInstanceVO) vmProfile.getVirtualMachine();
-        vm.setLastHostId(hostId);
+        Mockito.when(vm.getLastHostId()).thenReturn(hostId);
         // host id is null here so we pick up last host id
         DataCenterDeployment plan = new DataCenterDeployment(dataCenterId, podId, clusterId, null, null, null);
         try {
             DeployDestination dest = _dpm.planDeployment(vmProfile, plan, avoids, null);
             Assert.assertNull("Destination should be null since last host doesn't support encryption and root requires it", dest);
         } catch (Exception ex) {
-            ex.printStackTrace();
+            Assert.fail(ex.getMessage());
         }
     }
 
@@ -712,7 +677,6 @@ public class DeploymentPlanningManagerImplTest {
             put(Host.HOST_VOLUME_ENCRYPTION, "true");
         }};
         host.setDetails(hostDetails);
-        Mockito.when(host.getStatus()).thenReturn(Status.Up);
 
         VolumeVO vol1 = new VolumeVO("vol1", dataCenterId, podId, 1L, 1L, instanceId, "folder", "path", Storage.ProvisioningType.THIN, (long) 10 << 30, Volume.Type.ROOT);
         vol1.setPassphraseId(1L);
@@ -737,7 +701,6 @@ public class DeploymentPlanningManagerImplTest {
             put(Host.HOST_VOLUME_ENCRYPTION, "false");
         }};
         host.setDetails(hostDetails);
-        Mockito.when(host.getStatus()).thenReturn(Status.Up);
 
         VolumeVO vol1 = new VolumeVO("vol1", dataCenterId, podId, 1L, 1L, instanceId, "folder", "path", Storage.ProvisioningType.THIN, (long) 10 << 30, Volume.Type.ROOT);
         vol1.setPassphraseId(1L);
@@ -755,18 +718,13 @@ public class DeploymentPlanningManagerImplTest {
         }
     }
 
+    /**
+     * Test that when `findSuitablePoolsForVolumes` fails to find suitable pools for a volume,
+     * the volume's poolId is cleared to avoid incorrect pool assignment in subsequent deployment attempts.
+     */
     @Test
-    public void findSuitablePoolsForVolumesTest() throws Exception {
+    public void testFailedFindSuitablePoolsForVolumesTestClearsVolumePoolId() {
         Long diskOfferingId = 1L;
-        HostVO host = Mockito.spy(new HostVO("host"));
-        Map<String, String> hostDetails = new HashMap<>() {
-            {
-                put(Host.HOST_VOLUME_ENCRYPTION, "true");
-            }
-        };
-        host.setDetails(hostDetails);
-        Mockito.when(host.getStatus()).thenReturn(Status.Up);
-
         VolumeVO vol1 = Mockito.spy(new VolumeVO("vol1", dataCenterId, podId, 1L, 1L, instanceId, "folder", "path",
                 Storage.ProvisioningType.THIN, (long) 10 << 30, Volume.Type.ROOT));
         Mockito.when(vol1.getId()).thenReturn(1L);
@@ -774,63 +732,37 @@ public class DeploymentPlanningManagerImplTest {
         vol1.setPassphraseId(1L);
         vol1.setPoolId(1L);
         vol1.setDiskOfferingId(diskOfferingId);
-
         StoragePoolVO storagePool = new StoragePoolVO();
         storagePool.setStatus(StoragePoolStatus.Maintenance);
         storagePool.setId(vol1.getPoolId());
         storagePool.setDataCenterId(dataCenterId);
         storagePool.setPodId(podId);
         storagePool.setClusterId(clusterId);
-
-        DiskProfile diskProfile = Mockito.mock(DiskProfile.class);
-
-        StoragePoolAllocator allocator = Mockito.mock(StoragePoolAllocator.class);
-
-        DataCenterDeployment plan = new DataCenterDeployment(dataCenterId, podId, clusterId, null, null, null);
-
+        DataCenterDeployment plan = new DataCenterDeployment(dataCenterId, podId, clusterId, null, 1L, null);
         Account account = Mockito.mock(Account.class);
         Mockito.when(account.getId()).thenReturn(1L);
         Mockito.when(vmProfile.getOwner()).thenReturn(account);
         Mockito.when(_accountMgr.isRootAdmin(account.getId())).thenReturn(Boolean.FALSE);
-
         Mockito.when(_dcDao.findById(dataCenterId)).thenReturn(dc);
         Mockito.when(dc.getAllocationState()).thenReturn(AllocationState.Enabled);
-
         HostPodVO podVo = Mockito.mock(HostPodVO.class);
         Mockito.when(podVo.getAllocationState()).thenReturn(AllocationState.Enabled);
-        Mockito.doReturn(podVo).when(_podDao).findById(podId);
-
+        Mockito.when(_podDao.findById(podId)).thenReturn(podVo);
         ClusterVO cluster = Mockito.mock(ClusterVO.class);
         Mockito.when(cluster.getAllocationState()).thenReturn(AllocationState.Enabled);
         Mockito.when(_clusterDao.findById(clusterId)).thenReturn(cluster);
-
         DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
-
         Mockito.when(_diskOfferingDao.findById(vol1.getDiskOfferingId())).thenReturn(diskOffering);
-        VirtualMachineTemplate vmt = Mockito.mock(VirtualMachineTemplate.class);
-
-        ServiceOfferingVO serviceOffering = Mockito.mock(ServiceOfferingVO.class);
-        Mockito.when(vmProfile.getServiceOffering()).thenReturn(serviceOffering);
-
-        PrimaryDataStore primaryDataStore = Mockito.mock(PrimaryDataStore.class);
-
-        Mockito.when(vmt.getFormat()).thenReturn(Storage.ImageFormat.ISO);
-        Mockito.when(vmProfile.getTemplate()).thenReturn(vmt);
-
         Mockito.when(vmProfile.getId()).thenReturn(1L);
         Mockito.when(vmProfile.getType()).thenReturn(VirtualMachine.Type.User);
         Mockito.when(volDao.findUsableVolumesForInstance(1L)).thenReturn(Arrays.asList(vol1));
         Mockito.when(volDao.findByInstanceAndType(1L, Volume.Type.ROOT)).thenReturn(Arrays.asList(vol1));
-        Mockito.when(_dataStoreManager.getPrimaryDataStore(vol1.getPoolId())).thenReturn((DataStore) primaryDataStore);
-        Mockito.when(avoids.shouldAvoid(storagePool)).thenReturn(Boolean.FALSE);
-
-        Mockito.doReturn(Arrays.asList(storagePool)).when(allocator).allocateToPool(diskProfile, vmProfile, plan,
-                avoids, 10);
+        PrimaryDataStore primaryDataStore = Mockito.mock(PrimaryDataStore.class);
+        Mockito.when(_dataStoreManager.getPrimaryDataStore(vol1.getPoolId())).thenReturn(primaryDataStore);
         Mockito.when(volDao.update(vol1.getId(), vol1)).thenReturn(true);
         _dpm.findSuitablePoolsForVolumes(vmProfile, plan, avoids, 10);
         verify(vol1, times(1)).setPoolId(null);
-        assertTrue(vol1.getPoolId() == null);
-
+        Assert.assertNull(vol1.getPoolId());
     }
 
     // This is so ugly but everything is so intertwined...
@@ -900,11 +832,13 @@ public class DeploymentPlanningManagerImplTest {
                 ArgumentMatchers.anyFloat(),
                 ArgumentMatchers.anyBoolean()
         )).thenReturn(true);
-        Mockito.when(serviceOfferingDetailsDao.findDetail(vmProfile.getServiceOfferingId(), GPU.Keys.vgpuType.toString())).thenReturn(null);
 
         Mockito.doReturn(true).when(_dpm).checkVmProfileAndHost(vmProfile, host);
         Mockito.doReturn(true).when(_dpm).checkIfHostFitsPlannerUsage(ArgumentMatchers.any(Host.class), ArgumentMatchers.nullable(PlannerResourceUsage.class));
         Mockito.when(clusterDetailsDao.findDetail(ArgumentMatchers.anyLong(), ArgumentMatchers.anyString())).thenReturn(new ClusterDetailsVO(clusterId, "mock", "1"));
+        Mockito.doNothing().when(_dpm).avoidDifferentArchResources(Mockito.any(), Mockito.any(), Mockito.any());
+
+        Mockito.when(resourceManager.isGPUDeviceAvailable(svcOffering, host, instanceId)).thenReturn(true);
 
         DeploymentClusterPlanner planner = Mockito.spy(new FirstFitPlanner());
         try {
@@ -913,8 +847,8 @@ public class DeploymentPlanningManagerImplTest {
                     ArgumentMatchers.any(DeploymentPlan.class),
                     ArgumentMatchers.any(ExcludeList.class)
             );
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        } catch (InsufficientServerCapacityException ex) {
+            Assert.fail(ex.getMessage());
         }
 
         return planner;
@@ -925,7 +859,7 @@ public class DeploymentPlanningManagerImplTest {
         Mockito.when(dc.getId()).thenReturn(123l);
         List<Long> podIds = new ArrayList<>();
         podIds.add(1l);
-        Mockito.doReturn(podIds).when(hostPodDao).listAllPods(Mockito.anyLong());
+        Mockito.doReturn(podIds).when(_podDao).listAllPods(Mockito.anyLong());
         return dc;
     }
 
@@ -935,238 +869,6 @@ public class DeploymentPlanningManagerImplTest {
         Assert.assertEquals(isPodsEmpty, CollectionUtils.isEmpty(avoids.getPodsToAvoid()));
         Assert.assertEquals(isClustersEmpty, CollectionUtils.isEmpty(avoids.getClustersToAvoid()));
         Assert.assertEquals(isHostsEmpty, CollectionUtils.isEmpty(avoids.getHostsToAvoid()));
-    }
-
-    @Configuration
-    @ComponentScan(basePackageClasses = {DeploymentPlanningManagerImpl.class},
-                   includeFilters = {@Filter(value = TestConfiguration.Library.class,
-                                             type = FilterType.CUSTOM)}, useDefaultFilters = false)
-    public static class TestConfiguration extends SpringUtils.CloudStackTestConfiguration {
-
-        @Bean
-        public FirstFitPlanner firstFitPlanner() {
-            return Mockito.mock(FirstFitPlanner.class);
-        }
-
-        @Bean
-        public DeploymentPlanner deploymentPlanner() {
-            return Mockito.mock(DeploymentPlanner.class);
-        }
-
-        @Bean
-        public DataCenterVO dataCenter() {
-            return Mockito.mock(DataCenterVO.class);
-        }
-
-        @Bean
-        public ExcludeList excludeList() {
-            return Mockito.mock(ExcludeList.class);
-        }
-
-        @Bean
-        public VirtualMachineProfileImpl virtualMachineProfileImpl() {
-            return Mockito.mock(VirtualMachineProfileImpl.class);
-        }
-
-        @Bean
-        public HostTagsDao hostTagsDao() {
-            return Mockito.mock(HostTagsDao.class);
-        }
-
-        @Bean
-        public HostDetailsDao hostDetailsDao() {
-            return Mockito.mock(HostDetailsDao.class);
-        }
-
-
-        @Bean
-        public ClusterDetailsDao clusterDetailsDao() {
-            return Mockito.mock(ClusterDetailsDao.class);
-        }
-
-        @Bean
-        public ResourceManager resourceManager() {
-            return Mockito.mock(ResourceManager.class);
-        }
-
-        @Bean
-        public ServiceOfferingDetailsDao serviceOfferingDetailsDao() {
-            return Mockito.mock(ServiceOfferingDetailsDao.class);
-        }
-
-        @Bean
-        public AffinityGroupDomainMapDao affinityGroupDomainMapDao() {
-            return Mockito.mock(AffinityGroupDomainMapDao.class);
-        }
-
-        @Bean
-        public DataStoreManager cataStoreManager() {
-            return Mockito.mock(DataStoreManager.class);
-        }
-
-        @Bean
-        public StorageManager storageManager() {
-            return Mockito.mock(StorageManager.class);
-        }
-
-        @Bean
-        public HostDao hostDao() {
-            return Mockito.mock(HostDao.class);
-        }
-
-        @Bean
-        public HostPodDao hostPodDao() {
-            return Mockito.mock(HostPodDao.class);
-        }
-
-        @Bean
-        public ClusterDao clusterDao() {
-            return Mockito.mock(ClusterDao.class);
-        }
-
-        @Bean
-        public DedicatedResourceDao dedicatedResourceDao() {
-            return Mockito.mock(DedicatedResourceDao.class);
-        }
-
-        @Bean
-        public GuestOSDao guestOSDao() {
-            return Mockito.mock(GuestOSDao.class);
-        }
-
-        @Bean
-        public GuestOSCategoryDao guestOSCategoryDao() {
-            return Mockito.mock(GuestOSCategoryDao.class);
-        }
-
-        @Bean
-        public CapacityManager capacityManager() {
-            return Mockito.mock(CapacityManager.class);
-        }
-
-        @Bean
-        public StoragePoolHostDao storagePoolHostDao() {
-            return Mockito.mock(StoragePoolHostDao.class);
-        }
-
-        @Bean
-        public VolumeDao volumeDao() {
-            return Mockito.mock(VolumeDao.class);
-        }
-
-        @Bean
-        public ConfigurationDao configurationDao() {
-            return Mockito.mock(ConfigurationDao.class);
-        }
-
-        @Bean
-        public DiskOfferingDao diskOfferingDao() {
-            return Mockito.mock(DiskOfferingDao.class);
-        }
-
-        @Bean
-        public PrimaryDataStoreDao primaryDataStoreDao() {
-            return Mockito.mock(PrimaryDataStoreDao.class);
-        }
-
-        @Bean
-        public CapacityDao capacityDao() {
-            return Mockito.mock(CapacityDao.class);
-        }
-
-        @Bean
-        public PlannerHostReservationDao plannerHostReservationDao() {
-            return Mockito.mock(PlannerHostReservationDao.class);
-        }
-
-        @Bean
-        public AffinityGroupProcessor affinityGroupProcessor() {
-            return Mockito.mock(AffinityGroupProcessor.class);
-        }
-
-        @Bean
-        public AffinityGroupDao affinityGroupDao() {
-            return Mockito.mock(AffinityGroupDao.class);
-        }
-
-        @Bean
-        public AffinityGroupVMMapDao affinityGroupVMMapDao() {
-            return Mockito.mock(AffinityGroupVMMapDao.class);
-        }
-
-        @Bean
-        public AccountManager accountManager() {
-            return Mockito.mock(AccountManager.class);
-        }
-
-        @Bean
-        public AgentManager agentManager() {
-            return Mockito.mock(AgentManager.class);
-        }
-
-        @Bean
-        public MessageBus messageBus() {
-            return Mockito.mock(MessageBus.class);
-        }
-
-        @Bean
-        public UserVmDao userVMDao() {
-            return Mockito.mock(UserVmDao.class);
-        }
-
-        @Bean
-        public VMInstanceDetailsDao vmInstanceDetailsDao() {
-            return Mockito.mock(VMInstanceDetailsDao.class);
-        }
-
-        @Bean
-        public VMInstanceDao vmInstanceDao() {
-            return Mockito.mock(VMInstanceDao.class);
-        }
-
-        @Bean
-        public DataCenterDao dataCenterDao() {
-            return Mockito.mock(DataCenterDao.class);
-        }
-
-        @Bean
-        public VMReservationDao reservationDao() {
-            return Mockito.mock(VMReservationDao.class);
-        }
-
-        @Bean
-        public AffinityGroupService affinityGroupService() {
-            return Mockito.mock(AffinityGroupService.class);
-        }
-
-        @Bean
-        public HostGpuGroupsDao hostGpuGroupsDao() {
-            return Mockito.mock(HostGpuGroupsDao.class);
-        }
-
-        @Bean
-        public AccountDao accountDao() {
-            return Mockito.mock(AccountDao.class);
-        }
-
-        @Bean
-        public VMTemplateDao vmTemplateDao() {
-            return Mockito.mock(VMTemplateDao.class);
-        }
-
-        @Bean
-        public VgpuProfileDao vgpuProfileDao() {
-            return Mockito.mock(VgpuProfileDao.class);
-        }
-
-        public static class Library implements TypeFilter {
-
-            @Override
-            public boolean match(MetadataReader mdr, MetadataReaderFactory arg1) throws IOException {
-                ComponentScan cs = TestConfiguration.class.getAnnotation(ComponentScan.class);
-                return SpringUtils.includedInBasePackageClasses(mdr.getClassMetadata().getClassName(), cs);
-            }
-        }
     }
 
     @Test
