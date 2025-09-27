@@ -122,6 +122,7 @@ import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -193,6 +194,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     private VolumeDetailsDao volumeDetailsDao;
     @Inject
     private VolumeService _volumeService;
+    @Inject
+    public VolumeApiService _volumeApiService;
     @Inject
     private StorageCacheManager cacheMgr;
     @Inject
@@ -796,6 +799,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
         volumeVO.setPodId(destPool.getPodId());
         volumeVO.setPoolId(destPool.getId());
+        volumeVO.setPoolType(destPool.getPoolType());
         volumeVO.setLastPoolId(srcVolumeInfo.getPoolId());
 
         _volumeDao.update(srcVolumeInfo.getId(), volumeVO);
@@ -2348,10 +2352,21 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 volumeVO.setFormat(ImageFormat.QCOW2);
                 volumeVO.setLastId(srcVolumeInfo.getId());
 
+                if (Objects.equals(srcVolumeInfo.getDiskOfferingId(), destVolumeInfo.getDiskOfferingId())) {
+                    StoragePoolVO srcPoolVO = _storagePoolDao.findById(srcVolumeInfo.getPoolId());
+                    StoragePoolVO destPoolVO = _storagePoolDao.findById(destVolumeInfo.getPoolId());
+                    if (srcPoolVO != null && destPoolVO != null &&
+                            ((srcPoolVO.isShared() && destPoolVO.isLocal()) || (srcPoolVO.isLocal() && destPoolVO.isShared()))) {
+                        Long offeringId = getSuitableDiskOfferingForVolumeOnPool(volumeVO, destPoolVO);
+                        if (offeringId != null) {
+                            volumeVO.setDiskOfferingId(offeringId);
+                        }
+                    }
+                }
+
                 _volumeDao.update(volumeVO.getId(), volumeVO);
 
                 _volumeService.copyPoliciesBetweenVolumesAndDestroySourceVolumeAfterMigration(Event.OperationSuccessed, null, srcVolumeInfo, destVolumeInfo, false);
-
 
                 // Update the volume ID for snapshots on secondary storage
                 if (!_snapshotDao.listByVolumeId(srcVolumeInfo.getId()).isEmpty()) {
@@ -2394,17 +2409,32 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         }
     }
 
+    private Long getSuitableDiskOfferingForVolumeOnPool(VolumeVO volume, StoragePoolVO pool) {
+        List<DiskOfferingVO> diskOfferings = _diskOfferingDao.listAllActiveAndNonComputeDiskOfferings();
+        for (DiskOfferingVO diskOffering : diskOfferings) {
+            try {
+                if (_volumeApiService.validateConditionsToReplaceDiskOfferingOfVolume(volume, diskOffering, pool)) {
+                    logger.debug("Found suitable disk offering {} for the volume {}", diskOffering, volume);
+                    return diskOffering.getId();
+                }
+            } catch (Exception ignore) {
+            }
+        }
+        logger.warn("Unable to find suitable disk offering for the volume {}", volume);
+        return null;
+    }
+
     private VolumeVO duplicateVolumeOnAnotherStorage(Volume volume, StoragePoolVO storagePoolVO) {
         Long lastPoolId = volume.getPoolId();
 
         VolumeVO newVol = new VolumeVO(volume);
-
         newVol.setInstanceId(null);
         newVol.setChainInfo(null);
         newVol.setPath(null);
         newVol.setFolder(null);
         newVol.setPodId(storagePoolVO.getPodId());
         newVol.setPoolId(storagePoolVO.getId());
+        newVol.setPoolType(storagePoolVO.getPoolType());
         newVol.setLastPoolId(lastPoolId);
         newVol.setLastId(volume.getId());
 

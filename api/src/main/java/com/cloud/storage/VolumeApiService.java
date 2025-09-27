@@ -180,6 +180,8 @@ public interface VolumeApiService {
      */
     boolean doesStoragePoolSupportDiskOfferingTags(StoragePool destPool, String diskOfferingTags);
 
+    boolean validateConditionsToReplaceDiskOfferingOfVolume(Volume volume, DiskOffering newDiskOffering, StoragePool destPool);
+
     Volume destroyVolume(long volumeId, Account caller, boolean expunge, boolean forceExpunge);
 
     void destroyVolume(long volumeId);

@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.storage.Storage;
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -182,10 +183,10 @@ public interface VolumeOrchestrationService {
      */
     DiskProfile importVolume(Type type, String name, DiskOffering offering, Long sizeInBytes, Long minIops, Long maxIops,
                              Long zoneId, HypervisorType hypervisorType, VirtualMachine vm, VirtualMachineTemplate template,
-                             Account owner, Long deviceId, Long poolId, String path, String chainInfo);
+                             Account owner, Long deviceId, Long poolId, Storage.StoragePoolType poolType, String path, String chainInfo);
 
     DiskProfile updateImportedVolume(Type type, DiskOffering offering, VirtualMachine vm, VirtualMachineTemplate template,
-                                     Long deviceId, Long poolId, String path, String chainInfo, DiskProfile diskProfile);
+                                     Long deviceId, Long poolId, Storage.StoragePoolType poolType, String path, String chainInfo, DiskProfile diskProfile);
 
     /**
      * Unmanage VM volumes
