@@ -1927,7 +1927,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             for (final VirtualMachine vm : vms) {
 
                 Map<Long, Pair<Long, Long>> backupOfferingToSizeMap = new HashMap<>();
-                for (final Backup backup: backupDao.listByVmId(null, vm.getId())) {
+                List<Backup> backups = backupDao.listByVmId(null, vm.getId());
+                if (backups.isEmpty() && vm.getBackupOfferingId() != null) {
+                    backupOfferingToSizeMap.put(vm.getBackupOfferingId(), new Pair<>(0L, 0L));
+                }
+                for (final Backup backup: backups) {
                     Long backupSize = 0L;
                     Long backupProtectedSize = 0L;
                     if (Objects.nonNull(backup.getSize())) {
