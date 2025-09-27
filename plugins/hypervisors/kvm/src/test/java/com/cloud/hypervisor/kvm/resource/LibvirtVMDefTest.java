@@ -55,6 +55,7 @@ public class LibvirtVMDefTest extends TestCase {
 
         String expected = "<interface type='user'>\n" +
                 "<mac address='00:11:22:aa:bb:dd'/>\n" +
+                "<filterref filter='no-mac-spoofing'/>\n" +
                 "<model type='virtio'/>\n" +
                 "<ip family='ipv4' address='192.168.100.0' prefix='24'/>\n" +
                 "</interface>\n";
@@ -69,6 +70,7 @@ public class LibvirtVMDefTest extends TestCase {
 
         String expected = "<interface type='user'>\n" +
                 "<mac address='00:11:22:aa:bb:dd'/>\n" +
+                "<filterref filter='no-mac-spoofing'/>\n" +
                 "<model type='virtio'/>\n" +
                 "</interface>\n";
 
@@ -84,6 +86,7 @@ public class LibvirtVMDefTest extends TestCase {
             "<interface type='ethernet'>\n"
                     + "<target dev='targetDeviceName'/>\n"
                     + "<mac address='00:11:22:aa:bb:dd'/>\n"
+                    + "<filterref filter='no-mac-spoofing'/>\n"
                     + "<model type='virtio'/>\n"
                     + "<link state='up'/>\n"
                     + "</interface>\n";
@@ -100,6 +103,7 @@ public class LibvirtVMDefTest extends TestCase {
             "<interface type='" + LibvirtVMDef.InterfaceDef.GuestNetType.DIRECT + "'>\n"
                     + "<source dev='targetDeviceName' mode='private'/>\n"
                     + "<mac address='00:11:22:aa:bb:dd'/>\n"
+                    + "<filterref filter='no-mac-spoofing'/>\n"
                     + "<model type='virtio'/>\n"
                     + "<link state='up'/>\n"
                     + "</interface>\n";
@@ -117,6 +121,7 @@ public class LibvirtVMDefTest extends TestCase {
                 "<interface type='" + LibvirtVMDef.InterfaceDef.GuestNetType.BRIDGE + "'>\n"
                         + "<source bridge='targetDeviceName'/>\n"
                         + "<mac address='00:11:22:aa:bb:dd'/>\n"
+                        + "<filterref filter='no-mac-spoofing'/>\n"
                         + "<model type='virtio'/>\n"
                         + "<link state='up'/>\n"
                         + "<address type='pci' domain='0x0000' bus='0x00' slot='0x10' function='0x0'/>\n"
@@ -132,6 +137,7 @@ public class LibvirtVMDefTest extends TestCase {
                         + "<source bridge='targetDeviceName'/>\n"
                         + "<target dev='vnet11'/>\n"
                         + "<mac address='00:11:22:aa:bb:dd'/>\n"
+                        + "<filterref filter='no-mac-spoofing'/>\n"
                         + "<model type='virtio'/>\n"
                         + "<link state='down'/>\n"
                         + "<address type='pci' domain='0x0000' bus='0x00' slot='0x10' function='0x0'/>\n"
@@ -153,6 +159,7 @@ public class LibvirtVMDefTest extends TestCase {
                 "<interface type='" + LibvirtVMDef.InterfaceDef.GuestNetType.BRIDGE + "'>\n"
                         + "<source bridge='targetDeviceName'/>\n"
                         + "<mac address='00:11:22:aa:bb:dd'/>\n"
+                        + "<filterref filter='no-mac-spoofing'/>\n"
                         + "<model type='virtio'/>\n"
                         + "<driver queues='6'/>\n"
                         + "<link state='up'/>\n"
@@ -164,6 +171,7 @@ public class LibvirtVMDefTest extends TestCase {
                 "<interface type='" + LibvirtVMDef.InterfaceDef.GuestNetType.BRIDGE + "'>\n"
                         + "<source bridge='targetDeviceName'/>\n"
                         + "<mac address='00:11:22:aa:bb:dd'/>\n"
+                        + "<filterref filter='no-mac-spoofing'/>\n"
                         + "<model type='virtio'/>\n"
                         + "<driver queues='6' packed='on'/>\n"
                         + "<link state='up'/>\n"
@@ -175,6 +183,7 @@ public class LibvirtVMDefTest extends TestCase {
                 "<interface type='" + LibvirtVMDef.InterfaceDef.GuestNetType.BRIDGE + "'>\n"
                         + "<source bridge='targetDeviceName'/>\n"
                         + "<mac address='00:11:22:aa:bb:dd'/>\n"
+                        + "<filterref filter='no-mac-spoofing'/>\n"
                         + "<model type='virtio'/>\n"
                         + "<driver packed='on'/>\n"
                         + "<link state='up'/>\n"
@@ -186,6 +195,7 @@ public class LibvirtVMDefTest extends TestCase {
                 "<interface type='" + LibvirtVMDef.InterfaceDef.GuestNetType.BRIDGE + "'>\n"
                         + "<source bridge='targetDeviceName'/>\n"
                         + "<mac address='00:11:22:aa:bb:dd'/>\n"
+                        + "<filterref filter='no-mac-spoofing'/>\n"
                         + "<model type='virtio'/>\n"
                         + "<link state='up'/>\n"
                         + "</interface>\n";
