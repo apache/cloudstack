@@ -379,7 +379,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         ServiceOffering serviceOffering = serviceOfferingDao.findById(vm.getServiceOfferingId());
         details.put(ApiConstants.SERVICE_OFFERING_ID, serviceOffering.getUuid());
         VirtualMachineTemplate template = vmTemplateDao.findById(vm.getTemplateId());
-        details.put(ApiConstants.TEMPLATE_ID, template.getUuid());
+        if (template != null) {
+            details.put(ApiConstants.TEMPLATE_ID, template.getUuid());
+        }
 
         List<VMInstanceDetailVO> vmDetails = vmInstanceDetailsDao.listDetails(vm.getId());
         HashMap<String, String> settings = new HashMap<>();
