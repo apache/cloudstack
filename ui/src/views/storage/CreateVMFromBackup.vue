@@ -91,16 +91,16 @@ export default {
       required: true
     }
   },
-  created () {
-    this.fetchServiceOffering()
-    this.fetchBackupOffering().then(() => {
-      this.fetchBackupRepository()
-      this.loading = false
-    })
+  async created () {
+    await Promise.all[(
+      this.fetchServiceOffering(),
+      this.fetchBackupOffering()
+    )]
+    this.loading = false
   },
   methods: {
     fetchServiceOffering () {
-      getAPI('listServiceOfferings', {
+      return getAPI('listServiceOfferings', {
         zoneid: this.resource.zoneid,
         id: this.resource.vmdetails.serviceofferingid,
         listall: true
@@ -118,21 +118,10 @@ export default {
         this.backupOffering = backupOfferings[0]
       })
     },
-    fetchBackupRepository () {
-      if (this.backupOffering.provider !== 'nas') {
-        return
-      }
-      getAPI('listBackupRepositories', {
-        id: this.backupOffering.externalid
-      }).then(response => {
-        const backupRepositories = response.listbackuprepositoriesresponse.backuprepository || []
-        this.backupRepository = backupRepositories[0]
-      })
-    },
     populatePreFillData () {
       this.vmdetails = this.resource.vmdetails
       this.dataPreFill.zoneid = this.resource.zoneid
-      this.dataPreFill.crosszoneinstancecreation = this.backupRepository?.crosszoneinstancecreation || this.backupOffering.provider === 'dummy'
+      this.dataPreFill.crosszoneinstancecreation = this.backupOffering?.crosszoneinstancecreation || this.backupOffering.provider === 'dummy'
       this.dataPreFill.isIso = (this.vmdetails.isiso === 'true')
       this.dataPreFill.backupid = this.resource.id
       this.dataPreFill.computeofferingid = this.vmdetails.serviceofferingid
