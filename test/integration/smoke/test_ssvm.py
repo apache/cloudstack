@@ -18,15 +18,14 @@
 """
 # Import Local Modules
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.cloudstackAPI import (stopSystemVm,
+from marvin.cloudstackAPI import (getDiagnosticsData, stopSystemVm,
                                   rebootSystemVm,
                                   destroySystemVm, updateConfiguration)
 from marvin.lib.utils import (cleanup_resources,
                               get_process_status,
                               get_host_credentials,
                               wait_until)
-from marvin.lib.base import (PhysicalNetwork,
-                             NetScaler, ImageStore)
+from marvin.lib.base import (PhysicalNetwork, NetScaler, ImageStore, UserData)
 from marvin.lib.common import (get_zone,
                                list_hosts,
                                list_ssvms,
@@ -35,6 +34,10 @@ from marvin.lib.common import (get_zone,
 from nose.plugins.attrib import attr
 import telnetlib
 import logging
+import base64
+import os
+import urllib
+import zipfile
 
 # Import System modules
 import time
@@ -1399,3 +1402,139 @@ class TestSSVMs(cloudstackTestCase):
             int(nfs_version),
             "Check mounted NFS version to be the same as provided"
         )
+
+    @attr(
+    tags=[
+        "advanced",
+        "advancedns",
+        "smoke",
+        "basic", "vj",
+        "sg"],
+    required_hardware="true")
+    def test_14_userdata_on_ssvm(self):
+        """Test user data functionality on SSVM
+        """
+        # 1) Register userdata for the default admin user
+        # 2) Update global settings to enable userdata and add userdata for SSVM
+        # 3) Delete the SSVM if already present and wait for it to come up again
+        # 4) Wait for the SSVM to be ready
+        # 5) Download the file created by userdata script using the getDiagnosticsData command
+        # 6) Verify the file contains the expected content
+
+        userdata_script = """#!/bin/bash
+echo "User data script ran successfully" > /tmp/userdata.txt
+"""
+        userdata_file_path = "/tmp/userdata.txt"
+        expected_userdata_content = "User data script ran successfully"
+        b64_encoded_userdata = base64.b64encode(userdata_script.encode('utf-8')).decode('utf-8')
+        # Create a userdata entry
+        try:
+            self.userdata = UserData.register(
+                self.apiclient,
+                name="ssvm_userdata",
+                userdata=b64_encoded_userdata
+            )
+        except Exception as e:
+            if "already exists" in str(e):
+                self.debug("Userdata already exists, getting it")
+                self.userdata = UserData.list(self.apiclient, name="ssvm_userdata", listall=True)[0]
+            else:
+                self.fail("Failed to register userdata: %s" % e)
+
+        #Enable user data and set the script to be run on SSVM
+        cmd = updateConfiguration.updateConfigurationCmd()
+        cmd.name = "systemvm.userdata.enabled"
+        cmd.value = "true"
+        self.apiclient.updateConfiguration(cmd)
+
+        cmd = updateConfiguration.updateConfigurationCmd()
+        cmd.name = "secstorage.userdata"
+        cmd.value = self.userdata.id
+        self.apiclient.updateConfiguration(cmd)
+
+        list_ssvm_response = list_ssvms(self.apiclient, systemvmtype='secondarystoragevm', state='Running', zoneid=self.zone.id)
+        self.assertEqual(
+            isinstance(list_ssvm_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
+
+        ssvm = list_ssvm_response[0]
+        self.debug("Destroying SSVM: %s" % ssvm.id)
+        cmd = destroySystemVm.destroySystemVmCmd()
+        cmd.id = ssvm.id
+        self.apiclient.destroySystemVm(cmd)
+
+        ssvm_response = self.checkForRunningSystemVM(ssvm, 'secondarystoragevm')
+        self.debug("SSVM state after debug: %s" % ssvm_response.state)
+        self.assertEqual(
+            ssvm_response.state,
+            'Running',
+            "Check whether SSVM is running or not"
+        )
+        # Wait for the agent to be up
+        self.waitForSystemVMAgent(ssvm_response.name)
+
+        # 5) Download the file created by userdata script using the getDiagnosticsData command
+        cmd = getDiagnosticsData.getDiagnosticsDataCmd()
+        cmd.targetid = ssvm_response.id
+        cmd.files = userdata_file_path
+
+        # getDiagnosticsData command takes some time to work after a SSVM is started
+        retries = 4
+        response = None
+        while retries > -1:
+            try:
+                response = self.apiclient.getDiagnosticsData(cmd)
+                break  # Success, exit retry loop
+            except Exception as e:
+                if retries >= 0:
+                    retries = retries - 1
+                    self.debug("getDiagnosticsData failed (retries left: %d): %s" % (retries + 1, e))
+                    if retries > -1:
+                        time.sleep(30)
+                        continue
+                # If all retries exhausted, re-raise the exception
+                self.fail("Failed to get diagnostics data after retries: %s" % e)
+
+        # Download response.url file to /tmp/ directory and extract it
+        self.debug("Downloading userdata file from SSVM")
+        try:
+            urllib.request.urlretrieve(
+                response.url,
+                "/tmp/userdata.zip"
+            )
+        except Exception as e:
+            self.fail("Failed to download userdata file from SSVM: %s" % e)
+        self.debug("Downloaded userdata file from SSVM: %s" %
+                   "/tmp/userdata.zip")
+        try:
+            with zipfile.ZipFile("/tmp/userdata.zip", 'r') as zip_ref:
+                zip_ref.extractall("/tmp/")
+        except zipfile.BadZipFile as e:
+            self.fail("Downloaded userdata file is not a zip file: %s" % e)
+        self.debug("Extracted userdata file from zip: %s" % "/tmp/userdata.txt")
+
+        # 7) Verify the file contains the expected content
+        try:
+            with open("/tmp/userdata.txt", 'r') as f:
+                content = f.read().strip()
+            self.debug("Userdata file content: %s" % content)
+            self.assertEqual(
+                expected_userdata_content in content,
+                True,
+                f"Check that userdata file contains expected content: '{expected_userdata_content}'"
+            )
+        except FileNotFoundError:
+            self.fail("Userdata file not found in extracted zip")
+        except Exception as e:
+            self.fail("Failed to read userdata file: %s" % e)
+        finally:
+            # Clean up temporary files
+            try:
+                if os.path.exists("/tmp/userdata.zip"):
+                    os.remove("/tmp/userdata.zip")
+                if os.path.exists("/tmp/userdata.txt"):
+                    os.remove("/tmp/userdata.txt")
+            except Exception as e:
+                self.debug("Failed to clean up temporary files: %s" % e)
