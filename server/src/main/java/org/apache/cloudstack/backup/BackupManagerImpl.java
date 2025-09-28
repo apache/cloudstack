@@ -2136,10 +2136,15 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         response.setId(backup.getUuid());
         response.setName(backup.getName());
         response.setDescription(backup.getDescription());
-        response.setVmName(vm.getHostName());
-        response.setVmId(vm.getUuid());
-        if (vm.getBackupOfferingId() == null || vm.getBackupOfferingId() != backup.getBackupOfferingId()) {
-            response.setVmOfferingRemoved(true);
+        if (vm != null) {
+            response.setVmName(vm.getHostName());
+            response.setVmId(vm.getUuid());
+            if (vm.getBackupOfferingId() == null || vm.getBackupOfferingId() != backup.getBackupOfferingId()) {
+                response.setVmOfferingRemoved(true);
+            }
+        }
+        if (vm == null || VirtualMachine.State.Expunging.equals(vm.getState())) {
+            response.setVmExpunged(true);
         }
         response.setExternalId(backup.getExternalId());
         response.setType(backup.getType());
@@ -2155,9 +2160,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             }
         }
         // ACS 4.20: For backups taken prior this release the backup.backed_volumes column would be empty hence use vm_instance.backup_volumes
-        String backedUpVolumes;
+        String backedUpVolumes = "";
         if (Objects.isNull(backup.getBackedUpVolumes())) {
-            backedUpVolumes = new Gson().toJson(vm.getBackupVolumeList().toArray(), Backup.VolumeInfo[].class);
+            if (vm != null) {
+                backedUpVolumes = new Gson().toJson(vm.getBackupVolumeList().toArray(), Backup.VolumeInfo[].class);
+            }
         } else {
             backedUpVolumes = new Gson().toJson(backup.getBackedUpVolumes().toArray(), Backup.VolumeInfo[].class);
         }

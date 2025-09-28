@@ -29,7 +29,7 @@
         <a-form-item :label="$t('label.name.optional')" name="name">
           <a-input v-model:value="form.name" />
         </a-form-item>
-        <a-form-item v-if="!resource.virtualmachineid" name="preserveIpAddresses" style="margin-top: 8px">
+        <a-form-item v-if="resource.backupvmexpunged" name="preserveIpAddresses" style="margin-top: 8px">
           <a-switch v-model:checked="form.preserveIpAddresses" />
           <template #label>
             <tooltip-label :title="$t('label.use.backup.ip.address')" :tooltip="$t('label.use.backup.ip.address.tooltip')"/>
@@ -128,7 +128,7 @@ export default {
       this.dataPreFill.templateid = this.vmdetails.templateid
       this.dataPreFill.allowtemplateisoselection = true
       this.dataPreFill.isoid = this.vmdetails.templateid
-      this.dataPreFill.allowIpAddressesFetch = !this.resource.virtualmachineid
+      this.dataPreFill.allowIpAddressesFetch = this.resource.backupvmexpunged
       if (this.vmdetails.nics) {
         const nics = JSON.parse(this.vmdetails.nics)
         this.dataPreFill.networkids = nics.map(nic => nic.networkid)

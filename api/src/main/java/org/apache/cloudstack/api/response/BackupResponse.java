@@ -123,6 +123,10 @@ public class BackupResponse extends BaseResponse {
     @Param(description = "The backup offering corresponding to this backup was removed from the VM", since = "4.21.0")
     private Boolean vmOfferingRemoved;
 
+    @SerializedName(ApiConstants.BACKUP_VM_EXPUNGED)
+    @Param(description = "The VM from which the backup was taken is expunged", since = "4.22.0")
+    private Boolean vmExpunged;
+
     public String getId() {
         return id;
     }
@@ -305,5 +309,9 @@ public class BackupResponse extends BaseResponse {
 
     public void setVmOfferingRemoved(Boolean vmOfferingRemoved) {
         this.vmOfferingRemoved = vmOfferingRemoved;
+    }
+
+    public void setVmExpunged(Boolean vmExpunged) {
+        this.vmExpunged = vmExpunged;
     }
 }
