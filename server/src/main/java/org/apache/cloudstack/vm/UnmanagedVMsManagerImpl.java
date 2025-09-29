@@ -1128,7 +1128,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
 
         String internalCSName = unmanagedInstance.getInternalCSName();
-        if (StringUtils.isEmpty(instanceNameInternal)) {
+        if (StringUtils.isEmpty(internalCSName)) {
             internalCSName = instanceNameInternal;
         }
         Map<String, String> allDetails = new HashMap<>(details);
