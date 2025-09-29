@@ -106,10 +106,39 @@ export default {
 .onboarding {
   font-family: sans-serif;
   padding: 20px 10px 50px 10px;
-  background: #fff;
+  background: var(--onboarding-background-color, #fff);
   box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
   @media (min-width: 760px) {
     padding: 20px 10% 50px 10%;
+  }
+}
+
+.dark-mode .onboarding {
+  background: #141414;
+  color: rgba(255, 255, 255, 0.65);
+
+  h2, h3 {
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .title {
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .subtitle {
+    color: rgba(255, 255, 255, 0.65);
+  }
+
+  p, pre {
+    color: rgba(255, 255, 255, 0.65);
+  }
+
+  a {
+    color: rgba(255, 255, 255, 0.85);
+
+    &:hover {
+      color: #ffffff;
+    }
   }
 }
 
