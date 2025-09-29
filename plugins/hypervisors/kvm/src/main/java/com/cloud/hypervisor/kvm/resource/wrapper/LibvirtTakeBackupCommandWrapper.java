@@ -54,15 +54,17 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
         KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
 
         List<String> diskPaths = new ArrayList<>();
-        for (int idx = 0; idx < volumePaths.size(); idx++) {
-            PrimaryDataStoreTO volumePool = volumePools.get(idx);
-            String volumePath = volumePaths.get(idx);
-            if (volumePool.getPoolType() != Storage.StoragePoolType.RBD) {
-                diskPaths.add(volumePath);
-            } else {
-                KVMStoragePool volumeStoragePool = storagePoolMgr.getStoragePool(volumePool.getPoolType(), volumePool.getUuid());
-                String rbdDestVolumeFile = KVMPhysicalDisk.RBDStringBuilder(volumeStoragePool, volumePath);
-                diskPaths.add(rbdDestVolumeFile);
+        if (Objects.nonNull(volumePaths)) {
+            for (int idx = 0; idx < volumePaths.size(); idx++) {
+                PrimaryDataStoreTO volumePool = volumePools.get(idx);
+                String volumePath = volumePaths.get(idx);
+                if (volumePool.getPoolType() != Storage.StoragePoolType.RBD) {
+                    diskPaths.add(volumePath);
+                } else {
+                    KVMStoragePool volumeStoragePool = storagePoolMgr.getStoragePool(volumePool.getPoolType(), volumePool.getUuid());
+                    String rbdDestVolumeFile = KVMPhysicalDisk.RBDStringBuilder(volumeStoragePool, volumePath);
+                    diskPaths.add(rbdDestVolumeFile);
+                }
             }
         }
 
@@ -76,7 +78,7 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
                 "-m", Objects.nonNull(mountOptions) ? mountOptions : "",
                 "-p", backupPath,
                 "-q", command.getQuiesce() != null && command.getQuiesce() ? "true" : "false",
-                "-d", (Objects.nonNull(diskPaths) && !diskPaths.isEmpty()) ? String.join(",", diskPaths) : ""
+                "-d", diskPaths.isEmpty() ? "" : String.join(",", diskPaths)
         });
 
         Pair<Integer, String> result = Script.executePipedCommands(commands, libvirtComputingResource.getCmdsTimeout());
