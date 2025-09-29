@@ -89,6 +89,8 @@ import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import static com.cloud.consoleproxy.ConsoleProxyManager.NoVncConsoleShowDot;
+
 public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAccessManager {
 
     @Inject
@@ -565,8 +567,9 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         if (param.getHypervHost() != null || !ConsoleProxyManager.NoVncConsoleDefault.value()) {
             sb.append("/ajax?token=").append(token);
         } else {
+            String showDot = NoVncConsoleShowDot.valueIn(vm.getDataCenterId()) ? "true" : "false";
             sb.append("/resource/noVNC/vnc.html")
-                    .append("?autoconnect=true&show_dot=true")
+                    .append("?autoconnect=true&show_dot=").append(showDot)
                     .append("&port=").append(vncPort)
                     .append("&token=").append(token);
             if (requiresVncOverWebSocketConnection(vm, hostVo) && StringUtils.isNotBlank(locale)) {
