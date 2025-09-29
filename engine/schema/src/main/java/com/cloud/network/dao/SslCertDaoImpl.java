@@ -40,4 +40,10 @@ public class SslCertDaoImpl extends GenericDaoBase<SslCertVO, Long> implements S
         return listBy(sc);
     }
 
+    @Override
+    public int removeByAccountId(long accountId) {
+        SearchCriteria<SslCertVO> sc = listByAccountId.create();
+        sc.setParameters("accountId", accountId);
+        return remove(sc);
+    }
 }

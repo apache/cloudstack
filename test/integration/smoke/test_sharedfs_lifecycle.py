@@ -38,7 +38,8 @@ from marvin.lib.base import (Account,
                              )
 from marvin.lib.common import (get_domain,
                                get_zone,
-                               get_template)
+                               get_template,
+                               list_storage_pools)
 from marvin.codes import FAILED
 
 from marvin.lib.decoratorGenerators import skipTestIf
@@ -258,15 +259,23 @@ class TestSharedFSLifecycle(cloudstackTestCase):
     def test_resize_shared_fs(self):
         """Resize the shared filesystem by changing the disk offering and validate
         """
+        sharedfs_pool_response = list_storage_pools(self.apiclient, id=self.sharedfs.storageid)
+        sharedfs_pool = sharedfs_pool_response[0]
+
         self.mountSharedFSOnVM(self.vm1_ssh_client, self.sharedfs)
         result = self.vm1_ssh_client.execute("df -Th /mnt/fs1 | grep nfs")[0]
         self.debug(result)
         size = result.split()[-5]
         self.debug("Size of the filesystem is " + size)
-        self.assertEqual(size, "2.0G", "SharedFS size should be 2.0G")
+        if sharedfs_pool.type.lower() == "powerflex":
+            self.assertEqual(size, "8.0G", "SharedFS size should be 8.0G")
+            new_size = 9
+        else:
+            self.assertEqual(size, "2.0G", "SharedFS size should be 2.0G")
+            new_size = 3
 
         response = SharedFS.stop(self.sharedfs, self.apiclient)
-        response = SharedFS.changediskoffering(self.sharedfs, self.apiclient, self.disk_offering.id, 3)
+        response = SharedFS.changediskoffering(self.sharedfs, self.apiclient, self.disk_offering.id, new_size)
         self.debug(response)
         response = SharedFS.start(self.sharedfs, self.apiclient)
         time.sleep(10)
@@ -274,4 +283,7 @@ class TestSharedFSLifecycle(cloudstackTestCase):
         result = self.vm1_ssh_client.execute("df -Th /mnt/fs1 | grep nfs")[0]
         size = result.split()[-5]
         self.debug("Size of the filesystem is " + size)
-        self.assertEqual(size, "3.0G", "SharedFS size should be 3.0G")
+        if sharedfs_pool.type.lower() == "powerflex":
+            self.assertEqual(size, "16G", "SharedFS size should be 16G")
+        else:
+            self.assertEqual(size, "3.0G", "SharedFS size should be 3.0G")

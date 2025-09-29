@@ -133,7 +133,7 @@
               </a-form-item>
             </a-col>
             <a-col :md="24" :lg="12">
-              <a-form-item v-if="backupProvider === 'nas'" name="quiescevm" ref="quiescevm">
+              <a-form-item v-if="isQuiesceVmSupported" name="quiescevm" ref="quiescevm">
                 <a-switch v-model:checked="form.quiescevm"/>
                 <template #label>
                   <tooltip-label :title="$t('label.quiescevm')" :tooltip="apiParams.quiescevm.description"/>
@@ -180,13 +180,13 @@ export default {
       type: Boolean,
       default: false
     },
-    dataSource: {
-      type: Object,
-      required: true
-    },
     resource: {
       type: Object,
       required: true
+    },
+    submitFn: {
+      type: Function,
+      default: null
     }
   },
   data () {
@@ -211,6 +211,11 @@ export default {
     this.fetchBackupOffering()
   },
   inject: ['refreshSchedule', 'closeSchedule'],
+  computed: {
+    isQuiesceVmSupported () {
+      return this.$isBackupProviderSupportsQuiesceVm(this.backupProvider)
+    }
+  },
   methods: {
     initForm () {
       this.formRef = ref()
@@ -226,6 +231,10 @@ export default {
       })
     },
     fetchBackupOffering () {
+      if ('backupoffering' in this.resource) {
+        this.backupProvider = this.resource.backupoffering.provider
+        return
+      }
       getAPI('listBackupOfferings', { id: this.resource.backupofferingid }).then(json => {
         if (json.listbackupofferingsresponse && json.listbackupofferingsresponse.backupoffering) {
           const backupoffering = json.listbackupofferingsresponse.backupoffering[0]
@@ -304,6 +313,11 @@ export default {
           case 'monthly':
             params.schedule = [values.timeSelect.format('mm:HH'), values['day-of-month']].join(':')
             break
+        }
+        if (this.submitFn) {
+          this.submitFn(params)
+          this.resetForm()
+          return
         }
         this.actionLoading = true
         postAPI('createBackupSchedule', params).then(json => {

@@ -19,6 +19,7 @@
 import os
 import tempfile
 import time
+import math
 import unittest
 import urllib.error
 import urllib.parse
@@ -42,6 +43,7 @@ from marvin.lib.common import (get_domain,
                                get_zone,
                                find_storage_pool_type,
                                get_pod,
+                               list_storage_pools,
                                list_disk_offering)
 from marvin.lib.utils import (cleanup_resources, checkVolumeSize)
 from marvin.lib.utils import (format_volume_to_ext3,
@@ -235,7 +237,6 @@ class TestCreateVolume(cloudstackTestCase):
                         "Failed to start VM (ID: %s) " % vm.id)
                 timeout = timeout - 1
 
-            vol_sz = str(list_volume_response[0].size)
             ssh = self.virtual_machine.get_ssh_client(
                 reconnect=True
             )
@@ -243,6 +244,7 @@ class TestCreateVolume(cloudstackTestCase):
             list_volume_response = Volume.list(
                 self.apiClient,
                 id=volume.id)
+            vol_sz = str(list_volume_response[0].size)
             if list_volume_response[0].hypervisor.lower() == XEN_SERVER.lower():
                 volume_name = "/dev/xvd" + chr(ord('a') + int(list_volume_response[0].deviceid))
                 self.debug(" Using XenServer volume_name: %s" % (volume_name))
@@ -533,6 +535,17 @@ class TestVolumes(cloudstackTestCase):
         # Sleep to ensure the current state will reflected in other calls
         time.sleep(self.services["sleep"])
 
+        list_volume_response = Volume.list(
+            self.apiClient,
+            id=self.volume.id
+        )
+        volume = list_volume_response[0]
+
+        list_volume_pool_response = list_storage_pools(self.apiClient, id=volume.storageid)
+        volume_pool = list_volume_pool_response[0]
+        if volume_pool.type.lower() == "powerflex":
+            self.skipTest("Extract volume operation is unsupported for volumes on storage pool type %s" % volume_pool.type)
+
         cmd = extractVolume.extractVolumeCmd()
         cmd.id = self.volume.id
         cmd.mode = "HTTP_DOWNLOAD"
@@ -658,7 +671,15 @@ class TestVolumes(cloudstackTestCase):
                 type='DATADISK'
             )
             for vol in list_volume_response:
-                if vol.id == self.volume.id and int(vol.size) == (int(disk_offering_20_GB.disksize) * (1024 ** 3)) and vol.state == 'Ready':
+                list_volume_pool_response = list_storage_pools(
+                    self.apiClient,
+                    id=vol.storageid
+                )
+                volume_pool = list_volume_pool_response[0]
+                disksize = (int(disk_offering_20_GB.disksize))
+                if volume_pool.type.lower() == "powerflex":
+                    disksize = (int(math.ceil(disksize / 8) * 8))
+                if vol.id == self.volume.id and int(vol.size) == disksize * (1024 ** 3) and vol.state == 'Ready':
                     success = True
             if success:
                 break
@@ -925,7 +946,15 @@ class TestVolumes(cloudstackTestCase):
                 type='DATADISK'
             )
             for vol in list_volume_response:
-                if vol.id == self.volume.id and int(vol.size) == (20 * (1024 ** 3)) and vol.state == 'Ready':
+                list_volume_pool_response = list_storage_pools(
+                    self.apiClient,
+                    id=vol.storageid
+                )
+                volume_pool = list_volume_pool_response[0]
+                disksize = 20
+                if volume_pool.type.lower() == "powerflex":
+                    disksize = (int(math.ceil(disksize / 8) * 8))
+                if vol.id == self.volume.id and int(vol.size) == disksize * (1024 ** 3) and vol.state == 'Ready':
                     success = True
             if success:
                 break
@@ -1283,7 +1312,6 @@ class TestVolumeEncryption(cloudstackTestCase):
                     "Failed to start VM (ID: %s) " % vm.id)
             timeout = timeout - 1
 
-        vol_sz = str(list_volume_response[0].size)
         ssh = virtual_machine.get_ssh_client(
             reconnect=True
         )
@@ -1292,6 +1320,7 @@ class TestVolumeEncryption(cloudstackTestCase):
         list_volume_response = Volume.list(
             self.apiclient,
             id=volume.id)
+        vol_sz = str(list_volume_response[0].size)
 
         volume_name = "/dev/vd" + chr(ord('a') + int(list_volume_response[0].deviceid))
         self.debug(" Using KVM volume_name: %s" % (volume_name))
@@ -1410,7 +1439,6 @@ class TestVolumeEncryption(cloudstackTestCase):
                     "Failed to start VM (ID: %s) " % vm.id)
             timeout = timeout - 1
 
-        vol_sz = str(list_volume_response[0].size)
         ssh = virtual_machine.get_ssh_client(
             reconnect=True
         )
@@ -1419,6 +1447,12 @@ class TestVolumeEncryption(cloudstackTestCase):
         list_volume_response = Volume.list(
             self.apiclient,
             id=volume.id)
+        vol_sz = str(list_volume_response[0].size)
+        list_volume_pool_response = list_storage_pools(self.apiclient, id=list_volume_response[0].storageid)
+        volume_pool = list_volume_pool_response[0]
+        if volume_pool.type.lower() == "powerflex":
+            vol_sz = int(vol_sz)
+            vol_sz = str(vol_sz - (128 << 20) - ((vol_sz >> 30) * 200704))
 
         volume_name = "/dev/vd" + chr(ord('a') + int(list_volume_response[0].deviceid))
         self.debug(" Using KVM volume_name: %s" % (volume_name))
@@ -1543,7 +1577,6 @@ class TestVolumeEncryption(cloudstackTestCase):
                     "Failed to start VM (ID: %s) " % vm.id)
             timeout = timeout - 1
 
-        vol_sz = str(list_volume_response[0].size)
         ssh = virtual_machine.get_ssh_client(
             reconnect=True
         )
@@ -1552,6 +1585,12 @@ class TestVolumeEncryption(cloudstackTestCase):
         list_volume_response = Volume.list(
             self.apiclient,
             id=volume.id)
+        vol_sz = str(list_volume_response[0].size)
+        list_volume_pool_response = list_storage_pools(self.apiclient, id=list_volume_response[0].storageid)
+        volume_pool = list_volume_pool_response[0]
+        if volume_pool.type.lower() == "powerflex":
+            vol_sz = int(vol_sz)
+            vol_sz = str(vol_sz - (128 << 20) - ((vol_sz >> 30) * 200704))
 
         volume_name = "/dev/vd" + chr(ord('a') + int(list_volume_response[0].deviceid))
         self.debug(" Using KVM volume_name: %s" % (volume_name))

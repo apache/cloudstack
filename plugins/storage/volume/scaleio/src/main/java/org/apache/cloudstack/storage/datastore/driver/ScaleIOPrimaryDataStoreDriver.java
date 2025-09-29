@@ -573,8 +573,8 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     }
                 }
             } else {
-                 logger.debug("No encryption configured for data volume [id: {}, uuid: {}, name: {}]",
-                         volumeInfo.getId(), volumeInfo.getUuid(), volumeInfo.getName());
+                logger.debug("No encryption configured for volume [id: {}, uuid: {}, name: {}]",
+                        volumeInfo.getId(), volumeInfo.getUuid(), volumeInfo.getName());
             }
 
             return answer;
@@ -1592,7 +1592,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
      * @return true if resize is required
      */
     private boolean needsExpansionForEncryptionHeader(long srcSize, long dstSize) {
-        int headerSize = 32<<20; // ensure we have 32MiB for encryption header
+        int headerSize = 32 << 20; // ensure we have 32MiB for encryption header
         return srcSize + headerSize > dstSize;
     }
 

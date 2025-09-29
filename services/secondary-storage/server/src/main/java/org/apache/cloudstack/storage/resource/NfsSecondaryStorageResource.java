@@ -85,9 +85,11 @@ import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -2742,6 +2744,20 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return new PingStorageCommand(Host.Type.Storage, id, new HashMap<String, Boolean>());
     }
 
+    protected void configureStorageNetwork(Map<String, Object> params) {
+        _storageIp = MapUtils.getString(params, "storageip");
+        _storageNetmask = (String) params.get("storagenetmask");
+        _storageGateway = (String) params.get("storagegateway");
+        if (_storageIp == null && _inSystemVM && _eth1ip != null) {
+            String eth1Gateway = ObjectUtils.firstNonNull(_localgw, MapUtils.getString(params, "localgw"));
+            logger.info("Storage network not configured, using management network[ip: {}, netmask: {}, gateway: {}] for storage traffic",
+                    _eth1ip, _eth1mask, eth1Gateway);
+            _storageIp = _eth1ip;
+            _storageNetmask = _eth1mask;
+            _storageGateway = eth1Gateway;
+        }
+    }
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _eth1ip = (String)params.get("eth1ip");
@@ -2764,12 +2780,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             _inSystemVM = true;
         }
 
-        _storageIp = (String)params.get("storageip");
+        configureStorageNetwork(params);
         if (_storageIp == null && _inSystemVM) {
-            logger.warn("There is no storageip in /proc/cmdline, something wrong!");
+            logger.warn("No storageip in /proc/cmdline, something wrong! Even fallback to management network did not resolve storage IP.");
         }
-        _storageNetmask = (String)params.get("storagenetmask");
-        _storageGateway = (String)params.get("storagegateway");
         super.configure(name, params);
 
         _params = params;

@@ -98,7 +98,7 @@ def writeProgressBar(msg, result):
     sys.stdout.flush()
 
 class UnknownSystemException(Exception):
-    "This Excption is raised if the current operating enviornment is unknown"
+    "This Exception is raised if the current operating environment is unknown"
     pass
 
 class Distribution:

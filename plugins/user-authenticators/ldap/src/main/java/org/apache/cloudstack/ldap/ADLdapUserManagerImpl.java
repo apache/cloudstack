@@ -93,10 +93,14 @@ public class ADLdapUserManagerImpl extends OpenLdapUserManagerImpl implements Ld
     }
 
     protected String getMemberOfAttribute(final Long domainId) {
+        String rc;
         if(_ldapConfiguration.isNestedGroupsEnabled(domainId)) {
-            return MICROSOFT_AD_NESTED_MEMBERS_FILTER;
+            rc = MICROSOFT_AD_NESTED_MEMBERS_FILTER;
         } else {
-            return MICROSOFT_AD_MEMBERS_FILTER;
+            rc = MICROSOFT_AD_MEMBERS_FILTER;
         }
+        logger.trace("using memberOf filter = {} for domain with id {}", rc, domainId);
+
+        return rc;
     }
 }

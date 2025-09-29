@@ -61,6 +61,10 @@ import static com.cloud.network.Network.Service.NetworkACL;
 import static com.cloud.network.Network.Service.UserData;
 import static com.cloud.network.Network.Service.Firewall;
 
+import static org.apache.cloudstack.api.command.utils.OfferingUtils.isNetrisNatted;
+import static org.apache.cloudstack.api.command.utils.OfferingUtils.isNetrisRouted;
+import static org.apache.cloudstack.api.command.utils.OfferingUtils.isNsxWithoutLb;
+
 @APICommand(name = "createNetworkOffering", description = "Creates a network offering.", responseObject = NetworkOfferingResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateNetworkOfferingCmd extends BaseCmd {
@@ -297,7 +301,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
                         SourceNat.getName(),
                         PortForwarding.getName()));
             }
-            if (getNsxSupportsLbService()) {
+            if (getNsxSupportsLbService() || (provider != null && isNetrisNatted(getProvider(), getNetworkMode()))) {
                 services.add(Lb.getName());
             }
             if (Boolean.TRUE.equals(forVpc)) {
@@ -410,7 +414,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             else if (NetworkOffering.NetworkMode.NATTED.name().equalsIgnoreCase(getNetworkMode()) || NetworkACL.getName().equalsIgnoreCase(service)) {
                     serviceProviderMap.put(service, List.of(provider));
                 }
-            if (!getNsxSupportsLbService()) {
+            if (isNsxWithoutLb(getProvider(), getNsxSupportsLbService()) || isNetrisRouted(getProvider(), getNetworkMode())) {
                 serviceProviderMap.remove(Lb.getName());
             }
         }

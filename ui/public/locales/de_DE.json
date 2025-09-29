@@ -259,6 +259,7 @@
 "label.available": "Verfügbar",
 "label.back": "Zurück",
 "label.backup": "Backup",
+"label.backups": "Backup",
 "label.backup.attach.restore": "Backup-Volume wiederherstellen und anhängen",
 "label.backup.offering.assign": "VM zum Backup-Angebot zuordnen",
 "label.backup.offering.remove": "VM vom Backup-Angebot entfernen",

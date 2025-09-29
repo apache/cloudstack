@@ -597,3 +597,14 @@ export const extensionsUtilPlugin = {
     }
   }
 }
+
+export const backupUtilPlugin = {
+  install (app) {
+    app.config.globalProperties.$isBackupProviderSupportsQuiesceVm = function (provider) {
+      if (!provider && typeof provider !== 'string') {
+        return false
+      }
+      return ['nas'].includes(provider.toLowerCase())
+    }
+  }
+}

@@ -1,7 +1,7 @@
 # Apache CloudStack Installation basics
 
 This document describes how to develop, build, package and install Apache
-CloudStack. For more information please refer to the official [documentation](http://docs.cloudstack.apache.org)
+CloudStack. For more information please refer to the official [documentation](https://docs.cloudstack.apache.org)
 or the developer [wiki](https://cwiki.apache.org/confluence/display/CLOUDSTACK/Home).
 
 Apache CloudStack developers use various platforms for development, this guide
@@ -41,7 +41,7 @@ Start the MySQL service:
 
 ### Using jenv and/or pyenv for Version Management
 
-CloudStack is built using Java and Python.  To make selection of these tools versions more consistent and ease installation for developers, optional support for [jenv](http://www.jenv.be/) and [pyenv](https://github.com/yyuu/pyenv) with [virtualenv]|(https://github.com/yyuu/pyenv-virtualenv) is provided.  jenv installation instructions are available here and pyenv installation instructions are available here.  For users of [oh-my-zsh](http://ohmyz.sh/) there is a pyenv plugin available to trigger configuration of pyenv in a shell session.
+CloudStack is built using Java and Python.  To make selection of these tools versions more consistent and ease installation for developers, optional support for [jenv](http://www.jenv.be/) and [pyenv](https://github.com/yyuu/pyenv) with [virtualenv]|(https://github.com/yyuu/pyenv-virtualenv) is provided.  jenv installation instructions are available here and pyenv installation instructions are available here.  For users of [oh-my-zsh](https://ohmyz.sh/) there is a pyenv plugin available to trigger configuration of pyenv in a shell session.
 
 Following installation, execute the following commands to configure jenv and pyenv for use with CloudStack development:
 
@@ -171,7 +171,7 @@ All the rpm packages will be created in `dist/rpmbuild/RPMS/x86_64` directory.
 
 ## Notes
 
-If you will be using Xen as your hypervisor, please download [vhd-util](http://download.cloudstack.org/tools/vhd-util)
+If you will be using Xen as your hypervisor, please download [vhd-util](https://download.cloudstack.org/tools/vhd-util)
 
 If management server is installed on RHEL/CentOS, then copy vhd-util into:
 
