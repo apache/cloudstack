@@ -264,7 +264,7 @@ export default {
     fetchZoneData () {
       this.zones = []
       const params = {}
-      if (this.resource.zoneid && this.$route.name === 'deployVirtualMachine') {
+      if (this.resource.zoneid && (this.$route.name === 'deployVirtualMachine' || this.$route.path.startsWith('/backup'))) {
         params.id = this.resource.zoneid
       }
       params.showicon = true
