@@ -724,7 +724,7 @@
                         </div>
                       </a-card>
                     </a-form-item>
-                    <a-form-item v-if="extraConfigEnabledValue" name="extraconfig" ref="extraconfig">
+                    <a-form-item v-if="extraConfigEnabled" name="extraconfig" ref="extraconfig">
                       <template #label>
                         <tooltip-label :title="$t('label.extraconfig')" :tooltip="$t('label.extraconfig.tooltip')"/>
                       </template>
@@ -1424,7 +1424,7 @@ export default {
     dynamicScalingVmConfigValue () {
       return this.$store.getters.features.dynamicscalingenabled
     },
-    extraConfigEnabledValue () {
+    extraConfigEnabled () {
       return this.$store.getters.features.additionalconfigenabled
     },
     isCustomizedDiskIOPS () {

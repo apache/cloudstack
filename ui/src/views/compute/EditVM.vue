@@ -170,8 +170,20 @@ export default {
       groups: {
         loading: false,
         opts: []
-      },
-      extraConfigEnabled: this.$store.getters.features.additionalconfigenabled
+      }
+    }
+  },
+  computed: {
+    extraConfigEnabled () {
+      return this.$store.getters.features.additionalconfigenabled
+    },
+    combinedExtraConfig () {
+      if (!this.extraConfigEnabled || !this.resource.details) return ''
+      const configs = Object.keys(this.resource.details)
+        .filter(key => key.startsWith('extraconfig-'))
+        .map(key => this.resource.details[key] || '')
+        .filter(val => val.trim())
+      return configs.join('\n\n')
     }
   },
   beforeCreate () {
@@ -192,7 +204,8 @@ export default {
         deleteprotection: this.resource.deleteprotection,
         group: this.resource.group,
         userdata: '',
-        haenable: this.resource.haenable
+        haenable: this.resource.haenable,
+        extraconfig: this.combinedExtraConfig
       })
       this.rules = reactive({})
     },
