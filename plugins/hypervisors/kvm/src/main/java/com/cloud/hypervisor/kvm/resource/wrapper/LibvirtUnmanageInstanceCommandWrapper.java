@@ -19,11 +19,34 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringWriter;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
+
+import org.apache.cloudstack.utils.security.ParserUtils;
+import org.apache.commons.io.IOUtils;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.LibvirtException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.UnmanageInstanceAnswer;
@@ -48,12 +71,15 @@ public final class LibvirtUnmanageInstanceCommandWrapper extends CommandWrapper<
         logger.debug("Attempting to unmanage KVM instance: {}", instanceName);
         Domain dom = null;
         Connect conn = null;
+        String vmFinalSpecification;
         try {
             if (vmSpec == null) {
                 conn = libvirtUtilitiesHelper.getConnectionByVmName(instanceName);
                 dom = conn.domainLookupByName(instanceName);
-                String domainXML = dom.getXMLDesc(1);
-                conn.domainDefineXML(domainXML).free();
+                vmFinalSpecification = dom.getXMLDesc(1);
+                if (command.isConfigDriveAttached()) {
+                    vmFinalSpecification = cleanupConfigDrive(vmFinalSpecification, instanceName);
+                }
             } else {
                 // define domain using reconstructed vmSpec
                 logger.debug("Unmanaging Stopped KVM instance: {}", instanceName);
@@ -61,16 +87,23 @@ public final class LibvirtUnmanageInstanceCommandWrapper extends CommandWrapper<
                 libvirtComputingResource.createVbd(conn, vmSpec, instanceName, vm);
                 conn = libvirtUtilitiesHelper.getConnectionByType(vm.getHvsType());
                 String vmInitialSpecification = vm.toString();
-                String vmFinalSpecification = performXmlTransformHook(vmInitialSpecification, libvirtComputingResource);
-                conn.domainDefineXML(vmFinalSpecification).free();
+                vmFinalSpecification = performXmlTransformHook(vmInitialSpecification, libvirtComputingResource);
             }
-            logger.debug("Successfully unmanaged KVM instance: {}", instanceName);
+            conn.domainDefineXML(vmFinalSpecification).free();
+            logger.debug("Successfully unmanaged KVM instance: {} with domain XML: {}", instanceName, vmFinalSpecification);
             return new UnmanageInstanceAnswer(command, true, "Successfully unmanaged");
         } catch (final LibvirtException e) {
-            logger.warn("LibvirtException occurred during unmanaging instance: {} ", instanceName, e);
+            logger.error("LibvirtException occurred during unmanaging instance: {} ", instanceName, e);
             return new UnmanageInstanceAnswer(command, false, e.getMessage());
-        } catch (final URISyntaxException | InternalErrorException e) {
-            logger.warn("URISyntaxException ", e);
+        } catch (final IOException
+                       | ParserConfigurationException
+                       | SAXException
+                       | TransformerException
+                       | XPathExpressionException
+                       | InternalErrorException
+                       | URISyntaxException e) {
+
+            logger.error("Failed to unmanage Instance: {}.", instanceName, e);
             return new UnmanageInstanceAnswer(command, false, e.getMessage());
         } finally {
             if (dom != null) {
@@ -81,6 +114,45 @@ public final class LibvirtUnmanageInstanceCommandWrapper extends CommandWrapper<
                 }
             }
         }
+    }
+
+    String cleanupConfigDrive(String domainXML, String instanceName) throws ParserConfigurationException, IOException, SAXException, XPathExpressionException, TransformerException {
+        String isoName = "/" + instanceName + ".iso";
+        DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
+        DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+        Document document;
+        try (InputStream inputStream = IOUtils.toInputStream(domainXML, StandardCharsets.UTF_8)) {
+            document = docBuilder.parse(inputStream);
+        }
+        XPathFactory xPathFactory = XPathFactory.newInstance();
+        XPath xpath = xPathFactory.newXPath();
+
+        // Find all <disk device='cdrom'> elements with source file containing instanceName.iso
+        String expression = String.format("//disk[@device='cdrom'][source/@file[contains(., '%s')]]", isoName);
+        NodeList cdromDisks = (NodeList) xpath.evaluate(expression, document, XPathConstants.NODESET);
+
+        // If nothing matched, return original XML
+        if (cdromDisks == null || cdromDisks.getLength() == 0) {
+            logger.debug("No config drive found in domain XML for Instance: {}", instanceName);
+            return domainXML;
+        }
+
+        // Remove all matched config drive disks
+        for (int i = 0; i < cdromDisks.getLength(); i++) {
+            Node diskNode = cdromDisks.item(i);
+            if (diskNode != null && diskNode.getParentNode() != null) {
+                diskNode.getParentNode().removeChild(diskNode);
+            }
+        }
+        logger.debug("Removed {} config drive ISO CD-ROM entries for instance: {}", cdromDisks.getLength(), instanceName);
+
+        TransformerFactory transformerFactory = ParserUtils.getSaferTransformerFactory();
+        Transformer transformer = transformerFactory.newTransformer();
+        DOMSource source = new DOMSource(document);
+        StringWriter output = new StringWriter();
+        StreamResult result = new StreamResult(output);
+        transformer.transform(source, result);
+        return output.toString();
     }
 
     private String performXmlTransformHook(String vmInitialSpecification, final LibvirtComputingResource libvirtComputingResource) {

@@ -42,6 +42,7 @@ import org.apache.cloudstack.api.response.UnmanageVMInstanceResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.vm.UnmanagedVMsManager;
+import org.apache.commons.lang3.BooleanUtils;
 
 import javax.inject.Inject;
 
@@ -74,6 +75,13 @@ public class UnmanageVMInstanceCmd extends BaseAsyncCmd {
             since = "4.22.0")
     private Long hostId;
 
+    @Parameter(name = ApiConstants.FORCED,
+            type = CommandType.BOOLEAN,
+            required = false,
+            description = "Force unmanaging Instance with config drive. Applicable only for KVM Hypervisor.",
+            since = "4.22.0")
+    private Boolean forced;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -100,6 +108,10 @@ public class UnmanageVMInstanceCmd extends BaseAsyncCmd {
         this.hostId = hostId;
     }
 
+    public Boolean isForced() {
+        return BooleanUtils.isTrue(forced);
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -110,7 +122,7 @@ public class UnmanageVMInstanceCmd extends BaseAsyncCmd {
         UnmanageVMInstanceResponse response = new UnmanageVMInstanceResponse();
         try {
             CallContext.current().setEventDetails("VM ID = " + vmId);
-            Pair<Boolean, String> result = unmanagedVMsManager.unmanageVMInstance(vmId, hostId);
+            Pair<Boolean, String> result = unmanagedVMsManager.unmanageVMInstance(vmId, hostId, isForced());
             if (result.first()) {
                 response.setSuccess(true);
                 response.setHostId(result.second());

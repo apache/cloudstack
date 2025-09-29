@@ -2254,7 +2254,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_UNMANAGE, eventDescription = "unmanaging VM", async = true)
-    public Pair<Boolean, String> unmanageVMInstance(long vmId, Long paramHostId) {
+    public Pair<Boolean, String> unmanageVMInstance(long vmId, Long paramHostId, boolean isForced) {
         VMInstanceVO vmVO = vmDao.findById(vmId);
         if (vmVO == null || vmVO.getRemoved() != null) {
             throw new InvalidParameterValueException("Could not find VM to unmanage, it is either removed or not existing VM");
@@ -2268,6 +2268,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         } else if (paramHostId != null &&
                 (vmVO.getHypervisorType() != Hypervisor.HypervisorType.KVM || vmVO.getState() != VirtualMachine.State.Stopped)) {
             throw new UnsupportedServiceException("Param hostid is only supported for KVM hypervisor for stopped Instances.");
+        } else if (!isForced && vmVO.getHypervisorType() == Hypervisor.HypervisorType.KVM
+                && vmInstanceDetailsDao.findDetail(vmId, VmDetailConstants.CONFIG_DRIVE_LOCATION) != null) {
+            throw new UnsupportedServiceException("Config drive is attached to Instance, use forced param true from API to unmanage it.");
         }
 
         if (vmVO.getType().equals(VirtualMachine.Type.User)) {

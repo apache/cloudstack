@@ -27,6 +27,7 @@ public class UnmanageInstanceCommand extends Command {
     String instanceName;
     boolean executeInSequence = false;
     VirtualMachineTO vm;
+    boolean isConfigDriveAttached;
 
     @Override
     public boolean executeInSequence() {
@@ -48,5 +49,13 @@ public class UnmanageInstanceCommand extends Command {
 
     public VirtualMachineTO getVm() {
         return vm;
+    }
+
+    public boolean isConfigDriveAttached() {
+        return isConfigDriveAttached;
+    }
+
+    public void setConfigDriveAttached(boolean configDriveAttached) {
+        isConfigDriveAttached = configDriveAttached;
     }
 }

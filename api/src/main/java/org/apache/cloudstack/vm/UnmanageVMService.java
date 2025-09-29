@@ -26,5 +26,5 @@ public interface UnmanageVMService {
      *
      * @return (true if successful, false if not, hostUuid) if the VM is successfully unmanaged.
      */
-    Pair<Boolean, String> unmanageVMInstance(long vmId, Long paramHostId);
+    Pair<Boolean, String> unmanageVMInstance(long vmId, Long paramHostId, boolean isForced);
 }
