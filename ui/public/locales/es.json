@@ -222,6 +222,7 @@
 "label.available": "Disponible",
 "label.back": "Volver",
 "label.backup": "Respaldos",
+"label.backups": "Respaldos",
 "label.backup.attach.restore": "Restaurar y conectar un Volumen de Respaldo",
 "label.backup.offering.assign": "Asignar instancia a una oferta de respaldo",
 "label.backup.offering.remove": "remover instancia de una oferta de respaldo",

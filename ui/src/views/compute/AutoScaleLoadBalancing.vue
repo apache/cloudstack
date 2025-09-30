@@ -284,6 +284,7 @@
             <a-select-option value="tcp-proxy">{{ $t('label.tcp.proxy') }}</a-select-option>
             <a-select-option value="tcp">{{ $t('label.tcp') }}</a-select-option>
             <a-select-option value="udp">{{ $t('label.udp') }}</a-select-option>
+            <a-select-option value="ssl">{{ $t('label.ssl') }}</a-select-option>
           </a-select>
         </div>
         <div :span="24" class="action-button">
