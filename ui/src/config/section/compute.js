@@ -717,7 +717,7 @@ export default {
               name: 'endpoint.url'
             }
             const json = await getAPI('listConfigurations', params)
-            const configuration = json?.listconfigurationsresponse?.configuration || {}
+            const configuration = json?.listconfigurationsresponse?.configuration?.[0] || {}
             return !configuration.value || configuration.value.startsWith('http://localhost')
           },
           actions: [
