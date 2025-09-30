@@ -652,7 +652,7 @@ describe('Views > AutogenView.vue', () => {
           testapinamecase1response: {
             count: 0,
             testapinamecase1: [{
-              id: 'test-id-1',
+              id: 'uuid1',
               name: 'test-name-1'
             }]
           }
@@ -668,7 +668,7 @@ describe('Views > AutogenView.vue', () => {
             command: 'testApiNameCase1',
             response: 'json',
             listall: true,
-            id: 'test-id',
+            id: 'uuid1',
             hostname: 'test-id',
             page: 1,
             pagesize: 20
@@ -786,13 +786,13 @@ describe('Views > AutogenView.vue', () => {
         await flushPromises()
 
         expect(wrapper.vm.items).toEqual([{
-          id: 'test-hostname-value',
+          id: 'uuid1',
           name: 'test-name-value',
           hostname: 'test-hostname-value',
           key: 0
         }])
         expect(wrapper.vm.resource).toEqual({
-          id: 'test-hostname-value',
+          id: 'uuid1',
           name: 'test-name-value',
           hostname: 'test-hostname-value',
           key: 0
