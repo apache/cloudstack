@@ -777,6 +777,7 @@ describe('Views > AutogenView.vue', () => {
           testapinamecase1response: {
             count: 1,
             testapinamecase1: [{
+              id: 'uuid1',
               name: 'test-name-value',
               hostname: 'test-hostname-value'
             }]
