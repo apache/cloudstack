@@ -657,7 +657,7 @@ describe('Views > AutogenView.vue', () => {
             }]
           }
         })
-        await router.push({ name: 'testRouter13', params: { id: 'test-id' } })
+        await router.push({ name: 'testRouter13', params: { id: 'uuid1' } })
         await flushPromises()
 
         expect(mockAxios).toHaveBeenCalled()
@@ -669,7 +669,6 @@ describe('Views > AutogenView.vue', () => {
             response: 'json',
             listall: true,
             id: 'uuid1',
-            hostname: 'test-id',
             page: 1,
             pagesize: 20
           })
