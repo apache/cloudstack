@@ -2515,20 +2515,31 @@ public class AutoScaleManagerImplTest {
         Assert.assertEquals(result.first(), result.second());
     }
 
-    @Test
-    public void getNextVmHostAndDisplayNameGeneratesCorrectHostAndDisplayNameForWindowsTemplate() {
-        GuestOSVO guestOS = Mockito.mock(GuestOSVO.class);
+    private void runGetNextVmHostAndDisplayNameGeneratesCorrectHostAndDisplayNameForWindowsTemplate() {
         when(asVmGroupMock.getName()).thenReturn(vmGroupName);
         when(asVmGroupMock.getNextVmSeq()).thenReturn(1L);
         when(templateMock.getGuestOSId()).thenReturn(1L);
-        when(guestOS.getName()).thenReturn("Windows Server");
-        when(guestOSDao.findById(1L)).thenReturn(guestOS);
         Pair<String, String> result = autoScaleManagerImplSpy.getNextVmHostAndDisplayName(asVmGroupMock, templateMock);
         String vmHostNamePattern = AutoScaleManagerImpl.VM_HOSTNAME_PREFIX + vmGroupName +
                 "-" + asVmGroupMock.getNextVmSeq() + "-[a-z]{6}";
         Assert.assertTrue(result.second().matches(vmHostNamePattern));
         Assert.assertEquals(15, result.first().length());
         Assert.assertTrue(result.second().endsWith(result.first()));
+
+    }
+
+    @Test
+    public void getNextVmHostAndDisplayNameGeneratesCorrectHostAndDisplayNameForWindowsTemplateUsingGuestOsName() {
+        GuestOSVO guestOS = Mockito.mock(GuestOSVO.class);
+        when(guestOS.getName()).thenReturn("Windows Server");
+        when(guestOSDao.findById(1L)).thenReturn(guestOS);
+    }
+
+    @Test
+    public void getNextVmHostAndDisplayNameGeneratesCorrectHostAndDisplayNameForWindowsTemplateUsingGuestOsDisplayName() {
+        GuestOSVO guestOS = Mockito.mock(GuestOSVO.class);
+        when(guestOS.getDisplayName()).thenReturn("Windows Server");
+        when(guestOSDao.findById(1L)).thenReturn(guestOS);
     }
 
     @Test
