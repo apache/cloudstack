@@ -1432,7 +1432,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     private void deleteExistingSecondaryStorageUsageForVolume(long volId, long accountId, Date deletedDate) {
         List<UsageStorageVO> storageVOs = _usageStorageDao.listById(accountId, volId, StorageTypes.VOLUME);
         for (UsageStorageVO storageVO : storageVOs) {
-            logger.debug(String.format("Setting the volume with id: {} to 'deleted' in the usage_storage table for account: {}.", volId, accountId));
+            logger.debug("Setting the volume with id: {} to 'deleted' in the usage_storage table for account: {}.", volId, accountId);
             storageVO.setDeleted(deletedDate);
             _usageStorageDao.update(storageVO);
         }
@@ -1442,8 +1442,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         List<UsageVolumeVO> volumesVOs = _usageVolumeDao.listByVolumeId(volId, accountId);
         for (UsageVolumeVO volumesVO : volumesVOs) {
             if (volumesVO.getVmId() != null) {
-                logger.debug(String.format("Setting the volume with id: {} for instance id: {} to 'deleted' in the usage_volume table for account {}.",
-                        volumesVO.getVolumeId(), volumesVO.getVmId(), accountId));
+                logger.debug("Setting the volume with id: {} for instance id: {} to 'deleted' in the usage_volume table for account {}.",
+                        volumesVO.getVolumeId(), volumesVO.getVmId(), accountId);
                 volumesVO.setDeleted(deletedDate);
                 _usageVolumeDao.update(volumesVO.getId(), volumesVO);
             }
@@ -1453,7 +1453,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     private void deleteExistingVolumeUsage(long volId, long accountId, Date deletedDate) {
         List<UsageVolumeVO> volumesVOs = _usageVolumeDao.listByVolumeId(volId, accountId);
         for (UsageVolumeVO volumesVO : volumesVOs) {
-            logger.debug(String.format("Setting the volume with id: {} to 'deleted' in the usage_storage table for account: {}.", volId, accountId));
+            logger.debug("Setting the volume with id: {} to 'deleted' in the usage_volume table for account: {}.", volId, accountId);
             volumesVO.setDeleted(deletedDate);
             _usageVolumeDao.update(volumesVO.getId(), volumesVO);
         }
@@ -1479,7 +1479,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 deleteExistingVolumeUsage(volId, event.getAccountId(), event.getCreateDate());
             }
 
-            logger.debug(String.format("Creating a new entry in usage_volume for volume with id: {} for account: {}", volId, event.getVmId(), event.getAccountId()));
+            logger.debug("Creating a new entry in usage_volume for volume with id: {} for account: {}", volId, event.getAccountId());
             volumeVO = new UsageVolumeVO(volId, event.getZoneId(), event.getAccountId(), acct.getDomainId(), event.getOfferingId(), event.getTemplateId(), null, event.getSize(), event.getCreateDate(), null);
             _usageVolumeDao.persist(volumeVO);
 
@@ -1494,10 +1494,9 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             for (UsageVolumeVO volumesVO : volumesVOs) {
                 String delete_msg = String.format("Setting the volume with id: {} to 'deleted' in the usage_storage table for account: {}.", volId, event.getAccountId());
                 String create_msg = String.format("Creating a new entry in usage_volume for volume with id: {} after resize for account: {}", volId, event.getAccountId());
-                Long vmId = null;
+                Long vmId = volumesVO.getVmId();
                 if (vmId != null) {
-                    vmId = volumesVO.getVmId();
-                    delete_msg = String.format("Setting the volume with id: {} for instance id: {} to 'deleted' in the usage_storage table for account: {}.",
+                    delete_msg = String.format("Setting the volume with id: {} for instance id: {} to 'deleted' in the usage_volume table for account: {}.",
                             volId, vmId, event.getAccountId());
                     create_msg = String.format("Creating a new entry in usage_volume for volume with id: {} and instance id: {} after resize for account: {}",
                             volId, vmId, event.getAccountId());
@@ -1519,8 +1518,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         case EventTypes.EVENT_VOLUME_ATTACH:
             deleteExistingInstanceVolumeUsage(event.getResourceId(), event.getAccountId(), event.getCreateDate());
 
-            logger.debug(String.format("Creating a new entry in usage_volume for volume with id: {}, and instance id: {} for account: {}",
-                    volId, event.getVmId(), event.getAccountId()));
+            logger.debug("Creating a new entry in usage_volume for volume with id: {}, and instance id: {} for account: {}",
+                    volId, event.getVmId(), event.getAccountId());
             volumeVO = new UsageVolumeVO(volId, event.getZoneId(), event.getAccountId(), acct.getDomainId(), event.getOfferingId(), event.getTemplateId(), event.getVmId(), event.getSize(), event.getCreateDate(), null);
             _usageVolumeDao.persist(volumeVO);
             break;
@@ -1532,7 +1531,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         case EventTypes.EVENT_VOLUME_UPLOAD:
             deleteExistingSecondaryStorageUsageForVolume(volId, event.getAccountId(), event.getCreateDate());
 
-            logger.debug(String.format("Creating a new entry in usage_storage for volume with id : {} for account: {}", volId, event.getAccountId()));
+            logger.debug("Creating a new entry in usage_storage for volume with id : {} for account: {}", volId, event.getAccountId());
             UsageStorageVO storageVO = new UsageStorageVO(volId, event.getZoneId(), event.getAccountId(), acct.getDomainId(), StorageTypes.VOLUME, event.getTemplateId(), event.getSize(), event.getCreateDate(), null);
             _usageStorageDao.persist(storageVO);
             break;
