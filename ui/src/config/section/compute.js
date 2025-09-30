@@ -655,7 +655,7 @@ export default {
             }
             try {
               const json = await getAPI(api, {})
-              const versions = json?.listkubernetessupportedversionsresponse?.version || []
+              const versions = json?.listkubernetessupportedversionsresponse?.kubernetessupportedversion || []
               return versions.length === 0
             } catch (error) {}
             return false
