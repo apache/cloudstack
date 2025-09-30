@@ -1492,13 +1492,13 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         case EventTypes.EVENT_VOLUME_RESIZE:
             volumesVOs = _usageVolumeDao.listByVolumeId(volId, event.getAccountId());
             for (UsageVolumeVO volumesVO : volumesVOs) {
-                String delete_msg = String.format("Setting the volume with id: {} to 'deleted' in the usage_storage table for account: {}.", volId, event.getAccountId());
-                String create_msg = String.format("Creating a new entry in usage_volume for volume with id: {} after resize for account: {}", volId, event.getAccountId());
+                String delete_msg = String.format("Setting the volume with id: %s to 'deleted' in the usage_storage table for account: %s.", volId, event.getAccountId());
+                String create_msg = String.format("Creating a new entry in usage_volume for volume with id: %s after resize for account: %s", volId, event.getAccountId());
                 Long vmId = volumesVO.getVmId();
                 if (vmId != null) {
-                    delete_msg = String.format("Setting the volume with id: {} for instance id: {} to 'deleted' in the usage_volume table for account: {}.",
+                    delete_msg = String.format("Setting the volume with id: %s for instance id: %s to 'deleted' in the usage_volume table for account: %s.",
                             volId, vmId, event.getAccountId());
-                    create_msg = String.format("Creating a new entry in usage_volume for volume with id: {} and instance id: {} after resize for account: {}",
+                    create_msg = String.format("Creating a new entry in usage_volume for volume with id: %s and instance id: %s after resize for account: %s",
                             volId, vmId, event.getAccountId());
                 }
                 logger.debug(delete_msg);
