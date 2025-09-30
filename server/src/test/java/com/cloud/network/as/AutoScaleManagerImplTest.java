@@ -2533,6 +2533,7 @@ public class AutoScaleManagerImplTest {
         GuestOSVO guestOS = Mockito.mock(GuestOSVO.class);
         when(guestOS.getName()).thenReturn("Windows Server");
         when(guestOSDao.findById(1L)).thenReturn(guestOS);
+        runGetNextVmHostAndDisplayNameGeneratesCorrectHostAndDisplayNameForWindowsTemplate();
     }
 
     @Test
@@ -2540,6 +2541,7 @@ public class AutoScaleManagerImplTest {
         GuestOSVO guestOS = Mockito.mock(GuestOSVO.class);
         when(guestOS.getDisplayName()).thenReturn("Windows Server");
         when(guestOSDao.findById(1L)).thenReturn(guestOS);
+        runGetNextVmHostAndDisplayNameGeneratesCorrectHostAndDisplayNameForWindowsTemplate();
     }
 
     @Test
