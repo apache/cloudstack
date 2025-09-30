@@ -723,7 +723,7 @@ export default {
           actions: [
             {
               primary: true,
-              label: 'label.fix.configuration',
+              label: 'label.fix.global.setting',
               show: (store) => { return ('updateConfiguration' in store.getters.apis) },
               run: async () => {
                 let url = ''
@@ -743,8 +743,8 @@ export default {
                 } catch (error) {}
                 return false
               },
-              successMessage: 'message.config.updated',
-              errorMessage: 'message.config.update.failed'
+              successMessage: 'message.global.setting.updated',
+              errorMessage: 'message.global.setting.update.failed'
             },
             {
               label: 'label.go.to.global.settings',
