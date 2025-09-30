@@ -23,20 +23,21 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 import java.util.UUID;
 
 @Entity
 @Table(name = "ldap_configuration")
-public class LdapConfigurationVO implements InternalIdentity {
-    @Column(name = "hostname")
-    private String hostname;
-
+public class LdapConfigurationVO implements Identity, InternalIdentity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
+
+    @Column(name = "hostname")
+    private String hostname;
 
     @Column(name = "uuid")
     private String uuid;

@@ -23,9 +23,9 @@ import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
 import org.apache.cloudstack.api.EntityReference;
-import org.apache.cloudstack.ldap.LdapConfiguration;
+import org.apache.cloudstack.ldap.LdapConfigurationVO;
 
-@EntityReference(value = LdapConfiguration.class)
+@EntityReference(value = LdapConfigurationVO.class)
 public class LdapConfigurationResponse extends BaseResponse {
     @SerializedName("id")
     @Param(description = "the ID of the LDAP configuration")
