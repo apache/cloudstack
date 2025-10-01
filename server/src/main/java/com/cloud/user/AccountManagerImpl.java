@@ -1398,7 +1398,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
      - New role should not be of type Admin with domain other than ROOT domain
      */
     protected void validateRoleChange(Account account, Role role, Account caller) {
-        if (account.getRoleId() == role.getId()) {
+        if (account.getRoleId() != null && account.getRoleId().equals(role.getId())) {
             return;
         }
         Role currentRole = roleService.findRole(account.getRoleId());
