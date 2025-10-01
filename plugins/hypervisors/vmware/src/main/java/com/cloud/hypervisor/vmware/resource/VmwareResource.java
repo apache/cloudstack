@@ -5844,7 +5844,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                             result = true;
                             details = null;
                             for (var ipAddr : guestInfoNic.getIpAddress()) {
-                                if (cmd.getVmNetworkCidr() == null || NetUtils.isIpWithInCidrRange(ipAddr, cmd.getVmNetworkCidr())) {
+                                if (NetUtils.isValidIp4(ipAddr) && (cmd.getVmNetworkCidr() == null || NetUtils.isIpWithInCidrRange(ipAddr, cmd.getVmNetworkCidr()))) {
                                     details = ipAddr;
                                 }
                             }
