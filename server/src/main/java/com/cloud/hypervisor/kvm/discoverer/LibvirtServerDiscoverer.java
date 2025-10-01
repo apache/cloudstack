@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -69,6 +68,7 @@ import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SSHCmdHelper;
 import com.trilead.ssh2.Connection;
@@ -241,7 +241,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
 
         // Set cluster GUID based on cluster ID if null
         if (cluster.getGuid() == null) {
-            cluster.setGuid(UUID.nameUUIDFromBytes(String.valueOf(clusterId).getBytes()).toString());
+            cluster.setGuid(UuidUtils.nameUUIDFromBytes(String.valueOf(clusterId).getBytes()).toString());
             _clusterDao.update(clusterId, cluster);
         }
 
@@ -259,7 +259,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             String hostname = uri.getHost();
             InetAddress ia = InetAddress.getByName(hostname);
             agentIp = ia.getHostAddress();
-            String guid = UUID.nameUUIDFromBytes(agentIp.getBytes()).toString();
+            String guid = UuidUtils.nameUUIDFromBytes(agentIp.getBytes()).toString();
 
             List<HostVO> existingHosts = _resourceMgr.listAllHostsInOneZoneByType(Host.Type.Routing, dcId);
             if (existingHosts != null) {

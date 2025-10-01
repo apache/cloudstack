@@ -337,11 +337,11 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     }
 
     @Override
-    public boolean restoreBackupToVM(VirtualMachine vm, Backup backup, String hostIp, String dataStoreUuid) {
+    public Pair<Boolean, String> restoreBackupToVM(VirtualMachine vm, Backup backup, String hostIp, String dataStoreUuid) {
         final Long zoneId = backup.getZoneId();
         final String restorePointId = backup.getExternalId();
         final String restoreLocation = vm.getInstanceName();
-        return getClient(zoneId).restoreVMToDifferentLocation(restorePointId, restoreLocation, hostIp, dataStoreUuid).first();
+        return getClient(zoneId).restoreVMToDifferentLocation(restorePointId, restoreLocation, hostIp, dataStoreUuid);
     }
 
     @Override
@@ -356,6 +356,11 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
 
     @Override
     public void syncBackupStorageStats(Long zoneId) {
+    }
+
+    @Override
+    public Boolean crossZoneInstanceCreationEnabled(BackupOffering backupOffering) {
+        return false;
     }
 
     @Override

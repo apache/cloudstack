@@ -851,30 +851,6 @@ public class ConfigurationManagerImplTest {
     }
 
     @Test
-    public void shouldValidateConfigRangeTestValueIsNullReturnFalse() {
-        boolean result = configurationManagerImplSpy.shouldValidateConfigRange(Config.ConsoleProxyUrlDomain.name(), null, Config.ConsoleProxyUrlDomain);
-        Assert.assertFalse(result);
-    }
-
-    @Test
-    public void shouldValidateConfigRangeTestConfigIsNullReturnFalse() {
-        boolean result = configurationManagerImplSpy.shouldValidateConfigRange("", "test", null);
-        Assert.assertFalse(result);
-    }
-
-    @Test
-    public void shouldValidateConfigRangeTestConfigDoesNotHaveARangeReturnFalse() {
-        boolean result = configurationManagerImplSpy.shouldValidateConfigRange(Config.ConsoleProxySessionMax.name(), "test", Config.ConsoleProxySessionMax);
-        Assert.assertFalse(result);
-    }
-
-    @Test
-    public void shouldValidateConfigRangeTestValueIsNotNullAndConfigHasRangeReturnTrue() {
-        boolean result = configurationManagerImplSpy.shouldValidateConfigRange(Config.ConsoleProxySessionMax.name(), "test", Config.ConsoleProxyUrlDomain);
-        Assert.assertTrue(result);
-    }
-
-    @Test
     public void testResetConfigurations() {
         Long poolId = 1L;
         ResetCfgCmd cmd = Mockito.mock(ResetCfgCmd.class);

@@ -536,65 +536,6 @@ export default {
           details: ['name', 'state', 'id', 'servicelist', 'physicalnetworkid']
         },
         {
-          title: 'F5BigIp',
-          actions: [
-            {
-              api: 'addF5LoadBalancer',
-              listView: true,
-              icon: 'plus-outlined',
-              label: 'label.add.f5.device',
-              component: shallowRef(defineAsyncComponent(() => import('@/views/infra/network/providers/AddF5LoadBalancer.vue')))
-            },
-            {
-              api: 'updateNetworkServiceProvider',
-              icon: 'stop-outlined',
-              listView: true,
-              label: 'label.disable.provider',
-              confirm: 'message.confirm.disable.provider',
-              show: (record) => { return record && record.id && record.state === 'Enabled' },
-              mapping: {
-                state: {
-                  value: (record) => { return 'Disabled' }
-                }
-              }
-            },
-            {
-              api: 'updateNetworkServiceProvider',
-              icon: 'play-circle-outlined',
-              listView: true,
-              label: 'label.enable.provider',
-              confirm: 'message.confirm.enable.provider',
-              show: (record) => { return record && record.id && record.state === 'Disabled' },
-              mapping: {
-                state: {
-                  value: (record) => { return 'Enabled' }
-                }
-              }
-            },
-            {
-              api: 'deleteNetworkServiceProvider',
-              listView: true,
-              icon: 'poweroff-outlined',
-              label: 'label.shutdown.provider',
-              confirm: 'message.confirm.delete.provider',
-              show: (record) => { return record && record.id }
-            }
-          ],
-          details: ['name', 'state', 'id', 'servicelist'],
-          lists: [
-            {
-              title: 'label.devices',
-              api: 'listF5LoadBalancers',
-              mapping: {
-                physicalnetworkid: {
-                  value: (record) => { return record.physicalnetworkid }
-                }
-              },
-              columns: ['ipaddress', 'lbdevicestate', 'actions']
-            }
-          ]
-        },
-        {
           title: 'GloboDns',
           actions: [
             {

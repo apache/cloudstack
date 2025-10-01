@@ -47,7 +47,7 @@ public class LibvirtGpuDef {
 
     private void generateMdevXml(StringBuilder gpuBuilder) {
         String mdevUuid = vgpuType.getBusAddress(); // For MDEV devices, busAddress contains the UUID
-        String displayAttribute = vgpuType.isDisplay() ? "on" : "off";
+        String displayAttribute = vgpuType.isDisplay() ? "on' ramfb='on" : "off";
 
         gpuBuilder.append("<hostdev mode='subsystem' type='mdev' model='vfio-pci' display='").append(displayAttribute).append("'>\n");
         gpuBuilder.append("  <source>\n");
@@ -65,11 +65,16 @@ public class LibvirtGpuDef {
         // - UEFI/OVMF firmware environments
         // - ARM64 hosts (cache coherency issues with traditional VGA)
         // - Multi-monitor VDI setups (primary display)
+        String managed = "yes";
+        // To support passthrough NVIDIA GPUs with SR-IOV & vendor specific GPU integration
+        if (vgpuType.getVendorId().equals("10de") && !vgpuType.getModelName().equals("passthrough")) {
+            managed = "no";
+        }
         if (vgpuType.isDisplay()) {
-            gpuBuilder.append("<hostdev mode='subsystem' type='pci' managed='yes' display='on' ramfb='on'>\n");
+            gpuBuilder.append("<hostdev mode='subsystem' type='pci' managed='").append(managed).append("' display='on' ramfb='on'>\n");
         } else {
             // Compute-only workloads don't need display or ramfb
-            gpuBuilder.append("<hostdev mode='subsystem' type='pci' managed='yes' display='off'>\n");
+            gpuBuilder.append("<hostdev mode='subsystem' type='pci' managed='").append(managed).append("' display='off'>\n");
         }
         gpuBuilder.append("  <driver name='vfio'/>\n");
         gpuBuilder.append("  <source>\n");

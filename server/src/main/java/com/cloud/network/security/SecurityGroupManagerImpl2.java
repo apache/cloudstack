@@ -249,6 +249,9 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
                         //did a join with the nics table
                         String cidr = ngmapVO.getGuestIpAddress() + "/32";
                         cidrs.add(cidr);
+                        if (ngmapVO.getGuestIpv6Address() != null) {
+                            cidrs.add(ngmapVO.getGuestIpv6Address() + "/64");
+                        }
                     }
                 } else if (rule.getAllowedSourceIpCidr() != null) {
                     cidrs.add(rule.getAllowedSourceIpCidr());

@@ -1879,11 +1879,13 @@ export default {
       const query = Object.assign({}, this.$route.query)
       delete query.templatefilter
       delete query.isofilter
-      delete query.account
-      delete query.domainid
       delete query.state
       delete query.annotationfilter
       delete query.leased
+      if (!['publicip'].includes(this.$route.name)) {
+        delete query.account
+        delete query.domainid
+      }
       if (this.$route.name === 'template') {
         query.templatefilter = filter
       } else if (this.$route.name === 'iso') {
@@ -1984,9 +1986,8 @@ export default {
     },
     onSearch (opts) {
       const query = Object.assign({}, this.$route.query)
-      for (const key in this.searchParams) {
-        delete query[key]
-      }
+      const searchFilters = this.$route?.meta?.searchFilters || []
+      searchFilters.forEach(key => delete query[key])
       delete query.name
       delete query.templatetype
       delete query.keyword

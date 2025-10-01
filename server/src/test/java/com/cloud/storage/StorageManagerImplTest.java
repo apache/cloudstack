@@ -43,7 +43,7 @@ import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
-import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
+import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplianceCommand;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -453,7 +453,7 @@ public class StorageManagerImplTest {
         }
         try {
             Mockito.doReturn(new com.cloud.agent.api.Answer(
-                            Mockito.mock(CheckDataStoreStoragePolicyComplainceCommand.class)))
+                            Mockito.mock(CheckDataStoreStoragePolicyComplianceCommand.class)))
                     .when(storageManagerImpl).getCheckDatastorePolicyComplianceAnswer("policy", pool);
             assertTrue(storageManagerImpl.isStoragePoolCompliantWithStoragePolicy(1L, pool));
         } catch (StorageUnavailableException e) {
@@ -461,7 +461,7 @@ public class StorageManagerImplTest {
         }
         try {
             com.cloud.agent.api.Answer answer =
-                    new com.cloud.agent.api.Answer(Mockito.mock(CheckDataStoreStoragePolicyComplainceCommand.class),
+                    new com.cloud.agent.api.Answer(Mockito.mock(CheckDataStoreStoragePolicyComplianceCommand.class),
                             false, "");
             Mockito.doReturn(answer)
                     .when(storageManagerImpl).getCheckDatastorePolicyComplianceAnswer("policy", pool);
@@ -502,7 +502,7 @@ public class StorageManagerImplTest {
                 .thenReturn(policy);
         Mockito.doReturn(new ArrayList<>(List.of(1L, 2L))).when(storageManagerImpl).getUpHostsInPool(Mockito.anyLong());
         Mockito.when(hvGuruMgr.getGuruProcessedCommandTargetHost(Mockito.anyLong(),
-                Mockito.any(CheckDataStoreStoragePolicyComplainceCommand.class))).thenReturn(1L);
+                Mockito.any(CheckDataStoreStoragePolicyComplianceCommand.class))).thenReturn(1L);
         try {
             Mockito.when(agentManager.send(Mockito.anyLong(), Mockito.any(Command.class)))
                     .thenThrow(AgentUnavailableException.class);
@@ -529,12 +529,12 @@ public class StorageManagerImplTest {
                 .thenReturn(policy);
         Mockito.doReturn(new ArrayList<>(List.of(1L, 2L))).when(storageManagerImpl).getUpHostsInPool(Mockito.anyLong());
         Mockito.when(hvGuruMgr.getGuruProcessedCommandTargetHost(Mockito.anyLong(),
-                Mockito.any(CheckDataStoreStoragePolicyComplainceCommand.class))).thenReturn(1L);
+                Mockito.any(CheckDataStoreStoragePolicyComplianceCommand.class))).thenReturn(1L);
         try {
             Mockito.when(agentManager.send(Mockito.anyLong(),
-                            Mockito.any(CheckDataStoreStoragePolicyComplainceCommand.class)))
+                            Mockito.any(CheckDataStoreStoragePolicyComplianceCommand.class)))
                     .thenReturn(new com.cloud.agent.api.Answer(
-                            Mockito.mock(CheckDataStoreStoragePolicyComplainceCommand.class)));
+                            Mockito.mock(CheckDataStoreStoragePolicyComplianceCommand.class)));
         } catch (AgentUnavailableException | OperationTimedoutException e) {
             Assert.fail(e.getMessage());
         }

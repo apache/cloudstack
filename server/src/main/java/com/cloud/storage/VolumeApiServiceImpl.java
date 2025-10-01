@@ -3113,7 +3113,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             } catch (InterruptedException e) {
                 throw new RuntimeException("Operation is interrupted", e);
             } catch (ExecutionException e) {
-                throw new RuntimeException("Execution excetion", e);
+                throw new CloudRuntimeException("Execution exception getting the outcome of the asynchronous detach volume job", e);
             }
 
             Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
@@ -3507,8 +3507,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         if (hypervisorType.equals(HypervisorType.VMware)) {
             try {
-                boolean isStoragePoolStoragepolicyComplaince = storageMgr.isStoragePoolCompliantWithStoragePolicy(Arrays.asList(volumeDiskProfilePair), destPool);
-                if (!isStoragePoolStoragepolicyComplaince) {
+                boolean isStoragePoolStoragepolicyCompliance = storageMgr.isStoragePoolCompliantWithStoragePolicy(Arrays.asList(volumeDiskProfilePair), destPool);
+                if (!isStoragePoolStoragepolicyCompliance) {
                     throw new CloudRuntimeException(String.format("Storage pool %s is not storage policy compliance with the volume %s", poolUuid, vol.getUuid()));
                 }
             } catch (StorageUnavailableException e) {
@@ -3548,7 +3548,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 } catch (InterruptedException e) {
                     throw new RuntimeException("Operation is interrupted", e);
                 } catch (ExecutionException e) {
-                    throw new RuntimeException("Execution excetion", e);
+                    throw new CloudRuntimeException("Execution exception getting the outcome of the asynchronous migrate volume job", e);
                 }
 
                 Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
@@ -3814,10 +3814,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_SNAPSHOT_CREATE, eventDescription = "taking snapshot", async = true)
-    public Snapshot takeSnapshot(Long volumeId, Long policyId, Long snapshotId, Account account, boolean quiescevm,
-         Snapshot.LocationType locationType, boolean asyncBackup, Map<String, String> tags, List<Long> zoneIds, List<Long> poolIds, Boolean useStorageReplication)
-
-    throws ResourceAllocationException {
+    public Snapshot takeSnapshot(Long volumeId, Long policyId, Long snapshotId, Account account, boolean quiescevm, Snapshot.LocationType locationType, boolean asyncBackup,
+            Map<String, String> tags, List<Long> zoneIds, List<Long> poolIds, Boolean useStorageReplication) throws ResourceAllocationException {
         final Snapshot snapshot = takeSnapshotInternal(volumeId, policyId, snapshotId, account, quiescevm, locationType, asyncBackup, zoneIds, poolIds, useStorageReplication);
         if (snapshot != null && MapUtils.isNotEmpty(tags)) {
             taggedResourceService.createTags(Collections.singletonList(snapshot.getUuid()), ResourceTag.ResourceObjectType.Snapshot, tags, null);
@@ -3897,7 +3895,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 } catch (InterruptedException e) {
                     throw new RuntimeException("Operation is interrupted", e);
                 } catch (ExecutionException e) {
-                    throw new RuntimeException("Execution excetion", e);
+                    throw new CloudRuntimeException("Execution exception getting the outcome of the asynchronous take volume snapshot job", e);
                 }
 
                 Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
@@ -4261,7 +4259,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 } catch (InterruptedException e) {
                     throw new RuntimeException("Operation is interrupted", e);
                 } catch (ExecutionException e) {
-                    throw new RuntimeException("Execution excetion", e);
+                    throw new CloudRuntimeException("Execution exception getting the outcome of the asynchronous extract volume job", e);
                 }
 
                 Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());

@@ -231,7 +231,7 @@ class CsDhcp(CsDataBag):
         i = IPAddress(entry['ipv4_address'])
         # Calculate the device
         for v in self.devinfo:
-            if i > v['network'].network and i < v['network'].broadcast:
+            if i > v['network'].network and v['network'].broadcast and i < v['network'].broadcast:
                 v['dnsmasq'] = True
                 # Virtual Router
                 v['gateway'] = entry['default_gateway']

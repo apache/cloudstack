@@ -28,7 +28,7 @@ def main():
 
     if "minDiskNeeded" not in data:
         print("Missing minDiskNeeded in health_checks_data systemThresholds, skipping")
-        exit(0)
+        exit(3)
 
     minDiskNeeded = float(data["minDiskNeeded"]) * 1024
     s = statvfs('/')
