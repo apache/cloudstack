@@ -1988,11 +1988,20 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         return hostName;
     }
 
-    protected Pair<String, String> getNextVmHostAndDisplayName(AutoScaleVmGroupVO asGroup, VirtualMachineTemplate template) {
-        template.getGuestOSId();
+    protected boolean isWindowsOs(VirtualMachineTemplate template) {
         GuestOSVO guestOSVO = guestOSDao.findById(template.getGuestOSId());
-        String osName = guestOSVO != null ? StringUtils.firstNonBlank(guestOSVO.getName(), guestOSVO.getDisplayName()) : "";
-        boolean isWindows = osName.toLowerCase().contains("windows");
+        if (guestOSVO == null) {
+            return false;
+        }
+        String osName = StringUtils.firstNonBlank(guestOSVO.getName(), guestOSVO.getDisplayName());
+        if (StringUtils.isBlank(osName)) {
+            return false;
+        }
+        return osName.toLowerCase().contains("windows");
+    }
+
+    protected Pair<String, String> getNextVmHostAndDisplayName(AutoScaleVmGroupVO asGroup, VirtualMachineTemplate template) {
+        boolean isWindows = isWindowsOs(template);
         String vmHostNameSuffix = "-" + asGroup.getNextVmSeq() + "-" +
                 RandomStringUtils.random(VM_HOSTNAME_RANDOM_SUFFIX_LENGTH, 0, 0, true, false, (char[])null, new SecureRandom()).toLowerCase();
         // Truncate vm group name because max length of vm name is 63
