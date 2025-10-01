@@ -213,8 +213,8 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
         return convertExternalDetailsToMap(externalDetails);
     }
 
-    public Boolean isCleanupExternalDetails() {
-        return cleanupExternalDetails;
+    public boolean isCleanupExternalDetails() {
+        return Boolean.TRUE.equals(cleanupExternalDetails);
     }
 
     /////////////////////////////////////////////////////

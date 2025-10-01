@@ -2800,8 +2800,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Override
     public Host updateHost(final UpdateHostCmd cmd) throws NoTransitionException {
         return updateHost(cmd.getId(), cmd.getName(), cmd.getOsCategoryId(), cmd.getAllocationState(), cmd.getUrl(),
-                cmd.getHostTags(), cmd.getIsTagARule(), cmd.getAnnotation(), false, cmd.getExternalDetails(),
-                cmd.isCleanupExternalDetails());
+                cmd.getHostTags(), cmd.getIsTagARule(), cmd.getAnnotation(), false,
+                cmd.getExternalDetails(), cmd.isCleanupExternalDetails());
     }
 
     private Host updateHost(Long hostId, String name, Long guestOSCategoryId, String allocationState,
