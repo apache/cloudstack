@@ -39,7 +39,6 @@ export async function getLatestKubernetesIsoParams (arch) {
   try {
     const html = await fetch(BASE_KUBERNETES_ISO_URL, { cache: 'no-store' }).then(r => r.text())
 
-    // Grab all .iso hrefs from the index page
     const hrefs = [...html.matchAll(/href="([^"]+\.iso)"/gi)].map(m => m[1])
 
     // Prefer files that explicitly include the arch (e.g. ...-x86_64.iso)
@@ -50,7 +49,6 @@ export async function getLatestKubernetesIsoParams (arch) {
       isoHrefs = hrefs.filter(h => /setup-\d+\.\d+\.\d+\.iso$/i.test(h))
     }
 
-    // Map to { name, semanticversion, url, arch }
     const entries = isoHrefs.map(h => {
       const m = h.match(/setup-(?:v)?(\d+\.\d+\.\d+)(?:-calico)?(?:-(x86_64|arm64))?/i)
       return m
@@ -67,7 +65,6 @@ export async function getLatestKubernetesIsoParams (arch) {
 
     if (entries.length === 0) throw new Error('No matching ISOs found')
 
-    // Semver-style sort descending
     entries.sort((a, b) => {
       const pa = a.semanticversion.split('.').map(Number)
       const pb = b.semanticversion.split('.').map(Number)
