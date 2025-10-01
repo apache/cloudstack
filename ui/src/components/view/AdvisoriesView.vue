@@ -62,22 +62,24 @@ export default {
   computed: {
   },
   methods: {
-    evaluateAdvisories () {
+    async evaluateAdvisories () {
       this.advisories = []
       const metaAdvisories = this.$route.meta.advisories || []
       const dismissedAdvisories = this.$localStorage.get(DISMISSED_ADVISORIES_KEY) || []
-      for (const advisory of metaAdvisories) {
+      const advisoryPromises = metaAdvisories.map(async advisory => {
         if (dismissedAdvisories.includes(advisory.id)) {
-          continue
+          return null
         }
-        Promise.resolve(advisory.condition(this.$store)).then(active => {
-          if (active) {
-            this.advisories.push(advisory)
-          } else if (advisory.dismissOnConditionFail) {
-            this.dismissAdvisory(advisory.id, true)
-          }
-        })
-      }
+        const active = await Promise.resolve(advisory.condition(this.$store))
+        if (active) {
+          return advisory
+        } else if (advisory.dismissOnConditionFail) {
+          this.dismissAdvisory(advisory.id, true)
+        }
+        return null
+      })
+      const results = await Promise.all(advisoryPromises)
+      this.advisories = results.filter(a => a !== null)
     },
     onAlertClose (advisory) {
       this.dismissAdvisory(advisory.id)
