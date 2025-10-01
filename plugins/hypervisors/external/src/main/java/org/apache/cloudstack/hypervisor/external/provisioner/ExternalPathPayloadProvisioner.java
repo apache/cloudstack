@@ -103,10 +103,11 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
             BASE_EXTERNAL_PROVISIONER_SCRIPTS_DIR + "/provisioner.sh";
 
     private static final String PROPERTIES_FILE = "server.properties";
+    private static final String EXTENSIONS = "extensions";
     private static final String EXTENSIONS_DEPLOYMENT_MODE_NAME = "extensions.deployment.mode";
     private static final String EXTENSIONS_DIRECTORY_PROD = "/usr/share/cloudstack-management/extensions";
-    private static final String EXTENSIONS_DATA_DIRECTORY_PROD = "/var/lib/cloudstack/management/extensions";
-    private static final String EXTENSIONS_DIRECTORY_DEV = "extensions";
+    private static final String EXTENSIONS_DATA_DIRECTORY_PROD = System.getProperty("user.home") + File.separator + EXTENSIONS;
+    private static final String EXTENSIONS_DIRECTORY_DEV = EXTENSIONS;
     private static final String EXTENSIONS_DATA_DIRECTORY_DEV = "client/target/extensions-data";
 
     @Inject
