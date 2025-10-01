@@ -41,7 +41,7 @@ export default {
       permission: ['listLdapConfigurations'],
       searchFilters: ['domainid', 'hostname', 'port'],
       columns: ['hostname', 'port', 'domainid'],
-      details: ['hostname', 'port', 'domainid'],
+      details: ['id', 'hostname', 'port', 'domainid'],
       actions: [
         {
           api: 'addLdapConfiguration',
