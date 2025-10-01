@@ -3199,7 +3199,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     }
                 } else {
                     defineDiskForDefaultPoolType(disk, volume, isWindowsTemplate, isUefiEnabled, isSecureBoot,
-                            physicalDisk,devId, diskBusType, diskBusTypeData, details);
+                            physicalDisk, devId, diskBusType, diskBusTypeData, details);
                 }
             }
 
