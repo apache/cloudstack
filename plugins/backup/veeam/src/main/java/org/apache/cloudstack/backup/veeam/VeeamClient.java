@@ -366,7 +366,9 @@ public class VeeamClient {
      * that is used to wait for the restore to complete before throwing a {@link CloudRuntimeException}.
      */
     protected void checkIfRestoreSessionFinished(String type, String path) throws IOException {
-        for (int j = 0; j < restoreTimeout; j++) {
+        long startTime = System.currentTimeMillis();
+        long timeoutMs = restoreTimeout * 1000L;
+        if (System.currentTimeMillis() - startTime < timeoutMs) {
             HttpResponse relatedResponse = get(path);
             RestoreSession session = parseRestoreSessionResponse(relatedResponse);
             if (session.getResult().equals("Success")) {
