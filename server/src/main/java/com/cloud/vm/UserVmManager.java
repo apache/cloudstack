@@ -85,7 +85,7 @@ public interface UserVmManager extends UserVmService {
 
     ConfigKey<String> VmDistinctHostNameScope = new ConfigKey<>(String.class, "vm.distinct.hostname.scope", ConfigKey.CATEGORY_ADVANCED,
             "network",
-            "Scope of resources to check while checking if the hostname is unique. Possible values are global, domain, subdomain, account, network.",
+            "Defines the scope for enforcing unique VM hostnames which determines the resource boundary within which VM hostnames must be unique. Possible values: global, domain, subdomain, account, network.",
             true, ConfigKey.Scope.Global, null, "VM distinct hostname scope", null, null, null, ConfigKey.Kind.Select,
             "global,domain,subdomain,account,network");
 

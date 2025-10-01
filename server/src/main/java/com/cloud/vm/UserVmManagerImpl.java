@@ -4692,28 +4692,28 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private List<NetworkVO> getNetworksWithSameNetworkDomainInDomains(List<NetworkVO> networkList, boolean checkSubDomains) {
-        List<String> uniqueNtwkDomains = networkList.stream().map(NetworkVO::getNetworkDomain).collect(Collectors.toList());
-        List<Long> domainIdList = new ArrayList<>();
+        Set<String> uniqueNtwkDomains = networkList.stream().map(NetworkVO::getNetworkDomain).collect(Collectors.toSet());
+        Set<Long> domainIdList = new HashSet<>();
         for (Network network : networkList) {
             domainIdList.add(network.getDomainId());
         }
-        Set<Long> finalDomainIdList = new HashSet<>(domainIdList);
+        Set<Long> finalDomainIdSet = new HashSet<>(domainIdList);
         if (checkSubDomains) {
             for (Long domainId : domainIdList) {
                 DomainVO domain = _domainDao.findById(domainId);
                 List<Long> childDomainIds = _domainDao.getDomainChildrenIds(domain.getPath());
-                finalDomainIdList.addAll(childDomainIds);
+                finalDomainIdSet.addAll(childDomainIds);
             }
         }
-        return _networkDao.listByNetworkDomainsAndDomainIds(uniqueNtwkDomains, finalDomainIdList.stream().collect(Collectors.toList()));
+        return _networkDao.listByNetworkDomainsAndDomainIds(uniqueNtwkDomains, finalDomainIdSet);
     }
 
     private List<NetworkVO> getNetworksForCheckUniqueHostName(List<NetworkVO> networkList) {
         List<NetworkVO> finalNetworkList;
-        List<String> uniqueNtwkDomains;
+        Set<String> uniqueNtwkDomains;
         switch (VmDistinctHostNameScope.value()) {
             case "global":
-                uniqueNtwkDomains = networkList.stream().map(NetworkVO::getNetworkDomain).collect(Collectors.toList());
+                uniqueNtwkDomains = networkList.stream().map(NetworkVO::getNetworkDomain).collect(Collectors.toSet());
                 finalNetworkList = _networkDao.listByNetworkDomains(uniqueNtwkDomains);
                 break;
             case "domain":
@@ -4723,8 +4723,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 finalNetworkList = getNetworksWithSameNetworkDomainInDomains(networkList, true);
                 break;
             case "account":
-                uniqueNtwkDomains = networkList.stream().map(NetworkVO::getNetworkDomain).collect(Collectors.toList());
-                List<Long> accountIds = networkList.stream().map(Network::getAccountId).collect(Collectors.toList());
+                uniqueNtwkDomains = networkList.stream().map(NetworkVO::getNetworkDomain).collect(Collectors.toSet());
+                Set<Long> accountIds = networkList.stream().map(Network::getAccountId).collect(Collectors.toSet());
                 finalNetworkList = _networkDao.listByNetworkDomainsAndAccountIds(uniqueNtwkDomains, accountIds);
                 break;
             default:

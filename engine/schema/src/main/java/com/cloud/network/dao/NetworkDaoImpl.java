@@ -436,14 +436,14 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
     }
 
     @Override
-    public List<NetworkVO> listByNetworkDomains(List<String> uniqueNtwkDomains) {
+    public List<NetworkVO> listByNetworkDomains(Set<String> uniqueNtwkDomains) {
         SearchCriteria<NetworkVO> sc = NetworkDomainSearch.create();
         sc.setParameters("networkDomains", uniqueNtwkDomains.toArray());
         return search(sc, null);
     }
 
     @Override
-    public List<NetworkVO> listByNetworkDomainsAndAccountIds(List<String> uniqueNtwkDomains, List<Long> accountIds) {
+    public List<NetworkVO> listByNetworkDomainsAndAccountIds(Set<String> uniqueNtwkDomains, Set<Long> accountIds) {
         SearchCriteria<NetworkVO> sc = NetworkDomainSearch.create();
         sc.setParameters("networkDomains", uniqueNtwkDomains.toArray());
         sc.setParameters("accounts", accountIds.toArray());
@@ -451,7 +451,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
     }
 
     @Override
-    public List<NetworkVO> listByNetworkDomainsAndDomainIds(List<String> uniqueNtwkDomains, List<Long> domainIds) {
+    public List<NetworkVO> listByNetworkDomainsAndDomainIds(Set<String> uniqueNtwkDomains, Set<Long> domainIds) {
         SearchCriteria<NetworkVO> sc = NetworkDomainSearch.create();
         sc.setParameters("networkDomains", uniqueNtwkDomains.toArray());
         sc.setParameters("domains", domainIds.toArray());
