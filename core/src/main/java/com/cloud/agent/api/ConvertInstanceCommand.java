@@ -23,6 +23,7 @@ import com.cloud.hypervisor.Hypervisor;
 public class ConvertInstanceCommand extends Command {
 
     private RemoteInstanceTO sourceInstance;
+    private String originalVMName;
     private Hypervisor.HypervisorType destinationHypervisorType;
     private DataStoreTO conversionTemporaryLocation;
     private String templateDirOnConversionLocation;
@@ -35,17 +36,22 @@ public class ConvertInstanceCommand extends Command {
     }
 
     public ConvertInstanceCommand(RemoteInstanceTO sourceInstance, Hypervisor.HypervisorType destinationHypervisorType, DataStoreTO conversionTemporaryLocation,
-                                  String templateDirOnConversionLocation, boolean checkConversionSupport, boolean exportOvfToConversionLocation) {
+                                  String templateDirOnConversionLocation, boolean checkConversionSupport, boolean exportOvfToConversionLocation, String sourceVMName) {
         this.sourceInstance = sourceInstance;
         this.destinationHypervisorType = destinationHypervisorType;
         this.conversionTemporaryLocation = conversionTemporaryLocation;
         this.templateDirOnConversionLocation = templateDirOnConversionLocation;
         this.checkConversionSupport = checkConversionSupport;
         this.exportOvfToConversionLocation = exportOvfToConversionLocation;
+        this.originalVMName = sourceVMName;
     }
 
     public RemoteInstanceTO getSourceInstance() {
         return sourceInstance;
+    }
+
+    public String getOriginalVMName() {
+        return originalVMName;
     }
 
     public Hypervisor.HypervisorType getDestinationHypervisorType() {

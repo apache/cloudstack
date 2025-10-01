@@ -1686,9 +1686,14 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             importVMTask = importVmTasksManager.createImportVMTaskRecord(zone, owner, userId, displayName, vcenter, datacenterName, sourceVMName,
                     convertHost, importHost);
             importVmTasksManager.updateImportVMTaskStep(importVMTask, zone, owner, convertHost, importHost, null, CloningInstance);
+
+            // sourceVMwareInstance could be a cloned instance from sourceVMName, of the sourceVMName itself if its powered off.
+            // isClonedInstance indicates if the VM is a clone of sourceVMName
+
             Pair<UnmanagedInstanceTO, Boolean> sourceInstanceDetails = getSourceVmwareUnmanagedInstance(vcenter, datacenterName, username, password, clusterName, sourceHostName, sourceVMName);
             sourceVMwareInstance = sourceInstanceDetails.first();
             isClonedInstance = sourceInstanceDetails.second();
+
             boolean isWindowsVm = sourceVMwareInstance.getOperatingSystem().toLowerCase().contains("windows");
             if (isWindowsVm) {
                 checkConversionSupportOnHost(convertHost, sourceVMName, true);
@@ -1994,7 +1999,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         RemoteInstanceTO remoteInstanceTO = new RemoteInstanceTO(sourceVM);
         List<String> destinationStoragePools = selectInstanceConversionStoragePools(convertStoragePools, sourceVMwareInstance.getDisks(), serviceOffering, dataDiskOfferingMap);
         ConvertInstanceCommand cmd = new ConvertInstanceCommand(remoteInstanceTO,
-                Hypervisor.HypervisorType.KVM, temporaryConvertLocation, ovfTemplateDirConvertLocation, false, false);
+                Hypervisor.HypervisorType.KVM, temporaryConvertLocation,
+                ovfTemplateDirConvertLocation, false, false, sourceVM);
         if (StringUtils.isNotBlank(extraParams)) {
             cmd.setExtraParams(extraParams);
         }
@@ -2016,7 +2022,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         RemoteInstanceTO remoteInstanceTO = new RemoteInstanceTO(sourceVMwareInstance.getName(), sourceVMwareInstance.getPath(), vcenterHost, vcenterUsername, vcenterPassword, datacenterName);
         List<String> destinationStoragePools = selectInstanceConversionStoragePools(convertStoragePools, sourceVMwareInstance.getDisks(), serviceOffering, dataDiskOfferingMap);
         ConvertInstanceCommand cmd = new ConvertInstanceCommand(remoteInstanceTO,
-                Hypervisor.HypervisorType.KVM, temporaryConvertLocation, null, false, true);
+                Hypervisor.HypervisorType.KVM, temporaryConvertLocation, null, false, true, sourceVM);
         int timeoutSeconds = UnmanagedVMsManager.ConvertVmwareInstanceToKvmTimeout.value() * 60 * 60;
         cmd.setWait(timeoutSeconds);
         int noOfThreads = UnmanagedVMsManager.ThreadsOnKVMHostToImportVMwareVMFiles.value();

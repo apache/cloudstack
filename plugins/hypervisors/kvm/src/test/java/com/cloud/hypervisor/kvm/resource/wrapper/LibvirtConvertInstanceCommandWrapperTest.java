@@ -128,6 +128,7 @@ public class LibvirtConvertInstanceCommandWrapperTest {
         Mockito.when(cmd.getWait()).thenReturn(14400);
         Mockito.when(cmd.getConversionTemporaryLocation()).thenReturn(secondaryDataStore);
         Mockito.when(cmd.getCheckConversionSupport()).thenReturn(checkConversionSupport);
+        Mockito.when(cmd.getOriginalVMName()).thenReturn(vmName);
         return cmd;
     }
 
