@@ -19,6 +19,7 @@ import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 import { isZoneCreated } from '@/utils/zone'
 import { getAPI, postAPI, getBaseUrl } from '@/api'
+import { getLatestKubernetesIsoParams } from '@/utils/acsrepo'
 
 export default {
   name: 'compute',
@@ -614,7 +615,6 @@ export default {
               run: async () => {
                 const params = {
                   name: 'CKS Instance',
-                  displaytext: 'CKS Instance',
                   cpunumber: 2,
                   cpuspeed: 1000,
                   memory: 2048,
@@ -667,13 +667,15 @@ export default {
               loadingLabel: 'message.adding.latest.kubernetes.iso',
               show: (store) => { return ('addKubernetesSupportedVersion' in store.getters.apis) },
               run: async () => {
-                const params = {
-                  semanticversion: '1.33.1',
-                  url: 'https://download.cloudstack.org/cks/setup-v1.33.1-calico-x86_64.iso',
-                  displaytext: 'CKS Instance',
-                  mincpunumber: 2,
-                  minmemory: 2048
+                let arch = 'x86_64'
+                if ('listClusters' in store.getters.apis) {
+                  try {
+                    const json = await getAPI('listClusters', { allocationstate: 'Enabled', page: 1, pagesize: 1 })
+                    const cluster = json?.listclustersresponse?.cluster?.[0] || {}
+                    arch = cluster.architecture || 'x86_64'
+                  } catch (error) {}
                 }
+                const params = await getLatestKubernetesIsoParams(arch)
                 try {
                   const json = await postAPI('addKubernetesSupportedVersion', params)
                   if (json?.addkubernetessupportedversionresponse?.kubernetessupportedversion) {
@@ -731,7 +733,7 @@ export default {
                 if (baseUrl.startsWith('/')) {
                   url = window.location.origin + baseUrl
                 }
-                var params = {
+                const params = {
                   name: 'endpoint.url',
                   value: url
                 }
