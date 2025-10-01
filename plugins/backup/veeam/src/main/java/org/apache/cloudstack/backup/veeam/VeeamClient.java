@@ -382,7 +382,8 @@ public class VeeamClient {
                         getRestoreVmErrorDescription(StringUtils.substringAfterLast(sessionUid, ":"))));
                 throw new CloudRuntimeException(String.format("Restore job [%s] failed.", sessionUid));
             }
-            logger.debug(String.format("Waiting %s seconds, out of a total of %s seconds, for the restore backup process to finish.", j, restoreTimeout));
+            logger.debug(String.format("Waiting %d seconds, out of a total of %d seconds, for the restore backup process to finish.",
+    (System.currentTimeMillis() - startTime) / 1000, restoreTimeout));
 
             try {
                 Thread.sleep(1000);
