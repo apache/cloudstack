@@ -346,6 +346,11 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                 if (logger.isDebugEnabled()) {
                     logger.debug("ModifyStoragePool add succeeded");
                 }
+                try {
+                    storageManager.connectHostToSharedPool(host, pool.getId());
+                } catch (Exception e) {
+                    logger.warn("Unable to establish a connection between {} and {}", host, pool, e);
+                }
                 if (pool.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
                     logger.debug("Started synchronising datastore cluster storage pool {} with vCenter", pool);
                     storageManager.syncDatastoreClusterStoragePool(pool.getId(), ((ModifyStoragePoolAnswer) answer).getDatastoreClusterChildren(), host.getId());
