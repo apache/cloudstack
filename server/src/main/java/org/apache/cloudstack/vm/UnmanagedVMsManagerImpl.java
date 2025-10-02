@@ -569,7 +569,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             pools.addAll(primaryDataStoreDao.listByDataCenterId(zone.getId()));
             for (StoragePool pool : pools) {
                 String searchPoolParam = StringUtils.isNotBlank(dsPath) ? dsPath : dsName;
-                if (StringUtils.contains(pool.getPath(), searchPoolParam) &&
+                if ((StringUtils.contains(pool.getPath(), searchPoolParam) || pool.getUuid().equals(searchPoolParam)) &&
                         volumeApiService.doesStoragePoolSupportDiskOffering(pool, diskOffering)) {
                     storagePool = pool;
                     break;
