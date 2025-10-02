@@ -81,7 +81,7 @@ function generateRouterMap (section) {
           filters: child.filters,
           params: child.params ? child.params : {},
           columns: child.columns,
-          advisories: child.advisories,
+          advisories: !vueProps.$config.advisoriesDisabled ? child.advisories : undefined,
           details: child.details,
           searchFilters: child.searchFilters,
           related: child.related,
@@ -181,7 +181,7 @@ function generateRouterMap (section) {
     map.meta.columns = section.columns
   }
 
-  if (section.advisories) {
+  if (!vueProps.$config.advisoriesDisabled && section.advisories) {
     map.meta.advisories = section.advisories
   }
 
