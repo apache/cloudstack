@@ -5848,6 +5848,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                                     details = ipAddr;
                                 }
                             }
+                            break;
                         }
                     }
                 }
