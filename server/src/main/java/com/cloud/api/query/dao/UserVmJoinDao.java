@@ -46,4 +46,12 @@ public interface UserVmJoinDao extends GenericDao<UserVmJoinVO, Long> {
 
     List<UserVmJoinVO> listByAccountServiceOfferingTemplateAndNotInState(long accountId,
              List<VirtualMachine.State> states, List<Long> offeringIds, List<Long> templateIds);
+
+    List<UserVmJoinVO> listByNetworkOfferingId(Long networkOfferingId);
+
+    List<UserVmJoinVO> listByVpcOfferingId(Long vpcId);
+
+    List<UserVmJoinVO> listByDiskOfferingId(Long diskOfferingId);
+
+    List<UserVmJoinVO> listByServiceOfferingId(Long serviceOfferingId);
 }
