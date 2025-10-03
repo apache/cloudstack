@@ -1059,7 +1059,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Override
     public void evictTemplateFromStoragePoolsForZones(Long templateId, List<Long> zoneIds) {
         List<Long> poolIds = new ArrayList<>();
-        if (zoneIds != null && !zoneIds.isEmpty()) {
+        if (CollectionUtils.isNotEmpty(zoneIds)) {
             List<StoragePoolVO> pools = _poolDao.listByDataCenterIds(zoneIds);
             poolIds = pools.stream().map(StoragePoolVO::getId).collect(Collectors.toList());
         }

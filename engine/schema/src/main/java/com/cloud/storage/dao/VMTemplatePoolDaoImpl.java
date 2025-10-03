@@ -153,7 +153,7 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
     @Override
     public List<VMTemplateStoragePoolVO> listByPoolIdsAndTemplate(List<Long> poolIds, Long templateId) {
         SearchCriteria<VMTemplateStoragePoolVO> sc = PoolTemplateSearch.create();
-        if (poolIds != null && !poolIds.isEmpty()) {
+        if (CollectionUtils.isNotEmpty(poolIds)) {
             sc.setParameters("pool_id", poolIds.toArray());
         }
         sc.setParameters("template_id", templateId);
