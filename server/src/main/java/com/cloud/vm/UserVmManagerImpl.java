@@ -778,7 +778,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 Answer answer = _agentMgr.send(hostId, cmd);
                 if (answer.getResult()) {
                     String vmIp = answer.getDetails();
-                    if (null == vmIp) {
+                    if (vmIp == null) {
                         // we got a valid response and the NIC does not have an IP assigned, as such we will update the database with null
                         if (nic.getIPv4Address() != null) {
                             nic.setIPv4Address(null);
