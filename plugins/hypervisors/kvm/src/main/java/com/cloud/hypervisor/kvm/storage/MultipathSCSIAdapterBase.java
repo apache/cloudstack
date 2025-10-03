@@ -426,7 +426,8 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
     boolean isTemplateExtractable(String templatePath) {
         ScriptResult result = runScript("file", 5000L, templatePath, "| awk -F' ' '{print $2}'");
         String type = result.getResult();
-        return type.equalsIgnoreCase("bzip2") || type.equalsIgnoreCase("gzip") || type.equalsIgnoreCase("zip");
+        return type.equalsIgnoreCase("bzip2") || type.equalsIgnoreCase("gzip")
+                || type.equalsIgnoreCase("zip") || type.equalsIgnoreCase("xz");
     }
 
     String getExtractCommandForDownloadedFile(String downloadedTemplateFile, String templateFile) {
@@ -436,6 +437,8 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
             return "bunzip2 -c " + downloadedTemplateFile + " > " + templateFile;
         } else if (downloadedTemplateFile.endsWith(".gz")) {
             return "gunzip -c " + downloadedTemplateFile + " > " + templateFile;
+        } else if (downloadedTemplateFile.endsWith(".xz")) {
+            return "xz -d -c " + downloadedTemplateFile + " > " + templateFile;
         } else {
             throw new CloudRuntimeException("Unable to extract template " + downloadedTemplateFile);
         }

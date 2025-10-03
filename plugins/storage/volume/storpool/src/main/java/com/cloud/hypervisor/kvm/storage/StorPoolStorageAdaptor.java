@@ -539,7 +539,8 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
 
     private boolean isTemplateExtractable(String templatePath) {
         String type = Script.runSimpleBashScript("file " + templatePath + " | awk -F' ' '{print $2}'");
-        return type.equalsIgnoreCase("bzip2") || type.equalsIgnoreCase("gzip") || type.equalsIgnoreCase("zip");
+        return type.equalsIgnoreCase("bzip2") || type.equalsIgnoreCase("gzip")
+                || type.equalsIgnoreCase("zip") || type.equalsIgnoreCase("xz");
     }
 
     private String getExtractCommandForDownloadedFile(String downloadedTemplateFile, String templateFile) {
@@ -549,6 +550,8 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
             return "bunzip2 -c " + downloadedTemplateFile + " > " + templateFile;
         } else if (downloadedTemplateFile.endsWith(".gz")) {
             return "gunzip -c " + downloadedTemplateFile + " > " + templateFile;
+        } else if (downloadedTemplateFile.endsWith(".xz")) {
+            return "xz -d -c " + downloadedTemplateFile + " > " + templateFile;
         } else {
             throw new CloudRuntimeException("Unable to extract template " + downloadedTemplateFile);
         }
