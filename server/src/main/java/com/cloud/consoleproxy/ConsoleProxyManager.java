@@ -56,6 +56,10 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
     ConfigKey<Boolean> NoVncConsoleSourceIpCheckEnabled = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class, "novnc.console.sourceip.check.enabled", "false",
         "If true, The source IP to access novnc console must be same as the IP in request to management server for console URL. Needs to reconnect CPVM to management server when this changes (via restart CPVM, or management server, or cloud service in CPVM)", false);
 
+    ConfigKey<Boolean> NoVncConsoleShowDot = new ConfigKey<>(Boolean.class, "novnc.console.show.dot", ConfigKey.CATEGORY_ADVANCED, "true",
+            "If true, in noVNC console a dot cursor will be shown when the remote server provides no local cursor, or provides a fully-transparent (invisible) cursor.",
+            true, ConfigKey.Scope.Zone, null);
+
     ConfigKey<String> ConsoleProxyServiceOffering = new ConfigKey<>(String.class, "consoleproxy.service.offering", "Console Proxy", null,
             "Uuid of the service offering used by console proxy; if NULL - system offering will be used", true, ConfigKey.Scope.Zone, null);
 

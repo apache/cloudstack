@@ -65,6 +65,8 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.cloud.agent.api.GetExternalConsoleAnswer;
+import com.cloud.agent.api.GetExternalConsoleCommand;
 import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.PrepareExternalProvisioningAnswer;
 import com.cloud.agent.api.PrepareExternalProvisioningCommand;
@@ -88,11 +90,10 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.VMInstanceDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ExternalPathPayloadProvisionerTest {
@@ -106,9 +107,6 @@ public class ExternalPathPayloadProvisionerTest {
 
     @Mock
     private HostDao hostDao;
-
-    @Mock
-    private VMInstanceDao vmInstanceDao;
 
     @Mock
     private HypervisorGuruManager hypervisorGuruManager;
@@ -206,6 +204,20 @@ public class ExternalPathPayloadProvisionerTest {
         assertNull(result.get(ApiConstants.EXTERNAL_DETAILS));
         assertEquals("test-uuid", result.get(ApiConstants.VIRTUAL_MACHINE_ID));
         assertEquals("test-vm", result.get(ApiConstants.VIRTUAL_MACHINE_NAME));
+    }
+
+    @Test
+    public void testLoadAccessDetails_WithCaller() {
+        Map<String, Map<String, String>> externalDetails = new HashMap<>();
+        externalDetails.put(ApiConstants.EXTENSION, Map.of("key1", "value1"));
+        externalDetails.put(ApiConstants.CALLER, Map.of("key2", "value2"));
+        Map<String, Object> result = provisioner.loadAccessDetails(externalDetails, null);
+
+        assertNotNull(result);
+        assertNotNull(result.get(ApiConstants.EXTERNAL_DETAILS));
+        assertNotNull(((Map<String, String>) result.get(ApiConstants.EXTERNAL_DETAILS)).get(ApiConstants.EXTENSION));
+        assertNotNull(result.get(ApiConstants.CALLER));
+        assertNull(result.get(VmDetailConstants.CLOUDSTACK_VM_DETAILS));
     }
 
     @Test
@@ -317,7 +329,7 @@ public class ExternalPathPayloadProvisionerTest {
                 .executeExternalCommand(anyString(), anyString(), anyMap(), anyInt(), anyString(), anyString());
 
             PrepareExternalProvisioningAnswer answer = provisioner.prepareExternalProvisioning(
-                "host-guid", "test-extension", "test-extension.sh", cmd);
+                "host-name", "test-extension", "test-extension.sh", cmd);
 
             assertTrue(answer.getResult());
             assertEquals("test-net-uuid", answer.getVirtualMachineTO().getNics()[0].getNetworkUuid());
@@ -329,11 +341,14 @@ public class ExternalPathPayloadProvisionerTest {
     public void testPrepareExternalProvisioning_ExtensionNotConfigured() {
         PrepareExternalProvisioningCommand cmd = mock(PrepareExternalProvisioningCommand.class);
 
+        String extensionName = "test-extension";
+        String hostName = "host-name";
         PrepareExternalProvisioningAnswer answer = provisioner.prepareExternalProvisioning(
-            "host-guid", "test-extension", "nonexistent.sh", cmd);
+            hostName, extensionName, "nonexistent.sh", cmd);
 
         assertFalse(answer.getResult());
-        assertEquals("Extension not configured", answer.getDetails());
+        assertNotNull(answer);
+        assertEquals(String.format("Extension: %s not configured for host: %s", extensionName, hostName), answer.getDetails());
     }
 
     @Test
@@ -348,7 +363,7 @@ public class ExternalPathPayloadProvisionerTest {
         doReturn(new Pair<>(true, "{\"status\": \"success\", \"message\": \"Instance started\"}")).when(provisioner)
             .executeExternalCommand(anyString(), anyString(), anyMap(), anyInt(), anyString(), anyString());
 
-        StartAnswer answer = provisioner.startInstance("host-guid", "test-extension", "test-extension.sh", cmd);
+        StartAnswer answer = provisioner.startInstance("host-name", "test-extension", "test-extension.sh", cmd);
 
         assertTrue(answer.getResult());
         Mockito.verify(logger).debug("Starting VM test-uuid on the external system");
@@ -369,7 +384,7 @@ public class ExternalPathPayloadProvisionerTest {
         doReturn(new Pair<>(true, "{\"status\": \"success\", \"message\": \"Instance started\"}")).when(provisioner)
                 .executeExternalCommand(anyString(), anyString(), anyMap(), anyInt(), anyString(), anyString());
 
-        StartAnswer answer = provisioner.startInstance("host-guid", "test-extension", "test-extension.sh", cmd);
+        StartAnswer answer = provisioner.startInstance("host-name", "test-extension", "test-extension.sh", cmd);
 
         assertTrue(answer.getResult());
         Mockito.verify(logger).debug("Deploying VM test-uuid on the external system");
@@ -387,7 +402,7 @@ public class ExternalPathPayloadProvisionerTest {
         doReturn(new Pair<>(false, "{\"error\": \"Instance failed to start\"}")).when(provisioner)
                 .executeExternalCommand(anyString(), anyString(), anyMap(), anyInt(), anyString(), anyString());
 
-        StartAnswer answer = provisioner.startInstance("host-guid", "test-extension", "test-extension.sh", cmd);
+        StartAnswer answer = provisioner.startInstance("host-name", "test-extension", "test-extension.sh", cmd);
 
         assertFalse(answer.getResult());
         assertEquals("{\"error\": \"Instance failed to start\"}", answer.getDetails());
@@ -406,7 +421,7 @@ public class ExternalPathPayloadProvisionerTest {
         doReturn(new Pair<>(true, "success")).when(provisioner)
             .executeExternalCommand(anyString(), anyString(), anyMap(), anyInt(), anyString(), anyString());
 
-        StopAnswer answer = provisioner.stopInstance("host-guid", "test-extension", "test-extension.sh", cmd);
+        StopAnswer answer = provisioner.stopInstance("host-name", "test-extension", "test-extension.sh", cmd);
 
         assertTrue(answer.getResult());
     }
@@ -423,7 +438,7 @@ public class ExternalPathPayloadProvisionerTest {
         doReturn(new Pair<>(true, "success")).when(provisioner)
             .executeExternalCommand(anyString(), anyString(), anyMap(), anyInt(), anyString(), anyString());
 
-        RebootAnswer answer = provisioner.rebootInstance("host-guid", "test-extension", "test-extension.sh", cmd);
+        RebootAnswer answer = provisioner.rebootInstance("host-name", "test-extension", "test-extension.sh", cmd);
 
         assertTrue(answer.getResult());
     }
@@ -440,7 +455,7 @@ public class ExternalPathPayloadProvisionerTest {
         doReturn(new Pair<>(true, "success")).when(provisioner)
             .executeExternalCommand(anyString(), anyString(), anyMap(), anyInt(), anyString(), anyString());
 
-        StopAnswer answer = provisioner.expungeInstance("host-guid", "test-extension", "test-extension.sh", cmd);
+        StopAnswer answer = provisioner.expungeInstance("host-name", "test-extension", "test-extension.sh", cmd);
 
         assertTrue(answer.getResult());
     }
@@ -489,19 +504,11 @@ public class ExternalPathPayloadProvisionerTest {
         when(cmd.getParameters()).thenReturn(new HashMap<>());
         when(cmd.getExternalDetails()).thenReturn(new HashMap<>());
         when(cmd.getWait()).thenReturn(30);
-        when(cmd.getVmId()).thenReturn(1L);
-
-        VMInstanceVO vm = mock(VMInstanceVO.class);
-        when(vmInstanceDao.findById(anyLong())).thenReturn(vm);
-
-        when(hypervisorGuruManager.getGuru(Hypervisor.HypervisorType.External)).thenReturn(hypervisorGuru);
-        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
-        when(hypervisorGuru.implement(any(VirtualMachineProfile.class))).thenReturn(vmTO);
 
         doReturn(new Pair<>(true, "success")).when(provisioner)
             .executeExternalCommand(anyString(), anyString(), anyMap(), anyInt(), anyString(), anyString());
 
-        RunCustomActionAnswer answer = provisioner.runCustomAction("host-guid", "test-extension", "test-extension.sh", cmd);
+        RunCustomActionAnswer answer = provisioner.runCustomAction("host-name", "test-extension", "test-extension.sh", cmd);
 
         assertTrue(answer.getResult());
         Mockito.verify(logger).debug("Executing custom action '{}' in the external system", "test-action");
@@ -746,5 +753,237 @@ public class ExternalPathPayloadProvisionerTest {
         UserVmVO vm = mock(UserVmVO.class);
         VirtualMachine.PowerState result = provisioner.parsePowerStateFromResponse(vm, response);
         assertEquals(VirtualMachine.PowerState.PowerOn, result);
+    }
+
+    @Test
+    public void getVirtualMachineTOReturnsNullWhenVmIsNull() {
+        VirtualMachineTO result = provisioner.getVirtualMachineTO(null);
+        assertNull(result);
+    }
+
+    @Test
+    public void getVirtualMachineTOReturnsValidTOWhenVmIsNotNull() {
+        VirtualMachine vm = mock(VirtualMachine.class);
+        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+        when(hypervisorGuruManager.getGuru(Hypervisor.HypervisorType.External)).thenReturn(hypervisorGuru);
+        when(hypervisorGuru.implement(any(VirtualMachineProfile.class))).thenReturn(vmTO);
+        VirtualMachineTO result = provisioner.getVirtualMachineTO(vm);
+        assertNotNull(result);
+        assertEquals(vmTO, result);
+        Mockito.verify(hypervisorGuruManager).getGuru(Hypervisor.HypervisorType.External);
+        Mockito.verify(hypervisorGuru).implement(any(VirtualMachineProfile.class));
+    }
+
+    @Test
+    public void getInstanceConsoleReturnsAnswerWhenConsoleDetailsAreValid() {
+        GetExternalConsoleCommand cmd = mock(GetExternalConsoleCommand.class);
+        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+        when(cmd.getVirtualMachine()).thenReturn(vmTO);
+        when(vmTO.getUuid()).thenReturn("test-uuid");
+
+        Map<String, Object> accessDetails = new HashMap<>();
+        when(provisioner.loadAccessDetails(any(), eq(vmTO))).thenReturn(accessDetails);
+
+        String validOutput = "{\"console\":{\"host\":\"127.0.0.1\",\"port\":5900,\"password\":\"pass\",\"protocol\":\"vnc\"}}";
+        doReturn(new Pair<>(true, validOutput)).when(provisioner)
+                .getInstanceConsoleOnExternalSystem(anyString(), anyString(), anyString(), anyMap(), anyInt());
+
+        GetExternalConsoleAnswer result = provisioner.getInstanceConsole("host-name", "test-extension", "test-extension.sh", cmd);
+
+        assertNotNull(result);
+        assertEquals("127.0.0.1", result.getHost());
+        Integer port = 5900;
+        assertEquals(port, result.getPort());
+        assertEquals("pass", result.getPassword());
+        assertEquals("vnc", result.getProtocol());
+    }
+
+    @Test
+    public void getInstanceConsoleReturnsErrorWhenExtensionNotConfigured() {
+        GetExternalConsoleCommand cmd = mock(GetExternalConsoleCommand.class);
+        when(provisioner.getExtensionCheckedPath(anyString(), anyString())).thenReturn(null);
+
+        String extensionName = "test-extension";
+        String hostName = "host-name";
+        GetExternalConsoleAnswer result = provisioner.getInstanceConsole(hostName,
+                extensionName, "test-extension.sh", cmd);
+
+        assertNotNull(result);
+        assertEquals(String.format("Extension: %s not configured for host: %s", extensionName, hostName), result.getDetails());
+    }
+
+    @Test
+    public void getInstanceConsoleReturnsErrorWhenExternalSystemFails() {
+        GetExternalConsoleCommand cmd = mock(GetExternalConsoleCommand.class);
+        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+        when(cmd.getVirtualMachine()).thenReturn(vmTO);
+        when(vmTO.getUuid()).thenReturn("test-uuid");
+
+        doReturn(new Pair<>(false, "External system error")).when(provisioner)
+                .getInstanceConsoleOnExternalSystem(anyString(), anyString(), anyString(), anyMap(), anyInt());
+
+        GetExternalConsoleAnswer result = provisioner.getInstanceConsole("host-name", "test-extension", "test-extension.sh", cmd);
+
+        assertNotNull(result);
+        assertEquals("External system error", result.getDetails());
+    }
+
+    @Test
+    public void getInstanceConsoleReturnsErrorWhenConsoleObjectIsMissing() {
+        GetExternalConsoleCommand cmd = mock(GetExternalConsoleCommand.class);
+        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+        when(cmd.getVirtualMachine()).thenReturn(vmTO);
+        when(vmTO.getUuid()).thenReturn("test-uuid");
+
+        String invalidOutput = "{\"invalid_key\":\"value\"}";
+        doReturn(new Pair<>(true, invalidOutput)).when(provisioner)
+                .getInstanceConsoleOnExternalSystem(anyString(), anyString(), anyString(), anyMap(), anyInt());
+
+        GetExternalConsoleAnswer result = provisioner.getInstanceConsole("host-name", "test-extension", "test-extension.sh", cmd);
+
+        assertNotNull(result);
+        assertEquals("Missing console object in output", result.getDetails());
+    }
+
+    @Test
+    public void getInstanceConsoleReturnsErrorWhenRequiredFieldsAreMissing() {
+        GetExternalConsoleCommand cmd = mock(GetExternalConsoleCommand.class);
+        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+        when(cmd.getVirtualMachine()).thenReturn(vmTO);
+        when(vmTO.getUuid()).thenReturn("test-uuid");
+
+        String incompleteOutput = "{\"console\":{\"host\":\"127.0.0.1\"}}";
+        doReturn(new Pair<>(true, incompleteOutput)).when(provisioner)
+                .getInstanceConsoleOnExternalSystem(anyString(), anyString(), anyString(), anyMap(), anyInt());
+
+        GetExternalConsoleAnswer result = provisioner.getInstanceConsole("host-name", "test-extension", "test-extension.sh", cmd);
+
+        assertNotNull(result);
+        assertEquals("Missing required fields in output", result.getDetails());
+    }
+
+    @Test
+    public void getInstanceConsoleReturnsErrorWhenOutputParsingFails() {
+        GetExternalConsoleCommand cmd = mock(GetExternalConsoleCommand.class);
+        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+        when(cmd.getVirtualMachine()).thenReturn(vmTO);
+        when(vmTO.getUuid()).thenReturn("test-uuid");
+
+        String malformedOutput = "{console:invalid}";
+        doReturn(new Pair<>(true, malformedOutput)).when(provisioner)
+                .getInstanceConsoleOnExternalSystem(anyString(), anyString(), anyString(), anyMap(), anyInt());
+
+        GetExternalConsoleAnswer result = provisioner.getInstanceConsole("host-name", "test-extension", "test-extension.sh", cmd);
+
+        assertNotNull(result);
+        assertEquals("Failed to parse output", result.getDetails());
+    }
+
+    @Test
+    public void getInstanceConsoleOnExternalSystemReturnsSuccessWhenCommandExecutesSuccessfully() {
+        String extensionName = "test-extension";
+        String filename = "test-script.sh";
+        String vmUUID = "test-vm-uuid";
+        Map<String, Object> accessDetails = new HashMap<>();
+        int wait = 30;
+
+        doReturn(new Pair<>(true, "Console details")).when(provisioner)
+            .executeExternalCommand(eq(extensionName), eq("getconsole"), eq(accessDetails), eq(wait), anyString(), eq(filename));
+
+        Pair<Boolean, String> result = provisioner.getInstanceConsoleOnExternalSystem(extensionName, filename, vmUUID, accessDetails, wait);
+
+        assertTrue(result.first());
+        assertEquals("Console details", result.second());
+    }
+
+    @Test
+    public void getInstanceConsoleOnExternalSystemReturnsFailureWhenCommandFails() {
+        String extensionName = "test-extension";
+        String filename = "test-script.sh";
+        String vmUUID = "test-vm-uuid";
+        Map<String, Object> accessDetails = new HashMap<>();
+        int wait = 30;
+
+        doReturn(new Pair<>(false, "Failed to get console")).when(provisioner)
+            .executeExternalCommand(eq(extensionName), eq("getconsole"), eq(accessDetails), eq(wait), anyString(), eq(filename));
+
+        Pair<Boolean, String> result = provisioner.getInstanceConsoleOnExternalSystem(extensionName, filename, vmUUID, accessDetails, wait);
+
+        assertFalse(result.first());
+        assertEquals("Failed to get console", result.second());
+    }
+
+    @Test
+    public void getInstanceConsoleOnExternalSystemHandlesNullResponseGracefully() {
+        String extensionName = "test-extension";
+        String filename = "test-script.sh";
+        String vmUUID = "test-vm-uuid";
+        Map<String, Object> accessDetails = new HashMap<>();
+        int wait = 30;
+
+        doReturn(null).when(provisioner)
+            .executeExternalCommand(eq(extensionName), eq("getconsole"), eq(accessDetails), eq(wait), anyString(), eq(filename));
+
+        Pair<Boolean, String> result = provisioner.getInstanceConsoleOnExternalSystem(extensionName, filename, vmUUID, accessDetails, wait);
+
+        assertNull(result);
+    }
+
+    @Test
+    public void getSanitizedJsonStringForLogReturnsNullWhenInputIsNull() {
+        String result = provisioner.getSanitizedJsonStringForLog(null);
+        assertNull(result);
+    }
+
+    @Test
+    public void getSanitizedJsonStringForLogReturnsEmptyWhenInputIsEmpty() {
+        String result = provisioner.getSanitizedJsonStringForLog("");
+        assertEquals("", result);
+    }
+
+    @Test
+    public void getSanitizedJsonStringForLogReturnsSameStringWhenNoPasswordField() {
+        String json = "{\"key\":\"value\"}";
+        String result = provisioner.getSanitizedJsonStringForLog(json);
+        assertEquals(json, result);
+    }
+
+    @Test
+    public void getSanitizedJsonStringForLogMasksPasswordField() {
+        String json = "{\"password\":\"secret\"}";
+        String result = provisioner.getSanitizedJsonStringForLog(json);
+        assertEquals("{\"password\":\"****\"}", result);
+    }
+
+    @Test
+    public void getSanitizedJsonStringForLogHandlesMultiplePasswordFields() {
+        String json = "{\"password\":\"secret\",\"nested\":{\"password\":\"anotherSecret\"}}";
+        String result = provisioner.getSanitizedJsonStringForLog(json);
+        assertEquals("{\"password\":\"****\",\"nested\":{\"password\":\"****\"}}", result);
+    }
+
+    @Test
+    public void getSanitizedJsonStringForLogHandlesMalformedJsonGracefully() {
+        String json = "{password:\"secret\"";
+        String result = provisioner.getSanitizedJsonStringForLog(json);
+        assertEquals("{password:\"secret\"", result);
+    }
+
+    @Test
+    public void getExtensionConfigureErrorReturnsMessageWhenHostNameIsNotBlank() {
+        String result = provisioner.getExtensionConfigureError("test-extension", "test-host");
+        assertEquals("Extension: test-extension not configured for host: test-host", result);
+    }
+
+    @Test
+    public void getExtensionConfigureErrorReturnsMessageWhenHostNameIsBlank() {
+        String result = provisioner.getExtensionConfigureError("test-extension", "");
+        assertEquals("Extension: test-extension not configured", result);
+    }
+
+    @Test
+    public void getExtensionConfigureErrorReturnsMessageWhenHostNameIsNull() {
+        String result = provisioner.getExtensionConfigureError("test-extension", null);
+        assertEquals("Extension: test-extension not configured", result);
     }
 }

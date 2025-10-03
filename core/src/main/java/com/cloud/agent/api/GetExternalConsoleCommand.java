@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,47 +14,40 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
 
 package com.cloud.agent.api;
 
-import java.util.Map;
-
 import com.cloud.agent.api.to.VirtualMachineTO;
 
-public class RunCustomActionCommand extends Command {
+public class GetExternalConsoleCommand extends Command {
+    String vmName;
+    VirtualMachineTO vm;
+    protected boolean executeInSequence;
 
-    String actionName;
-    VirtualMachineTO vmTO;
-    Map<String, Object> parameters;
-
-    public RunCustomActionCommand(String actionName) {
-        this.actionName = actionName;
-        this.setWait(5);
+    public GetExternalConsoleCommand(String vmName, VirtualMachineTO vm) {
+        this.vmName = vmName;
+        this.vm = vm;
+        this.executeInSequence = false;
     }
 
-    public String getActionName() {
-        return actionName;
+    public String getVmName() {
+        return this.vmName;
     }
 
-    public VirtualMachineTO getVmTO() {
-        return vmTO;
+    public void setVirtualMachine(VirtualMachineTO vm) {
+        this.vm = vm;
     }
 
-    public void setVmTO(VirtualMachineTO vmTO) {
-        this.vmTO = vmTO;
-    }
-
-    public Map<String, Object> getParameters() {
-        return parameters;
-    }
-
-    public void setParameters(Map<String, Object> parameters) {
-        this.parameters = parameters;
+    public VirtualMachineTO getVirtualMachine() {
+        return vm;
     }
 
     @Override
     public boolean executeInSequence() {
-        return false;
+        return executeInSequence;
+    }
+
+    public void setExecuteInSequence(boolean executeInSequence) {
+        this.executeInSequence = executeInSequence;
     }
 }
