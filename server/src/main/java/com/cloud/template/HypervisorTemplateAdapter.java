@@ -693,6 +693,9 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         if (success) {
             if ((imageStores != null && imageStores.size() > 1) && (profile.getZoneIdList() != null)) {
                 //if template is stored in more than one image stores, and the zone id is not null, then don't delete other templates.
+                if (templateMgr.TemplateDeleteFromPrimaryStorage.value()) {
+                    templateMgr.evictTemplateFromStoragePoolsForZones(template.getId(), profile.getZoneIdList());
+                }
                 return cleanupTemplate(template, success);
             }
 
@@ -724,6 +727,10 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                     _resourceLimitMgr.decrementResourceCount(template.getAccountId(), ResourceType.template);
                     _resourceLimitMgr.recalculateResourceCount(template.getAccountId(), account.getDomainId(), ResourceType.secondary_storage.getOrdinal());
 
+            }
+
+            if (templateMgr.TemplateDeleteFromPrimaryStorage.value()) {
+                templateMgr.evictTemplateFromStoragePoolsForZones(template.getId(), profile.getZoneIdList());
             }
 
             // remove its related ACL permission
