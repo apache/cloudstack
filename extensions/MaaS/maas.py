@@ -97,13 +97,18 @@ class MaasManager:
             resource_owner_secret=self.data["secret"],
         )
 
-    def call_maas(self, method, path, data=None):
+    def call_maas(self, method, path, data=None, ignore_404=False):
         if not path.startswith("/"):
             path = "/" + path
         url = f"{self.data['endpoint']}:5240/MAAS/api/2.0{path}"
         resp = self.session.request(method, url, data=data)
+
+        if resp.status_code == 404 and ignore_404:
+            return None
+
         if not resp.ok:
             fail(f"MAAS API error: {resp.status_code} {resp.text}")
+
         try:
             return resp.json() if resp.text else {}
         except ValueError:
@@ -183,8 +188,9 @@ runcmd:
         sysid = self.data.get("system_id")
         if not sysid:
             fail("system_id missing for delete")
-        self.call_maas("POST", f"/machines/{sysid}/", {"op": "release"})
-        succeed({"status": "success", "message": "Instance deleted"})
+
+        self.call_maas("POST", f"/machines/{sysid}/", {"op": "release"}, ignore_404=True)
+        succeed({"status": "success", "message": f"Instance deleted or not found ({sysid})"})
 
     def start(self):
         sysid = self.data.get("system_id")
