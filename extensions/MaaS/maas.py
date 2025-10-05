@@ -49,11 +49,13 @@ class MaasManager:
 
             endpoint = host.get("endpoint") or extension.get("endpoint")
             apikey = host.get("apikey") or extension.get("apikey")
-            distro_series = (
-                json_data.get("cloudstack.vm.details", {})
-                .get("details", {})
-                .get("distro_series", None)
-            )
+
+            details = json_data.get("cloudstack.vm.details", {}).get("details", {})
+
+            distro_series = details.get("distro_series", None)
+            os_name = details.get("os")  # "ubuntu" or "centos"
+            release = details.get("release")  # "20.04", "22.04", "8", etc.
+            architecture = details.get("architecture")  # "amd64/ga-20.04", "amd64/generic", etc.
 
             if not endpoint or not apikey:
                 fail("Missing MAAS endpoint or apikey")
@@ -68,12 +70,7 @@ class MaasManager:
 
             consumer, token, secret = parts
 
-            system_id = (
-                    json_data.get("cloudstack.vm.details", {})
-                    .get("details", {})
-                    .get("maas_system_id")
-                    or vm.get("maas_system_id", "")
-            )
+            system_id = details.get("maas_system_id") or vm.get("maas_system_id", "")
 
             vm_name = vm.get("vm_name") or json_data.get("cloudstack.vm.details", {}).get("name")
             if not vm_name:
@@ -85,6 +82,9 @@ class MaasManager:
                 "token": token,
                 "secret": secret,
                 "distro_series": distro_series or "ubuntu/focal",
+                "os": os_name,
+                "release": release,
+                "architecture": architecture,
                 "system_id": system_id,
                 "vm_name": vm_name,
             }
@@ -163,17 +163,30 @@ class MaasManager:
         if not sysid:
             fail("system_id missing for create")
 
-        ds = self.data.get("distro_series", "ubuntu/focal")
-        self.call_maas(
-            "POST",
-            f"/machines/{sysid}/",
-            {
-                "op": "deploy",
-                "distro_series": ds,
-                "net-setup-method": "curtin",
-            },
-        )
-        succeed({"status": "success", "message": f"Instance created with {ds}"})
+        ds = self.data.get("distro_series", None)
+        os_name = self.data.get("os")
+        release = self.data.get("release")
+        arch = self.data.get("architecture")
+
+        deploy_payload = {"op": "deploy"}
+
+        if os_name or release or arch:
+            if os_name:
+                deploy_payload["os"] = os_name
+            if release:
+                deploy_payload["release"] = release
+            if arch:
+                deploy_payload["architecture"] = arch
+            if ds:
+                deploy_payload["distro_series"] = ds
+        else:
+            deploy_payload["distro_series"] = ds or "ubuntu/focal"
+
+        deploy_payload["net-setup-method"] = "curtin"
+
+        self.call_maas("POST", f"/machines/{sysid}/", deploy_payload)
+
+        succeed({"status": "success", "message": "Instance created", "requested": deploy_payload})
 
     def delete(self):
         sysid = self.data.get("system_id")
