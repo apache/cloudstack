@@ -163,26 +163,16 @@ class MaasManager:
             fail("system_id missing for create")
 
         ds = self.data.get("distro_series", "ubuntu/focal")
-        vm_name = self.data.get("vm_name")
-
-        # Cloud-init userdata to disable netplan, flush IPs on ens35, and run dhclient
-        userdata = """#cloud-config
-network:
-  config: disabled
-runcmd:
-  - [ sh, -c, "dhclient -v -4 ens35 || true" ]
-"""
-
         self.call_maas(
             "POST",
             f"/machines/{sysid}/",
             {
                 "op": "deploy",
                 "distro_series": ds,
-                "userdata": userdata,
+                "net-setup-method": "curtin",
             },
         )
-        succeed({"status": "success", "message": f"Instance created with {self.data['distro_series']}"})
+        succeed({"status": "success", "message": f"Instance created with {ds}"})
 
     def delete(self):
         sysid = self.data.get("system_id")
