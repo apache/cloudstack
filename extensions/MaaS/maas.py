@@ -18,6 +18,7 @@
 
 import sys
 import json
+import time
 from requests_oauthlib import OAuth1Session
 
 
@@ -200,8 +201,12 @@ class MaasManager:
         sysid = self.data.get("system_id")
         if not sysid:
             fail("system_id missing for reboot")
-        self.call_maas("POST", f"/machines/{sysid}/", {"op": "power_cycle"})
-        succeed({"status": "success", "power_state": "PowerOn"})
+
+        self.call_maas("POST", f"/machines/{sysid}/", {"op": "power_off"})
+        time.sleep(5)
+        self.call_maas("POST", f"/machines/{sysid}/", {"op": "power_on"})
+
+        succeed({"status": "success", "power_state": "PowerOn", "message": "Reboot completed"})
 
     def status(self):
         sysid = self.data.get("system_id")
