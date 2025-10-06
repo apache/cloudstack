@@ -47,6 +47,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
+import com.cloud.agent.api.UnmountDatastoresCommand;
 import com.cloud.event.ActionEventUtils;
 import com.google.gson.Gson;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -2754,7 +2755,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         profile.setHost(dest.getHost());
 
         _networkMgr.prepareNicForMigration(profile, dest);
-        volumeMgr.prepareForMigration(profile, dest);
+        volumeMgr.prepareForMigration(profile, dest, srcHostId);
         profile.setConfigDriveLabel(VmConfigDriveLabel.value());
         updateOverCommitRatioForVmProfile(profile, dest.getHost().getClusterId());
 
@@ -2883,13 +2884,27 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             } else {
                 _networkMgr.commitNicForMigration(vmSrc, profile);
                 volumeMgr.release(vm.getId(), srcHostId);
+                postMigrationRelease(profile, vm.getId(), srcHostId);
                 _networkMgr.setHypervisorHostname(profile, dest, true);
-
                 updateVmPod(vm, dstHostId);
             }
 
             work.setStep(Step.Done);
             _workDao.update(work.getId(), work);
+        }
+    }
+
+    private void postMigrationRelease(VirtualMachineProfile profile, long vmId, long srcHostId) {
+        List<String> poolsToReleaseOnOrigin = volumeMgr.postMigrationReleaseDatastoresOnOriginHost(profile, vmId);
+        if (CollectionUtils.isEmpty(poolsToReleaseOnOrigin)) {
+            return;
+        }
+        // Unmount the datastores from this host only (useful for SolidFire 1:1 plugin zone-wide storage migrations)
+        UnmountDatastoresCommand cmd = new UnmountDatastoresCommand(poolsToReleaseOnOrigin);
+        try {
+            _agentMgr.send(srcHostId, cmd);
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -3243,7 +3258,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         _networkMgr.prepareNicForMigration(profile, destination);
-        volumeMgr.prepareForMigration(profile, destination);
+        volumeMgr.prepareForMigration(profile, destination, srcHostId);
         final HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
         final VirtualMachineTO to = hvGuru.implement(profile);
 
@@ -4410,7 +4425,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
         _networkMgr.prepareNicForMigration(profile, dest);
 
-        volumeMgr.prepareForMigration(profile, dest);
+        volumeMgr.prepareForMigration(profile, dest, srcHostId);
 
         final VirtualMachineTO to = toVmTO(profile);
         final PrepareForMigrationCommand pfmc = new PrepareForMigrationCommand(to);
