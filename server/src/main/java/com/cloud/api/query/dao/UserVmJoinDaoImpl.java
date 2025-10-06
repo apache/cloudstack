@@ -111,10 +111,6 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
 
     private final SearchBuilder<UserVmJoinVO> VmDetailSearch;
     private final SearchBuilder<UserVmJoinVO> activeVmByIsoSearch;
-    private final SearchBuilder<UserVmJoinVO> vmByNetworkIdSearch;
-    private final SearchBuilder<UserVmJoinVO> vmByVpcIdSearch;
-    private final SearchBuilder<UserVmJoinVO> vmByDiskOfferingIdSearch;
-    private final SearchBuilder<UserVmJoinVO> vmByServiceOfferingIdSearch;
 
     protected UserVmJoinDaoImpl() {
 
@@ -128,26 +124,6 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         activeVmByIsoSearch.and("isoId", activeVmByIsoSearch.entity().getIsoId(), SearchCriteria.Op.EQ);
         activeVmByIsoSearch.and("stateNotIn", activeVmByIsoSearch.entity().getState(), SearchCriteria.Op.NIN);
         activeVmByIsoSearch.done();
-
-        vmByNetworkIdSearch = createSearchBuilder();
-        vmByNetworkIdSearch.and("networkId", vmByNetworkIdSearch.entity().getNetworkId(), Op.EQ);
-        vmByNetworkIdSearch.selectFields(vmByNetworkIdSearch.entity().getId(), vmByNetworkIdSearch.entity().getInstanceName());
-        vmByNetworkIdSearch.done();
-
-        vmByVpcIdSearch = createSearchBuilder();
-        vmByVpcIdSearch.and("vpcId", vmByVpcIdSearch.entity().getVpcId(), Op.EQ);
-        vmByVpcIdSearch.selectFields(vmByVpcIdSearch.entity().getId(), vmByVpcIdSearch.entity().getInstanceName());
-        vmByVpcIdSearch.done();
-
-        vmByDiskOfferingIdSearch = createSearchBuilder();
-        vmByDiskOfferingIdSearch.and("diskOfferingId", vmByDiskOfferingIdSearch.entity().getDiskOfferingId(), Op.EQ);
-        vmByDiskOfferingIdSearch.selectFields(vmByDiskOfferingIdSearch.entity().getId(), vmByDiskOfferingIdSearch.entity().getInstanceName());
-        vmByDiskOfferingIdSearch.done();
-
-        vmByServiceOfferingIdSearch = createSearchBuilder();
-        vmByServiceOfferingIdSearch.and("serviceOfferingId", vmByServiceOfferingIdSearch.entity().getServiceOfferingId(), Op.EQ);
-        vmByServiceOfferingIdSearch.selectFields(vmByServiceOfferingIdSearch.entity().getId(), vmByServiceOfferingIdSearch.entity().getInstanceName());
-        vmByServiceOfferingIdSearch.done();
     }
 
     @Override
@@ -740,46 +716,6 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             sc.setParameters("state", states.toArray());
         }
         sc.setParameters("displayVm", 1);
-        return customSearch(sc, null);
-    }
-
-    @Override
-    public List<UserVmJoinVO> listByNetworkOfferingId(Long networkId) {
-        if (networkId == null) {
-            return new ArrayList<>();
-        }
-        SearchCriteria<UserVmJoinVO> sc = vmByNetworkIdSearch.create();
-        sc.setParameters("networkId", networkId);
-        return customSearch(sc, null);
-    }
-
-    @Override
-    public List<UserVmJoinVO> listByVpcOfferingId(Long vpcId) {
-        if (vpcId == null) {
-            return new ArrayList<>();
-        }
-        SearchCriteria<UserVmJoinVO> sc = vmByVpcIdSearch.create();
-        sc.setParameters("vpcId", vpcId);
-        return customSearch(sc, null);
-    }
-
-    @Override
-    public List<UserVmJoinVO> listByDiskOfferingId(Long diskOfferingId) {
-        if (diskOfferingId == null) {
-            return new ArrayList<>();
-        }
-        SearchCriteria<UserVmJoinVO> sc = vmByDiskOfferingIdSearch.create();
-        sc.setParameters("diskOfferingId", diskOfferingId);
-        return customSearch(sc, null);
-    }
-
-    @Override
-    public List<UserVmJoinVO> listByServiceOfferingId(Long serviceOfferingId) {
-        if (serviceOfferingId == null) {
-            return new ArrayList<>();
-        }
-        SearchCriteria<UserVmJoinVO> sc = vmByServiceOfferingIdSearch.create();
-        sc.setParameters("serviceOfferingId", serviceOfferingId);
         return customSearch(sc, null);
     }
 }

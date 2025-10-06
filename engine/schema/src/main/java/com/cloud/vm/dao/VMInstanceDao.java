@@ -187,4 +187,5 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
 
     Map<String, Long> getNameIdMapForVmIds(Collection<Long> ids);
 
+    int getVmCountByOfferingId(Long serviceOfferingId);
 }
