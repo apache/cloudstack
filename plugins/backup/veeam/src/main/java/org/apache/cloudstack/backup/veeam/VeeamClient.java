@@ -90,6 +90,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.util.Supplier;
 
 public class VeeamClient {
     protected Logger logger = LogManager.getLogger(getClass());
@@ -382,8 +383,8 @@ public class VeeamClient {
                         getRestoreVmErrorDescription(StringUtils.substringAfterLast(sessionUid, ":"))));
                 throw new CloudRuntimeException(String.format("Restore job [%s] failed.", sessionUid));
             }
-            logger.debug(String.format("Waiting %d seconds, out of a total of %d seconds, for the restore backup process to finish.",
-    (System.currentTimeMillis() - startTime) / 1000, restoreTimeout));
+            logger.debug("Waiting {} seconds, out of a total of {} seconds, for the restore backup process to finish.",
+                    (System.currentTimeMillis() - startTime) / 1000, restoreTimeout);
 
             try {
                 Thread.sleep(1000);
