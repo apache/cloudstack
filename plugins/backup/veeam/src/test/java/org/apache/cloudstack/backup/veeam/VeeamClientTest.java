@@ -25,7 +25,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.times;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
