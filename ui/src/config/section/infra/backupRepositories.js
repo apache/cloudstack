@@ -19,7 +19,7 @@ export default {
   name: 'backuprepository',
   title: 'label.backup.repository',
   icon: 'inbox-outlined',
-  docHelp: 'adminguide/backup_and_recovery.html',
+  docHelp: 'adminguide/nas_plugin.html',
   permission: ['listBackupRepositories'],
   searchFilters: ['zoneid'],
   columns: ['name', 'provider', 'type', 'address', 'zonename'],
