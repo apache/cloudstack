@@ -1051,6 +1051,8 @@
 "label.externalid": "External Id",
 "label.externalloadbalanceripaddress": "External load balancer IP address.",
 "label.extra": "Extra arguments",
+"label.extraconfig": "Additional Configuration",
+"label.extraconfig.tooltip": "Additional configuration parameters (extraconfig) to pass to the instance in plain text",
 "label.f5": "F5",
 "label.f5.ip.loadbalancer": "F5 BIG-IP load balancer.",
 "label.failed": "Failed",

@@ -430,6 +430,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 logger.warn("Unable to find the network with ID: {} passed for the Kubernetes cluster", networkId);
                 return false;
             }
+            if (isDirectAccess(network)) {
+                return true;
+            }
             networkOffering = networkOfferingDao.findById(network.getNetworkOfferingId());
             if (networkOffering == null) {
                 logger.warn("Unable to find the network offering of the network: {} ({}) to be used for provisioning Kubernetes cluster", network.getName(), network.getUuid());
@@ -1870,7 +1873,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         try {
             Role role = getProjectKubernetesAccountRole();
             UserAccount userAccount = accountService.createUserAccount(accountName,
-                    UuidUtils.first(UUID.randomUUID().toString()), PROJECT_KUBERNETES_ACCOUNT_FIRST_NAME,
+                    UUID.randomUUID().toString(), PROJECT_KUBERNETES_ACCOUNT_FIRST_NAME,
                     PROJECT_KUBERNETES_ACCOUNT_LAST_NAME, null, null, accountName, Account.Type.NORMAL, role.getId(),
                     project.getDomainId(), null, null, null, null, User.Source.NATIVE);
             projectManager.assignAccountToProject(project, userAccount.getAccountId(), ProjectAccount.Role.Regular,
