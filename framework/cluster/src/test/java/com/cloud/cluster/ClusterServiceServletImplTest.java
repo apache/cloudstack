@@ -17,15 +17,18 @@
 
 package com.cloud.cluster;
 
+import java.net.InetAddress;
 import java.util.List;
 import java.util.Optional;
 
+import org.apache.cloudstack.utils.ServerPropertiesUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.http.NameValuePair;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -60,5 +63,41 @@ public class ClusterServiceServletImplTest {
         Assert.assertTrue(opt.isPresent());
         val = opt.get();
         Assert.assertEquals(peer, val.getValue());
+    }
+
+    @Test
+    public void getBindAddressIfAvailable_returnsInetAddress_whenBindAddressIsValid() {
+        try (MockedStatic<ServerPropertiesUtil> ignored = Mockito.mockStatic(ServerPropertiesUtil.class)) {
+            Mockito.when(ServerPropertiesUtil.getProperty("bind.interface")).thenReturn("127.0.0.1");
+
+            InetAddress result = clusterServiceServlet.getBindAddressIfAvailable();
+
+            Assert.assertNotNull(result);
+            Assert.assertEquals("127.0.0.1", result.getHostAddress());
+        } catch (RuntimeException e) {
+            Assert.fail("Unexpected RuntimeException: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void getBindAddressIfAvailable_returnsNull_whenBindAddressIsBlank() {
+        try (MockedStatic<ServerPropertiesUtil> ignored = Mockito.mockStatic(ServerPropertiesUtil.class)) {
+            Mockito.when(ServerPropertiesUtil.getProperty("bind.interface")).thenReturn("");
+
+            InetAddress result = clusterServiceServlet.getBindAddressIfAvailable();
+
+            Assert.assertNull(result);
+        } catch (RuntimeException e) {
+            Assert.fail("Unexpected RuntimeException: " + e.getMessage());
+        }
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void getBindAddressIfAvailable_throwsRuntimeException_whenBindAddressIsInvalid() throws RuntimeException {
+        try (MockedStatic<ServerPropertiesUtil> ignored = Mockito.mockStatic(ServerPropertiesUtil.class)) {
+            Mockito.when(ServerPropertiesUtil.getProperty("bind.interface")).thenReturn("invalid-address");
+
+            clusterServiceServlet.getBindAddressIfAvailable();
+        }
     }
 }
