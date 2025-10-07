@@ -24,15 +24,25 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.management.ManagementFactory;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.List;
 import java.util.Properties;
 
-import com.cloud.api.ApiServer;
+import javax.servlet.DispatcherType;
+
+import org.apache.cloudstack.utils.server.ServerPropertiesUtil;
 import org.apache.commons.daemon.Daemon;
 import org.apache.commons.daemon.DaemonContext;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.jetty.jmx.MBeanContainer;
 import org.eclipse.jetty.server.ForwardedRequestCustomizer;
+import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.RequestLog;
@@ -46,14 +56,18 @@ import org.eclipse.jetty.server.handler.MovedContextHandler;
 import org.eclipse.jetty.server.handler.RequestLogHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.eclipse.jetty.server.session.SessionHandler;
+import org.eclipse.jetty.servlet.DefaultServlet;
+import org.eclipse.jetty.servlet.FilterHolder;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.util.ssl.KeyStoreScanner;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.eclipse.jetty.util.thread.ScheduledExecutorScheduler;
 import org.eclipse.jetty.webapp.WebAppContext;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 
+import com.cloud.api.ApiServer;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.server.ServerProperties;
@@ -111,6 +125,12 @@ public class ServerDaemon implements Daemon {
     private int minThreads;
     private int maxThreads;
 
+    private boolean shareEnabled = false;
+    private String shareBaseDir;
+    private String shareCacheCtl;
+    private boolean shareDirList = false;
+    private String shareSecret;
+
     //////////////////////////////////////////////////
     /////////////// Public methods ///////////////////
     //////////////////////////////////////////////////
@@ -119,6 +139,14 @@ public class ServerDaemon implements Daemon {
         final ServerDaemon daemon = new ServerDaemon();
         daemon.init(null);
         daemon.start();
+    }
+
+    protected void initShareConfigFromProperties() {
+        setShareEnabled(ServerPropertiesUtil.getShareEnabled());
+        setShareBaseDir(ServerPropertiesUtil.getShareBaseDirectory());
+        setShareCacheCtl(ServerPropertiesUtil.getShareCacheControl());
+        setShareDirList(ServerPropertiesUtil.getShareDirAllowed());
+        setShareSecret(ServerPropertiesUtil.getShareSecret());
     }
 
     @Override
@@ -153,6 +181,7 @@ public class ServerDaemon implements Daemon {
             setMaxFormKeys(Integer.valueOf(properties.getProperty(REQUEST_MAX_FORM_KEYS_KEY, String.valueOf(DEFAULT_REQUEST_MAX_FORM_KEYS))));
             setMinThreads(Integer.valueOf(properties.getProperty(THREADS_MIN, "10")));
             setMaxThreads(Integer.valueOf(properties.getProperty(THREADS_MAX, "500")));
+            initShareConfigFromProperties();
         } catch (final IOException e) {
             logger.warn("Failed to read configuration from server.properties file", e);
         } finally {
@@ -288,6 +317,52 @@ public class ServerDaemon implements Daemon {
         }
     }
 
+    /**
+     * Creates a Jetty context at /share to serve static files for modules (e.g. Extensions Framework).
+     * Controlled via server properties
+     *
+     * @return a configured Handler or null if disabled.
+     */
+    private Handler createShareContextHandler() throws IOException {
+        if (!shareEnabled) {
+            logger.info("/{} context not mounted", ServerPropertiesUtil.SHARE_DIR);
+            return null;
+        }
+
+        final Path base = Paths.get(shareBaseDir);
+        Files.createDirectories(base);
+
+        final ServletContextHandler shareCtx = new ServletContextHandler(ServletContextHandler.NO_SESSIONS);
+        shareCtx.setContextPath("/" + ServerPropertiesUtil.SHARE_DIR);
+        shareCtx.setBaseResource(Resource.newResource(base.toAbsolutePath().toUri()));
+
+        // Efficient static file serving
+        ServletHolder def = shareCtx.addServlet(DefaultServlet.class, "/*");
+        def.setInitParameter("dirAllowed", Boolean.toString(shareDirList));
+        def.setInitParameter("etags", "true");
+        def.setInitParameter("cacheControl", shareCacheCtl);
+        def.setInitParameter("useFileMappedBuffer", "true");
+        def.setInitParameter("acceptRanges", "true");
+
+        // Gzip using modern Jetty handler
+        org.eclipse.jetty.server.handler.gzip.GzipHandler gzipHandler =
+                new org.eclipse.jetty.server.handler.gzip.GzipHandler();
+        gzipHandler.setMinGzipSize(1024);
+        gzipHandler.setIncludedMimeTypes(
+                "text/html", "text/plain", "text/css", "text/javascript",
+                "application/javascript", "application/json", "application/xml");
+        gzipHandler.setHandler(shareCtx);
+
+        // Optional signed-URL guard (path + "|" + exp => HMAC-SHA256, base64url)
+        if (StringUtils.isNotBlank(shareSecret)) {
+            shareCtx.addFilter(new FilterHolder(new ShareSignedUrlFilter(true, shareSecret)),
+                    "/*", EnumSet.of(DispatcherType.REQUEST));
+        }
+
+        logger.info("Mounted /{} static context at baseDir={}", ServerPropertiesUtil.SHARE_DIR, base);
+        return shareCtx;
+    }
+
     private Pair<SessionHandler,HandlerCollection> createHandlers() {
         final WebAppContext webApp = new WebAppContext();
         webApp.setContextPath(contextPath);
@@ -318,8 +393,23 @@ public class ServerDaemon implements Daemon {
         rootRedirect.setNewContextURL(contextPath);
         rootRedirect.setPermanent(true);
 
+        // Optional /share handler (served by createShareContextHandler)
+        Handler shareHandler = null;
+        try {
+            shareHandler = createShareContextHandler();
+        } catch (IOException e) {
+            logger.error("Failed to initialize /share context", e);
+        }
+
+        List<Handler> handlers = new java.util.ArrayList<>();
+        handlers.add(log);
+        handlers.add(gzipHandler);
+        if (shareHandler != null) {
+            handlers.add(shareHandler);
+        }
         // Put rootRedirect at the end!
-        return new Pair<>(webApp.getSessionHandler(), new HandlerCollection(log, gzipHandler, rootRedirect));
+        handlers.add(rootRedirect);
+        return new Pair<>(webApp.getSessionHandler(), new HandlerCollection(handlers.toArray(new Handler[0])));
     }
 
     private RequestLog createRequestLog() {
@@ -407,5 +497,25 @@ public class ServerDaemon implements Daemon {
 
     public void setMaxThreads(int maxThreads) {
         this.maxThreads = maxThreads;
+    }
+
+    public void setShareEnabled(boolean shareEnabled) {
+        this.shareEnabled = shareEnabled;
+    }
+
+    public void setShareBaseDir(String shareBaseDir) {
+        this.shareBaseDir = shareBaseDir;
+    }
+
+    public void setShareCacheCtl(String shareCacheCtl) {
+        this.shareCacheCtl = shareCacheCtl;
+    }
+
+    public void setShareDirList(boolean shareDirList) {
+        this.shareDirList = shareDirList;
+    }
+
+    public void setShareSecret(String shareSecret) {
+        this.shareSecret = shareSecret;
     }
 }

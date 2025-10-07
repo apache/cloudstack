@@ -174,6 +174,6 @@ public class ExtensionVO implements Extension {
 
     @Override
     public String toString() {
-        return String.format("Extension %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "uuid", "name", "type"));
+        return String.format("Extension %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "uuid", "name", "type", "userDefined"));
     }
 }

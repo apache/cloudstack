@@ -72,14 +72,17 @@ import org.apache.cloudstack.framework.extensions.api.ListCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.ListExtensionsCmd;
 import org.apache.cloudstack.framework.extensions.api.RegisterExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.RunCustomActionCmd;
+import org.apache.cloudstack.framework.extensions.api.SyncExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.UnregisterExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.UpdateCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.UpdateExtensionCmd;
 import org.apache.cloudstack.framework.extensions.command.CleanupExtensionFilesCommand;
+import org.apache.cloudstack.framework.extensions.command.DownloadAndSyncExtensionFilesCommand;
 import org.apache.cloudstack.framework.extensions.command.ExtensionRoutingUpdateCommand;
 import org.apache.cloudstack.framework.extensions.command.ExtensionServerActionBaseCommand;
 import org.apache.cloudstack.framework.extensions.command.GetExtensionPathChecksumCommand;
 import org.apache.cloudstack.framework.extensions.command.PrepareExtensionPathCommand;
+import org.apache.cloudstack.framework.extensions.command.StartSyncExtensionFilesCommand;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionCustomActionDao;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionCustomActionDetailsDao;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionDao;
@@ -123,7 +126,6 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
-import com.cloud.hypervisor.ExternalProvisioner;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.org.Cluster;
 import com.cloud.serializer.GsonHelper;
@@ -180,9 +182,6 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     HostDetailsDao hostDetailsDao;
 
     @Inject
-    ExternalProvisioner externalProvisioner;
-
-    @Inject
     ExtensionCustomActionDao extensionCustomActionDao;
 
     @Inject
@@ -211,6 +210,12 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
 
     @Inject
     RoleService roleService;
+
+    @Inject
+    ExtensionsFilesystemManager extensionsFilesystemManager;
+
+    @Inject
+    ExtensionsShareManager extensionsShareManager;
 
     private ScheduledExecutorService extensionPathStateCheckExecutor;
 
@@ -272,9 +277,9 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     }
 
     protected Pair<Boolean, String> prepareExtensionPathOnCurrentServer(String name, boolean userDefined,
-                                                                              String relativePath) {
+                    Extension.Type type, String relativePath) {
         try {
-            externalProvisioner.prepareExtensionPath(name, userDefined, relativePath);
+            extensionsFilesystemManager.prepareExtensionPath(name, userDefined, type, relativePath);
         } catch (CloudRuntimeException e) {
             logger.error("Failed to prepare path for Extension [name: {}, userDefined: {}, relativePath: {}] on this server",
                     name, userDefined, relativePath, e);
@@ -294,8 +299,8 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
 
     protected Pair<Boolean, String> cleanupExtensionFilesOnCurrentServer(String name, String relativePath) {
         try {
-            externalProvisioner.cleanupExtensionPath(name, relativePath);
-            externalProvisioner.cleanupExtensionData(name, 0, true);
+            extensionsFilesystemManager.cleanupExtensionPath(name, relativePath);
+            extensionsFilesystemManager.cleanupExtensionData(name, 0, true);
         } catch (CloudRuntimeException e) {
             logger.error("Failed to cleanup files for Extension [name: {}, relativePath: {}] on this server",
                     name, relativePath, e);
@@ -534,10 +539,40 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         }
     }
 
+    protected void checkExtensionPathState(Extension extension) {
+        List<ManagementServerHostVO> msList = managementServerHostDao.listBy(ManagementServerHost.State.Up);
+        msList.removeIf(ms -> ms.getMsid() == ManagementServerNode.getManagementServerId());
+        checkExtensionPathState(extension, msList);
+    }
+
+    protected boolean compareChecksumMaps(Extension extension, long ms1Id, Map<String, String> map1,
+                  long ms2Id, Map<String, String> map2) {
+        if (MapUtils.isEmpty(map1) || MapUtils.isEmpty(map2)) {
+            return false;
+        }
+        if (map1.size() != map2.size()) {
+            return false;
+        }
+        for (Map.Entry<String, String> entry : map1.entrySet()) {
+            String map2Value = map2.get(entry.getKey());
+            logger.debug("Comparing checksum for file {} of {} between [msid: {}, checksum: {}] and [msid: {}, checksum: {}]",
+                    entry.getKey(), extension, ms1Id, entry.getValue(), ms2Id, map2Value);
+            if (!StringUtils.equals(entry.getValue(), map2Value)) {
+                logger.error("Checksum for file {} of {} is different [msid: {}, checksum: {}] and [msid: {}, checksum: {}]",
+                        entry.getKey(), extension, ms1Id, entry.getValue(), ms2Id,
+                        (StringUtils.isNotBlank(map2Value) ? map2Value : "unknown"));
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @SuppressWarnings("unchecked")
     protected void checkExtensionPathState(Extension extension, List<ManagementServerHostVO> msHosts) {
-        String checksum = externalProvisioner.getChecksumForExtensionPath(extension.getName(),
+        logger.debug("Checking path state for {} across management servers", extension);
+        Map<String, String> checksumMap = extensionsFilesystemManager.getChecksumMapForExtension(extension.getName(),
                 extension.getRelativePath());
-        if (StringUtils.isBlank(checksum)) {
+        if (MapUtils.isEmpty(checksumMap)) {
             updateExtensionPathReady(extension, false);
             return;
         }
@@ -548,10 +583,22 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         for (ManagementServerHostVO msHost : msHosts) {
             final Pair<Boolean, String> msPeerChecksumResult = getChecksumForExtensionPathOnMSPeer(extension,
                     msHost);
-            if (!msPeerChecksumResult.first() || !checksum.equals(msPeerChecksumResult.second())) {
-                logger.error("Path checksum for {} is different [msid: {}, checksum: {}] and [msid: {}, checksum: {}]",
-                        extension, ManagementServerNode.getManagementServerId(), checksum, msHost.getMsid(),
-                        (msPeerChecksumResult.first() ? msPeerChecksumResult.second() : "unknown"));
+            if (!msPeerChecksumResult.first() || StringUtils.isBlank(msPeerChecksumResult.second())) {
+                logger.error("{} returned failure or empty checksum map for {}", msHost, extension);
+                updateExtensionPathReady(extension, false);
+                return;
+            }
+            Map<String, String> msPeerChecksumMap = null;
+            try {
+                msPeerChecksumMap = GsonHelper.getGson().fromJson(msPeerChecksumResult.second(), Map.class);
+            } catch (Exception e) {
+                logger.error("Failed to parse checksum map JSON from {} for {}: {}",
+                        msHost, extension, e.getMessage(), e);
+                updateExtensionPathReady(extension, false);
+                return;
+            }
+            if (!compareChecksumMaps(extension, ManagementServerNode.getManagementServerId(), checksumMap,
+                    msHost.getMsid(), msPeerChecksumMap)) {
                 updateExtensionPathReady(extension, false);
                 return;
             }
@@ -561,7 +608,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
 
     @Override
     public String getExtensionsPath() {
-        return externalProvisioner.getExtensionsPath();
+        return extensionsFilesystemManager.getExtensionsPath();
     }
 
     @Override
@@ -642,7 +689,9 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         List<ManagementServerHostVO> msHosts = managementServerHostDao.listBy(ManagementServerHost.State.Up);
         for (ManagementServerHostVO msHost : msHosts) {
             if (msHost.getMsid() == ManagementServerNode.getManagementServerId()) {
-                prepared = prepared && prepareExtensionPathOnCurrentServer(extension.getName(), extension.isUserDefined(),
+                prepared = prepared && prepareExtensionPathOnCurrentServer(extension.getName(),
+                        extension.isUserDefined(),
+                        extension.getType(),
                         extension.getRelativePath()).first();
                 continue;
             }
@@ -917,7 +966,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         ExtensionResponse response = new ExtensionResponse(extension.getUuid(), extension.getName(),
                 extension.getDescription(), extension.getType().name());
         response.setCreated(extension.getCreated());
-        response.setPath(externalProvisioner.getExtensionPath(extension.getRelativePath()));
+        response.setPath(extensionsFilesystemManager.getExtensionPath(extension.getRelativePath()));
         response.setPathReady(extension.isPathReady());
         response.setUserDefined(extension.isUserDefined());
         response.setState(extension.getState().name());
@@ -1499,18 +1548,26 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         Answer answer = new Answer(command, false, "Unsupported command");
         if (command instanceof GetExtensionPathChecksumCommand) {
             final GetExtensionPathChecksumCommand cmd = (GetExtensionPathChecksumCommand)command;
-            String checksum = externalProvisioner.getChecksumForExtensionPath(extensionName,
+            Map<String, String> checksumMap = extensionsFilesystemManager.getChecksumMapForExtension(extensionName,
                     extensionRelativePath);
-            answer = new Answer(cmd, StringUtils.isNotBlank(checksum), checksum);
+            answer = new Answer(cmd, MapUtils.isNotEmpty(checksumMap), GsonHelper.getGson().toJson(checksumMap));
         } else if (command instanceof PrepareExtensionPathCommand) {
             final PrepareExtensionPathCommand cmd = (PrepareExtensionPathCommand)command;
             Pair<Boolean, String> result = prepareExtensionPathOnCurrentServer(
-                    extensionName, cmd.isExtensionUserDefined(), extensionRelativePath);
+                    extensionName, cmd.isExtensionUserDefined(), cmd.getExtensionType(), extensionRelativePath);
             answer = new Answer(cmd, result.first(), result.second());
         } else if (command instanceof CleanupExtensionFilesCommand) {
             final CleanupExtensionFilesCommand cmd = (CleanupExtensionFilesCommand)command;
             Pair<Boolean, String> result = cleanupExtensionFilesOnCurrentServer(extensionName,
                     extensionRelativePath);
+            answer = new Answer(cmd, result.first(), result.second());
+        } else if (command instanceof StartSyncExtensionFilesCommand) {
+            final StartSyncExtensionFilesCommand cmd = (StartSyncExtensionFilesCommand)command;
+            Pair<Boolean, String> result = startSyncExtensionFiles(cmd);
+            answer = new Answer(cmd, result.first(), result.second());
+        } else if (command instanceof DownloadAndSyncExtensionFilesCommand) {
+            final DownloadAndSyncExtensionFilesCommand cmd = (DownloadAndSyncExtensionFilesCommand)command;
+            Pair<Boolean, String> result = downloadAndSyncExtensionFiles(cmd);
             answer = new Answer(cmd, result.first(), result.second());
         }
         final Answer[] answers = new Answer[1];
@@ -1576,6 +1633,124 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         return agentMgr.easySend(host.getId(), cmd);
     }
 
+    protected Pair<Boolean, String> syncExtensionUsingMSPeer(ExtensionVO extension,
+                 ManagementServerHostVO sourceManagementServer, List<ManagementServerHost> targetManagementServers,
+                 List<String> files) {
+        logger.debug("Initiating sync for {} using {}", extension, sourceManagementServer);
+        final String msPeer = Long.toString(sourceManagementServer.getMsid());
+        final Command[] cmds = new Command[1];
+        cmds[0] = new StartSyncExtensionFilesCommand(
+                ManagementServerNode.getManagementServerId(), extension,
+                targetManagementServers.stream().map(ManagementServerHost::getUuid).collect(Collectors.toList()),
+                files);
+        String answersStr = clusterManager.execute(msPeer, 0L, GsonHelper.getGson().toJson(cmds), true);
+        return getResultFromAnswersString(answersStr, extension, sourceManagementServer, "sync");
+    }
+
+    protected Pair<Boolean, String> startSyncExtensionFiles(StartSyncExtensionFilesCommand cmd) {
+        final long extensionId = cmd.getExtensionId();
+        final List<String> targetManagementServerIds = cmd.getTargetManagementServerIds();
+        final List<String> files = cmd.getFiles();
+        final ExtensionVO extension = extensionDao.findById(extensionId);
+        if (extension == null) {
+            String msg = String.format("Unable to find extension with id: %d for starting sync", extensionId);
+            logger.error(msg);
+            return new Pair<>(false, msg);
+        }
+        if (CollectionUtils.isEmpty(targetManagementServerIds)) {
+            String msg = "No valid target management servers specified for starting sync";
+            logger.error(msg);
+            return new Pair<>(false, msg);
+        }
+        List<ManagementServerHostVO> targetManagementServers = managementServerHostDao.listByUuids(targetManagementServerIds);
+        if (targetManagementServers.size() != targetManagementServerIds.size()) {
+            String msg = "Some of the specified target management servers are not found";
+            logger.error(msg);
+            return new Pair<>(false, msg);
+        }
+        ManagementServerHost sourceManagementServer = managementServerHostDao.findById(ManagementServerNode.getManagementServerId());
+        List<ManagementServerHost> targetManagementServerHosts = targetManagementServers.stream()
+                .map(msHostVO -> (ManagementServerHost) msHostVO)
+                .collect(Collectors.toList());
+        if (CollectionUtils.isNotEmpty(files)) {
+            try {
+                extensionsFilesystemManager.validateExtensionFiles(extension, files);
+            } catch (CloudRuntimeException cre) {
+                String msg = "Invalid file paths specified: " + cre.getMessage();
+                logger.error(msg);
+                return new Pair<>(false, msg);
+            }
+        }
+        return extensionsShareManager.syncExtension(extension, sourceManagementServer, targetManagementServerHosts,
+                files);
+    }
+
+    protected Pair<Boolean, String> downloadAndSyncExtensionFiles(DownloadAndSyncExtensionFilesCommand cmd) {
+        final long extensionId = cmd.getExtensionId();
+        final ExtensionVO extension = extensionDao.findById(extensionId);
+        if (extension == null) {
+            String msg = String.format("Unable to find extension with ID: %d for starting sync", extensionId);
+            logger.error(msg);
+            return new Pair<>(false, msg);
+        }
+        return extensionsShareManager.downloadAndApplyExtensionSync(extension, cmd);
+    }
+
+    @Override
+    public boolean syncExtension(SyncExtensionCmd cmd) {
+        final long extensionId = cmd.getId();
+        final long sourceManagementServerId = cmd.getSourceManagementServerId();
+        List<Long> targetManagementServerIds = cmd.getTargetManagementServerIds();
+        final List<String> files = cmd.getFiles();
+        final ExtensionVO extension = extensionDao.findById(extensionId);
+        if (extension == null) {
+            throw new InvalidParameterValueException("Unable to find extension with the specified id");
+        }
+        final ManagementServerHostVO sourceManagementServer = managementServerHostDao.findById(sourceManagementServerId);
+        if (sourceManagementServer == null || !ManagementServerHost.State.Up.equals(sourceManagementServer.getState())) {
+            throw new InvalidParameterValueException("Unable to find active source management server with the specified id");
+        }
+        List<ManagementServerHost> targetManagementServers = new ArrayList<>();
+        if (CollectionUtils.isNotEmpty(targetManagementServerIds)) {
+            if (targetManagementServerIds.contains(sourceManagementServerId)) {
+                throw new InvalidParameterValueException("Source management server cannot be specified as target");
+            }
+            List<ManagementServerHostVO> msList = managementServerHostDao.listUpByIds(targetManagementServerIds);
+            if (msList.size() != targetManagementServerIds.size()) {
+                throw new InvalidParameterValueException("Some of the specified target management servers are not found or not in Up state");
+            }
+            targetManagementServers.addAll(msList);
+        } else {
+            List<ManagementServerHostVO> msList = managementServerHostDao.listBy(ManagementServerHost.State.Up);
+            msList.removeIf(ms -> ms.getId() == sourceManagementServerId);
+            targetManagementServers.addAll(msList);
+        }
+        if (CollectionUtils.isEmpty(targetManagementServers)) {
+            throw new InvalidParameterValueException("No valid target management servers found for syncing the extension");
+        }
+        if (CollectionUtils.isNotEmpty(files)) {
+            try {
+                extensionsFilesystemManager.validateExtensionFiles(extension, files);
+            } catch (CloudRuntimeException cre) {
+                throw new InvalidParameterValueException("Invalid file paths specified: " + cre.getMessage());
+            }
+        }
+        Pair<Boolean, String> result;
+        if (ManagementServerNode.getManagementServerId() != sourceManagementServer.getMsid()) {
+            result = syncExtensionUsingMSPeer(extension, sourceManagementServer, targetManagementServers, files);
+        } else {
+            result = extensionsShareManager.syncExtension(extension, sourceManagementServer, targetManagementServers,
+                    files);
+        }
+        if (!result.first()) {
+            throw new CloudRuntimeException(String.format("Failed to sync extension '%s' via '%s': %s",
+                    extension.getName(), sourceManagementServer.getName(), result.second()));
+        }
+
+        checkExtensionPathState(extension);
+        return true;
+    }
+
     @Override
     public Long getExtensionIdForCluster(long clusterId) {
         ExtensionResourceMapVO map = extensionResourceMapDao.findByResourceIdAndType(clusterId,
@@ -1601,6 +1776,17 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     }
 
     @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        try {
+            extensionPathStateCheckExecutor = Executors.newScheduledThreadPool(1,
+                    new NamedThreadFactory("Extension-Path-State-Check"));
+        } catch (final Exception e) {
+            throw new ConfigurationException("Unable to to configure ExtensionsManagerImpl");
+        }
+        return true;
+    }
+
+    @Override
     public boolean start() {
         long pathStateCheckInterval = PathStateCheckInterval.value();
         long pathStateCheckInitialDelay = Math.min(60, pathStateCheckInterval);
@@ -1612,12 +1798,9 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     }
 
     @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        try {
-            extensionPathStateCheckExecutor = Executors.newScheduledThreadPool(1,
-                    new NamedThreadFactory("Extension-Path-State-Check"));
-        } catch (final Exception e) {
-            throw new ConfigurationException("Unable to to configure ExtensionsManagerImpl");
+    public boolean stop() {
+        if (extensionPathStateCheckExecutor != null && !extensionPathStateCheckExecutor.isShutdown()) {
+            extensionPathStateCheckExecutor.shutdownNow();
         }
         return true;
     }
@@ -1637,6 +1820,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         cmds.add(UpdateExtensionCmd.class);
         cmds.add(RegisterExtensionCmd.class);
         cmds.add(UnregisterExtensionCmd.class);
+        cmds.add(SyncExtensionCmd.class);
         return cmds;
     }
 

@@ -128,6 +128,16 @@ export default {
       show: (record) => { return ['Enabled'].includes(record.state) }
     },
     {
+      api: 'syncExtension',
+      icon: 'sync-outlined',
+      label: 'label.sync.extension',
+      message: 'message.confirm.sync.extension',
+      dataView: true,
+      popup: true,
+      component: shallowRef(defineAsyncComponent(() => import('@/views/extension/SyncExtension.vue'))),
+      show: (record) => { return ['Enabled'].includes(record.state) }
+    },
+    {
       api: 'deleteExtension',
       icon: 'delete-outlined',
       label: 'label.delete.extension',

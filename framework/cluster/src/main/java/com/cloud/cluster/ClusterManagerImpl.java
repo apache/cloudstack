@@ -468,6 +468,8 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
         return null;
     }
 
+
+
     @Override
     public ManagementServerHostVO getPeer(final String mgmtServerId) {
         return _mshostDao.findByMsid(Long.parseLong(mgmtServerId));

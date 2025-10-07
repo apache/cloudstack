@@ -23,6 +23,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyBoolean;
 import static org.mockito.Mockito.anyLong;
@@ -40,6 +41,7 @@ import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.security.InvalidParameterException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -68,13 +70,16 @@ import org.apache.cloudstack.framework.extensions.api.ListCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.ListExtensionsCmd;
 import org.apache.cloudstack.framework.extensions.api.RegisterExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.RunCustomActionCmd;
+import org.apache.cloudstack.framework.extensions.api.SyncExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.UnregisterExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.UpdateCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.UpdateExtensionCmd;
 import org.apache.cloudstack.framework.extensions.command.CleanupExtensionFilesCommand;
+import org.apache.cloudstack.framework.extensions.command.DownloadAndSyncExtensionFilesCommand;
 import org.apache.cloudstack.framework.extensions.command.ExtensionServerActionBaseCommand;
 import org.apache.cloudstack.framework.extensions.command.GetExtensionPathChecksumCommand;
 import org.apache.cloudstack.framework.extensions.command.PrepareExtensionPathCommand;
+import org.apache.cloudstack.framework.extensions.command.StartSyncExtensionFilesCommand;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionCustomActionDao;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionCustomActionDetailsDao;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionDao;
@@ -85,6 +90,7 @@ import org.apache.cloudstack.framework.extensions.vo.ExtensionCustomActionDetail
 import org.apache.cloudstack.framework.extensions.vo.ExtensionCustomActionVO;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionResourceMapVO;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionVO;
+import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.junit.Before;
 import org.junit.Test;
@@ -92,6 +98,7 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -114,7 +121,6 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
-import com.cloud.hypervisor.ExternalProvisioner;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.org.Cluster;
 import com.cloud.serializer.GsonHelper;
@@ -155,7 +161,7 @@ public class ExtensionsManagerImplTest {
     @Mock
     private HostDetailsDao hostDetailsDao;
     @Mock
-    private ExternalProvisioner externalProvisioner;
+    private ExtensionsFilesystemManager extensionsFilesystemManager;
     @Mock
     private ExtensionCustomActionDao extensionCustomActionDao;
     @Mock
@@ -176,6 +182,8 @@ public class ExtensionsManagerImplTest {
     private VMTemplateDao templateDao;
     @Mock
     private RoleService roleService;
+    @Mock
+    private ExtensionsShareManager extensionsShareManager;
 
     @Before
     public void setUp() {
@@ -240,8 +248,9 @@ public class ExtensionsManagerImplTest {
 
     @Test
     public void prepareExtensionPathOnCurrentServerReturnsSuccess() {
-        doNothing().when(externalProvisioner).prepareExtensionPath(anyString(), anyBoolean(), anyString());
-        Pair<Boolean, String> result = extensionsManager.prepareExtensionPathOnCurrentServer("name", true, "entry");
+        doNothing().when(extensionsFilesystemManager).prepareExtensionPath(anyString(), anyBoolean(), any(Extension.Type.class), anyString());
+        Pair<Boolean, String> result = extensionsManager.prepareExtensionPathOnCurrentServer("name", true,
+                Extension.Type.Orchestrator, "entry");
         assertTrue(result.first());
         assertNull(result.second());
     }
@@ -545,7 +554,7 @@ public class ExtensionsManagerImplTest {
 
     @Test
     public void getExtensionsPathReturnsProvisionerPath() {
-        when(externalProvisioner.getExtensionsPath()).thenReturn("/tmp/extensions");
+        when(extensionsFilesystemManager.getExtensionsPath()).thenReturn("/tmp/extensions");
         assertEquals("/tmp/extensions", extensionsManager.getExtensionsPath());
     }
 
@@ -587,14 +596,59 @@ public class ExtensionsManagerImplTest {
     }
 
     @Test
+    public void compareChecksumMapsReturnsTrueWhenMapsAreIdentical() {
+        Map<String, String> map1 = Map.of("file1", "checksum1", "file2", "checksum2");
+        Map<String, String> map2 = Map.of("file1", "checksum1", "file2", "checksum2");
+        boolean result = extensionsManager.compareChecksumMaps(mock(Extension.class), 1L, map1, 2L, map2);
+        assertTrue(result);
+    }
+
+    @Test
+    public void compareChecksumMapsReturnsFalseWhenMapsAreEmpty() {
+        Map<String, String> map1 = Collections.emptyMap();
+        Map<String, String> map2 = Collections.emptyMap();
+        boolean result = extensionsManager.compareChecksumMaps(mock(Extension.class), 1L, map1, 2L, map2);
+        assertFalse(result);
+    }
+
+    @Test
+    public void compareChecksumMapsReturnsFalseWhenMapSizesDiffer() {
+        Map<String, String> map1 = Map.of("file1", "checksum1");
+        Map<String, String> map2 = Map.of("file1", "checksum1", "file2", "checksum2");
+        boolean result = extensionsManager.compareChecksumMaps(mock(Extension.class), 1L, map1, 2L, map2);
+        assertFalse(result);
+    }
+
+    @Test
+    public void compareChecksumMapsReturnsFalseWhenChecksumsDiffer() {
+        Map<String, String> map1 = Map.of("file1", "checksum1", "file2", "checksum2");
+        Map<String, String> map2 = Map.of("file1", "checksum1", "file2", "differentChecksum");
+        boolean result = extensionsManager.compareChecksumMaps(mock(Extension.class), 1L, map1, 2L, map2);
+        assertFalse(result);
+    }
+
+    @Test
+    public void compareChecksumMapsReturnsFalseWhenMap2IsNull() {
+        Map<String, String> map1 = Map.of("file1", "checksum1");
+        boolean result = extensionsManager.compareChecksumMaps(mock(Extension.class), 1L, map1, 2L, null);
+        assertFalse(result);
+    }
+
+    @Test
+    public void compareChecksumMapsReturnsFalseWhenMap1IsNull() {
+        Map<String, String> map2 = Map.of("file1", "checksum1");
+        boolean result = extensionsManager.compareChecksumMaps(mock(Extension.class), 1L, null, 2L, map2);
+        assertFalse(result);
+    }
+
+    @Test
     public void checkExtensionPathSyncUpdatesReadyWhenChecksumIsBlank() {
         Extension ext = mock(Extension.class);
         when(ext.getName()).thenReturn("ext");
         when(ext.getRelativePath()).thenReturn("entry.sh");
-        when(externalProvisioner.getChecksumForExtensionPath("ext", "entry.sh")).thenReturn("");
-
+        when(extensionsFilesystemManager.getChecksumMapForExtension("ext", "entry.sh"))
+                .thenReturn(Collections.emptyMap());
         extensionsManager.checkExtensionPathState(ext, Collections.emptyList());
-
         verify(extensionsManager).updateExtensionPathReady(ext, false);
     }
 
@@ -603,7 +657,8 @@ public class ExtensionsManagerImplTest {
         ExtensionVO ext = mock(ExtensionVO.class);
         when(ext.getName()).thenReturn("ext");
         when(ext.getRelativePath()).thenReturn("entry.sh");
-        when(externalProvisioner.getChecksumForExtensionPath("ext", "entry.sh")).thenReturn("checksum123");
+        when(extensionsFilesystemManager.getChecksumMapForExtension("ext", "entry.sh"))
+                .thenReturn(Map.of("entry.sh", "checksum123"));
         when(extensionDao.createForUpdate(anyLong())).thenReturn(ext);
         extensionsManager.checkExtensionPathState(ext, Collections.emptyList());
         verify(extensionsManager).updateExtensionPathReady(ext, true);
@@ -614,10 +669,13 @@ public class ExtensionsManagerImplTest {
         ExtensionVO ext = mock(ExtensionVO.class);
         when(ext.getName()).thenReturn("ext");
         when(ext.getRelativePath()).thenReturn("entry.sh");
-        when(externalProvisioner.getChecksumForExtensionPath("ext", "entry.sh")).thenReturn("checksum123");
+        Map<String, String> checksumMap = Map.of("entry.sh", "checksum123");
+        when(extensionsFilesystemManager.getChecksumMapForExtension("ext", "entry.sh"))
+                .thenReturn(checksumMap);
         when(extensionDao.createForUpdate(anyLong())).thenReturn(ext);
         ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
-        doReturn(new Pair<>(true, "checksum123")).when(extensionsManager).getChecksumForExtensionPathOnMSPeer(ext, msHost);
+        doReturn(new Pair<>(true, GsonHelper.getGson().toJson(checksumMap)))
+                .when(extensionsManager).getChecksumForExtensionPathOnMSPeer(ext, msHost);
         extensionsManager.checkExtensionPathState(ext, Collections.singletonList(msHost));
         verify(extensionsManager).updateExtensionPathReady(ext, true);
     }
@@ -627,10 +685,14 @@ public class ExtensionsManagerImplTest {
         Extension ext = mock(Extension.class);
         when(ext.getName()).thenReturn("ext");
         when(ext.getRelativePath()).thenReturn("entry.sh");
-        when(externalProvisioner.getChecksumForExtensionPath("ext", "entry.sh")).thenReturn("checksum123");
+        Map<String, String> checksumMap1 = Map.of("entry.sh", "checksum123");
+        Map<String, String> checksumMap2 = Map.of("entry.sh", "checksum789");
+        when(extensionsFilesystemManager.getChecksumMapForExtension("ext", "entry.sh"))
+                .thenReturn(checksumMap1);
         ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
         when(msHost.getMsid()).thenReturn(1L);
-        doReturn(new Pair<>(true, "checksum456")).when(extensionsManager).getChecksumForExtensionPathOnMSPeer(ext, msHost);
+        doReturn(new Pair<>(true, GsonHelper.getGson().toJson(checksumMap2)))
+                .when(extensionsManager).getChecksumForExtensionPathOnMSPeer(ext, msHost);
         extensionsManager.checkExtensionPathState(ext, Collections.singletonList(msHost));
         verify(extensionsManager).updateExtensionPathReady(ext, false);
     }
@@ -640,14 +702,11 @@ public class ExtensionsManagerImplTest {
         Extension ext = mock(Extension.class);
         when(ext.getName()).thenReturn("ext");
         when(ext.getRelativePath()).thenReturn("entry.sh");
-        when(externalProvisioner.getChecksumForExtensionPath("ext", "entry.sh")).thenReturn("checksum123");
-
+        when(extensionsFilesystemManager.getChecksumMapForExtension("ext", "entry.sh"))
+                .thenReturn(Map.of("entry.sh", "checksum123"));
         ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
-        when(msHost.getMsid()).thenReturn(1L);
         doReturn(new Pair<>(false, null)).when(extensionsManager).getChecksumForExtensionPathOnMSPeer(ext, msHost);
-
         extensionsManager.checkExtensionPathState(ext, Collections.singletonList(msHost));
-
         verify(extensionsManager).updateExtensionPathReady(ext, false);
     }
 
@@ -683,35 +742,35 @@ public class ExtensionsManagerImplTest {
         assertThrows(CloudRuntimeException.class, () -> extensionsManager.createExtension(cmd));
     }
 
-    @Test
-    public void prepareExtensionPathAcrossServersReturnsTrueWhenAllServersSucceed() {
+    private Extension getMockedExtension() {
         Extension ext = mock(Extension.class);
         when(ext.getName()).thenReturn("ext");
         when(ext.isUserDefined()).thenReturn(true);
+        when(ext.getType()).thenReturn(Extension.Type.Orchestrator);
         when(ext.getRelativePath()).thenReturn("entry.sh");
         when(ext.getId()).thenReturn(1L);
-        when(ext.isPathReady()).thenReturn(false);
+        when(ext.isPathReady()).thenReturn(true);
+        return ext;
+    }
 
+    @Test
+    public void prepareExtensionPathAcrossServersReturnsTrueWhenAllServersSucceed() {
+        Extension ext = getMockedExtension();
+        when(ext.isPathReady()).thenReturn(false);
         ManagementServerHostVO msHost1 = mock(ManagementServerHostVO.class);
         ManagementServerHostVO msHost2 = mock(ManagementServerHostVO.class);
         when(msHost1.getMsid()).thenReturn(100L);
         when(msHost2.getMsid()).thenReturn(200L);
-
         when(managementServerHostDao.listBy(any())).thenReturn(Arrays.asList(msHost1, msHost2));
-
         try (MockedStatic<ManagementServerNode> managementServerNodeMockedStatic = mockStatic(ManagementServerNode.class)) {
             managementServerNodeMockedStatic.when(ManagementServerNode::getManagementServerId).thenReturn(101L);
-            doReturn(new Pair<>(true, "ok")).when(extensionsManager).prepareExtensionPathOnCurrentServer(anyString(), anyBoolean(), anyString());
+            doReturn(new Pair<>(true, "ok")).when(extensionsManager).prepareExtensionPathOnCurrentServer(
+                    anyString(), anyBoolean(), any(Extension.Type.class), anyString());
             doReturn(true).when(extensionsManager).prepareExtensionPathOnMSPeer(eq(ext), eq(msHost2));
-
-            // Simulate current server is msHost1
             when(msHost1.getMsid()).thenReturn(101L);
-
-            // Extension entry point ready state should be updated
             ExtensionVO updateExt = mock(ExtensionVO.class);
             when(extensionDao.createForUpdate(1L)).thenReturn(updateExt);
             when(extensionDao.update(1L, updateExt)).thenReturn(true);
-
             boolean result = extensionsManager.prepareExtensionPathAcrossServers(ext);
             assertTrue(result);
             verify(extensionDao).update(1L, updateExt);
@@ -720,29 +779,20 @@ public class ExtensionsManagerImplTest {
 
     @Test
     public void prepareExtensionPathAcrossServersReturnsFalseWhenAnyServerFails() {
-        Extension ext = mock(Extension.class);
-        when(ext.getName()).thenReturn("ext");
-        when(ext.isUserDefined()).thenReturn(true);
-        when(ext.getRelativePath()).thenReturn("entry.sh");
-        when(ext.getId()).thenReturn(1L);
-        when(ext.isPathReady()).thenReturn(true);
-
+        Extension ext = getMockedExtension();
         ManagementServerHostVO msHost1 = mock(ManagementServerHostVO.class);
         ManagementServerHostVO msHost2 = mock(ManagementServerHostVO.class);
         when(msHost1.getMsid()).thenReturn(101L);
         when(msHost2.getMsid()).thenReturn(200L);
-
         when(managementServerHostDao.listBy(any())).thenReturn(Arrays.asList(msHost1, msHost2));
-
         try (MockedStatic<ManagementServerNode> managementServerNodeMockedStatic = mockStatic(ManagementServerNode.class)) {
             managementServerNodeMockedStatic.when(ManagementServerNode::getManagementServerId).thenReturn(101L);
-            doReturn(new Pair<>(true, "ok")).when(extensionsManager).prepareExtensionPathOnCurrentServer(anyString(), anyBoolean(), anyString());
+            doReturn(new Pair<>(true, "ok")).when(extensionsManager).prepareExtensionPathOnCurrentServer(
+                    anyString(), anyBoolean(), any(Extension.Type.class), anyString());
             doReturn(false).when(extensionsManager).prepareExtensionPathOnMSPeer(eq(ext), eq(msHost2));
-
             ExtensionVO updateExt = mock(ExtensionVO.class);
             when(extensionDao.createForUpdate(1L)).thenReturn(updateExt);
             when(extensionDao.update(1L, updateExt)).thenReturn(true);
-
             boolean result = extensionsManager.prepareExtensionPathAcrossServers(ext);
             assertFalse(result);
             verify(extensionDao).update(1L, updateExt);
@@ -751,21 +801,14 @@ public class ExtensionsManagerImplTest {
 
     @Test
     public void prepareExtensionPathAcrossServersDoesNotUpdateIfStateUnchanged() {
-        Extension ext = mock(Extension.class);
-        when(ext.getName()).thenReturn("ext");
-        when(ext.isUserDefined()).thenReturn(true);
-        when(ext.getRelativePath()).thenReturn("entry.sh");
-        when(ext.isPathReady()).thenReturn(true);
-
+        Extension ext = getMockedExtension();
         ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
         when(msHost.getMsid()).thenReturn(101L);
-
         when(managementServerHostDao.listBy(any())).thenReturn(Collections.singletonList(msHost));
-
         try (MockedStatic<ManagementServerNode> managementServerNodeMockedStatic = mockStatic(ManagementServerNode.class)) {
             managementServerNodeMockedStatic.when(ManagementServerNode::getManagementServerId).thenReturn(101L);
-            doReturn(new Pair<>(true, "ok")).when(extensionsManager).prepareExtensionPathOnCurrentServer(anyString(), anyBoolean(), anyString());
-
+            doReturn(new Pair<>(true, "ok")).when(extensionsManager).prepareExtensionPathOnCurrentServer(
+                    anyString(), anyBoolean(), any(Extension.Type.class), anyString());
             boolean result = extensionsManager.prepareExtensionPathAcrossServers(ext);
             assertTrue(result);
             verify(extensionDao, never()).update(anyLong(), any());
@@ -1116,7 +1159,7 @@ public class ExtensionsManagerImplTest {
         when(extension.getId()).thenReturn(1L);
 
         // Mock externalProvisioner
-        when(externalProvisioner.getExtensionPath("entry.sh")).thenReturn("/some/path/entry.sh");
+        when(extensionsFilesystemManager.getExtensionPath("entry.sh")).thenReturn("/some/path/entry.sh");
 
         // Mock detailsDao
         Pair<Map<String, String>, Map<String, String>> detailsPair = new Pair<>(Map.of("foo", "bar"),
@@ -1154,7 +1197,7 @@ public class ExtensionsManagerImplTest {
         when(extension.getState()).thenReturn(Extension.State.Disabled);
         when(extension.getId()).thenReturn(2L);
 
-        when(externalProvisioner.getExtensionPath("entry2.sh")).thenReturn("/some/path/entry2.sh");
+        when(extensionsFilesystemManager.getExtensionPath("entry2.sh")).thenReturn("/some/path/entry2.sh");
 
         Map<String, String> hiddenDetails = Map.of(ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM, "false");
         when(extensionDetailsDao.listDetailsKeyPairs(2L, List.of(ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM)))
@@ -1708,8 +1751,8 @@ public class ExtensionsManagerImplTest {
         GetExtensionPathChecksumCommand cmd = mock(GetExtensionPathChecksumCommand.class);
         when(cmd.getExtensionName()).thenReturn("ext");
         when(cmd.getExtensionRelativePath()).thenReturn("ext/entry.sh");
-        when(extensionsManager.externalProvisioner.getChecksumForExtensionPath(anyString(), anyString()))
-                .thenReturn("checksum123");
+        when(extensionsFilesystemManager.getChecksumMapForExtension(anyString(), anyString()))
+                .thenReturn(Map.of("entry.sh", "checksum123"));
         String json = extensionsManager.handleExtensionServerCommands(cmd);
         assertTrue(json.contains("checksum123"));
         assertTrue(json.contains("\"result\":true"));
@@ -1719,10 +1762,11 @@ public class ExtensionsManagerImplTest {
     public void handleExtensionServerCommands_PreparePathCommand_ReturnsSuccessAnswer() {
         PrepareExtensionPathCommand cmd = mock(PrepareExtensionPathCommand.class);
         when(cmd.getExtensionName()).thenReturn("ext");
-        when(cmd.getExtensionRelativePath()).thenReturn("ext/entry.sh");
         when(cmd.isExtensionUserDefined()).thenReturn(true);
+        when(cmd.getExtensionType()).thenReturn(Extension.Type.Orchestrator);
+        when(cmd.getExtensionRelativePath()).thenReturn("ext/entry.sh");
         doReturn(new Pair<>(true, "ok")).when(extensionsManager)
-                .prepareExtensionPathOnCurrentServer(anyString(), anyBoolean(), anyString());
+                .prepareExtensionPathOnCurrentServer(anyString(), anyBoolean(), any(Extension.Type.class), anyString());
 
         String json = extensionsManager.handleExtensionServerCommands(cmd);
         assertTrue(json.contains("\"result\":true"));
@@ -2036,4 +2080,310 @@ public class ExtensionsManagerImplTest {
         }
     }
 
+    @Test
+    public void syncExtensionUsingMSPeerReturnsSuccessWhenSyncSucceeds() {
+        ExtensionVO extension = mock(ExtensionVO.class);
+        ManagementServerHostVO sourceManagementServer = mock(ManagementServerHostVO.class);
+        when(sourceManagementServer.getMsid()).thenReturn(1L);
+        List<ManagementServerHost> targetManagementServers = List.of(mock(ManagementServerHost.class));
+        when(targetManagementServers.get(0).getUuid()).thenReturn("uuid-1");
+        List<String> files = List.of("file1", "file2");
+        when(clusterManager.execute(eq("1"), eq(0L), anyString(), eq(true))).thenReturn("some");
+        doReturn(new Pair<>(true, "Sync successful")).when(extensionsManager)
+                .getResultFromAnswersString("some", extension, sourceManagementServer, "sync");
+        Pair<Boolean, String> result =extensionsManager.syncExtensionUsingMSPeer(extension, sourceManagementServer,
+                targetManagementServers, files);
+        assertTrue(result.first());
+        assertEquals("Sync successful", result.second());
+    }
+
+    @Test
+    public void syncExtensionUsingMSPeerReturnsFailureWhenSyncFails() {
+        ExtensionVO extension = mock(ExtensionVO.class);
+        ManagementServerHostVO sourceManagementServer = mock(ManagementServerHostVO.class);
+        when(sourceManagementServer.getMsid()).thenReturn(1L);
+        List<ManagementServerHost> targetManagementServers = List.of(mock(ManagementServerHost.class));
+        when(targetManagementServers.get(0).getUuid()).thenReturn("uuid-1");
+        List<String> files = List.of("file1", "file2");
+        when(clusterManager.execute(eq("1"), eq(0L), anyString(), eq(true))).thenReturn("some");
+        doReturn(new Pair<>(false, "Sync failed")).when(extensionsManager)
+                .getResultFromAnswersString("some", extension, sourceManagementServer, "sync");
+        Pair<Boolean, String> result = extensionsManager.syncExtensionUsingMSPeer(extension, sourceManagementServer,
+                targetManagementServers, files);
+        assertFalse(result.first());
+        assertEquals("Sync failed", result.second());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void syncExtensionUsingMSPeerHandlesClusterManagerException() {
+        ExtensionVO extension = mock(ExtensionVO.class);
+        ManagementServerHostVO sourceManagementServer = mock(ManagementServerHostVO.class);
+        when(sourceManagementServer.getMsid()).thenReturn(1L);
+        List<ManagementServerHost> targetManagementServers = List.of(mock(ManagementServerHost.class));
+        when(targetManagementServers.get(0).getUuid()).thenReturn("uuid-1");
+        List<String> files = List.of("file1", "file2");
+        when(clusterManager.execute(eq("1"), eq(0L), anyString(), eq(true)))
+                .thenThrow(new CloudRuntimeException("Cluster manager error"));
+        extensionsManager.syncExtensionUsingMSPeer(extension, sourceManagementServer, targetManagementServers, files);
+    }
+
+    @Test
+    public void startSyncExtensionFilesReturnsFailureWhenExtensionNotFound() {
+        StartSyncExtensionFilesCommand cmd = mock(StartSyncExtensionFilesCommand.class);
+        when(cmd.getExtensionId()).thenReturn(1L);
+        when(extensionDao.findById(1L)).thenReturn(null);
+        Pair<Boolean, String> result = extensionsManager.startSyncExtensionFiles(cmd);
+        assertFalse(result.first());
+        assertEquals("Unable to find extension with id: 1 for starting sync", result.second());
+    }
+
+    @Test
+    public void startSyncExtensionFilesReturnsFailureWhenNoTargetServersProvided() {
+        StartSyncExtensionFilesCommand cmd = mock(StartSyncExtensionFilesCommand.class);
+        when(cmd.getExtensionId()).thenReturn(1L);
+        when(cmd.getTargetManagementServerIds()).thenReturn(Collections.emptyList());
+        ExtensionVO extension = mock(ExtensionVO.class);
+        when(extensionDao.findById(1L)).thenReturn(extension);
+        Pair<Boolean, String> result = extensionsManager.startSyncExtensionFiles(cmd);
+        assertFalse(result.first());
+        assertEquals("No valid target management servers specified for starting sync", result.second());
+    }
+
+    @Test
+    public void startSyncExtensionFilesReturnsFailureWhenTargetServersNotFound() {
+        StartSyncExtensionFilesCommand cmd = mock(StartSyncExtensionFilesCommand.class);
+        when(cmd.getExtensionId()).thenReturn(1L);
+        when(cmd.getTargetManagementServerIds()).thenReturn(List.of("uuid-1", "uuid-2"));
+        ExtensionVO extension = mock(ExtensionVO.class);
+        when(extensionDao.findById(1L)).thenReturn(extension);
+        when(managementServerHostDao.listByUuids(anyList())).thenReturn(List.of(mock(ManagementServerHostVO.class)));
+        Pair<Boolean, String> result = extensionsManager.startSyncExtensionFiles(cmd);
+        assertFalse(result.first());
+        assertEquals("Some of the specified target management servers are not found", result.second());
+    }
+
+    @Test
+    public void startSyncExtensionFilesReturnsFailureWhenInvalidFilesProvided() {
+        StartSyncExtensionFilesCommand cmd = mock(StartSyncExtensionFilesCommand.class);
+        when(cmd.getExtensionId()).thenReturn(1L);
+        when(cmd.getTargetManagementServerIds()).thenReturn(List.of("uuid-1"));
+        when(cmd.getFiles()).thenReturn(List.of("invalidFile"));
+        ExtensionVO extension = mock(ExtensionVO.class);
+        when(extensionDao.findById(1L)).thenReturn(extension);
+        ManagementServerHostVO targetServer = mock(ManagementServerHostVO.class);
+        when(managementServerHostDao.listByUuids(anyList())).thenReturn(List.of(targetServer));
+        doThrow(new CloudRuntimeException("Invalid file paths")).when(extensionsFilesystemManager).validateExtensionFiles(extension, List.of("invalidFile"));
+        Pair<Boolean, String> result = extensionsManager.startSyncExtensionFiles(cmd);
+        assertFalse(result.first());
+        assertEquals("Invalid file paths specified: Invalid file paths", result.second());
+    }
+
+    @Test
+    public void startSyncExtensionFilesReturnsSuccessWhenAllValidationsPass() {
+        StartSyncExtensionFilesCommand cmd = mock(StartSyncExtensionFilesCommand.class);
+        when(cmd.getExtensionId()).thenReturn(1L);
+        when(cmd.getTargetManagementServerIds()).thenReturn(List.of("uuid-1"));
+        when(cmd.getFiles()).thenReturn(List.of("validFile"));
+        ExtensionVO extension = mock(ExtensionVO.class);
+        when(extensionDao.findById(1L)).thenReturn(extension);
+        ManagementServerHostVO targetServer = mock(ManagementServerHostVO.class);
+        when(managementServerHostDao.listByUuids(anyList())).thenReturn(List.of(targetServer));
+        ManagementServerHostVO sourceServer = mock(ManagementServerHostVO.class);
+        when(managementServerHostDao.findById(anyLong())).thenReturn(sourceServer);
+        doNothing().when(extensionsFilesystemManager).validateExtensionFiles(extension, List.of("validFile"));
+        when(extensionsShareManager.syncExtension(eq(extension), eq(sourceServer), anyList(),
+                eq(List.of("validFile")))).thenReturn(new Pair<>(true, "Sync successful"));
+        Pair<Boolean, String> result = extensionsManager.startSyncExtensionFiles(cmd);
+        assertTrue(result.first());
+        assertEquals("Sync successful", result.second());
+    }
+
+    @Test
+    public void downloadAndSyncExtensionFilesReturnsFailureWhenExtensionNotFound() {
+        DownloadAndSyncExtensionFilesCommand cmd = mock(DownloadAndSyncExtensionFilesCommand.class);
+        when(cmd.getExtensionId()).thenReturn(1L);
+        when(extensionDao.findById(1L)).thenReturn(null);
+        Pair<Boolean, String> result = extensionsManager.downloadAndSyncExtensionFiles(cmd);
+        assertFalse(result.first());
+        assertEquals("Unable to find extension with ID: 1 for starting sync", result.second());
+    }
+
+    @Test
+    public void downloadAndSyncExtensionFilesReturnsSuccessWhenSyncSucceeds() {
+        DownloadAndSyncExtensionFilesCommand cmd = mock(DownloadAndSyncExtensionFilesCommand.class);
+        when(cmd.getExtensionId()).thenReturn(1L);
+        ExtensionVO extension = mock(ExtensionVO.class);
+        when(extensionDao.findById(1L)).thenReturn(extension);
+        when(extensionsShareManager.downloadAndApplyExtensionSync(extension, cmd))
+            .thenReturn(new Pair<>(true, "Sync successful"));
+        Pair<Boolean, String> result = extensionsManager.downloadAndSyncExtensionFiles(cmd);
+        assertTrue(result.first());
+        assertEquals("Sync successful", result.second());
+    }
+
+    @Test
+    public void downloadAndSyncExtensionFilesReturnsFailureWhenSyncFails() {
+        DownloadAndSyncExtensionFilesCommand cmd = mock(DownloadAndSyncExtensionFilesCommand.class);
+        when(cmd.getExtensionId()).thenReturn(1L);
+        ExtensionVO extension = mock(ExtensionVO.class);
+        when(extensionDao.findById(1L)).thenReturn(extension);
+        when(extensionsShareManager.downloadAndApplyExtensionSync(extension, cmd))
+            .thenReturn(new Pair<>(false, "Sync failed"));
+        Pair<Boolean, String> result = extensionsManager.downloadAndSyncExtensionFiles(cmd);
+        assertFalse(result.first());
+        assertEquals("Sync failed", result.second());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void syncExtensionThrowsWhenExtensionNotFound() {
+        SyncExtensionCmd cmd = mock(SyncExtensionCmd.class);
+        when(cmd.getId()).thenReturn(1L);
+        when(extensionDao.findById(1L)).thenReturn(null);
+
+        extensionsManager.syncExtension(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void syncExtensionThrowsWhenSourceManagementServerNotFound() {
+        SyncExtensionCmd cmd = mock(SyncExtensionCmd.class);
+        when(cmd.getId()).thenReturn(1L);
+        when(cmd.getSourceManagementServerId()).thenReturn(2L);
+        when(extensionDao.findById(1L)).thenReturn(mock(ExtensionVO.class));
+        when(managementServerHostDao.findById(2L)).thenReturn(null);
+
+        extensionsManager.syncExtension(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void syncExtensionThrowsWhenSourceManagementServerNotUp() {
+        SyncExtensionCmd cmd = mock(SyncExtensionCmd.class);
+        when(cmd.getId()).thenReturn(1L);
+        when(cmd.getSourceManagementServerId()).thenReturn(2L);
+        when(extensionDao.findById(1L)).thenReturn(mock(ExtensionVO.class));
+        ManagementServerHostVO sourceServer = mock(ManagementServerHostVO.class);
+        when(sourceServer.getState()).thenReturn(ManagementServerHost.State.Down);
+        when(managementServerHostDao.findById(2L)).thenReturn(sourceServer);
+
+        extensionsManager.syncExtension(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void syncExtensionThrowsWhenTargetManagementServerNotFound() {
+        SyncExtensionCmd cmd = mock(SyncExtensionCmd.class);
+        when(cmd.getId()).thenReturn(1L);
+        when(cmd.getSourceManagementServerId()).thenReturn(2L);
+        when(cmd.getTargetManagementServerIds()).thenReturn(List.of(3L));
+        when(extensionDao.findById(1L)).thenReturn(mock(ExtensionVO.class));
+        ManagementServerHostVO sourceServer = mock(ManagementServerHostVO.class);
+        when(sourceServer.getState()).thenReturn(ManagementServerHost.State.Up);
+        when(managementServerHostDao.findById(2L)).thenReturn(sourceServer);
+        when(managementServerHostDao.listUpByIds(anyList())).thenReturn(Collections.emptyList());
+
+        extensionsManager.syncExtension(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void syncExtensionThrowsWhenNoValidTargetManagementServers() {
+        SyncExtensionCmd cmd = mock(SyncExtensionCmd.class);
+        when(cmd.getId()).thenReturn(1L);
+        when(cmd.getSourceManagementServerId()).thenReturn(2L);
+        when(cmd.getTargetManagementServerIds()).thenReturn(Collections.emptyList());
+        when(extensionDao.findById(1L)).thenReturn(mock(ExtensionVO.class));
+        ManagementServerHostVO sourceServer = mock(ManagementServerHostVO.class);
+        when(sourceServer.getState()).thenReturn(ManagementServerHost.State.Up);
+        when(managementServerHostDao.findById(2L)).thenReturn(sourceServer);
+        when(managementServerHostDao.listBy(ManagementServerHost.State.Up)).thenReturn(Collections.emptyList());
+
+        extensionsManager.syncExtension(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void syncExtensionThrowsWhenInvalidFilesProvided() {
+        SyncExtensionCmd cmd = mock(SyncExtensionCmd.class);
+        when(cmd.getId()).thenReturn(1L);
+        when(cmd.getSourceManagementServerId()).thenReturn(2L);
+        when(cmd.getFiles()).thenReturn(List.of("invalidFile"));
+        when(extensionDao.findById(1L)).thenReturn(mock(ExtensionVO.class));
+        ManagementServerHostVO sourceServer = mock(ManagementServerHostVO.class);
+        when(sourceServer.getState()).thenReturn(ManagementServerHost.State.Up);
+        when(managementServerHostDao.findById(2L)).thenReturn(sourceServer);
+        ManagementServerHostVO targetServer = mock(ManagementServerHostVO.class);
+        when(targetServer.getId()).thenReturn(10L);
+        when(managementServerHostDao.listBy(ManagementServerHost.State.Up))
+                .thenReturn(new ArrayList<>(List.of(targetServer)));
+        doThrow(new CloudRuntimeException("Invalid file paths")).when(extensionsFilesystemManager).validateExtensionFiles(any(), anyList());
+
+        extensionsManager.syncExtension(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void syncExtensionReturnsTrueWhenNotAllTargetsInUpOrFound() {
+        SyncExtensionCmd cmd = mock(SyncExtensionCmd.class);
+        when(cmd.getId()).thenReturn(1L);
+        when(cmd.getSourceManagementServerId()).thenReturn(2L);
+        List<Long> targetIds = List.of(3L, 4L);
+        when(cmd.getTargetManagementServerIds()).thenReturn(targetIds);
+        when(cmd.getFiles()).thenReturn(List.of("validFile"));
+        ExtensionVO extension = mock(ExtensionVO.class);
+        when(extensionDao.findById(1L)).thenReturn(extension);
+        ManagementServerHostVO sourceServer = mock(ManagementServerHostVO.class);
+        when(sourceServer.getState()).thenReturn(ManagementServerHost.State.Up);
+        when(managementServerHostDao.findById(2L)).thenReturn(sourceServer);
+        when(managementServerHostDao.listUpByIds(targetIds)).thenReturn(List.of(mock(ManagementServerHostVO.class)));
+        extensionsManager.syncExtension(cmd);
+    }
+
+    @Test
+    public void syncExtensionReturnsTrueWhenSyncSucceeds() {
+        SyncExtensionCmd cmd = mock(SyncExtensionCmd.class);
+        when(cmd.getId()).thenReturn(1L);
+        when(cmd.getSourceManagementServerId()).thenReturn(2L);
+        List<Long> targetIds = List.of(3L, 4L);
+        when(cmd.getTargetManagementServerIds()).thenReturn(targetIds);
+        when(cmd.getFiles()).thenReturn(List.of("validFile"));
+        ExtensionVO extension = mock(ExtensionVO.class);
+        when(extensionDao.findById(1L)).thenReturn(extension);
+        ManagementServerHostVO sourceServer = mock(ManagementServerHostVO.class);
+        when(sourceServer.getState()).thenReturn(ManagementServerHost.State.Up);
+        when(sourceServer.getMsid()).thenReturn(100L);
+        when(managementServerHostDao.findById(2L)).thenReturn(sourceServer);
+        when(managementServerHostDao.listUpByIds(targetIds)).thenReturn(List.of(mock(ManagementServerHostVO.class),
+                mock(ManagementServerHostVO.class)));
+        doNothing().when(extensionsFilesystemManager).validateExtensionFiles(extension, List.of("validFile"));
+        doNothing().when(extensionsManager).checkExtensionPathState(extension);
+        try (MockedStatic<ManagementServerNode> mocked = Mockito.mockStatic(ManagementServerNode.class)) {
+            mocked.when(ManagementServerNode::getManagementServerId).thenReturn(100L);
+            when(extensionsShareManager.syncExtension(eq(extension), eq(sourceServer), anyList(), eq(List.of("validFile"))))
+                    .thenReturn(new Pair<>(true, "Sync successful"));
+            boolean result = extensionsManager.syncExtension(cmd);
+            assertTrue(result);
+            verify(extensionsManager).checkExtensionPathState(extension);
+        }
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void syncExtensionThrowsWhenSyncFails() {
+        SyncExtensionCmd cmd = mock(SyncExtensionCmd.class);
+        when(cmd.getId()).thenReturn(1L);
+        when(cmd.getSourceManagementServerId()).thenReturn(2L);
+        List<Long> targetIds = List.of(3L);
+        when(cmd.getTargetManagementServerIds()).thenReturn(targetIds);
+        when(cmd.getFiles()).thenReturn(List.of("validFile"));
+        ExtensionVO extension = mock(ExtensionVO.class);
+        when(extensionDao.findById(1L)).thenReturn(extension);
+        ManagementServerHostVO sourceServer = mock(ManagementServerHostVO.class);
+        when(sourceServer.getState()).thenReturn(ManagementServerHost.State.Up);
+        when(sourceServer.getMsid()).thenReturn(100L);
+        when(managementServerHostDao.findById(2L)).thenReturn(sourceServer);
+        ManagementServerHostVO targetServer = mock(ManagementServerHostVO.class);
+        when(managementServerHostDao.listUpByIds(targetIds)).thenReturn(List.of(targetServer));
+        doNothing().when(extensionsFilesystemManager).validateExtensionFiles(extension, List.of("validFile"));
+        try (MockedStatic<ManagementServerNode> mocked = Mockito.mockStatic(ManagementServerNode.class)) {
+            mocked.when(ManagementServerNode::getManagementServerId).thenReturn(101L);
+            doReturn(new Pair<>(false, "Sync failed")).when(extensionsManager).syncExtensionUsingMSPeer(
+                    eq(extension), eq(sourceServer), anyList(), eq(List.of("validFile")));
+            extensionsManager.syncExtension(cmd);
+            verify(extensionsManager, never()).checkExtensionPathState(extension);
+        }
+    }
 }

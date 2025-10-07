@@ -39,6 +39,7 @@ import org.apache.cloudstack.framework.extensions.api.ListCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.ListExtensionsCmd;
 import org.apache.cloudstack.framework.extensions.api.RegisterExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.RunCustomActionCmd;
+import org.apache.cloudstack.framework.extensions.api.SyncExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.UnregisterExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.UpdateCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.UpdateExtensionCmd;
@@ -97,4 +98,6 @@ public interface ExtensionsManager extends Manager {
     void updateExtensionResourceMapDetails(final long extensionResourceMapId, final Map<String, String> details);
 
     Answer getInstanceConsole(VirtualMachine vm, Host host);
+
+    boolean syncExtension(SyncExtensionCmd cmd);
 }
