@@ -31,6 +31,7 @@ import static org.mockito.Mockito.when;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -70,6 +71,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.agent.AgentManager;
@@ -158,15 +160,19 @@ import com.cloud.vm.DiskProfile;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class UnmanagedVMsManagerImplTest {
 
+    @Spy
     @InjectMocks
     private UnmanagedVMsManagerImpl unmanagedVMsManager = new UnmanagedVMsManagerImpl();
 
@@ -237,6 +243,8 @@ public class UnmanagedVMsManagerImplTest {
     EntityManager entityMgr;
     @Mock
     DeploymentPlanningManager deploymentPlanningManager;
+    @Mock
+    private VMInstanceDetailsDao vmInstanceDetailsDao;
 
     private static final long virtualMachineId = 1L;
 
@@ -445,38 +453,107 @@ public class UnmanagedVMsManagerImplTest {
 
     @Test(expected = InvalidParameterValueException.class)
     public void unmanageVMInstanceMissingInstanceTest() {
-        long notExistingId = 10L;
-        unmanagedVMsManager.unmanageVMInstance(notExistingId);
+        when(vmDao.findById(anyLong())).thenReturn(null);
+        unmanagedVMsManager.unmanageVMInstance(1L, null, false);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void unmanageVMInstanceRemovedInstanceTest() {
+        VMInstanceVO userVmVO = mock(VMInstanceVO.class);
+        when(vmDao.findById(anyLong())).thenReturn(userVmVO);
+        when(userVmVO.getRemoved()).thenReturn(new Date());
+        unmanagedVMsManager.unmanageVMInstance(1L, null, false);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void unmanageVMInstanceDestroyedInstanceTest() {
         when(virtualMachine.getState()).thenReturn(VirtualMachine.State.Destroyed);
-        unmanagedVMsManager.unmanageVMInstance(virtualMachineId);
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId, null, false);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void unmanageVMInstanceExpungedInstanceTest() {
         when(virtualMachine.getState()).thenReturn(VirtualMachine.State.Expunging);
-        unmanagedVMsManager.unmanageVMInstance(virtualMachineId);
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId, null, false);
     }
 
     @Test(expected = UnsupportedServiceException.class)
     public void unmanageVMInstanceExistingVMSnapshotsTest() {
         when(virtualMachine.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.None);
-        unmanagedVMsManager.unmanageVMInstance(virtualMachineId);
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId, null, false);
+    }
+
+    @Test(expected = UnsupportedServiceException.class)
+    public void unmanageVMInstanceInvalidHyperVisor() {
+        when(virtualMachine.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.None);
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId, null, false);
+    }
+
+    @Test(expected = UnsupportedServiceException.class)
+    public void unmanageVMInstanceInvalidVmType() {
+        when(virtualMachine.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.VMware);
+        when(virtualMachine.getType()).thenReturn(VirtualMachine.Type.ConsoleProxy);
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId, null, false);
     }
 
     @Test(expected = UnsupportedServiceException.class)
     public void unmanageVMInstanceExistingVolumeSnapshotsTest() {
         when(virtualMachine.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.None);
-        unmanagedVMsManager.unmanageVMInstance(virtualMachineId);
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId, null, false);
     }
 
     @Test(expected = UnsupportedServiceException.class)
     public void unmanageVMInstanceExistingISOAttachedTest() {
         when(virtualMachine.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.None);
-        unmanagedVMsManager.unmanageVMInstance(virtualMachineId);
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId, null, false);
+    }
+
+    @Test(expected = UnsupportedServiceException.class)
+    public void unmanageVMInstanceVmwareHostIdParamTest() {
+        when(virtualMachine.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.VMware);
+        when(virtualMachine.getType()).thenReturn(VirtualMachine.Type.User);
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId, 1L, false);
+    }
+
+    @Test(expected = UnsupportedServiceException.class)
+    public void unmanageVMInstanceRunningHostIdParamTest() {
+        when(virtualMachine.getType()).thenReturn(VirtualMachine.Type.User);
+        when(virtualMachine.getState()).thenReturn(VirtualMachine.State.Running);
+        when(virtualMachine.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId, 1L, false);
+    }
+
+    @Test(expected = UnsupportedServiceException.class)
+    public void unmanageVMInstanceRunningForceParamTest() {
+        when(virtualMachine.getType()).thenReturn(VirtualMachine.Type.User);
+        when(virtualMachine.getState()).thenReturn(VirtualMachine.State.Running);
+        when(virtualMachine.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        VMInstanceDetailVO vmInstanceDetailVO = mock(VMInstanceDetailVO.class);
+        when(vmInstanceDetailsDao.findDetail(virtualMachineId, VmDetailConstants.CONFIG_DRIVE_LOCATION)).thenReturn(vmInstanceDetailVO);
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId, null, false);
+    }
+
+    @Test
+    public void unmanageVMInstanceVMwareHostId() {
+        when(virtualMachine.getType()).thenReturn(VirtualMachine.Type.User);
+        when(virtualMachine.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        when(virtualMachine.getState()).thenReturn(VirtualMachine.State.Stopped);
+        UserVmVO userVmVO = mock(UserVmVO.class);
+        when(userVmVO.getIsoId()).thenReturn(null);
+        when(userVmDao.findById(anyLong())).thenReturn(userVmVO);
+        when(vmDao.findById(virtualMachineId)).thenReturn(virtualMachine);
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId, 1L, false);
+    }
+
+    @Test
+    public void unmanageVMInstanceStoppedInstanceTest() {
+        when(virtualMachine.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        when(virtualMachine.getType()).thenReturn(VirtualMachine.Type.User);
+        when(virtualMachine.getState()).thenReturn(VirtualMachine.State.Stopped);
+        UserVmVO userVmVO = mock(UserVmVO.class);
+        when(userVmDao.findById(anyLong())).thenReturn(userVmVO);
+        Mockito.doNothing().when(unmanagedVMsManager).performUnmanageVMInstancePrechecks(any());
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId, null, false);
     }
 
     @Test

@@ -22,6 +22,7 @@ package org.apache.cloudstack.backup;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.LogLevel;
 import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 
 import java.util.List;
 
@@ -31,6 +32,7 @@ public class RestoreBackupCommand extends Command  {
     private String backupRepoType;
     private String backupRepoAddress;
     private List<String> backupVolumesUUIDs;
+    private List<PrimaryDataStoreTO> restoreVolumePools;
     private List<String> restoreVolumePaths;
     private String diskType;
     private Boolean vmExists;
@@ -72,6 +74,14 @@ public class RestoreBackupCommand extends Command  {
 
     public void setBackupRepoAddress(String backupRepoAddress) {
         this.backupRepoAddress = backupRepoAddress;
+    }
+
+    public List<PrimaryDataStoreTO> getRestoreVolumePools() {
+        return restoreVolumePools;
+    }
+
+    public void setRestoreVolumePools(List<PrimaryDataStoreTO> restoreVolumePools) {
+        this.restoreVolumePools = restoreVolumePools;
     }
 
     public List<String> getRestoreVolumePaths() {
