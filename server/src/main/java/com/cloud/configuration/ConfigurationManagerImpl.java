@@ -643,9 +643,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         configKeysAllowedOnlyForDefaultAdmin.add(AccountManagerImpl.allowOperationsOnUsersInSameAccount.key());
 
         configKeysAllowedOnlyForDefaultAdmin.add(VirtualMachineManager.SystemVmEnableUserData.key());
-        configKeysAllowedOnlyForDefaultAdmin.add(ConsoleProxyManager.ConsoleProxyUserData.key());
-        configKeysAllowedOnlyForDefaultAdmin.add(SecondaryStorageVmManager.SecondaryStorageUserData.key());
-        configKeysAllowedOnlyForDefaultAdmin.add(VirtualNetworkApplianceManager.RouterUserData.key());
+        configKeysAllowedOnlyForDefaultAdmin.add(ConsoleProxyManager.ConsoleProxyVmUserData.key());
+        configKeysAllowedOnlyForDefaultAdmin.add(SecondaryStorageVmManager.SecondaryStorageVmUserData.key());
+        configKeysAllowedOnlyForDefaultAdmin.add(VirtualNetworkApplianceManager.VirtualRouterUserData.key());
     }
 
     private void initMessageBusListener() {

@@ -1234,7 +1234,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         buf.append(" keystore_password=").append(VirtualMachineGuru.getEncodedString(PasswordGenerator.generateRandomPassword(16)));
 
         if (SystemVmEnableUserData.valueIn(dc.getId())) {
-            String userDataUuid = SecondaryStorageUserData.valueIn(dc.getId());
+            String userDataUuid = SecondaryStorageVmUserData.valueIn(dc.getId());
             try {
                 String userData = userDataManager.validateAndGetUserDataForSystemVM(userDataUuid);
                 if (StringUtils.isNotBlank(userData)) {
@@ -1547,7 +1547,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {NTPServerConfig, MaxNumberOfSsvmsForMigration, SecondaryStorageCapacityScanInterval, SecondaryStorageUserData};
+        return new ConfigKey<?>[] {NTPServerConfig, MaxNumberOfSsvmsForMigration, SecondaryStorageCapacityScanInterval,
+                                   SecondaryStorageVmUserData};
     }
 
 }

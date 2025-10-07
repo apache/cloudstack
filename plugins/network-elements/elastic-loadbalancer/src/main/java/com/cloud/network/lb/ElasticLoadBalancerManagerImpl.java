@@ -103,7 +103,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
-import static com.cloud.network.router.VirtualNetworkApplianceManager.RouterUserData;
+import static com.cloud.network.router.VirtualNetworkApplianceManager.VirtualRouterUserData;
 import static com.cloud.vm.VirtualMachineManager.SystemVmEnableUserData;
 
 @Component
@@ -486,7 +486,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
         buf.append(" authorized_key=").append(VirtualMachineGuru.getEncodedMsPublicKey(msPublicKey));
 
         if (SystemVmEnableUserData.valueIn(dc.getId())) {
-            String userDataUuid = RouterUserData.valueIn(dc.getId());
+            String userDataUuid = VirtualRouterUserData.valueIn(dc.getId());
             try {
                 String userData = userDataManager.validateAndGetUserDataForSystemVM(userDataUuid);
                 if (StringUtils.isNotBlank(userData)) {

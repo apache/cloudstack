@@ -144,7 +144,7 @@ class TestSystemVMUserData(cloudstackTestCase):
 
         Args:
             userdata_name: Name for the userdata entry
-            global_setting_name: Global setting name to update (e.g., 'secstorage.userdata', 'cpvm.userdata', 'router.userdata')
+            global_setting_name: Global setting name to update (e.g., 'secstorage.vm.userdata', 'console.proxy.vm.userdata', 'virtual.router.userdata')
             vm_type_display_name: Display name for the VM type (e.g., 'SSVM', 'CPVM', 'VR')
 
         Returns:
@@ -289,7 +289,7 @@ echo "User data script ran successfully on {vm_type_display_name}" > /tmp/userda
             systemvm_type: Type of system VM ('secondarystoragevm' or 'consoleproxy')
             userdata_name: Name for the userdata entry
             vm_type_display_name: Display name for log messages (e.g., 'SSVM' or 'CPVM')
-            global_setting_name: Global setting name for userdata (e.g., 'secstorage.userdata' or 'cpvm.userdata')
+            global_setting_name: Global setting name for userdata (e.g., 'secstorage.vm.userdata' or 'console.proxy.vm.userdata')
         """
         # 1) Register userdata and configure global setting
         self.userdata_id = self.register_userdata(
@@ -346,7 +346,7 @@ echo "User data script ran successfully on {vm_type_display_name}" > /tmp/userda
             systemvm_type="secondarystoragevm",
             userdata_name="ssvm_userdata",
             vm_type_display_name="SSVM",
-            global_setting_name="secstorage.userdata",
+            global_setting_name="secstorage.vm.userdata",
         )
 
     @attr(
@@ -359,7 +359,7 @@ echo "User data script ran successfully on {vm_type_display_name}" > /tmp/userda
             systemvm_type="consoleproxy",
             userdata_name="cpvm_userdata",
             vm_type_display_name="CPVM",
-            global_setting_name="consoleproxy.userdata",
+            global_setting_name="console.proxy.vm.userdata",
         )
 
     @attr(
@@ -369,7 +369,7 @@ echo "User data script ran successfully on {vm_type_display_name}" > /tmp/userda
     def test_3_userdata_on_vr(self):
         """Test user data functionality on VR"""
         # 1) Register userdata and configure global setting
-        self.userdata_id = self.register_userdata("vr_userdata", "router.userdata", "VR")
+        self.userdata_id = self.register_userdata("vr_userdata", "virtual.router.userdata", "VR")
 
         # 2) Create an isolated network which will trigger VR creation with userdata
         result = createEnabledNetworkOffering(

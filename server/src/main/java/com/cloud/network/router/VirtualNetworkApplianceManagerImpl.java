@@ -2101,7 +2101,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         buf.append(String.format(" logrotatefrequency=%s", routerLogrotateFrequency));
 
         if (SystemVmEnableUserData.valueIn(router.getDataCenterId())) {
-            String userDataUuid = RouterUserData.valueIn(dc.getId());
+            String userDataUuid = VirtualRouterUserData.valueIn(dc.getId());
             try {
                 String userData = userDataManager.validateAndGetUserDataForSystemVM(userDataUuid);
                 if (StringUtils.isNotBlank(userData)) {
@@ -3372,7 +3372,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 ExposeDnsAndBootpServer,
                 RouterLogrotateFrequency,
                 RemoveControlIpOnStop,
-                RouterUserData
+                VirtualRouterUserData
         };
     }
 

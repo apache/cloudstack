@@ -1272,7 +1272,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         buf.append(" keystore_password=").append(VirtualMachineGuru.getEncodedString(PasswordGenerator.generateRandomPassword(16)));
 
         if (SystemVmEnableUserData.valueIn(dc.getId())) {
-            String userDataUuid = ConsoleProxyUserData.valueIn(dc.getId());
+            String userDataUuid = ConsoleProxyVmUserData.valueIn(dc.getId());
             try {
                 String userData = userDataManager.validateAndGetUserDataForSystemVM(userDataUuid);
                 if (StringUtils.isNotBlank(userData)) {
@@ -1588,9 +1588,10 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] { ConsoleProxySslEnabled, NoVncConsoleDefault, NoVncConsoleSourceIpCheckEnabled, ConsoleProxyServiceOffering,
-                ConsoleProxyCapacityStandby, ConsoleProxyCapacityScanInterval, ConsoleProxyCmdPort, ConsoleProxyRestart, ConsoleProxyUrlDomain, ConsoleProxySessionMax, ConsoleProxySessionTimeout, ConsoleProxyDisableRpFilter, ConsoleProxyLaunchMax,
-                ConsoleProxyManagementLastState, ConsoleProxyServiceManagementState, NoVncConsoleShowDot, ConsoleProxyUserData };
+        return new ConfigKey<?>[] {ConsoleProxySslEnabled, NoVncConsoleDefault, NoVncConsoleSourceIpCheckEnabled, ConsoleProxyServiceOffering,
+                                   ConsoleProxyCapacityStandby, ConsoleProxyCapacityScanInterval, ConsoleProxyCmdPort, ConsoleProxyRestart, ConsoleProxyUrlDomain, ConsoleProxySessionMax, ConsoleProxySessionTimeout, ConsoleProxyDisableRpFilter, ConsoleProxyLaunchMax,
+                                   ConsoleProxyManagementLastState, ConsoleProxyServiceManagementState, NoVncConsoleShowDot,
+                                   ConsoleProxyVmUserData};
     }
 
     protected ConsoleProxyStatus parseJsonToConsoleProxyStatus(String json) throws JsonParseException {

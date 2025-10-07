@@ -97,7 +97,7 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
     ConfigKey<String> ConsoleProxyManagementLastState = new ConfigKey<String>(ConfigKey.CATEGORY_ADVANCED, String.class, "consoleproxy.management.state.last", com.cloud.consoleproxy.ConsoleProxyManagementState.Auto.toString(),
             "last console proxy service management state", false, ConfigKey.Kind.Select, consoleProxyManagementStates);
 
-    ConfigKey<String> ConsoleProxyUserData = new ConfigKey<>(String.class, "consoleproxy.userdata",
+    ConfigKey<String> ConsoleProxyVmUserData = new ConfigKey<>(String.class, "console.proxy.vm.userdata",
             ConfigKey.CATEGORY_ADVANCED, "",
             "UUID for user data for console proxy VMs. This works only when systemvm.userdata.enabled is set to true",
             true, ConfigKey.Scope.Zone, null, "User Data for CPVMs",

@@ -107,7 +107,7 @@ public interface VirtualMachineManager extends Manager {
             "Whether to sync power states of the transitioning and stalled VMs while processing VM power reports.", false);
 
     ConfigKey<Boolean> SystemVmEnableUserData = new ConfigKey<>(Boolean.class, "systemvm.userdata.enabled", "Advanced", "false",
-            "Enable user data for system VMs. When enabled, the CPVM, SSVM, and Router system VMs will use the values from the global settings consoleproxy.userdata, secstorage.userdata, and router.userdata, respectively, to provide cloud-init user data to the VM.",
+            "Enable user data for system VMs. When enabled, the CPVM, SSVM, and Router system VMs will use the values from the global settings console.proxy.vm.userdata, secstorage.vm.userdata, and virtual.router.userdata, respectively, to provide cloud-init user data to the VM.",
             true, ConfigKey.Scope.Zone, null);
 
     interface Topics {

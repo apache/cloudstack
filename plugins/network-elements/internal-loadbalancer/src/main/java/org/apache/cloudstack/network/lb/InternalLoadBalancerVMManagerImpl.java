@@ -21,7 +21,7 @@ import static com.cloud.hypervisor.Hypervisor.HypervisorType.KVM;
 import static com.cloud.hypervisor.Hypervisor.HypervisorType.LXC;
 import static com.cloud.hypervisor.Hypervisor.HypervisorType.VMware;
 import static com.cloud.hypervisor.Hypervisor.HypervisorType.XenServer;
-import static com.cloud.network.router.VirtualNetworkApplianceManager.RouterUserData;
+import static com.cloud.network.router.VirtualNetworkApplianceManager.VirtualRouterUserData;
 import static com.cloud.vm.VirtualMachineManager.SystemVmEnableUserData;
 
 import java.util.ArrayList;
@@ -251,7 +251,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
 
         long dcId = profile.getVirtualMachine().getDataCenterId();
         if (SystemVmEnableUserData.valueIn(dcId)) {
-            String userDataUuid = RouterUserData.valueIn(dcId);
+            String userDataUuid = VirtualRouterUserData.valueIn(dcId);
             try {
                 String userData = userDataManager.validateAndGetUserDataForSystemVM(userDataUuid);
                 if (StringUtils.isNotBlank(userData)) {
