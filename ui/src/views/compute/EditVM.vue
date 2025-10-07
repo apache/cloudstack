@@ -243,7 +243,7 @@ export default {
         userdata: '',
         haenable: this.resource.haenable,
         leaseduration: this.resource.leaseduration,
-        leaseexpiryaction: this.resource.leaseexpiryaction
+        leaseexpiryaction: this.resource.leaseexpiryaction,
         extraconfig: this.combinedExtraConfig
       })
       this.rules = reactive({
