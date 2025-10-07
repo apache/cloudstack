@@ -413,10 +413,8 @@ export default {
           for (const index in net.traffics) {
             if (this.hypervisor === 'VMware') {
               delete this.physicalNetworks[idx].traffics[index].label
-            } else {
-              if (!net.traffics[index].label) {
-                this.physicalNetworks[idx].traffics[index].label = ''
-              }
+            } else if (!net.traffics[index].label) {
+              this.physicalNetworks[idx].traffics[index].label = ''
             }
             const traffic = net.traffics[index]
             if (traffic.type === 'storage') {
