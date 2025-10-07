@@ -41,7 +41,7 @@ export default {
       permission: ['listLdapConfigurations'],
       searchFilters: ['domainid', 'hostname', 'port'],
       columns: ['hostname', 'port', 'domainid'],
-      details: ['hostname', 'port', 'domainid'],
+      details: ['id', 'hostname', 'port', 'domainid'],
       actions: [
         {
           api: 'addLdapConfiguration',
@@ -141,7 +141,7 @@ export default {
       permission: ['listBackupRepositories'],
       searchFilters: ['zoneid'],
       columns: ['name', 'provider', 'type', 'address', 'zonename'],
-      details: ['name', 'type', 'address', 'provider', 'zonename'],
+      details: ['name', 'type', 'address', 'provider', 'zonename', 'crosszoneinstancecreation'],
       actions: [
         {
           api: 'addBackupRepository',
@@ -149,7 +149,7 @@ export default {
           label: 'label.backup.repository.add',
           listView: true,
           args: [
-            'name', 'provider', 'address', 'type', 'mountopts', 'zoneid'
+            'name', 'provider', 'address', 'type', 'mountopts', 'zoneid', 'crosszoneinstancecreation'
           ],
           mapping: {
             type: {
@@ -159,6 +159,15 @@ export default {
               value: (record) => { return 'nas' }
             }
           }
+        },
+        {
+          api: 'updateBackupRepository',
+          icon: 'edit-outlined',
+          label: 'label.backup.repository.edit',
+          message: 'message.action.edit.backup.repository',
+          args: ['name', 'address', 'mountopts', 'crosszoneinstancecreation'],
+          dataView: true,
+          popup: true
         },
         {
           api: 'deleteBackupRepository',

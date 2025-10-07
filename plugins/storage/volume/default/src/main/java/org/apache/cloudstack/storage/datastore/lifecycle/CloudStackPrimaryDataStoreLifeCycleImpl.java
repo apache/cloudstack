@@ -69,6 +69,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachineManager;
@@ -309,7 +310,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStor
         } else if ("PreSetup".equalsIgnoreCase(scheme) && !HypervisorType.VMware.equals(hypervisorType)) {
             uuid = hostPath.replace("/", "");
         } else {
-            uuid = UUID.nameUUIDFromBytes((storageHost + hostPath).getBytes()).toString();
+            uuid = UuidUtils.nameUUIDFromBytes((storageHost + hostPath).getBytes()).toString();
         }
 
         List<StoragePoolVO> spHandles = primaryDataStoreDao.findIfDuplicatePoolsExistByUUID(uuid);
@@ -503,7 +504,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStor
     @Override
     public boolean attachHost(DataStore store, HostScope scope, StoragePoolInfo existingInfo) {
         DataStore dataStore = dataStoreHelper.attachHost(store, scope, existingInfo);
-        if(existingInfo.getCapacityBytes() == 0){
+        if (existingInfo.getCapacityBytes() == 0) {
             try {
                 storageMgr.connectHostToSharedPool(hostDao.findById(scope.getScopeId()), dataStore.getId());
             } catch (StorageUnavailableException ex) {

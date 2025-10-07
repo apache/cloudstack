@@ -485,6 +485,7 @@
   "label.available.public.ips": "使用できるパブリックIPアドレス",
   "label.back": "戻る",
   "label.backup": "バックアップ",
+  "label.backups": "バックアップ",
   "label.backup.attach.restore": "復元とバックアップボリュームをアタッチ",
   "label.backup.offering.assign": "VMをバックアップオファリングに割り当て",
   "label.backup.offering.remove": "VMバックアップオファリングから削除",

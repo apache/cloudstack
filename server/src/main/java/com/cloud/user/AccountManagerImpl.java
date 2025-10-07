@@ -136,6 +136,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.RemoteAccessVpnVO;
+import com.cloud.network.dao.SslCertDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.security.SecurityGroupManager;
@@ -176,6 +177,7 @@ import com.cloud.utils.ConstantTimeComparator;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
@@ -308,6 +310,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private UserDataDao userDataDao;
     @Inject
     private NetworkPermissionDao networkPermissionDao;
+    @Inject
+    private SslCertDao sslCertDao;
 
     private List<QuerySelector> _querySelectors;
 
@@ -1202,6 +1206,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             // Delete registered UserData
             userDataDao.removeByAccountId(accountId);
 
+            // Delete SSL certificates
+            sslCertDao.removeByAccountId(accountId);
+
             // Delete Webhooks
             deleteWebhooksForAccount(accountId);
 
@@ -1365,7 +1372,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 if (accountType == Account.Type.RESOURCE_DOMAIN_ADMIN) {
                     // set registration token
                     byte[] bytes = (domainIdFinal + accountNameFinal + userName + System.currentTimeMillis()).getBytes();
-                    String registrationToken = UUID.nameUUIDFromBytes(bytes).toString();
+                    String registrationToken = UuidUtils.nameUUIDFromBytes(bytes).toString();
                     user.setRegistrationToken(registrationToken);
                 }
 
@@ -2747,7 +2754,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             logger.debug("Creating user: " + userName + ", accountId: " + accountId + " timezone:" + timezone);
         }
 
-        passwordPolicy.verifyIfPasswordCompliesWithPasswordPolicies(password, userName, getAccount(accountId).getDomainId());
+        Account callingAccount = getCurrentCallingAccount();
+        if (callingAccount.getId() != Account.ACCOUNT_ID_SYSTEM) {
+            passwordPolicy.verifyIfPasswordCompliesWithPasswordPolicies(password, userName, getAccount(accountId).getDomainId());
+        }
 
         String encodedPassword = null;
         for (UserAuthenticator authenticator : _userPasswordEncoders) {

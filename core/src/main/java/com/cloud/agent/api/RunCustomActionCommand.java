@@ -21,10 +21,12 @@ package com.cloud.agent.api;
 
 import java.util.Map;
 
+import com.cloud.agent.api.to.VirtualMachineTO;
+
 public class RunCustomActionCommand extends Command {
 
     String actionName;
-    Long vmId;
+    VirtualMachineTO vmTO;
     Map<String, Object> parameters;
 
     public RunCustomActionCommand(String actionName) {
@@ -36,12 +38,12 @@ public class RunCustomActionCommand extends Command {
         return actionName;
     }
 
-    public Long getVmId() {
-        return vmId;
+    public VirtualMachineTO getVmTO() {
+        return vmTO;
     }
 
-    public void setVmId(Long vmId) {
-        this.vmId = vmId;
+    public void setVmTO(VirtualMachineTO vmTO) {
+        this.vmTO = vmTO;
     }
 
     public Map<String, Object> getParameters() {

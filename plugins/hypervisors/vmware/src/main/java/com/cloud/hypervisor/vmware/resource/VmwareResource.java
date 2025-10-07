@@ -294,6 +294,7 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionUtil;
@@ -5309,7 +5310,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                     poolInfo.setHostPath(childPath);
                     String uuid = childDsMo.getCustomFieldValue(CustomFieldConstants.CLOUD_UUID);
                     if (uuid == null || !uuid.contains("-")) {
-                        uuid = UUID.nameUUIDFromBytes(((pool.getHost() + childPath)).getBytes()).toString();
+                        uuid = UuidUtils.nameUUIDFromBytes(((pool.getHost() + childPath)).getBytes()).toString();
                     }
                     poolInfo.setUuid(uuid);
                     poolInfo.setLocalPath(cmd.LOCAL_PATH_PREFIX + File.separator + uuid);
@@ -5544,7 +5545,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
     private String getSecondaryDatastoreUUID(String storeUrl) {
         String uuid = null;
         try {
-            uuid = UUID.nameUUIDFromBytes(storeUrl.getBytes("UTF-8")).toString();
+            uuid = UuidUtils.nameUUIDFromBytes(storeUrl.getBytes("UTF-8")).toString();
         } catch (UnsupportedEncodingException e) {
             logger.warn("Failed to create UUID from string " + storeUrl + ". Bad storeUrl or UTF-8 encoding error.");
         }
@@ -5837,11 +5838,20 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 if (toolsStatus == VirtualMachineToolsStatus.TOOLS_NOT_INSTALLED) {
                     details += "Vmware tools not installed.";
                 } else {
-                    ip = guestInfo.getIpAddress();
-                    if (ip != null) {
-                        result = true;
+                    var normalizedMac = cmd.getMacAddress().replaceAll("-", ":");
+                    for(var guestInfoNic : guestInfo.getNet()) {
+                        var normalizedNicMac = guestInfoNic.getMacAddress().replaceAll("-", ":");
+                        if (!result && normalizedNicMac.equalsIgnoreCase(normalizedMac)) {
+                            result = true;
+                            details = null;
+                            for (var ipAddr : guestInfoNic.getIpAddress()) {
+                                if (NetUtils.isValidIp4(ipAddr) && (cmd.getVmNetworkCidr() == null || NetUtils.isIpWithInCidrRange(ipAddr, cmd.getVmNetworkCidr()))) {
+                                    details = ipAddr;
+                                }
+                            }
+                            break;
+                        }
                     }
-                    details = ip;
                 }
             } else {
                 details += "VM " + vmName + " no longer exists on vSphere host: " + hyperHost.getHyperHostName();

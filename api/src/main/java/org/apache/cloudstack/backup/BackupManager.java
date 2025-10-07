@@ -55,7 +55,7 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
     ConfigKey<String> BackupProviderPlugin = new ConfigKey<>("Advanced", String.class,
             "backup.framework.provider.plugin",
             "dummy",
-            "The backup and recovery provider plugin.", true, ConfigKey.Scope.Zone, BackupFrameworkEnabled.key());
+            "The backup and recovery provider plugin. Valid plugin values: dummy, veeam, networker and nas", true, ConfigKey.Scope.Zone, BackupFrameworkEnabled.key());
 
     ConfigKey<Long> BackupSyncPollingInterval = new ConfigKey<>("Advanced", Long.class,
             "backup.framework.sync.interval",
@@ -204,6 +204,8 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
     Map<Long, Network.IpAddresses> getIpToNetworkMapFromBackup(Backup backup, boolean preserveIps, List<Long> networkIds);
 
     Boolean canCreateInstanceFromBackup(Long backupId);
+
+    Boolean canCreateInstanceFromBackupAcrossZones(Long backupId);
 
     /**
      * Restore a backup to a new Instance
