@@ -154,9 +154,9 @@
               </a-form-item>
               <a-form-item name="forceconverttopool" ref="forceconverttopool" v-if="selectedVmwareVcenter">
                 <template #label>
-                  <tooltip-label :title="'Force converting to storage pool directly (not using temporary storage for conversion)'" :tooltip="apiParams.forcemstoimportvmfiles.description"/>
+                  <tooltip-label :title="$t('label.force.convert.to.pool')" :tooltip="apiParams.forceconverttopool.description"/>
                 </template>
-                <a-switch v-model:checked="form.forceconverttopool" @change="val => { switches.forceConvertToPool = val }" />
+                <a-switch v-model:checked="form.forceconverttopool" @change="onForceConvertToPoolChange" />
               </a-form-item>
               <a-form-item name="converthostid" ref="converthostid">
                 <check-box-select-pair
@@ -188,13 +188,18 @@
                   v-if="cluster.hypervisortype === 'KVM' && selectedVmwareVcenter"
                   :resourceKey="cluster.id"
                   :selectOptions="storageOptionsForConversion"
-                  :checkBoxLabel="$t('message.select.temporary.storage.instance.conversion')"
+                  :checkBoxLabel="switches.forceConvertToPool ? $t('message.select.destination.storage.instance.conversion') : $t('message.select.temporary.storage.instance.conversion')"
                   :defaultCheckBoxValue="false"
                   :reversed="false"
                   @handle-checkselectpair-change="updateSelectedStorageOptionForConversion"
                 />
               </a-form-item>
-              <a-form-item v-if="showStoragePoolsForConversion" name="convertstoragepool" ref="convertstoragepool" :label="$t('label.storagepool')">
+              <a-form-item
+                v-if="showStoragePoolsForConversion"
+                name="convertstoragepool"
+                ref="convertstoragepool"
+                :label="$t('label.storagepool')"
+              >
                 <a-select
                   v-model:value="form.convertstoragepoolid"
                   defaultActiveFirstOption
@@ -1062,19 +1067,22 @@ export default {
       }
     },
     resetStorageOptionsForConversion () {
-      this.storageOptionsForConversion = [
-        {
-          id: 'secondary',
-          name: 'Secondary Storage'
-        }, {
-          id: 'primary',
-          name: 'Primary Storage'
-        }
-      ]
+      this.storageOptionsForConversion = this.switches.forceConvertToPool ? [] : [{
+        id: 'secondary',
+        name: 'Secondary Storage'
+      }]
+      this.storageOptionsForConversion.push({
+        id: 'primary',
+        name: 'Primary Storage'
+      })
     },
     onSelectRootDisk (val) {
       this.selectedRootDiskIndex = val
       this.updateSelectedRootDisk()
+    },
+    onForceConvertToPoolChange (val) {
+      this.switches.forceConvertToPool = val
+      this.resetStorageOptionsForConversion()
     },
     updateSelectedRootDisk () {
       var rootDisk = this.resource.disk[this.selectedRootDiskIndex]

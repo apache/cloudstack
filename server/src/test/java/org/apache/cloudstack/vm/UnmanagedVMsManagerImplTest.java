@@ -1151,4 +1151,41 @@ public class UnmanagedVMsManagerImplTest {
             Assert.fail("Exception encountered: " + e.getMessage());
         }
     }
+
+    @Test
+    public void testCheckConversionStoragePoolSecondaryStorageStaging() {
+        unmanagedVMsManager.checkConversionStoragePool(null, false);
+        Mockito.verifyNoInteractions(primaryDataStoreDao);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testCheckConversionStoragePoolTemporarySecondaryStorageForceConvertToPool() {
+        unmanagedVMsManager.checkConversionStoragePool(null, true);
+    }
+
+    @Test
+    public void testCheckConversionStoragePoolPrimaryStagingPool() {
+        StoragePoolVO destPool = mock(StoragePoolVO.class);
+        long destPoolId = 1L;
+        Mockito.when(primaryDataStoreDao.findById(destPoolId)).thenReturn(destPool);
+        unmanagedVMsManager.checkConversionStoragePool(destPoolId, false);
+    }
+
+    @Test
+    public void testCheckConversionStoragePoolPrimaryStagingPoolTypeAllowedForce() {
+        StoragePoolVO destPool = mock(StoragePoolVO.class);
+        Mockito.when(destPool.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+        long destPoolId = 1L;
+        Mockito.when(primaryDataStoreDao.findById(destPoolId)).thenReturn(destPool);
+        unmanagedVMsManager.checkConversionStoragePool(destPoolId, true);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testCheckConversionStoragePoolPrimaryStagingPoolTypeNotAllowedForce() {
+        StoragePoolVO destPool = mock(StoragePoolVO.class);
+        Mockito.when(destPool.getPoolType()).thenReturn(Storage.StoragePoolType.RBD);
+        long destPoolId = 1L;
+        Mockito.when(primaryDataStoreDao.findById(destPoolId)).thenReturn(destPool);
+        unmanagedVMsManager.checkConversionStoragePool(destPoolId, true);
+    }
 }

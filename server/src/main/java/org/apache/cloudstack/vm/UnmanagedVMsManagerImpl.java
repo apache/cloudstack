@@ -206,6 +206,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     private static final List<Hypervisor.HypervisorType> importUnmanagedInstancesSupportedHypervisors =
             Arrays.asList(Hypervisor.HypervisorType.VMware, Hypervisor.HypervisorType.KVM);
 
+    private static final List<Storage.StoragePoolType> forceConvertToPoolAllowedTypes =
+            Arrays.asList(Storage.StoragePoolType.NetworkFilesystem, Storage.StoragePoolType.Filesystem,
+                    Storage.StoragePoolType.SharedMountPoint);
+
     @Inject
     private AgentManager agentManager;
     @Inject
@@ -1655,6 +1659,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                     "Please set all the information for a vCenter IP/Name, datacenter, username and password");
         }
 
+        checkConversionStoragePool(convertStoragePoolId, forceConvertToPool);
+
         checkExtraParamsAllowed(extraParams);
 
         if (existingVcenterId != null) {
@@ -1748,6 +1754,30 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             }
             if (temporaryConvertLocation != null  && StringUtils.isNotBlank(ovfTemplateOnConvertLocation)) {
                 removeTemplate(temporaryConvertLocation, ovfTemplateOnConvertLocation);
+            }
+        }
+    }
+
+    /**
+     * Check whether the conversion storage pool exists and is suitable for the conversion or not.
+     * Secondary storage is only allowed when forceConvertToPool is false.
+     * @param convertStoragePoolId the ID of the storage pool (primary or secondary)
+     * @param forceConvertToPool when true, only primary storage pool must be allowed
+     * @throws CloudRuntimeException in case these requirements are not met
+     */
+    protected void checkConversionStoragePool(Long convertStoragePoolId, boolean forceConvertToPool) {
+        if (forceConvertToPool && convertStoragePoolId == null) {
+            String msg = "The parameter forceconverttopool is set to true, but a primary storage pool has not been provided for conversion";
+            logFailureAndThrowException(msg);
+        }
+        if (convertStoragePoolId != null) {
+            StoragePoolVO selectedStoragePool = primaryDataStoreDao.findById(convertStoragePoolId);
+            if (selectedStoragePool == null) {
+                logFailureAndThrowException(String.format("Cannot find a storage pool with ID %s", convertStoragePoolId));
+            }
+            if (forceConvertToPool && !forceConvertToPoolAllowedTypes.contains(selectedStoragePool.getPoolType())) {
+                logFailureAndThrowException(String.format("The selected storage pool %s does not support direct conversion " +
+                        "as its type %s", selectedStoragePool.getName(), selectedStoragePool.getPoolType().name()));
             }
         }
     }
