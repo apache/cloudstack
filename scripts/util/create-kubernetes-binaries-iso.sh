@@ -112,6 +112,11 @@ echo "Downloading kubernetes cluster provider ${PROVIDER_URL}"
 provider_conf_file="${working_dir}/provider.yaml"
 curl -sSL ${PROVIDER_URL} -o ${provider_conf_file}
 
+csi_conf_file="${working_dir}/manifest.yaml"
+echo "Including CloudStack CSI Driver manifest"
+wget https://github.com/cloudstack/cloudstack-csi-driver/releases/download/v3.0.0/snapshot-crds.yaml -O ${working_dir}/snapshot-crds.yaml
+wget https://github.com/cloudstack/cloudstack-csi-driver/releases/download/v3.0.0/manifest.yaml -O ${csi_conf_file}
+
 echo "Fetching k8s docker images..."
 ctr -v
 if [ $? -ne 0 ]; then
@@ -143,6 +148,10 @@ output=`printf "%s\n" ${output} ${autoscaler_image}`
 provider_image=`grep "image:" ${provider_conf_file} | cut -d ':' -f2- | tr -d ' '`
 output=`printf "%s\n" ${output} ${provider_image}`
 
+# Extract images from manifest.yaml and add to output
+csi_images=`grep "image:" "${csi_conf_file}" | cut -d ':' -f2- | tr -d ' ' | tr -d "'"`
+output=`printf "%s\n%s" "${output}" "${csi_images}"`
+
 while read -r line; do
     echo "Downloading image $line ---"
     if [[ $line == kubernetesui* ]] || [[ $line == apache* ]] || [[ $line == weaveworks* ]]; then
@@ -171,10 +180,6 @@ if [ -n "${9}" ]; then
   ETCD_VERSION=v${9}
   wget -q --show-progress "https://github.com/etcd-io/etcd/releases/download/${ETCD_VERSION}/etcd-${ETCD_VERSION}-linux-amd64.tar.gz" -O ${etcd_dir}/etcd-linux-amd64.tar.gz
 fi
-
-echo "Including CloudStack CSI Driver manifest"
-wget https://github.com/shapeblue/cloudstack-csi-driver/releases/download/v3.0.0/snapshot-crds.yaml -O ${working_dir}/snapshot-crds.yaml
-wget https://github.com/shapeblue/cloudstack-csi-driver/releases/download/v3.0.0/manifest.yaml -O ${working_dir}/manifest.yaml
 
 mkisofs -o "${output_dir}/${build_name}" -J -R -l "${iso_dir}"
 
