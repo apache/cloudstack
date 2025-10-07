@@ -52,10 +52,9 @@ class MaasManager:
 
             details = json_data.get("cloudstack.vm.details", {}).get("details", {})
 
-            distro_series = details.get("distro_series", None)
-            os_name = details.get("os")  # "ubuntu" or "centos"
-            release = details.get("release")  # "20.04", "22.04", "8", etc.
-            architecture = details.get("architecture")  # "amd64/ga-20.04", "amd64/generic", etc.
+            os_name = details.get("os") or vm.get("os")
+            architecture = details.get("architecture") or vm.get("architecture")
+            distro_series = details.get("distro_series") or vm.get("distro_series")
 
             if not endpoint or not apikey:
                 fail("Missing MAAS endpoint or apikey")
@@ -83,7 +82,6 @@ class MaasManager:
                 "secret": secret,
                 "distro_series": distro_series or "ubuntu/focal",
                 "os": os_name,
-                "release": release,
                 "architecture": architecture,
                 "system_id": system_id,
                 "vm_name": vm_name,
@@ -165,16 +163,13 @@ class MaasManager:
 
         ds = self.data.get("distro_series", None)
         os_name = self.data.get("os")
-        release = self.data.get("release")
         arch = self.data.get("architecture")
 
         deploy_payload = {"op": "deploy"}
 
-        if os_name or release or arch:
+        if os_name or arch:
             if os_name:
                 deploy_payload["os"] = os_name
-            if release:
-                deploy_payload["release"] = release
             if arch:
                 deploy_payload["architecture"] = arch
             if ds:
