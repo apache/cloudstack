@@ -266,11 +266,6 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         // populate owner.
         ApiResponseHelper.populateOwner(templateResponse, template);
 
-        // populate domain
-        templateResponse.setDomainId(template.getDomainUuid());
-        templateResponse.setDomainName(template.getDomainName());
-        templateResponse.setDomainPath(template.getDomainPath());
-
         // If the user is an 'Admin' or 'the owner of template' or template belongs to a project, add the template download status
         if (view == ResponseView.Full ||
                 template.getAccountId() == CallContext.current().getCallingAccount().getId() ||
@@ -415,11 +410,6 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         // populate owner.
         ApiResponseHelper.populateOwner(response, result);
 
-        // populate domain
-        response.setDomainId(result.getDomainUuid());
-        response.setDomainName(result.getDomainName());
-        response.setDomainPath(result.getDomainPath());
-
         // set details map
         if (result.getDetailName() != null) {
             Map<String, String> details = new HashMap<>();
@@ -503,11 +493,6 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
 
         // populate owner.
         ApiResponseHelper.populateOwner(isoResponse, iso);
-
-        // populate domain
-        isoResponse.setDomainId(iso.getDomainUuid());
-        isoResponse.setDomainName(iso.getDomainName());
-        isoResponse.setDomainPath(iso.getDomainPath());
 
         Account caller = CallContext.current().getCallingAccount();
         boolean isAdmin = false;
