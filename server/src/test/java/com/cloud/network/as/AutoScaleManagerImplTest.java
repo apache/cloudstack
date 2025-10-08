@@ -2595,10 +2595,14 @@ public class AutoScaleManagerImplTest {
     }
 
     @Test
-    public void trimsHostNameToLast15Characters() {
+    public void trimsHostNameToLastMaxCharacters() {
+        String name = "ThisIsAReallyLongHost-Name_1234";
         AutoScaleManagerImpl manager = new AutoScaleManagerImpl();
-        String result = manager.getTrimmedHostNameForWindows("ThisIsAReallyLongHost-Name_1234");
-        Assert.assertEquals("ngHost-Name1234", result);
+        String result = manager.getTrimmedHostNameForWindows(name);
+        String normalized = name.replace("_", "");
+        Assert.assertEquals(normalized
+                        .substring(normalized.length() - AutoScaleManagerImpl.MAX_WINDOWS_VM_HOSTNAME_LENGTH),
+                result);
     }
 
     @Test
