@@ -2699,8 +2699,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         StoragePoolVO poolVO = _storagePoolDao.findById(pool.getId());
-        poolVO.setUsedBytes(mspAnswer.getPoolInfo().getCapacityBytes() - mspAnswer.getPoolInfo().getAvailableBytes());
-        poolVO.setCapacityBytes(mspAnswer.getPoolInfo().getCapacityBytes());
+        if (!Storage.StoragePoolType.StorPool.equals(poolVO.getPoolType())) {
+            poolVO.setUsedBytes(mspAnswer.getPoolInfo().getCapacityBytes() - mspAnswer.getPoolInfo().getAvailableBytes());
+            poolVO.setCapacityBytes(mspAnswer.getPoolInfo().getCapacityBytes());
+        }
 
         _storagePoolDao.update(pool.getId(), poolVO);
     }
