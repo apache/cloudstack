@@ -19,43 +19,43 @@
 
 package com.cloud.agent.api;
 
-import java.util.Map;
-
 import com.cloud.agent.api.to.VirtualMachineTO;
 
-public class RunCustomActionCommand extends Command {
-
-    String actionName;
-    VirtualMachineTO vmTO;
-    Map<String, Object> parameters;
-
-    public RunCustomActionCommand(String actionName) {
-        this.actionName = actionName;
-        this.setWait(5);
-    }
-
-    public String getActionName() {
-        return actionName;
-    }
-
-    public VirtualMachineTO getVmTO() {
-        return vmTO;
-    }
-
-    public void setVmTO(VirtualMachineTO vmTO) {
-        this.vmTO = vmTO;
-    }
-
-    public Map<String, Object> getParameters() {
-        return parameters;
-    }
-
-    public void setParameters(Map<String, Object> parameters) {
-        this.parameters = parameters;
-    }
+/**
+ */
+public class UnmanageInstanceCommand extends Command {
+    String instanceName;
+    boolean executeInSequence = false;
+    VirtualMachineTO vm;
+    boolean isConfigDriveAttached;
 
     @Override
     public boolean executeInSequence() {
-        return false;
+        return executeInSequence;
+    }
+
+    public UnmanageInstanceCommand(VirtualMachineTO vm) {
+        this.vm = vm;
+        this.instanceName = vm.getName();
+    }
+
+    public UnmanageInstanceCommand(String instanceName) {
+        this.instanceName = instanceName;
+    }
+
+    public String getInstanceName() {
+        return instanceName;
+    }
+
+    public VirtualMachineTO getVm() {
+        return vm;
+    }
+
+    public boolean isConfigDriveAttached() {
+        return isConfigDriveAttached;
+    }
+
+    public void setConfigDriveAttached(boolean configDriveAttached) {
+        isConfigDriveAttached = configDriveAttached;
     }
 }

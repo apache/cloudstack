@@ -19,43 +19,9 @@
 
 package com.cloud.agent.api;
 
-import java.util.Map;
+public class UnmanageInstanceAnswer extends Answer {
 
-import com.cloud.agent.api.to.VirtualMachineTO;
-
-public class RunCustomActionCommand extends Command {
-
-    String actionName;
-    VirtualMachineTO vmTO;
-    Map<String, Object> parameters;
-
-    public RunCustomActionCommand(String actionName) {
-        this.actionName = actionName;
-        this.setWait(5);
-    }
-
-    public String getActionName() {
-        return actionName;
-    }
-
-    public VirtualMachineTO getVmTO() {
-        return vmTO;
-    }
-
-    public void setVmTO(VirtualMachineTO vmTO) {
-        this.vmTO = vmTO;
-    }
-
-    public Map<String, Object> getParameters() {
-        return parameters;
-    }
-
-    public void setParameters(Map<String, Object> parameters) {
-        this.parameters = parameters;
-    }
-
-    @Override
-    public boolean executeInSequence() {
-        return false;
+    public UnmanageInstanceAnswer(UnmanageInstanceCommand cmd, boolean success, String details) {
+        super(cmd, success, details);
     }
 }

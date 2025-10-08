@@ -48,6 +48,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.servlet.ConsoleProxyPasswordBasedEncryptor;
 import com.cloud.servlet.ConsoleProxyServlet;
 import com.cloud.utils.Ternary;
@@ -161,8 +162,12 @@ public abstract class AgentHookBase implements AgentHook {
 
         String sid = cmd.getSid();
         if (sid == null || !sid.equals(vm.getVncPassword())) {
-            logger.warn("sid " + sid + " in url does not match stored sid.");
-            return new ConsoleAccessAuthenticationAnswer(cmd, false);
+            if (Hypervisor.HypervisorType.External.equals(vm.getHypervisorType())) {
+                logger.debug("{} is on External hypervisor, skip checking sid", vm.getHypervisorType());
+            } else {
+                logger.warn("sid {} in url does not match stored sid.", sid);
+                return new ConsoleAccessAuthenticationAnswer(cmd, false);
+            }
         }
 
         if (cmd.isReauthenticating()) {
