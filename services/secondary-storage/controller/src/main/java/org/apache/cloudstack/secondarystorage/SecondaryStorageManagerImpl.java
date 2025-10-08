@@ -17,6 +17,7 @@
 package org.apache.cloudstack.secondarystorage;
 
 import static com.cloud.configuration.Config.SecStorageAllowedInternalDownloadSites;
+import static com.cloud.vm.VirtualMachineManager.SystemVmEnableUserData;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -52,6 +53,7 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
+import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -252,13 +254,16 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     @Inject
     VolumeDataStoreDao _volumeStoreDao;
     @Inject
+    DiskControllerMappingDao diskControllerMappingDao;
+    @Inject
     private ImageStoreDetailsUtil imageStoreDetailsUtil;
     @Inject
     private IndirectAgentLB indirectAgentLB;
     @Inject
     private CAManager caManager;
     @Inject
-    private DiskControllerMappingDao diskControllerMappingDao;
+    private UserDataManager userDataManager;
+
     private int _secStorageVmMtuSize;
 
     private String _instance;
@@ -1237,6 +1242,19 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         String nfsVersion = imageStoreDetailsUtil != null ? imageStoreDetailsUtil.getNfsVersion(secStores.get(0).getId()) : null;
         buf.append(" nfsVersion=").append(nfsVersion);
         buf.append(" keystore_password=").append(VirtualMachineGuru.getEncodedString(PasswordGenerator.generateRandomPassword(16)));
+
+        if (SystemVmEnableUserData.valueIn(dc.getId())) {
+            String userDataUuid = SecondaryStorageVmUserData.valueIn(dc.getId());
+            try {
+                String userData = userDataManager.validateAndGetUserDataForSystemVM(userDataUuid);
+                if (StringUtils.isNotBlank(userData)) {
+                    buf.append(" userdata=").append(userData);
+                }
+            } catch (Exception e) {
+                logger.warn("Failed to load user data for the ssvm, ignored", e);
+            }
+        }
+
         String bootArgs = buf.toString();
         if (logger.isDebugEnabled()) {
             logger.debug(String.format("Boot args for machine profile [%s]: [%s].", profile.toString(), bootArgs));
@@ -1539,7 +1557,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {NTPServerConfig, MaxNumberOfSsvmsForMigration, SecondaryStorageCapacityScanInterval};
+        return new ConfigKey<?>[] {NTPServerConfig, MaxNumberOfSsvmsForMigration, SecondaryStorageCapacityScanInterval,
+                                   SecondaryStorageVmUserData};
     }
 
 }

@@ -663,10 +663,14 @@
         />
       </template>
       <template v-if="column.key === 'domain'">
-        <router-link
-          v-if="record.domainid && !record.domainid.toString().includes(',') && $store.getters.userInfo.roletype !== 'User'"
-          :to="{ path: '/domain/' + record.domainid, query: { tab: 'details' } }"
-        >{{ text }}</router-link>
+        <span v-if="record.domainid && $store.getters.userInfo.roletype !== 'User'">
+          <template v-for="(id, idx) in record.domainid.split(',')" :key="id">
+            <router-link :to="{ path: '/domain/' + id, query: { tab: 'details' } }">
+              {{ record.domain.split(',')[idx] || id }}
+            </router-link>
+            <span v-if="idx < record.domainid.split(',').length - 1">, </span>
+          </template>
+        </span>
         <span v-else>{{ text }}</span>
       </template>
       <template v-if="column.key === 'domainpath'">

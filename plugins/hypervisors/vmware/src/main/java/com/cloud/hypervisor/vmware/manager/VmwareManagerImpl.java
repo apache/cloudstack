@@ -1580,7 +1580,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                 continue;
             }
             Collections.shuffle(hostIds);
-            CheckDataStoreStoragePolicyComplainceCommand command = new CheckDataStoreStoragePolicyComplainceCommand(storagePolicy.getPolicyId(), storageFilerTO);
+            CheckDataStoreStoragePolicyComplianceCommand command = new CheckDataStoreStoragePolicyComplianceCommand(storagePolicy.getPolicyId(), storageFilerTO);
             long targetHostId = hypervisorGuruManager.getGuruProcessedCommandTargetHost(hostIds.get(0), command);
             try {
                 Answer answer = _agentMgr.send(targetHostId, command);

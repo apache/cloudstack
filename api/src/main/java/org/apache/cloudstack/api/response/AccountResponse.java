@@ -569,7 +569,7 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
 
     @Override
     public void setVpcLimit(String vpcLimit) {
-        this.vpcLimit = networkLimit;
+        this.vpcLimit = vpcLimit;
     }
 
     @Override

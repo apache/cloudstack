@@ -18,8 +18,10 @@
 from marvin.codes import FAILED
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.cloudstackException import CloudstackAPIException
 from marvin.lib.utils import (cleanup_resources,
                               is_snapshot_on_nfs,
+                              is_snapshot_on_powerflex,
                               validateList)
 from marvin.lib.base import (VirtualMachine,
                              Account,
@@ -146,10 +148,16 @@ class TestSnapshotRootDisk(cloudstackTestCase):
             type='ROOT',
             listall=True
         )
+        volume = volumes[0]
+        volume_pool_response = list_storage_pools(
+            self.apiclient,
+            id=volume.storageid
+        )
+        volume_pool = volume_pool_response[0]
 
         snapshot = Snapshot.create(
             self.apiclient,
-            volumes[0].id,
+            volume.id,
             account=self.account.name,
             domainid=self.account.domainid
         )
@@ -209,6 +217,11 @@ class TestSnapshotRootDisk(cloudstackTestCase):
             "Check if backup_snap_id is not null"
         )
 
+        if volume_pool.type.lower() == "powerflex":
+            self.assertTrue(is_snapshot_on_powerflex(
+                self.apiclient, self.dbclient, self.config, self.zone.id, snapshot.id))
+            return
+
         self.assertTrue(is_snapshot_on_nfs(
             self.apiclient, self.dbclient, self.config, self.zone.id, snapshot.id))
         return
@@ -246,6 +259,11 @@ class TestSnapshotRootDisk(cloudstackTestCase):
             PASS,
             "Invalid response returned for list volumes")
         vol_uuid = vol_res[0].id
+        volume_pool_response = list_storage_pools(self.apiclient,
+                                                    id=vol_res[0].storageid)
+        volume_pool = volume_pool_response[0]
+        if volume_pool.type.lower() != 'networkfilesystem':
+            self.skipTest("This test is not supported for volume created on storage pool type %s" % volume_pool.type)
         clusters = list_clusters(
             self.apiclient,
             zoneid=self.zone.id
@@ -437,15 +455,16 @@ class TestSnapshotStandaloneBackup(cloudstackTestCase):
             )
             cls._cleanup.append(cls.virtual_machine)
 
-            volumes =Volume.list(
+            volumes = Volume.list(
                 cls.userapiclient,
                 virtualmachineid=cls.virtual_machine.id,
                 type='ROOT',
                 listall=True
             )
+            cls.volume = volumes[0]
             cls.snapshot = Snapshot.create(
                 cls.userapiclient,
-                volumes[0].id,
+                cls.volume.id,
                 account=cls.account.name,
                 domainid=cls.account.domainid
             )
@@ -475,13 +494,28 @@ class TestSnapshotStandaloneBackup(cloudstackTestCase):
         """Test creating volume from snapshot
         """
         self.services['volume_from_snapshot']['zoneid'] = self.zone.id
-        self.volume_from_snap = Volume.create_from_snapshot(
-            self.userapiclient,
-            snapshot_id=self.snapshot.id,
-            services=self.services["volume_from_snapshot"],
-            account=self.account.name,
-            domainid=self.account.domainid
+        snapshot_volume_pool_response = list_storage_pools(
+            self.apiclient,
+            id=self.volume.storageid
         )
+        snapshot_volume_pool = snapshot_volume_pool_response[0]
+        try:
+            self.volume_from_snap = Volume.create_from_snapshot(
+                self.userapiclient,
+                snapshot_id=self.snapshot.id,
+                services=self.services["volume_from_snapshot"],
+                account=self.account.name,
+                domainid=self.account.domainid
+            )
+        except CloudstackAPIException as cs:
+           self.debug(cs.errorMsg)
+           if snapshot_volume_pool.type.lower() == "powerflex":
+                self.assertTrue(
+                    cs.errorMsg.find("Create volume from snapshot is not supported for PowerFlex volume snapshots") > 0,
+                    msg="Other than unsupported error while creating volume from snapshot for volume on PowerFlex pool")
+                return
+           self.fail("Failed to create volume from snapshot: %s" % cs)
+
         self.cleanup.append(self.volume_from_snap)
 
         self.assertEqual(

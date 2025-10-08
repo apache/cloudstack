@@ -22,6 +22,7 @@ Tests of VM Autoscaling
 import logging
 import time
 import datetime
+import math
 
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
@@ -53,7 +54,8 @@ from marvin.lib.base import (Account,
 
 from marvin.lib.common import (get_domain,
                                get_zone,
-                               get_template)
+                               get_template,
+                               list_storage_pools)
 from marvin.lib.utils import wait_until
 
 MIN_MEMBER = 1
@@ -466,8 +468,10 @@ class TestVmAutoScaling(cloudstackTestCase):
     def verifyVmProfile(self, vm, autoscalevmprofileid, networkid=None, projectid=None):
         self.message("Verifying profiles of new VM %s (%s)" % (vm.name, vm.id))
         datadisksizeInBytes = None
+        datadiskpoolid = None
         diskofferingid = None
         rootdisksizeInBytes = None
+        rootdiskpoolid = None
         sshkeypairs = None
 
         affinitygroupIdsArray = []
@@ -496,9 +500,23 @@ class TestVmAutoScaling(cloudstackTestCase):
         for volume in volumes:
             if volume.type == 'ROOT':
                 rootdisksizeInBytes = volume.size
+                rootdiskpoolid = volume.storageid
             elif volume.type == 'DATADISK':
                 datadisksizeInBytes = volume.size
+                datadiskpoolid = volume.storageid
                 diskofferingid = volume.diskofferingid
+
+        rootdisk_pool_response = list_storage_pools(
+            self.apiclient,
+            id=rootdiskpoolid
+        )
+        rootdisk_pool = rootdisk_pool_response[0]
+
+        datadisk_pool_response = list_storage_pools(
+            self.apiclient,
+            id=datadiskpoolid
+        )
+        datadisk_pool = datadisk_pool_response[0]
 
         vmprofiles_list = AutoScaleVmProfile.list(
             self.regular_user_apiclient,
@@ -522,18 +540,26 @@ class TestVmAutoScaling(cloudstackTestCase):
         self.assertEquals(templateid, vmprofile.templateid)
         self.assertEquals(serviceofferingid, vmprofile.serviceofferingid)
 
+        rootdisksize = None
         if vmprofile_otherdeployparams.rootdisksize:
-            self.assertEquals(int(rootdisksizeInBytes), int(vmprofile_otherdeployparams.rootdisksize) * (1024 ** 3))
+            rootdisksize = int(vmprofile_otherdeployparams.rootdisksize)
         elif vmprofile_otherdeployparams.overridediskofferingid:
             self.assertEquals(vmprofile_otherdeployparams.overridediskofferingid, self.disk_offering_override.id)
-            self.assertEquals(int(rootdisksizeInBytes), int(self.disk_offering_override.disksize) * (1024 ** 3))
+            rootdisksize = int(self.disk_offering_override.disksize)
         else:
-            self.assertEquals(int(rootdisksizeInBytes), int(self.templatesize) * (1024 ** 3))
+            rootdisksize = int(self.templatesize)
+
+        if rootdisk_pool.type.lower() == "powerflex":
+            rootdisksize = (int(math.ceil(rootdisksize / 8) * 8))
+        self.assertEquals(int(rootdisksizeInBytes), rootdisksize * (1024 ** 3))
 
         if vmprofile_otherdeployparams.diskofferingid:
             self.assertEquals(diskofferingid, vmprofile_otherdeployparams.diskofferingid)
         if vmprofile_otherdeployparams.disksize:
-            self.assertEquals(int(datadisksizeInBytes), int(vmprofile_otherdeployparams.disksize) * (1024 ** 3))
+            datadisksize = int(vmprofile_otherdeployparams.disksize)
+            if datadisk_pool.type.lower() == "powerflex":
+                datadisksize = (int(math.ceil(datadisksize / 8) * 8))
+            self.assertEquals(int(datadisksizeInBytes), datadisksize * (1024 ** 3))
 
         if vmprofile_otherdeployparams.keypairs:
             self.assertEquals(sshkeypairs, vmprofile_otherdeployparams.keypairs)
