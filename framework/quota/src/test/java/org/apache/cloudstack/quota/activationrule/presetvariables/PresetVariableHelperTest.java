@@ -31,6 +31,8 @@ import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.host.HostTagVO;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.network.vpc.VpcOfferingVO;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.storage.StoragePoolTagVO;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.RoleVO;
@@ -187,6 +189,9 @@ public class PresetVariableHelperTest {
 
     @Mock
     BackupOfferingDao backupOfferingDaoMock;
+
+    @Mock
+    VpcOfferingDao vpcOfferingDao;
 
     List<Integer> runningAndAllocatedVmUsageTypes = Arrays.asList(UsageTypes.RUNNING_VM, UsageTypes.ALLOCATED_VM);
     List<Integer> templateAndIsoUsageTypes = Arrays.asList(UsageTypes.TEMPLATE, UsageTypes.ISO);
@@ -1338,5 +1343,37 @@ public class PresetVariableHelperTest {
         Mockito.when(store.getDataCenterId()).thenReturn(1L);
         Mockito.when(imageStoreDaoMock.findById(1L)).thenReturn(store);
         Assert.assertNotNull(presetVariableHelperSpy.getSnapshotImageStoreRef(1L, 1L));
+    }
+
+    @Test
+    public void getPresetVariableValueNetworkOfferingTestSetValuesAndReturnObject() {
+        NetworkOfferingVO networkOfferingVoMock = Mockito.mock(NetworkOfferingVO.class);
+        Mockito.doReturn(networkOfferingVoMock).when(networkOfferingDaoMock).findByIdIncludingRemoved(Mockito.anyLong());
+        mockMethodValidateIfObjectIsNull();
+
+        GenericPresetVariable expected = getGenericPresetVariableForTests();
+        Mockito.doReturn(expected.getId()).when(networkOfferingVoMock).getUuid();
+        Mockito.doReturn(expected.getName()).when(networkOfferingVoMock).getName();
+
+        GenericPresetVariable result = presetVariableHelperSpy.getPresetVariableValueNetworkOffering(1L);
+
+        assertPresetVariableIdAndName(expected, result);
+        validateFieldNamesToIncludeInToString(Arrays.asList("id", "name"), result);
+    }
+
+    @Test
+    public void getPresetVariableValueVpcOfferingTestSetValuesAndReturnObject() {
+        VpcOfferingVO vpcOfferingVoMock = Mockito.mock(VpcOfferingVO.class);
+        Mockito.doReturn(vpcOfferingVoMock).when(vpcOfferingDao).findByIdIncludingRemoved(Mockito.anyLong());
+        mockMethodValidateIfObjectIsNull();
+
+        GenericPresetVariable expected = getGenericPresetVariableForTests();
+        Mockito.doReturn(expected.getId()).when(vpcOfferingVoMock).getUuid();
+        Mockito.doReturn(expected.getName()).when(vpcOfferingVoMock).getName();
+
+        GenericPresetVariable result = presetVariableHelperSpy.getPresetVariableValueVpcOffering(1L);
+
+        assertPresetVariableIdAndName(expected, result);
+        validateFieldNamesToIncludeInToString(Arrays.asList("id", "name"), result);
     }
 }

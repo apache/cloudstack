@@ -28,11 +28,12 @@ import java.util.stream.Collectors;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.host.HostTagVO;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.vpc.VpcOfferingVO;
 import com.cloud.network.vpc.VpcVO;
 import javax.inject.Inject;
 
-import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.StoragePoolTagVO;
 import org.apache.cloudstack.acl.RoleVO;
 import org.apache.cloudstack.acl.dao.RoleDao;
@@ -66,6 +67,7 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostTagsDao;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.server.ResourceTag;
@@ -190,6 +192,9 @@ public class PresetVariableHelper {
 
     @Inject
     ClusterDetailsDao clusterDetailsDao;
+
+    @Inject
+    VpcOfferingDao vpcOfferingDao;
 
     protected boolean backupSnapshotAfterTakingSnapshot = SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value();
 
@@ -778,6 +783,19 @@ public class PresetVariableHelper {
         value.setId(network.getUuid());
         value.setName(network.getName());
         value.setState(usageRecord.getState());
+
+        value.setNetworkOffering(getPresetVariableValueNetworkOffering(network.getNetworkOfferingId()));
+    }
+
+    protected GenericPresetVariable getPresetVariableValueNetworkOffering(Long networkOfferingId) {
+        NetworkOfferingVO networkOfferingVo = networkOfferingDao.findByIdIncludingRemoved(networkOfferingId);
+        validateIfObjectIsNull(networkOfferingVo, networkOfferingId, "network offering");
+
+        GenericPresetVariable networkOffering = new GenericPresetVariable();
+        networkOffering.setId(networkOfferingVo.getUuid());
+        networkOffering.setName(networkOfferingVo.getName());
+
+        return networkOffering;
     }
 
     protected void loadPresetVariableValueForVpc(UsageVO usageRecord, Value value) {
@@ -793,6 +811,18 @@ public class PresetVariableHelper {
 
         value.setId(vpc.getUuid());
         value.setName(vpc.getName());
+        value.setVpcOffering(getPresetVariableValueVpcOffering(vpc.getVpcOfferingId()));
+    }
+
+    protected GenericPresetVariable getPresetVariableValueVpcOffering(long vpcOfferingId) {
+        VpcOfferingVO vpcOfferingVo = vpcOfferingDao.findByIdIncludingRemoved(vpcOfferingId);
+        validateIfObjectIsNull(vpcOfferingVo, vpcOfferingId, "vpc offering");
+
+        GenericPresetVariable vpcOffering = new GenericPresetVariable();
+        vpcOffering.setId(vpcOfferingVo.getUuid());
+        vpcOffering.setName(vpcOfferingVo.getName());
+
+        return vpcOffering;
     }
 
     /**
