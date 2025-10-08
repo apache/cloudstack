@@ -50,6 +50,9 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.consoleproxy.ConsoleProxyManager;
+import com.cloud.network.router.VirtualNetworkApplianceManager;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
+import com.cloud.vm.VirtualMachineManager;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -638,6 +641,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     protected void populateConfigKeysAllowedOnlyForDefaultAdmin() {
         configKeysAllowedOnlyForDefaultAdmin.add(AccountManagerImpl.listOfRoleTypesAllowedForOperationsOfSameRoleType.key());
         configKeysAllowedOnlyForDefaultAdmin.add(AccountManagerImpl.allowOperationsOnUsersInSameAccount.key());
+
+        configKeysAllowedOnlyForDefaultAdmin.add(VirtualMachineManager.SystemVmEnableUserData.key());
+        configKeysAllowedOnlyForDefaultAdmin.add(ConsoleProxyManager.ConsoleProxyVmUserData.key());
+        configKeysAllowedOnlyForDefaultAdmin.add(SecondaryStorageVmManager.SecondaryStorageVmUserData.key());
+        configKeysAllowedOnlyForDefaultAdmin.add(VirtualNetworkApplianceManager.VirtualRouterUserData.key());
     }
 
     private void initMessageBusListener() {
