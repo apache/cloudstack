@@ -631,18 +631,18 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
             }
             if (!Files.isDirectory(filePath) && !Files.isRegularFile(filePath)) {
                 throw new CloudRuntimeException(
-                        String.format("Failed to cleanup extension entry-point: %s for extension: %s as it either " +
+                        String.format("Failed to cleanup path: %s for extension: %s as it either " +
                                         "does not exist or is not a regular file/directory",
                                 extensionName, extensionRelativePath));
             }
             if (!FileUtil.deleteRecursively(filePath)) {
                 throw new CloudRuntimeException(
-                        String.format("Failed to delete extension entry-point: %s for extension: %s",
+                        String.format("Failed to delete path: %s for extension: %s",
                                 extensionName, filePath));
             }
         } catch (IOException e) {
             throw new CloudRuntimeException(
-                    String.format("Failed to cleanup extension entry-point: %s for extension: %s due to: %s",
+                    String.format("Failed to cleanup path: %s for extension: %s due to: %s",
                             extensionName, normalizedPath, e.getMessage()), e);
         }
     }
