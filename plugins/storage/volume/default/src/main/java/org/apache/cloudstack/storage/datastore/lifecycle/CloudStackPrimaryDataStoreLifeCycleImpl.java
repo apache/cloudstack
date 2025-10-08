@@ -476,8 +476,8 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStor
 
     @Override
     public boolean cancelMaintain(DataStore store) {
-        storagePoolAutmation.cancelMaintain(store);
         dataStoreHelper.cancelMaintain(store);
+        storagePoolAutmation.cancelMaintain(store);
         return true;
     }
 
