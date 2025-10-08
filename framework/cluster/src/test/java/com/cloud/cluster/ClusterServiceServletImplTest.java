@@ -18,6 +18,7 @@
 package com.cloud.cluster;
 
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Optional;
 
@@ -69,9 +70,7 @@ public class ClusterServiceServletImplTest {
     public void getBindAddressIfAvailable_returnsInetAddress_whenBindAddressIsValid() {
         try (MockedStatic<ServerPropertiesUtil> ignored = Mockito.mockStatic(ServerPropertiesUtil.class)) {
             Mockito.when(ServerPropertiesUtil.getProperty("bind.interface")).thenReturn("127.0.0.1");
-
             InetAddress result = clusterServiceServlet.getBindAddressIfAvailable();
-
             Assert.assertNotNull(result);
             Assert.assertEquals("127.0.0.1", result.getHostAddress());
         } catch (RuntimeException e) {
@@ -80,23 +79,53 @@ public class ClusterServiceServletImplTest {
     }
 
     @Test
-    public void getBindAddressIfAvailable_returnsNull_whenBindAddressIsBlank() {
+    public void getBindAddressIfAvailable_returnsInetAddress_whenBindAddressIsHostname() {
+        String hostname;
+        try {
+            hostname = InetAddress.getLocalHost().getHostName();
+        } catch (UnknownHostException e) {
+            hostname = "localhost";
+        }
         try (MockedStatic<ServerPropertiesUtil> ignored = Mockito.mockStatic(ServerPropertiesUtil.class)) {
-            Mockito.when(ServerPropertiesUtil.getProperty("bind.interface")).thenReturn("");
-
+            Mockito.when(ServerPropertiesUtil.getProperty("bind.interface")).thenReturn(hostname);
             InetAddress result = clusterServiceServlet.getBindAddressIfAvailable();
+            Assert.assertNotNull(result);
+            InetAddress address = InetAddress.getByName(hostname);
+            Assert.assertEquals(address, result);
+        } catch (UnknownHostException | RuntimeException e) {
+            Assert.fail("Unexpected RuntimeException: " + e.getMessage());
+        }
+    }
 
+    private void runBindAddressIfAvailableForNullResult(String bindAddress) {
+        try (MockedStatic<ServerPropertiesUtil> ignored = Mockito.mockStatic(ServerPropertiesUtil.class)) {
+            Mockito.when(ServerPropertiesUtil.getProperty("bind.interface")).thenReturn(bindAddress);
+            InetAddress result = clusterServiceServlet.getBindAddressIfAvailable();
             Assert.assertNull(result);
         } catch (RuntimeException e) {
             Assert.fail("Unexpected RuntimeException: " + e.getMessage());
         }
     }
 
+    @Test
+    public void getBindAddressIfAvailable_returnsInetAddress_whenWildcard() {
+        runBindAddressIfAvailableForNullResult("0.0.0.0");
+    }
+
+    @Test
+    public void getBindAddressIfAvailable_returnsInetAddress_whenIp6Wildcard() {
+        runBindAddressIfAvailableForNullResult("::");
+    }
+
+    @Test
+    public void getBindAddressIfAvailable_returnsNull_whenBindAddressIsBlank() {
+        runBindAddressIfAvailableForNullResult("");
+    }
+
     @Test(expected = RuntimeException.class)
     public void getBindAddressIfAvailable_throwsRuntimeException_whenBindAddressIsInvalid() throws RuntimeException {
         try (MockedStatic<ServerPropertiesUtil> ignored = Mockito.mockStatic(ServerPropertiesUtil.class)) {
             Mockito.when(ServerPropertiesUtil.getProperty("bind.interface")).thenReturn("invalid-address");
-
             clusterServiceServlet.getBindAddressIfAvailable();
         }
     }

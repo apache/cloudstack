@@ -169,10 +169,13 @@ public class ClusterServiceServletImpl implements ClusterService {
     protected InetAddress getBindAddressIfAvailable() {
         String bindAddressStr = ServerPropertiesUtil.getProperty("bind.interface");
         InetAddress bindAddress = null;
+        if (StringUtils.isBlank(bindAddressStr) ||
+                "0.0.0.0".equalsIgnoreCase(bindAddressStr) ||
+                "::".equals(bindAddressStr)) {
+            return bindAddress;
+        }
         try {
-            if (StringUtils.isNotBlank(bindAddressStr)) {
-                bindAddress = InetAddress.getByName(bindAddressStr);
-            }
+            bindAddress = InetAddress.getByName(bindAddressStr);
         } catch (UnknownHostException e) {
             logger.error("Unable to resolve bind address: {}", bindAddressStr, e);
             throw new RuntimeException(e);
