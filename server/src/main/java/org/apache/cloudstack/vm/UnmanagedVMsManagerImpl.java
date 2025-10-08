@@ -176,6 +176,7 @@ import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -183,6 +184,7 @@ import org.apache.logging.log4j.Logger;
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -1689,8 +1691,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                     "instance {} from VMware to KVM ", convertHost, sourceVMName);
 
             temporaryConvertLocation = selectInstanceConversionTemporaryLocation(
-                    destinationCluster, convertHost, convertStoragePoolId, forceConvertToPool);
-            List<StoragePoolVO> convertStoragePools = findInstanceConversionStoragePoolsInCluster(destinationCluster, serviceOffering, dataDiskOfferingMap);
+                    destinationCluster, convertHost, importHost, convertStoragePoolId, forceConvertToPool);
+            List<StoragePoolVO> convertStoragePools = findInstanceConversionDestinationStoragePoolsInCluster(destinationCluster, serviceOffering, dataDiskOfferingMap, temporaryConvertLocation, forceConvertToPool);
+
             long importStartTime = System.currentTimeMillis();
             importVMTask = importVmTasksManager.createImportVMTaskRecord(zone, owner, userId, displayName, vcenter, datacenterName, sourceVMName,
                     convertHost, importHost);
@@ -2119,17 +2122,23 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return ((ImportConvertedInstanceAnswer) importAnswer).getConvertedInstance();
     }
 
-    private List<StoragePoolVO> findInstanceConversionStoragePoolsInCluster(
+    private List<StoragePoolVO> findInstanceConversionDestinationStoragePoolsInCluster(
             Cluster destinationCluster, ServiceOfferingVO serviceOffering,
-            Map<String, Long> dataDiskOfferingMap
-    ) {
-        List<StoragePoolVO> pools = new ArrayList<>();
-        pools.addAll(primaryDataStoreDao.findClusterWideStoragePoolsByHypervisorAndPoolType(destinationCluster.getId(), Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.NetworkFilesystem));
-        pools.addAll(primaryDataStoreDao.findZoneWideStoragePoolsByHypervisorAndPoolType(destinationCluster.getDataCenterId(), Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.NetworkFilesystem));
-        if (pools.isEmpty()) {
-            String msg = String.format("Cannot find suitable storage pools in the cluster %s for the conversion", destinationCluster.getName());
-            logger.error(msg);
-            throw new CloudRuntimeException(msg);
+            Map<String, Long> dataDiskOfferingMap,
+            DataStoreTO temporaryConvertLocation, boolean forceConvertToPool) {
+        List<StoragePoolVO> poolsList;
+        if (!forceConvertToPool) {
+            Set<StoragePoolVO> pools = new HashSet<>(primaryDataStoreDao.findClusterWideStoragePoolsByHypervisorAndPoolType(destinationCluster.getId(), Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.NetworkFilesystem));
+            pools.addAll(primaryDataStoreDao.findZoneWideStoragePoolsByHypervisorAndPoolType(destinationCluster.getDataCenterId(), Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.NetworkFilesystem));
+            if (pools.isEmpty()) {
+                String msg = String.format("Cannot find suitable storage pools in the cluster %s for the conversion", destinationCluster.getName());
+                logger.error(msg);
+                throw new CloudRuntimeException(msg);
+            }
+            poolsList = new ArrayList<>(pools);
+        } else {
+            DataStore dataStore = dataStoreManager.getDataStore(temporaryConvertLocation.getUuid(), temporaryConvertLocation.getRole());
+            poolsList = Collections.singletonList(primaryDataStoreDao.findById(dataStore.getId()));
         }
 
         if (serviceOffering.getDiskOfferingId() != null) {
@@ -2139,7 +2148,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 logger.error(msg);
                 throw new CloudRuntimeException(msg);
             }
-            if (getStoragePoolWithTags(pools, diskOffering.getTags()) == null) {
+            if (getStoragePoolWithTags(poolsList, diskOffering.getTags()) == null) {
                 String msg = String.format("Cannot find suitable storage pool for disk offering %s that belongs to the service offering %s", diskOffering.getName(), serviceOffering.getName());
                 logger.error(msg);
                 throw new CloudRuntimeException(msg);
@@ -2152,14 +2161,14 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 logger.error(msg);
                 throw new CloudRuntimeException(msg);
             }
-            if (getStoragePoolWithTags(pools, diskOffering.getTags()) == null) {
+            if (getStoragePoolWithTags(poolsList, diskOffering.getTags()) == null) {
                 String msg = String.format("Cannot find suitable storage pool for disk offering %s", diskOffering.getName());
                 logger.error(msg);
                 throw new CloudRuntimeException(msg);
             }
         }
 
-        return pools;
+        return poolsList;
     }
 
     private StoragePoolVO getStoragePoolWithTags(List<StoragePoolVO> pools, String tags) {
@@ -2205,41 +2214,63 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         throw new CloudRuntimeException(msg);
     }
 
-    protected DataStoreTO selectInstanceConversionTemporaryLocation(Cluster destinationCluster,
-                                                                    HostVO convertHost,
-                                                                    Long convertStoragePoolId, boolean forceConvertToPool) {
-        if (convertStoragePoolId != null) {
-            StoragePoolVO selectedStoragePool = primaryDataStoreDao.findById(convertStoragePoolId);
-            if (selectedStoragePool == null) {
-                logFailureAndThrowException(String.format("Cannot find a storage pool with ID %s", convertStoragePoolId));
-            }
-            if ((selectedStoragePool.getScope() == ScopeType.CLUSTER && selectedStoragePool.getClusterId() != destinationCluster.getId()) ||
-                    (selectedStoragePool.getScope() == ScopeType.ZONE && selectedStoragePool.getDataCenterId() != destinationCluster.getDataCenterId())) {
-                logFailureAndThrowException(String.format("Cannot use the storage pool %s for the instance conversion as " +
-                        "it is not in the scope of the cluster %s", selectedStoragePool.getName(), destinationCluster.getName()));
-            }
-            if (convertHost != null && selectedStoragePool.getScope() == ScopeType.CLUSTER && !selectedStoragePool.getClusterId().equals(convertHost.getClusterId())) {
-                logFailureAndThrowException(String.format("Cannot use the storage pool %s for the instance conversion as " +
-                        "the host %s for conversion is in a different cluster", selectedStoragePool.getName(), convertHost.getName()));
-            }
-            if (!forceConvertToPool) {
-                if (selectedStoragePool.getScope() == ScopeType.HOST) {
-                    logFailureAndThrowException(String.format("The storage pool %s is a local storage pool and not supported for temporary conversion location, cluster and zone wide NFS storage pools are supported", selectedStoragePool.getName()));
-                } else if (selectedStoragePool.getPoolType() != Storage.StoragePoolType.NetworkFilesystem) {
-                    logFailureAndThrowException(String.format("The storage pool %s is not supported for temporary conversion location, only NFS storage pools are supported", selectedStoragePool.getName()));
-                }
-            }
-            return dataStoreManager.getPrimaryDataStore(convertStoragePoolId).getTO();
-        } else {
-            long zoneId = destinationCluster.getDataCenterId();
-            ImageStoreVO imageStore = imageStoreDao.findOneByZoneAndProtocol(zoneId, "nfs");
-            if (imageStore == null) {
-                logFailureAndThrowException(String.format("Could not find an NFS secondary storage pool on zone %s to use as a temporary location " +
-                        "for instance conversion", zoneId));
-            }
-            DataStore dataStore = dataStoreManager.getDataStore(imageStore.getId(), DataStoreRole.Image);
-            return dataStore.getTO();
+    private void checkBeforeSelectingTemporaryConversionStoragePool(StoragePoolVO selectedStoragePool, Long convertStoragePoolId, Cluster destinationCluster, HostVO convertHost) {
+        if (selectedStoragePool == null) {
+            logFailureAndThrowException(String.format("Cannot find a storage pool with ID %s", convertStoragePoolId));
         }
+        if ((selectedStoragePool.getScope() == ScopeType.CLUSTER && selectedStoragePool.getClusterId() != destinationCluster.getId()) ||
+                (selectedStoragePool.getScope() == ScopeType.ZONE && selectedStoragePool.getDataCenterId() != destinationCluster.getDataCenterId())) {
+            logFailureAndThrowException(String.format("Cannot use the storage pool %s for the instance conversion as " +
+                    "it is not in the scope of the cluster %s", selectedStoragePool.getName(), destinationCluster.getName()));
+        }
+        if (convertHost != null && selectedStoragePool.getScope() == ScopeType.CLUSTER && !selectedStoragePool.getClusterId().equals(convertHost.getClusterId())) {
+            logFailureAndThrowException(String.format("Cannot use the storage pool %s for the instance conversion as " +
+                    "the host %s for conversion is in a different cluster", selectedStoragePool.getName(), convertHost.getName()));
+        }
+    }
+
+    private DataStoreTO getImageStoreOnDestinationZoneForTemporaryConversion(Cluster destinationCluster, boolean forceConvertToPool) {
+        if (forceConvertToPool) {
+            logFailureAndThrowException("Please select a primary storage pool when the parameter forceconverttopool is set to true");
+        }
+        long zoneId = destinationCluster.getDataCenterId();
+        ImageStoreVO imageStore = imageStoreDao.findOneByZoneAndProtocol(zoneId, "nfs");
+        if (imageStore == null) {
+            logFailureAndThrowException(String.format("Could not find an NFS secondary storage pool on zone %s to use as a temporary location " +
+                    "for instance conversion", zoneId));
+        }
+        DataStore dataStore = dataStoreManager.getDataStore(imageStore.getId(), DataStoreRole.Image);
+        return dataStore.getTO();
+    }
+
+    private void checkDestinationOrTemporaryStoragePoolForConversion(StoragePoolVO selectedStoragePool, boolean forceConvertToPool, HostVO convertHost, HostVO importHost) {
+        if (selectedStoragePool.getScope() == ScopeType.HOST && (ObjectUtils.anyNull(convertHost, importHost) ||
+                ObjectUtils.allNotNull(convertHost, importHost) && convertHost.getId() != importHost.getId() ||
+                !forceConvertToPool) ) {
+            logFailureAndThrowException("Please select the same host as convert and importing host and " +
+                    "set forceconvertopool to true to use a local storage pool for conversion");
+        }
+        if (!forceConvertToPool && selectedStoragePool.getPoolType() != Storage.StoragePoolType.NetworkFilesystem) {
+            logFailureAndThrowException(String.format("The storage pool %s is not supported for temporary conversion location," +
+                    "only NFS storage pools are supported when forceconverttopool is set to false", selectedStoragePool.getName()));
+        }
+    }
+
+    protected DataStoreTO selectInstanceConversionTemporaryLocation(Cluster destinationCluster,
+                                                                    HostVO convertHost, HostVO importHost,
+                                                                    Long convertStoragePoolId, boolean forceConvertToPool) {
+        if (convertStoragePoolId == null) {
+            String msg = String.format("No convert storage pool has been provided, " +
+                    "selecting an NFS secondary storage pool from the destination cluster (%s) zone", destinationCluster.getName());
+            logger.debug(msg);
+            return getImageStoreOnDestinationZoneForTemporaryConversion(destinationCluster, forceConvertToPool);
+        }
+
+        StoragePoolVO selectedStoragePool = primaryDataStoreDao.findById(convertStoragePoolId);
+        checkBeforeSelectingTemporaryConversionStoragePool(selectedStoragePool, convertStoragePoolId, destinationCluster, convertHost);
+        checkDestinationOrTemporaryStoragePoolForConversion(selectedStoragePool, forceConvertToPool, convertHost, importHost);
+
+        return dataStoreManager.getPrimaryDataStore(convertStoragePoolId).getTO();
     }
 
     protected Map<String, String> createParamsForTemplateFromVmwareVmMigration(String vcenterHost, String datacenterName,
