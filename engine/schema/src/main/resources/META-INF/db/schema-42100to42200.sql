@@ -35,6 +35,10 @@ UPDATE `cloud`.`ldap_configuration` SET uuid = UUID() WHERE uuid IS NULL OR uuid
 -- Add the column cross_zone_instance_creation to cloud.backup_repository. if enabled it means that new Instance can be created on all Zones from Backups on this Repository.
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backup_repository', 'cross_zone_instance_creation', 'TINYINT(1) DEFAULT NULL COMMENT ''Backup Repository can be used for disaster recovery on another zone''');
 
+-- Updated display to false for password/token detail of the storage pool details
+UPDATE `cloud`.`storage_pool_details` SET display = 0 WHERE name LIKE '%password%';
+UPDATE `cloud`.`storage_pool_details` SET display = 0 WHERE name LIKE '%token%';
+
 -- VMware to KVM migration improvements
 CREATE TABLE IF NOT EXISTS `cloud`.`import_vm_task`(
     `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
