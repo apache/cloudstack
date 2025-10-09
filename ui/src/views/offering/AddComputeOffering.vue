@@ -467,6 +467,9 @@
                 <a-radio-button value="writethrough">
                   {{ $t('label.writethrough') }}
                 </a-radio-button>
+                <a-radio-button value="hypervisor_default">
+                  {{ $t('label.hypervisor.default') }}
+                </a-radio-button>
               </a-radio-group>
             </a-form-item>
             <a-form-item :label="$t('label.qostype')" name="qostype" ref="qostype">

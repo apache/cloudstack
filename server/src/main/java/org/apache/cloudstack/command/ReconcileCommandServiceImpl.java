@@ -1064,6 +1064,7 @@ public class ReconcileCommandServiceImpl extends ManagerBase implements Reconcil
         logger.debug(String.format("Updating volume %s to %s state", sourceVolume, Volume.State.Ready));
         sourceVolume.setState(Volume.State.Ready);
         sourceVolume.setPoolId(srcDataStore.getId());   // restore pool_id and update path
+        sourceVolume.setPoolType(srcDataStore.getPoolType());
         sourceVolume.setPath(srcData.getPath());
         sourceVolume.set_iScsiName(srcData.getPath());
         sourceVolume.setUpdated(new Date());
@@ -1075,6 +1076,7 @@ public class ReconcileCommandServiceImpl extends ManagerBase implements Reconcil
             VolumeVO newVolume = (VolumeVO) newVol;
             newVolume.setInstanceId(null);
             newVolume.setPoolId(destDataStore.getId());
+            newVolume.setPoolType(destDataStore.getPoolType());
             newVolume.setState(Volume.State.Creating);
             newVolume.setPath(destData.getPath());
             newVolume.set_iScsiName(destData.getPath());

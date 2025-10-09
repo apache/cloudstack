@@ -21,6 +21,8 @@ import static com.cloud.hypervisor.Hypervisor.HypervisorType.KVM;
 import static com.cloud.hypervisor.Hypervisor.HypervisorType.LXC;
 import static com.cloud.hypervisor.Hypervisor.HypervisorType.VMware;
 import static com.cloud.hypervisor.Hypervisor.HypervisorType.XenServer;
+import static com.cloud.network.router.VirtualNetworkApplianceManager.VirtualRouterUserData;
+import static com.cloud.vm.VirtualMachineManager.SystemVmEnableUserData;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,6 +41,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
+import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.agent.AgentManager;
@@ -126,6 +129,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
+import org.apache.commons.lang3.StringUtils;
 
 public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements InternalLoadBalancerVMManager, InternalLoadBalancerVMService, VirtualMachineGuru {
     static final private String InternalLbVmNamePrefix = "b";
@@ -175,6 +179,8 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
     ResourceManager _resourceMgr;
     @Inject
     UserDao _userDao;
+    @Inject
+    private UserDataManager userDataManager;
 
     @Override
     public boolean finalizeVirtualMachineProfile(final VirtualMachineProfile profile, final DeployDestination dest, final ReservationContext context) {
@@ -242,6 +248,19 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
 
         final String type = "ilbvm";
         buf.append(" type=" + type);
+
+        long dcId = profile.getVirtualMachine().getDataCenterId();
+        if (SystemVmEnableUserData.valueIn(dcId)) {
+            String userDataUuid = VirtualRouterUserData.valueIn(dcId);
+            try {
+                String userData = userDataManager.validateAndGetUserDataForSystemVM(userDataUuid);
+                if (StringUtils.isNotBlank(userData)) {
+                    buf.append(" userdata=").append(userData);
+                }
+            } catch (Exception e) {
+                logger.warn("Failed to load user data for the internal lb vm, ignored", e);
+            }
+        }
 
         if (logger.isDebugEnabled()) {
             logger.debug("Boot Args for " + profile + ": " + buf.toString());
