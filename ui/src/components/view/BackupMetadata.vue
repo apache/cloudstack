@@ -42,7 +42,7 @@
               {{ getTemplateDisplayName() }}
             </router-link>
           </div>
-          <div v-else-if="item === 'osid'">
+          <div v-else-if="item === 'ostypeid'">
             <router-link :to="{ path: '/guestos' + '/' + backupMetadata[item] }">
               {{ backupMetadata.osname }}
             </router-link>

@@ -164,13 +164,26 @@
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description>
                   <div v-if="zoneSelected" style="margin-top: 15px">
-                    <div v-if="showTemplateOsIdWarning" style="color: red">
-                      {{ $t('message.create.instance.from.backup.template.osid.different') }}
-                    </div>
                     <a-card
                       :tabList="tabList"
                       :activeTabKey="tabKey"
                       @tabChange="key => onTabChange(key, 'tabKey')">
+                      <a-alert v-if="showOsTypeWarning">
+                        <template #message>
+                          <div v-if="selectedTemplateIso && dataPreFill.ostypename">
+                            {{ selectedTemplateIso.message }}<br>
+                            {{ selectedTemplateIso.label }} :
+                            <router-link :to="{ path: '/guestos/' + selectedTemplateIso.item.ostypeid }">
+                              {{ selectedTemplateIso.item.ostypename }}
+                            </router-link><br>
+                            {{ $t('label.backup') }} :
+                            <router-link :to="{ path: '/guestos/' + dataPreFill.ostypeid }">
+                              {{ dataPreFill.ostypename }}
+                            </router-link>
+                          </div>
+                        </template>
+                      </a-alert>
+                      <br v-if="showOsTypeWarning"/>
                       <div v-if="tabKey === 'templateid'">
                         {{ $t('message.template.desc') }}
                         <div v-if="isZoneSelectedMultiArch" style="width: 100%; margin-top: 5px">
@@ -936,7 +949,7 @@ export default {
       dataPreFill: {},
       showDetails: false,
       showRootDiskSizeChanger: false,
-      showTemplateOsIdWarning: false,
+      showOsTypeWarning: false,
       showOverrideDiskOfferingOption: false,
       securitygroupids: [],
       rootDiskSizeFixed: 0,
@@ -979,12 +992,17 @@ export default {
     crossZoneInstanceCreationEnabled () {
       return this.dataPreFill.crosszoneinstancecreation
     },
-    showTemplateOsIdWarning2 () {
-      console.log('showTemplateOsIdWarning called with templateid:', this.form.templateid)
-      return this.form.templateid && this.templateOsIdIsDifferent(this.form.templateid)
-    },
     isNormalUserOrProject () {
       return ['User'].includes(this.$store.getters.userInfo.roletype) || store.getters.project.id
+    },
+    selectedTemplateIso () {
+      if (this.tabKey === 'templateid' && this.template?.ostypeid) {
+        return { label: this.$t('label.template'), item: this.template, message: this.$t('message.template.ostype.different.from.backup') }
+      }
+      if (this.tabKey === 'isoid' && this.iso?.ostypeid) {
+        return { label: this.$t('label.iso'), item: this.iso, message: this.$t('message.iso.ostype.different.from.backup') }
+      }
+      return null
     },
     diskSize () {
       const customRootDiskSize = _.get(this.instanceConfig, 'rootdisksize', null)
@@ -1621,46 +1639,6 @@ export default {
         { id: 'storage_specific', description: 'storage_specific' }
       ]
     },
-    templateOsIdIsDifferent (templateid) {
-      console.log('templateOsIdIsDifferent called with templateid:', templateid)
-      console.log('dataPreFill:', this.dataPreFill)
-      if (!templateid) {
-        console.log('No templateid provided, returning false')
-        return false
-      }
-      if (!this.dataPreFill || !this.dataPreFill.osid) {
-        console.log('No dataPreFill.osid available, returning false')
-        return false
-      }
-      console.log('Looking for template with id:', templateid)
-      console.log('Available template options:', this.options.templates)
-      // Find the selected template by ID
-      let selectedTemplate = null
-      for (const key in this.options.templates) {
-        const templateList = _.get(this.options.templates[key], 'template', [])
-        console.log(`Searching in template category ${key}:`, templateList)
-        const template = _.find(templateList, (option) => option.id === templateid)
-        if (template) {
-          selectedTemplate = template
-          console.log('Found template:', selectedTemplate)
-          break
-        }
-      }
-      if (!selectedTemplate) {
-        console.log('Template not found with id:', templateid)
-        return false
-      }
-      if (!selectedTemplate.ostypeid) {
-        console.log('Selected template has no osid:', selectedTemplate)
-        return false
-      }
-      const isDifferent = selectedTemplate.ostypeid !== this.dataPreFill.osid
-      console.log('Template osid:', selectedTemplate.ostypeid)
-      console.log('DataPreFill osid:', this.dataPreFill.osid)
-      console.log('Are they different?', isDifferent)
-      // Return true if the template's osid is different from dataPreFill.osid
-      return isDifferent
-    },
     fetchInstaceGroups () {
       this.options.instanceGroups = []
       getAPI('listInstanceGroups', {
@@ -1706,13 +1684,6 @@ export default {
       if (name === 'templateid') {
         this.tabKey = 'templateid'
         this.form.templateid = value
-        if (this.templateOsIdIsDifferent(value)) {
-          console.log('Showing template osid warning')
-          this.showTemplateOsIdWarning = true
-        } else {
-          console.log('Hiding template osid warning')
-          this.showTemplateOsIdWarning = false
-        }
         this.form.isoid = null
         this.resetFromTemplateConfiguration()
         let template = ''
@@ -1742,6 +1713,7 @@ export default {
           this.form.iothreadsenabled = template.details && Object.prototype.hasOwnProperty.call(template.details, 'iothreads')
           this.form.iodriverpolicy = template.details?.['io.policy']
           this.form.keyboard = template.details?.keyboard
+          this.showOsTypeWarning = template.ostypeid !== this.dataPreFill.ostypeid
           if (template.details['vmware-to-kvm-mac-addresses']) {
             this.dataPreFill.macAddressArray = JSON.parse(template.details['vmware-to-kvm-mac-addresses'])
           }
@@ -1755,6 +1727,13 @@ export default {
         this.tabKey = 'isoid'
         this.form.isoid = value
         this.form.templateid = null
+        for (const key in this.options.isos) {
+          var iso = _.find(_.get(this.options.isos[key], 'iso', []), (option) => option.id === value)
+          if (iso) {
+            this.showOsTypeWarning = iso.ostypeid !== this.dataPreFill.ostypeid
+            break
+          }
+        }
       } else if (['cpuspeed', 'cpunumber', 'memory'].includes(name)) {
         this.vm[name] = value
         this.form[name] = value
