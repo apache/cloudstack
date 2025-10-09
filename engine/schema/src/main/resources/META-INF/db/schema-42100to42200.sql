@@ -26,6 +26,12 @@ CALL `cloud`.`IDEMPOTENT_CHANGE_COLUMN`('router_health_check', 'check_result', '
 -- Increase length of scripts_version column to 128 due to md5sum to sha512sum change
 CALL `cloud`.`IDEMPOTENT_CHANGE_COLUMN`('cloud.domain_router', 'scripts_version', 'scripts_version', 'VARCHAR(128)');
 
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.snapshot_policy','domain_id', 'BIGINT(20) DEFAULT NULL');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.snapshot_policy','account_id', 'BIGINT(20) DEFAULT NULL');
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backup_schedule','domain_id', 'BIGINT(20) DEFAULT NULL');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backup_schedule','account_id', 'BIGINT(20) DEFAULT NULL');
+
 -- Increase the cache_mode column size from cloud.disk_offering table
 CALL `cloud`.`IDEMPOTENT_CHANGE_COLUMN`('cloud.disk_offering', 'cache_mode', 'cache_mode', 'varchar(18) DEFAULT "none" COMMENT "The disk cache mode to use for disks created with this offering"');
 
