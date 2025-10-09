@@ -3675,6 +3675,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 String[] offeringTagsArray = (offeringTags == null || offeringTags.isEmpty()) ? new String[0] : offeringTags.split(",");
                 if (!CollectionUtils.isSubCollection(Arrays.asList(requiredTagsArray), Arrays.asList(offeringTagsArray))) {
                     iteratorForTagsChecking.remove();
+                    count--;
                 }
             }
         }

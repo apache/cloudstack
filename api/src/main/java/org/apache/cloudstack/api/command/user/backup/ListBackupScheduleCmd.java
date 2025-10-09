@@ -24,7 +24,7 @@ import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.BackupScheduleResponse;
@@ -39,7 +39,6 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.utils.exception.CloudRuntimeException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,10 +47,10 @@ import java.util.List;
         description = "List backup schedule of a VM",
         responseObject = BackupScheduleResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class ListBackupScheduleCmd extends BaseCmd {
+public class ListBackupScheduleCmd extends BaseListProjectAndAccountResourcesCmd {
 
     @Inject
-    private BackupManager backupManager;
+    BackupManager backupManager;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -60,9 +59,15 @@ public class ListBackupScheduleCmd extends BaseCmd {
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
             type = CommandType.UUID,
             entityType = UserVmResponse.class,
-            required = true,
             description = "ID of the VM")
     private Long vmId;
+
+    @Parameter(name = ApiConstants.ID,
+            type = CommandType.UUID,
+            entityType = BackupScheduleResponse.class,
+            description = "the ID of the backup schedule",
+            since = "4.22.0")
+    private Long id;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -72,6 +77,10 @@ public class ListBackupScheduleCmd extends BaseCmd {
         return vmId;
     }
 
+    public Long getId() {
+        return id;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -79,19 +88,18 @@ public class ListBackupScheduleCmd extends BaseCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try{
-            List<BackupSchedule> schedules = backupManager.listBackupSchedule(getVmId());
+            List<BackupSchedule> schedules = backupManager.listBackupSchedules(this);
             ListResponse<BackupScheduleResponse> response = new ListResponse<>();
             List<BackupScheduleResponse> scheduleResponses = new ArrayList<>();
+
             if (!CollectionUtils.isNullOrEmpty(schedules)) {
                 for (BackupSchedule schedule : schedules) {
                     scheduleResponses.add(_responseGenerator.createBackupScheduleResponse(schedule));
                 }
-                response.setResponses(scheduleResponses, schedules.size());
-                response.setResponseName(getCommandName());
-                setResponseObject(response);
-            } else {
-                throw new CloudRuntimeException("No backup schedule exists for the VM");
             }
+            response.setResponses(scheduleResponses, schedules.size());
+            response.setResponseName(getCommandName());
+            setResponseObject(response);
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }

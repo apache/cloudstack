@@ -30,7 +30,7 @@ import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 @EntityReference(value = {KubernetesCluster.class})
-public class KubernetesClusterResponse extends BaseResponseWithAnnotations implements ControlledEntityResponse {
+public class KubernetesClusterResponse extends BaseResponseWithAnnotations implements ControlledViewEntityResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "the id of the Kubernetes cluster")
     private String id;

@@ -28,6 +28,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.Callable;
@@ -157,13 +158,7 @@ public class Script implements Callable<String> {
         boolean obscureParam = false;
         for (int i = 0; i < command.length; i++) {
             String cmd = command[i];
-            if (StringUtils.isNotEmpty(cmd) && cmd.startsWith("vi://")) {
-                String[] tokens = cmd.split("@");
-                if (tokens.length >= 2) {
-                    builder.append("vi://").append("******@").append(tokens[1]).append(" ");
-                } else {
-                    builder.append("vi://").append("******").append(" ");
-                }
+            if (sanitizeViCmdParameter(cmd, builder) || sanitizeRbdFileFormatCmdParameter(cmd, builder)) {
                 continue;
             }
             if (obscureParam) {
@@ -179,6 +174,41 @@ public class Script implements Callable<String> {
             }
         }
         return builder.toString();
+    }
+
+    private boolean sanitizeViCmdParameter(String cmd, StringBuilder builder) {
+        if (StringUtils.isEmpty(cmd) || !cmd.startsWith("vi://")) {
+            return false;
+        }
+
+        String[] tokens = cmd.split("@");
+        if (tokens.length >= 2) {
+            builder.append("vi://").append("******@").append(tokens[1]).append(" ");
+        } else {
+            builder.append("vi://").append("******").append(" ");
+        }
+        return true;
+    }
+
+    private boolean sanitizeRbdFileFormatCmdParameter(String cmd, StringBuilder builder) {
+        if (StringUtils.isEmpty(cmd) || !cmd.startsWith("rbd:") || !cmd.contains("key=")) {
+            return false;
+        }
+
+        String[] tokens = cmd.split("key=");
+        if (tokens.length != 2) {
+            return false;
+        }
+
+        String tokenWithKey = tokens[1];
+        String[] options = tokenWithKey.split(":");
+        if (options.length > 1) {
+            String optionsAfterKey = String.join(":", Arrays.copyOfRange(options, 1, options.length));
+            builder.append(tokens[0]).append("key=").append("******").append(":").append(optionsAfterKey).append(" ");
+        } else {
+            builder.append(tokens[0]).append("key=").append("******").append(" ");
+        }
+        return true;
     }
 
     public long getTimeout() {
