@@ -207,7 +207,7 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
             since = "4.21.0")
     private Map cniConfigDetails;
 
-    @Parameter(name = ApiConstants.ENABLE_CSI, type = CommandType.BOOLEAN, description = "if true, setups up CloudStack CSI driver", since = "4.21.0")
+    @Parameter(name = ApiConstants.ENABLE_CSI, type = CommandType.BOOLEAN, description = "if true, setups up CloudStack CSI driver", since = "4.22.0")
     private Boolean enableCsi;
 
     @Parameter(name=ApiConstants.AS_NUMBER, type=CommandType.LONG, description="the AS Number of the network")

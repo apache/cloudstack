@@ -34,3 +34,5 @@ UPDATE `cloud`.`ldap_configuration` SET uuid = UUID() WHERE uuid IS NULL OR uuid
 
 -- Add the column cross_zone_instance_creation to cloud.backup_repository. if enabled it means that new Instance can be created on all Zones from Backups on this Repository.
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backup_repository', 'cross_zone_instance_creation', 'TINYINT(1) DEFAULT NULL COMMENT ''Backup Repository can be used for disaster recovery on another zone''');
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.kubernetes_cluster', 'csi_enabled', 'TINYINT(1) unsigned NOT NULL DEFAULT 0 COMMENT "true if kubernetes cluster is using csi, false otherwise" ');
