@@ -4783,12 +4783,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         if (network.getGuestType() == GuestType.L2) {
             return null;
         }
-        return dataCenter.getNetworkType() == NetworkType.Basic ?
-                getSelectedIpForNicImportOnBasicZone(ipAddresses.getIp4Address(), network, dataCenter):
+        return GuestType.Shared.equals(network.getGuestType()) ?
+                getSelectedIpForNicImportOnSharedNetwork(ipAddresses.getIp4Address(), network, dataCenter):
                 _ipAddrMgr.acquireGuestIpAddress(network, ipAddresses.getIp4Address());
     }
 
-    protected String getSelectedIpForNicImportOnBasicZone(String requestedIp, Network network, DataCenter dataCenter) {
+    protected String getSelectedIpForNicImportOnSharedNetwork(String requestedIp, Network network, DataCenter dataCenter) {
         IPAddressVO ipAddressVO = StringUtils.isBlank(requestedIp) ?
                 _ipAddressDao.findBySourceNetworkIdAndDatacenterIdAndState(network.getId(), dataCenter.getId(), IpAddress.State.Free):
                 _ipAddressDao.findByIp(requestedIp);
