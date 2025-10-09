@@ -61,7 +61,6 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobManagerImpl;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.storage.DiskControllerMappingVO;
-import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
 import org.apache.cloudstack.storage.dao.DiskControllerMappingDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
