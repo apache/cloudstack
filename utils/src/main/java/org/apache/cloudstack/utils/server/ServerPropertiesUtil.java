@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.utils;
+package org.apache.cloudstack.utils.server;
 
 import java.io.File;
 import java.io.FileInputStream;

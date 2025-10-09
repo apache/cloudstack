@@ -51,6 +51,7 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.utils.security.DigestHelper;
+import org.apache.cloudstack.utils.server.ServerPropertiesUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -826,7 +827,7 @@ public class SystemVmTemplateRegistration {
         Ini.Section defaultSection = ini.get("default");
         boolean updateCustomDownloadRepository = false;
         String defaultDownloadRepository = defaultSection.get(TEMPLATES_DOWNLOAD_REPOSITORY_KEY);
-        String customDownloadRepository = System.getProperty(TEMPLATES_CUSTOM_DOWNLOAD_REPOSITORY_KEY);
+        String customDownloadRepository = ServerPropertiesUtil.getProperty(TEMPLATES_CUSTOM_DOWNLOAD_REPOSITORY_KEY);
         if (StringUtils.isNotBlank(customDownloadRepository) && StringUtils.isNotBlank(defaultDownloadRepository)) {
             LOGGER.debug("Updating custom download repository: {}", customDownloadRepository);
             updateCustomDownloadRepository = true;
