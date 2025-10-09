@@ -91,6 +91,12 @@
         <a-textarea v-model:value="form.userdata">
         </a-textarea>
       </a-form-item>
+      <a-form-item v-if="extraConfigEnabled">
+        <template #label>
+          <tooltip-label :title="$t('label.extraconfig')" :tooltip="$t('label.extraconfig.tooltip')"/>
+        </template>
+        <a-textarea v-model:value="form.extraconfig"/>
+      </a-form-item>
       <a-form-item ref="securitygroupids" name="securitygroupids" :label="$t('label.security.groups')" v-if="securityGroupsEnabled">
         <a-select
           mode="multiple"
@@ -204,6 +210,19 @@ export default {
       }
     }
   },
+  computed: {
+    extraConfigEnabled () {
+      return this.$store.getters.features.additionalconfigenabled
+    },
+    combinedExtraConfig () {
+      if (!this.extraConfigEnabled || !this.resource.details) return ''
+      const configs = Object.keys(this.resource.details)
+        .filter(key => key.startsWith('extraconfig-'))
+        .map(key => this.resource.details[key] || '')
+        .filter(val => val.trim())
+      return configs.join('\n\n')
+    }
+  },
   beforeCreate () {
     this.apiParams = this.$getApiParams('updateVirtualMachine')
   },
@@ -224,7 +243,8 @@ export default {
         userdata: '',
         haenable: this.resource.haenable,
         leaseduration: this.resource.leaseduration,
-        leaseexpiryaction: this.resource.leaseexpiryaction
+        leaseexpiryaction: this.resource.leaseexpiryaction,
+        extraconfig: this.combinedExtraConfig
       })
       this.rules = reactive({
         leaseduration: [this.naturalNumberRule]
@@ -402,6 +422,9 @@ export default {
           if (values.leaseexpiryaction !== undefined) {
             params.leaseexpiryaction = values.leaseexpiryaction
           }
+        }
+        if (values.extraconfig && values.extraconfig.length > 0) {
+          params.extraconfig = encodeURIComponent(values.extraconfig)
         }
         this.loading = true
 

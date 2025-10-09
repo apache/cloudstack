@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,17 +15,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
 
-package org.apache.cloudstack.vm;
+package com.cloud.agent.api;
 
-import com.cloud.utils.Pair;
+public class UnmanageInstanceAnswer extends Answer {
 
-public interface UnmanageVMService {
-
-    /**
-     * Unmanage a guest VM from CloudStack
-     *
-     * @return (true if successful, false if not, hostUuid) if the VM is successfully unmanaged.
-     */
-    Pair<Boolean, String> unmanageVMInstance(long vmId, Long paramHostId, boolean isForced);
+    public UnmanageInstanceAnswer(UnmanageInstanceCommand cmd, boolean success, String details) {
+        super(cmd, success, details);
+    }
 }
