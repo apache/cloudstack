@@ -207,10 +207,6 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
         // populate owner.
         ApiResponseHelper.populateOwner(routerResponse, router);
 
-        routerResponse.setDomainId(router.getDomainUuid());
-        routerResponse.setDomainName(router.getDomainName());
-        routerResponse.setDomainPath(router.getDomainPath());
-
         routerResponse.setZoneName(router.getDataCenterName());
         routerResponse.setDns1(router.getDns1());
         routerResponse.setDns2(router.getDns2());
