@@ -22,7 +22,7 @@ import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Optional;
 
-import org.apache.cloudstack.utils.ServerPropertiesUtil;
+import org.apache.cloudstack.utils.server.ServerPropertiesUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.http.NameValuePair;
 import org.junit.Assert;

@@ -28,7 +28,7 @@ import java.util.List;
 import javax.net.ssl.SSLContext;
 
 import org.apache.cloudstack.framework.ca.CAService;
-import org.apache.cloudstack.utils.ServerPropertiesUtil;
+import org.apache.cloudstack.utils.server.ServerPropertiesUtil;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.config.RequestConfig;
