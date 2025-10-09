@@ -49,6 +49,7 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
@@ -233,6 +234,9 @@ public class BackupManagerTest {
 
     @Mock
     DomainDao domainDao;
+
+    @Mock
+    private GuestOSDao _guestOSDao;
 
     private Gson gson;
 

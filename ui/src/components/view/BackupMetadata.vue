@@ -91,7 +91,7 @@ export default {
       }
       const fieldOrder = [
         'templateid',
-        'osid',
+        'ostypeid',
         'hypervisor',
         'serviceofferingid',
         'nics',
@@ -111,9 +111,6 @@ export default {
       }
       if (field === 'vmsettings') {
         return this.$t('label.settings')
-      }
-      if (field === 'osid') {
-        return this.$t('label.ostypeid')
       }
       return this.$t('label.' + String(field).toLowerCase())
     },

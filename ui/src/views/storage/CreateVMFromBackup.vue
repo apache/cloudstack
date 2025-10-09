@@ -123,6 +123,8 @@ export default {
       this.dataPreFill.zoneid = this.resource.zoneid
       this.dataPreFill.crosszoneinstancecreation = this.backupOffering?.crosszoneinstancecreation || this.backupOffering.provider === 'dummy'
       this.dataPreFill.isIso = (this.vmdetails.isiso === 'true')
+      this.dataPreFill.ostypeid = this.resource.vmdetails.ostypeid
+      this.dataPreFill.osname = this.resource.vmdetails.osname
       this.dataPreFill.backupid = this.resource.id
       this.dataPreFill.computeofferingid = this.vmdetails.serviceofferingid
       this.dataPreFill.templateid = this.vmdetails.templateid

@@ -388,7 +388,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             details.put(ApiConstants.TEMPLATE_ID, template.getUuid());
             GuestOSVO guestOS = _guestOSDao.findById(guestOSId);
             if (guestOS != null) {
-                details.put(ApiConstants.OS_ID, guestOS.getUuid());
+                details.put(ApiConstants.OS_TYPE_ID, guestOS.getUuid());
             }
         }
 
@@ -2113,8 +2113,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 details.put(ApiConstants.IS_ISO, String.valueOf(template.getFormat().equals(Storage.ImageFormat.ISO)));
             }
         }
-        if (details.containsKey(ApiConstants.OS_ID)) {
-            GuestOSVO guestOS = _guestOSDao.findByUuid(details.get(ApiConstants.OS_ID));
+        if (details.containsKey(ApiConstants.OS_TYPE_ID)) {
+            GuestOSVO guestOS = _guestOSDao.findByUuid(details.get(ApiConstants.OS_TYPE_ID));
             if (guestOS != null) {
                 details.put(ApiConstants.OS_NAME, guestOS.getDisplayName());
             }

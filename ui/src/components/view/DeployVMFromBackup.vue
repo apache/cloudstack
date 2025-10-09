@@ -164,6 +164,9 @@
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description>
                   <div v-if="zoneSelected" style="margin-top: 15px">
+                    <div v-if="showTemplateOsIdWarning" style="color: red">
+                      {{ $t('message.create.instance.from.backup.template.osid.different') }}
+                    </div>
                     <a-card
                       :tabList="tabList"
                       :activeTabKey="tabKey"
@@ -933,6 +936,7 @@ export default {
       dataPreFill: {},
       showDetails: false,
       showRootDiskSizeChanger: false,
+      showTemplateOsIdWarning: false,
       showOverrideDiskOfferingOption: false,
       securitygroupids: [],
       rootDiskSizeFixed: 0,
@@ -974,6 +978,10 @@ export default {
     },
     crossZoneInstanceCreationEnabled () {
       return this.dataPreFill.crosszoneinstancecreation
+    },
+    showTemplateOsIdWarning2 () {
+      console.log('showTemplateOsIdWarning called with templateid:', this.form.templateid)
+      return this.form.templateid && this.templateOsIdIsDifferent(this.form.templateid)
     },
     isNormalUserOrProject () {
       return ['User'].includes(this.$store.getters.userInfo.roletype) || store.getters.project.id
@@ -1613,6 +1621,46 @@ export default {
         { id: 'storage_specific', description: 'storage_specific' }
       ]
     },
+    templateOsIdIsDifferent (templateid) {
+      console.log('templateOsIdIsDifferent called with templateid:', templateid)
+      console.log('dataPreFill:', this.dataPreFill)
+      if (!templateid) {
+        console.log('No templateid provided, returning false')
+        return false
+      }
+      if (!this.dataPreFill || !this.dataPreFill.osid) {
+        console.log('No dataPreFill.osid available, returning false')
+        return false
+      }
+      console.log('Looking for template with id:', templateid)
+      console.log('Available template options:', this.options.templates)
+      // Find the selected template by ID
+      let selectedTemplate = null
+      for (const key in this.options.templates) {
+        const templateList = _.get(this.options.templates[key], 'template', [])
+        console.log(`Searching in template category ${key}:`, templateList)
+        const template = _.find(templateList, (option) => option.id === templateid)
+        if (template) {
+          selectedTemplate = template
+          console.log('Found template:', selectedTemplate)
+          break
+        }
+      }
+      if (!selectedTemplate) {
+        console.log('Template not found with id:', templateid)
+        return false
+      }
+      if (!selectedTemplate.ostypeid) {
+        console.log('Selected template has no osid:', selectedTemplate)
+        return false
+      }
+      const isDifferent = selectedTemplate.ostypeid !== this.dataPreFill.osid
+      console.log('Template osid:', selectedTemplate.ostypeid)
+      console.log('DataPreFill osid:', this.dataPreFill.osid)
+      console.log('Are they different?', isDifferent)
+      // Return true if the template's osid is different from dataPreFill.osid
+      return isDifferent
+    },
     fetchInstaceGroups () {
       this.options.instanceGroups = []
       getAPI('listInstanceGroups', {
@@ -1658,6 +1706,13 @@ export default {
       if (name === 'templateid') {
         this.tabKey = 'templateid'
         this.form.templateid = value
+        if (this.templateOsIdIsDifferent(value)) {
+          console.log('Showing template osid warning')
+          this.showTemplateOsIdWarning = true
+        } else {
+          console.log('Hiding template osid warning')
+          this.showTemplateOsIdWarning = false
+        }
         this.form.isoid = null
         this.resetFromTemplateConfiguration()
         let template = ''
