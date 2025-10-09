@@ -212,6 +212,24 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             Arrays.asList(Storage.StoragePoolType.NetworkFilesystem, Storage.StoragePoolType.Filesystem,
                     Storage.StoragePoolType.SharedMountPoint);
 
+    ConfigKey<Boolean> ConvertVmwareInstanceToKvmExtraParamsAllowed = new ConfigKey<>(Boolean.class,
+            "convert.vmware.instance.to.kvm.extra.params.allowed",
+            "Advanced",
+            "false",
+            "Disabled by default. If enabled, allows extra parameters to be passed to the virt-v2v binary on KVM conversion hosts",
+            true,
+            ConfigKey.Scope.Global,
+            null);
+
+    ConfigKey<String> ConvertVmwareInstanceToKvmExtraParamsAllowedList = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED,
+            String.class,
+            "convert.vmware.instance.to.kvm.extra.params.allowed.list",
+            "",
+            "Comma separated list of allowed extra parameters to be passed to the virt-v2v binary on KVM conversion hosts",
+            true,
+            ConfigKey.Kind.CSV,
+            null);
+
     @Inject
     private AgentManager agentManager;
     @Inject
@@ -1435,13 +1453,29 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return responseGenerator.createUserVmResponse(ResponseObject.ResponseView.Full, "virtualmachine", userVm).get(0);
     }
 
-    private void checkExtraParamsAllowed(String extraParams) {
+    protected void checkExtraParamsAllowed(String extraParams) {
         if (StringUtils.isBlank(extraParams)) {
             return;
         }
         if (BooleanUtils.isFalse(ConvertVmwareInstanceToKvmExtraParamsAllowed.value())) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
                     "Extra parameters for Vmware to KVM conversion are disabled by the administrator");
+        }
+        String allowedParamsStr = ConvertVmwareInstanceToKvmExtraParamsAllowedList.value();
+        if (StringUtils.isBlank(allowedParamsStr)) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                    "Extra parameters for Vmware to KVM conversion are enabled but the allowed list of parameters is empty");
+        }
+        List<String> allowedParams = Arrays.stream(allowedParamsStr.split(",")).toList();
+        List<String> sanitizedParams = Arrays.stream(extraParams.split(" "))
+                .filter(x -> x.startsWith("-"))
+                .map(s -> s.replaceFirst("^-+", "").trim()) //Remove the starting hyphens as in --X or -x
+                .toList();
+        for (String param : sanitizedParams) {
+            if (!allowedParams.contains(param)) {
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                        String.format("The parameter %s is not allowed by the administrator", param));
+            }
         }
     }
 
@@ -2977,7 +3011,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 ConvertVmwareInstanceToKvmTimeout,
                 ThreadsOnMSToImportVMwareVMFiles,
                 ThreadsOnKVMHostToImportVMwareVMFiles,
-                ConvertVmwareInstanceToKvmExtraParamsAllowed
+                ConvertVmwareInstanceToKvmExtraParamsAllowed,
+                ConvertVmwareInstanceToKvmExtraParamsAllowedList
         };
     }
 }

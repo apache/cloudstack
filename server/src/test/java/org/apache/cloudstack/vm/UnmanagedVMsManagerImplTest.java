@@ -55,6 +55,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
@@ -250,6 +251,11 @@ public class UnmanagedVMsManagerImplTest {
     ImportVMTaskVO importVMTaskVO;
     @Mock
     private VMInstanceDetailsDao vmInstanceDetailsDao;
+
+    @Mock
+    private ConfigKey<Boolean> configKeyMockParamsAllowed;
+    @Mock
+    private ConfigKey<String> configKeyMockParamsAllowedList;
 
     private static final long virtualMachineId = 1L;
 
@@ -1264,5 +1270,45 @@ public class UnmanagedVMsManagerImplTest {
         long destPoolId = 1L;
         Mockito.when(primaryDataStoreDao.findById(destPoolId)).thenReturn(destPool);
         unmanagedVMsManager.checkConversionStoragePool(destPoolId, true);
+    }
+
+    @Test
+    public void testCheckExtraParamsAllowedEmptyParams() {
+        unmanagedVMsManager.checkExtraParamsAllowed(null);
+        Mockito.verifyNoInteractions(configKeyMockParamsAllowed);
+    }
+
+    @Test(expected = ServerApiException.class)
+    public void testCheckExtraParamsAllowedDisabledByAdministrator() {
+        unmanagedVMsManager.ConvertVmwareInstanceToKvmExtraParamsAllowed = configKeyMockParamsAllowed;
+        Mockito.when(configKeyMockParamsAllowed.value()).thenReturn(false);
+        unmanagedVMsManager.checkExtraParamsAllowed("--mac 00:0c:29:e6:3d:9d:ip:192.168.0.89,192.168.0.1,24,192.168.0.254 -x");
+    }
+
+    @Test(expected = ServerApiException.class)
+    public void testCheckExtraParamsAllowedEnabledButEmptyAllowedList() {
+        unmanagedVMsManager.ConvertVmwareInstanceToKvmExtraParamsAllowed = configKeyMockParamsAllowed;
+        unmanagedVMsManager.ConvertVmwareInstanceToKvmExtraParamsAllowedList = configKeyMockParamsAllowedList;
+        Mockito.when(configKeyMockParamsAllowed.value()).thenReturn(true);
+        Mockito.when(configKeyMockParamsAllowedList.value()).thenReturn(null);
+        unmanagedVMsManager.checkExtraParamsAllowed("--mac 00:0c:29:e6:3d:9d:ip:192.168.0.89,192.168.0.1,24,192.168.0.254 -x");
+    }
+
+    @Test
+    public void testCheckExtraParamsAllowedEnabledAndAllowedList() {
+        unmanagedVMsManager.ConvertVmwareInstanceToKvmExtraParamsAllowed = configKeyMockParamsAllowed;
+        unmanagedVMsManager.ConvertVmwareInstanceToKvmExtraParamsAllowedList = configKeyMockParamsAllowedList;
+        Mockito.when(configKeyMockParamsAllowed.value()).thenReturn(true);
+        Mockito.when(configKeyMockParamsAllowedList.value()).thenReturn("mac,network,x");
+        unmanagedVMsManager.checkExtraParamsAllowed("--mac 00:0c:29:e6:3d:9d:ip:192.168.0.89,192.168.0.1,24,192.168.0.254 -x");
+    }
+
+    @Test(expected = ServerApiException.class)
+    public void testCheckExtraParamsAllowedEnabledParamNotInTheAllowedList() {
+        unmanagedVMsManager.ConvertVmwareInstanceToKvmExtraParamsAllowed = configKeyMockParamsAllowed;
+        unmanagedVMsManager.ConvertVmwareInstanceToKvmExtraParamsAllowedList = configKeyMockParamsAllowedList;
+        Mockito.when(configKeyMockParamsAllowed.value()).thenReturn(true);
+        Mockito.when(configKeyMockParamsAllowedList.value()).thenReturn("network,x");
+        unmanagedVMsManager.checkExtraParamsAllowed("--mac 00:0c:29:e6:3d:9d:ip:192.168.0.89,192.168.0.1,24,192.168.0.254 -x");
     }
 }
