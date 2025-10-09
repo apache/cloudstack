@@ -30,10 +30,10 @@ else
       "https://github.com/cloudstack/cloudstack-csi-driver/releases/download/v3.0.0/snapshot-crds.yaml"
       "https://github.com/cloudstack/cloudstack-csi-driver/releases/download/v3.0.0/manifest.yaml"
     )
-    for url in "${URLS[@]}"; do
+    for url in "${CSI_URLS[@]}"; do
         filename=$(basename "$url")
 
-        curl -sSL ${url} -o ${working_dir}/${filename}
+        curl -sSL ${url} -o ${TARGET_DIR}/${filename}
         if [ $? -ne 0 ]; then
           echo "Unable to connect to the internet to download the relevant files to install and setup CloudStack CSI driver"
           exit 1
