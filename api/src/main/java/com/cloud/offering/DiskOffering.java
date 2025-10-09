@@ -69,6 +69,8 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
 
     boolean isCustomized();
 
+    boolean isShared();
+
     void setDiskSize(long diskSize);
 
     long getDiskSize();
@@ -99,7 +101,6 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
 
     Long getBytesReadRateMaxLength();
 
-
     void setBytesWriteRate(Long bytesWriteRate);
 
     Long getBytesWriteRate();
@@ -111,7 +112,6 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
     void setBytesWriteRateMaxLength(Long bytesWriteMaxLength);
 
     Long getBytesWriteRateMaxLength();
-
 
     void setIopsReadRate(Long iopsReadRate);
 
@@ -132,7 +132,6 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
     void setIopsWriteRateMax(Long iopsWriteRateMax);
 
     Long getIopsWriteRateMax();
-
 
     void setIopsWriteRateMaxLength(Long iopsWriteRateMaxLength);
 

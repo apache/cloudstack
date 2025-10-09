@@ -1116,7 +1116,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
                 // make room for encryption header on raw format, use LUKS
                 if (format == PhysicalDiskFormat.RAW) {
-                    destFile.setSize(destFile.getSize() - (16<<20));
+                    destFile.setSize(destFile.getSize() - (16 << 20));
                     destFile.setFormat(PhysicalDiskFormat.LUKS);
                 }
 
@@ -1593,7 +1593,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         String sourcePath = disk.getPath();
 
         KVMPhysicalDisk newDisk;
-        logger.debug("copyPhysicalDisk: disk size:" + toHumanReadableSize(disk.getSize()) + ", virtualsize:" + toHumanReadableSize(disk.getVirtualSize())+" format:"+disk.getFormat());
+        logger.debug("copyPhysicalDisk: disk size:{}, virtualsize:{} format:{}", toHumanReadableSize(disk.getSize()), toHumanReadableSize(disk.getVirtualSize()), disk.getFormat());
         if (destPool.getType() != StoragePoolType.RBD) {
             if (disk.getFormat() == PhysicalDiskFormat.TAR) {
                 newDisk = destPool.createPhysicalDisk(name, PhysicalDiskFormat.DIR, Storage.ProvisioningType.THIN, disk.getVirtualSize(), null);
