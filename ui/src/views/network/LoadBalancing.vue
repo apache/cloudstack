@@ -1639,7 +1639,12 @@ export default {
       this.editRuleDetails.name = this.selectedRule.name
       this.editRuleDetails.algorithm = this.lbProvider !== 'Netris' ? this.selectedRule.algorithm : undefined
       this.editRuleDetails.protocol = this.selectedRule.protocol
-      this.editRuleDetails.cidrlist = this.selectedRule.cidrlist || ''
+      // Normalize cidrlist: replace spaces with commas and clean up
+      this.editRuleDetails.cidrlist = (this.selectedRule.cidrlist || '')
+        .split(/[\s,]+/) // Split on spaces or commas
+        .map(c => c.trim())
+        .filter(c => c)
+        .join(',') || ''
     },
     handleSubmitEditForm () {
       if (this.editRuleModalLoading) return
