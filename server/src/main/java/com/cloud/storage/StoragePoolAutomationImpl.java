@@ -355,6 +355,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                     throw new CloudRuntimeException(exceptionSB.toString());
                 }
             } else {
+                storageManager.updateStoragePoolHostVOAndBytes(pool, host.getId(), (ModifyStoragePoolAnswer) answer);
                 reportSucceededModifyStorePool(pool, (ModifyStoragePoolAnswer) answer, host, true);
             }
         }
