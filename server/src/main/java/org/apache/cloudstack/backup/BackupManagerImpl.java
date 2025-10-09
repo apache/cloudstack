@@ -122,12 +122,14 @@ import com.cloud.projects.Project;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.template.VirtualMachineTemplate;
@@ -232,6 +234,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     private ResourceLimitService resourceLimitMgr;
     @Inject
     private AlertManager alertManager;
+    @Inject
+    private GuestOSDao _guestOSDao;
 
     private AsyncJobDispatcher asyncJobDispatcher;
     private Timer backupTimer;
@@ -380,7 +384,12 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         details.put(ApiConstants.SERVICE_OFFERING_ID, serviceOffering.getUuid());
         VirtualMachineTemplate template = vmTemplateDao.findById(vm.getTemplateId());
         if (template != null) {
+            long guestOSId = template.getGuestOSId();
             details.put(ApiConstants.TEMPLATE_ID, template.getUuid());
+            GuestOSVO guestOS = _guestOSDao.findById(guestOSId);
+            if (guestOS != null) {
+                details.put(ApiConstants.OS_ID, guestOS.getUuid());
+            }
         }
 
         List<VMInstanceDetailVO> vmDetails = vmInstanceDetailsDao.listDetails(vm.getId());
@@ -2102,6 +2111,12 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 details.put(ApiConstants.TEMPLATE_ID, template.getUuid());
                 details.put(ApiConstants.TEMPLATE_NAME, template.getName());
                 details.put(ApiConstants.IS_ISO, String.valueOf(template.getFormat().equals(Storage.ImageFormat.ISO)));
+            }
+        }
+        if (details.containsKey(ApiConstants.OS_ID)) {
+            GuestOSVO guestOS = _guestOSDao.findByUuid(details.get(ApiConstants.OS_ID));
+            if (guestOS != null) {
+                details.put(ApiConstants.OS_NAME, guestOS.getDisplayName());
             }
         }
         if (details.containsKey(ApiConstants.SERVICE_OFFERING_ID)) {
