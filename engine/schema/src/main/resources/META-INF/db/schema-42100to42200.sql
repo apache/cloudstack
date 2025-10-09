@@ -50,4 +50,3 @@ UPDATE `cloud`.`storage_pool_details` SET display = 0 WHERE name LIKE '%token%';
 
 -- Add csi_enabled column to kubernetes_cluster table to indicate if the cluster is using csi or not
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.kubernetes_cluster', 'csi_enabled', 'TINYINT(1) unsigned NOT NULL DEFAULT 0 COMMENT "true if kubernetes cluster is using csi, false otherwise" ');
-
