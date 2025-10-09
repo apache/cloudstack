@@ -18,6 +18,7 @@
 package com.cloud.network.router;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+import static com.cloud.vm.VirtualMachineManager.SystemVmEnableUserData;
 
 import java.lang.reflect.Type;
 import java.math.BigInteger;
@@ -71,6 +72,7 @@ import org.apache.cloudstack.network.BgpPeer;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.network.topology.NetworkTopology;
 import org.apache.cloudstack.network.topology.NetworkTopologyContext;
+import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.usage.UsageUtils;
@@ -352,6 +354,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     @Inject
     BGPService bgpService;
 
+    @Inject
+    private UserDataManager userDataManager;
     private int _routerStatsInterval = 300;
     private int _routerCheckInterval = 30;
     private int _rvrStatusUpdatePoolSize = 10;
@@ -2096,6 +2100,18 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 " on the virtual router.", RouterLogrotateFrequency.key(), routerLogrotateFrequency, dc.getUuid()));
         buf.append(String.format(" logrotatefrequency=%s", routerLogrotateFrequency));
 
+        if (SystemVmEnableUserData.valueIn(router.getDataCenterId())) {
+            String userDataUuid = VirtualRouterUserData.valueIn(dc.getId());
+            try {
+                String userData = userDataManager.validateAndGetUserDataForSystemVM(userDataUuid);
+                if (StringUtils.isNotBlank(userData)) {
+                    buf.append(" userdata=").append(userData);
+                }
+            } catch (Exception e) {
+                logger.warn("Failed to load user data for the virtual router, ignored", e);
+            }
+        }
+
         if (logger.isDebugEnabled()) {
             logger.debug("Boot Args for " + profile + ": " + buf);
         }
@@ -3355,7 +3371,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 RouterHealthChecksMaxMemoryUsageThreshold,
                 ExposeDnsAndBootpServer,
                 RouterLogrotateFrequency,
-                RemoveControlIpOnStop
+                RemoveControlIpOnStop,
+                VirtualRouterUserData
         };
     }
 

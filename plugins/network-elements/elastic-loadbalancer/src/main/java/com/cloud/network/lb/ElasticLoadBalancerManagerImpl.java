@@ -35,6 +35,8 @@ import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.userdata.UserDataManager;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
@@ -101,6 +103,9 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
+import static com.cloud.network.router.VirtualNetworkApplianceManager.VirtualRouterUserData;
+import static com.cloud.vm.VirtualMachineManager.SystemVmEnableUserData;
+
 @Component
 public class ElasticLoadBalancerManagerImpl extends ManagerBase implements ElasticLoadBalancerManager, VirtualMachineGuru {
 
@@ -136,6 +141,8 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
     private ElasticLbVmMapDao _elbVmMapDao;
     @Inject
     private NicDao _nicDao;
+    @Inject
+    private UserDataManager userDataManager;
 
     String _instance;
 
@@ -477,6 +484,19 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
         }
         String msPublicKey = _configDao.getValue("ssh.publickey");
         buf.append(" authorized_key=").append(VirtualMachineGuru.getEncodedMsPublicKey(msPublicKey));
+
+        if (SystemVmEnableUserData.valueIn(dc.getId())) {
+            String userDataUuid = VirtualRouterUserData.valueIn(dc.getId());
+            try {
+                String userData = userDataManager.validateAndGetUserDataForSystemVM(userDataUuid);
+                if (StringUtils.isNotBlank(userData)) {
+                    buf.append(" userdata=").append(userData);
+                }
+            } catch (Exception e) {
+                logger.warn("Failed to load user data for the elastic lb vm, ignored", e);
+            }
+        }
+
         if (logger.isDebugEnabled()) {
             logger.debug("Boot Args for " + profile + ": " + buf.toString());
         }

@@ -27,6 +27,7 @@ public class ApiConstants {
     public static final String ACTIVATION_RULE = "activationrule";
     public static final String ACTIVITY = "activity";
     public static final String ADAPTER_TYPE = "adaptertype";
+    public static final String ADDITONAL_CONFIG_ENABLED = "additionalconfigenabled";
     public static final String ADDRESS = "address";
     public static final String ALGORITHM = "algorithm";
     public static final String ALIAS = "alias";
