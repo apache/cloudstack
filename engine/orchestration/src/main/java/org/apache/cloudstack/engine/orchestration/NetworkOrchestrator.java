@@ -4777,6 +4777,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             if (ipAddressVO != null && IpAddress.State.Free.equals(ipAddressVO.getState())) {
                 ipAddressVO.setState(IPAddressVO.State.Allocated);
                 ipAddressVO.setAllocatedTime(new Date());
+                Account account = _accountDao.findById(vm.getAccountId());
+                ipAddressVO.setAllocatedInDomainId(account.getDomainId());
+                ipAddressVO.setAllocatedToAccountId(account.getId());
                 _ipAddressDao.update(ipAddressVO.getId(), ipAddressVO);
             }
         }
