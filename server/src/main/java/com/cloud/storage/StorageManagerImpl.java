@@ -3049,6 +3049,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     StoragePoolVO storagePoolVO = _storagePoolDao.findByUuid(datastoreName);
                     if (storagePoolVO != null) {
                         volumeVO.setPoolId(storagePoolVO.getId());
+                        volumeVO.setPoolType(storagePoolVO.getPoolType());
                     } else {
                         logger.warn("Unable to find datastore {} while updating the new datastore of the volume {}", datastoreName, volumeVO);
                     }

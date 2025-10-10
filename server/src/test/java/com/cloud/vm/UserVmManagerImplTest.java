@@ -59,6 +59,7 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
 
+import com.cloud.storage.dao.SnapshotPolicyDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -79,6 +80,7 @@ import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.backup.BackupVO;
 import org.apache.cloudstack.backup.dao.BackupDao;
+import org.apache.cloudstack.backup.dao.BackupScheduleDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
@@ -434,6 +436,13 @@ public class UserVmManagerImplTest {
 
     @Mock
     private UUIDManager uuidMgr;
+
+
+    @Mock
+    private SnapshotPolicyDao snapshotPolicyDao;
+
+    @Mock
+    private BackupScheduleDao backupScheduleDao;
 
     MockedStatic<UnmanagedVMsManager> unmanagedVMsManagerMockedStatic;
 
