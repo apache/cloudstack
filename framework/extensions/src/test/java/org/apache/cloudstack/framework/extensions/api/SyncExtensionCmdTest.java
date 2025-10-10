@@ -43,14 +43,14 @@ public class SyncExtensionCmdTest {
         ReflectionTestUtils.setField(cmd, "id", 123L);
         assertEquals(Long.valueOf(123), cmd.getId());
     }
-    
+
     @Test
     public void returnsSourceManagementServerIdWhenGetSourceManagementServerIdIsCalled() {
         SyncExtensionCmd cmd = new SyncExtensionCmd();
         ReflectionTestUtils.setField(cmd, "sourceManagementServerId", 456L);
         assertEquals(Long.valueOf(456), cmd.getSourceManagementServerId());
     }
-    
+
     @Test
     public void returnsTargetManagementServerIdsWhenGetTargetManagementServerIdsIsCalled() {
         SyncExtensionCmd cmd = new SyncExtensionCmd();
@@ -58,7 +58,7 @@ public class SyncExtensionCmdTest {
         ReflectionTestUtils.setField(cmd, "targetManagementServerIds", targetIds);
         assertEquals(targetIds, cmd.getTargetManagementServerIds());
     }
-    
+
     @Test
     public void returnsFilesWhenGetFilesIsCalled() {
         SyncExtensionCmd cmd = new SyncExtensionCmd();
@@ -66,55 +66,55 @@ public class SyncExtensionCmdTest {
         ReflectionTestUtils.setField(cmd, "files", files);
         assertEquals(files, cmd.getFiles());
     }
-    
+
     @Test
     public void executesSuccessfullyWhenSyncExtensionSucceeds() throws Exception {
         SyncExtensionCmd cmd = new SyncExtensionCmd();
         ExtensionsManager mockManager = mock(ExtensionsManager.class);
         ReflectionTestUtils.setField(cmd, "extensionsManager", mockManager);
         when(mockManager.syncExtension(cmd)).thenReturn(true);
-    
+
         cmd.execute();
-    
+
         SuccessResponse response = (SuccessResponse) cmd.getResponseObject();
         assertTrue(response.getSuccess());
     }
-    
+
     @Test(expected = ServerApiException.class)
     public void throwsExceptionWhenSyncExtensionFails() throws Exception {
         SyncExtensionCmd cmd = new SyncExtensionCmd();
         ExtensionsManager mockManager = mock(ExtensionsManager.class);
         ReflectionTestUtils.setField(cmd, "extensionsManager", mockManager);
         when(mockManager.syncExtension(cmd)).thenReturn(false);
-    
+
         cmd.execute();
     }
-    
+
     @Test
     public void returnsSystemAccountIdWhenGetEntityOwnerIdIsCalled() {
         SyncExtensionCmd cmd = new SyncExtensionCmd();
         assertEquals(Account.ACCOUNT_ID_SYSTEM, cmd.getEntityOwnerId());
     }
-    
+
     @Test
     public void returnsExtensionResourceTypeWhenGetApiResourceTypeIsCalled() {
         SyncExtensionCmd cmd = new SyncExtensionCmd();
         assertEquals(ApiCommandResourceType.Extension, cmd.getApiResourceType());
     }
-    
+
     @Test
     public void returnsIdWhenGetApiResourceIdIsCalled() {
         SyncExtensionCmd cmd = new SyncExtensionCmd();
         ReflectionTestUtils.setField(cmd, "id", 123L);
         assertEquals(Long.valueOf(123), cmd.getApiResourceId());
     }
-    
+
     @Test
     public void returnsCorrectEventType() {
         SyncExtensionCmd cmd = new SyncExtensionCmd();
         assertEquals(EventTypes.EVENT_EXTENSION_SYNC, cmd.getEventType());
     }
-    
+
     @Test
     public void returnsCorrectEventDescription() {
         SyncExtensionCmd cmd = new SyncExtensionCmd();

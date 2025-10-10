@@ -39,80 +39,80 @@ public class ShareSignedUrlFilterTest {
         HttpServletRequest mockRequest = mock(HttpServletRequest.class);
         HttpServletResponse mockResponse = mock(HttpServletResponse.class);
         FilterChain mockChain = mock(FilterChain.class);
-    
+
         when(mockRequest.getParameter("exp")).thenReturn(null);
         when(mockRequest.getParameter("sig")).thenReturn(null);
-    
+
         filter.doFilter(mockRequest, mockResponse, mockChain);
-    
+
         verify(mockChain).doFilter(mockRequest, mockResponse);
     }
-    
+
     @Test
     public void deniesRequestWhenTokenIsRequiredAndParametersAreMissing() throws Exception {
         ShareSignedUrlFilter filter = new ShareSignedUrlFilter(true, "secret");
         HttpServletRequest mockRequest = mock(HttpServletRequest.class);
         HttpServletResponse mockResponse = mock(HttpServletResponse.class);
         FilterChain mockChain = mock(FilterChain.class);
-    
+
         when(mockRequest.getParameter("exp")).thenReturn(null);
         when(mockRequest.getParameter("sig")).thenReturn(null);
-    
+
         filter.doFilter(mockRequest, mockResponse, mockChain);
-    
+
         verify(mockResponse).sendError(HttpServletResponse.SC_FORBIDDEN, "Missing token");
         verifyNoInteractions(mockChain);
     }
-    
+
     @Test
     public void deniesRequestWhenExpirationIsInvalid() throws Exception {
         ShareSignedUrlFilter filter = new ShareSignedUrlFilter(true, "secret");
         HttpServletRequest mockRequest = mock(HttpServletRequest.class);
         HttpServletResponse mockResponse = mock(HttpServletResponse.class);
         FilterChain mockChain = mock(FilterChain.class);
-    
+
         when(mockRequest.getParameter("exp")).thenReturn("invalid");
         when(mockRequest.getParameter("sig")).thenReturn("signature");
-    
+
         filter.doFilter(mockRequest, mockResponse, mockChain);
-    
+
         verify(mockResponse).sendError(HttpServletResponse.SC_FORBIDDEN, "Bad exp");
         verifyNoInteractions(mockChain);
     }
-    
+
     @Test
     public void deniesRequestWhenTokenIsExpired() throws Exception {
         ShareSignedUrlFilter filter = new ShareSignedUrlFilter(true, "secret");
         HttpServletRequest mockRequest = mock(HttpServletRequest.class);
         HttpServletResponse mockResponse = mock(HttpServletResponse.class);
         FilterChain mockChain = mock(FilterChain.class);
-    
+
         when(mockRequest.getParameter("exp")).thenReturn(String.valueOf(Instant.now().getEpochSecond() - 10));
         when(mockRequest.getParameter("sig")).thenReturn("signature");
-    
+
         filter.doFilter(mockRequest, mockResponse, mockChain);
-    
+
         verify(mockResponse).sendError(HttpServletResponse.SC_FORBIDDEN, "Token expired");
         verifyNoInteractions(mockChain);
     }
-    
+
     @Test
     public void deniesRequestWhenSignatureIsInvalid() throws Exception {
         ShareSignedUrlFilter filter = new ShareSignedUrlFilter(true, "secret");
         HttpServletRequest mockRequest = mock(HttpServletRequest.class);
         HttpServletResponse mockResponse = mock(HttpServletResponse.class);
         FilterChain mockChain = mock(FilterChain.class);
-    
+
         when(mockRequest.getParameter("exp")).thenReturn(String.valueOf(Instant.now().getEpochSecond() + 1000));
         when(mockRequest.getParameter("sig")).thenReturn("invalidSignature");
         when(mockRequest.getRequestURI()).thenReturn("/share/resource");
-    
+
         filter.doFilter(mockRequest, mockResponse, mockChain);
-    
+
         verify(mockResponse).sendError(HttpServletResponse.SC_FORBIDDEN, "Bad signature");
         verifyNoInteractions(mockChain);
     }
-    
+
     @Test
     public void allowsRequestWhenSignatureIsValid() throws Exception {
         String secret = "secret";
@@ -120,17 +120,17 @@ public class ShareSignedUrlFilterTest {
         HttpServletRequest mockRequest = mock(HttpServletRequest.class);
         HttpServletResponse mockResponse = mock(HttpServletResponse.class);
         FilterChain mockChain = mock(FilterChain.class);
-    
+
         String exp = String.valueOf(Instant.now().getEpochSecond() + 1000);
         String data = "/share/resource|" + exp;
         String validSignature = HMACSignUtil.generateSignature(data, secret);
-    
+
         when(mockRequest.getParameter("exp")).thenReturn(exp);
         when(mockRequest.getParameter("sig")).thenReturn(validSignature);
         when(mockRequest.getRequestURI()).thenReturn("/share/resource");
-    
+
         filter.doFilter(mockRequest, mockResponse, mockChain);
-    
+
         verify(mockChain).doFilter(mockRequest, mockResponse);
     }
 }

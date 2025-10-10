@@ -51,14 +51,14 @@ public class ServerPropertiesUtilTest {
         String result = ServerPropertiesUtil.getProperty("key");
         assertEquals("value", result);
     }
-    
+
     @Test
     public void returnsNullWhenPropertyDoesNotExist() {
         Properties mockProperties = mock(Properties.class);
         ServerPropertiesUtil.propertiesRef.set(mockProperties);
         assertNull(ServerPropertiesUtil.getProperty("nonexistentKey"));
     }
-    
+
     @Test
     public void loadsPropertiesFromFileWhenNotCached() throws Exception {
         File tempFile = Files.createTempFile("server", ".properties").toFile();
@@ -70,7 +70,7 @@ public class ServerPropertiesUtilTest {
             assertEquals("value", ServerPropertiesUtil.getProperty("key"));
         }
     }
-    
+
     @Test
     public void returnsNullWhenPropertiesFileNotFound() {
         try (MockedStatic<PropertiesUtil> mocked = mockStatic(PropertiesUtil.class)) {
@@ -79,7 +79,7 @@ public class ServerPropertiesUtilTest {
             assertNull(ServerPropertiesUtil.getProperty("key"));
         }
     }
-    
+
     @Test
     public void returnsNullWhenIOExceptionOccurs() {
         File mockFile = mock(File.class);
