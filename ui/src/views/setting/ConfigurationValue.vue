@@ -258,11 +258,6 @@ export default {
     this.setConfigData()
   },
   watch: {
-    loading (newVal, oldVal) {
-      if (oldVal === true && newVal === false) {
-        this.setConfigData()
-      }
-    },
     configrecord: {
       handler () {
         this.setConfigData()
