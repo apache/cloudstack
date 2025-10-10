@@ -452,16 +452,19 @@
           </a-select>
         </div>
         <div v-if="lbProvider !== 'Netris'" class="edit-rule__item">
-          <p class="edit-rule__label">{{ $t('label.sourcecidrlist') }}</p>
+          <p class="edit-rule__label">
+            {{ $t('label.sourcecidrlist') }}
+            <tooltip-label
+              :title="''"
+              bold
+              :tooltip="createLoadBalancerRuleParams.cidrlist.description || 'Enter a comma-separated list of CIDR blocks.'"
+              :tooltip-placement="'right'"
+              style="display: inline; margin-left: 5px;"
+            />
+          </p>
           <a-input
             v-model:value="editRuleDetails.cidrlist"
             :placeholder="$t('label.sourcecidrlist')"
-          />
-          <tooltip-label
-            :title="$t('label.sourcecidrlist')"
-            bold
-            :tooltip="createLoadBalancerRuleParams.cidrlist.description"
-            :tooltip-placement="'right'"
           />
         </div>
         <div :span="24" class="action-button">
