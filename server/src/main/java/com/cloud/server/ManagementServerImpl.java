@@ -822,6 +822,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserDataDao;
+import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
@@ -2412,16 +2413,17 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     protected List<IpAddress.State> getStatesForIpAddressSearch(final ListPublicIpAddressesCmd cmd) {
-        final String state = cmd.getState();
+        final String statesStr = cmd.getState();
         final List<IpAddress.State> states = new ArrayList<>();
-        if (StringUtils.isNotBlank(state)) {
-            for (String s : StringUtils.split(state, ",")) {
-                try {
-                    states.add(IpAddress.State.valueOf(s));
-                } catch (IllegalArgumentException e) {
-                    throw new InvalidParameterValueException("Invalid state: " + s);
-                }
+        if (StringUtils.isBlank(statesStr)) {
+            return states;
+        }
+        for (String s : StringUtils.split(statesStr, ",")) {
+            IpAddress.State state = EnumUtils.getEnumIgnoreCase(IpAddress.State.class, s.trim());
+            if (state == null) {
+                throw new InvalidParameterValueException("Invalid state: " + s);
             }
+            states.add(state);
         }
         return states;
     }

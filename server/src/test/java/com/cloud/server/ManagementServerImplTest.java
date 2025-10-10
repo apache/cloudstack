@@ -1038,7 +1038,7 @@ public class ManagementServerImplTest {
     @Test
     public void getStatesForIpAddressSearchReturnsValidStates() {
         ListPublicIpAddressesCmd cmd = Mockito.mock(ListPublicIpAddressesCmd.class);
-        Mockito.when(cmd.getState()).thenReturn("Allocated,Free");
+        Mockito.when(cmd.getState()).thenReturn("Allocated ,free");
         List<IpAddress.State> result = spy.getStatesForIpAddressSearch(cmd);
         Assert.assertEquals(2, result.size());
         Assert.assertTrue(result.contains(IpAddress.State.Allocated));
