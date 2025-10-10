@@ -1471,7 +1471,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 .stream()
                 .filter(x -> x.startsWith("-"))
                 .map(s -> s.replaceFirst("^-+", "").trim()) //Remove the starting hyphens as in --X or -x
-                .toList();
+                .collect(Collectors.toList());
         for (String param : sanitizedParams) {
             if (!allowedParams.contains(param)) {
                 throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
