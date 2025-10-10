@@ -1034,4 +1034,49 @@ public class ManagementServerImplTest {
         Assert.assertNotNull(spy.getExternalVmConsole(virtualMachine, host));
         Mockito.verify(extensionManager).getInstanceConsole(virtualMachine, host);
     }
+
+    @Test
+    public void getStatesForIpAddressSearchReturnsValidStates() {
+        ListPublicIpAddressesCmd cmd = Mockito.mock(ListPublicIpAddressesCmd.class);
+        Mockito.when(cmd.getState()).thenReturn("Allocated,Free");
+        List<IpAddress.State> result = spy.getStatesForIpAddressSearch(cmd);
+        Assert.assertEquals(2, result.size());
+        Assert.assertTrue(result.contains(IpAddress.State.Allocated));
+        Assert.assertTrue(result.contains(IpAddress.State.Free));
+    }
+
+    @Test
+    public void getStatesForIpAddressSearchReturnsEmptyListForNullState() {
+        ListPublicIpAddressesCmd cmd = Mockito.mock(ListPublicIpAddressesCmd.class);
+        Mockito.when(cmd.getState()).thenReturn(null);
+        List<IpAddress.State> result = spy.getStatesForIpAddressSearch(cmd);
+        Assert.assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void getStatesForIpAddressSearchReturnsEmptyListForBlankState() {
+        ListPublicIpAddressesCmd cmd = Mockito.mock(ListPublicIpAddressesCmd.class);
+        Mockito.when(cmd.getState()).thenReturn("   ");
+        List<IpAddress.State> result = spy.getStatesForIpAddressSearch(cmd);
+        Assert.assertTrue(result.isEmpty());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void getStatesForIpAddressSearchThrowsExceptionForInvalidState() {
+        ListPublicIpAddressesCmd cmd = Mockito.mock(ListPublicIpAddressesCmd.class);
+        Mockito.when(cmd.getState()).thenReturn("InvalidState");
+        spy.getStatesForIpAddressSearch(cmd);
+    }
+
+    @Test
+    public void getStatesForIpAddressSearchHandlesMixedValidAndInvalidStates() {
+        ListPublicIpAddressesCmd cmd = Mockito.mock(ListPublicIpAddressesCmd.class);
+        Mockito.when(cmd.getState()).thenReturn("Allocated,InvalidState");
+        try {
+            spy.getStatesForIpAddressSearch(cmd);
+            Assert.fail("Expected InvalidParameterValueException to be thrown");
+        } catch (InvalidParameterValueException e) {
+            Assert.assertEquals("Invalid state: InvalidState", e.getMessage());
+        }
+    }
 }

@@ -2411,6 +2411,21 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return new Pair<>(result.first(), result.second());
     }
 
+    protected List<IpAddress.State> getStatesForIpAddressSearch(final ListPublicIpAddressesCmd cmd) {
+        final String state = cmd.getState();
+        final List<IpAddress.State> states = new ArrayList<>();
+        if (StringUtils.isNotBlank(state)) {
+            for (String s : StringUtils.split(state, ",")) {
+                try {
+                    states.add(IpAddress.State.valueOf(s));
+                } catch (IllegalArgumentException e) {
+                    throw new InvalidParameterValueException("Invalid state: " + s);
+                }
+            }
+        }
+        return states;
+    }
+
     @Override
     public Pair<List<? extends IpAddress>, Integer> searchForIPAddresses(final ListPublicIpAddressesCmd cmd) {
         final Long associatedNetworkId = cmd.getAssociatedNetworkId();
@@ -2421,17 +2436,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Long networkId = cmd.getNetworkId();
         final Long vpcId = cmd.getVpcId();
 
-        final String state = cmd.getState();
-        List<IpAddress.State> states = new ArrayList<>();
-        if (StringUtils.isNotBlank(state)) {
-            for (String s : StringUtils.split(state, ",")) {
-                try {
-                    states.add(IpAddress.State.valueOf(s));
-                } catch (IllegalArgumentException e) {
-                    throw new InvalidParameterValueException("Invalid state: " + s);
-                }
-            }
-        }
+        final List<IpAddress.State> states = getStatesForIpAddressSearch(cmd);
         Boolean isAllocated = cmd.isAllocatedOnly();
         if (isAllocated == null) {
             if (states.contains(IpAddress.State.Free) || states.contains(IpAddress.State.Reserved)) {
