@@ -2611,7 +2611,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
         String macAddress = networkModel.getNextAvailableMacAddressInNetwork(networkId);
 
-        Network.IpAddresses requestedIpPair = new Network.IpAddresses(null, null, macAddress);
+        String ipAddress = network.getGuestType() != Network.GuestType.L2 ? "auto" : null;
+
+        Network.IpAddresses requestedIpPair = new Network.IpAddresses(ipAddress, null, macAddress);
 
         NicProfile nicProfile = new NicProfile(requestedIpPair.getIp4Address(), requestedIpPair.getIp6Address(), requestedIpPair.getMacAddress());
         nicProfile.setOrderIndex(0);
