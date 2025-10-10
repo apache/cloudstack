@@ -4772,6 +4772,15 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
         });
 
+        if (selectedIp != null && GuestType.Shared.equals(network.getGuestType())) {
+            IPAddressVO ipAddressVO = _ipAddressDao.findByIpAndSourceNetworkId(network.getId(), selectedIp);
+            if (ipAddressVO != null && IpAddress.State.Free.equals(ipAddressVO.getState())) {
+                ipAddressVO.setState(IPAddressVO.State.Allocated);
+                ipAddressVO.setAllocatedTime(new Date());
+                _ipAddressDao.update(ipAddressVO.getId(), ipAddressVO);
+            }
+        }
+
         final Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
         final NicProfile vmNic = new NicProfile(vo, network, vo.getBroadcastUri(), vo.getIsolationUri(), networkRate, _networkModel.isSecurityGroupSupportedInNetwork(network),
                 _networkModel.getNetworkTag(vm.getHypervisorType(), network));
@@ -4791,7 +4800,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     protected String getSelectedIpForNicImportOnSharedNetwork(String requestedIp, Network network, DataCenter dataCenter) {
         IPAddressVO ipAddressVO = StringUtils.isBlank(requestedIp) ?
                 _ipAddressDao.findBySourceNetworkIdAndDatacenterIdAndState(network.getId(), dataCenter.getId(), IpAddress.State.Free):
-                _ipAddressDao.findByIp(requestedIp);
+                _ipAddressDao.findByIpAndSourceNetworkId(network.getId(), requestedIp);
         if (ipAddressVO == null || ipAddressVO.getState() != IpAddress.State.Free) {
             String msg = String.format("Cannot find a free IP to assign to VM NIC on network %s", network.getName());
             logger.error(msg);
