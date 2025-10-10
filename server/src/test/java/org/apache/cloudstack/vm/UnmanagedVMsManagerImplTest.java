@@ -731,7 +731,6 @@ public class UnmanagedVMsManagerImplTest {
         when(dataStore.getTO()).thenReturn(dataStoreTO);
 
         StoragePoolVO destPool = mock(StoragePoolVO.class);
-        when(destPool.getUuid()).thenReturn(UUID.randomUUID().toString());
         when(destPool.getDataCenterId()).thenReturn(zoneId);
         when(destPool.getClusterId()).thenReturn(null);
         when(destPool.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
