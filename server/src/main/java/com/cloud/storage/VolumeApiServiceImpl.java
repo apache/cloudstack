@@ -2937,8 +2937,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 List<StoragePoolVO> childDatastores = _storagePoolDao.listChildStoragePoolsInDatastoreCluster(storageId);
                 Collections.shuffle(childDatastores);
                 volume.setPoolId(childDatastores.get(0).getId());
+                volume.setPoolType(childDatastores.get(0).getPoolType());
             } else {
                 volume.setPoolId(pool.getId());
+                volume.setPoolType(pool.getPoolType());
             }
         }
 
@@ -3113,7 +3115,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             } catch (InterruptedException e) {
                 throw new RuntimeException("Operation is interrupted", e);
             } catch (ExecutionException e) {
-                throw new RuntimeException("Execution excetion", e);
+                throw new CloudRuntimeException("Execution exception getting the outcome of the asynchronous detach volume job", e);
             }
 
             Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
@@ -3225,6 +3227,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     if (storagePoolVO != null) {
                         VolumeVO volumeVO = _volsDao.findById(volumeId);
                         volumeVO.setPoolId(storagePoolVO.getId());
+                        volumeVO.setPoolType(storagePoolVO.getPoolType());
                         _volsDao.update(volumeVO.getId(), volumeVO);
                     } else {
                         logger.warn("Unable to find datastore {} while updating the new datastore of the volume {}", datastoreName, volume);
@@ -3507,8 +3510,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         if (hypervisorType.equals(HypervisorType.VMware)) {
             try {
-                boolean isStoragePoolStoragepolicyComplaince = storageMgr.isStoragePoolCompliantWithStoragePolicy(Arrays.asList(volumeDiskProfilePair), destPool);
-                if (!isStoragePoolStoragepolicyComplaince) {
+                boolean isStoragePoolStoragepolicyCompliance = storageMgr.isStoragePoolCompliantWithStoragePolicy(Arrays.asList(volumeDiskProfilePair), destPool);
+                if (!isStoragePoolStoragepolicyCompliance) {
                     throw new CloudRuntimeException(String.format("Storage pool %s is not storage policy compliance with the volume %s", poolUuid, vol.getUuid()));
                 }
             } catch (StorageUnavailableException e) {
@@ -3548,7 +3551,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 } catch (InterruptedException e) {
                     throw new RuntimeException("Operation is interrupted", e);
                 } catch (ExecutionException e) {
-                    throw new RuntimeException("Execution excetion", e);
+                    throw new CloudRuntimeException("Execution exception getting the outcome of the asynchronous migrate volume job", e);
                 }
 
                 Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
@@ -3645,12 +3648,16 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      *
      * If all of the above validations pass, we check if the size of the new disk offering is different from the volume. If it is, we log a warning message.
      */
-    protected void validateConditionsToReplaceDiskOfferingOfVolume(VolumeVO volume, DiskOfferingVO newDiskOffering, StoragePool destPool) {
+    @Override
+    public boolean validateConditionsToReplaceDiskOfferingOfVolume(Volume volume, DiskOffering newDiskOffering, StoragePool destPool) {
         if (newDiskOffering == null) {
-            return;
+            return false;
         }
-        if ((destPool.isShared() && newDiskOffering.isUseLocalStorage()) || destPool.isLocal() && newDiskOffering.isShared()) {
-            throw new InvalidParameterValueException("You cannot move the volume to a shared storage and assign a disk offering for local storage and vice versa.");
+        if (destPool.isShared() && newDiskOffering.isUseLocalStorage()) {
+            throw new InvalidParameterValueException("You cannot move the volume to shared storage, with the disk offering configured for local storage.");
+        }
+        if (destPool.isLocal() && newDiskOffering.isShared()) {
+            throw new InvalidParameterValueException("You cannot move the volume to local storage, with the disk offering configured for shared storage.");
         }
         if (!doesStoragePoolSupportDiskOffering(destPool, newDiskOffering)) {
             throw new InvalidParameterValueException(String.format("Migration failed: target pool [%s, tags:%s] has no matching tags for volume [%s, uuid:%s, tags:%s]", destPool.getName(),
@@ -3675,6 +3682,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     volume, oldDiskOffering, newDiskOffering);
         }
         logger.info("Changing disk offering to [{}] while migrating volume [{}].", newDiskOffering, volume);
+        return true;
     }
 
     /**
@@ -3895,7 +3903,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 } catch (InterruptedException e) {
                     throw new RuntimeException("Operation is interrupted", e);
                 } catch (ExecutionException e) {
-                    throw new RuntimeException("Execution excetion", e);
+                    throw new CloudRuntimeException("Execution exception getting the outcome of the asynchronous take volume snapshot job", e);
                 }
 
                 Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
@@ -4259,7 +4267,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 } catch (InterruptedException e) {
                     throw new RuntimeException("Operation is interrupted", e);
                 } catch (ExecutionException e) {
-                    throw new RuntimeException("Execution excetion", e);
+                    throw new CloudRuntimeException("Execution exception getting the outcome of the asynchronous extract volume job", e);
                 }
 
                 Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());

@@ -62,6 +62,7 @@ import org.apache.cloudstack.api.command.user.backup.UpdateBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.repository.AddBackupRepositoryCmd;
 import org.apache.cloudstack.api.command.user.backup.repository.DeleteBackupRepositoryCmd;
 import org.apache.cloudstack.api.command.user.backup.repository.ListBackupRepositoriesCmd;
+import org.apache.cloudstack.api.command.user.backup.repository.UpdateBackupRepositoryCmd;
 import org.apache.cloudstack.api.command.user.vm.CreateVMFromBackupCmd;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.backup.dao.BackupDao;
@@ -107,7 +108,6 @@ import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
@@ -588,7 +588,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         final BackupScheduleVO schedule = backupScheduleDao.findByVMAndIntervalType(vmId, intervalType);
         if (schedule == null) {
-            return backupScheduleDao.persist(new BackupScheduleVO(vmId, intervalType, scheduleString, timezoneId, nextDateTime, maxBackups, cmd.getQuiesceVM()));
+            return backupScheduleDao.persist(new BackupScheduleVO(vmId, intervalType, scheduleString, timezoneId, nextDateTime, maxBackups, cmd.getQuiesceVM(), vm.getAccountId(), vm.getDomainId()));
         }
 
         schedule.setScheduleType((short) intervalType.ordinal());
@@ -638,13 +638,59 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         return maxBackups;
     }
 
-    @Override
-    public List<BackupSchedule> listBackupSchedule(final Long vmId) {
-        final VMInstanceVO vm = findVmById(vmId);
-        validateBackupForZone(vm.getDataCenterId());
-        accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
+    public List<BackupSchedule> listBackupSchedules(ListBackupScheduleCmd cmd) {
+        Account caller = CallContext.current().getCallingAccount();
+        Long id = cmd.getId();
+        Long vmId = cmd.getVmId();
+        List<Long> permittedAccounts = new ArrayList<>();
+        Long domainId = null;
+        Boolean isRecursive = null;
+        String keyword = cmd.getKeyword();
+        Project.ListProjectResourcesCriteria listProjectResourcesCriteria = null;
 
-        return backupScheduleDao.listByVM(vmId).stream().map(BackupSchedule.class::cast).collect(Collectors.toList());
+        if (vmId != null) {
+            final VMInstanceVO vm = findVmById(vmId);
+            validateBackupForZone(vm.getDataCenterId());
+            accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
+        }
+
+        Ternary<Long, Boolean, Project.ListProjectResourcesCriteria> domainIdRecursiveListProject =
+                new Ternary<>(cmd.getDomainId(), cmd.isRecursive(), null);
+        accountManager.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, true, false);
+        domainId = domainIdRecursiveListProject.first();
+        isRecursive = domainIdRecursiveListProject.second();
+        listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+
+        Filter searchFilter = new Filter(BackupScheduleVO.class, "id", false, null, null);
+        SearchBuilder<BackupScheduleVO> searchBuilder = backupScheduleDao.createSearchBuilder();
+
+        accountManager.buildACLSearchBuilder(searchBuilder, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+
+        searchBuilder.and("id", searchBuilder.entity().getId(), SearchCriteria.Op.EQ);
+        if (vmId != null) {
+            searchBuilder.and("vmId", searchBuilder.entity().getVmId(), SearchCriteria.Op.EQ);
+        }
+        if (keyword != null && !keyword.isEmpty()) {
+            SearchBuilder<VMInstanceVO> vmSearch = vmInstanceDao.createSearchBuilder();
+            vmSearch.and("hostName", vmSearch.entity().getHostName(), SearchCriteria.Op.LIKE);
+            searchBuilder.join("vmJoin", vmSearch, searchBuilder.entity().getVmId(), vmSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        }
+
+        SearchCriteria<BackupScheduleVO> sc = searchBuilder.create();
+        accountManager.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+
+        if (id != null) {
+            sc.setParameters("id", id);
+        }
+        if (vmId != null) {
+            sc.setParameters("vmId", vmId);
+        }
+        if (keyword != null && !keyword.isEmpty()) {
+            sc.setJoinParameters("vmJoin", "hostName", "%" + keyword + "%");
+        }
+
+        Pair<List<BackupScheduleVO>, Integer> result = backupScheduleDao.searchAndCount(sc, searchFilter);
+        return new ArrayList<>(result.first());
     }
 
     @Override
@@ -1022,7 +1068,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (offering == null) {
             throw new CloudRuntimeException(errorMessage);
         }
-        String backupDetailsInMessage = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backup, "uuid", "externalId", "vmId", "type", "status", "date");
+        String backupDetailsInMessage = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backup, "uuid", "externalId", "vmId", "name");
         tryRestoreVM(backup, vm, offering, backupDetailsInMessage);
         updateVolumeState(vm, Volume.Event.RestoreSucceeded, Volume.State.Ready);
         updateVmState(vm, VirtualMachine.Event.RestoringSuccess, VirtualMachine.State.Stopped);
@@ -1239,6 +1285,14 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         return ipToNetworkMap;
     }
 
+    private void processRestoreBackupToVMFailure(VMInstanceVO vm, Backup backup, Long eventId) {
+        updateVolumeState(vm, Volume.Event.RestoreFailed, Volume.State.Ready);
+        updateVmState(vm, VirtualMachine.Event.RestoringFailed, VirtualMachine.State.Stopped);
+        ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE_FROM_BACKUP,
+                String.format("Failed to create Instance %s from backup %s", vm.getInstanceName(), backup.getUuid()),
+                vm.getId(), ApiCommandResourceType.VirtualMachine.toString(), eventId);
+    }
+
     @Override
     public Boolean canCreateInstanceFromBackup(final Long backupId) {
         final BackupVO backup = backupDao.findById(backupId);
@@ -1251,7 +1305,18 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     @Override
-    public boolean restoreBackupToVM(final Long backupId, final Long vmId) throws ResourceUnavailableException {
+    public Boolean canCreateInstanceFromBackupAcrossZones(final Long backupId) {
+        final BackupVO backup = backupDao.findById(backupId);
+        BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(backup.getBackupOfferingId());
+        if (offering == null) {
+            throw new CloudRuntimeException("Failed to find backup offering");
+        }
+        final BackupProvider backupProvider = getBackupProvider(offering.getProvider());
+        return backupProvider.crossZoneInstanceCreationEnabled(offering);
+    }
+
+    @Override
+    public boolean restoreBackupToVM(final Long backupId, final Long vmId) throws CloudRuntimeException {
         final BackupVO backup = backupDao.findById(backupId);
         if (backup == null) {
             throw new CloudRuntimeException("Backup " + backupId + " does not exist");
@@ -1293,7 +1358,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException("Create instance from backup is not supported by the " + offering.getProvider() + " provider.");
         }
 
-        String backupDetailsInMessage = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backup, "uuid", "externalId", "newVMId", "type", "status", "date");
+        String backupDetailsInMessage = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backup, "uuid", "externalId", "name");
+        Pair<Boolean, String> result = null;
         Long eventId = null;
         try {
             updateVmState(vm, VirtualMachine.Event.RestoringRequested, VirtualMachine.State.Restoring);
@@ -1310,18 +1376,21 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 host = restoreInfo.first().getPrivateIpAddress();
                 dataStore = restoreInfo.second().getUuid();
             }
-            if (!backupProvider.restoreBackupToVM(vm, backup, host, dataStore)) {
-                throw new CloudRuntimeException(String.format("Error restoring backup [%s] to VM %s.", backupDetailsInMessage, vm.getUuid()));
-            }
+            result = backupProvider.restoreBackupToVM(vm, backup, host, dataStore);
+
         } catch (Exception e) {
-            updateVolumeState(vm, Volume.Event.RestoreFailed, Volume.State.Ready);
-            updateVmState(vm, VirtualMachine.Event.RestoringFailed, VirtualMachine.State.Stopped);
-            logger.error(String.format("Failed to create Instance [%s] from backup [%s] due to: [%s].", vm.getInstanceName(), backupDetailsInMessage, e.getMessage()), e);
-            ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE_FROM_BACKUP,
-                    String.format("Failed to create Instance %s from backup %s", vm.getInstanceName(), backup.getUuid()),
-                    vm.getId(), ApiCommandResourceType.VirtualMachine.toString(), eventId);
+            logger.error(String.format("Failed to create Instance [%s] from backup [%s] due to: [%s]", vm.getInstanceName(), backupDetailsInMessage, e.getMessage()), e);
+            processRestoreBackupToVMFailure(vm, backup, eventId);
             throw new CloudRuntimeException(String.format("Error while creating Instance [%s] from backup [%s].", vm.getUuid(), backupDetailsInMessage));
         }
+
+        if (result != null && !result.first()) {
+            String error_msg = String.format("Failed to create Instance [%s] from backup [%s] due to: %s.", vm.getInstanceName(), backupDetailsInMessage, result.second());
+            logger.error(error_msg);
+            processRestoreBackupToVMFailure(vm, backup, eventId);
+            throw new CloudRuntimeException(error_msg);
+        }
+
         updateVolumeState(vm, Volume.Event.RestoreSucceeded, Volume.State.Ready);
         updateVmState(vm, VirtualMachine.Event.RestoringSuccess, VirtualMachine.State.Stopped);
         ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_CREATE_FROM_BACKUP,
@@ -1604,6 +1673,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         cmdList.add(DeleteBackupCmd.class);
         cmdList.add(RestoreVolumeFromBackupAndAttachToVMCmd.class);
         cmdList.add(AddBackupRepositoryCmd.class);
+        cmdList.add(UpdateBackupRepositoryCmd.class);
         cmdList.add(DeleteBackupRepositoryCmd.class);
         cmdList.add(ListBackupRepositoriesCmd.class);
         cmdList.add(CreateVMFromBackupCmd.class);
@@ -1903,7 +1973,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             for (final VirtualMachine vm : vms) {
 
                 Map<Long, Pair<Long, Long>> backupOfferingToSizeMap = new HashMap<>();
-                for (final Backup backup: backupDao.listByVmId(null, vm.getId())) {
+                List<Backup> backups = backupDao.listByVmId(null, vm.getId());
+                if (backups.isEmpty() && vm.getBackupOfferingId() != null) {
+                    backupOfferingToSizeMap.put(vm.getBackupOfferingId(), new Pair<>(0L, 0L));
+                }
+                for (final Backup backup: backups) {
                     Long backupSize = 0L;
                     Long backupProtectedSize = 0L;
                     if (Objects.nonNull(backup.getSize())) {

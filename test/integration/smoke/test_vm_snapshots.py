@@ -27,7 +27,9 @@ from marvin.lib.base import (Account,
 from marvin.lib.common import (get_zone,
                                get_domain,
                                get_suitable_test_template,
+                               list_volumes,
                                list_snapshots,
+                               list_storage_pools,
                                list_virtual_machines)
 import time
 
@@ -87,6 +89,18 @@ class TestVmSnapshot(cloudstackTestCase):
             serviceofferingid=cls.service_offering.id,
             mode=cls.zone.networktype
         )
+        volumes = list_volumes(
+            cls.apiclient,
+            virtualmachineid=cls.virtual_machine.id,
+            type='ROOT',
+            listall=True
+        )
+        volume = volumes[0]
+        volume_pool_response = list_storage_pools(
+            cls.apiclient,
+            id=volume.storageid
+        )
+        cls.volume_pool = volume_pool_response[0]
         cls.random_data_0 = random_gen(size=100)
         cls.test_dir = "$HOME"
         cls.random_data = "random.data"
@@ -146,15 +160,15 @@ class TestVmSnapshot(cloudstackTestCase):
 
         #KVM VM Snapshot needs to set snapshot with memory
         MemorySnapshot = False
-        if self.hypervisor.lower() in (KVM.lower()):
+        if self.hypervisor.lower() in (KVM.lower()) and self.volume_pool.type.lower() != "powerflex":
            MemorySnapshot = True
 
         vm_snapshot = VmSnapshot.create(
             self.apiclient,
             self.virtual_machine.id,
             MemorySnapshot,
-            "TestSnapshot",
-            "Display Text"
+            "TestVmSnapshot",
+            "Test VM Snapshot"
         )
         self.assertEqual(
             vm_snapshot.state,
@@ -214,7 +228,7 @@ class TestVmSnapshot(cloudstackTestCase):
         )
 
         #We don't need to stop the VM when taking a VM Snapshot on KVM
-        if self.hypervisor.lower() in (KVM.lower()):
+        if self.hypervisor.lower() in (KVM.lower()) and self.volume_pool.type.lower() != "powerflex":
            pass
         else:
            self.virtual_machine.stop(self.apiclient)
@@ -224,7 +238,7 @@ class TestVmSnapshot(cloudstackTestCase):
             list_snapshot_response[0].id)
 
         #We don't need to start the VM when taking a VM Snapshot on KVM
-        if self.hypervisor.lower() in (KVM.lower()):
+        if self.hypervisor.lower() in (KVM.lower()) and self.volume_pool.type.lower() != "powerflex":
            pass
         else:
            self.virtual_machine.start(self.apiclient)

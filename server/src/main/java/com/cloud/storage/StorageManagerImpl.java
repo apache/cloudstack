@@ -122,7 +122,7 @@ import org.apache.cloudstack.secstorage.HeuristicVO;
 import org.apache.cloudstack.secstorage.dao.SecondaryStorageHeuristicDao;
 import org.apache.cloudstack.secstorage.heuristics.Heuristic;
 import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
-import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
+import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplianceCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.SyncVolumePathAnswer;
 import org.apache.cloudstack.storage.command.SyncVolumePathCommand;
@@ -3049,6 +3049,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     StoragePoolVO storagePoolVO = _storagePoolDao.findByUuid(datastoreName);
                     if (storagePoolVO != null) {
                         volumeVO.setPoolId(storagePoolVO.getId());
+                        volumeVO.setPoolType(storagePoolVO.getPoolType());
                     } else {
                         logger.warn("Unable to find datastore {} while updating the new datastore of the volume {}", datastoreName, volumeVO);
                     }
@@ -3072,7 +3073,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     }
 
-    private void updateStoragePoolHostVOAndBytes(StoragePool pool, long hostId, ModifyStoragePoolAnswer mspAnswer) {
+    @Override
+    public void updateStoragePoolHostVOAndBytes(StoragePool pool, long hostId, ModifyStoragePoolAnswer mspAnswer) {
         StoragePoolHostVO poolHost = _storagePoolHostDao.findByPoolHost(pool.getId(), hostId);
         if (poolHost == null) {
             poolHost = new StoragePoolHostVO(pool.getId(), hostId, mspAnswer.getPoolInfo().getLocalPath().replaceAll("//", "/"));
@@ -3082,8 +3084,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         StoragePoolVO poolVO = _storagePoolDao.findById(pool.getId());
-        poolVO.setUsedBytes(mspAnswer.getPoolInfo().getCapacityBytes() - mspAnswer.getPoolInfo().getAvailableBytes());
-        poolVO.setCapacityBytes(mspAnswer.getPoolInfo().getCapacityBytes());
+        if (!Storage.StoragePoolType.StorPool.equals(poolVO.getPoolType())) {
+            poolVO.setUsedBytes(mspAnswer.getPoolInfo().getCapacityBytes() - mspAnswer.getPoolInfo().getAvailableBytes());
+            poolVO.setCapacityBytes(mspAnswer.getPoolInfo().getCapacityBytes());
+        }
 
         _storagePoolDao.update(pool.getId(), poolVO);
     }
@@ -3614,7 +3618,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
         try {
             StorageFilerTO storageFilerTO = new StorageFilerTO(pool);
-            CheckDataStoreStoragePolicyComplainceCommand cmd = new CheckDataStoreStoragePolicyComplainceCommand(storagePolicyVO.getPolicyId(), storageFilerTO);
+            CheckDataStoreStoragePolicyComplianceCommand cmd = new CheckDataStoreStoragePolicyComplianceCommand(storagePolicyVO.getPolicyId(), storageFilerTO);
             long targetHostId = _hvGuruMgr.getGuruProcessedCommandTargetHost(hostIds.get(0), cmd);
             return _agentMgr.send(targetHostId, cmd);
         } catch (AgentUnavailableException e) {

@@ -23,10 +23,14 @@ import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
 import org.apache.cloudstack.api.EntityReference;
-import org.apache.cloudstack.ldap.LdapConfiguration;
+import org.apache.cloudstack.ldap.LdapConfigurationVO;
 
-@EntityReference(value = LdapConfiguration.class)
+@EntityReference(value = LdapConfigurationVO.class)
 public class LdapConfigurationResponse extends BaseResponse {
+    @SerializedName("id")
+    @Param(description = "the ID of the LDAP configuration")
+    private String id;
+
     @SerializedName(ApiConstants.HOST_NAME)
     @Param(description = "name of the host running the ldap server")
     private String hostname;
@@ -53,9 +57,18 @@ public class LdapConfigurationResponse extends BaseResponse {
         setPort(port);
     }
 
-    public LdapConfigurationResponse(final String hostname, final int port, final String domainId) {
+    public LdapConfigurationResponse(final String hostname, final int port, final String domainId, final String id) {
         this(hostname, port);
         setDomainId(domainId);
+        setId(id);
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getHostname() {

@@ -233,11 +233,49 @@
         >{{ $t(text.toLowerCase()) }}</span>
         <span v-else>{{ text }}</span>
       </template>
-
       <template v-if="column.key === 'schedule'">
-        {{ text }}
-        <br />
-        ({{ generateHumanReadableSchedule(text) }})
+        <div v-if="['/snapshotpolicy', '/backupschedule'].some(path => $route.path.endsWith(path))">
+          <label class="interval-content">
+            <span v-if="record.intervaltype===0 || record.intervaltype==='HOURLY'">{{ record.schedule + $t('label.min.past.hour') }}</span>
+            <span v-else>{{ record.schedule.split(':')[1] + ':' + record.schedule.split(':')[0] }}</span>
+          </label>
+          <span v-if="record.intervaltype===2 || record.intervaltype==='WEEKLY'">
+            {{ ` ${$t('label.every')} ${$t(listDayOfWeek[record.schedule.split(':')[2] - 1])}` }}
+          </span>
+          <span v-else-if="record.intervaltype===3 || record.intervaltype==='MONTHLY'">
+            {{ ` ${$t('label.day')} ${record.schedule.split(':')[2]} ${$t('label.of.month')}` }}
+          </span>
+        </div>
+        <div v-else>
+          {{ text }}
+          <br />
+          ({{ generateHumanReadableSchedule(text) }})
+        </div>
+      </template>
+      <template v-if="column.key === 'intervaltype' && ['/snapshotpolicy', '/backupschedule'].some(path => $route.path.endsWith(path))">
+        <QuickView
+          style="margin-right: 8px"
+          :actions="actions"
+          :resource="record"
+          :enabled="quickViewEnabled() && actions.length > 0"
+          @exec-action="$parent.execAction"
+        />
+        <span v-if="record.intervaltype===0">
+          <clock-circle-outlined />
+        </span>
+        <span class="custom-icon icon-daily" v-else-if="record.intervaltype===1">
+          <calendar-outlined />
+        </span>
+        <span class="custom-icon icon-weekly" v-else-if="record.intervaltype===2">
+          <calendar-outlined />
+        </span>
+        <span class="custom-icon icon-monthly" v-else-if="record.intervaltype===3">
+          <calendar-outlined />
+        </span>
+        {{ getIntervalTypeText(record.intervaltype) }}
+      </template>
+      <template v-if="column.key === 'timezone'">
+        <label>{{ getTimeZone(record.timezone) }}</label>
       </template>
       <template v-if="column.key === 'displayname'">
         <QuickView
@@ -1011,6 +1049,7 @@ import { createPathBasedOnVmType } from '@/utils/plugins'
 import { validateLinks } from '@/utils/links'
 import cronstrue from 'cronstrue/i18n'
 import moment from 'moment-timezone'
+import { timeZoneName } from '@/utils/timezone'
 import { FileTextOutlined } from '@ant-design/icons-vue'
 
 export default {
@@ -1111,7 +1150,8 @@ export default {
         }
       },
       usageTypeMap: {},
-      resourceIdToValidLinksMap: {}
+      resourceIdToValidLinksMap: {},
+      listDayOfWeek: ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
     }
   },
   watch: {
@@ -1148,7 +1188,7 @@ export default {
         '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm', '/annotation',
         '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering',
         '/tungstenfabric', '/oauthsetting', '/guestos', '/guestoshypervisormapping', '/webhook', 'webhookdeliveries', '/quotatariff', '/sharedfs',
-        '/ipv4subnets', '/managementserver', '/gpucard', '/gpudevices', '/vgpuprofile', '/extension'].join('|'))
+        '/ipv4subnets', '/managementserver', '/gpucard', '/gpudevices', '/vgpuprofile', '/extension', '/snapshotpolicy', '/backupschedule'].join('|'))
         .test(this.$route.path)
     },
     enableGroupAction () {
@@ -1161,6 +1201,13 @@ export default {
     },
     getDateAtTimeZone (date, timezone) {
       return date ? moment(date).tz(timezone).format('YYYY-MM-DD HH:mm:ss') : null
+    },
+    getIntervalTypeText (intervaltype) {
+      const types = { 0: 'HOURLY', 1: 'DAILY', 2: 'WEEKLY', 3: 'MONTHLY' }
+      return types[intervaltype] || intervaltype
+    },
+    getTimeZone (timeZone) {
+      return timeZoneName(timeZone)
     },
     fetchColumns () {
       if (this.isOrderUpdatable()) {
@@ -1563,4 +1610,31 @@ export default {
     color: #f50000;
     padding: 10%;
   }
+
+  .custom-icon:before {
+      font-size: 8px;
+      position: absolute;
+      top: 8px;
+      left: 3.5px;
+      color: #000;
+      font-weight: 700;
+      line-height: 1.7;
+    }
+
+    .icon-daily:before {
+      content: "01";
+      left: 5px;
+      top: 7px;
+      line-height: 1.9;
+    }
+
+    .icon-weekly:before {
+      content: "1-7";
+      left: 3px;
+      line-height: 1.7;
+    }
+
+    .icon-monthly:before {
+      content: "***";
+    }
 </style>

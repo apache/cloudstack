@@ -59,6 +59,7 @@ import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.backup.dao.BackupRepositoryDao;
 import org.apache.cloudstack.cluster.ClusterDrsAlgorithm;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -158,6 +159,8 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
     @Inject
     private ImageStoreDao imageStoreDao;
     @Inject
+    BackupRepositoryDao backupRepositoryDao;
+    @Inject
     private VMInstanceDao vmInstanceDao;
     @Inject
     private DomainRouterDao domainRouterDao;
@@ -235,7 +238,7 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
     @Override
     public ListResponse<VolumeMetricsStatsResponse> searchForVolumeMetricsStats(ListVolumesUsageHistoryCmd cmd) {
         Pair<List<VolumeVO>, Integer> volumeList = searchForVolumesInternal(cmd);
-        Map<Long,List<VolumeStatsVO>> volumeStatsList = searchForVolumeMetricsStatsInternal(cmd, volumeList.first());
+        Map<Long, List<VolumeStatsVO>> volumeStatsList = searchForVolumeMetricsStatsInternal(cmd, volumeList.first());
         return createVolumeMetricsStatsResponse(volumeList, volumeStatsList);
     }
 
@@ -557,6 +560,7 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
         response.setHosts(hostCountAndCpuSockets.first());
         response.setStoragePools(storagePoolDao.countAll());
         response.setImageStores(imageStoreDao.countAllImageStores());
+        response.setBackupRepositories(backupRepositoryDao.countAll());
         response.setObjectStores(objectStoreDao.countAllObjectStores());
         response.setSystemvms(vmInstanceDao.countByTypes(VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm));
         response.setRouters(domainRouterDao.countAllByRole(VirtualRouter.Role.VIRTUAL_ROUTER));

@@ -77,7 +77,7 @@
     </template>
     <a-select-option v-for="option in options" :key="option.id" :value="option[optionValueKey]">
       <span>
-        <span v-if="showIcon">
+        <span v-if="showIcon && option.showicon !== false">
           <resource-icon v-if="option.icon && option.icon.base64image" :image="option.icon.base64image" size="1x" style="margin-right: 5px"/>
           <render-icon v-else :icon="defaultIcon" style="margin-right: 5px" />
         </span>

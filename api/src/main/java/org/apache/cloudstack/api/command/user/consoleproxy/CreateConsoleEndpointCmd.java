@@ -35,6 +35,7 @@ import org.apache.cloudstack.consoleproxy.ConsoleAccessManager;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.utils.consoleproxy.ConsoleAccessUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.ObjectUtils;
 
 import javax.inject.Inject;
 import java.util.Map;
@@ -86,6 +87,10 @@ public class CreateConsoleEndpointCmd extends BaseCmd {
     }
 
     private ConsoleEndpointWebsocketResponse createWebsocketResponse(ConsoleEndpoint endpoint) {
+        if (ObjectUtils.allNull(endpoint.getWebsocketHost(), endpoint.getWebsocketPort(), endpoint.getWebsocketPath(),
+                endpoint.getWebsocketToken(), endpoint.getWebsocketExtra())) {
+            return null;
+        }
         ConsoleEndpointWebsocketResponse wsResponse = new ConsoleEndpointWebsocketResponse();
         wsResponse.setHost(endpoint.getWebsocketHost());
         wsResponse.setPort(endpoint.getWebsocketPort());

@@ -320,6 +320,9 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         pool = super.persist(pool);
         if (details != null) {
             for (Map.Entry<String, String> detail : details.entrySet()) {
+                if (detail.getKey().toLowerCase().contains("password") || detail.getKey().toLowerCase().contains("token")) {
+                    displayDetails = false;
+                }
                 StoragePoolDetailVO vo = new StoragePoolDetailVO(pool.getId(), detail.getKey(), detail.getValue(), displayDetails);
                 _detailsDao.persist(vo);
             }
