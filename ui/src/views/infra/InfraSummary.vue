@@ -175,6 +175,7 @@ import router from '@/router'
 import Breadcrumb from '@/components/widgets/Breadcrumb'
 import ChartCard from '@/components/widgets/ChartCard'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import { getSingularIfPluralWord } from '@/utils/util.js'
 
 export default {
   name: 'InfraSummary',
@@ -187,7 +188,7 @@ export default {
     return {
       loading: true,
       routes: {},
-      sections: ['zones', 'pods', 'clusters', 'hosts', 'storagepools', 'imagestores', 'imagecachestores', 'objectstores', 'systemvms', 'routers', 'cpusockets', 'managementservers', 'alerts', 'ilbvms', 'metrics'],
+      sections: ['zones', 'pods', 'clusters', 'hosts', 'storagepools', 'imagestores', 'imagecachestores', 'backuprepositories', 'objectstores', 'systemvms', 'routers', 'cpusockets', 'managementservers', 'alerts', 'ilbvms', 'metrics'],
       sslFormVisible: false,
       stats: {},
       intermediateCertificates: [],
@@ -216,7 +217,7 @@ export default {
     fetchData () {
       this.routes = {}
       for (const section of this.sections) {
-        const sectionRouteName = section.substring(0, section.length - 1)
+        const sectionRouteName = getSingularIfPluralWord(section)
         const sectionKey = section
         if (router.resolve('/' + sectionRouteName).matched[0].redirect === '/exception/404') {
           continue

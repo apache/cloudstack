@@ -23,7 +23,11 @@ import clusters from '@/config/section/infra/clusters'
 import hosts from '@/config/section/infra/hosts'
 import primaryStorages from '@/config/section/infra/primaryStorages'
 import secondaryStorages from '@/config/section/infra/secondaryStorages'
+<<<<<<< HEAD
 import secondaryStagingStorages from '@/config/section/infra/secondaryStagingStorages'
+=======
+import backupRepositories from '@/config/section/infra/backupRepositories'
+>>>>>>> apache/main
 import objectStorages from '@/config/section/infra/objectStorages'
 import systemVms from '@/config/section/infra/systemVms'
 import routers from '@/config/section/infra/routers'
@@ -51,7 +55,11 @@ export default {
     hosts,
     primaryStorages,
     secondaryStorages,
+<<<<<<< HEAD
     secondaryStagingStorages,
+=======
+    backupRepositories,
+>>>>>>> apache/main
     objectStorages,
     systemVms,
     routers,

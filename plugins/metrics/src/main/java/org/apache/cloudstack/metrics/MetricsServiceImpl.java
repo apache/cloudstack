@@ -59,6 +59,7 @@ import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.backup.dao.BackupRepositoryDao;
 import org.apache.cloudstack.cluster.ClusterDrsAlgorithm;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -157,6 +158,8 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
     private PrimaryDataStoreDao storagePoolDao;
     @Inject
     private ImageStoreDao imageStoreDao;
+    @Inject
+    BackupRepositoryDao backupRepositoryDao;
     @Inject
     private VMInstanceDao vmInstanceDao;
     @Inject
@@ -558,6 +561,7 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
         response.setStoragePools(storagePoolDao.countAll());
         response.setImageStores(imageStoreDao.countAllImageStores());
         response.setImageCacheStores(imageStoreDao.countAllImageCacheStores());
+        response.setBackupRepositories(backupRepositoryDao.countAll());
         response.setObjectStores(objectStoreDao.countAllObjectStores());
         response.setSystemvms(vmInstanceDao.countByTypes(VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm));
         response.setRouters(domainRouterDao.countAllByRole(VirtualRouter.Role.VIRTUAL_ROUTER));

@@ -102,3 +102,16 @@ export function toCsv ({ keys = null, data = null, columnDelimiter = ',', lineDe
 
   return result
 }
+
+export function getSingularIfPluralWord(word) {
+  if (word.endsWith('ies') && word.length > 3) {
+    return word.slice(0, -3) + 'y';
+  }
+  if (word.endsWith('sses') || word.endsWith('shes') || word.endsWith('ches') || word.endsWith('xes') || word.endsWith('zes')) {
+    return word.slice(0, -2);
+  }
+  if (word.endsWith('s') && !word.endsWith('ss')) {
+    return word.slice(0, -1);
+  }
+  return word;
+}
