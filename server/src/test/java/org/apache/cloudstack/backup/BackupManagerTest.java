@@ -1573,14 +1573,12 @@ public class BackupManagerTest {
 
         VMTemplateVO template = mock(VMTemplateVO.class);
         when(template.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
-        when(template.getUuid()).thenReturn(templateUuid);
         when(template.getName()).thenReturn("template1");
         when(vmTemplateDao.findByUuid(templateUuid)).thenReturn(template);
         Map<String, String> details = new HashMap<>();
         details.put(ApiConstants.TEMPLATE_ID, templateUuid);
 
         ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
-        when(serviceOffering.getUuid()).thenReturn(serviceOfferingUuid);
         when(serviceOffering.getName()).thenReturn("service-offering1");
         when(serviceOfferingDao.findByUuid(serviceOfferingUuid)).thenReturn(serviceOffering);
         details.put(ApiConstants.SERVICE_OFFERING_ID, serviceOfferingUuid);

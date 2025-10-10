@@ -168,9 +168,11 @@
                       :tabList="tabList"
                       :activeTabKey="tabKey"
                       @tabChange="key => onTabChange(key, 'tabKey')">
-                      <a-alert v-if="showOsTypeWarning">
+                      <a-alert
+                        v-if="showOsTypeWarning && selectedTemplateIso"
+                        style="margin-bottom: 10px">
                         <template #message>
-                          <div v-if="selectedTemplateIso && dataPreFill.ostypename">
+                          <div>
                             {{ selectedTemplateIso.message }}<br>
                             {{ selectedTemplateIso.label }} :
                             <router-link :to="{ path: '/guestos/' + selectedTemplateIso.item.ostypeid }">
@@ -183,7 +185,6 @@
                           </div>
                         </template>
                       </a-alert>
-                      <br v-if="showOsTypeWarning"/>
                       <div v-if="tabKey === 'templateid'">
                         {{ $t('message.template.desc') }}
                         <div v-if="isZoneSelectedMultiArch" style="width: 100%; margin-top: 5px">
@@ -1713,7 +1714,7 @@ export default {
           this.form.iothreadsenabled = template.details && Object.prototype.hasOwnProperty.call(template.details, 'iothreads')
           this.form.iodriverpolicy = template.details?.['io.policy']
           this.form.keyboard = template.details?.keyboard
-          this.showOsTypeWarning = template.ostypeid !== this.dataPreFill.ostypeid
+          this.showOsTypeWarning = this.dataPreFill.ostypeid && template.ostypeid !== this.dataPreFill.ostypeid
           if (template.details['vmware-to-kvm-mac-addresses']) {
             this.dataPreFill.macAddressArray = JSON.parse(template.details['vmware-to-kvm-mac-addresses'])
           }
@@ -1730,7 +1731,7 @@ export default {
         for (const key in this.options.isos) {
           var iso = _.find(_.get(this.options.isos[key], 'iso', []), (option) => option.id === value)
           if (iso) {
-            this.showOsTypeWarning = iso.ostypeid !== this.dataPreFill.ostypeid
+            this.showOsTypeWarning = this.dataPreFill.ostypeid && iso.ostypeid !== this.dataPreFill.ostypeid
             break
           }
         }

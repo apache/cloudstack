@@ -389,6 +389,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             GuestOSVO guestOS = _guestOSDao.findById(guestOSId);
             if (guestOS != null) {
                 details.put(ApiConstants.OS_TYPE_ID, guestOS.getUuid());
+                details.put(ApiConstants.OS_NAME, guestOS.getDisplayName());
             }
         }
 
@@ -2108,21 +2109,13 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (details.containsKey(ApiConstants.TEMPLATE_ID)) {
             VirtualMachineTemplate template = vmTemplateDao.findByUuid(details.get(ApiConstants.TEMPLATE_ID));
             if (template != null) {
-                details.put(ApiConstants.TEMPLATE_ID, template.getUuid());
                 details.put(ApiConstants.TEMPLATE_NAME, template.getName());
                 details.put(ApiConstants.IS_ISO, String.valueOf(template.getFormat().equals(Storage.ImageFormat.ISO)));
-            }
-        }
-        if (details.containsKey(ApiConstants.OS_TYPE_ID)) {
-            GuestOSVO guestOS = _guestOSDao.findByUuid(details.get(ApiConstants.OS_TYPE_ID));
-            if (guestOS != null) {
-                details.put(ApiConstants.OS_NAME, guestOS.getDisplayName());
             }
         }
         if (details.containsKey(ApiConstants.SERVICE_OFFERING_ID)) {
             ServiceOffering serviceOffering = serviceOfferingDao.findByUuid(details.get(ApiConstants.SERVICE_OFFERING_ID));
             if (serviceOffering != null) {
-                details.put(ApiConstants.SERVICE_OFFERING_ID, serviceOffering.getUuid());
                 details.put(ApiConstants.SERVICE_OFFERING_NAME, serviceOffering.getName());
             }
         }
@@ -2201,7 +2194,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         if (Boolean.TRUE.equals(listVmDetails)) {
             Map<String, String> vmDetails = new HashMap<>();
-            vmDetails.put(ApiConstants.HYPERVISOR, vm.getHypervisorType().toString());
+            if (vm != null) {
+                vmDetails.put(ApiConstants.HYPERVISOR, vm.getHypervisorType().toString());
+            }
             Map<String, String> details = getDetailsFromBackupDetails(backup.getId());
             vmDetails.putAll(details);
             response.setVmDetails(vmDetails);
