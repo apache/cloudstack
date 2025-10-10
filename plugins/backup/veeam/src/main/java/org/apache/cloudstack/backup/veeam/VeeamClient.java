@@ -368,7 +368,7 @@ public class VeeamClient {
     protected void checkIfRestoreSessionFinished(String type, String path) throws IOException {
         long startTime = System.currentTimeMillis();
         long timeoutMs = restoreTimeout * 1000L;
-        if (System.currentTimeMillis() - startTime < timeoutMs) {
+        while (System.currentTimeMillis() - startTime < timeoutMs) {
             HttpResponse relatedResponse = get(path);
             RestoreSession session = parseRestoreSessionResponse(relatedResponse);
             if (session.getResult().equals("Success")) {
