@@ -104,10 +104,9 @@ export function toCsv ({ keys = null, data = null, columnDelimiter = ',', lineDe
 }
 
 export function isValidIPv4Cidr (rule, value) {
-  console.log('here')
   return new Promise((resolve, reject) => {
     if (!value) {
-      reject(new Error('Required input'))
+      reject(new Error())
       return
     }
     const cidrRegex = /^(\d{1,3}\.){3}\d{1,3}\/([0-9]|[1-2][0-9]|3[0-2])$/

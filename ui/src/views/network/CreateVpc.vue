@@ -419,7 +419,7 @@ export default {
     },
     updateCidrRule () {
       if (!this.selectedVpcOfferingHavingRoutedNetworkMode) {
-        this.rules.cidr = [{ validator: isValidIPv4Cidr }]
+        this.rules.cidr = [{ required: true, message: this.$t('message.error.required.input') }, { validator: isValidIPv4Cidr }]
       } else {
         delete this.rules.cidr
       }
