@@ -853,6 +853,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         Volume vol = ApiDBUtils.findVolumeById(policy.getVolumeId());
         if (vol != null) {
             policyResponse.setVolumeId(vol.getUuid());
+            policyResponse.setVolumeName(vol.getName());
         }
         policyResponse.setSchedule(policy.getSchedule());
         policyResponse.setIntervalType(policy.getInterval());

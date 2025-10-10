@@ -2859,6 +2859,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
             volume.setPath(result.getPath());
             volume.setPoolId(pool.getId());
+            volume.setPoolType(pool.getPoolType());
             if (result.getChainInfo() != null) {
                 volume.setChainInfo(result.getChainInfo());
             }

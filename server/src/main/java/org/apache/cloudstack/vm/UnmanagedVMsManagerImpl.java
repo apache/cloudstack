@@ -820,7 +820,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
         diskProfile.setSize(copyRemoteVolumeAnswer.getSize());
         DiskProfile profile = volumeManager.updateImportedVolume(type, diskOffering, vm, template, deviceId,
-                storagePool.getId(), copyRemoteVolumeAnswer.getFilename(), chainInfo, diskProfile);
+                storagePool.getId(), storagePool.getPoolType(), copyRemoteVolumeAnswer.getFilename(), chainInfo, diskProfile);
 
         return new Pair<>(profile, storagePool);
     }
@@ -836,7 +836,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         StoragePool storagePool = storagePools.get(0);
 
         DiskProfile profile = volumeManager.updateImportedVolume(type, diskOffering, vm, template, deviceId,
-                storagePool.getId(), diskPath, null, diskProfile);
+                storagePool.getId(), storagePool.getPoolType(), diskPath, null, diskProfile);
 
         return new Pair<>(profile, storagePool);
     }
@@ -847,7 +847,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         StoragePool storagePool = primaryDataStoreDao.findById(poolId);
 
         DiskProfile profile = volumeManager.updateImportedVolume(type, diskOffering, vm, template, deviceId,
-                poolId, diskPath, null, diskProfile);
+                poolId, storagePool.getPoolType(), diskPath, null, diskProfile);
 
         return new Pair<>(profile, storagePool);
     }
@@ -866,7 +866,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
         StoragePool storagePool = getStoragePool(disk, zone, cluster, diskOffering);
         DiskProfile profile = volumeManager.importVolume(type, name, diskOffering, diskSize,
-                minIops, maxIops, vm.getDataCenterId(), vm.getHypervisorType(), vm, template, owner, deviceId, storagePool.getId(), path, chainInfo);
+                minIops, maxIops, vm.getDataCenterId(), vm.getHypervisorType(), vm, template, owner, deviceId, storagePool.getId(), storagePool.getPoolType(), path, chainInfo);
 
         return new Pair<DiskProfile, StoragePool>(profile, storagePool);
     }

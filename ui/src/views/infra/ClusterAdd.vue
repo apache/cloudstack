@@ -155,7 +155,7 @@
           <a-input v-model:value="form.host"></a-input>
         </a-form-item>
         <a-form-item name="datacenter" ref="datacenter" :label="$t('label.vcenterdatacenter')">
-          <a-input v-model:value="form.dataCenter"></a-input>
+          <a-input v-model:value="form.datacenter"></a-input>
         </a-form-item>
         <a-form-item name="usedefaultvmwarecred" ref="usedefaultvmwarecred" :label="$t('label.use.existing.vcenter.credentials.from.zone')">
           <a-switch v-model:checked="form.usedefaultvmwarecred" @change="onChangeUseDefaultVMwareCred()" />
@@ -266,6 +266,7 @@ export default {
       this.loading = true
       getAPI('listZones', { showicon: true }).then(response => {
         this.zonesList = response.listzonesresponse.zone || []
+        this.form.zoneid = this.zonesList?.[0]?.id || null
         this.fetchPods()
       }).catch(error => {
         this.$notifyError(error)
@@ -288,7 +289,7 @@ export default {
     fetchPods () {
       this.loading = true
       getAPI('listPods', {
-        zoneid: this.zoneId
+        zoneid: this.form.zoneid
       }).then(response => {
         this.podsList = response.listpodsresponse.pod || []
       }).catch(error => {
@@ -314,12 +315,12 @@ export default {
       this.loading = true
       this.clustertype = 'ExternalManaged'
       getAPI('listVmwareDcs', {
-        zoneid: this.form.zoneId
+        zoneid: this.form.zoneid
       }).then(response => {
         var vmwaredcs = response.listvmwaredcsresponse.VMwareDC
         if (vmwaredcs !== null) {
           this.form.host = vmwaredcs[0].vcenter
-          this.form.dataCenter = vmwaredcs[0].name
+          this.form.datacenter = vmwaredcs[0].name
         }
       }).catch(error => {
         this.$notification.error({
@@ -352,7 +353,7 @@ export default {
       var clustername = values.clustername
       var url = ''
       if (values.hypervisor === 'VMware') {
-        clustername = `${this.host}/${this.dataCenter}/${clustername}`
+        clustername = `${this.form.host}/${this.form.datacenter}/${clustername}`
         url = `http://${clustername}`
       }
       this.loading = true
