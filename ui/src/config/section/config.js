@@ -134,52 +134,6 @@ export default {
       ]
     },
     {
-      name: 'backuprepository',
-      title: 'label.backup.repository',
-      icon: 'inbox-outlined',
-      docHelp: 'adminguide/backup_and_recovery.html',
-      permission: ['listBackupRepositories'],
-      searchFilters: ['zoneid'],
-      columns: ['name', 'provider', 'type', 'address', 'zonename'],
-      details: ['name', 'type', 'address', 'provider', 'zonename', 'crosszoneinstancecreation'],
-      actions: [
-        {
-          api: 'addBackupRepository',
-          icon: 'plus-outlined',
-          label: 'label.backup.repository.add',
-          listView: true,
-          args: [
-            'name', 'provider', 'address', 'type', 'mountopts', 'zoneid', 'crosszoneinstancecreation'
-          ],
-          mapping: {
-            type: {
-              options: ['nfs', 'cifs', 'ceph']
-            },
-            provider: {
-              value: (record) => { return 'nas' }
-            }
-          }
-        },
-        {
-          api: 'updateBackupRepository',
-          icon: 'edit-outlined',
-          label: 'label.backup.repository.edit',
-          message: 'message.action.edit.backup.repository',
-          args: ['name', 'address', 'mountopts', 'crosszoneinstancecreation'],
-          dataView: true,
-          popup: true
-        },
-        {
-          api: 'deleteBackupRepository',
-          icon: 'delete-outlined',
-          label: 'label.backup.repository.remove',
-          message: 'message.action.delete.backup.repository',
-          dataView: true,
-          popup: true
-        }
-      ]
-    },
-    {
       name: 'hypervisorcapability',
       title: 'label.hypervisor.capabilities',
       icon: 'database-outlined',

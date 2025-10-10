@@ -77,3 +77,6 @@ CREATE TABLE IF NOT EXISTS `cloud`.`import_vm_task`(
     CONSTRAINT `fk_import_vm_task__import_host_id` FOREIGN KEY `fk_import_vm_task__import_host_id` (`import_host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
     INDEX `i_import_vm_task__zone_id`(`zone_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CALL `cloud`.`INSERT_EXTENSION_IF_NOT_EXISTS`('MaaS', 'Baremetal Extension for Canonical MaaS written in Python', 'MaaS/maas.py');
+CALL `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`('MaaS', 'orchestratorrequirespreparevm', 'true', 0);
