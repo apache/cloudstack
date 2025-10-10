@@ -19,22 +19,18 @@ package org.apache.cloudstack.utils.server;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Properties;
 
+import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -42,6 +38,11 @@ import com.cloud.utils.PropertiesUtil;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ServerPropertiesUtilTest {
+
+    @After
+    public void clearCache() {
+        ServerPropertiesUtil.propertiesRef.set(null);
+    }
 
     @Test
     public void returnsPropertyValueWhenPropertiesAreLoaded() {
@@ -81,15 +82,13 @@ public class ServerPropertiesUtilTest {
     }
 
     @Test
-    public void returnsNullWhenIOExceptionOccurs() {
-        File mockFile = mock(File.class);
-        try (MockedStatic<PropertiesUtil> mocked = mockStatic(PropertiesUtil.class);
-             MockedConstruction<FileInputStream> ignored = mockConstruction(FileInputStream.class);
-             MockedConstruction<Properties> ignored1 = mockConstruction(Properties.class, (mock, context) -> {
-                 doThrow(new IOException("Test IOException")).when(mock).load(any(FileInputStream.class));
-             })) {
+    public void returnsNullWhenIOExceptionOccurs() throws IOException {
+        File tempFile = Files.createTempFile("bad", ".properties").toFile();
+        tempFile.deleteOnExit();
+        Files.writeString(tempFile.toPath(), "\u0000\u0000\u0000");
+        try (MockedStatic<PropertiesUtil> mocked = mockStatic(PropertiesUtil.class)) {
             mocked.when(() -> PropertiesUtil.findConfigFile(ServerPropertiesUtil.PROPERTIES_FILE))
-                    .thenReturn(mockFile);
+                    .thenReturn(tempFile);
             assertNull(ServerPropertiesUtil.getProperty("key"));
         }
     }
