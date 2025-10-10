@@ -1466,8 +1466,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
                     "Extra parameters for Vmware to KVM conversion are enabled but the allowed list of parameters is empty");
         }
-        List<String> allowedParams = Arrays.stream(allowedParamsStr.split(",")).toList();
-        List<String> sanitizedParams = Arrays.stream(extraParams.split(" "))
+        List<String> allowedParams = Arrays.asList(allowedParamsStr.split(","));
+        List<String> sanitizedParams = Arrays.asList(extraParams.split(" "))
+                .stream()
                 .filter(x -> x.startsWith("-"))
                 .map(s -> s.replaceFirst("^-+", "").trim()) //Remove the starting hyphens as in --X or -x
                 .toList();
