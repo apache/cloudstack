@@ -47,6 +47,35 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.openapitools</groupId>
+                <artifactId>openapi-generator-maven-plugin</artifactId>
+                <version>4.3.1</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <inputSpec>
+                                ${project.basedir}/src/main/resources/openapi-v1.yaml
+                            </inputSpec>
+                            <generatorName>spring</generatorName>
+                            <apiPackage>org.apache.cloudstack.storage.ontap.clients</apiPackage>
+                            <modelPackage>org.apache.cloudstack.storage.ontap.models</modelPackage>
+                            <generateModels>true</generateModels>
+                            <generateModelTests>false</generateModelTests>
+                            <generateApis>true</generateApis>
+                            <generateApiTests>false</generateApiTests>
+                            <configOptions>
+                                <unhandledException>true</unhandledException>
+                                <useTags>true</useTags>
+                                <interfaceOnly>true</interfaceOnly>
+                            </configOptions>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <skipTests>true</skipTests>
